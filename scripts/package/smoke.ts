@@ -37,6 +37,9 @@ export const PACKAGES = [
   "cdk",
   "ui",
   "motion",
+  "bridge",
+  "bridge-react",
+  "bridge-preact",
   "create-rivet",
   "nx",
 ];
@@ -57,6 +60,13 @@ const PEERS = [
   "nx",
   // @rivetjs/motion peer (motion.dev).
   "motion",
+  // Framework bridge consumers supply React/Preact and React's declaration packages.
+  "react",
+  "react-dom",
+  "@types/react",
+  "@types/react-dom",
+  "preact",
+  "preact-render-to-string",
 ];
 /** Starter templates the full run builds (router + compiler + runtime + reactivity + devtools; starter-ui also kit + cdk + ui). */
 export const TEMPLATES = ["starter-minimal", "starter-static", "starter-server", "starter-ui"];
@@ -183,7 +193,17 @@ export function smoke(names: string[], { build = true, keep = false, dist: distR
   if (compiledSpecifiers.length && manifests.has("@rivetjs/compiler")) {
     writeFileSync(join(app, "imports-jsx.mjs"), importAll(compiledSpecifiers, false));
     node("node imports via Rivet loader (dom)", ["--import", "@rivetjs/runtime/testing/register", "imports-jsx.mjs"]);
-    node("node imports via Rivet loader (server)", ["--import", "@rivetjs/runtime/testing/register", "imports-jsx.mjs"], { RIVET_TEST_TARGET: "server" });
+    // The explicit DOM island ABI imports `_dom`; it is tested above in its browser target, never server-rewritten.
+    writeFileSync(
+      join(app, "imports-jsx-server.mjs"),
+      importAll(
+        compiledSpecifiers.filter((specifier) => specifier !== "@rivetjs/bridge/dom"),
+        false,
+      ),
+    );
+    node("node imports via Rivet loader (server)", ["--import", "@rivetjs/runtime/testing/register", "imports-jsx-server.mjs"], {
+      RIVET_TEST_TARGET: "server",
+    });
   }
 
   // 2. Consumer type-check. Script declarations (`client.d.ts`: ambient `declare module "*?image"`) are referenced.

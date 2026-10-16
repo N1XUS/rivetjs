@@ -1,7 +1,7 @@
 // Release versions: every publishable lib (`libs/*` with `publishConfig.directory`) ships with ONE version.
 // Pure helpers + manifest rewriting; `release.ts` drives them.
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, globSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve, sep } from "node:path";
 
 export const ROOT = resolve(import.meta.dirname, "../..");
 
@@ -111,4 +111,33 @@ export function bumpManifest<T extends Record<string, unknown>>(pkg: T, version:
 /** Rewrites `<dir>/package.json` with {@link bumpManifest} (keeps 2-space JSON + trailing newline). */
 export function bumpFile(file: string, version: string, names: Set<string>): void {
   writeFileSync(file, JSON.stringify(bumpManifest(read(file), version, names), null, 2) + "\n");
+}
+
+/** Release versions and internal dependency specs must agree throughout the workspace and npm lockfile. */
+export function bumpWorkspace(root: string, version: string): void {
+  const libs = publishableLibs(root);
+  const names = new Set(libs.map((lib) => lib.name));
+  const workspace = read(join(root, "package.json")) as Manifest & { workspaces: string[] };
+  const files = [
+    "package.json",
+    ...globSync(
+      workspace.workspaces.map((pattern) => join(pattern, "package.json")),
+      { cwd: root },
+    ).sort(),
+  ];
+  const lockFile = join(root, "package-lock.json");
+  const lock = JSON.parse(readFileSync(lockFile, "utf8")) as { packages: Record<string, Record<string, unknown>> };
+  const changes = new Map<string, string>();
+  for (const file of files) {
+    const pkg = read(join(root, file));
+    const next = names.has(pkg.name) ? version : pkg.version;
+    const key = file === "package.json" ? "" : dirname(file).split(sep).join("/");
+    const entry = lock.packages[key];
+    if (!entry) throw new Error(`package-lock.json is missing workspace ${key || "root"}`);
+    const updated = JSON.stringify({ ...bumpManifest(pkg, version, names), version: next }, null, 2) + "\n";
+    if (updated !== readFileSync(join(root, file), "utf8")) changes.set(file, updated);
+    lock.packages[key] = { ...bumpManifest(entry, version, names), version: names.has(pkg.name) ? version : entry["version"] };
+  }
+  for (const [file, content] of changes) writeFileSync(join(root, file), content);
+  writeFileSync(lockFile, JSON.stringify(lock, null, 2) + "\n");
 }

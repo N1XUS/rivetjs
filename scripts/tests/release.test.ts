@@ -1,14 +1,15 @@
 // scripts/release: version arithmetic, manifest bumps, publishable libs, conventional-commit changelog, --publish guard.
 import { strict as assert } from "node:assert";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, test } from "vitest";
 import { commitsSince, lastTag, parseCommit, renderChangelog } from "../release/changelog.ts";
-import { bumpManifest, currentVersion, nextVersion, ORDER, publishableLibs, ROOT } from "../release/version.ts";
+import { bumpManifest, bumpWorkspace, currentVersion, nextVersion, ORDER, publishableLibs, ROOT } from "../release/version.ts";
 import { assertLocalRegistry, assertNpmTargets, localNpmArgs, localNpmEnv, stripRegistryKeys } from "../release/verdaccio.ts";
-import { dryRunArgs } from "../release/release.ts";
+import { dryRunArgs, publishArgs } from "../release/release.ts";
+import { PACKAGES } from "../package/smoke.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "release-"));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -63,9 +64,62 @@ test("publishableLibs: every lib with publishConfig.directory, dependency order,
     ORDER.filter((dir) => dirs.includes(dir)),
   );
   assert.ok(dirs.indexOf("reactivity") < dirs.indexOf("runtime") && dirs.indexOf("cdk") < dirs.indexOf("ui"));
-  assert.equal(currentVersion(libs), "0.0.0-experimental");
+  assert.equal(currentVersion(libs), libs[0]!.version);
   assert.throws(() => currentVersion([libs[0]!, { ...libs[1]!, version: "9.9.9" }]), /disagree/);
   for (const lib of libs) assert.ok(lib.dist.endsWith(join("dist", "libs", lib.dir)), lib.dist);
+});
+
+test("tarball smoke covers every package in the release", () => {
+  assert.deepEqual(
+    PACKAGES,
+    publishableLibs().map((lib) => lib.dir),
+  );
+});
+
+test("release bump keeps private workspace dependencies and lock entries aligned with the published packages", () => {
+  const root = join(scratch, "workspace");
+  const files = {
+    "package.json": { name: "workspace", version: "0.1.0", workspaces: ["libs/*", "apps/*"] },
+    "libs/core/package.json": { name: "@rivetjs/core", version: "0.0.0-experimental", publishConfig: { directory: "../../dist/libs/core" } },
+    "libs/docs-kit/package.json": {
+      name: "@rivetjs/docs-kit",
+      version: "0.0.0-experimental",
+      private: true,
+      peerDependencies: { "@rivetjs/core": "0.0.0-experimental" },
+    },
+    "apps/docs/package.json": {
+      name: "docs",
+      version: "0.0.0-experimental",
+      private: true,
+      dependencies: { "@rivetjs/core": "0.0.0-experimental", vite: "^8.3.2" },
+    },
+  };
+  for (const [name, value] of Object.entries(files)) {
+    const target = join(root, name);
+    mkdirSync(join(target, ".."), { recursive: true });
+    writeFileSync(target, JSON.stringify(value));
+  }
+  const packages: Record<string, unknown> = Object.fromEntries(Object.entries(files).map(([name, value]) => [name.replace(/\/?package.json$/, ""), value]));
+  packages["node_modules/@rivetjs/core"] = { resolved: "libs/core", link: true };
+  writeFileSync(join(root, "package-lock.json"), JSON.stringify({ name: "workspace", lockfileVersion: 3, packages }));
+  bumpWorkspace(root, "0.1.0-alpha.0");
+  const read = (file: string) => JSON.parse(readFileSync(join(root, file), "utf8"));
+  assert.equal(read("libs/core/package.json").version, "0.1.0-alpha.0");
+  assert.equal(read("apps/docs/package.json").version, "0.0.0-experimental", "private app versions do not change");
+  assert.equal(read("apps/docs/package.json").dependencies["@rivetjs/core"], "0.1.0-alpha.0");
+  assert.equal(read("libs/docs-kit/package.json").peerDependencies["@rivetjs/core"], "0.1.0-alpha.0");
+  assert.equal(read("apps/docs/package.json").dependencies.vite, "^8.3.2");
+  const lock = read("package-lock.json");
+  assert.equal(lock.packages["libs/core"].version, "0.1.0-alpha.0");
+  assert.deepEqual(lock.packages["apps/docs"].dependencies, read("apps/docs/package.json").dependencies);
+  assert.deepEqual(lock.packages["node_modules/@rivetjs/core"], { resolved: "libs/core", link: true });
+});
+
+test("publish arguments retain provenance by default and support private-repository releases without it", () => {
+  const common = ["publish", "/dist/core", "--tag", "latest", "--access", "public"];
+  assert.deepEqual(publishArgs("/dist/core", "latest", { publish: true, provenance: true }), [...common, "--provenance"]);
+  assert.deepEqual(publishArgs("/dist/core", "latest", { publish: true, provenance: false }), common);
+  assert.deepEqual(publishArgs("/dist/core", "latest", {}), [...common, "--dry-run"]);
 });
 
 test("changelog: conventional subjects, scopes, breaking (! and footer), sections, counts", () => {

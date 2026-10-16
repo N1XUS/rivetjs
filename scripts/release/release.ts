@@ -6,8 +6,8 @@
 //
 //   1. version: current (all libs agree) → next
 //   2. changelog: conventional commits since the last `v*` tag (printed; `--apply` prepends it to CHANGELOG.md)
-//   3. bump: `--apply` rewrites libs/*/package.json (version + internal `@rivetjs/*` specs); otherwise only the
-//      built dist manifests get the next version (step 5)
+//   3. bump: `--apply` rewrites published versions, all workspace internal specs, and matching lock entries;
+//      otherwise only the built dist manifests get the next version (step 5)
 //   4. `nx run-many -t package` → dist/libs/<lib>
 //   5. dist manifests → next version (dry run)
 //   6. `node scripts/package/smoke.ts --no-build` (tarballs installed offline, imports, tsc, starter builds)
@@ -24,14 +24,15 @@
 // npmrc, `npm config get registry` / `@rivetjs:registry` not the local URL, another user config, non-local
 // credentials, and a package whose `npm publish --dry-run --offline` does not name the local registry.
 //
-// `--publish` is for .github/workflows/release.yml only: real `npm publish --provenance` per lib. It refuses to run
+// `--publish` is for .github/workflows/release.yml only: real `npm publish` per lib (provenance unless disabled
+// for a private repository with NPM_CONFIG_PROVENANCE=false). It refuses to run
 // outside GitHub Actions (`GITHUB_ACTIONS=true`) or without `NODE_AUTH_TOKEN`. The workflow commits + tags itself.
 import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { commitsSince, lastTag, renderChangelog } from "./changelog.ts";
-import { bumpFile, currentVersion, nextVersion, publishableLibs, ROOT } from "./version.ts";
+import { bumpFile, bumpWorkspace, currentVersion, nextVersion, publishableLibs, ROOT } from "./version.ts";
 import { assertLocalRegistry, assertNpmTargets, localNpmArgs, localNpmEnv, stripRegistryKeys, USERCONFIG } from "./verdaccio.ts";
 
 const step = (title: string) => console.log(`\n== ${title}`);
@@ -39,6 +40,23 @@ const step = (title: string) => console.log(`\n== ${title}`);
 /** The local path's pre-publish probe: same flags as the real publish, `--dry-run --offline` (no request to any host). */
 export function dryRunArgs(dist: string, tag: string, npmArgs: string[]): string[] {
   return ["publish", dist, "--tag", tag, "--access", "public", ...npmArgs, "--dry-run", "--offline"];
+}
+
+/** Private repositories cannot generate npm provenance; public CI releases retain it by default. */
+export function publishArgs(
+  dist: string,
+  tag: string,
+  { publish = false, localArgs = [] as string[], provenance = process.env["NPM_CONFIG_PROVENANCE"] !== "false" } = {},
+): string[] {
+  return [
+    "publish",
+    dist,
+    "--tag",
+    tag,
+    "--access",
+    "public",
+    ...(publish ? (provenance ? ["--provenance"] : []) : localArgs.length ? localArgs : ["--dry-run"]),
+  ];
 }
 
 function sh(command: string, args: string[], { env = {}, capture = false } = {}): string {
@@ -117,8 +135,8 @@ export function main(argv: string[]): void {
 
   step("3. bump");
   if (values.apply) {
-    for (const lib of libs) bumpFile(join(ROOT, "libs", lib.dir, "package.json"), next, names);
-    console.log(`libs/*/package.json → ${next}`);
+    bumpWorkspace(ROOT, next);
+    console.log(`published libs → ${next}; workspace dependencies + package-lock.json aligned`);
   } else console.log("dry run: source manifests untouched (dist manifests bumped after packaging)");
 
   step("4. package");
@@ -159,7 +177,7 @@ export function main(argv: string[]): void {
       const target = /Publishing to (\S+)/.exec(probe)?.[1];
       if (!target || assertLocalRegistry(target).href !== local) throw new Error(`refusing to publish ${lib.name}: npm would publish to ${target ?? "?"}`);
     }
-    const args = ["publish", lib.dist, "--tag", tag, "--access", "public", ...(values.publish ? ["--provenance"] : local ? npmArgs : ["--dry-run"])];
+    const args = publishArgs(lib.dist, tag, { publish: values.publish, localArgs: local ? npmArgs : [] });
     const out = sh("npm", args, { capture: true });
     const summary = out.split("\n").filter((line) => /(name|version|package size|unpacked size|total files):/.test(line));
     console.log(summary.map((line) => "  " + line.replace(/^npm (notice|warn) /, "").trim()).join("\n"));
