@@ -274,6 +274,47 @@ test("resume demo: no script before the click, the readout names exactly the chu
   }
 });
 
+test("resume demo: an earlier theme interaction does not appear in this example's downloaded files", async () => {
+  const page = await home();
+  try {
+    await page.getByRole("button", { name: "Theme", exact: true }).click();
+    await page.waitForLoadState("networkidle");
+    await page.keyboard.press("Escape");
+    const prior = await page.evaluate(() =>
+      performance
+        .getEntriesByType("resource")
+        .map((entry) => new URL(entry.name).pathname)
+        .filter((path) => path.includes("ThemeMenu") && path.endsWith(".js")),
+    );
+    assert.ok(prior.length > 0, "the theme was really loaded before the demo");
+    await page.locator(".rd button").click();
+    await page.waitForFunction(() => document.querySelector(".rd-files")?.textContent);
+    const names = (await page.locator(".rd-files").textContent())!.split(" · ");
+    assert.ok(
+      names.some((name) => name.startsWith("resume-ResumeDemo-")),
+      names.join(", "),
+    );
+    assert.ok(!names.some((name) => /ThemeMenu|popover|resume-App|resume-MobileMenu|resume-SearchButton/.test(name)), names.join(", "));
+    // Independent Vite output graph: every listed JS file must belong to this handler or its shared runtime/loader.
+    const manifest = JSON.parse(readFileSync(resolve(client, ".vite/manifest.json"), "utf8")) as Record<string, { file: string; imports?: string[] }>;
+    const allowed = new Set<string>();
+    const visit = (key: string) => {
+      const entry = manifest[key];
+      if (!entry || allowed.has(entry.file)) return;
+      allowed.add(entry.file);
+      for (const key of entry.imports ?? []) visit(key);
+    };
+    for (const [key, entry] of Object.entries(manifest)) if (/\/(?:resume-ResumeDemo|resume-entry|resume-loader)-/.test(entry.file)) visit(key);
+    for (const name of names) assert.ok(allowed.has("assets/" + name.replace(/\.deps\.js$/, ".js")), `${name} belongs to the demo dependency graph`);
+    const downloaded = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => new URL(entry.name).pathname.slice(1)));
+    const expected = downloaded.filter((path) => allowed.has(path)).map((path) => path.slice(path.lastIndexOf("/") + 1));
+    assert.deepEqual(names.filter((name) => !name.endsWith(".deps.js")).sort(), expected.sort(), "all actually downloaded dependencies are included");
+    assert.match((await page.locator(".rd-cost").textContent()) ?? "", /already fetched before your click/);
+  } finally {
+    await page.close();
+  }
+});
+
 test("resume demo: after a hover, the first click paints within 100 ms on slow 4G + 4x CPU", async () => {
   const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
   try {
