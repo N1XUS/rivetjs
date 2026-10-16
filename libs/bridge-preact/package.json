@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge-preact",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -29,7 +29,7 @@
   },
   "peerDependencies": {
     "@preact/preset-vite": ">=2.10.0 <3",
-    "@rivetjs/bridge": "0.0.0-experimental",
+    "@rivetjs/bridge": "0.1.0-alpha.0",
     "preact": ">=10.29.0 <12",
     "preact-render-to-string": ">=6.7.0 <7"
   },

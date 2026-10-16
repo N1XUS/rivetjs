@@ -6,11 +6,11 @@
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-dialog": "1.3.0",
-    "@rivetjs/bridge": "0.0.0-experimental",
-    "@rivetjs/bridge-react": "0.0.0-experimental",
-    "@rivetjs/reactivity": "0.0.0-experimental",
-    "@rivetjs/router": "0.0.0-experimental",
-    "@rivetjs/runtime": "0.0.0-experimental",
+    "@rivetjs/bridge": "0.1.0-alpha.0",
+    "@rivetjs/bridge-react": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/router": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0",
     "@tanstack/react-table": "9.3.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -19,7 +19,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.1.0-alpha.0",
     "vite": "8.3.2"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/motion",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "description": "Animations for Rivet on Motion (motion.dev): Motion elements, Presence, layout animations, scroll and in-view, CSS entrances.",
   "license": "MIT",
   "private": true,
@@ -57,13 +57,13 @@
     "./entrance.css": "./entrance.css"
   },
   "dependencies": {
-    "@rivetjs/kit": "0.0.0-experimental",
-    "@rivetjs/reactivity": "0.0.0-experimental",
-    "@rivetjs/router": "0.0.0-experimental",
-    "@rivetjs/runtime": "0.0.0-experimental"
+    "@rivetjs/kit": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/router": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0"
   },
   "peerDependencies": {
-    "@rivetjs/cdk": "0.0.0-experimental",
+    "@rivetjs/cdk": "0.1.0-alpha.0",
     "motion": ">=14.1.0 <15"
   },
   "peerDependenciesMeta": {

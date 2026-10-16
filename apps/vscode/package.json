@@ -11,7 +11,7 @@
     "node": ">=24"
   },
   "devDependencies": {
-    "@rivetjs/typescript-plugin": "0.0.0-experimental",
+    "@rivetjs/typescript-plugin": "0.1.0-alpha.0",
     "@types/vscode": "1.90.0",
     "esbuild": "0.28.2"
   }

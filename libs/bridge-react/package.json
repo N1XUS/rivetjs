@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge-react",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "description": "React 19 islands for Rivet: server render into the stream, hydrate on a client policy, live props, slots.",
   "license": "MIT",
   "private": true,
@@ -29,7 +29,7 @@
     }
   },
   "peerDependencies": {
-    "@rivetjs/bridge": "0.0.0-experimental",
+    "@rivetjs/bridge": "0.1.0-alpha.0",
     "@vitejs/plugin-react": ">=6.0.0 <7",
     "react": ">=19.0.0 <20",
     "react-dom": ">=19.0.0 <20"

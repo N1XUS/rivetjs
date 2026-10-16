@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/nx",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@nx/devkit": "23.2.1",
-    "create-rivet": "0.0.0-experimental"
+    "create-rivet": "0.1.0-alpha.0"
   },
   "peerDependencies": {
     "nx": ">=23 <24"

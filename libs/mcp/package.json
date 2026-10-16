@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/mcp",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.1",
-    "@rivetjs/compiler": "0.0.0-experimental",
-    "@rivetjs/language-core": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.1.0-alpha.0",
+    "@rivetjs/language-core": "0.1.0-alpha.0",
     "typescript": "5.9.3",
     "zod": "3.25.76"
   },

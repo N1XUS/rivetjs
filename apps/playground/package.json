@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@rivetjs/reactivity": "0.0.0-experimental",
-    "@rivetjs/runtime": "0.0.0-experimental",
-    "@rivetjs/router": "0.0.0-experimental"
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0",
+    "@rivetjs/router": "0.1.0-alpha.0"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.1.0-alpha.0",
     "@tailwindcss/vite": "4.3.3",
     "chrome-launcher": "1.2.2",
     "esbuild": "0.28.2",

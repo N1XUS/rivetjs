@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/language-core",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -20,11 +20,11 @@
     "rivet-check": "./cli.ts"
   },
   "peerDependencies": {
-    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.1.0-alpha.0",
     "typescript": ">=5.6"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.0.0-experimental"
+    "@rivetjs/compiler": "0.1.0-alpha.0"
   },
   "engines": {
     "node": ">=24"

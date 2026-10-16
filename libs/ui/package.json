@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/ui",
-  "version": "0.0.0-experimental",
+  "version": "0.1.0-alpha.0",
   "description": "Styled Rivet UI components (Tailwind CSS v4) built on @rivetjs/cdk.",
   "license": "Apache-2.0",
   "private": true,
@@ -542,11 +542,11 @@
     "./styles/*": "./styles/*"
   },
   "dependencies": {
-    "@rivetjs/cdk": "0.0.0-experimental",
-    "@rivetjs/forms": "0.0.0-experimental",
-    "@rivetjs/kit": "0.0.0-experimental",
-    "@rivetjs/reactivity": "0.0.0-experimental",
-    "@rivetjs/runtime": "0.0.0-experimental",
+    "@rivetjs/cdk": "0.1.0-alpha.0",
+    "@rivetjs/forms": "0.1.0-alpha.0",
+    "@rivetjs/kit": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0",
     "tailwind-variants": "3.3.1",
     "tw-animate-css": "1.4.0"
   },
