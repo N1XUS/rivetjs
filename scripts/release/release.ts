@@ -71,7 +71,7 @@ export function publishArgs(
   ];
 }
 
-function sh(command: string, args: string[], { env = {}, capture = false } = {}): string {
+function sh(command: string, args: string[], { env = {}, capture = false, stdoutOnly = false } = {}): string {
   console.log(`$ ${command} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
     cwd: ROOT,
@@ -84,7 +84,7 @@ function sh(command: string, args: string[], { env = {}, capture = false } = {})
     if (capture) console.error((result.stderr || result.stdout).trim());
     throw new Error(`${command} ${args.join(" ")} exited ${result.status}`);
   }
-  return capture ? result.stdout + result.stderr : "";
+  return capture ? (stdoutOnly ? result.stdout : result.stdout + result.stderr) : "";
 }
 
 export function main(argv: string[]): void {
@@ -188,9 +188,9 @@ export function main(argv: string[]): void {
   // Check every skipped package before uploading any new package. Registry errors, pending scans,
   // and different tarballs all stop recovery rather than silently accepting an inconsistent release.
   for (const lib of libs.slice(0, resume)) {
-    const packed = JSON.parse(sh("npm", ["pack", lib.dist, "--dry-run", "--json"], { capture: true }));
+    const packed = JSON.parse(sh("npm", ["pack", lib.dist, "--dry-run", "--json"], { capture: true, stdoutOnly: true }));
     const published = JSON.parse(
-      sh("npm", ["view", `${lib.name}@${next}`, "dist.integrity", "--json", "--registry", "https://registry.npmjs.org/"], { capture: true }),
+      sh("npm", ["view", `${lib.name}@${next}`, "dist.integrity", "--json", "--registry", "https://registry.npmjs.org/"], { capture: true, stdoutOnly: true }),
     );
     assertPublishedIntegrity(lib.name, packed[0]?.integrity, published);
     console.log(`  verified existing ${lib.name}@${next}: identical tarball`);
