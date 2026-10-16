@@ -1,0 +1,8 @@
+{
+  "name": "editorial-bench-lane-hugo",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hugo-extended": "0.167.0"
+  }
+}

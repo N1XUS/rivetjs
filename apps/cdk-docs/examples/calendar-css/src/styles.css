@@ -1,0 +1,99 @@
+/* Plain CSS on the default part class names (rv-Calendar, rv-CalendarGrid, rv-CalendarCell, …) and the state attributes.
+   @rivetjs/cdk/theme.css has no calendar rules: everything below is yours. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #1c1917;
+}
+main {
+  padding: 1rem;
+}
+.rv-Calendar {
+  display: inline-block;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: #fafaf9;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+.rv-Calendar[data-disabled] {
+  opacity: 0.5;
+}
+.rv-Calendar header {
+  display: flex;
+  align-items: center;
+}
+.rv-Calendar .rv-Heading {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+}
+.rv-Calendar .rv-Button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: #b45309;
+  cursor: pointer;
+}
+.rv-Calendar .rv-Button:hover:not(:disabled) {
+  background: #fef3c7;
+}
+.rv-Calendar .rv-Button:disabled {
+  color: #d6d3d1;
+}
+.rv-CalendarHeaderCell {
+  padding-block: 0.4rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #78716c;
+}
+.rv-CalendarCell {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  outline: none;
+  transition: background 120ms;
+}
+.rv-CalendarCell[data-hovered] {
+  background: #fef3c7;
+}
+.rv-CalendarCell[data-pressed] {
+  transform: scale(0.94);
+}
+.rv-CalendarCell[data-focus-visible] {
+  outline: 2px solid #b45309;
+  outline-offset: 1px;
+}
+.rv-CalendarCell[data-today] {
+  text-decoration: underline 2px #f59e0b;
+}
+.rv-CalendarCell[data-selected] {
+  background: #b45309;
+  color: #fff;
+}
+.rv-CalendarCell[data-outside-month] {
+  color: #d6d3d1;
+}
+.rv-CalendarCell[aria-disabled="true"]:not([data-outside-month]) {
+  color: #a8a29e;
+  cursor: not-allowed;
+}
+.rv-CalendarCell[data-unavailable] {
+  background: repeating-linear-gradient(45deg, transparent 0 3px, #e7e5e4 3px 5px);
+}
+.rv-CalendarCell[data-invalid] {
+  background: #dc2626;
+  color: #fff;
+}
+.rv-Calendar [slot="errorMessage"] {
+  margin-top: 0.25rem;
+  color: #dc2626;
+  font-size: 0.8rem;
+}

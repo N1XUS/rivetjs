@@ -1,0 +1,14 @@
+import { headTags, type DocumentShell } from "@rivetjs/router/server";
+
+/**
+ * The HTML around every page. The route `head` (title, meta, links, scripts) is written in full; `input` carries the
+ * stylesheets, the CSP nonce (server pages) and the client-managed marks of `@rivetjs/kit` head components.
+ */
+const document: DocumentShell = (input) => ({
+  start:
+    '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    headTags({ ...input.head, title: input.head?.title ?? "Rivet app" }, input) +
+    "</head><body>",
+  end: "</body></html>",
+});
+export default document;

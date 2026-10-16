@@ -1,0 +1,278 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/input-group.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Input group styles */
+.input-group {
+  @apply inline-flex min-h-9 items-center rounded-field border bg-field text-sm text-field-foreground shadow-field outline-none;
+  border-width: var(--border-width-field);
+  border-color: var(--field-border);
+
+  /* When textarea is present, align items to start and allow height to grow */
+  &:has([data-slot="input-group-textarea"]) {
+    @apply items-start;
+    height: auto;
+  }
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  /* Hover state */
+  @media (hover: hover) {
+    &:hover:not(:focus-within),
+    &[data-hovered="true"]:not([data-focus-within="true"]) {
+      @apply bg-field-hover;
+      border-color: var(--field-border-hover);
+    }
+  }
+
+  /* Focus within state - only when input/textarea is focused */
+  &:has([data-slot="input-group-input"]:focus),
+  &:has([data-slot="input-group-textarea"]:focus) {
+    @apply status-focused-field;
+    border-color: var(--field-border-focus);
+    background-color: var(--field-focus);
+  }
+
+  /* Invalid state */
+  &[data-invalid="true"] {
+    @apply status-invalid-field;
+    background-color: var(--field-focus);
+    border-color: var(--color-field-border-invalid);
+  }
+
+  /* Disabled state */
+  &[data-disabled="true"],
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  /**
+   * Browser autofill state.
+   * The user-agent paints `:-webkit-autofill`/`:autofill` on the inner <input>
+   * element only, inside its content box. Because the inner input has its
+   * border-radius stripped on whichever side touches a prefix/suffix, the
+   * autofill highlight ends up as a sharp-cornered rectangle and the
+   * prefix/suffix slots receive no highlight at all. Lift the highlight
+   * onto the group so the rounded shell + prefix + suffix all share it.
+   */
+  &:has([data-slot="input-group-input"]:-webkit-autofill),
+  &:has([data-slot="input-group-input"]:autofill) {
+    background-color: var(--field-focus);
+    border-color: var(--field-border-focus);
+  }
+}
+
+.input-group__input {
+  @apply flex-1 rounded-none border-0 bg-transparent px-3 py-2 text-base shadow-none outline-none placeholder:text-field-placeholder sm:text-sm;
+
+  /* Remove border radius on left side when prefix is present */
+  .input-group:has([data-slot="input-group-prefix"]) & {
+    @apply rounded-s-none ps-0;
+  }
+
+  /* Remove border radius on right side when suffix is present */
+  .input-group:has([data-slot="input-group-suffix"]) & {
+    @apply rounded-e-none pe-0;
+  }
+
+  /* Focus state - handled by group */
+  &:focus,
+  &:focus-visible {
+    @apply outline-none;
+  }
+
+  /**
+   * Neutralize the browser's per-input autofill paint so the inner <input>
+   * doesn't draw a sharp-cornered yellow rectangle. The unified highlight
+   * is applied to `.input-group` above. Preserve the autofilled text and
+   * caret colors, and pin the background-color transition so the inset
+   * box-shadow trick doesn't flicker on state changes.
+   */
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus,
+  &:-webkit-autofill:active,
+  &:autofill {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset;
+    box-shadow: 0 0 0 1000px transparent inset;
+    -webkit-text-fill-color: var(--field-foreground);
+    caret-color: var(--field-foreground);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
+/* TextArea within InputGroup - uses same base class as input but with textarea-specific styles */
+.input-group__input[data-slot="input-group-textarea"] {
+  min-height: 38px;
+  resize: vertical;
+}
+
+.input-group__prefix {
+  @apply flex h-full items-center justify-center rounded-e-none bg-transparent px-3 text-field-placeholder;
+  /* Rivet: inside the shell's border: shell radius − border width (TWEAKS.md TW-123) */
+  border-start-start-radius: max(0px, calc(var(--radius-field) - var(--border-width-field)));
+  border-end-start-radius: max(0px, calc(var(--radius-field) - var(--border-width-field)));
+  border-width: var(--border-width-field);
+  border-color: var(--field-border);
+  border-style: solid;
+  border-inline-end-color: var(--field-border);
+  border-inline-start: none;
+  border-top: none;
+  border-bottom: none;
+
+  /* Align to top when textarea is present */
+  .input-group:has([data-slot="input-group-textarea"]) & {
+    @apply items-start;
+    padding-top: 0.5rem;
+  }
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}
+
+.input-group__suffix {
+  @apply flex h-full items-center justify-center rounded-s-none bg-transparent px-3 text-field-placeholder;
+  /* Rivet: inside the shell's border: shell radius − border width (TWEAKS.md TW-123) */
+  border-start-end-radius: max(0px, calc(var(--radius-field) - var(--border-width-field)));
+  border-end-end-radius: max(0px, calc(var(--radius-field) - var(--border-width-field)));
+  border-width: var(--border-width-field);
+  border-color: var(--field-border);
+  border-style: solid;
+  border-inline-start-color: var(--field-border);
+  border-inline-end: none;
+  border-top: none;
+  border-bottom: none;
+
+  /* Align to top when textarea is present */
+  .input-group:has([data-slot="input-group-textarea"]) & {
+    @apply items-start;
+    padding-top: 0.5rem;
+  }
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}
+
+/* Rivet: field buttons (TW-145). A Button directly in a Prefix / Suffix sits concentric inside the shell: the same inset
+   (`--input-group-inset`) on every side, height = shell inner height − 2 × inset (the Prefix / Suffix stretches to the
+   shell and pads by the inset, the button stretches in it: follows any shell height, 40 / 36 px → 32 / 28 px), radius = shell radius − border − inset (a circle in a pill shell, a small rounding in a square one),
+   icon-only square (`aspect-ratio: 1` on the stretched height), 16 px icon. Ghost / tertiary rest without fill and with the muted icon colour, fill on hover / press;
+   the focus ring is drawn inside the button (no offset past the shell). The suffix padding goes, so a `pe-0` class on it is
+   no longer needed; textarea groups (toolbar layouts) keep their own spacing. */
+.input-group {
+  --input-group-inset: 3px;
+}
+
+/* Flat selectors (nesting would repeat the long prefix in every state rule); `:where()` keeps the shell part at 0
+   specificity, `:is(prefix, suffix)[data-slot] > .button` (0,3,0) beats the Button size / variant classes. */
+:where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix):has(> .button) {
+  @apply gap-0 self-stretch p-0;
+  align-items: stretch;
+  padding-block: var(--input-group-inset);
+}
+
+:where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button {
+  @apply shrink-0 self-stretch;
+  height: auto;
+  min-height: 0;
+  margin-inline: var(--input-group-inset);
+  padding-inline: --spacing(2.5);
+  border-radius: max(--spacing(0.5), calc(var(--radius-field) - var(--border-width-field) - var(--input-group-inset)));
+
+  /* focus ring inside the shell (no offset) */
+  &:is(:focus-visible, [data-focus-visible="true"]) {
+    --tw-ring-offset-width: 0px;
+  }
+
+  & + .button {
+    margin-inline-start: 0;
+  }
+
+  &.button--icon-only {
+    @apply p-0;
+    width: auto;
+    aspect-ratio: 1;
+  }
+
+  &:is(.button--ghost, .button--tertiary) {
+    --button-bg: transparent;
+    --button-bg-hover: var(--default);
+    --button-bg-pressed: var(--default-hover);
+    --button-fg: var(--field-placeholder, var(--muted));
+  }
+
+  &:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"]) {
+    --button-fg: var(--field-foreground);
+  }
+
+  svg {
+    @apply size-4;
+  }
+}
+
+/* Variant property definitions */
+.input-group--primary {
+  /* Default styles */
+}
+
+.input-group--secondary {
+  @apply shadow-none;
+  background-color: var(--input-group-bg);
+
+  --input-group-bg: var(--default);
+  --input-group-bg-hover: var(--default-hover);
+  --input-group-bg-focus: var(--default);
+
+  @media (hover: hover) {
+    &:hover:not(:focus-within),
+    &[data-hovered="true"]:not([data-focus-within="true"]) {
+      background-color: var(--input-group-bg-hover);
+    }
+  }
+
+  &:has([data-slot="input-group-input"]:focus),
+  &:has([data-slot="input-group-textarea"]:focus) {
+    background-color: var(--input-group-bg-focus);
+  }
+
+  /* Invalid state */
+  &[data-invalid="true"] {
+    @apply status-invalid-field;
+    border-color: var(--color-field-border-invalid);
+    background-color: var(--input-group-bg-focus);
+  }
+
+  [data-slot="input-group-input"],
+  [data-slot="input-group-textarea"] {
+    @apply bg-transparent;
+  }
+}
+
+/* Full width modifier */
+.input-group--full-width {
+  @apply w-full;
+}
+
+/* Rivet: density (identity spec §3.2, TWEAKS.md TW-139) — `data-density="compact"` on an ancestor shifts height and
+   padding one scale step; a `data-density="comfortable"` ancestor restores the default. */
+.input-group:where([data-density="compact"] *):not(:where([data-density="comfortable"] *)) {
+  @apply min-h-8;
+}

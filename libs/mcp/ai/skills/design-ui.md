@@ -1,0 +1,39 @@
+---
+name: rivet-ui-design
+description: Use when designing, building, or polishing Rivet interfaces with @rivetjs/ui or @rivetjs/cdk, including colors, spacing, typography, page structure, app layouts, component composition, responsive behavior, and interactions.
+---
+
+# Design with Rivet UI and CDK
+
+Design a coherent experience around the user's task, then express it with Rivet components. Preserve the app's brand, established patterns, and requested scope. This skill works in consumer projects; MCP is optional.
+
+## Start with the task and existing system
+
+Read project instructions, the relevant screens, installed package versions, global styles, and theme overrides. Identify the main task, content priorities, primary action, data density, and target devices. Ask only about missing information that materially changes the design; otherwise state a reasonable assumption and proceed.
+
+For a new or substantially redesigned screen, establish a compact design contract:
+
+- **Structure:** navigation, page regions, reading order, and what changes on mobile.
+- **Visual system:** semantic color roles, type hierarchy, spacing rhythm, density, and surface treatment.
+- **Composition:** chosen UI/CDK components and why they fit the task.
+- **Behavior:** primary action, focus/keyboard behavior, feedback, and loading/empty/error/success states.
+
+Use that contract to guide the implementation, not as a mandatory separate deliverable or approval gate. For a small edit, preserve the existing contract and change only what is needed.
+
+## Read the relevant design references
+
+| Decision | Reference |
+| --- | --- |
+| Palette, contrast, spacing, typography, radius, visual hierarchy | [Visual foundations](references/visual-foundations.md) |
+| Information architecture, app shell, page regions, responsive and scrolling behavior | [Structure and app layouts](references/structure-and-layout.md) |
+| Choosing and combining components, forms, lists, overlays, reusable patterns | [Component composition](references/component-composition.md) |
+| Action hierarchy, states, feedback, keyboard, focus, motion | [Interactions](references/interactions.md) |
+| Actual imports, APIs, signals, resumability, styles, MCP and offline lookup | [Rivet implementation](references/rivet-implementation.md) |
+
+Load the references needed for the task. Before writing code, consult the implementation reference and verify the selected components against the installed version.
+
+## Implement and assess the whole experience
+
+Use styled `@rivetjs/ui` for its supported patterns. Use headless `@rivetjs/cdk` when the task requires a different visual treatment or a behavior primitive; custom styling still needs every interactive state. Compose semantic HTML for regions that need no component behavior.
+
+Evaluate the screen with realistic content: long titles, many rows, empty data, validation errors, pending actions, and narrow widths. Check hierarchy, alignment, contrast, readable text, keyboard access, focus restoration, and overflow. Inspect light/dark modes if supported and reduced motion when adding movement. Run the project's available checks and build; use MCP `check_code` when connected. Report the design decisions and what was actually verified. If browser inspection is unavailable, say which visual checks remain.

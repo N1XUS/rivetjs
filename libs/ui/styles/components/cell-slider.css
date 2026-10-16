@@ -1,0 +1,101 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no cell slider). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --surface, --accent, --accent-soft, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/slider (track pointer + keyboard, free drag + animated snap on release for stepped sliders). */
+/* -------------------------------------------------------------------------------------------------
+ * CellSlider Component Styles
+ * Block: cell-slider (parts: track = the whole cell / fill / thumb / label / output)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: cell-slider - the cell; label and value sit above the track
+ */
+.cell-slider {
+  @apply relative isolate flex w-full items-center justify-between gap-3 overflow-hidden rounded-xl px-3.5 text-sm select-none;
+
+  --cell-slider-height: calc(var(--spacing) * 11);
+  --cell-slider-track: var(--default);
+  --cell-slider-fill: var(--accent-soft);
+  --cell-slider-thumb: var(--accent);
+  height: var(--cell-slider-height);
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.cell-slider--default {
+  /* defaults above */
+}
+
+/* Secondary: on a surface (cards, grouped settings) */
+.cell-slider--secondary {
+  --cell-slider-track: var(--surface);
+  --cell-slider-fill: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+
+/**
+ * Element: track - stretched over the whole cell
+ */
+.cell-slider__track {
+  @apply absolute inset-0 z-0;
+
+  background-color: var(--cell-slider-track);
+  cursor: var(--cursor-interactive);
+
+  .cell-slider[data-disabled="true"] & {
+    cursor: default;
+  }
+}
+
+/**
+ * Element: fill - accent tint from the start to the thumb (the cdk sets its position inline)
+ */
+.cell-slider__fill {
+  background-color: var(--cell-slider-fill);
+
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}
+
+/**
+ * Element: thumb - transparent hit area at the fill edge with a thin pill
+ */
+.cell-slider__thumb {
+  @apply top-1/2 flex h-full w-4 items-center justify-center outline-none;
+
+  &::after {
+    content: "";
+    @apply h-1/2 rounded-full;
+    width: 3px;
+    background-color: var(--cell-slider-thumb);
+
+    transition: height var(--duration-fast) var(--ease-out);
+    @apply motion-reduce:transition-none;
+  }
+
+  &[data-dragging="true"]::after {
+    @apply h-3/5;
+  }
+
+  &[data-focus-visible="true"]::after {
+    @apply status-focused;
+  }
+}
+
+.cell-slider:has(.cell-slider__thumb[data-focus-visible="true"]) {
+  @apply status-focused;
+}
+
+/**
+ * Element: label / output - above the track, presses pass through to it
+ */
+.cell-slider__label,
+.cell-slider__output {
+  @apply pointer-events-none relative z-10 truncate;
+}
+
+.cell-slider__label {
+  @apply font-medium text-foreground;
+}
+
+.cell-slider__output {
+  @apply shrink-0 text-muted tabular-nums;
+}

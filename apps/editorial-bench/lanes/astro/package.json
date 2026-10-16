@@ -1,0 +1,9 @@
+{
+  "name": "editorial-bench-lane-astro",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "astro": "7.3.8",
+    "marked": "18.1.0"
+  }
+}

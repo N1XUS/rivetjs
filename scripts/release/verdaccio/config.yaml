@@ -1,0 +1,39 @@
+# Local registry for the release end to end (`node scripts/release/local-e2e.ts`, `node scripts/release/verdaccio.ts`).
+# Project level only: everything it writes stays under ./storage (gitignored) — packages, the throwaway user, the npm
+# userconfig and the npm cache of the e2e run. Never the user's ~/.npmrc or ~/.config/verdaccio.
+storage: ./storage/data
+auth:
+  htpasswd:
+    file: ./storage/htpasswd
+    # Registration off: verdaccio.ts `userconfig()` writes the run's throwaway user into the file itself.
+    max_users: -1
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+packages:
+  # Rivet's own names are served from local publishes only — never proxied (create-rivet on npmjs may be another
+  # package, and an unpublished @rivetjs name must 404, not fall through).
+  '@rivetjs/*':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+  'create-rivet':
+    access: $all
+    publish: $authenticated
+    unpublish: $authenticated
+  # Third-party dependencies of the starters: read through from npmjs (cached in ./storage/data).
+  '**':
+    access: $all
+    publish: $authenticated
+    proxy: npmjs
+server:
+  keepAliveTimeout: 60
+middlewares:
+  audit:
+    enabled: false
+web:
+  enable: false
+log:
+  type: stdout
+  format: pretty
+  level: warn

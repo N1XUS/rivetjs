@@ -1,0 +1,10 @@
+syntax = "proto3";
+package rivet.bench;
+option csharp_namespace = "Rivet.Bench";
+service Content { rpc GetPage (PageRequest) returns (Page); }
+// strings = text variant (wire-compatible with the former bool): 0 = integer values; 1 = escaping variant, rows carry
+// text_values (field 3 of each row is markup-significant + non-ASCII); 2 = text grid, every field is a 24-64 char
+// ASCII string (two of ten escape-bearing) — the Razor-adversarial scenario (docs/benchmarks/razor-adversarial.md).
+message PageRequest { int32 rows = 1; string token = 2; bool article = 3; int32 delay_ms = 4; int32 strings = 5; }
+message Row { int32 id = 1; repeated int32 values = 2; repeated string text_values = 3; }
+message Page { string token = 1; string title = 2; string markdown = 3; repeated Row rows = 4; }

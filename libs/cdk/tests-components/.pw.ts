@@ -1,0 +1,14 @@
+import { chromium } from "playwright";
+import { start } from "@rivetjs/router/node";
+const root = new URL("./app/", import.meta.url).pathname;
+const app = await start({ dist: root + "dist", port: 0, host: "127.0.0.1", onError: (e: unknown) => console.error("ERR", e) });
+const browser = await chromium.launch({ headless: true });
+const page = await browser.newPage();
+page.on("pageerror", (e) => console.log("PAGEERROR", e.message));
+page.on("console", (m) => console.log("CONSOLE", m.text()));
+const st = (expr: string) => page.evaluate(expr).then((v) => console.log(expr, "=>", JSON.stringify(v)));
+(globalThis as any).page = page; (globalThis as any).st = st;
+await page.goto(app.url + process.argv[2]);
+const steps = await import(process.argv[3]!);
+await steps.default(page, st);
+await browser.close(); await app.close();

@@ -1,0 +1,96 @@
+/* Tailwind first, then the cdk layers between Tailwind's base and its utilities. */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/theme.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* theme.css draws the group, the button and the popover; calendars ship no styles: a small look on their classes. */
+@layer components {
+  .rv-DatePicker {
+    display: grid;
+    gap: 0.25rem;
+    justify-items: start;
+  }
+  .rv-Group .rv-Button {
+    display: grid;
+    place-items: center;
+  }
+  .rv-Calendar header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.25rem;
+  }
+  .rv-Calendar .rv-Heading {
+    flex: 1;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .rv-Calendar header .rv-Button {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+  }
+  .rv-CalendarGrid {
+    border-collapse: collapse;
+  }
+  .rv-CalendarHeaderCell {
+    padding: 0.25rem 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+  .rv-CalendarCell {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    outline: none;
+  }
+  .rv-CalendarCell[data-hovered] {
+    background: #f1f5f9;
+  }
+  .rv-CalendarCell[data-focus-visible] {
+    box-shadow: 0 0 0 2px #2563eb;
+  }
+  .rv-CalendarCell[data-selected] {
+    background: #2563eb;
+    color: #fff;
+  }
+  .rv-CalendarCell[data-outside-month] {
+    visibility: hidden;
+  }
+  .rv-CalendarCell[data-disabled] {
+    color: #cbd5e1;
+    cursor: default;
+  }
+  .rv-CalendarCell[data-unavailable] {
+    color: #ef4444;
+    text-decoration: line-through;
+    cursor: default;
+  }
+  .rv-CalendarCell[data-invalid] {
+    background: #dc2626;
+    color: #fff;
+  }
+  .rv-FieldError {
+    font-size: 0.75rem;
+    color: #b91c1c;
+  }
+  .rv-Text[slot="description"] {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+}

@@ -1,0 +1,16 @@
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export interface <%= className %>Props {
+  title: string;
+  children?: Content;
+}
+
+/** <%= className %>: a titled box. */
+export function <%= className %>(props: <%= className %>Props) {
+  return (
+    <section class="<%= fileName %>">
+      <h2>{props.title}</h2>
+      {props.children}
+    </section>
+  );
+}

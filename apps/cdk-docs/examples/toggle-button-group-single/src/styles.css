@@ -1,0 +1,50 @@
+/* Plain CSS: the group, its buttons, and the selection state. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+}
+.rv-ToggleButtonGroup {
+  display: flex;
+  width: fit-content;
+}
+.rv-ToggleButtonGroup[data-orientation="vertical"] {
+  flex-direction: column;
+}
+.rv-ToggleButtonGroup .rv-ToggleButton {
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #334155;
+  font: inherit;
+  cursor: pointer;
+}
+.rv-ToggleButtonGroup .rv-ToggleButton + .rv-ToggleButton {
+  margin-left: -1px;
+}
+.rv-ToggleButtonGroup .rv-ToggleButton:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.rv-ToggleButtonGroup .rv-ToggleButton:last-child {
+  border-radius: 0 6px 6px 0;
+}
+/* Single selection: radios with aria-checked; multiple: aria-pressed. data-selected covers both. */
+.rv-ToggleButtonGroup .rv-ToggleButton[data-selected] {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: white;
+}
+.rv-ToggleButtonGroup .rv-ToggleButton:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  z-index: 1;
+}
+.rv-ToggleButtonGroup[data-disabled] .rv-ToggleButton,
+.rv-ToggleButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

@@ -1,0 +1,17 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+/* Make the page scroll, so the scroll position has something to report. */
+.tall {
+  height: 2000px;
+}
+button {
+  font: inherit;
+}

@@ -1,0 +1,60 @@
+/* Plain CSS: default classes plus the data-* state attributes. Position / translate of the thumb and fill are inline. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  margin: 16px;
+}
+.rv-Slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  width: 220px;
+}
+.rv-Slider[data-orientation="vertical"] {
+  width: auto;
+  grid-template-columns: auto;
+  justify-items: center;
+}
+.rv-SliderOutput {
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+.rv-SliderTrack {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+}
+.rv-SliderTrack[data-orientation="vertical"] {
+  width: 6px;
+  height: 140px;
+}
+.rv-SliderFill {
+  border-radius: 3px;
+  background: #2563eb;
+}
+.rv-SliderThumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #2563eb;
+}
+.rv-SliderTrack[data-orientation="horizontal"] .rv-SliderThumb {
+  top: 50%;
+}
+.rv-SliderTrack[data-orientation="vertical"] .rv-SliderThumb {
+  left: 50%;
+}
+.rv-SliderThumb[data-dragging] {
+  background: #2563eb;
+}
+.rv-SliderThumb[data-focus-visible] {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}

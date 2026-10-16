@@ -1,0 +1,57 @@
+/* Plain CSS on the default rv-* classes and data-* state attributes. */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #0f172a;
+}
+
+.demo {
+  margin: 1rem;
+  max-width: 20rem;
+  font-size: 0.875rem;
+}
+.rv-ComboBox {
+  display: grid;
+  gap: 0.25rem;
+}
+.rv-ComboBox .rv-Group {
+  display: flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+}
+.rv-ComboBox[data-open] .rv-Group {
+  border-color: #0d9488;
+}
+.rv-ComboBox .rv-Button {
+  border: 0;
+  background: none;
+  padding: 0 0.5rem;
+  color: #64748b;
+}
+.rv-ComboBox .rv-Input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+}
+.rv-Popover[data-trigger="ComboBox"] {
+  width: var(--trigger-width);
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+.rv-ListBoxItem {
+  padding: 0.375rem 0.75rem;
+}
+.rv-ListBoxItem[data-focused] {
+  background: #0d9488;
+  color: white;
+}
+.rv-ListBoxItem[data-selected] {
+  font-weight: 600;
+}
+.rv-ListBoxItem[data-disabled] {
+  color: #94a3b8;
+}

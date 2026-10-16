@@ -1,0 +1,43 @@
+/* Shared by both lanes (copied into each build). Plain CSS: no framework, no web fonts. */
+:root { --bg: #f7f8fc; --panel: #fff; --line: #e3e6ef; --text: #1b1e2b; --muted: #61667a; --accent: #0360fa; --accent-2: #5b00f8; --bad: #c62828; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--text); background: var(--bg); }
+.shell { display: grid; grid-template-columns: 200px 1fr; min-height: 100vh; }
+.side { background: var(--panel); border-right: 1px solid var(--line); padding: 16px 12px; }
+.side strong { display: block; margin: 0 8px 16px; }
+.side a { display: block; padding: 8px; border-radius: 6px; color: var(--text); text-decoration: none; }
+.side a[aria-current="page"] { background: #eaf0ff; color: var(--accent); font-weight: 600; }
+.top { display: flex; justify-content: space-between; align-items: center; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+main { padding: 24px; display: grid; gap: 24px; align-content: start; }
+h1 { font-size: 20px; margin: 0; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; }
+.kpi span { color: var(--muted); font-size: 12px; }
+.kpi b { display: block; font-size: 20px; }
+.panel, .chart, .orders, .order-form { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 0; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.grid tbody tr { cursor: pointer; }
+.grid tbody tr:hover { background: #f3f6ff; }
+.sort { background: none; border: 0; font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+.toolbar, .pager { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.pager { margin: 12px 0 0; }
+.toolbar input { flex: 1; }
+input, select, textarea, button { font: inherit; }
+input, select, textarea { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
+button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; }
+button[type="submit"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.status { padding: 1px 8px; border-radius: 99px; font-size: 12px; background: #eef0f6; }
+.status.paid { background: #e6f4ea; } .status.refunded { background: #f3e8ff; } .status.failed { background: #fde8e8; }
+.order-form { display: grid; gap: 8px; max-width: 480px; }
+.order-form label { display: grid; gap: 4px; }
+.order-form .check { display: flex; gap: 8px; align-items: center; }
+.error { color: var(--bad); margin: -4px 0 0; font-size: 12px; }
+.toast { background: #e6f4ea; padding: 8px 12px; border-radius: 6px; }
+.overlay { position: fixed; inset: 0; background: rgb(0 0 0 / 0.3); }
+.dialog { position: fixed; top: 20vh; left: 50%; transform: translateX(-50%); width: min(420px, 92vw); background: var(--panel); border-radius: 10px; padding: 20px; box-shadow: 0 10px 40px rgb(0 0 0 / 0.2); }
+.dialog dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; }
+.user-menu { position: relative; }
+.user-menu ul { position: absolute; right: 0; top: 110%; list-style: none; margin: 0; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; min-width: 140px; }
+.user-menu li { padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+.user-menu li:hover { background: #f3f6ff; }

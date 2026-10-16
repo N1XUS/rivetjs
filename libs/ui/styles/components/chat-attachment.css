@@ -1,0 +1,132 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no chat attachments). Feature set inspired by HeroUI Pro's public ChatAttachment docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatAttachment Component Styles
+ * Blocks: chat-attachment (preview / preview-image / preview-video / icon / info / name / size / remove),
+ *         chat-attachment-group, chat-attachment-input (file / trigger / dropzone)
+ * States: [data-variant="media|file"], icon [data-kind], dropzone [data-drop-target="true"]
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-attachment {
+  @apply relative flex shrink-0 overflow-hidden text-start;
+}
+
+/* File card */
+.chat-attachment[data-variant="file"] {
+  @apply h-14 w-56 max-w-full items-center gap-2.5 rounded-xl border border-separator bg-surface p-2 pe-3;
+}
+
+/* Media tile */
+.chat-attachment[data-variant="media"] {
+  @apply size-14 rounded-xl bg-default;
+}
+
+.chat-attachment__preview {
+  @apply flex shrink-0 items-center justify-center overflow-hidden;
+}
+
+.chat-attachment[data-variant="file"] .chat-attachment__preview {
+  @apply size-10 rounded-lg bg-default;
+}
+
+.chat-attachment[data-variant="media"] .chat-attachment__preview {
+  @apply size-full;
+}
+
+.chat-attachment__preview-image,
+.chat-attachment__preview-video {
+  @apply size-full object-cover;
+}
+
+.chat-attachment__icon {
+  @apply inline-flex items-center justify-center text-muted;
+
+  & svg {
+    @apply size-[18px];
+  }
+
+  &[data-kind="pdf"] {
+    @apply text-danger;
+  }
+
+  &[data-kind="spreadsheet"] {
+    @apply text-success;
+  }
+
+  &[data-kind="document"] {
+    @apply text-accent;
+  }
+
+  &[data-kind="code"],
+  &[data-kind="archive"] {
+    @apply text-warning;
+  }
+}
+
+.chat-attachment__info {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.chat-attachment__name {
+  @apply truncate text-sm leading-5 font-medium text-foreground;
+}
+
+.chat-attachment__size {
+  @apply truncate text-xs leading-4 text-muted;
+}
+
+/* Media: name / size become a hover overlay. */
+.chat-attachment[data-variant="media"] .chat-attachment__info {
+  @apply pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 pt-3 pb-1 opacity-0 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+
+  & .chat-attachment__name,
+  & .chat-attachment__size {
+    @apply text-[10px] leading-3 text-white;
+  }
+}
+
+.chat-attachment[data-variant="media"]:hover .chat-attachment__info,
+.chat-attachment[data-variant="media"]:focus-within .chat-attachment__info {
+  @apply opacity-100;
+}
+
+.chat-attachment__remove {
+  @apply absolute end-1 top-1 size-5 min-h-0 min-w-0 rounded-full bg-background/80 p-0 opacity-0 backdrop-blur transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+
+  & svg {
+    @apply size-3;
+  }
+}
+
+.chat-attachment[data-variant="file"] .chat-attachment__remove {
+  @apply static ms-auto bg-transparent opacity-100 backdrop-blur-none;
+}
+
+.chat-attachment:hover .chat-attachment__remove,
+.chat-attachment:focus-within .chat-attachment__remove,
+.chat-attachment__remove:focus-visible {
+  @apply opacity-100;
+}
+
+@media (hover: none) {
+  .chat-attachment__remove {
+    @apply opacity-100;
+  }
+}
+
+/* Group */
+.chat-attachment-group {
+  @apply flex w-full flex-wrap gap-2;
+}
+
+/* Input */
+.chat-attachment-input {
+  display: contents;
+}
+
+.chat-attachment-input__dropzone {
+  @apply rounded-2xl border border-dashed border-transparent transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+
+  &[data-drop-target="true"] {
+    @apply border-accent bg-accent-soft;
+  }
+}

@@ -1,0 +1,64 @@
+/* Plain CSS on the default rv-* classes and data attributes (no Tailwind). */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: #0f172a;
+}
+.page {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+.rv-Compare {
+  inline-size: min(26rem, 100%);
+  block-size: 18rem;
+  border-radius: 1rem;
+  user-select: none;
+}
+.rv-CompareBefore,
+.rv-CompareAfter {
+  block-size: 100%;
+}
+.layer {
+  box-sizing: border-box;
+  block-size: 100%;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.layer p {
+  margin: 0;
+  max-inline-size: 18rem;
+}
+.before {
+  background: #e2e8f0;
+}
+.after {
+  background: #1e293b;
+  color: #f8fafc;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.rv-CompareHandle {
+  block-size: 2.75rem;
+  display: flex;
+  align-items: center;
+  cursor: ns-resize;
+  outline: none;
+}
+.rv-CompareDivider {
+  inline-size: 100%;
+  block-size: 3px;
+  background: #3b82f6;
+}
+.rv-CompareHandle[data-focus-visible] .rv-CompareDivider {
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.35);
+}
+.rv-CompareHandle[data-dragging] .rv-CompareDivider {
+  background: #1d4ed8;
+}
+:root[data-theme="dark"] body {
+  color: #e2e8f0;
+  background: #0f172a;
+}

@@ -1,0 +1,820 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no sidebar). Layout = shadcn/ui Sidebar (shadcn@4.21.4, MIT, © 2023 shadcn) new-york-v4 classes; look = HeroUI tokens (surfaces, separators, radii, focus ring, menu-item states). */
+/* -------------------------------------------------------------------------------------------------
+ * Sidebar Component Styles
+ * Block: sidebar (root: data-state / data-collapsible / data-variant / data-side from @rivetjs/cdk/sidebar)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: sidebar-wrapper - the provider; sets --sidebar-width / --sidebar-width-icon inline
+ */
+.sidebar-wrapper {
+  @apply flex min-h-svh w-full;
+
+  &:has(> .sidebar[data-variant="inset"]) {
+    @apply bg-background-secondary;
+  }
+}
+
+/**
+ * Block: sidebar - the desktop root (collapsible offcanvas / icon) or the static panel (collapsible none)
+ */
+.sidebar {
+  @apply text-foreground;
+
+  /* Desktop panel (gap + container): hidden below 768 px, where the trigger opens the mobile sheet (upstream
+     `hidden md:block`). CSS, so a resumed page needs no viewport check at load. */
+  &[data-state] {
+    @apply max-md:hidden;
+  }
+
+  /* collapsible="none": one static panel */
+  &:not([data-state]) {
+    @apply flex h-full w-(--sidebar-width) flex-col bg-background;
+  }
+}
+
+/**
+ * Element: gap - reserves the sidebar width in the page layout
+ */
+.sidebar__gap {
+  @apply relative w-(--sidebar-width) bg-transparent;
+  /* Collapse / expand: 200 ms ease-out-quad (HeroUI Pro's public demo: ~190 ms, 54 % at a third, 86 % at 60 %). */
+  transition: width var(--duration-base) var(--ease-out-quad);
+  @apply motion-reduce:transition-none;
+
+  .sidebar[data-collapsible="offcanvas"] > & {
+    @apply w-0;
+  }
+
+  .sidebar[data-collapsible="icon"] > & {
+    @apply w-(--sidebar-width-icon);
+  }
+
+  .sidebar[data-collapsible="icon"]:is([data-variant="floating"], [data-variant="inset"]) > & {
+    width: calc(var(--sidebar-width-icon) + 1rem);
+  }
+}
+
+/**
+ * Element: container - the fixed panel that slides (offcanvas) or shrinks (icon)
+ */
+.sidebar__container {
+  @apply fixed inset-y-0 z-10 flex h-svh w-(--sidebar-width);
+  transition:
+    inset-inline-start var(--duration-base) var(--ease-out-quad),
+    inset-inline-end var(--duration-base) var(--ease-out-quad),
+    width var(--duration-base) var(--ease-out-quad);
+  @apply motion-reduce:transition-none;
+
+  .sidebar[data-side="left"] > & {
+    @apply start-0;
+  }
+
+  .sidebar[data-side="right"] > & {
+    @apply end-0;
+  }
+
+  .sidebar[data-side="left"][data-collapsible="offcanvas"] > & {
+    inset-inline-start: calc(var(--sidebar-width) * -1);
+  }
+
+  .sidebar[data-side="right"][data-collapsible="offcanvas"] > & {
+    inset-inline-end: calc(var(--sidebar-width) * -1);
+  }
+
+  .sidebar[data-variant="sidebar"][data-side="left"] > & {
+    @apply border-e border-separator;
+  }
+
+  .sidebar[data-variant="sidebar"][data-side="right"] > & {
+    @apply border-s border-separator;
+  }
+
+  .sidebar[data-variant="sidebar"][data-collapsible="icon"] > & {
+    @apply w-(--sidebar-width-icon);
+  }
+
+  .sidebar:is([data-variant="floating"], [data-variant="inset"]) > & {
+    @apply p-2;
+  }
+
+  .sidebar[data-collapsible="icon"]:is([data-variant="floating"], [data-variant="inset"]) > & {
+    width: calc(var(--sidebar-width-icon) + 1rem + 2px);
+  }
+}
+
+/**
+ * Element: inner - the panel surface
+ */
+.sidebar__inner {
+  @apply flex h-full w-full flex-col bg-background;
+
+  .sidebar[data-variant="inset"] & {
+    @apply bg-transparent;
+  }
+
+  .sidebar[data-variant="floating"] & {
+    @apply bg-surface shadow-surface;
+    border-radius: min(32px, var(--radius-3xl));
+  }
+}
+
+/**
+ * Element: inset - the page next to the sidebar
+ */
+.sidebar__inset {
+  @apply relative flex w-full flex-1 flex-col bg-background;
+
+  .sidebar[data-variant="inset"] ~ & {
+    @apply m-2 ms-0 bg-surface shadow-surface;
+    border-radius: min(32px, var(--radius-3xl));
+  }
+
+  .sidebar[data-variant="inset"][data-state="collapsed"] ~ & {
+    @apply ms-2;
+  }
+}
+
+/**
+ * Element: trigger - extra classes on top of the ghost icon-only Button
+ */
+.sidebar__trigger {
+  @apply shrink-0;
+}
+
+/**
+ * Element: rail - thin hit area on the panel edge
+ */
+.sidebar__rail {
+  @apply absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 bg-transparent outline-none sm:flex;
+  transition: all var(--duration-base) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  &::after {
+    @apply absolute inset-y-0 start-1/2 w-0.5 rounded-full content-[""];
+    transition: background-color var(--duration-fast) var(--ease-out);
+    @apply motion-reduce:transition-none;
+  }
+
+  @media (hover: hover) {
+    &:hover::after {
+      @apply bg-separator;
+    }
+  }
+
+  &:focus-visible::after,
+  &[data-focus-visible="true"]::after {
+    @apply bg-focus;
+  }
+
+  .sidebar[data-side="left"] & {
+    @apply -end-4 cursor-w-resize;
+  }
+
+  .sidebar[data-side="right"] & {
+    @apply start-0 cursor-e-resize;
+  }
+
+  .sidebar[data-side="left"][data-state="collapsed"] & {
+    @apply cursor-e-resize;
+  }
+
+  .sidebar[data-side="right"][data-state="collapsed"] & {
+    @apply cursor-w-resize;
+  }
+
+  .sidebar[data-collapsible="offcanvas"] & {
+    @apply translate-x-0;
+
+    &::after {
+      @apply start-full;
+    }
+  }
+
+  .sidebar[data-side="left"][data-collapsible="offcanvas"] & {
+    @apply -end-2;
+  }
+
+  .sidebar[data-side="right"][data-collapsible="offcanvas"] & {
+    @apply -start-2;
+  }
+}
+
+/**
+ * Element: resize-handle - Rivet `resizable`: window-splitter hit area (8 px) centred on the panel's inner edge;
+ * separator line on hover, 2 px accent while dragging / keyboard-focused (= app-layout resize handle look)
+ */
+.sidebar__resize-handle {
+  @apply absolute inset-y-0 z-20 w-2 cursor-col-resize outline-none select-none;
+
+  &::after {
+    @apply absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent;
+    content: "";
+    transition: background-color var(--duration-fast) var(--ease-smooth);
+    @apply motion-reduce:transition-none;
+  }
+
+  @media (hover: hover) {
+    &:hover::after {
+      @apply bg-accent;
+      /* A pointer passing over the edge does not flash the line. */
+      transition-delay: var(--duration-fast);
+    }
+  }
+
+  &[data-dragging]::after,
+  &:focus-visible::after {
+    @apply w-0.5 bg-accent;
+    transition-delay: 0ms;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+
+  .sidebar[data-side="left"] & {
+    @apply -end-1;
+  }
+
+  .sidebar[data-side="right"] & {
+    @apply -start-1;
+  }
+}
+
+/* While dragging the width follows the pointer; the collapse / expand snap keeps the 200 ms transition. */
+.sidebar[data-resizing] > :is(.sidebar__gap, .sidebar__container) {
+  transition: none;
+}
+
+/**
+ * Elements: header / footer / content
+ */
+.sidebar__header,
+.sidebar__footer {
+  @apply flex flex-col gap-2 p-2;
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply px-1.5;
+  }
+}
+
+.sidebar__content {
+  @apply flex min-h-0 flex-1 flex-col gap-2 overflow-auto;
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply overflow-hidden;
+  }
+}
+
+/**
+ * Element: separator - extra classes on top of the HeroUI Separator
+ */
+.sidebar__separator {
+  @apply mx-2 w-auto;
+
+  /* Over the HeroUI `.separator` / `.separator--horizontal` `w-full` whatever the stylesheet order (a 100 % width
+     plus the inline margins ran past the panel's end). */
+  &.separator {
+    @apply w-auto;
+  }
+}
+
+/**
+ * Element: input - extra classes on top of the HeroUI Input
+ */
+.sidebar__input {
+  @apply h-8 w-full;
+}
+
+/**
+ * Elements: group / group label / group action / group content
+ */
+.sidebar__group {
+  @apply relative flex w-full min-w-0 flex-col p-2;
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply px-1.5;
+  }
+}
+
+.sidebar__group-label {
+  @apply flex h-8 shrink-0 items-center rounded-xl px-2 text-xs font-medium text-muted outline-none;
+  transition:
+    margin var(--duration-base) var(--ease-smooth),
+    opacity var(--duration-base) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4 shrink-0;
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply -mt-8 opacity-0;
+  }
+}
+
+.sidebar__group-action,
+.sidebar__menu-action {
+  @apply absolute end-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-foreground outline-none;
+  cursor: var(--cursor-interactive);
+  transition:
+    transform var(--duration-base) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4 shrink-0;
+  }
+
+  /* Larger hit area on touch screens. */
+  &::after {
+    @apply absolute -inset-2 content-[""] md:hidden;
+  }
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__group-content {
+  @apply w-full text-sm;
+}
+
+/**
+ * Elements: menu / menu item
+ */
+.sidebar__menu,
+.sidebar__menu-sub {
+  @apply m-0 flex w-full min-w-0 list-none flex-col gap-1 p-0;
+}
+
+.sidebar__menu-item,
+.sidebar__menu-sub-item {
+  @apply relative;
+}
+
+/**
+ * Element: menu button (HeroUI menu-item look)
+ */
+.sidebar__menu-button {
+  @apply flex h-9 w-full items-center gap-2 overflow-hidden rounded-xl p-2 text-start text-sm text-foreground no-underline outline-none no-highlight;
+  cursor: var(--cursor-interactive);
+  transition:
+    transform var(--duration-base) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-smooth),
+    width var(--duration-base) var(--ease-out-quad),
+    height var(--duration-base) var(--ease-out-quad),
+    padding var(--duration-base) var(--ease-out-quad);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4 shrink-0;
+  }
+
+  & > span:last-child {
+    @apply truncate;
+  }
+
+  .sidebar__menu-item:has(> .sidebar__menu-action) > & {
+    @apply pe-8;
+  }
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  &[data-active="true"] {
+    @apply bg-default font-medium;
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:active,
+  &[data-pressed="true"] {
+    transform: scale(0.98);
+  }
+
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  /* Collapsed rows 36 px square, centred in the 48 px rail (HeroUI Pro: 36 x 36 at x = 6; shadcn: 32 px). */
+  .sidebar[data-collapsible="icon"] & {
+    @apply size-9 p-2.5;
+  }
+}
+
+.sidebar__menu-button--sm {
+  @apply h-7 text-xs;
+}
+
+.sidebar__menu-button--lg {
+  @apply h-12;
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply p-0.5;
+  }
+}
+
+.sidebar__menu-button--outline {
+  @apply bg-surface shadow-surface;
+}
+
+/**
+ * Element: menu action - offset per menu button size; showOnHover hides it until the item is hovered
+ */
+.sidebar__menu-action {
+  @apply end-1 top-1.5;
+
+  .sidebar__menu-button--sm ~ & {
+    @apply top-1;
+  }
+
+  .sidebar__menu-button--lg ~ & {
+    @apply top-2.5;
+  }
+
+  &[data-show-on-hover="true"] {
+    @apply md:opacity-0;
+
+    .sidebar__menu-item:hover > &,
+    .sidebar__menu-item:focus-within > &,
+    &[aria-expanded="true"] {
+      @apply opacity-100;
+    }
+  }
+}
+
+/**
+ * Element: menu badge
+ */
+.sidebar__menu-badge {
+  @apply pointer-events-none absolute end-1 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-lg px-1 text-xs font-medium text-muted tabular-nums select-none;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  .sidebar__menu-button--sm ~ & {
+    @apply top-1;
+  }
+
+  .sidebar__menu-button--lg ~ & {
+    @apply top-2.5;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: menu skeleton
+ */
+.sidebar__menu-skeleton {
+  @apply flex h-9 items-center gap-2 rounded-xl px-2;
+}
+
+.sidebar__menu-skeleton-icon {
+  @apply size-4 rounded-lg;
+}
+
+.sidebar__menu-skeleton-text {
+  @apply h-4 max-w-(--skeleton-width) flex-1 rounded-lg;
+}
+
+/**
+ * Elements: sub menu / sub button
+ */
+.sidebar__menu-sub {
+  @apply mx-3.5 translate-x-px border-s rtl:-translate-x-px border-separator px-2.5 py-0.5;
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu-sub-button {
+  @apply flex h-8 min-w-0 -translate-x-px items-center rtl:translate-x-px gap-2 overflow-hidden rounded-xl px-2 text-sm text-foreground no-underline outline-none;
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4 shrink-0;
+  }
+
+  & > span:last-child {
+    @apply truncate;
+  }
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  &[data-active="true"] {
+    @apply bg-default font-medium;
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu-sub-button--sm {
+  @apply text-xs;
+}
+
+/**
+ * Rivet extensions (feature set inspired by HeroUI Pro's public Sidebar docs; independent implementation, HeroUI
+ * open-source tokens): tree indicator, sub menu panel, guide lines, actions group, chip, pages, backdrops, reduce motion.
+ */
+.sidebar__menu-indicator {
+  @apply ms-auto inline-flex shrink-0 text-muted;
+  transition: rotate var(--duration-base) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4;
+  }
+
+  [aria-expanded="true"] > & {
+    rotate: 90deg;
+  }
+
+  [aria-expanded="true"] > &:dir(rtl) {
+    rotate: -90deg;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu-sub-panel {
+  @apply overflow-hidden;
+  block-size: var(--disclosure-panel-height);
+  transition: block-size var(--duration-base) var(--ease-out-quart);
+  @apply motion-reduce:transition-none;
+
+  & > .sidebar__menu-sub {
+    @apply mt-1;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu[data-guide-lines="none"] .sidebar__menu-sub,
+.sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub {
+  @apply border-transparent;
+}
+
+.sidebar__menu[data-guide-lines="hover"] .sidebar__menu-sub {
+  transition: border-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}
+
+.sidebar__menu[data-guide-lines="hover"]:is(:hover, :focus-within) .sidebar__menu-sub {
+  @apply border-separator;
+}
+
+.sidebar__menu-actions {
+  @apply absolute end-1 top-1.5 flex items-center gap-0.5;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & > .sidebar__menu-action {
+    @apply static;
+  }
+
+  .sidebar__menu-button--sm ~ & {
+    @apply top-1;
+  }
+
+  .sidebar__menu-button--lg ~ & {
+    @apply top-2.5;
+  }
+
+  &[data-show-on-hover="true"] {
+    @apply md:opacity-0;
+
+    .sidebar__menu-item:hover > &,
+    .sidebar__menu-item:focus-within > &,
+    &:has([aria-expanded="true"]) {
+      @apply opacity-100;
+    }
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu-item:has(> .sidebar__menu-actions) > .sidebar__menu-button {
+  @apply pe-14;
+}
+
+.sidebar__menu-chip {
+  @apply pointer-events-none absolute end-1 top-2 select-none;
+  transition: opacity var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  .sidebar__menu-button--sm ~ & {
+    @apply top-1;
+  }
+
+  .sidebar__menu-button--lg ~ & {
+    @apply top-3;
+  }
+
+  .sidebar[data-collapsible="icon"] & {
+    @apply hidden;
+  }
+}
+
+.sidebar__menu-item:has(> .sidebar__menu-chip) > .sidebar__menu-button {
+  @apply pe-12;
+}
+
+/* Badge / chip next to menu actions: never drawn under an action. An action that is always visible (no `showOnHover`,
+   or any action below 768 px, where `showOnHover` keeps it shown) pushes the badge toward the start; a `showOnHover`
+   action takes the badge's place while the item is hovered / focused or its menu is open (the badge fades out).
+   Collapsed to icons: badges and actions are hidden, the 36 px button keeps its own padding. */
+.sidebar__menu-item:has(> .sidebar__menu-actions > :nth-child(2 of .sidebar__menu-action)) {
+  --sidebar-menu-actions-width: 2.625rem;
+}
+
+.sidebar__menu-item:has(> .sidebar__menu-actions > :nth-child(3 of .sidebar__menu-action)) {
+  --sidebar-menu-actions-width: 4rem;
+}
+
+.sidebar__menu-item:has(> .sidebar__menu-actions > :nth-child(4 of .sidebar__menu-action)) {
+  --sidebar-menu-actions-width: 5.375rem;
+}
+
+.sidebar__menu-item:has(> :is(.sidebar__menu-action, .sidebar__menu-actions)) {
+  & > :is(.sidebar__menu-badge, .sidebar__menu-chip) {
+    inset-inline-end: calc(var(--sidebar-menu-actions-width, 1.25rem) + 0.5rem);
+  }
+
+  & > .sidebar__menu-button:has(~ :is(.sidebar__menu-badge, .sidebar__menu-chip)):not(.sidebar[data-collapsible="icon"] *) {
+    padding-inline-end: calc(var(--sidebar-menu-actions-width, 1.25rem) + 2.75rem);
+  }
+}
+
+@media (width >= 48rem) {
+  .sidebar__menu-item:has(> [data-show-on-hover="true"]:is(.sidebar__menu-action, .sidebar__menu-actions)):not(
+      :has(> :is(.sidebar__menu-action, .sidebar__menu-actions):not([data-show-on-hover="true"]))
+    ) {
+    & > :is(.sidebar__menu-badge, .sidebar__menu-chip) {
+      inset-inline-end: 0.25rem;
+    }
+
+    & > .sidebar__menu-button:has(~ :is(.sidebar__menu-badge, .sidebar__menu-chip)):not(.sidebar[data-collapsible="icon"] *) {
+      padding-inline-end: max(calc(var(--sidebar-menu-actions-width, 1.25rem) + 0.75rem), 2.75rem);
+    }
+
+    &:is(:hover, :focus-within, :has(> .sidebar__menu-action[aria-expanded="true"]), :has(> .sidebar__menu-actions [aria-expanded="true"]))
+      > :is(.sidebar__menu-badge, .sidebar__menu-chip) {
+      opacity: 0;
+    }
+  }
+}
+
+.sidebar__pages {
+  @apply min-h-0 w-full;
+}
+
+.sidebar__page:not([hidden]) {
+  @apply flex min-h-0 min-w-0 flex-col gap-2;
+}
+
+.sidebar__sheet-backdrop[data-backdrop="blur"] {
+  @apply bg-backdrop backdrop-blur-md;
+}
+
+.sidebar__sheet-backdrop[data-backdrop="opaque"] {
+  @apply bg-backdrop;
+}
+
+.sidebar__sheet-backdrop[data-backdrop="transparent"] {
+  @apply bg-transparent;
+}
+
+[data-reduce-motion="true"] :is(
+    .sidebar__gap,
+    .sidebar__container,
+    .sidebar__group-label,
+    .sidebar__menu-button,
+    .sidebar__menu-sub-button,
+    .sidebar__menu-indicator,
+    .sidebar__menu-badge,
+    .sidebar__menu-chip,
+    .sidebar__menu-sub,
+    .sidebar__menu-sub-panel
+  ),
+.sidebar__sheet[data-reduce-motion="true"],
+.sidebar__sheet-backdrop[data-reduce-motion="true"] {
+  transition: none;
+}
+
+/**
+ * Element: tooltip - extra classes on top of the HeroUI tooltip (menu button tooltips while collapsed)
+ */
+.sidebar__tooltip {
+  @apply break-normal whitespace-nowrap;
+}
+
+/**
+ * Mobile sheet (upstream <Sheet>): backdrop + side panel on the overlay layer (HeroUI drawer look)
+ */
+.sidebar__sheet-backdrop {
+  @apply fixed inset-0 z-(--z-index-overlay) h-(--visual-viewport-height) w-full bg-backdrop;
+  transition: opacity var(--duration-base) cubic-bezier(0.32, 0.72, 0, 1);
+  @apply motion-reduce:transition-none;
+
+  &[data-entering="true"],
+  &[data-exiting="true"] {
+    opacity: 0;
+  }
+}
+
+.sidebar__sheet {
+  @apply fixed inset-y-0 flex h-full w-(--sidebar-width) max-w-[85vw] flex-col bg-overlay text-foreground shadow-overlay outline-none;
+  transition: translate var(--duration-base) cubic-bezier(0.32, 0.72, 0, 1);
+  @apply motion-reduce:transition-none;
+
+  &[data-side="left"] {
+    @apply start-0;
+    border-start-end-radius: min(32px, var(--radius-2xl));
+    border-end-end-radius: min(32px, var(--radius-2xl));
+
+    &[data-entering="true"],
+    &[data-exiting="true"] {
+      translate: -100% 0;
+    }
+  }
+
+  &[data-side="right"] {
+    @apply end-0;
+    border-start-start-radius: min(32px, var(--radius-2xl));
+    border-end-start-radius: min(32px, var(--radius-2xl));
+
+    &[data-entering="true"],
+    &[data-exiting="true"] {
+      translate: 100% 0;
+    }
+  }
+
+  &[data-exiting="true"] {
+    transition-duration: var(--duration-base);
+  }
+}
+
+.sidebar__sheet-dialog {
+  @apply flex h-full w-full flex-col outline-none;
+
+  & > [data-slot="sidebar-sheet-inner"] {
+    @apply flex h-full w-full flex-col;
+  }
+}

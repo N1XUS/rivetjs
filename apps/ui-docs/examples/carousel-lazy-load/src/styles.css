@@ -1,0 +1,19 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

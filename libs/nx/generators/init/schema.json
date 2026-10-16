@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetInit",
+  "title": "Initialize @rivetjs/nx",
+  "description": "Adds @rivetjs/nx and the shared Rivet tooling to the workspace and registers the inference plugin in nx.json.",
+  "type": "object",
+  "properties": {
+    "addPlugin": {
+      "type": "boolean",
+      "description": "Register @rivetjs/nx/plugin in nx.json (inferred targets). Default: true unless NX_ADD_PLUGINS=false or nx.json useInferencePlugins is false."
+    },
+    "skipPackageJson": { "type": "boolean", "default": false, "description": "Do not add dependencies to the root package.json." },
+    "keepExistingVersions": { "type": "boolean", "default": false, "description": "Keep versions already in package.json." },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "skipInstall": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not run the package manager install." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "additionalProperties": false
+}

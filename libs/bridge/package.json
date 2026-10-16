@@ -1,0 +1,71 @@
+{
+  "name": "@rivetjs/bridge",
+  "version": "0.0.0-experimental",
+  "description": "Framework bridges for Rivet: components of other frameworks (React, Preact adapters) as islands inside a resumable Rivet page.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "rivet": {
+    "source": true
+  },
+  "imports": {
+    "#dev": {
+      "types": "./dev-off.ts",
+      "development": "./dev-on.ts",
+      "default": "./dev-off.ts"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./server": {
+      "types": "./server.tsx",
+      "default": "./server.tsx"
+    },
+    "./dom": {
+      "types": "./dom.tsx",
+      "default": "./dom.tsx"
+    },
+    "./client": {
+      "types": "./client.ts",
+      "default": "./client.ts"
+    },
+    "./intent": {
+      "types": "./intent.ts",
+      "default": "./intent.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./adapter": {
+      "types": "./adapter.ts",
+      "default": "./adapter.ts"
+    },
+    "./persist": {
+      "types": "./persist.ts",
+      "default": "./persist.ts"
+    }
+  },
+  "peerDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "vite": "^8.3.2"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/bridge"
+  }
+}

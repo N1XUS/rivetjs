@@ -1,0 +1,10 @@
+import { expect, test } from "vitest";
+import { fire, render } from "@rivetjs/runtime/testing";
+import { <%= className %> } from "./<%= fileName %>.tsx";
+
+test("<%= className %> creates its content when it opens", () => {
+  const view = render(() => <<%= className %> label="Details">{() => <p>Inside</p>}</<%= className %>>);
+  expect(view.container.querySelector("p")).toBeNull();
+  fire(view.find("button"), "click");
+  expect(view.find("[role=dialog] p").textContent).toBe("Inside");
+});

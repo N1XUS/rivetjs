@@ -1,0 +1,8 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/header.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* ==========================================================================
+   Base header styles
+   ========================================================================== */
+
+.header {
+  @apply w-full px-2 pt-1.5 pb-1 text-start text-xs font-medium text-muted;
+}

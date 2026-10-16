@@ -1,0 +1,4 @@
+node_modules/
+dist/
+src/articles/
+src/_data/site.json

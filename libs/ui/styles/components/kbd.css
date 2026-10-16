@@ -1,0 +1,29 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/kbd.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Base styles */
+.kbd {
+  @apply inline-flex h-6 items-center space-x-0.5 rounded-lg bg-default px-1.5 text-center font-sans text-sm font-medium whitespace-nowrap text-muted rtl:space-x-reverse;
+  word-spacing: -0.25rem;
+}
+
+/* Key abbreviation styles */
+.kbd__abbr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+}
+
+/* Content wrapper */
+.kbd__content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Variant styles */
+.kbd--light {
+  @apply bg-transparent;
+}

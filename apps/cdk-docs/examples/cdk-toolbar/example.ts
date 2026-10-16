@@ -1,0 +1,40 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Toolbar with roving focus",
+  summary: "A toolbar built from @rivetjs/cdk/keys, focus and bidi: one tab stop, arrow keys that wrap and skip disabled buttons, mirrored in right-to-left.",
+  tags: ["cdk", "keyboard", "focus"],
+  status: "experimental",
+  frame: { height: "sm" },
+  show: ["src/components/Toolbar.tsx", "src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#format", "role", "toolbar"] },
+    { attr: ["#format", "data-rk", "ArrowLeft ArrowRight Home End"] },
+    { attr: ["#format-bold", "tabindex", null] },
+    { attr: ["#format-italic", "tabindex", "-1"] },
+    { press: ["#format-bold", "ArrowRight"] },
+    { focused: "#format-italic" },
+    { attr: ["#format-italic", "tabindex", "0"] },
+    { attr: ["#format-bold", "tabindex", "-1"] },
+    { key: "ArrowRight" },
+    { focused: "#format-underline" },
+    // Link is disabled: skipped, and the toolbar wraps.
+    { key: "ArrowRight" },
+    { focused: "#format-bold" },
+    { key: "ArrowLeft" },
+    { focused: "#format-underline" },
+    { key: "Home" },
+    { focused: "#format-bold" },
+    { key: "End" },
+    { focused: "#format-underline" },
+    { key: "Space" },
+    { attr: ["#format-underline", "aria-pressed", "true"] },
+    // Tab leaves the toolbar from its single tab stop.
+    { key: "Tab" },
+    { focused: "#rtl-bold" },
+    { key: "ArrowLeft" },
+    { focused: "#rtl-italic" },
+    { key: "ArrowRight" },
+    { focused: "#rtl-bold" },
+  ],
+});

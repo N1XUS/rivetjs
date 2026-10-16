@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetApplication",
+  "title": "Rivet application",
+  "description": "Creates a Rivet app from one of the create-rivet starters, with Nx targets (inferred or in project.json) and an optional Vitest setup.",
+  "type": "object",
+  "properties": {
+    "directory": {
+      "type": "string",
+      "description": "Project folder, relative to the workspace root (e.g. apps/web).",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Which directory do you want to create the application in?"
+    },
+    "name": { "type": "string", "description": "Project name (default: the folder name).", "pattern": "^[a-zA-Z][^:]*$" },
+    "template": {
+      "type": "string",
+      "enum": ["static", "server", "ui", "minimal"],
+      "default": "static",
+      "description": "Starter: static (prerendered pages, Tailwind), server (loader + form action per request, Node), ui (@rivetjs/ui + Tailwind v4), minimal (one page, no Tailwind).",
+      "x-prompt": {
+        "message": "Which starter?",
+        "type": "list",
+        "items": [
+          { "value": "static", "label": "Static site (prerendered pages, Tailwind)" },
+          { "value": "server", "label": "Node server (loader + form action per request)" },
+          { "value": "ui", "label": "UI components (@rivetjs/ui + Tailwind v4)" },
+          { "value": "minimal", "label": "Minimal (one page, one signal)" }
+        ]
+      }
+    },
+    "adapter": {
+      "type": "string",
+      "enum": ["node", "static"],
+      "description": "node: pages render per request; static: prerendered HTML files. Default: from the template (server → node, others → static)."
+    },
+    "deploy": {
+      "type": "string",
+      "enum": ["vercel", "netlify", "cloudflare", "bun", "deno"],
+      "description": "Platform target, the same files as create-rivet --deploy: rivetRouter({ adapter }) + platform config; Nx targets instead of npm scripts (vercel / cloudflare: deploy; cloudflare / bun / deno: preview). bun and deno need --template=server."
+    },
+    "tailwind": { "type": "boolean", "description": "Tailwind v4. Default: on, except the minimal starter." },
+    "unitTestRunner": {
+      "type": "string",
+      "enum": ["vitest", "none"],
+      "default": "vitest",
+      "description": "Test runner: vitest.config.ts with rivetTest() and a first test."
+    },
+    "tags": { "type": "string", "description": "Comma-separated project tags." },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "addPlugin": { "type": "boolean", "x-priority": "internal", "description": "Use inferred targets (default: true unless NX_ADD_PLUGINS=false)." },
+    "skipPackageJson": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not add dependencies to the root package.json." },
+    "skipInstall": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not run the package manager install." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["directory"],
+  "additionalProperties": false
+}

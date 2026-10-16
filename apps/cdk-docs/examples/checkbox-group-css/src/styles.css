@@ -1,0 +1,60 @@
+/* Plain CSS on the default class names; state from data attributes. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.rv-CheckboxGroup {
+  display: grid;
+  gap: 6px;
+  margin: 16px;
+  max-width: 320px;
+}
+.rv-CheckboxGroup > .rv-Label {
+  font-weight: 600;
+}
+.rv-CheckboxButton {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.rv-CheckboxButton[data-hovered] {
+  background: #f8fafc;
+}
+.rv-CheckboxButton[data-selected] {
+  background: #f0fdfa;
+}
+.rv-CheckboxButton[data-disabled] {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.box {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  color: transparent;
+}
+[data-selected] > .box {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: white;
+}
+[data-focus-visible] > .box {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+.rv-CheckboxGroup > .rv-Text {
+  color: #64748b;
+  font-size: 12px;
+}
+.rv-CheckboxGroup[data-invalid] > .rv-Label,
+.rv-FieldError {
+  color: #b91c1c;
+}

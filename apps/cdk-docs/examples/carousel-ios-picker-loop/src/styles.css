@@ -1,0 +1,97 @@
+/* Tailwind, with the cdk state variants (focused:, orientation-*:, entering:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* embla's iOS picker styles (IOS_PICKER_STYLES), on the cdk parts. */
+.ios-picker-frame {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 22.2rem;
+  max-width: 30rem;
+  margin-inline: auto;
+}
+.ios-picker-frame::before,
+.ios-picker-frame::after {
+  position: absolute;
+  left: 0;
+  right: 0;
+  content: "";
+  display: block;
+  height: calc(50% - 32px / 2);
+  z-index: 1;
+  pointer-events: none;
+}
+.ios-picker-frame::before {
+  top: -0.5px;
+  border-bottom: 0.5px solid rgb(15 23 42 / 0.3);
+  background: linear-gradient(to top, rgb(255 255 255 / 0.65) 0%, rgb(255 255 255) 100%);
+}
+.ios-picker-frame::after {
+  bottom: -0.5px;
+  border-top: 0.5px solid rgb(15 23 42 / 0.3);
+  background: linear-gradient(to bottom, rgb(255 255 255 / 0.65) 0%, rgb(255 255 255) 100%);
+}
+.ios-picker {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  min-width: 50%;
+  justify-content: center;
+  line-height: 1;
+  font-size: 1.8rem;
+}
+.ios-picker-scene {
+  min-width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  touch-action: pan-x;
+}
+.ios-picker-viewport {
+  height: 32px;
+  width: 100%;
+  perspective: 1000px;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.ios-picker-viewport--perspective-left {
+  perspective-origin: calc(50% + 130px) 50%;
+  transform: translateX(27px);
+}
+.ios-picker-viewport--perspective-right {
+  perspective-origin: calc(50% - 130px) 50%;
+  transform: translateX(-27px);
+}
+.ios-picker-container {
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.ios-picker-slide {
+  width: 100%;
+  height: 100%;
+  font-size: 19px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  opacity: 0;
+}
+.ios-picker-label {
+  font-weight: 700;
+  transform: translateX(-55px);
+  pointer-events: none;
+}

@@ -1,0 +1,54 @@
+{
+  "name": "@rivetjs/nx",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Nx plugin for Rivet: generators, executors and inferred tasks for Rivet apps and libraries.",
+  "keywords": [
+    "rivet",
+    "nx",
+    "nx-plugin",
+    "generators",
+    "executors",
+    "vite",
+    "jsx",
+    "ssr",
+    "resumable"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./plugin": {
+      "types": "./plugin.ts",
+      "default": "./plugin.ts"
+    },
+    "./package.json": "./package.json",
+    "./generators.json": "./generators.json",
+    "./executors.json": "./executors.json",
+    "./migrations.json": "./migrations.json",
+    "./generators/*/schema.json": "./generators/*/schema.json",
+    "./executors/*/schema.json": "./executors/*/schema.json"
+  },
+  "generators": "./generators.json",
+  "executors": "./executors.json",
+  "nx-migrations": {
+    "migrations": "./migrations.json"
+  },
+  "dependencies": {
+    "@nx/devkit": "23.2.1",
+    "create-rivet": "0.0.0-experimental"
+  },
+  "peerDependencies": {
+    "nx": ">=23 <24"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/nx"
+  }
+}

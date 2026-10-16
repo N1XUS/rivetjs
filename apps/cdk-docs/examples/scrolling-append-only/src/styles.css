@@ -1,0 +1,35 @@
+/* Plain CSS. The viewport needs a size: .cdk-virtual-scrollable sets contain: strict. */
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.viewport {
+  width: 320px;
+  height: 240px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.viewport:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+.row {
+  box-sizing: border-box;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.row[data-odd="true"] {
+  background: #f8fafc;
+}
+output {
+  color: #475569;
+}

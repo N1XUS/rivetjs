@@ -1,0 +1,157 @@
+{
+  "diagnostic": "idle-post-gc-retained-memory",
+  "frontend": {
+    "container": "0dbbe4d2ab263a54278022c69c65193e27b158ccb4cd79b82e7086384d991e34",
+    "name": "/rivet-direct-retained-controls",
+    "image": "sha256:c933975b67161d431a3bfd974c4635c97f3de6e6b4bbbbab3c5b5b05f5e59310",
+    "nanoCpus": 1000000000,
+    "memoryBytes": 536870912,
+    "oomKilled": false,
+    "command": [
+      "node",
+      "--expose-gc",
+      "apps/ssr-bench/experiments/direct/retained-server.mjs"
+    ],
+    "portBindings": {
+      "8080/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "18109"
+        }
+      ],
+      "8082/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "18111"
+        }
+      ]
+    },
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/direct",
+        "Destination": "/workspace/apps/ssr-bench/experiments/direct",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/Users/denisseverin/Projects/claude-test/rivet/libs/server-emitter",
+        "Destination": "/workspace/libs/server-emitter",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      }
+    ],
+    "removedAfterCapture": true,
+    "memorySwapBytes": 1073741824,
+    "network": "rivet-ssr-bench_default"
+  },
+  "backend": {
+    "container": "f46faa7b8429975898c1f7abf954ccb6e9a0a87438254a9cd4ada2c789127012",
+    "image": "sha256:10efd062c54ea2d69522b2735c1b39e286c93e01762f414ff4ae70d062592697",
+    "nanoCpus": 2000000000,
+    "memoryBytes": 1073741824,
+    "oomKilled": false,
+    "memorySwapBytes": 2147483648,
+    "network": "rivet-ssr-bench_default"
+  },
+  "driver": {
+    "node": "v24.14.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpuQuota": null,
+    "memoryQuota": null,
+    "cpuCount": 14,
+    "machine": "arm64",
+    "resourceLimits": "Host driver has no declared CPU/memory quota"
+  },
+  "verified": {
+    "warmRequests": 96,
+    "measuredRequests": 1920,
+    "batches": 504,
+    "serverMaxActive": 4,
+    "completed": 1797,
+    "cancelled": 219,
+    "failed": 0,
+    "idleFinal": true
+  },
+  "sources": [
+    {
+      "path": "retained-server.mjs",
+      "sha256": "f32e56eab98fc71d32e21aac62c0a66d79caf614341dc7beb32f55a65d5487bf"
+    },
+    {
+      "path": "retained-support.mjs",
+      "sha256": "80922d8c691b325443e5bbb6afe0c4b55d51f52166783e5d8c48eda41030e4a4"
+    },
+    {
+      "path": "fixture.mjs",
+      "sha256": "da6bac324adc8640d9eb08b1f3fff9aacb00b4065d8e3c0fe51d81a61d21cb5a"
+    },
+    {
+      "path": "prototype.mjs",
+      "sha256": "cdd0542f1ce3708d2eb133627535dc63faeaab84e1fa1d395edb743f15bea132"
+    },
+    {
+      "path": "trusted-prototype.mjs",
+      "sha256": "b4a35f36830fa6cea77d391ed2250d50022e492e07926ac641cb51d728c5fed7"
+    },
+    {
+      "path": "../../services/content.server.mjs",
+      "sha256": "3892cdafb6ce40bf8836872e9d6426272033d822597c6c4f02eaea4d7b669f7f"
+    },
+    {
+      "path": "../../../../libs/server-emitter/index.mjs",
+      "sha256": "d8efd2b5aa871b1c885a167385e7de3c57753be25bedbdf72f1481475a5c2964"
+    },
+    {
+      "path": "../../../../libs/server-emitter/writers.mjs",
+      "sha256": "18703dc90c5628a7ae6e5a38941423cafde72b2e40ba31bc9fb8d556505a9ca7"
+    },
+    {
+      "path": "../../../../libs/server-emitter/style.mjs",
+      "sha256": "b0d6d8b1b75470369a64be8567cc96ab5202605bdeb17af250ed89b119dd5439"
+    },
+    {
+      "path": "retained-probe.mjs",
+      "sha256": "252236b38c6d376082f484e16e93df604df8571d3063b5c4928517851c1dcfd1"
+    },
+    {
+      "path": "retained-support.mjs",
+      "sha256": "80922d8c691b325443e5bbb6afe0c4b55d51f52166783e5d8c48eda41030e4a4"
+    }
+  ],
+  "compiledArtifact": {
+    "path": "/workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+    "bytes": 9242,
+    "sha256": "709d044cb4e4d6abb505e294387c0e0a50fdb5b45b6679051605669eb8459c33"
+  },
+  "evidence": [
+    {
+      "path": "docs/benchmarks/direct-ssr/direct-ssr-retained-diagnostic.json",
+      "bytes": 1515116,
+      "sha256": "445d55e9a485eedf60156c7571689a5c2135a0ddc7f4bfd310724f4d469748d0"
+    }
+  ],
+  "rawInspectArtifacts": [
+    {
+      "path": ".artifacts/ssr-bench/direct-retained-b710b72/frontend-before.json",
+      "sha256": "ecc518c7916d5d7761a41104bfcb5aef4140180ec97732ab7b6b42ab6cf4f1e9"
+    },
+    {
+      "path": ".artifacts/ssr-bench/direct-retained-b710b72/frontend-after.json",
+      "sha256": "ecc518c7916d5d7761a41104bfcb5aef4140180ec97732ab7b6b42ab6cf4f1e9"
+    },
+    {
+      "path": ".artifacts/ssr-bench/direct-retained-b710b72/backend-before.json",
+      "sha256": "807624ef374d19f4249c9742d8f88f3a7a14dd87c97e98405b7c8e989e6428c2"
+    },
+    {
+      "path": ".artifacts/ssr-bench/direct-retained-b710b72/backend-after.json",
+      "sha256": "807624ef374d19f4249c9742d8f88f3a7a14dd87c97e98405b7c8e989e6428c2"
+    }
+  ],
+  "scope": "Separate explicit-GC diagnostic, no CPU/profile ranking. Sequential lane/size cases share one process. Paused clients can finish server-side before requested abort; full output oracle applies only to completed delivery. Post-GC JS heap and RSS/native memory are distinct. Bounded waves do not prove absence of every leak."
+}

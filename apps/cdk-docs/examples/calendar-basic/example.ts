@@ -1,0 +1,32 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Calendar",
+  summary: "A month grid bound to a string signal: click or press Enter on a day to select it, arrows move focus, PageDown pages.",
+  tags: ["cdk", "calendar", "dates"],
+  status: "experimental",
+  frame: { height: "md" },
+  show: ["src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#cal", "role", "application"] },
+    { attr: ["#cal", "aria-label", "Event date, October 2026"] },
+    { attr: ["#cal table", "role", "grid"] },
+    { expect: ["#cal .rv-Heading", "October 2026"] },
+    { attr: ['#cal [data-date="2026-10-14"]', "data-selected", "true"] },
+    { attr: ['#cal [data-date="2026-10-14"]', "tabindex", "0"] },
+    { click: '#cal [data-date="2026-10-20"]' },
+    { expect: ["#value", "Selected: 2026-10-20"] },
+    { attr: ['#cal [data-date="2026-10-20"]', "data-selected", "true"] },
+    { press: ['#cal [data-date="2026-10-20"]', "ArrowRight"] },
+    { focused: '[data-date="2026-10-21"]' },
+    { key: "ArrowDown" },
+    { focused: '[data-date="2026-10-28"]' },
+    { key: "Enter" },
+    { expect: ["#value", "Selected: 2026-10-28"] },
+    { key: "PageDown" },
+    { focused: '[data-date="2026-11-28"]' },
+    { expect: ["#cal .rv-Heading", "November 2026"] },
+    { click: '#cal button[aria-label="Previous"]' },
+    { expect: ["#cal .rv-Heading", "October 2026"] },
+  ],
+});

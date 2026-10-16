@@ -1,0 +1,26 @@
+FROM node:26.11.1-bookworm-slim@sha256:86f07bc9c5dce4578cf37e5a418b7bfc7f817cda25cde66e2b66e95ed86c4567 AS build
+WORKDIR /workspace
+COPY package.json package-lock.json ./
+COPY apps/ssr-bench/package.json ./apps/ssr-bench/package.json
+COPY apps/bench-stable/package.json ./apps/bench-stable/package.json
+COPY apps/playground/package.json ./apps/playground/package.json
+COPY libs/compiler/package.json ./libs/compiler/package.json
+COPY libs/runtime/package.json ./libs/runtime/package.json
+COPY libs/reactivity/package.json ./libs/reactivity/package.json
+COPY libs/router/package.json ./libs/router/package.json
+RUN npm ci --no-audit --no-fund
+COPY tsconfig.base.json ./
+COPY libs/compiler ./libs/compiler
+COPY libs/runtime ./libs/runtime
+COPY libs/reactivity ./libs/reactivity
+COPY libs/router ./libs/router
+COPY apps/ssr-bench ./apps/ssr-bench
+RUN node apps/ssr-bench/build.ts
+FROM node:26.11.1-bookworm-slim@sha256:86f07bc9c5dce4578cf37e5a418b7bfc7f817cda25cde66e2b66e95ed86c4567
+WORKDIR /workspace
+ENV NODE_ENV=production
+COPY apps/ssr-bench/runtime/package*.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
+COPY --from=build /workspace/apps/ssr-bench/dist ./apps/ssr-bench/dist
+EXPOSE 8080
+CMD ["node","apps/ssr-bench/dist/server.mjs"]

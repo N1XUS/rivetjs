@@ -1,0 +1,42 @@
+/* Plain CSS for the default rv-Toolbar class and its data-orientation. No Tailwind. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.rv-Toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  width: max-content;
+}
+.rv-Toolbar[data-orientation="vertical"] {
+  flex-direction: column;
+}
+/* A nested toolbar (role="group") and a Group sit inline. */
+.rv-Toolbar .rv-Toolbar,
+.rv-Group {
+  display: flex;
+  gap: 2px;
+  border: 0;
+  padding: 0;
+}
+.rv-Toolbar [role="separator"] {
+  align-self: stretch;
+  width: 1px;
+  background: #cbd5e1;
+}
+button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  background: white;
+  font: inherit;
+}
+button:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 1px;
+}

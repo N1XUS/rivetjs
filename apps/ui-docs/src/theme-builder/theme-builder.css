@@ -1,0 +1,301 @@
+/*
+ * Theme builder page (/themes). Controls use the docs-kit tokens (they are part of the docs page); the preview
+ * (`.tb-stage`) carries the edited theme as inline custom properties and renders @rivetjs/ui components with the
+ * ui component CSS. The site stylesheet (src/styles.css) already has most component CSS; the ones it leaves out
+ * because of docs class-name collisions (`card`, `menu`, `menu-item`, `tag`) or that only this page uses are imported
+ * here (same order as `@rivetjs/ui/styles/components/index.css`), linked on /themes only (router route CSS). Overlays
+ * portal into `#tb-overlays` inside `.tb-stage`, so the collision resets below cover them too.
+ */
+@reference "../styles.css";
+
+@import "@rivetjs/ui/styles/components/description.css" layer(components);
+@import "@rivetjs/ui/styles/components/field-error.css" layer(components);
+@import "@rivetjs/ui/styles/components/accordion.css" layer(components);
+@import "@rivetjs/ui/styles/components/breadcrumbs.css" layer(components);
+@import "@rivetjs/ui/styles/components/pagination.css" layer(components);
+@import "@rivetjs/ui/styles/components/tabs.css" layer(components);
+@import "@rivetjs/ui/styles/components/segment.css" layer(components);
+@import "@rivetjs/ui/styles/components/dropdown.css" layer(components);
+@import "@rivetjs/ui/styles/components/list-box-item.css" layer(components);
+@import "@rivetjs/ui/styles/components/list-box-section.css" layer(components);
+@import "@rivetjs/ui/styles/components/list-box.css" layer(components);
+@import "@rivetjs/ui/styles/components/menu-item.css" layer(components);
+@import "@rivetjs/ui/styles/components/menu-section.css" layer(components);
+@import "@rivetjs/ui/styles/components/menu.css" layer(components);
+@import "@rivetjs/ui/styles/components/tag-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/tag.css" layer(components);
+@import "@rivetjs/ui/styles/components/slider.css" layer(components);
+@import "@rivetjs/ui/styles/components/switch.css" layer(components);
+@import "@rivetjs/ui/styles/components/table.css" layer(components);
+@import "@rivetjs/ui/styles/components/skeleton.css" layer(components);
+@import "@rivetjs/ui/styles/components/toast.css" layer(components);
+@import "@rivetjs/ui/styles/components/checkbox.css" layer(components);
+@import "@rivetjs/ui/styles/components/input.css" layer(components);
+@import "@rivetjs/ui/styles/components/input-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/number-field.css" layer(components);
+@import "@rivetjs/ui/styles/components/number-stepper.css" layer(components);
+@import "@rivetjs/ui/styles/components/radio-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/radio-button-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/radio.css" layer(components);
+@import "@rivetjs/ui/styles/components/textfield.css" layer(components);
+@import "@rivetjs/ui/styles/components/calendar.css" layer(components);
+@import "@rivetjs/ui/styles/components/range-calendar.css" layer(components);
+@import "@rivetjs/ui/styles/components/calendar-year-picker.css" layer(components);
+@import "@rivetjs/ui/styles/components/date-field.css" layer(components);
+@import "@rivetjs/ui/styles/components/date-input-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/date-picker.css" layer(components);
+@import "@rivetjs/ui/styles/components/card.css" layer(components);
+@import "@rivetjs/ui/styles/components/avatar-group.css" layer(components);
+@import "@rivetjs/ui/styles/components/modal.css" layer(components);
+@import "@rivetjs/ui/styles/components/popover.css" layer(components);
+@import "@rivetjs/ui/styles/components/tooltip.css" layer(components);
+@import "@rivetjs/ui/styles/components/combo-box.css" layer(components);
+@import "@rivetjs/ui/styles/components/select.css" layer(components);
+@import "@rivetjs/ui/styles/components/chat-message.css" layer(components);
+@import "@rivetjs/ui/styles/components/chat-message-actions.css" layer(components);
+@import "@rivetjs/ui/styles/components/prompt-input.css" layer(components);
+
+@layer components {
+  .tb {
+    @apply mx-auto flex max-w-[1400px] flex-col gap-6 px-4 py-8 sm:px-6;
+  }
+  .tb-head {
+    @apply flex flex-col gap-4 md:flex-row md:items-end md:justify-between;
+  }
+  .tb-title {
+    @apply m-0 text-3xl font-semibold tracking-tight;
+    font-family: var(--font-display);
+    color: var(--fg-strong);
+  }
+  .tb-lead {
+    @apply mt-2 mb-0 max-w-2xl text-sm leading-6;
+    color: var(--fg-soft);
+  }
+  .tb-body {
+    @apply grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)];
+  }
+  .tb-controls {
+    @apply flex flex-col gap-5 self-start rounded-2xl border p-4 lg:sticky lg:top-20;
+    border-color: var(--line);
+    background: var(--bg-raised);
+  }
+  .tb-group {
+    @apply flex flex-col gap-2;
+  }
+  .tb-label {
+    @apply m-0 flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase;
+    color: var(--fg-faint);
+  }
+  .tb-sub {
+    @apply m-0 text-xs;
+    color: var(--fg-soft);
+  }
+
+  /* Presets */
+  .tb-presets {
+    @apply grid grid-cols-3 gap-1.5;
+  }
+  .tb-preset {
+    @apply flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs font-medium;
+    border-color: var(--line);
+    background: transparent;
+    color: var(--fg);
+    transition:
+      background-color 0.15s var(--ease-out),
+      border-color 0.15s var(--ease-out);
+  }
+  .tb-preset:hover {
+    background: var(--bg-soft);
+  }
+  .tb-preset[aria-pressed="true"] {
+    border-color: var(--fg);
+  }
+  .tb-preset-swatch {
+    @apply inline-block size-3.5 shrink-0 rounded-full;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--fg) 15%, transparent);
+  }
+
+  /* Sliders (cdk Slider: rv-* classes + data-* state; thumb / fill position inline) */
+  .tb-slider .rv-Slider {
+    @apply grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1.5;
+  }
+  .tb-slider .rv-Label {
+    @apply text-sm;
+    color: var(--fg);
+  }
+  .tb-slider .rv-SliderOutput {
+    @apply text-xs tabular-nums;
+    font-family: var(--font-mono);
+    color: var(--fg-soft);
+  }
+  .tb-slider .rv-SliderTrack {
+    @apply relative col-span-2 h-6 w-full cursor-pointer touch-none rounded-full;
+    background: var(--tb-track);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--fg) 10%, transparent);
+  }
+  .tb-slider .rv-SliderThumb {
+    @apply top-1/2 size-5 rounded-full border-2 border-white;
+    background: var(--tb-thumb);
+    box-shadow:
+      0 0 0 1px rgb(0 0 0 / 0.25),
+      0 2px 6px rgb(0 0 0 / 0.25);
+  }
+  .tb-slider .rv-SliderThumb[data-dragging] {
+    @apply cursor-grabbing;
+  }
+  .tb-slider .rv-SliderThumb[data-focus-visible] {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .tb-accent-value {
+    @apply m-0 flex items-center gap-2 text-xs;
+    color: var(--fg-soft);
+  }
+
+  /* Segmented buttons, plain buttons */
+  .tb-segment {
+    @apply inline-flex rounded-xl border p-0.5;
+    border-color: var(--line);
+    background: var(--bg-soft);
+  }
+  .tb-segment-wrap {
+    @apply flex w-full;
+  }
+  .tb-seg {
+    @apply inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[10px] border-0 bg-transparent px-3 py-1.5 text-sm font-medium;
+    color: var(--fg-soft);
+    transition:
+      background-color 0.15s var(--ease-out),
+      color 0.15s var(--ease-out),
+      box-shadow 0.15s var(--ease-out);
+  }
+  .tb-seg[aria-pressed="true"] {
+    background: var(--bg-raised);
+    color: var(--fg-strong);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  }
+  .tb-seg:focus-visible,
+  .tb-preset:focus-visible,
+  .tb-button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .tb-check {
+    @apply flex cursor-pointer items-center gap-2 text-sm;
+    color: var(--fg);
+  }
+  .tb-actions {
+    @apply flex flex-wrap gap-2;
+  }
+  .tb-button {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium;
+    border-color: var(--line-strong);
+    background: var(--bg-raised);
+    color: var(--fg);
+    transition: background-color 0.15s var(--ease-out);
+  }
+  .tb-button:hover {
+    background: var(--bg-soft);
+  }
+  .tb-button-primary {
+    border-color: transparent;
+    background: var(--button-bg);
+    color: #fff;
+  }
+  .tb-button-primary:hover {
+    background: var(--button-bg-hover);
+  }
+
+  /* Contrast audit */
+  .tb-contrast-summary {
+    @apply m-0 text-sm font-medium;
+    color: var(--prefer);
+  }
+  .tb-contrast-summary[data-pass="false"] {
+    color: var(--warning);
+  }
+  .tb-contrast-list {
+    @apply m-0 flex list-none flex-col gap-1 p-0 text-xs;
+    color: var(--fg-soft);
+  }
+
+  /* Preview stage: the edited theme (inline variables) on the ui page background */
+  .tb-main {
+    @apply flex min-w-0 flex-col gap-6;
+  }
+  .tb-stage {
+    @apply rounded-3xl p-3 sm:p-5;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 8%, transparent);
+  }
+  /* Masonry by CSS columns on the stage width (container query): 1 column on phones, 2 from 42rem, 3 from 64rem. */
+  .tb-preview {
+    @apply @container;
+  }
+  .tb-preview-grid {
+    @apply columns-1 gap-4 @2xl:columns-2 @5xl:columns-3;
+  }
+  .tb-preview-grid > .tb-tile {
+    @apply mb-4 w-full min-w-0 break-inside-avoid;
+  }
+  /* docs-kit `.card` (link tiles) shares the class name with the ui Card: undo its frame on preview cards. */
+  .tb-stage .card {
+    border: 0;
+    color: inherit;
+    text-decoration: none;
+    transition: none;
+  }
+  .tb-stage .card:hover {
+    color: inherit;
+  }
+  .tb-stage .card--default,
+  .tb-stage .card--default:hover {
+    background: var(--surface);
+  }
+  .tb-stage .card p {
+    margin: 0;
+    line-height: inherit;
+  }
+  /* …and its `.card p` colour (docs --fg-soft, invisible on a dark stage) beats the ui `.card__description`. */
+  .tb-stage .card .card__description {
+    @apply text-muted;
+  }
+  /* docs-kit base h1–h4 (display font, weight, docs colour): ui headings (calendar, popover, modal) inherit instead.
+     Zero specificity: any ui class rule still wins; the components layer beats the docs base layer. */
+  :where(.tb-stage) :where(h1, h2, h3, h4) {
+    font-family: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+  /* docs-kit's frame `.menu-item` (theme menu) shares the class name with the ui one: undo what the ui one does not set
+     (colour, focused background). `.tag` needs nothing: `.tag--<variant>` sets background + colour after it. */
+  .tb-stage .menu-item,
+  .tb-stage .menu-item[data-focused] {
+    color: inherit;
+  }
+  .tb-stage .menu-item[data-focused]:not([data-hovered="true"]) {
+    background: transparent;
+  }
+  .tb-token {
+    @apply block size-8 rounded-lg;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--foreground) 12%, transparent);
+  }
+
+  /* CSS output */
+  .tb-code-panel {
+    @apply flex min-w-0 flex-col gap-2;
+  }
+  .tb-code-head {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
+  .tb-code {
+    @apply m-0 max-h-[28rem] overflow-auto rounded-2xl border p-4 text-xs leading-5;
+    border-color: var(--line);
+    background: var(--bg-code);
+    color: var(--fg);
+    font-family: var(--font-mono);
+  }
+}

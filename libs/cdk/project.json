@@ -1,0 +1,25 @@
+{
+  "name": "cdk",
+  "projectType": "library",
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/cdk" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "vitest run --project cdk --project cdk-dev --maxWorkers=2; a=$?; vitest run --project cdk-browser; b=$?; vitest run --project cdk-components; c=$?; exit $((a | b | c))"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node scripts/tsc.ts -p libs/cdk"
+      }
+    }
+  }
+}

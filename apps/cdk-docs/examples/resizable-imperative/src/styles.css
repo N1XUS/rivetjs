@@ -1,0 +1,54 @@
+body {
+  margin: 0;
+  padding: 24px;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.Group {
+  height: 220px;
+  max-width: 560px;
+  border: 1px solid #d4d4d8;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+.Panel {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+  font-weight: 600;
+}
+.Handle {
+  flex-basis: 6px !important;
+  background: #e4e4e7;
+  outline: none;
+  transition: background-color 0.15s;
+}
+.Handle[aria-orientation="horizontal"] {
+  flex-basis: 6px;
+}
+.Handle[data-separator="hover"],
+.Handle[data-separator="active"],
+.Handle:focus-visible {
+  background: #6366f1;
+}
+.Toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.Toolbar button {
+  font: inherit;
+  padding: 4px 10px;
+  border: 1px solid #d4d4d8;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+.Status {
+  margin-top: 8px;
+  color: #52525b;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "types": ["node", "@rivetjs/compiler/images/client"], "resolveJsonModule": true },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "*.ts", "content/_charts.ts", "tests/**/*.ts", "scripts/**/*.ts", "../../libs/docs-kit/virtual.d.ts", "examples/**/*.ts", "examples/**/*.tsx", ".rivet/routes.d.ts"],
+  "exclude": ["node_modules", "dist", ".artifacts"]
+}

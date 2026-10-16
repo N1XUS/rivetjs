@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetApiRoute",
+  "title": "Rivet API route",
+  "description": "Adds an endpoint route (a plain .ts file in src/routes with onGet / onPost / … request handlers) to a server-rendered Rivet app.",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Endpoint path under src/routes (api/health, api/items/[id]).",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Endpoint path (under src/routes, e.g. api/health)?"
+    },
+    "project": {
+      "type": "string",
+      "description": "The Rivet app.",
+      "$default": { "$source": "projectName" },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "methods": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["get", "post", "put", "patch", "delete"] },
+      "default": ["get"],
+      "description": "Request handlers to write."
+    },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["path", "project"],
+  "additionalProperties": false
+}

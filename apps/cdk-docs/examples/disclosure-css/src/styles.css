@@ -1,0 +1,55 @@
+/* Plain CSS on the default class names and the data-expanded state. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.rv-Disclosure {
+  margin: 8px 16px;
+  max-width: 28rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.rv-Disclosure[data-expanded] {
+  border-color: #818cf8;
+}
+
+.rv-Disclosure h3 {
+  margin: 0;
+}
+
+.rv-Disclosure .rv-Button {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rv-Disclosure .chevron {
+  transition: transform 150ms;
+}
+
+.rv-Disclosure[data-expanded] .chevron {
+  transform: rotate(180deg);
+}
+
+.rv-Disclosure .rv-Button[data-focus-visible] {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+/* The panel stays in the DOM (hidden="until-found": find-in-page opens it). --disclosure-panel-height animates it. */
+.rv-DisclosurePanel {
+  padding: 0 14px 12px;
+  color: #475569;
+}

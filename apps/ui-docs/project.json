@@ -1,0 +1,56 @@
+{
+  "name": "ui-docs",
+  "projectType": "application",
+  "implicitDependencies": ["ui", "cdk", "kit", "docs-kit", "compiler", "runtime", "reactivity", "router", "i18n", "devtools"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts build apps/ui-docs"
+      }
+    },
+    "examples": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts examples apps/ui-docs"
+      }
+    },
+    "api": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts api apps/ui-docs"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "vitest run --project ui-docs"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts prepare apps/ui-docs && node scripts/tsc.ts -p apps/ui-docs --checkers 1"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts serve apps/ui-docs --dev"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node libs/docs-kit/cli.ts serve apps/ui-docs"
+      }
+    }
+  }
+}

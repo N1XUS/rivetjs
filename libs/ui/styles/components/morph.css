@@ -1,0 +1,230 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no morph). Feature set inspired by HeroUI Pro's public MorphButton docs; independent implementation on HeroUI tokens. Motion = `@rivetjs/cdk/morph` (house motion, inline styles only while morphing); this sheet owns both resting states and turns `--morph-progress` (0 = collapsed, 1 = expanded) into the content cross-fade / scale / stagger. */
+/* -------------------------------------------------------------------------------------------------
+ * Morph Component Styles
+ * Block: morph (parts: surface / collapsed / expanded / trigger / close)
+ * Modifiers: morph--primary (inverted surface) / morph--secondary (overlay surface); morph--<direction>
+ * Variables: --morph-collapsed-radius, --morph-expanded-radius (px; read by the motion), --morph-progress (written by the
+ * motion while morphing), --morph-z (stacking while open).
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: morph - in-flow footprint = the collapsed content's box (the surface overflows it, siblings never move)
+ */
+.morph {
+  --morph-collapsed-radius: 9999px;
+  --morph-expanded-radius: min(28px, var(--radius-3xl));
+  --morph-progress: 0;
+  --morph-z: 30;
+  @apply relative inline-flex align-middle;
+  -webkit-tap-highlight-color: transparent;
+
+  &[data-open] {
+    --morph-progress: 1;
+  }
+
+  &[data-open],
+  &[data-morphing] {
+    z-index: var(--morph-z);
+  }
+}
+
+/**
+ * Element: surface - the morphing box (background, radius, shadow). Closed: the footprint's box; open at rest: the
+ * panel's natural box; while morphing: inline width / height / border-radius from the motion.
+ */
+.morph__surface {
+  @apply absolute overflow-hidden;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--morph-collapsed-radius);
+  contain: layout paint;
+  z-index: 0;
+
+  .morph[data-open]:not([data-morphing]) & {
+    width: max-content;
+    height: auto;
+    border-radius: var(--morph-expanded-radius);
+  }
+}
+
+/* primary = inverted surface: the theme's foreground is the paper, its background the ink. Both contents swap the tokens, so
+   ui components inside (Button, Separator, text-muted …) read correctly on it. */
+.morph--primary {
+  --morph-ink: var(--background);
+  --morph-paper: var(--foreground);
+}
+
+.morph--primary .morph__surface {
+  background-color: var(--morph-paper);
+  color: var(--morph-ink);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.35), 0 2px 6px -2px rgb(0 0 0 / 0.2);
+}
+
+.morph--primary :is(.morph__collapsed, .morph__expanded) {
+  --foreground: var(--morph-ink);
+  --background: var(--morph-paper);
+  --muted: color-mix(in oklab, var(--morph-ink) 64%, var(--morph-paper));
+  --default: color-mix(in oklab, var(--morph-ink) 14%, var(--morph-paper));
+  --default-hover: color-mix(in oklab, var(--morph-ink) 22%, var(--morph-paper));
+  --default-foreground: var(--morph-ink);
+  --separator: color-mix(in oklab, var(--morph-ink) 16%, transparent);
+  --border: color-mix(in oklab, var(--morph-ink) 18%, transparent);
+  color: var(--morph-ink);
+}
+
+.morph--secondary .morph__surface {
+  @apply bg-overlay text-foreground;
+  box-shadow: var(--overlay-shadow);
+}
+
+/**
+ * Element: collapsed - in-flow content shown while collapsed (fades + scales out over the first part of the morph)
+ */
+.morph__collapsed {
+  @apply relative flex cursor-(--cursor-interactive) items-center gap-2 select-none;
+  z-index: 1;
+  padding-block: calc(var(--spacing) * 1.5);
+  padding-inline: calc(var(--spacing) * 4) calc(var(--spacing) * 1.5);
+  min-height: calc(var(--spacing) * 11);
+  opacity: clamp(0, calc(1 - var(--morph-progress) * 2.5), 1);
+  scale: calc(1 - var(--morph-progress) * 0.04);
+
+  .morph--secondary & {
+    @apply text-foreground;
+  }
+
+  .morph[data-open] & {
+    @apply pointer-events-none;
+  }
+
+  .morph[data-disabled] & {
+    @apply cursor-default opacity-50;
+  }
+}
+
+/**
+ * Element: expanded - the panel (natural size; set its width with a class). In flow inside the surface when open at rest,
+ * anchored to the pinned side while morphing; hidden (and inert) when closed at rest.
+ */
+.morph__expanded {
+  @apply absolute flex flex-col gap-3 p-5 outline-none;
+  width: max-content;
+  max-width: min(calc(100vw - 2rem), 28rem);
+  opacity: clamp(0, calc((var(--morph-progress) - 0.3) / 0.6), 1);
+  scale: calc(0.97 + var(--morph-progress) * 0.03);
+
+  .morph:not([data-open]):not([data-morphing]) & {
+    visibility: hidden;
+  }
+
+  .morph[data-open]:not([data-morphing]) & {
+    @apply relative;
+  }
+
+  /* Stagger: each direct child trails the previous one by a slice of the progress. */
+  & > * {
+    opacity: clamp(0, calc((var(--morph-progress) - 0.35 - var(--morph-stagger, 0) * 0.06) / 0.45), 1);
+    translate: 0 calc((1 - clamp(0, calc((var(--morph-progress) - 0.3) / 0.7), 1)) * 6px);
+  }
+  & > :nth-child(2) {
+    --morph-stagger: 1;
+  }
+  & > :nth-child(3) {
+    --morph-stagger: 2;
+  }
+  & > :nth-child(4) {
+    --morph-stagger: 3;
+  }
+  & > :nth-child(5) {
+    --morph-stagger: 4;
+  }
+  & > :nth-child(n + 6) {
+    --morph-stagger: 5;
+  }
+}
+
+/**
+ * Element: trigger - the collapsed state's button (focus target on close)
+ */
+.morph__trigger {
+  @apply inline-flex shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-medium outline-none;
+  height: calc(var(--spacing) * 7);
+  cursor: inherit;
+
+  .morph--primary & {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .morph--secondary & {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+/**
+ * Element: close - a button inside the panel that collapses it (style it with a class or Button classes)
+ */
+.morph__close {
+  @apply outline-none;
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+/**
+ * Modifiers: direction - the surface and the panel are pinned on the side opposite to the growth direction
+ * (logical start / end: mirrors in RTL)
+ */
+.morph--top :is(.morph__surface, .morph__expanded) {
+  bottom: 0;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.morph--bottom :is(.morph__surface, .morph__expanded) {
+  top: 0;
+  left: 50%;
+  translate: -50% 0;
+}
+
+.morph--start :is(.morph__surface, .morph__expanded) {
+  inset-inline-end: 0;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.morph--end :is(.morph__surface, .morph__expanded) {
+  inset-inline-start: 0;
+  top: 50%;
+  translate: 0 -50%;
+}
+
+.morph--top-start :is(.morph__surface, .morph__expanded) {
+  bottom: 0;
+  inset-inline-end: 0;
+}
+
+.morph--top-end :is(.morph__surface, .morph__expanded) {
+  bottom: 0;
+  inset-inline-start: 0;
+}
+
+.morph--bottom-start :is(.morph__surface, .morph__expanded) {
+  top: 0;
+  inset-inline-end: 0;
+}
+
+.morph--bottom-end :is(.morph__surface, .morph__expanded) {
+  top: 0;
+  inset-inline-start: 0;
+}
+
+/* Open at rest the panel sits in flow inside the anchored surface: its own anchor offsets no longer apply. */
+.morph[data-open]:not([data-morphing]) .morph__expanded {
+  inset: auto;
+  translate: none;
+}

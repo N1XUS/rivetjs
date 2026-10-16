@@ -1,0 +1,195 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no markdown renderer). Feature set inspired by HeroUI Pro's public Markdown docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Markdown Component Styles
+ * Block: markdown (parts: paragraph / heading(--1..6) / strong / em / del / inline-code / link / image / list(--ordered)
+ *        / list-item / task-checkbox / blockquote / hr / table-wrapper / table / code-block / caret / tail (the streaming
+ *        blocks' `display: contents` wrapper) / live (block being streamed) / word (streamed word))
+ * States: [data-streaming="true"]
+ * -----------------------------------------------------------------------------------------------*/
+
+.markdown {
+  @apply flex min-w-0 flex-col gap-3 text-sm leading-6 text-foreground;
+  overflow-wrap: anywhere;
+}
+
+/* The streaming blocks' wrapper: one element per list row (the runtime keeps a single-element row's nodes), no box. */
+.markdown__tail {
+  display: contents;
+}
+
+/* Blocks keep their size while the streaming root's height is pinned for its smooth growth (no flex shrinking). */
+.markdown > *,
+.markdown__tail > * {
+  @apply shrink-0;
+}
+
+.markdown__paragraph {
+  @apply m-0;
+}
+
+.markdown__heading {
+  @apply m-0 mt-2 font-semibold text-foreground;
+  text-wrap: balance;
+}
+
+.markdown__heading--1 {
+  @apply text-xl leading-8;
+}
+
+.markdown__heading--2 {
+  @apply text-lg leading-7;
+}
+
+.markdown__heading--3 {
+  @apply text-base leading-6;
+}
+
+.markdown__heading--4,
+.markdown__heading--5,
+.markdown__heading--6 {
+  @apply text-sm leading-6;
+}
+
+.markdown__strong {
+  @apply font-semibold;
+}
+
+.markdown__del {
+  @apply text-muted;
+}
+
+.markdown__inline-code {
+  @apply rounded-md bg-default px-1.5 py-0.5 font-mono text-[0.85em];
+}
+
+.markdown__link {
+  @apply rounded-sm text-accent underline decoration-accent/40 underline-offset-2 outline-none;
+  transition: text-decoration-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &:hover {
+    @apply decoration-accent;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+.markdown__image {
+  @apply h-auto max-w-full rounded-xl;
+}
+
+.markdown__list {
+  @apply m-0 flex list-disc flex-col gap-1 ps-5;
+}
+
+.markdown__list--ordered {
+  @apply list-decimal;
+}
+
+.markdown__list[data-task="true"] {
+  @apply list-none ps-1;
+}
+
+.markdown__list-item {
+  @apply ps-0.5;
+
+  & > .markdown__list {
+    @apply mt-1;
+  }
+
+  &::marker {
+    @apply text-muted;
+  }
+}
+
+.markdown__list-item[data-task="true"] {
+  @apply flex items-baseline gap-2;
+}
+
+.markdown__task-checkbox {
+  @apply size-3.5 shrink-0 translate-y-0.5 accent-accent;
+}
+
+.markdown__blockquote {
+  @apply m-0 flex flex-col gap-2 border-s-2 border-separator ps-4 text-muted;
+}
+
+.markdown__hr {
+  @apply my-1 h-px w-full border-0 bg-separator;
+}
+
+.markdown__table-wrapper {
+  @apply w-full overflow-x-auto rounded-xl border border-separator outline-none;
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+.markdown__table {
+  @apply w-full border-collapse text-sm;
+
+  & th {
+    @apply bg-surface-secondary px-3 py-2 text-start font-medium text-muted;
+  }
+
+  & td {
+    @apply border-t border-separator px-3 py-2;
+  }
+}
+
+.markdown__code-block {
+  @apply my-0;
+}
+
+/* Streaming caret: a soft pulsing dot after the last word (removed when the stream ends). */
+.markdown__caret {
+  @apply ms-1 inline-block size-[0.55em] translate-y-[-0.05em] rounded-full bg-current align-middle opacity-60;
+  animation: markdown-caret-pulse 1.1s var(--ease-out, ease-out) infinite;
+}
+
+@keyframes markdown-caret-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    scale: 0.8;
+  }
+  50% {
+    opacity: 0.7;
+    scale: 1;
+  }
+}
+
+/* Live tail: each new word and each new block fades + un-blurs in (only nodes the stream creates have these classes). */
+.markdown__word {
+  animation: markdown-word-in var(--duration-base) var(--ease-out, ease-out) both;
+}
+
+.markdown__live {
+  animation: markdown-block-in var(--duration-slow) var(--ease-out, ease-out) both;
+}
+
+@keyframes markdown-word-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+@keyframes markdown-block-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+    filter: blur(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markdown__caret,
+  .markdown__word,
+  .markdown__live {
+    animation: none;
+  }
+}

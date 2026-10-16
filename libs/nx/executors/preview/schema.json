@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet preview",
+  "description": "Serves a built Rivet app: the project's serve.js when it has one, else the router's Node server (@rivetjs/router/node start), else vite preview.",
+  "type": "object",
+  "properties": {
+    "port": { "type": "number", "description": "Port (PORT for serve.js / the Node server, --port for vite preview)." },
+    "host": { "type": "string", "description": "Host (HOST / --host)." },
+    "outputPath": { "type": "string", "default": "dist", "description": "Build output folder, relative to the project." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Extra environment variables." }
+  },
+  "additionalProperties": false
+}

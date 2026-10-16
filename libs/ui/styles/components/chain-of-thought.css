@@ -1,0 +1,135 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no reasoning trace). Feature set inspired by HeroUI Pro's public ChainOfThought docs; independent implementation on HeroUI tokens. Composes `.disclosure*` + `.text-shimmer`. */
+/* -------------------------------------------------------------------------------------------------
+ * ChainOfThought Component Styles
+ * Block: chain-of-thought (parts: heading / trigger / trigger-icon / label / indicator / content / body / steps / step
+ *        / step-marker / step-icon / step-body / step-label / step-content)
+ * States: [data-streaming="true"] (label shimmers), step [data-status="complete|active|pending|error"]
+ * -----------------------------------------------------------------------------------------------*/
+
+.chain-of-thought {
+  @apply flex w-full min-w-0 flex-col text-sm;
+}
+
+.chain-of-thought__heading {
+  @apply m-0 flex text-sm font-normal;
+}
+
+.chain-of-thought__trigger {
+  @apply -mx-1.5 flex max-w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-muted transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply text-foreground;
+  }
+}
+
+.chain-of-thought__trigger-icon {
+  @apply size-4 shrink-0;
+}
+
+.chain-of-thought__label {
+  @apply truncate;
+}
+
+/* The shimmer runs only while the root streams. */
+.chain-of-thought:not([data-streaming="true"]) .chain-of-thought__label.text-shimmer {
+  animation: none;
+  background-image: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.chain-of-thought__indicator {
+  @apply ms-0 size-3.5;
+}
+
+.chain-of-thought__body {
+  @apply pt-2 pb-1;
+}
+
+/* Every step keeps its bottom padding (the list takes it back with a negative margin), so a new last step adds only
+ * its own height: the previous one never jumps from pb-0 to pb-3. */
+.chain-of-thought__steps {
+  @apply -mb-3 flex flex-col;
+}
+
+.chain-of-thought__step {
+  @apply relative flex gap-3 pb-3 text-muted;
+
+  /* Connector line between markers. */
+  &:not(:last-child)::before {
+    content: "";
+    @apply absolute start-[7.5px] top-6 bottom-1 w-px bg-separator;
+  }
+}
+
+.chain-of-thought__step-marker {
+  @apply flex h-5 w-4 shrink-0 items-center justify-center;
+}
+
+.chain-of-thought__step-icon {
+  @apply size-4;
+}
+
+.chain-of-thought__step[data-status="complete"] .chain-of-thought__step-icon {
+  @apply text-muted;
+}
+
+.chain-of-thought__step[data-status="active"] .chain-of-thought__step-icon {
+  @apply text-accent;
+  animation: chain-of-thought-spin 1s linear infinite;
+}
+
+.chain-of-thought__step[data-status="pending"] .chain-of-thought__step-icon {
+  @apply opacity-50;
+}
+
+.chain-of-thought__step[data-status="error"] .chain-of-thought__step-icon {
+  @apply text-danger;
+}
+
+.chain-of-thought__step-body {
+  @apply flex min-w-0 flex-1 flex-col gap-1;
+}
+
+.chain-of-thought__step-label {
+  @apply leading-5 text-foreground;
+}
+
+.chain-of-thought__step[data-status="pending"] .chain-of-thought__step-label {
+  @apply text-muted;
+}
+
+.chain-of-thought__step-content {
+  @apply flex min-w-0 flex-col gap-1.5 text-sm leading-5 text-muted;
+}
+
+/* Steps added while the trace streams grow in (height from 0 + fade / slide; `interpolate-size` animates to `auto`;
+ * browsers without it show the step at once with the fade). Scoped to streaming, so steps present at load never move. */
+.chain-of-thought[data-streaming="true"] .chain-of-thought__step {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  animation: chain-of-thought-step-in var(--duration-slow) var(--ease-out, ease-out) both;
+}
+
+@keyframes chain-of-thought-step-in {
+  from {
+    height: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    translate: 0 4px;
+    filter: blur(2px);
+  }
+}
+
+@keyframes chain-of-thought-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chain-of-thought__step[data-status="active"] .chain-of-thought__step-icon,
+  .chain-of-thought[data-streaming="true"] .chain-of-thought__step {
+    animation: none;
+  }
+}

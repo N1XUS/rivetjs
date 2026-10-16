@@ -1,0 +1,9 @@
+{
+  "name": "editorial-bench-lane-rivet",
+  "private": true,
+  "type": "module",
+  "description": "Rivet lane of apps/editorial-bench. @rivetjs/* + vite resolve from the repo workspace; only marked is pinned here.",
+  "dependencies": {
+    "marked": "18.1.0"
+  }
+}

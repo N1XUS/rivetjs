@@ -1,0 +1,117 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no cell select). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --surface, --muted, --foreground, focus / disabled status utilities). Behaviour = @rivetjs/cdk/select (parts form); the popover adds the vendored `select__popover` look. */
+/* -------------------------------------------------------------------------------------------------
+ * CellSelect Component Styles
+ * Block: cell-select (parts: trigger = the whole cell / label / value / indicator / popover)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: cell-select - the field wrapper (the trigger is the cell)
+ */
+.cell-select {
+  @apply flex w-full flex-col gap-1;
+
+  --cell-select-height: calc(var(--spacing) * 11);
+}
+
+/**
+ * Element: trigger - a full-width row: label start, value + indicator end
+ */
+.cell-select__trigger {
+  @apply relative flex w-full items-center gap-3 rounded-xl px-3.5 text-sm outline-none select-none no-highlight;
+
+  height: var(--cell-select-height);
+  background-color: var(--cell-select-bg);
+  cursor: var(--cursor-interactive);
+
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled="true"]),
+    &[data-hovered="true"] {
+      background-color: var(--cell-select-bg-hover);
+    }
+  }
+
+  &[data-pressed="true"] {
+    background-color: var(--cell-select-bg-hover);
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/* Default: gray cell for pages */
+.cell-select__trigger--default {
+  --cell-select-bg: var(--default);
+  --cell-select-bg-hover: var(--default-hover);
+}
+
+/* Secondary: surface cell inside gray containers */
+.cell-select__trigger--secondary {
+  --cell-select-bg: var(--surface);
+  --cell-select-bg-hover: var(--surface-hover);
+}
+
+/**
+ * Element: label - start of the row
+ */
+.cell-select__label {
+  @apply min-w-0 shrink-0 truncate font-medium text-foreground;
+}
+
+/**
+ * Element: value - end of the row, truncated
+ */
+.cell-select__value {
+  @apply ms-auto min-w-0 truncate text-end text-muted;
+
+  &[data-placeholder="true"] {
+    @apply text-field-placeholder;
+  }
+
+  /* The selected item's ListBox indicator stays in the list */
+  [data-slot="list-box-item-indicator"] {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: indicator - chevron after the value
+ */
+.cell-select__indicator {
+  @apply flex size-4 shrink-0 items-center justify-center text-muted;
+
+  transition: rotate var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  /* Custom indicator children rotate; the default morph chevron (morph-icon.css, TW-149) flattens and folds instead. */
+  &[data-open="true"]:not(.morph-chevron) {
+    @apply rotate-180;
+  }
+
+  &[data-slot="cell-select-default-indicator"] {
+    --morph-chevron-size: var(--cell-select-indicator-size, 1rem);
+    --morph-chevron-stroke: var(--cell-select-indicator-stroke, calc(var(--morph-chevron-size) / 12));
+    --morph-chevron-duration: var(--cell-select-indicator-duration, var(--duration-morph-chevron));
+    @apply size-(--morph-chevron-size);
+  }
+}
+
+/**
+ * Element: popover - vendored `select__popover` look; at least as wide as the value side
+ */
+/* Compound with the vendored `select__popover` (whose `min-width` it overrides): independent of stylesheet order (a client
+ * navigation can insert select.css after this file). */
+.select__popover.cell-select__popover {
+  min-width: min(var(--trigger-width), 16rem);
+}

@@ -1,0 +1,486 @@
+// Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no charts). Feature set inspired by HeroUI Pro's public chart docs
+// (area / line / bar / pie-donut charts with tooltip, legend, grid and axes on HeroUI tokens; Pro wraps recharts with a
+// children API). Independent implementation with a data-driven API (`data` + `index` + `series`, like a table's columns):
+// - Server-rendered SVG (area / line, 0…100 viewBox stretched to the plot, `vector-effect: non-scaling-stroke`) or HTML
+//   (bars, axes, labels: crisp at any width). Monotone cubic curves (Fritsch–Carlson, `chart-math.ts`).
+// - Tooltips are CSS only: one focusable slot per index (`aria-label` = the row's values) shows the guide, dots and a
+//   tooltip on `:hover` / `:focus-visible`. No state, no script: a chart costs no JS on a resumed page.
+// - `data` / `series` / formatters are read once at mount (all geometry is plain strings computed before the markup); re-create
+//   the chart to show other data (`<Show keyed when={period()}>`).
+import { createId } from "@rivetjs/cdk/id";
+import { cachedIntl } from "@rivetjs/cdk/i18n/intl-cache";
+import type { JSX } from "@rivetjs/runtime/jsx-runtime";
+
+import { chartVariants } from "../../../styles/src/components/chart/index.ts";
+import { areaPath, labelIndices, linearPath, monotonePath, niceTicks } from "./chart-math.ts";
+import type { Point } from "./chart-math.ts";
+
+const SLOTS = chartVariants();
+
+// Gradient stops (`offset` is missing from the JSX SVG stop typings: spread plain attribute objects).
+const STOP_TOP = { offset: "0%", "stop-color": "currentColor", "stop-opacity": "0.32" } as Record<string, string>;
+const STOP_BOTTOM = { offset: "100%", "stop-color": "currentColor", "stop-opacity": "0.02" } as Record<string, string>;
+
+type ChartDatum = Record<string, string | number>;
+
+interface ChartSeries {
+  /** Key of the value in each datum. */
+  key: string;
+  /** Legend / tooltip label (default: the key). */
+  label?: string;
+  /** Any CSS colour (default: the palette `var(--chart-N)`). */
+  color?: string;
+}
+
+interface CartesianChartProps extends Omit<JSX.IntrinsicElements["figure"], "children" | "class"> {
+  data: ChartDatum[];
+  /** Key of the x value (category label) in each datum. */
+  index: string;
+  series: ChartSeries[];
+  /** Plot height in px. @default 240 */
+  height?: number;
+  /** Formats y values (axis, tooltip). Default: `Intl.NumberFormat("en-US")`. */
+  valueFormatter?: (value: number) => string;
+  /** Formats the index value (x axis, tooltip title). */
+  indexFormatter?: (value: string | number) => string;
+  /** Lower bound of the y axis. @default 0 */
+  minValue?: number;
+  /** Upper bound of the y axis (default: from the data, rounded up to a nice tick). */
+  maxValue?: number;
+  showLegend?: boolean;
+  showGrid?: boolean;
+  showXAxis?: boolean;
+  showYAxis?: boolean;
+  showTooltip?: boolean;
+  /** Accessible name of the figure. */
+  "aria-label"?: string;
+  class?: string;
+}
+
+interface AreaChartProps extends CartesianChartProps {
+  /** `monotone` (default) or `linear`. */
+  curve?: "monotone" | "linear";
+  /** Stack the series (areas on top of each other). */
+  stacked?: boolean;
+}
+
+type LineChartProps = Omit<AreaChartProps, "stacked">;
+
+interface BarChartProps extends CartesianChartProps {
+  stacked?: boolean;
+}
+
+const colorOf = (s: ChartSeries, i: number) => s.color ?? `var(--chart-${(i % 6) + 1})`;
+const defaultFormat = (v: number) => cachedIntl(Intl.NumberFormat, "en-US").format(v);
+const pct = (n: number) => `${Math.round(n * 1000) / 1000}%`;
+
+interface Prepared {
+  rows: { label: string; values: number[]; sums: number[] }[];
+  ticks: number[];
+  min: number;
+  max: number;
+  y: (v: number) => number;
+  format: (v: number) => string;
+  colors: string[];
+  labels: string[];
+}
+
+function prepare(props: CartesianChartProps, stacked: boolean): Prepared {
+  const format = props.valueFormatter ?? defaultFormat;
+  const indexFormat = props.indexFormatter ?? ((v: string | number) => String(v));
+  const rows = props.data.map((d) => {
+    const values = props.series.map((s) => Number(d[s.key] ?? 0));
+    let acc = 0;
+    const sums = values.map((v) => (acc += v));
+    return { label: indexFormat(d[props.index] ?? ""), values, sums };
+  });
+  const all = rows.flatMap((r) => (stacked ? r.sums : r.values));
+  const lo = Math.min(props.minValue ?? 0, ...all);
+  const hi = props.maxValue ?? Math.max(...all, lo + 1);
+  const ticks = niceTicks(lo, hi, 4);
+  const min = ticks[0]!;
+  const max = props.maxValue ?? ticks[ticks.length - 1]!;
+  const y = (v: number) => 100 - ((v - min) / (max - min || 1)) * 100;
+  return {
+    rows,
+    ticks: ticks.filter((t) => t <= max),
+    min,
+    max,
+    y,
+    format,
+    colors: props.series.map(colorOf),
+    labels: props.series.map((s) => s.label ?? s.key),
+  };
+}
+
+/** Legend items (plain data). */
+const legendOf = (p: Prepared) => p.labels.map((label, i) => ({ label, color: p.colors[i]! }));
+
+function tooltipLabel(p: Prepared, row: Prepared["rows"][number]): string {
+  return `${row.label}: ${row.values.map((v, i) => `${p.labels[i]} ${p.format(v)}`).join(", ")}`;
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Area / Line
+ * -----------------------------------------------------------------------------------------------*/
+function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Element {
+  const stacked = props.kind === "area" && props.stacked === true;
+  const p = prepare(props, stacked);
+  const id = createId();
+  const n = p.rows.length;
+  const xOf = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
+  const curve = props.curve === "linear" ? linearPath : monotonePath;
+  const baseline = p.y(Math.max(p.min, 0));
+  const paths = props.series.map((_, si) => {
+    const points: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(stacked ? r.sums[si]! : r.values[si]!) }));
+    const line = curve(points);
+    let area = "";
+    if (props.kind === "area") {
+      if (stacked && si > 0) {
+        const below: Point[] = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.sums[si - 1]!) })).reverse();
+        const back = curve(below).replace(/^M/, "L");
+        area = `${line} ${back} Z`;
+      } else area = areaPath(line, points, baseline);
+    }
+    return { line, area, color: p.colors[si]!, gradient: `${id}-g${si}` };
+  });
+  const step = n <= 1 ? 100 : 100 / (n - 1);
+  const slots = p.rows.map((r, i) => {
+    const x = xOf(i);
+    const left = Math.max(0, x - step / 2);
+    const right = Math.min(100, x + step / 2);
+    return {
+      left: pct(left),
+      width: pct(right - left),
+      // the guide / dots sit at the point: offset inside the clipped slot
+      inner: pct(right - left === 0 ? 50 : ((x - left) / (right - left)) * 100),
+      side: x > 60 ? "start" : "end",
+      label: tooltipLabel(p, r),
+      title: r.label,
+      dots: r.values.map((v, si) => ({ top: pct(p.y(stacked ? r.sums[si]! : v)), color: p.colors[si]! })),
+      rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
+    };
+  });
+  return Frame(
+    props,
+    p,
+    props.kind,
+    <>
+      <svg class={SLOTS.svg()} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        {props.kind === "area" ? (
+          <defs>
+            {paths.map((path) => (
+              <linearGradient id={path.gradient} x1="0" y1="0" x2="0" y2="1" style={{ color: path.color }}>
+                <stop {...STOP_TOP} />
+                <stop {...STOP_BOTTOM} />
+              </linearGradient>
+            ))}
+          </defs>
+        ) : null}
+        {paths.map((path) => (
+          <g style={{ "--chart-color": path.color }}>
+            {props.kind === "area" ? <path class={SLOTS.area()} d={path.area} fill={`url(#${path.gradient})`} /> : null}
+            <path class={SLOTS.line()} d={path.line} vector-effect="non-scaling-stroke" />
+          </g>
+        ))}
+      </svg>
+      {props.showTooltip === false ? null : (
+        <div class={SLOTS.slots()}>
+          {slots.map((slot) => (
+            <div
+              class={SLOTS.slot()}
+              data-slot="chart-slot"
+              data-side={slot.side}
+              tabIndex={0}
+              aria-label={slot.label}
+              style={{ left: slot.left, width: slot.width }}
+            >
+              <span class={SLOTS.guide()} style={{ "inset-inline-start": slot.inner }} />
+              {slot.dots.map((dot) => (
+                <span class={SLOTS.dot()} style={{ top: dot.top, "inset-inline-start": slot.inner, "--chart-color": dot.color }} />
+              ))}
+              {Tooltip(slot.title, slot.rows, slot.inner)}
+            </div>
+          ))}
+        </div>
+      )}
+    </>,
+    (i) => xOf(i),
+  );
+}
+
+function Tooltip(title: string, rows: { label: string; value: string; color: string }[], anchor?: string): JSX.Element {
+  return (
+    <div class={SLOTS.tooltip()} data-slot="chart-tooltip" aria-hidden="true" style={anchor ? { "--chart-anchor": anchor } : undefined}>
+      <div class={SLOTS.tooltipTitle()}>{title}</div>
+      {rows.map((row) => (
+        <div class={SLOTS.tooltipRow()}>
+          <span class={SLOTS.swatch()} style={{ "--chart-color": row.color }} />
+          <span>{row.label}</span>
+          <span class={SLOTS.tooltipValue()}>{row.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Figure + legend + y axis + grid + plot content + x axis. */
+function Frame(props: CartesianChartProps, p: Prepared, kind: string, plot: JSX.Element, xOf: (i: number) => number): JSX.Element {
+  const showY = props.showYAxis !== false && kind !== "sparkline";
+  const showX = props.showXAxis !== false && kind !== "sparkline";
+  const showGrid = props.showGrid !== false && kind !== "sparkline";
+  const showLegend = kind !== "sparkline" && (props.showLegend ?? props.series.length > 1);
+  const yTicks = p.ticks.map((t) => ({ top: pct(p.y(t)), label: p.format(t), baseline: t === 0 || t === p.min }));
+  const shown = labelIndices(p.rows.length, 7);
+  const major = labelIndices(p.rows.length, 4);
+  const xLabels = shown.map((i) => ({ left: pct(xOf(i)), label: p.rows[i]!.label, minor: !major.includes(i) }));
+  const legend = legendOf(p);
+  const {
+    data: _d,
+    index: _i,
+    series: _s,
+    height,
+    valueFormatter: _v,
+    indexFormatter: _f,
+    minValue: _mi,
+    maxValue: _ma,
+    showLegend: _l,
+    showGrid: _g,
+    showXAxis: _x,
+    showYAxis: _y,
+    showTooltip: _t,
+    class: cls,
+    ...rest
+  } = props as CartesianChartProps & Record<string, unknown>;
+  const { kind: _k, curve: _c, stacked: _st, ...figureProps } = rest as Record<string, unknown>;
+  return (
+    <figure
+      class={chartVariants({ kind: kind as never }).base({ class: cls as string | undefined })}
+      data-slot="chart"
+      data-hide-y-axis={showY ? undefined : ""}
+      style={{ "--chart-height": `${height ?? (kind === "sparkline" ? 48 : 240)}px` }}
+      {...(figureProps as object)}
+    >
+      {showLegend ? (
+        <ul class={SLOTS.legend()} data-slot="chart-legend">
+          {legend.map((item) => (
+            <li class={SLOTS.legendItem()}>
+              <span class={SLOTS.swatch()} style={{ "--chart-color": item.color }} />
+              {item.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div class={SLOTS.frame()}>
+        {showY ? (
+          <div class={SLOTS.yAxis()} aria-hidden="true">
+            {yTicks.map((t) => (
+              <span class={SLOTS.yLabel()} style={{ top: t.top }}>
+                {t.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div class={SLOTS.plot()} data-slot="chart-plot">
+          {showGrid ? (
+            <div class={SLOTS.grid()} aria-hidden="true">
+              {yTicks.map((t) => (
+                <span class={SLOTS.gridLine()} style={{ top: t.top }} data-baseline={t.baseline ? "" : undefined} />
+              ))}
+            </div>
+          ) : null}
+          {plot}
+        </div>
+        {showX ? (
+          <div class={SLOTS.xAxis()} aria-hidden="true">
+            {xLabels.map((l) => (
+              <span class={SLOTS.xLabel()} style={{ left: l.left }} data-minor={l.minor ? "" : undefined}>
+                {l.label}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </figure>
+  );
+}
+
+/** Area chart: filled monotone areas (optionally stacked) with a CSS tooltip per index. */
+const AreaChart = (props: AreaChartProps): JSX.Element => Cartesian({ ...props, kind: "area" });
+
+/** Line chart: monotone lines with a CSS tooltip per index. */
+const LineChart = (props: LineChartProps): JSX.Element => Cartesian({ ...props, kind: "line" });
+
+/** Sparkline: a small area chart without axes, grid, legend or tooltip (KPI cards). */
+const Sparkline = (props: Omit<AreaChartProps, "showLegend" | "showGrid" | "showXAxis" | "showYAxis">): JSX.Element => {
+  const p = prepare(props, false);
+  const n = p.rows.length;
+  const xOf = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
+  const id = createId();
+  const paths = props.series.map((_, si) => {
+    const points = p.rows.map((r, i) => ({ x: xOf(i), y: p.y(r.values[si]!) }));
+    const line = monotonePath(points);
+    return { line, area: areaPath(line, points, 100), color: p.colors[si]!, gradient: `${id}-g${si}` };
+  });
+  return Frame(
+    { ...props, showTooltip: false },
+    p,
+    "sparkline",
+    <svg class={SLOTS.svg()} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        {paths.map((path) => (
+          <linearGradient id={path.gradient} x1="0" y1="0" x2="0" y2="1" style={{ color: path.color }}>
+            <stop {...STOP_TOP} />
+            <stop {...STOP_BOTTOM} />
+          </linearGradient>
+        ))}
+      </defs>
+      {paths.map((path) => (
+        <g style={{ "--chart-color": path.color }}>
+          <path class={SLOTS.area()} d={path.area} fill={`url(#${path.gradient})`} />
+          <path class={SLOTS.line()} d={path.line} vector-effect="non-scaling-stroke" />
+        </g>
+      ))}
+    </svg>,
+    xOf,
+  );
+};
+
+/* -------------------------------------------------------------------------------------------------
+ * Bar
+ * -----------------------------------------------------------------------------------------------*/
+const BarChart = (props: BarChartProps): JSX.Element => {
+  const stacked = props.stacked === true;
+  const p = prepare(props, stacked);
+  const n = p.rows.length;
+  const xOf = (i: number) => ((i + 0.5) / Math.max(1, n)) * 100;
+  const base = p.y(Math.max(p.min, 0));
+  const groups = p.rows.map((r, i) => ({
+    label: tooltipLabel(p, r),
+    title: r.label,
+    side: xOf(i) > 60 ? "start" : "end",
+    bars: r.values.map((v, si) => ({ height: pct(stacked ? (v / (p.max - p.min || 1)) * 100 : base - p.y(v)), color: p.colors[si]! })),
+    rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
+  }));
+  return Frame(
+    props,
+    p,
+    "bar",
+    <div class={SLOTS.bars()}>
+      {groups.map((g) => (
+        <div class={SLOTS.barGroup()} data-slot="chart-slot" data-side={g.side} tabIndex={props.showTooltip === false ? undefined : 0} aria-label={g.label}>
+          {stacked ? (
+            <div class={SLOTS.barStack()}>
+              {g.bars.map((bar) => (
+                <span class={SLOTS.bar()} style={{ height: bar.height, "--chart-color": bar.color }} />
+              ))}
+            </div>
+          ) : (
+            g.bars.map((bar) => <span class={SLOTS.bar()} style={{ height: bar.height, "--chart-color": bar.color }} />)
+          )}
+          {props.showTooltip === false ? null : Tooltip(g.title, g.rows)}
+        </div>
+      ))}
+    </div>,
+    xOf,
+  );
+};
+
+/* -------------------------------------------------------------------------------------------------
+ * Donut
+ * -----------------------------------------------------------------------------------------------*/
+interface DonutSegment {
+  key: string;
+  label: string;
+  value: number;
+  color?: string;
+}
+
+interface DonutChartProps extends Omit<JSX.IntrinsicElements["figure"], "children" | "class"> {
+  data: DonutSegment[];
+  /** Outer size in px. @default 160 */
+  size?: number;
+  /** Ring thickness in viewBox units (0…50). @default 12 */
+  thickness?: number;
+  valueFormatter?: (value: number) => string;
+  /** Centre value (default: the formatted total), shown above `centerLabel`. */
+  children?: JSX.Element;
+  centerLabel?: string;
+  showLegend?: boolean;
+  "aria-label"?: string;
+  class?: string;
+}
+
+const DonutChart = (props: DonutChartProps): JSX.Element => {
+  const { data, size, thickness, valueFormatter, children, centerLabel, showLegend, class: cls, ...rest } = props;
+  const format = valueFormatter ?? defaultFormat;
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const r = 40;
+  const c = 2 * Math.PI * r;
+  const gap = data.length > 1 ? 1.2 : 0;
+  let offset = 0;
+  const segments = data.map((d, i) => {
+    const len = total ? (d.value / total) * c : 0;
+    const seg = {
+      dash: `${Math.max(0, len - gap).toFixed(3)} ${(c - Math.max(0, len - gap)).toFixed(3)}`,
+      offset: (-offset).toFixed(3),
+      color: d.color ?? `var(--chart-${(i % 6) + 1})`,
+      title: `${d.label}: ${format(d.value)} (${total ? Math.round((d.value / total) * 100) : 0}%)`,
+      label: d.label,
+      value: format(d.value),
+      share: `${total ? Math.round((d.value / total) * 100) : 0}%`,
+    };
+    offset += len;
+    return seg;
+  });
+  const stroke = thickness ?? 12;
+  return (
+    <figure
+      class={chartVariants({ kind: "donut" }).base({ class: cls })}
+      data-slot="chart"
+      style={{ "--chart-donut-size": `${size ?? 160}px` }}
+      aria-label={props["aria-label"] ?? segments.map((s) => s.title).join(", ")}
+      {...rest}
+    >
+      <div class={SLOTS.donut()}>
+        <svg class={SLOTS.donutSvg()} viewBox="0 0 100 100" aria-hidden="true">
+          <circle class={SLOTS.donutTrack()} cx="50" cy="50" r={String(r)} stroke-width={String(stroke)} />
+          {segments.map((s) => (
+            <circle
+              class={SLOTS.donutSegment()}
+              cx="50"
+              cy="50"
+              r={String(r)}
+              stroke-width={String(stroke)}
+              stroke-dasharray={s.dash}
+              stroke-dashoffset={s.offset}
+              style={{ "--chart-color": s.color }}
+            >
+              <title>{s.title}</title>
+            </circle>
+          ))}
+        </svg>
+        <div class={SLOTS.donutCenter()}>
+          <span class={SLOTS.donutValue()}>{children ?? format(total)}</span>
+          {centerLabel ? <span>{centerLabel}</span> : null}
+        </div>
+      </div>
+      {showLegend === false ? null : (
+        <ul class={SLOTS.legend()} data-slot="chart-legend">
+          {segments.map((s) => (
+            <li class={SLOTS.legendItem()}>
+              <span class={SLOTS.swatch()} style={{ "--chart-color": s.color }} />
+              {s.label}
+              <span class={SLOTS.legendValue()}>
+                {s.value} · {s.share}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </figure>
+  );
+};
+
+export { AreaChart, LineChart, BarChart, DonutChart, Sparkline };
+export type { AreaChartProps, LineChartProps, BarChartProps, DonutChartProps, DonutSegment, ChartDatum, ChartSeries, CartesianChartProps };

@@ -1,0 +1,124 @@
+{
+  "baselineRevision": "b710b72",
+  "frontend": {
+    "container": "rivet-direct-trusted-controls",
+    "image": "sha256:c933975b67161d431a3bfd974c4635c97f3de6e6b4bbbbab3c5b5b05f5e59310",
+    "cpuLimit": 1,
+    "memoryBytes": 536870912,
+    "oomKilled": false,
+    "readOnlyMounts": [
+      "apps/ssr-bench/experiments/direct",
+      "libs/server-emitter"
+    ],
+    "removedAfterCapture": true
+  },
+  "backend": {
+    "container": "rivet-ssr-bench-backend-1",
+    "image": "sha256:10efd062c54ea2d69522b2735c1b39e286c93e01762f414ff4ae70d062592697",
+    "cpuLimit": 2,
+    "memoryBytes": 1073741824,
+    "oomKilled": false
+  },
+  "driver": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.14.1",
+    "cpu": "Apple M4 Pro",
+    "cpuCount": 14,
+    "totalMemoryBytes": 51539607552,
+    "cpuQuota": null,
+    "memoryQuota": null
+  },
+  "infrastructure": "Docker Desktop Linux ARM64 VM on macOS; driver host process outside VM with no quota; no profilers/builds/tests during measured load",
+  "sources": [
+    {
+      "path": "apps/ssr-bench/experiments/direct/trusted-prototype.mjs",
+      "sha256": "89e216a644866bdb2d84e2cb95fc2cfac86f63219248d3bad799e5d749eb46fe",
+      "measuredSourceSnapshot": "apps/ssr-bench/experiments/direct/snapshots/trusted-prototype-measured-before-ack-fix.txt",
+      "livePathChangedAfterTiming": true
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/trusted-prototype.test.mjs",
+      "sha256": "7127aa17c1bb242b18ca37891aad6a1a049ab57f444acbe7ff13e52006d0e257",
+      "livePathChangedAfterTiming": true,
+      "role": "Historical pre-timing test metadata; current verified test source fingerprint is recorded separately."
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/numeric-control.mjs",
+      "sha256": "346cedff2ba51983253561e7e7322cc83e13055f31d25686073a17488299ee51"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/controls-trusted.mjs",
+      "sha256": "b74eadf71b0ebc16412962b47121db137e948e80550ddac1a6dee5d6bc5b05f3"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/controls-trusted.test.mjs",
+      "sha256": "5e93dff7e351fff15e6f0f4762edf58cf4181971bec6986be20da74f8d5c373f"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/pure-trusted.mjs",
+      "sha256": "ce05417c40e4f772016176e2bcd287a4a0f4c6b40a09c6cbe6e6b5395d2fc4aa"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/http-trusted-probe.mjs",
+      "sha256": "55e30b0c0c8d14b589f4abb2f7f535c8ae9392763209c90c8bc823d13537096c"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/fixture.mjs",
+      "sha256": "da6bac324adc8640d9eb08b1f3fff9aacb00b4065d8e3c0fe51d81a61d21cb5a"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.mjs",
+      "sha256": "b282af2b56b2b6e20f0e858f2b780c85e8c0a3e272aa089322c40fca5188f844",
+      "measuredSourceSnapshot": "apps/ssr-bench/experiments/direct/snapshots/prototype-measured-before-ack-fix.txt",
+      "livePathChangedAfterTiming": true
+    }
+  ],
+  "variant": "closed-plain-data-trusted-controls",
+  "evidence": [
+    {
+      "path": "docs/benchmarks/direct-ssr/direct-ssr-trusted-pure-diagnostic.json",
+      "bytes": 32069,
+      "sha256": "7ae883f49392d8b934a0d0d35c1aee67fac837b246a40a5ecd68cf824fcbad1b"
+    },
+    {
+      "path": "docs/benchmarks/direct-ssr/direct-ssr-trusted-http-diagnostic.json",
+      "bytes": 310022,
+      "sha256": "10ab53e4493ef1312a43bc50c72128f0587d1c047bbfe64c4332647fe2455eb6"
+    }
+  ],
+  "scope": "Both trusted pure and Docker HTTP runs used actual artifact 709d044c (9242 bytes); immutable image c933. Host artifact df1260 belongs earlier diagnostics only. Public generic escaping and request-local captures/conversions. Numeric one-hash-per-int control differs from legacy String/FNV and cannot replace that control or be subtracted from full CPU. Timings used the preserved pre-cancellation-fix prototype; current trusted source has correctness verification only.",
+  "numericChecksums": {
+    "100": 972863885,
+    "1000": 2818744149,
+    "5000": 1814090837
+  },
+  "timingVersion": "before generic acknowledgment cancellation fix; timings not rerun",
+  "compiledArtifact": {
+    "sha256": "709d044cb4e4d6abb505e294387c0e0a50fdb5b45b6679051605669eb8459c33",
+    "bytes": 9242,
+    "usedBy": [
+      "trusted-pure",
+      "trusted-http"
+    ]
+  },
+  "postTimingVerificationSources": [
+    {
+      "path": "apps/ssr-bench/experiments/direct/trusted-prototype.mjs",
+      "sha256": "b4a35f36830fa6cea77d391ed2250d50022e492e07926ac641cb51d728c5fed7"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/trusted-prototype.test.mjs",
+      "sha256": "ceab1655e5a0497a53a0219bc71491b0a3fb626ade4d88fd871f4b11a6c760b2"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.mjs",
+      "sha256": "cdd0542f1ce3708d2eb133627535dc63faeaab84e1fa1d395edb743f15bea132"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.test.mjs",
+      "sha256": "ec6f5b6e9adeb7f5e14423ed779eac80e24c0bbb8d892e591fac7d3f96059573"
+    }
+  ],
+  "validatedPrototypeTimingVersion": "before generic acknowledgment/child cancellation fix; historical timing and profile JSONs not changed"
+}

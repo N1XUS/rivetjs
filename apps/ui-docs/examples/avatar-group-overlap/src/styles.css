@@ -1,0 +1,29 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+/* Upstream injects this through a <style> element; Rivet JSX has no <style> content, so it lives here. */
+@keyframes ag-stripes {
+  to {
+    background-position: 24px 24px;
+  }
+}
+.ag-stripes {
+  background-color: color-mix(in oklab, var(--danger) 6%, var(--surface));
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 10px,
+    color-mix(in oklab, var(--danger) 12%, transparent) 10px 11px,
+    transparent 11px 21px,
+    color-mix(in oklab, var(--danger) 28%, transparent) 21px 22px
+  );
+  background-size: 24px 24px;
+  animation: ag-stripes 2.8s linear infinite;
+}

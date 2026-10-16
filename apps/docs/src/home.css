@@ -1,0 +1,1230 @@
+/*
+ * Docs homepage (src/routes/index.tsx). Plain CSS on docs-kit theme tokens (theme.css); benchmark
+ * pieces style themselves (docs-kit components/bench-chart.css). One soft brand glow behind the hero
+ * visual and one in the closing band; no gradient text, no gradient buttons.
+ */
+@layer components {
+  .lp {
+    --lp-radius: 0.875rem;
+    --lp-shadow: 0 1px 2px color-mix(in srgb, var(--c-full) 6%, transparent), 0 24px 48px -28px color-mix(in srgb, var(--c-full) 28%, transparent);
+    --lp-glow: color-mix(in oklab, var(--color-brand-indigo) 16%, transparent);
+    --lp-glow-2: color-mix(in oklab, var(--color-brand-violet) 10%, transparent);
+    --lp-glow-3: color-mix(in oklab, var(--color-brand-cyan) 7%, transparent);
+  }
+  /* The hero glow may extend past the content column: clip at the viewport-wide frame column (homepage
+     only), never at a content box. The glow fades to nothing inside its own box before that edge. */
+  .frame-main:has(.lp) {
+    overflow-x: clip;
+  }
+  .lp-inner {
+    max-width: 74rem;
+    margin-inline: auto;
+    padding: 0 1rem 4rem;
+  }
+  [data-theme="dark"] .lp {
+    --lp-shadow: 0 1px 2px oklch(0% 0 0 / 0.5), 0 32px 64px -32px oklch(0% 0 0 / 0.8);
+    --lp-glow: color-mix(in oklab, #6c72ff 22%, transparent);
+    --lp-glow-2: color-mix(in oklab, #9b5cff 14%, transparent);
+    --lp-glow-3: color-mix(in oklab, #01eef9 6%, transparent);
+  }
+  @media (min-width: 640px) {
+    .lp-inner {
+      padding-inline: 1.5rem;
+    }
+  }
+  :where(.lp) :where(h1, h2, h3, p, ul, ol, li) {
+    margin: 0;
+  }
+  :where(.lp) :where(ul, ol) {
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Buttons */
+
+  /* Hero */
+  /* Hero: one centered column on wide screens, left-aligned on phones (centered 3-line headings wrap badly). */
+  .lp-hero {
+    position: relative;
+    isolation: isolate;
+    padding-top: 3rem;
+  }
+  .lp-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+  /* Static CSS glow (no canvas, no JS): two brand stops behind the headline, faded out by its own mask. */
+  .lp-hero-glow {
+    position: absolute;
+    left: -1rem;
+    right: -1rem;
+    top: -2rem;
+    height: 34rem;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  }
+  .lp-hero-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(42% 46% at 40% 50%, color-mix(in oklab, var(--color-brand-cyan) 14%, transparent), transparent),
+      radial-gradient(42% 46% at 62% 46%, color-mix(in oklab, var(--color-brand-violet) 14%, transparent), transparent);
+  }
+  [data-theme="dark"] .lp-hero-glow::before {
+    background:
+      radial-gradient(42% 46% at 40% 50%, color-mix(in oklab, var(--color-brand-cyan) 18%, transparent), transparent),
+      radial-gradient(42% 46% at 62% 46%, color-mix(in oklab, var(--color-brand-violet) 28%, transparent), transparent);
+  }
+  .lp-eyebrow {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--fg-soft);
+    text-decoration: none;
+  }
+  .lp-eyebrow:hover {
+    color: var(--fg-strong);
+  }
+  .lp-eyebrow > svg {
+    transition: translate 120ms var(--ease-out);
+  }
+  .lp-eyebrow:hover > svg {
+    translate: 2px 0;
+  }
+  .lp-hero .rw-head {
+    --rw-line: calc(clamp(2.5rem, 6vw + 0.5rem, 4.5rem) * 1.02); /* = .rw-title line box: the pause control centres on line 1 */
+    margin-top: 1.5rem;
+  }
+  .lp-hero .rw-title {
+    font-size: clamp(2.5rem, 6vw + 0.5rem, 4.5rem);
+    font-weight: 650;
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    color: var(--fg-strong);
+  }
+  .lp-hero .rw-lead {
+    text-wrap: balance;
+  }
+  .lp-lead {
+    margin-top: 1.5rem;
+    max-width: 40rem;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--fg-soft);
+  }
+  .lp-hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 2rem;
+  }
+  .lp-hero-actions .lp-command {
+    margin-top: 0;
+  }
+  .lp-textlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 1.25rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .lp-textlink:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .lp-command {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 2.75rem;
+    margin-top: 1rem;
+    padding: 0 0.375rem 0 0.875rem;
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    background: var(--bg-code);
+    box-sizing: border-box;
+  }
+  .lp-command:focus-within {
+    border-color: transparent;
+    background:
+      linear-gradient(var(--bg-code), var(--bg-code)) padding-box,
+      linear-gradient(90deg, var(--color-brand-cyan), var(--color-brand-royal), var(--color-brand-indigo), var(--color-brand-violet), var(--color-brand-purple), var(--color-brand-magenta)) border-box;
+  }
+  .lp-command pre {
+    flex: 1;
+    margin: 0;
+    padding: 0.625rem 0;
+    overflow-x: auto;
+    border: 0;
+    background: none;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--fg-strong);
+    white-space: pre;
+  }
+  .lp-command-icon {
+    flex: none;
+    color: var(--fg-quiet);
+  }
+  .lp-command .copy-button {
+    position: static;
+    flex: none;
+  }
+  .lp-hero-actions .lp-command {
+    width: 100%;
+  }
+  @media (min-width: 640px) {
+    .lp-hero-actions {
+      flex-direction: row;
+      align-items: center;
+      width: auto;
+    }
+    .lp-hero-actions .lp-command {
+      width: auto;
+    }
+  }
+  @media (min-width: 1024px) {
+    .lp .lp-hero {
+      padding-top: 3.5rem;
+      text-align: center;
+    }
+    .lp-hero-copy {
+      align-items: center;
+    }
+    .lp-hero .rw-head {
+      padding-inline-start: 2.75rem; /* mirror the pause control: the headline stays centered */
+    }
+    .lp-hero .rw {
+      justify-items: center;
+      margin-inline: auto;
+    }
+    .lp-hero-glow {
+      left: calc(50% - 34rem);
+      right: auto;
+      width: 68rem;
+      top: -1rem;
+    }
+  }
+
+  /* Hero controls in plain home CSS with the @rivetjs/ui look (soft Chip sm, tertiary Button: same sizes, radii and
+     the ui theme's computed colours), so no ui theme tokens reach the inline critical CSS of `/`. */
+  .lp-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+    padding: 0 4px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 20px;
+    white-space: nowrap;
+    color: oklab(0.427 -0.0177 -0.1686);
+    background: oklab(0.52 -0.0251 -0.2387 / 0.15);
+  }
+  .lp-chip-warning {
+    gap: 6px;
+    color: oklab(0.515 0.0239 0.0796);
+    background: oklab(0.782 0.0453 0.1535 / 0.15);
+  }
+  [data-theme="dark"] .lp-chip {
+    color: oklab(0.648 -0.0184 -0.1749);
+    background: oklab(0.52 -0.0251 -0.2387 / 0.12);
+  }
+  [data-theme="dark"] .lp-chip-warning {
+    color: oklab(0.867 0.0218 0.0982);
+    background: oklab(0.82 0.0302 0.1369 / 0.12);
+  }
+  .lp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 24px;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 24px;
+    white-space: nowrap;
+    text-decoration: none;
+    color: oklch(0.22 0.02 275);
+    background: oklch(0.94 0.005 264);
+    transition:
+      transform 0.25s,
+      background-color 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .lp-btn:hover {
+    background: oklch(0.91 0.006 264);
+  }
+  .lp-btn:active {
+    transform: scale(0.97);
+  }
+  .lp-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  [data-theme="dark"] .lp-btn {
+    color: oklch(0.93 0.006 275);
+    background: oklch(0.274 0.005 264);
+  }
+  [data-theme="dark"] .lp-btn:hover {
+    background: oklch(0.31 0.005 264);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-btn:active {
+      transform: none;
+    }
+  }
+
+  /* Pre-release chip beside every npm create command (index.tsx PreRelease). */
+  .lp-prerelease {
+    align-self: flex-start;
+  }
+  .lp-cta .lp-prerelease {
+    align-self: auto;
+    margin-top: 0.75rem;
+  }
+  @media (min-width: 640px) {
+    .lp-prerelease {
+      align-self: auto;
+    }
+  }
+
+  /* Proof strip: the hero's bottom edge (spec 3.1), one open row of computed ratios linking their charts. */
+  .lp-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 3rem;
+    border-top: 1px solid color-mix(in oklab, var(--line) 60%, transparent);
+    text-align: start;
+  }
+  .lp-strip a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.875rem 0;
+    color: inherit;
+    text-decoration: none;
+  }
+  .lp-strip-big {
+    flex: none;
+    min-width: 4.5rem;
+    font-size: 1.75rem;
+    font-weight: 650;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fg-strong);
+  }
+  .lp-strip-claim {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    text-wrap: pretty;
+    color: var(--fg-soft);
+  }
+  .lp-strip a:hover .lp-strip-claim {
+    color: var(--fg-strong);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (min-width: 900px) {
+    .lp-strip {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      column-gap: 2.5rem;
+      margin-top: 3.5rem;
+    }
+    .lp-strip a {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1.5rem 0 0;
+    }
+    .lp-strip-big {
+      font-size: clamp(2.5rem, 3.4vw, 3rem);
+    }
+  }
+
+  /* Sections */
+  .lp-section {
+    margin-top: 7rem;
+  }
+  .lp-hero + .lp-section {
+    margin-top: 5rem;
+  }
+  .lp-section-head {
+    max-width: 44rem;
+    margin-bottom: 2.5rem;
+  }
+  .lp-kicker {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .lp-section-head h2 {
+    margin-top: 0.75rem;
+    font-size: clamp(1.75rem, 3.6vw, 2.625rem);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    color: var(--fg-strong);
+  }
+  .lp-section-head p:not(.lp-kicker) {
+    margin-top: 1rem;
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    text-wrap: pretty;
+    color: var(--fg-soft);
+  }
+
+  .lp-more {
+    margin-top: 1.5rem;
+  }
+  .lp-more a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  /* Feature grid: 4 × 2, unboxed, hairlines between rows only. */
+  .lp-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+  .lp-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .lp-cell h3,
+  .lp-ai-list h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fg-strong);
+  }
+  .lp-cell p,
+  .lp-ai-list p {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    text-wrap: pretty;
+    color: var(--fg-soft);
+  }
+  .lp-cell p {
+    flex: 1;
+  }
+  .lp-cell-icon {
+    color: var(--color-brand-royal);
+  }
+  [data-theme="dark"] .lp-cell-icon {
+    color: var(--color-brand-cyan);
+  }
+  .lp-cell a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: fit-content;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .lp-cell a:hover {
+    text-decoration: underline;
+  }
+  .lp-cell a svg,
+  .lp-textlink svg {
+    transition: translate 120ms ease-out;
+  }
+  .lp-cell a:hover svg,
+  .lp-textlink:hover svg {
+    translate: 2px 0;
+  }
+  @media (min-width: 640px) {
+    .lp-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .lp-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .lp-cell {
+      padding: 2rem 0;
+    }
+  }
+
+  /* AI tooling: 3 columns, snippet under each. */
+  .lp-ai-list {
+    display: grid;
+    gap: 2rem;
+    margin: 0 0 2rem;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-ai-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .lp-ai-list code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+  .lp-ai-links {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+  }
+  .lp-ai-list .lp-command {
+    margin-top: auto;
+  }
+  @media (min-width: 900px) {
+    .lp-ai-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .lp-command-small pre {
+    font-size: 0.8125rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .lp-commands .lp-command,
+  .lp-ai-list .lp-command {
+    width: 100%;
+    margin-top: 0;
+  }
+  /* Narrow screens: commands wrap instead of scrolling (a scroll region would need to be focusable). */
+  .lp-commands .lp-command pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* Get started: compiled sample + 3 commands. */
+  .lp-start-body {
+    display: grid;
+    gap: 2rem;
+  }
+  .lp .lp-start-code {
+    min-width: 0;
+    margin-top: 0;
+  }
+  .lp .lp-start-code .code-block {
+    margin: 0;
+  }
+  .lp-start-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+  }
+  .lp-commands {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: lp-step;
+  }
+  .lp-commands li {
+    display: grid;
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+    align-items: center;
+    counter-increment: lp-step;
+  }
+  .lp-commands li::before {
+    content: counter(lp-step);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--fg-quiet);
+  }
+  .lp-start-needs {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--fg-quiet);
+  }
+  .lp-start-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+  @media (min-width: 960px) {
+    .lp-start-body {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+      gap: 3rem;
+      align-items: start;
+    }
+  }
+
+  /* Closing line: centered, the command again. */
+  .lp-cta {
+    display: grid;
+    justify-items: center;
+    gap: 1.25rem;
+    margin-top: 8rem;
+    padding: 4rem 0 2rem;
+    text-align: center;
+    background: radial-gradient(50% 80% at 50% 120%, var(--lp-glow), transparent 70%), radial-gradient(30% 60% at 80% 110%, var(--lp-glow-2), transparent 70%);
+  }
+  /* Classes, not `.lp-cta h2`: the band is a deferred subtree (data-css-defer), its descendants' rules stay out of the
+     inline critical CSS only when their selectors name something the first viewport lacks. */
+  .lp-cta-title {
+    font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+    color: var(--fg-strong);
+  }
+}
+
+/* Rotating headline (components/home/RotatingWords.tsx): CSS only. Every word sits in one grid cell (slot = widest
+   word, no layout shift); one keyframe set shared by all words, offset by --i periods. The percentages assume 4
+   words (duration = 4 periods: enter 0–3.85 % = 0.15 period, hold to 21.15 %, exit to 25 %); word 0 starts in its
+   hold, two cycles, the last word stops in its hold (iteration count 1.2). Pause: checkbox, hover, focus. */
+@layer components {
+  .rw-head {
+    --rw-duration: calc(var(--rw-period) * var(--rw-count));
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    padding-inline-end: 2.75rem; /* pause control beside the rotating line */
+  }
+  .rw {
+    display: grid;
+    justify-items: start;
+    width: fit-content; /* = widest word */
+  }
+  .rw-word {
+    grid-area: 1 / 1;
+    opacity: 0;
+    padding-bottom: 0.08em; /* descenders inside the clipped gradient */
+    background-image: linear-gradient(
+      90deg,
+      var(--color-brand-royal),
+      var(--color-brand-indigo) 45%,
+      var(--color-brand-violet) 75%,
+      var(--color-brand-purple)
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  [data-theme="dark"] .rw-word {
+    background-image: linear-gradient(90deg, var(--color-brand-cyan), #7c8cff 45%, #a77bff 75%, #e06cf5);
+  }
+  .rw-word:first-child {
+    opacity: 1;
+  }
+  /* Pause control: a fixed spot at the end of the headline's first line, whatever word is showing. */
+  .rw-pause {
+    position: absolute;
+    inset-inline-end: 0;
+    top: calc(var(--rw-line, 2.5rem) / 2 - 1rem);
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    color: var(--fg-faint);
+    cursor: pointer;
+    transition: color 0.15s var(--ease-out);
+  }
+  .rw-pause:hover,
+  .rw-pause:has(input:focus-visible) {
+    color: var(--fg-strong);
+  }
+  .rw-pause:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .rw-pause .rw-pause-icon,
+  .rw-pause .rw-play-icon {
+    grid-area: 1 / 1;
+  }
+  .rw-play-icon,
+  .rw-pause:has(input:checked) .rw-pause-icon {
+    visibility: hidden;
+  }
+  .rw-pause:has(input:checked) .rw-play-icon {
+    visibility: visible;
+  }
+  .rw-list {
+    display: none;
+    margin-top: 0.75rem;
+    font-size: 0.9375rem;
+    color: var(--fg-soft);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rw-word {
+      animation: rw var(--rw-duration) both;
+      animation-delay: calc(var(--i) * var(--rw-period) - 0.1538 * var(--rw-period));
+      animation-iteration-count: 2;
+    }
+    .rw-word[data-last] {
+      animation-iteration-count: 1.2;
+    }
+    .rw-head:has(.rw-pause input:checked) .rw-word,
+    .rw-title:hover .rw-word,
+    .rw-head:focus-within .rw-word {
+      animation-play-state: paused;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rw-pause {
+      display: none;
+    }
+    .rw-list {
+      display: block;
+    }
+  }
+}
+@keyframes rw {
+  0% {
+    opacity: 0;
+    transform: translateY(0.35em);
+    filter: blur(6px);
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  3.85% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  21.15% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  25%,
+  100% {
+    opacity: 0;
+    transform: translateY(-0.35em);
+    filter: blur(6px);
+  }
+}
+
+/* Numbers strip (index.tsx #numbers, data: content/_charts.ts homeStrip): unboxed, hairlines between charts. */
+@layer components {
+  .lp-charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 56px;
+    align-items: start;
+  }
+  .lp-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 24px;
+    border-top: 1px solid color-mix(in oklab, var(--line) 60%, transparent);
+    scroll-margin-top: 5rem;
+  }
+  .lp-chart-figure {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+  }
+  .lp-chart-peer {
+    font-size: 1.25rem;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+    color: var(--fg-soft);
+  }
+  .lp-chart-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-weight: 400;
+  }
+  .lp-chart-big {
+    font-size: clamp(3rem, 6vw, 4.5rem);
+    font-weight: 650;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--fg-strong);
+  }
+  .lp-chart-claim {
+    max-width: 30rem;
+    font-size: 1rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+    color: var(--fg);
+  }
+  .lp-chart-note,
+  .lp-chart-source,
+  .lp-chart-loss {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fg-soft);
+  }
+  .lp-chart-unit {
+    color: var(--fg-faint);
+  }
+  .lp-chart-loss {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+  .lp-chart-loss svg {
+    flex: none;
+    translate: 0 2px;
+    color: var(--fg-faint);
+  }
+  .lp-chart-source a {
+    color: var(--fg-soft);
+    text-underline-offset: 3px;
+  }
+  .lp-chart-source a:hover {
+    color: var(--fg-strong);
+  }
+  .lp-charts-source {
+    margin-top: 2.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--fg-soft);
+  }
+  .lp-charts-source a {
+    color: var(--fg-soft);
+    text-underline-offset: 3px;
+  }
+  .lp-charts-source a:hover {
+    color: var(--fg-strong);
+  }
+  @media (min-width: 900px) {
+    .lp-charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 72px 64px;
+    }
+  }
+  .lp-loss {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    max-width: 52rem;
+    margin-top: 2rem;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--fg-soft);
+  }
+  .lp-loss strong {
+    font-weight: 600;
+    color: var(--fg-strong);
+  }
+  .lp-loss-icon {
+    flex: none;
+    translate: 0 3px;
+    color: var(--fg-faint);
+  }
+
+  /* Bars (components/home/BarList.tsx): label | bar | value; Rivet bar = brand gradient, peers neutral. */
+  .bars {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+    align-items: center;
+  }
+  .bars-row {
+    display: contents;
+  }
+  .bars-label {
+    font-size: 0.8125rem;
+    color: var(--fg-soft);
+  }
+  .bars-row[data-rivet] .bars-label,
+  .bars-row[data-rivet] .bars-value {
+    font-weight: 600;
+    color: var(--fg-strong);
+  }
+  .bars-track {
+    display: block;
+    min-width: 0;
+  }
+  .bars-bar {
+    display: block;
+    width: max(calc(var(--p) * 100%), 3px);
+    height: 10px;
+    border-radius: 0 6px 6px 0;
+    background: color-mix(in srgb, var(--fg) 18%, transparent);
+    transform-origin: left center;
+  }
+  [data-theme="dark"] .bars-bar {
+    background: color-mix(in srgb, var(--fg) 24%, transparent);
+  }
+  .bars-row[data-rivet] .bars-bar {
+    background: linear-gradient(90deg, var(--color-brand-cyan), var(--color-brand-indigo) 55%, var(--color-brand-violet));
+  }
+  .bars-value {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    color: var(--fg-soft);
+  }
+
+  /* Count-up + bar growth on a view timeline: CSS only. Complete at rest: the <data> text and full bars are the
+     default (no scroll timelines, reduced motion, print); the animation fills forwards only, so a chart that has not
+     entered yet (full-page captures, link previews) shows its final value, and the run starts at entry 0 % (the
+     element's first visible pixel row), never mid-view. */
+  @supports (animation-timeline: view()) {
+    @media screen and (prefers-reduced-motion: no-preference) {
+      .cu {
+        position: relative;
+        display: inline-block;
+        color: transparent;
+        --cu-n: var(--cu-to);
+        animation: cu linear forwards;
+        animation-timeline: view();
+        animation-range: entry 0% entry 90%;
+      }
+      .cu::after {
+        position: absolute;
+        inset: 0;
+        color: var(--fg-strong);
+        counter-reset: cu-i var(--cu-i) cu-f var(--cu-f);
+        content: counter(cu-i) "." counter(cu-f) attr(data-suffix) / "";
+      }
+      .cu[data-digits="0"]::after {
+        content: counter(cu-i) attr(data-suffix) / "";
+      }
+      .bars-bar {
+        animation: bars-grow linear forwards;
+        animation-timeline: view();
+        animation-range: entry 0% entry calc(60% + var(--i) * 6%);
+      }
+    }
+  }
+}
+@property --cu-n {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --cu-i {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --cu-f {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+.cu {
+  /* integer division of the animated tenths: nearest-integer rounding of (n − 5) / 10 = floor(n / 10) */
+  --cu-i: calc((var(--cu-n) - 5) / 10);
+  --cu-f: calc(var(--cu-n) - var(--cu-i) * 10);
+}
+@keyframes cu {
+  from {
+    --cu-n: 0;
+  }
+  to {
+    --cu-n: var(--cu-to);
+  }
+}
+@keyframes bars-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Resumability demo (index.tsx .lp-resume, components/home/ResumeDemo.tsx): rail + live panel; the readout swaps
+   on the first click through the component's own data-clicked attribute binding (CSS fade + 4 px rise, no JS). */
+@layer components {
+  .lp-resume-body {
+    display: grid;
+    gap: 2rem;
+  }
+  .lp-resume-panel {
+    order: -1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  .lp-rail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lp-rail li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding-top: 0.875rem;
+    border-top: 2px solid var(--line);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--fg-soft);
+  }
+  .lp-rail li:last-child {
+    border-top-color: var(--accent);
+  }
+  .lp-rail li svg {
+    color: var(--fg-quiet);
+  }
+  .lp-rail li:last-child svg {
+    color: var(--accent);
+  }
+  .lp-rail strong {
+    font-weight: 600;
+    color: var(--fg-strong);
+  }
+  @media (max-width: 639px) {
+    .lp-rail span {
+      font-size: 0.8125rem;
+    }
+  }
+  @media (min-width: 960px) {
+    .lp-resume-body {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      gap: 3.5rem;
+      align-items: start;
+    }
+    .lp-resume-panel {
+      order: 0;
+    }
+    .lp-rail {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1.75rem;
+    }
+    .lp-rail li {
+      padding: 0 0 0 1.25rem;
+      border-top: 0;
+      border-left: 2px solid var(--line);
+    }
+    .lp-rail li:last-child {
+      border-left-color: var(--accent);
+    }
+    .lp-rail span {
+      font-size: 0.9375rem;
+    }
+  }
+  .lp-resume-code .code-block {
+    margin: 0;
+  }
+  .rd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1.25rem 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--lp-radius, 0.875rem);
+    background: var(--bg);
+  }
+  .rd-like {
+    flex: none;
+  }
+  .rd-like button svg {
+    transition: transform 180ms ease-out;
+  }
+  .rd[data-clicked] .rd-like button svg {
+    fill: currentColor;
+  }
+  .rd-like button {
+    font-variant-numeric: tabular-nums;
+  }
+  .rd-readout {
+    flex: 1 1 18rem;
+    display: grid;
+    gap: 0.75rem;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .rd-readout dt {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--fg-quiet);
+  }
+  .rd-readout dd {
+    margin: 0.125rem 0 0;
+    overflow-wrap: anywhere;
+    color: var(--fg);
+  }
+  .rd-where {
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .rd-files {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--fg-strong);
+  }
+  .rd-after,
+  .rd[data-clicked] .rd-before {
+    display: none;
+  }
+  .rd[data-clicked] .rd-after {
+    display: block;
+    animation: rd-in 180ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rd[data-clicked] .rd-after {
+      animation: none;
+    }
+  }
+}
+@keyframes rd-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Components showcase (index.tsx .lp-showcase, components/home/Showcase.tsx): text left, the ui stage right. The stage
+   is the one surface besides code windows (it IS the components); only layout here, the look is @rivetjs/ui's. */
+@layer components {
+  .lp-showcase {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .lp-showcase .lp-section-head {
+    margin-bottom: 1.5rem;
+  }
+  .lp-facts {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--fg-soft);
+  }
+  .lp-facts li {
+    padding-left: 1rem;
+    border-left: 2px solid var(--line);
+  }
+  .lp-facts code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+  }
+  .lp-showcase-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 1.5rem;
+  }
+  .lp-stage {
+    min-width: 0;
+    padding: 1rem;
+    border-radius: 1.5rem;
+    background: var(--background);
+  }
+  [data-theme="dark"] .lp-stage {
+    background: radial-gradient(80% 70% at 70% 0%, color-mix(in oklab, var(--color-brand-violet) 10%, transparent), transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--line) 70%, transparent);
+  }
+  .lp-stage-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+  .lp-stage-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .lp-stage-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+  .lp-stage-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .lp-stage-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+  }
+  .lp-stage-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  @media (min-width: 960px) {
+    .lp-showcase {
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 3.5rem;
+      align-items: center;
+    }
+    .lp-stage {
+      padding: 1.5rem;
+    }
+  }
+}
+
+/* Footer line (components/home/PerfLine.tsx): this page's own numbers, muted mono. */
+@layer components {
+  .lp-perf {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 4rem;
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: var(--fg-quiet);
+  }
+  .lp-perf-live {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+  .lp-perf-visit {
+    color: var(--fg-soft);
+  }
+}
+
+/* Links inside running text are underlined (contrast with the text around them is not enough on its own). */
+@layer components {
+  .lp-loss a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}

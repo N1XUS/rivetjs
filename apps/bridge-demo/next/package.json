@@ -1,0 +1,16 @@
+{
+  "name": "bridge-demo-lane-next",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@hookform/resolvers": "5.9.1",
+    "@radix-ui/react-dialog": "1.3.0",
+    "@tanstack/react-table": "9.3.1",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-hook-form": "7.90.0",
+    "recharts": "3.10.1",
+    "zod": "3.25.76"
+  }
+}

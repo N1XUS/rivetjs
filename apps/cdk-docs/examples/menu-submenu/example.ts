@@ -1,0 +1,47 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Menu submenus",
+  summary:
+    "SubmenuTrigger wraps a MenuItem and a Popover with a Menu; submenus nest, open on hover (after `delay`) or ArrowRight, and close with ArrowLeft or Escape.",
+  tags: ["menu", "submenu"],
+  status: "experimental",
+  frame: { height: "lg" },
+  show: ["src/routes/index.tsx"],
+  test: [
+    // Keyboard: ArrowRight opens a submenu on its first item, ArrowLeft / Escape close it and focus its trigger.
+    { press: ["#sub-trigger", "Enter"] },
+    { focused: '[data-key="cut"]' },
+    { attr: ['[data-key="share"]', "aria-haspopup", "menu"] },
+    { attr: ['[data-key="share"]', "aria-expanded", "false"] },
+    { key: "ArrowUp" },
+    { focused: '[data-key="share"]' },
+    { key: "ArrowRight" },
+    { focused: '[data-key="sms"]' },
+    { attr: ['[data-key="share"]', "aria-expanded", "true"] },
+    { attr: ['[data-key="share"]', "data-open", "true"] },
+    { matches: '.rv-Popover[data-trigger="SubmenuTrigger"] [data-key="sms"]' },
+    { key: "ArrowUp" },
+    { focused: '[data-key="email"]' },
+    { key: "ArrowRight" },
+    { focused: '[data-key="work"]' },
+    { key: "ArrowLeft" },
+    { absent: '[data-key="work"]' },
+    { focused: '[data-key="email"]' },
+    { key: "Escape" },
+    { absent: '[data-key="sms"]' },
+    { focused: '[data-key="share"]' },
+    { key: "Escape" },
+    { absent: "#sub" },
+    { focused: "#sub-trigger" },
+    // Pointer: hovering a trigger item opens its submenu; an item two levels deep runs its menu's onAction and closes every menu.
+    { click: "#sub-trigger" },
+    { hover: '[data-key="share"]' },
+    { attr: ['[data-key="share"]', "aria-expanded", "true"] },
+    { hover: '[data-key="email"]' },
+    { attr: ['[data-key="email"]', "aria-expanded", "true"] },
+    { click: '[data-key="work"]' },
+    { expect: ["#sub-value", "work"] },
+    { absent: '[role="menu"]' },
+  ],
+});

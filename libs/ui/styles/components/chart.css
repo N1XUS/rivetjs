@@ -1,0 +1,298 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no charts). Feature set (area / line / bar / donut charts with tooltips, legend, grid, axes) inspired by HeroUI Pro's public chart docs; independent implementation on HeroUI tokens: data-driven server-rendered SVG / HTML, CSS-only tooltips (`:hover` / `:focus-visible` on per-point slots), no script. */
+/* -------------------------------------------------------------------------------------------------
+ * Chart Component Styles
+ * Block: chart (parts: legend / frame / y-axis / plot / grid / svg / area / line / bars / slot / guide / dot / tooltip /
+ * x-axis / donut)
+ * Modifiers: chart--area / --line / --bar / --donut / --sparkline
+ * Variables: --chart-1 … --chart-6 (palette), --chart-color (per series), --chart-height (plot), --chart-y-axis-width
+ * -----------------------------------------------------------------------------------------------*/
+
+.chart {
+  /* ≥ 3 : 1 + APCA Lc 30 on --surface per mode (`@rivetjs/ui/theme` CHART_PALETTE, tests/theme.test.ts) */
+  --chart-1: var(--accent);
+  --chart-2: oklch(0.62 0.105 200);
+  --chart-3: oklch(0.6 0.2 300);
+  --chart-4: oklch(0.62 0.145 60);
+  --chart-5: oklch(0.65 0.2 350);
+  --chart-6: oklch(0.62 0.13 150);
+  --chart-height: 240px;
+  --chart-y-axis-width: 3rem;
+  @apply relative m-0 flex min-w-0 flex-col gap-3 text-xs text-muted;
+  container-type: inline-size;
+}
+
+.dark .chart,
+[data-theme="dark"] .chart {
+  --chart-2: oklch(0.72 0.14 200);
+  --chart-4: oklch(0.72 0.16 60);
+  --chart-6: oklch(0.7 0.14 150);
+}
+
+/* Legend */
+.chart__legend {
+  @apply m-0 flex list-none flex-wrap items-center gap-x-4 gap-y-1 p-0;
+}
+
+.chart__legend-item {
+  @apply inline-flex items-center gap-1.5 text-xs text-muted;
+}
+
+.chart__legend-value {
+  @apply ms-auto ps-3 font-medium whitespace-nowrap text-foreground tabular-nums;
+}
+
+.chart__swatch {
+  @apply inline-block size-2.5 shrink-0 rounded-full;
+  background-color: var(--chart-color);
+}
+
+/* Frame: y-axis column + plot, x-axis row below */
+.chart__frame {
+  @apply grid min-w-0;
+  grid-template-columns: var(--chart-y-axis-width) minmax(0, 1fr);
+  grid-template-rows: var(--chart-height) auto;
+
+  .chart[data-hide-y-axis] & {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.chart__y-axis {
+  @apply relative;
+}
+
+.chart__y-label {
+  @apply absolute end-2 -translate-y-1/2 tabular-nums whitespace-nowrap;
+}
+
+.chart__plot {
+  @apply relative min-w-0;
+}
+
+.chart__grid {
+  @apply pointer-events-none absolute inset-0;
+}
+
+.chart__grid-line {
+  @apply absolute inset-x-0 border-t border-dashed;
+  border-color: var(--separator);
+
+  &[data-baseline] {
+    @apply border-solid;
+  }
+}
+
+.chart__svg {
+  @apply absolute inset-0 block size-full overflow-visible;
+}
+
+.chart__area {
+  stroke: none;
+}
+
+.chart__line {
+  fill: none;
+  stroke: var(--chart-color);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart--line .chart__line {
+  stroke-width: 2.5px;
+}
+
+/* Bars (HTML: crisp radii at any width) */
+.chart__bars {
+  @apply absolute inset-0 flex items-stretch;
+}
+
+.chart__bar-group {
+  @apply relative flex min-w-0 flex-1 items-end justify-center gap-[3px] px-0.5 outline-none;
+}
+
+.chart__bar-stack {
+  @apply flex h-full max-w-10 min-w-0 flex-1 flex-col-reverse;
+}
+
+.chart__bar {
+  @apply min-w-0 max-w-8 flex-1 rounded-t-md transition-[filter] duration-(--duration-fast);
+  background-color: var(--chart-color);
+
+  .chart__bar-stack & {
+    @apply w-full max-w-none flex-none rounded-none;
+
+    &:last-child {
+      @apply rounded-t-md;
+    }
+  }
+}
+
+.chart__bar-group:hover .chart__bar,
+.chart__bar-group:focus-visible .chart__bar {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+/* Slots: one per index, hover / focus shows the guide, dots and the tooltip */
+.chart__slots {
+  @apply absolute inset-0;
+}
+
+.chart__slot {
+  @apply absolute inset-y-0 outline-none;
+}
+
+.chart__guide {
+  @apply pointer-events-none absolute inset-y-0 start-1/2 w-px opacity-0;
+  background-color: var(--border, var(--separator));
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+}
+
+.chart__dot {
+  @apply pointer-events-none absolute left-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0;
+  background-color: var(--chart-color);
+  box-shadow: 0 0 0 2px var(--background);
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+}
+
+.chart__tooltip {
+  @apply pointer-events-none absolute top-2 z-10 hidden min-w-36 flex-col gap-1 rounded-xl bg-overlay px-3 py-2 text-xs text-foreground opacity-0;
+  /* display: none at rest (a hidden tooltip near the edge must not widen the page); fades in on show. */
+  max-width: min(16rem, 80cqw);
+  transition:
+    opacity var(--duration-fast) var(--ease-smooth),
+    display var(--duration-fast) allow-discrete;
+  box-shadow: var(--overlay-shadow);
+  inset-inline-start: calc(var(--chart-anchor, 50%) + 10px);
+
+  [data-side="start"] > & {
+    inset-inline-start: auto;
+    inset-inline-end: calc(100% - var(--chart-anchor, 50%) + 10px);
+  }
+
+  .chart__bar-group > & {
+    top: 0;
+  }
+}
+
+.chart__tooltip-title {
+  @apply font-medium;
+}
+
+.chart__tooltip-row {
+  @apply flex items-center gap-2 text-muted;
+}
+
+.chart__tooltip-value {
+  @apply ms-auto ps-3 font-medium whitespace-nowrap text-foreground tabular-nums;
+}
+
+.chart__slot:hover,
+.chart__slot:focus-visible,
+.chart__bar-group:hover,
+.chart__bar-group:focus-visible {
+  .chart__guide,
+  .chart__dot {
+    @apply opacity-100;
+  }
+
+  .chart__tooltip {
+    @apply flex opacity-100;
+
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+
+.chart__slot:focus-visible .chart__guide,
+.chart__bar-group:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* X axis */
+.chart__x-axis {
+  @apply relative h-6;
+  grid-column: -2;
+}
+
+.chart__x-label {
+  @apply absolute top-2 -translate-x-1/2 whitespace-nowrap;
+
+  &:dir(rtl) {
+    @apply translate-x-1/2;
+  }
+}
+
+@container (max-width: 420px) {
+  .chart__x-label[data-minor] {
+    @apply hidden;
+  }
+}
+
+/* Sparkline: no axes, grid, legend or tooltip; fills its container */
+.chart--sparkline {
+  --chart-y-axis-width: 0px;
+  @apply gap-0;
+
+  .chart__frame {
+    grid-template-rows: var(--chart-height);
+  }
+}
+
+/* Donut */
+.chart--donut {
+  @apply flex-row flex-wrap items-center gap-6;
+}
+
+.chart__donut {
+  @apply relative shrink-0;
+  width: var(--chart-donut-size, 160px);
+  height: var(--chart-donut-size, 160px);
+}
+
+.chart__donut-svg {
+  @apply block size-full -rotate-90;
+}
+
+.chart__donut-track {
+  fill: none;
+  stroke: var(--default);
+}
+
+.chart__donut-segment {
+  fill: none;
+  stroke: var(--chart-color);
+  transition: stroke-width var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
+
+  &:hover {
+    stroke-width: 15;
+  }
+}
+
+.chart__donut-svg:has(.chart__donut-segment:hover) .chart__donut-segment:not(:hover) {
+  opacity: 0.45;
+}
+
+.chart__donut-center {
+  @apply pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center;
+}
+
+.chart__donut-value {
+  @apply text-xl font-semibold text-foreground tabular-nums;
+}
+
+.chart--donut .chart__legend {
+  @apply max-w-64 min-w-40 flex-1 flex-col items-stretch gap-2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart__tooltip,
+  .chart__guide,
+  .chart__dot,
+  .chart__bar,
+  .chart__donut-segment {
+    transition: none;
+  }
+}

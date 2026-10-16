@@ -1,0 +1,13 @@
+---
+import Base from "../../layouts/Base.astro";
+import Teasers from "../../components/Teasers.astro";
+import { articles, site } from "../../lib/site.mjs";
+export async function getStaticPaths() {
+  const { site } = await import("../../lib/site.mjs");
+  return site.authors.map((a) => ({ params: { author: a.slug } }));
+}
+const { author } = Astro.params;
+const name = site.authors.find((a) => a.slug === author).name;
+const items = (await articles()).filter((a) => a.authorSlug === author).slice(0, site.listLimit);
+---
+<Base title={name} description={`Stories by ${name}.`}><main class="list"><h1>{name}</h1><Teasers items={items} /></main></Base>

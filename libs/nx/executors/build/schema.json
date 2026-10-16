@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet build",
+  "description": "Builds a Rivet app with Vite: the client build (one per locale with @rivetjs/i18n), the server build, then the prerender step for static apps.",
+  "type": "object",
+  "properties": {
+    "config": { "type": "string", "description": "Vite config file, relative to the project (default: Vite's lookup)." },
+    "mode": { "type": "string", "description": "Vite mode (--mode)." },
+    "ssr": { "type": "boolean", "description": "Also run the server build (vite build --ssr). Default: true, except csr-mode apps." },
+    "prerender": { "type": "boolean", "description": "Prerender every page after the builds. Default: true for rivetRouter({ mode: \"static\" }) apps." },
+    "locales": { "type": "array", "items": { "type": "string" }, "description": "One client build per locale (RIVET_LOCALE). Inferred from i18n.config.ts." },
+    "outputPath": { "type": "string", "default": "dist", "description": "Build output folder, relative to the project." },
+    "logLevel": { "type": "string", "enum": ["info", "warn", "error", "silent"], "description": "Vite log level." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Extra environment variables for every step." }
+  },
+  "additionalProperties": false
+}

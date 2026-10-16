@@ -1,0 +1,1 @@
+{ "cart": { "title": "Cart", "count": "{n, plural, one {# item} other {# items}}", "badge": "{n, plural, one {<b>#</b> item} other {<b>#</b> items}}", "terms": "See <link>terms</link> for {n} items", "help": "Questions? <link>Contact us</link>" } }

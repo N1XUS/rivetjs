@@ -1,0 +1,42 @@
+/* Plain CSS: the form is .rv-Form; fields keep their own classes and data attributes. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.rv-Form {
+  display: grid;
+  gap: 14px;
+  max-width: 300px;
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+.rv-Form .rv-TextField {
+  display: grid;
+  gap: 4px;
+}
+.rv-Form .rv-Input {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+/* Native mode: :user-invalid after the visitor interacted; [data-invalid] for committed / server errors. */
+.rv-Form .rv-Input:user-invalid,
+.rv-Form .rv-Input[data-invalid] {
+  border-color: #b91c1c;
+}
+.rv-Form .rv-FieldError {
+  color: #b91c1c;
+  font-size: 12px;
+}
+.rv-Form .rv-Button {
+  justify-self: start;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #0f766e;
+  color: white;
+  font: inherit;
+}

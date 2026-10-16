@@ -1,0 +1,3 @@
+{{ define "title" }}{{ if eq .Data.Plural "tags" }}Tag: {{ .Data.Term }}{{ else }}{{ (index (where site.Data.site.authors "slug" .Data.Term) 0).name }}{{ end }}{{ end }}
+{{ define "description" }}{{ if eq .Data.Plural "tags" }}Stories tagged {{ .Data.Term }}.{{ else }}Stories by {{ (index (where site.Data.site.authors "slug" .Data.Term) 0).name }}.{{ end }}{{ end }}
+{{ define "main" }}<main class="list"><h1>{{ if eq .Data.Plural "tags" }}Tag: {{ .Data.Term }}{{ else }}{{ (index (where site.Data.site.authors "slug" .Data.Term) 0).name }}{{ end }}</h1>{{ partial "teasers.html" (first 50 .Pages.ByDate.Reverse) }}</main>{{ end }}

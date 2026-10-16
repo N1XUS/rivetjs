@@ -1,0 +1,8 @@
+# Client navigation: route CSS order (follow-up, 2026-10-12)
+
+Recorded by the CDK-PINS review (finding 2); no code yet.
+
+- Symptom: after a client navigation to a page whose module closure holds several ui component stylesheets, equal-specificity cross-file overrides can lose. Seen with `@rivetjs/ui` InlineSelect / CellSelect: `select.css` (base popover width) applied after `inline-select.css` / `cell-select.css`, so the popover width override lost on client-navigated pages but held on document loads.
+- Cause: SSR is correct — `libs/router/build/route-css.ts` lists a route's CSS post-order (imports before their importer) and links one merged route sheet. Client navigation has no route-CSS handling (`libs/runtime/dom-router.ts` has no stylesheet code): the CSS of lazily imported chunks is appended by Vite's preload helper in chunk load order, which is not the SSR order.
+- Workaround in place: 77cc0729 chained the select popover selectors (`libs/ui/styles/components/inline-select.css`, `cell-select.css`) to win on specificity. Defensive and kept (the Tailwind utilities layer still wins over it), but every other equal-specificity cross-file override in ui is exposed the same way.
+- Fix sketch: on client navigation the router inserts the target route's stylesheet links in SSR order (or links the route's merged sheet, `assets/route-<hash>.css`, from the build manifest) before swapping the page, instead of relying on Vite's preload helper order; keep the dev path (one link per file) in the same order. Test: client-nav fixture with two component sheets overriding each other at equal specificity; computed style equals the document-load style.

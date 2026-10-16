@@ -1,0 +1,568 @@
+{
+  "name": "@rivetjs/ui",
+  "version": "0.0.0-experimental",
+  "description": "Styled Rivet UI components (Tailwind CSS v4) built on @rivetjs/cdk.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "rivet": {
+    "source": true
+  },
+  "imports": {
+    "#dev": {
+      "types": "./src/utils/dev-off.ts",
+      "development": "./src/utils/dev-on.ts",
+      "default": "./src/utils/dev-off.ts"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./surface": {
+      "types": "./src/components/surface/index.ts",
+      "default": "./src/components/surface/index.ts"
+    },
+    "./card": {
+      "types": "./src/components/card/index.ts",
+      "default": "./src/components/card/index.ts"
+    },
+    "./carousel": {
+      "types": "./src/components/carousel/index.ts",
+      "default": "./src/components/carousel/index.ts"
+    },
+    "./data-grid": {
+      "types": "./src/components/data-grid/index.ts",
+      "default": "./src/components/data-grid/index.ts"
+    },
+    "./separator": {
+      "types": "./src/components/separator/index.ts",
+      "default": "./src/components/separator/index.ts"
+    },
+    "./header": {
+      "types": "./src/components/header/index.ts",
+      "default": "./src/components/header/index.ts"
+    },
+    "./label": {
+      "types": "./src/components/label/index.ts",
+      "default": "./src/components/label/index.ts"
+    },
+    "./description": {
+      "types": "./src/components/description/index.ts",
+      "default": "./src/components/description/index.ts"
+    },
+    "./error-message": {
+      "types": "./src/components/error-message/index.ts",
+      "default": "./src/components/error-message/index.ts"
+    },
+    "./field-error": {
+      "types": "./src/components/field-error/index.ts",
+      "default": "./src/components/field-error/index.ts"
+    },
+    "./kbd": {
+      "types": "./src/components/kbd/index.ts",
+      "default": "./src/components/kbd/index.ts"
+    },
+    "./spinner": {
+      "types": "./src/components/spinner/index.ts",
+      "default": "./src/components/spinner/index.ts"
+    },
+    "./skeleton": {
+      "types": "./src/components/skeleton/index.ts",
+      "default": "./src/components/skeleton/index.ts"
+    },
+    "./empty-state": {
+      "types": "./src/components/empty-state/index.ts",
+      "default": "./src/components/empty-state/index.ts"
+    },
+    "./badge": {
+      "types": "./src/components/badge/index.ts",
+      "default": "./src/components/badge/index.ts"
+    },
+    "./chip": {
+      "types": "./src/components/chip/index.ts",
+      "default": "./src/components/chip/index.ts"
+    },
+    "./alert": {
+      "types": "./src/components/alert/index.ts",
+      "default": "./src/components/alert/index.ts"
+    },
+    "./typography": {
+      "types": "./src/components/typography/index.ts",
+      "default": "./src/components/typography/index.ts"
+    },
+    "./lightbox": {
+      "types": "./src/components/lightbox/index.ts",
+      "default": "./src/components/lightbox/index.ts"
+    },
+    "./link": {
+      "types": "./src/components/link/index.ts",
+      "default": "./src/components/link/index.ts"
+    },
+    "./button": {
+      "types": "./src/components/button/index.ts",
+      "default": "./src/components/button/index.ts"
+    },
+    "./button-group": {
+      "types": "./src/components/button-group/index.ts",
+      "default": "./src/components/button-group/index.ts"
+    },
+    "./toggle-button": {
+      "types": "./src/components/toggle-button/index.ts",
+      "default": "./src/components/toggle-button/index.ts"
+    },
+    "./toggle-button-group": {
+      "types": "./src/components/toggle-button-group/index.ts",
+      "default": "./src/components/toggle-button-group/index.ts"
+    },
+    "./close-button": {
+      "types": "./src/components/close-button/index.ts",
+      "default": "./src/components/close-button/index.ts"
+    },
+    "./avatar": {
+      "types": "./src/components/avatar/index.ts",
+      "default": "./src/components/avatar/index.ts"
+    },
+    "./avatar-group": {
+      "types": "./src/components/avatar-group/index.ts",
+      "default": "./src/components/avatar-group/index.ts"
+    },
+    "./progress-bar": {
+      "types": "./src/components/progress-bar/index.ts",
+      "default": "./src/components/progress-bar/index.ts"
+    },
+    "./progress-circle": {
+      "types": "./src/components/progress-circle/index.ts",
+      "default": "./src/components/progress-circle/index.ts"
+    },
+    "./meter": {
+      "types": "./src/components/meter/index.ts",
+      "default": "./src/components/meter/index.ts"
+    },
+    "./resizable": {
+      "types": "./src/components/resizable/index.ts",
+      "default": "./src/components/resizable/index.ts"
+    },
+    "./scroll-area": {
+      "types": "./src/components/scroll-area/index.ts",
+      "default": "./src/components/scroll-area/index.ts"
+    },
+    "./scroll-shadow": {
+      "types": "./src/components/scroll-shadow/index.ts",
+      "default": "./src/components/scroll-shadow/index.ts"
+    },
+    "./popover": {
+      "types": "./src/components/popover/index.ts",
+      "default": "./src/components/popover/index.ts"
+    },
+    "./sidebar": {
+      "types": "./src/components/sidebar/index.ts",
+      "default": "./src/components/sidebar/index.ts"
+    },
+    "./app-layout": {
+      "types": "./src/components/app-layout/index.ts",
+      "default": "./src/components/app-layout/index.ts"
+    },
+    "./stepper": {
+      "types": "./src/components/stepper/index.ts",
+      "default": "./src/components/stepper/index.ts"
+    },
+    "./tooltip": {
+      "types": "./src/components/tooltip/index.ts",
+      "default": "./src/components/tooltip/index.ts"
+    },
+    "./input": {
+      "types": "./src/components/input/index.ts",
+      "default": "./src/components/input/index.ts"
+    },
+    "./textarea": {
+      "types": "./src/components/textarea/index.ts",
+      "default": "./src/components/textarea/index.ts"
+    },
+    "./textfield": {
+      "types": "./src/components/textfield/index.ts",
+      "default": "./src/components/textfield/index.ts"
+    },
+    "./form": {
+      "types": "./src/components/form/index.ts",
+      "default": "./src/components/form/index.ts"
+    },
+    "./fieldset": {
+      "types": "./src/components/fieldset/index.ts",
+      "default": "./src/components/fieldset/index.ts"
+    },
+    "./breadcrumbs": {
+      "types": "./src/components/breadcrumbs/index.ts",
+      "default": "./src/components/breadcrumbs/index.ts"
+    },
+    "./toolbar": {
+      "types": "./src/components/toolbar/index.ts",
+      "default": "./src/components/toolbar/index.ts"
+    },
+    "./modal": {
+      "types": "./src/components/modal/index.ts",
+      "default": "./src/components/modal/index.ts"
+    },
+    "./input-group": {
+      "types": "./src/components/input-group/index.ts",
+      "default": "./src/components/input-group/index.ts"
+    },
+    "./search-field": {
+      "types": "./src/components/search-field/index.ts",
+      "default": "./src/components/search-field/index.ts"
+    },
+    "./number-field": {
+      "types": "./src/components/number-field/index.ts",
+      "default": "./src/components/number-field/index.ts"
+    },
+    "./list-box": {
+      "types": "./src/components/list-box/index.ts",
+      "default": "./src/components/list-box/index.ts"
+    },
+    "./list-box-item": {
+      "types": "./src/components/list-box-item/index.ts",
+      "default": "./src/components/list-box-item/index.ts"
+    },
+    "./list-box-section": {
+      "types": "./src/components/list-box-section/index.ts",
+      "default": "./src/components/list-box-section/index.ts"
+    },
+    "./tag": {
+      "types": "./src/components/tag/index.ts",
+      "default": "./src/components/tag/index.ts"
+    },
+    "./tag-group": {
+      "types": "./src/components/tag-group/index.ts",
+      "default": "./src/components/tag-group/index.ts"
+    },
+    "./alert-dialog": {
+      "types": "./src/components/alert-dialog/index.ts",
+      "default": "./src/components/alert-dialog/index.ts"
+    },
+    "./calendar": {
+      "types": "./src/components/calendar/index.ts",
+      "default": "./src/components/calendar/index.ts"
+    },
+    "./calendar-year-picker": {
+      "types": "./src/components/calendar-year-picker/index.ts",
+      "default": "./src/components/calendar-year-picker/index.ts"
+    },
+    "./drawer": {
+      "types": "./src/components/drawer/index.ts",
+      "default": "./src/components/drawer/index.ts"
+    },
+    "./navbar": {
+      "types": "./src/components/navbar/index.ts",
+      "default": "./src/components/navbar/index.ts"
+    },
+    "./action-bar": {
+      "types": "./src/components/action-bar/index.ts",
+      "default": "./src/components/action-bar/index.ts"
+    },
+    "./sheet": {
+      "types": "./src/components/sheet/index.ts",
+      "default": "./src/components/sheet/index.ts"
+    },
+    "./menu": {
+      "types": "./src/components/menu/index.ts",
+      "default": "./src/components/menu/index.ts"
+    },
+    "./menu-item": {
+      "types": "./src/components/menu-item/index.ts",
+      "default": "./src/components/menu-item/index.ts"
+    },
+    "./menu-section": {
+      "types": "./src/components/menu-section/index.ts",
+      "default": "./src/components/menu-section/index.ts"
+    },
+    "./dropdown": {
+      "types": "./src/components/dropdown/index.ts",
+      "default": "./src/components/dropdown/index.ts"
+    },
+    "./range-calendar": {
+      "types": "./src/components/range-calendar/index.ts",
+      "default": "./src/components/range-calendar/index.ts"
+    },
+    "./input-otp": {
+      "types": "./src/components/input-otp/index.ts",
+      "default": "./src/components/input-otp/index.ts"
+    },
+    "./date-input-group": {
+      "types": "./src/components/date-input-group/index.ts",
+      "default": "./src/components/date-input-group/index.ts"
+    },
+    "./date-field": {
+      "types": "./src/components/date-field/index.ts",
+      "default": "./src/components/date-field/index.ts"
+    },
+    "./time-field": {
+      "types": "./src/components/time-field/index.ts",
+      "default": "./src/components/time-field/index.ts"
+    },
+    "./toast": {
+      "types": "./src/components/toast/index.ts",
+      "default": "./src/components/toast/index.ts"
+    },
+    "./checkbox": {
+      "types": "./src/components/checkbox/index.ts",
+      "default": "./src/components/checkbox/index.ts"
+    },
+    "./checkbox-group": {
+      "types": "./src/components/checkbox-group/index.ts",
+      "default": "./src/components/checkbox-group/index.ts"
+    },
+    "./radio": {
+      "types": "./src/components/radio/index.ts",
+      "default": "./src/components/radio/index.ts"
+    },
+    "./radio-group": {
+      "types": "./src/components/radio-group/index.ts",
+      "default": "./src/components/radio-group/index.ts"
+    },
+    "./switch": {
+      "types": "./src/components/switch/index.ts",
+      "default": "./src/components/switch/index.ts"
+    },
+    "./switch-group": {
+      "types": "./src/components/switch-group/index.ts",
+      "default": "./src/components/switch-group/index.ts"
+    },
+    "./select": {
+      "types": "./src/components/select/index.ts",
+      "default": "./src/components/select/index.ts"
+    },
+    "./date-picker": {
+      "types": "./src/components/date-picker/index.ts",
+      "default": "./src/components/date-picker/index.ts"
+    },
+    "./date-range-picker": {
+      "types": "./src/components/date-range-picker/index.ts",
+      "default": "./src/components/date-range-picker/index.ts"
+    },
+    "./slider": {
+      "types": "./src/components/slider/index.ts",
+      "default": "./src/components/slider/index.ts"
+    },
+    "./disclosure": {
+      "types": "./src/components/disclosure/index.ts",
+      "default": "./src/components/disclosure/index.ts"
+    },
+    "./combo-box": {
+      "types": "./src/components/combo-box/index.ts",
+      "default": "./src/components/combo-box/index.ts"
+    },
+    "./color-swatch": {
+      "types": "./src/components/color-swatch/index.ts",
+      "default": "./src/components/color-swatch/index.ts"
+    },
+    "./color-area": {
+      "types": "./src/components/color-area/index.ts",
+      "default": "./src/components/color-area/index.ts"
+    },
+    "./color-slider": {
+      "types": "./src/components/color-slider/index.ts",
+      "default": "./src/components/color-slider/index.ts"
+    },
+    "./color-input-group": {
+      "types": "./src/components/color-input-group/index.ts",
+      "default": "./src/components/color-input-group/index.ts"
+    },
+    "./color-field": {
+      "types": "./src/components/color-field/index.ts",
+      "default": "./src/components/color-field/index.ts"
+    },
+    "./color-swatch-picker": {
+      "types": "./src/components/color-swatch-picker/index.ts",
+      "default": "./src/components/color-swatch-picker/index.ts"
+    },
+    "./color-picker": {
+      "types": "./src/components/color-picker/index.ts",
+      "default": "./src/components/color-picker/index.ts"
+    },
+    "./disclosure-group": {
+      "types": "./src/components/disclosure-group/index.ts",
+      "default": "./src/components/disclosure-group/index.ts"
+    },
+    "./autocomplete": {
+      "types": "./src/components/autocomplete/index.ts",
+      "default": "./src/components/autocomplete/index.ts"
+    },
+    "./accordion": {
+      "types": "./src/components/accordion/index.ts",
+      "default": "./src/components/accordion/index.ts"
+    },
+    "./segment": {
+      "types": "./src/components/segment/index.ts",
+      "default": "./src/components/segment/index.ts"
+    },
+    "./native-select": {
+      "types": "./src/components/native-select/index.ts",
+      "default": "./src/components/native-select/index.ts"
+    },
+    "./checkbox-button-group": {
+      "types": "./src/components/checkbox-button-group/index.ts",
+      "default": "./src/components/checkbox-button-group/index.ts"
+    },
+    "./radio-button-group": {
+      "types": "./src/components/radio-button-group/index.ts",
+      "default": "./src/components/radio-button-group/index.ts"
+    },
+    "./number-stepper": {
+      "types": "./src/components/number-stepper/index.ts",
+      "default": "./src/components/number-stepper/index.ts"
+    },
+    "./cell-slider": {
+      "types": "./src/components/cell-slider/index.ts",
+      "default": "./src/components/cell-slider/index.ts"
+    },
+    "./cell-select": {
+      "types": "./src/components/cell-select/index.ts",
+      "default": "./src/components/cell-select/index.ts"
+    },
+    "./inline-select": {
+      "types": "./src/components/inline-select/index.ts",
+      "default": "./src/components/inline-select/index.ts"
+    },
+    "./pagination": {
+      "types": "./src/components/pagination/index.ts",
+      "default": "./src/components/pagination/index.ts"
+    },
+    "./table": {
+      "types": "./src/components/table/index.ts",
+      "default": "./src/components/table/index.ts"
+    },
+    "./tabs": {
+      "types": "./src/components/tabs/index.ts",
+      "default": "./src/components/tabs/index.ts"
+    },
+    "./morph": {
+      "types": "./src/components/morph/index.ts",
+      "default": "./src/components/morph/index.ts"
+    },
+    "./compare": {
+      "types": "./src/components/compare/index.ts",
+      "default": "./src/components/compare/index.ts"
+    },
+    "./masonry": {
+      "types": "./src/components/masonry/index.ts",
+      "default": "./src/components/masonry/index.ts"
+    },
+    "./item-morph": {
+      "types": "./src/components/item-morph/index.ts",
+      "default": "./src/components/item-morph/index.ts"
+    },
+    "./time-picker": {
+      "types": "./src/components/time-picker/index.ts",
+      "default": "./src/components/time-picker/index.ts"
+    },
+    "./rating": {
+      "types": "./src/components/rating/index.ts",
+      "default": "./src/components/rating/index.ts"
+    },
+    "./trend-chip": {
+      "types": "./src/components/trend-chip/index.ts",
+      "default": "./src/components/trend-chip/index.ts"
+    },
+    "./kpi": {
+      "types": "./src/components/kpi/index.ts",
+      "default": "./src/components/kpi/index.ts"
+    },
+    "./chart": {
+      "types": "./src/components/chart/index.ts",
+      "default": "./src/components/chart/index.ts"
+    },
+    "./text-shimmer": {
+      "types": "./src/components/text-shimmer/index.ts",
+      "default": "./src/components/text-shimmer/index.ts"
+    },
+    "./chat-loader": {
+      "types": "./src/components/chat-loader/index.ts",
+      "default": "./src/components/chat-loader/index.ts"
+    },
+    "./chat-message": {
+      "types": "./src/components/chat-message/index.ts",
+      "default": "./src/components/chat-message/index.ts"
+    },
+    "./chat-message-actions": {
+      "types": "./src/components/chat-message-actions/index.ts",
+      "default": "./src/components/chat-message-actions/index.ts"
+    },
+    "./prompt-suggestion": {
+      "types": "./src/components/prompt-suggestion/index.ts",
+      "default": "./src/components/prompt-suggestion/index.ts"
+    },
+    "./chat-list-view": {
+      "types": "./src/components/chat-list-view/index.ts",
+      "default": "./src/components/chat-list-view/index.ts"
+    },
+    "./code-block": {
+      "types": "./src/components/code-block/index.ts",
+      "default": "./src/components/code-block/index.ts"
+    },
+    "./markdown": {
+      "types": "./src/components/markdown/index.ts",
+      "default": "./src/components/markdown/index.ts"
+    },
+    "./chain-of-thought": {
+      "types": "./src/components/chain-of-thought/index.ts",
+      "default": "./src/components/chain-of-thought/index.ts"
+    },
+    "./chat-source": {
+      "types": "./src/components/chat-source/index.ts",
+      "default": "./src/components/chat-source/index.ts"
+    },
+    "./chat-tool": {
+      "types": "./src/components/chat-tool/index.ts",
+      "default": "./src/components/chat-tool/index.ts"
+    },
+    "./chat-conversation": {
+      "types": "./src/components/chat-conversation/index.ts",
+      "default": "./src/components/chat-conversation/index.ts"
+    },
+    "./chat-attachment": {
+      "types": "./src/components/chat-attachment/index.ts",
+      "default": "./src/components/chat-attachment/index.ts"
+    },
+    "./prompt-input": {
+      "types": "./src/components/prompt-input/index.ts",
+      "default": "./src/components/prompt-input/index.ts"
+    },
+    "./theme": {
+      "types": "./src/theme/index.ts",
+      "default": "./src/theme/index.ts"
+    },
+    "./styles": {
+      "style": "./styles/index.css",
+      "default": "./styles/index.css"
+    },
+    "./styles/*": "./styles/*"
+  },
+  "dependencies": {
+    "@rivetjs/cdk": "0.0.0-experimental",
+    "@rivetjs/forms": "0.0.0-experimental",
+    "@rivetjs/kit": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "tailwind-variants": "3.3.1",
+    "tw-animate-css": "1.4.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "tailwindcss": "4.3.3"
+  },
+  "peerDependencies": {
+    "tailwindcss": "^4.0.0",
+    "lucide": ">=1"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/ui"
+  }
+}

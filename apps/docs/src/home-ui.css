@@ -1,0 +1,18 @@
+/*
+ * @rivetjs/ui on the home page only: imported by src/routes/index.tsx, so the router links it on `/` alone (route
+ * CSS, `.vite/rivet-route-css.json`) and no other docs page pays for it. Tailwind context for the components' `@apply`
+ * comes from references (nothing emitted twice); the Rivet tokens are scoped to `[data-ui-theme="rivet"]`
+ * (`themes/scoped.css`): the docs theme keeps `:root`. The stylesheets of the components the home renders come with their modules.
+ */
+@reference "tailwindcss";
+@reference "tw-animate-css";
+@reference "@rivetjs/ui/styles/utilities/index.css";
+@reference "@rivetjs/ui/styles/variants/index.css";
+@reference "@rivetjs/ui/styles/themes/rivet.css";
+@import "@rivetjs/ui/styles/themes/scoped.css" layer(theme);
+/* The Tailwind theme variables the component files read (`--border-width-field`, `--ease-smooth`, `--text-xs`, …) in a
+   sub-layer of `theme`: the docs' own theme values (direct in `theme`, or unlayered) win, it only fills the gaps. */
+@import "@rivetjs/ui/styles/out/theme.css" layer(theme.ui);
+/* The components' own stylesheets (`@rivetjs/ui/styles/out/<name>.css`) come with their modules (Showcase.tsx)
+   and the router merges them into this route's sheet; only what no imported module brings is listed here. */
+@import "@rivetjs/ui/styles/components/popover.css" layer(components);

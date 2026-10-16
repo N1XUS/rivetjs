@@ -1,0 +1,69 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no KPI). Feature set inspired by HeroUI Pro's public KPI docs; independent implementation on HeroUI tokens (card surface look, tabular numerals). */
+/* -------------------------------------------------------------------------------------------------
+ * KPI Component Styles
+ * Block: kpi (parts: header / title / icon / value / trend / description / chart / footer)
+ * Modifiers: kpi--default / --secondary / --transparent
+ * Variables: --kpi-padding (card padding; the chart bleeds by it)
+ * -----------------------------------------------------------------------------------------------*/
+
+.kpi {
+  --kpi-padding: --spacing(4);
+  @apply relative flex min-w-0 flex-col gap-2;
+  padding: var(--kpi-padding);
+  border-radius: min(28px, var(--radius-3xl));
+}
+
+.kpi--default {
+  @apply bg-surface shadow-surface;
+}
+
+.kpi--secondary {
+  @apply bg-surface-secondary;
+}
+
+.kpi--transparent {
+  --kpi-padding: 0px;
+  @apply bg-transparent;
+}
+
+.kpi__header {
+  @apply flex items-center justify-between gap-2;
+}
+
+.kpi__title {
+  @apply truncate text-sm font-medium text-muted;
+}
+
+.kpi__icon {
+  @apply inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-default text-foreground;
+}
+
+.kpi__body {
+  @apply flex flex-wrap items-baseline gap-x-2 gap-y-1;
+}
+
+.kpi__value {
+  @apply text-2xl leading-8 font-semibold tracking-tight text-foreground tabular-nums;
+}
+
+.kpi__description {
+  @apply text-xs text-muted;
+}
+
+/* Edge to edge: the chart bleeds through the card padding; as the last part (no footer) also to the bottom edge, clipped to
+ * the card's bottom corners. */
+.kpi__chart {
+  @apply mt-1 min-h-0;
+  margin-inline: calc(var(--kpi-padding) * -1);
+
+  &:last-child {
+    @apply overflow-hidden;
+    margin-bottom: calc(var(--kpi-padding) * -1);
+    border-end-start-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+}
+
+.kpi__footer {
+  @apply mt-1 flex items-center gap-2 border-t border-separator pt-3 text-xs text-muted;
+}

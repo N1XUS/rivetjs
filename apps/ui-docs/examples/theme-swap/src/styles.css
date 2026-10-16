@@ -1,0 +1,11 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app, + every theme preset scoped to [data-ui-preset]. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@import "@rivetjs/ui/styles/themes/presets.css" layer(theme);
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}

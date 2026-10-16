@@ -1,0 +1,17 @@
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 16px;
+}
+.rv-Heading,
+.section-title {
+  margin: 0;
+}
+.section-title {
+  color: #0f766e;
+}

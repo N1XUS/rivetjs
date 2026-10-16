@@ -1,0 +1,11 @@
+# SSR benchmark load generator v2: multi-threaded raw-socket Node generator (loadgen/).
+# Build context is apps/ssr-bench/loadgen only. Digest-pinned Node 24 base (the lanes run
+# Node 26, Dockerfile.node; the generator stays put so stored provenance stays valid); no npm
+# dependencies. Tag: rivet-ssr-bench-load:v2.
+#   docker build -t rivet-ssr-bench-load:v2 -f apps/ssr-bench/Dockerfile.loadgen apps/ssr-bench/loadgen
+FROM node:24.14.1-bookworm-slim@sha256:b506e7321f176aae77317f99d67a24b272c1f09f1d10f1761f2773447d8da26c
+WORKDIR /loadgen
+RUN echo '{"type":"module","private":true}' > package.json
+COPY client.ts loadgen.ts validate.ts ./
+ENV NODE_ENV=production
+CMD ["node", "/loadgen/loadgen.ts", "--hash"]

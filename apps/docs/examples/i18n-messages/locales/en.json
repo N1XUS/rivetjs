@@ -1,0 +1,12 @@
+{
+  "greet": {
+    "label": "Your name",
+    "hello": "Hello, {name}!",
+    "terms": "By saving you accept the <link>terms</link>. Nothing is <b>sent</b>."
+  },
+  "nav": {
+    "home": "Home",
+    "shop": "Shop",
+    "help": "Help"
+  }
+}

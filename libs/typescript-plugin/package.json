@@ -1,0 +1,29 @@
+{
+  "name": "@rivetjs/typescript-plugin",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript language service plugin: Rivet compiler diagnostics, quick fixes, resume hints and route links in TS editors.",
+  "main": "./dist/index.cjs",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@rivetjs/language-core": "0.0.0-experimental"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.6"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/typescript-plugin",
+    "prebuilt": "dist"
+  }
+}

@@ -1,0 +1,100 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no inline select). Feature set inspired by HeroUI Pro's public docs (classes, `--inline-select-value-max-width`, `--inline-select-indicator-size`); independent implementation on HeroUI tokens (--default, --foreground, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/select (parts form); the popover adds the vendored `select__popover` look. */
+/* -------------------------------------------------------------------------------------------------
+ * InlineSelect Component Styles
+ * Block: inline-select (parts: trigger / value / indicator / popover)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: inline-select - flows with the surrounding text
+ */
+.inline-select {
+  @apply inline-flex max-w-full align-baseline;
+
+  --inline-select-value-max-width: 16rem;
+  --inline-select-indicator-size: 0.875rem;
+}
+
+/**
+ * Element: trigger - ghost button, the text keeps the surrounding font
+ */
+.inline-select__trigger {
+  @apply inline-flex min-w-0 items-center gap-1 rounded-md px-1 font-medium text-foreground outline-none select-none no-highlight;
+
+  font-size: inherit;
+  line-height: inherit;
+  cursor: var(--cursor-interactive);
+
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      background-color: var(--default);
+    }
+  }
+
+  &[data-pressed="true"],
+  &[aria-expanded="true"] {
+    background-color: var(--default);
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/**
+ * Element: value - truncated at --inline-select-value-max-width
+ */
+.inline-select__value {
+  @apply truncate;
+
+  max-width: var(--inline-select-value-max-width);
+
+  &[data-placeholder="true"] {
+    @apply text-muted;
+  }
+
+  /* The selected item's ListBox indicator stays in the list */
+  [data-slot="list-box-item-indicator"] {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: indicator - up / down chevrons
+ */
+.inline-select__indicator {
+  @apply inline-flex shrink-0 items-center justify-center text-muted;
+
+  width: var(--inline-select-indicator-size);
+  height: var(--inline-select-indicator-size);
+
+  & > svg {
+    @apply size-full;
+  }
+}
+
+/**
+ * Element: popover - vendored `select__popover` look, never narrower than a menu
+ */
+/* Compound with the vendored `select__popover` (whose `min-width` it overrides): independent of stylesheet order (a client
+ * navigation can insert select.css after this file). */
+.select__popover.inline-select__popover {
+  min-width: max(var(--trigger-width), 12rem);
+}
+
+/**
+ * In Breadcrumbs (`Breadcrumbs.Item` function child): match the breadcrumb link text
+ */
+.breadcrumbs .inline-select__trigger {
+  @apply text-sm leading-5;
+}

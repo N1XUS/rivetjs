@@ -1,0 +1,13 @@
+{
+  "name": "rivet",
+  "owner": {
+    "name": "Rivet"
+  },
+  "plugins": [
+    {
+      "name": "rivet",
+      "source": "./plugin",
+      "description": "Rivet design and framework skills (UI/CDK design, routes, forms in drawers, React ports, UI pages, resumability fixes) and the Rivet MCP server (docs search, components, compiler checks)."
+    }
+  ]
+}

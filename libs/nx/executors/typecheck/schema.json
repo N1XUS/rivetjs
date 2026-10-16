@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet typecheck",
+  "description": "tsc --noEmit for a project; routed apps run rivet sync first so the generated route types (.rivet/routes.d.ts) are current.",
+  "type": "object",
+  "properties": {
+    "tsConfig": { "type": "string", "default": "tsconfig.json", "description": "tsconfig file, relative to the project." },
+    "sync": { "type": "boolean", "description": "Run rivet sync first. Default: routed apps only." }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,29 @@
+/* Plain CSS: default class names + data-* states. The gradient is an inline style set by the component. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  margin: 16px;
+}
+.rv-ColorArea {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+}
+.rv-ColorArea[data-disabled] {
+  opacity: 0.4;
+}
+.rv-ColorThumb {
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px black, inset 0 0 0 1px black;
+  box-sizing: border-box;
+}
+.rv-ColorThumb[data-focus-visible],
+.rv-ColorThumb[data-dragging] {
+  width: 26px;
+  height: 26px;
+}

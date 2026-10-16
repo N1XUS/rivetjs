@@ -1,0 +1,10 @@
+node_modules
+**/node_modules
+**/dist
+**/.rivet
+.git
+.nx
+.artifacts
+.superpowers
+**/__pycache__
+**/.cache

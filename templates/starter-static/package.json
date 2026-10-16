@@ -1,0 +1,31 @@
+{
+  "name": "rivet-starter-static",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr && node prerender.js",
+    "preview": "node serve.js",
+    "check": "rivet sync && rivet-check"
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "experimental",
+    "@rivetjs/router": "experimental",
+    "@rivetjs/runtime": "experimental"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@rivetjs/compiler": "experimental",
+    "@rivetjs/devtools": "experimental",
+    "@rivetjs/language-core": "experimental",
+    "@rivetjs/typescript-plugin": "experimental",
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.2"
+  }
+}

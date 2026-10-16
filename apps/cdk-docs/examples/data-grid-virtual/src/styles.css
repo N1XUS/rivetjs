@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  padding: 24px;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.rv-DataGrid {
+  width: 560px;
+  border: 1px solid #d4d4d8;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rv-DataGrid-column {
+  background: #f4f4f5;
+  text-align: start;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-bottom: 1px solid #d4d4d8;
+}
+.rv-DataGrid-column[data-allows-sorting] {
+  cursor: pointer;
+}
+.rv-DataGrid-column[data-sort-direction="ascending"]::after {
+  content: " (asc)";
+  font-weight: 400;
+}
+.rv-DataGrid-column[data-sort-direction="descending"]::after {
+  content: " (desc)";
+  font-weight: 400;
+}
+.rv-DataGrid-cell {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f4f4f5;
+  background: white;
+}
+.rv-DataGrid-row[data-selected] .rv-DataGrid-cell {
+  background: #eef2ff;
+}
+.rv-DataGrid-checkbox {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 1px solid #71717a;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+.rv-DataGrid-checkbox[aria-checked="true"] {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+.rv-DataGrid-checkbox[aria-checked="mixed"] {
+  background: linear-gradient(#4f46e5, #4f46e5) center / 8px 2px no-repeat;
+}
+.rv-DataGrid-resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 6px;
+}
+.rv-DataGrid-resizer:hover,
+.rv-DataGrid-resizer[data-resizing] {
+  background: #4f46e5;
+}
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: -2px;
+}

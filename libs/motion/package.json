@@ -1,0 +1,84 @@
+{
+  "name": "@rivetjs/motion",
+  "version": "0.0.0-experimental",
+  "description": "Animations for Rivet on Motion (motion.dev): Motion elements, Presence, layout animations, scroll and in-view, CSS entrances.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./layout.tsx",
+    "./layout-engine.ts",
+    "./entrance.css"
+  ],
+  "rivet": {
+    "source": true
+  },
+  "imports": {
+    "#dev": {
+      "types": "./dev-off.ts",
+      "development": "./dev-on.ts",
+      "default": "./dev-off.ts"
+    },
+    "#server": {
+      "types": "./server-on.ts",
+      "browser": "./server-off.ts",
+      "default": "./server-on.ts"
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./index.tsx",
+      "default": "./index.tsx"
+    },
+    "./presence": {
+      "types": "./presence.tsx",
+      "default": "./presence.tsx"
+    },
+    "./layout": {
+      "types": "./layout.tsx",
+      "default": "./layout.tsx"
+    },
+    "./animate": {
+      "types": "./animate.ts",
+      "default": "./animate.ts"
+    },
+    "./scroll": {
+      "types": "./scroll.tsx",
+      "default": "./scroll.tsx"
+    },
+    "./in-view": {
+      "types": "./in-view.tsx",
+      "default": "./in-view.tsx"
+    },
+    "./reduced-motion": {
+      "types": "./reduced-motion.ts",
+      "default": "./reduced-motion.ts"
+    },
+    "./entrance.css": "./entrance.css"
+  },
+  "dependencies": {
+    "@rivetjs/kit": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental"
+  },
+  "peerDependencies": {
+    "@rivetjs/cdk": "0.0.0-experimental",
+    "motion": ">=14.1.0 <15"
+  },
+  "peerDependenciesMeta": {
+    "@rivetjs/cdk": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "motion": "14.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/motion"
+  }
+}

@@ -1,0 +1,30 @@
+/* Plain CSS: default class names + data-* states; the conic gradient is an inline style. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: flex;
+  gap: 24px;
+  margin: 16px;
+}
+output {
+  display: block;
+  font-family: monospace;
+}
+.rv-ColorWheelTrack[data-disabled] {
+  opacity: 0.4;
+}
+.rv-ColorThumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px black;
+  box-sizing: border-box;
+}
+.rv-ColorThumb[data-focus-visible],
+.rv-ColorThumb[data-dragging] {
+  width: 24px;
+  height: 24px;
+}

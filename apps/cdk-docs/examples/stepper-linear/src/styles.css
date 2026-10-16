@@ -1,0 +1,56 @@
+/* Plain CSS: non-navigable headers carry aria-disabled, completed ones data-completed. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.rv-Stepper {
+  max-width: 32rem;
+  margin: 16px;
+}
+
+.rv-StepList {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.rv-StepHeader {
+  padding: 6px 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.rv-StepHeader[aria-selected="true"] {
+  border-color: #4f46e5;
+  font-weight: 600;
+}
+
+.rv-StepHeader[aria-disabled="true"] {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.rv-StepHeader[data-completed]::after {
+  content: " (done)";
+  color: #16a34a;
+}
+
+.rv-StepHeader small {
+  color: #64748b;
+}
+
+.rv-StepPanel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.rv-StepPanel input {
+  padding: 4px 8px;
+  font: inherit;
+}

@@ -1,0 +1,210 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/index.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* ------------------------------------------------------------------------------------------------
+ * Component Styles
+ * ------------------------------------------------------------------------------------------------
+ * CRITICAL: Import order matters for CSS specificity and style overrides.
+ *
+ * General Rule: Shared/primitive components MUST be imported FIRST, before components that use them.
+ * This ensures that parent component styles can properly override shared component defaults.
+ *
+ * Organization: Components are grouped by their Storybook categories (Components/Category/Name)
+ * to maintain consistency between documentation and implementation.
+ * ------------------------------------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------------------------------------
+ * Shared Components - MUST Import FIRST
+ * ------------------------------------------------------------------------------------------------
+ * These are used by multiple components and must be imported early to allow proper overrides.
+ * ------------------------------------------------------------------------------------------------ */
+@import "./close-button.css";
+@import "./description.css";
+@import "./error-message.css";
+@import "./field-error.css";
+@import "./label.css";
+@import "./morph-icon.css"; /* Rivet-authored (TWEAKS.md): shared by the picker chevrons + Navbar burger */
+
+/* ------------------------------------------------------------------------------------------------
+ * Navigation
+ * ------------------------------------------------------------------------------------------------ */
+@import "./accordion.css";
+@import "./breadcrumbs.css";
+@import "./disclosure-group.css";
+@import "./disclosure.css";
+@import "./link.css";
+@import "./pagination.css";
+@import "./tabs.css";
+@import "./sidebar.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./stepper.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./app-layout.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./resizable.css"; /* Rivet-authored (TWEAKS.md) */
+
+/* ------------------------------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------------------------------ */
+@import "./button.css";
+@import "./button-group.css";
+@import "./toggle-button.css";
+@import "./toggle-button-group.css";
+@import "./segment.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./toolbar.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Collections
+ * ------------------------------------------------------------------------------------------------ */
+@import "./dropdown.css";
+@import "./list-box-item.css";
+@import "./list-box-section.css";
+@import "./list-box.css";
+@import "./menu-item.css";
+@import "./menu-section.css";
+@import "./menu.css";
+@import "./tag-group.css";
+@import "./tag.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Colors
+ * ------------------------------------------------------------------------------------------------ */
+@import "./color-area.css";
+@import "./color-picker.css";
+@import "./color-slider.css";
+@import "./color-swatch.css";
+@import "./color-swatch-picker.css";
+@import "./color-input-group.css";
+@import "./color-field.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Controls
+ * ------------------------------------------------------------------------------------------------ */
+@import "./slider.css";
+@import "./cell-slider.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./switch.css";
+@import "./switch-group.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * DataDisplay
+ * ------------------------------------------------------------------------------------------------ */
+@import "./badge.css";
+@import "./chip.css";
+@import "./table.css";
+@import "./data-grid.css"; /* Rivet-authored (TWEAKS.md) */
+
+/* ------------------------------------------------------------------------------------------------
+ * Feedback
+ * ------------------------------------------------------------------------------------------------ */
+@import "./alert.css";
+@import "./empty-state.css";
+@import "./skeleton.css";
+@import "./meter.css";
+@import "./progress-bar.css";
+@import "./progress-circle.css";
+@import "./spinner.css";
+@import "./toast.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Forms
+ * ------------------------------------------------------------------------------------------------ */
+@import "./checkbox-group.css";
+@import "./checkbox-button-group.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./checkbox.css";
+@import "./fieldset.css";
+@import "./input-otp.css";
+@import "./input.css";
+@import "./input-group.css";
+@import "./number-field.css";
+@import "./number-stepper.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./radio-group.css";
+@import "./radio-button-group.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./rating.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./radio.css";
+@import "./textfield.css";
+@import "./search-field.css";
+@import "./textarea.css";
+
+/* ------------------------------------------------------------------------------------------------
+* Date & Time
+* ------------------------------------------------------------------------------------------------ */
+@import "./calendar.css";
+@import "./range-calendar.css";
+@import "./calendar-year-picker.css";
+@import "./date-field.css";
+@import "./time-field.css";
+@import "./date-input-group.css";
+@import "./date-picker.css";
+@import "./date-range-picker.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Layout
+ * ------------------------------------------------------------------------------------------------ */
+@import "./card.css";
+@import "./header.css";
+@import "./separator.css";
+@import "./surface.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Media
+ * ------------------------------------------------------------------------------------------------ */
+@import "./avatar.css";
+@import "./avatar-group.css";
+@import "./carousel.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./lightbox.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chart.css"; /* Rivet-authored (TWEAKS.md) */
+
+/* ------------------------------------------------------------------------------------------------
+ * Overlays
+ * ------------------------------------------------------------------------------------------------ */
+@import "./alert-dialog.css";
+@import "./drawer.css";
+@import "./sheet.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./navbar.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./action-bar.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./modal.css";
+@import "./morph.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./compare.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./masonry.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./item-morph.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./time-picker.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./popover.css";
+@import "./tooltip.css";
+@import "./trend-chip.css"; /* Rivet-authored (TWEAKS.md) */
+
+/* ------------------------------------------------------------------------------------------------
+ * Pickers
+ * ------------------------------------------------------------------------------------------------ */
+@import "./combo-box.css";
+@import "./select.css";
+@import "./native-select.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./cell-select.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./inline-select.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./autocomplete.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * Typography
+ * ------------------------------------------------------------------------------------------------ */
+@import "./kbd.css";
+@import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./typography.css";
+
+/* ------------------------------------------------------------------------------------------------
+ * AI (Rivet-authored, TWEAKS.md)
+ * ------------------------------------------------------------------------------------------------ */
+@import "./text-shimmer.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-loader.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-message.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-message-actions.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./prompt-suggestion.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-list-view.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./code-block.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./markdown.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chain-of-thought.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-source.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-tool.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-conversation.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./chat-attachment.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./prompt-input.css"; /* Rivet-authored (TWEAKS.md) */
+
+/* ------------------------------------------------------------------------------------------------
+ * Utilities
+ * ------------------------------------------------------------------------------------------------ */
+@import "./scroll-area.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./scroll-shadow.css";

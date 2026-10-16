@@ -1,0 +1,12 @@
+/* Tailwind v4 variants for Rivet aria's non-ARIA state attributes (zero runtime). Overlay transitions:
+   entering: / exiting: (RAC), data-closed: / data-enter: / data-leave: (Headless UI). ARIA states use
+   Tailwind's built-ins: aria-selected:, aria-pressed:, aria-expanded:, aria-disabled:, open:, … */
+@custom-variant focused (&[data-focused]);
+@custom-variant placement-top (&[data-placement^="top"]);
+@custom-variant placement-bottom (&[data-placement^="bottom"]);
+@custom-variant placement-left (&[data-placement^="left"]);
+@custom-variant placement-right (&[data-placement^="right"]);
+@custom-variant orientation-vertical (&[data-orientation="vertical"]);
+@custom-variant orientation-horizontal (&[data-orientation="horizontal"]);
+@custom-variant entering (&[data-entering]);
+@custom-variant exiting (&[data-exiting]);

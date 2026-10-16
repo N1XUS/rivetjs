@@ -1,0 +1,23 @@
+{
+  "name": "dom-bench",
+  "projectType": "application",
+  "implicitDependencies": ["compiler", "runtime", "reactivity"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node apps/dom-bench/build.ts" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "cache": false,
+      "options": { "command": "vitest run --project dom-bench" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p apps/dom-bench" }
+    }
+  }
+}

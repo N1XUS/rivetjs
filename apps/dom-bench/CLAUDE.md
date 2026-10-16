@@ -1,0 +1,73 @@
+# @rivetjs/dom-bench
+
+> **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
+
+Client DOM benchmarks (real Chromium/Chrome via Playwright): large-DOM suite, krausest (js-framework-benchmark keyed) port, Rivet-only scoreboard vs stored competitor numbers, CPU/trace tooling. Goal: Rivet beats Solid 1/2, Svelte 5, React 19 on every DOM metric (see `docs/benchmarks/perf-scoreboard.md`).
+
+## Entry points (all run as `node apps/dom-bench/<file>`)
+
+- `build.ts` — esbuild large-DOM lanes → `dist/<lane>.js` (+ external `.js.map`) + `dist/builds.json`. Lanes `rivet` (compiled; extra compile options via `--compile-options '<json>'`), `rivet-v2` (hand-lowered), `react`, `solid`, `solid-stable`; `--lanes a,b`.
+- `run.ts` — large-DOM runner. Options `--rows 100,1000,5000 --repeats 3 --samples 5 --frameworks rivet --out .artifacts/dom-bench/latest` → `<out>/results.json`.
+- `report.ts <results.json>` — `report.html` beside it.
+- `scoreboard.ts` — Rivet-only run of dom + krausest + resume (+ `--ssr` Docker) vs `competitors.json` / `krausest/published.json`; WIN/TIE/LOSE per scenario (`verdict.ts`), median (min–max), browser builds recorded + compared (`browsers`), refused comparisons = n/a with a note (browser major drift, SSR provenance mismatch, stored resume numbers without `paintLatency`). `--ssr` = rivet-compiled vs static peers + rivet-resume vs resumable peers, rows 100/1000/5000 c1, run with the stored `ssr.provenance` window/GC profile.
+- `verdict.ts` — `stat`, `verdict` (WIN/LOSE need ≥3% median gap + non-overlapping trial ranges when both have them, else TIE), `overall`, `browserDrift`. Shared with `apps/ssr-bench/fair-report.ts`.
+- `trace.ts` / `trace-report.ts` — CPU profile + Performance trace + heap snapshot per lane/op; diff report.
+- `server.ts` — `startServer(port = 0, dist)` loopback static server for `dist/` (ephemeral port); COOP/COEP on every response (cross-origin isolated → 5 µs `performance.now`, not 100 µs); `run.ts` throws if a page is not `crossOriginIsolated`.
+- `context/build.ts` / `context/run.ts` — context / deep-nesting suite, Rivet (compiler, DOM v2 / server) vs Solid stable (`apps/bench-stable`), server (Node child per lane per round) + DOM (Chromium, cross-origin isolated, script time only, lanes interleaved per sample; CDP heap after GC). Scenarios (`context/shape.js`): `deep-100/500` (nested reactive components, each reads a context), `providers-50` (50 nested providers, 1000 leaves × 10 reads), `tree-1023` (binary tree, every node re-provides + reads), `update-1000` (signal in context, 1000 consumers, 10 writes), `error-500` (ErrorBoundary over a 500-deep chain, leaf throws on update), `themed-500` (signal read at every level + one owner effect: owner-first flush); `--max-depth` = deepest `deep-N` mounting on a fresh page (stack per level). `build.ts --base <dir>` adds lane `rivet-base` built against another checkout's `libs/{reactivity,runtime}` (`git archive HEAD libs/runtime libs/reactivity | tar -x -C <dir>`) for interleaved A/B; `--no-minify` / `--metafile` for profiling / byte attribution. Output → `.artifacts/dom-bench/context/latest.json`. Results: `docs/benchmarks/2026-10-07-context-suite.md`.
+- `props/build.ts` / `props/run.ts` — component-props suite (live props getters, spread, `mergeProps` / `splitProps`), Rivet (compiler, DOM v2) vs Solid stable, Chromium cross-origin isolated, lanes interleaved per sample, CDP heap after GC. One scenario (`props/shape.js`: 1000 rows × 6 components) measured as phases `mount` / `relabel` / `select` / `bump` / `dispose` + `heapKB` (`props/harness.js`, validated once per lane). `build.ts --base <dir>` → lane `rivet-base` (A/B runtime; compiled with `<dir>/libs/compiler/index.ts` when present — `git archive HEAD libs/compiler | tar -x -C <dir> --exclude libs/compiler/rust` for A/B compiler emission), `--lane name=file.js` → lane from a hand-edited compiled `rivet.jsx` (prototype emission shapes before a compiler patch; start from `--emit` → `dist/props/rivet.compiled.js`). `run.ts [--samples 20] [--lanes a,b] [--flags "<v8 flags>"] [--out file]` → `.artifacts/dom-bench/props/latest.json`, ratios vs `solid-stable`. Results: `docs/benchmarks/2026-10-08-props-suite.md`.
+- `data-grid/build.ts` / `data-grid/run.ts` — `@rivetjs/cdk/data-grid` vs cdk `Table` baseline (`cdk-table.tsx`, same columns / data `shape.ts`): lanes → `dist/data-grid/<lane>.js` (Rivet compiler, production conditions); Chromium cross-origin isolated, contract `window.gridBench`; scenarios 1k / 10k mount, sort, filter, clear filter, select all, heap after GC, 10k virtualized scroll frames (p50 / p95, long frames, rendered rows). `run.ts [--samples 5] [--cpu 1] [--out file.json]`, default `.artifacts/dom-bench/data-grid/latest.json`; holds `bench-lock.ts`.
+- `masonry/build.ts` / `masonry/run.ts` — `@rivetjs/cdk/masonry` vs hand-written baselines (`masonry/vanilla.ts`: CSS `column-count`, react-masonry-css round-robin columns, masonry.js measure + absolute placement; algorithm equivalents, not the libraries) on one tile shape (`masonry/shape.ts`, contract `window.masonryBench`): lanes → `.artifacts/dom-bench/masonry/dist/<lane>.js` (never `apps/*/dist`; `--out`), Chromium cross-origin isolated, scenarios rivet exact (3 breakpoints) / exact-3 (fixed columns) / justified / measure 1k, vanilla 1k ×3, rivet virtual 10k; ops `mountScript`, `mount` (+ forced layout), `resize` 1000 → 1300 px (3 → 4 columns) + back, `resizeLayouts` (CDP LayoutCount of one resize + the next frame), `toggle` (rivet live `getSpan` of item 0, incremental relayout), `height` (placement check across lanes), heap after GC, virtual scroll steps + rAF frames. `run.ts [--samples 5] [--cpu 1] [--dist dir] [--out file.json]`, default `.artifacts/dom-bench/masonry/latest.json`; holds `bench-lock.ts`. Results: `docs/benchmarks/2026-10-11-masonry.md`.
+- `bench-lock.ts` — machine-wide mkdir mutex for timed phases.
+- `metrics.ts` — `selectFields`, `summarize` (order statistics).
+- npm aliases: `npm run build:dom-bench`, `bench:dom`, `bench:dom:report`.
+
+## Layout
+
+- `adapters/<lane>.jsx|js` — large-DOM fixtures; contract `window.bench.{mount(rows),update(indices,revision),dispose()}` (`types.d.ts`). 1k/5k sections × 10 reactive fields (5k = 285k elements, 50k fields).
+- `krausest/` — keyed-table suite: `build.ts` (→ `dist/krausest/<lane>/{index.html,main.js}` + `manifest.json`; rolldown + oxc minify; the `rivet` lane's `main.js` starts with `//# allFunctionsCalledOnLoad` like a Vite entry chunk, `libs/compiler/vite.ts`), `run.ts`, `benchmarks.ts` (webdriver-ts init/run steps), `timeline.ts` (duration/script/paint from trace), `compare.ts` (ratio verdicts + `overheads`: script ms / heap MB above vanilla per benchmark, published script scaled by local / published vanilla total; scoreboard rows `krausest <id> script|heap above vanilla`), `server.ts` (COOP/COEP static), `rivet.jsx` / `vanilla.js` lanes, `style.css` (written Bootstrap-3 subset), `words.js`, `published.json` + `extract-published.ts`.
+- `motion/` — `@rivetjs/motion` suite (plan T14): `build.ts` (esbuild; `rivet.tsx` through the Rivet compiler, `react.jsx` = React 19 + `motion/react`, automatic JSX with `tsconfigRaw: {}` (the repo tsconfig sets the Rivet JSX source), `vanilla.ts` = `motion` by hand → `.artifacts/dom-bench/motion/dist/` + `builds.json` sizes), `run.ts` (mount-1000 / stagger-1000 / relayout-1000 per lane, CDP metrics, bench lock), `ssr.ts` (`ssr-rivet.tsx` vs `ssr-react.jsx`, in-process interleaved), `shape.ts` (lane contract `window.motionBench`). Report `docs/benchmarks/2026-10-12-motion.md`.
+- `competitors.json` — stored competitor numbers with provenance: `dom` (1k/5k Stat per metric + `provenance.browser`), gzip, `resume` (slow paintLatency Stat + `provenance.chrome`/`metric`), `ssr` (`provenance` = generator sha/window/GC, `classes` static|resumable, `metrics[rows][lane]` Stat). Written by `apps/ssr-bench/fair-report.ts --store-competitors` from a fair-comparison run; legacy plain numbers still parse (margin-only verdicts).
+- `tests/` — vitest `dom-bench` project: `metrics`, `krausest` (timeline/compare unit), `browser` (needs `dist/` from `build.ts`).
+
+## krausest setup
+
+- Reference: `krausest/published.json` from js-framework-benchmark `webdriver-ts-results/src/results.ts` @ `bf894b681fb56433ccb6efb4a3c93e35eda2b20d`, Chrome 154.0.8037.98; refs vanillajs-keyed, solid-v1.9.3, svelte-v5.42.1 (+ classic), react-hooks/compiler/classes v19. Regenerate: `krausest/extract-published.ts <results.ts> <commit> <chrome>`.
+- Real Chrome (`/Applications/Google Chrome.app`), `--window-size=1000,800 --js-flags=--expose-gc --enable-benchmarking`, fresh tab per iteration, warmups, forced major GC, CPU slowdown 4x (03/04/05/09) / 2x (06). Headless by default; `--headed` = krausest-like.
+- Verdict = ratio method: `Rivet/local vanilla <= F/published vanilla`. Lanes interleave per iteration. Sizes (41/42) compare absolute kB.
+- Lane contract is DOM only: `#run #runlots #add #update #clear #swaprows`, `tbody>tr`, `td:nth(2)>a` select, `td:nth(3)>a>span` remove, `tr.danger`.
+- Full methodology + deviations: [README.md](README.md#krausest-methodology).
+
+## Rules / invariants
+
+- The scoreboard measures only Rivet (+ local vanilla); competitor data is stored. Competitors are re-measured only in a full fair-comparison run (same machine/browser/generator, recorded provenance) and stored via `fair-report.ts --store-competitors` — never mix provenance.
+- `scoreboard.ts --repo <path>` drives **that checkout's** `apps/dom-bench/{build,run}.ts`, `apps/dom-bench/krausest/build.ts`, `apps/resume-bench/run.ts` → these paths and CLIs are a cross-branch contract. Don't move/rename them.
+- Every timed phase holds `bench-lock.ts` (default `$TMPDIR/rivet-bench.lock`, override `RIVET_BENCH_LOCK`; `none` when caller already holds it). krausest locks per benchmark.
+- Bundle size: krausest 41/42 LOSE vs Solid is accepted; no semantic trades (guard stripping, slim profile) for size.
+- Builds emit external source maps only (bundle bytes unchanged) — trace-report symbolizes with them.
+- Run timings with other builds/tests/benchmarks stopped.
+
+## Commands
+
+- Motion suite: `node apps/dom-bench/motion/build.ts && node apps/dom-bench/motion/run.ts [--samples 5] [--cpu 4] [--out f.json]`; `node apps/dom-bench/motion/ssr.ts [--samples 25] [--out f.json]`.
+- Props suite: `node apps/dom-bench/props/build.ts [--base <dir>] [--lane name=file.js] && node apps/dom-bench/props/run.ts [--samples 30] [--lanes rivet,rivet-base,solid-stable]`.
+- Context suite: `node apps/dom-bench/context/build.ts && node apps/dom-bench/context/run.ts [--targets server,dom] [--samples 15] [--rounds 3] [--scenarios a,b] [--lanes rivet,solid-stable] [--max-depth]`.
+- `node apps/dom-bench/build.ts` then `npx vitest run --project dom-bench` (or `NX_DAEMON=false npx nx run dom-bench:test`, builds first).
+- Typecheck: `node scripts/tsc.ts -p apps/dom-bench` (tsgo; adapters excluded).
+- `node apps/dom-bench/krausest/build.ts && node apps/dom-bench/krausest/run.ts --benchmarks cpu --iterations 15`; `node apps/dom-bench/krausest/compare.ts <results.json>`.
+- `node apps/dom-bench/scoreboard.ts [--quick] [--suites dom,krausest,resume] [--ssr] [--md docs/benchmarks/perf-scoreboard.md|--no-md]`.
+
+## Result files
+
+- `.artifacts/dom-bench/latest/results.json` (+ `report.html`), `.artifacts/krausest/<stamp>/`, `.artifacts/perf-night/scoreboard/<stamp>.json` (+ raw `<stamp>/`), `.artifacts/perf-night/traces/<suite>-<lane>-<op>[-<rows>]/`. Markdown: `docs/benchmarks/perf-scoreboard.md`.
+
+## Gotchas
+
+- `build.ts:9` imports `../resume-bench/stable-dependencies.ts` (stable Solid resolution from `apps/bench-stable`).
+- `browser.test.ts` fails on a stale/missing `dist/` — rebuild after compiler/runtime changes.
+- Open LOSEs: see `docs/benchmarks/2026-10-09-fair-comparison.md` (ranked loss list; SSR + resume re-measured for every lane at HEAD 2026-10-09, which also feeds `competitors.json` `ssr` / `resume`; `dom` keeps its 2026-10-06 provenance because the 5000-row DOM case exceeds the 3 GB agent RSS cap, the 1000-row DOM re-measure is in the report only).
+- Context suite depth: both lanes overflow the stack around 600–1300 nested reactive levels on a cold page (frame size shrinks once optimized), so timed `deep-*` stays at 500; compare depth with `--max-depth` only.
+- `crossOriginIsolated` needs every subresource same-origin (or CORP); the fixture pages load only `/<lane>.js`.
+
+## See also
+
+- [README.md](README.md), [../resume-bench/CLAUDE.md](../resume-bench/CLAUDE.md), [../ssr-bench/CLAUDE.md](../ssr-bench/CLAUDE.md), [../../docs/benchmarks/perf-scoreboard.md](../../docs/benchmarks/perf-scoreboard.md), [../../docs/benchmarks/large-dom-benchmark.md](../../docs/benchmarks/large-dom-benchmark.md), [../../docs/benchmarks/large-dom-comparison.md](../../docs/benchmarks/large-dom-comparison.md)

@@ -1,0 +1,149 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/toggle-button.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* ==========================================================================
+   ToggleButton - Interactive toggle control for on/off states
+   ========================================================================== */
+
+/* Base styles */
+.toggle-button {
+  @apply relative isolate inline-flex h-10 w-fit origin-center items-center justify-center gap-2 rounded-3xl px-4 text-sm font-medium whitespace-nowrap outline-none select-none no-highlight md:h-9;
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply transform-gpu motion-reduce:transition-none;
+
+  /* Cursor */
+  cursor: var(--cursor-interactive);
+
+  /* Default tokens (unselected state) */
+  --toggle-button-bg: var(--default);
+  --toggle-button-bg-hover: var(--default-hover);
+  --toggle-button-bg-pressed: var(--default-hover);
+  --toggle-button-fg: currentColor;
+
+  /* Selected state tokens */
+  --toggle-button-bg-selected: var(--accent-soft);
+  --toggle-button-bg-selected-hover: var(--accent-soft-hover);
+  --toggle-button-bg-selected-pressed: var(--accent-soft-hover);
+  --toggle-button-fg-selected: var(--accent-soft-foreground);
+
+  background-color: var(--toggle-button-bg);
+  color: var(--toggle-button-fg);
+
+  /* Focus state */
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  /* Disabled state */
+  &:disabled,
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  /* Hover */
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      background-color: var(--toggle-button-bg-hover);
+    }
+  }
+
+  /* Active / pressed */
+  &:active,
+  &[data-pressed="true"] {
+    background-color: var(--toggle-button-bg-pressed);
+    transform: scale(0.97);
+  }
+
+  /* Selected state */
+  &[data-selected="true"] {
+    background-color: var(--toggle-button-bg-selected);
+    color: var(--toggle-button-fg-selected);
+
+    @media (hover: hover) {
+      &:hover,
+      &[data-hovered="true"] {
+        background-color: var(--toggle-button-bg-selected-hover);
+      }
+    }
+
+    &:active,
+    &[data-pressed="true"] {
+      background-color: var(--toggle-button-bg-selected-pressed);
+    }
+  }
+
+  /* SVG icon styling */
+  & svg {
+    /* Rivet: 16 px at text 14 on every breakpoint, no margins (TWEAKS.md TW-140) */
+    @apply pointer-events-none size-4 shrink-0 self-center;
+  }
+}
+
+/* ==========================================================================
+   Size variants
+   ========================================================================== */
+
+.toggle-button--sm {
+  @apply h-9 px-3 md:h-8;
+
+  & svg {
+    @apply size-4;
+  }
+}
+
+.toggle-button--md {
+  /* No styles as this is the default size */
+}
+
+.toggle-button--lg {
+  @apply h-11 text-base md:h-10;
+
+  /* Rivet: text 16 → 20 px icon, stroke 1.75 (TWEAKS.md TW-140) */
+  & svg {
+    @apply size-5;
+    stroke-width: 1.75;
+  }
+}
+
+/* ==========================================================================
+   Variant styles
+   ========================================================================== */
+
+.toggle-button--default {
+  --toggle-button-bg: var(--default);
+  --toggle-button-bg-hover: var(--default-hover);
+  --toggle-button-bg-pressed: var(--default-hover);
+}
+
+.toggle-button--ghost {
+  --toggle-button-bg: transparent;
+  --toggle-button-bg-hover: var(--default);
+  --toggle-button-bg-pressed: var(--default);
+  --toggle-button-fg: var(--default-foreground);
+}
+
+/* ==========================================================================
+   Icon-only modifier
+   ========================================================================== */
+
+.toggle-button--icon-only {
+  @apply w-10 p-0 md:w-9;
+}
+
+.toggle-button--icon-only.toggle-button--sm {
+  @apply w-9 md:w-8;
+}
+
+.toggle-button--icon-only.toggle-button--lg {
+  @apply w-11 md:w-10;
+}

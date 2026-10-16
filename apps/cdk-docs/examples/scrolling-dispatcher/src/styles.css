@@ -1,0 +1,35 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.panels {
+  display: flex;
+  gap: 12px;
+}
+.panel {
+  width: 150px;
+  height: 120px;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.panel:focus-visible {
+  outline: 2px solid #6366f1;
+}
+.tall {
+  height: 600px;
+  padding: 8px;
+  background: linear-gradient(#fff, #e0e7ff);
+}
+output {
+  color: #475569;
+}
+button {
+  font: inherit;
+}

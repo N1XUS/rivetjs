@@ -1,0 +1,30 @@
+// Port of HeroUI v3.2.6 `apps/docs/src/demos/en/textarea/rows.tsx` (Apache-2.0, © 2025 NextUI Inc.; modified).
+import { Label } from "@rivetjs/ui/label";
+import { TextArea } from "@rivetjs/ui/textarea";
+
+export const head = { title: "TextArea: Rows and Resizing" };
+
+// #region demo
+export function Rows() {
+  return (
+    <div class="flex w-96 flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <Label for="textarea-rows-3">Short feedback</Label>
+        <TextArea aria-label="Short feedback" id="textarea-rows-3" placeholder="This week's highlights..." rows={3} />
+      </div>
+      <div class="flex flex-col gap-2">
+        <Label for="textarea-rows-6">Detailed notes</Label>
+        <TextArea aria-label="Detailed notes" id="textarea-rows-6" placeholder="Write out the full meeting notes..." rows={6} style={{ resize: "vertical" }} />
+      </div>
+    </div>
+  );
+}
+// #endregion
+
+export default function Demo() {
+  return (
+    <div class="flex min-h-dvh items-center justify-center p-6 [:where(&>*)]:max-w-full">
+      <Rows />
+    </div>
+  );
+}

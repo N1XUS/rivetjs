@@ -1,0 +1,57 @@
+/* Plain CSS: default rv-Carousel* classes plus data-* state. Overflow, touch-action, the flex track and the
+   slide size (--rv-carousel-slide-size) are inline behaviour styles. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.rv-Carousel {
+  width: 320px;
+  margin: 16px;
+  --rv-carousel-slide-size: 80%;
+}
+.rv-CarouselViewport {
+  border-radius: 12px;
+}
+.rv-CarouselViewport:active {
+  cursor: grabbing;
+}
+.rv-CarouselSlide {
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+.rv-CarouselSlide > div {
+  display: grid;
+  place-items: center;
+  height: 140px;
+  border-radius: 12px;
+  background: #e0e7ff;
+  font-size: 18px;
+  font-weight: 600;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+.rv-CarouselSlide[data-snapped] > div {
+  opacity: 1;
+}
+.rv-Carousel[data-dragging] .rv-CarouselSlide > div {
+  background: #c7d2fe;
+}
+.controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.rv-CarouselPrevious,
+.rv-CarouselNext {
+  padding: 4px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: white;
+}
+.rv-CarouselPrevious[data-disabled],
+.rv-CarouselNext[data-disabled] {
+  opacity: 0.4;
+}

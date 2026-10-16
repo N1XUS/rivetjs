@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetLibrary",
+  "title": "Rivet library",
+  "description": "Creates a Rivet component library: source exports per subpath (tree-shakeable, sideEffects false), Vitest with rivetTest(), and a package build when publishable.",
+  "type": "object",
+  "properties": {
+    "directory": {
+      "type": "string",
+      "description": "Project folder, relative to the workspace root (e.g. libs/ui-kit).",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Which directory do you want to create the library in?"
+    },
+    "name": { "type": "string", "description": "Project name (default: the folder name).", "pattern": "^[a-zA-Z][^:]*$" },
+    "importPath": { "type": "string", "description": "npm name (default @<workspace scope>/<name>)." },
+    "publishable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Add a build target (@rivetjs/nx:package) that emits .js / .jsx + .d.ts into dist/<directory>."
+    },
+    "subpaths": { "type": "string", "description": "Extra subpath exports, comma-separated (button,card → <importPath>/button, …)." },
+    "unitTestRunner": { "type": "string", "enum": ["vitest", "none"], "default": "vitest", "description": "Test runner." },
+    "tags": { "type": "string", "description": "Comma-separated project tags." },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "addPlugin": { "type": "boolean", "x-priority": "internal", "description": "Use inferred targets (default: true unless NX_ADD_PLUGINS=false)." },
+    "skipPackageJson": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not add dependencies to the root package.json." },
+    "skipInstall": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not run the package manager install." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["directory"],
+  "additionalProperties": false
+}

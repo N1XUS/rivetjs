@@ -1,0 +1,1 @@
+{ "cart": { "title": "Warenkorb", "count": "{n, plural, one {# Artikel} other {# Artikel}}", "badge": "{n, plural, one {<b>#</b> Artikel} other {<b>#</b> Artikel im Korb}}", "terms": "Siehe <link>AGB</link> für {n} Artikel", "help": "Fragen? <link>Kontakt</link>" } }

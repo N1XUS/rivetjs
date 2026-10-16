@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetI18nSetup",
+  "title": "Set up @rivetjs/i18n",
+  "description": "Adds compile-time i18n to a Rivet app: i18n.config.ts, one ICU catalog per locale (locales/<locale>.json), the i18n() Vite plugin before the router, and the dependency. The build target then runs one client build per locale.",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The Rivet app.",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "locales": { "type": "string", "default": "en", "description": "Comma-separated locales, the default first (en,de)." },
+    "defaultLocale": { "type": "string", "description": "Default locale (default: the first locale)." },
+    "prefix": { "type": "string", "enum": ["as-needed", "always", "never"], "default": "as-needed", "description": "Locale prefix in URLs." },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "skipPackageJson": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not change package.json files." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["project"],
+  "additionalProperties": false
+}

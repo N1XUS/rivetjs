@@ -1,0 +1,22 @@
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+/* Keyframes for the entering: / exiting: variants (data-entering / data-exiting). */
+@theme {
+  --animate-menu-in: menu-in 150ms ease-out;
+  --animate-menu-out: menu-in 100ms ease-in reverse;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    translate: 0 -4px;
+  }
+}
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}

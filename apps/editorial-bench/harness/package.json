@@ -1,0 +1,13 @@
+{
+  "name": "editorial-bench-harness",
+  "private": true,
+  "type": "module",
+  "description": "Measurement deps of apps/editorial-bench (shared static server, Lighthouse). Playwright resolves from the repo root.",
+  "dependencies": {
+    "chrome-launcher": "1.2.2",
+    "compression": "1.8.1",
+    "finalhandler": "2.1.1",
+    "lighthouse": "13.5.0",
+    "serve-static": "2.2.1"
+  }
+}

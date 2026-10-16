@@ -1,0 +1,28 @@
+{
+  "name": "typescript-plugin",
+  "projectType": "library",
+  "implicitDependencies": ["language-core", "compiler"],
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": { "command": "node scripts/package/build.ts libs/typescript-plugin" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node libs/typescript-plugin/build.ts" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project typescript-plugin" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "tsc -p libs/typescript-plugin" }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "types": ["node"], "resolveJsonModule": true },
+  "include": ["*.ts", "*.tsx", "components/**/*", "search/**/*", "tools/**/*.ts", "tests/**/*.ts"],
+  "//": "routes/ are copied into each app and type-checked there (typed by the app's routes.d.ts)",
+  "exclude": ["node_modules"]
+}

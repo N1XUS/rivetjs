@@ -1,0 +1,483 @@
+@rivetjs/cdk
+Copyright Rivet contributors.
+
+This package contains code ported from third-party projects. Each ported file names its source
+in a header comment ("Ported from ..."). The original notices follow.
+
+--------------------------------------------------------------------------------
+React Spectrum (react-aria, react-stately, @react-aria/*, @react-stately/*, @react-types/shared,
+@internationalized/*) — https://github.com/adobe/react-spectrum
+Copyright 2020 Adobe. All rights reserved.
+Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+Unless required by applicable law or agreed to in writing, software distributed under the License
+is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.
+
+Ported into:
+  interactions/* (usePress, useHover, useFocus, useFocusWithin, useFocusVisible, useKeyboard,
+  useLongPress, useMove, useInteractOutside, useScrollWheel, mergeProps), focus/focus-ring.tsx,
+  announcer/live-announcer.ts, focus/focus-scope.tsx;
+  collections/types.ts, collections/nodes.ts, collections/builder.ts, collections/list.ts,
+  collections/tree.ts, collections/tree-state.ts, collections/grid.ts, collections/table.ts,
+  collections/base.ts, selection/state.ts, selection/manager.ts, selection/utils.ts,
+  selection/dom-utils.ts, selection/list-keyboard-delegate.ts, selection/type-select.ts,
+  selection/selectable-collection.ts, selection/selectable-list.ts, selection/selectable-item.ts,
+  collections/list-state.ts (@react-stately/list useListState, useSingleSelectListState);
+  overlay/ (position.ts, close-on-scroll.ts, index.ts (overlay, interactOutside), overlay-trigger.ts,
+  overlay-trigger-state.ts, prevent-scroll.ts, prevent-scroll-ios.ts, aria-hide-outside.ts, modal-overlay.ts,
+  dismiss-button.tsx, overlay-strings.ts), modal/provider.tsx, popover/use-popover.ts, portal/index.tsx (PortalProvider, Overlay);
+  utils/id.ts (useId, mergeIds, useSlotId), platform (isMac, isIPhone, isIPad, isIOS, isAppleDevice, isWebKit,
+  isChrome, isAndroid, isFirefox), utils/index.ts (chain, mergeProps, runAfterTransition, isVirtualClick,
+  focusWithoutScrolling, useLabels, useDescription, useFormReset, ...), utils/dom.ts (getScrollParent,
+  scrollIntoView, scrollIntoViewport, shadow DOM helpers), observers (useResizeObserver), utils/links.tsx
+  (openLink, RouterProvider), utils/dom-props.ts (GlobalDOMEvents, filterDOMProps), i18n (useLocale, useCollator, useDateFormatter, useNumberFormatter,
+  useFilter, useMessageFormatter, useListFormatter, LocalizedStringDictionary /
+  LocalizedStringFormatter, and the @internationalized/date, @internationalized/number,
+  @internationalized/message and @internationalized/string pieces they use);
+  virtualizer/ (@react-stately/virtualizer, @react-stately/layout, @react-aria/virtualizer),
+  dnd/ (@react-aria/dnd, @react-stately/dnd, react-aria-components DropZone / FileTrigger);
+  grid-list/ (index.tsx, behaviour.ts, row.ts: RAC GridList + @react-aria/gridlist), tag-group/ (index.tsx,
+  behaviour.ts, intl.ts: RAC TagGroup + @react-aria/tag), data/ (@react-stately/data useListData,
+  useAsyncList, useTreeData);
+  table/ (index.tsx, column-resize.tsx, behaviour.ts, collection.ts, keyboard-delegate.ts, intl.ts, rac-intl.ts:
+  RAC Table + @react-aria/table), grid/ (behaviour.ts, keyboard-delegate.ts, intl.ts: @react-aria/grid),
+  state/table.ts, state/table-column-resize.ts, state/grid.ts (@react-stately/table, @react-stately/grid);
+  and the corresponding tests under tests/.
+
+--------------------------------------------------------------------------------
+Angular Components (@angular/cdk) — https://github.com/angular/components
+Copyright (c) Google LLC. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  a11y/* (FocusMonitor, InteractivityChecker, FocusTrap, key managers, LiveAnnouncer,
+  HighContrastModeDetector, AriaDescriber), collections/selection-model.ts, collections/data-source.ts,
+  collections/unique-selection-dispatcher.ts, portal/portal-outlet.ts, overlay-service/ (overlay-strategy.ts,
+  overlay-viewport.ts, overlay-ref.ts, overlay-container.ts, overlay-dispatchers.ts,
+  scroll-strategies.ts, global-position.ts, connected-position.ts, overlay-position-builder.ts,
+  index.ts, overlay.css); layout, observers, text-field/autosize.ts, stepper, accordion, table, tree,
+  menu, listbox, dialog, clipboard, bidi, platform, coercion, scrolling/ (src/cdk/scrolling,
+  src/cdk-experimental/scrolling), drag-drop/ (src/cdk/drag-drop); and the corresponding tests under tests/.
+
+--------------------------------------------------------------------------------
+Also ported (aria-dates):
+- @internationalized/number (libs/cdk/number/NumberFormatter.ts, NumberParser.ts, index.tsx;
+  libs/cdk/tests/number-parser.test.ts, libs/cdk/tests/number-format-sign-display-polyfill.test.ts)
+  https://github.com/adobe/react-spectrum/tree/main/packages/@internationalized/number
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: TypeScript module specifiers, strict parameter types, formatting;
+  tests run on Vitest with Jest globals (@rivetjs/testing/jest).
+- react-stately useNumberFieldState (libs/cdk/number/number-field-state.tsx, libs/cdk/tests/number-field-state.test.ts)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-stately/src/numberfield
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: React hook -> signal-based createNumberFieldState factory (same option / return shape).
+- react-stately color (libs/cdk/color/color.ts, intl.ts, area-state.ts, slider-state.tsx, wheel-state.ts,
+  field-state.tsx, channel-field-state.tsx, picker-state.ts, index.ts; libs/cdk/tests/color-model.test.ts,
+  libs/cdk/tests/color-field-state.test.ts, libs/cdk/tests/color-states.test.ts)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-stately/src/color (@react-stately/color)
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: React hooks -> signal-based create*State factories (serializable, free functions); colors stored as strings;
+  intl/color/*.json generated into intl.ts; tests run on Vitest with Jest globals (@rivetjs/testing/jest).
+- react-aria color hooks + react-aria-components color components (libs/cdk/color-area/, color-wheel/, color-slider/,
+  color-field/, color-swatch/, color-swatch-picker/ (incl. intl.ts), color-picker/, color-thumb/, color/aria-intl.ts;
+  libs/cdk/tests/color-area.browser.test.tsx, color-wheel.browser.test.tsx, color-slider.browser.test.tsx,
+  color-field.browser.test.tsx, color-swatch.browser.test.tsx, color-swatch-picker.browser.test.tsx)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-aria/src/color,
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-aria-components/src (ColorArea, ColorField, ColorPicker,
+  ColorSlider, ColorSwatch, ColorSwatchPicker, ColorThumb, ColorWheel)
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: hooks -> attribute bags + free handlers over serializable color state (resumable); components on Rivet
+  contexts / render-prop accessors; gradients as inline styles; tests on Vitest browser mode (Chromium).
+- react-stately useSliderState (libs/cdk/slider/state.ts, libs/cdk/tests/slider-state.test.ts)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-stately/src/slider
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: React hook -> signal-based createSliderState factory (free functions); numberFormatter -> locale + formatOptions.
+- react-aria useSlider / useSliderThumb + react-aria-components Slider (libs/cdk/slider/behaviour.tsx, slider/index.tsx,
+  libs/cdk/tests/slider.browser.test.tsx)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-aria/src/slider
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: hooks -> attribute bags + free handlers over serializable slider state (resumable); RAC parts on Rivet contexts.
+- react-aria useNumberField / useSpinButton + react-aria-components NumberField (libs/cdk/number-field/behaviour.tsx,
+  number-field/index.tsx, number-field/intl.ts, spinbutton/behaviour.tsx, spinbutton/intl.ts,
+  libs/cdk/tests/number-field.browser.test.tsx, number-field-behaviour.browser.test.tsx, spinbutton.browser.test.tsx)
+  https://github.com/adobe/react-spectrum/tree/main/packages/react-aria/src/numberfield
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: hooks -> attribute bags + free handlers over plain JSON spin / edit state (resumable); intl JSON -> generated intl.ts.
+
+- @internationalized/date (libs/cdk/date, libs/cdk/tests/date)
+  https://github.com/adobe/react-spectrum/tree/main/packages/@internationalized/date
+  Copyright 2020 Adobe. Licensed under the Apache License, Version 2.0.
+  Modified: TypeScript module specifiers, type-only imports, override modifiers, strict index types;
+  tests run on Vitest with Jest globals (@rivetjs/testing/jest).
+
+--------------------------------------------------------------------------------
+React Spectrum (react-stately, react-aria, react-aria-components) — formerly @rivetjs/cdk
+(Apache License, Version 2.0, as above). Ported into:
+  state/list.ts (@react-stately/list useListState, useSingleSelectListState),
+  state/selection.ts (@react-stately/selection)
+- _adapters/collections.ts, _adapters/selection.ts — react-stately ListCollection, SelectionManager,
+  useMultipleSelectionState; react-aria ListKeyboardDelegate, useSelectableCollection,
+  useSelectableItem, useTypeSelect (local adapters until @rivetjs/cdk/collections)
+- _adapters/interactions.ts, _adapters/intl.ts — react-aria useLongPress timer + PressEvent shape, i18n (subsets; the rest re-exported from interactions/, platform/, utils/)
+- listbox/*, state/menu.ts — react-aria listbox, react-stately menu, react-aria-components ListBox
+- combobox/*, state/combobox.ts — react-aria combobox/useComboBox.ts, react-stately combobox/useComboBoxState.ts, react-aria-components ComboBox.tsx (+ intl/combobox strings)
+- autocomplete/*, state/autocomplete.ts — react-aria autocomplete/useAutocomplete.ts, react-stately autocomplete/useAutocompleteState.ts, react-aria-components Autocomplete.tsx
+- search-field/*, state/search-field.ts — react-aria searchfield/useSearchField.ts, react-stately searchfield/useSearchFieldState.ts, react-aria-components SearchField.tsx (+ intl/searchfield strings)
+- i18n/filter.ts, i18n/list-formatter.ts — react-aria i18n/useFilter.ts, useCollator.ts, useListFormatter.tsx
+- tests/combobox*.ts(x), search-field*.ts(x) — ports of RAC ComboBox.test.js, SearchField.test.js, react-aria useSearchField.test.js, react-stately useComboBoxState.test.js, useSearchFieldState.test.js
+- tests/select.browser.test.tsx — port of RAC Select.test.js
+- _adapters/collection.ts — react-stately collections/getChildNodes.ts, list/ListCollection.ts,
+  tree/TreeCollection.ts (local adapter until @rivetjs/cdk/collections)
+- _adapters/grid-selection.ts — react-stately selection/{Selection,useMultipleSelectionState,SelectionManager}.ts
+- _adapters/dom-collection.ts — react-aria selection/{DOMLayoutDelegate,utils}.ts
+- _adapters/selectable.ts — react-aria selection/{useSelectableCollection,useSelectableItem,useTypeSelect}.ts
+- _adapters/press.ts — react-aria interactions/usePress.ts (press start/end bookkeeping, long-press timer; rest re-exported)
+- button/press.ts — per-element adapter over interactions/press.tsx (react-aria interactions/usePress.ts)
+- utils/links.tsx — react-aria utils/openLink.tsx, useLinkProps (link/router.ts re-exports it)
+- utils/animation.tsx — react-aria utils/animation.ts (useEnterAnimation, useExitAnimation)
+- utils/load-more-sentinel.tsx — react-aria utils/useLoadMoreSentinel.ts
+- tree/behaviour.tsx, tree/collection.ts, tree/intl.ts — react-aria tree/useTree.ts, useTreeItem.ts, intl/tree/*.json; react-aria-components Tree.tsx (TreeCollection)
+- tree/index.tsx, tree/navigation-context.tsx, navigation-tree/index.tsx, tests/tree.browser.test.tsx, tests/navigation-tree.browser.test.tsx — react-aria-components Tree.tsx, NavigationTree.tsx, test/Tree.test.tsx, test/NavigationTree.test.tsx, Tree.ssr.test.js; react-aria test-utils tree.ts
+- tree/tree-key-manager.ts, tree/control.ts, tests/tree-key-manager.test.ts, tests/tree-control.test.ts — Angular CDK (MIT, © Google LLC) a11y/key-manager/tree-key-manager*.ts, tree/control/*
+- stepper/index.tsx, stepper/state.ts, tests/stepper.browser.test.tsx, tests/stepper-state.test.ts, tests/stepper-ssr.test.ts — Angular CDK (MIT, © Google LLC) v22.2.2 stepper/{stepper,step-header,step-label,stepper-button}.ts + Angular Material stepper header markup / ARIA and stepper.spec.ts (subset)
+- state/tabs.ts — react-stately tabs/useTabListState.ts, list/useSingleSelectListState.ts
+- tabs/keyboard-delegate.ts, tabs/behaviour.ts, tabs/index.tsx — react-aria tabs/*, react-aria-components Tabs.tsx
+- tests/tabs.browser.test.tsx — react-aria-components test/Tabs.test.js
+- shared-element-transition/index.tsx, shared-element-transition/transition.tsx — react-aria-components SharedElementTransition.tsx (© 2025 Adobe)
+- selection-indicator/index.tsx, selection-indicator/context.ts — react-aria-components SelectionIndicator.tsx (© 2025 Adobe)
+- progress-bar/index.tsx, progress-bar/behaviour.tsx, meter/index.tsx, meter/behaviour.tsx — react-aria progress/useProgressBar.ts,
+  meter/useMeter.ts, react-aria-components ProgressBar.tsx, Meter.tsx (© 2020/2022 Adobe)
+- file-trigger/index.tsx — react-aria-components FileTrigger.tsx (© 2023 Adobe)
+- toggle-button-group/index.tsx, toggle-button-group/context.ts, toggle-button-group/behaviour.tsx, toggle-button-group/item.tsx,
+  state/toggle-group.ts — react-aria button/useToggleButtonGroup.ts, react-stately toggle/useToggleGroupState.ts,
+  react-aria-components ToggleButtonGroup.tsx (© 2024 Adobe)
+- toggle-button/index.tsx, toggle-button/behaviour.ts, tests/toggle-button.browser.test.tsx — react-aria-components ToggleButton.tsx,
+  test/ToggleButton.test.js; react-aria button/useToggleButton.ts
+- modal/index.tsx, dialog/index.tsx, dialog/behaviour.tsx, popover/index.tsx,
+  popover/behaviour.ts, state/overlays.ts — react-aria useModalOverlay,
+  useOverlay, useDialog, usePopover, useOverlayTrigger, useMenuTrigger; react-stately useOverlayTriggerState;
+  react-aria-components Modal.tsx, Dialog.tsx, Popover.tsx, Menu.tsx
+- menu/index.tsx, menu/behaviour.tsx, menu/safely-mouse-to-submenu.ts, menu/intl.ts, state/menu.ts — react-aria-components
+  Menu.tsx; react-aria menu/{useMenuTrigger,useMenu,useMenuItem,useSubmenuTrigger,useSafelyMouseToSubmenu}.ts, intl/menu/*.json;
+  react-stately menu/{useMenuTriggerState,useSubmenuTriggerState}.ts (© 2020–2024 Adobe)
+- disclosure/index.tsx, disclosure/behaviour.tsx, state/disclosure.ts, accordion/index.tsx — react-aria-components Disclosure.tsx;
+  react-aria disclosure/useDisclosure.ts; react-stately disclosure/{useDisclosureState,useDisclosureGroupState}.ts (© 2024 Adobe);
+  Angular CDK accordion/{accordion,accordion-item}.ts extras (MIT, © Google LLC)
+- tests/menu.browser.test.tsx, tests/disclosure-state.test.ts, tests/disclosure-behaviour.test.ts, tests/accordion.test.ts —
+  react-aria-components test/Menu.test.js (subset); react-stately test/disclosure/useDisclosure{,Group}State.test.ts; react-aria
+  test/disclosure/useDisclosure.test.ts; Angular CDK accordion/accordion.spec.ts (MIT, © Google LLC)
+- tooltip/index.tsx, tooltip/behaviour.tsx, state/tooltip.ts — react-aria tooltip/{useTooltipTrigger,useTooltip}.ts,
+  react-stately tooltip/useTooltipTriggerState.ts, react-aria-components Tooltip.tsx
+- toast/index.tsx, toast/behaviour.tsx, toast/intl.ts, state/toast.ts — react-aria-components Toast.tsx, react-aria
+  toast/{useToast,useToastRegion}.ts, intl/toast/*.json, react-stately toast/useToastState.ts
+- landmark/index.tsx, landmark/manager.ts — react-aria landmark/useLandmark.ts
+- tests/toast.browser.test.tsx, tests/toast-state.test.ts, tests/landmark.browser.test.tsx, tests/landmark-ssr.test.ts —
+  react-aria-components test/Toast.test.js, react-aria test/toast/useToast.test.js, test/landmark/useLandmark{.test.tsx,.ssr.test.js},
+  react-stately test/toast/useToastState.test.js
+- overlay-arrow/index.tsx, overlay/contexts.ts — react-aria-components OverlayArrow.tsx, Dialog.tsx, Popover.tsx
+- preview-trigger/index.tsx, preview-trigger/behaviour.tsx, overlay/safe-area.ts, overlay/hover-trigger.tsx —
+  react-aria tooltip/{usePreviewTrigger,useSafeArea}.ts, react-aria-components PreviewTrigger.tsx
+- popover/popover-overlay.tsx, popover/use-popover.ts — react-aria overlays/usePopover.ts, react-aria-components Popover.tsx
+- select/index.tsx, select/select-parts.tsx, select/select-value.tsx, select/behaviour.tsx, select/hidden-select.tsx, select/intl.ts, state/select.ts — react-aria
+  select/{useSelect.ts,HiddenSelect.tsx}, react-stately select/useSelectState.ts, react-aria-components Select.tsx, intl/*.json
+- date-field/index.tsx, date-field/behaviour.tsx, state/date-field.ts, state/time-field.ts — react-aria datepicker/{useDateField,useDateSegment,
+  useDatePickerGroup,useDisplayNames}.ts, spinbutton/useSpinButton.ts, react-stately datepicker/{useDateFieldState,
+  IncompleteDate,placeholders,utils}.ts, react-aria-components DateField.tsx, HiddenDateInput.tsx
+- date-picker/index.tsx, date-picker/behaviour.tsx, state/date-picker.ts — react-aria datepicker/{useDatePicker,
+  useDateRangePicker}.ts, react-stately datepicker/{useDatePickerState,useDateRangePickerState}.ts,
+  react-aria-components DatePicker.tsx
+- slots/index.tsx — react-aria-components utils.tsx (Provider, useContextProps, useSlottedContext, useRenderProps,
+  composeRenderProps, useSlot, removeDataAttributes), react-aria utils/useId.ts (useSlotId)
+- heading/index.tsx, text/index.tsx, header/index.tsx, keyboard/index.tsx, input/index.tsx, text-area/index.tsx,
+  label/index.tsx — react-aria-components Heading.tsx, Text.tsx, Header.tsx, Keyboard.tsx, Input.tsx, TextArea.tsx, Label.tsx
+- separator/index.tsx, separator/behaviour.ts — react-aria-components Separator.tsx, react-aria separator/useSeparator.ts
+- interactions/pressable.tsx, focus/focusable.tsx — react-aria interactions/{Pressable,PressResponder,useFocusable}.tsx, context.ts
+- tests/slots.browser.test.tsx, tests/pressable.browser.test.tsx — react-aria-components Separator.test.js,
+  react-aria interactions/test/{Pressable,PressResponder,useFocusable}.test.js
+- collections/hidden.ts — react-aria-components Hidden.tsx (HiddenContext, useIsHidden)
+- collections/components.tsx, collections/dom.ts — @react-aria/collections CollectionBuilder.tsx (Collection, createLeafComponent, createBranchComponent, CollectionRoot / CollectionBranch); react-aria-components Collection.tsx
+- interactions/controllable.ts, utils/types.ts, utils/data-attrs.tsx — react-stately utils/useControlledState.ts,
+  @react-types/shared, react-aria interactions/{useHover,useFocusable}.ts + focus/useFocusRing.ts (state writers)
+- button/index.tsx, button/behaviour.ts, link/index.tsx, link/behaviour.ts, group/index.tsx, toolbar/index.tsx,
+  toolbar/behaviour.ts, breadcrumbs/index.tsx, breadcrumbs/behaviour.ts, breadcrumbs/intl.ts — react-aria-components
+  Button.tsx, Link.tsx, Group.tsx, Toolbar.tsx, Breadcrumbs.tsx; react-aria button/useButton.ts, link/useLink.ts,
+  toolbar/useToolbar.ts, breadcrumbs/useBreadcrumbs.ts, breadcrumbs/intl/*.json
+- tests/button.browser.test.tsx, link.browser.test.tsx, group.browser.test.tsx, toolbar.browser.test.tsx,
+  breadcrumbs.browser.test.tsx, pilots-ssr.test.ts, controllable.test.ts — react-aria-components Button.test.js,
+  Link.test.js, Group.test.js, Toolbar.test.tsx, Breadcrumbs.test.js, Breadcrumbs.ssr.test.js
+- overflow/index.tsx (+ the collapsing path of breadcrumbs/index.tsx) — React Spectrum v3 (@adobe/react-spectrum)
+  breadcrumbs/Breadcrumbs.tsx (updateOverflow / computeVisibleItems), actiongroup/ActionGroup.tsx (overflowMode="collapse",
+  outerWidth / outerHeight); @react-spectrum/s2 Breadcrumbs.tsx (fonts.ready re-measure, container gap)
+- tests/overflow.browser.test.tsx — React Spectrum v3 test/breadcrumbs/Breadcrumbs.test.js, test/actiongroup/ActionGroup.test.js
+- checkbox/index.tsx, checkbox/behaviour.tsx, switch/index.tsx, switch/behaviour.tsx, state/toggle.ts, state/checkbox-group.ts,
+  text-field/index.tsx, text-field/behaviour.tsx, form/index.tsx, form/field-error.tsx, form/behaviour.ts,
+  state/form-validation.ts — react-aria-components Checkbox.tsx, Switch.tsx, TextField.tsx, Form.tsx, FieldError.tsx;
+  react-aria checkbox/*, switch/useSwitch.ts, toggle/useToggle.ts, textfield/*, form/useFormValidation.ts,
+  utils/useFormReset.ts; react-stately checkbox/useCheckboxGroupState.ts, toggle/useToggleState.ts, form/useFormValidationState.ts
+- radio-group/index.tsx, radio-group/parts.tsx, radio-group/behaviour.ts, state/radio-group.ts — react-aria-components
+  RadioGroup.tsx; react-aria radio/useRadioGroup.ts, radio/useRadio.ts; react-stately radio/useRadioGroupState.ts
+- tests/checkbox.browser.test.tsx, checkbox-group.browser.test.tsx, switch.browser.test.tsx, text-field.browser.test.tsx,
+  field-error.browser.test.tsx, form.browser.test.tsx, form-reset.browser.test.tsx, text-field-behaviour.browser.test.tsx,
+  checkbox-group-behaviour.browser.test.tsx, checkbox-group-state.test.ts — react-aria-components Checkbox.test.js,
+  CheckboxGroup.test.js, Switch.test.js, TextField.test.js, FieldError.test.js, Form.test.js; react-aria
+  utils/useFormReset.test.tsx, textfield/useTextField.test.js, checkbox/useCheckboxGroup.test.tsx; react-stately
+  checkbox/useCheckboxGroupState.test.tsx
+
+--------------------------------------------------------------------------------
+shadcn/ui — https://github.com/shadcn-ui/ui (release shadcn@4.21.4)
+Copyright (c) 2023 shadcn. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  sidebar/index.tsx, sidebar/state.ts — apps/v4/registry/new-york-v4/ui/sidebar.tsx,
+  apps/v4/registry/bases/aria/ui/sidebar.tsx, apps/v4/registry/new-york-v4/hooks/use-mobile.ts
+  (sidebar/sheet-motion.ts is Rivet-only, on the embla-ported motion/); theme.css `rv-Sidebar*` rules — layout classes of
+  new-york-v4 ui/sidebar.tsx; apps/cdk-docs examples sidebar-* — registry blocks sidebar-01, -03, -07, -08, -13.
+
+--------------------------------------------------------------------------------
+Radix UI Primitives — https://github.com/radix-ui/primitives (@radix-ui/react-scroll-area 1.3.0,
+@radix-ui/react-presence 1.1.11, @radix-ui/number 1.1.3, @radix-ui/react-direction 1.1.5)
+Copyright (c) 2022 WorkOS. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  scroll-area/index.tsx, scroll-area/dom.ts — packages/react/scroll-area/src/scroll-area.tsx,
+  use-state-machine.ts (+ number clamp, react-direction useDirection, primitive composeEventHandlers);
+  scroll-area/presence.tsx — packages/react/presence/src/presence.tsx, use-state-machine.tsx;
+  tests/scroll-area.browser.test.tsx — packages/react/scroll-area/src/scroll-area.test.tsx.
+
+--------------------------------------------------------------------------------
+embla-carousel — https://github.com/davidjerleke/embla-carousel (embla-carousel 8.6.0,
+embla-carousel-autoplay 8.6.0, embla-carousel-auto-scroll 8.6.0, embla-carousel-class-names 8.6.0,
+embla-carousel-fade 8.6.0, embla-carousel-auto-height 8.6.0)
+Copyright (c) David Jerleke. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  carousel/engine/*.ts — packages/embla-carousel/src/components/*.ts (Alignment, Animations, Axis,
+  Counter, DragHandler, DragTracker, EmblaCarousel, Engine, EventHandler, EventStore, NodeRects,
+  Options, OptionsHandler, PercentOfView, Plugins, PluginsHandler, ResizeHandler, ScrollBounds,
+  ScrollContain, ScrollLimit, ScrollLooper, ScrollProgress, ScrollSnaps, ScrollTarget, ScrollTo,
+  SlideFocus, SlideLooper, SlideRegistry, SlideSizes, SlidesHandler, SlidesInView, SlidesToScroll,
+  Translate, utils) + index.ts;
+  motion/{Vector1d,ScrollBody,Limit,Animations,DragTracker,DragRelease,utils}.ts — the same
+  components (Vector1d, ScrollBody, Limit, Animations, DragTracker, DragHandler release physics,
+  utils), DOM-agnostic; motion/Motion1D.ts — Engine.ts update / render loop composition;
+  carousel/plugins/autoplay/*, auto-scroll/*, class-names/*, fade/*, auto-height/* —
+  packages/embla-carousel-{autoplay,auto-scroll,class-names,fade,auto-height}/src/components/*.ts;
+  tests/carousel-*.test.ts (except carousel-plugins-rivet), tests/carousel/{fixtures,mocks}/* —
+  packages/embla-carousel/src/__tests__/*.test.ts, fixtures/*, mocks/*.
+
+--------------------------------------------------------------------------------
+yet-another-react-lightbox — https://github.com/igordanchenko/yet-another-react-lightbox (3.32.2)
+Copyright (c) 2022 Igor Danchenko. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  lightbox/state.ts — src/types.ts, src/props.ts, src/consts.ts, src/utils.ts;
+  lightbox/behaviour.ts — src/modules/Controller/{Controller.tsx,usePointerSwipe.ts,useWheelSwipe.ts,
+  usePreventWheelDefaults.ts}, src/modules/Navigation/{useKeyboardNavigation.ts,useNavigationState.ts};
+  lightbox/index.tsx — src/Lightbox.tsx, src/modules/{Portal,Controller/Controller,Carousel,Toolbar,
+  Navigation/Navigation}.tsx, src/components/{ImageSlide,IconButton}.tsx;
+  lightbox/{zoom,video,captions,counter,download,fullscreen,share,slideshow,thumbnails,inline}/index.tsx —
+  src/plugins/<name>/* (Download's FileSaver after eligrey/FileSaver.js, MIT);
+  tests/lightbox.browser.test.tsx, tests/lightbox-plugins.browser.test.tsx — test/unit/Lightbox.spec.ts,
+  test/unit/plugins/*.spec.tsx (cases that apply).
+  (lightbox/embed, lightbox/pdf are Rivet-authored.)
+
+--------------------------------------------------------------------------------
+react-resizable-panels — https://github.com/bvaughn/react-resizable-panels (react-resizable-panels 4.14.3)
+Copyright (c) 2018 Brian Vaughn. Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  resizable/engine/** — lib/global/** (non-test), lib/constants.ts, lib/types.ts, lib/utils/{EventEmitter,
+  assert,isArrayEqual,isHTMLElement,isShadowRoot}.ts, lib/components/group/{sortByElementOffset,
+  compareDocumentPosition,isInDocumentOrder,sortByDocumentPosition,readLegacyLayout}.ts,
+  lib/components/group/auto-save/getStorageKey.ts, lib/components/{group,panel}/types.ts (framework-free parts);
+  resizable/engine/vendor/stacking-order.ts — lib/vendor/stacking-order.ts (upstream fork of stacking-order 2.0.0,
+  © Rich Harris, MIT);
+  resizable/index.tsx, resizable/mount.ts — lib/components/group/{Group,ResizePreview}.tsx,
+  lib/components/group/{GroupContext,useGroupContext,useDefaultLayout,useGroupRef,useGroupCallbackRef,
+  useGroupImperativeHandle,useResizePreviews}.ts, lib/components/panel/Panel.tsx,
+  lib/components/panel/{constants,usePanelRef,usePanelCallbackRef,usePanelImperativeHandle}.ts,
+  lib/components/separator/{Separator,SeparatorClone,SeparatorOverlay,SeparatorOverlayRenderer}.tsx,
+  lib/components/shared/ResizeSeparator.tsx, lib/index.ts;
+  tests/resizable/** — lib/**/*.test.ts (engine suite, grid excluded), lib/global/test/*, lib/utils/test/*,
+  vitest.setup.ts.
+
+--------------------------------------------------------------------------------
+flickr/justified-layout — https://github.com/flickr/justified-layout (justified-layout 4.1.0)
+Copyright 2019 SmugMug, Inc.
+Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  masonry/justified.ts — lib/row.js (Row: addItem, completeLayout, forceComplete), lib/index.js
+  (computeLayout, createNewRow edge-case bounds, defaults); tests/masonry-layout.test.ts ("justified rows"
+  describe) — test cases after test/justified-layout.js where they apply.
+
+--------------------------------------------------------------------------------
+@malva-ui/scheduler — angular-ui-lib/libs/scheduler (the Rivet author's own library)
+Copyright (c) 2026 Malva UI
+Licensed under the MIT License:
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+  associated documentation files (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge, publish, distribute,
+  sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+  NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+  OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Ported into:
+  scheduler/time.ts — src/lib/layout/scheduler-time.ts;
+  scheduler/layout.ts — src/lib/layout/scheduler-layout.ts, src/lib/layout/scheduler-focus.ts
+  (nextVisibleDate), src/lib/scheduler/scheduler.types.ts;
+  scheduler/behaviour.ts — src/lib/layout/scheduler-focus.ts (findEventElement, findCellElement);
+  scheduler/dates.ts — replaces the MlvDateAdapter calls of src/lib/layout/*.ts (Rivet-authored bridge);
+  tests/scheduler-{layout,time,focus}.test.ts — src/lib/layout/scheduler-{layout,time,focus}.spec.ts;
+  scheduler/state.ts — src/lib/scheduler/scheduler.ts (models, computeds, public methods),
+  src/lib/scheduler/scheduler-context.ts (commitChange, announce);
+  scheduler/intl.ts — @malva-ui/i18n libs/i18n/*/src/lib/*.ts `scheduler` sections (14 locales);
+  tests/scheduler-state.test.ts — Rivet cases over the ported state;
+  scheduler/index.tsx — src/lib/scheduler/scheduler.ts + scheduler.html (root host, drag hint, live regions);
+  scheduler/context.tsx — src/lib/scheduler/scheduler-context.ts (root → views contract);
+  scheduler/month.tsx — src/lib/month/scheduler-month.ts + scheduler-month.html;
+  scheduler/event.tsx — src/lib/event/scheduler-event.ts + scheduler-event.html;
+  scheduler/behaviour.ts (month handlers) — src/lib/month/scheduler-month.ts (_openMore, popover close);
+  tests/scheduler-month.browser.test.tsx — src/lib/month/scheduler-month.spec.ts;
+  scheduler/time-grid.tsx — src/lib/time-grid/scheduler-time-grid.ts + scheduler-time-grid.html;
+  scheduler/time-grid-client.tsx — src/lib/time-grid/scheduler-time-grid.ts (scrollOffsetFor, initial scroll,
+  scroll requests), src/lib/scheduler/scheduler.ts (minute clock);
+  scheduler/behaviour.ts (time-grid focus) — src/lib/time-grid/scheduler-time-grid.ts (_onCellFocus);
+  tests/scheduler-time-grid.browser.test.tsx — src/lib/time-grid/scheduler-time-grid.spec.ts;
+  scheduler/keys.ts — src/lib/event/scheduler-event.ts (keyboard, move / resize steps, focus hand-off),
+  src/lib/month/scheduler-month.ts (`+N more` keys, popover hand-off), @malva-ui/core/menu
+  context-menu-trigger.ts (mlvIsContextMenuKey, mlvClaimContextMenuKey);
+  scheduler/keys-month.ts — src/lib/month/scheduler-month.ts (keyboard navigation + selection);
+  scheduler/keys-time-grid.ts — src/lib/time-grid/scheduler-time-grid.ts (keyboard navigation + selection);
+  tests/scheduler-keyboard.browser.test.tsx — keyboard / focus / interaction cases of
+  src/lib/{month,time-grid,event,scheduler}/*.spec.ts;
+  scheduler/pointer.ts — src/lib/drag/scheduler-pointer.ts;
+  scheduler/drag.ts — src/lib/drag/scheduler-drag.service.ts, src/lib/event/scheduler-event.ts (resize);
+  scheduler/behaviour.ts (schedulerPress) — Rivet-authored delegated press (replaces SortableJS list binding);
+  scheduler/select.ts — src/lib/month/scheduler-month.ts + src/lib/time-grid/scheduler-time-grid.ts (range select);
+  scheduler/state.ts (selection) — src/lib/time-grid/scheduler-time-grid.ts (_selectionRange, _commitSelection);
+  scheduler/selection.ts — src/lib/time-grid/scheduler-time-grid.ts + src/lib/month/scheduler-month.ts
+  (_selectedBounds, _isSelected), src/lib/scheduler/scheduler.ts (selectable);
+  tests/scheduler-pointer.browser.test.tsx — src/lib/drag/scheduler-pointer.spec.ts + range-select / externalDrop cases;
+  tests/scheduler-drag.browser.test.tsx — src/lib/drag/scheduler-drag.service.spec.ts,
+  src/lib/event/scheduler-event.spec.ts (drag / resize), src/lib/month/scheduler-month.spec.ts (popover drag);
+  tests/scheduler-fixtures.ts — src/lib/testing/* helpers.
+  scheduler/toolbar.tsx — src/lib/scheduler/scheduler.html (toolbar), scheduler.ts (_headerContext, nav labels),
+  scheduler-defs.ts (MlvSchedulerHeaderDef);
+  scheduler/menus.tsx — src/lib/scheduler/scheduler.ts (context menu, _slotRange), scheduler.html (menu panel),
+  scheduler-defs.ts (slot / event menu defs), @malva-ui/core/menu context-menu-trigger.ts (openFromEvent);
+  tests/scheduler-menu.browser.test.tsx — src/lib/scheduler/scheduler-context-menu.spec.ts;
+  tests/scheduler-root.browser.test.tsx — src/lib/scheduler/scheduler.spec.ts (root cases).

@@ -1,0 +1,37 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no message actions). Feature set inspired by HeroUI Pro's public ChatMessageActions docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatMessageActions Component Styles
+ * Block: chat-message-actions (parts: action / copy-icon / copied-icon)
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-message-actions {
+  @apply flex items-center gap-0.5 text-muted;
+}
+
+.chat-message-actions__action {
+  @apply text-muted;
+
+  &[aria-pressed="true"] {
+    @apply text-foreground;
+  }
+
+  & svg {
+    @apply transition-transform duration-(--duration-fast) motion-reduce:transition-none;
+  }
+
+  &:active svg {
+    scale: 0.9;
+  }
+}
+
+.chat-message-actions__copied-icon {
+  @apply hidden text-success;
+}
+
+[data-copied="true"] > .chat-message-actions__copy-icon {
+  @apply hidden;
+}
+
+[data-copied="true"] > .chat-message-actions__copied-icon {
+  @apply inline-block;
+}

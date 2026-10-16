@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetComponent",
+  "title": "Rivet component",
+  "description": "Adds a resumability-correct component (.tsx) to a Rivet app or library: inline-arrow handlers, render-function children for overlays, plus a test and an optional story route.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Component name (user-card becomes UserCard).",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Component name?"
+    },
+    "project": {
+      "type": "string",
+      "description": "The app or library.",
+      "$default": { "$source": "projectName" },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "directory": { "type": "string", "description": "Folder under the project's src (default components for apps, the src root for libraries)." },
+    "kind": {
+      "type": "string",
+      "enum": ["basic", "overlay"],
+      "default": "basic",
+      "description": "basic: signal + inline handler; overlay: trigger + panel with render-function children."
+    },
+    "test": { "type": "boolean", "description": "Write <Name>.test.tsx. Default: when the project has a vitest config." },
+    "story": { "type": "boolean", "default": false, "description": "Story page route src/routes/stories/<name>.tsx (apps only)." },
+    "export": { "type": "boolean", "description": "Re-export from the library's src/index.ts. Default: true for libraries." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["name", "project"],
+  "additionalProperties": false
+}

@@ -1,0 +1,51 @@
+/* Plain CSS: the snap animation moves the thumb and the fill inline (cdk motion);
+   style the animating thumb with [data-snapping]. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 24px;
+  margin: 16px;
+  max-width: 280px;
+}
+.rv-Slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.rv-SliderOutput {
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+.rv-SliderTrack {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(to right, #cbd5e1 0 2px, #e2e8f0 2px 25%);
+}
+.rv-SliderFill {
+  border-radius: 3px;
+  background: #2563eb;
+}
+.rv-SliderThumb {
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #2563eb;
+}
+.rv-SliderThumb[data-dragging] {
+  background: #2563eb;
+}
+.rv-SliderThumb[data-snapping] {
+  background: #93c5fd;
+}
+.rv-SliderThumb[data-focus-visible] {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}

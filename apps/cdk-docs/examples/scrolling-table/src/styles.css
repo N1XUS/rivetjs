@@ -1,0 +1,27 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.viewport {
+  width: 360px;
+  height: 240px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+tr {
+  height: 36px;
+}
+td {
+  padding: 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+td.num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

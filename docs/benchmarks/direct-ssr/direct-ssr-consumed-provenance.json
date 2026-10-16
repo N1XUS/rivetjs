@@ -1,0 +1,392 @@
+{
+  "decision": "Rejected live opt-in implementation: sustained CPU and code-size gates fail; root owns restoration after archive review. No further timings or allocation profiles.",
+  "baselineRevision": "742d2ec5b42f41f623a1a0d31e3c378ee26244fa",
+  "timing": {
+    "trials": 120,
+    "measuredPages": 2400,
+    "warmPages": 600,
+    "rotatedRepeats": 5,
+    "warmupPerTrial": 5,
+    "iterationsPerTrial": 20,
+    "gcOutsideTimedWindow": true,
+    "node": "v24.14.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "quietWindow": "Exclusive host run; no concurrent builds/tests/profiles/load",
+    "rawTotals": {
+      "completedPages": 2400,
+      "cpuMs": 44524.407,
+      "wallMs": 42680.858624000015,
+      "writes": 479200,
+      "units": 7586744000
+    }
+  },
+  "evidence": [
+    {
+      "path": "docs/benchmarks/direct-ssr/direct-ssr-consumed-diagnostic.json",
+      "sha256": "5ce3af2128ce13f8af85223a8f72b4eff92805b552af317039d93f2f99dcdc34"
+    },
+    {
+      "path": "docs/benchmarks/direct-ssr/direct-ssr-consumed-summary.json",
+      "sha256": "1efae7cfba27ca4bd6791411b4402db8fb93162a55f8617e314309b235fde5fb"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/consumed-root/archive-manifest.json",
+      "sha256": "20c73d8969d40a8dfcf1d9332a5bedf50b7c84cc1655134fee2d5d980c041352"
+    }
+  ],
+  "artifacts": [
+    {
+      "lane": "preserved-baseline",
+      "fields": 10,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/preserved-baseline-10.mjs",
+      "sha256": "00380accb37edb14d12def7baac76ff629159d4e20e27eb7bd67992fae3aefd5",
+      "bytes": 6645,
+      "gzipBytes": 2835,
+      "brotliBytes": 2526,
+      "emittedSourceBytes": 1527,
+      "emittedSourceSha256": "8b68e60cbce3863f46c2fe264ece0b418ba38d36bdafd9082b9c96cb1401160c",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/template.mjs": {
+          "bytesInOutput": 1398
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/omitted.mjs": {
+          "bytesInOutput": 80
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/reactivity/index.mjs": {
+          "bytesInOutput": 1089
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 36
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-async.mjs": {
+          "bytesInOutput": 62
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server.mjs": {
+          "bytesInOutput": 3153
+        },
+        "<stdin>": {
+          "bytesInOutput": 801
+        }
+      }
+    },
+    {
+      "lane": "new-OFF",
+      "fields": 10,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-OFF-10.mjs",
+      "sha256": "873c1a80448e85a812052debdb98b0decc7d21a93b95f77a9c16d0f1f1575e76",
+      "bytes": 6826,
+      "gzipBytes": 2912,
+      "brotliBytes": 2593,
+      "emittedSourceBytes": 1527,
+      "emittedSourceSha256": "8b68e60cbce3863f46c2fe264ece0b418ba38d36bdafd9082b9c96cb1401160c",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1398
+        },
+        "libs/runtime/omitted.mjs": {
+          "bytesInOutput": 80
+        },
+        "libs/reactivity/index.mjs": {
+          "bytesInOutput": 1089
+        },
+        "libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 36
+        },
+        "libs/runtime/server-async.mjs": {
+          "bytesInOutput": 62
+        },
+        "libs/runtime/server.mjs": {
+          "bytesInOutput": 3333
+        },
+        "<stdin>": {
+          "bytesInOutput": 802
+        }
+      }
+    },
+    {
+      "lane": "new-ON",
+      "fields": 10,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-ON-10.mjs",
+      "sha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+      "bytes": 14233,
+      "gzipBytes": 4173,
+      "brotliBytes": 3670,
+      "emittedSourceBytes": 17421,
+      "emittedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+      "consumedRootLowered": true,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1402
+        },
+        "libs/runtime/omitted.mjs": {
+          "bytesInOutput": 80
+        },
+        "libs/reactivity/index.mjs": {
+          "bytesInOutput": 1091
+        },
+        "libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 36
+        },
+        "libs/runtime/server-async.mjs": {
+          "bytesInOutput": 63
+        },
+        "libs/runtime/server.mjs": {
+          "bytesInOutput": 3389
+        },
+        "libs/runtime/server-direct.mjs": {
+          "bytesInOutput": 1650
+        },
+        "<stdin>": {
+          "bytesInOutput": 6496
+        }
+      }
+    },
+    {
+      "lane": "hand",
+      "fields": 10,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/hand-10.mjs",
+      "sha256": "d8a40719a4c549b6e845a91890da894ebdca8830446cef942d110679d755fc9c",
+      "bytes": 3777,
+      "gzipBytes": 1230,
+      "brotliBytes": 1008,
+      "emittedSourceBytes": 4837,
+      "emittedSourceSha256": "fe82c8683e72ffbf1e17160d3d587dd3c2adb236d25d5116131c3f5db2f48e3e",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1136
+        },
+        "<stdin>": {
+          "bytesInOutput": 2616
+        }
+      }
+    },
+    {
+      "lane": "preserved-baseline",
+      "fields": 50,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/preserved-baseline-50.mjs",
+      "sha256": "b20706326802f50bb8b8fda4eddfbe4ef4c44687be859df480342dd72435b5ec",
+      "bytes": 8085,
+      "gzipBytes": 3079,
+      "brotliBytes": 2648,
+      "emittedSourceBytes": 3767,
+      "emittedSourceSha256": "2115756ab8e0b43fcfc3ef89e8e95fbc5ca5b68851ce062897faf4f1261e4a52",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/template.mjs": {
+          "bytesInOutput": 1398
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/omitted.mjs": {
+          "bytesInOutput": 80
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/reactivity/index.mjs": {
+          "bytesInOutput": 1089
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 36
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-async.mjs": {
+          "bytesInOutput": 62
+        },
+        "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server.mjs": {
+          "bytesInOutput": 3153
+        },
+        "<stdin>": {
+          "bytesInOutput": 2241
+        }
+      }
+    },
+    {
+      "lane": "new-OFF",
+      "fields": 50,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-OFF-50.mjs",
+      "sha256": "f47c072c835a67b6de0b232b748a20ca8789b5f910a7481e5fd630787cc0866c",
+      "bytes": 8266,
+      "gzipBytes": 3152,
+      "brotliBytes": 2720,
+      "emittedSourceBytes": 3767,
+      "emittedSourceSha256": "2115756ab8e0b43fcfc3ef89e8e95fbc5ca5b68851ce062897faf4f1261e4a52",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1398
+        },
+        "libs/runtime/omitted.mjs": {
+          "bytesInOutput": 80
+        },
+        "libs/reactivity/index.mjs": {
+          "bytesInOutput": 1089
+        },
+        "libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 36
+        },
+        "libs/runtime/server-async.mjs": {
+          "bytesInOutput": 62
+        },
+        "libs/runtime/server.mjs": {
+          "bytesInOutput": 3333
+        },
+        "<stdin>": {
+          "bytesInOutput": 2242
+        }
+      }
+    },
+    {
+      "lane": "new-ON",
+      "fields": 50,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-ON-50.mjs",
+      "sha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+      "bytes": 31882,
+      "gzipBytes": 5696,
+      "brotliBytes": 4388,
+      "emittedSourceBytes": 63632,
+      "emittedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+      "consumedRootLowered": true,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1408
+        },
+        "libs/runtime/omitted.mjs": {
+          "bytesInOutput": 81
+        },
+        "libs/reactivity/index.mjs": {
+          "bytesInOutput": 1092
+        },
+        "libs/runtime/server-structural.mjs": {
+          "bytesInOutput": 37
+        },
+        "libs/runtime/server-async.mjs": {
+          "bytesInOutput": 67
+        },
+        "libs/runtime/server.mjs": {
+          "bytesInOutput": 3405
+        },
+        "libs/runtime/server-direct.mjs": {
+          "bytesInOutput": 1660
+        },
+        "<stdin>": {
+          "bytesInOutput": 24106
+        }
+      }
+    },
+    {
+      "lane": "hand",
+      "fields": 50,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/hand-50.mjs",
+      "sha256": "021a2c9e492ad07c6f92b5a814b403fe4dab3866f4324aaf11a0829d8b5e6f0a",
+      "bytes": 11792,
+      "gzipBytes": 1886,
+      "brotliBytes": 1419,
+      "emittedSourceBytes": 19077,
+      "emittedSourceSha256": "56a45715fda8f7747b06597c3575b0f413d8316fb91d3a2a911f20279d2c5ac7",
+      "consumedRootLowered": false,
+      "bundlerInputs": {
+        "libs/runtime/template.mjs": {
+          "bytesInOutput": 1153
+        },
+        "<stdin>": {
+          "bytesInOutput": 10613
+        }
+      }
+    }
+  ],
+  "proofs": [
+    {
+      "fields": 10,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.mjs",
+      "sha256": "91a53334ca259ef413f615b97bd2e29c1ed5fd5d12cb87a0fd4e386a89dfc264",
+      "bytes": 14420,
+      "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.emitted.mjs",
+      "sourceSha256": "badc7a0a8b636731a2783f5bd90f3c0820699f199693a5b689aaf010af3911b7",
+      "timedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+      "timedArtifactSha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+      "sites": {
+        "roots": 1,
+        "cleanSetup": 1,
+        "cleanEntry": 1,
+        "setupFallback": 1,
+        "materialized": 1
+      },
+      "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+    },
+    {
+      "fields": 50,
+      "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.mjs",
+      "sha256": "cd907f818e7895c9dce131bacfcc40103475912d186eb49ceeaa71c82f9769d0",
+      "bytes": 32074,
+      "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.emitted.mjs",
+      "sourceSha256": "32254ceae3d8e80f2a71a8c32649a7ff5c862b6c30ef2ee5b243c21bd7da58ee",
+      "timedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+      "timedArtifactSha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+      "sites": {
+        "roots": 1,
+        "cleanSetup": 1,
+        "cleanEntry": 1,
+        "setupFallback": 1,
+        "materialized": 1
+      },
+      "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+    }
+  ],
+  "sourceSnapshots": [
+    {
+      "originalPath": "libs/compiler/index.mjs",
+      "archivePath": "apps/ssr-bench/experiments/consumed-root/source-snapshot/libs/compiler/index.mjs",
+      "role": "rejected exact product/test source",
+      "bytes": 36027,
+      "sha256": "1952c4600329f273ee1dead6ae84df509f464f9ad50db7a50ae07179d3a90478"
+    },
+    {
+      "originalPath": "libs/runtime/server.mjs",
+      "archivePath": "apps/ssr-bench/experiments/consumed-root/source-snapshot/libs/runtime/server.mjs",
+      "role": "rejected exact product/test source",
+      "bytes": 12029,
+      "sha256": "92f73e31e5803af357c9a21ca949dc7f729a1246e74b71c8049a50bab78a6e1a"
+    },
+    {
+      "originalPath": "libs/runtime/server-direct.mjs",
+      "archivePath": "apps/ssr-bench/experiments/consumed-root/source-snapshot/libs/runtime/server-direct.mjs",
+      "role": "rejected exact product/test source",
+      "bytes": 3089,
+      "sha256": "b52a5a1be19aaeeae8f62da4e42524dcbec18fdeeb43c90f346cbe9008fe4240"
+    },
+    {
+      "originalPath": "libs/compiler/tests/server-direct.test.mjs",
+      "archivePath": "apps/ssr-bench/experiments/consumed-root/source-snapshot/libs/compiler/tests/server-direct.test.mjs",
+      "role": "rejected exact product/test source",
+      "bytes": 16311,
+      "sha256": "ab8a1e391237f4a952cbd2ff4e4d4d8cf5634bbe165ad014f0287fe94fc7ce91"
+    }
+  ],
+  "sharedWriter": {
+    "path": "/Users/denisseverin/Projects/claude-test/rivet/libs/server-emitter/writers.mjs",
+    "bytes": 2896,
+    "sha256": "18703dc90c5628a7ae6e5a38941423cafde72b2e40ba31bc9fb8d556505a9ca7"
+  },
+  "fixtureSources": [
+    {
+      "fields": 10,
+      "bytes": 1186,
+      "sha256": "c79da9bf61f490ed4eb356c77bdd3bba285b7becdb5f1eb17d038fedd9a9e305",
+      "handSha256": "fe82c8683e72ffbf1e17160d3d587dd3c2adb236d25d5116131c3f5db2f48e3e"
+    },
+    {
+      "fields": 50,
+      "bytes": 3186,
+      "sha256": "62f5cb6366a62dc0065d4d19702a6e9e38a684e8014876afcf08141f6c63fe80",
+      "handSha256": "56a45715fda8f7747b06597c3575b0f413d8316fb91d3a2a911f20279d2c5ac7"
+    }
+  ],
+  "installedVersions": {
+    "typescript": "5.9.3",
+    "entities": "7.0.0",
+    "esbuild": "0.28.2"
+  },
+  "cleanExecutionProof": "All6fullsize proof cases rows100/1k/5k\u00d7fields10/50:12200clean setup/admission;0setupfallback/shadow. Separate instrumented bundles; uninstrumented timed code never changed.",
+  "actualExistingAdapterCoverage": 0,
+  "allocationScope": "Source-visible root/slot-array removal replaced by one capture closure; actual totalV8allocation/backingstores/contexts unmeasured. Heap drift is not allocation/retainedmemory evidence.",
+  "sizeScope": "Bundles include actual runtime, external shared fixture helper/writer separatelyfingerprinted. NewOFF+181rawbytes in bothfixturecards; no universalappbundleclaim."
+}

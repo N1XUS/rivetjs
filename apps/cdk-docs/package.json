@@ -1,0 +1,21 @@
+{
+  "name": "@rivetjs/cdk-docs",
+  "version": "0.0.0-experimental",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@rivetjs/cdk": "0.0.0-experimental",
+    "@rivetjs/docs-kit": "0.0.0-experimental",
+    "@rivetjs/kit": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "lucide": "1.52.0"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@tailwindcss/vite": "4.3.3",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.2"
+  }
+}

@@ -1,0 +1,40 @@
+/* Plain CSS: a vertical line joins the steps; the selected header is bold. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.rv-Stepper {
+  max-width: 24rem;
+  margin: 16px;
+}
+
+.rv-Step {
+  padding-inline-start: 16px;
+  border-inline-start: 2px solid #e2e8f0;
+}
+
+.rv-Step[data-selected] {
+  border-color: #4f46e5;
+}
+
+.rv-StepHeader {
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.rv-StepHeader[aria-expanded="true"] {
+  font-weight: 600;
+}
+
+.rv-StepHeader:focus-visible {
+  outline: 2px solid #6366f1;
+}
+
+.rv-StepPanel {
+  padding-bottom: 12px;
+  color: #475569;
+}

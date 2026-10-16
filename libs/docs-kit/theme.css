@@ -1,0 +1,247 @@
+/*
+ * Docs theme: fonts, colour tokens, type scale, base element styles. Shared by every docs site
+ * (imported by the app's src/styles.css after Tailwind). Token contrast is tested in
+ * tests/contrast.test.ts (WCAG AA for every text/background pair, both themes): change a value
+ * there and here together.
+ */
+
+/* Self-hosted variable fonts. Swap ensures the requested typefaces appear on the first visit,
+   including with JavaScript disabled. Code uses Fira Code's contextual ligatures. */
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2") format("woff2-variations");
+}
+@font-face {
+  font-family: "Fira Code";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("../../node_modules/@fontsource-variable/fira-code/files/fira-code-latin-wght-normal.woff2") format("woff2-variations");
+}
+@theme {
+  --color-brand-cyan: #01eef9;
+  --color-brand-blue: #0085f8;
+  --color-brand-royal: #0360fa;
+  --color-brand-indigo: #262cfa;
+  --color-brand-navy: #1d04cd;
+  --color-brand-violet: #5b00f8;
+  --color-brand-purple: #b815f9;
+  --color-brand-magenta: #f827f5;
+  --color-brand-pink: #f930bf;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/*
+ * Tokens. Neutrals are a contrast ladder tinted toward the logo indigo (oklch hue 275), inverted per
+ * theme: --c-full (strongest text) … --c-8 (softest surface). Semantic names (--bg, --fg, --line,
+ * --accent, …) map onto it; components use the semantic names only.
+ *
+ * Layout: top bar 3.75rem, side nav 16.25rem, TOC 15rem, text column 46rem (a comfortable reading measure in Manrope).
+ * Breakpoints (media queries can't read custom properties, so they are literal in site.css): side
+ * nav + top-bar sections ≥ 900px (drawer below), TOC column ≥ 1280px. Z-index: nav 20, bar 30; the
+ * cdk overlay layer (drawer, menus, search) sets its own (100+) inline and sits after the page in the DOM.
+ */
+:root {
+  --side-width: 16.25rem;
+  --toc-width: 15rem;
+  --page-width: 56rem;
+  --gutter: 3rem;
+  --bar-height: 3.75rem;
+  /* Below the cdk overlay layer (ModalOverlay sets z-index 100 inline, popovers 100000). */
+  --z-nav: 20;
+  --z-bar: 30;
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Light ladder. */
+  --c-page: oklch(100% 0 0);
+  --c-full: oklch(16% 0.02 275);
+  --c-1: oklch(22% 0.02 275);
+  --c-2: oklch(38% 0.018 275);
+  --c-3: oklch(48% 0.016 275);
+  --c-4: oklch(52% 0.014 275);
+  --c-5: oklch(84% 0.01 275);
+  --c-6: oklch(91.5% 0.008 275);
+  --c-7: oklch(96.6% 0.005 275);
+  --c-8: oklch(98.6% 0.003 275);
+
+  --bg: var(--c-page);
+  --bg-soft: var(--c-7);
+  --bg-softer: var(--c-8);
+  --bg-code: var(--c-8);
+  --bg-raised: var(--c-page);
+  --fg: var(--c-1);
+  --fg-strong: var(--c-full);
+  --fg-soft: var(--c-2);
+  --fg-faint: var(--c-3);
+  --fg-quiet: var(--c-4);
+  --line: var(--c-6);
+  --line-strong: var(--c-5);
+
+  /* Accents. Links: logo indigo; hover: logo violet; active nav/TOC: violet. */
+  --accent: #262cfa;
+  --accent-hover: #5b00f8;
+  --accent-strong: #4a00c9;
+  --accent-soft: #eef0ff;
+  --mark: #fff1b8;
+  --selection: color-mix(in srgb, var(--color-brand-indigo) 18%, transparent);
+
+  /* Callouts and code headers: accent (text-safe) + tint. */
+  --note: #0353d6;
+  --tip: #00747a;
+  --warning: #9a4600;
+  --gotcha: #b0109f;
+  --prefer: #13702f;
+  --avoid: #bf1a1a;
+  --tag-new: #13702f;
+  --tag-updated: #0353d6;
+
+  /*
+   * Soft accent line (indigo → violet, low opacity): decorative only, in few places (active side-nav /
+   * TOC item, tab underline). Never the full logo spectrum, never fills or text.
+   */
+  --brand-gradient: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-brand-indigo) 70%, transparent),
+    color-mix(in oklab, var(--color-brand-violet) 55%, transparent)
+  );
+  --brand-gradient-vertical: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-brand-indigo) 70%, transparent),
+    color-mix(in oklab, var(--color-brand-violet) 55%, transparent)
+  );
+  /* Header panel wash: a faint single-hue tint in the corner (no glow). */
+  --header-wash: color-mix(in oklab, var(--color-brand-indigo) 5%, var(--bg-soft));
+  /* Filled buttons (white text, tested ≥ 4.5:1). */
+  --button-bg: var(--color-brand-indigo);
+  --button-bg-hover: var(--color-brand-navy);
+  --shadow-pop: 0 1px 2px oklch(20% 0.02 275 / 0.08), 0 8px 24px oklch(20% 0.02 275 / 0.12);
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  /* Dark ladder: near-black with an indigo cast. */
+  --c-page: oklch(16.5% 0.012 275);
+  --c-full: oklch(98.5% 0.003 275);
+  --c-1: oklch(93% 0.006 275);
+  --c-2: oklch(82% 0.01 275);
+  --c-3: oklch(72% 0.012 275);
+  --c-4: oklch(68% 0.012 275);
+  --c-5: oklch(40% 0.016 275);
+  --c-6: oklch(28% 0.016 275);
+  --c-7: oklch(21.5% 0.014 275);
+  --c-8: oklch(19% 0.013 275);
+
+  --bg-raised: var(--c-7);
+
+  /* Logo stops mixed toward white (pastel on near-black). */
+  --accent: #9aa4ff;
+  --accent-hover: #c0c6ff;
+  --accent-strong: #c4a6ff;
+  --accent-soft: color-mix(in oklab, var(--color-brand-indigo) 26%, transparent);
+  --mark: color-mix(in oklab, #f5b800 38%, transparent);
+
+  --note: #7fb2ff;
+  --tip: #4fe6ee;
+  --warning: #ffb45c;
+  --gotcha: #f78bf2;
+  --prefer: #6ee391;
+  --avoid: #ff8a8a;
+  --tag-new: #6ee391;
+  --tag-updated: #7fb2ff;
+
+  --brand-gradient: linear-gradient(90deg, color-mix(in oklab, #9aa4ff 75%, transparent), color-mix(in oklab, #b48cff 60%, transparent));
+  --brand-gradient-vertical: linear-gradient(180deg, color-mix(in oklab, #9aa4ff 75%, transparent), color-mix(in oklab, #b48cff 60%, transparent));
+  --header-wash: color-mix(in oklab, #7b82ff 7%, var(--bg-soft));
+  --button-bg: #3a40f0;
+  --button-bg-hover: #2a2fd8;
+  --shadow-pop: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@view-transition {
+  navigation: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  html {
+    scroll-padding-top: calc(var(--bar-height) + 1rem);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.90625rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--bg);
+    color: var(--fg);
+  }
+  ::selection {
+    background: var(--selection);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    color: var(--fg-strong);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-variant-ligatures: common-ligatures contextual;
+    font-feature-settings:
+      "calt" 1,
+      "liga" 1;
+    letter-spacing: 0;
+  }
+  a {
+    color: var(--accent);
+    transition: color 0.2s;
+  }
+  a:hover {
+    color: var(--accent-hover);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  button:not(:disabled),
+  a,
+  summary,
+  label {
+    cursor: pointer;
+  }
+  svg {
+    flex-shrink: 0;
+  }
+}

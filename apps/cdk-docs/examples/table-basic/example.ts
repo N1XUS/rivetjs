@@ -1,0 +1,38 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Table",
+  summary: "A table with multiple selection: native table elements with grid roles, selection checkboxes and select all, arrow keys between cells.",
+  tags: ["table", "selection", "keyboard"],
+  status: "experimental",
+  frame: { height: "md" },
+  show: ["src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#files", "role", "grid"] },
+    { attr: ["#files", "aria-multiselectable", "true"] },
+    { attr: ["#files-name", "role", "columnheader"] },
+    { attr: ["#files-games-name", "role", "rowheader"] },
+    { attr: ["#files tbody tr[data-key=games]", "aria-labelledby", "files-games-name"] },
+    { attr: ["#files thead input[type=checkbox]", "aria-label", "Select All"] },
+    { click: "#files-games-name" },
+    { attr: ["#files tbody tr[data-key=games]", "aria-selected", "true"] },
+    { matches: "#files tbody tr[data-key=games] input:checked" },
+    { matches: "#files thead [slot=selection][data-indeterminate]" },
+    { key: "ArrowDown" },
+    { focused: "#files-apps-name" },
+    { key: "ArrowRight" },
+    { focused: "#files tbody tr[data-key=apps] td:nth-child(3)" },
+    { key: "ArrowLeft" },
+    { key: "ArrowLeft" },
+    { key: "ArrowLeft" },
+    { focused: "#files tbody tr[data-key=apps]" },
+    { key: "Space" },
+    { attr: ["#files tbody tr[data-key=apps]", "aria-selected", "true"] },
+    // cdk bug: the select all checkbox does not respond on a resumed page; Ctrl+A / Cmd+A selects all.
+    { key: "ControlOrMeta+a" },
+    { attr: ["#files tbody tr[data-key=job]", "aria-selected", "true"] },
+    { matches: "#files thead [slot=selection][data-selected] svg" },
+    { key: "Escape" },
+    { attr: ["#files tbody tr[data-key=games]", "aria-selected", "false"] },
+  ],
+});

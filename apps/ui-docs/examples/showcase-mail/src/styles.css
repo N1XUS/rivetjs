@@ -1,0 +1,25 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+/* Below 768 px: one pane at a time (the list, or the open message); the folder pane and the resize handles hide and
+   the visible pane takes the full width (`!important`: the cdk panels carry inline `display` / flex sizes). */
+@media (width < 48rem) {
+  .mail-panes > [data-pane="nav"],
+  .mail-panes > [data-separator] {
+    display: none !important;
+  }
+  .mail-panes > [data-pane] {
+    flex: 1 1 100% !important;
+  }
+  .mail-panes > [data-pane]:has(.mail-mobile-hidden) {
+    display: none !important;
+  }
+}

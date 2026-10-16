@@ -1,0 +1,36 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/field-error.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Field error styles */
+.field-error {
+  @apply h-0 px-1 text-xs wrap-break-word text-danger opacity-0 data-visible:h-auto data-visible:opacity-100;
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    height var(--duration-slow) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}
+
+/*
+ * Toggle fields (checkbox/switch): stack below the label like description.
+ * Disable collapsible height/opacity — those styles break flex-col content layout.
+ */
+.checkbox > .field-error,
+.checkbox > [data-slot="field-error"],
+.switch > .field-error,
+.switch > [data-slot="field-error"],
+.radio > .field-error,
+.radio > [data-slot="field-error"] {
+  /* Rivet: no inline-start padding here: checkbox / switch / radio.css indent their `> [data-slot="field-error"]`, which
+     must not depend on the order the per-component files load in (TWEAKS.md TW-119) */
+  @apply m-0 h-auto min-h-0 py-0 pe-0 text-muted opacity-100;
+  transition: none;
+}
+
+/* Rivet: a field error without the slot attribute keeps the former `p-0` start padding (TW-119) */
+:is(.checkbox, .switch, .radio) > .field-error:not([data-slot="field-error"]) {
+  @apply ps-0;
+}

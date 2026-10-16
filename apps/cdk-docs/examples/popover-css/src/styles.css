@@ -1,0 +1,57 @@
+/* Plain CSS on the default class names and state attributes. No Tailwind, no theme. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+.rv-Button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+}
+.rv-Button[aria-expanded="true"] {
+  border-color: #0f766e;
+}
+.rv-Popover {
+  max-width: 16rem;
+  padding: 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  /* Set by the engine: grow out of the trigger. */
+  transform-origin: var(--trigger-anchor-point);
+}
+.rv-Dialog {
+  outline: none;
+}
+.rv-Dialog .rv-Heading {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.rv-OverlayArrow .tip {
+  display: block;
+  width: 12px;
+  height: 6px;
+  background: #cbd5e1;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.rv-OverlayArrow[data-placement="bottom"] .tip {
+  rotate: 180deg;
+}
+.rv-Popover[data-entering] {
+  animation: pop 140ms ease-out;
+}
+.rv-Popover[data-exiting] {
+  animation: pop 100ms ease-in reverse;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.95;
+  }
+}

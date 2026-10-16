@@ -1,0 +1,1 @@
+export { <%= subpathClass %>, type <%= subpathClass %>Props } from "./<%= subpathClass %>.tsx";

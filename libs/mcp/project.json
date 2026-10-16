@@ -1,0 +1,22 @@
+{
+  "name": "mcp",
+  "projectType": "library",
+  "implicitDependencies": ["compiler", "language-core", "docs-kit"],
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/mcp" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project mcp" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/mcp" }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+node_modules/
+.rivet/
+dist/
+.artifacts/
+.superpowers/
+.vitest/
+.nx/
+**/bin/
+**/obj/
+**/__pycache__/
+apps/resume-bench/.build/
+apps/resume-bench/results/
+libs/i18n/tests/fixture/src/rivet-i18n.d.ts
+.vercel/
+.netlify/
+.wrangler/
+
+# Local registry of the release e2e (scripts/release/verdaccio.ts): packages, throwaway user, npm userconfig + cache
+scripts/release/verdaccio/storage/

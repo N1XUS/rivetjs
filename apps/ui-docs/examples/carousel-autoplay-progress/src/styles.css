@@ -1,0 +1,31 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+/* embla's autoplay progress: the bar slides across while the timer runs, hidden (and paused) when it stops. */
+.autoplay-progress[data-hidden] {
+  opacity: 0;
+}
+.autoplay-progress-bar {
+  animation-name: autoplay-progress;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+}
+.autoplay-progress[data-hidden] .autoplay-progress-bar {
+  animation-play-state: paused;
+}
+@keyframes autoplay-progress {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}

@@ -1,0 +1,162 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no number stepper). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --surface, --foreground, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/number-field (spinbutton input + stepper buttons). The displayed value rolls in per changed character (CSS keyframes on client-created spans; none with reduced motion), also while the input is focused; the raw input text shows only while the user edits it (`data-editing`). */
+/* -------------------------------------------------------------------------------------------------
+ * NumberStepper Component Styles
+ * Block: number-stepper (parts: group / button (decrement, increment) / value / input / display / char)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: number-stepper - the field (label, group, description, error)
+ */
+.number-stepper {
+  @apply inline-flex flex-col gap-1;
+
+  --number-stepper-height: calc(var(--spacing) * 9);
+  --number-stepper-button: calc(var(--spacing) * 7);
+  --number-stepper-font-size: var(--text-sm);
+  --number-stepper-value-width: 3ch;
+
+  &[data-invalid="true"] [data-slot="description"] {
+    @apply hidden;
+  }
+}
+
+.number-stepper--sm {
+  --number-stepper-height: calc(var(--spacing) * 7);
+  --number-stepper-button: calc(var(--spacing) * 5);
+  --number-stepper-font-size: var(--text-xs);
+}
+
+.number-stepper--md {
+  /* defaults above */
+}
+
+.number-stepper--lg {
+  --number-stepper-height: calc(var(--spacing) * 11);
+  --number-stepper-button: calc(var(--spacing) * 9);
+  --number-stepper-font-size: var(--text-base);
+}
+
+/**
+ * Element: group - the pill holding the buttons and the value
+ */
+.number-stepper__group {
+  @apply inline-flex w-fit items-center gap-1 rounded-full bg-default p-1;
+
+  height: var(--number-stepper-height);
+
+  &:has(.number-stepper__input:focus-visible),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  &[data-invalid="true"] {
+    @apply status-invalid-field;
+  }
+}
+
+/**
+ * Element: button - decrement / increment
+ */
+.number-stepper__button {
+  @apply flex shrink-0 items-center justify-center rounded-full bg-surface text-foreground shadow-surface outline-none select-none no-highlight;
+
+  width: var(--number-stepper-button);
+  height: var(--number-stepper-button);
+  cursor: var(--cursor-interactive);
+
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    width: calc(var(--number-stepper-button) * 0.55);
+    height: calc(var(--number-stepper-button) * 0.55);
+  }
+
+  @media (hover: hover) {
+    &[data-hovered="true"]:not([data-disabled="true"]) {
+      @apply bg-surface-secondary;
+    }
+  }
+
+  &[data-pressed="true"] {
+    transform: scale(0.92);
+  }
+
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-disabled="true"],
+  &:disabled {
+    @apply opacity-40 shadow-none;
+    cursor: default;
+  }
+}
+
+/**
+ * Element: value - the input under the animated display
+ */
+.number-stepper__value {
+  @apply relative inline-grid items-center justify-items-center px-1 font-medium text-foreground tabular-nums;
+
+  min-width: var(--number-stepper-value-width);
+  font-size: var(--number-stepper-font-size);
+  height: 100%;
+}
+
+.number-stepper__input {
+  @apply col-start-1 row-start-1 h-full w-full min-w-0 bg-transparent p-0 text-center outline-none;
+
+  font: inherit;
+  /* The display shows the value unless the user edits the text (`data-editing` on the value, set by the component on
+     typing / IME / caret placement, cleared on a step, commit or blur): a focused input alone keeps the animated
+     display (a stepper press focuses the input). */
+  color: transparent;
+  caret-color: transparent;
+  field-sizing: content;
+  min-width: var(--number-stepper-value-width);
+
+  .number-stepper__value[data-editing="true"] & {
+    color: inherit;
+    caret-color: auto;
+  }
+}
+
+.number-stepper__display {
+  @apply pointer-events-none col-start-1 row-start-1 inline-flex overflow-hidden whitespace-pre;
+
+  .number-stepper__value[data-editing="true"] & {
+    visibility: hidden;
+  }
+}
+
+/**
+ * Element: char - one displayed character; a client-created one rolls in
+ */
+.number-stepper__char {
+  @apply inline-block;
+
+  &[data-roll] {
+    animation: number-stepper-roll var(--duration-base) var(--ease-out);
+    @apply motion-reduce:animate-none;
+  }
+}
+
+@keyframes number-stepper-roll {
+  from {
+    opacity: 0;
+    transform: translateY(60%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  padding: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+figure {
+  margin: 0;
+}
+figcaption {
+  margin-bottom: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.area {
+  width: 140px;
+  height: 160px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.viewport {
+  width: 100%;
+  height: 100%;
+}
+.viewport p {
+  margin: 0;
+  padding: 4px 10px;
+}
+.scrollbar {
+  display: flex;
+  width: 8px;
+  padding: 1px;
+  user-select: none;
+  touch-action: none;
+}
+.scrollbar[data-state="visible"] {
+  animation: fade-in 120ms ease-out;
+}
+.thumb {
+  flex: 1;
+  border-radius: 8px;
+  background: #64748b;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}

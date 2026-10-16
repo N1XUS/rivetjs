@@ -1,0 +1,8 @@
+# Deno lanes: the exact built bundles + runtime node_modules (package.json at /workspace → Deno 2 resolves bare
+# specifiers from node_modules) of the Node lane image, run by pinned official Deno. No rebuild.
+FROM denoland/deno:2.9.7@sha256:fa335acdf6b72106eda2cb6a8cb5f4187e7630e357467489db4b2e7352d5e432
+WORKDIR /workspace
+ENV NODE_ENV=production
+COPY --from=lane /workspace /workspace
+EXPOSE 8080
+CMD ["deno", "run", "-A", "apps/ssr-bench/dist/server.mjs"]

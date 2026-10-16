@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "*.ts",
+    "loadgen/*.ts",
+    "adapters/*.ts",
+    "fixture/*.ts",
+    "services/*.ts",
+    "tests/*.ts",
+    "types.d.ts",
+    "router-app/*.ts",
+    "router-app/src/**/*.ts",
+    "router-app/src/**/*.tsx",
+    "cache-bench/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", "router-app/.rivet", ".build", "results", "adapters/*.jsx", "dotnet"]
+}

@@ -1,0 +1,43 @@
+/* Plain CSS on .rv-Group: the state of the whole group as data attributes. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 16px;
+}
+.rv-Group {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rv-Group > * {
+  border: 0;
+  padding: 4px 10px;
+  background: white;
+  font: inherit;
+  outline: none;
+}
+.rv-Group:hover,
+.rv-Group[data-hovered] {
+  border-color: #94a3b8;
+}
+.rv-Group[data-focus-within] {
+  border-color: #0f766e;
+}
+.rv-Group[data-focus-visible] {
+  box-shadow: 0 0 0 3px #99f6e4;
+}
+.rv-Group[data-invalid] {
+  border-color: #b91c1c;
+}
+.rv-Group[data-disabled] {
+  opacity: 0.5;
+}
+.rv-Group input {
+  width: 3em;
+}

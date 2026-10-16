@@ -1,0 +1,29 @@
+{
+  "name": "devtools",
+  "projectType": "library",
+  "implicitDependencies": ["compiler", "runtime", "reactivity"],
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": { "command": "node scripts/package/build.ts libs/devtools" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node libs/devtools/build.ts" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "dependsOn": ["build"],
+      "options": { "command": "vitest run --project devtools --project devtools-dev" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/devtools" }
+    }
+  }
+}

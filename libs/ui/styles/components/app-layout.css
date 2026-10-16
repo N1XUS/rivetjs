@@ -1,0 +1,228 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no app layout). Feature set (class / CSS variable names) inspired by HeroUI Pro's public AppLayout docs; independent implementation on HeroUI tokens and the Rivet-authored sidebar styles. */
+/* -------------------------------------------------------------------------------------------------
+ * AppLayout Component Styles
+ * Block: app-layout (on the sidebar wrapper: data-scroll-mode / data-sidebar-side / data-aside-mobile / data-reduce-motion)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: app-layout - the scaffold (sidebar + body)
+ */
+.app-layout {
+  --app-layout-aside-width: 320px;
+  --app-layout-aside-duration: var(--duration-base);
+  --app-layout-header-height: 3.5rem;
+
+  @apply bg-background text-foreground;
+  /* Panel sizes given as numbers are `cqw` of the layout (also inside the fixed sidebar container and the aside). */
+  container-type: inline-size;
+
+  /* A right sidebar sits after the body (DOM order stays sidebar-first for the inset sibling rules). */
+  &[data-sidebar-side="right"] > .sidebar {
+    order: 2;
+  }
+}
+
+/* Scroll mode "content": the layout fills the viewport, main scrolls */
+.app-layout--scroll-content {
+  @apply h-svh max-h-svh overflow-hidden;
+
+  & .app-layout__body {
+    @apply min-h-0 overflow-hidden;
+  }
+
+  & .app-layout__content {
+    @apply min-h-0 flex-1;
+  }
+
+  & .app-layout__main {
+    @apply min-h-0 overflow-y-auto;
+  }
+
+  & .app-layout__aside {
+    @apply static max-h-none self-stretch;
+  }
+}
+
+/**
+ * Element: body - the page next to the sidebar (also `sidebar__inset`)
+ */
+.app-layout__body {
+  @apply relative min-w-0;
+}
+
+/**
+ * Element: header - the sticky navbar
+ */
+.app-layout__header {
+  @apply sticky top-0 z-20 flex shrink-0 items-center gap-2 border-b border-separator bg-background/80 px-4 backdrop-blur;
+  min-height: var(--app-layout-header-height);
+
+  .sidebar[data-variant="inset"] ~ .app-layout__body & {
+    @apply bg-transparent backdrop-blur-none;
+    border-start-start-radius: inherit;
+    border-start-end-radius: inherit;
+  }
+
+  &:empty {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: toolbar - a bar under the navbar
+ */
+.app-layout__toolbar {
+  @apply flex shrink-0 items-center gap-2 border-b border-separator px-4 py-2;
+}
+
+/**
+ * Element: content - main + aside row
+ */
+.app-layout__content {
+  @apply relative flex min-w-0 flex-1;
+}
+
+/**
+ * Element: main - the page content
+ */
+.app-layout__main {
+  @apply min-w-0 flex-1;
+}
+
+/**
+ * Element: aside - the right panel (data-state open / closed)
+ */
+.app-layout__aside {
+  @apply sticky shrink-0 overflow-hidden border-s border-separator bg-background;
+  top: var(--app-layout-header-height);
+  width: var(--app-layout-aside-width);
+  max-height: calc(100svh - var(--app-layout-header-height));
+  transition:
+    width var(--app-layout-aside-duration) var(--ease-smooth),
+    transform var(--app-layout-aside-duration) var(--ease-smooth),
+    border-color var(--app-layout-aside-duration) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  &[data-state="closed"] {
+    @apply w-0 border-s-0;
+    transform: translateX(100%);
+
+    &:dir(rtl) {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* Below 1024 px the column is hidden (asideMobile "hidden" or "sheet": the sheet takes over). */
+  @media (width < 1024px) {
+    @apply hidden;
+  }
+}
+
+.app-layout__aside-inner {
+  @apply h-full overflow-y-auto;
+  width: var(--app-layout-aside-width);
+  min-width: var(--app-layout-aside-width);
+}
+
+/**
+ * Element: footer
+ */
+.app-layout__footer {
+  @apply shrink-0 border-t border-separator px-4 py-3 text-sm text-muted;
+}
+
+/**
+ * Element: menu-toggle - mobile only (opens the sidebar sheet)
+ */
+.app-layout .app-layout__menu-toggle {
+  @apply md:hidden;
+}
+
+/**
+ * Element: aside-trigger - hidden below 1024 px unless the aside has a mobile sheet
+ */
+.app-layout .app-layout__aside-trigger:not([data-sheet]) {
+  @media (width < 1024px) {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: resize-handle - WAI-ARIA window splitter on a panel edge
+ */
+.app-layout__resize-handle {
+  @apply absolute inset-y-0 z-30 w-2 cursor-col-resize touch-none outline-none select-none;
+
+  &::after {
+    @apply absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-transparent;
+    content: "";
+    transition: background-color var(--duration-fast) var(--ease-smooth);
+  }
+
+  @media (hover: hover) {
+    &:hover::after {
+      @apply bg-accent;
+    }
+  }
+
+  &[data-dragging]::after,
+  &:focus-visible::after {
+    @apply w-0.5 bg-accent;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+
+  /* Sidebar handle: on the body's edge next to the sidebar */
+  &[data-panel="sidebar"] {
+    @apply -start-1;
+
+    &[data-side="right"] {
+      @apply start-auto -end-1;
+    }
+  }
+
+  /* Aside handle: on the aside's start edge (positioned by the content row) */
+  &[data-panel="aside"] {
+    @apply sticky top-(--app-layout-header-height) -me-2 h-[calc(100svh-var(--app-layout-header-height))];
+    position: relative;
+    inset: auto;
+  }
+
+  .app-layout__content:has(> .app-layout__aside[data-state="closed"]) > &[data-panel="aside"] {
+    @apply hidden;
+  }
+
+  @media (width < 1024px) {
+    &[data-panel="aside"] {
+      @apply hidden;
+    }
+  }
+
+  @media (width < 768px) {
+    &[data-panel="sidebar"] {
+      @apply hidden;
+    }
+  }
+}
+
+/* The sidebar collapsed to icons / offcanvas: no resizing */
+.sidebar[data-state="collapsed"] ~ .app-layout__body > .app-layout__resize-handle[data-panel="sidebar"] {
+  @apply hidden;
+}
+
+/**
+ * Element: sheet - the mobile aside (a right drawer)
+ */
+.app-layout__sheet {
+  width: min(var(--app-layout-aside-width), 85vw);
+}
+
+/* reduceMotion */
+.app-layout[data-reduce-motion] {
+  & .app-layout__aside,
+  & .app-layout__resize-handle::after {
+    transition: none;
+  }
+}

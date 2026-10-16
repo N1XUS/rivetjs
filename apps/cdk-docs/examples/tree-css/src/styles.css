@@ -1,0 +1,69 @@
+/* Plain CSS over the default class names, the state attributes and --tree-item-level. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+
+.rv-Tree {
+  display: grid;
+  gap: 2px;
+  width: 16rem;
+  margin: 1rem;
+  padding: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.rv-TreeItem {
+  padding: 4px 6px;
+  /* Indent by depth: TreeItem sets --tree-item-level (1 for root rows) on its style. */
+  padding-inline-start: calc(6px + (var(--tree-item-level) - 1) * 18px);
+  border-radius: 6px;
+  outline: none;
+  cursor: default;
+}
+
+.rv-TreeItem[data-hovered] {
+  background: #f1f5f9;
+}
+
+.rv-TreeItem[data-selected] {
+  background: #0369a1;
+  color: white;
+}
+
+.rv-TreeItem[data-focus-visible] {
+  box-shadow: inset 0 0 0 2px #0ea5e9;
+}
+
+.rv-TreeItem[data-disabled] {
+  color: #94a3b8;
+}
+
+.rv-TreeItem .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rv-TreeItem [slot="chevron"],
+.rv-TreeItem .spacer {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+.rv-TreeItem [slot="chevron"] svg {
+  transition: rotate 150ms;
+}
+
+.rv-TreeItem[data-expanded] > [role="gridcell"] [slot="chevron"] svg {
+  rotate: 90deg;
+}

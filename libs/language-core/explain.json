@@ -1,0 +1,653 @@
+{
+  "$comment": "Fix texts per RV code (`explain.ts` `explainCode`): what the code means in practice and the mechanical fix, for AI assistants (MCP explain_diagnostic / check_code), rivet check and editors. Severity, title and docs URL stay in libs/compiler/codes.json; every code there has an entry here (tests/explain.test.ts). `messages` = the emitted texts ({x} = placeholder); `avoid` triggers the code, `prefer` compiles clean (verified 2026-10-08 against both targets); `quickFix` = the language-core code fix that applies, if any.",
+  "codes": [
+    {
+      "code": "RV1000",
+      "messages": ["{oxc parser message}"],
+      "fix": "Fix the syntax error at the reported position (unclosed tag, stray brace, missing parenthesis). In the editor TypeScript's own syntax error is shown instead (analyzeFile drops RV1000 when TS reports syntax errors).",
+      "avoid": "export const A = () => <div>;",
+      "prefer": "export const A = () => <div />;",
+      "note": "Text comes from oxc verbatim; not Rivet-authored."
+    },
+    {
+      "code": "RV1001",
+      "messages": [null],
+      "fix": "Retired: spread attributes compile ({...props} lowers to _spread)."
+    },
+    {
+      "code": "RV1002",
+      "messages": ["Spread children are not supported"],
+      "fix": "Render the array as an expression child instead of spreading it: {items} or {items.map((x) => <li>{x}</li>)} (or <For each={items}>).",
+      "avoid": "export const A = (p: { items: any[] }) => <ul>{...p.items}</ul>;",
+      "prefer": "export const A = (p: { items: any[] }) => <ul>{p.items}</ul>;"
+    },
+    {
+      "code": "RV1003",
+      "messages": ["Unsupported namespaced tag"],
+      "fix": "Drop the XML namespace prefix from the tag: write <rect> inside <svg> instead of <svg:rect>.",
+      "avoid": "export const A = () => <svg:rect />;",
+      "prefer": "export const A = () => <svg><rect /></svg>;"
+    },
+    {
+      "code": "RV1004",
+      "messages": ["Unsupported native tag"],
+      "fix": "Use a valid HTML/SVG/MathML tag name, a custom element with a hyphen (<my-el>), or a capitalized component name (<MyEl />).",
+      "avoid": "export const A = () => <x$y />;",
+      "prefer": "export const A = () => <x-y />;",
+      "note": "Message omits the tag name."
+    },
+    {
+      "code": "RV1005",
+      "messages": [
+        "Unsupported parser-repaired native nesting: {tag}",
+        "Unsupported parser-repaired native nesting: text in <{tag}>",
+        "Unsupported parser-repaired native nesting: {inner} in <{tag}>",
+        "Unsupported parser-repaired native nesting: rows directly in <table> get an implied <tbody> (wrap the For / Show / .map in <tbody>)"
+      ],
+      "fix": "Use nesting the HTML parser keeps as written: no block elements inside <p> (use <div>), wrap table rows in <tbody>, only <option>/<optgroup> inside <select>.",
+      "avoid": "export const A = () => <p><div /></p>;",
+      "prefer": "export const A = () => <div><div /></div>;",
+      "note": "Only the implied-<tbody> variant carries a hint; '{tag}' variant does not name the offending parent."
+    },
+    {
+      "code": "RV1006",
+      "messages": ["Text is not supported directly in table structure"],
+      "fix": "Move the text into a cell: <tr><td>text</td></tr> (text directly in <table>/<tbody>/<thead>/<tfoot>/<tr> is foster-parented by the parser).",
+      "avoid": "export const A = () => <table>hello</table>;",
+      "prefer": "export const A = () => <table><tbody><tr><td>hello</td></tr></tbody></table>;",
+      "note": "DOM target only (targets: [\"dom\"])."
+    },
+    {
+      "code": "RV1007",
+      "messages": [
+        "Script/style JSX content is not supported; use css`` from @rivetjs/runtime/css or build-time assets",
+        "Script/style JSX content is not supported; use build-time assets"
+      ],
+      "fix": "Remove the <style>/<script> children: put CSS in a css`` block (import { css } from \"@rivetjs/runtime/css\") or a .css import, and scripts in a module/asset.",
+      "avoid": "export const A = () => <style>{\".a{color:red}\"}</style>;",
+      "prefer": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red }`;\nexport const A = () => <p class={s.a} />;"
+    },
+    {
+      "code": "RV1008",
+      "messages": ["Void elements cannot have children"],
+      "fix": "Self-close the void element and drop its children: <br />, <img />, <input />.",
+      "avoid": "export const A = () => <br>x</br>;",
+      "prefer": "export const A = () => <br />;",
+      "quickFix": "rivetSelfClose: \"Self-close the void element (drop its children)\""
+    },
+    {
+      "code": "RV1009",
+      "messages": ["Textarea model cannot also have children"],
+      "fix": "Self-close the <textarea>: model:value supplies its content.",
+      "avoid": "declare const v: any;\nexport const A = () => <textarea model:value={v}>x</textarea>;",
+      "prefer": "declare const v: any;\nexport const A = () => <textarea model:value={v} />;",
+      "quickFix": "rivetSelfClose: \"Remove the textarea children (model supplies the value)\""
+    },
+    {
+      "code": "RV1010",
+      "messages": ["Textarea/title children must be scalar text expressions; elements and fragments are not supported"],
+      "fix": "Give <textarea>/<title> only text or a string expression: <title>{`${name} – Site`}</title>; move markup out.",
+      "avoid": "export const A = () => <textarea><b /></textarea>;",
+      "prefer": "export const A = () => <textarea>{\"text\"}</textarea>;"
+    },
+    {
+      "code": "RV1011",
+      "messages": ["Unsupported model binding: {name}"],
+      "fix": "Use model:value only on <textarea>, <select> or <input type=\"text|search|email|url|tel|password\"> with a static type, and model:checked only on <input type=\"checkbox\">; the value must be a signal identifier or member (model:value={name}).",
+      "avoid": "declare const v: any;\nexport const A = () => <div model:value={v} />;",
+      "prefer": "declare const v: any;\nexport const A = () => <input type=\"text\" model:value={v} />;"
+    },
+    {
+      "code": "RV1012",
+      "messages": ["Unknown native event: {name}"],
+      "fix": "Use a known DOM event name (onClick, onInput, …) or, for a custom event, the on:my-event={…} form.",
+      "avoid": "export const A = () => <div onFrobnicate={() => 1} />;",
+      "prefer": "export const A = () => <div on:frobnicate={() => 1} />;",
+      "note": "Could suggest the nearest event name."
+    },
+    {
+      "code": "RV1013",
+      "messages": ["Unsupported global event attribute: {name}"],
+      "fix": "Write global events as window:onX / document:onX with a capitalized letters-only event name: window:onResize={…}.",
+      "avoid": "export const A = () => <div window:onclick={() => 1} />;",
+      "prefer": "export const A = () => <div window:onClick={() => 1} />;"
+    },
+    {
+      "code": "RV1014",
+      "messages": [null],
+      "fix": "Retired (live props 2026-10-07): each={xs()} / when={c()} are getters and update."
+    },
+    {
+      "code": "RV1015",
+      "messages": ["Event handler {name} must be a function"],
+      "fix": "Pass a function, not a string/number/boolean: onClick={() => go()}.",
+      "avoid": "export const A = () => <button onClick=\"go()\" />;",
+      "prefer": "declare const go: () => void;\nexport const A = () => <button onClick={() => go()} />;"
+    },
+    {
+      "code": "RV1016",
+      "messages": [
+        "Event handler {name} expression is evaluated once at render (handlers bind once); wrap it in an arrow to re-evaluate it per event, e.g. `{name}={() => (cond() ? a() : b())}` or `{name}={(event) => handler()?.(event)}`"
+      ],
+      "fix": "Wrap the handler expression in an arrow so it is re-read per event: onClick={(event) => (s() ? a : b)?.(event)}.",
+      "avoid": "declare const s: any, a: any, b: any;\nexport const A = () => <button onClick={s() ? a : b} />;",
+      "prefer": "declare const s: any, a: any, b: any;\nexport const A = () => <button onClick={(event) => (s() ? a : b)?.(event)} />;",
+      "quickFix": "rivetHandlerArrow: \"Wrap handler in arrow function\" → (event) => (<expr>)?.(event)"
+    },
+    {
+      "code": "RV1101",
+      "messages": ["Unsafe or unsupported native attribute: {name}", "Unsafe URL attribute"],
+      "fix": "Remove the attribute (e.g. innerHTML is rejected); for URL attributes use a safe http(s) or relative value instead of a javascript: URL.",
+      "avoid": "export const A = () => <a href=\"javascript:alert(1)\">x</a>;",
+      "prefer": "export const A = () => <a href=\"/help\">x</a>;",
+      "note": "'Unsafe URL attribute' does not name the attribute."
+    },
+    {
+      "code": "RV1102",
+      "messages": ["preload must be one of \"eager\", \"idle\", \"visible\", \"intent\", \"interaction\""],
+      "fix": "Set preload to one of \"eager\", \"idle\", \"visible\", \"intent\", \"interaction\" (string literal).",
+      "avoid": "export const A = () => <a href=\"/x\" preload=\"soon\" />;",
+      "prefer": "export const A = () => <a href=\"/x\" preload=\"idle\" />;",
+      "quickFix": "rivetPreload: \"Change preload to \\\"{nearest}\\\"\"",
+      "note": "typescript-plugin drops RV1102 when TS already reports an error inside its range (index.ts:163)."
+    },
+    {
+      "code": "RV1103",
+      "messages": ["clientEvent target must be window, document, a ref-bound element or \"media:(query)\""],
+      "fix": "Pass window, document, a ref-bound local, or a string literal \"media:(query)\" as the clientEvent target.",
+      "avoid": "import { clientEvent } from \"@rivetjs/runtime/dom\";\nexport function A() { clientEvent(\"body\", \"click\", () => {}); return <p />; }",
+      "prefer": "import { clientEvent } from \"@rivetjs/runtime/dom\";\nexport function A() { clientEvent(document, \"click\", () => {}); return <p />; }",
+      "note": "Resume mode, server target."
+    },
+    {
+      "code": "RV2001",
+      "messages": ["Browser global `{name}` is read during server rendering; move it into a handler, clientEffect or clientEvent"],
+      "fix": "Move the browser-global read into a handler, clientEffect(() => { … }) or clientEvent(window, …); never read window/document during render.",
+      "avoid": "export function A() {\n  console.log(window.innerWidth);\n  return <p />;\n}",
+      "prefer": "import { clientEffect } from \"@rivetjs/runtime/dom\";\nexport function A() {\n  clientEffect(() => {\n    console.log(window.innerWidth);\n  });\n  return <p />;\n}",
+      "quickFix": "rivetClientEffect: \"Run it in the browser: wrap in clientEffect(() => { … })\" (+ import; not offered for variable/return/function statements)",
+      "note": "Resume mode, server target only. Quick fix returns [] for `const w = window.x;` (VariableStatement)."
+    },
+    {
+      "code": "RV2002",
+      "messages": ["Resumable ref callbacks must assign a local: ref={(el) => (local = el)}"],
+      "fix": "Use an element ref: const el = ref<HTMLDivElement>(); <div ref={el} />, or assign a local: ref={(e) => (el = e)}.",
+      "avoid": "export function A() { return <div ref={(el) => el.focus()} onClick={() => 1} />; }",
+      "prefer": "import { ref } from \"@rivetjs/runtime/dom\";\nexport function A() { const divRef = ref<HTMLDivElement>(); return <div ref={divRef} onClick={() => 1} />; }",
+      "quickFix": "rivetRefObject: \"Use an element ref: const {name} = ref<…>(); ref={{name}}\"; rivetRefLocal: \"Bind the element to a local: ref={(el) => ({name} = el)}\"",
+      "note": "Resume mode."
+    },
+    {
+      "code": "RV2003",
+      "messages": ["Resumable code cannot capture `{name}`: class instances are not serializable"],
+      "fix": "Create the instance inside the handler (or a clientEffect), build it with `reconstruct(() => new Foo())` from `@rivetjs/runtime/dom` (or `/server` in a server-only module; no value in the page; the browser runs the factory on first read), or capture plain data/signals instead of a `new …` value.",
+      "avoid": "import { Foo } from \"foo-sdk\";\nexport function A() { const f = new Foo(); return <button onClick={() => console.log(f.n)} />; }",
+      "prefer": "import { Foo } from \"foo-sdk\";\nexport function A() { return <button onClick={() => console.log(new Foo().n)} />; }",
+      "note": "Resume mode; syntax-only (`const x = new X()` / class expression). Since Function Bridge T24 not for a data class declared in the module (it registers and resumes as data) nor an import of a `.tsx` / `.jsx` module (that module registers it); ineligible module classes are RV2102. Type-aware twin: RV2101.",
+      "quickFix": "rivetReconstruct: \"Build it in the browser: reconstruct(() => …)\" → const x = reconstruct(() => <init>); reads become x() (+ import from @rivetjs/runtime/dom)"
+    },
+    {
+      "code": "RV2004",
+      "messages": [null],
+      "fix": "Retired: onXCapture handlers resume.",
+      "note": "docs/guides/editor.md:26 still lists a 'capture-phase handler → bubbling' quick fix that no longer exists (not in FIXABLE_CODES)."
+    },
+    {
+      "code": "RV2005",
+      "messages": ["Ref-bound locals must be assigned only by ref callbacks"],
+      "fix": "Assign the ref-bound local only inside its ref callback; keep other state in a separate signal, or use const el = ref<…>() and ref={el}.",
+      "avoid": "export function A() { let el: any; return <div ref={(e) => (el = e)} onClick={() => { el = null; }} />; }",
+      "prefer": "export function A() { let el: any; return <div ref={(e) => (el = e)} onClick={() => el.focus()} />; }",
+      "note": "Resume mode."
+    },
+    {
+      "code": "RV2006",
+      "messages": ["JSX inside handlers, effects and computeds is not resumable"],
+      "fix": "Keep JSX in the render: store data in a signal from the handler and render it with {() => …} / <Show>.",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() { const s = signal<any>(null); return <button onClick={() => s.set(<p />)} />; }",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() { const on = signal(false); return <div><button onClick={() => on.set(true)} />{() => (on() ? <p /> : null)}</div>; }",
+      "note": "Resume mode."
+    },
+    {
+      "code": "RV2007",
+      "messages": ["Resumable code cannot capture `this`"],
+      "fix": "Use an arrow function and read the element from event.currentTarget (or a ref) instead of `this`.",
+      "avoid": "export function A() { return <div onClick={function () { this; }} />; }",
+      "prefer": "export function A() { return <div onClick={(event) => event.currentTarget} />; }",
+      "note": "Resume mode."
+    },
+    {
+      "code": "RV2008",
+      "messages": [
+        "Cannot resume {component}: the module exports a different binding as `{name}` than the `{name}` its symbols reference; rename the local or the export"
+      ],
+      "fix": "Rename one binding: give the used value (an import or a module-scope local) another local name, or export the other binding under a different name. Covers `export { a as b }` next to a used local `b` and `export { a as b } from \"./c\"` next to a used import or local `b`.",
+      "avoid": "import { x } from \"./b\";\nexport { y as x } from \"./c\";\nexport function A() { return <button onClick={() => x()} />; }",
+      "prefer": "import { x } from \"./b\";\nexport { y as cx } from \"./c\";\nexport function A() { return <button onClick={() => x()} />; }",
+      "note": "Resume mode, server and DOM targets; no source range (span None)."
+    },
+    {
+      "code": "RV2009",
+      "messages": [
+        "Cannot resume {module}: module references `{first}` and `{second}` share the browser name `{name}`; rename one import"
+      ],
+      "fix": "Import one of the two values under another exported name (re-export it from a small module) so their module reference names differ.",
+      "avoid": "import { fmt } from \"./a\";\nimport { fmt as fmt2 } from \"./b\";\nexport function A() { return <List items={[fmt, fmt2]} />; }",
+      "prefer": "import { fmt } from \"./a\";\nimport { fmtB } from \"./b-reexport\";\nexport function A() { return <List items={[fmt, fmtB]} />; }",
+      "note": "Resume mode. Module reference names are `<name>$<unit hash>$ref`; only a unit hash collision (5 base-36 digits over the module id + exported name) between two values one module references can trigger it — not reproducible on demand."
+    },
+    {
+      "code": "RV2010",
+      "messages": [
+        "Cannot resume: module reference {id} names two different files — {file} (imported by {importer}) and {otherFile} (imported by {otherImporter}); two installed copies of one package share the id: dedupe the package so every importer loads one copy (`npm dedupe` / `pnpm dedupe`, or Vite `resolve.dedupe: [\"{package}\"]`)"
+      ],
+      "fix": "Install one copy of the package for every importer: run `npm dedupe` / `pnpm dedupe`, align the version ranges that pulled in the second copy, or list the package in Vite `resolve.dedupe` so every importer resolves to the root copy.",
+      "avoid": "// node_modules/fmt@1 and src/admin/node_modules/fmt@2: one id, two files\nimport { fmt } from \"fmt\";\nexport function A() { return <List format={fmt} />; }",
+      "prefer": "// one node_modules/fmt for every importer (npm dedupe, or resolve: { dedupe: [\"fmt\"] })\nimport { fmt } from \"fmt\";\nexport function A() { return <List format={fmt} />; }",
+      "note": "Client build of the Vite plugin (vite-plugin-rivet), resume mode: an import module reference id names the package specifier, so two installed copies share it and the browser would resume every page with one copy's value. Two paths of one real file (symlinks, `resolve.preserveSymlinks`) are one file. Development SSR warns instead (`resume module reference <id> is stamped with two different values`). Not a compiler diagnostic: needs a project build."
+    },
+    {
+      "code": "RV2011",
+      "messages": [
+        "Mutually recursive functions {names} are separated by an early exit (return / throw / break / continue): their group registers after the last one, so a render leaving early cannot resume them; move the group's functions together before the early exit"
+      ],
+      "fix": "Declare every function of the group (the local functions that call each other) next to each other, before any `return` / `throw` / `break` / `continue` of their block, or write them as function declarations (registered at the top of the block).",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function A(props: { a: boolean }) {\n  const n = signal(0);\n  const even = (k: number): boolean => (k === 0 ? true : odd(k - 1));\n  if (props.a) return <b onClick={() => n.set(even(2) ? 1 : 0)}>{n()}</b>;\n  const odd = (k: number): boolean => (k === 0 ? false : even(k - 1));\n  return <i onClick={() => n.set(odd(3) ? 1 : 0)}>{n()}</i>;\n}",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function A(props: { a: boolean }) {\n  const n = signal(0);\n  const even = (k: number): boolean => (k === 0 ? true : odd(k - 1));\n  const odd = (k: number): boolean => (k === 0 ? false : even(k - 1));\n  if (props.a) return <b onClick={() => n.set(even(2) ? 1 : 0)}>{n()}</b>;\n  return <i onClick={() => n.set(odd(3) ? 1 : 0)}>{n()}</i>;\n}",
+      "note": "Resume mode (Function Bridge T10): mutually recursive local functions resume as one group, registered once per render after the last `const` member; a render that leaves before that point would write unregistered functions into the page."
+    },
+    {
+      "code": "RV2012",
+      "messages": [
+        "`.bind` with a spread first argument is not resumable: pass the bound `this` as its own first argument (`f.bind(self, ...args)`)",
+        "`.bind` with a spread first argument may not resume: if the callee is a function Rivet compiled, pass the bound `this` as its own first argument (`f.bind(self, ...args)`); an object with its own `bind` is fine"
+      ],
+      "fix": "Write the bound `this` as the first argument; later arguments may still be spread (`f.bind(null, ...args)`).",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() {\n  const n = signal(0);\n  const add = (by: number) => n.set(n() + by);\n  const args: [null, number] = [null, 2];\n  const go = add.bind(...args);\n  return <b onClick={() => go()}>{n()}</b>;\n}",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() {\n  const n = signal(0);\n  const add = (by: number) => n.set(n() + by);\n  const rest: [number] = [2];\n  const go = add.bind(null, ...rest);\n  return <b onClick={() => go()}>{n()}</b>;\n}",
+      "note": "Resume mode (Function Bridge T10): a captured `const g = f.bind(…)` resumes as a bound function (`_rBound`). An error when the callee is provably a function (declared in the component or module, or an import); a warning otherwise (an object with its own `bind` is legal; the render-time \"not serializable\" error stays the ground truth)."
+    },
+    {
+      "code": "RV2013",
+      "messages": [
+        "`.bind` of `{callee}` is not resumable: only a function declared in the component, a module-level function or an import can be bound; call it from an arrow instead (`(...args) => {callee}(...args)`)",
+        "`.bind` of `{callee}` may not resume: Rivet cannot tell that `{callee}` is a function it compiled; if it is one, call it from an arrow instead (`(...args) => {callee}(...args)`); an object with its own `bind` is fine"
+      ],
+      "fix": "Call the function from an arrow (`() => props.onPick(2)`), or bind a function declared in the component / module, or an import.",
+      "avoid": "export function A(props: { onPick: (v: number) => void }) {\n  const pick = props.onPick.bind(null, 2);\n  return <b onClick={() => pick()}>x</b>;\n}",
+      "prefer": "export function A(props: { onPick: (v: number) => void }) {\n  return <b onClick={() => props.onPick(2)}>x</b>;\n}",
+      "note": "Resume mode (Function Bridge T10): the bound function is written into the page as its target plus arguments, so the target must be a function Rivet can resume (a parameter, a property read or a call result is not). A warning: such a receiver may be an object with its own `bind` (legal); the render-time \"not serializable\" error stays the ground truth. An error only when the callee is provably a function Rivet cannot reference."
+    },
+    {
+      "code": "RV2014",
+      "messages": [
+        "`.bind(…)` inside an object literal may not resume (a native bound function is not serializable): keep the bound function in a local constant (`const g = f.bind(…)`) and store `g`; an object with its own `bind` is fine"
+      ],
+      "fix": "Bind into a local constant first and store it by name: `const inc = add.bind(null, 1); const api = { inc };`.",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() {\n  const n = signal(0);\n  const add = (by: number) => n.set(n() + by);\n  const api = { inc: add.bind(null, 1) };\n  return <b onClick={() => api.inc()}>{n()}</b>;\n}",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function A() {\n  const n = signal(0);\n  const add = (by: number) => n.set(n() + by);\n  const inc = add.bind(null, 1);\n  const api = { inc };\n  return <b onClick={() => api.inc()}>{n()}</b>;\n}",
+      "note": "Resume mode (Function Bridge T10). A warning, only when a resumable closure reaches the property: it captures the whole object or reads that key (`api.inc()`); a handler reading another key (`api.k`) is clean."
+    },
+    {
+      "code": "RV2015",
+      "messages": [
+        "Component returns a function that cannot resume ({form}): return an inline arrow from a named component (`function Name(props) { return () => …; }`)"
+      ],
+      "fix": "Name the component and return the accessor inline (`export function Count(props) { return () => …; }`); with a wrapper (`memo`, `forwardRef`), wrap the named component instead of an anonymous function; for a returned `let view = () => …`, declare it with `const`.",
+      "avoid": "export default function (props: { n: () => number }) {\n  return () => <b>{props.n()}</b>;\n}",
+      "prefer": "export function Count(props: { n: () => number }) {\n  return () => <b>{props.n()}</b>;\n}",
+      "note": "Resume mode (RESUME-ACCESSOR-ROW fixes 1–2). A warning: the module compiles, but the server traversal calls the accessor outside every resume site, so a resumed page never updates it. Resumable without a warning, in a PascalCase module-level function: `return () => …`, `return c ? () => a : () => b` (also `&&` / `||` / `??`), `const view = () => …; return view`, a hoisted parameterless `function view() {…}` returned by name, concise `(props) => () => …`. Reported for an anonymous default export, a function passed to a call whose result is a PascalCase `const` or the default export (`const Card = memo((props) => () => …)`), and a returned `let` bound to an accessor (declare it with `const`)."
+    },
+    {
+      "code": "RV2101",
+      "messages": [
+        "`{name}` is captured by {sites} and serialized into resume state, but its type is not serializable: {problem}. Create it inside the closure or keep it out of browser code."
+      ],
+      "fix": "Create the value inside the closure, or capture serializable data (plain objects, signals) instead of class instances, Promises, DOM nodes or WeakMaps.",
+      "avoid": "declare function makeStore(): { add(): void } & WeakMap<object, 1>;\nexport function A() { const store = makeStore(); return <button onClick={() => store.add()}>Add</button>; }",
+      "prefer": "declare function makeStore(): { add(): void };\nexport function A() { return <button onClick={() => makeStore().add()}>Add</button>; }",
+      "note": "Language service only (type-aware, resume files); warning. Not for instances of a class the compiler registers in a resume module (data class or `static [revive]`, the check op's `classes`; T28): those resume (RV2003 / RV2102 cover the ineligible ones)."
+    },
+    {
+      "code": "RV2102",
+      "messages": [
+        "Cannot resume `{capture}.{field}`: {Class} instance holds a resource (its field reads `{global}`); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "Cannot resume `{capture}`: {Class} instance holds a resource (its constructor reads `{global}`); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "Cannot resume `{capture}.{#field}`: {Class} instance has a private field (`{#field}` cannot be restored without running the constructor); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "Cannot resume `{capture}`: {Class} extends `{Base}`, not a data class of this module (built-in and package bases keep state the browser cannot restore); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "Cannot resume `{capture}`: {Class} is decorated (`{@decorator}` runs code when the class is constructed; the browser never constructs it); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "Cannot resume `{capture}.{field}`: {Class} field arrow reads `super` (it cannot run outside the class); create it inside the handler, build it with reconstruct(() => new {Class}(…)) or give {Class} a static [revive]",
+        "RV2102: {Class} has [serialize] but no static [revive]"
+      ],
+      "fix": "Create the instance where it is used (inside the handler or a clientEffect), build it with `reconstruct(() => new X(…))` from `@rivetjs/runtime/dom` (the browser runs the factory on first read), keep its data in signals, or give the class a `static [revive]` that rebuilds it in the browser.",
+      "avoid": "class Conn { live = typeof window !== \"undefined\"; }\nexport function A() { const conn = new Conn(); return <b onClick={() => console.log(conn.live)}>x</b>; }",
+      "prefer": "class Conn { live = typeof window !== \"undefined\"; }\nexport function A() { return <b onClick={() => console.log(new Conn().live)}>x</b>; }",
+      "note": "Resume mode (Function Bridge T24). A data class declared at module scope of a resume module registers (`_rClass`) and its captured instances resume without running the constructor. Not eligible: an instance `#private` element or `accessor` field (no private brand without the constructor), a class or member decorator (runs code while constructing), a field arrow reading `super` / `new.target` (cannot run outside the class), an `extends` other than a data class of the same module (built-ins, packages, Node `EventEmitter`), a resource read while constructing (`window`, `document`, `navigator`, `globalThis`, `localStorage`, `sessionStorage`, `WebSocket`, `EventSource`, `Worker`, `BroadcastChannel` in a field initializer or the constructor). Classes with an own or inherited `static [revive]` register as resource holders (T25): an instance with `[serialize]()` sends only that data and the browser rebuilds it with `static [revive](data)` on first use; package classes register the same hooks with `registerClass(cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`. At render, `[serialize]` without `static [revive]` is `RV2102: {Class} has [serialize] but no static [revive]` (dev and production).",
+      "quickFix": "rivetReconstruct: \"Build it in the browser: reconstruct(() => …)\" → const x = reconstruct(() => new X(…)); reads become x() (+ import from @rivetjs/runtime/dom)"
+    },
+    {
+      "code": "RV2145",
+      "messages": [
+        "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",
+        "{file} matches both {framework}({ include }) and {other}({ include }) — pick one owner"
+      ],
+      "fix": "Give the module one owner: rename it with the framework suffix (`Counter.react.tsx`) and drop it from the Rivet `include`, or narrow one bridge's `include` / add the file to its `exclude`.",
+      "avoid": "// vite.config.ts: rivet({ include: [\"src/**\"], bridges: [react({ include: [\"src/widgets/**\"] })] })\nexport function Chart() { return <div />; }",
+      "prefer": "// vite.config.ts: rivet({ include: [\"src/pages/**\"], bridges: [react({ include: [\"src/widgets/**\"] })] })\nexport function Chart() { return <div />; }",
+      "note": "Vite plugin (`rivet({ bridges })`, framework bridges spec §4.1). Ownership: `.vue` / `.svelte` files, `*.react|preact|solid.tsx|jsx`, a leading `@jsxImportSource` pragma of the framework, each bridge's `include` / `exclude` (folders as globs, npm packages by import specifier); everything else is Rivet."
+    },
+    {
+      "code": "RV2146",
+      "messages": ["Non-component export {name} from a {framework} module used in browser code of a Rivet file ({importer})"],
+      "fix": "Use the framework's hooks and helpers inside the framework component (the island); pass plain values or callbacks to it as props. Constants can move to a shared `.ts` module both sides import.",
+      "avoid": "// Counter.react.tsx exports useCount (a React hook)\nimport { useCount } from \"./Counter.react\";\nexport function A() { return <button onClick={() => useCount()}>x</button>; }",
+      "prefer": "// shared.ts exports START; Counter.react.tsx uses its own hooks\nimport { START } from \"./shared\";\nexport function A() { return <button onClick={() => console.log(START)}>x</button>; }",
+      "note": "Vite plugin warning (client build): a facade re-exports a framework module's non-component exports unchanged, so the import works on the server; in browser code it pulls the framework module (and runtime) into the Rivet chunk."
+    },
+    {
+      "code": "RV2148",
+      "messages": ["{file} is owned by {framework} but uses the Rivet runtime ({use}): Rivet code in a framework module is never compiled by Rivet"],
+      "fix": "Move the Rivet code (signals bound to Rivet JSX, `@rivetjs/runtime` helpers) into a Rivet module and import the island from it, or take the file out of the bridge's ownership: drop the framework suffix (`Chart.react.tsx` → `Chart.tsx`) or narrow the bridge's `include`.",
+      "avoid": "// Chart.react.tsx (owned by react())\nimport { Show } from \"@rivetjs/runtime\";\nexport function Chart() { return <Show when={true}>x</Show>; }",
+      "prefer": "// Chart.react.tsx: React only\nexport function Chart() { return <div>x</div>; }\n// page.tsx (Rivet): <Show when={ready()}><Chart client=\"visible\" /></Show>",
+      "note": "Vite plugin (`rivet({ bridges })`). A module a bridge owns is compiled by that framework's plugins only: an `@rivetjs/runtime` import (or `@jsxImportSource @rivetjs/runtime`) there would run Rivet ABI code the Rivet compiler never produced. `@rivetjs/reactivity` signals are fine inside framework components (read them through the framework's own subscription)."
+    },
+    {
+      "code": "RV2149",
+      "messages": ["{framework} island {id} recovered from an error: {message}"],
+      "fix": "Make the island render the same markup on the server and in the browser: no `typeof window` / `Date.now()` / `Math.random()` / locale-dependent output during render — move browser-only values into an effect, or make the island `client=\"only\"`.",
+      "avoid": "// Clock.react.tsx\nexport function Clock() { return <time>{new Date().toLocaleTimeString()}</time>; }",
+      "prefer": "// Clock.react.tsx\nexport function Clock() {\n  const [now, setNow] = useState<string | null>(null);\n  useEffect(() => setNow(new Date().toLocaleTimeString()), []);\n  return <time>{now ?? \"\"}</time>;\n}",
+      "note": "Browser (framework adapter). The framework threw away the server HTML of the island and rendered it on the client (React `onRecoverableError`): the page works, but the island paid a full client render and lost the server markup. Dev: an entry on the dev error channel (overlay / devtools log) naming the island; production: `console.error` with the code. Rivet slot content inside the island is kept (same nodes)."
+    },
+    {
+      "code": "RV2150",
+      "messages": ["Preact useId mask not applied (probe rendered {html}): Preact island ids would not be unique. This Preact version is not supported by @rivetjs/bridge-preact; update it or pin preact to a supported version."],
+      "fix": "Install a Preact version inside `@rivetjs/bridge-preact`'s peer range that the adapter supports (pin `preact` to the last working version), or update `@rivetjs/bridge-preact`.",
+      "avoid": "// package.json\n\"preact\": \"^11\"   // a minor that moved Preact's internal useId mask",
+      "prefer": "// package.json\n\"preact\": \"11.0.1\"  // a version @rivetjs/bridge-preact supports",
+      "note": "Server render (`@rivetjs/bridge-preact/server`). The adapter makes `useId` ids unique per island through Preact's internal `useId` mask (no public option exists); its first render checks that the installed Preact still reads it. If not, every Preact island fails to render (RV2144 path) instead of silently emitting the same ids in every island."
+    },
+    {
+      "code": "RV3001",
+      "messages": ["Target helper re-exports are not supported; use a direct named import"],
+      "fix": "Do not re-export from @rivetjs/runtime/dom|server; import the helper by name where it is used.",
+      "avoid": "export { clientEffect } from \"@rivetjs/runtime/dom\";",
+      "prefer": "import { clientEffect } from \"@rivetjs/runtime/dom\";\nclientEffect(() => {});"
+    },
+    {
+      "code": "RV3002",
+      "messages": [
+        "Import target helpers as named bindings; namespace aliases are not supported",
+        "Import target helpers as named bindings; computed namespace helpers are not supported",
+        "Target runtime namespaces cannot be aliased or destructured; use named helper imports"
+      ],
+      "fix": "Replace ns.Helper with a named import: import { For } from \"@rivetjs/runtime/dom\" and use For.",
+      "avoid": "import * as dom from \"@rivetjs/runtime/dom\";\nexport const f = () => dom.For;",
+      "prefer": "import { For } from \"@rivetjs/runtime/dom\";\nexport const f = () => For;",
+      "quickFix": "rivetNamedImport: \"Import {helper} as a named binding from {module}\""
+    },
+    {
+      "code": "RV3003",
+      "messages": ["Import structural helpers as named bindings; namespace aliases are not supported"],
+      "fix": "Import the structural helper by name and use it as a tag: import { For } from \"@rivetjs/runtime/dom\"; <For each={xs}>…</For>.",
+      "avoid": "import * as r from \"@rivetjs/runtime/dom\";\ndeclare const xs: any;\nexport const A = () => <r.For each={xs}>{(x: any) => <p>{x}</p>}</r.For>;",
+      "prefer": "import { For } from \"@rivetjs/runtime/dom\";\ndeclare const xs: any;\nexport const A = () => <For each={xs}>{(x: any) => <p>{x}</p>}</For>;",
+      "note": "Fires together with RV3002 for the same tag; RV3002's quick fix (rivetNamedImport) also rewrites the closing tag."
+    },
+    {
+      "code": "RV3004",
+      "messages": ["Structural helper aliases require a named import alias"],
+      "fix": "Alias in the import, not with a const: import { For as Each } from \"@rivetjs/runtime/dom\".",
+      "avoid": "import { For } from \"@rivetjs/runtime/dom\";\nconst F = For;",
+      "prefer": "import { For as F } from \"@rivetjs/runtime/dom\";"
+    },
+    {
+      "code": "RV3005",
+      "messages": ["Server clientOnly must be called directly through its named import binding"],
+      "fix": "Call clientOnly(...) directly where it is used; do not store, pass or alias the clientOnly binding.",
+      "avoid": "import { clientOnly } from \"@rivetjs/runtime/dom\";\nexport const c = [clientOnly];",
+      "prefer": "import { clientOnly } from \"@rivetjs/runtime/dom\";\nexport const Map = clientOnly(() => import(\"./map\"));",
+      "note": "Server target."
+    },
+    {
+      "code": "RV3006",
+      "messages": ["Server clientOnly erasure requires an inline importer and inline selector or undefined"],
+      "fix": "Pass clientOnly an inline arrow importer and, optionally, an inline selector: clientOnly(() => import(\"./map\"), (m) => m.Map); no variables or spreads.",
+      "avoid": "import { clientOnly } from \"@rivetjs/runtime/dom\";\ndeclare const imp: any;\nexport const X = clientOnly(imp);",
+      "prefer": "import { clientOnly } from \"@rivetjs/runtime/dom\";\nexport const X = clientOnly(() => import(\"./x\"), (m) => m.X);",
+      "note": "Server target."
+    },
+    {
+      "code": "RV3007",
+      "messages": [
+        "Declare server exports (serverLoad, onGet, …) in their own export statement",
+        "`export *` is not allowed in a route module: server exports must be named"
+      ],
+      "fix": "Give each server export (serverLoad, onGet, …) its own export statement and replace `export *` with named exports.",
+      "avoid": "export const serverLoad = () => 1, other = 2;\nexport default () => <p />;",
+      "prefer": "export const serverLoad = () => 1;\nexport const other = 2;\nexport default () => <p />;",
+      "note": "serverExports option (route modules)."
+    },
+    {
+      "code": "RV3008",
+      "messages": [
+        "`{name}` is server-only (removed from browser builds) but browser code references it at line {line}",
+        "`{name}` (from \"{source}\") is used by browser code at line {line}; server-only modules cannot reach the browser — use it only inside server exports"
+      ],
+      "fix": "Use server exports and server-only imports only inside server exports; pass their results to the page as serverLoad data instead.",
+      "avoid": "import { readFileSync } from \"node:fs\";\nexport const serverLoad = () => 1;\nexport default () => <p>{String(readFileSync)}</p>;",
+      "prefer": "import { readFileSync } from \"node:fs\";\nexport const serverLoad = () => readFileSync(\"a.txt\", \"utf8\");\nexport default () => <p />;",
+      "note": "First variant lacks a fix hint."
+    },
+    {
+      "code": "RV3009",
+      "messages": ["Server-only code cannot render JSX in a resumed route module: return data and render it in the page"],
+      "fix": "Return plain data from serverLoad/onGet and render the JSX in the page component.",
+      "avoid": "export const serverLoad = () => ({ x: <p /> });\nexport default () => <p />;",
+      "prefer": "export const serverLoad = () => ({ x: \"text\" });\nexport default () => <p />;",
+      "note": "serverExports + resume."
+    },
+    {
+      "code": "RV3101",
+      "messages": ["No route matches \"{path}\" (routes from {routesDir ?? \"the router\"})."],
+      "fix": "Point the Link at an existing route path (check src/routes), or add the missing route file.",
+      "avoid": "import { Link } from \"@rivetjs/router\";\nexport const A = () => <Link to=\"/abuot\">About</Link>;",
+      "prefer": "import { Link } from \"@rivetjs/router\";\nexport const A = () => <Link to=\"/about\">About</Link>;",
+      "note": "Language service only; warning; TS-side text (not Rust). Could suggest nearest route."
+    },
+    {
+      "code": "RV4001",
+      "messages": ["Unknown message key \"{key}\"", "No message keys match prefix \"{prefix}\""],
+      "fix": "Use a key that exists in the default-locale catalog (or add it to the catalog).",
+      "avoid": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"nope\");",
+      "prefer": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"hello\");",
+      "note": "Build only (check op passes no staticCalls: never in editor / rivet-check)."
+    },
+    {
+      "code": "RV4002",
+      "messages": [
+        "Unknown param \"{name}\" for \"{key}\"",
+        "Missing param \"{name}\" for \"{key}\"",
+        "Tag <{name}> in \"{key}\" needs a param: {export}(\"{key}\", { {name}: (c) => <…>{c}</…> })"
+      ],
+      "fix": "Pass exactly the params the message declares: t(\"greet\", { name, age }); tags need a (c) => <tag>{c}</tag> param.",
+      "avoid": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"greet\", { name: 1 });",
+      "prefer": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"greet\", { name: 1, age: 2 });",
+      "note": "Build only."
+    },
+    {
+      "code": "RV4003",
+      "messages": [
+        "{export}() arguments cannot be spread",
+        "{export}() takes a key and an optional params object",
+        "{export}() key must be a string literal or a prefixed template literal (`prefix.${x}`)",
+        "{export}.in() key must be a string literal",
+        "{export}() params must be an object literal",
+        "Prefixed keys must not take params",
+        "Prefixed keys must not take params (\"{k}\")"
+      ],
+      "fix": "Call t() with a literal key and an inline object literal of params: t(\"greet\", { name, age }).",
+      "avoid": "import { t } from \"@rivetjs/i18n\";\ndeclare const params: any;\nexport const x = t(\"greet\", params);",
+      "prefer": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"greet\", { name: \"Bo\", age: 2 });",
+      "note": "Build only."
+    },
+    {
+      "code": "RV4004",
+      "messages": [
+        "Tag param must be (children) => <jsx>",
+        "Tag param JSX must be static native markup around {children}",
+        "Message tags ({tag} in \"{key}\") are not supported in t.in(): it returns a string, and tags need JSX content. Use t() in JSX (children, a prop, a variable), or a message without tags",
+        "Message tags ({tag} in \"{key}\") are not supported in {position}: attribute values are strings, and tags need JSX content. Use a message without tags here, or render this one as JSX (children, a prop, a variable)",
+        "Message tag {tag} in \"{key}\" cannot be lowered here"
+      ],
+      "fix": "Render tagged messages only as JSX children with tag params of the form (c) => <b>{c}</b> (static native markup); use a tagless message in attributes and t.in().",
+      "avoid": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"terms\", { link: (c) => <Link>{c}</Link> });",
+      "prefer": "import { t } from \"@rivetjs/i18n\";\nexport const x = t(\"terms\", { link: (c) => <a href=\"/terms\">{c}</a> });",
+      "note": "'cannot be lowered here' variant lacks a hint. classify() prefix 'Tags inside plural/select' has no emitter (dead pattern). Build only."
+    },
+    {
+      "code": "RV4005",
+      "messages": [
+        "Static call table \"{id}\" is not registered",
+        "staticCalls require at least one variant",
+        "DOM target with staticCalls requires a variant index"
+      ],
+      "fix": "Configure i18n through the @rivetjs/i18n Vite plugin (it registers the table and passes variants/variant); for direct compile() calls, registerTable(id, table) first and pass variants (+ variant for target \"dom\").",
+      "avoid": "compile(src, { target: \"dom\", staticCalls: [{ id: \"t\", module: \"@rivetjs/i18n\", export: \"t\" }], variants: [\"en\"] })",
+      "prefer": "compile(src, { target: \"dom\", staticCalls: [{ id: \"t\", module: \"@rivetjs/i18n\", export: \"t\" }], variants: [\"en\"], variant: 0 })",
+      "note": "Integration/config error, no source range."
+    },
+    {
+      "code": "RV5001",
+      "messages": [
+        "css``: unterminated comment",
+        "css``: unterminated string",
+        "css``: unclosed block",
+        "css``: unexpected }",
+        "css``: expected a rule, found {text:?}",
+        "css``: use :global(selector); bare :global is not supported",
+        "css``: unbalanced {char}"
+      ],
+      "fix": "Fix the CSS syntax inside the css`` block (close braces, strings and comments; write :global(selector)).",
+      "avoid": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red`;",
+      "prefer": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red }`;",
+      "note": "Only with the styles option (build); check op passes styles: None so never in editor."
+    },
+    {
+      "code": "RV5002",
+      "messages": [
+        "css`` must initialize a top-level const (const styles = css`…`)",
+        "css`` interpolations are not supported: write values literally; for a dynamic value set a custom property on the element (style={{ \"--x\": value }}) and read var(--x) in the block; for states define a class per state and pick it with class:active={on} or cx(styles.base, on && styles.active), or select on a data-* attribute (.card[data-size=\"lg\"])",
+        "css`` class maps are read-only",
+        "Unknown class '{key}' in css`` block {binding}"
+      ],
+      "fix": "Read only classes defined in the block (s.a for .a), declare css`` as a top-level const, never assign to it, and replace ${} interpolations with custom properties (style={{ \"--x\": v }} + var(--x)).",
+      "avoid": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red }`;\nexport const A = () => <p class={s.b} />;",
+      "prefer": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red }`;\nexport const A = () => <p class={s.a} />;",
+      "note": "Build only (styles option). Unknown-class variant could list defined classes."
+    },
+    {
+      "code": "RV5003",
+      "messages": [
+        "style strings are not supported: use a style object (style={{ color: c, \"--x\": v }}) or style:color={c}",
+        "Use one class attribute (class or className) per element",
+        "Unsafe style value for {property}: url(), src(), image-set(), expression(), javascript: and \\ ; { } /* are not allowed in style values",
+        "Invalid style property: {key}",
+        "style:{key} needs a value"
+      ],
+      "fix": "Use a style object or style:prop={v} instead of a style string, one class attribute per element, and no url()/expression() in inline style values (use a class).",
+      "avoid": "export const A = () => <p style=\"color: red\" />;",
+      "prefer": "export const A = () => <p style={{ color: \"red\" }} />;",
+      "note": "'Invalid style property' / 'needs a value' variants lack hints."
+    },
+    {
+      "code": "RV6001",
+      "messages": [
+        "<slot> must be used inside a component function",
+        "<slot> needs the component's props parameter: function {component}(props) or function {component}({ {name} })",
+        "<slot r:name=\"{name}\">: add `{name}` to the destructured props of {component}"
+      ],
+      "fix": "Use <slot> inside a component that takes props: function Card(props) { return <div><slot /></div>; } (or destructure the slot name).",
+      "avoid": "export const A = () => <slot />;",
+      "prefer": "export function A(props: { children?: any }) { return <div><slot /></div>; }"
+    },
+    {
+      "code": "RV6002",
+      "messages": ["r:name must be a string literal naming a prop (an identifier)", "r:args must be an array literal: r:args={[item, index]}"],
+      "fix": "Give r:name a string literal that is a valid identifier (r:name=\"header\") and r:args an array literal (r:args={[item, index]}).",
+      "avoid": "export function A(props: any) { return <slot r:name=\"1x\" />; }",
+      "prefer": "export function A(props: any) { return <slot r:name=\"header\" />; }"
+    },
+    {
+      "code": "RV6003",
+      "messages": [
+        "r:slot must be a string literal",
+        "conditional r:slot branches must name the same slot",
+        "r:slot is only allowed on a direct child of a component element",
+        "r:slot=\"children\": pass default slot content as plain children"
+      ],
+      "fix": "Put r:slot=\"name\" (string literal) only on a direct child of a component element; pass default content as plain children instead of r:slot=\"children\".",
+      "avoid": "export const A = () => <div><p r:slot=\"x\" /></div>;",
+      "prefer": "declare const Card: any;\nexport const A = () => <Card><p r:slot=\"x\" /></Card>;"
+    },
+    {
+      "code": "RV6004",
+      "messages": ["slot \"{name}\" is also passed as an attribute", "slot \"{name}\" is passed more than once"],
+      "fix": "Pass each slot once: either the x={…} prop or a child with r:slot=\"x\", not both.",
+      "avoid": "declare const C: any;\nexport const A = () => <C x={1}><p r:slot=\"x\" /></C>;",
+      "prefer": "declare const C: any;\nexport const A = () => <C><p r:slot=\"x\" /></C>;"
+    },
+    {
+      "code": "RV7001",
+      "messages": [
+        "Invalid compiler option: {serde error}",
+        "Invalid compiler option `styles`: expected an object `{ scope, names?, layer? }`",
+        "Invalid compiler option `styles.scope`: expected a string",
+        "Invalid compiler option `styles.names`: expected \"readable\" or \"short\"",
+        "Invalid compiler option `styles.layer`: expected a string, null or false",
+        "Invalid compiler option `resume.module`: expected a string",
+        "Invalid compiler option `resume`: expected `{ module?: string }`, true or false",
+        "Invalid compiler option `targets`: unknown target \"{bad}\""
+      ],
+      "fix": "Pass the option in the documented shape (e.g. resume: { module: \"src/a.tsx\" } or true; styles: { scope: string }).",
+      "avoid": "check(src, { resume: 5 })",
+      "prefer": "check(src, { resume: { module: \"src/a.tsx\" } })",
+      "note": "Integration error; no source range."
+    },
+    {
+      "code": "RV7101",
+      "messages": ["Editor manifest missing: resume-mode and route checks cannot run. Run `rivet sync` (or `vite build`) first."],
+      "fix": "Run `rivet sync` (or `vite build`) to write .rivet/editor.json, then re-run rivet-check.",
+      "note": "rivet-check only (project-level, filename = <root>/.rivet/editor.json)."
+    },
+    {
+      "code": "RV7102",
+      "messages": ["Editor manifest stale ({reason} changed after it was written). Run `rivet sync`."],
+      "fix": "Run `rivet sync` to refresh .rivet/editor.json.",
+      "note": "rivet-check only; warning."
+    },
+    {
+      "code": "RV9000",
+      "messages": ["{any unclassified compiler message}"],
+      "fix": "Unclassified compiler error: read the message; report it so the message gets a stable code.",
+      "note": "No current emitter falls through (verified: every diag literal classifies; compiler/tests/check.test.ts asserts no RV9000 for the family corpus)."
+    },
+    {
+      "code": "RV9001",
+      "messages": [
+        "Internal error: compiler panicked: {panic}",
+        "Internal error: emitted code failed to parse: {message}",
+        "Internal error: list plan width mismatch",
+        "Internal error: inlinable component did not lower to a template",
+        "Internal error: component plan width mismatch",
+        "Internal error: <{tag}> has no DOM lowering",
+        "Unknown compilation target"
+      ],
+      "fix": "Compiler bug: simplify or split the reported component to work around it and report the file; for 'Unknown compilation target' pass target \"server\" or \"dom\".",
+      "avoid": "compile(src, { target: \"wasm\" })",
+      "prefer": "compile(src, { target: \"dom\" })",
+      "note": "Also wasm stack overflow on too-deep nesting. 'Unknown compilation target' arguably belongs in RV7001."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/label.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Base label styles */
+.label {
+  /* Base styling */
+  @apply text-sm font-medium text-foreground;
+}
+
+/*
+ * Exclude group-level components (RadioGroup, CheckboxGroup) and radio/checkbox items
+ * to ensure asterisks only appear on atomic form field labels and group labels,
+ * not on individual options within those groups
+ */
+.label--required,
+[data-required="true"]:not([role="group"]):not([role="radiogroup"]):not([role="checkboxgroup"])
+  > .label,
+[data-required="true"]:not([data-slot="radio"]):not([data-slot="checkbox"]) > .label {
+  @apply after:ms-0.5 after:text-danger after:content-['*'];
+}
+
+.label--disabled,
+[data-disabled="true"] .label {
+  @apply status-disabled;
+}
+
+.label--invalid,
+[data-invalid="true"] .label,
+[aria-invalid="true"] .label {
+  @apply text-danger;
+}
+
+/* Rivet: field rhythm (identity spec §3.6, TWEAKS.md TW-142) — label ↓ 6 px, description / error ↓ 4 px (the field root's
+   gap = --field-gap-help; the label adds the difference). */
+:where(.autocomplete, .color-field, .combo-box, .date-field, .number-field, .native-select, .search-field, .select, .textfield, .time-field, .date-picker, .date-range-picker, .tag-group) > .label {
+  margin-block-end: calc(var(--field-gap-label) - var(--field-gap-help));
+}

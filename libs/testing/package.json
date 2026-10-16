@@ -1,0 +1,94 @@
+{
+  "name": "@rivetjs/testing",
+  "version": "0.0.0-experimental",
+  "description": "Test harnesses for Rivet apps: happy-dom and browser rendering, user-event, Vitest plugin.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./jest": {
+      "types": "./jest.ts",
+      "default": "./jest.ts"
+    },
+    "./steps": {
+      "types": "./steps.ts",
+      "default": "./steps.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./jest-dom": {
+      "types": "./jest-dom.ts",
+      "default": "./jest-dom.ts"
+    },
+    "./node-env": {
+      "types": "./node-env.ts",
+      "default": "./node-env.ts"
+    },
+    "./jasmine": {
+      "types": "./jasmine.ts",
+      "default": "./jasmine.ts"
+    },
+    "./fake-events": {
+      "types": "./fake-events/index.ts",
+      "default": "./fake-events/index.ts"
+    },
+    "./user": {
+      "types": "./user/index.ts",
+      "default": "./user/index.ts"
+    },
+    "./html": {
+      "types": "./html.ts",
+      "default": "./html.ts"
+    },
+    "./serializer": {
+      "types": "./serializer.ts",
+      "default": "./serializer.ts"
+    },
+    "./cleanup": {
+      "types": "./cleanup.ts",
+      "default": "./cleanup.ts"
+    },
+    "./fuzz": {
+      "types": "./fuzz/index.ts",
+      "default": "./fuzz/index.ts"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/user-event": "^14.6.1"
+  },
+  "peerDependencies": {
+    "happy-dom": "^20.14.5",
+    "playwright": "^1.63.0",
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  },
+  "peerDependenciesMeta": {
+    "happy-dom": {
+      "optional": true
+    },
+    "playwright": {
+      "optional": true
+    },
+    "@rivetjs/compiler": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/testing"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["*.ts", "*/**/*.ts"],
+  "exclude": ["tests/fixture/src", "tests/fixture-app/.rivet", "tests/fixture-app/dist", "tests/fixture-app/src/rivet-i18n.d.ts"]
+}

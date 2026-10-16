@@ -1,0 +1,240 @@
+/* Pages outside the content grid: home, API, examples, search. Imported by styles.css. */
+@layer components {
+  .wide-page {
+    @apply mx-auto max-w-6xl px-4 py-10 sm:px-6;
+  }
+  ul.card-grid {
+    @apply list-none p-0;
+  }
+  .home {
+    @apply mx-auto max-w-6xl px-4 pb-8 sm:px-6;
+  }
+  .home > section {
+    @apply mt-20;
+  }
+  .home h2 {
+    @apply mb-3 text-2xl font-semibold tracking-tight;
+  }
+  .home > section > p {
+    @apply mt-0 mb-6 max-w-3xl leading-7;
+    color: var(--fg-soft);
+  }
+  .home .home-hero {
+    @apply mt-0 pt-16 sm:pt-20;
+  }
+  .home-status {
+    @apply flex flex-wrap items-center gap-2 text-sm;
+    color: var(--fg-soft);
+  }
+  .home-logo {
+    @apply mb-6 block h-16 w-auto;
+  }
+  .home-hero h1 {
+    @apply mt-4 mb-0 max-w-4xl text-4xl font-semibold tracking-tight sm:text-6xl;
+    line-height: 1.05;
+  }
+  /* Headline accent: solid indigo (no gradient text). */
+  .brand-text {
+    color: var(--accent);
+  }
+  .home-hero .home-tagline {
+    @apply mt-5 max-w-2xl text-lg leading-8;
+  }
+  .home-actions {
+    @apply mt-8 flex flex-wrap gap-3;
+  }
+  .button-primary,
+  .button-secondary {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold no-underline;
+    transition:
+      background-color 0.15s var(--ease-out),
+      border-color 0.15s var(--ease-out),
+      color 0.15s var(--ease-out);
+  }
+  .button-primary {
+    background: var(--button-bg);
+    color: white;
+  }
+  .button-primary:hover {
+    background: var(--button-bg-hover);
+    color: white;
+  }
+  .button-secondary {
+    @apply border;
+    border-color: var(--line-strong);
+    color: var(--fg-strong);
+  }
+  .button-secondary:hover {
+    border-color: var(--accent);
+    color: var(--fg-strong);
+  }
+  .home-more {
+    @apply mt-4 mb-0 text-sm font-medium;
+  }
+  .home-more a {
+    @apply inline-flex items-center gap-1.5 no-underline;
+  }
+
+  /* Features */
+  .feature-grid {
+    @apply m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .feature {
+    @apply flex h-full flex-col gap-2 rounded-xl border p-5 no-underline;
+    box-sizing: border-box;
+    border-color: var(--line);
+    color: var(--fg);
+    transition:
+      border-color 0.3s,
+      background-color 0.3s;
+  }
+  .feature:hover {
+    border-color: var(--line-strong);
+    background: var(--bg-softer);
+    color: var(--fg);
+  }
+  .feature strong {
+    @apply mt-2 font-semibold;
+    color: var(--fg-strong);
+  }
+  .feature-text {
+    @apply text-sm leading-6;
+    color: var(--fg-soft);
+  }
+  .feature-icon {
+    @apply grid h-10 w-10 place-items-center rounded-lg;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .home .prose {
+    @apply mt-0;
+  }
+  .home-start-body,
+  .home-sample-body {
+    @apply max-w-3xl;
+  }
+  .starter-form {
+    @apply mt-auto pt-3;
+  }
+  .starter-form .stackblitz-button {
+    @apply w-full justify-center;
+  }
+
+  /* API pages */
+  .api-package {
+    @apply mt-10;
+  }
+  .api-package h2 {
+    @apply mb-1 text-xl font-semibold;
+  }
+  .api-package-name {
+    @apply ml-2 text-sm font-normal;
+    color: var(--fg-faint);
+  }
+  .api-package-summary {
+    @apply mt-0 mb-4;
+    color: var(--fg-soft);
+  }
+  .api-card-meta {
+    @apply flex items-center gap-2 text-xs;
+  }
+  .api-card {
+    @apply my-6;
+  }
+  .api-card-head {
+    @apply m-0 flex flex-wrap items-baseline gap-2;
+  }
+  .api-card-head a {
+    @apply text-base font-semibold;
+  }
+  .api-kind {
+    @apply rounded px-1.5 py-0.5 text-xs;
+    background: var(--bg-soft);
+    color: var(--fg-faint);
+  }
+  .api-entry {
+    @apply text-xs;
+    color: var(--fg-faint);
+  }
+  .api-card-summary {
+    @apply my-2 text-sm leading-6;
+    color: var(--fg-soft);
+  }
+  .api-card-foot {
+    @apply mt-3 mb-0 flex items-center justify-between gap-2 text-sm;
+  }
+  .api-badges {
+    @apply flex flex-wrap items-center gap-2;
+  }
+  .doc-article > .api-signature,
+  .doc-article section > .api-signature {
+    @apply my-4;
+  }
+  .doc-article section > h2 {
+    @apply mt-10 mb-3 text-xl font-semibold;
+  }
+  .api-list {
+    @apply m-0 list-none p-0;
+  }
+  .api-list li {
+    @apply border-b py-3;
+    border-color: var(--line);
+  }
+  .api-list li p {
+    @apply mt-1 mb-0 text-sm;
+    color: var(--fg-soft);
+  }
+  .api-list .api-kind {
+    @apply ml-2;
+  }
+  .api-member {
+    @apply text-xs whitespace-pre-wrap;
+  }
+  .api-default {
+    @apply text-sm;
+    color: var(--fg-faint);
+  }
+  .api-source {
+    @apply mt-10 text-sm;
+  }
+
+  /* Examples gallery */
+  .example-gallery {
+    @apply mt-8;
+  }
+  .example-gallery .card {
+    @apply h-full;
+  }
+  .example-card-tags {
+    @apply flex flex-wrap gap-1;
+  }
+
+  /* Search page */
+  .search-page-form {
+    @apply mt-6 flex max-w-xl gap-2;
+  }
+  .search-page-form input {
+    @apply min-w-0 flex-1 rounded-lg border px-3 py-2 text-base;
+    border-color: var(--line);
+    background: var(--bg);
+    color: var(--fg);
+  }
+  .search-page-form button {
+    @apply rounded-lg px-4 py-2 font-semibold;
+    background: var(--accent);
+    color: var(--bg);
+  }
+  .page-index {
+    @apply mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .page-index h2 {
+    @apply mb-2 text-lg font-semibold;
+  }
+  .page-index h3 {
+    @apply mt-3 mb-1 text-sm font-semibold;
+    color: var(--fg-faint);
+  }
+  .page-index ul {
+    @apply m-0 list-none p-0 text-sm leading-7;
+  }
+}

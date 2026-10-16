@@ -1,0 +1,47 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "DatePicker",
+  summary: "A segmented date field with a calendar button: the popover opens on the placeholder date, picking a day closes it and fills the field.",
+  tags: ["aria", "date", "forms", "overlay"],
+  status: "experimental",
+  frame: { height: "lg" },
+  show: ["src/routes/index.tsx", "src/styles.css", "src/components/Icon.tsx"],
+  test: [
+    { attr: ["#trip", "role", "group"] },
+    { attr: ["#trip", "aria-labelledby", "trip-label"] },
+    { attr: ["#trip-field", "role", "presentation"] },
+    { expect: ["#trip-field", "mm/dd/yyyy"] },
+    { attr: ["#trip-button", "aria-label", "Calendar"] },
+    { matches: "#trip-button svg" },
+    { described: ["#trip", "Type a date or pick one."] },
+    { attr: ["#trip-button", "aria-expanded", "false"] },
+    // Closed: no popover in the page.
+    { absent: "#trip-dialog" },
+    { click: "#trip-button" },
+    { matches: "#trip-dialog[role=dialog]" },
+    { attr: ["#trip-button", "aria-expanded", "true"] },
+    { attr: [".rv-DatePicker", "data-open", "true"] },
+    // Focus moves to the calendar, on the placeholder date.
+    { focused: '[data-date="2026-10-14"]' },
+    { key: "ArrowRight" },
+    { focused: '[data-date="2026-10-15"]' },
+    { key: "Enter" },
+    { absent: "#trip-dialog" },
+    { focused: "#trip-button" },
+    { expect: ["#trip-field", "10/15/2026"] },
+    { expect: ["#value", "Value: 2026-10-15"] },
+    { described: ["#trip", "Selected Date: October 15, 2026"] },
+    { click: "#trip-button" },
+    { click: '[data-date="2026-10-20"]' },
+    { absent: "#trip-dialog" },
+    { expect: ["#value", "Value: 2026-10-20"] },
+    // Typing works too; Alt+ArrowDown opens the calendar from a segment.
+    { press: ["#trip-field-day", "ArrowUp"] },
+    { expect: ["#value", "Value: 2026-10-21"] },
+    { press: ["#trip-field-month", "Alt+ArrowDown"] },
+    { focused: '[data-date="2026-10-21"]' },
+    { key: "Escape" },
+    { absent: "#trip-dialog" },
+  ],
+});

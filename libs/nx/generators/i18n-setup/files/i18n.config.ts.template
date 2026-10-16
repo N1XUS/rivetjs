@@ -1,0 +1,10 @@
+import type { I18nRouteConfig } from "@rivetjs/i18n/router";
+
+// Locales (the default first), ICU catalogs per locale, and how the locale appears in URLs. Used by the i18n() Vite
+// plugin (vite.config.ts) and by `i18nGuard(config)` in a `[[lang]]` layout (see the Locale URLs guide).
+export const config = {
+  locales: <%- localesJson %>,
+  defaultLocale: "<%= defaultLocale %>",
+  catalogs: "locales/{locale}.json",
+  routing: { prefix: "<%= prefix %>" },
+} satisfies I18nRouteConfig & { catalogs: string };

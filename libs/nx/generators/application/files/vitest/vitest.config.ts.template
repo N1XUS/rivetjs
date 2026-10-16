@@ -1,0 +1,16 @@
+import { defineConfig } from "vitest/config";
+import { rivetTest } from "@rivetjs/testing/vite";
+
+// Two projects: components in happy-dom (DOM target), `*.server.test.tsx` as server HTML in Node.
+export default defineConfig({
+  plugins: [rivetTest()],
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: { name: "dom", include: ["src/**/*.test.tsx"], exclude: ["src/**/*.server.test.tsx"], environment: "happy-dom" },
+      },
+      { extends: true, test: { name: "server", include: ["src/**/*.server.test.tsx"], environment: "node" } },
+    ],
+  },
+});

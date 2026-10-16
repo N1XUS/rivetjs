@@ -1,0 +1,29 @@
+/* @rivetjs/cdk/masonry.css — optional, perf only (layout is identical without it).
+   Registers the Masonry / Bento grid custom properties as inherited lengths so a server-rendered page computes each
+   masked column width once on the grid; unregistered, every item re-parses the clamp() token stream (~3x slower style
+   recalc for 1k items). Components register the same names from JS when they render on the client. 12 breakpoints (justified: rowHeight keys + up to 7 tolerance splits). */
+@property --rv-mw { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m0 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w0 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m1 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w1 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m2 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w2 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m3 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w3 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m4 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w4 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m5 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w5 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m6 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w6 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m7 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w7 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m8 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w8 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m9 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w9 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m10 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w10 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m11 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w11 { syntax: "<length>"; inherits: true; initial-value: 0px; }

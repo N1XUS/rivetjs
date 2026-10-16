@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet library package",
+  "description": "Builds a publishable Rivet library: tsc emits .js / .jsx (JSX preserved for the consuming app's Rivet compiler) + .d.ts, then a package.json whose exports point at the emitted files.",
+  "type": "object",
+  "properties": {
+    "tsConfig": { "type": "string", "default": "tsconfig.lib.json", "description": "tsconfig of the emit, relative to the project." },
+    "outputPath": { "type": "string", "description": "Output folder, relative to the workspace root. Default dist/<projectRoot>." },
+    "sourceRoot": {
+      "type": "string",
+      "default": "src",
+      "description": "Source folder the emit is rooted at (the tsconfig's rootDir), relative to the project."
+    },
+    "assets": { "type": "array", "items": { "type": "string" }, "description": "Extra files copied from the project." }
+  },
+  "additionalProperties": false
+}

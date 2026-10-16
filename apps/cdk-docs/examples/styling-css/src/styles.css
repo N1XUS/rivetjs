@@ -1,0 +1,90 @@
+/* Plain CSS: no Tailwind. Components without a class prop carry their default rv-* classes;
+   state comes from the ARIA and data-* attributes they already set. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.demo {
+  display: grid;
+  gap: 0.75rem;
+  max-inline-size: 18rem;
+  margin: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rv-Button,
+.rv-ToggleButton {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background: #fff;
+  font: inherit;
+}
+
+.rv-Button:focus-visible,
+.rv-ToggleButton:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+/* data-pressed: while a pointer or key holds the button down. */
+.rv-Button[data-pressed],
+.rv-ToggleButton[data-pressed] {
+  transform: scale(0.96);
+}
+
+.rv-Button[data-disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rv-ToggleButton[aria-pressed="true"] {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.rv-ListBox {
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+/* data-focused: the listbox element itself has focus (before an option takes it). */
+.rv-ListBox[data-focused] {
+  box-shadow: 0 0 0 2px rgb(13 148 136 / 0.3);
+}
+
+.rv-ListBoxItem {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  outline: none;
+}
+
+.rv-ListBoxItem[data-focused] {
+  background: #f1f5f9;
+}
+
+.rv-ListBoxItem[aria-selected="true"] {
+  background: #ccfbf1;
+  font-weight: 600;
+}
+
+.rv-ListBoxItem[aria-disabled="true"] {
+  color: #94a3b8;
+}
+
+.value {
+  color: #475569;
+}

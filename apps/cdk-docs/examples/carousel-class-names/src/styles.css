@@ -1,0 +1,19 @@
+/* Tailwind, with the cdk state variants (focused:, orientation-*:, entering:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* embla's Class Names example: slides that are not snapped fade back (classes set by the ClassNames plugin). */
+.slide {
+  transition: opacity 0.2s ease-in-out;
+}
+.slide:not(.is-snapped) {
+  opacity: 0.16;
+}

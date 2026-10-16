@@ -1,0 +1,18 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/switch-group.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Switch Group styles */
+.switch-group {
+  @apply flex flex-col gap-6;
+}
+
+.switch-group__items {
+  @apply flex gap-4;
+}
+
+/* Orientation modifiers */
+.switch-group--horizontal .switch-group__items {
+  @apply flex-row;
+}
+
+.switch-group--vertical .switch-group__items {
+  @apply flex-col;
+}

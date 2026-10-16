@@ -1,0 +1,3314 @@
+{
+ "date": "2026-10-12",
+ "lane": "ROUTE-CHUNKS",
+ "host": "Apple M4 Pro, Node v26.5.1, Chromium headless shell 1243 (Playwright)",
+ "method": "one cold context per page, HTTP/1.1 local static server, no throttling; JS requests + gzip bytes until 3 s without JS, then click the trigger; served JS prefixed with an evaluation probe",
+ "builds": {
+  "comp-on": "chunks component, merge 2048 (default)",
+  "comp-off": "component, merge false",
+  "comp-16k": "component, merge 16384",
+  "comp-64k": "component, merge 65536",
+  "group-on": "group, merge 2048",
+  "route-on": "route before the fix (HEAD), merge 2048",
+  "route-off": "route before the fix, merge false",
+  "route2-on": "route + barrel reach + per-set shared chunks",
+  "route4-on": "route2 + fetch-ahead (final)",
+  "bd-comp": "bridge-demo component",
+  "bd-route": "bridge-demo route (barrel reach + fetch-ahead)",
+  "ss-comp": "starter server component",
+  "ss-route": "starter server route"
+ },
+ "rows": [
+  {
+   "dist": "comp-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 77,
+   "beforeGz": 155498,
+   "evaluated": 77,
+   "evalChunks": 16,
+   "clickMin": 111,
+   "clickMed": 111,
+   "clicks": [
+    111
+   ],
+   "clickJs": 2,
+   "clickGz": 663
+  },
+  {
+   "dist": "comp-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 61,
+   "beforeGz": 180233,
+   "evaluated": 61,
+   "evalChunks": 1,
+   "clickMin": 116,
+   "clickMed": 116,
+   "clicks": [
+    116
+   ],
+   "clickJs": 31,
+   "clickGz": 19771
+  },
+  {
+   "dist": "comp-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 76,
+   "beforeGz": 155642,
+   "evaluated": 76,
+   "evalChunks": 2,
+   "clickMin": 94,
+   "clickMed": 94,
+   "clicks": [
+    94
+   ],
+   "clickJs": 15,
+   "clickGz": 8538
+  },
+  {
+   "dist": "comp-off",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 126,
+   "beforeGz": 167459,
+   "evaluated": 126,
+   "evalChunks": 16,
+   "clickMin": 111,
+   "clickMed": 111,
+   "clicks": [
+    111
+   ],
+   "clickJs": 2,
+   "clickGz": 657
+  },
+  {
+   "dist": "comp-off",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 100,
+   "beforeGz": 187844,
+   "evaluated": 100,
+   "evalChunks": 1,
+   "clickMin": 144,
+   "clickMed": 144,
+   "clicks": [
+    144
+   ],
+   "clickJs": 34,
+   "clickGz": 21568
+  },
+  {
+   "dist": "comp-off",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 123,
+   "beforeGz": 167145,
+   "evaluated": 123,
+   "evalChunks": 2,
+   "clickMin": 115,
+   "clickMed": 115,
+   "clicks": [
+    115
+   ],
+   "clickJs": 15,
+   "clickGz": 8521
+  },
+  {
+   "dist": "route-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 380,
+   "beforeGz": 1029522,
+   "evaluated": 380,
+   "evalChunks": 3,
+   "clickMin": 122,
+   "clickMed": 122,
+   "clicks": [
+    122
+   ],
+   "clickJs": 257,
+   "clickGz": 144860
+  },
+  {
+   "dist": "route-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 0,
+   "beforeGz": 0,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 266,
+   "clickMed": 266,
+   "clicks": [
+    266
+   ],
+   "clickJs": 737,
+   "clickGz": 1228014
+  },
+  {
+   "dist": "route-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 70,
+   "beforeGz": 151229,
+   "evaluated": 70,
+   "evalChunks": 1,
+   "clickMin": 253,
+   "clickMed": 253,
+   "clicks": [
+    253
+   ],
+   "clickJs": 519,
+   "clickGz": 1005475
+  },
+  {
+   "dist": "route-off",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 338,
+   "beforeGz": 1033797,
+   "evaluated": 338,
+   "evalChunks": 3,
+   "clickMin": 99,
+   "clickMed": 99,
+   "clicks": [
+    99
+   ],
+   "clickJs": 250,
+   "clickGz": 135187
+  },
+  {
+   "dist": "route-off",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 0,
+   "beforeGz": 0,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 260,
+   "clickMed": 260,
+   "clicks": [
+    260
+   ],
+   "clickJs": 671,
+   "clickGz": 1209759
+  },
+  {
+   "dist": "route-off",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 96,
+   "beforeGz": 159509,
+   "evaluated": 96,
+   "evalChunks": 1,
+   "clickMin": 242,
+   "clickMed": 242,
+   "clicks": [
+    242
+   ],
+   "clickJs": 489,
+   "clickGz": 1010927
+  },
+  {
+   "dist": "group-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 77,
+   "beforeGz": 155498,
+   "evaluated": 77,
+   "evalChunks": 16,
+   "clickMin": 97,
+   "clickMed": 97,
+   "clicks": [
+    97
+   ],
+   "clickJs": 2,
+   "clickGz": 663
+  },
+  {
+   "dist": "group-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 61,
+   "beforeGz": 180233,
+   "evaluated": 61,
+   "evalChunks": 1,
+   "clickMin": 136,
+   "clickMed": 136,
+   "clicks": [
+    136
+   ],
+   "clickJs": 31,
+   "clickGz": 19771
+  },
+  {
+   "dist": "group-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 76,
+   "beforeGz": 155642,
+   "evaluated": 76,
+   "evalChunks": 2,
+   "clickMin": 91,
+   "clickMed": 91,
+   "clicks": [
+    91
+   ],
+   "clickJs": 15,
+   "clickGz": 8538
+  },
+  {
+   "dist": "route2-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 77,
+   "beforeGz": 162279,
+   "evaluated": 77,
+   "evalChunks": 10,
+   "clickMin": 109,
+   "clickMed": 109,
+   "clicks": [
+    109
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route2-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 0,
+   "beforeGz": 0,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 166,
+   "clickMed": 166,
+   "clicks": [
+    166
+   ],
+   "clickJs": 79,
+   "clickGz": 202443
+  },
+  {
+   "dist": "route2-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 75,
+   "beforeGz": 152697,
+   "evaluated": 75,
+   "evalChunks": 1,
+   "clickMin": 114,
+   "clickMed": 114,
+   "clicks": [
+    114
+   ],
+   "clickJs": 13,
+   "clickGz": 17950
+  },
+  {
+   "dist": "comp-16k",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 58,
+   "beforeGz": 151501,
+   "evaluated": 58,
+   "evalChunks": 16,
+   "clickMin": 107,
+   "clickMed": 107,
+   "clicks": [
+    107
+   ],
+   "clickJs": 2,
+   "clickGz": 665
+  },
+  {
+   "dist": "comp-16k",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 39,
+   "beforeGz": 176363,
+   "evaluated": 39,
+   "evalChunks": 1,
+   "clickMin": 138,
+   "clickMed": 138,
+   "clicks": [
+    138
+   ],
+   "clickJs": 31,
+   "clickGz": 19485
+  },
+  {
+   "dist": "comp-16k",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 52,
+   "beforeGz": 152776,
+   "evaluated": 52,
+   "evalChunks": 2,
+   "clickMin": 165,
+   "clickMed": 165,
+   "clicks": [
+    165
+   ],
+   "clickJs": 15,
+   "clickGz": 8405
+  },
+  {
+   "dist": "comp-64k",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 49,
+   "beforeGz": 152470,
+   "evaluated": 49,
+   "evalChunks": 16,
+   "clickMin": 97,
+   "clickMed": 97,
+   "clicks": [
+    97
+   ],
+   "clickJs": 2,
+   "clickGz": 669
+  },
+  {
+   "dist": "comp-64k",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 29,
+   "beforeGz": 175462,
+   "evaluated": 29,
+   "evalChunks": 1,
+   "clickMin": 136,
+   "clickMed": 136,
+   "clicks": [
+    136
+   ],
+   "clickJs": 32,
+   "clickGz": 20550
+  },
+  {
+   "dist": "comp-64k",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 44,
+   "beforeGz": 155072,
+   "evaluated": 44,
+   "evalChunks": 2,
+   "clickMin": 112,
+   "clickMed": 112,
+   "clicks": [
+    112
+   ],
+   "clickJs": 15,
+   "clickGz": 8315
+  },
+  {
+   "dist": "route3-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 76,
+   "beforeGz": 162238,
+   "evaluated": 76,
+   "evalChunks": 10,
+   "clickMin": 112,
+   "clickMed": 112,
+   "clicks": [
+    112
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route3-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 78,
+   "beforeGz": 202389,
+   "evaluated": 1,
+   "evalChunks": 0,
+   "clickMin": 150,
+   "clickMed": 150,
+   "clicks": [
+    150
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route3-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 87,
+   "beforeGz": 170600,
+   "evaluated": 74,
+   "evalChunks": 1,
+   "clickMin": 119,
+   "clickMed": 119,
+   "clicks": [
+    119
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route4-on",
+   "path": "/examples/select-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 76,
+   "beforeGz": 162238,
+   "evaluated": 76,
+   "evalChunks": 10,
+   "clickMin": 116,
+   "clickMed": 116,
+   "clicks": [
+    116
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route4-on",
+   "path": "/examples/date-picker-basic/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 78,
+   "beforeGz": 202389,
+   "evaluated": 1,
+   "evalChunks": 0,
+   "clickMin": 147,
+   "clickMed": 147,
+   "clicks": [
+    147
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "route4-on",
+   "path": "/examples/combo-box-default/frame/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 87,
+   "beforeGz": 170600,
+   "evaluated": 74,
+   "evalChunks": 1,
+   "clickMin": 131,
+   "clickMed": 131,
+   "clicks": [
+    131
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "ss-comp",
+   "path": "/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 0,
+   "beforeGz": 0,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "bd-comp",
+   "path": "/orders",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 15,
+   "beforeGz": 131101,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "bd-comp",
+   "path": "/orders/new",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 14,
+   "beforeGz": 129310,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "ss-route",
+   "path": "/",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 0,
+   "beforeGz": 0,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "bd-route",
+   "path": "/orders",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 10,
+   "beforeGz": 132162,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  },
+  {
+   "dist": "bd-route",
+   "path": "/orders/new",
+   "proto": "h1",
+   "cond": "none",
+   "n": 1,
+   "before": 9,
+   "beforeGz": 130357,
+   "evaluated": 0,
+   "evalChunks": 0,
+   "clickMin": 0,
+   "clickMed": 0,
+   "clicks": [
+    0
+   ],
+   "clickJs": 0,
+   "clickGz": 0
+  }
+ ],
+ "timed": {
+  "date": "2026-10-13 02:0x",
+  "builds": [
+   "comp-on",
+   "route4-on"
+  ],
+  "n": 5,
+  "interleaved": true,
+  "load": "1-min 3.98 at start (5-min 4.51), 3.30 at end",
+  "method": "click on the trigger -> popup visible (ms); mode after = after 3 s without JS, now = at the load event; fast3g = 562.5 ms RTT, 1.44 Mbit/s down, 4x CPU",
+  "summary": [
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "combo-box-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 9891,
+    "route": 9390,
+    "compMin": 9887,
+    "routeMin": 9385,
+    "compJs": 91,
+    "routeJs": 87,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -501
+   },
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "date-picker-basic",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 10400,
+    "route": 8948,
+    "compMin": 10394,
+    "routeMin": 8937,
+    "compJs": 92,
+    "routeJs": 78,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -1452
+   },
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "select-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 8902,
+    "route": 8397,
+    "compMin": 8894,
+    "routeMin": 8381,
+    "compJs": 79,
+    "routeJs": 76,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -505
+   },
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "now",
+    "path": "combo-box-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 9897,
+    "route": 9396,
+    "compMin": 9893,
+    "routeMin": 9384,
+    "compJs": 0,
+    "routeJs": 0,
+    "compBefore": 91,
+    "routeBefore": 87,
+    "delta": -501
+   },
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "now",
+    "path": "date-picker-basic",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 10406,
+    "route": 9038,
+    "compMin": 10386,
+    "routeMin": 9030,
+    "compJs": 0,
+    "routeJs": 0,
+    "compBefore": 92,
+    "routeBefore": 78,
+    "delta": -1368
+   },
+   {
+    "proto": "h1",
+    "cond": "fast3g",
+    "mode": "now",
+    "path": "select-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 8899,
+    "route": 8405,
+    "compMin": 8892,
+    "routeMin": 8396,
+    "compJs": 0,
+    "routeJs": 0,
+    "compBefore": 79,
+    "routeBefore": 76,
+    "delta": -494
+   },
+   {
+    "proto": "h1",
+    "cond": "none",
+    "mode": "after",
+    "path": "combo-box-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 121,
+    "route": 121,
+    "compMin": 113,
+    "routeMin": 107,
+    "compJs": 15,
+    "routeJs": 0,
+    "compBefore": 76,
+    "routeBefore": 87,
+    "delta": 0
+   },
+   {
+    "proto": "h1",
+    "cond": "none",
+    "mode": "after",
+    "path": "date-picker-basic",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 142,
+    "route": 139,
+    "compMin": 128,
+    "routeMin": 134,
+    "compJs": 31,
+    "routeJs": 0,
+    "compBefore": 61,
+    "routeBefore": 78,
+    "delta": -3
+   },
+   {
+    "proto": "h1",
+    "cond": "none",
+    "mode": "after",
+    "path": "select-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 109,
+    "route": 105,
+    "compMin": 100,
+    "routeMin": 95,
+    "compJs": 2,
+    "routeJs": 0,
+    "compBefore": 77,
+    "routeBefore": 76,
+    "delta": -4
+   },
+   {
+    "proto": "h2",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "combo-box-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 3872,
+    "route": 3865,
+    "compMin": 3859,
+    "routeMin": 3864,
+    "compJs": 109,
+    "routeJs": 100,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -7
+   },
+   {
+    "proto": "h2",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "date-picker-basic",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 4508,
+    "route": 4493,
+    "compMin": 4498,
+    "routeMin": 4484,
+    "compJs": 114,
+    "routeJs": 90,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -15
+   },
+   {
+    "proto": "h2",
+    "cond": "fast3g",
+    "mode": "after",
+    "path": "select-default",
+    "n": [
+     5,
+     5
+    ],
+    "comp": 3876,
+    "route": 3874,
+    "compMin": 3873,
+    "routeMin": 3866,
+    "compJs": 98,
+    "routeJs": 87,
+    "compBefore": 0,
+    "routeBefore": 0,
+    "delta": -2
+   }
+  ],
+  "rows": [
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 77,
+    "beforeGz": 155498,
+    "evaluated": 77,
+    "evalChunks": 16,
+    "clickMin": 120,
+    "clickMed": 120,
+    "clicks": [
+     120
+    ],
+    "clickJs": 2,
+    "clickGz": 663
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 61,
+    "beforeGz": 180233,
+    "evaluated": 61,
+    "evalChunks": 1,
+    "clickMin": 156,
+    "clickMed": 156,
+    "clicks": [
+     156
+    ],
+    "clickJs": 31,
+    "clickGz": 19771
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 155642,
+    "evaluated": 76,
+    "evalChunks": 2,
+    "clickMin": 130,
+    "clickMed": 130,
+    "clicks": [
+     130
+    ],
+    "clickJs": 15,
+    "clickGz": 8538
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 95,
+    "clickMed": 95,
+    "clicks": [
+     95
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 1,
+    "evalChunks": 0,
+    "clickMin": 146,
+    "clickMed": 146,
+    "clicks": [
+     146
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 74,
+    "evalChunks": 1,
+    "clickMin": 132,
+    "clickMed": 132,
+    "clicks": [
+     132
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8905,
+    "clickMed": 8905,
+    "clicks": [
+     8905
+    ],
+    "clickJs": 79,
+    "clickGz": 156161
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 10405,
+    "clickMed": 10405,
+    "clicks": [
+     10405
+    ],
+    "clickJs": 92,
+    "clickGz": 200004
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9892,
+    "clickMed": 9892,
+    "clicks": [
+     9892
+    ],
+    "clickJs": 91,
+    "clickGz": 164180
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8397,
+    "clickMed": 8397,
+    "clicks": [
+     8397
+    ],
+    "clickJs": 76,
+    "clickGz": 162238
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8973,
+    "clickMed": 8973,
+    "clicks": [
+     8973
+    ],
+    "clickJs": 78,
+    "clickGz": 202389
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9387,
+    "clickMed": 9387,
+    "clicks": [
+     9387
+    ],
+    "clickJs": 87,
+    "clickGz": 170600
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 79,
+    "beforeGz": 156161,
+    "evaluated": 79,
+    "evalChunks": 18,
+    "clickMin": 8925,
+    "clickMed": 8925,
+    "clicks": [
+     8925
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 92,
+    "beforeGz": 200004,
+    "evaluated": 92,
+    "evalChunks": 21,
+    "clickMin": 10386,
+    "clickMed": 10386,
+    "clicks": [
+     10386
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 91,
+    "beforeGz": 164180,
+    "evaluated": 91,
+    "evalChunks": 17,
+    "clickMin": 9897,
+    "clickMed": 9897,
+    "clicks": [
+     9897
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 8397,
+    "clickMed": 8397,
+    "clicks": [
+     8397
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 78,
+    "evalChunks": 11,
+    "clickMin": 9033,
+    "clickMed": 9033,
+    "clicks": [
+     9033
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 87,
+    "evalChunks": 12,
+    "clickMin": 9384,
+    "clickMed": 9384,
+    "clicks": [
+     9384
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3875,
+    "clickMed": 3875,
+    "clicks": [
+     3875
+    ],
+    "clickJs": 98,
+    "clickGz": 162383
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4515,
+    "clickMed": 4515,
+    "clicks": [
+     4515
+    ],
+    "clickJs": 114,
+    "clickGz": 206505
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3872,
+    "clickMed": 3872,
+    "clicks": [
+     3872
+    ],
+    "clickJs": 109,
+    "clickGz": 170965
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3874,
+    "clickMed": 3874,
+    "clicks": [
+     3874
+    ],
+    "clickJs": 87,
+    "clickGz": 166211
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4493,
+    "clickMed": 4493,
+    "clicks": [
+     4493
+    ],
+    "clickJs": 90,
+    "clickGz": 206230
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 1,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3864,
+    "clickMed": 3864,
+    "clicks": [
+     3864
+    ],
+    "clickJs": 100,
+    "clickGz": 174793
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 77,
+    "beforeGz": 155498,
+    "evaluated": 77,
+    "evalChunks": 16,
+    "clickMin": 106,
+    "clickMed": 106,
+    "clicks": [
+     106
+    ],
+    "clickJs": 2,
+    "clickGz": 663
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 61,
+    "beforeGz": 180233,
+    "evaluated": 61,
+    "evalChunks": 1,
+    "clickMin": 128,
+    "clickMed": 128,
+    "clicks": [
+     128
+    ],
+    "clickJs": 31,
+    "clickGz": 19771
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 155642,
+    "evaluated": 76,
+    "evalChunks": 2,
+    "clickMin": 113,
+    "clickMed": 113,
+    "clicks": [
+     113
+    ],
+    "clickJs": 15,
+    "clickGz": 8538
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 131,
+    "clickMed": 131,
+    "clicks": [
+     131
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 1,
+    "evalChunks": 0,
+    "clickMin": 155,
+    "clickMed": 155,
+    "clicks": [
+     155
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 74,
+    "evalChunks": 1,
+    "clickMin": 124,
+    "clickMed": 124,
+    "clicks": [
+     124
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8902,
+    "clickMed": 8902,
+    "clicks": [
+     8902
+    ],
+    "clickJs": 79,
+    "clickGz": 156161
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 10399,
+    "clickMed": 10399,
+    "clicks": [
+     10399
+    ],
+    "clickJs": 92,
+    "clickGz": 200004
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9891,
+    "clickMed": 9891,
+    "clicks": [
+     9891
+    ],
+    "clickJs": 91,
+    "clickGz": 164180
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8398,
+    "clickMed": 8398,
+    "clicks": [
+     8398
+    ],
+    "clickJs": 76,
+    "clickGz": 162238
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8948,
+    "clickMed": 8948,
+    "clicks": [
+     8948
+    ],
+    "clickJs": 78,
+    "clickGz": 202389
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9390,
+    "clickMed": 9390,
+    "clicks": [
+     9390
+    ],
+    "clickJs": 87,
+    "clickGz": 170600
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 79,
+    "beforeGz": 156161,
+    "evaluated": 79,
+    "evalChunks": 18,
+    "clickMin": 8905,
+    "clickMed": 8905,
+    "clicks": [
+     8905
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 92,
+    "beforeGz": 200004,
+    "evaluated": 92,
+    "evalChunks": 21,
+    "clickMin": 10406,
+    "clickMed": 10406,
+    "clicks": [
+     10406
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 91,
+    "beforeGz": 164180,
+    "evaluated": 91,
+    "evalChunks": 17,
+    "clickMin": 9893,
+    "clickMed": 9893,
+    "clicks": [
+     9893
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 8405,
+    "clickMed": 8405,
+    "clicks": [
+     8405
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 78,
+    "evalChunks": 11,
+    "clickMin": 9030,
+    "clickMed": 9030,
+    "clicks": [
+     9030
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 87,
+    "evalChunks": 12,
+    "clickMin": 9394,
+    "clickMed": 9394,
+    "clicks": [
+     9394
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3873,
+    "clickMed": 3873,
+    "clicks": [
+     3873
+    ],
+    "clickJs": 98,
+    "clickGz": 162383
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4498,
+    "clickMed": 4498,
+    "clicks": [
+     4498
+    ],
+    "clickJs": 114,
+    "clickGz": 206505
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3859,
+    "clickMed": 3859,
+    "clicks": [
+     3859
+    ],
+    "clickJs": 109,
+    "clickGz": 170965
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3886,
+    "clickMed": 3886,
+    "clicks": [
+     3886
+    ],
+    "clickJs": 87,
+    "clickGz": 166211
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4499,
+    "clickMed": 4499,
+    "clicks": [
+     4499
+    ],
+    "clickJs": 90,
+    "clickGz": 206230
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 2,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3864,
+    "clickMed": 3864,
+    "clicks": [
+     3864
+    ],
+    "clickJs": 100,
+    "clickGz": 174793
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 77,
+    "beforeGz": 155498,
+    "evaluated": 77,
+    "evalChunks": 16,
+    "clickMin": 100,
+    "clickMed": 100,
+    "clicks": [
+     100
+    ],
+    "clickJs": 2,
+    "clickGz": 663
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 61,
+    "beforeGz": 180233,
+    "evaluated": 61,
+    "evalChunks": 1,
+    "clickMin": 150,
+    "clickMed": 150,
+    "clicks": [
+     150
+    ],
+    "clickJs": 31,
+    "clickGz": 19771
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 155642,
+    "evaluated": 76,
+    "evalChunks": 2,
+    "clickMin": 132,
+    "clickMed": 132,
+    "clicks": [
+     132
+    ],
+    "clickJs": 15,
+    "clickGz": 8538
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 130,
+    "clickMed": 130,
+    "clicks": [
+     130
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 1,
+    "evalChunks": 0,
+    "clickMin": 134,
+    "clickMed": 134,
+    "clicks": [
+     134
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 74,
+    "evalChunks": 1,
+    "clickMin": 121,
+    "clickMed": 121,
+    "clicks": [
+     121
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8900,
+    "clickMed": 8900,
+    "clicks": [
+     8900
+    ],
+    "clickJs": 79,
+    "clickGz": 156161
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 10400,
+    "clickMed": 10400,
+    "clicks": [
+     10400
+    ],
+    "clickJs": 92,
+    "clickGz": 200004
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9896,
+    "clickMed": 9896,
+    "clicks": [
+     9896
+    ],
+    "clickJs": 91,
+    "clickGz": 164180
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8381,
+    "clickMed": 8381,
+    "clicks": [
+     8381
+    ],
+    "clickJs": 76,
+    "clickGz": 162238
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8937,
+    "clickMed": 8937,
+    "clicks": [
+     8937
+    ],
+    "clickJs": 78,
+    "clickGz": 202389
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9396,
+    "clickMed": 9396,
+    "clicks": [
+     9396
+    ],
+    "clickJs": 87,
+    "clickGz": 170600
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 79,
+    "beforeGz": 156161,
+    "evaluated": 79,
+    "evalChunks": 18,
+    "clickMin": 8899,
+    "clickMed": 8899,
+    "clicks": [
+     8899
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 92,
+    "beforeGz": 200004,
+    "evaluated": 92,
+    "evalChunks": 21,
+    "clickMin": 10411,
+    "clickMed": 10411,
+    "clicks": [
+     10411
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 91,
+    "beforeGz": 164180,
+    "evaluated": 91,
+    "evalChunks": 17,
+    "clickMin": 9903,
+    "clickMed": 9903,
+    "clicks": [
+     9903
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 8396,
+    "clickMed": 8396,
+    "clicks": [
+     8396
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 78,
+    "evalChunks": 11,
+    "clickMin": 9038,
+    "clickMed": 9038,
+    "clicks": [
+     9038
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 87,
+    "evalChunks": 12,
+    "clickMin": 9396,
+    "clickMed": 9396,
+    "clicks": [
+     9396
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3876,
+    "clickMed": 3876,
+    "clicks": [
+     3876
+    ],
+    "clickJs": 98,
+    "clickGz": 162383
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4505,
+    "clickMed": 4505,
+    "clicks": [
+     4505
+    ],
+    "clickJs": 114,
+    "clickGz": 206505
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3859,
+    "clickMed": 3859,
+    "clicks": [
+     3859
+    ],
+    "clickJs": 109,
+    "clickGz": 170965
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3873,
+    "clickMed": 3873,
+    "clicks": [
+     3873
+    ],
+    "clickJs": 87,
+    "clickGz": 166211
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4509,
+    "clickMed": 4509,
+    "clicks": [
+     4509
+    ],
+    "clickJs": 90,
+    "clickGz": 206230
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 3,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3900,
+    "clickMed": 3900,
+    "clicks": [
+     3900
+    ],
+    "clickJs": 100,
+    "clickGz": 174793
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 77,
+    "beforeGz": 155498,
+    "evaluated": 77,
+    "evalChunks": 16,
+    "clickMin": 119,
+    "clickMed": 119,
+    "clicks": [
+     119
+    ],
+    "clickJs": 2,
+    "clickGz": 663
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 61,
+    "beforeGz": 180233,
+    "evaluated": 61,
+    "evalChunks": 1,
+    "clickMin": 140,
+    "clickMed": 140,
+    "clicks": [
+     140
+    ],
+    "clickJs": 31,
+    "clickGz": 19771
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 155642,
+    "evaluated": 76,
+    "evalChunks": 2,
+    "clickMin": 121,
+    "clickMed": 121,
+    "clicks": [
+     121
+    ],
+    "clickJs": 15,
+    "clickGz": 8538
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 101,
+    "clickMed": 101,
+    "clicks": [
+     101
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 1,
+    "evalChunks": 0,
+    "clickMin": 139,
+    "clickMed": 139,
+    "clicks": [
+     139
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 74,
+    "evalChunks": 1,
+    "clickMin": 120,
+    "clickMed": 120,
+    "clicks": [
+     120
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8894,
+    "clickMed": 8894,
+    "clicks": [
+     8894
+    ],
+    "clickJs": 79,
+    "clickGz": 156161
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 10394,
+    "clickMed": 10394,
+    "clicks": [
+     10394
+    ],
+    "clickJs": 92,
+    "clickGz": 200004
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9890,
+    "clickMed": 9890,
+    "clicks": [
+     9890
+    ],
+    "clickJs": 91,
+    "clickGz": 164180
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8391,
+    "clickMed": 8391,
+    "clicks": [
+     8391
+    ],
+    "clickJs": 76,
+    "clickGz": 162238
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8952,
+    "clickMed": 8952,
+    "clicks": [
+     8952
+    ],
+    "clickJs": 78,
+    "clickGz": 202389
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9385,
+    "clickMed": 9385,
+    "clicks": [
+     9385
+    ],
+    "clickJs": 87,
+    "clickGz": 170600
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 79,
+    "beforeGz": 156161,
+    "evaluated": 79,
+    "evalChunks": 18,
+    "clickMin": 8892,
+    "clickMed": 8892,
+    "clicks": [
+     8892
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 92,
+    "beforeGz": 200004,
+    "evaluated": 92,
+    "evalChunks": 21,
+    "clickMin": 10410,
+    "clickMed": 10410,
+    "clicks": [
+     10410
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 91,
+    "beforeGz": 164180,
+    "evaluated": 91,
+    "evalChunks": 17,
+    "clickMin": 9901,
+    "clickMed": 9901,
+    "clicks": [
+     9901
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 8406,
+    "clickMed": 8406,
+    "clicks": [
+     8406
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 78,
+    "evalChunks": 11,
+    "clickMin": 9045,
+    "clickMed": 9045,
+    "clicks": [
+     9045
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 87,
+    "evalChunks": 12,
+    "clickMin": 9397,
+    "clickMed": 9397,
+    "clicks": [
+     9397
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3879,
+    "clickMed": 3879,
+    "clicks": [
+     3879
+    ],
+    "clickJs": 98,
+    "clickGz": 162383
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4535,
+    "clickMed": 4535,
+    "clicks": [
+     4535
+    ],
+    "clickJs": 114,
+    "clickGz": 206505
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3883,
+    "clickMed": 3883,
+    "clicks": [
+     3883
+    ],
+    "clickJs": 109,
+    "clickGz": 170965
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3866,
+    "clickMed": 3866,
+    "clicks": [
+     3866
+    ],
+    "clickJs": 87,
+    "clickGz": 166211
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4484,
+    "clickMed": 4484,
+    "clicks": [
+     4484
+    ],
+    "clickJs": 90,
+    "clickGz": 206230
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 4,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3865,
+    "clickMed": 3865,
+    "clicks": [
+     3865
+    ],
+    "clickJs": 100,
+    "clickGz": 174793
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 77,
+    "beforeGz": 155498,
+    "evaluated": 77,
+    "evalChunks": 16,
+    "clickMin": 109,
+    "clickMed": 109,
+    "clicks": [
+     109
+    ],
+    "clickJs": 2,
+    "clickGz": 663
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 61,
+    "beforeGz": 180233,
+    "evaluated": 61,
+    "evalChunks": 1,
+    "clickMin": 142,
+    "clickMed": 142,
+    "clicks": [
+     142
+    ],
+    "clickJs": 31,
+    "clickGz": 19771
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 155642,
+    "evaluated": 76,
+    "evalChunks": 2,
+    "clickMin": 117,
+    "clickMed": 117,
+    "clicks": [
+     117
+    ],
+    "clickJs": 15,
+    "clickGz": 8538
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 105,
+    "clickMed": 105,
+    "clicks": [
+     105
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 1,
+    "evalChunks": 0,
+    "clickMin": 137,
+    "clickMed": 137,
+    "clicks": [
+     137
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "none",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 74,
+    "evalChunks": 1,
+    "clickMin": 107,
+    "clickMed": 107,
+    "clicks": [
+     107
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8906,
+    "clickMed": 8906,
+    "clicks": [
+     8906
+    ],
+    "clickJs": 79,
+    "clickGz": 156161
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 10408,
+    "clickMed": 10408,
+    "clicks": [
+     10408
+    ],
+    "clickJs": 92,
+    "clickGz": 200004
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9887,
+    "clickMed": 9887,
+    "clicks": [
+     9887
+    ],
+    "clickJs": 91,
+    "clickGz": 164180
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8401,
+    "clickMed": 8401,
+    "clicks": [
+     8401
+    ],
+    "clickJs": 76,
+    "clickGz": 162238
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 8943,
+    "clickMed": 8943,
+    "clicks": [
+     8943
+    ],
+    "clickJs": 78,
+    "clickGz": 202389
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 9402,
+    "clickMed": 9402,
+    "clicks": [
+     9402
+    ],
+    "clickJs": 87,
+    "clickGz": 170600
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 79,
+    "beforeGz": 156161,
+    "evaluated": 79,
+    "evalChunks": 18,
+    "clickMin": 8897,
+    "clickMed": 8897,
+    "clicks": [
+     8897
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 92,
+    "beforeGz": 200004,
+    "evaluated": 92,
+    "evalChunks": 21,
+    "clickMin": 10401,
+    "clickMed": 10401,
+    "clicks": [
+     10401
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 91,
+    "beforeGz": 164180,
+    "evaluated": 91,
+    "evalChunks": 17,
+    "clickMin": 9896,
+    "clickMed": 9896,
+    "clicks": [
+     9896
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 76,
+    "beforeGz": 162238,
+    "evaluated": 76,
+    "evalChunks": 10,
+    "clickMin": 8406,
+    "clickMed": 8406,
+    "clicks": [
+     8406
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 78,
+    "beforeGz": 202389,
+    "evaluated": 78,
+    "evalChunks": 11,
+    "clickMin": 9038,
+    "clickMed": 9038,
+    "clicks": [
+     9038
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "route4-on",
+    "mode": "now",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h1",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 87,
+    "beforeGz": 170600,
+    "evaluated": 87,
+    "evalChunks": 12,
+    "clickMin": 9401,
+    "clickMed": 9401,
+    "clicks": [
+     9401
+    ],
+    "clickJs": 0,
+    "clickGz": 0
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3886,
+    "clickMed": 3886,
+    "clicks": [
+     3886
+    ],
+    "clickJs": 98,
+    "clickGz": 162383
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4508,
+    "clickMed": 4508,
+    "clicks": [
+     4508
+    ],
+    "clickJs": 114,
+    "clickGz": 206505
+   },
+   {
+    "dist": "comp-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3872,
+    "clickMed": 3872,
+    "clicks": [
+     3872
+    ],
+    "clickJs": 109,
+    "clickGz": 170965
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/select-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3878,
+    "clickMed": 3878,
+    "clicks": [
+     3878
+    ],
+    "clickJs": 87,
+    "clickGz": 166211
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/date-picker-basic/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 4491,
+    "clickMed": 4491,
+    "clicks": [
+     4491
+    ],
+    "clickJs": 90,
+    "clickGz": 206230
+   },
+   {
+    "dist": "route4-on",
+    "mode": "after",
+    "rep": 5,
+    "path": "/examples/combo-box-default/frame/",
+    "proto": "h2",
+    "cond": "fast3g",
+    "n": 1,
+    "before": 0,
+    "beforeGz": 0,
+    "evaluated": 0,
+    "evalChunks": 0,
+    "clickMin": 3889,
+    "clickMed": 3889,
+    "clicks": [
+     3889
+    ],
+    "clickJs": 100,
+    "clickGz": 174793
+   }
+  ]
+ }
+}

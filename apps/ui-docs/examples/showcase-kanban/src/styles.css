@@ -1,0 +1,40 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+
+/* Angular CDK drag-drop state classes: lifted preview, faded slot, animated sorting.
+   The sorting transition also drives the cards' shift when a card enters or leaves a column. */
+.cdk-drag-preview {
+  @apply rotate-2 shadow-overlay;
+  box-sizing: border-box;
+}
+.cdk-drag-placeholder {
+  @apply opacity-40;
+}
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+  transition: transform 200ms var(--ease-out-quad, ease-out);
+}
+/* The drop: the preview glides into the slot and straightens up on the way. */
+.cdk-drag-preview.cdk-drag-animating {
+  rotate: none;
+  transition:
+    transform 200ms var(--ease-out-quad, ease-out),
+    rotate 200ms var(--ease-out-quad, ease-out);
+}
+.cdk-drop-list-receiving,
+.cdk-drop-list-dragging {
+  @apply bg-accent-soft/40;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cdk-drag-preview.cdk-drag-animating,
+  .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+    transition: none;
+  }
+}

@@ -1,0 +1,34 @@
+---
+name: rivet-port-react-component
+description: Port a React (or Solid / Next.js) component or page to Rivet idioms - signals instead of useState, clientEffect instead of useEffect, For with a key, live props, class, serializable handlers. Use when the user pastes React code or asks to convert / migrate a component to Rivet.
+---
+
+# Port a React component to Rivet
+
+Map each construct (full table: `get_doc("docs:/start/coming-from-other-frameworks/")`):
+
+| React                                                   | Rivet                                                                                                                               |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `const [n, setN] = useState(0)`                         | `const n = signal(0)`; read `n()`, write `n.set(1)` / `n.update((v) => v + 1)` (`@rivetjs/reactivity`)                              |
+| `useMemo(() => a * 2, [a])`                             | `computed(() => a() * 2)` (no dependency list)                                                                                      |
+| `useEffect(() => …, [deps])`                            | `clientEffect(() => …)` from `@rivetjs/runtime/dom` (browser only, re-runs when read signals change; return a cleanup)              |
+| `useRef()` for an element                               | `const el = ref<HTMLInputElement>()` + `ref={el}`; read `el()`                                                                      |
+| `useCallback`, `memo`                                   | nothing: components run once                                                                                                        |
+| `useContext`                                            | `createContext` / `useContext` (`@rivetjs/reactivity`) + `<Provider token value>` (`@rivetjs/runtime/dom`)                          |
+| `items.map((i) => <li key={i.id}>…)`                    | `<For each={items} by={(i) => i.id}>{(i) => <li>{i().name}</li>}</For>` (item / index are accessors); `.map` is fine for fixed data |
+| `cond && <p />`                                         | `cond() && <p />` or `<Show when={cond()}>`                                                                                         |
+| `className`, `htmlFor`, `onChange` on text inputs       | `class`, `for`, `onInput` or `model:value={signal}`                                                                                 |
+| `style="…"` strings                                     | `style={{ color: c() }}` or `style:color={c()}`                                                                                     |
+| `function Badge({ count })`                             | `function Badge(props: { count: number })` + `props.count` (props are live; destructuring reads once)                               |
+| `React.lazy`, `<Suspense>`                              | `lazyComponent`, `Async`, `Suspense` (`@rivetjs/runtime/dom`)                                                                       |
+| Next.js `getServerSideProps`, Remix `loader` / `action` | `export const serverLoad` / `serverActions` in the route file                                                                       |
+| `useRouter().push`, `useSearchParams`                   | `navigate()`, `useSearchParams()` from `@rivetjs/router/client`                                                                     |
+| icon components / inline SVG                            | `<Icon icon={Check} />` from `@rivetjs/kit/icon` + `import { Check } from "lucide"`                                                 |
+
+Then fix what resuming requires:
+
+1. Move browser reads (`window`, `document`, `localStorage`, `matchMedia`) out of the component body into handlers or `clientEffect` (RV2001).
+2. Handlers: inline arrows or local consts. Values they capture must serialize: create class instances (`Intl.*`, SDK clients) inside the handler or build them with `reconstruct(() => new X(…))` (`import { reconstruct } from "@rivetjs/runtime/dom"`; RV2003); wrap library callbacks: `onPress={() => track("save")}`.
+3. Render props and item renderers stay functions (`{(item) => …}`).
+4. Third-party React UI → `@rivetjs/ui` / `@rivetjs/cdk` equivalents: `list_components`, `get_component(name)`; React Aria-style names carry over (`onPress`, `isOpen={signal}`).
+5. `check_code` the result, fix every RV code (`explain_diagnostic`), then `npm run check`.

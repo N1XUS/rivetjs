@@ -1,0 +1,31 @@
+# THROWAWAY SPIKE: Compose override adding the native Rust lanes next to apps/ssr-bench/compose.yaml.
+# Used only by spikes/rust-ceiling/bench.py (paths resolve relative to apps/ssr-bench).
+x-rust: &rust
+  image: rivet-ssr-bench-rust-ceiling:spike
+  build:
+    context: spikes/rust-ceiling
+  init: true
+  mem_limit: 512m
+  depends_on: [backend]
+services:
+  rust-ceiling:
+    <<: *rust
+    # Same 1 CPU / 512 MiB quota as every Node lane and Razor; tokio current_thread = one OS thread.
+    cpus: 1.0
+    environment: { GRPC_URL: "http://backend:8081", LANE: rust-ceiling, WORKERS: "1", INPUT: proto }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}20:8080"]
+    profiles: [variants]
+  rust-ceiling-mt:
+    <<: *rust
+    # Second variant, NOT quota-equal: tokio multi_thread, 2 workers, 2 CPUs.
+    cpus: 2.0
+    environment: { GRPC_URL: "http://backend:8081", LANE: rust-ceiling-mt, WORKERS: "2", INPUT: proto }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}21:8080"]
+    profiles: [variants]
+  rust-ceiling-json:
+    <<: *rust
+    # JSON boundary: protobuf → JSON string (stand-in for a JS loader's output) → serde_json parse → render. 1 CPU.
+    cpus: 1.0
+    environment: { GRPC_URL: "http://backend:8081", LANE: rust-ceiling-json, WORKERS: "1", INPUT: json-serde }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}22:8080"]
+    profiles: [variants]

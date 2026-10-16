@@ -1,0 +1,632 @@
+{
+  "name": "@rivetjs/cdk",
+  "version": "0.0.0-experimental",
+  "description": "Headless, accessible components and utilities for Rivet: overlays, collections, focus, interactions, dates, drag and drop.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "rivet": {
+    "source": true
+  },
+  "imports": {
+    "#dev": {
+      "types": "./utils/dev-off.ts",
+      "development": "./utils/dev-on.ts",
+      "default": "./utils/dev-off.ts"
+    },
+    "#server": {
+      "types": "./collections/server-on.tsx",
+      "browser": {
+        "development": "./collections/server-dev.ts",
+        "default": "./collections/server-off.ts"
+      },
+      "default": "./collections/server-on.tsx"
+    }
+  },
+  "exports": {
+    "./id": {
+      "types": "./utils/id.ts",
+      "default": "./utils/id.ts"
+    },
+    "./animation": {
+      "types": "./utils/animation.tsx",
+      "default": "./utils/animation.tsx"
+    },
+    "./platform": {
+      "types": "./platform/index.ts",
+      "default": "./platform/index.ts"
+    },
+    "./bidi": {
+      "types": "./bidi/index.ts",
+      "default": "./bidi/index.ts"
+    },
+    "./a11y": {
+      "types": "./a11y/index.ts",
+      "default": "./a11y/index.ts"
+    },
+    "./announcer": {
+      "types": "./announcer/index.tsx",
+      "default": "./announcer/index.tsx"
+    },
+    "./keys": {
+      "types": "./keys/index.ts",
+      "default": "./keys/index.ts"
+    },
+    "./focus": {
+      "types": "./focus/index.ts",
+      "default": "./focus/index.ts"
+    },
+    "./focus-scope": {
+      "types": "./focus/focus-scope.tsx",
+      "default": "./focus/focus-scope.tsx"
+    },
+    "./slot-probe": {
+      "types": "./collections/server-on.tsx",
+      "browser": {
+        "development": "./collections/server-dev.ts",
+        "default": "./collections/server-off.ts"
+      },
+      "default": "./collections/server-on.tsx"
+    },
+    "./collections": {
+      "types": "./collections/index.ts",
+      "default": "./collections/index.ts"
+    },
+    "./collections/components": {
+      "types": "./collections/components.tsx",
+      "default": "./collections/components.tsx"
+    },
+    "./collections/*": {
+      "types": "./collections/*.ts",
+      "default": "./collections/*.ts"
+    },
+    "./selection/*": {
+      "types": "./selection/*.ts",
+      "default": "./selection/*.ts"
+    },
+    "./overlay": {
+      "types": "./overlay/index.ts",
+      "default": "./overlay/index.ts"
+    },
+    "./position": {
+      "types": "./overlay/position.ts",
+      "default": "./overlay/position.ts"
+    },
+    "./overlay-trigger-state": {
+      "types": "./overlay/overlay-trigger-state.ts",
+      "default": "./overlay/overlay-trigger-state.ts"
+    },
+    "./overlay-contexts": {
+      "types": "./overlay/contexts.ts",
+      "default": "./overlay/contexts.ts"
+    },
+    "./hover-trigger": {
+      "types": "./overlay/hover-trigger.tsx",
+      "default": "./overlay/hover-trigger.tsx"
+    },
+    "./safe-area": {
+      "types": "./overlay/safe-area.ts",
+      "default": "./overlay/safe-area.ts"
+    },
+    "./autocomplete-contexts": {
+      "types": "./autocomplete/contexts.ts",
+      "default": "./autocomplete/contexts.ts"
+    },
+    "./overlay-trigger": {
+      "types": "./overlay/overlay-trigger.tsx",
+      "default": "./overlay/overlay-trigger.tsx"
+    },
+    "./close-on-scroll": {
+      "types": "./overlay/close-on-scroll.ts",
+      "default": "./overlay/close-on-scroll.ts"
+    },
+    "./prevent-scroll": {
+      "types": "./overlay/prevent-scroll.ts",
+      "default": "./overlay/prevent-scroll.ts"
+    },
+    "./aria-hide-outside": {
+      "types": "./overlay/aria-hide-outside.ts",
+      "default": "./overlay/aria-hide-outside.ts"
+    },
+    "./modal-overlay": {
+      "types": "./overlay/modal-overlay.ts",
+      "default": "./overlay/modal-overlay.ts"
+    },
+    "./dismiss-button": {
+      "types": "./overlay/dismiss-button.tsx",
+      "default": "./overlay/dismiss-button.tsx"
+    },
+    "./overlay-strings": {
+      "types": "./overlay/overlay-strings.ts",
+      "default": "./overlay/overlay-strings.ts"
+    },
+    "./portal": {
+      "types": "./portal/index.tsx",
+      "default": "./portal/index.tsx"
+    },
+    "./portal-outlet": {
+      "types": "./portal/portal-outlet.ts",
+      "default": "./portal/portal-outlet.ts"
+    },
+    "./overlay-strategy": {
+      "types": "./overlay-service/overlay-strategy.ts",
+      "default": "./overlay-service/overlay-strategy.ts"
+    },
+    "./overlay-viewport": {
+      "types": "./overlay-service/overlay-viewport.ts",
+      "default": "./overlay-service/overlay-viewport.ts"
+    },
+    "./overlay-ref": {
+      "types": "./overlay-service/overlay-ref.ts",
+      "default": "./overlay-service/overlay-ref.ts"
+    },
+    "./overlay-container": {
+      "types": "./overlay-service/overlay-container.ts",
+      "default": "./overlay-service/overlay-container.ts"
+    },
+    "./overlay-dispatchers": {
+      "types": "./overlay-service/overlay-dispatchers.ts",
+      "default": "./overlay-service/overlay-dispatchers.ts"
+    },
+    "./scroll-strategies": {
+      "types": "./overlay-service/scroll-strategies.ts",
+      "default": "./overlay-service/scroll-strategies.ts"
+    },
+    "./global-position": {
+      "types": "./overlay-service/global-position.ts",
+      "default": "./overlay-service/global-position.ts"
+    },
+    "./connected-position": {
+      "types": "./overlay-service/connected-position.ts",
+      "default": "./overlay-service/connected-position.ts"
+    },
+    "./overlay-position-builder": {
+      "types": "./overlay-service/overlay-position-builder.ts",
+      "default": "./overlay-service/overlay-position-builder.ts"
+    },
+    "./overlay-service": {
+      "types": "./overlay-service/index.ts",
+      "default": "./overlay-service/index.ts"
+    },
+    "./portal-mount": {
+      "types": "./portal/portal-mount.ts",
+      "default": "./portal/portal-mount.ts"
+    },
+    "./interactions": {
+      "types": "./interactions/index.ts",
+      "default": "./interactions/index.ts"
+    },
+    "./clipboard": {
+      "types": "./clipboard/index.ts",
+      "default": "./clipboard/index.ts"
+    },
+    "./focus-ring": {
+      "types": "./focus/focus-ring.tsx",
+      "default": "./focus/focus-ring.tsx"
+    },
+    "./live-announcer": {
+      "types": "./announcer/live-announcer.ts",
+      "default": "./announcer/live-announcer.ts"
+    },
+    "./interactions/utils": {
+      "types": "./interactions/utils.ts",
+      "default": "./interactions/utils.ts"
+    },
+    "./interactions/merge-props": {
+      "types": "./interactions/merge-props.tsx",
+      "default": "./interactions/merge-props.tsx"
+    },
+    "./interactions/pressable": {
+      "types": "./interactions/pressable.tsx",
+      "default": "./interactions/pressable.tsx"
+    },
+    "./focusable": {
+      "types": "./focus/focusable.tsx",
+      "default": "./focus/focusable.tsx"
+    },
+    "./interactions/press": {
+      "types": "./interactions/press.tsx",
+      "default": "./interactions/press.tsx"
+    },
+    "./interactions/hover": {
+      "types": "./interactions/hover.tsx",
+      "default": "./interactions/hover.tsx"
+    },
+    "./interactions/focus": {
+      "types": "./interactions/focus.tsx",
+      "default": "./interactions/focus.tsx"
+    },
+    "./interactions/focus-visible": {
+      "types": "./interactions/focus-visible.tsx",
+      "default": "./interactions/focus-visible.tsx"
+    },
+    "./interactions/keyboard": {
+      "types": "./interactions/keyboard.tsx",
+      "default": "./interactions/keyboard.tsx"
+    },
+    "./interactions/long-press": {
+      "types": "./interactions/long-press.tsx",
+      "default": "./interactions/long-press.tsx"
+    },
+    "./interactions/move": {
+      "types": "./interactions/move.tsx",
+      "default": "./interactions/move.tsx"
+    },
+    "./interactions/interact-outside": {
+      "types": "./interactions/interact-outside.tsx",
+      "default": "./interactions/interact-outside.tsx"
+    },
+    "./interactions/scroll-wheel": {
+      "types": "./interactions/scroll-wheel.tsx",
+      "default": "./interactions/scroll-wheel.tsx"
+    },
+    "./a11y/focus-monitor": {
+      "types": "./a11y/focus-monitor.ts",
+      "default": "./a11y/focus-monitor.ts"
+    },
+    "./a11y/interactivity-checker": {
+      "types": "./a11y/interactivity-checker.ts",
+      "default": "./a11y/interactivity-checker.ts"
+    },
+    "./a11y/focus-trap": {
+      "types": "./a11y/focus-trap.ts",
+      "default": "./a11y/focus-trap.ts"
+    },
+    "./a11y/key-manager": {
+      "types": "./a11y/key-manager.ts",
+      "default": "./a11y/key-manager.ts"
+    },
+    "./a11y/live-announcer": {
+      "types": "./a11y/live-announcer.ts",
+      "default": "./a11y/live-announcer.ts"
+    },
+    "./a11y/high-contrast": {
+      "types": "./a11y/high-contrast.ts",
+      "default": "./a11y/high-contrast.ts"
+    },
+    "./a11y/aria-describer": {
+      "types": "./a11y/aria-describer.ts",
+      "default": "./a11y/aria-describer.ts"
+    },
+    "./bidi-dir": {
+      "types": "./bidi/bidi-dir.tsx",
+      "default": "./bidi/bidi-dir.tsx"
+    },
+    "./coercion": {
+      "types": "./coercion/index.ts",
+      "default": "./coercion/index.ts"
+    },
+    "./layout": {
+      "types": "./layout/index.ts",
+      "default": "./layout/index.ts"
+    },
+    "./observers": {
+      "types": "./observers/index.ts",
+      "default": "./observers/index.ts"
+    },
+    "./dom-props": {
+      "types": "./utils/dom-props.ts",
+      "default": "./utils/dom-props.ts"
+    },
+    "./data-attrs": {
+      "types": "./utils/data-attrs.tsx",
+      "default": "./utils/data-attrs.tsx"
+    },
+    "./types": {
+      "types": "./utils/types.ts",
+      "default": "./utils/types.ts"
+    },
+    "./interactions/controllable": {
+      "types": "./interactions/controllable.ts",
+      "default": "./interactions/controllable.ts"
+    },
+    "./utils": {
+      "types": "./utils/index.ts",
+      "default": "./utils/index.ts"
+    },
+    "./dom": {
+      "types": "./utils/dom.ts",
+      "default": "./utils/dom.ts"
+    },
+    "./links": {
+      "types": "./utils/links.tsx",
+      "default": "./utils/links.tsx"
+    },
+    "./i18n": {
+      "types": "./i18n/index.ts",
+      "default": "./i18n/index.ts"
+    },
+    "./i18n/filter": {
+      "types": "./i18n/filter.ts",
+      "default": "./i18n/filter.ts"
+    },
+    "./i18n/list-formatter": {
+      "types": "./i18n/list-formatter.ts",
+      "default": "./i18n/list-formatter.ts"
+    },
+    "./i18n/intl-cache": {
+      "types": "./i18n/intl-cache.ts",
+      "default": "./i18n/intl-cache.ts"
+    },
+    "./accordion": {
+      "types": "./accordion/index.tsx",
+      "default": "./accordion/index.tsx"
+    },
+    "./scrolling": {
+      "types": "./scrolling/index.tsx",
+      "default": "./scrolling/index.tsx"
+    },
+    "./virtualizer": {
+      "types": "./virtualizer/index.tsx",
+      "default": "./virtualizer/index.tsx"
+    },
+    "./date": {
+      "types": "./date/index.ts",
+      "default": "./date/index.ts"
+    },
+    "./drag-drop": {
+      "types": "./drag-drop/index.tsx",
+      "default": "./drag-drop/index.tsx"
+    },
+    "./drag-drop/cdk": {
+      "types": "./drag-drop/cdk-index.tsx",
+      "default": "./drag-drop/cdk-index.tsx"
+    },
+    "./tree/behaviour": {
+      "types": "./tree/behaviour.tsx",
+      "default": "./tree/behaviour.tsx"
+    },
+    "./text-field/behaviour": {
+      "types": "./text-field/behaviour.tsx",
+      "default": "./text-field/behaviour.tsx"
+    },
+    "./checkbox/behaviour": {
+      "types": "./checkbox/behaviour.tsx",
+      "default": "./checkbox/behaviour.tsx"
+    },
+    "./switch/behaviour": {
+      "types": "./switch/behaviour.tsx",
+      "default": "./switch/behaviour.tsx"
+    },
+    "./select/behaviour": {
+      "types": "./select/behaviour.tsx",
+      "default": "./select/behaviour.tsx"
+    },
+    "./select/parts": {
+      "types": "./select/parts.tsx",
+      "default": "./select/parts.tsx"
+    },
+    "./tree/cdk": {
+      "types": "./tree/cdk-index.ts",
+      "default": "./tree/cdk-index.ts"
+    },
+    "./drag-drop/utils": {
+      "types": "./drag-drop/drag-utils.ts",
+      "default": "./drag-drop/drag-utils.ts"
+    },
+    "./number": {
+      "types": "./number/index.tsx",
+      "default": "./number/index.tsx"
+    },
+    "./color": {
+      "types": "./color/index.ts",
+      "default": "./color/index.ts"
+    },
+    "./slider/state": {
+      "types": "./slider/state.ts",
+      "default": "./slider/state.ts"
+    },
+    "./sidebar/state": {
+      "types": "./sidebar/state.ts",
+      "default": "./sidebar/state.ts"
+    },
+    "./stepper/state": {
+      "types": "./stepper/state.ts",
+      "default": "./stepper/state.ts"
+    },
+    "./slider/behaviour": {
+      "types": "./slider/behaviour.tsx",
+      "default": "./slider/behaviour.tsx"
+    },
+    "./number-field/behaviour": {
+      "types": "./number-field/behaviour.tsx",
+      "default": "./number-field/behaviour.tsx"
+    },
+    "./spinbutton/behaviour": {
+      "types": "./spinbutton/behaviour.tsx",
+      "default": "./spinbutton/behaviour.tsx"
+    },
+    "./i18n-provider": {
+      "types": "./i18n/i18n-provider.tsx",
+      "default": "./i18n/i18n-provider.tsx"
+    },
+    "./modal/provider": {
+      "types": "./modal/provider.tsx",
+      "default": "./modal/provider.tsx"
+    },
+    "./dialog/behaviour": {
+      "types": "./dialog/behaviour.tsx",
+      "default": "./dialog/behaviour.tsx"
+    },
+    "./tooltip/behaviour": {
+      "types": "./tooltip/behaviour.tsx",
+      "default": "./tooltip/behaviour.tsx"
+    },
+    "./toast/behaviour": {
+      "types": "./toast/behaviour.tsx",
+      "default": "./toast/behaviour.tsx"
+    },
+    "./color-area/behaviour": {
+      "types": "./color-area/behaviour.tsx",
+      "default": "./color-area/behaviour.tsx"
+    },
+    "./color-wheel/behaviour": {
+      "types": "./color-wheel/behaviour.tsx",
+      "default": "./color-wheel/behaviour.tsx"
+    },
+    "./color-slider/behaviour": {
+      "types": "./color-slider/behaviour.tsx",
+      "default": "./color-slider/behaviour.tsx"
+    },
+    "./color-field/behaviour": {
+      "types": "./color-field/behaviour.tsx",
+      "default": "./color-field/behaviour.tsx"
+    },
+    "./preview-trigger/behaviour": {
+      "types": "./preview-trigger/behaviour.tsx",
+      "default": "./preview-trigger/behaviour.tsx"
+    },
+    "./toggle-button-group/behaviour": {
+      "types": "./toggle-button-group/behaviour.tsx",
+      "default": "./toggle-button-group/behaviour.tsx"
+    },
+    "./progress-bar/behaviour": {
+      "types": "./progress-bar/behaviour.tsx",
+      "default": "./progress-bar/behaviour.tsx"
+    },
+    "./meter/behaviour": {
+      "types": "./meter/behaviour.tsx",
+      "default": "./meter/behaviour.tsx"
+    },
+    "./menu/behaviour": {
+      "types": "./menu/behaviour.tsx",
+      "default": "./menu/behaviour.tsx"
+    },
+    "./disclosure/behaviour": {
+      "types": "./disclosure/behaviour.tsx",
+      "default": "./disclosure/behaviour.tsx"
+    },
+    "./popover/use-popover": {
+      "types": "./popover/use-popover.ts",
+      "default": "./popover/use-popover.ts"
+    },
+    "./text-field/autosize": {
+      "types": "./text-field/autosize.ts",
+      "default": "./text-field/autosize.ts"
+    },
+    "./state/*": {
+      "types": "./state/*.ts",
+      "default": "./state/*.ts"
+    },
+    "./morph/item": {
+      "types": "./morph/item.tsx",
+      "default": "./morph/item.tsx"
+    },
+    "./listbox/behaviour": {
+      "types": "./listbox/behaviour.tsx",
+      "default": "./listbox/behaviour.tsx"
+    },
+    "./combobox/behaviour": {
+      "types": "./combobox/behaviour.tsx",
+      "default": "./combobox/behaviour.tsx"
+    },
+    "./autocomplete/behaviour": {
+      "types": "./autocomplete/behaviour.tsx",
+      "default": "./autocomplete/behaviour.tsx"
+    },
+    "./search-field/behaviour": {
+      "types": "./search-field/behaviour.tsx",
+      "default": "./search-field/behaviour.tsx"
+    },
+    "./calendar/behaviour": {
+      "types": "./calendar/behaviour.tsx",
+      "default": "./calendar/behaviour.tsx"
+    },
+    "./range-calendar/behaviour": {
+      "types": "./range-calendar/behaviour.tsx",
+      "default": "./range-calendar/behaviour.tsx"
+    },
+    "./date-field/behaviour": {
+      "types": "./date-field/behaviour.tsx",
+      "default": "./date-field/behaviour.tsx"
+    },
+    "./date-picker/behaviour": {
+      "types": "./date-picker/behaviour.tsx",
+      "default": "./date-picker/behaviour.tsx"
+    },
+    "./*/behaviour": {
+      "types": "./*/behaviour.ts",
+      "default": "./*/behaviour.ts"
+    },
+    "./overlay.css": "./overlay-service/overlay.css",
+    "./text-field.css": "./text-field/text-field.css",
+    "./scrolling.css": "./scrolling/scrolling.css",
+    "./flip": {
+      "types": "./flip/index.ts",
+      "default": "./flip/index.ts"
+    },
+    "./masonry.css": "./masonry/masonry.css",
+    "./masonry/behaviour": {
+      "types": "./masonry/behaviour.ts",
+      "default": "./masonry/behaviour.ts"
+    },
+    "./scheduler/layout": {
+      "types": "./scheduler/layout-index.ts",
+      "default": "./scheduler/layout-index.ts"
+    },
+    "./theme.css": "./theme.css",
+    "./tailwind.css": "./tailwind.css",
+    "./motion": {
+      "types": "./motion/index.ts",
+      "default": "./motion/index.ts"
+    },
+    "./sheet-motion": {
+      "types": "./sheet-motion/index.ts",
+      "default": "./sheet-motion/index.ts"
+    },
+    "./carousel/engine": {
+      "types": "./carousel/engine/index.ts",
+      "default": "./carousel/engine/index.ts"
+    },
+    "./carousel/state": {
+      "types": "./carousel/state.ts",
+      "default": "./carousel/state.ts"
+    },
+    "./carousel/behaviour": {
+      "types": "./carousel/behaviour.tsx",
+      "default": "./carousel/behaviour.tsx"
+    },
+    "./carousel/autoplay": {
+      "types": "./carousel/plugins/autoplay/index.ts",
+      "default": "./carousel/plugins/autoplay/index.ts"
+    },
+    "./carousel/auto-scroll": {
+      "types": "./carousel/plugins/auto-scroll/index.ts",
+      "default": "./carousel/plugins/auto-scroll/index.ts"
+    },
+    "./carousel/class-names": {
+      "types": "./carousel/plugins/class-names/index.ts",
+      "default": "./carousel/plugins/class-names/index.ts"
+    },
+    "./carousel/fade": {
+      "types": "./carousel/plugins/fade/index.ts",
+      "default": "./carousel/plugins/fade/index.ts"
+    },
+    "./carousel/auto-height": {
+      "types": "./carousel/plugins/auto-height/index.ts",
+      "default": "./carousel/plugins/auto-height/index.ts"
+    },
+    "./*": {
+      "types": "./*/index.tsx",
+      "default": "./*/index.tsx"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/kit": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@rivetjs/testing": "0.0.0-experimental"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/cdk"
+  }
+}

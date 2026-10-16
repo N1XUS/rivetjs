@@ -1,0 +1,22 @@
+# Generated (regenerate, never hand-format): gen-events outputs, docs routes/manifests, router .rivet/
+libs/runtime/jsx-events.ts
+libs/runtime/resume-loader.min.ts
+libs/router/shared/prefetch-fallback.min.ts
+apps/*/src/generated/
+apps/*/src/routes/(docs)/
+**/.rivet/
+package-lock.json
+# Written by gates (JSON.stringify): ui identity baselines
+scripts/size-report/ui-components.json
+libs/ui/tests-components/a11y.known.json
+libs/ui/tests-components/parity-counts.json
+# Agent worktrees and scratch copies
+.claude/
+*-tmp.ts
+# Vendored upstream sources (byte-comparable to upstream; patches listed in PATCHES.md)
+libs/ui/styles/
+# Internal docs (design specs, plans, research, blog drafts + gists): prose and WIP snippets, not checked
+docs/
+# Dev-error fixtures: dev-errors.test.ts asserts line:column positions inside them
+libs/router/tests/fixture-dev/src/routes/unserializable.tsx
+libs/router/tests/fixture-dev/src/routes/unserializable-member.tsx

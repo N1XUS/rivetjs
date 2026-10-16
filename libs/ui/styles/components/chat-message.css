@@ -1,0 +1,79 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no chat message). Feature set inspired by HeroUI Pro's public ChatMessage docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatMessage Component Styles
+ * Block: chat-message (parts: avatar / body / bubble / content / actions / meta)
+ * Modifiers: chat-message--assistant / chat-message--user; data-actions="hover" | "always"
+ * States: [data-role="assistant|user"], [data-actions="always|hover"], [data-streaming="true"] (assistant: actions hidden)
+ * Variables: --chat-message-bubble-max-width
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-message {
+  --chat-message-bubble-max-width: min(80%, 36rem);
+  @apply relative flex w-full min-w-0 text-sm leading-relaxed text-foreground;
+}
+
+.chat-message--assistant {
+  @apply items-start gap-3;
+}
+
+.chat-message--user {
+  @apply flex-col items-end gap-1;
+}
+
+.chat-message__avatar {
+  @apply flex w-8 shrink-0 justify-center pt-0.5;
+}
+
+.chat-message__body {
+  @apply flex min-w-0 flex-1 flex-col gap-2;
+}
+
+.chat-message__bubble {
+  @apply flex flex-col gap-2 rounded-3xl bg-default px-4 py-2.5 text-default-foreground;
+  max-width: var(--chat-message-bubble-max-width);
+  overflow-wrap: anywhere;
+}
+
+.chat-message__content {
+  @apply min-w-0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+
+  /* Rich content (markdown, code) manages its own whitespace. */
+  &:has(> .markdown, > .code-block) {
+    white-space: normal;
+  }
+}
+
+.chat-message__actions {
+  @apply flex items-center gap-0.5 text-muted;
+  transition:
+    opacity var(--duration-base) var(--ease-out, ease-out),
+    translate var(--duration-base) var(--ease-out, ease-out),
+    visibility var(--duration-base);
+  @apply motion-reduce:transition-none;
+}
+
+/* A streaming turn hides its actions; they fade in when `data-streaming` goes away (a transition: never at page load). */
+.chat-message[data-streaming="true"] .chat-message__actions {
+  @apply invisible -translate-y-0.5 opacity-0;
+}
+
+.chat-message__meta {
+  @apply text-xs text-muted;
+}
+
+.chat-message[data-actions="hover"] .chat-message__actions {
+  @apply opacity-0 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+}
+
+.chat-message[data-actions="hover"]:hover .chat-message__actions,
+.chat-message[data-actions="hover"]:focus-within .chat-message__actions {
+  @apply opacity-100;
+}
+
+@media (hover: none) {
+  .chat-message[data-actions="hover"] .chat-message__actions {
+    @apply opacity-100;
+  }
+}

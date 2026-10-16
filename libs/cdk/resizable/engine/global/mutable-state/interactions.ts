@@ -1,0 +1,123 @@
+// Ported from react-resizable-panels (lib/global/mutable-state/interactions.ts, v4.14.3), MIT, © Brian Vaughn.
+// Rivet: engine file kept as upstream (framework-free); `.ts` import specifiers.
+import { EventEmitter } from "../../utils/EventEmitter.ts";
+import type { RegisteredResizeAxis, RegisteredSeparator } from "../types.ts";
+import type { InteractionActive, InteractionState, ResizePreview } from "./types.ts";
+
+let state: InteractionState = {
+  cursorFlags: 0,
+  state: "inactive",
+};
+
+type ChangeEvent = {
+  next: InteractionState;
+  prev: InteractionState;
+};
+
+const eventEmitter = new EventEmitter<{
+  change: ChangeEvent;
+}>();
+
+export function getInteractionState() {
+  return state;
+}
+
+export function subscribeToInteractionState(callback: (event: ChangeEvent) => void) {
+  return eventEmitter.addListener("change", callback);
+}
+
+export function updateCursorFlags(
+  cursorFlags: number,
+  previews: ResizePreview[] = [],
+  previewLayoutMap?: InteractionActive["previewLayoutMap"],
+  didPointerMove = false,
+) {
+  const prev = state;
+
+  const next = { ...state };
+  next.cursorFlags = cursorFlags;
+  if (next.state === "active") {
+    next.didPointerMove ||= didPointerMove;
+    next.previews = previews;
+    if (previewLayoutMap) {
+      next.previewLayoutMap = previewLayoutMap;
+    }
+  }
+
+  state = next;
+
+  eventEmitter.emit("change", {
+    prev,
+    next,
+  });
+}
+
+export function updateInteractionState(next: InteractionState) {
+  const prev = state;
+
+  state = next;
+
+  // Keep click-to-focus behavior, but release keyboard focus after a drag.
+  // This also handles interactions completed by the missed-pointerup fallback.
+  if (prev.state === "active" && next.state !== "active" && prev.didPointerMove) {
+    prev.hitRegions.forEach(({ separator }) => {
+      if (separator && separator.element.ownerDocument.activeElement === separator.element) {
+        separator.element.blur();
+      }
+    });
+  }
+
+  eventEmitter.emit("change", {
+    prev,
+    next,
+  });
+}
+
+/**
+ * The preview prop is read through a registered separator getter.
+ * Notify after its layout effect has updated that getter, without re-registering the group.
+ */
+export function notifySeparatorPreviewChanged(separator: RegisteredSeparator) {
+  if (state.state !== "active" || !state.previews.some((preview) => preview.separator === separator)) {
+    return;
+  }
+
+  updateInteractionState({
+    ...state,
+    previews: state.previews.map((preview) => (preview.separator === separator ? { ...preview } : preview)),
+  });
+}
+
+export function removeAxisFromInteraction(axis: RegisteredResizeAxis) {
+  if (state.state === "inactive") {
+    return false;
+  }
+
+  const hitRegions = state.hitRegions.filter((region) => region.axis !== axis);
+  const hasPreviews = state.state === "active" && state.previews.some((preview) => preview.axis === axis);
+  if (hitRegions.length === state.hitRegions.length && !hasPreviews) {
+    return false;
+  }
+
+  if (hitRegions.length === 0) {
+    updateInteractionState({ cursorFlags: 0, state: "inactive" });
+  } else if (state.state === "active") {
+    const initialLayoutMap = new Map(state.initialLayoutMap);
+    const previewLayoutMap = new Map(state.previewLayoutMap);
+    initialLayoutMap.delete(axis);
+    previewLayoutMap.delete(axis);
+
+    updateInteractionState({
+      ...state,
+      cursorFlags: 0,
+      hitRegions,
+      initialLayoutMap,
+      previewLayoutMap,
+      previews: state.previews.filter((preview) => preview.axis !== axis),
+    });
+  } else {
+    updateInteractionState({ ...state, hitRegions });
+  }
+
+  return true;
+}

@@ -1,0 +1,14 @@
+# UWS-SPIKE lanes: the exact built bundles + runtime node_modules of the Node lane image (compose additional context
+# `lane` = service:rivet-compiled) on the same pinned Node 26 image, plus uWebSockets.js (exact release tarball
+# v20.71.0 from github.com/uNetworking/uWebSockets.js, integrity-pinned in uws/package-lock.json; prebuilt
+# linux binaries, no toolchain). No rebuild, so bundle bytes are identical to the Node lanes.
+# Base: the same Node 26.11.1 on Debian trixie — uWS v20.71 binaries need glibc >= 2.38 (bookworm has 2.36). The
+# `*-trixie` lanes run the node:http router entry in THIS image: the control for the base-image change.
+FROM node:26.11.1-trixie-slim@sha256:193fe51b64e77981119c98c2002c9e32a70e2f006fb4d25068ce0558998917f0
+WORKDIR /workspace
+ENV NODE_ENV=production
+COPY --from=lane /workspace /workspace
+COPY apps/ssr-bench/uws/package.json apps/ssr-bench/uws/package-lock.json ./apps/ssr-bench/
+RUN cd apps/ssr-bench && npm ci --omit=dev --no-audit --no-fund && node -e "require('uWebSockets.js')"
+EXPOSE 8080
+CMD ["node","apps/ssr-bench/dist/rivet-router-uws.mjs"]

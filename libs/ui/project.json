@@ -1,0 +1,13 @@
+{
+  "name": "ui",
+  "projectType": "library",
+  "targets": {
+    "package": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/package/build.ts libs/ui" } },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project ui --maxWorkers=2 && vitest run --project ui-components --maxWorkers=2" }
+    },
+    "typecheck": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/tsc.ts -p libs/ui --checkers 1" } }
+  }
+}

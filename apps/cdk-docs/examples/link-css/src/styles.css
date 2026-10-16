@@ -1,0 +1,35 @@
+/* Plain CSS: .rv-Link on <a> (href) or <span role="link"> (no href / disabled). */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: flex;
+  gap: 16px;
+  margin: 16px;
+}
+.rv-Link {
+  color: #0f766e;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rv-Link:hover {
+  text-decoration: underline;
+}
+.rv-Link:focus-visible {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.rv-Link[data-current] {
+  color: #0f172a;
+  font-weight: 600;
+}
+.rv-Link[data-disabled] {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.rv-Link[data-pressed] {
+  opacity: 0.7;
+}

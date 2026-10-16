@@ -1,0 +1,8 @@
+{
+  "name": "rivet-ssr-bench-uws",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "uWebSockets.js": "https://github.com/uNetworking/uWebSockets.js/archive/refs/tags/v20.71.0.tar.gz"
+  }
+}

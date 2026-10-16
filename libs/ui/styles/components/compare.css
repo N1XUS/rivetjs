@@ -1,0 +1,158 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 and HeroUI Pro have no compare). Before / after comparison in the HeroUI visual language on HeroUI tokens. Behaviour + motion = `@rivetjs/cdk/compare` (inline position / clip-path styles from JS, house motion for keyed / jump settles: no CSS transition on the position); this sheet sizes the parts and draws the divider, the round handle and the labels. */
+/* -------------------------------------------------------------------------------------------------
+ * Compare Component Styles
+ * Block: compare (parts: before / after / handle / divider / thumb / label)
+ * State: [data-orientation="horizontal" | "vertical"], [data-dragging], [data-moving], [data-disabled]; handle
+ * [data-focus-visible], [data-hovered]; label [data-placement="start" | "end"]
+ * Variables: --rv-compare-position (written by the cdk), --compare-divider-color, --compare-divider-width,
+ * --compare-handle-size, --compare-hit-size
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: compare - the frame; the before layer sizes it (images fill it), the after layer is stacked over it
+ */
+.compare {
+  --compare-divider-color: var(--white);
+  --compare-divider-width: 2px;
+  --compare-handle-size: 2.5rem;
+  --compare-hit-size: 2.75rem;
+  @apply isolate block w-full select-none overflow-hidden bg-default no-highlight;
+  border-radius: min(24px, var(--radius-3xl));
+  -webkit-tap-highlight-color: transparent;
+
+  &[data-disabled="true"] {
+    @apply opacity-60;
+  }
+}
+
+/**
+ * Elements: before / after - full-size layers; direct images / videos cover the frame
+ */
+.compare__before,
+.compare__after {
+  @apply relative h-full w-full;
+
+  & > :is(img, picture, video, canvas, svg) {
+    @apply block h-full w-full object-cover;
+  }
+
+  & > picture > img {
+    @apply block h-full w-full object-cover;
+  }
+}
+
+.compare__after {
+  /* The cdk clips it with an inline clip-path; a fallback stacking context keeps labels inside. */
+  @apply z-0;
+}
+
+/**
+ * Element: handle - the hit strip along the divider (ARIA slider); centres the line + the round thumb
+ */
+.compare__handle {
+  @apply z-10 flex cursor-ew-resize items-center justify-center outline-none;
+  width: var(--compare-hit-size);
+
+  &[aria-orientation="vertical"] {
+    @apply cursor-ns-resize;
+    width: auto;
+    height: var(--compare-hit-size);
+  }
+
+  &[data-disabled="true"] {
+    @apply cursor-default;
+  }
+}
+
+/**
+ * Element: divider - the line across the frame
+ */
+.compare__divider {
+  @apply pointer-events-none absolute;
+  background-color: var(--compare-divider-color);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 0 8px rgb(0 0 0 / 0.25);
+  inset-block: 0;
+  inset-inline-start: 50%;
+  width: var(--compare-divider-width);
+  translate: -50% 0;
+
+  [dir="rtl"] & {
+    translate: 50% 0;
+  }
+
+  &[data-orientation="vertical"] {
+    inset: auto 0;
+    top: 50%;
+    width: auto;
+    height: var(--compare-divider-width);
+    translate: 0 -50%;
+  }
+}
+
+/**
+ * Element: thumb - the round surface button on the divider (lucide grip icon inside)
+ */
+.compare__thumb {
+  @apply relative flex shrink-0 items-center justify-center rounded-full bg-surface text-foreground;
+  width: var(--compare-handle-size);
+  height: var(--compare-handle-size);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.06), 0 4px 14px -4px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.18);
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    transform var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    @apply pointer-events-none size-5 text-muted;
+  }
+
+  .compare__handle[data-hovered="true"] & {
+    @apply bg-surface-hover;
+  }
+
+  .compare__handle[data-dragging="true"] & {
+    @apply scale-[0.92] motion-reduce:scale-100;
+  }
+
+  .compare__handle[data-focus-visible="true"] & {
+    @apply status-focused;
+  }
+
+  .compare__handle[data-disabled="true"] & {
+    @apply shadow-none;
+  }
+}
+
+/**
+ * Element: label - a small badge pinned to a corner of its layer ("Before" / "After")
+ */
+.compare__label {
+  @apply pointer-events-none absolute z-[1] rounded-full px-2.5 py-1 text-xs font-medium;
+  top: 0.75rem;
+  color: var(--white);
+  background-color: rgb(0 0 0 / 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+
+  &[data-placement="start"] {
+    inset-inline-start: 0.75rem;
+  }
+
+  &[data-placement="end"] {
+    inset-inline-end: 0.75rem;
+  }
+
+  /* Vertical: start = top, end = bottom (both on the start edge). */
+  &[data-orientation="vertical"][data-placement="end"] {
+    top: auto;
+    bottom: 0.75rem;
+    inset-inline-start: 0.75rem;
+    inset-inline-end: auto;
+  }
+}

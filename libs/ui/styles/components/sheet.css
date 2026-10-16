@@ -1,0 +1,358 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no sheet). Feature set inspired by HeroUI Pro's public Sheet docs; independent implementation on HeroUI open-source tokens (overlay surface, backdrop, separator, radii). Drag / snap motion = @rivetjs/cdk/sheet-motion (embla physics): no CSS transition while dragging or snapping; enter / exit = CSS `translate` (composes with the inline drag `transform`). */
+/* -------------------------------------------------------------------------------------------------
+ * Sheet Component Styles
+ * Block: sheet
+ * Variables: --sheet-backdrop-opacity (backdrop colour opacity, written by the motion), --initial-transform (enter / exit offset),
+ *   --snap-point-height (current snap offset, px), --sheet-snap-height (dialog height with snap points).
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Element: trigger / close - buttons that open / close the sheet
+ */
+.sheet__trigger,
+.sheet__close {
+  @apply inline-block cursor-(--cursor-interactive);
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/**
+ * Element: backdrop - the underlay. The element fades on enter / exit (the overlay waits for that transition); its
+ * `::before` carries the colour and follows the drag through `--sheet-backdrop-opacity` (written every motion frame,
+ * so no transition there). The sheet is a descendant: a drag fade on the element itself would fade the sheet too.
+ * Blur (`--blur`): on the element, not on `::before` — an ancestor with opacity < 1 is a backdrop root, so a `::before`
+ * blur saw nothing while the element faded and popped in at opacity 1. Its radius = `--sheet-blur` × the registered
+ * `--sheet-blur-scale` (0 while entering / exiting, transitioned with the fade) × `--sheet-backdrop-opacity` (unregistered:
+ * follows the drag at once).
+ */
+@property --sheet-blur-scale {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+.sheet__backdrop {
+  @apply fixed inset-0 z-(--z-index-overlay);
+  @apply h-(--visual-viewport-height) w-full;
+  opacity: 1;
+  --sheet-blur-scale: 1;
+  transition:
+    opacity var(--overlay-fade-duration) var(--sheet-ease),
+    --sheet-blur-scale var(--overlay-fade-duration) var(--sheet-ease);
+
+  --sheet-ease: var(--overlay-ease);
+
+  &::before {
+    @apply pointer-events-none absolute inset-0;
+    content: "";
+    opacity: var(--sheet-backdrop-opacity, 1);
+  }
+
+  &[data-entering="true"],
+  &[data-exiting="true"] {
+    opacity: 0;
+    --sheet-blur-scale: 0;
+  }
+
+  &[data-exiting="true"] {
+    transition-duration: var(--overlay-exit-duration);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.sheet__backdrop--opaque::before {
+  @apply bg-backdrop;
+}
+
+.sheet__backdrop--blur {
+  --sheet-blur: var(--blur-md);
+  -webkit-backdrop-filter: blur(calc(var(--sheet-blur) * var(--sheet-blur-scale) * var(--sheet-backdrop-opacity, 1)));
+  backdrop-filter: blur(calc(var(--sheet-blur) * var(--sheet-blur-scale) * var(--sheet-backdrop-opacity, 1)));
+
+  &::before {
+    @apply bg-backdrop;
+  }
+}
+
+.sheet__backdrop--transparent::before {
+  @apply bg-transparent;
+}
+
+/**
+ * Element: content - positioning wrapper (the modal element)
+ */
+.sheet__content {
+  @apply pointer-events-none;
+  @apply fixed inset-0 z-(--z-index-overlay) flex;
+  @apply h-(--visual-viewport-height) w-full min-w-0;
+
+  --sheet-ease: var(--overlay-ease);
+}
+
+.sheet__content--bottom {
+  @apply items-end;
+}
+
+.sheet__content--top {
+  @apply items-start;
+}
+
+.sheet__content--left {
+  @apply justify-start;
+}
+
+.sheet__content--right {
+  @apply justify-end;
+}
+
+.sheet__content--detached {
+  @apply p-3;
+}
+
+/* Non-modal sheet (`isModal={false}`): no backdrop; the wrapper itself fades on exit (the overlay waits for it). */
+.sheet__content[data-sheet-modal="false"] {
+  transition: opacity var(--overlay-exit-duration) var(--sheet-ease);
+
+  &[data-exiting="true"] {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/**
+ * Element: dialog - the sheet panel (drag target)
+ */
+.sheet__dialog {
+  @apply relative flex flex-col;
+  @apply bg-overlay text-foreground shadow-overlay outline-none;
+  @apply pointer-events-auto;
+  @apply px-6 pb-6;
+
+  --sheet-radius: min(28px, var(--radius-2xl));
+  --initial-transform: 100%;
+
+  translate: 0 0;
+  will-change: translate;
+  transition:
+    translate var(--overlay-duration) var(--sheet-ease),
+    scale var(--overlay-fade-duration) var(--sheet-ease);
+
+  /* Dragging / snapping: the motion owns the position. */
+  &[data-dragging="true"] {
+    @apply select-none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.sheet__dialog--bottom,
+.sheet__dialog--top {
+  @apply w-full max-h-[85dvh];
+}
+
+.sheet__dialog--bottom {
+  border-start-start-radius: var(--sheet-radius);
+  border-start-end-radius: var(--sheet-radius);
+}
+
+.sheet__dialog--top {
+  @apply pt-6 pb-2;
+  border-end-start-radius: var(--sheet-radius);
+  border-end-end-radius: var(--sheet-radius);
+}
+
+.sheet__dialog--left,
+.sheet__dialog--right {
+  @apply h-full w-80 max-w-[85vw] pt-6 sm:w-96;
+}
+
+.sheet__dialog--detached {
+  @apply rounded-(--sheet-radius);
+  --initial-transform: calc(100% + 0.75rem);
+
+  &.sheet__dialog--bottom,
+  &.sheet__dialog--top {
+    @apply mx-auto max-w-xl;
+  }
+
+  &.sheet__dialog--left,
+  &.sheet__dialog--right {
+    @apply h-auto max-h-full;
+  }
+}
+
+/* Snap points: a tall panel moved to its snap offset (inline transform); the backdrop opacity follows the motion. */
+.sheet__dialog[data-sheet-snap-points="true"] {
+  &.sheet__dialog--bottom,
+  &.sheet__dialog--top {
+    @apply max-h-none;
+    height: var(--sheet-snap-height, 96dvh);
+  }
+
+  &.sheet__dialog--left,
+  &.sheet__dialog--right {
+    @apply max-w-none;
+    width: var(--sheet-snap-height, 96dvw);
+  }
+}
+
+/* Enter / exit: slide from the attached edge (`translate`, so the inline drag / snap `transform` is kept). */
+.sheet__content--bottom:is([data-entering="true"], [data-exiting="true"]) .sheet__dialog {
+  translate: 0 var(--initial-transform);
+}
+
+.sheet__content--top:is([data-entering="true"], [data-exiting="true"]) .sheet__dialog {
+  translate: 0 calc(-1 * var(--initial-transform));
+}
+
+.sheet__content--left:is([data-entering="true"], [data-exiting="true"]) .sheet__dialog {
+  translate: calc(-1 * var(--initial-transform)) 0;
+}
+
+.sheet__content--right:is([data-entering="true"], [data-exiting="true"]) .sheet__dialog {
+  translate: var(--initial-transform) 0;
+}
+
+[data-exiting="true"] .sheet__dialog {
+  transition-duration: var(--overlay-exit-duration);
+}
+
+/* Nested: the parent sheet steps back while a nested sheet is open (progress follows the nested drag). */
+.sheet__dialog[data-sheet-nested-open="true"] {
+  scale: calc(1 - 0.05 * var(--sheet-nested-progress, 1));
+  transform-origin: 50% 0;
+}
+
+.sheet__dialog--bottom[data-sheet-nested-open="true"] {
+  translate: 0 calc(-0.75rem * var(--sheet-nested-progress, 1));
+}
+
+/**
+ * Element: handle - drag handle (bar); a press cycles through the snap points
+ */
+.sheet__handle {
+  @apply flex shrink-0 cursor-grab touch-none items-center justify-center;
+  @apply -mx-6 py-3;
+
+  & > [data-slot="sheet-handle-bar"] {
+    @apply h-1 w-10 rounded-full;
+    @apply bg-separator;
+    transition: background-color var(--duration-fast) var(--ease-smooth);
+  }
+
+  &:hover > [data-slot="sheet-handle-bar"] {
+    @apply bg-default-foreground/30;
+  }
+}
+
+.sheet__dialog[data-dragging="true"] .sheet__handle {
+  @apply cursor-grabbing;
+}
+
+.sheet__dialog--top .sheet__handle {
+  @apply order-last;
+}
+
+/**
+ * Element: header / heading / body / footer
+ */
+.sheet__header {
+  @apply flex flex-col gap-1.5;
+}
+
+.sheet__heading {
+  @apply align-middle text-base font-medium text-foreground;
+}
+
+.sheet__body {
+  @apply min-h-0 flex-1 scrollbar;
+  @apply text-sm leading-[1.43] text-muted;
+  @apply -mx-[3px] p-[3px];
+  @apply overflow-y-auto overscroll-contain;
+}
+
+.sheet__footer {
+  @apply flex flex-row items-center justify-end gap-2;
+}
+
+.sheet__header + .sheet__body {
+  @apply mt-2;
+}
+
+.sheet__header + .sheet__footer,
+.sheet__body + .sheet__footer {
+  @apply mt-5;
+}
+
+.sheet__dialog--left .sheet__handle,
+.sheet__dialog--right .sheet__handle {
+  @apply hidden;
+}
+
+/**
+ * Element: close-trigger - the close (X) button
+ */
+.sheet__close-trigger {
+  @apply absolute end-4 top-4;
+}
+
+/*
+ * Rivet: the close trigger is centred on the header's first row (heading line, or an icon / back button
+ * leading the header) instead of upstream's fixed top-4 corner, which sat 8–12px above a heading line.
+ * Anchor positioning; scoped per dialog (nested overlays); falls back to the top-4 corner without a header
+ * or without anchor support.
+ */
+.sheet__dialog {
+  anchor-scope: --rv-sheet-header-row;
+}
+
+.sheet__header > :first-child:not(.sheet__close-trigger) {
+  anchor-name: --rv-sheet-header-row;
+}
+
+@supports (anchor-name: --rv-a) {
+  .sheet__close-trigger {
+    top: anchor(--rv-sheet-header-row center, calc(var(--spacing) * 4 + 12px));
+    translate: 0 -50%;
+  }
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Background scaling (`shouldScaleBackground`): the app wrapper `[data-sheet-wrapper]` steps back while a sheet is open.
+ * -----------------------------------------------------------------------------------------------*/
+[data-sheet-wrapper] {
+  transform-origin: 50% 0;
+  transition:
+    transform var(--overlay-duration) var(--overlay-ease),
+    border-radius var(--overlay-duration) var(--overlay-ease);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+[data-sheet-wrapper][data-sheet-scaled="true"] {
+  @apply overflow-hidden;
+  transform: translateY(calc(0.875rem * var(--sheet-open-progress, 1))) scale(calc(1 - 0.06 * var(--sheet-open-progress, 1)));
+  border-radius: calc(0.75rem * var(--sheet-open-progress, 1));
+}
+
+[data-sheet-wrapper][data-sheet-dragging="true"] {
+  transition: none;
+}

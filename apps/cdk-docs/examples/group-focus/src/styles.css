@@ -1,0 +1,32 @@
+/* Tailwind, with the cdk state variants (focused:, orientation-*:, entering:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@import "@rivetjs/cdk/theme.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* The ring follows the group's state, not the focused child. */
+.rv-Group {
+  display: flex;
+  width: fit-content;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.rv-Group input {
+  border: 0;
+  padding: 4px 8px;
+  outline: none;
+}
+.rv-Group[data-focus-within] {
+  border-color: #0f766e;
+}
+.rv-Group[data-focus-visible] {
+  box-shadow: 0 0 0 3px #99f6e4;
+}

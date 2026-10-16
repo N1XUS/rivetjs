@@ -1,0 +1,36 @@
+{
+  "name": "@rivetjs/language-core",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Editor-agnostic Rivet language features: compiler diagnostics, quick fixes, resume sites, routes.",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./cli": {
+      "types": "./cli.ts",
+      "default": "./cli.ts"
+    },
+    "./explain.json": "./explain.json"
+  },
+  "bin": {
+    "rivet-check": "./cli.ts"
+  },
+  "peerDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "typescript": ">=5.6"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/language-core"
+  }
+}

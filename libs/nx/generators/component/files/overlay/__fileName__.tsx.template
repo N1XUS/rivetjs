@@ -1,0 +1,32 @@
+import { signal } from "@rivetjs/reactivity";
+import type { Slot } from "@rivetjs/runtime/jsx-runtime";
+
+export interface <%= className %>Props {
+  /** Trigger text (also the panel's accessible name). */
+  label: string;
+  /**
+   * Render-function children (`{() => <p>…</p>}`): the content of the closed panel is created when it opens, also on a
+   * resumed page. Plain JSX children would be created right away and kept for later, which a resumed page cannot save.
+   */
+  children: Slot;
+}
+
+/** <%= className %>: a trigger and a panel that opens below it. Handlers are inline arrows (resumable). */
+export function <%= className %>(props: <%= className %>Props) {
+  const open = signal(false);
+  return (
+    <div class="<%= cssName %>">
+      <button type="button" aria-expanded={open() ? "true" : "false"} onClick={() => open.update((value) => !value)}>
+        {props.label}
+      </button>
+      {open() && (
+        <div role="dialog" aria-label={props.label}>
+          {props.children()}
+          <button type="button" onClick={() => open.set(false)}>
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

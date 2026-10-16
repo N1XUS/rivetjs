@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "./generated/highlight.css";
+/* Theme (fonts, tokens, base), frame + content components, wide pages: shared by every docs site. */
+@import "@rivetjs/docs-kit/theme.css";
+@import "@rivetjs/docs-kit/site.css";
+@import "@rivetjs/docs-kit/pages.css";
+@import "@rivetjs/docs-kit/components/bench-chart.css";
+/* Homepage (src/routes/index.tsx). */
+@import "./home.css";
+@source "./**/*.{ts,tsx}";
+@source not "./generated/**";
+@source "../examples/**/*.{ts,tsx}";
+@source "../../../libs/docs-kit/**/*.{ts,tsx}";
+
+/* `dark:` follows the theme the inline script (or the theme menu) sets on <html>. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));

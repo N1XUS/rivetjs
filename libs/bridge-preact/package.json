@@ -1,0 +1,52 @@
+{
+  "name": "@rivetjs/bridge-preact",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./server": {
+      "types": "./server.ts",
+      "default": "./server.ts"
+    },
+    "./client": {
+      "types": "./client.ts",
+      "default": "./client.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./types": {
+      "types": "./types.ts",
+      "default": "./types.ts"
+    }
+  },
+  "peerDependencies": {
+    "@preact/preset-vite": ">=2.10.0 <3",
+    "@rivetjs/bridge": "0.0.0-experimental",
+    "preact": ">=10.29.0 <12",
+    "preact-render-to-string": ">=6.7.0 <7"
+  },
+  "peerDependenciesMeta": {
+    "@preact/preset-vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "preact": "11.0.1",
+    "preact-render-to-string": "6.8.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/bridge-preact"
+  }
+}

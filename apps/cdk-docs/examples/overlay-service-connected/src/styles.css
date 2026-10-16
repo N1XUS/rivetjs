@@ -1,0 +1,11 @@
+/* The overlay service's structural styles (container, pane, backdrop, scroll block), then Tailwind. */
+@import "@rivetjs/cdk/overlay.css";
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}

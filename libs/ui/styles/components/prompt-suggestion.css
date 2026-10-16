@@ -1,0 +1,108 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no prompt suggestion). Feature set inspired by HeroUI Pro's public PromptSuggestion docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * PromptSuggestion Component Styles
+ * Block: prompt-suggestion (parts: header / title / description / items / item / item-title /
+ *        item-description / item-meta / item-tags / item-footer)
+ * Modifiers: prompt-suggestion--pill (wrapping row) / prompt-suggestion--card (grid of cards)
+ * -----------------------------------------------------------------------------------------------*/
+
+.prompt-suggestion {
+  @apply flex w-full flex-col gap-4;
+}
+
+.prompt-suggestion__header {
+  @apply flex flex-col gap-1;
+}
+
+.prompt-suggestion__title {
+  @apply text-lg font-semibold text-foreground;
+}
+
+.prompt-suggestion__description {
+  @apply text-sm text-muted;
+}
+
+.prompt-suggestion__items {
+  @apply flex flex-wrap gap-2;
+}
+
+.prompt-suggestion__item {
+  cursor: var(--cursor-interactive);
+  @apply no-highlight text-start text-sm text-foreground outline-none select-none;
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    scale var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    @apply size-4 shrink-0 text-muted;
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-pressed="true"] {
+    scale: 0.98;
+  }
+
+  &:disabled,
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.prompt-suggestion__item-title {
+  @apply font-medium text-foreground;
+}
+
+.prompt-suggestion__item-description {
+  @apply text-muted;
+}
+
+.prompt-suggestion__item-meta {
+  @apply text-xs text-muted;
+}
+
+.prompt-suggestion__item-tags {
+  @apply flex flex-wrap gap-1;
+}
+
+.prompt-suggestion__item-footer {
+  @apply mt-auto flex items-center gap-2 pt-1 text-xs text-muted;
+}
+
+/* Pill: a wrapping row of rounded buttons. */
+.prompt-suggestion--pill .prompt-suggestion__item {
+  @apply inline-flex h-9 items-center gap-2 rounded-full border border-separator bg-surface px-4 shadow-surface;
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-surface-secondary;
+    }
+  }
+}
+
+.prompt-suggestion--pill .prompt-suggestion__item-description {
+  @apply hidden;
+}
+
+/* Card: a responsive grid of starters. */
+.prompt-suggestion--card .prompt-suggestion__items {
+  @apply grid gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+}
+
+.prompt-suggestion--card .prompt-suggestion__item {
+  @apply flex min-h-24 flex-col items-start gap-1 rounded-2xl bg-surface p-4 shadow-surface;
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-surface-secondary;
+    }
+  }
+}

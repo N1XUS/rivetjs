@@ -1,0 +1,31 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "TimeField",
+  summary: "A segmented time field: hour, minute and AM/PM segments typed or spun with the arrow keys; the value is an ISO time string in a signal.",
+  tags: ["aria", "date", "time", "forms", "keyboard"],
+  status: "experimental",
+  frame: { height: "sm" },
+  show: ["src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#start", "role", "group"] },
+    { name: ["#start", "Event time"] },
+    { attr: ["#start-hour", "role", "spinbutton"] },
+    { attr: ["#start-hour", "aria-valuetext", "Empty"] },
+    { attr: ["#start-minute", "data-placeholder", "true"] },
+    { attr: ["#start-dayPeriod", "data-type", "dayPeriod"] },
+    { described: ["#start-hour", "Type digits, A / P, or use the arrow keys."] },
+    { press: ["#start-hour", "9"] },
+    { focused: "#start-minute" },
+    { key: "3" },
+    { key: "0" },
+    { focused: "#start-dayPeriod" },
+    { key: "a" },
+    { expect: ["#value", "Value: 09:30:00"] },
+    { attr: ["#start-hour", "aria-valuetext", "9 AM"] },
+    { key: "p" },
+    { expect: ["#value", "Value: 21:30:00"] },
+    { press: ["#start-minute", "ArrowUp"] },
+    { expect: ["#value", "Value: 21:31:00"] },
+  ],
+});

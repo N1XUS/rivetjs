@@ -1,0 +1,13 @@
+import { expect, test } from "vitest";
+import { render } from "@rivetjs/runtime/testing";
+import { <%= className %> } from "./<%= className %>.tsx";
+
+test("<%= className %> renders its title and children", () => {
+  const view = render(() => (
+    <<%= className %> title="Hello">
+      <p>Body</p>
+    </<%= className %>>
+  ));
+  expect(view.find("h2").textContent).toBe("Hello");
+  expect(view.find("p").textContent).toBe("Body");
+});

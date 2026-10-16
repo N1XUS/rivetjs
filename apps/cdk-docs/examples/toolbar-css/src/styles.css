@@ -1,0 +1,35 @@
+/* Plain CSS: .rv-Toolbar with data-orientation; its controls keep their own classes. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.rv-Toolbar {
+  display: inline-flex;
+  gap: 4px;
+  margin: 16px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.rv-Toolbar[data-orientation="vertical"] {
+  flex-direction: column;
+}
+.rv-Toolbar hr {
+  margin: 0 4px;
+  border: 0;
+  border-left: 1px solid #cbd5e1;
+}
+.rv-Toolbar .rv-Button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+}
+.rv-Toolbar .rv-Button:hover {
+  background: #e2e8f0;
+}
+.rv-Toolbar .rv-Button:focus-visible {
+  outline: 2px solid #14b8a6;
+}

@@ -1,0 +1,9 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/checkbox-group.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+.checkbox-group {
+  @apply flex flex-col;
+
+  [data-slot="checkbox"] {
+    @apply mt-(--field-gap-group);
+  }
+}

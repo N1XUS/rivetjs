@@ -1,0 +1,1 @@
+<ul class="teasers">{% for a in items %}<li class="teaser"><h2><a href="/articles/{{ a.data.slug }}/">{{ a.data.title }}</a></h2><p class="meta">{{ a.data.author }} · <time datetime="{{ a.data.iso }}">{{ a.data.iso | day }}</time></p><p>{{ a.data.description }}</p></li>{% endfor %}</ul>

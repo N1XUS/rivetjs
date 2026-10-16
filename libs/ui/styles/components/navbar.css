@@ -1,0 +1,268 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no navbar). Feature set inspired by HeroUI Pro's public Navbar docs; independent implementation on HeroUI open-source tokens (background, surface, separator, default, focus ring). */
+/* -------------------------------------------------------------------------------------------------
+ * Navbar Component Styles
+ * Block: navbar
+ * Variables: --navbar-height (bar height, from the `height` prop), --navbar-max-width (header content width),
+ *   --navbar-transition-duration (hide / reveal).
+ * Hide on scroll: CSS scroll-state container query on the root scroller (no JS); the JS fallback (`parentRef`, browsers
+ *   without scroll-state queries) writes `data-hide-mode="js"` + `data-hidden="true"`.
+ * -----------------------------------------------------------------------------------------------*/
+
+.navbar {
+  @apply relative z-40 w-full;
+  --navbar-height: 4rem;
+  --navbar-max-width: 1024px;
+  --navbar-transition-duration: var(--duration-slow);
+
+  translate: 0 0;
+  transition: translate var(--navbar-transition-duration) cubic-bezier(0.32, 0.72, 0, 1);
+
+  &[data-hidden="true"] {
+    translate: 0 calc(-100% - 1rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.navbar--sticky {
+  @apply sticky top-0;
+  @apply border-b border-separator bg-background/80 backdrop-blur-lg;
+}
+
+.navbar--static {
+  @apply border-b border-separator bg-background;
+}
+
+.navbar--floating {
+  @apply sticky top-2 mx-2 w-auto;
+  @apply rounded-2xl border border-separator bg-surface/80 shadow-surface backdrop-blur-lg;
+}
+
+/* Zero-JS hide on scroll (scroll-state queries): hidden after a scroll towards the bottom, shown after one towards the top. */
+@supports (container-type: scroll-state) {
+  html:has(.navbar[data-hide-on-scroll="true"]) {
+    container-type: scroll-state;
+  }
+
+  @container scroll-state(scrolled: bottom) {
+    .navbar[data-hide-on-scroll="true"]:not([data-hide-mode="js"], [data-menu-open="true"]) {
+      translate: 0 calc(-100% - 1rem);
+    }
+  }
+}
+
+/* Mobile menu open: page scroll locked (`shouldBlockScroll`). */
+html:has(.navbar[data-menu-open="true"][data-block-scroll="true"]) {
+  overflow: hidden;
+}
+
+/**
+ * Element: header - the bar (height, max content width)
+ */
+.navbar__header {
+  @apply mx-auto flex w-full items-center;
+  @apply h-(--navbar-height) max-w-(--navbar-max-width);
+}
+
+.navbar__header--sm {
+  @apply gap-2 px-4 text-sm;
+}
+
+.navbar__header--md {
+  @apply gap-4 px-6 text-sm;
+}
+
+.navbar__header--lg {
+  @apply gap-6 px-8 text-base;
+}
+
+.navbar__header--max-sm {
+  --navbar-max-width: 640px;
+}
+
+.navbar__header--max-md {
+  --navbar-max-width: 768px;
+}
+
+.navbar__header--max-lg {
+  --navbar-max-width: 1024px;
+}
+
+.navbar__header--max-xl {
+  --navbar-max-width: 1280px;
+}
+
+.navbar__header--max-2xl {
+  --navbar-max-width: 1536px;
+}
+
+.navbar__header--max-full {
+  --navbar-max-width: 100%;
+}
+
+/**
+ * Element: brand / content / spacer / separator
+ */
+.navbar__brand {
+  @apply flex shrink-0 items-center gap-2 font-semibold text-foreground;
+}
+
+.navbar__content {
+  @apply flex h-full items-center gap-1;
+}
+
+.navbar__spacer {
+  @apply flex-1;
+}
+
+.navbar__separator {
+  @apply mx-1 h-5 self-center;
+}
+
+/**
+ * Element: item - a link (`href`) or a button in the bar
+ */
+.navbar__item {
+  @apply inline-flex h-9 shrink-0 items-center gap-2 rounded-xl px-3;
+  @apply cursor-(--cursor-interactive) font-medium text-muted no-underline outline-none select-none;
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth);
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply bg-default text-foreground;
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-current="true"],
+  &[aria-current="page"] {
+    @apply text-foreground;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.navbar__item--sm {
+  @apply h-8 px-2 text-xs;
+}
+
+.navbar__item--lg {
+  @apply h-10 px-4 text-base;
+}
+
+.navbar__label {
+  @apply truncate;
+}
+
+/**
+ * Element: menu-toggle - opens / closes the mobile menu (default icon = morph burger, morph-icon.css, TW-149)
+ */
+.navbar__menu-toggle {
+  @apply inline-flex size-9 shrink-0 items-center justify-center rounded-xl;
+  @apply cursor-(--cursor-interactive) text-foreground outline-none;
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+
+  &:hover {
+    @apply bg-default;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+
+  & > [data-slot="navbar-menu-toggle-icon"] {
+    --morph-burger-size: var(--navbar-toggle-size, 1.25rem);
+    --morph-burger-stroke: var(--navbar-toggle-stroke, calc(var(--morph-burger-size) / 12));
+    --morph-burger-duration: var(--navbar-toggle-duration, var(--duration-morph-burger));
+  }
+}
+
+.navbar__menu-toggle--sm {
+  @apply size-8;
+}
+
+.navbar__menu-toggle--lg {
+  @apply size-10;
+}
+
+/**
+ * Element: menu - the mobile menu below the bar (server-rendered, hidden while closed)
+ */
+.navbar__menu {
+  @apply absolute inset-x-0 top-full flex flex-col gap-1 overflow-y-auto;
+  @apply bg-background px-4 py-3;
+  height: calc(100dvh - var(--navbar-height));
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity var(--duration-base) var(--ease-smooth),
+    translate var(--duration-base) var(--ease-smooth),
+    display var(--duration-base) allow-discrete;
+
+  &:not([data-open="true"]) {
+    display: none;
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 -0.5rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.navbar--floating .navbar__menu {
+  @apply top-[calc(100%+0.5rem)] h-auto max-h-[calc(100dvh-var(--navbar-height)-2rem)];
+  @apply rounded-2xl border border-separator bg-surface shadow-surface;
+}
+
+/**
+ * Element: menu-item - a link / button in the mobile menu (closes the menu when pressed)
+ */
+.navbar__menu-item {
+  @apply flex h-11 w-full shrink-0 items-center gap-2 rounded-xl px-3;
+  @apply cursor-(--cursor-interactive) text-base text-foreground no-underline outline-none select-none;
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply bg-default;
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-current="true"],
+  &[aria-current="page"] {
+    @apply bg-default font-semibold;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.navbar__menu-item--sm {
+  @apply h-9 text-sm;
+}
+
+.navbar__menu-item--lg {
+  @apply h-12 text-lg;
+}

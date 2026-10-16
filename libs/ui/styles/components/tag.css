@@ -1,0 +1,123 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/tag.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Tag component styles */
+.tag {
+  --optical-offset: 0.031em;
+
+  @apply relative inline-flex items-center gap-1 rounded-xl font-medium select-none no-highlight;
+
+  /* Default size - matches .tag--md */
+  @apply px-2 py-1 text-xs;
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    scale var(--duration-fast) var(--ease-smooth),
+    opacity var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply origin-center transform-gpu motion-reduce:transition-none;
+
+  /* Cursor */
+  cursor: var(--cursor-interactive);
+
+  /* SVG icon styling */
+  & svg {
+    @apply pointer-events-none size-3.5 shrink-0 self-center text-current;
+    /* Rivet: 14 px icon, 2 px stroke (lucide absoluteStrokeWidth: 2 × 24 / 14 units; TWEAKS.md TW-140) */
+    stroke-width: 3.43;
+  }
+}
+
+/* Disabled state */
+.tag:is([data-disabled="true"], [aria-disabled="true"]) {
+  @apply status-disabled;
+}
+
+/* Focus visible state (keyboard focus only) */
+.tag:is(:focus-visible, [data-focus-visible]) {
+  @apply status-focused;
+}
+
+/* Pressed/Active state */
+.tag:is(:active, [data-pressed="true"]) {
+}
+
+/* Selected state */
+.tag:is([data-selected="true"], [aria-selected="true"]) {
+  @apply bg-accent-soft text-accent-soft-foreground;
+
+  /* Selected + Hover state */
+  @media (hover: hover) {
+    &:is(:hover, [data-hovered="true"]) {
+      @apply bg-accent-soft-hover;
+    }
+  }
+}
+
+/* Size */
+.tag--sm {
+  @apply px-2 py-1 text-xs leading-3;
+
+  /* Rivet: 12 px icons keep the 20 px height (12-px chip exception; 2 px stroke = 2 × 24 / 12 units; TWEAKS.md TW-140) */
+  & svg {
+    @apply size-3;
+    stroke-width: 4;
+  }
+
+  & .tag__remove-button {
+    @apply size-3;
+  }
+}
+
+.tag--md {
+  /* No styles as this is the default size */
+}
+
+.tag--lg {
+  @apply rounded-2xl px-3 py-1.5 text-sm;
+}
+
+/* Variant */
+.tag--default {
+  @apply bg-default text-default-foreground;
+
+  /* Hover state (when not selected or disabled) */
+  @media (hover: hover) {
+    &:is(:hover, [data-hovered="true"]):not([data-selected="true"]):not([data-disabled="true"]) {
+      @apply bg-default-hover;
+    }
+  }
+}
+
+.tag--surface {
+  @apply bg-surface text-surface-foreground;
+
+  /* Hover state (when not selected or disabled) */
+  @media (hover: hover) {
+    &:is(:hover, [data-hovered="true"]):not([data-selected="true"]):not([data-disabled="true"]) {
+      @apply bg-surface-hover;
+    }
+  }
+}
+
+/* Remove Button  */
+.tag__remove-button {
+  /**
+   * The glyph is 12px, half the minimum target size. A finger tap that misses it lands on the
+   * tag body, which consumes the press without removing anything, so removing a tag by touch
+   * takes several attempts. `touch-target` widens the pressable area to 24px (44px on coarse
+   * pointers). On fine pointers the `--sm` overlay reaches ~2px past the tag box, which the 6px
+   * list gap absorbs; on coarse pointers it can reach into the neighbouring tag's padding, the
+   * trade WCAG 2.5.5 makes for touch.
+   */
+  @apply touch-target size-3.5 text-inherit;
+
+  /* SVG icon styling */
+  & svg {
+    @apply size-[inherit] shrink-0 self-center text-current;
+  }
+}

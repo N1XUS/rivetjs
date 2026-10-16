@@ -1,0 +1,28 @@
+/*
+ * `.ui-stage`: a box that shows @rivetjs/ui components inside the docs (home showcase). The docs theme (docs-kit
+ * theme.css, unlayered on :root) and the UI theme (layer theme, on :root) both define `--accent`, `--accent-hover`,
+ * `--accent-soft`, `--warning`, `--radius`, …; the docs values win on :root, and UI tokens derived from them on
+ * :root (`--accent-soft-foreground`, `--focus`, …) would inherit the docs colours. The stage element carries
+ * `data-ui-theme="rivet"`: `@rivetjs/ui/styles/themes/scoped.css` (generated from the shipped Rivet theme, imported
+ * in styles.css) re-declares every token and derived formula on it, light and dark (`[data-theme=dark]` on <html>),
+ * so the components look exactly as in an app on `@rivetjs/ui/styles` — no hand-copied values to keep in sync.
+ */
+@layer components {
+  .ui-stage {
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  /* Home hero: the `theme-swap` example frame (preset tabs on its first row, visible above the fold on desktop). */
+  .home-swap {
+    margin-top: 2.5rem;
+  }
+  .home-swap iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+}

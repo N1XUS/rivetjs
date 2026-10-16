@@ -1,0 +1,290 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no carousel). Behaviour + motion = embla-carousel 8.6.0 port (MIT, © David Jerleke) via @rivetjs/cdk/carousel; look = HeroUI tokens (surface radius, icon-only buttons, overlay surface, focus ring, accent). */
+/* -------------------------------------------------------------------------------------------------
+ * Carousel Component Styles
+ * Block: carousel (root: data-orientation / data-loop / data-draggable / data-dragging / data-playing / data-ready
+ * from @rivetjs/cdk/carousel). Slide movement = embla's motion (inline transform): no CSS transition on the track.
+ * Layout: a grid; the viewport sits in the "stage" area, inside controls overlay it, outside controls get their own
+ * columns (rows when vertical), dots / thumbnails follow it.
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: carousel
+ */
+.carousel {
+  @apply relative grid w-full min-w-0 text-foreground;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "previous stage next"
+    "dots dots dots"
+    "thumbnails thumbnails thumbnails";
+
+  &[data-dragging] {
+    @apply select-none;
+  }
+}
+
+/* Size variants: spacing between slides, viewport radius, dot / thumbnail sizes, vertical viewport height */
+.carousel--sm {
+  --carousel-gap: 0.5rem;
+  --carousel-radius: var(--radius-2xl);
+  --carousel-dot-size: 0.375rem;
+  --carousel-dot-active-size: 1rem;
+  --carousel-thumbnail-size: 3rem;
+  --carousel-height: 14rem;
+}
+
+.carousel--md {
+  --carousel-gap: 1rem;
+  --carousel-radius: min(32px, var(--radius-3xl));
+  --carousel-dot-size: 0.5rem;
+  --carousel-dot-active-size: 1.5rem;
+  --carousel-thumbnail-size: 4rem;
+  --carousel-height: 20rem;
+}
+
+.carousel--lg {
+  --carousel-gap: 1.5rem;
+  --carousel-radius: var(--radius-4xl);
+  --carousel-dot-size: 0.625rem;
+  --carousel-dot-active-size: 2rem;
+  --carousel-thumbnail-size: 5rem;
+  --carousel-height: 26rem;
+}
+
+/* Vertical: the stage column, dots / thumbnails beside it */
+.carousel--vertical {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "previous dots thumbnails"
+    "stage dots thumbnails"
+    "next dots thumbnails";
+}
+
+/**
+ * Element: viewport - the clipping drag surface (embla root; overflow + touch-action inline from the cdk)
+ */
+.carousel__viewport {
+  @apply relative min-w-0 outline-none;
+  grid-area: stage;
+  border-radius: var(--carousel-radius);
+
+  .carousel[data-draggable] & {
+    cursor: grab;
+  }
+
+  .carousel[data-dragging] & {
+    cursor: grabbing;
+  }
+
+  .carousel--vertical & {
+    height: var(--carousel-height);
+  }
+}
+
+/**
+ * Element: content - the track (embla container; display flex inline from the cdk, translated by the engine).
+ * Slide spacing = a start padding on every item, cancelled on the track: slide sizes stay percentages of the track.
+ */
+.carousel__content {
+  backface-visibility: hidden;
+  margin-inline-start: calc(var(--carousel-gap) * -1);
+
+  .carousel--vertical & {
+    @apply ms-0;
+    margin-top: calc(var(--carousel-gap) * -1);
+    height: calc(var(--carousel-height) + var(--carousel-gap));
+  }
+}
+
+/**
+ * Element: item - a slide (flex basis = --rv-carousel-slide-size, inline from the cdk)
+ */
+.carousel__item {
+  @apply relative;
+  padding-inline-start: var(--carousel-gap);
+
+  .carousel--vertical & {
+    @apply ps-0;
+    padding-top: var(--carousel-gap);
+  }
+}
+
+/**
+ * Element: control - previous / next (HeroUI icon-only Button)
+ */
+.carousel__control {
+  @apply z-10 self-center;
+  grid-area: stage;
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    opacity var(--duration-base) var(--ease-out);
+  @apply motion-reduce:transition-none;
+}
+
+.carousel__previous {
+  @apply ms-3 justify-self-start;
+}
+
+.carousel__next {
+  @apply me-3 justify-self-end;
+}
+
+.carousel--vertical .carousel__previous {
+  @apply ms-0 mt-3 self-start justify-self-center;
+}
+
+.carousel--vertical .carousel__next {
+  @apply me-0 mb-3 self-end justify-self-center;
+}
+
+/* Inside: the default (tertiary) control sits on the overlay surface; no previous / next snap → fades out */
+.carousel--inside .carousel__control:where(.button--tertiary),
+.carousel--inside .carousel__rotation-control:where(.button--tertiary) {
+  @apply shadow-overlay;
+  --button-bg: var(--overlay);
+  --button-bg-hover: var(--default);
+  --button-bg-pressed: var(--default-hover);
+  --button-fg: var(--overlay-foreground);
+}
+
+.carousel--inside .carousel__control:disabled,
+.carousel--inside .carousel__control[aria-disabled="true"] {
+  opacity: 0;
+}
+
+/* Outside: own grid columns (rows when vertical) */
+.carousel--outside .carousel__previous {
+  @apply ms-0 me-3;
+  grid-area: previous;
+}
+
+.carousel--outside .carousel__next {
+  @apply ms-3 me-0;
+  grid-area: next;
+}
+
+.carousel--outside.carousel--vertical .carousel__previous {
+  @apply me-0 mt-0 mb-3 self-center;
+}
+
+.carousel--outside.carousel--vertical .carousel__next {
+  @apply ms-0 mt-3 mb-0 self-center;
+}
+
+/**
+ * Element: rotation-control - APG rotation control (stop / start autoplay), bottom start of the stage
+ */
+.carousel__rotation-control {
+  @apply z-10 m-3 self-end justify-self-start;
+  grid-area: stage;
+
+  &:not([data-rotating]) [data-slot="carousel-pause-icon"],
+  &[data-rotating] [data-slot="carousel-play-icon"] {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: counter - "N / M", top end of the stage
+ */
+.carousel__counter {
+  @apply pointer-events-none z-10 m-3 self-start justify-self-end rounded-full bg-overlay px-2.5 py-1 text-xs font-medium text-overlay-foreground tabular-nums shadow-overlay;
+  grid-area: stage;
+}
+
+/**
+ * Element: dots - the slide picker (APG tab list), below the stage (beside it when vertical)
+ */
+.carousel__dots {
+  @apply mt-3 flex items-center justify-self-center gap-2;
+  grid-area: dots;
+
+  .carousel--vertical & {
+    @apply ms-3 mt-0 flex-col self-center;
+  }
+}
+
+/**
+ * Element: dot - one tab; the selected one stretches into a pill
+ */
+.carousel__dot {
+  @apply relative shrink-0 rounded-full outline-none touch-target no-highlight;
+  width: var(--carousel-dot-size);
+  height: var(--carousel-dot-size);
+  background-color: color-mix(in oklab, var(--muted) 40%, transparent);
+  cursor: var(--cursor-interactive);
+  transition:
+    width var(--duration-slow) var(--ease-out-quart),
+    height var(--duration-slow) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: var(--muted);
+    }
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+
+  &[aria-selected="true"] {
+    @apply bg-accent;
+    width: var(--carousel-dot-active-size);
+  }
+
+  .carousel--vertical &[aria-selected="true"] {
+    width: var(--carousel-dot-size);
+    height: var(--carousel-dot-active-size);
+  }
+}
+
+/**
+ * Element: thumbnails - the slide picker with previews (APG tab list), scrolls when it overflows
+ */
+.carousel__thumbnails {
+  @apply mt-2 flex max-w-full scrollbar-none gap-2 justify-self-center overflow-x-auto p-1;
+  grid-area: thumbnails;
+
+  .carousel--vertical & {
+    @apply ms-2 mt-0 flex-col self-start overflow-x-visible overflow-y-auto;
+    max-height: var(--carousel-height);
+  }
+}
+
+/**
+ * Element: thumbnail - one tab; images / videos inside cover it
+ */
+.carousel__thumbnail {
+  @apply relative shrink-0 overflow-hidden rounded-xl bg-default outline-none no-highlight;
+  width: var(--carousel-thumbnail-size);
+  aspect-ratio: 1;
+  opacity: 0.55;
+  cursor: var(--cursor-interactive);
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  &[aria-selected="true"] {
+    @apply ring-2 ring-accent;
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+
+  & > :is(img, video, picture) {
+    @apply pointer-events-none size-full object-cover;
+  }
+}

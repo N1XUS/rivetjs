@@ -1,0 +1,267 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no stepper). Feature set (class / CSS variable names) inspired by HeroUI Pro's public Stepper docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Stepper Component Styles
+ * Block: stepper (an `ol` from @rivetjs/cdk/stepper list semantics; steps carry data-status inactive / active / complete)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: stepper - the list; sizes and colours are CSS variables (override per stepper or per step)
+ */
+.stepper {
+  --stepper-indicator-size: 2rem;
+  --stepper-separator-size: 2px;
+  --stepper-vertical-gap: 1.5rem;
+  --stepper-gap: 0.5rem;
+  --stepper-separator-gap: 0.25rem;
+  --stepper-active-color: var(--accent);
+  --stepper-complete-color: var(--accent);
+  --stepper-complete-fg: var(--accent-foreground);
+  --stepper-inactive-border: var(--border);
+  --stepper-inactive-fg: var(--muted);
+
+  @apply m-0 flex list-none p-0 text-foreground;
+
+  &.stepper--horizontal {
+    @apply w-full flex-row items-start;
+  }
+
+  &.stepper--vertical {
+    @apply flex-col;
+  }
+}
+
+/* Sizes */
+.stepper--sm {
+  --stepper-indicator-size: 1.5rem;
+  --stepper-vertical-gap: 1rem;
+}
+
+.stepper--lg {
+  --stepper-indicator-size: 2.5rem;
+  --stepper-vertical-gap: 2rem;
+}
+
+/**
+ * Element: step - one list item; positions its separator
+ */
+.stepper__step {
+  @apply relative m-0 flex min-w-0 p-0;
+
+  .stepper--horizontal > & {
+    @apply flex-1;
+    padding-inline-end: var(--stepper-gap);
+
+    &:last-child {
+      @apply flex-none;
+      padding-inline-end: 0;
+    }
+  }
+
+  .stepper--vertical > & {
+    padding-bottom: var(--stepper-vertical-gap);
+
+    &:last-child {
+      @apply pb-0;
+    }
+  }
+}
+
+/**
+ * Element: step-button - the header (a button when the stepper is interactive, data-clickable)
+ */
+.stepper__step-button {
+  @apply m-0 flex min-w-0 appearance-none border-0 bg-transparent p-0 text-start text-inherit outline-none;
+  font: inherit;
+  border-radius: calc(var(--radius) * 1.5);
+
+  .stepper--horizontal & {
+    @apply flex-col items-start;
+    gap: var(--stepper-gap);
+  }
+
+  .stepper--vertical & {
+    @apply flex-row items-start gap-3;
+  }
+
+  &[data-clickable] {
+    @apply cursor-(--cursor-interactive);
+
+    &:focus-visible,
+    &[data-focus-visible="true"] {
+      @apply status-focused;
+    }
+
+    @media (hover: hover) {
+      &:hover:not([aria-disabled="true"]) .stepper__indicator[data-status="inactive"] {
+        border-color: var(--stepper-active-color);
+      }
+
+      &:hover:not([aria-disabled="true"]) .stepper__title {
+        @apply text-foreground;
+      }
+    }
+
+    &[aria-disabled="true"] {
+      @apply cursor-(--cursor-disabled);
+    }
+  }
+}
+
+/**
+ * Element: indicator - number, check, icon or bullet
+ */
+.stepper__indicator {
+  @apply relative inline-flex shrink-0 items-center justify-center rounded-full font-medium tabular-nums select-none;
+  width: var(--stepper-indicator-size);
+  height: var(--stepper-indicator-size);
+  border: 2px solid var(--stepper-inactive-border);
+  color: var(--stepper-inactive-fg);
+  font-size: calc(var(--stepper-indicator-size) * 0.42);
+  transition:
+    background-color var(--duration-base) var(--ease-smooth),
+    border-color var(--duration-base) var(--ease-smooth),
+    color var(--duration-base) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  &[data-status="active"] {
+    border-color: var(--stepper-active-color);
+    color: var(--stepper-active-color);
+  }
+
+  &[data-status="complete"] {
+    border-color: var(--stepper-complete-color);
+    background-color: var(--stepper-complete-color);
+    color: var(--stepper-complete-fg);
+  }
+
+  /* Default completed icon: lucide Check drawn in (stroke-dashoffset) */
+  & > [data-slot="stepper-check"] {
+    width: 55%;
+    height: 55%;
+
+    & path,
+    & polyline {
+      stroke-dasharray: 24;
+      stroke-dashoffset: 0;
+      animation: stepper-check-draw var(--duration-slow) var(--ease-out, ease-out) both;
+      @apply motion-reduce:animate-none;
+    }
+  }
+}
+
+@keyframes stepper-check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/**
+ * Element: icon - an icon inside the indicator; empty = a bullet dot
+ */
+.stepper__icon {
+  @apply inline-flex items-center justify-center;
+  width: 55%;
+  height: 55%;
+
+  & > svg {
+    @apply size-full;
+  }
+
+  &:empty {
+    @apply rounded-full bg-current;
+    width: 35%;
+    height: 35%;
+  }
+}
+
+/**
+ * Elements: content / title / description (spans: phrasing content inside the step button)
+ */
+.stepper__content {
+  @apply flex min-w-0 flex-col gap-0.5;
+
+  .stepper--vertical & {
+    min-height: var(--stepper-indicator-size);
+    @apply justify-center;
+  }
+}
+
+.stepper__title {
+  @apply block text-sm font-medium text-muted;
+  transition: color var(--duration-base) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  .stepper__step:is([data-status="active"], [data-status="complete"]) & {
+    @apply text-foreground;
+  }
+
+  .stepper--sm & {
+    @apply text-xs;
+  }
+
+  .stepper--lg & {
+    @apply text-base;
+  }
+}
+
+.stepper__description {
+  @apply block text-xs text-muted;
+
+  .stepper--lg & {
+    @apply text-sm;
+  }
+}
+
+/**
+ * Element: separator - the connector to the next step (hidden on the last step unless data-force)
+ */
+.stepper__separator {
+  @apply pointer-events-none absolute block;
+
+  .stepper--horizontal & {
+    top: calc(var(--stepper-indicator-size) / 2 - var(--stepper-separator-size) / 2);
+    height: var(--stepper-separator-size);
+    inset-inline-start: calc(var(--stepper-indicator-size) + var(--stepper-gap));
+    inset-inline-end: calc(var(--stepper-gap) * 2);
+  }
+
+  .stepper--vertical & {
+    width: var(--stepper-separator-size);
+    inset-inline-start: calc(var(--stepper-indicator-size) / 2 - var(--stepper-separator-size) / 2);
+    top: calc(var(--stepper-indicator-size) + var(--stepper-separator-gap));
+    bottom: var(--stepper-separator-gap);
+  }
+
+  .stepper__step:last-child &:not([data-force]) {
+    @apply hidden;
+  }
+}
+
+.stepper__separator-track {
+  @apply block size-full overflow-hidden rounded-full;
+  background-color: var(--stepper-inactive-border);
+}
+
+.stepper__separator-fill {
+  @apply block size-full rounded-full;
+  background-color: var(--stepper-complete-color);
+  transition: transform var(--duration-slow) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  .stepper--horizontal & {
+    transform: scaleX(var(--stepper-separator-progress, 0));
+    transform-origin: left center;
+
+    &:dir(rtl) {
+      transform-origin: right center;
+    }
+  }
+
+  .stepper--vertical & {
+    transform: scaleY(var(--stepper-separator-progress, 0));
+    transform-origin: center top;
+  }
+}

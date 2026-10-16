@@ -1,0 +1,11 @@
+dist/
+.rivet/
+.artifacts/
+# Generated from content/ and examples/ by @rivetjs/docs-kit (api.json is a committed snapshot).
+src/routes/(docs)/
+# Shared site routes, copied from @rivetjs/docs-kit/routes/.
+src/routes/search.tsx
+src/routes/examples/
+src/routes/api/
+src/generated/*
+!src/generated/api.json

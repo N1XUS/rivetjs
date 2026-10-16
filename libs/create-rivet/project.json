@@ -1,0 +1,21 @@
+{
+  "name": "create-rivet",
+  "projectType": "library",
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/create-rivet" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project create-rivet" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/create-rivet" }
+    }
+  }
+}

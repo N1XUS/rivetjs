@@ -1,0 +1,90 @@
+# Manual release of every publishable lib (one version) to npm, with provenance.
+# Runs only from the Actions tab (workflow_dispatch); `dry-run` (default true) publishes nothing and pushes nothing.
+# Needs the NPM_TOKEN secret (an npm automation token with publish rights on @rivetjs/* and create-rivet).
+# Steps: scripts/release/release.ts (version, changelog, package, tarball smoke, create-rivet e2e, npm publish),
+# then commit the bumped manifests + CHANGELOG.md, tag v<version>, push. See scripts/CLAUDE.md "Release".
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump (ignored when version is set)"
+        type: choice
+        options: [prerelease, patch, minor, major]
+        default: prerelease
+      version:
+        description: "Exact version (x.y.z or x.y.z-pre.n); overrides bump"
+        type: string
+        required: false
+      preid:
+        description: "Prerelease id"
+        type: string
+        default: alpha
+      dist-tag:
+        description: "npm dist-tag (default: next for prereleases, latest otherwise; `npm create rivet@latest` needs create-rivet on latest)"
+        type: string
+        required: false
+      dry-run:
+        description: "Dry run: npm publish --dry-run, no commit, no tag, no push"
+        type: boolean
+        default: true
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # commit + tag
+  id-token: write # npm provenance
+
+env:
+  NX_DAEMON: "false"
+  NX_ISOLATE_PLUGINS: "false"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # changelog since the last v* tag
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+
+      - name: Release (dry run)
+        if: ${{ inputs.dry-run }}
+        id: dry
+        env:
+          BUMP: ${{ inputs.version || inputs.bump }}
+          PREID: ${{ inputs.preid }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+        run: node scripts/release/release.ts "$BUMP" --preid "$PREID" ${DIST_TAG:+--tag "$DIST_TAG"}
+
+      - name: Release (publish)
+        if: ${{ !inputs.dry-run }}
+        id: publish
+        env:
+          BUMP: ${{ inputs.version || inputs.bump }}
+          PREID: ${{ inputs.preid }}
+          DIST_TAG: ${{ inputs.dist-tag }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: node scripts/release/release.ts "$BUMP" --preid "$PREID" ${DIST_TAG:+--tag "$DIST_TAG"} --apply --publish
+
+      - name: Commit, tag, push
+        if: ${{ !inputs.dry-run }}
+        env:
+          VERSION: ${{ steps.publish.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md libs/*/package.json
+          git commit -m "chore(release): v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push --follow-tags

@@ -1,0 +1,55 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no trend chip). Feature set inspired by HeroUI Pro's public TrendChip docs; independent implementation on HeroUI tokens (success / danger / default soft colours, lucide trend icons). */
+/* -------------------------------------------------------------------------------------------------
+ * TrendChip Component Styles
+ * Block: trend-chip (parts: icon)
+ * Modifiers: trend-chip--positive / --negative / --neutral, trend-chip--sm / --md, trend-chip--soft / --ghost
+ * -----------------------------------------------------------------------------------------------*/
+
+.trend-chip {
+  @apply inline-flex shrink-0 items-center gap-1 rounded-full font-medium whitespace-nowrap tabular-nums;
+  color: var(--trend-chip-color);
+}
+
+.trend-chip--soft {
+  background-color: var(--trend-chip-bg);
+}
+
+.trend-chip--ghost {
+  @apply px-0;
+}
+
+.trend-chip--sm {
+  @apply h-5 px-1.5 text-[0.6875rem];
+}
+
+.trend-chip--md {
+  @apply h-6 px-2 text-xs;
+}
+
+.trend-chip--ghost.trend-chip--sm,
+.trend-chip--ghost.trend-chip--md {
+  @apply px-0;
+}
+
+.trend-chip--positive {
+  --trend-chip-color: var(--success-soft-foreground);
+  --trend-chip-bg: var(--success-soft);
+}
+
+.trend-chip--negative {
+  --trend-chip-color: var(--danger-soft-foreground);
+  --trend-chip-bg: var(--danger-soft);
+}
+
+.trend-chip--neutral {
+  --trend-chip-color: var(--default-soft-foreground, var(--muted));
+  --trend-chip-bg: var(--default);
+}
+
+.trend-chip__icon {
+  @apply size-3.5 shrink-0;
+
+  .trend-chip--sm & {
+    @apply size-3;
+  }
+}

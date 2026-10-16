@@ -1,0 +1,14 @@
+import { signal } from "@rivetjs/reactivity";
+import type { LayoutProps } from "@rivetjs/router";
+
+export default function Layout({ children }: LayoutProps) {
+  const clicks = signal(0);
+  return (
+    <div>
+      <button type="button" id="count" onClick={() => clicks.update((n) => n + 1)}>
+        Clicks {clicks()}
+      </button>
+      <main>{children}</main>
+    </div>
+  );
+}

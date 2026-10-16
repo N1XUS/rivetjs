@@ -1,0 +1,12 @@
+{
+  "name": "<%= importPath %>",
+  "version": "0.0.1",<% if (!publishable) { %>
+  "private": true,<% } %>
+  "type": "module",
+  "sideEffects": false,
+  "exports": <%- exportsJson %>,
+  "peerDependencies": {
+    "@rivetjs/reactivity": "<%= rivet %>",
+    "@rivetjs/runtime": "<%= rivet %>"
+  }
+}

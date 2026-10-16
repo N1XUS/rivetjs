@@ -1,0 +1,36 @@
+{
+  "name": "@rivetjs/docs-kit",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "rivet": {
+    "source": true
+  },
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "@fontsource-variable/fira-code": "5.3.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/manrope": "5.3.0",
+    "@rivetjs/cdk": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/kit": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "lucide": "1.52.0",
+    "pagefind": "1.5.2",
+    "remark-directive": "4.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "shiki": "4.5.0",
+    "typedoc": "0.28.20",
+    "unified": "11.0.5"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

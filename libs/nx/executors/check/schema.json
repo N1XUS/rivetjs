@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet check",
+  "description": "Rivet diagnostics for a project (rivet-check from @rivetjs/language-core): compiler errors of both targets, serializability, route links. Routed apps run rivet sync first.",
+  "type": "object",
+  "properties": {
+    "tsConfig": {
+      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
+      "description": "tsconfig file(s) to check, relative to the project. Default tsconfig.json."
+    },
+    "types": { "type": "boolean", "default": true, "description": "Type-aware checks (RV2101 serializability, RV3101 route links)." },
+    "manifest": { "type": "boolean", "description": "Check .rivet/editor.json (RV7101 / RV7102). Default: routed apps only." },
+    "sync": { "type": "boolean", "description": "Run rivet sync first. Default: routed apps only." },
+    "format": { "type": "string", "enum": ["text", "json"], "description": "Output format." }
+  },
+  "additionalProperties": false
+}

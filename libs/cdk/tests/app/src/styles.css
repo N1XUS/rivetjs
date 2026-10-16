@@ -1,0 +1,20 @@
+@import "@rivetjs/cdk/text-field.css";
+body { font-family: system-ui, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+main { max-width: 48rem; margin: 0 auto; padding: 2rem 1rem; }
+.spacer { height: 150vh; }
+.vp { height: 200px; width: 300px; border: 1px solid #ccc; }
+.vp .row { height: 50px; box-sizing: border-box; }
+.vp-h { width: 200px; height: 60px; border: 1px solid #ccc; }
+.vp-h .cdk-virtual-scroll-content-wrapper { display: flex; flex-direction: row; }
+.vp-h .col { width: 50px; height: 50px; flex: none; }
+.person { box-sizing: border-box; overflow: hidden; }
+.scroller { height: 200px; width: 300px; border: 1px solid #ccc; }
+.scroller .above { height: 50px; margin: 0; }
+.row { height: 50px; box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+/* transition story */
+.fade { transition: opacity 120ms linear; }
+.from { opacity: 0; }
+.to { opacity: 1; }
+.slow { transition: opacity 250ms linear; }

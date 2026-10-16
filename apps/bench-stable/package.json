@@ -1,0 +1,15 @@
+{
+  "name": "@rivetjs/bench-stable",
+  "version": "0.0.0-experimental",
+  "private": true,
+  "type": "module",
+  "description": "Isolated stable framework toolchains for the comparison benchmarks.",
+  "dependencies": {
+    "@babel/core": "7.29.7",
+    "@builder.io/qwik": "1.20.1",
+    "babel-preset-solid": "1.9.15",
+    "solid-js": "1.9.15",
+    "vite": "7.3.6",
+    "vite-plugin-solid": "2.11.14"
+  }
+}

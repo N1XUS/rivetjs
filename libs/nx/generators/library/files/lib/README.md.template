@@ -1,0 +1,18 @@
+# <%= importPath %>
+
+Rivet library. Components are `.tsx` modules compiled by the app's Rivet compiler (`rivetRouter()` / `rivet()` in the
+app's Vite config), so they resume like the app's own components.
+
+```tsx
+import { <%= className %> } from "<%= importPath %>";
+```
+<% if (subpaths.length) { %>
+Subpaths (each one tree-shakes on its own):
+<% for (const subpath of subpaths) { %>
+- `<%= importPath %>/<%= subpath.fileName %>`<% } %>
+<% } %>
+## Nx
+
+- `nx test <%= name %>`: Vitest (DOM + server targets)
+- `nx check <%= name %>` / `nx typecheck <%= name %>`<% if (publishable) { %>
+- `nx build <%= name %>`: publishable package in `<%= outputPath %>` (`.js` / `.jsx` + `.d.ts`)<% } %>

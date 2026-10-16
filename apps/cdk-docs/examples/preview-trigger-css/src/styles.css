@@ -1,0 +1,48 @@
+/* Plain CSS on the default class names and state attributes. No Tailwind, no theme. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+}
+.text {
+  margin: 2rem 1rem;
+}
+.rv-Link {
+  color: #4338ca;
+  text-decoration: underline;
+}
+.rv-Popover[data-trigger="PreviewTrigger"] {
+  width: 240px;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.15);
+  transform-origin: var(--trigger-anchor-point);
+}
+.rv-Popover[data-trigger="PreviewTrigger"] p {
+  margin: 0.25rem 0 0;
+}
+.rv-Popover[data-entering] {
+  animation: pop 150ms ease-out;
+}
+.rv-Popover[data-exiting] {
+  animation: pop 100ms ease-in reverse;
+}
+.rv-OverlayArrow .tip {
+  display: block;
+  width: 12px;
+  height: 6px;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.rv-OverlayArrow[data-placement="bottom"] .tip {
+  transform: rotate(180deg);
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}

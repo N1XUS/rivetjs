@@ -1,0 +1,144 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no tool-call card). Feature set inspired by HeroUI Pro's public ChatTool docs; independent implementation on HeroUI tokens. Composes `.disclosure*` + `.code-block`. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatTool Component Styles
+ * Blocks: chat-tool (heading / trigger / trigger-label / tool-name / tool-icon / status-icon / indicator / content / body
+ *         / args / result / code / error / error-icon / error-text / approval / approval-text / approval-actions),
+ *         chat-tool-group (trigger / body)
+ * States: [data-state="input-streaming|input-available|output-available|output-error|requires-action"]
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-tool {
+  @apply flex w-full min-w-0 flex-col rounded-2xl border border-separator bg-surface text-sm;
+}
+
+.chat-tool__heading {
+  @apply m-0 flex text-sm font-normal;
+}
+
+.chat-tool__trigger {
+  @apply flex w-full min-w-0 items-center gap-2 rounded-2xl px-3 py-2.5 text-start text-muted;
+  transition: color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply text-foreground;
+  }
+}
+
+.chat-tool__trigger-label {
+  @apply min-w-0 flex-1 truncate;
+}
+
+.chat-tool__tool-name {
+  @apply font-medium text-foreground;
+}
+
+.chat-tool__tool-icon {
+  @apply size-4 shrink-0;
+}
+
+.chat-tool__status-icon {
+  @apply inline-flex size-4 shrink-0 items-center justify-center;
+  transition: color var(--duration-base) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & > svg {
+    @apply size-4;
+  }
+
+  &[data-state="input-streaming"],
+  &[data-state="input-available"] {
+    @apply text-accent;
+
+    & > svg {
+      animation: chat-tool-spin 1s linear infinite;
+    }
+  }
+
+  &[data-state="output-available"] {
+    @apply text-success;
+  }
+
+  &[data-state="output-error"] {
+    @apply text-danger;
+  }
+
+  &[data-state="requires-action"] {
+    @apply text-warning;
+  }
+}
+
+.chat-tool__indicator {
+  @apply size-3.5;
+}
+
+.chat-tool__body {
+  @apply flex flex-col gap-2.5 px-3 pb-3;
+}
+
+.chat-tool__args,
+.chat-tool__result {
+  @apply flex min-w-0 flex-col;
+}
+
+.chat-tool__code {
+  @apply my-0;
+  --code-block-max-height: 16rem;
+}
+
+.chat-tool__error {
+  @apply flex items-start gap-2 rounded-xl bg-danger-soft px-3 py-2 text-danger-soft-foreground;
+}
+
+.chat-tool__error-icon {
+  @apply mt-0.5 size-4 shrink-0;
+}
+
+.chat-tool__error-text {
+  @apply min-w-0 flex-1 font-mono text-xs leading-5 break-words;
+}
+
+.chat-tool__approval {
+  @apply flex flex-wrap items-center justify-between gap-2 rounded-xl bg-warning-soft px-3 py-2 text-warning-soft-foreground;
+}
+
+.chat-tool__approval-text {
+  @apply min-w-0 flex-1;
+}
+
+.chat-tool__approval-actions {
+  @apply flex shrink-0 gap-2;
+}
+
+/* Group */
+.chat-tool-group {
+  @apply flex w-full min-w-0 flex-col;
+}
+
+.chat-tool-group__trigger {
+  @apply -mx-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm text-muted;
+  transition: color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply text-foreground;
+  }
+}
+
+.chat-tool-group__body {
+  @apply flex flex-col gap-2 pt-2;
+}
+
+@keyframes chat-tool-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-tool__status-icon > svg {
+    animation: none !important;
+  }
+}

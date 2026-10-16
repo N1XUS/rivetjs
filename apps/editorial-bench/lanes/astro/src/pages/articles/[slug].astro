@@ -1,0 +1,14 @@
+---
+import { marked } from "marked";
+import Base from "../../layouts/Base.astro";
+import { bySlug, day } from "../../lib/site.mjs";
+export async function getStaticPaths() {
+  const { articles } = await import("../../lib/site.mjs");
+  return (await articles()).map((a) => ({ params: { slug: a.slug } }));
+}
+const index = await bySlug();
+const a = index.get(Astro.params.slug);
+const related = a.related.map((s) => index.get(s));
+const html = marked.parse(a.body);
+---
+<Base title={a.title} description={a.description}><main class="layout"><article><h1>{a.title}</h1><p class="meta">By <a href={`/authors/${a.authorSlug}/`}>{a.author}</a> · <time datetime={a.date}>{day(a.date)}</time></p><ul class="tags">{a.tags.map((t) => <li><a href={`/tags/${t}/`}>{t}</a></li>)}</ul><div class="body" set:html={html} /></article><aside class="related"><h2>Related</h2><ul>{related.map((r) => <li><a href={`/articles/${r.slug}/`}>{r.title}</a><time datetime={r.date}>{day(r.date)}</time></li>)}</ul></aside></main></Base>

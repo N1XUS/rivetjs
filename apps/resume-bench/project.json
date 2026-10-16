@@ -1,0 +1,19 @@
+{
+  "name": "resume-bench",
+  "root": "apps/resume-bench",
+  "projectType": "application",
+  "implicitDependencies": [
+    "compiler",
+    "runtime",
+    "reactivity"
+  ],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node scripts/tsc.ts -p apps/resume-bench"
+      }
+    }
+  }
+}

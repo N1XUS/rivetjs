@@ -1,0 +1,173 @@
+{
+  "name": "@rivetjs/runtime",
+  "version": "0.0.0-experimental",
+  "description": "Rivet runtime: streaming server renderer, compiled DOM templates, resumability, router runtime, images and styles.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "rivet": {
+    "abi": 8
+  },
+  "imports": {
+    "#dev": {
+      "development": "./dev/on.ts",
+      "default": "./dev/off.ts"
+    }
+  },
+  "exports": {
+    "./server": {
+      "types": "./server.ts",
+      "default": "./server.ts"
+    },
+    "./dom": {
+      "types": "./dom.ts",
+      "development": "./dev/dom.ts",
+      "default": "./dom.ts"
+    },
+    "./dev/a11y": {
+      "types": "./dev/a11y.ts",
+      "development": "./dev/a11y.ts",
+      "default": "./dev/a11y-off.ts"
+    },
+    "./jsx-runtime": {
+      "types": "./jsx-runtime.ts",
+      "default": "./jsx-runtime.ts"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./jsx-runtime.ts",
+      "default": "./jsx-runtime.ts"
+    },
+    "./async": {
+      "types": "./async.ts",
+      "default": "./async.ts"
+    },
+    "./lazy": {
+      "types": "./lazy.ts",
+      "default": "./lazy.ts"
+    },
+    "./router": {
+      "types": "./router.ts",
+      "default": "./router.ts"
+    },
+    "./router/dom": {
+      "types": "./dom-router.ts",
+      "default": "./dom-router.ts"
+    },
+    "./router/server": {
+      "types": "./server-router.ts",
+      "default": "./server-router.ts"
+    },
+    "./server-resume": {
+      "types": "./server-resume.ts",
+      "default": "./server-resume.ts"
+    },
+    "./server-markup": {
+      "types": "./server-markup.ts",
+      "default": "./server-markup.ts"
+    },
+    "./server-cache": {
+      "types": "./server-cache.ts",
+      "default": "./server-cache.ts"
+    },
+    "./props": {
+      "types": "./props.ts",
+      "default": "./props.ts"
+    },
+    "./dom-resume": {
+      "types": "./dom-resume.ts",
+      "default": "./dom-resume.ts"
+    },
+    "./node": {
+      "types": "./node.ts",
+      "default": "./node.ts"
+    },
+    "./hot": {
+      "types": "./hot.ts",
+      "default": "./hot.ts"
+    },
+    "./hot-reactivity": {
+      "types": "./hot-reactivity.ts",
+      "default": "./hot-reactivity.ts"
+    },
+    "./resume-format": {
+      "types": "./resume-format.ts",
+      "default": "./resume-format.ts"
+    },
+    "./resume-builtins": {
+      "types": "./resume-builtins.ts",
+      "default": "./resume-builtins.ts"
+    },
+    "./resume-loader-module": {
+      "types": "./resume-loader-module.ts",
+      "default": "./resume-loader-module.ts"
+    },
+    "./image": {
+      "types": "./image.ts",
+      "default": "./image.ts"
+    },
+    "./image/dom": {
+      "types": "./image-dom.ts",
+      "default": "./image-dom.ts"
+    },
+    "./style": {
+      "types": "./style.ts",
+      "default": "./style.ts"
+    },
+    "./escape": {
+      "types": "./escape.ts",
+      "default": "./escape.ts"
+    },
+    "./slot": {
+      "types": "./slot.ts",
+      "default": "./slot.ts"
+    },
+    "./css": {
+      "types": "./css.ts",
+      "default": "./css.ts"
+    },
+    "./id": {
+      "types": "./id.ts",
+      "browser": "./id-dom.ts",
+      "default": "./id.ts"
+    },
+    "./image-plan": {
+      "types": "./image-plan.ts",
+      "default": "./image-plan.ts"
+    },
+    "./testing": {
+      "types": "./testing.ts",
+      "default": "./testing.ts"
+    },
+    "./testing/server": {
+      "types": "./testing-server.ts",
+      "default": "./testing-server.ts"
+    },
+    "./testing/register": {
+      "types": "./testing-register.ts",
+      "default": "./testing-register.ts"
+    },
+    "./testing/resume": {
+      "types": "./testing-resume.ts",
+      "default": "./testing-resume.ts"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental"
+  },
+  "peerDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental"
+  },
+  "peerDependenciesMeta": {
+    "@rivetjs/compiler": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/runtime"
+  }
+}

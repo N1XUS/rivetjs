@@ -1,0 +1,131 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/list-box-item.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* ==========================================================================
+   Base list-box item styles
+   ========================================================================== */
+
+.list-box-item {
+  @apply relative flex min-h-9 w-full items-center justify-start gap-3 px-2 py-1.5 outline-none no-highlight;
+  /* Rivet: concentric with the padded popover list it sits in (`--r-inner`), else HeroUI's 16 px (TWEAKS.md TW-123) */
+  border-radius: var(--r-inner, var(--radius-2xl));
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    transform var(--duration-base) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+
+  @apply motion-reduce:transition-none;
+
+  /* Cursor */
+  cursor: var(--cursor-interactive);
+
+  [data-slot="label"] {
+    @apply pointer-events-none w-fit select-none;
+  }
+
+  [data-slot="description"] {
+    @apply pointer-events-none text-wrap select-none;
+  }
+
+  /* Add inline-end padding when indicator is present */
+  &:has(.list-box-item__indicator) {
+    @apply pe-7;
+  }
+
+  /* Focus visible state (keyboard focus only).
+     React Aria always sets data-focused when it owns the item, so the native
+     fallback is scoped to consumers rendering this class outside React Aria. */
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  /* Focus state */
+  &:focus,
+  &[data-focus="true"] {
+  }
+
+  /* Pressed state */
+  &:active,
+  &[data-pressed="true"] {
+    transform: scale(0.98);
+  }
+
+  /* Hover state */
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  /* Selected state */
+  &[aria-selected="true"],
+  &[data-selected="true"] {
+  }
+
+  /* Disabled state */
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/* ==========================================================================
+   List-box item indicator
+   ========================================================================== */
+
+.list-box-item__indicator {
+  @apply absolute end-2 top-1/2 flex size-4 shrink-0 -translate-y-1/2 items-center justify-center text-default-foreground;
+
+  /**
+   * Transitions
+   */
+  @apply transition duration-(--duration-base) motion-reduce:transition-none;
+
+  /* Checkmark SVG indicator */
+  [data-slot="list-box-item-indicator--checkmark"] {
+    @apply size-3.5;
+    /* Rivet: 14 px icon, 2 px stroke (lucide absoluteStrokeWidth: 2 × 24 / 14 units; TWEAKS.md TW-140) */
+    stroke-width: 3.43;
+
+    /**
+     * Transitions
+     */
+    @apply transition-all duration-(--duration-slow) motion-reduce:transition-none;
+  }
+
+  .list-box-item[aria-selected="true"] [data-slot="list-box-item-indicator--checkmark"],
+  .list-box-item[data-selected="true"] [data-slot="list-box-item-indicator--checkmark"] {
+    /**
+     * Transitions
+     * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+     */
+    transition: stroke-dashoffset var(--duration-base) linear;
+    @apply motion-reduce:transition-none;
+  }
+}
+
+/* Default variant */
+.list-box-item--default {
+}
+
+/* Danger variant */
+.list-box-item--danger {
+  .list-box-item__indicator {
+    @apply text-danger;
+  }
+
+  [data-slot="label"] {
+    @apply text-danger;
+  }
+}
+
+/* Rivet: density (identity spec §3.2, TWEAKS.md TW-139) — `data-density="compact"` on an ancestor shifts height and
+   padding one scale step; a `data-density="comfortable"` ancestor restores the default. */
+.list-box-item:where([data-density="compact"] *):not(:where([data-density="comfortable"] *)) {
+  @apply min-h-8 py-1;
+}

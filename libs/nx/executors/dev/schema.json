@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet dev server",
+  "description": "Runs the Vite dev server of a Rivet app (pages render through the production request handler and resume; hot reload keeps state).",
+  "type": "object",
+  "properties": {
+    "port": { "type": "number", "description": "Port (--port); Vite's default is 5173." },
+    "host": { "oneOf": [{ "type": "string" }, { "type": "boolean" }], "description": "Host to listen on (--host); true listens on all addresses." },
+    "strictPort": { "type": "boolean", "description": "Fail when the port is taken instead of trying the next one." },
+    "open": { "type": "boolean", "description": "Open the browser." },
+    "config": { "type": "string", "description": "Vite config file, relative to the project." },
+    "mode": { "type": "string", "description": "Vite mode." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Extra environment variables." }
+  },
+  "additionalProperties": false
+}

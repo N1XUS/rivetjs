@@ -1,0 +1,73 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no item morph). iOS context-menu style preview of a list item on HeroUI tokens. Motion = `@rivetjs/cdk/morph/item` (house motion; inline geometry only while morphing, behaviour styles inline from JS); this sheet owns the resting look, turns `--morph-progress` (0 = the row's box, 1 = the panel) into the content fade and `--morph-hold` (0 → 1 while a long press is held) into the row's press-and-hold scale. */
+/* -------------------------------------------------------------------------------------------------
+ * ItemMorph Component Styles
+ * Block: item-morph (the morphing surface, role="dialog"; parts: panel / backdrop / close)
+ * Modifiers: item-morph__backdrop--opaque / --blur / --transparent
+ * Variables: --morph-expanded-radius (read by the motion), --morph-progress (written while morphing), --morph-hold (on the
+ * held item)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: item-morph - the surface (fixed, positioned by the motion); open at rest = the panel's natural box
+ */
+.item-morph {
+  --morph-expanded-radius: var(--radius-3xl);
+  @apply bg-overlay text-foreground;
+  border-radius: var(--morph-expanded-radius);
+  box-shadow: var(--overlay-shadow), 0 24px 48px -16px rgb(0 0 0 / 0.35);
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  /* While morphing the surface fades in from the row (and out into it), so the row never pops. */
+  &[data-morphing] {
+    opacity: clamp(0, calc(var(--morph-progress, 1) * 4), 1);
+  }
+}
+
+/**
+ * Element: panel - the content box (its width is the open width; set it with `panelClass`)
+ */
+.item-morph__panel {
+  @apply flex flex-col gap-3 p-4;
+  width: min(22rem, calc(100vw - 2rem));
+  opacity: clamp(0, calc((var(--morph-progress, 1) - 0.3) * 1.8), 1);
+  transform-origin: top center;
+  scale: calc(0.96 + 0.04 * clamp(0, var(--morph-progress, 1), 1));
+}
+
+/**
+ * Element: backdrop - dims (and blurs) the page while the panel is open; opacity follows the motion inline
+ */
+.item-morph__backdrop {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.item-morph__backdrop--opaque {
+  @apply bg-backdrop;
+}
+
+.item-morph__backdrop--blur {
+  @apply bg-backdrop backdrop-blur-md;
+}
+
+.item-morph__backdrop--transparent {
+  background: transparent;
+}
+
+/**
+ * Element: close - a button in the panel that morphs it back into the row
+ */
+.item-morph__close {
+  @apply self-end;
+}
+
+/**
+ * The held item (long press): shrinks slightly while held, iOS style
+ */
+[data-rv-morph][data-morph-holding] {
+  scale: calc(1 - 0.04 * var(--morph-hold, 0));
+}
+
+[data-rv-morph] {
+  -webkit-touch-callout: none;
+}

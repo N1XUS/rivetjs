@@ -1,0 +1,21 @@
+{
+  "name": "i18n",
+  "projectType": "library",
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/i18n" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project i18n" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/i18n" }
+    }
+  }
+}

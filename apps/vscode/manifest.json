@@ -1,0 +1,30 @@
+{
+  "name": "rivet",
+  "displayName": "Rivet",
+  "description": "Rivet compiler diagnostics, quick fixes, resume hints and route links for TSX, plus Rivet: Doctor.",
+  "version": "0.0.1",
+  "publisher": "rivetjs",
+  "license": "MIT",
+  "private": true,
+  "engines": { "vscode": "^1.90.0" },
+  "categories": ["Programming Languages", "Linters"],
+  "main": "./extension.cjs",
+  "activationEvents": ["onLanguage:typescriptreact", "onLanguage:javascriptreact"],
+  "contributes": {
+    "typescriptServerPlugins": [{ "name": "@rivetjs/typescript-plugin", "enableForWorkspaceTypeScriptVersions": true }],
+    "commands": [{ "command": "rivet.doctor", "title": "Rivet: Doctor" }],
+    "configuration": {
+      "title": "Rivet",
+      "properties": {
+        "rivet.inlayHints": {
+          "type": "string",
+          "enum": ["client", "all", "off"],
+          "default": "client",
+          "description": "Resume inlay hints: browser-only closures (client), every resume site (all), or none. Shown by the extension itself (independent of typescript.inlayHints.*); editor.inlayHints.enabled still applies."
+        },
+        "rivet.typeAware": { "type": "boolean", "default": true, "description": "Warn when a resumable closure captures a value whose type resume state cannot carry (RV2101)." },
+        "rivet.regions": { "type": "boolean", "default": false, "description": "Tint code by where it runs on a resumed page: browser only vs server and browser." }
+      }
+    }
+  }
+}

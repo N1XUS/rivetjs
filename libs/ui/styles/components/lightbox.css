@@ -1,0 +1,258 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no lightbox). Behaviour = yet-another-react-lightbox 3.32.2 port (MIT, © Igor Danchenko) via @rivetjs/cdk/lightbox; look = HeroUI tokens (backdrop, overlay surface, icon-only buttons, focus ring, radii). */
+/* Rivet: modified, see TWEAKS.md */
+/* -------------------------------------------------------------------------------------------------
+ * Lightbox Component Styles
+ * Block: lightbox (modal dialog element; the cdk sets position / inset / grid / touch-action inline). Overlay =
+ * lightbox__backdrop (cdk ModalOverlay: data-entering / data-exiting, --rv-lightbox-fade). The container is a grid
+ * (top / start / main / end / bottom areas): carousel in main, thumbnails in their side's area; toolbar, previous / next,
+ * counter and captions are absolutely positioned in the main area (an absolute grid child with grid-area uses that area as
+ * its containing block), so a thumbnails strip never sits under them.
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Element: backdrop - full-viewport overlay behind the lightbox
+ */
+.lightbox__backdrop {
+  @apply fixed inset-0 z-(--z-index-overlay);
+  @apply h-(--visual-viewport-height) w-full;
+  /* Pull to close fades the backdrop (cdk writes --rv-lightbox-pull-opacity on the container) */
+  &:has([style*="--rv-lightbox-pull-opacity"]) {
+    background-color: color-mix(in oklab, var(--backdrop) calc(var(--rv-lightbox-pull-opacity, 1) * 100%), transparent);
+  }
+
+  &[data-entering="true"] {
+    @apply animate-in ease-out fade-in-0;
+    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+  }
+
+  &[data-exiting="true"] {
+    @apply animate-out ease-out fade-out-0;
+    animation-duration: var(--rv-lightbox-fade, var(--duration-base));
+  }
+
+  &[data-exiting="true"],
+  &[data-entering="true"] {
+    @apply will-change-[opacity];
+    @apply motion-reduce:animate-none;
+  }
+}
+
+.lightbox__backdrop--opaque {
+  background-color: color-mix(in oklab, black 90%, transparent);
+}
+
+.lightbox__backdrop--blur {
+  background-color: color-mix(in oklab, black 70%, transparent);
+  @apply backdrop-blur-md;
+}
+
+/**
+ * Block: lightbox - the dialog element (fills the backdrop)
+ */
+.lightbox {
+  @apply text-white outline-none;
+  --lightbox-control-bg: color-mix(in oklab, black 45%, transparent);
+  --lightbox-control-fg: white;
+}
+
+/**
+ * Element: container - gesture surface (cdk: grid, overflow hidden, touch-action)
+ */
+.lightbox__container {
+  @apply outline-none;
+}
+
+.lightbox__container[data-gesture="pull"] {
+  opacity: var(--rv-lightbox-pull-opacity, 1);
+}
+
+/**
+ * Element: carousel - slide track (cdk: grid area main, relative)
+ */
+.lightbox__carousel {
+  @apply outline-none;
+}
+
+/**
+ * Element: slide - one carousel slide box (cdk: absolute, flex centre, size container)
+ */
+.lightbox__slide {
+  @apply select-none;
+}
+
+/**
+ * Element: image / video / embed / pdf - slide media
+ */
+.lightbox__image {
+  @apply block;
+  -webkit-touch-callout: none;
+}
+
+.lightbox__container[data-zoomed] .lightbox__image {
+  @apply cursor-grab;
+}
+
+.lightbox__video,
+.lightbox__embed,
+.lightbox__embed-poster,
+.lightbox__pdf {
+  @apply rounded-2xl bg-black shadow-overlay;
+}
+
+.lightbox__pdf {
+  @apply bg-white;
+}
+
+.lightbox__pdf-fallback {
+  @apply flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center text-sm font-medium text-foreground;
+  @apply rounded-2xl bg-surface no-underline;
+
+  & svg {
+    @apply size-10 text-muted;
+  }
+}
+
+/**
+ * Element: placeholder - loading / error indicator over an image
+ */
+.lightbox__placeholder {
+  @apply text-white/70;
+
+  & svg {
+    @apply size-8;
+  }
+
+  &[data-status="loading"] svg {
+    @apply animate-spin motion-reduce:animate-none;
+  }
+}
+
+/**
+ * Element: toolbar - top-end button row
+ */
+.lightbox__toolbar {
+  grid-area: main;
+  @apply absolute end-0 top-0 z-10 flex items-center gap-1 p-3;
+}
+
+/**
+ * Element: button - icon-only controls on the dark overlay
+ */
+.lightbox__button {
+  --button-bg: var(--lightbox-control-bg);
+  --button-bg-hover: color-mix(in oklab, black 65%, transparent);
+  --button-bg-pressed: color-mix(in oklab, black 75%, transparent);
+  --button-fg: var(--lightbox-control-fg);
+  @apply backdrop-blur-sm;
+
+  &[hidden] {
+    @apply hidden;
+  }
+
+  &:disabled,
+  &[data-disabled="true"] {
+    @apply opacity-40;
+  }
+
+  /* Toggles: both icons rendered, the pressed state picks one (no reactive child) */
+  & [data-when="on"] {
+    @apply hidden;
+  }
+
+  &[aria-pressed="true"] [data-when="on"] {
+    @apply inline-block;
+  }
+
+  &[aria-pressed="true"] [data-when="off"] {
+    @apply hidden;
+  }
+}
+
+.lightbox__previous,
+.lightbox__next {
+  grid-area: main;
+  @apply absolute top-1/2 z-10 -translate-y-1/2;
+
+  &:disabled {
+    @apply invisible;
+  }
+}
+
+.lightbox__previous {
+  @apply start-3;
+}
+
+.lightbox__next {
+  @apply end-3;
+}
+
+[dir="rtl"] .lightbox__previous svg,
+[dir="rtl"] .lightbox__next svg {
+  @apply -scale-x-100;
+}
+
+/**
+ * Element: counter - "k / n" at the top start
+ */
+.lightbox__counter {
+  grid-area: main;
+  @apply absolute start-0 top-0 z-10 m-3 rounded-full px-3 py-1.5 text-sm font-medium tabular-nums;
+  background-color: var(--lightbox-control-bg);
+  color: var(--lightbox-control-fg);
+}
+
+/**
+ * Element: captions - title + description over the bottom of the carousel
+ */
+.lightbox__captions {
+  grid-area: main;
+  @apply pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-1 px-6 pt-9 pb-4;
+  background: linear-gradient(to top, color-mix(in oklab, black 70%, transparent), transparent);
+}
+
+.lightbox__captions-title {
+  @apply text-base font-semibold;
+}
+
+.lightbox__captions-description {
+  @apply text-sm text-white/80;
+}
+
+/**
+ * Element: thumbnails - strip of slide buttons (grid area from the cdk)
+ */
+.lightbox__thumbnails {
+  @apply z-10;
+}
+
+.lightbox__thumbnail {
+  @apply relative cursor-pointer border-white/20 bg-white/5 text-white/80 outline-none;
+  @apply transition-[border-color,opacity,transform] duration-(--duration-fast) motion-reduce:transition-none;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &[data-current] {
+    @apply border-white;
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    @apply ring-2 ring-focus ring-offset-2 ring-offset-black;
+  }
+}
+
+.lightbox__thumbnail-icon {
+  @apply size-6;
+}
+
+/**
+ * Element: inline - in-page lightbox root (size it with class / style)
+ */
+.lightbox__inline {
+  @apply overflow-hidden rounded-3xl bg-black text-white;
+  --lightbox-control-bg: color-mix(in oklab, black 45%, transparent);
+  --lightbox-control-fg: white;
+}

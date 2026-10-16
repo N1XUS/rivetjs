@@ -1,0 +1,18 @@
+/* Tailwind, the cdk variants and the optional starter theme. */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@import "@rivetjs/cdk/theme.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* Dialogs near the top: the middle of the frame is underlay, so a click there is "outside". */
+.rv-ModalOverlay {
+  align-items: flex-start;
+  padding-block-start: 1rem;
+}

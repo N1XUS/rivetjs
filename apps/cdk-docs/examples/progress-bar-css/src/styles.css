@@ -1,0 +1,48 @@
+/* Plain CSS: the default class; indeterminate = no aria-valuenow. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+  max-width: 280px;
+}
+.rv-ProgressBar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+}
+.rv-ProgressBar .track {
+  grid-column: span 2;
+  position: relative;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.rv-ProgressBar .fill {
+  width: var(--fill);
+  height: 100%;
+  background: #7c3aed;
+  transition: width 200ms;
+}
+.rv-ProgressBar:not([aria-valuenow]) .fill {
+  position: absolute;
+  width: 40%;
+  animation: slide 1.2s ease-in-out infinite;
+}
+@keyframes slide {
+  from {
+    left: -40%;
+  }
+  to {
+    left: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-ProgressBar:not([aria-valuenow]) .fill {
+    animation: none;
+  }
+}

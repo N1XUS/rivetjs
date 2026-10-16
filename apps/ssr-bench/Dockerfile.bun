@@ -1,0 +1,8 @@
+# Bun lanes: the exact built bundles + runtime node_modules of the Node lane image (compose additional context
+# `lane` = service:rivet-compiled), run by pinned official Bun. No rebuild, so bundle bytes are identical.
+FROM oven/bun:1.4.2@sha256:9114c058aeae42162ee16dd5084b95fe9473970bb6bcb5b232ab1630f0546895
+WORKDIR /workspace
+ENV NODE_ENV=production
+COPY --from=lane /workspace /workspace
+EXPOSE 8080
+CMD ["bun", "apps/ssr-bench/dist/server.mjs"]

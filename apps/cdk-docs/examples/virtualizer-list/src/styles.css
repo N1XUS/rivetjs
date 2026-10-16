@@ -1,0 +1,38 @@
+/* Plain CSS: the scroller (.rv-Virtualizer) and each positioned view (.rv-Virtualizer-item). */
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.rv-Virtualizer {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.rv-Virtualizer:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+.row {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+output {
+  color: #475569;
+}
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+button {
+  font: inherit;
+}

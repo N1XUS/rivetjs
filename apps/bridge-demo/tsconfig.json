@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["*.ts", "components/*.ts", "components/*.tsx", "rivet/*.ts", "rivet/src/**/*.ts", "rivet/src/**/*.tsx", "rivet/.rivet/routes.d.ts"],
+  "exclude": ["node_modules", "next", "rivet/dist*", "results"]
+}

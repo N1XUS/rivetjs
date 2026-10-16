@@ -1,0 +1,30 @@
+# Hugo lane of apps/editorial-bench. Content dir is passed on the command line (build.sh).
+baseURL = "/"
+languageCode = "en"
+title = "The Daily Fixture"
+disableKinds = ["rss", "sitemap", "taxonomy", "section", "robotstxt", "404"]
+relativeURLs = false
+
+[taxonomies]
+  tag = "tags"
+  authorslug = "authorslug"
+
+[permalinks]
+  [permalinks.page]
+    articles = "/articles/:slug/"
+  [permalinks.term]
+    tags = "/tags/:slug/"
+    authorslug = "/authors/:slug/"
+
+[pagination]
+  pagerSize = 20
+  path = "page"
+
+# Parity with marked: no syntax highlighting, no typographer, no heading ids.
+[markup]
+  [markup.highlight]
+    codeFences = false
+  [markup.goldmark.extensions]
+    typographer = false
+  [markup.goldmark.parser]
+    autoHeadingID = false

@@ -1,0 +1,72 @@
+/* Plain CSS, ported from the Angular CDK "table drag-drop (Material)" example (app.css); colours are variables so the
+   example follows the docs' light / dark theme (the frame's <html data-theme>). */
+:root {
+  --example-bg: #fff;
+  --example-fg: rgba(0, 0, 0, 0.87);
+  --example-surface: #fff;
+  --example-border: #ccc;
+  --example-muted: #ccc;
+  --example-muted-border: #999;
+}
+:root[data-theme="dark"] {
+  --example-bg: #111113;
+  --example-fg: rgba(255, 255, 255, 0.87);
+  --example-surface: #1c1c1f;
+  --example-border: #3f3f46;
+  --example-muted: #3f3f46;
+  --example-muted-border: #71717a;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--example-bg);
+  color: var(--example-fg);
+  font-family: sans-serif;
+}
+
+.example-table {
+  width: 100%;
+  max-width: 500px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.example-table th,
+.example-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: solid 1px var(--example-border);
+}
+
+.example-table tbody tr {
+  cursor: move;
+  background: var(--example-surface);
+}
+
+/* The preview is a <tr> moved to <body>: keep its cells laid out like the table's. */
+.cdk-drag-preview {
+  display: table;
+  box-sizing: border-box;
+  box-shadow:
+    0 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  font-size: 14px;
+}
+
+.cdk-drag-preview td {
+  padding: 12px 16px;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}

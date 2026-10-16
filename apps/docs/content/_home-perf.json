@@ -1,0 +1,32 @@
+{
+  "loader": {
+    "bytes": 4264,
+    "brotli": 1967
+  },
+  "cdk": {
+    "tests": 5217,
+    "a11y": 613
+  },
+  "inlineJs": {
+    "bytes": 7714,
+    "scripts": 3
+  },
+  "html": {
+    "bytes": 125414,
+    "brotli": 23633
+  },
+  "lighthouse": {
+    "date": "2026-10-12",
+    "score": 100,
+    "lcp": 903,
+    "fcp": 806,
+    "tbt": 0,
+    "cls": 0,
+    "nav": {
+      "lcp": 688,
+      "lcpAfterResponse": 681,
+      "cls": 0,
+      "jsBytes": 0
+    }
+  }
+}

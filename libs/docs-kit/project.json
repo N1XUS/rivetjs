@@ -1,0 +1,16 @@
+{
+  "name": "docs-kit",
+  "projectType": "library",
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project docs-kit" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/docs-kit" }
+    }
+  }
+}

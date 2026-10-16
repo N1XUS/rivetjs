@@ -1,0 +1,23 @@
+{
+  "name": "island-bench",
+  "root": "apps/island-bench",
+  "projectType": "application",
+  "implicitDependencies": ["compiler", "runtime", "bridge", "bridge-react", "bridge-preact"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node apps/island-bench/run.ts --phases build" }
+    },
+    "benchmark": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node apps/island-bench/run.ts" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p apps/island-bench" }
+    }
+  }
+}

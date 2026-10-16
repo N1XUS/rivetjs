@@ -1,0 +1,22 @@
+# @rivetjs/docs-kit/tools/llms
+> **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
+
+AI outputs of a docs site (llmstxt.org format) + the page data `@rivetjs/mcp` bundles. Pure function of committed sources: `content/**.md` + `_nav.ts` + `_charts.ts`, `examples/<id>/` (example.ts `show` files), committed `src/generated/api.json`. Nothing generated (examples.json, routes) is read; nothing is written except by `writeLlms`.
+
+## Layout
+- `source.ts`: `loadLlmsSource(root) → LlmsSource` (site, areas, `pages: LlmsPage[]` in nav order with Markdown bodies + nav section / group, `api: ApiModel`, `examples: Map<id, LlmsExample>` (shown files as plain text via `examples.ts` `shownFile`, `usedOn` content paths), glossary `terms`, `charts`); `hrefOf(path)`, `fenceLang(path)`, `listTree(dir)`.
+- `markdown.ts`: `llmsMarkdown(body, ctx)`: same parser as the content pipeline (remark + gfm + directive); author text kept byte for byte (source slices), only docs syntax replaced: `::example{id}` → `**Example: title.** summary` + one fence per shown file (`tsx title="path"`), `::api{symbol}` → name, entry, summary, signatures, reference link, `::starter` → create command, `::chart` → table (formatted with the chart's `digits`, stat ratio via `advantage`), `:::note|tip|warning|gotcha[label]` → `> **Kind: label.**` blockquote, `:term[x]` → `x`, `:kbd[x]` → `` `x` ``, `site:` links → sibling origin, internal links → `ctx.link({ href, kind: page | site | external })`. Multi-line replacements inside list items / quotes keep the line prefix. Unknown example / symbol / chart = error (as in the content build). `exampleMarkdown`, `symbolMarkdown(symbol, level)` (kind, entry, runs on, summary / remarks, signatures, params + members tables, @example), `fence(text, info)` (backtick run longer than any inside).
+- `generate.ts`: `generateLlms(root, { link? }) → LlmsOutput { site, app, docs: LlmsDoc[] (kind page | api | example, href, file, title, description, section, markdown, tags), files: Map<file, text> }`; `llmsFrom(source, options)`; `mdFileOf(href)` (`/a/b/` → `a/b.md`, `/` → `index.md`); `writeLlms(output, dir)`; `llmsDigest(output)` (sha256 over sorted files); `llmsProblems(output, source)` (page without Markdown, same-origin `.md` link to no file); `llmsCommand(root, args)`.
+- Files: `llms.txt` (H1 site name, `>` tagline, note line (llms-full, sibling `llms.txt`, `npx @rivetjs/mcp`), `## <nav section>` page links `[title](<origin>/<page>.md): description`, `## API reference` (one `.md` per API entry), `## Optional` (examples)), `llms-full.txt` (every content page, examples inlined; API entries not included: too large, separate files), `<page>.md` (`# title`, `> description`, `Source: <html url>`, body), `api/<entry>.md` (every symbol of the entry; symbol page links → entry file + `#name`), `examples/<id>.md`.
+- Measured 2026-10-08: docs 224 files 2.2 MB (llms.txt 41 KB, full 0.8 MB) 0.8 s; cdk-docs 874 / 10 MB (full 2.5 MB) 2.1 s; ui-docs 1140 / 11.9 MB (full 2.8 MB) 1.8 s; < 270 MB RSS each.
+
+## Wiring
+- `tools/build.ts` `buildSite`: after host files, `writeLlms(generateLlms(root), client)` → every build / serve rebuild ships them (`llms: N files` log line).
+- `cli.ts llms <app> [--out dir] [--check] [--dist dir]`: write (default `<app>/dist/client`), or `--check` (no writes): page coverage + dangling same-site `.md` links + two generations byte-identical; `--dist <dir>` also compares a built site's files (stale build). CI `gates` job runs `--check` for the three sites.
+- Ruling 2026-10-08 (AI-ECOSYSTEM lane): outputs are NOT checked in (≈ 24 MB over three sites, every content edit would churn them; built from committed sources in every docs build, so they cannot go stale against content). `--check` guards determinism + completeness instead.
+- `libs/mcp` builds its bundled data from `generateLlms` with its own `link` (site-qualified paths), so MCP docs and llms.txt never diverge.
+
+## Gotchas
+- Links in the outputs use `site.origin` (env `DOCS_ORIGIN` / `CDK_DOCS_ORIGIN` / `UI_DOCS_ORIGIN`; dev default `http://127.0.0.1:<port>`): production builds must set the origins, as for canonical URLs.
+- `serve --dev` does not serve `/llms.txt` (dev server has no build output); `serve` (built site) does.
+- Tests: `tests/llms.test.ts` (conversion cases + apps/docs end to end).

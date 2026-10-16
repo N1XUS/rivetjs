@@ -1,0 +1,31 @@
+/* The optional starter look (layer rivet.theme, zero specificity), then your own tokens. */
+@import "@rivetjs/cdk/theme.css";
+
+/* Unlayered rules beat the theme layer: override the --rv-* tokens on :root. */
+:root {
+  --rv-color-accent: light-dark(#7c3aed, #a78bfa);
+  --rv-color-accent-text: light-dark(#ffffff, #1e1b4b);
+  --rv-color-selected: light-dark(#ede9fe, #312e81);
+  --rv-radius: 0.75rem;
+}
+
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  background: var(--rv-color-surface);
+  color: var(--rv-color-text);
+}
+
+.demo {
+  display: grid;
+  gap: 0.75rem;
+  max-inline-size: 22rem;
+  margin: 1rem;
+}
+
+/* A one-off change for one part: a plain rule wins over the :where() theme rules. */
+.rv-ListBox {
+  max-inline-size: 12rem;
+}

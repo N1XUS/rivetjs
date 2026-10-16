@@ -1,0 +1,58 @@
+/* Plain CSS: the label (.rv-CheckboxButton, or .rv-Checkbox for the all-in-one) carries the state as data attributes. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 10px;
+  margin: 16px;
+}
+.rv-CheckboxButton,
+.rv-Checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.box {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.1s;
+}
+.box svg {
+  display: none;
+  color: white;
+}
+[data-hovered] > .box {
+  border-color: #334155;
+}
+[data-pressed] > .box {
+  transform: scale(0.9);
+}
+[data-selected] > .box,
+[data-indeterminate] > .box {
+  border-color: #0f766e;
+  background: #0f766e;
+}
+[data-selected]:not([data-indeterminate]) > .box .check,
+[data-indeterminate] > .box .dash {
+  display: block;
+}
+[data-invalid] > .box {
+  border-color: #b91c1c;
+}
+[data-focus-visible] > .box {
+  outline: 2px solid #14b8a6;
+  outline-offset: 2px;
+}
+[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

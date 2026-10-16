@@ -1,0 +1,27 @@
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 16px;
+}
+.field {
+  display: grid;
+  gap: 4px;
+}
+.rv-Input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font: inherit;
+}
+.rv-Input[data-invalid] {
+  border-color: #b91c1c;
+}
+.rv-Text {
+  color: #64748b;
+  font-size: 12px;
+}

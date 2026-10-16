@@ -1,0 +1,8 @@
+/* @rivetjs/router Tailwind v4 variants: `@import "@rivetjs/router/tailwind.css";` after `@import "tailwindcss";`.
+   nav-pending:  while the navigation indicator shows (html[data-rivet-pending], after the delay)
+   link-pending: on the clicked link until the new page commits (a[data-rivet-pending])
+   nav-back / nav-forward: during a back / forward transition (html[data-rivet-transition]) */
+@custom-variant nav-pending (html[data-rivet-pending] &);
+@custom-variant link-pending (&[data-rivet-pending]);
+@custom-variant nav-back (html[data-rivet-transition~="back"] &);
+@custom-variant nav-forward (html[data-rivet-transition~="forward"] &);

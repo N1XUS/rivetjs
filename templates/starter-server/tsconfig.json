@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    // TypeScript 6+ defaults this to true (TS2882 on `import "./styles.css"`); Vite handles side-effect imports.
+    "noUncheckedSideEffectImports": false,
+    "jsx": "preserve",
+    "jsxImportSource": "@rivetjs/runtime",
+    "types": ["node"],
+    "plugins": [{ "name": "@rivetjs/typescript-plugin" }]
+  },
+  "include": ["src", "*.ts", ".rivet/routes.d.ts"]
+}

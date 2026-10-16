@@ -1,0 +1,73 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no resizable panels). Behaviour = react-resizable-panels 4.14.3 (MIT, © Brian Vaughn) via @rivetjs/cdk/resizable; API + anatomy = shadcn/ui Resizable (MIT); look = HeroUI separator / focus / accent tokens. Flex layout, panel sizes and touch-action are inline styles of the cdk parts. */
+/* -------------------------------------------------------------------------------------------------
+ * Resizable Component Styles
+ * Block: resizable (parts: panel / handle[aria-orientation][data-separator] / grip)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: resizable - the panel group (cdk sets display:flex + flex-direction inline)
+ */
+.resizable {
+  @apply size-full;
+}
+
+/**
+ * Element: panel - the inner element of a cdk panel (cdk sets overflow:auto inline)
+ */
+.resizable__panel {
+  @apply size-full;
+}
+
+/**
+ * Element: handle - the separator line; a wider invisible hit area via ::after.
+ * aria-orientation = the line's orientation ("vertical" in a horizontal group).
+ */
+.resizable__handle {
+  @apply relative flex w-px items-center justify-center bg-separator outline-none;
+  cursor: col-resize;
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  &::after {
+    content: "";
+    @apply absolute inset-y-0 left-1/2 w-1 -translate-x-1/2;
+  }
+
+  &[aria-orientation="horizontal"] {
+    @apply h-px w-full;
+    cursor: row-resize;
+
+    &::after {
+      @apply inset-x-0 inset-y-auto top-1/2 left-0 h-1 w-full translate-x-0 -translate-y-1/2;
+    }
+  }
+
+  &[data-separator="hover"],
+  &[data-separator="active"] {
+    @apply bg-accent;
+  }
+
+  &:focus-visible,
+  &[data-separator="focus"]:focus-visible {
+    @apply status-focused bg-accent;
+  }
+
+  &[data-separator="disabled"] {
+    @apply status-disabled;
+  }
+}
+
+/**
+ * Element: grip - the optional handle knob (withHandle), lucide grip icon inside
+ */
+.resizable__grip {
+  @apply z-10 flex h-4 w-3 shrink-0 items-center justify-center rounded-sm border border-separator bg-surface text-muted;
+
+  .resizable__handle[aria-orientation="horizontal"] > & {
+    @apply h-3 w-4;
+  }
+
+  & svg {
+    @apply size-2.5;
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "motion",
+  "projectType": "library",
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/motion" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project motion --project motion-browser --passWithNoTests" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p libs/motion" }
+    }
+  }
+}

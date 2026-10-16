@@ -1,0 +1,46 @@
+{
+  "name": "ssr-bench",
+  "root": "apps/ssr-bench",
+  "projectType": "application",
+  "implicitDependencies": [
+    "compiler",
+    "runtime"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node apps/ssr-bench/build.ts"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false,
+      "options": {
+        "commands": [
+          "vitest run --project ssr-bench",
+          "node apps/ssr-bench/run-python.ts -m unittest discover -s apps/ssr-bench/tests -p 'test_*.py'"
+        ],
+        "parallel": false
+      }
+    },
+    "benchmark": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node apps/ssr-bench/run-python.ts apps/ssr-bench/benchmark.py"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node scripts/tsc.ts -p apps/ssr-bench"
+      }
+    }
+  }
+}

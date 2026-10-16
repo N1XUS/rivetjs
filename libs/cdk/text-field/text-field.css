@@ -1,0 +1,45 @@
+/* Ported from angular/components src/cdk/text-field/_index.scss (MIT, © Google LLC). */
+
+/* Autosize: no resize handle (the height is overwritten on the next input). */
+textarea.cdk-textarea-autosize {
+  resize: none;
+}
+
+/* Rivet zero-JS path (`autosizeProps({ native: true })`): the browser sizes the textarea to its
+   content; min / max rows come from custom properties. */
+textarea.cdk-textarea-autosize-native {
+  field-sizing: content;
+  min-block-size: calc(var(--cdk-autosize-min-rows, 1) * 1lh);
+  max-block-size: calc(var(--cdk-autosize-max-rows, infinity) * 1lh);
+}
+
+/* Applied while measuring; `!important` keeps user rules out of the measurement. 2px top / bottom
+   padding works around a Chrome measurement bug (subtracted afterwards). */
+textarea.cdk-textarea-autosize-measuring {
+  padding: 2px 0 !important;
+  box-sizing: content-box !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* Firefox: changing `overflow` breaks undo / redo (#16629), so measure with `height: 0` instead. */
+textarea.cdk-textarea-autosize-measuring-firefox {
+  padding: 2px 0 !important;
+  box-sizing: content-box !important;
+  height: 0 !important;
+}
+
+/* Autofill monitoring: empty keyframes whose `animationstart` reveals the autofill state. Chrome 80+
+   needs the 1ms delay for the event to fire. */
+@keyframes cdk-text-field-autofill-start {
+  /*!*/
+}
+@keyframes cdk-text-field-autofill-end {
+  /*!*/
+}
+.cdk-text-field-autofill-monitored:-webkit-autofill {
+  animation: cdk-text-field-autofill-start 0s 1ms;
+}
+.cdk-text-field-autofill-monitored:not(:-webkit-autofill) {
+  animation: cdk-text-field-autofill-end 0s 1ms;
+}

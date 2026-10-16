@@ -1,0 +1,60 @@
+// Ported from react-resizable-panels (lib/global/mutable-state/interactions.test.ts, v4.14.3), MIT, © Brian Vaughn.
+// Rivet: upstream test kept as is; import specifiers point at libs/cdk/resizable/engine (`.ts`); suite setup (upstream vitest.setup.ts) imported first.
+import "../../setup.ts";
+import { afterEach, expect, test } from "vitest";
+import { calculateHitRegions } from "../../../../resizable/engine/global/dom/calculateHitRegions.ts";
+import { mockGroup } from "../test/mockGroup.ts";
+import { calculateResizePreviews } from "../../../../resizable/engine/global/utils/calculateResizePreviews.ts";
+import { getInteractionState, removeAxisFromInteraction, updateInteractionState } from "../../../../resizable/engine/global/mutable-state/interactions.ts";
+
+afterEach(() => {
+  updateInteractionState({ cursorFlags: 0, state: "inactive" });
+});
+
+test("removing a group preserves the other group in a shared drag", () => {
+  const groups = [0, 100].map((top) => {
+    const group = mockGroup(new DOMRect(0, top, 200, 100));
+    group.addPanel(new DOMRect(0, 0, 100, 100));
+    group.addPanel(new DOMRect(100, 0, 100, 100));
+    return group;
+  });
+  const hitRegions = groups.flatMap((group) => calculateHitRegions({ axis: group }));
+  const initialLayoutMap = new Map(
+    groups.map((group) => [
+      group,
+      {
+        [group.items[0].id]: 50,
+        [group.items[1].id]: 50,
+      },
+    ]),
+  );
+  const previews = groups.flatMap((group) => calculateResizePreviews(group, hitRegions));
+
+  updateInteractionState({
+    cursorFlags: 0,
+    didPointerMove: false,
+    hitRegions,
+    initialLayoutMap,
+    pointerDownAtPoint: { x: 100, y: 100 },
+    previewLayoutMap: new Map(initialLayoutMap),
+    previews,
+    state: "active",
+  });
+
+  removeAxisFromInteraction(groups[0]);
+
+  const interaction = getInteractionState();
+  expect(interaction.state).toBe("active");
+  if (interaction.state !== "active") {
+    throw Error("Expected active interaction");
+  }
+  expect(interaction.hitRegions).toEqual([hitRegions[1]]);
+  expect(interaction.previews).toEqual([previews[1]]);
+  expect(interaction.previews[0]).toBe(previews[1]);
+  expect(interaction.initialLayoutMap.has(groups[0])).toBe(false);
+  expect(interaction.previewLayoutMap.has(groups[0])).toBe(false);
+  expect(interaction.initialLayoutMap.get(groups[1])).toBe(initialLayoutMap.get(groups[1]));
+
+  removeAxisFromInteraction(groups[1]);
+  expect(getInteractionState().state).toBe("inactive");
+});

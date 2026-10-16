@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@rivetjs/router/tailwind.css";
+@import "@rivetjs/router/transitions.css";
+@source "./**/*.{ts,tsx}";
+
+/* The morph between a thumbnail and the big photo takes a little longer than the page fade. */
+::view-transition-group(*.photo) {
+  animation-duration: 300ms;
+}

@@ -1,0 +1,9 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext", "moduleResolution": "bundler", "jsxImportSource": "solid-js",
+    "strict": false, "types": ["node", "vite/client"],
+    "paths": { "solid-js": ["../../../bench-stable/node_modules/solid-js/types/index.d.ts"], "solid-js/*": ["../../../bench-stable/node_modules/solid-js/*"] }
+  },
+  "include": ["src"]
+}

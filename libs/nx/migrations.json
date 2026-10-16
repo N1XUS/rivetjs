@@ -1,0 +1,10 @@
+{
+  "generators": {
+    "example-noop": {
+      "version": "0.0.1",
+      "description": "Example migration that changes nothing (the path future breaking releases follow).",
+      "implementation": "./migrations/0.0.1/example-noop"
+    }
+  },
+  "packageJsonUpdates": {}
+}

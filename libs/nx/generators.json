@@ -1,0 +1,66 @@
+{
+  "name": "@rivetjs/nx",
+  "version": "0.1",
+  "generators": {
+    "preset": {
+      "factory": "./generators/preset/generator",
+      "schema": "./generators/preset/schema.json",
+      "description": "Workspace preset: npx create-nx-workspace --preset=@rivetjs/nx (init + a first Rivet app).",
+      "x-use-standalone-layout": false,
+      "hidden": true
+    },
+    "init": {
+      "factory": "./generators/init/generator",
+      "schema": "./generators/init/schema.json",
+      "description": "Add @rivetjs/nx to a workspace: Rivet tooling dependencies, the inference plugin in nx.json.",
+      "hidden": true
+    },
+    "application": {
+      "factory": "./generators/application/generator",
+      "schema": "./generators/application/schema.json",
+      "aliases": ["app"],
+      "x-type": "application",
+      "description": "Create a Rivet app from a create-rivet starter (static, server, ui, minimal)."
+    },
+    "library": {
+      "factory": "./generators/library/generator",
+      "schema": "./generators/library/schema.json",
+      "aliases": ["lib"],
+      "x-type": "library",
+      "description": "Create a Rivet component library (tree-shakeable subpath exports, Vitest, optional package build)."
+    },
+    "component": {
+      "factory": "./generators/component/generator",
+      "schema": "./generators/component/schema.json",
+      "aliases": ["c"],
+      "description": "Add a resumable component (+ test, optional story route)."
+    },
+    "route": {
+      "factory": "./generators/route/generator",
+      "schema": "./generators/route/schema.json",
+      "aliases": ["r", "page"],
+      "description": "Add a file route: dynamic segments, serverLoad, serverActions, serverGuard, folder layout."
+    },
+    "layout": {
+      "factory": "./generators/layout/generator",
+      "schema": "./generators/layout/schema.json",
+      "description": "Add a _layout.tsx to a routes folder (optional serverGuard)."
+    },
+    "api-route": {
+      "factory": "./generators/api-route/generator",
+      "schema": "./generators/api-route/schema.json",
+      "aliases": ["endpoint"],
+      "description": "Add an endpoint route (onGet / onPost / … request handlers)."
+    },
+    "ui-setup": {
+      "factory": "./generators/ui-setup/generator",
+      "schema": "./generators/ui-setup/schema.json",
+      "description": "Add @rivetjs/ui + Tailwind v4 + its styles to an app."
+    },
+    "i18n-setup": {
+      "factory": "./generators/i18n-setup/generator",
+      "schema": "./generators/i18n-setup/schema.json",
+      "description": "Add compile-time i18n (@rivetjs/i18n): config, catalogs, Vite plugin."
+    }
+  }
+}

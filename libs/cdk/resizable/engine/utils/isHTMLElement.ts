@@ -1,0 +1,6 @@
+// Ported from react-resizable-panels (lib/utils/isHTMLElement.ts, v4.14.3), MIT, © Brian Vaughn.
+// Rivet: engine file kept as upstream (framework-free); `.ts` import specifiers.
+// Detects HTMLElement without requiring instanceof and browser globals
+export function isHTMLElement(value: unknown): value is HTMLElement {
+  return value !== null && typeof value === "object" && "nodeType" in value && value.nodeType === Node.ELEMENT_NODE;
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["*.ts", "lanes/rivet-*/*.ts", "lanes/rivet-*/*.tsx", "components/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "results",
+    "lanes/*/node_modules",
+    "lanes/*/dist",
+    "lanes/next/.next",
+    "lanes/astro-react/.astro",
+    "lanes/astro-preact/.astro"
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "create-rivet",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Create a Rivet app: npm create rivet@latest",
+  "keywords": [
+    "rivet",
+    "create",
+    "starter",
+    "template",
+    "jsx",
+    "ssr",
+    "resumable"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./deploy": {
+      "types": "./deploy.ts",
+      "default": "./deploy.ts"
+    }
+  },
+  "bin": {
+    "create-rivet": "./cli.ts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/create-rivet",
+    "bundle": "./bundle.ts"
+  }
+}

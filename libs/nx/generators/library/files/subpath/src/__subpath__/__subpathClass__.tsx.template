@@ -1,0 +1,10 @@
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export interface <%= subpathClass %>Props {
+  children?: Content;
+}
+
+/** <%= subpathClass %> (`<%= importPath %>/<%= subpath %>`: imported alone, nothing else of the library is bundled). */
+export function <%= subpathClass %>(props: <%= subpathClass %>Props) {
+  return <div class="<%= subpath %>">{props.children}</div>;
+}

@@ -1,0 +1,30 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Button events",
+  summary: "Every Button callback logged: press start, up, end, change and press with the pointer type, plus click, focus, blur and key events.",
+  tags: ["button", "events"],
+  status: "experimental",
+  frame: { height: "sm" },
+  show: ["src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#save", "type", "button"] },
+    { attr: ["#save", "class", "rv-Button"] },
+    { click: "#save" },
+    { expect: ["#log", "start:mouse"] },
+    { expect: ["#log", "up:mouse"] },
+    { expect: ["#log", "end:mouse"] },
+    { expect: ["#log", "change:true"] },
+    { expect: ["#log", "change:false"] },
+    { expect: ["#log", "press:mouse"] },
+    { expect: ["#log", "click"] },
+    { expect: ["#log", "focus"] },
+    { expect: ["#count", "Pressed 1 time"] },
+    { press: ["#save", "Enter"] },
+    { expect: ["#log", "keydown:Enter"] },
+    { expect: ["#log", "press:keyboard"] },
+    { expect: ["#count", "Pressed 2 times"] },
+    { key: "Tab" },
+    { expect: ["#log", "blur"] },
+  ],
+});

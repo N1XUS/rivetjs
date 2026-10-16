@@ -1,0 +1,95 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no rating). Feature set inspired by HeroUI Pro's public Rating docs; independent implementation on HeroUI tokens. Stars = lucide `Star` icons (an outline layer + a filled layer clipped to the star's fill). Interactive ratings are native radios: the filled stars and the hover preview are CSS only (`:checked` / `:hover` with `:has()`), nothing runs before input. */
+/* -------------------------------------------------------------------------------------------------
+ * Rating Component Styles
+ * Block: rating (parts: item / star / fill / value)
+ * Modifiers: rating--sm / --md / --lg, rating--readonly
+ * Variables: --rating-color (filled star), --rating-empty (empty star), --rating-size, --rating-fill (per star, 0%…100%)
+ * -----------------------------------------------------------------------------------------------*/
+
+.rating {
+  --rating-color: var(--warning);
+  --rating-empty: color-mix(in oklab, var(--muted) 45%, transparent);
+  --rating-size: 1.25rem;
+  @apply inline-flex items-center gap-0.5 align-middle;
+
+  &[data-disabled="true"] {
+    @apply opacity-(--disabled-opacity);
+  }
+}
+
+.rating--sm {
+  --rating-size: 1rem;
+}
+
+.rating--lg {
+  --rating-size: 1.75rem;
+}
+
+/* Element: item - one star (a label around a visually hidden radio when interactive) */
+.rating__item {
+  --rating-fill: 0%;
+  @apply relative inline-flex shrink-0 rounded-sm;
+  width: var(--rating-size);
+  height: var(--rating-size);
+
+  .rating:not(.rating--readonly):not([data-disabled="true"]) & {
+    @apply cursor-(--cursor-interactive);
+  }
+
+  &:has(:focus-visible) {
+    @apply status-focused;
+  }
+}
+
+/* Element: star - the outline (empty) layer and the filled layer */
+.rating__star {
+  @apply absolute inset-0 size-full;
+  color: var(--rating-empty);
+  fill: currentColor;
+  transition: color var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth);
+}
+
+.rating__fill {
+  @apply absolute inset-0 size-full;
+  color: var(--rating-color);
+  fill: currentColor;
+  clip-path: inset(0 calc(100% - var(--rating-fill, 0%)) 0 0);
+  transition: clip-path var(--duration-fast) var(--ease-smooth), scale var(--duration-fast) var(--ease-smooth);
+
+  &:dir(rtl) {
+    clip-path: inset(0 0 0 calc(100% - var(--rating-fill, 0%)));
+  }
+}
+
+/* Interactive: the checked star and the ones before it are filled; a hovered group previews up to the pointer. */
+.rating:not(.rating--readonly) {
+  .rating__item:has(input:checked),
+  .rating__item:has(~ .rating__item input:checked) {
+    --rating-fill: 100%;
+  }
+
+  &:not([data-disabled="true"]):hover .rating__item {
+    --rating-fill: 0%;
+  }
+
+  &:not([data-disabled="true"]) .rating__item:hover,
+  &:not([data-disabled="true"]) .rating__item:has(~ .rating__item:hover) {
+    --rating-fill: 100%;
+  }
+
+  &:not([data-disabled="true"]) .rating__item:hover .rating__fill {
+    scale: 1.12;
+  }
+}
+
+/* Element: value - an optional numeric value next to the stars */
+.rating__value {
+  @apply ms-1.5 text-sm font-medium text-foreground tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rating__star,
+  .rating__fill {
+    transition: none;
+  }
+}

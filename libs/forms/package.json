@@ -1,0 +1,68 @@
+{
+  "name": "@rivetjs/forms",
+  "version": "0.0.0-experimental",
+  "description": "Resumable forms for Rivet: Standard Schema validation, progressive enhancement through route actions.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "development": "./dev.ts",
+      "default": "./index.ts"
+    },
+    "./array": {
+      "types": "./array.ts",
+      "default": "./array.ts"
+    },
+    "./components": {
+      "types": "./components.tsx",
+      "default": "./components.tsx"
+    },
+    "./scope": {
+      "types": "./scope.ts",
+      "default": "./scope.ts"
+    },
+    "./wizard": {
+      "types": "./wizard.ts",
+      "default": "./wizard.ts"
+    },
+    "./autosave": {
+      "types": "./autosave.ts",
+      "development": "./autosave-dev.ts",
+      "default": "./autosave.ts"
+    },
+    "./errors": {
+      "types": "./errors.ts",
+      "default": "./errors.ts"
+    },
+    "./server": {
+      "types": "./server/index.ts",
+      "browser": "./server/browser.ts",
+      "default": "./server/index.ts"
+    },
+    "./csrf": {
+      "types": "./csrf.ts",
+      "browser": "./server/browser.ts",
+      "default": "./csrf.ts"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental"
+  },
+  "peerDependencies": {
+    "@rivetjs/router": "0.0.0-experimental"
+  },
+  "devDependencies": {
+    "zod": "^3.25.0"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/forms"
+  }
+}

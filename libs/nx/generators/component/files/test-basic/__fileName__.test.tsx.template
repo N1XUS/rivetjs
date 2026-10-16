@@ -1,0 +1,10 @@
+import { expect, test } from "vitest";
+import { fire, render } from "@rivetjs/runtime/testing";
+import { <%= className %> } from "./<%= fileName %>.tsx";
+
+test("<%= className %> counts clicks", () => {
+  const view = render(() => <<%= className %> label="Count" />);
+  const button = view.find("button");
+  fire(button, "click");
+  expect(button.textContent).toBe("Count 1");
+});

@@ -1,0 +1,1701 @@
+// Ported from react-aria-components (src/Table.tsx: Table, TableHeader, Column, ColumnResizer,
+// TableBody, TableFooter, Row, Cell, TableLoadMoreItem, ResizableTableContainer, TableContext,
+// TableStateContext, TableColumnResizeStateContext, TableOptionsContext / useTableOptions,
+// RowFocusContext), Apache-2.0, © Adobe.
+//
+// A table displays data in rows and columns: keyboard navigation, row selection (checkboxes via
+// `<Checkbox slot="selection">`), sorting, column resizing, expandable rows (treegrid), links, actions.
+// Rivet:
+// - The collection is built from the content (`collectionOf`, B5 build mode) into `./collection.ts`
+//   `TableCollection` (RAC's internal class), flattened by the expanded keys and filtered by the
+//   SelectableCollectionContext `filter` in a computed; `CollectionRendererContext.CollectionRoot`
+//   renders the header / body / footer sections keyed by node key (resumed rows are adopted).
+// - State: `../state/table.ts` `createTableState` (signals + plain data); the react-stately `TableState`
+//   view (collection + SelectionManager instances) is rebuilt per event / binding. Handlers are inline
+//   arrows calling `./behaviour.ts` / `../grid/behaviour.ts` free functions with KEYS, never nodes.
+// - `TableStateContext` / `TableColumnResizeStateContext` provide ACCESSORS of the state views
+//   (`useContext(TableStateContext)!()`), not the views (deviation: views hold class instances).
+// - `tableOptions()` = RAC `useTableOptions()` (cdk naming: no `use*`).
+// - Render props are accessors (`class={({ isSelected }) => (isSelected() ? "on" : "")}`); `data-*`
+//   state values `"true"`; `class` = RAC `className` (defaults `rv-Table`, `rv-TableHeader`, `rv-Column`,
+//   `rv-ColumnResizer`, `rv-TableBody`, `rv-TableFooter`, `rv-Row`, `rv-Cell`, `rv-TableLoadingIndicator`,
+//   `rv-ResizableTableContainer`).
+// - react-aria `useDescription` elements (sort, sortable column, long-press, resizer descriptions) are
+//   rendered by the Table as hidden siblings after the `<table>` (server HTML carries them; a `<div>`
+//   inside `<table>` would be foster-parented by the HTML parser).
+// - Selection checkbox / expand button ids derive from the table id + row key (byte-stable server HTML).
+// Deviations:
+// - Native table elements only (`table` / `thead` / `tr` / `th` / `td`): the Virtualizer table layout
+//   (`isVirtualized` → `div` elements) is not wired yet.
+// - Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button) not wired yet (DnD lane).
+// - No `FocusScope` wrapper (nothing here reads its context); the SharedElementTransition scope is a `SharedElementContext` provider entry.
+// - Header placeholder cells (nested columns, react-stately level) render nothing — RAC renders
+//   `node.render` of a placeholder (no render: throws); RAC `Column` is a leaf, so RAC tables never
+//   have them.
+import { computed, createContext, provide, signal, untrack, useContext } from "@rivetjs/reactivity";
+import { For, Portal, Show, clientEffect, ref as elementRef } from "@rivetjs/runtime/dom";
+import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
+import {
+  Collection,
+  CollectionRendererContext,
+  DefaultCollectionRenderer,
+  collectionOf,
+  createBranchComponent,
+  createLeafComponent,
+  renderNodeAt,
+  type CollectionProps,
+} from "../collections/components.tsx";
+import { LoaderNode } from "../collections/base.ts";
+import type { GridNode } from "../collections/grid.ts";
+import type { DisabledBehavior, Key, Node, Selection, SelectionBehavior, SelectionMode, SortDescriptor, SortDirection } from "../collections/types.ts";
+import type { Signal } from "@rivetjs/reactivity";
+import { createTableState, tableState, type TableState, type TableStateData } from "../state/table.ts";
+import { resetGridFocusedKey } from "../state/grid.ts";
+import { createTableColumnResizeState, tableColumnResizeState, type ColumnSize, type TableColumnResizeState } from "../state/table-column-resize.ts";
+import type { ColumnStaticSize } from "../collections/table.ts";
+import {
+  gridBlur,
+  gridCellClick,
+  gridCellFocus,
+  gridCellKeyDown,
+  gridCellKeyDownCapture,
+  gridCellKeyUp,
+  gridCellPointerDown,
+  gridCellPointerUp,
+  gridFocus,
+  gridKeyDown,
+  gridKeyDownCapture,
+  gridMouseDown,
+  gridRowClick,
+  gridRowDoubleClick,
+  gridRowDragStart,
+  gridRowFocus,
+  gridRowKeyDown,
+  gridRowKeyUp,
+  gridRowPointerCancel,
+  gridRowPointerDown,
+  gridRowPointerUp,
+  gridShared,
+  highlightSelectionDescription,
+  type GridCellProps,
+} from "../grid/behaviour.ts";
+import {
+  getRowLabelledBy,
+  normalizeKey,
+  tableCellProps,
+  tableColumnHeaderPress,
+  tableColumnHeaderPressable,
+  tableColumnHeaderProps,
+  tableGridProps,
+  tableHeaderRowProps,
+  tableProps,
+  tableRowExpandPress,
+  tableRowKeyDown,
+  tableRowProps,
+  tableSelectAllCheckboxChange,
+  tableSelectAllCheckboxProps,
+  tableSelectionCheckboxChange,
+  tableSelectionCheckboxProps,
+  tableSortDescription,
+  type AriaTableColumnHeaderProps,
+  type AriaTableProps,
+  type TableRowProps as AriaTableRowProps,
+  type TableStateLike,
+} from "./behaviour.ts";
+import { focusColumnResizer, tableColumnResizeProps } from "./column-resize.tsx";
+import { TableBodyNode, TableCellNode, TableCollection, TableColumnNode, TableFooterNode, TableHeaderNode, TableRowNode } from "./collection.ts";
+import { strings as tableStrings } from "./intl.ts";
+import { strings as racStrings } from "./rac-intl.ts";
+import { formatMessage } from "../_adapters/intl.ts";
+import {
+  pressClick,
+  pressDragStart,
+  pressKeyDown,
+  pressMouseDown,
+  pressPointerDown,
+  pressPointerEnter,
+  pressPointerLeave,
+  pressPointerUp,
+  type PressOptions,
+} from "../button/press.ts";
+import { ButtonContext } from "../button/index.tsx";
+import { CheckboxContext, CheckboxFieldContext } from "../checkbox/index.tsx";
+import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
+import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";
+import { FieldInputContext, SelectableCollectionContext, type SelectableCollectionContextValue } from "../autocomplete/contexts.ts";
+import {
+  DEFAULT_SLOT,
+  Provider,
+  contextProps,
+  mergeRefValues,
+  renderProps,
+  resumableContext,
+  type ContextValue,
+  type RefValue,
+  type RenderProps,
+  type SlotProps,
+  type StyleRenderProps,
+} from "../slots/index.tsx";
+import {
+  dataBool,
+  focusStateBlur,
+  focusStateFocus,
+  focusStateIn,
+  hoverStateEnter,
+  hoverStateLeave,
+  hoverStateOver,
+  type InteractionStateOptions,
+} from "../utils/data-attrs.tsx";
+import { useFocusRing } from "../focus/focus-ring.tsx";
+import { focusSafely, getFocusableTreeWalker } from "../focus/index.ts";
+import { getItemElement } from "../collections/dom.ts";
+import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
+import { isScrollable } from "../utils/dom.ts";
+import { useId } from "../utils/id.ts";
+import { useLocale } from "../i18n/index.ts";
+import { loadMoreSentinel, type LoadMoreSentinelProps } from "../utils/load-more-sentinel.tsx";
+import { useRouter, type LinkDOMProps } from "../utils/links.tsx";
+import type { HoverEvents } from "../utils/types.ts";
+import type { PressEvents } from "../interactions/press.tsx";
+import { hasLive, liveKeys } from "../utils/live.tsx";
+import { liveRenderProps } from "../slots/index.tsx";
+
+export { TableCollection } from "./collection.ts";
+export type { TableState } from "../state/table.ts";
+export type { TableColumnResizeState, ColumnSize } from "../state/table-column-resize.ts";
+export type { ColumnStaticSize } from "../collections/table.ts";
+
+type MaybeAccessor<T> = T | (() => T);
+const read = <T,>(value: MaybeAccessor<T>): T => (typeof value === "function" ? (value as () => T)() : value);
+type Px = Record<string, string | number | undefined>;
+
+// ---------------------------------------------------------------------------------------------
+// Contexts
+// ---------------------------------------------------------------------------------------------
+
+/** RAC `TableContext`: props for the Tables inside a component, optionally per `slot`. */
+export const TableContext = resumableContext(createContext<ContextValue<TableProps, HTMLTableElement>>(null, { id: "rv-table" }));
+/** RAC `TableStateContext` (Rivet: an accessor of the state view of the enclosing Table). */
+export const TableStateContext = resumableContext(createContext<(() => TableState<any>) | null>(null, { id: "rv-table-state" }));
+/** RAC `TableColumnResizeStateContext` (Rivet: an accessor; null outside a ResizableTableContainer). */
+export const TableColumnResizeStateContext = resumableContext(
+  createContext<(() => TableColumnResizeState<unknown>) | null>(null, { id: "rv-table-column-resize-state" }),
+);
+
+export interface TableOptionsContextValue {
+  /** The type of selection that is allowed in the table. */
+  selectionMode: SelectionMode;
+  /** The selection behavior for the table. If selectionMode is `"none"`, this will be `null`. */
+  selectionBehavior: SelectionBehavior | null;
+  /** Whether the table allows empty selection. */
+  disallowEmptySelection: boolean;
+  /** Whether the table allows rows to be dragged. */
+  allowsDragging: boolean;
+}
+
+const TableOptionsContext = resumableContext(createContext<TableOptionsContextValue | null>(null, { id: "rv-table-options" }));
+
+/** Returns options from the parent `<Table>` component (RAC `useTableOptions`). */
+export function tableOptions(): TableOptionsContextValue {
+  return useContext(TableOptionsContext)!;
+}
+
+export interface RowFocusContextValue {
+  /** Whether a descendant of the row has keyboard focus (accessor). */
+  isFocusVisibleWithinRow: () => boolean;
+}
+
+/** RAC `RowFocusContext` (Rivet: `isFocusVisibleWithinRow` is an accessor). */
+export const RowFocusContext = resumableContext(createContext<RowFocusContextValue>({ isFocusVisibleWithinRow: () => false }, { id: "rv-row-focus" }));
+
+/** What the Table shares with its parts (plain data + accessors). */
+interface TableInternal {
+  data: TableStateData;
+  /** The rendered (expanded + filtered) collection. */
+  collection: () => TableCollection<unknown>;
+  gridId: string;
+  locale: string;
+  direction: "ltr" | "rtl";
+  isVirtualized: boolean;
+  /** Hidden description element ids (react-aria `useDescription`). */
+  sortableDescriptionId: string;
+  resizerDescriptionId: string;
+}
+const TableInternalContext = resumableContext(createContext<TableInternal | null>(null, { id: "rv-table-internal" }));
+
+interface ResizableTableContainerContextValue {
+  /** The measured width of the scrollable element (react-aria `tableWidth`). */
+  tableWidth: Signal<number>;
+  /** Ref the Table merges into its own (RAC `tableRef`). */
+  tableRef: RefValue<HTMLElement>;
+  onResizeStart?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+  onResize?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+  onResizeEnd?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+}
+const ResizableTableContainerContext = resumableContext(
+  createContext<ResizableTableContainerContextValue | null>(null, { id: "rv-resizable-table-container" }),
+);
+
+interface ColumnResizerContextValue {
+  columnKey: Key;
+  /** The column header element. */
+  triggerRef: () => Element | null | undefined;
+}
+const ColumnResizerContext = resumableContext(createContext<ColumnResizerContextValue | null>(null, { id: "rv-column-resizer" }));
+
+const columnOf = (c: TableCollection<unknown>, key: Key): GridNode<unknown> | undefined => (c.getItem(key) ?? undefined) as GridNode<unknown> | undefined;
+
+// ---------------------------------------------------------------------------------------------
+// ResizableTableContainer
+// ---------------------------------------------------------------------------------------------
+
+export interface ResizableTableContainerProps extends GlobalDOMAttributes<HTMLDivElement> {
+  /** The CSS class of the element. Default "rv-ResizableTableContainer". */
+  class?: string | undefined;
+  style?: Px | undefined;
+  /** The Table (and anything else) inside the container. */
+  children?: unknown;
+  /** Handler that is called when a user starts a column resize. */
+  onResizeStart?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+  /** Handler that is called when a user performs a column resize (controlled widths: the Column `width` props). */
+  onResize?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+  /** Handler that is called after a user performs a column resize (store the widths). */
+  onResizeEnd?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
+  ref?: RefValue<HTMLDivElement> | undefined;
+}
+
+/** Wraps a Table to enable column resizing (ColumnResizer); measures the scrollable width. */
+export function ResizableTableContainer(props: ResizableTableContainerProps) {
+  const container = elementRef<HTMLDivElement>();
+  const containerRef = mergeRefValues<HTMLDivElement>(container as RefValue<HTMLDivElement>, props.ref);
+  const tableRef = elementRef<HTMLElement>();
+  const tableWidth = signal(0);
+  clientEffect(() => {
+    // Walk up the DOM from the Table to the ResizableTableContainer and stop when we reach the first
+    // scrollable element: what we measure to determine column widths (scrollbar widths).
+    const root = container();
+    let table = tableRef() as HTMLElement | null | undefined;
+    while (table && table !== root && !isScrollable(table)) table = table.parentElement;
+    const scroll = table ?? null;
+    if (!scroll) return;
+    tableWidth.set(scroll.clientWidth);
+    const view = scroll.ownerDocument.defaultView;
+    if (!view || typeof view.ResizeObserver === "undefined") return;
+    const observer = new view.ResizeObserver(() => tableWidth.set(scroll.clientWidth));
+    observer.observe(scroll, { box: "border-box" });
+    return () => observer.disconnect();
+  });
+  // Locals only (PROPS-CAPTURE: a literal reading `props.x` captures the whole props object).
+  const { onResizeStart, onResize, onResizeEnd } = props;
+  const ctx: ResizableTableContainerContextValue = { tableWidth, tableRef: tableRef as RefValue<HTMLElement>, onResizeStart, onResize, onResizeEnd };
+  const dom = globalDOMProps(props, ["style"]);
+  const className = props.class || "rv-ResizableTableContainer";
+  const style = props.style;
+  const children = props.children;
+  return (
+    <div {...dom} ref={containerRef as never} class={className} style={style}>
+      {provide(ResizableTableContainerContext, ctx, () => renderSlot(children)) as never}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Table
+// ---------------------------------------------------------------------------------------------
+
+/** Render props of `Table` (accessors; `@selector` = the matching attribute). */
+export interface TableRenderProps {
+  /** Whether the table is currently focused. @selector [data-focused] */
+  isFocused: () => boolean;
+  /** Whether the table is currently keyboard focused. @selector [data-focus-visible] */
+  isFocusVisible: () => boolean;
+  /** Whether the table is currently the active drop target. @selector [data-drop-target] */
+  isDropTarget: () => boolean;
+  /** State of the table (accessor of the view). */
+  state: () => TableState<unknown>;
+}
+
+export interface TableProps extends StyleRenderProps<TableRenderProps>, SlotProps, GlobalDOMAttributes<HTMLTableElement> {
+  /** The elements that make up the table: TableHeader, TableBody, Columns, Rows. */
+  children?: unknown;
+  id?: string | undefined;
+  "aria-label"?: string | undefined;
+  "aria-labelledby"?: string | undefined;
+  "aria-describedby"?: string | undefined;
+  "aria-details"?: string | undefined;
+  /** The type of selection that is allowed in the collection. Default "none". */
+  selectionMode?: SelectionMode | undefined;
+  /** How multiple selection should behave in the collection. Default "toggle". */
+  selectionBehavior?: SelectionBehavior | undefined;
+  /** The currently selected keys: a plain value (controlled) or a Signal (two-way). */
+  selectedKeys?: Signal<Selection> | "all" | Iterable<Key> | undefined;
+  /** The initial selected keys (uncontrolled). */
+  defaultSelectedKeys?: "all" | Iterable<Key> | undefined;
+  /** Handler that is called when the selection changes. */
+  onSelectionChange?: ((keys: Selection) => void) | undefined;
+  /** Whether the collection allows empty selection. */
+  disallowEmptySelection?: boolean | undefined;
+  /** The row keys that are disabled. */
+  disabledKeys?: Iterable<Key> | undefined;
+  /** Whether `disabledKeys` applies to all interactions, or only selection. Default "all". */
+  disabledBehavior?: DisabledBehavior | undefined;
+  /** The current sorted column and direction: a plain value (controlled) or a Signal (two-way). */
+  sortDescriptor?: SortDescriptor | Signal<SortDescriptor | null> | null | undefined;
+  /** Handler that is called when the sorted column or direction changes. */
+  onSortChange?: ((descriptor: SortDescriptor) => any) | undefined;
+  /** The currently expanded row keys: a plain value (controlled) or a Signal (two-way). */
+  expandedKeys?: Signal<Set<Key>> | Iterable<Key> | undefined;
+  /** The initial expanded row keys (uncontrolled). */
+  defaultExpandedKeys?: Iterable<Key> | undefined;
+  /** Handler that is called when rows are expanded or collapsed. */
+  onExpandedChange?: ((keys: Set<Key>) => any) | undefined;
+  /** The id of the column that displays hierarchical data (treegrid). */
+  treeColumn?: Key | undefined;
+  /** Handler that is called when a user performs an action on the row. */
+  onRowAction?: ((key: Key) => void) | undefined;
+  /** Handler that is called when a user performs an action on the cell. */
+  onCellAction?: ((key: Key) => void) | undefined;
+  /** Whether keyboard navigation to focusable elements within cells is via arrow keys or the tab key. Default "arrow". */
+  keyboardNavigationBehavior?: "arrow" | "tab" | undefined;
+  /** Whether pressing the escape key should clear selection. Default "clearSelection". */
+  escapeKeyBehavior?: "clearSelection" | "none" | undefined;
+  /** Whether selection should occur on press up instead of press down. */
+  shouldSelectOnPressUp?: boolean | undefined;
+  /** Whether typeahead navigation is disabled. */
+  disallowTypeAhead?: boolean | undefined;
+  ref?: RefValue<HTMLTableElement> | undefined;
+}
+
+/** Global DOM events / attributes Table handles itself; the user's run from its own handler. */
+const TABLE_OWNED = ["onMouseDown", "onScroll", "style", "id"] as const;
+
+/**
+ * A table displays data in rows and columns and enables a user to navigate its contents via
+ * directional navigation keys, and optionally supports row selection and sorting.
+ */
+export function Table(inProps: TableProps) {
+  const [tableCtxProps, tableCtxRef] = contextProps(inProps, inProps.ref, TableContext) as [TableProps, RefValue<HTMLTableElement> | undefined];
+  // RAC TableInner: the Autocomplete's SelectableCollectionContext merges under the table props.
+  const [props, userRef] = contextProps(
+    tableCtxProps as TableProps & SelectableCollectionContextValue<unknown>,
+    tableCtxRef as never,
+    SelectableCollectionContext as never,
+  ) as [TableProps & SelectableCollectionContextValue<unknown>, RefValue<HTMLTableElement> | undefined];
+  const container = useContext(ResizableTableContainerContext);
+  const renderer = useContext(CollectionRendererContext);
+  // Module component functions are not serializable: resolve the renderer at the call site (`(custom ?? Default).X(…)`).
+  const customRenderer = renderer === DefaultCollectionRenderer ? undefined : renderer;
+  const sharedElements: SharedElementScope = {};
+  const isVirtualized = !!renderer.isVirtualized;
+  const { locale, direction } = useLocale();
+
+  // Separate selection options so collection components can read them via tableOptions().
+  const selectionMode: SelectionMode = props.selectionMode ?? "none";
+  const selectionBehavior: SelectionBehavior = props.selectionBehavior ?? "toggle";
+  // Locals only (PROPS-CAPTURE: literals / closures reading `props.x` capture the whole props object).
+  const {
+    disallowEmptySelection,
+    onRowAction,
+    onCellAction,
+    shouldSelectOnPressUp,
+    keyboardNavigationBehavior,
+    escapeKeyBehavior,
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledby,
+    "aria-describedby": ariaDescribedby,
+    "aria-details": ariaDetails,
+  } = props;
+  const options: TableOptionsContextValue = {
+    selectionMode,
+    selectionBehavior: selectionMode === "none" ? null : selectionBehavior,
+    disallowEmptySelection: !!disallowEmptySelection,
+    allowsDragging: false,
+  };
+  const children = props.children;
+  // Object-literal arrows (not call-argument arrows): the build computed captures them, so they must be
+  // resumable closures.
+  const build = {
+    content: () => provide(TableOptionsContext, options, () => Collection({ children })),
+    createCollection: () => new TableCollection<unknown>(),
+  };
+  const built = collectionOf(build.content, build.createCollection);
+  const data = createTableState<unknown>({
+    selectionMode,
+    selectionBehavior,
+    // Live props: a controlled `selectedKeys={keys()}` stays live (accessor; never written).
+    selectedKeys: liveKeys(props, "selectedKeys"),
+    defaultSelectedKeys: props.defaultSelectedKeys,
+    onSelectionChange: props.onSelectionChange,
+    disallowEmptySelection: props.disallowEmptySelection,
+    disabledKeys: props.disabledKeys,
+    disabledBehavior: props.disabledBehavior ?? "all",
+    sortDescriptor: props.sortDescriptor,
+    onSortChange: props.onSortChange,
+    expandedKeys: liveKeys(props, "expandedKeys") as never,
+    defaultExpandedKeys: props.defaultExpandedKeys,
+    onExpandedChange: props.onExpandedChange,
+    treeColumn: props.treeColumn,
+  });
+  const filter = props.filter;
+  // RAC: collection.withExpandedKeys(expandedKeys), then UNSTABLE_useFilteredTableState(state, filter).
+  const collection = computed(() => {
+    const c = built().withExpandedKeys(data.expandedKeys.value());
+    return filter ? c.filter(filter as never) : c;
+  });
+  const shared = gridShared({ onRowAction, onCellAction, shouldSelectOnPressUp, keyboardNavigationBehavior });
+  const gridId = useId(props.id);
+  const view = (): TableStateLike<unknown> => ({ ...tableState<unknown>(data, collection()), grid: shared, gridId });
+  const sortDescriptionId = gridId + "-sort-description";
+  const descriptionId = gridId + "-description";
+  const internal: TableInternal = {
+    data,
+    collection,
+    gridId,
+    locale,
+    direction,
+    isVirtualized,
+    sortableDescriptionId: gridId + "-sortable-description",
+    resizerDescriptionId: gridId + "-resizer-description",
+  };
+  const aria: AriaTableProps = {
+    id: gridId,
+    "aria-label": ariaLabel,
+    "aria-labelledby": ariaLabelledby,
+    "aria-describedby": ariaDescribedby,
+    "aria-details": ariaDetails,
+    isVirtualized,
+    layoutDelegate: renderer.layoutDelegate,
+    escapeKeyBehavior,
+    keyboardNavigationBehavior,
+    onRowAction,
+    onCellAction,
+    shouldSelectOnPressUp,
+    locale,
+    direction,
+    descriptionId,
+    sortDescriptionId,
+  };
+  const disallowTypeAhead = props.disallowTypeAhead as MaybeAccessor<boolean | undefined>;
+  const shouldUseVirtualFocus = props.shouldUseVirtualFocus;
+  const onFocusInFromContext = props.onFocusIn as ((e: FocusEvent) => void) | undefined;
+  // The grid handler props for the event's table element (keyboard delegate over its DOM layout).
+  const gridOf = (v: TableStateLike<unknown>, e: Event) =>
+    tableGridProps({ ...aria, disallowTypeAhead: !!read(disallowTypeAhead) }, v, e.currentTarget as HTMLElement);
+
+  const el = elementRef<HTMLTableElement>();
+  const rootRef = mergeRefValues<HTMLTableElement>(mergeRefValues<HTMLTableElement>(el as RefValue<HTMLTableElement>, userRef), container?.tableRef as never);
+  // react-aria useHasTabbableChild (empty table with a tabbable child: the table leaves the tab order).
+  const hasTabbableChild = signal(false);
+  clientEffect(() => {
+    const root = el();
+    if (!root || collection().size !== 0) return;
+    const update = () => hasTabbableChild.set(!!getFocusableTreeWalker(root, { tabbable: true }).nextNode());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["tabIndex", "disabled"] });
+    return () => observer.disconnect();
+  });
+  // useGridState: reset the focused key when its row leaves the collection.
+  // `blurred`: target of the last focusout to nowhere (Rivet: Chromium fires focusout when the focused row is
+  // removed, jsdom / React's detached-node events do not — a blur whose target left the DOM keeps focus in the grid).
+  const focusMemo: { last: TableCollection<unknown> | null; blurred: Element | null } = { last: null, blurred: null };
+  clientEffect(() => {
+    const c = collection();
+    const selection = data.selectionState;
+    const previous = untrack(selection.focusedKey);
+    resetGridFocusedKey(data, focusMemo.last, c);
+    focusMemo.last = c;
+    // useSelectableItem's focus effect for the replacement key, after the rows re-rendered.
+    const next = untrack(selection.focusedKey);
+    if (next == null || next === previous) return;
+    const wasFocused = untrack(selection.isFocused);
+    queueMicrotask(() => {
+      const lost = focusMemo.blurred;
+      if (untrack(selection.focusedKey) !== next || !(wasFocused || (lost && !lost.isConnected))) return;
+      const item = getItemElement(el(), next);
+      if (item && item.ownerDocument.activeElement !== item) focusSafely(item);
+    });
+  });
+
+  // Column resizing (ResizableTableContainer): the layout state over the measured width.
+  const resizeData = container ? createTableColumnResizeState<unknown>({ tableWidth: container.tableWidth }) : null;
+  const layout = resizeData ? () => tableColumnResizeState(resizeData, view()) as TableColumnResizeState<unknown> : null;
+
+  const focused = signal(false);
+  const focusVisible = signal(false);
+  const rootInteraction: InteractionStateOptions = { states: { isFocused: focused, isFocusVisible: focusVisible } };
+  const values: TableRenderProps = {
+    isFocused: () => focused(),
+    isFocusVisible: () => focusVisible(),
+    isDropTarget: () => false,
+    state: view,
+  };
+  const rp = untrack(() =>
+    renderProps(
+      { class: props.class, style: props.style, values, defaultClassName: "rv-Table" },
+      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+    ),
+  );
+  const style = (): Px | undefined => {
+    const s = rp.style() as Px | undefined;
+    // due to https://bugzilla.mozilla.org/show_bug.cgi?id=1959353, we can't use "fit-content".
+    return resizeData && !isVirtualized ? { ...s, tableLayout: "fixed", width: "min-content" } : s;
+  };
+  const onMouseDown = props.onMouseDown;
+  const onScroll = props.onScroll;
+  const slot = props.slot || undefined;
+  const dom = globalDOMProps(props, TABLE_OWNED);
+  const attrs = () => {
+    const a = tableProps(aria, view(), hasTabbableChild()).gridProps;
+    // Autocomplete virtual focus: the collection itself is never tabbable.
+    return read(shouldUseVirtualFocus) ? { ...a, tabIndex: undefined } : a;
+  };
+  const sortDescription = () => tableSortDescription({ locale }, view());
+  const longPressDescription = () => {
+    const v = view();
+    return highlightSelectionDescription({
+      selectionManager: v.selectionManager,
+      hasItemActions: !!(shared.actions.onRowAction || shared.actions.onCellAction),
+      locale,
+    });
+  };
+  return (
+    <>
+      <table
+        {...dom}
+        {...attrs()}
+        ref={rootRef as never}
+        class={rp.class()}
+        style={style()}
+        slot={slot}
+        data-focused={dataBool(focused())}
+        data-focus-visible={dataBool(focusVisible())}
+        onKeyDownCapture={(e) => {
+          const v = view();
+          gridKeyDownCapture(e, gridOf(v, e), v);
+        }}
+        onKeyDown={(e) => {
+          const v = view();
+          gridKeyDown(e, gridOf(v, e), v);
+        }}
+        onFocusIn={(e) => {
+          const v = view();
+          gridFocus(e, gridOf(v, e), v);
+          onFocusInFromContext?.(e);
+        }}
+        onFocusOut={(e) => {
+          focusMemo.blurred = e.relatedTarget == null ? (e.target as Element) : null;
+          const v = view();
+          gridBlur(e, gridOf(v, e), v);
+        }}
+        onFocus={(e) => focusStateFocus(rootInteraction, e)}
+        onBlur={(e) => focusStateBlur(rootInteraction, e)}
+        onMouseDown={(e) => {
+          const v = view();
+          gridMouseDown(e, gridOf(v, e), v);
+          onMouseDown?.(e as never);
+        }}
+        onScroll={(e) => onScroll?.(e as never)}
+      >
+        <Provider
+          values={[
+            [TableStateContext, view],
+            [TableColumnResizeStateContext, layout],
+            [TableOptionsContext, options],
+            [TableInternalContext, internal],
+            [SelectableCollectionContext, null],
+            [FieldInputContext, null],
+            // RAC: the rows share one SharedElementTransition scope (a SelectionIndicator animates between them).
+            [SharedElementContext, sharedElements],
+          ]}
+        >
+          {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: collection as never, scrollRef: el }) as never}
+        </Provider>
+      </table>
+      <div id={sortDescriptionId} hidden>
+        {sortDescription() ?? ""}
+      </div>
+      <div id={internal.sortableDescriptionId} hidden>
+        {formatMessage(tableStrings, locale, "sortable")}
+      </div>
+      <div id={descriptionId} hidden>
+        {longPressDescription() ?? ""}
+      </div>
+      {resizeData ? (
+        <div id={internal.resizerDescriptionId} hidden>
+          {formatMessage(tableStrings, locale, "resizerDescription")}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// TableHeader
+// ---------------------------------------------------------------------------------------------
+
+export interface TableHeaderRenderProps {
+  /** Whether the table header is currently hovered with a mouse. @selector [data-hovered] */
+  isHovered: () => boolean;
+}
+
+export interface TableHeaderProps<T> extends StyleRenderProps<TableHeaderRenderProps>, HoverEvents, GlobalDOMAttributes<HTMLTableSectionElement> {
+  /** A list of table columns. */
+  columns?: Iterable<T> | (() => Iterable<T>) | undefined;
+  /** A list of `Column(s)` or a function. If the latter, a list of columns must be provided using the `columns` prop. */
+  children?: unknown | ((item: T) => unknown);
+  /** RAC parity; ignored (Rivet re-renders through signals). */
+  dependencies?: readonly unknown[] | undefined;
+  ref?: RefValue<HTMLTableSectionElement> | undefined;
+}
+
+const HOVER_OWNED = ["onPointerEnter", "onPointerLeave", "style"] as const;
+
+/** A header within a `<Table>`, containing the table columns. */
+export const TableHeader = /* @__PURE__ */ createBranchComponent(
+  TableHeaderNode,
+  function TableHeader<T>(props: TableHeaderProps<T>, ref: unknown) {
+    const internal = useContext(TableInternalContext)!;
+    const hovered = signal(false);
+    const { onHoverStart, onHoverChange, onHoverEnd } = props;
+    const interaction: InteractionStateOptions = {
+      onHoverStart,
+      onHoverChange,
+      onHoverEnd,
+      states: { isHovered: hovered },
+    };
+    const rp = untrack(() =>
+      renderProps(
+        { class: props.class, style: props.style, values: { isHovered: () => hovered() }, defaultClassName: "rv-TableHeader" },
+        hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+      ),
+    );
+    const { onPointerEnter, onPointerLeave } = props;
+    const dom = globalDOMProps(props, HOVER_OWNED);
+    const rowKeys = (): Key[] => internal.collection().headerRows.map((row) => row.key);
+    return (
+      <thead
+        {...dom}
+        role="rowgroup"
+        ref={ref as never}
+        class={rp.class()}
+        style={rp.style()}
+        onPointerEnter={(e) => {
+          hoverStateEnter(interaction, e);
+          onPointerEnter?.(e as never);
+        }}
+        onPointerLeave={(e) => {
+          hoverStateLeave(interaction, e);
+          onPointerLeave?.(e as never);
+        }}
+      >
+        <For each={rowKeys} by={(k: Key) => k}>
+          {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
+        </For>
+      </thead>
+    );
+  },
+  (props) => Collection({ items: props.columns as CollectionProps<unknown>["items"], children: props.children }),
+);
+
+function TableHeaderRow(props: { rowKey: Key }) {
+  const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
+  const internal = useContext(TableInternalContext)!;
+  const rowKey = props.rowKey;
+  const isVirtualized = internal.isVirtualized;
+  const locale = internal.locale;
+  const attrs = () => {
+    const v = view();
+    const row = v.collection.headerRows.find((r) => r.key === rowKey);
+    return row ? tableHeaderRowProps({ node: row, isVirtualized }, v).rowProps : { role: "row" };
+  };
+  // useTableSelectAllCheckbox
+  const checkboxProps = {
+    "aria-label": untrack(() => tableSelectAllCheckboxProps(view(), locale).checkboxProps["aria-label"]),
+    isSelected: () => tableSelectAllCheckboxProps(view(), locale).checkboxProps.isSelected,
+    isDisabled: () => tableSelectAllCheckboxProps(view(), locale).checkboxProps.isDisabled,
+    isIndeterminate: () => tableSelectAllCheckboxProps(view(), locale).checkboxProps.isIndeterminate,
+    onChange: () => tableSelectAllCheckboxChange(view()),
+  };
+  const cellKeys = (): Key[] => {
+    const keys: Key[] = [];
+    for (const n of internal.collection().getChildren(rowKey)) keys.push(n.key);
+    return keys;
+  };
+  return (
+    <tr {...attrs()}>
+      <Provider
+        values={[
+          [CheckboxContext, { slots: { selection: checkboxProps } }],
+          [CheckboxFieldContext, { slots: { selection: checkboxProps } }],
+        ]}
+      >
+        {/* Columns are in the key map; header placeholders (nested columns) render nothing. */}
+        <For each={cellKeys} by={(k: Key) => k}>
+          {(k: () => Key) => renderNodeAt(internal.collection, k) as never}
+        </For>
+      </Provider>
+    </tr>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Column
+// ---------------------------------------------------------------------------------------------
+
+export interface ColumnRenderProps {
+  /** @selector [data-hovered] */
+  isHovered: () => boolean;
+  /** @selector [data-pressed] */
+  isPressed: () => boolean;
+  /** @selector [data-focused] */
+  isFocused: () => boolean;
+  /** @selector [data-focus-visible] */
+  isFocusVisible: () => boolean;
+  /** Whether the column allows sorting. @selector [data-allows-sorting] */
+  allowsSorting: () => boolean;
+  /** The current sort direction. @selector [data-sort-direction="ascending | descending"] */
+  sortDirection: () => SortDirection | undefined;
+  /** Whether the column is currently being resized. @selector [data-resizing] */
+  isResizing: () => boolean;
+  /** Triggers sorting for this column in the given direction. */
+  sort(direction: SortDirection): void;
+  /** Starts column resizing if the table is contained in a `<ResizableTableContainer>` element. */
+  startResize(): void;
+}
+
+export interface ColumnProps extends RenderProps<ColumnRenderProps>, GlobalDOMAttributes<HTMLTableCellElement> {
+  /** The unique id of the column. */
+  id?: Key | undefined;
+  /** Whether the column allows sorting. */
+  allowsSorting?: boolean | undefined;
+  /** Whether a column is a row header and should be announced by assistive technology during row navigation. */
+  isRowHeader?: boolean | undefined;
+  /** A string representation of the column's contents, used for accessibility announcements. */
+  textValue?: string | undefined;
+  /** The width of the column (only inside a `<ResizableTableContainer>`). */
+  width?: ColumnSize | null | undefined;
+  /** The default width of the column (only inside a `<ResizableTableContainer>`). */
+  defaultWidth?: ColumnSize | null | undefined;
+  /** The minimum width of the column (only inside a `<ResizableTableContainer>`). */
+  minWidth?: ColumnStaticSize | null | undefined;
+  /** The maximum width of the column (only inside a `<ResizableTableContainer>`). */
+  maxWidth?: ColumnStaticSize | null | undefined;
+  /** Whether the column header or its first focusable child element should be focused when the column header is focused. */
+  focusMode?: "child" | "cell" | undefined;
+  /** Whether the column supports arrow key navigation even when the table uses tab keyboard navigation. */
+  allowsArrowNavigation?: boolean | undefined;
+  ref?: RefValue<HTMLTableCellElement> | undefined;
+}
+
+const COLUMN_OWNED = ["onPointerDown", "onPointerUp", "onPointerEnter", "onPointerLeave", "onMouseDown", "onClick", "onDragStart", "style", "id"] as const;
+
+/** A column within a `<Table>`. */
+export const Column = /* @__PURE__ */ createLeafComponent(TableColumnNode, function Column(props: ColumnProps, forwardedRef: unknown, column: Node<unknown>) {
+  const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
+  const internal = useContext(TableInternalContext)!;
+  const layout = useContext(TableColumnResizeStateContext);
+  const key = column.key;
+  const isVirtualized = internal.isVirtualized;
+  const locale = internal.locale;
+  const descriptionId = internal.sortableDescriptionId;
+  const { focusMode, allowsArrowNavigation } = props;
+  const th = elementRef<HTMLTableCellElement>();
+  const thRef = mergeRefValues<HTMLTableCellElement>(th as RefValue<HTMLTableCellElement>, forwardedRef as RefValue<HTMLTableCellElement> | undefined);
+  const hopts = (v: TableStateLike<unknown>, el?: Element | null): AriaTableColumnHeaderProps<unknown> & GridCellProps => ({
+    node: columnOf(v.collection as TableCollection<unknown>, key)!,
+    isVirtualized,
+    focusMode: focusMode ?? "child",
+    allowsArrowNavigation,
+    descriptionId,
+    locale,
+    ref: (el as HTMLElement | null | undefined) ?? undefined,
+  });
+  const attrs = () => {
+    const v = view();
+    return columnOf(v.collection as TableCollection<unknown>, key) ? tableColumnHeaderProps(hopts(v), v).columnHeaderProps : {};
+  };
+  const allowsSorting = () => !!columnOf(internal.collection(), key)?.props?.allowsSorting;
+  const sortDirection = () => {
+    const s = internal.data.sortDescriptor.value();
+    return s?.column === key ? s.direction : undefined;
+  };
+  const isResizing = () => !!layout && layout().resizingColumn === key;
+  const hovered = signal(false);
+  const pressed = signal(false);
+  const focused = signal(false);
+  const focusVisible = signal(false);
+  const interaction: InteractionStateOptions = {
+    isDisabled: () => !allowsSorting(),
+    states: { isHovered: hovered, isFocused: focused, isFocusVisible: focusVisible },
+  };
+  // usePress of useTableColumnHeader (options read per event).
+  const press = (v: TableStateLike<unknown>): PressOptions => {
+    const o = hopts(v);
+    return {
+      isDisabled: !tableColumnHeaderPressable(o, v),
+      onPress: () => tableColumnHeaderPress(o, v, (k) => v.sort(k), view),
+      onPressStart: () => pressed.set(true),
+      onPressEnd: () => pressed.set(false),
+    };
+  };
+  const values: ColumnRenderProps = {
+    isHovered: () => hovered(),
+    isPressed: () => pressed(),
+    isFocused: () => focused(),
+    isFocusVisible: () => focusVisible(),
+    allowsSorting,
+    sortDirection,
+    isResizing,
+    startResize: () => {
+      if (!layout) throw new Error("Wrap your <Table> in a <ResizableTableContainer> to enable column resizing");
+      layout().startResize(key);
+      view().setKeyboardNavigationDisabled(true);
+      focusColumnResizer(th() ?? null);
+    },
+    sort: (direction: SortDirection) => view().sort(key, direction),
+  };
+  const rp = untrack(() =>
+    renderProps(
+      { class: props.class, style: props.style, children: props.children, values, defaultClassName: "rv-Column" },
+      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+    ),
+  );
+  const style = (): Px | undefined => {
+    const s = rp.style() as Px | undefined;
+    return layout ? { ...s, width: `${layout().getColumnWidth(key)}px` } : s;
+  };
+  const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onClick } = props;
+  const dom = globalDOMProps(props, COLUMN_OWNED);
+  return (
+    <th
+      {...dom}
+      {...attrs()}
+      ref={thRef as never}
+      class={rp.class()}
+      style={style()}
+      data-resizing={dataBool(isResizing())}
+      data-allows-sorting={dataBool(allowsSorting())}
+      data-sort-direction={sortDirection()}
+      onKeyDownCapture={(e) => {
+        const v = view();
+        gridCellKeyDownCapture(e, hopts(v), v);
+      }}
+      onKeyDown={(e) => {
+        const v = view();
+        gridCellKeyDown(e, hopts(v), v);
+        pressKeyDown(press(v), e);
+      }}
+      onKeyUp={(e) => {
+        const v = view();
+        gridCellKeyUp(e, hopts(v), v);
+      }}
+      onFocusIn={(e) => {
+        const v = view();
+        gridCellFocus(e, hopts(v), v);
+      }}
+      onFocus={(e) => {
+        focusStateFocus(interaction, e);
+      }}
+      onBlur={(e) => {
+        focusStateBlur(interaction, e);
+      }}
+      onPointerEnter={(e) => {
+        hoverStateEnter(interaction, e);
+        pressPointerEnter(press(view()), e);
+        onPointerEnter?.(e as never);
+      }}
+      onPointerLeave={(e) => {
+        hoverStateLeave(interaction, e);
+        pressPointerLeave(press(view()), e);
+        onPointerLeave?.(e as never);
+      }}
+      onPointerDown={(e) => {
+        const v = view();
+        gridCellPointerDown(e, hopts(v), v);
+        pressPointerDown(press(v), e);
+        onPointerDown?.(e as never);
+      }}
+      onPointerUp={(e) => {
+        const v = view();
+        gridCellPointerUp(e, hopts(v), v);
+        pressPointerUp(press(v), e);
+        onPointerUp?.(e as never);
+      }}
+      onMouseDown={(e) => pressMouseDown(press(view()), e)}
+      onClick={(e) => {
+        const v = view();
+        gridCellClick(e, hopts(v), v);
+        pressClick(press(v), e);
+        onClick?.(e as never);
+      }}
+      onDragStart={(e) => pressDragStart(press(view()), e)}
+    >
+      {
+        // A binding (not a Provider child slot): a render function that reads render-prop accessors
+        // and returns text re-runs on change, as RAC re-renders.
+        provide(ColumnResizerContext, { columnKey: key, triggerRef: th }, () =>
+          provide(CollectionRendererContext, DefaultCollectionRenderer, () => rp.children()),
+        ) as never
+      }
+    </th>
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// ColumnResizer
+// ---------------------------------------------------------------------------------------------
+
+export interface ColumnResizerRenderProps {
+  /** @selector [data-hovered] */
+  isHovered: () => boolean;
+  /** @selector [data-focused] */
+  isFocused: () => boolean;
+  /** @selector [data-focus-visible] */
+  isFocusVisible: () => boolean;
+  /** Whether the resizer is currently being resized. @selector [data-resizing] */
+  isResizing: () => boolean;
+  /** The direction that the column is currently resizable. @selector [data-resizable-direction="right | left | both"] */
+  resizableDirection: () => "right" | "left" | "both";
+}
+
+export interface ColumnResizerProps extends HoverEvents, RenderProps<ColumnResizerRenderProps>, GlobalDOMAttributes<HTMLDivElement> {
+  /** A custom accessibility label for the resizer. */
+  "aria-label"?: string | undefined;
+  ref?: RefValue<HTMLDivElement> | undefined;
+}
+
+const RESIZER_OWNED = ["onPointerDown", "onPointerUp", "onPointerEnter", "onPointerLeave", "onMouseDown", "onClick", "onDragStart", "style"] as const;
+
+/** A draggable / keyboard-adjustable handle that resizes its Column (inside a ResizableTableContainer). */
+export function ColumnResizer(props: ColumnResizerProps) {
+  const layout = useContext(TableColumnResizeStateContext);
+  if (!layout) throw new Error("Wrap your <Table> in a <ResizableTableContainer> to enable column resizing");
+  const container = useContext(ResizableTableContainerContext)!;
+  const { columnKey, triggerRef } = useContext(ColumnResizerContext)!;
+  const internal = useContext(TableInternalContext)!;
+  const locale = internal.locale;
+  const direction = internal.direction;
+  const column = untrack(() => columnOf(internal.collection(), columnKey))!;
+  const ariaLabelProp = props["aria-label"];
+  const id = `${internal.gridId}-${normalizeKey(columnKey)}-resizer`;
+  const aria = tableColumnResizeProps(
+    {
+      column,
+      "aria-label": ariaLabelProp || formatMessage(racStrings, locale, "tableResizer"),
+      onResizeStart: container.onResizeStart,
+      onResize: container.onResize,
+      onResizeEnd: container.onResizeEnd,
+      triggerRef,
+      id,
+      descriptionId: internal.resizerDescriptionId,
+      locale,
+    },
+    layout,
+  );
+  const ring = useFocusRing();
+  const hovered = signal(false);
+  const { onHoverStart, onHoverChange, onHoverEnd } = props;
+  const interaction: InteractionStateOptions = { onHoverStart, onHoverChange, onHoverEnd, states: { isHovered: hovered } };
+  const resizableDirection = (): "right" | "left" | "both" => {
+    const l = layout();
+    const isEResizable = l.getColumnMinWidth(columnKey) >= l.getColumnWidth(columnKey);
+    const isWResizable = l.getColumnMaxWidth(columnKey) <= l.getColumnWidth(columnKey);
+    if (isEResizable) return direction === "rtl" ? "right" : "left";
+    if (isWResizable) return direction === "rtl" ? "left" : "right";
+    return "both";
+  };
+  const resizer = elementRef<HTMLDivElement>();
+  const resizerRef = mergeRefValues<HTMLDivElement>(resizer as RefValue<HTMLDivElement>, props.ref);
+  // The cursor of the resizer (computed style) for the full-screen cursor overlay.
+  const cursor = signal("");
+  clientEffect(() => {
+    const node = resizer();
+    resizableDirection();
+    if (node) cursor.set(node.ownerDocument.defaultView?.getComputedStyle(node).cursor ?? "");
+  });
+  const values: ColumnResizerRenderProps = {
+    isHovered: () => hovered(),
+    isFocused: () => ring.isFocused(),
+    isFocusVisible: () => ring.isFocusVisible(),
+    isResizing: aria.isResizing,
+    resizableDirection,
+  };
+  const rp = untrack(() =>
+    renderProps(
+      { class: props.class, style: props.style, children: props.children, values, defaultClassName: "rv-ColumnResizer" },
+      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+    ),
+  );
+  const r = aria.resizerProps as Record<string, (e: never) => void>;
+  const input = aria.inputProps as Record<string, unknown> & { onFocus: (e: FocusEvent) => void; onBlur: (e: FocusEvent) => void };
+  const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onMouseDown, onClick } = props;
+  const dom = globalDOMProps(props, RESIZER_OWNED);
+  const { onFocus: inputFocus, onBlur: inputBlur, onChange: inputChange, style: inputStyle, ...inputAttrs } = input as Record<string, any>;
+  // Cursor overlay is used to style the cursor against the entire screen.
+  // Do not turn off pointer events or the cursor will no longer be styled.
+  return (
+    <div
+      {...dom}
+      ref={resizerRef as never}
+      role="presentation"
+      class={rp.class()}
+      style={{ ...(rp.style() as Px | undefined), touchAction: "none" }}
+      data-rv-column-resizer=""
+      data-focused={dataBool(ring.isFocused())}
+      data-focus-visible={dataBool(ring.isFocusVisible())}
+      data-resizing={dataBool(aria.isResizing())}
+      data-resizable-direction={resizableDirection()}
+      onKeyDown={(e) => {
+        r.onKeyDown!(e as never);
+      }}
+      onKeyUp={(e) => {
+        r.onKeyUp!(e as never);
+      }}
+      onPointerDown={(e) => {
+        r.onPointerDown!(e as never);
+        onPointerDown?.(e as never);
+      }}
+      onPointerUp={(e) => {
+        r.onPointerUp!(e as never);
+        onPointerUp?.(e as never);
+      }}
+      onPointerEnter={(e) => {
+        hoverStateEnter(interaction, e);
+        r.onPointerEnter!(e as never);
+        onPointerEnter?.(e as never);
+      }}
+      onPointerLeave={(e) => {
+        hoverStateLeave(interaction, e);
+        r.onPointerLeave!(e as never);
+        onPointerLeave?.(e as never);
+      }}
+      onMouseDown={(e) => {
+        r.onMouseDown!(e as never);
+        onMouseDown?.(e as never);
+      }}
+      onClick={(e) => {
+        r.onClick!(e as never);
+        onClick?.(e as never);
+      }}
+      onDragStart={(e) => r.onDragStart!(e as never)}
+    >
+      {rp.children() as never}
+      <input
+        {...inputAttrs}
+        style={inputStyle}
+        onFocus={(e) => {
+          inputFocus(e);
+          // The ring's focus-in (binds its own blur while focused).
+          (ring.focusProps.onFocusIn as (e: FocusEvent) => void)(e);
+        }}
+        onBlur={(e) => inputBlur(e)}
+        onChange={(e) => inputChange(e)}
+      />
+      <Show when={() => aria.isResizing() && aria.isMouseResizing()}>
+        {() => (
+          <Portal>
+            <div style={{ position: "fixed", top: "0", left: "0", bottom: "0", right: "0", cursor: cursor() }} data-testid="cursor-overlay" />
+          </Portal>
+        )}
+      </Show>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// TableBody / TableFooter
+// ---------------------------------------------------------------------------------------------
+
+export interface TableBodyRenderProps {
+  /** Whether the table body has no rows and should display its empty state. @selector [data-empty] */
+  isEmpty: () => boolean;
+  /** Whether the Table is currently the active drop target. @selector [data-drop-target] */
+  isDropTarget: () => boolean;
+}
+
+export interface TableBodyProps<T> extends CollectionProps<T>, StyleRenderProps<TableBodyRenderProps>, GlobalDOMAttributes<HTMLTableSectionElement> {
+  /** Provides content to display when there are no rows in the table. */
+  renderEmptyState?: ((props: TableBodyRenderProps) => unknown) | undefined;
+  ref?: RefValue<HTMLTableSectionElement> | undefined;
+}
+
+/** The body of a `<Table>`, containing the table rows. */
+export const TableBody = /* @__PURE__ */ createBranchComponent(TableBodyNode, function TableBody<T>(props: TableBodyProps<T>, ref: unknown, node: Node<T>) {
+  const internal = useContext(TableInternalContext)!;
+  const branchRenderer = useContext(CollectionRendererContext);
+  const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
+  // The built renderer only reads the parent key: a plain object, not the node class instance (resumable capture).
+  const branchParent = { key: node.key };
+  const isEmpty = () => internal.collection().size === 0;
+  const values: TableBodyRenderProps = { isEmpty, isDropTarget: () => false };
+  const rp = untrack(() =>
+    renderProps(
+      { class: props.class, style: props.style, values, defaultClassName: "rv-TableBody" },
+      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+    ),
+  );
+  const renderEmptyState = props.renderEmptyState;
+  const numColumns = () => internal.collection().columnCount;
+  const dom = globalDOMProps(props, ["style", "id"]);
+  // TODO (upstream): TableBody doesn't support being the scrollable body of the table yet.
+  return (
+    <tbody {...dom} role="rowgroup" ref={ref as never} class={rp.class()} style={rp.style()} data-empty={dataBool(isEmpty())}>
+      {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+      {renderEmptyState ? (
+        <Show when={isEmpty}>
+          {() => (
+            <tr role="row">
+              <td role="rowheader" colSpan={numColumns()}>
+                {renderEmptyState(values) as never}
+              </td>
+            </tr>
+          )}
+        </Show>
+      ) : null}
+    </tbody>
+  );
+});
+
+export interface TableFooterProps<T> extends CollectionProps<T>, GlobalDOMAttributes<HTMLTableSectionElement> {
+  /** The CSS class of the element. Default "rv-TableFooter". */
+  class?: string | undefined;
+  style?: Px | undefined;
+  ref?: RefValue<HTMLTableSectionElement> | undefined;
+}
+
+/** The footer of a `<Table>`, containing table rows. */
+export const TableFooter = /* @__PURE__ */ createBranchComponent(TableFooterNode, function TableFooter<
+  T,
+>(props: TableFooterProps<T>, ref: unknown, node: Node<T>) {
+  const internal = useContext(TableInternalContext)!;
+  const branchRenderer = useContext(CollectionRendererContext);
+  const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
+  // The built renderer only reads the parent key: a plain object, not the node class instance (resumable capture).
+  const branchParent = { key: node.key };
+  const dom = globalDOMProps(props, ["style", "id"]);
+  const className = props.class || "rv-TableFooter";
+  const style = props.style;
+  return (
+    <tfoot {...dom} role="rowgroup" ref={ref as never} class={className} style={style}>
+      {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+    </tfoot>
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// Row
+// ---------------------------------------------------------------------------------------------
+
+export interface RowRenderProps {
+  /** @selector [data-hovered] */
+  isHovered: () => boolean;
+  /** @selector [data-pressed] */
+  isPressed: () => boolean;
+  /** @selector [data-selected] */
+  isSelected: () => boolean;
+  /** @selector [data-focused] */
+  isFocused: () => boolean;
+  /** @selector [data-focus-visible] */
+  isFocusVisible: () => boolean;
+  /** @selector [data-disabled] */
+  isDisabled: () => boolean;
+  /** @selector [data-selection-mode="single | multiple"] */
+  selectionMode: () => SelectionMode;
+  selectionBehavior: () => SelectionBehavior;
+  /** @selector [data-allows-dragging] */
+  allowsDragging: () => boolean;
+  /** @selector [data-dragging] */
+  isDragging: () => boolean;
+  /** @selector [data-drop-target] */
+  isDropTarget: () => boolean;
+  /** Whether the row's children have keyboard focus. @selector [data-focus-visible-within] */
+  isFocusVisibleWithin: () => boolean;
+  /** The unique id of the row. */
+  id: Key;
+  /** Whether the row is expanded. @selector [data-expanded] */
+  isExpanded: () => boolean;
+  /** Whether the row has child rows. @selector [data-has-child-items] */
+  hasChildItems: () => boolean;
+  /** What level the row has within the table. @selector [data-level] */
+  level: () => number;
+  /** State of the table (accessor of the view). */
+  state: () => TableState<unknown>;
+}
+
+export interface RowProps<T>
+  extends StyleRenderProps<RowRenderProps>, LinkDOMProps, HoverEvents, PressEvents, Omit<GlobalDOMAttributes<HTMLTableRowElement>, "onClick"> {
+  /** A list of columns used when dynamically rendering cells. */
+  columns?: Iterable<T> | (() => Iterable<T>) | undefined;
+  /** The cells within the row. Supports static items or a function for dynamic rendering. */
+  children?: unknown | ((item: T) => unknown);
+  /** The object value that this row represents. When using dynamic collections, this is set automatically. */
+  value?: T | undefined;
+  /** RAC parity; ignored (Rivet re-renders through signals). */
+  dependencies?: readonly unknown[] | undefined;
+  /** A string representation of the row's contents, used for features like typeahead. */
+  textValue?: string | undefined;
+  /** Whether the row is disabled. */
+  isDisabled?: boolean | undefined;
+  /** Whether `disabledKeys` applies to all interactions, or only selection. */
+  disabledBehavior?: DisabledBehavior | undefined;
+  /** Handler that is called when a user performs an action on the row. */
+  onAction?: (() => void) | undefined;
+  /** The unique id of the row. */
+  id?: Key | undefined;
+  /** Whether this row has children, even if not loaded yet. */
+  hasChildItems?: boolean | undefined;
+  ref?: RefValue<HTMLTableRowElement> | undefined;
+}
+
+/** Global DOM events Row handles itself (the user's chain after its own); RAC drops `onClick`. */
+const ROW_OWNED = [
+  "onPointerDown",
+  "onPointerUp",
+  "onPointerCancel",
+  "onPointerEnter",
+  "onPointerLeave",
+  "onDblClick",
+  "onDragStart",
+  "onClick",
+  "style",
+  "id",
+] as const;
+
+/** A row within a `<Table>`. */
+export const Row = /* @__PURE__ */ createBranchComponent(
+  TableRowNode,
+  function Row<T>(props: RowProps<T>, forwardedRef: unknown, item: Node<T>) {
+    const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
+    const internal = useContext(TableInternalContext)!;
+    const key = item.key;
+    const isVirtualized = internal.isVirtualized;
+    const locale = internal.locale;
+    const router = useRouter();
+    const rowBase = `${internal.gridId}-${normalizeKey(key)}`;
+    const expandButtonId = rowBase + "-expand";
+    const checkboxId = rowBase + "-checkbox";
+    const isTreeGrid = internal.data.treeColumn != null;
+    const { hasChildItems: hasChildItemsProp, onHoverStart, onHoverChange, onHoverEnd } = props;
+    const ropts = (v: TableStateLike<unknown>, el?: Element | null): AriaTableRowProps<unknown> => ({
+      node: v.collection.getItem(key) as GridNode<unknown>,
+      isVirtualized,
+      shouldSelectOnPressUp: false,
+      expandButtonId,
+      router,
+      locale,
+      ref: (el as HTMLElement | null | undefined) ?? undefined,
+    });
+    const row = elementRef<HTMLTableRowElement>();
+    const rowRef = mergeRefValues<HTMLTableRowElement>(row as RefValue<HTMLTableRowElement>, forwardedRef as RefValue<HTMLTableRowElement> | undefined);
+    const st = computed(() => {
+      const v = view();
+      const n = v.collection.getItem(key) as GridNode<unknown> | null;
+      if (!n) return null;
+      const aria = tableRowProps(ropts(v), v, locale);
+      const hasChildItems = !!hasChildItemsProp || v.collection.getItem((n as { lastChildKey?: Key | null }).lastChildKey!)?.type !== "cell";
+      return {
+        aria,
+        hasChildItems,
+        isExpanded: hasChildItems && v.expandedKeys.has(key),
+        level: n.level + 1,
+        selectionMode: v.selectionManager.selectionMode,
+        selectionBehavior: v.selectionManager.selectionBehavior,
+      };
+    });
+    const hovered = signal(false);
+    const pressed = signal(false);
+    const focusVisible = signal(false);
+    const within = useFocusRing({ within: true });
+    const interaction: InteractionStateOptions = {
+      // because of https://bugs.webkit.org/show_bug.cgi?id=214609, hover only when selectable or with an action.
+      isDisabled: () => !st()?.aria.allowsSelection && !st()?.aria.hasAction,
+      onHoverStart,
+      onHoverChange,
+      onHoverEnd,
+      states: { isHovered: hovered, isFocusVisible: focusVisible },
+    };
+    // Row `isPressed` lives in the press memo of the row element: re-read it after the row's press handlers.
+    const syncPressed = (target: EventTarget | null) => {
+      const v = view();
+      if (v.collection.getItem(key)) pressed.set(tableRowProps(ropts(v, target as Element | null), v, locale).isPressed);
+    };
+    const selectionMode = () => st()?.selectionMode ?? "none";
+    const values: RowRenderProps = {
+      isHovered: () => hovered(),
+      isPressed: () => pressed(),
+      isSelected: () => !!st()?.aria.isSelected,
+      isFocused: () => !!st()?.aria.isFocused,
+      isFocusVisible: () => focusVisible(),
+      isDisabled: () => !!st()?.aria.isDisabled,
+      selectionMode,
+      selectionBehavior: () => st()?.selectionBehavior ?? "toggle",
+      allowsDragging: () => false,
+      isDragging: () => false,
+      isDropTarget: () => false,
+      isFocusVisibleWithin: () => within.isFocusVisible(),
+      id: key,
+      hasChildItems: () => !!st()?.hasChildItems,
+      isExpanded: () => !!st()?.isExpanded,
+      level: () => st()?.level ?? 1,
+      state: view,
+    };
+    const rp = untrack(() =>
+      renderProps(
+        {
+          class: props.class,
+          style: props.style,
+          values,
+          defaultClassName: "rv-Row",
+          defaultStyle: { "--table-row-level": untrack(values.level) },
+        },
+        hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+      ),
+    );
+    // useTableSelectionCheckbox (Rivet: the id derives from the table id + row key, see header).
+    const checkboxProps = {
+      id: checkboxId,
+      "aria-label": untrack(() => tableSelectionCheckboxProps({ key, id: checkboxId, locale }, view()).checkboxProps["aria-label"]),
+      "aria-labelledby": untrack(() => `${checkboxId} ${getRowLabelledBy(view(), key)}`),
+      isSelected: () => !!st()?.aria.isSelected,
+      isDisabled: () => !view().selectionManager.canSelectItem(key),
+      onChange: (isSelected: boolean) => tableSelectionCheckboxChange(isSelected, { key }, view()),
+    };
+    const chevron = isTreeGrid
+      ? {
+          id: expandButtonId,
+          "aria-label": () => st()?.aria.expandButtonProps["aria-label"],
+          "aria-labelledby": untrack(() => st()?.aria.expandButtonProps["aria-labelledby"]),
+          isDisabled: () => !!st()?.aria.expandButtonProps.isDisabled,
+          excludeFromTabOrder: true,
+          preventFocusOnPress: true,
+          "data-react-aria-prevent-focus": "true",
+          onPress: () => {
+            const v = view();
+            tableRowExpandPress(ropts(v), v);
+          },
+        }
+      : {};
+    const { onPointerDown, onPointerUp, onPointerCancel, onPointerEnter, onPointerLeave, onDblClick } = props;
+    const dom = globalDOMProps(props, ROW_OWNED);
+    const branchRenderer = useContext(CollectionRendererContext);
+    const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
+    // The built renderer only reads the parent key: a plain object, not the node class instance (resumable capture).
+    const branchParent = { key: key };
+    return (
+      <tr
+        {...dom}
+        {...(st()?.aria.rowProps ?? { role: "row" })}
+        ref={rowRef as never}
+        class={rp.class()}
+        style={rp.style()}
+        data-disabled={dataBool(values.isDisabled())}
+        data-selected={dataBool(values.isSelected())}
+        data-focused={dataBool(values.isFocused())}
+        data-pressed={dataBool(pressed())}
+        data-selection-mode={selectionMode() === "none" ? undefined : selectionMode()}
+        data-expanded={dataBool(values.isExpanded())}
+        data-has-child-items={dataBool(values.hasChildItems())}
+        data-level={values.level()}
+        data-focus-visible-within={dataBool(values.isFocusVisibleWithin())}
+        onKeyDown={(e) => {
+          const v = view();
+          gridRowKeyDown(e, ropts(v), v);
+          if (!e.cancelBubble) tableRowKeyDown(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+        }}
+        onKeyUp={(e) => {
+          const v = view();
+          gridRowKeyUp(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+        }}
+        onFocusIn={(e) => {
+          // The row's own focus (was a native `focus` listener per row; it ran before this focusin): its `blur` binds while focused.
+          focusStateIn(interaction, e);
+          const v = view();
+          gridRowFocus(e, ropts(v), v);
+          (within.focusProps.onFocusIn as (e: FocusEvent) => void)(e);
+        }}
+        onFocusOut={(e) => (within.focusProps.onFocusOut as (e: FocusEvent) => void)(e)}
+        onPointerOver={(e) => hoverStateOver(interaction, e)}
+        onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
+        onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
+        onPointerDown={(e) => {
+          const v = view();
+          gridRowPointerDown(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+          onPointerDown?.(e as never);
+        }}
+        onPointerUp={(e) => {
+          const v = view();
+          gridRowPointerUp(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+          onPointerUp?.(e as never);
+        }}
+        onPointerCancel={(e) => {
+          const v = view();
+          gridRowPointerCancel(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+          onPointerCancel?.(e as never);
+        }}
+        onClick={(e) => {
+          const v = view();
+          gridRowClick(e, ropts(v), v);
+          syncPressed(e.currentTarget);
+        }}
+        onDblClick={(e) => {
+          const v = view();
+          gridRowDoubleClick(e, ropts(v), v);
+          onDblClick?.(e as never);
+        }}
+        onDragStart={(e) => {
+          const v = view();
+          gridRowDragStart(e, ropts(v), v);
+        }}
+      >
+        <Provider
+          values={[
+            [CheckboxContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],
+            [CheckboxFieldContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],
+            [ButtonContext, { slots: { [DEFAULT_SLOT]: {}, chevron, drag: { style: { pointerEvents: "none" } } } }],
+            [SelectionIndicatorContext, { isSelected: values.isSelected }],
+            [RowFocusContext, { isFocusVisibleWithinRow: values.isFocusVisibleWithin }],
+          ]}
+        >
+          {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+        </Provider>
+      </tr>
+    );
+  },
+  (props) => {
+    const children = props.children;
+    if (props.id == null && typeof children === "function" && !isSlot(children)) {
+      throw new Error("No id detected for the Row element. The Row element requires a id to be provided to it when the cells are rendered dynamically.");
+    }
+    return Collection({ items: props.columns as CollectionProps<unknown>["items"], children, idScope: props.id });
+  },
+);
+
+// ---------------------------------------------------------------------------------------------
+// Cell
+// ---------------------------------------------------------------------------------------------
+
+export interface CellRenderProps {
+  /** @selector [data-pressed] */
+  isPressed: () => boolean;
+  /** @selector [data-focused] */
+  isFocused: () => boolean;
+  /** @selector [data-focus-visible] */
+  isFocusVisible: () => boolean;
+  /** @selector [data-hovered] */
+  isHovered: () => boolean;
+  /** Whether the parent row is selected. @selector [data-selected] */
+  isSelected: () => boolean;
+  /** Whether the parent row is disabled. @selector [data-disabled] */
+  isDisabled: () => boolean;
+  /** Whether the parent row's children have keyboard focus. @selector [data-focus-visible-within-row] */
+  isFocusVisibleWithinRow: () => boolean;
+  /** The unique id of the cell. */
+  id?: Key | undefined;
+  /** The index of the column that this cell belongs to (respects column spans). @selector [data-column-index] */
+  columnIndex: () => number | null | undefined;
+  /** Whether the cell belongs to the hierarchical tree column. @selector [data-tree-column] */
+  isTreeColumn: () => boolean;
+  /** Whether the parent row is expanded. @selector [data-expanded] */
+  isExpanded: () => boolean;
+  /** Whether the parent row has child rows. @selector [data-has-child-items] */
+  hasChildItems: () => boolean;
+  /** What level the parent row has within the table. @selector [data-level] */
+  level: () => number;
+}
+
+export interface CellProps extends RenderProps<CellRenderProps>, GlobalDOMAttributes<HTMLTableCellElement> {
+  /** The unique id of the cell. */
+  id?: Key | undefined;
+  /** A string representation of the cell's contents, used for features like typeahead. */
+  textValue?: string | undefined;
+  /** Indicates how many columns the data cell spans. */
+  colSpan?: number | undefined;
+  /** Whether the cell or its first focusable child element should be focused when the grid cell is focused. */
+  focusMode?: "child" | "cell" | undefined;
+  /** Whether the cell supports arrow key navigation even when the table uses tab keyboard navigation. */
+  allowsArrowNavigation?: boolean | undefined;
+  ref?: RefValue<HTMLTableCellElement> | undefined;
+}
+
+const CELL_OWNED = ["onPointerDown", "onPointerUp", "onPointerEnter", "onPointerLeave", "onClick", "style", "id"] as const;
+
+/** A cell within a table row. */
+export const Cell = /* @__PURE__ */ createLeafComponent(TableCellNode, function Cell(props: CellProps, forwardedRef: unknown, cell: Node<unknown>) {
+  const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
+  const internal = useContext(TableInternalContext)!;
+  const rowFocus = useContext(RowFocusContext);
+  const key = cell.key;
+  const rowKey = cell.parentKey!;
+  const isVirtualized = internal.isVirtualized;
+  const { focusMode, allowsArrowNavigation } = props;
+  const nodeOf = (v: TableStateLike<unknown>): GridNode<unknown> | null => {
+    const n = v.collection.getItem(key) as (GridNode<unknown> & { column?: GridNode<unknown> }) | null;
+    if (n) n.column = v.collection.columns[n.index];
+    return n;
+  };
+  const copts = (v: TableStateLike<unknown>, n: GridNode<unknown>, el?: Element | null): GridCellProps => ({
+    node: n,
+    isVirtualized,
+    focusMode,
+    allowsArrowNavigation,
+    shouldSelectOnPressUp: false,
+    ref: (el as HTMLElement | null | undefined) ?? undefined,
+  });
+  const st = computed(() => {
+    const v = view();
+    const n = nodeOf(v);
+    if (!n) return null;
+    const row = v.collection.getItem(rowKey) as (GridNode<unknown> & { lastChildKey?: Key | null }) | null;
+    const hasChildItems = !!row && (!!row.props?.hasChildItems || v.collection.getItem(row.lastChildKey!)?.type !== "cell");
+    return {
+      ...tableCellProps(copts(v, n), v),
+      isSelected: v.selectionManager.isSelected(rowKey),
+      isDisabled: v.selectionManager.isDisabled(rowKey),
+      hasChildItems,
+      isExpanded: hasChildItems && v.expandedKeys.has(rowKey),
+      level: (row?.level ?? 0) + 1,
+      // colIndex is null, when there is no span, falling back to using the index
+      columnIndex: n.colIndex || n.index,
+      isTreeColumn: (n as { column?: GridNode<unknown> }).column?.key === v.treeColumn,
+    };
+  });
+  // Cell events with the node for the event (skipped once the cell left the collection).
+  const on = (e: Event, fn: (e: never, props: GridCellProps, state: TableStateLike<unknown>) => void) => {
+    const v = view();
+    const n = nodeOf(v);
+    if (n) fn(e as never, copts(v, n), v);
+  };
+  const hovered = signal(false);
+  const focused = signal(false);
+  const focusVisible = signal(false);
+  const interaction: InteractionStateOptions = { states: { isHovered: hovered, isFocused: focused, isFocusVisible: focusVisible } };
+  const values: CellRenderProps = {
+    isPressed: () => !!st()?.isPressed,
+    isFocused: () => focused(),
+    isFocusVisible: () => focusVisible(),
+    isHovered: () => hovered(),
+    isSelected: () => !!st()?.isSelected,
+    isDisabled: () => !!st()?.isDisabled,
+    isFocusVisibleWithinRow: rowFocus.isFocusVisibleWithinRow,
+    id: key,
+    columnIndex: () => st()?.columnIndex,
+    isTreeColumn: () => !!st()?.isTreeColumn,
+    isExpanded: () => !!st()?.isExpanded,
+    hasChildItems: () => !!st()?.hasChildItems,
+    level: () => st()?.level ?? 1,
+  };
+  const rp = untrack(() =>
+    renderProps(
+      { class: props.class, style: props.style, children: props.children, values, defaultClassName: "rv-Cell" },
+      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
+    ),
+  );
+  const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onClick } = props;
+  const dom = globalDOMProps(props, CELL_OWNED);
+  return (
+    <td
+      {...dom}
+      {...(st()?.gridCellProps ?? { role: "gridcell" })}
+      ref={forwardedRef as never}
+      class={rp.class()}
+      style={rp.style()}
+      data-focus-visible-within-row={dataBool(rowFocus.isFocusVisibleWithinRow())}
+      data-pressed={dataBool(values.isPressed())}
+      data-selected={dataBool(values.isSelected())}
+      data-column-index={values.columnIndex() ?? undefined}
+      data-expanded={dataBool(values.isExpanded())}
+      data-has-child-items={dataBool(values.hasChildItems())}
+      data-level={values.level()}
+      data-tree-column={dataBool(values.isTreeColumn())}
+      data-disabled={dataBool(values.isDisabled())}
+      onKeyDownCapture={(e) => on(e, gridCellKeyDownCapture)}
+      onKeyDown={(e) => {
+        on(e, gridCellKeyDown);
+      }}
+      onKeyUp={(e) => {
+        on(e, gridCellKeyUp);
+      }}
+      onFocusIn={(e) => {
+        // The cell's own focus (was a native `focus` listener per cell, before this focusin); its `blur` binds while focused.
+        focusStateIn(interaction, e);
+        on(e, gridCellFocus);
+      }}
+      onPointerOver={(e) => hoverStateOver(interaction, e)}
+      onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
+      onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
+      onPointerDown={(e) => {
+        on(e, gridCellPointerDown);
+        onPointerDown?.(e as never);
+      }}
+      onPointerUp={(e) => {
+        on(e, gridCellPointerUp);
+        onPointerUp?.(e as never);
+      }}
+      onClick={(e) => {
+        on(e, gridCellClick);
+        onClick?.(e as never);
+      }}
+    >
+      {provide(CollectionRendererContext, DefaultCollectionRenderer, () => rp.children()) as never}
+    </td>
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// TableLoadMoreItem
+// ---------------------------------------------------------------------------------------------
+
+export interface TableLoadMoreItemProps extends Omit<LoadMoreSentinelProps, "collection">, GlobalDOMAttributes<HTMLTableRowElement> {
+  /** The CSS class of the element. Default "rv-TableLoadingIndicator". */
+  class?: string | undefined;
+  style?: Px | undefined;
+  /** The load more spinner to render when loading additional items. */
+  children?: unknown;
+  /** Whether or not the loading spinner should be rendered (a value or an accessor). */
+  isLoading?: MaybeAccessor<boolean | undefined>;
+  ref?: RefValue<HTMLTableRowElement> | undefined;
+}
+
+/** A sentinel row: calls `onLoadMore` when scrolled near, and renders its children while `isLoading`. */
+export const TableLoadMoreItem = /* @__PURE__ */ createLeafComponent(
+  LoaderNode,
+  function TableLoadingIndicator(props: TableLoadMoreItemProps, ref: unknown, item: Node<unknown>) {
+    const internal = useContext(TableInternalContext)!;
+    const isLoading = props.isLoading;
+    const level = item.level + 1;
+    const numColumns = () => internal.collection().columns.length;
+    const sentinel = elementRef<HTMLDivElement>();
+    const { onLoadMore, scrollOffset, style: userStyle } = props;
+    loadMoreSentinel({ onLoadMore, collection: internal.collection, scrollOffset }, sentinel);
+    const children = props.children;
+    const className = props.class || "rv-TableLoadingIndicator";
+    const style = { "--table-row-level": level, ...userStyle };
+    const dom = globalDOMProps(props, ["style", "id"]);
+    return (
+      <>
+        {/* Always render the sentinel. For now onus is on the user for styling when using flex + gap. */}
+        <tr style={{ height: "0" }} inert>
+          <td style={{ padding: "0", border: "0" }}>
+            <div data-testid="loadMoreSentinel" ref={sentinel} style={{ position: "relative", height: "1px", width: "1px" }} />
+          </td>
+        </tr>
+        <Show when={() => !!read(isLoading) && children != null}>
+          {() => (
+            // For now don't include aria-rowindex on loader since they aren't keyboard focusable.
+            <tr {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
+              <td role="rowheader" colSpan={numColumns()}>
+                {children as never}
+              </td>
+            </tr>
+          )}
+        </Show>
+      </>
+    );
+  },
+);

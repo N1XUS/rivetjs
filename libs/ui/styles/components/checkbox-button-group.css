@@ -1,0 +1,173 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no card-style checkbox group). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--surface, --border, --accent, --accent-soft, --default, field tokens, focus / disabled status utilities). Behaviour = @rivetjs/cdk/checkbox (native radios sharing a name). */
+/* -------------------------------------------------------------------------------------------------
+ * CheckboxButtonGroup Component Styles
+ * Block: checkbox-button-group (parts: field / item = the card / indicator / item-icon / item-content)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: checkbox-button-group - the group; label / description / error span the whole row
+ */
+.checkbox-button-group {
+  @apply gap-3;
+
+  > [data-slot="label"],
+  > [data-slot="description"],
+  > [data-slot="field-error"] {
+    flex-basis: 100%;
+    grid-column: 1 / -1;
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.checkbox-button-group--flex {
+  @apply flex flex-wrap items-stretch;
+}
+
+.checkbox-button-group--grid {
+  @apply grid grid-cols-[repeat(auto-fill,minmax(min(100%,12rem),1fr))];
+}
+
+/**
+ * Element: field - the item wrapper (stretches the card)
+ */
+.checkbox-button-group__field {
+  @apply flex min-w-0;
+}
+
+/**
+ * Element: item - the selectable card (a label around the hidden native checkbox)
+ */
+.checkbox-button-group__item {
+  @apply relative flex w-full items-start gap-3 rounded-2xl border bg-surface p-4 text-sm text-foreground shadow-surface outline-none select-none no-highlight;
+
+  border-color: var(--border);
+  cursor: var(--cursor-interactive);
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &:has(> .checkbox-button-group__indicator) {
+    @apply pe-10;
+  }
+
+  @media (hover: hover) {
+    &[data-hovered="true"]:not([data-selected="true"]) {
+      @apply bg-surface-secondary;
+    }
+  }
+
+  &[data-pressed="true"] {
+    transform: scale(0.98);
+  }
+
+  &[data-selected="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  &[data-invalid="true"] {
+    border-color: var(--danger);
+  }
+}
+
+/**
+ * Element: indicator - check box in the card corner (default lucide Check) or custom content
+ */
+.checkbox-button-group__indicator {
+  @apply pointer-events-none absolute end-3 top-3 flex items-center justify-center;
+
+  &:not([data-custom]) {
+    @apply size-4 rounded-md border bg-field text-accent-foreground shadow-field;
+    border-width: 1.5px;
+    border-color: color-mix(in oklab, var(--muted) 70%, transparent);
+
+    transition:
+      background-color var(--duration-base) var(--ease-out),
+      border-color var(--duration-base) var(--ease-out);
+    @apply motion-reduce:transition-none;
+
+    & svg {
+      @apply size-3;
+      stroke-width: 3;
+      opacity: 0;
+      scale: 0.6;
+      transition:
+        opacity var(--duration-fast) var(--ease-out),
+        scale var(--duration-base) var(--ease-out);
+      @apply motion-reduce:transition-none;
+    }
+  }
+
+  .checkbox-button-group__item[data-selected="true"] &:not([data-custom]) {
+    @apply border-accent bg-accent;
+
+    & svg {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  &[data-custom] {
+    @apply text-muted;
+    transition: color var(--duration-base) var(--ease-out);
+    @apply motion-reduce:transition-none;
+  }
+
+  .checkbox-button-group__item[data-selected="true"] &[data-custom] {
+    @apply text-accent;
+  }
+}
+
+/**
+ * Element: item-icon - leading icon tile
+ */
+.checkbox-button-group__item-icon {
+  @apply flex size-9 shrink-0 items-center justify-center rounded-xl bg-default text-foreground;
+
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    @apply size-4.5;
+  }
+
+  .checkbox-button-group__item[data-selected="true"] & {
+    @apply bg-accent-soft text-accent-soft-foreground;
+  }
+}
+
+/**
+ * Element: item-content - title + description column
+ */
+.checkbox-button-group__item-content {
+  @apply flex min-w-0 flex-1 flex-col gap-0.5;
+
+  [data-slot="label"] {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  [data-slot="description"] {
+    @apply text-xs text-muted;
+  }
+}

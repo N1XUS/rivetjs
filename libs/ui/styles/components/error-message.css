@@ -1,0 +1,15 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/error-message.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Base error message styles */
+.error-message {
+  @apply h-auto text-xs wrap-break-word text-danger;
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    height var(--duration-slow) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+}

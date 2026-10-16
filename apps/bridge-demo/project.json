@@ -1,0 +1,13 @@
+{
+  "name": "bridge-demo",
+  "root": "apps/bridge-demo",
+  "projectType": "application",
+  "implicitDependencies": ["compiler", "runtime", "router", "bridge", "bridge-react"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/tsc.ts -p apps/bridge-demo" }
+    }
+  }
+}

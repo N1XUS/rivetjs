@@ -1,0 +1,55 @@
+/* Plain CSS: style the default rv-* class names and the data attributes (render-prop states). */
+body {
+  margin: 0;
+  font: 14px/1.5 system-ui, sans-serif;
+  color: #0f172a;
+}
+
+.rv-Tabs {
+  margin: 1rem;
+  max-width: 28rem;
+}
+.rv-Tabs[data-orientation="vertical"] {
+  display: flex;
+  gap: 1rem;
+}
+
+.rv-TabList {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #cbd5e1;
+}
+.rv-TabList[data-orientation="vertical"] {
+  flex-direction: column;
+  border-bottom: 0;
+  border-inline-end: 1px solid #cbd5e1;
+}
+
+.rv-Tab {
+  padding: 0.5rem 0.875rem;
+  border-bottom: 2px solid transparent;
+  color: #475569;
+  cursor: default;
+  outline: none;
+}
+.rv-Tab[data-hovered] {
+  color: #0f172a;
+}
+.rv-Tab[data-selected] {
+  border-bottom-color: #0d9488;
+  color: #0f172a;
+  font-weight: 600;
+}
+.rv-Tab[data-disabled] {
+  opacity: 0.4;
+}
+.rv-Tab[data-focus-visible],
+.rv-TabPanel[data-focus-visible] {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+}
+
+.rv-TabPanel {
+  padding: 1rem 0.25rem;
+  outline: none;
+}

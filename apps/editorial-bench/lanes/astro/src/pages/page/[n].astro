@@ -1,0 +1,12 @@
+---
+import ListPage from "../../components/ListPage.astro";
+import { articles, site } from "../../lib/site.mjs";
+export async function getStaticPaths() {
+  const { articles, site } = await import("../../lib/site.mjs");
+  const pages = Math.ceil((await articles()).length / site.perPage);
+  return Array.from({ length: pages - 1 }, (_, i) => ({ params: { n: String(i + 2) } }));
+}
+const n = Number(Astro.params.n);
+const all = await articles();
+---
+<ListPage n={n} pages={Math.ceil(all.length / site.perPage)} items={all.slice((n - 1) * site.perPage, n * site.perPage)} />

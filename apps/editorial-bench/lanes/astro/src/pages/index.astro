@@ -1,0 +1,6 @@
+---
+import ListPage from "../components/ListPage.astro";
+import { articles, site } from "../lib/site.mjs";
+const all = await articles();
+---
+<ListPage n={1} pages={Math.ceil(all.length / site.perPage)} items={all.slice(0, site.perPage)} />

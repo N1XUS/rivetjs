@@ -1,0 +1,89 @@
+{
+  "baselineRevision": "b710b72",
+  "frontend": {
+    "container": "rivet-direct-controls",
+    "image": "sha256:c933975b67161d431a3bfd974c4635c97f3de6e6b4bbbbab3c5b5b05f5e59310",
+    "cpuLimit": 1,
+    "memoryBytes": 536870912,
+    "oomKilled": false,
+    "readOnlyMounts": [
+      "apps/ssr-bench/experiments/direct",
+      "libs/server-emitter"
+    ]
+  },
+  "backend": {
+    "container": "rivet-ssr-bench-backend-1",
+    "image": "sha256:10efd062c54ea2d69522b2735c1b39e286c93e01762f414ff4ae70d062592697",
+    "cpuLimit": 2,
+    "memoryBytes": 1073741824,
+    "oomKilled": false
+  },
+  "driver": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.14.1",
+    "cpu": "Apple M4 Pro",
+    "cpuCount": 14,
+    "totalMemoryBytes": 51539607552,
+    "cpuQuota": null,
+    "memoryQuota": null
+  },
+  "infrastructure": "Docker Desktop Linux ARM64 VM on macOS; driver host process outside VM with no quota; no profilers/builds/tests during measured load",
+  "sources": [
+    {
+      "path": "apps/ssr-bench/experiments/direct/fixture.mjs",
+      "sha256": "da6bac324adc8640d9eb08b1f3fff9aacb00b4065d8e3c0fe51d81a61d21cb5a"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.mjs",
+      "sha256": "b282af2b56b2b6e20f0e858f2b780c85e8c0a3e272aa089322c40fca5188f844",
+      "measuredSourceSnapshot": "apps/ssr-bench/experiments/direct/snapshots/prototype-measured-before-ack-fix.txt",
+      "livePathChangedAfterTiming": true
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/controls.mjs",
+      "sha256": "8b9b01ab4c0d237b533495b70994aa64dc3d884264dbcc165b6c48a368d97a1f"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/http-probe.mjs",
+      "sha256": "40979014def491592ac62319ea9960491ea5a29597c7653b86e0ece55e2db95c"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/pure.mjs",
+      "sha256": "ef4addc6a5176b38c2ff847796150787585a5d43b8bd981706a74786408d1f05"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.test.mjs",
+      "sha256": "4b53c14f3bb5007e380a59e3f1f1d699aace9ebae4ebea2681ea4631c38c8ad2",
+      "livePathChangedAfterTiming": true,
+      "role": "Historical pre-timing test metadata; current verified source fingerprint recorded separately."
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/controls.test.mjs",
+      "sha256": "5e0fbdad5d46aaf643fa639e7073d149f6e19cc2fc9ec71e81ea252ebd089d1a"
+    },
+    {
+      "path": "libs/server-emitter/index.mjs",
+      "sha256": "d8efd2b5aa871b1c885a167385e7de3c57753be25bedbdf72f1481475a5c2964"
+    },
+    {
+      "path": "libs/server-emitter/writers.mjs",
+      "sha256": "18703dc90c5628a7ae6e5a38941423cafde72b2e40ba31bc9fb8d556505a9ca7"
+    },
+    {
+      "path": "libs/server-emitter/style.mjs",
+      "sha256": "b0d6d8b1b75470369a64be8567cc96ab5202605bdeb17af250ed89b119dd5439"
+    }
+  ],
+  "validatedPrototypeTimingVersion": "before generic acknowledgment/child cancellation fix; historical timing and profile JSONs not changed",
+  "postTimingVerificationSources": [
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.mjs",
+      "sha256": "cdd0542f1ce3708d2eb133627535dc63faeaab84e1fa1d395edb743f15bea132"
+    },
+    {
+      "path": "apps/ssr-bench/experiments/direct/prototype.test.mjs",
+      "sha256": "ec6f5b6e9adeb7f5e14423ed779eac80e24c0bbb8d892e591fac7d3f96059573"
+    }
+  ]
+}

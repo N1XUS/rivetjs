@@ -1,0 +1,31 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.strip {
+  width: 320px;
+  height: 64px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+/* Horizontal rows: the content wrapper is a block; lay the items out in a row. */
+.strip .cdk-virtual-scroll-content-wrapper {
+  display: flex;
+}
+.col {
+  box-sizing: border-box;
+  flex: 0 0 50px;
+  width: 50px;
+  display: grid;
+  place-items: center;
+  border-inline-end: 1px solid #e2e8f0;
+}
+button {
+  font: inherit;
+}

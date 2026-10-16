@@ -1,0 +1,33 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Tabs",
+  summary: "Tabs, TabList, Tab and TabPanel with a disabled tab: arrow keys move and select, Home and End jump, the selection is a signal.",
+  tags: ["aria", "tabs", "keyboard"],
+  status: "experimental",
+  frame: { height: "sm" },
+  show: ["src/routes/index.tsx", "src/styles.css"],
+  test: [
+    { attr: ["#product-tab-overview", "aria-selected", "true"] },
+    { attr: ["#product-tab-overview", "aria-controls", "product-tabpanel-overview"] },
+    { absent: "#product-tabpanel-specs" },
+    { press: ["#product-tab-overview", "ArrowRight"] },
+    { focused: "#product-tab-specs" },
+    { attr: ["#product-tab-specs", "aria-selected", "true"] },
+    { attr: ["#product-tab-specs", "data-selected", "true"] },
+    { attr: ["#product-tab-specs", "tabindex", "0"] },
+    { attr: ["#product-tab-overview", "tabindex", "-1"] },
+    { expect: ["#product-tabpanel-specs", "Specs of the product."] },
+    { absent: "#product-tabpanel-overview" },
+    { expect: ["#value", "Selected: specs"] },
+    { key: "ArrowRight" },
+    { focused: "#product-tab-faq" },
+    { key: "ArrowRight" },
+    { focused: "#product-tab-overview" },
+    { key: "End" },
+    { focused: "#product-tab-faq" },
+    { key: "Home" },
+    { attr: ["#product-tab-overview", "aria-selected", "true"] },
+    { expect: ["#value", "Selected: overview"] },
+  ],
+});

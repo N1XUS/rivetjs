@@ -1,0 +1,24 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/surface.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Surface component styles */
+
+/* Block */
+.surface {
+  @apply relative text-foreground;
+}
+
+/* Modifier - variant */
+.surface--transparent {
+  @apply bg-transparent;
+}
+
+.surface--default {
+  @apply bg-surface text-surface-foreground;
+}
+
+.surface--secondary {
+  @apply bg-surface-secondary text-surface-secondary-foreground;
+}
+
+.surface--tertiary {
+  @apply bg-surface-tertiary text-surface-tertiary-foreground;
+}

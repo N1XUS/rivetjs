@@ -1,0 +1,1976 @@
+{
+  "source": {
+    "repository": "https://github.com/krausest/js-framework-benchmark",
+    "commit": "bf894b681fb56433ccb6efb4a3c93e35eda2b20d",
+    "file": "webdriver-ts-results/src/results.ts",
+    "sha256": "309211af64c41c65b98bc387d49da9ebbaf73390df135afd3e1a93c5feadaffd",
+    "page": "https://krausest.github.io/js-framework-benchmark/current.html",
+    "chrome": "154.0.8037.98",
+    "extractedAt": "2026-10-04T19:53:13.484Z",
+    "displayDefault": "median of total (results page default: DisplayMode.DISPLAY_MEDIAN, CpuDurationMode.TOTAL)",
+    "units": {
+      "cpu": "ms",
+      "memory": "MB (measureUserAgentSpecificMemory bytes / 1024 / 1024)",
+      "size": "kB",
+      "firstPaint": "ms"
+    }
+  },
+  "benchmarks": [
+    {
+      "id": "01_run1k",
+      "label": "create rows",
+      "description": "creating 1,000 rows. (5 warmup runs).",
+      "type": 0
+    },
+    {
+      "id": "02_replace1k",
+      "label": "replace all rows",
+      "description": "updating all 1,000 rows. (5 warmup runs).",
+      "type": 0
+    },
+    {
+      "id": "03_update10th1k_x16",
+      "label": "partial update",
+      "description": "updating every 10th row for 1,000 row. (3 warmup runs). 4 x CPU slowdown.",
+      "type": 0
+    },
+    {
+      "id": "04_select1k",
+      "label": "select row",
+      "description": "highlighting a selected row. (5 warmup runs). 4 x CPU slowdown.",
+      "type": 0
+    },
+    {
+      "id": "05_swap1k",
+      "label": "swap rows",
+      "description": "swap 2 rows for table with 1,000 rows. (5 warmup runs). 4 x CPU slowdown.",
+      "type": 0
+    },
+    {
+      "id": "06_remove-one-1k",
+      "label": "remove row",
+      "description": "removing one row. (5 warmup runs). 2 x CPU slowdown.",
+      "type": 0
+    },
+    {
+      "id": "07_create10k",
+      "label": "create many rows",
+      "description": "creating 10,000 rows. (5 warmup runs).",
+      "type": 0
+    },
+    {
+      "id": "08_create1k-after1k_x2",
+      "label": "append rows to large table",
+      "description": "appending 1,000 to a table of 1,000 rows. (5 warmup runs).",
+      "type": 0
+    },
+    {
+      "id": "09_clear1k_x8",
+      "label": "clear rows",
+      "description": "clearing a table with 1,000 rows. (5 warmup runs). 4 x CPU slowdown.",
+      "type": 0
+    },
+    {
+      "id": "21_ready-memory",
+      "label": "ready memory",
+      "description": "Memory usage after page load.",
+      "type": 1
+    },
+    {
+      "id": "22_run-memory",
+      "label": "run memory",
+      "description": "Memory usage after adding 1,000 rows.",
+      "type": 1
+    },
+    {
+      "id": "25_run-clear-memory",
+      "label": "creating/clearing 1k rows (5 cycles)",
+      "description": "Memory usage after creating and clearing 1000 rows 5 times",
+      "type": 1
+    },
+    {
+      "id": "41_size-uncompressed",
+      "label": "uncompressed size",
+      "description": "uncompressed size of all implementation files (excluding /css and http headers)",
+      "type": 5
+    },
+    {
+      "id": "42_size-compressed",
+      "label": "compressed size",
+      "description": "brotli compressed size of all implementation files (excluding /css and http headers)",
+      "type": 5
+    },
+    {
+      "id": "43_first-paint",
+      "label": "first paint",
+      "description": "first paint",
+      "type": 5
+    }
+  ],
+  "frameworks": {
+    "vanillajs-keyed": {
+      "issues": [
+        772
+      ],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 20.6,
+            "mean": 20.66,
+            "min": 20.4,
+            "max": 21
+          },
+          "script": {
+            "n": 15,
+            "median": 1.8,
+            "mean": 1.8733333333333337,
+            "min": 1.8,
+            "max": 2.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.5,
+            "mean": 18.44666666666667,
+            "min": 18.2,
+            "max": 18.8
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 22.1,
+            "mean": 22.086666666666666,
+            "min": 21.7,
+            "max": 22.9
+          },
+          "script": {
+            "n": 15,
+            "median": 3.5,
+            "mean": 3.513333333333333,
+            "min": 3.2,
+            "max": 3.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.2,
+            "mean": 18.233333333333338,
+            "min": 17.9,
+            "max": 18.8
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 9.7,
+            "mean": 9.913333333333334,
+            "min": 8.9,
+            "max": 13.7
+          },
+          "script": {
+            "n": 15,
+            "median": 0.5,
+            "mean": 0.4266666666666667,
+            "min": 0.1,
+            "max": 1.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 8.3,
+            "mean": 8.413333333333334,
+            "min": 7.2,
+            "max": 11.4
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 2.5,
+            "mean": 2.5,
+            "min": 1.9,
+            "max": 3
+          },
+          "script": {
+            "n": 25,
+            "median": 0.1,
+            "mean": 0.332,
+            "min": 0.1,
+            "max": 1
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.6,
+            "mean": 1.7480000000000002,
+            "min": 1,
+            "max": 2.8
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 11,
+            "mean": 11.106666666666666,
+            "min": 10.2,
+            "max": 12
+          },
+          "script": {
+            "n": 15,
+            "median": 0.1,
+            "mean": 0.1866666666666667,
+            "min": 0,
+            "max": 1
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.7,
+            "mean": 9.746666666666668,
+            "min": 9.2,
+            "max": 10.7
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 10.1,
+            "mean": 10.139999999999999,
+            "min": 9.7,
+            "max": 10.8
+          },
+          "script": {
+            "n": 15,
+            "median": 0.5,
+            "mean": 0.4933333333333333,
+            "min": 0.2,
+            "max": 1
+          },
+          "paint": {
+            "n": 15,
+            "median": 9,
+            "mean": 8.979999999999999,
+            "min": 8.6,
+            "max": 9.3
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 213.3,
+            "mean": 213.58666666666664,
+            "min": 212.1,
+            "max": 215
+          },
+          "script": {
+            "n": 15,
+            "median": 16.8,
+            "mean": 16.813333333333333,
+            "min": 16.6,
+            "max": 17.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 190.2,
+            "mean": 190.32,
+            "min": 189,
+            "max": 191.6
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 23.6,
+            "mean": 23.660000000000004,
+            "min": 23.4,
+            "max": 24.1
+          },
+          "script": {
+            "n": 15,
+            "median": 1.9,
+            "mean": 1.8666666666666667,
+            "min": 1.8,
+            "max": 2
+          },
+          "paint": {
+            "n": 15,
+            "median": 21,
+            "mean": 21.1,
+            "min": 20.9,
+            "max": 21.5
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 8.7,
+            "mean": 8.746666666666668,
+            "min": 7.7,
+            "max": 9.7
+          },
+          "script": {
+            "n": 15,
+            "median": 6.5,
+            "mean": 6.513333333333334,
+            "min": 5.9,
+            "max": 7.6
+          },
+          "paint": {
+            "n": 15,
+            "median": 1.2,
+            "mean": 1.2800000000000002,
+            "min": 0.7,
+            "max": 2.3
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.48,
+            "mean": 0.48,
+            "min": 0.48,
+            "max": 0.48
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.87,
+            "mean": 1.87,
+            "min": 1.87,
+            "max": 1.87
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.58,
+            "mean": 0.58,
+            "min": 0.58,
+            "max": 0.58
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 11.3,
+            "mean": 11.3,
+            "min": 11.3,
+            "max": 11.3
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 2.5,
+            "mean": 2.5,
+            "min": 2.5,
+            "max": 2.5
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 53.8,
+            "mean": 53.8,
+            "min": 53.8,
+            "max": 53.8
+          }
+        }
+      }
+    },
+    "solid-v1.9.3-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 21.7,
+            "mean": 21.720000000000002,
+            "min": 21.3,
+            "max": 22.3
+          },
+          "script": {
+            "n": 15,
+            "median": 2.8,
+            "mean": 2.813333333333333,
+            "min": 2.7,
+            "max": 3
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.6,
+            "mean": 18.579999999999995,
+            "min": 18.3,
+            "max": 19.1
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 23.9,
+            "mean": 23.95333333333333,
+            "min": 23.5,
+            "max": 24.3
+          },
+          "script": {
+            "n": 15,
+            "median": 5.1,
+            "mean": 5.1066666666666665,
+            "min": 5,
+            "max": 5.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.3,
+            "mean": 18.346666666666668,
+            "min": 18.2,
+            "max": 18.6
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 10.4,
+            "mean": 10.273333333333333,
+            "min": 9.5,
+            "max": 11.2
+          },
+          "script": {
+            "n": 15,
+            "median": 0.8,
+            "mean": 0.8133333333333332,
+            "min": 0.6,
+            "max": 1.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 8.4,
+            "mean": 8.313333333333333,
+            "min": 7.4,
+            "max": 9
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 3.2,
+            "mean": 3.2560000000000007,
+            "min": 2.5,
+            "max": 3.8
+          },
+          "script": {
+            "n": 25,
+            "median": 0.9,
+            "mean": 0.8879999999999998,
+            "min": 0.2,
+            "max": 1.5
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.6,
+            "mean": 1.744,
+            "min": 1.1,
+            "max": 2.9
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 12.5,
+            "mean": 12.44,
+            "min": 11.7,
+            "max": 13.1
+          },
+          "script": {
+            "n": 15,
+            "median": 1,
+            "mean": 1.0733333333333335,
+            "min": 0.6,
+            "max": 1.6
+          },
+          "paint": {
+            "n": 15,
+            "median": 10,
+            "mean": 9.966666666666669,
+            "min": 8.9,
+            "max": 10.8
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 10.2,
+            "mean": 10.233333333333333,
+            "min": 10,
+            "max": 10.7
+          },
+          "script": {
+            "n": 15,
+            "median": 0.4,
+            "mean": 0.41333333333333333,
+            "min": 0.3,
+            "max": 0.5
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.2,
+            "mean": 9.146666666666668,
+            "min": 8.8,
+            "max": 9.4
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 228.8,
+            "mean": 229.09333333333333,
+            "min": 227.1,
+            "max": 234
+          },
+          "script": {
+            "n": 15,
+            "median": 23,
+            "mean": 23.013333333333335,
+            "min": 22.4,
+            "max": 23.9
+          },
+          "paint": {
+            "n": 15,
+            "median": 199.4,
+            "mean": 199.44666666666666,
+            "min": 198,
+            "max": 202.4
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 24.7,
+            "mean": 24.76666666666667,
+            "min": 24.3,
+            "max": 25.3
+          },
+          "script": {
+            "n": 15,
+            "median": 3,
+            "mean": 2.9866666666666664,
+            "min": 2.9,
+            "max": 3.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.1,
+            "mean": 21.10666666666667,
+            "min": 20.6,
+            "max": 21.6
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 10.6,
+            "mean": 11.006666666666664,
+            "min": 9.5,
+            "max": 13.6
+          },
+          "script": {
+            "n": 15,
+            "median": 8.4,
+            "mean": 8.953333333333337,
+            "min": 7,
+            "max": 11.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 1,
+            "mean": 1.1,
+            "min": 0.3,
+            "max": 2.3
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.6,
+            "mean": 0.6,
+            "min": 0.6,
+            "max": 0.6
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 2.68,
+            "mean": 2.68,
+            "min": 2.68,
+            "max": 2.68
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.77,
+            "mean": 0.77,
+            "min": 0.77,
+            "max": 0.77
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 11.5,
+            "mean": 11.5,
+            "min": 11.5,
+            "max": 11.5
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 4.5,
+            "mean": 4.5,
+            "min": 4.5,
+            "max": 4.5
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 51.6,
+            "mean": 51.6,
+            "min": 51.6,
+            "max": 51.6
+          }
+        }
+      }
+    },
+    "svelte-v5.42.1-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 22.1,
+            "mean": 22.013333333333335,
+            "min": 21.1,
+            "max": 22.3
+          },
+          "script": {
+            "n": 15,
+            "median": 3.4,
+            "mean": 3.32,
+            "min": 2.9,
+            "max": 3.5
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.4,
+            "mean": 18.346666666666668,
+            "min": 17.8,
+            "max": 18.5
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 24.9,
+            "mean": 24.92,
+            "min": 24.3,
+            "max": 25.7
+          },
+          "script": {
+            "n": 15,
+            "median": 6.1,
+            "mean": 6.0600000000000005,
+            "min": 5.8,
+            "max": 6.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.3,
+            "mean": 18.326666666666668,
+            "min": 17.7,
+            "max": 18.9
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 10.9,
+            "mean": 10.860000000000003,
+            "min": 10.1,
+            "max": 11.9
+          },
+          "script": {
+            "n": 15,
+            "median": 1,
+            "mean": 1.1000000000000003,
+            "min": 0.6,
+            "max": 1.8
+          },
+          "paint": {
+            "n": 15,
+            "median": 8.3,
+            "mean": 8.566666666666666,
+            "min": 7.7,
+            "max": 9.4
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 5,
+            "mean": 4.924,
+            "min": 4,
+            "max": 5.8
+          },
+          "script": {
+            "n": 25,
+            "median": 2.6,
+            "mean": 2.552,
+            "min": 1.4,
+            "max": 3.5
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.8,
+            "mean": 1.804,
+            "min": 0.8,
+            "max": 3
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 13,
+            "mean": 13.04,
+            "min": 12.2,
+            "max": 13.6
+          },
+          "script": {
+            "n": 15,
+            "median": 1.5,
+            "mean": 1.4933333333333332,
+            "min": 1,
+            "max": 1.9
+          },
+          "paint": {
+            "n": 15,
+            "median": 10.4,
+            "mean": 10.353333333333332,
+            "min": 9.5,
+            "max": 11
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 10.5,
+            "mean": 10.54,
+            "min": 10,
+            "max": 11.2
+          },
+          "script": {
+            "n": 15,
+            "median": 0.6,
+            "mean": 0.6466666666666665,
+            "min": 0.5,
+            "max": 1.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.1,
+            "mean": 9.193333333333332,
+            "min": 8.8,
+            "max": 10
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 231.9,
+            "mean": 232.00666666666666,
+            "min": 230.5,
+            "max": 235.5
+          },
+          "script": {
+            "n": 15,
+            "median": 25.2,
+            "mean": 25.153333333333332,
+            "min": 24.9,
+            "max": 25.4
+          },
+          "paint": {
+            "n": 15,
+            "median": 199.6,
+            "mean": 200.22,
+            "min": 198.8,
+            "max": 203.7
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 25.1,
+            "mean": 25.106666666666666,
+            "min": 24.7,
+            "max": 26
+          },
+          "script": {
+            "n": 15,
+            "median": 3.2,
+            "mean": 3.193333333333334,
+            "min": 3.1,
+            "max": 3.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.2,
+            "mean": 21.253333333333334,
+            "min": 20.9,
+            "max": 22.1
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 10.4,
+            "mean": 10.433333333333334,
+            "min": 9.5,
+            "max": 12.1
+          },
+          "script": {
+            "n": 15,
+            "median": 8.4,
+            "mean": 8.473333333333333,
+            "min": 7.9,
+            "max": 10.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 0.8,
+            "mean": 0.9800000000000002,
+            "min": 0.3,
+            "max": 2
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.67,
+            "mean": 0.67,
+            "min": 0.67,
+            "max": 0.67
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 2.88,
+            "mean": 2.88,
+            "min": 2.88,
+            "max": 2.88
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.94,
+            "mean": 0.94,
+            "min": 0.94,
+            "max": 0.94
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 26.6,
+            "mean": 26.6,
+            "min": 26.6,
+            "max": 26.6
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 9.7,
+            "mean": 9.7,
+            "min": 9.7,
+            "max": 9.7
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 71.4,
+            "mean": 71.4,
+            "min": 71.4,
+            "max": 71.4
+          }
+        }
+      }
+    },
+    "svelte-classic-v5.43.2-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 22.7,
+            "mean": 22.7,
+            "min": 22.3,
+            "max": 23.3
+          },
+          "script": {
+            "n": 15,
+            "median": 4.1,
+            "mean": 4,
+            "min": 3.7,
+            "max": 4.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.3,
+            "mean": 18.346666666666668,
+            "min": 18.1,
+            "max": 18.8
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 25.5,
+            "mean": 25.580000000000005,
+            "min": 25,
+            "max": 26.8
+          },
+          "script": {
+            "n": 15,
+            "median": 6.9,
+            "mean": 6.8533333333333335,
+            "min": 6.6,
+            "max": 7.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.1,
+            "mean": 18.18,
+            "min": 17.9,
+            "max": 19.2
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 13.2,
+            "mean": 13.273333333333333,
+            "min": 12.3,
+            "max": 14.1
+          },
+          "script": {
+            "n": 15,
+            "median": 3.2,
+            "mean": 3.2133333333333334,
+            "min": 2.5,
+            "max": 3.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 8.8,
+            "mean": 8.806666666666667,
+            "min": 7.8,
+            "max": 9.8
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 4.5,
+            "mean": 4.4959999999999996,
+            "min": 3.7,
+            "max": 5.3
+          },
+          "script": {
+            "n": 25,
+            "median": 2.2,
+            "mean": 2.128,
+            "min": 0.9,
+            "max": 2.6
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.8,
+            "mean": 1.8160000000000003,
+            "min": 0.8,
+            "max": 3
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 15.2,
+            "mean": 15.219999999999999,
+            "min": 14.6,
+            "max": 15.9
+          },
+          "script": {
+            "n": 15,
+            "median": 3.4,
+            "mean": 3.3466666666666662,
+            "min": 2.8,
+            "max": 3.9
+          },
+          "paint": {
+            "n": 15,
+            "median": 10.8,
+            "mean": 10.746666666666666,
+            "min": 9.9,
+            "max": 11.9
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 11.9,
+            "mean": 11.953333333333331,
+            "min": 11.5,
+            "max": 12.5
+          },
+          "script": {
+            "n": 15,
+            "median": 1.5,
+            "mean": 1.4933333333333332,
+            "min": 1.3,
+            "max": 1.8
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.7,
+            "mean": 9.773333333333332,
+            "min": 9.2,
+            "max": 10.3
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 239.9,
+            "mean": 240,
+            "min": 237.9,
+            "max": 242.3
+          },
+          "script": {
+            "n": 15,
+            "median": 33.2,
+            "mean": 33.13333333333333,
+            "min": 32.6,
+            "max": 33.6
+          },
+          "paint": {
+            "n": 15,
+            "median": 200.4,
+            "mean": 200.45333333333338,
+            "min": 198.4,
+            "max": 202.2
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 26.5,
+            "mean": 26.526666666666667,
+            "min": 26.2,
+            "max": 27.4
+          },
+          "script": {
+            "n": 15,
+            "median": 4.6,
+            "mean": 4.613333333333333,
+            "min": 4.5,
+            "max": 4.9
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.2,
+            "mean": 21.200000000000003,
+            "min": 20.8,
+            "max": 22.1
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 10.5,
+            "mean": 10.6,
+            "min": 9.5,
+            "max": 13.8
+          },
+          "script": {
+            "n": 15,
+            "median": 8.2,
+            "mean": 8.366666666666667,
+            "min": 7.4,
+            "max": 11.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 1.2,
+            "mean": 1.1600000000000001,
+            "min": 0.3,
+            "max": 1.9
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 0.6,
+            "mean": 0.6,
+            "min": 0.6,
+            "max": 0.6
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 3.08,
+            "mean": 3.08,
+            "min": 3.08,
+            "max": 3.08
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1,
+            "mean": 1,
+            "min": 1,
+            "max": 1
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 28.9,
+            "mean": 28.9,
+            "min": 28.9,
+            "max": 28.9
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 10.4,
+            "mean": 10.4,
+            "min": 10.4,
+            "max": 10.4
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 65.6,
+            "mean": 65.6,
+            "min": 65.6,
+            "max": 65.6
+          }
+        }
+      }
+    },
+    "react-hooks-v19.2.0-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 23.6,
+            "mean": 24.1,
+            "min": 23.3,
+            "max": 25.4
+          },
+          "script": {
+            "n": 15,
+            "median": 6.2,
+            "mean": 6.260000000000001,
+            "min": 5.8,
+            "max": 6.8
+          },
+          "paint": {
+            "n": 15,
+            "median": 17.1,
+            "mean": 17.346666666666668,
+            "min": 16.8,
+            "max": 18.2
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 30.2,
+            "mean": 30.226666666666667,
+            "min": 29.4,
+            "max": 31.5
+          },
+          "script": {
+            "n": 15,
+            "median": 11.7,
+            "mean": 11.573333333333334,
+            "min": 10.8,
+            "max": 12.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.1,
+            "mean": 18.1,
+            "min": 18,
+            "max": 18.3
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 14.7,
+            "mean": 14.62,
+            "min": 13.6,
+            "max": 15.5
+          },
+          "script": {
+            "n": 15,
+            "median": 4.5,
+            "mean": 4.319999999999999,
+            "min": 3.8,
+            "max": 4.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.2,
+            "mean": 9.120000000000001,
+            "min": 8.3,
+            "max": 10.2
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 5.4,
+            "mean": 5.324,
+            "min": 4.2,
+            "max": 6
+          },
+          "script": {
+            "n": 25,
+            "median": 3,
+            "mean": 2.8879999999999995,
+            "min": 1.4,
+            "max": 3.6
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.7,
+            "mean": 1.8000000000000003,
+            "min": 1.1,
+            "max": 2.9
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 89.7,
+            "mean": 89.44666666666667,
+            "min": 86.6,
+            "max": 92.9
+          },
+          "script": {
+            "n": 15,
+            "median": 18.2,
+            "mean": 18.513333333333332,
+            "min": 16.8,
+            "max": 20.4
+          },
+          "paint": {
+            "n": 15,
+            "median": 68.5,
+            "mean": 68.48000000000002,
+            "min": 66.7,
+            "max": 70.1
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 11.3,
+            "mean": 11.32666666666667,
+            "min": 10.9,
+            "max": 12
+          },
+          "script": {
+            "n": 15,
+            "median": 1.3,
+            "mean": 1.2799999999999998,
+            "min": 1,
+            "max": 1.4
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.4,
+            "mean": 9.359999999999998,
+            "min": 8.6,
+            "max": 10
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 401,
+            "mean": 406.6866666666666,
+            "min": 385.7,
+            "max": 430.4
+          },
+          "script": {
+            "n": 15,
+            "median": 187,
+            "mean": 192.49999999999997,
+            "min": 169.6,
+            "max": 217.4
+          },
+          "paint": {
+            "n": 15,
+            "median": 206.6,
+            "mean": 207.22,
+            "min": 204.2,
+            "max": 212.7
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 29.3,
+            "mean": 29.440000000000005,
+            "min": 28.8,
+            "max": 32.3
+          },
+          "script": {
+            "n": 15,
+            "median": 7.1,
+            "mean": 7.106666666666666,
+            "min": 6.9,
+            "max": 7.6
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.3,
+            "mean": 21.493333333333332,
+            "min": 21,
+            "max": 23.8
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 17.6,
+            "mean": 17.59333333333333,
+            "min": 16.4,
+            "max": 18.5
+          },
+          "script": {
+            "n": 15,
+            "median": 15.5,
+            "mean": 15.413333333333332,
+            "min": 14.6,
+            "max": 16.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 0.9,
+            "mean": 1.1133333333333335,
+            "min": 0.5,
+            "max": 1.9
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.19,
+            "mean": 1.19,
+            "min": 1.19,
+            "max": 1.19
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 4.37,
+            "mean": 4.37,
+            "min": 4.37,
+            "max": 4.37
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.98,
+            "mean": 1.98,
+            "min": 1.98,
+            "max": 1.98
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 190.3,
+            "mean": 190.3,
+            "min": 190.3,
+            "max": 190.3
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 51.4,
+            "mean": 51.4,
+            "min": 51.4,
+            "max": 51.4
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 226.6,
+            "mean": 226.6,
+            "min": 226.6,
+            "max": 226.6
+          }
+        }
+      }
+    },
+    "react-compiler-hooks-v19.0.0-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 24,
+            "mean": 24.30666666666667,
+            "min": 23.6,
+            "max": 25.7
+          },
+          "script": {
+            "n": 15,
+            "median": 6.3,
+            "mean": 6.439999999999999,
+            "min": 6,
+            "max": 7.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 17.1,
+            "mean": 17.366666666666667,
+            "min": 17,
+            "max": 18.2
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 29.8,
+            "mean": 29.84666666666667,
+            "min": 29.4,
+            "max": 30.6
+          },
+          "script": {
+            "n": 15,
+            "median": 11.2,
+            "mean": 11.280000000000001,
+            "min": 10.8,
+            "max": 12.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 18,
+            "mean": 18.026666666666664,
+            "min": 17.7,
+            "max": 18.4
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 14.9,
+            "mean": 14.906666666666666,
+            "min": 14.3,
+            "max": 15.5
+          },
+          "script": {
+            "n": 15,
+            "median": 4.5,
+            "mean": 4.54,
+            "min": 4,
+            "max": 5.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.1,
+            "mean": 9.086666666666668,
+            "min": 8,
+            "max": 10.4
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 7,
+            "mean": 7.108,
+            "min": 6.4,
+            "max": 7.9
+          },
+          "script": {
+            "n": 25,
+            "median": 4.3,
+            "mean": 4.331999999999999,
+            "min": 3.7,
+            "max": 4.8
+          },
+          "paint": {
+            "n": 25,
+            "median": 2.3,
+            "mean": 2.3,
+            "min": 1.2,
+            "max": 3.4
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 90.9,
+            "mean": 91.04666666666667,
+            "min": 88.1,
+            "max": 94
+          },
+          "script": {
+            "n": 15,
+            "median": 19.9,
+            "mean": 19.953333333333333,
+            "min": 18,
+            "max": 21.5
+          },
+          "paint": {
+            "n": 15,
+            "median": 69,
+            "mean": 68.88666666666668,
+            "min": 67.2,
+            "max": 70.9
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 12,
+            "mean": 12.02,
+            "min": 11.7,
+            "max": 12.6
+          },
+          "script": {
+            "n": 15,
+            "median": 1.9,
+            "mean": 1.9533333333333334,
+            "min": 1.7,
+            "max": 2.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.4,
+            "mean": 9.44,
+            "min": 9,
+            "max": 10
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 432.7,
+            "mean": 441.5200000000001,
+            "min": 424,
+            "max": 468.6
+          },
+          "script": {
+            "n": 15,
+            "median": 217.8,
+            "mean": 227.96666666666667,
+            "min": 212.2,
+            "max": 252.6
+          },
+          "paint": {
+            "n": 15,
+            "median": 205.9,
+            "mean": 206.30666666666667,
+            "min": 204.7,
+            "max": 209.6
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 29.5,
+            "mean": 29.533333333333328,
+            "min": 28.9,
+            "max": 30.4
+          },
+          "script": {
+            "n": 15,
+            "median": 7.4,
+            "mean": 7.446666666666666,
+            "min": 7.1,
+            "max": 7.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.2,
+            "mean": 21.253333333333334,
+            "min": 20.9,
+            "max": 21.8
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 17.6,
+            "mean": 17.806666666666665,
+            "min": 16.6,
+            "max": 19.9
+          },
+          "script": {
+            "n": 15,
+            "median": 15.4,
+            "mean": 15.613333333333333,
+            "min": 14.9,
+            "max": 17.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 1,
+            "mean": 1.1600000000000001,
+            "min": 0.3,
+            "max": 2.1
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.11,
+            "mean": 1.11,
+            "min": 1.11,
+            "max": 1.11
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 4.58,
+            "mean": 4.58,
+            "min": 4.58,
+            "max": 4.58
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.95,
+            "mean": 1.95,
+            "min": 1.95,
+            "max": 1.95
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 183,
+            "mean": 183,
+            "min": 183,
+            "max": 183
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 50,
+            "mean": 50,
+            "min": 50,
+            "max": 50
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 219.8,
+            "mean": 219.8,
+            "min": 219.8,
+            "max": 219.8
+          }
+        }
+      }
+    },
+    "react-classes-v19.0.0-keyed": {
+      "issues": [],
+      "results": {
+        "01_run1k": {
+          "total": {
+            "n": 15,
+            "median": 24.4,
+            "mean": 24.446666666666665,
+            "min": 23.9,
+            "max": 25.8
+          },
+          "script": {
+            "n": 15,
+            "median": 6.8,
+            "mean": 6.833333333333333,
+            "min": 6.4,
+            "max": 7.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 17,
+            "mean": 17.1,
+            "min": 16.9,
+            "max": 18
+          }
+        },
+        "02_replace1k": {
+          "total": {
+            "n": 15,
+            "median": 29.5,
+            "mean": 29.526666666666664,
+            "min": 28.7,
+            "max": 30.1
+          },
+          "script": {
+            "n": 15,
+            "median": 10.8,
+            "mean": 10.940000000000001,
+            "min": 10.4,
+            "max": 11.5
+          },
+          "paint": {
+            "n": 15,
+            "median": 18.1,
+            "mean": 18.026666666666664,
+            "min": 17.7,
+            "max": 18.2
+          }
+        },
+        "03_update10th1k_x16": {
+          "total": {
+            "n": 15,
+            "median": 13.5,
+            "mean": 13.573333333333332,
+            "min": 12.1,
+            "max": 15.6
+          },
+          "script": {
+            "n": 15,
+            "median": 3.2,
+            "mean": 3.4200000000000004,
+            "min": 2.8,
+            "max": 4.2
+          },
+          "paint": {
+            "n": 15,
+            "median": 9,
+            "mean": 9.08,
+            "min": 7.5,
+            "max": 11.2
+          }
+        },
+        "04_select1k": {
+          "total": {
+            "n": 25,
+            "median": 5.2,
+            "mean": 5.159999999999999,
+            "min": 4.3,
+            "max": 5.7
+          },
+          "script": {
+            "n": 25,
+            "median": 2.8,
+            "mean": 2.7680000000000007,
+            "min": 2.1,
+            "max": 3.4
+          },
+          "paint": {
+            "n": 25,
+            "median": 1.7,
+            "mean": 1.7719999999999996,
+            "min": 0.8,
+            "max": 2.8
+          }
+        },
+        "05_swap1k": {
+          "total": {
+            "n": 15,
+            "median": 88.9,
+            "mean": 89.4,
+            "min": 87.4,
+            "max": 97.4
+          },
+          "script": {
+            "n": 15,
+            "median": 17.6,
+            "mean": 17.913333333333334,
+            "min": 17.3,
+            "max": 19.1
+          },
+          "paint": {
+            "n": 15,
+            "median": 68.6,
+            "mean": 69.02666666666667,
+            "min": 67,
+            "max": 77.9
+          }
+        },
+        "06_remove-one-1k": {
+          "total": {
+            "n": 15,
+            "median": 11.5,
+            "mean": 11.473333333333333,
+            "min": 11.1,
+            "max": 12
+          },
+          "script": {
+            "n": 15,
+            "median": 1.4,
+            "mean": 1.4466666666666665,
+            "min": 1.3,
+            "max": 1.9
+          },
+          "paint": {
+            "n": 15,
+            "median": 9.3,
+            "mean": 9.326666666666664,
+            "min": 9,
+            "max": 9.6
+          }
+        },
+        "07_create10k": {
+          "total": {
+            "n": 15,
+            "median": 431.9,
+            "mean": 434.0666666666667,
+            "min": 425.6,
+            "max": 466.9
+          },
+          "script": {
+            "n": 15,
+            "median": 218.3,
+            "mean": 220.59333333333333,
+            "min": 214,
+            "max": 254.3
+          },
+          "paint": {
+            "n": 15,
+            "median": 205.9,
+            "mean": 206.43333333333334,
+            "min": 204.4,
+            "max": 209.8
+          }
+        },
+        "08_create1k-after1k_x2": {
+          "total": {
+            "n": 15,
+            "median": 29.6,
+            "mean": 29.660000000000004,
+            "min": 29.2,
+            "max": 31.3
+          },
+          "script": {
+            "n": 15,
+            "median": 7.5,
+            "mean": 7.493333333333334,
+            "min": 7.3,
+            "max": 7.7
+          },
+          "paint": {
+            "n": 15,
+            "median": 21.2,
+            "mean": 21.313333333333336,
+            "min": 20.9,
+            "max": 22.8
+          }
+        },
+        "09_clear1k_x8": {
+          "total": {
+            "n": 15,
+            "median": 17.4,
+            "mean": 17.646666666666665,
+            "min": 16.7,
+            "max": 19.5
+          },
+          "script": {
+            "n": 15,
+            "median": 15.3,
+            "mean": 15.546666666666669,
+            "min": 14.5,
+            "max": 17.8
+          },
+          "paint": {
+            "n": 15,
+            "median": 1.1,
+            "mean": 1.1733333333333333,
+            "min": 0.6,
+            "max": 2
+          }
+        },
+        "21_ready-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.13,
+            "mean": 1.13,
+            "min": 1.13,
+            "max": 1.13
+          }
+        },
+        "22_run-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 4.52,
+            "mean": 4.52,
+            "min": 4.52,
+            "max": 4.52
+          }
+        },
+        "25_run-clear-memory": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 1.89,
+            "mean": 1.89,
+            "min": 1.89,
+            "max": 1.89
+          }
+        },
+        "41_size-uncompressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 184.6,
+            "mean": 184.6,
+            "min": 184.6,
+            "max": 184.6
+          }
+        },
+        "42_size-compressed": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 50.2,
+            "mean": 50.2,
+            "min": 50.2,
+            "max": 50.2
+          }
+        },
+        "43_first-paint": {
+          "DEFAULT": {
+            "n": 1,
+            "median": 223.2,
+            "mean": 223.2,
+            "min": 223.2,
+            "max": 223.2
+          }
+        }
+      }
+    }
+  }
+}

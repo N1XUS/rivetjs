@@ -1,0 +1,132 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 draws a rotating chevron / swaps two icons): morphing disclosure chevron + menu burger after apple.com's local / global nav (TWEAKS.md TW-149). */
+/* ------------------------------------------------------------------------------------------------
+ * Morph icons: CSS geometry, not icons (no SVG paths). Two / three round-capped bars drawn by
+ * `::before` / `::after` (+ one child span for the burger's middle bar) whose rotation, length and
+ * offset are computed from ONE registered number, `--morph-p` (0 closed … 1 open). `[data-open="true"]`
+ * sets it to 1; the transition runs on the bars (they inherit the value), so:
+ *   - zero JS, resumable: the state attribute the component already renders drives it;
+ *   - no first-render playback (transitions never run on the initial style);
+ *   - interruptible: a toggle mid-flight reverses from the current shape (keyframes would snap).
+ * Degrades (targets Chrome 111 / Safari 16.4 / Firefox 128): without `@property` (Firefox < 128) or `linear()` (Safari < 17.2,
+ * Chrome < 113) there is no transition and the shape swaps instantly; geometry only needs `atan()` / `cos()` (Chrome 111,
+ * Safari 15.4, Firefox 108; no `sqrt()`, Chrome 120).
+ *
+ * Bars are drawn 8x and scaled by .125: a 1.33 px box snaps its thickness to whole device pixels (ink −24…−35 % on the
+ * chevron, +20 % on the burger vs lucide); at 8x the snap error is 8x smaller (`morph-icons.test.ts` ink check, ±10 %).
+ *
+ * Chevron (Select / ComboBox / Autocomplete / CellSelect / NativeSelect default indicator): lucide
+ * `ChevronDown` geometry at rest (8 × 4 in a 16 px box, stroke = size / 12); the arms flatten into a
+ * line and fold up (apple.com local-nav chevron: same 320 ms, same two-segment splines, as `linear()`).
+ * Burger (Navbar menu toggle): lucide `Menu` at rest, lucide `X` open; bars slide to the centre
+ * (middle one fades) then rotate ±45° (apple.com global-nav burger, 240 ms).
+ *
+ * Hooks: `--morph-chevron-size` / `-stroke` / `-duration`, `--morph-burger-size` / `-stroke` /
+ * `-duration` (components map their own `--<component>-indicator-*` / `--navbar-toggle-*` onto them),
+ * theme tokens `--duration-morph-chevron` (320 ms) / `--duration-morph-burger` (240 ms) and the `--ease-morph-*` curves.
+ * ------------------------------------------------------------------------------------------------ */
+@property --morph-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Host box: zero specificity, so a component slot class on the same element (`.select__indicator` `position: absolute`,
+   `display: flex`) wins regardless of file order (no equal-specificity tie across files, styles-split.test.ts). */
+:where(.morph-chevron, .morph-burger) {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.morph-chevron,
+.morph-burger {
+  /* Explicit 0: a morph icon inside another open one (a Select in an open navbar menu) stays closed. */
+  --morph-p: 0;
+
+  &[data-open="true"] {
+    --morph-p: 1;
+  }
+
+  &::before,
+  &::after,
+  & > span {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 9999px;
+    background: currentColor;
+  }
+}
+
+/* Chevron: d = 1 - 2p (1 = ⌄, 0 = flat, -1 = ⌃); arm = (s/4, s/4·d), centred at (∓s/8, 0). */
+.morph-chevron {
+  --_s: var(--morph-chevron-size, 1rem);
+  --_t: var(--morph-chevron-stroke, calc(var(--_s) / 12));
+  inline-size: var(--_s);
+  block-size: var(--_s);
+
+  /* Derived per bar: the bars run the transition, so they must read their own (inherited) --morph-p. */
+  &::before,
+  &::after {
+    --_d: calc(1 - 2 * var(--morph-p));
+    /* Arm length s/4 · √(1 + d²) = s/4 / cos(atan d); ×8, scaled back in the transform. */
+    inline-size: calc((var(--_s) / 4 / cos(atan(var(--_d))) + var(--_t)) * 8);
+    block-size: calc(var(--_t) * 8);
+    /* Collapse curve (theme `--ease-morph-chevron-close`). */
+    transition: --morph-p var(--morph-chevron-duration, var(--duration-morph-chevron)) var(--ease-morph-chevron-close);
+  }
+
+  &::before {
+    transform: translate(-50%, -50%) translateX(calc(var(--_s) / -8)) rotate(atan(var(--_d))) scale(0.125);
+  }
+
+  &::after {
+    transform: translate(-50%, -50%) translateX(calc(var(--_s) / 8)) rotate(calc(-1 * atan(var(--_d)))) scale(0.125);
+  }
+
+  /* Expand curve (theme `--ease-morph-chevron-open`). */
+  &[data-open="true"]::before,
+  &[data-open="true"]::after {
+    transition-timing-function: var(--ease-morph-chevron-open);
+  }
+}
+
+/* Burger: a = slide phase (0…1 over p 0…0.5), b = rotate phase (p 0.5…1); lucide Menu → X (24-unit grid). */
+.morph-burger {
+  --_s: var(--morph-burger-size, 1.25rem);
+  --_t: var(--morph-burger-stroke, calc(var(--_s) / 12));
+  inline-size: var(--_s);
+  block-size: var(--_s);
+
+  &::before,
+  &::after,
+  & > span {
+    --_a: clamp(0, 2 * var(--morph-p), 1);
+    --_b: clamp(0, 2 * var(--morph-p) - 1, 1);
+    inline-size: calc((var(--_s) * (16 + 0.9706 * var(--_b)) / 24 + var(--_t)) * 8);
+    block-size: calc(var(--_t) * 8);
+    transition: --morph-p var(--morph-burger-duration, var(--duration-morph-burger)) var(--ease-morph-burger);
+  }
+
+  & > span {
+    inline-size: calc((var(--_s) * 16 / 24 + var(--_t)) * 8);
+    transform: translate(-50%, -50%) scale(0.125);
+    opacity: calc(1 - var(--_a));
+  }
+
+  &::before {
+    transform: translate(-50%, -50%) translateY(calc(var(--_s) * -7 / 24 * (1 - var(--_a)))) rotate(calc(45deg * var(--_b))) scale(0.125);
+  }
+
+  &::after {
+    transform: translate(-50%, -50%) translateY(calc(var(--_s) * 7 / 24 * (1 - var(--_a)))) rotate(calc(-45deg * var(--_b))) scale(0.125);
+  }
+}
+
+/* Reduced motion (system setting or `data-reduce-motion="true"`): the shape swaps instantly. */
+.morph-chevron,
+.morph-burger,
+.morph-burger > span {
+  @apply motion-reduce:transition-none;
+}

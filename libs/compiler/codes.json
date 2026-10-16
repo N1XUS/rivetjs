@@ -1,0 +1,448 @@
+{
+  "$comment": "Rivet diagnostic code registry. Compiler codes are assigned in rust/src/diagnostics.rs (tests/codes.test.ts keeps both in sync); language-service codes (RV2101, RV3101, RV7101, RV7102) in libs/language-core. Codes are never reused; retired codes stay listed. `docs` per code = the docs base + code (placeholder origin until the docs site is published).",
+  "docs": "https://rivetjs.dev/errors/",
+  "ranges": {
+    "RV1": "syntax / JSX / attributes",
+    "RV2": "resume",
+    "RV3": "imports / helpers / route modules",
+    "RV4": "static calls (i18n)",
+    "RV5": "styles",
+    "RV6": "slots",
+    "RV7": "config / plugin options",
+    "RV8": "perf hints (info)",
+    "RV9": "internal"
+  },
+  "reserved": [
+    {
+      "from": "RV2500",
+      "to": "RV2599",
+      "owner": "@rivetjs/runtime",
+      "title": "Runtime hints (DEV.hint keys)"
+    },
+    {
+      "from": "RV3102",
+      "to": "RV3199",
+      "owner": "@rivetjs/router",
+      "title": "Router scanner / plugin / handler"
+    }
+  ],
+  "codes": [
+    {
+      "code": "RV1000",
+      "severity": "error",
+      "title": "Parse error",
+      "docs": "https://rivetjs.dev/errors/RV1000"
+    },
+    {
+      "code": "RV1001",
+      "severity": "error",
+      "title": "Spread attributes (retired: spreads compile)",
+      "retired": true,
+      "docs": "https://rivetjs.dev/errors/RV1001"
+    },
+    {
+      "code": "RV1002",
+      "severity": "error",
+      "title": "Spread children are not supported",
+      "docs": "https://rivetjs.dev/errors/RV1002"
+    },
+    {
+      "code": "RV1003",
+      "severity": "error",
+      "title": "Unsupported namespaced tag",
+      "docs": "https://rivetjs.dev/errors/RV1003"
+    },
+    {
+      "code": "RV1004",
+      "severity": "error",
+      "title": "Unsupported native tag",
+      "docs": "https://rivetjs.dev/errors/RV1004"
+    },
+    {
+      "code": "RV1005",
+      "severity": "error",
+      "title": "Parser-repaired native nesting",
+      "docs": "https://rivetjs.dev/errors/RV1005"
+    },
+    {
+      "code": "RV1006",
+      "severity": "error",
+      "title": "Text directly in table structure",
+      "docs": "https://rivetjs.dev/errors/RV1006"
+    },
+    {
+      "code": "RV1007",
+      "severity": "error",
+      "title": "<script> / <style> JSX content",
+      "docs": "https://rivetjs.dev/errors/RV1007"
+    },
+    {
+      "code": "RV1008",
+      "severity": "error",
+      "title": "Void element with children",
+      "docs": "https://rivetjs.dev/errors/RV1008"
+    },
+    {
+      "code": "RV1009",
+      "severity": "error",
+      "title": "Textarea model with children",
+      "docs": "https://rivetjs.dev/errors/RV1009"
+    },
+    {
+      "code": "RV1010",
+      "severity": "error",
+      "title": "Textarea / title children must be scalar text",
+      "docs": "https://rivetjs.dev/errors/RV1010"
+    },
+    {
+      "code": "RV1011",
+      "severity": "error",
+      "title": "Unsupported model binding",
+      "docs": "https://rivetjs.dev/errors/RV1011"
+    },
+    {
+      "code": "RV1012",
+      "severity": "error",
+      "title": "Unknown native event",
+      "docs": "https://rivetjs.dev/errors/RV1012"
+    },
+    {
+      "code": "RV1013",
+      "severity": "error",
+      "title": "Unsupported global event attribute",
+      "docs": "https://rivetjs.dev/errors/RV1013"
+    },
+    {
+      "code": "RV1014",
+      "severity": "error",
+      "title": "Structural prop passes a value instead of an accessor (retired: component props are live, each={xs()} / when={on()} update)",
+      "retired": true,
+      "docs": "https://rivetjs.dev/errors/RV1014"
+    },
+    {
+      "code": "RV1015",
+      "severity": "error",
+      "title": "Event handler is a literal (string / number / boolean), not a function",
+      "docs": "https://rivetjs.dev/errors/RV1015"
+    },
+    {
+      "code": "RV1016",
+      "severity": "error",
+      "title": "Event handler reads state when it binds (handlers bind once; wrap it in an arrow)",
+      "docs": "https://rivetjs.dev/errors/RV1016"
+    },
+    {
+      "code": "RV1101",
+      "severity": "error",
+      "title": "Unsafe or unsupported native attribute / URL",
+      "docs": "https://rivetjs.dev/errors/RV1101"
+    },
+    {
+      "code": "RV1102",
+      "severity": "error",
+      "title": "Invalid preload directive value",
+      "docs": "https://rivetjs.dev/errors/RV1102"
+    },
+    {
+      "code": "RV1103",
+      "severity": "error",
+      "title": "Invalid clientEvent target",
+      "docs": "https://rivetjs.dev/errors/RV1103"
+    },
+    {
+      "code": "RV2001",
+      "severity": "error",
+      "title": "Browser global read during server rendering (resume)",
+      "docs": "https://rivetjs.dev/errors/RV2001"
+    },
+    {
+      "code": "RV2002",
+      "severity": "error",
+      "title": "Resumable ref callback must assign a local",
+      "docs": "https://rivetjs.dev/errors/RV2002"
+    },
+    {
+      "code": "RV2003",
+      "severity": "error",
+      "title": "Captured class instance is not serializable",
+      "docs": "https://rivetjs.dev/errors/RV2003"
+    },
+    {
+      "code": "RV2004",
+      "severity": "error",
+      "title": "Capture-phase handlers are not resumable (retired: onXCapture resumes)",
+      "retired": true,
+      "docs": "https://rivetjs.dev/errors/RV2004"
+    },
+    {
+      "code": "RV2005",
+      "severity": "error",
+      "title": "Ref-bound local assigned outside ref callbacks",
+      "docs": "https://rivetjs.dev/errors/RV2005"
+    },
+    {
+      "code": "RV2006",
+      "severity": "error",
+      "title": "JSX inside handlers, effects and computeds",
+      "docs": "https://rivetjs.dev/errors/RV2006"
+    },
+    {
+      "code": "RV2007",
+      "severity": "error",
+      "title": "Resumable code captures `this`",
+      "docs": "https://rivetjs.dev/errors/RV2007"
+    },
+    {
+      "code": "RV2008",
+      "severity": "error",
+      "title": "Resumed module exports a different binding under a captured name",
+      "docs": "https://rivetjs.dev/errors/RV2008"
+    },
+    {
+      "code": "RV2009",
+      "severity": "error",
+      "title": "Two module references share a browser name",
+      "docs": "https://rivetjs.dev/errors/RV2009"
+    },
+    {
+      "code": "RV2010",
+      "severity": "error",
+      "title": "One module reference id resolves to two installed copies (Vite build)",
+      "docs": "https://rivetjs.dev/errors/RV2010"
+    },
+    {
+      "code": "RV2011",
+      "severity": "error",
+      "title": "Mutually recursive functions separated by an early exit (resume)",
+      "docs": "https://rivetjs.dev/errors/RV2011"
+    },
+    {
+      "code": "RV2012",
+      "severity": "error",
+      "title": "`.bind` with a spread first argument (resume; a warning when the receiver may be an object with its own `bind`)",
+      "docs": "https://rivetjs.dev/errors/RV2012"
+    },
+    {
+      "code": "RV2013",
+      "severity": "warning",
+      "title": "`.bind` of a value Rivet cannot resume (resume; an error when it is provably a function)",
+      "docs": "https://rivetjs.dev/errors/RV2013"
+    },
+    {
+      "code": "RV2014",
+      "severity": "warning",
+      "title": "`.bind(…)` inside an object literal a resumable closure reaches (resume)",
+      "docs": "https://rivetjs.dev/errors/RV2014"
+    },
+    {
+      "code": "RV2015",
+      "severity": "warning",
+      "title": "Component returns a function that cannot resume: anonymous default export or wrapper call (resume)",
+      "docs": "https://rivetjs.dev/errors/RV2015"
+    },
+    {
+      "code": "RV2101",
+      "severity": "warning",
+      "title": "Captured value not serializable (type-aware, language service)",
+      "docs": "https://rivetjs.dev/errors/RV2101"
+    },
+    {
+      "code": "RV2102",
+      "severity": "error",
+      "title": "Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive]",
+      "docs": "https://rivetjs.dev/errors/RV2102"
+    },
+    {
+      "code": "RV2145",
+      "severity": "error",
+      "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",
+      "docs": "https://rivetjs.dev/errors/RV2145"
+    },
+    {
+      "code": "RV2146",
+      "severity": "warning",
+      "title": "Non-component export of a framework module used in browser code of a Rivet module (Vite build)",
+      "docs": "https://rivetjs.dev/errors/RV2146"
+    },
+    {
+      "code": "RV2148",
+      "severity": "error",
+      "title": "A module owned by a framework bridge uses the Rivet runtime (Vite build)",
+      "docs": "https://rivetjs.dev/errors/RV2148"
+    },
+    {
+      "code": "RV2149",
+      "severity": "warning",
+      "title": "A framework island recovered from a hydration error by rendering on the client (browser)",
+      "docs": "https://rivetjs.dev/errors/RV2149"
+    },
+    {
+      "code": "RV2150",
+      "severity": "error",
+      "title": "The installed Preact no longer reads the island useId mask: Preact island ids would not be unique (server)",
+      "docs": "https://rivetjs.dev/errors/RV2150"
+    },
+    {
+      "code": "RV3001",
+      "severity": "error",
+      "title": "Target helper re-exports",
+      "docs": "https://rivetjs.dev/errors/RV3001"
+    },
+    {
+      "code": "RV3002",
+      "severity": "error",
+      "title": "Target helper / runtime namespace imports",
+      "docs": "https://rivetjs.dev/errors/RV3002"
+    },
+    {
+      "code": "RV3003",
+      "severity": "error",
+      "title": "Structural helper namespace imports",
+      "docs": "https://rivetjs.dev/errors/RV3003"
+    },
+    {
+      "code": "RV3004",
+      "severity": "error",
+      "title": "Structural helper aliases",
+      "docs": "https://rivetjs.dev/errors/RV3004"
+    },
+    {
+      "code": "RV3005",
+      "severity": "error",
+      "title": "Server clientOnly must be called directly",
+      "docs": "https://rivetjs.dev/errors/RV3005"
+    },
+    {
+      "code": "RV3006",
+      "severity": "error",
+      "title": "Server clientOnly erasure shape",
+      "docs": "https://rivetjs.dev/errors/RV3006"
+    },
+    {
+      "code": "RV3007",
+      "severity": "error",
+      "title": "Route module server export shape",
+      "docs": "https://rivetjs.dev/errors/RV3007"
+    },
+    {
+      "code": "RV3008",
+      "severity": "error",
+      "title": "Server-only code referenced by browser code",
+      "docs": "https://rivetjs.dev/errors/RV3008"
+    },
+    {
+      "code": "RV3009",
+      "severity": "error",
+      "title": "Server-only code renders JSX in a resumed route module",
+      "docs": "https://rivetjs.dev/errors/RV3009"
+    },
+    {
+      "code": "RV3101",
+      "severity": "warning",
+      "title": "Link matches no route (language service)",
+      "docs": "https://rivetjs.dev/errors/RV3101"
+    },
+    {
+      "code": "RV4001",
+      "severity": "error",
+      "title": "Unknown message key / prefix",
+      "docs": "https://rivetjs.dev/errors/RV4001"
+    },
+    {
+      "code": "RV4002",
+      "severity": "error",
+      "title": "Unknown or missing message param",
+      "docs": "https://rivetjs.dev/errors/RV4002"
+    },
+    {
+      "code": "RV4003",
+      "severity": "error",
+      "title": "Static call arguments",
+      "docs": "https://rivetjs.dev/errors/RV4003"
+    },
+    {
+      "code": "RV4004",
+      "severity": "error",
+      "title": "Message tags",
+      "docs": "https://rivetjs.dev/errors/RV4004"
+    },
+    {
+      "code": "RV4005",
+      "severity": "error",
+      "title": "Static call configuration",
+      "docs": "https://rivetjs.dev/errors/RV4005"
+    },
+    {
+      "code": "RV5001",
+      "severity": "error",
+      "title": "css`` syntax",
+      "docs": "https://rivetjs.dev/errors/RV5001"
+    },
+    {
+      "code": "RV5002",
+      "severity": "error",
+      "title": "css`` usage (declaration, interpolation, unknown or written class)",
+      "docs": "https://rivetjs.dev/errors/RV5002"
+    },
+    {
+      "code": "RV5003",
+      "severity": "error",
+      "title": "Invalid or unsafe class / style attribute value",
+      "docs": "https://rivetjs.dev/errors/RV5003"
+    },
+    {
+      "code": "RV6001",
+      "severity": "error",
+      "title": "<slot> outside a component or without its props parameter",
+      "docs": "https://rivetjs.dev/errors/RV6001"
+    },
+    {
+      "code": "RV6002",
+      "severity": "error",
+      "title": "Invalid r:name / r:args",
+      "docs": "https://rivetjs.dev/errors/RV6002"
+    },
+    {
+      "code": "RV6003",
+      "severity": "error",
+      "title": "Invalid r:slot usage",
+      "docs": "https://rivetjs.dev/errors/RV6003"
+    },
+    {
+      "code": "RV6004",
+      "severity": "error",
+      "title": "Slot content passed twice",
+      "docs": "https://rivetjs.dev/errors/RV6004"
+    },
+    {
+      "code": "RV7001",
+      "severity": "error",
+      "title": "Invalid compiler option",
+      "docs": "https://rivetjs.dev/errors/RV7001"
+    },
+    {
+      "code": "RV7101",
+      "severity": "error",
+      "title": "Editor manifest (.rivet/editor.json) missing (rivet check)",
+      "docs": "https://rivetjs.dev/errors/RV7101"
+    },
+    {
+      "code": "RV7102",
+      "severity": "warning",
+      "title": "Editor manifest (.rivet/editor.json) stale (rivet check)",
+      "docs": "https://rivetjs.dev/errors/RV7102"
+    },
+    {
+      "code": "RV9000",
+      "severity": "error",
+      "title": "Unclassified compiler error",
+      "docs": "https://rivetjs.dev/errors/RV9000"
+    },
+    {
+      "code": "RV9001",
+      "severity": "error",
+      "title": "Internal compiler error (incl. compiler panic)",
+      "docs": "https://rivetjs.dev/errors/RV9001"
+    }
+  ]
+}

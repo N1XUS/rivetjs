@@ -1,0 +1,42 @@
+{
+  "name": "@rivetjs/devtools",
+  "version": "0.0.0-experimental",
+  "description": "Rivet DevTools for the Vite dev server: component tree, signals, updates, HMR and error log, performance.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./agent": {
+      "types": "./agent/index.ts",
+      "default": "./agent/index.ts"
+    },
+    "./protocol": {
+      "types": "./protocol.ts",
+      "default": "./protocol.ts"
+    },
+    "./server": {
+      "types": "./server.ts",
+      "default": "./server.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "lucide": "1.52.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/devtools"
+  },
+  "peerDependencies": {
+    "vite": "^8.3.2"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "vite": "8.3.2"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

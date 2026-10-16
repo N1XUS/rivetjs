@@ -1,0 +1,23 @@
+/* Tailwind, then the @rivetjs/cdk variants (focused:, entering:, placement-*:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+/* Keyframes for the entering: / exiting: variants. */
+@theme {
+  --animate-pop-in: pop 150ms ease-out;
+  --animate-pop-out: pop 100ms ease-in reverse;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.95;
+  }
+}
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}

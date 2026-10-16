@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetPreset",
+  "title": "Rivet workspace preset",
+  "description": "npx create-nx-workspace --preset=@rivetjs/nx: an Nx workspace with the Rivet plugin and a first Rivet app.",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "description": "Workspace name; also the default app name.", "$default": { "$source": "argv", "index": 0 } },
+    "appName": { "type": "string", "description": "Name of the first app (default: the workspace name)." },
+    "directory": { "type": "string", "description": "Folder of the first app (default apps/<appName>)." },
+    "template": { "type": "string", "enum": ["static", "server", "ui", "minimal"], "default": "static", "description": "Starter of the first app." },
+    "adapter": {
+      "type": "string",
+      "enum": ["node", "static"],
+      "description": "node: pages render per request; static: prerendered HTML. Default: from the template."
+    },
+    "deploy": {
+      "type": "string",
+      "enum": ["vercel", "netlify", "cloudflare", "bun", "deno"],
+      "description": "Platform target of the first app (create-rivet --deploy). bun and deno need --template=server."
+    },
+    "tailwind": { "type": "boolean", "description": "Tailwind v4. Default: on, except the minimal starter." },
+    "unitTestRunner": { "type": "string", "enum": ["vitest", "none"], "default": "vitest", "description": "Test runner of the first app." },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "skipInstall": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not run the package manager install." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["name"],
+  "additionalProperties": true
+}

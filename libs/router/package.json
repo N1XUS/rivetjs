@@ -1,0 +1,137 @@
+{
+  "name": "@rivetjs/router",
+  "version": "0.0.0-experimental",
+  "description": "File routing for Rivet: loaders, actions, guards, a web-standard request handler, Node / static / edge adapters.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "rivet": "./cli/rivet.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./server": {
+      "types": "./server/index.ts",
+      "default": "./server/index.ts"
+    },
+    "./route-cache": {
+      "types": "./server/route-cache.ts",
+      "default": "./server/route-cache.ts"
+    },
+    "./server-only": {
+      "types": "./server-only.ts",
+      "default": "./server-only.ts"
+    },
+    "./client": {
+      "types": "./client/index.ts",
+      "development": "./client/dev.ts",
+      "default": "./client/index.ts"
+    },
+    "./route-context": {
+      "types": "./client/route-context.ts",
+      "default": "./client/route-context.ts"
+    },
+    "./leave": {
+      "types": "./client/leave.ts",
+      "default": "./client/leave.ts"
+    },
+    "./navigation": {
+      "types": "./client/navigation.ts",
+      "default": "./client/navigation.ts"
+    },
+    "./search": {
+      "types": "./client/search.ts",
+      "default": "./client/search.ts"
+    },
+    "./transitions": {
+      "types": "./client/transitions.ts",
+      "default": "./client/transitions.ts"
+    },
+    "./prefetch": {
+      "types": "./shared/prefetch.ts",
+      "default": "./shared/prefetch.ts"
+    },
+    "./link": {
+      "types": "./client/link.tsx",
+      "default": "./client/link.tsx"
+    },
+    "./transitions.css": "./client/transitions.css",
+    "./tailwind.css": "./client/tailwind.css",
+    "./routes": {
+      "types": "./build/routes.ts",
+      "default": "./build/routes.ts"
+    },
+    "./node": {
+      "types": "./adapters/node.ts",
+      "default": "./adapters/node.ts"
+    },
+    "./fetch": {
+      "types": "./adapters/fetch.ts",
+      "default": "./adapters/fetch.ts"
+    },
+    "./static": {
+      "types": "./adapters/static.ts",
+      "default": "./adapters/static.ts"
+    },
+    "./csr": {
+      "types": "./adapters/csr.ts",
+      "default": "./adapters/csr.ts"
+    },
+    "./vercel": {
+      "types": "./adapters/vercel.ts",
+      "default": "./adapters/vercel.ts"
+    },
+    "./vercel-edge": {
+      "types": "./adapters/vercel-edge.ts",
+      "default": "./adapters/vercel-edge.ts"
+    },
+    "./netlify": {
+      "types": "./adapters/netlify.ts",
+      "default": "./adapters/netlify.ts"
+    },
+    "./cloudflare": {
+      "types": "./adapters/cloudflare.ts",
+      "default": "./adapters/cloudflare.ts"
+    },
+    "./bun": {
+      "types": "./adapters/bun.ts",
+      "default": "./adapters/bun.ts"
+    },
+    "./deno": {
+      "types": "./adapters/deno.ts",
+      "default": "./adapters/deno.ts"
+    },
+    "./head": {
+      "types": "./shared/head.ts",
+      "default": "./shared/head.ts"
+    },
+    "./vite": {
+      "types": "./build/vite.ts",
+      "default": "./build/vite.ts"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/compiler": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "vite": "^8.3.2"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/router"
+  }
+}

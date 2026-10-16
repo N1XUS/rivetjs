@@ -1,0 +1,21 @@
+{
+  "name": "@rivetjs/playground",
+  "version": "0.0.0-experimental",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@tailwindcss/vite": "4.3.3",
+    "chrome-launcher": "1.2.2",
+    "esbuild": "0.28.2",
+    "lighthouse": "13.5.0",
+    "sharp": "0.35.5",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.2"
+  }
+}

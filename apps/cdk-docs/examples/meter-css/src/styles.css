@@ -1,0 +1,34 @@
+/* Plain CSS: the default class, the parts, and a custom property from the style render prop. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  margin: 16px;
+  max-width: 260px;
+}
+.rv-Meter {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+}
+.rv-Meter .value {
+  color: #475569;
+}
+.rv-Meter .track {
+  grid-column: span 2;
+  height: 8px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+.rv-Meter .fill {
+  width: var(--fill);
+  height: 100%;
+  background: #16a34a;
+}
+.rv-Meter.low .fill {
+  background: #dc2626;
+}

@@ -1,0 +1,21 @@
+/* Tailwind, then the @rivetjs/cdk variants (focused:, entering:, placement-*:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* The classes FocusMonitor sets: a ring for keyboard focus only. */
+.monitored.cdk-keyboard-focused {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+.monitored.cdk-mouse-focused,
+.monitored.cdk-program-focused {
+  outline: none;
+}

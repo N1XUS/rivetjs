@@ -1,0 +1,52 @@
+{
+  "name": "@rivetjs/i18n",
+  "version": "0.0.0-experimental",
+  "description": "Compile-time i18n for Rivet: ICU message catalogs inlined per locale, locale resolution.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./runtime": {
+      "types": "./runtime.ts",
+      "default": "./runtime.ts"
+    },
+    "./resolve": {
+      "types": "./resolve.ts",
+      "default": "./resolve.ts"
+    },
+    "./router": {
+      "types": "./router.ts",
+      "default": "./router.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    }
+  },
+  "dependencies": {
+    "@formatjs/icu-messageformat-parser": "2.11.4",
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "vite": "^8.3.2"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/i18n"
+  }
+}

@@ -1,0 +1,10 @@
+import { expect, test } from "vitest";
+import { fire, render } from "@rivetjs/runtime/testing";
+import { Counter } from "./Counter.tsx";
+
+test("counts clicks", () => {
+  const view = render(() => <Counter />);
+  const button = view.find("button");
+  fire(button, "click");
+  expect(button.textContent).toBe("Clicked 1 times");
+});

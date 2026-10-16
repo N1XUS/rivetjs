@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "paths": { "/*": ["./*"] } },
+  "include": ["*.ts", "*.tsx", "*/**/*.ts", "*/**/*.tsx"],
+  "exclude": ["**/node_modules", "**/dist", "tests/*/.rivet", "tests/*/dist", "tests-components/*/.rivet", "tests-components/*/dist"]
+}

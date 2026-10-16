@@ -1,0 +1,36 @@
+/* Plain CSS: default class names + data-* states. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  margin: 16px;
+  width: 200px;
+}
+.rv-ColorSwatchPicker {
+  display: grid;
+  gap: 4px;
+}
+.rv-ColorSwatchPickerItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 6px;
+  outline: none;
+  cursor: default;
+}
+.rv-ColorSwatchPickerItem[data-selected] {
+  background: #e2e8f0;
+}
+.rv-ColorSwatchPickerItem[data-focus-visible] {
+  box-shadow: 0 0 0 2px #2563eb;
+}
+.rv-ColorSwatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+.name {
+  font-family: monospace;
+}

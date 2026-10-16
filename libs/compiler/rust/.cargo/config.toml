@@ -1,0 +1,5 @@
+# T8: 8 MiB wasm shadow stack (rustc default 1 MiB). With the stack first in linear memory an
+# overflow traps as "memory access out of bounds"; at 1 MiB ~800 nested elements hit it before the
+# V8 stack limit. The loader (../wasm.ts) turns either into an RV9001 diagnostic.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "link-arg=-zstack-size=8388608"]

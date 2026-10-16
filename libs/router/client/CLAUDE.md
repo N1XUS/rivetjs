@@ -1,0 +1,76 @@
+# @rivetjs/router/client
+
+> **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
+
+Browser side of file routes: data-endpoint loads, link interception, intent prefetch, persisted nested layouts, programmatic navigation + revalidation, params/search params, scroll/focus/announce, leave guards, view transitions. Used by the generated `.rivet/app.tsx`; every export is a no-op or server-safe outside a browser.
+
+## Entry points
+
+| Subpath | File | Purpose |
+|---|---|---|
+| `/client` | `index.ts` | Everything below + router core (`routeData`, `dataURL`, `decodeData` (async: runtime `_decodeWire`, loads the built-ins chunk `x` first when the data holds such entries), `routableAnchor`, `interceptClick`, `notePopstate`, `swapRoute`, `prefetchData`/`prefetchModule`, `loadModule`, `ModuleTable`, `_endpoint`, `preloadPage` (memoized per importer), `_ssrLevel` (server: route level result from `ServerData` synchronously), `settle`, `onNavigate`, `useNavigation`, `_serve`, `_transitions`, `_arm`…) |
+| `/client` (`development` condition) | `dev.ts` | Same exports; wraps `routeData`/`_layouts`/`_landed` to feed the DevTools Router pane |
+| `/link` | `link.tsx` | `<Link to>` → plain `<a href>` + `data-*` (typed by `RoutePath`, base added); rest `<a>` props spread (prod client: DOM v2 `_spread` + `style.ts` load with the lazy link chunk only — `runtime/dom-v2-spread.ts`); `active` → `aria-current` + `data-current` (+ `data-rivet-active` marker). `prefetch`: `"intent"` (default) → no attribute; `"none"` / `"document"` / `"prerender"` → `data-rivet-prefetch` (the generated intent handler skips only `none`; document kinds are read by the page's speculation rules / fallback, `../shared/prefetch.ts`). Fast path: no rest props except a string `class` → plain `<a>` with no spread (server: no `spreadAttributes`). Bare path (B, 2026-10-07): every prop but `to` / `children` / string `class` absent or undefined → `<a class href>` only (no destructure / rest object / 8 undefined option attributes; same markup). Resume lane 1000 rows (with runtime `attribute()` null slots): page render 2.34 → 1.9 ms, alloc 5.46 → 4.83 MB, live set 2.48 → 1.93 MB. Compile-time bare `<Link>` (IMPL-RESUME 2026-10-09, compiler `compile/server_link.rs`): on the server target a `<Link>` imported from `/link` or `/client` with only `to`, an optional literal `class` and static text children is written into the enclosing template as `<a class href={_linkHref(to)}>text</a>` (no component call / props object; `_linkHref` = the bare path's href, same bytes); client targets keep the component |
+| — | `prefetch-fallback.ts` | Document prefetch fallback (no Speculation Rules): self-contained function, serialized + minified by `../build/prefetch-script.ts` into `../shared/prefetch-fallback.min.ts` (inline classic script, never bundled; budget < 1400 chars, `prefetch-unit.test.ts`; 1390). Second argument (routed apps): RegExp literal of the route paths — a link whose `pathname` matches and that is not `[data-rivet-reload],[rel~=external]` is skipped (the router takes it). First prefetch per tab session = `fetch(href, { cache: "no-store" })` probe: `cache-control`/`pragma` `no-store`/`no-cache`/`max-age=0` (no `stale-while-revalidate`) → `sessionStorage["rivet:prefetch"] = "0"` (off for the session), else `"1"` + warm the URL; network error → retry on next intent |
+| `/navigation` | `navigation.ts` | `navigation` signal, `Navigation` context (`rivet:navigation`), `IDLE` — tiny, resume entry imports it |
+| `/search` | `search.ts` | `searchParams` signal, `SearchParams` context (`rivet:search`) |
+| `/leave` | `leave.ts` | `beforeLeave(fn)` — dependency free (forms autosave imports it alone) |
+| `/route-context` | `route-context.ts` | `ServerData` context, `actionResult()` |
+| `/transitions` | `transitions.ts` | `install(options)`: View Transitions + pending attributes; loaded on first navigation intent |
+| `/transitions.css`, `/tailwind.css` | `*.css` | Default transition CSS; Tailwind variants |
+
+## Layout
+
+- `index.ts` — router core; `_`-prefixed exports are internal contracts with codegen (`build/codegen.ts`), not app API. `heldRoutes` recognizes the outlet region by its start marker `r[` / `rN[` (resume marker ids may be left out, runtime `docs/resume.md` "Marker ids").
+- Link (`interceptClick`) and API (`navigate()` → `_serve`) navigations defer on a document's first mouse click like any handler; dom-v2 hides the hovered old content until the next rAF (see `../../../docs/guides/resumability.md` "First mouse click"). Async swaps after a fetch are not covered.
+- `layouts.ts` — persisted layouts (resume state `at` = the server render's path + search, no origin; resolved against `location.href`): `LayoutTable`, per-level key signals, `_keepIds` (`_rivet_keep`), `_plan` (`invalidate(key)` planning), `_landed`/`_take`/`_enter`. `_enter` keeps its build window (`_building()` + the level handoff) when the layout returns an accessor (dev HMR wrapper; read later by the insertion): otherwise the inner Router's `hold` (`heldRoutes`) would take a resumed server outlet's content — incl. a re-created level Router — and dispose it (`groups.test.ts` dev).
+- `navigate.ts` — `navigate`, `invalidate` (= `revalidate`), `setSearchParams`; queue + `rivet:go` document event; `_go(url, invalidate?)` = the router brand's lean entry (queue + one ask, base-path / trailing-slash rules of `navigate()`; only a booted App installs it). `serve()` is event-first (BRAND fix 2026-10-12): one ask; unanswered on a resumed page → boot the runtime, ask again on the runtime's `rivet:attach` (dom-resume `drain` attached pending listeners), ONE `WAIT` (10 s) timeout → document load; no polling.
+- Router brand (FOLD + fix 2026-10-12, index.ts `_brand(go)`): `globalThis[Symbol.for("rivet.router")] = { clear: _clearPrefetch, go: _go }`, assigned on every call (dev HMR replaces it), first install dispatches `rivet:router` on the document. Called only by generated App handlers of apps using forms (codegen `forms`: click / intent / popstate / `rivet:go` handlers start with `_brand(_go)`), so apps without forms carry neither `_brand` nor `_go` (`tests/codegen.test.ts`). `@rivetjs/forms` (`libs/forms/router.ts`) reaches the router only through it: forms chunks import no router module, so the router client stays inside the App chunk (story app 10 → 7 chunks before interaction). Tests `tests/router-brand.test.ts` (`_go` base / slash / invalidate, `_brand`, `serve()` attach + timeout).
+- `params.ts` — `useParams` (`RouteParamsContext`), `useSearchParams`.
+- `scroll.ts` — history-state keys (`i`, `rivet`), scroll restore, focus, fragment reveal.
+- `announce.ts` — route announcer live region (created on first client navigation).
+- `transition-helpers.ts` — pure helpers (Node-testable) behind `transitions.ts`.
+- `active.ts` — `<Link active>`: `currentOf` (exact / prefix, one trailing slash ignored), `_markActive` (re-marks `a[data-rivet-active]`; called by the generated App only when `activeLinks`, armed via `_arm`).
+- `index.ts` `_arm(router, ...effects)` — Z1 lazy router: runs the App's nested-layout `_sync` / active-link effects once per router on the first routed event (the App chunk loads on link intent/click, not at idle). No `.tsx` imports.
+- Document links (2026-10-08): `routableAnchor(event, modules?)` / `interceptClick(event, router, modules?)` — with the generated page table a URL no page route matches is not routable (browser loads it: no `preventDefault`, no data request, no chunk prefetch). `isPage` = `loadModule`'s matcher (first call builds it through `loadModule`) + not an `_endpoint` row (generated rows for endpoints the server matches before a later dynamic page pattern that fits them). First check sets `routable` (module `let`, `??=`): `routeData` `{ redirect }` to an in-base URL it rejects → `location.assign`. Single-route bundles carry only that `let` + check (+21 B min); routed `/client` +188 B min. Not covered: `navigate()` / popstate to unmatched URLs (client `_404`), cold held clicks (loader boots + replays, then native).
+- `live.ts` — live pages (`export const live = true`; spec `docs/design/specs/2026-10-08-partial-render-design.md`): `_live(source)` App slot `{ m, s, u, d, n }` (resume state; `s` = the shown live page's data signal), `_livePage(slot, value, url, depth)` (route render: new signal per render), `_serveLive(router, live, state?, table?)` (generated `rivet:go` when a page is live): same-URL `invalidate()` / `revalidate(fresh)` / `invalidate(key)` matching the page loader of the shown live page → one `batch` of `_refreshed` + `s.set(page data)`, no page re-render; else `_perform` (= index.ts `perform`, exported with `_dropPrefetch` for it). Skips when a navigation is in flight (`_current()`) or the URL differs; generation counter `n` (newest answer wins); loader failure → regular rerun. Search-only navigations — nested layout levels: `_liveLevels(router, live, state, table, from, url)` = `_sync`'s `inPlace(from, url)` hook (`from` = URL `_sync` saw last, `synced` WeakMap; skipped while `_bump`ed): true → no level key moves, `refresh(…, fail)` in place (fail: `_bump()` + `_sync` re-renders the page level); `_refreshed` also sets each layout's `u` when the URL changed. Single-level apps: `_live(source, router)` adds `k` (top Router key signal, `equals: false`) + `h` (shown URL without fragment); `_liveRouter(router, live)` = the top Router's navigator (`k()` tracked, location untracked); `_armLive(router, live, state?, table?)` (first call from any navigation entry point) starts the effect that sets `k` on location changes, except fragment-only and search-only changes of the shown live page → `refresh(…, fail)` + `_inPlace()` (`fail` = the search navigation's Router commit on a failed loader: `k` set) (index.ts: ends the navigation in flight without a Router commit — `current` cleared, `committed`, after-swap callbacks + waiters). `_liveIntent(event, live, state?)` (generated focusin intent handler + a `pointerdown` clientEvent, live apps only): first interaction inside a `form` per page render (`live.w`) calls the resume runtime's `Symbol.for("rivet.warm")` hook on the page data signal and every layout data signal → their reader chunks load before the submit. Imported only through the generated App (0 B otherwise). `_refreshed` clears `stale` (all data fresh after such a request).
+- `layouts.ts` `_lastMatch` — matcher wrapper remembering the last `(pathname, hit)`; used by `find()` and `loadModule()` (intent + navigation re-match the same path). Callers read `route`/`params` only.
+
+## Rules / invariants
+
+- Pay-per-use: `search.ts`, `navigate.ts` serving (`_serve`), `RouteParamsContext` provider, `transitions.ts`, `announce` are pulled in only when codegen enables them (see [../build/CLAUDE.md](../build/CLAUDE.md)). Don't import them from `index.ts` paths that always run; keep leaf modules leaf (`leave.ts`, `navigation.ts` have no router imports).
+- Resumable: params/search/navigation are signals or identified contexts so resumed bindings revive without component code. `<Link>` needs no JS.
+- Layouts: every layout stays mounted while navigation stays below it; props are accessors (`data()`, `params()`, `url()`) backed by App-level signals. Children wrapped in `<div data-rivet-outlet="N">`. One commit per navigation.
+- Data requests: `?_rivet=data` (+ `_rivet_keep=/,/shop` for kept layouts, `.` = page loader). Never kept: `byURL` layouts, layouts with a `head` function, after submit/`invalidate()`. Header `accept: application/json` only (no `x-rivet-data`).
+- Prefetch cache (`prefetched`, index.ts): TTL 5 s, cap `PREFETCH_MAX` 32 (sweep expired + abort oldest on insert), every entry has its own `AbortController`; `started()` aborts all but the target's; reused only when its keep list equals the navigation's (else aborted + refetched); `_clearPrefetch`/`invalidate(key)` abort all.
+- Non-JSON data response (`content-type` without `json`) → `{ reload: true }` (document load). Malformed JSON throws (dev overlay test in `dev-errors.test.ts` relies on it).
+- `routeData` races the (possibly warmed, not signal-tied) response and its body against `work.signal`, then `throwIfAborted()`: a superseded load sets no title, follows no redirect, loads no document.
+- `{ redirect }` to another origin / outside the base → `location.assign` only for `http(s):`; any other scheme loads the page's own document (server's real answer).
+- `dataURL`: page query as written (`withoutRivet`, no `URLSearchParams` re-serialization) + `_rivet=data` (+ `_rivet_keep=` encodeURIComponent).
+- `settle()`: no `h1` and no hash → waits rAF frames while a `MutationObserver` on `body` saw changes (≥ 1 frame, ≤ 30); observer disconnected on settle or when a newer navigation settles.
+- `invalidate(key)` reruns only loaders whose `depends()` keys match; unknown keys → rerun everything; no match → no request.
+- `trailingSlash` set: `<Link>` href (`slashHref`) and same-origin in-base `navigate()` targets (`slashPath`) canonical; gated on the `TRAILING_SLASH` constant (0 B by default). Plain `<a>` in the other form: the data endpoint's `{ redirect }` lands it.
+- `navigate()` without the `rivet:go` listener (feature not detected) falls back to a document load.
+- No inline styles: transition names / announcer styles via CSSOM (strict `style-src`).
+- `beforeLeave`'s `beforeunload` listener exists only while a guard is registered (bfcache).
+- UI: never invent SVG paths or use UTF symbols as icons — use lucide.
+
+## Commands
+
+```sh
+npx vitest run --project router libs/router/tests/client-core.test.ts libs/router/tests/transitions-unit.test.ts libs/router/tests/depends-plan.test.ts libs/router/tests/data-redirect.test.ts
+npx vitest run --project router libs/router/tests/nested.test.ts libs/router/tests/navigation.test.ts libs/router/tests/nav-api.test.ts libs/router/tests/transitions.test.ts libs/router/tests/document-links.test.ts   # Chromium e2e
+npm run size-report   # byte cost per fixture (router:nav-api, router:nested)
+```
+
+## Gotchas
+
+- `route-context.ts` must not import `.tsx` (Node tests load it; server entry imports `ServerData`).
+- `client/index.ts`, `link.tsx`, `navigation.ts`, `search.ts`, `transitions.ts` are referenced by path in `apps/docs/api.config.ts`.
+- Kept loaders don't rerun: don't pass data between loaders via `locals` (use guards).
+- `history.pushState` from app code isn't observed — use `navigate()`.
+- Resumed pages: the resume runtime attaches pending `load` clientEvent listeners (the App's `rivet:go`) before the first delegated handler runs, so a click's `navigate()` is usually served at once; calls before that ask again on `rivet:attach` (one `WAIT` timeout). `nav-api.test.ts` cold step gates `rivet:go` at the window and releases it with a `rivet:attach`.
+
+## See also
+
+- [../CLAUDE.md](../CLAUDE.md), [docs/guides/routing.md](../../../docs/guides/routing.md) (links, nested layouts, revalidation, leave guards, base path), `libs/runtime/router*` (`Router`, `compileRoutes`)

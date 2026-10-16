@@ -1,0 +1,9 @@
+/* Ported from HeroUI v3.2.6 packages/styles/themes/default/index.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Declares the theme variables - @see https://tailwindcss.com/docs/theme */
+@import "../shared/theme.css";
+
+/* Default Theme */
+@import "./variables.css" layer(theme);
+
+/* Component customizations for default theme */
+@import "./components/index.css" layer(components);

@@ -1,0 +1,228 @@
+name: rivet-ssr-bench
+x-node: &node
+  image: ${RIVET_BENCH_NODE_IMAGE:-rivet-ssr-bench-node:local}
+  # Frontend quota: 1 CPU for the comparison (benchmark.py --cores N raises it; the rivet-router lanes then run N
+  # node adapter workers, `start({ workers })`, the other lanes stay one process).
+  cpus: ${SSR_BENCH_CORES:-1}
+  mem_limit: 512m
+  init: true
+  # GC profile, identical for EVERY Node lane (benchmark.py --gc tuned|default sets SSR_BENCH_NODE_FLAGS; unset =
+  # tuned). Under a 1-CPU quota V8's parallel GC helper threads (sized for all host cores) burn the quota between
+  # requests (single-threaded GC measured ~45% less CPU per 1,000-row Rivet page); an 8 MiB semi-space cuts CPU
+  # ~10% at 1,000 rows for ~18 MiB more peak memory. Empty string = Node defaults.
+  command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server.mjs
+  environment: &node-env
+    GRPC_URL: backend:8081
+    NODE_ENV: production
+    RIVET_WORKERS: ${SSR_BENCH_CORES:-1}
+  depends_on: [backend]
+x-node-build: &node-build
+  <<: *node
+  build:
+    context: ../..
+    dockerfile: apps/ssr-bench/Dockerfile.node
+# Alternative JS runtimes over the SAME built bundles (copied from the Node lane image, never rebuilt).
+x-bun: &bun
+  image: ${RIVET_BENCH_BUN_IMAGE:-rivet-ssr-bench-bun:local}
+  build: { context: ../.., dockerfile: apps/ssr-bench/Dockerfile.bun, additional_contexts: { lane: "service:rivet-compiled" } }
+  cpus: 1.0
+  mem_limit: 512m
+  init: true
+  depends_on: [backend]
+  profiles: [variants]
+# UWS-SPIKE: same Node 26 image + bundles + GC profile, plus uWebSockets.js (experimental router adapter).
+x-uws: &uws
+  image: ${RIVET_BENCH_UWS_IMAGE:-rivet-ssr-bench-uws:local}
+  build: { context: ../.., dockerfile: apps/ssr-bench/Dockerfile.uws, additional_contexts: { lane: "service:rivet-compiled" } }
+  cpus: 1.0
+  mem_limit: 512m
+  init: true
+  environment: { GRPC_URL: backend:8081, NODE_ENV: production }
+  command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router-uws.mjs
+  depends_on: [backend]
+  profiles: [variants]
+x-deno: &deno
+  image: rivet-ssr-bench-deno:local
+  build: { context: ../.., dockerfile: apps/ssr-bench/Dockerfile.deno, additional_contexts: { lane: "service:rivet-compiled" } }
+  cpus: 1.0
+  mem_limit: 512m
+  init: false # the deno image's entrypoint already runs tini
+  depends_on: [backend]
+  profiles: [variants]
+services:
+  backend:
+    # Explicit image names (the default under project rivet-ssr-bench) so a run under another
+    # SSR_BENCH_PROJECT reuses these images instead of building project-named copies.
+    image: rivet-ssr-bench-backend:latest
+    build:
+      context: ../..
+      dockerfile: apps/ssr-bench/Dockerfile.dotnet
+      args: { PROJECT: ContentService }
+    cpus: 2.0
+    mem_limit: 1g
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}00:8081", "127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}10:8080"]
+  rivet:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: rivet, RIVET_VARIANT: stream }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}01:8080"]
+  solid:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: solid }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}02:8080"]
+  qwik:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: qwik }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}03:8080"]
+  solid-stable:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: solid-stable }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}11:8080"]
+  qwik-stable:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: qwik-stable }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}12:8080"]
+  dotnet:
+    image: rivet-ssr-bench-dotnet:latest
+    build:
+      context: ../..
+      dockerfile: apps/ssr-bench/Dockerfile.dotnet
+      args: { PROJECT: ContentSite }
+    cpus: 1.0
+    mem_limit: 512m
+    # Razor's counterpart of the Node GC profile (SSR_BENCH_DOTNET_GC_ENV; unset = tuned): no background GC
+    # thread + a larger gen0 budget. Empty string = .NET defaults (Server GC, concurrent).
+    environment: { GRPC_URL: "http://backend:8081", ASPNETCORE_URLS: "http://0.0.0.0:8080", DOTNET_GC_ENV: "${SSR_BENCH_DOTNET_GC_ENV-DOTNET_gcConcurrent=0 DOTNET_GCgen0size=0x1000000}" }
+    entrypoint: ["sh", "-c", "exec env $$DOTNET_GC_ENV dotnet ContentSite.dll"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}04:8080"]
+    depends_on: [backend]
+  rivet-string:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: rivet, RIVET_VARIANT: string }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}05:8080"]
+    profiles: [variants]
+  solid-stable-string:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: solid-stable-string }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}13:8080"]
+    profiles: [variants]
+  solid-stable-static:
+    <<: *node-build
+    # Solid 1 compiled hydratable:false + renderToString: the non-hydratable peer of rivet-compiled / Razor.
+    environment: { <<: *node-env, FRAMEWORK: solid-stable-static }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}14:8080"]
+    profiles: [variants]
+  solid-stable-interactive:
+    <<: *node-build
+    # Solid 1 hydratable with rivet-resume's per-row work: click handlers, signal-driven attribute, links, nested
+    # layout with state, page data serialized for hydration (seroval resource) — the like-for-like resumable peer.
+    environment: { <<: *node-env, FRAMEWORK: solid-stable-interactive }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}21:8080"]
+    profiles: [variants]
+  rivet-compiled:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: rivet-compiled }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}06:8080"]
+    profiles: [variants]
+  rivet-for:
+    <<: *node-build
+    environment: { <<: *node-env, FRAMEWORK: rivet-for }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}07:8080"]
+    profiles: [variants]
+  rivet-router:
+    <<: *node-build
+    environment: { <<: *node-env }
+    # Production @rivetjs/router node adapter over the file-routed build (no server.ts); same GC profile as
+    # every Node lane, so the delta is router + resumable render overhead.
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}09:8080"]
+    profiles: [variants]
+  rivet-resume:
+    <<: *node-build
+    environment: { <<: *node-env }
+    # Same router build as rivet-router, measured on `/resume`: keyed <For>, per-row handler + reactive attribute +
+    # <Link>, nested layout with state — the resumable peer of Solid hydratable / Qwik (benchmark.py PATHS).
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}15:8080"]
+    profiles: [variants]
+  rivet-compiled-baseline:
+    <<: *node
+    image: rivet-ssr-bench-node:b01eba3-baseline
+    environment: { <<: *node-env, FRAMEWORK: rivet-compiled }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}08:8080"]
+    profiles: [variants]
+  # GC profile counterparts: Deno takes the same V8 flags (SSR_BENCH_DENO_FLAGS); Bun/JSC has no semi-space knob,
+  # tuned = no concurrent GC thread (SSR_BENCH_BUN_GC_ENV). Empty = runtime defaults.
+  rivet-compiled-bun:
+    <<: *bun
+    environment: { <<: *node-env, FRAMEWORK: rivet-compiled, BUN_GC_ENV: "${SSR_BENCH_BUN_GC_ENV-BUN_JSC_useConcurrentGC=0}" }
+    command: ["sh", "-c", "exec env $$BUN_GC_ENV bun apps/ssr-bench/dist/server.mjs"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}16:8080"]
+  rivet-router-bun:
+    <<: *bun
+    environment: { <<: *node-env, BUN_GC_ENV: "${SSR_BENCH_BUN_GC_ENV-BUN_JSC_useConcurrentGC=0}" }
+    command: ["sh", "-c", "exec env $$BUN_GC_ENV bun apps/ssr-bench/dist/rivet-router.mjs"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}17:8080"]
+  solid-stable-static-bun:
+    <<: *bun
+    environment: { <<: *node-env, FRAMEWORK: solid-stable-static, BUN_GC_ENV: "${SSR_BENCH_BUN_GC_ENV-BUN_JSC_useConcurrentGC=0}" }
+    command: ["sh", "-c", "exec env $$BUN_GC_ENV bun apps/ssr-bench/dist/server.mjs"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}20:8080"]
+  # UWS-SPIKE transport lanes (2026-10-09): rivet-router / rivet-resume's build and handler on uWebSockets.js
+  # (node, `server-uws.ts`) and on Bun's native Bun.serve (`server-bun.ts`, web streams); `/resume` via PATHS.
+  rivet-router-uws:
+    <<: *uws
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}22:8080"]
+  rivet-resume-uws:
+    <<: *uws
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}23:8080"]
+  # Shared static harness on uWS (`server-uws.ts`), same for every framework; controls = the node:http
+  # `server.ts` in the same image (`*-trixie`).
+  rivet-compiled-uws:
+    <<: *uws
+    environment: { GRPC_URL: backend:8081, NODE_ENV: production, FRAMEWORK: rivet-compiled }
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server-uws.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}28:8080"]
+  solid-stable-static-uws:
+    <<: *uws
+    environment: { GRPC_URL: backend:8081, NODE_ENV: production, FRAMEWORK: solid-stable-static }
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server-uws.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}29:8080"]
+  rivet-compiled-trixie:
+    <<: *uws
+    environment: { GRPC_URL: backend:8081, NODE_ENV: production, FRAMEWORK: rivet-compiled }
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}30:8080"]
+  solid-stable-static-trixie:
+    <<: *uws
+    environment: { GRPC_URL: backend:8081, NODE_ENV: production, FRAMEWORK: solid-stable-static }
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}31:8080"]
+  # Control: the node:http router entry (production node adapter) in the uws image (trixie base).
+  rivet-router-trixie:
+    <<: *uws
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}26:8080"]
+  rivet-resume-trixie:
+    <<: *uws
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}27:8080"]
+  rivet-router-bunserve:
+    <<: *bun
+    environment: { <<: *node-env, BUN_GC_ENV: "${SSR_BENCH_BUN_GC_ENV-BUN_JSC_useConcurrentGC=0}" }
+    command: ["sh", "-c", "exec env $$BUN_GC_ENV bun apps/ssr-bench/dist/rivet-router-bunserve.mjs"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}24:8080"]
+  rivet-resume-bunserve:
+    <<: *bun
+    environment: { <<: *node-env, BUN_GC_ENV: "${SSR_BENCH_BUN_GC_ENV-BUN_JSC_useConcurrentGC=0}" }
+    command: ["sh", "-c", "exec env $$BUN_GC_ENV bun apps/ssr-bench/dist/rivet-router-bunserve.mjs"]
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}25:8080"]
+  rivet-compiled-deno:
+    <<: *deno
+    environment: { <<: *node-env, FRAMEWORK: rivet-compiled }
+    command: deno run -A ${SSR_BENCH_DENO_FLAGS---v8-flags=--single-threaded-gc,--max-semi-space-size=8} apps/ssr-bench/dist/server.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}18:8080"]
+  rivet-router-deno:
+    <<: *deno
+    environment: { <<: *node-env }
+    command: deno run -A ${SSR_BENCH_DENO_FLAGS---v8-flags=--single-threaded-gc,--max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}19:8080"]

@@ -1,0 +1,12 @@
+---
+layout: base.njk
+pagination:
+  data: collections.articles
+  size: 20
+  alias: items
+permalink: "{% if pagination.pageNumber == 0 %}/{% else %}/page/{{ pagination.pageNumber + 1 }}/{% endif %}"
+eleventyComputed:
+  pageTitle: "{% if pagination.pageNumber == 0 %}Latest{% else %}Latest, page {{ pagination.pageNumber + 1 }}{% endif %}"
+  pageDescription: "Latest stories from The Daily Fixture."
+---
+{% set n = pagination.pageNumber + 1 %}<main class="list"><h1>{% if n == 1 %}Latest{% else %}Latest, page {{ n }}{% endif %}</h1>{% include "teasers.njk" %}<nav class="pager">{% if n > 1 %}<a href="{% if n == 2 %}/{% else %}/page/{{ n - 1 }}/{% endif %}">Newer</a>{% endif %}<span>Page {{ n }} of {{ pagination.pages.length }}</span>{% if n < pagination.pages.length %}<a href="/page/{{ n + 1 }}/">Older</a>{% endif %}</nav></main>

@@ -1,0 +1,3 @@
+{{ define "title" }}{{ if eq .Paginator.PageNumber 1 }}Latest{{ else }}Latest, page {{ .Paginator.PageNumber }}{{ end }}{{ end }}
+{{ define "description" }}Latest stories from The Daily Fixture.{{ end }}
+{{ define "main" }}{{ $p := .Paginate (where site.RegularPages "Section" "articles").ByDate.Reverse }}<main class="list"><h1>{{ if eq $p.PageNumber 1 }}Latest{{ else }}Latest, page {{ $p.PageNumber }}{{ end }}</h1>{{ partial "teasers.html" $p.Pages }}<nav class="pager">{{ with $p.Prev }}<a href="{{ .URL }}">Newer</a>{{ end }}<span>Page {{ $p.PageNumber }} of {{ $p.TotalPages }}</span>{{ with $p.Next }}<a href="{{ .URL }}">Older</a>{{ end }}</nav></main>{{ end }}

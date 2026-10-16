@@ -1,0 +1,18 @@
+/* Tailwind, with the cdk state variants (focused:, orientation-*:, entering:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@import "@rivetjs/cdk/text-field.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* Rows for the zero-JS autosize path of text-field.css. */
+#grow {
+  --cdk-autosize-min-rows: 2;
+  --cdk-autosize-max-rows: 6;
+}

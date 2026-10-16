@@ -1,0 +1,20 @@
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 16px;
+}
+kbd {
+  font: 12px ui-monospace, monospace;
+}
+.shortcut {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  color: #475569;
+}

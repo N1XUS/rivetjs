@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet prerender",
+  "description": "Renders every page of a built Rivet app to HTML files in <outputPath>/client (prerenderBuild of @rivetjs/router/static). Run after the client + server builds.",
+  "type": "object",
+  "properties": {
+    "outputPath": { "type": "string", "default": "dist", "description": "Build output folder, relative to the project (holds client/ and server/)." },
+    "script": { "type": "string", "description": "Run the project's own script instead (relative to the project, e.g. prerender.js)." }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,12 @@
+/* Layer order first: the optional theme sits in `rivet`, below Tailwind's components and utilities. */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+/* focused:, placement-*:, orientation-*:, entering:, exiting: */
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}

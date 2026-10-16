@@ -1,0 +1,48 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no conversation view). Feature set inspired by HeroUI Pro's public ChatConversation docs; independent implementation (CSS stick-to-bottom: column-reverse scroller). */
+/* -------------------------------------------------------------------------------------------------
+ * ChatConversation Component Styles
+ * Block: chat-conversation (parts: stack / content / scroll-anchor / scroll-button-container / scroll-button)
+ * States: [data-at-bottom="true"] (scroll button hidden)
+ * Variables: --chat-conversation-max-width (content column)
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-conversation {
+  --chat-conversation-max-width: 48rem;
+  @apply relative flex min-h-0 w-full flex-1 overflow-y-auto outline-none;
+  /* Starts at the bottom and stays there while content grows (scrollTop 0 = bottom). */
+  flex-direction: column-reverse;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+/* The single flex item: document order inside; auto bottom margin keeps a short conversation at the top. */
+.chat-conversation__stack {
+  @apply relative flex w-full shrink-0 flex-col;
+  margin-bottom: auto;
+}
+
+.chat-conversation__content {
+  @apply mx-auto flex w-full flex-col gap-6 px-4 py-6;
+  max-width: var(--chat-conversation-max-width);
+}
+
+.chat-conversation__scroll-anchor {
+  @apply h-px w-full shrink-0;
+  overflow-anchor: auto;
+}
+
+.chat-conversation__scroll-button-container {
+  @apply pointer-events-none sticky bottom-0 z-10 flex h-0 w-full justify-center;
+}
+
+.chat-conversation__scroll-button {
+  @apply pointer-events-auto -translate-y-[calc(100%+1rem)] rounded-full shadow-surface transition-[opacity,visibility,translate] duration-(--duration-base) motion-reduce:transition-none;
+}
+
+.chat-conversation[data-at-bottom="true"] .chat-conversation__scroll-button {
+  @apply pointer-events-none invisible translate-y-[-1.5rem] opacity-0;
+}

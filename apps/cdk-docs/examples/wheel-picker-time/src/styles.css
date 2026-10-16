@@ -1,0 +1,22 @@
+/* Tailwind first, then the cdk layers between Tailwind's base and its utilities. */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/theme.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* The DateInput sits in a Group with the clock button: the group draws the field box. */
+.picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-block: 0.125rem;
+  padding-inline: 0.5rem 0.125rem;
+  border: 1px solid var(--rv-color-border);
+  border-radius: var(--rv-radius);
+}

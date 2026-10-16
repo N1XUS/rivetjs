@@ -1,0 +1,101 @@
+/* RangeCalendar on its default class names and data-* states (no theme.css rules for calendars). */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #1c1917;
+}
+main {
+  padding: 1rem;
+}
+.rv-RangeCalendar {
+  display: inline-block;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: #fafaf9;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+.rv-RangeCalendar header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.rv-RangeCalendar .rv-Heading {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  text-align: center;
+}
+.rv-RangeCalendar .rv-Button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.rv-RangeCalendar .rv-Button[data-hovered] {
+  background: #e7e5e4;
+}
+.rv-RangeCalendar .rv-Button[data-focus-visible] {
+  outline: 2px solid #0d9488;
+}
+.rv-CalendarGrid {
+  border-collapse: collapse;
+}
+.rv-CalendarHeaderCell {
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: #78716c;
+}
+.rv-CalendarGridBody td {
+  padding: 1px 0;
+}
+.rv-CalendarCell {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  cursor: default;
+  outline: none;
+}
+.rv-CalendarCell[data-hovered]:not([data-selected]) {
+  border-radius: 999px;
+  background: #e7e5e4;
+}
+/* The range (and the live preview while selecting) is filled; its ends are rounded with logical radii (RTL ready). */
+.rv-CalendarCell[data-selected] {
+  background: #ccfbf1;
+  color: #134e4a;
+}
+.rv-CalendarCell:is([data-selection-start], [data-selection-end]) {
+  background: #0d9488;
+  color: #fff;
+}
+.rv-CalendarCell[data-selection-start] {
+  border-start-start-radius: 999px;
+  border-end-start-radius: 999px;
+}
+.rv-CalendarCell[data-selection-end] {
+  border-start-end-radius: 999px;
+  border-end-end-radius: 999px;
+}
+.rv-CalendarCell[data-focus-visible] {
+  box-shadow: inset 0 0 0 2px #134e4a;
+}
+.rv-CalendarCell[data-outside-month] {
+  visibility: hidden;
+}
+.rv-CalendarCell[data-disabled] {
+  color: #d6d3d1;
+}
+.rv-CalendarCell[data-unavailable] {
+  color: #b91c1c;
+  text-decoration: line-through;
+}
+.rv-CalendarCell[data-invalid] {
+  background: #fee2e2;
+  color: #991b1b;
+}

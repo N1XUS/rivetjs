@@ -1,0 +1,9 @@
+{
+  // Editor fallback for .tsx files no package project includes (browser test fixtures, bench lanes,
+  // generated .rivet code): TypeScript 5.6+ keeps searching parent folders when the nearest config
+  // does not include a file. Not part of `npm run typecheck`; packages keep their own strict projects.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "strict": false },
+  "include": ["**/*.tsx", "**/.rivet/*.ts"],
+  "exclude": ["**/node_modules", "**/dist", "apps/resume-bench/lanes/solid", "apps/resume-bench/lanes/qwik", "apps/resume-bench/.build"]
+}

@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+**/dist
+**/bin
+**/obj
+.git
+.nx
+.artifacts
+.superpowers
+**/__pycache__
+**/.cache

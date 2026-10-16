@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": false,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true,
+    // TS 6+ defaults this to true (TS2882 on every `import "./x.css"`); keep the 5.x behaviour for tsc and tsgo alike.
+    "noUncheckedSideEffectImports": false,
+    "jsx": "preserve",
+    "jsxImportSource": "@rivetjs/runtime",
+    // Editors only (tsc ignores plugins): Rivet compiler diagnostics, resume hints, route links.
+    // Loaded from node_modules/@rivetjs/typescript-plugin/dist (nx run typescript-plugin:build).
+    "plugins": [{ "name": "@rivetjs/typescript-plugin" }],
+    "types": ["node"]
+  }
+}

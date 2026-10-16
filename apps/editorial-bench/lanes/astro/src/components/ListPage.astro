@@ -1,0 +1,7 @@
+---
+import Base from "../layouts/Base.astro";
+import Teasers from "./Teasers.astro";
+const { n, pages, items } = Astro.props;
+const title = n === 1 ? "Latest" : `Latest, page ${n}`;
+---
+<Base title={title} description="Latest stories from The Daily Fixture."><main class="list"><h1>{title}</h1><Teasers items={items} /><nav class="pager">{n > 1 && <a href={n === 2 ? "/" : `/page/${n - 1}/`}>Newer</a>}<span>Page {n} of {pages}</span>{n < pages && <a href={`/page/${n + 1}/`}>Older</a>}</nav></main></Base>

@@ -1,0 +1,120 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no code block). Feature set inspired by HeroUI Pro's public CodeBlock docs; independent implementation on HeroUI tokens (token colours = HeroUI status tokens, so both themes follow). */
+/* -------------------------------------------------------------------------------------------------
+ * CodeBlock Component Styles
+ * Block: code-block (parts: header / language / code / pre / token / copy-button / copy-icon / copied-icon)
+ * Token modifiers: code-block__token--{comment,string,number,keyword,literal,type,function,property,operator,
+ *                  punctuation,tag,attribute,variable,inserted,deleted,meta}
+ * Variables: --code-block-max-height, --code-*
+ * -----------------------------------------------------------------------------------------------*/
+
+.code-block {
+  --code-block-max-height: none;
+  --code-comment: var(--muted);
+  --code-keyword: var(--accent-soft-foreground);
+  --code-string: var(--success-soft-foreground);
+  --code-number: var(--warning-soft-foreground);
+  --code-function: color-mix(in oklab, var(--accent-soft-foreground) 55%, var(--danger-soft-foreground));
+  --code-type: color-mix(in oklab, var(--accent-soft-foreground) 45%, var(--success-soft-foreground));
+  --code-property: color-mix(in oklab, var(--foreground) 70%, var(--accent-soft-foreground));
+  --code-tag: var(--danger-soft-foreground);
+  --code-punctuation: color-mix(in oklab, var(--foreground) 62%, transparent);
+  @apply relative my-1 flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-separator bg-surface-secondary text-foreground;
+}
+
+.code-block__header {
+  @apply flex h-9 items-center justify-between gap-2 border-b border-separator ps-4 pe-1.5 text-xs text-muted;
+}
+
+.code-block__language {
+  @apply truncate font-medium;
+}
+
+.code-block__code {
+  @apply min-w-0 overflow-auto outline-none;
+  max-height: var(--code-block-max-height);
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+.code-block__pre {
+  @apply m-0 w-max min-w-full px-4 py-3 font-mono text-[13px] leading-6;
+  tab-size: 2;
+  white-space: pre;
+}
+
+.code-block__code[data-wrap="true"] .code-block__pre {
+  @apply w-auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.code-block__token--comment {
+  color: var(--code-comment);
+  font-style: italic;
+}
+
+.code-block__token--keyword {
+  color: var(--code-keyword);
+}
+
+.code-block__token--string {
+  color: var(--code-string);
+}
+
+.code-block__token--number,
+.code-block__token--literal,
+.code-block__token--variable {
+  color: var(--code-number);
+}
+
+.code-block__token--function {
+  color: var(--code-function);
+}
+
+.code-block__token--type {
+  color: var(--code-type);
+}
+
+.code-block__token--property,
+.code-block__token--attribute {
+  color: var(--code-property);
+}
+
+.code-block__token--tag {
+  color: var(--code-tag);
+}
+
+.code-block__token--operator,
+.code-block__token--punctuation {
+  color: var(--code-punctuation);
+}
+
+.code-block__token--meta {
+  color: var(--code-comment);
+}
+
+.code-block__token--inserted {
+  @apply block bg-success-soft text-success-soft-foreground;
+}
+
+.code-block__token--deleted {
+  @apply block bg-danger-soft text-danger-soft-foreground;
+}
+
+.code-block__copy-button {
+  @apply text-muted;
+}
+
+.code-block__copied-icon {
+  @apply hidden text-success;
+}
+
+[data-copied="true"] > .code-block__copy-icon {
+  @apply hidden;
+}
+
+[data-copied="true"] > .code-block__copied-icon {
+  @apply inline-block;
+}

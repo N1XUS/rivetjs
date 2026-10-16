@@ -1,0 +1,45 @@
+/* Plain CSS: default class names; the root carries data-invalid / -disabled / -readonly / -required. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 16px;
+  margin: 16px;
+  max-width: 320px;
+}
+.rv-TextField {
+  display: grid;
+  gap: 4px;
+}
+.rv-TextField .rv-Label {
+  font-weight: 600;
+}
+.rv-Input {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+.rv-Input[data-focus-visible] {
+  outline: 2px solid #14b8a6;
+  border-color: #0f766e;
+}
+.rv-Input[data-hovered] {
+  border-color: #94a3b8;
+}
+.rv-Input[data-invalid] {
+  border-color: #b91c1c;
+}
+.rv-TextField[data-readonly] .rv-Input {
+  background: #f8fafc;
+}
+.rv-TextField .rv-Text {
+  color: #64748b;
+  font-size: 12px;
+}
+.rv-FieldError {
+  color: #b91c1c;
+  font-size: 12px;
+}

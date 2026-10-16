@@ -1,0 +1,47 @@
+import { defineExample } from "@rivetjs/docs-kit/define.ts";
+
+export default defineExample({
+  title: "Select slots",
+  summary: "Item descriptions, a children option slot with render states, renderValue and indicator on the trigger, and renderEmptyState.",
+  tags: ["select", "slots"],
+  status: "experimental",
+  frame: { height: "lg" },
+  show: ["src/routes/index.tsx"],
+  test: [
+    { expect: ["#plan-value", "Pro"] },
+    { click: "#plan-trigger" },
+    { matches: "#plan-listbox-option-team" },
+    { expect: ["#plan-listbox-option-team-description", "Unlimited projects"] },
+    { name: ["#plan-listbox-option-team", "Team"] },
+    { described: ["#plan-listbox-option-team", "Unlimited projects"] },
+    { key: "Escape" },
+    { absent: "#plan-listbox" },
+    // The option slot: the check follows isSelected, the arrow follows isFocused.
+    { expect: ["#check-value", "Free"] },
+    { click: "#check-trigger" },
+    { click: "#check-listbox-option-team" },
+    { absent: "#check-listbox" },
+    { expect: ["#check-value", "Team"] },
+    { click: "#check-trigger" },
+    { focused: "#check-listbox-option-team" },
+    { matches: "#check-listbox-option-team svg.check" },
+    { key: "ArrowUp" },
+    { matches: "#check-listbox-option-pro svg.focus" },
+    { key: "Escape" },
+    { absent: "#check-listbox" },
+    // renderValue and indicator.
+    { expect: ["#fruit-value", "2 selected"] },
+    { matches: "#fruit-arrow svg.down" },
+    { click: "#fruit-trigger" },
+    { matches: "#fruit-arrow svg.up" },
+    { click: "#fruit-listbox-option-2" },
+    { expect: ["#fruit-value", "3 selected"] },
+    { key: "Escape" },
+    { absent: "#fruit-listbox" },
+    { matches: "#fruit-arrow svg.down" },
+    // An empty collection.
+    { click: "#none-trigger" },
+    { matches: "#none-listbox[data-empty]" },
+    { expect: ["#none-listbox [role=option]", "No results"] },
+  ],
+});

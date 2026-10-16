@@ -1,0 +1,32 @@
+/* Plain CSS: <ol class="rv-Breadcrumbs"> of <li class="rv-Breadcrumb">, each with a .rv-Link. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.rv-Breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px;
+  padding: 0;
+  list-style: none;
+}
+.rv-Breadcrumb:not([data-current])::after {
+  content: "/";
+  margin-left: 6px;
+  color: #94a3b8;
+}
+.rv-Breadcrumb .rv-Link {
+  color: #0f766e;
+  text-decoration: none;
+}
+.rv-Breadcrumb a.rv-Link:hover {
+  text-decoration: underline;
+}
+.rv-Breadcrumb[data-current] .rv-Link {
+  color: #0f172a;
+  font-weight: 600;
+  cursor: default;
+}

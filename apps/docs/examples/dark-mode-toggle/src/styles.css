@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+
+/* `dark:` classes follow the data-theme attribute instead of the system setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased dark:bg-slate-900 dark:text-slate-100;
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "language-core",
+  "projectType": "library",
+  "implicitDependencies": ["compiler"],
+  "targets": {
+    "package": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node scripts/package/build.ts libs/language-core" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project language-core" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "tsc -p libs/language-core" }
+    }
+  }
+}

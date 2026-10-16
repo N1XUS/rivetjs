@@ -1,0 +1,8 @@
+import { expect, test } from "vitest";
+import { renderToString } from "@rivetjs/runtime/testing/server";
+import Home from "./index.tsx";
+
+test("renders the loader's notes on the server", async () => {
+  const html = await renderToString(() => <Home data={{ notes: ["First note"] }} params={{}} url={new URL("http://localhost/")} />);
+  expect(html).toContain("First note");
+});

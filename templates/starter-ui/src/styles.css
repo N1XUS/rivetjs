@@ -1,0 +1,11 @@
+/* Tailwind first, then the @rivetjs/ui styles (Rivet theme; other looks = @rivetjs/ui/theme presets pasted after it). */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+/* Scan the app's source for class names (explicit, so it also works in ignored folders). */
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "cart": {
+    "count": "In your cart: {n, plural, one {# item} other {# items}}",
+    "add": "Add an item",
+    "remove": "Remove an item"
+  }
+}

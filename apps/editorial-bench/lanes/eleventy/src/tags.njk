@@ -1,0 +1,12 @@
+---
+layout: base.njk
+pagination:
+  data: site.tags
+  size: 1
+  alias: tag
+permalink: "/tags/{{ tag }}/"
+eleventyComputed:
+  pageTitle: "Tag: {{ tag }}"
+  pageDescription: "Stories tagged {{ tag }}."
+---
+{% set items = collections.articles | withTag(tag, site.listLimit) %}<main class="list"><h1>Tag: {{ tag }}</h1>{% include "teasers.njk" %}</main>

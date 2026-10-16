@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "version": 2,
+  "title": "Rivet test",
+  "description": "Runs Vitest in the project folder (the project's vitest.config.ts with rivetTest() from @rivetjs/testing/vite: DOM target in happy-dom, server target for *.server.test.tsx).",
+  "type": "object",
+  "properties": {
+    "config": { "type": "string", "description": "Vitest config file, relative to the project." },
+    "watch": { "type": "boolean", "default": false, "description": "Watch mode." },
+    "coverage": { "type": "boolean", "description": "Collect coverage (coverage/)." },
+    "maxWorkers": { "oneOf": [{ "type": "number" }, { "type": "string" }], "description": "Worker cap (--maxWorkers)." },
+    "passWithNoTests": { "type": "boolean", "default": true, "description": "Succeed when no test file matches." },
+    "update": { "type": "boolean", "description": "Update snapshots (-u)." },
+    "project": { "type": "array", "items": { "type": "string" }, "description": "Vitest projects to run (--project)." },
+    "testFiles": { "type": "array", "items": { "type": "string" }, "description": "Test file filters." },
+    "testNamePattern": { "type": "string", "description": "Test name pattern (-t)." },
+    "reporters": { "type": "array", "items": { "type": "string" }, "description": "Vitest reporters." },
+    "env": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Extra environment variables." }
+  },
+  "additionalProperties": false
+}

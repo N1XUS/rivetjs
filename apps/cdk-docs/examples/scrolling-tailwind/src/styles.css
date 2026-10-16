@@ -1,0 +1,5 @@
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@import "@rivetjs/cdk/scrolling.css" layer(rivet);
+@source "./**/*.{ts,tsx}";

@@ -1,0 +1,202 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/menu-item.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* ==========================================================================
+   Base menu item styles
+   ========================================================================== */
+
+.menu-item {
+  @apply relative flex min-h-9 w-full items-center justify-start gap-3 px-2 py-1.5 outline-none no-highlight;
+  /* Rivet: concentric with the padded popover list it sits in (`--r-inner`), else HeroUI's 16 px (TWEAKS.md TW-123) */
+  border-radius: var(--r-inner, var(--radius-2xl));
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    transform var(--duration-base) var(--ease-out-quart),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+
+  @apply motion-reduce:transition-none;
+
+  /* Cursor */
+  cursor: var(--cursor-interactive);
+
+  [data-slot="label"] {
+    @apply pointer-events-none w-fit select-none;
+  }
+
+  [data-slot="description"] {
+    @apply pointer-events-none text-wrap select-none;
+  }
+
+  [data-slot="submenu-indicator"] svg {
+    @apply size-4;
+  }
+
+  /* Add inline-start padding when indicator is present */
+  &:has(.menu-item__indicator) {
+    @apply ps-7;
+  }
+
+  /* Add inline-end padding when indicator is present and has submenu */
+  &[data-has-submenu="true"]:has(.menu-item__indicator) {
+    @apply ps-2 pe-7;
+  }
+
+  /* Focus visible state (keyboard focus only).
+     React Aria always sets data-focused when it owns the item, so the native
+     fallback is scoped to consumers rendering this class outside React Aria. */
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  /* Focus state */
+  &:focus,
+  &[data-focus="true"] {
+  }
+
+  /* Pressed state */
+  &:active,
+  &[data-pressed="true"] {
+    @apply will-change-transform;
+    transform: scale(0.98);
+  }
+
+  /* Hover state */
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  /* Selected state */
+  &[aria-checked="true"],
+  &[aria-selected="true"],
+  &[data-selected="true"] {
+    [data-slot="menu-item-indicator--checkmark"] {
+      /**
+     * Transitions
+     * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+     */
+      transition: stroke-dashoffset var(--duration-fast) linear;
+      @apply motion-reduce:transition-none;
+    }
+
+    [data-slot="menu-item-indicator--dot"] {
+      /**
+       * Selected state: visible and scaled up
+       */
+      @apply scale-100 opacity-100;
+    }
+  }
+
+  /* Disabled state */
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/* ==========================================================================
+   Menu item indicator
+   ========================================================================== */
+
+.menu-item__indicator {
+  @apply absolute start-2 top-1/2 flex size-4 shrink-0 -translate-y-1/2 items-center justify-center text-muted;
+
+  /**
+   * Transitions
+   */
+  @apply transition duration-(--duration-base) motion-reduce:transition-none;
+
+  /* Position on the inline-end when menu item has submenu */
+  .menu-item[data-has-submenu="true"] & {
+    @apply start-auto end-2;
+  }
+
+  /* Checkmark SVG indicator */
+  [data-slot="menu-item-indicator--checkmark"] {
+    @apply size-3.5;
+    /* Rivet: 14 px icon, 2 px stroke (lucide absoluteStrokeWidth: 2 × 24 / 14 units; TWEAKS.md TW-140) */
+    stroke-width: 3.43;
+
+    .menu-item[data-selection-mode="multiple"] & {
+      /**
+       * Transitions
+       */
+      @apply transition-all duration-(--duration-slow) motion-reduce:transition-none;
+    }
+  }
+
+  /* Dot SVG indicator */
+  [data-slot="menu-item-indicator--dot"] {
+    @apply size-2;
+
+    .menu-item[data-selection-mode="multiple"] & {
+      /**
+     * Transitions
+     */
+      @apply transition-all duration-(--duration-base) motion-reduce:transition-none;
+    }
+    /**
+     * Default state: hidden and scaled down
+     */
+    @apply scale-70 opacity-0;
+  }
+}
+
+/* Submenu indicator (chevron-right) */
+.menu-item__indicator--submenu {
+  @apply text-muted;
+
+  svg {
+    @apply size-4;
+  }
+}
+
+/* Default variant */
+.menu-item--default {
+}
+
+/* Danger variant */
+.menu-item--danger {
+  .menu-item__indicator {
+    @apply text-danger;
+  }
+
+  [data-slot="label"] {
+    @apply text-danger;
+  }
+
+  .menu-item__icon {
+    @apply text-danger;
+  }
+}
+
+/* Rivet: Dropdown.Item sugar parts (TWEAKS.md TW-147) — what the HeroUI demos spell out with utilities: a muted 16 px
+   leading icon (top-aligned to the label line next to a description), a label + description column, an end-aligned
+   shortcut. */
+.menu-item__icon {
+  @apply size-4 shrink-0 text-muted;
+}
+
+.menu-item__text {
+  @apply flex min-w-0 flex-col;
+}
+
+.menu-item:has(> .menu-item__text) > .menu-item__icon {
+  @apply mt-0.5 self-start;
+}
+
+.menu-item__shortcut {
+  @apply ms-auto;
+}
+
+/* Rivet: density (identity spec §3.2, TWEAKS.md TW-139) — `data-density="compact"` on an ancestor shifts height and
+   padding one scale step; a `data-density="comfortable"` ancestor restores the default. */
+.menu-item:where([data-density="compact"] *):not(:where([data-density="comfortable"] *)) {
+  @apply min-h-8 py-1;
+}

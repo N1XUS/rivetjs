@@ -1,0 +1,65 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/card.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* Card component styles */
+
+/* Block */
+.card {
+  @apply relative flex flex-col gap-3 overflow-visible p-4;
+  @apply shadow-surface;
+  /* Rivet: a Card nested in a padded surface takes that surface's inner radius (TWEAKS.md TW-123) */
+  --r-card: var(--r-inner, min(32px, var(--radius-3xl)));
+  border-radius: var(--r-card);
+  /* Rivet: theme token for frosted cards (Glass preset, TW-148); unset = none (no containing block for fixed children) */
+  backdrop-filter: var(--surface-backdrop, none);
+}
+
+/* Rivet: inner radius for what the Card holds (nested Card, media, `data-radius="concentric"` controls) = Card radius −
+   padding; set on the children, not the Card, so the Card itself reads its parent's `--r-inner` (TWEAKS.md TW-123) */
+.card > :not(.card) {
+  --r-inner: max(var(--r-min, 0px), calc(var(--r-card) - var(--spacing) * 4));
+}
+
+/* Element - header */
+.card__header {
+  @apply flex flex-col gap-1;
+}
+
+/* Element - title */
+.card__title {
+  /* Rivet: title / description rhythm 20 / 20 at 14 px (was leading-6), 4 px apart (TWEAKS.md TW-143) */
+  @apply text-sm leading-5 font-medium text-foreground;
+}
+
+/* Element - description */
+.card__description {
+  @apply text-sm leading-5 text-muted;
+}
+
+/* Element - content */
+.card__content {
+  @apply flex flex-1 flex-col gap-1;
+}
+
+/* Element - footer */
+.card__footer {
+  @apply flex flex-row items-center;
+}
+
+/* Modifier - variant */
+
+.card--transparent {
+  @apply border-none bg-transparent shadow-none;
+  backdrop-filter: none;
+}
+
+.card--default {
+  @apply bg-surface;
+}
+
+.card--secondary {
+  @apply bg-surface-secondary;
+}
+
+.card--tertiary {
+  @apply bg-surface-tertiary;
+}

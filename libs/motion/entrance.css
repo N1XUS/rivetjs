@@ -1,0 +1,44 @@
+/*
+ * @rivetjs/motion entrance fallback: pages rendered without a head sink (plain renderToString, no @rivetjs/router
+ * + @rivetjs/kit head) link this sheet once. Elements carry `data-mvv` and inline `--rv-mve-*` custom properties
+ * (libs/motion/css.ts `entranceVars`): `n` animation names (one per animated property), `nr` the names kept under
+ * prefers-reduced-motion, `d` / `e` / `l` durations / easings / delays (lists aligned with `n`; `dr` / `er` / `lr` aligned
+ * with `nr` when it is shorter), and the start value
+ * per property (`o` opacity, `t` translate, `s` scale, `r` rotate). The inline style holds the final state; each
+ * animation runs from its start value with a backwards fill (no forwards fill: later inline values win).
+ */
+[data-mvv] {
+  animation-name: var(--rv-mve-n);
+  animation-duration: var(--rv-mve-d);
+  animation-timing-function: var(--rv-mve-e);
+  animation-delay: var(--rv-mve-l);
+  animation-fill-mode: backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-mvv] {
+    animation-name: var(--rv-mve-nr, none);
+    animation-duration: var(--rv-mve-dr, var(--rv-mve-d));
+    animation-timing-function: var(--rv-mve-er, var(--rv-mve-e));
+    animation-delay: var(--rv-mve-lr, var(--rv-mve-l));
+  }
+}
+@keyframes rv-mve-o {
+  from {
+    opacity: var(--rv-mve-o);
+  }
+}
+@keyframes rv-mve-t {
+  from {
+    translate: var(--rv-mve-t);
+  }
+}
+@keyframes rv-mve-s {
+  from {
+    scale: var(--rv-mve-s);
+  }
+}
+@keyframes rv-mve-r {
+  from {
+    rotate: var(--rv-mve-r);
+  }
+}

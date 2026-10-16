@@ -1,0 +1,55 @@
+# @rivetjs/cdk/tabs
+> **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
+
+RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, render props, `data-*` states, `render`, slot contexts, SelectionIndicator) + Rivet `items` preset over the same parts.
+
+## Entry points
+- `@rivetjs/cdk/tabs` -> `index.tsx`: `Tabs`, `TabList`, `Tab`, `TabPanels`, `TabPanel`, `TabsContext` (`rv-tabs`), `TabListStateContext` (`rv-tab-list-state`); types `TabsProps`, `TabsRenderProps`, `TabItem` (preset item), `TabListProps`, `TabListRenderProps`, `TabProps`, `TabRenderProps`, `TabPanelsProps`, `TabPanelProps`, `TabPanelRenderProps`, `KeyboardActivation`, `TabListState`, `Key`, `Orientation`
+- `@rivetjs/cdk/tabs/behaviour` -> `behaviour.ts`: tablist handlers `tabListKeyDown(state, e, router)`, `tabListPointerDown(e)`, `tabListFocusIn` / `tabListFocusOut`; per-tab press callbacks `tabPressStart` / `tabPressUp` / `tabPress(state, e: PressEvent, router)`, `tabClick(state, e, router)`; readers `isTabSelected`, `tabSelected`, `isTabDisabled`, `tabTabIndex`, `tabsKeys`; ids `tabId`, `tabPanelId`; `syncPanelTabIndex`; `TAB`; re-export `TabsKeyboardDelegate`
+- state: `@rivetjs/cdk/state/tabs` -> `createTabListState`, `findDefaultSelectedKey`, `selectTab`, `setTabFocusedKey`, `effectiveFocusedKey`, `tabsSelectionState`, `TabListState`, `TabListStateOptions`, `TabKey`
+
+## Layout
+- `index.tsx` - parts. `Tabs` root `<div>` (state + `TabListStateContext`); `TabList` `<div role=tablist>` = `SharedElementTransition` scope + live `CollectionRoot`; `Tab` = `createLeafComponent(TabItemNode)` `<div|a role=tab>`; `TabPanels` hideable `<div>` + `Collection`; `TabPanel` hideable, `Show` of `TabPanelInner` (or force-mounted)
+- `behaviour.ts` - react-aria useTabList / useTab / useTabPanel: tablist handlers delegated on the tablist over `../_adapters/selectable.ts` + `DOMCollection`; tab press callbacks run `selectableItemPress*` with `pressOptions` (tab → closest tablist)
+- `keyboard-delegate.ts` - `TabsKeyboardDelegate`
+- `../state/tabs.ts` - selected / focused key signals (+ `focusedSelection`), not region state
+- tests: `../tests/tabs.browser.test.tsx` (RAC Tabs.test.js port, 42 cases, project `cdk-browser`), `../tests/shared-element.browser.test.tsx` (SelectionIndicator), `../tests-components/tabs.test.ts` (route `app/src/routes/tabs.tsx`: preset `#product` / `#manual` / `#keys` / RTL / nested + parts `#parts`), `tabs-state.test.ts`, `dom-events-collections.test.ts` (`#d-tabs` parts, `#j-tabs` preset), `selection-indicator.test.ts`, `axe.test.ts` (`/tabs`)
+- docs: `apps/cdk-docs/content/components/tabs.md`; examples `apps/cdk-docs/examples/tabs-{basic,controlled,css,custom (render),disabled (items renderers),dom-events,events,indicator,indicator-css,links,manual,nested,orientation,rtl,slots (items preset),tailwind}/`, `dom-props-forward`, `styling-theme`
+
+## Upstream
+- `index.tsx`: RAC Tabs.tsx (Tabs, TabList, Tab, TabPanels, TabPanel, contexts). Deviation: `items` preset; default selection at state creation; ids from the Tabs id
+- `behaviour.ts`: react-aria tabs/useTabList, useTab, useTabPanel, utils
+- `keyboard-delegate.ts`: react-aria tabs/TabsKeyboardDelegate.ts
+- `../state/tabs.ts`: react-stately tabs/useTabListState + list/useSingleSelectListState
+- Parity table: `docs/design/specs/2026-10-05-tabs-parity.md`
+
+## Rules / invariants
+- Tabs props: `selectedKey` (Signal two-way / plain controlled / null / live value form), `defaultSelectedKey`, `onSelectionChange` (fires on re-select too; not for the default selection), `disabledKeys`, `isDisabled`, `orientation`, `keyboardActivation`, `id` (base of ids), `class` / `style` / `children` (render props `{ orientation }`), `render`, slot / global DOM props. Root `data-orientation`, `data-disabled`, `data-focused` / `data-focus-visible` (focus within, written by handlers)
+- Default selection (`needsDefault`: no initial key, uncontrolled or signal): preset → its items; parts → one `buildCollectionFrom` pass over the children (outside `TabListStateContext`), `TabItemNode`s → `TabKey[]`; plain controlled `selectedKey` never defaulted
+- Preset (`items` + no children): `TabList items` of `Tab`s (`tab` slot `(item)` or `label ?? textValue`; tab content as a slot child `{tab ? tab(item) : label}` — an arrow child here broke the resumed SelectionIndicator) + with `panel`: `TabPanels items` of `TabPanel shouldForceMount hidden={() => !selected}` with `{() => panel(item)}`. Slots get the item VALUE (`item.label`, not `item()`). `TabItem` has `id` (not `key`)
+- TabList: id `<id>-tablist`, role tablist, `aria-orientation`, `data-orientation`, `data-collection` (= state id), `data-rk` (`tabsKeys`), useLabels; owns `onKeyDown` / `onPointerDown` / `onFocusIn` / `onFocusOut` (user's chained). Without state: renders a plain `Collection` (build pass). Render props `{ orientation, state }`, default class `rv-TabList`
+- Tab: per-tab `pressProps` (RA usePress: onPress*/onClick; stops click propagation like RA — a TabList `onClick` never sees tab clicks), hover / focus states (`../utils/data-attrs.tsx`), FocusableContext (`mergeFocusableContext`: TooltipTrigger props + ref reach the tab), id `<id>-tab-<key>`, `aria-selected`, `aria-controls` (selected only), roving `tabIndex`, `aria-disabled` + `data-disabled`, `data-selected`, `data-pressed`, `data-hovered` / `data-focused` / `data-focus-visible` (handlers), `data-key` (+ `data-key-type`), `data-text`; `<a>` with `href` (link attrs in a spread object). Content inside `Provider SelectionIndicatorContext { isSelected }` via `content()` (own child site). State signals only when class / style / children are functions
+- TabPanel: hideable; id from `collectionItemId()` inside `TabPanels items`; rendered only while selected or exiting (`Show`) unless `shouldForceMount`; while selected: id `<id>-tabpanel-<key>`, role tabpanel, `tabIndex=0` (dropped by `syncPanelTabIndex` with tabbable content), labels; always `inert` + `data-inert="true"` when unselected, `data-entering` / `data-exiting`; children inside `Provider [TabsContext, null], [TabListStateContext, null], [CollectionRendererContext, Default]` (nested Tabs)
+- Panels created in the browser animate: `createExitAnimation` / `createEnterAnimation` (`../utils/animation.tsx`), `TabPanels` `--tab-panel-width` / `--tab-panel-height` effect (browser-created only: a clientEffect recorded during SSR would boot the runtime at load)
+- Resumable: idle arrows are object-literal values (`idle.isExiting`), never conditional bare arrows (`x ? f : () => false` captured by `TabPanelInner` = "function is not serializable" → page-wide resume render error); user refs on panels merged synchronously (`mergeRefs`), render attrs key `tabindex` lowercase
+- Unselected panels' children: render-function children (`{() => …}`) — created later in the browser
+- Keyboard: Left / Right follow text direction (DOM `dir`) in both orientations, Up / Down vertical only; wrap; disabled skipped; automatic = `selectOnFocus`; Enter / Space press via the tab's usePress
+- Pointer: mouse selects on press start; link tabs select on press up and navigate on click (router); disabled tab pointerdown prevented
+- live props (P5): `Tabs` runs `liveOptions(props, ["isDisabled"], ["selectedKey"])` (a value-form `selectedKey={k()}` = live controlled accessor, `isDisabled` → `state.disabled`, root `data-disabled` through the spread); `Tab` keeps `isDisabled` live (`liveAt` → `isTabDisabled(state, key, accessor)`, `aria-disabled` / `data-disabled` returned-arrow bag, `tabTabIndex(…, read(isDisabled))`); class / style / children of Tabs / TabList / Tab / TabPanel from a live view (TabList: class / style only — its children must stay out of the resumable `rp`). Part bodies untracked; TabPanel's `Show` stays tracked (server: its `when` read is the branch's resume dependency; untracked → the panel never switched on a resumed page) and TabPanels renders its `<Collection>` outside the untracked body (its rows' `Show` reads are the TabPanels site's resume dependencies; story `/tabs` `#item-parts`, cdk-docs `tabs-nested`). Live `orientation` / `keyboardActivation` / `disabledKeys` (LIVE-SWEEP round 2): in `liveOptions`' keys; `createTabListState` keeps the creation values + `state.live` accessors, read through `tabsOrientation` / `tabsKeyboardActivation` / `tabsDisabledKeys` (`../state/tabs.ts`; keyboard delegate, `selectOnFocus`, `isTabDisabled`); root / TabList `data-` / `aria-orientation` + render-bag `data-rk` via returned arrows (`orientationAttr`, `tabsKeysAttr`); a Tab takes the accessor path when `state.live.disabledKeys` is set; Tabs root render values read `orientation` from the props (the builder may call children before the state exists). Read once: `FocusableContext` merge (disabled at creation), `href` / link attrs, `id`, `defaultSelectedKey`, `shouldForceMount`, render-prop forms (state signals only when class / style / children were functions at creation). Tests `tests/live-props.browser.test.tsx`, story `tests-components/live-props.test.ts`
+
+## Commands
+- `npx vitest run --project cdk-browser libs/cdk/tests/tabs.browser.test.tsx libs/cdk/tests/shared-element.browser.test.tsx`
+- `npx vitest run --project cdk-components libs/cdk/tests-components/tabs.test.ts libs/cdk/tests-components/tabs-state.test.ts libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/selection-indicator.test.ts libs/cdk/tests-components/axe.test.ts`
+- `node libs/docs-kit/cli.ts examples apps/cdk-docs tabs-basic tabs-controlled … dom-props-forward styling-theme`
+
+## Gotchas
+- `TabsContext` is not re-provided inside panels as RAC does (cleared to null for nested Tabs)
+- A given `defaultSelectedKey` / signal value that is not a tab is replaced only when the state is created; later tab removal does not reselect
+- Runs on `../_adapters/` (`collection.ts`, `dom-collection.ts`, `grid-selection.ts`, `selectable.ts`, `press.ts` for `setInteractionModality` / `PressEvent`)
+- `pressProps` is pointer-only (no mouse-event fallback): tests fire pointer events
+- TabPanels `prevSize` is the size measured after the previous change (approximation of RAC's layout effect)
+- Open (CDK-PINS 2026-10-12): server TabPanel keeps `tabIndex=0` even with tabbable content (RA useHasTabbableChild drops it after mount; `syncPanelTabIndex` runs on press / Tab key only, and the browser's Tab default lands before a cold handler) — a server fix needs a runtime attribute resolved after the panel's children render (request to the runtime lane: an attribute resolved from the element's rendered children HTML); fuzz pins `/tabs` stay open. TabPanels size variables and enter / exit animations remain browser-created only (fuzz pins `design`).
+
+## See also
+- [../CLAUDE.md](../CLAUDE.md), [../state/CLAUDE.md](../state/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md)
+- `docs/design/specs/2026-10-05-tabs-parity.md`

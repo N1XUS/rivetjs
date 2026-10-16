@@ -1,0 +1,182 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NX_DAEMON: "false"
+  NX_ISOLATE_PLUGINS: "false"
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  # Every nx `test` target: library suites incl. the Chromium projects (kit-browser, testing-browser,
+  # cdk-browser, cdk-components), compiler + DOM v2 parity, docs (builds the docs site + templates),
+  # ssr-bench CI subset + Python unit tests.
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx nx run-many -t test --output-style=static --skip-nx-cache
+
+  # Resume fuzz (Function Bridge T31, `@rivetjs/testing/fuzz`): every story route resumed vs CSR, sharded per story app
+  # and route shard (`RIVET_FUZZ_SHARD`); budget ≤ 10 min per shard.
+  resume-fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [cdk, ui]
+        shard: [1/3, 2/3, 3/3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx vitest run --project ${{ matrix.app }}-resume-fuzz --maxWorkers=1
+        env:
+          RIVET_FUZZ_SHARD: ${{ matrix.shard }}
+
+  zero-cost:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: sh scripts/zero-cost/check.sh
+
+  # The documented gates that are not nx test targets (root CLAUDE.md "Gates", CONTRIBUTING.md).
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Generated event lists up to date
+        run: node scripts/gen-events.mjs --check
+      - name: Generated server row emitter (wasm) up to date
+        run: node scripts/gen-row-wasm.mjs --check
+      - name: Compiler oracle parity
+        run: npx nx run compiler:parity --output-style=static --skip-nx-cache
+      - name: Docs content (frontmatter, references, links; no placeholders)
+        run: |
+          node libs/docs-kit/cli.ts check-content apps/docs --strict
+          node libs/docs-kit/cli.ts check-content apps/cdk-docs --strict
+          node libs/docs-kit/cli.ts check-content apps/ui-docs --strict
+      - name: Docs code fences (syntax + import drift)
+        run: |
+          node libs/docs-kit/cli.ts check-snippets apps/docs
+          node libs/docs-kit/cli.ts check-snippets apps/cdk-docs
+          node libs/docs-kit/cli.ts check-snippets apps/ui-docs
+      - name: AI outputs (llms.txt, llms-full.txt, per-page Markdown; deterministic, complete)
+        run: |
+          node libs/docs-kit/cli.ts llms apps/docs --check
+          node libs/docs-kit/cli.ts llms apps/cdk-docs --check
+          node libs/docs-kit/cli.ts llms apps/ui-docs --check
+      - name: MCP server data (same documents as llms outputs; deterministic)
+        run: node libs/mcp/build-data.ts --check
+      - name: AI instruction files (AGENTS.md / CLAUDE.md / skills / editor rules in starters + plugin)
+        run: node libs/mcp/ai/sync.ts --check
+      # scripts/tests/ai-eval.test.ts runs the AI eval's behaviour checks in Chromium.
+      - run: npx playwright install --with-deps chromium
+      - name: Repo script tests
+        run: npx vitest run --project scripts
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Changed files only (the tree is not fully formatted): files clean at the base must stay clean.
+      - name: Check formatting against available history
+        env:
+          FORMAT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # A squashed initial snapshot has no common history with the replaced repository root.
+          if ! git merge-base "$FORMAT_BASE" HEAD >/dev/null 2>&1; then
+            FORMAT_BASE=HEAD
+          fi
+          npm run format:check -- --base "$FORMAT_BASE"
+
+  size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run size-report -- --check
+
+  # docs:build already runs as a dependency of docs:test (test job); cdk-docs has no test target and ui-docs:test
+  # (upstream section drift check, in the test job) does not build the site, so both sites build here.
+  cdk-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx nx run cdk-docs:build --output-style=static --skip-nx-cache
+
+  ui-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx nx run ui-docs:build --output-style=static --skip-nx-cache

@@ -1,0 +1,26 @@
+{
+  "name": "rivet-example-drawer-form",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --ssr",
+    "start": "node serve.js"
+  },
+  "dependencies": {
+    "@rivetjs/cdk": "experimental",
+    "@rivetjs/forms": "experimental",
+    "@rivetjs/reactivity": "experimental",
+    "@rivetjs/router": "experimental",
+    "@rivetjs/runtime": "experimental",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@rivetjs/compiler": "experimental",
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.2"
+  }
+}

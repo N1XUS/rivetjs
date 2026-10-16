@@ -1,0 +1,2912 @@
+{
+  "meta": {
+    "host": {
+      "cpus": 14,
+      "cpuModel": "Apple M4 Pro",
+      "memGB": 48,
+      "platform": "darwin",
+      "node": "v26.5.1"
+    },
+    "updated": "2026-10-11T15:44:20.773Z",
+    "versions": {
+      "rivet": {
+        "marked": "18.1.0",
+        "vite": "8.3.2",
+        "@rivetjs/*": "workspace (d9f3852e)"
+      },
+      "astro": {
+        "astro": "7.3.8",
+        "marked": "18.1.0"
+      },
+      "eleventy": {
+        "@11ty/eleventy": "3.1.6",
+        "marked": "18.1.0"
+      },
+      "hugo": {
+        "hugo-extended": "0.167.0",
+        "hugo": "v0.167.0-3fff6fb5c267dacb26280c78dbe8c344054249c8+extended"
+      },
+      "next": {
+        "marked": "18.1.0",
+        "next": "16.4.0",
+        "react": "19.3.0",
+        "react-dom": "19.3.0"
+      },
+      "sveltekit": {
+        "@sveltejs/adapter-static": "4.0.0",
+        "@sveltejs/kit": "3.0.1",
+        "@sveltejs/vite-plugin-svelte": "7.3.1",
+        "marked": "18.1.0",
+        "svelte": "5.57.2",
+        "vite": "8.3.4"
+      }
+    }
+  },
+  "build": {
+    "100": {
+      "rivet": {
+        "status": "ok",
+        "seconds": {
+          "median": 0.750830249999999,
+          "min": 0.7254139169999999,
+          "max": 0.7871102500000016,
+          "samples": [
+            0.7254139169999999,
+            0.7871102500000016,
+            0.750830249999999
+          ]
+        },
+        "peakMB": {
+          "median": 217.859375,
+          "min": 214.734375,
+          "max": 218.140625,
+          "samples": [
+            214.734375,
+            218.140625,
+            217.859375
+          ]
+        },
+        "raw": [
+          {
+            "ms": 725.4139169999999,
+            "peakKB": 219888,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.71728515625,
+            "valid": true
+          },
+          {
+            "ms": 787.1102500000015,
+            "peakKB": 223376,
+            "status": "ok",
+            "loadStart": 7.81982421875,
+            "loadEnd": 7.81982421875,
+            "valid": true
+          },
+          {
+            "ms": 750.8302499999991,
+            "peakKB": 223088,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 7.52001953125,
+            "valid": true
+          }
+        ]
+      },
+      "astro": {
+        "status": "ok",
+        "seconds": {
+          "median": 0.7528363339999996,
+          "min": 0.747385542,
+          "max": 0.7687913749999862,
+          "samples": [
+            0.747385542,
+            0.7528363339999996,
+            0.7687913749999862
+          ]
+        },
+        "peakMB": {
+          "median": 356.3125,
+          "min": 356.078125,
+          "max": 357.359375,
+          "samples": [
+            356.078125,
+            356.3125,
+            357.359375
+          ]
+        },
+        "raw": [
+          {
+            "ms": 747.385542,
+            "peakKB": 364624,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.71728515625,
+            "valid": true
+          },
+          {
+            "ms": 752.8363339999996,
+            "peakKB": 364864,
+            "status": "ok",
+            "loadStart": 7.81982421875,
+            "loadEnd": 7.81982421875,
+            "valid": true
+          },
+          {
+            "ms": 768.7913749999861,
+            "peakKB": 365936,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 7.52001953125,
+            "valid": true
+          }
+        ]
+      },
+      "eleventy": {
+        "status": "ok",
+        "seconds": {
+          "median": 0.39338324999999896,
+          "min": 0.3547071670000005,
+          "max": 0.4523423750000002,
+          "samples": [
+            0.39338324999999896,
+            0.4523423750000002,
+            0.3547071670000005
+          ]
+        },
+        "peakMB": {
+          "median": 140.765625,
+          "min": 138.359375,
+          "max": 141.0625,
+          "samples": [
+            138.359375,
+            141.0625,
+            140.765625
+          ]
+        },
+        "raw": [
+          {
+            "ms": 393.38324999999895,
+            "peakKB": 141680,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.71728515625,
+            "valid": true
+          },
+          {
+            "ms": 452.3423750000002,
+            "peakKB": 144448,
+            "status": "ok",
+            "loadStart": 7.81982421875,
+            "loadEnd": 7.81982421875,
+            "valid": true
+          },
+          {
+            "ms": 354.7071670000005,
+            "peakKB": 144144,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 7.52001953125,
+            "valid": true
+          }
+        ]
+      },
+      "hugo": {
+        "status": "ok",
+        "seconds": {
+          "median": 0.11105433300000005,
+          "min": 0.10809895899999537,
+          "max": 0.13494866599999658,
+          "samples": [
+            0.11105433300000005,
+            0.13494866599999658,
+            0.10809895899999537
+          ]
+        },
+        "peakMB": {
+          "median": 67.484375,
+          "min": 67.4375,
+          "max": 67.890625,
+          "samples": [
+            67.890625,
+            67.4375,
+            67.484375
+          ]
+        },
+        "raw": [
+          {
+            "ms": 111.05433300000004,
+            "peakKB": 69520,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.71728515625,
+            "valid": true
+          },
+          {
+            "ms": 134.9486659999966,
+            "peakKB": 69056,
+            "status": "ok",
+            "loadStart": 7.81982421875,
+            "loadEnd": 7.81982421875,
+            "valid": true
+          },
+          {
+            "ms": 108.09895899999538,
+            "peakKB": 69104,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 7.52001953125,
+            "valid": true
+          }
+        ]
+      },
+      "next": {
+        "status": "ok",
+        "seconds": {
+          "median": 2.302626042,
+          "min": 2.142606,
+          "max": 2.397500583000001,
+          "samples": [
+            2.302626042,
+            2.397500583000001,
+            2.142606
+          ]
+        },
+        "peakMB": {
+          "median": 2328.171875,
+          "min": 2286.875,
+          "max": 2335.03125,
+          "samples": [
+            2286.875,
+            2328.171875,
+            2335.03125
+          ]
+        },
+        "raw": [
+          {
+            "ms": 2302.626042,
+            "peakKB": 2341760,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.71728515625,
+            "valid": true
+          },
+          {
+            "ms": 2397.500583000001,
+            "peakKB": 2384048,
+            "status": "ok",
+            "loadStart": 7.81982421875,
+            "loadEnd": 9.1953125,
+            "valid": true
+          },
+          {
+            "ms": 2142.6059999999998,
+            "peakKB": 2391072,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 8.59912109375,
+            "valid": true
+          }
+        ]
+      },
+      "sveltekit": {
+        "status": "ok",
+        "seconds": {
+          "median": 1.4595158330000122,
+          "min": 1.446430625000008,
+          "max": 1.5605038749999984,
+          "samples": [
+            1.5605038749999984,
+            1.4595158330000122,
+            1.446430625000008
+          ]
+        },
+        "peakMB": {
+          "median": 472.390625,
+          "min": 468.625,
+          "max": 472.484375,
+          "samples": [
+            472.484375,
+            472.390625,
+            468.625
+          ]
+        },
+        "raw": [
+          {
+            "ms": 1560.5038749999985,
+            "peakKB": 483824,
+            "status": "ok",
+            "loadStart": 7.71728515625,
+            "loadEnd": 7.81982421875,
+            "valid": true
+          },
+          {
+            "ms": 1459.5158330000122,
+            "peakKB": 483728,
+            "status": "ok",
+            "loadStart": 7.52001953125,
+            "loadEnd": 7.52001953125,
+            "valid": true
+          },
+          {
+            "ms": 1446.4306250000081,
+            "peakKB": 479872,
+            "status": "ok",
+            "loadStart": 7.9736328125,
+            "loadEnd": 7.9736328125,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "1000": {
+      "rivet": {
+        "status": "ok",
+        "seconds": {
+          "median": 2.0042670420000213,
+          "min": 1.863990957999995,
+          "max": 2.152687291999988,
+          "samples": [
+            1.863990957999995,
+            2.152687291999988,
+            2.0042670420000213
+          ]
+        },
+        "peakMB": {
+          "median": 215.015625,
+          "min": 207.953125,
+          "max": 232.921875,
+          "samples": [
+            207.953125,
+            232.921875,
+            215.015625
+          ]
+        },
+        "raw": [
+          {
+            "ms": 1863.9909579999949,
+            "peakKB": 212944,
+            "status": "ok",
+            "loadStart": 7.30224609375,
+            "loadEnd": 7.30224609375,
+            "valid": true
+          },
+          {
+            "ms": 2152.687291999988,
+            "peakKB": 238512,
+            "status": "ok",
+            "loadStart": 7.8515625,
+            "loadEnd": 7.783203125,
+            "valid": true
+          },
+          {
+            "ms": 2004.2670420000213,
+            "peakKB": 220176,
+            "status": "ok",
+            "loadStart": 7.9833984375,
+            "loadEnd": 8.14453125,
+            "valid": true
+          }
+        ]
+      },
+      "astro": {
+        "status": "ok",
+        "seconds": {
+          "median": 1.4924291660000453,
+          "min": 1.3934453750000102,
+          "max": 2.1897075420000185,
+          "samples": [
+            1.3934453750000102,
+            2.1897075420000185,
+            1.4924291660000453
+          ]
+        },
+        "peakMB": {
+          "median": 542.921875,
+          "min": 538.734375,
+          "max": 545.75,
+          "samples": [
+            542.921875,
+            538.734375,
+            545.75
+          ]
+        },
+        "raw": [
+          {
+            "ms": 1393.4453750000102,
+            "peakKB": 555952,
+            "status": "ok",
+            "loadStart": 7.30224609375,
+            "loadEnd": 7.30224609375,
+            "valid": true
+          },
+          {
+            "ms": 2189.7075420000183,
+            "peakKB": 551664,
+            "status": "ok",
+            "loadStart": 7.783203125,
+            "loadEnd": 7.783203125,
+            "valid": true
+          },
+          {
+            "ms": 1492.4291660000454,
+            "peakKB": 558848,
+            "status": "ok",
+            "loadStart": 7.87890625,
+            "loadEnd": 7.87890625,
+            "valid": true
+          }
+        ]
+      },
+      "eleventy": {
+        "status": "ok",
+        "seconds": {
+          "median": 1.3948447919999598,
+          "min": 1.1803961659999913,
+          "max": 1.6524645000000018,
+          "samples": [
+            1.1803961659999913,
+            1.6524645000000018,
+            1.3948447919999598
+          ]
+        },
+        "peakMB": {
+          "median": 227.859375,
+          "min": 216.453125,
+          "max": 228.59375,
+          "samples": [
+            227.859375,
+            216.453125,
+            228.59375
+          ]
+        },
+        "raw": [
+          {
+            "ms": 1180.3961659999914,
+            "peakKB": 233328,
+            "status": "ok",
+            "loadStart": 7.30224609375,
+            "loadEnd": 8.39892578125,
+            "valid": true
+          },
+          {
+            "ms": 1652.4645000000019,
+            "peakKB": 221648,
+            "status": "ok",
+            "loadStart": 7.783203125,
+            "loadEnd": 7.783203125,
+            "valid": true
+          },
+          {
+            "ms": 1394.8447919999599,
+            "peakKB": 234080,
+            "status": "ok",
+            "loadStart": 7.87890625,
+            "loadEnd": 7.87890625,
+            "valid": true
+          }
+        ]
+      },
+      "hugo": {
+        "status": "ok",
+        "seconds": {
+          "median": 0.47778295800002524,
+          "min": 0.4463359169999894,
+          "max": 0.4964895830000169,
+          "samples": [
+            0.4463359169999894,
+            0.47778295800002524,
+            0.4964895830000169
+          ]
+        },
+        "peakMB": {
+          "median": 149.53125,
+          "min": 148.4375,
+          "max": 151.421875,
+          "samples": [
+            148.4375,
+            149.53125,
+            151.421875
+          ]
+        },
+        "raw": [
+          {
+            "ms": 446.3359169999894,
+            "peakKB": 152000,
+            "status": "ok",
+            "loadStart": 7.57763671875,
+            "loadEnd": 7.57763671875,
+            "valid": true
+          },
+          {
+            "ms": 477.78295800002525,
+            "peakKB": 153120,
+            "status": "ok",
+            "loadStart": 7.783203125,
+            "loadEnd": 7.783203125,
+            "valid": true
+          },
+          {
+            "ms": 496.48958300001686,
+            "peakKB": 155056,
+            "status": "ok",
+            "loadStart": 7.87890625,
+            "loadEnd": 7.87890625,
+            "valid": true
+          }
+        ]
+      },
+      "next": {
+        "status": "over-cap",
+        "seconds": null,
+        "peakMB": null,
+        "raw": [
+          {
+            "ms": 3197.832833000022,
+            "peakKB": 2809392,
+            "status": "over-cap",
+            "loadStart": 7.57763671875,
+            "loadEnd": 7.57763671875,
+            "valid": false
+          }
+        ]
+      },
+      "sveltekit": {
+        "status": "ok",
+        "seconds": {
+          "median": 3.4019993330000142,
+          "min": 3.197429125000024,
+          "max": 3.6757731659999697,
+          "samples": [
+            3.4019993330000142,
+            3.6757731659999697,
+            3.197429125000024
+          ]
+        },
+        "peakMB": {
+          "median": 547.25,
+          "min": 524.578125,
+          "max": 549.140625,
+          "samples": [
+            549.140625,
+            547.25,
+            524.578125
+          ]
+        },
+        "raw": [
+          {
+            "ms": 3401.9993330000143,
+            "peakKB": 562320,
+            "status": "ok",
+            "loadStart": 7.57763671875,
+            "loadEnd": 7.8515625,
+            "valid": true
+          },
+          {
+            "ms": 3675.77316599997,
+            "peakKB": 560384,
+            "status": "ok",
+            "loadStart": 7.783203125,
+            "loadEnd": 8.84130859375,
+            "valid": true
+          },
+          {
+            "ms": 3197.429125000024,
+            "peakKB": 537168,
+            "status": "ok",
+            "loadStart": 7.87890625,
+            "loadEnd": 7.72802734375,
+            "valid": true
+          }
+        ]
+      }
+    },
+    "5000": {
+      "rivet": {
+        "status": "ok",
+        "seconds": {
+          "median": 8.310416750000034,
+          "min": 6.188055041000014,
+          "max": 8.513140583000029,
+          "samples": [
+            6.188055041000014,
+            8.513140583000029,
+            8.310416750000034
+          ]
+        },
+        "peakMB": {
+          "median": 235.734375,
+          "min": 232.984375,
+          "max": 258.75,
+          "samples": [
+            258.75,
+            235.734375,
+            232.984375
+          ]
+        },
+        "raw": [
+          {
+            "ms": 6188.055041000014,
+            "peakKB": 264960,
+            "status": "ok",
+            "loadStart": 7.34912109375,
+            "loadEnd": 7.32080078125,
+            "valid": true
+          },
+          {
+            "ms": 8513.14058300003,
+            "peakKB": 241392,
+            "status": "ok",
+            "loadStart": 7.78076171875,
+            "loadEnd": 8.10205078125,
+            "valid": true
+          },
+          {
+            "ms": 8310.416750000033,
+            "peakKB": 238576,
+            "status": "ok",
+            "loadStart": 7.8671875,
+            "loadEnd": 7.79736328125,
+            "valid": true
+          }
+        ]
+      },
+      "astro": {
+        "status": "ok",
+        "seconds": {
+          "median": 5.462011583000014,
+          "min": 3.8173404169999996,
+          "max": 6.351596499999985,
+          "samples": [
+            3.8173404169999996,
+            5.462011583000014,
+            6.351596499999985
+          ]
+        },
+        "peakMB": {
+          "median": 1088.640625,
+          "min": 1082.75,
+          "max": 1275.609375,
+          "samples": [
+            1275.609375,
+            1082.75,
+            1088.640625
+          ]
+        },
+        "raw": [
+          {
+            "ms": 3817.3404169999994,
+            "peakKB": 1306224,
+            "status": "ok",
+            "loadStart": 7.32080078125,
+            "loadEnd": 7.6953125,
+            "valid": true
+          },
+          {
+            "ms": 5462.011583000014,
+            "peakKB": 1108736,
+            "status": "ok",
+            "loadStart": 7.66748046875,
+            "loadEnd": 7.69384765625,
+            "valid": true
+          },
+          {
+            "ms": 6351.596499999985,
+            "peakKB": 1114768,
+            "status": "ok",
+            "loadStart": 7.79736328125,
+            "loadEnd": 9.74365234375,
+            "valid": true
+          }
+        ]
+      },
+      "eleventy": {
+        "status": "ok",
+        "seconds": {
+          "median": 7.055125999999931,
+          "min": 5.686022624999984,
+          "max": 7.344294832999993,
+          "samples": [
+            5.686022624999984,
+            7.344294832999993,
+            7.055125999999931
+          ]
+        },
+        "peakMB": {
+          "median": 434.546875,
+          "min": 434.171875,
+          "max": 439.1875,
+          "samples": [
+            439.1875,
+            434.546875,
+            434.171875
+          ]
+        },
+        "raw": [
+          {
+            "ms": 5686.022624999983,
+            "peakKB": 449728,
+            "status": "ok",
+            "loadStart": 7.6953125,
+            "loadEnd": 7.55908203125,
+            "valid": true
+          },
+          {
+            "ms": 7344.294832999993,
+            "peakKB": 444976,
+            "status": "ok",
+            "loadStart": 7.69384765625,
+            "loadEnd": 7.71826171875,
+            "valid": true
+          },
+          {
+            "ms": 8472.625833000056,
+            "peakKB": 444144,
+            "status": "ok",
+            "loadStart": 22.75,
+            "loadEnd": 25.17236328125,
+            "valid": false
+          },
+          {
+            "ms": 7055.125999999931,
+            "peakKB": 444592,
+            "status": "ok",
+            "loadStart": 7.85498046875,
+            "loadEnd": 10.099609375,
+            "valid": true
+          }
+        ]
+      },
+      "hugo": {
+        "status": "ok",
+        "seconds": {
+          "median": 2.959800500000012,
+          "min": 1.5547971659999458,
+          "max": 3.0171532500002067,
+          "samples": [
+            1.5547971659999458,
+            2.959800500000012,
+            3.0171532500002067
+          ]
+        },
+        "peakMB": {
+          "median": 553.46875,
+          "min": 552.0625,
+          "max": 555.421875,
+          "samples": [
+            555.421875,
+            552.0625,
+            553.46875
+          ]
+        },
+        "raw": [
+          {
+            "ms": 1554.7971659999457,
+            "peakKB": 568752,
+            "status": "ok",
+            "loadStart": 7.55908203125,
+            "loadEnd": 7.55908203125,
+            "valid": true
+          },
+          {
+            "ms": 2959.800500000012,
+            "peakKB": 565312,
+            "status": "ok",
+            "loadStart": 7.71826171875,
+            "loadEnd": 7.98095703125,
+            "valid": true
+          },
+          {
+            "ms": 3017.1532500002068,
+            "peakKB": 566752,
+            "status": "ok",
+            "loadStart": 7.67529296875,
+            "loadEnd": 7.701171875,
+            "valid": true
+          }
+        ]
+      },
+      "next": {
+        "status": "over-cap",
+        "seconds": null,
+        "peakMB": null,
+        "raw": [
+          {
+            "ms": 2850.566208000004,
+            "peakKB": 2842016,
+            "status": "over-cap",
+            "loadStart": 7.55908203125,
+            "loadEnd": 8.07470703125,
+            "valid": false
+          }
+        ]
+      },
+      "sveltekit": {
+        "status": "ok",
+        "seconds": {
+          "median": 12.35828112499998,
+          "min": 8.244942416999955,
+          "max": 13.108408999999986,
+          "samples": [
+            8.244942416999955,
+            13.108408999999986,
+            12.35828112499998
+          ]
+        },
+        "peakMB": {
+          "median": 775.96875,
+          "min": 772.9375,
+          "max": 778.78125,
+          "samples": [
+            772.9375,
+            778.78125,
+            775.96875
+          ]
+        },
+        "raw": [
+          {
+            "ms": 8244.942416999955,
+            "peakKB": 791488,
+            "status": "ok",
+            "loadStart": 7.73193359375,
+            "loadEnd": 8.2333984375,
+            "valid": true
+          },
+          {
+            "ms": 13108.408999999985,
+            "peakKB": 797472,
+            "status": "ok",
+            "loadStart": 7.98095703125,
+            "loadEnd": 9.9697265625,
+            "valid": true
+          },
+          {
+            "ms": 12358.28112499998,
+            "peakKB": 794592,
+            "status": "ok",
+            "loadStart": 7.701171875,
+            "loadEnd": 12.099609375,
+            "valid": true
+          }
+        ]
+      }
+    }
+  },
+  "output": {
+    "100": {
+      "rivet": {
+        "totalBytes": 3049313,
+        "files": 304,
+        "htmlFiles": 138,
+        "jsFiles": 22,
+        "jsBytes": 78170,
+        "article": {
+          "raw": 13128.5,
+          "brotli": 4848,
+          "gzip": 5797.5,
+          "inlineJS": 4693,
+          "inlineData": 822,
+          "jsFiles": 5,
+          "jsFileRaw": 65281,
+          "jsFileBrotli": 24196
+        },
+        "index": {
+          "raw": 13982,
+          "brotli": 4575
+        },
+        "tag": {
+          "raw": 13786,
+          "brotli": 4545
+        },
+        "parity": "reference"
+      },
+      "astro": {
+        "totalBytes": 984975,
+        "files": 142,
+        "htmlFiles": 137,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6939,
+          "brotli": 1976.5,
+          "gzip": 2555,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7794,
+          "brotli": 1660
+        },
+        "tag": {
+          "raw": 7572,
+          "brotli": 1639
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "eleventy": {
+        "totalBytes": 985286,
+        "files": 142,
+        "htmlFiles": 137,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6941,
+          "brotli": 1987.5,
+          "gzip": 2553,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7797,
+          "brotli": 1676
+        },
+        "tag": {
+          "raw": 7575,
+          "brotli": 1641
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "hugo": {
+        "totalBytes": 985574,
+        "files": 143,
+        "htmlFiles": 138,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6940,
+          "brotli": 1981.5,
+          "gzip": 2552,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7844,
+          "brotli": 1684
+        },
+        "tag": {
+          "raw": 7574,
+          "brotli": 1646
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "next": {
+        "totalBytes": 8420379,
+        "files": 706,
+        "htmlFiles": 140,
+        "jsFiles": 9,
+        "jsBytes": 569436,
+        "article": {
+          "raw": 21978,
+          "brotli": 4286.5,
+          "gzip": 5198.5,
+          "inlineJS": 14220,
+          "inlineData": 0,
+          "jsFiles": 6,
+          "jsFileRaw": 568937,
+          "jsFileBrotli": 150249
+        },
+        "index": {
+          "raw": 25651,
+          "brotli": 3850
+        },
+        "tag": {
+          "raw": 26365,
+          "brotli": 3899
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "sveltekit": {
+        "totalBytes": 3060714,
+        "files": 297,
+        "htmlFiles": 137,
+        "jsFiles": 17,
+        "jsBytes": 95434,
+        "article": {
+          "raw": 15527,
+          "brotli": 3182,
+          "gzip": 3911,
+          "inlineJS": 7558,
+          "inlineData": 0,
+          "jsFiles": 9,
+          "jsFileRaw": 90577,
+          "jsFileBrotli": 31831
+        },
+        "index": {
+          "raw": 15390,
+          "brotli": 2594
+        },
+        "tag": {
+          "raw": 14929,
+          "brotli": 2613
+        },
+        "parity": "20/20 article texts equal rivet"
+      }
+    },
+    "1000": {
+      "rivet": {
+        "totalBytes": 25420617,
+        "files": 2194,
+        "htmlFiles": 1083,
+        "jsFiles": 22,
+        "jsBytes": 78170,
+        "article": {
+          "raw": 13770,
+          "brotli": 5003,
+          "gzip": 5988.5,
+          "inlineJS": 4693,
+          "inlineData": 822,
+          "jsFiles": 5,
+          "jsFileRaw": 65281,
+          "jsFileBrotli": 24196
+        },
+        "index": {
+          "raw": 13983,
+          "brotli": 4575
+        },
+        "tag": {
+          "raw": 23557,
+          "brotli": 6199
+        },
+        "parity": "reference"
+      },
+      "astro": {
+        "totalBytes": 8164463,
+        "files": 1087,
+        "htmlFiles": 1082,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 7581.5,
+          "brotli": 2125,
+          "gzip": 2743,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7795,
+          "brotli": 1675
+        },
+        "tag": {
+          "raw": 17343,
+          "brotli": 3270
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "eleventy": {
+        "totalBytes": 8166709,
+        "files": 1087,
+        "htmlFiles": 1082,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 7583.5,
+          "brotli": 2127.5,
+          "gzip": 2741.5,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7798,
+          "brotli": 1680
+        },
+        "tag": {
+          "raw": 17346,
+          "brotli": 3278
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "hugo": {
+        "totalBytes": 8168212,
+        "files": 1088,
+        "htmlFiles": 1083,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 7582.5,
+          "brotli": 2127,
+          "gzip": 2740.5,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7845,
+          "brotli": 1686
+        },
+        "tag": {
+          "raw": 17345,
+          "brotli": 3274
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "sveltekit": {
+        "totalBytes": 26237597,
+        "files": 2187,
+        "htmlFiles": 1082,
+        "jsFiles": 17,
+        "jsBytes": 95434,
+        "article": {
+          "raw": 16895,
+          "brotli": 3362,
+          "gzip": 4113,
+          "inlineJS": 8255,
+          "inlineData": 0,
+          "jsFiles": 9,
+          "jsFileRaw": 90577,
+          "jsFileBrotli": 31831
+        },
+        "index": {
+          "raw": 15394,
+          "brotli": 2587
+        },
+        "tag": {
+          "raw": 32849,
+          "brotli": 4752
+        },
+        "parity": "20/20 article texts equal rivet"
+      }
+    },
+    "5000": {
+      "rivet": {
+        "totalBytes": 121246258,
+        "files": 10594,
+        "htmlFiles": 5283,
+        "jsFiles": 22,
+        "jsBytes": 78170,
+        "article": {
+          "raw": 12934,
+          "brotli": 4817.5,
+          "gzip": 5760,
+          "inlineJS": 4693,
+          "inlineData": 822,
+          "jsFiles": 5,
+          "jsFileRaw": 65281,
+          "jsFileBrotli": 24196
+        },
+        "index": {
+          "raw": 13984,
+          "brotli": 4576
+        },
+        "tag": {
+          "raw": 23557,
+          "brotli": 6199
+        },
+        "parity": "reference"
+      },
+      "astro": {
+        "totalBytes": 38172904,
+        "files": 5287,
+        "htmlFiles": 5282,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6742,
+          "brotli": 1941,
+          "gzip": 2524.5,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7796,
+          "brotli": 1675
+        },
+        "tag": {
+          "raw": 17343,
+          "brotli": 3270
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "eleventy": {
+        "totalBytes": 38183750,
+        "files": 5287,
+        "htmlFiles": 5282,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6744,
+          "brotli": 1944,
+          "gzip": 2523,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7799,
+          "brotli": 1679
+        },
+        "tag": {
+          "raw": 17346,
+          "brotli": 3278
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "hugo": {
+        "totalBytes": 38190653,
+        "files": 5288,
+        "htmlFiles": 5283,
+        "jsFiles": 0,
+        "jsBytes": 0,
+        "article": {
+          "raw": 6743,
+          "brotli": 1943.5,
+          "gzip": 2522,
+          "inlineJS": 0,
+          "inlineData": 0,
+          "jsFiles": 0,
+          "jsFileRaw": 0,
+          "jsFileBrotli": 0
+        },
+        "index": {
+          "raw": 7846,
+          "brotli": 1686
+        },
+        "tag": {
+          "raw": 17345,
+          "brotli": 3274
+        },
+        "parity": "20/20 article texts equal rivet"
+      },
+      "sveltekit": {
+        "totalBytes": 123990825,
+        "files": 10587,
+        "htmlFiles": 5282,
+        "jsFiles": 17,
+        "jsBytes": 95434,
+        "article": {
+          "raw": 15157.5,
+          "brotli": 3115.5,
+          "gzip": 3821,
+          "inlineJS": 7385.5,
+          "inlineData": 0,
+          "jsFiles": 9,
+          "jsFileRaw": 90577,
+          "jsFileBrotli": 31831
+        },
+        "index": {
+          "raw": 15394,
+          "brotli": 2589
+        },
+        "tag": {
+          "raw": 32847,
+          "brotli": 4749
+        },
+        "parity": "20/20 article texts equal rivet"
+      }
+    }
+  },
+  "serve": {
+    "1000": {
+      "rivet": {
+        "loadStart": 7.7587890625,
+        "client": {
+          "requests": 9,
+          "transferBytes": 69044,
+          "jsRequests": 5,
+          "jsTransferBytes": 29135,
+          "jsBytes": 65281,
+          "other": [
+            "image /img/photo-3.jpg",
+            "image /img/photo-4.jpg",
+            "stylesheet /site.css"
+          ],
+          "domElements": 116
+        },
+        "lighthouse": {
+          "article": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1202.9162500000002,
+              "min": 1202.854,
+              "max": 1211.08275,
+              "samples": [
+                1202.854,
+                1211.08275,
+                1202.9162500000002
+              ]
+            },
+            "fcp": {
+              "median": 752.3330000000001,
+              "min": 752.2832000000001,
+              "max": 758.8661999999999,
+              "samples": [
+                752.2832000000001,
+                758.8661999999999,
+                752.3330000000001
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 752.3330000000001,
+              "min": 752.2832000000001,
+              "max": 758.8661999999999,
+              "samples": [
+                752.2832000000001,
+                758.8661999999999,
+                752.3330000000001
+              ]
+            },
+            "domSize": {
+              "median": 109,
+              "min": 109,
+              "max": 109,
+              "samples": [
+                109,
+                109,
+                109
+              ]
+            },
+            "bytes": {
+              "median": 72800,
+              "min": 72800,
+              "max": 72800,
+              "samples": [
+                72800,
+                72800,
+                72800
+              ]
+            },
+            "warnings": []
+          },
+          "index": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1202.6766,
+              "min": 1202.3328,
+              "max": 1202.8229,
+              "samples": [
+                1202.8229,
+                1202.6766,
+                1202.3328
+              ]
+            },
+            "fcp": {
+              "median": 752.6766,
+              "min": 752.3327999999999,
+              "max": 752.8228999999999,
+              "samples": [
+                752.8228999999999,
+                752.6766,
+                752.3327999999999
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 752.6766,
+              "min": 752.3327999999999,
+              "max": 752.8228999999999,
+              "samples": [
+                752.8228999999999,
+                752.6766,
+                752.3327999999999
+              ]
+            },
+            "domSize": {
+              "median": 146,
+              "min": 146,
+              "max": 146,
+              "samples": [
+                146,
+                146,
+                146
+              ]
+            },
+            "bytes": {
+              "median": 39909,
+              "min": 39909,
+              "max": 39909,
+              "samples": [
+                39909,
+                39909,
+                39909
+              ]
+            },
+            "warnings": []
+          }
+        },
+        "nav": {
+          "ttfb": {
+            "median": 1.7000000476837158,
+            "min": 1.5,
+            "max": 3.200000047683716,
+            "samples": [
+              3.200000047683716,
+              1.899999976158142,
+              1.7000000476837158,
+              1.7000000476837158,
+              1.5
+            ]
+          },
+          "dcl": {
+            "median": 1221.6000000238419,
+            "min": 1211.3999999761581,
+            "max": 1238.6000000238419,
+            "samples": [
+              1238.6000000238419,
+              1236.5,
+              1221.6000000238419,
+              1221.2000000476837,
+              1211.3999999761581
+            ]
+          },
+          "load": {
+            "median": 1336.3999999761581,
+            "min": 1335.3000000715256,
+            "max": 1343.7000000476837,
+            "samples": [
+              1343.7000000476837,
+              1335.6000000238419,
+              1336.3999999761581,
+              1335.3000000715256,
+              1338.1999999284744
+            ]
+          },
+          "fcp": {
+            "median": 1232,
+            "min": 1208,
+            "max": 1236,
+            "samples": [
+              1236,
+              1232,
+              1236,
+              1216,
+              1208
+            ]
+          }
+        },
+        "loadEnd": 7.04931640625,
+        "valid": true
+      },
+      "astro": {
+        "loadStart": 7.88232421875,
+        "client": {
+          "requests": 4,
+          "transferBytes": 36660,
+          "jsRequests": 0,
+          "jsTransferBytes": 0,
+          "jsBytes": 0,
+          "other": [
+            "image /img/photo-3.jpg",
+            "image /img/photo-4.jpg",
+            "stylesheet /site.css"
+          ],
+          "domElements": 107
+        },
+        "lighthouse": {
+          "article": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1051.7794,
+              "min": 1051.3318,
+              "max": 1052.3314,
+              "samples": [
+                1052.3314,
+                1051.3318,
+                1051.7794
+              ]
+            },
+            "fcp": {
+              "median": 751.7793999999999,
+              "min": 751.3317999999999,
+              "max": 752.3314,
+              "samples": [
+                752.3314,
+                751.3317999999999,
+                751.7793999999999
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.7793999999999,
+              "min": 751.3317999999999,
+              "max": 752.3314,
+              "samples": [
+                752.3314,
+                751.3317999999999,
+                751.7793999999999
+              ]
+            },
+            "domSize": {
+              "median": 101,
+              "min": 101,
+              "max": 101,
+              "samples": [
+                101,
+                101,
+                101
+              ]
+            },
+            "bytes": {
+              "median": 36881,
+              "min": 36881,
+              "max": 36881,
+              "samples": [
+                36881,
+                36881,
+                36881
+              ]
+            },
+            "warnings": []
+          },
+          "index": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 901.4042999999999,
+              "min": 901.2687000000001,
+              "max": 901.8074999999999,
+              "samples": [
+                901.8074999999999,
+                901.2687000000001,
+                901.4042999999999
+              ]
+            },
+            "fcp": {
+              "median": 751.4042999999999,
+              "min": 751.2687000000001,
+              "max": 751.8074999999999,
+              "samples": [
+                751.8074999999999,
+                751.2687000000001,
+                751.4042999999999
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.4042999999999,
+              "min": 751.2687000000001,
+              "max": 751.8074999999999,
+              "samples": [
+                751.8074999999999,
+                751.2687000000001,
+                751.4042999999999
+              ]
+            },
+            "domSize": {
+              "median": 138,
+              "min": 138,
+              "max": 138,
+              "samples": [
+                138,
+                138,
+                138
+              ]
+            },
+            "bytes": {
+              "median": 3971,
+              "min": 3971,
+              "max": 3971,
+              "samples": [
+                3971,
+                3971,
+                3971
+              ]
+            },
+            "warnings": []
+          }
+        },
+        "nav": {
+          "ttfb": {
+            "median": 3,
+            "min": 1.600000023841858,
+            "max": 21.100000023841858,
+            "samples": [
+              2.100000023841858,
+              21.100000023841858,
+              5.199999928474426,
+              3,
+              1.600000023841858
+            ]
+          },
+          "dcl": {
+            "median": 597.1999999284744,
+            "min": 595.6000000238419,
+            "max": 614.1000000238419,
+            "samples": [
+              595.6000000238419,
+              614.1000000238419,
+              597.1999999284744,
+              599.3000000715256,
+              596.2999999523163
+            ]
+          },
+          "load": {
+            "median": 1345.2999999523163,
+            "min": 1344.1000000238419,
+            "max": 1360.5,
+            "samples": [
+              1344.1000000238419,
+              1360.5,
+              1345.2999999523163,
+              1345.7000000476837,
+              1344.5
+            ]
+          },
+          "fcp": {
+            "median": 1232,
+            "min": 1228,
+            "max": 1252,
+            "samples": [
+              1228,
+              1252,
+              1232,
+              1236,
+              1232
+            ]
+          }
+        },
+        "loadEnd": 7.5888671875,
+        "valid": true
+      },
+      "eleventy": {
+        "loadStart": 7.482421875,
+        "client": {
+          "requests": 4,
+          "transferBytes": 36662,
+          "jsRequests": 0,
+          "jsTransferBytes": 0,
+          "jsBytes": 0,
+          "other": [
+            "image /img/photo-3.jpg",
+            "image /img/photo-4.jpg",
+            "stylesheet /site.css"
+          ],
+          "domElements": 107
+        },
+        "lighthouse": {
+          "article": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1051.8148,
+              "min": 1051.359,
+              "max": 1052.0431,
+              "samples": [
+                1052.0431,
+                1051.359,
+                1051.8148
+              ]
+            },
+            "fcp": {
+              "median": 751.8148000000001,
+              "min": 751.3589999999999,
+              "max": 752.0431000000001,
+              "samples": [
+                752.0431000000001,
+                751.3589999999999,
+                751.8148000000001
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.8148000000001,
+              "min": 751.3589999999999,
+              "max": 752.0431000000001,
+              "samples": [
+                752.0431000000001,
+                751.3589999999999,
+                751.8148000000001
+              ]
+            },
+            "domSize": {
+              "median": 101,
+              "min": 101,
+              "max": 101,
+              "samples": [
+                101,
+                101,
+                101
+              ]
+            },
+            "bytes": {
+              "median": 36883,
+              "min": 36883,
+              "max": 36883,
+              "samples": [
+                36883,
+                36883,
+                36883
+              ]
+            },
+            "warnings": []
+          },
+          "index": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 901.5281,
+              "min": 901.396,
+              "max": 901.8173999999999,
+              "samples": [
+                901.396,
+                901.8173999999999,
+                901.5281
+              ]
+            },
+            "fcp": {
+              "median": 751.5281,
+              "min": 751.396,
+              "max": 751.8173999999999,
+              "samples": [
+                751.396,
+                751.8173999999999,
+                751.5281
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.5281,
+              "min": 751.396,
+              "max": 751.8173999999999,
+              "samples": [
+                751.396,
+                751.8173999999999,
+                751.5281
+              ]
+            },
+            "domSize": {
+              "median": 138,
+              "min": 138,
+              "max": 138,
+              "samples": [
+                138,
+                138,
+                138
+              ]
+            },
+            "bytes": {
+              "median": 3974,
+              "min": 3974,
+              "max": 3974,
+              "samples": [
+                3974,
+                3974,
+                3974
+              ]
+            },
+            "warnings": []
+          }
+        },
+        "nav": {
+          "ttfb": {
+            "median": 1.6999999284744263,
+            "min": 1.5,
+            "max": 12.699999928474426,
+            "samples": [
+              3.100000023841858,
+              1.6999999284744263,
+              1.5,
+              1.600000023841858,
+              12.699999928474426
+            ]
+          },
+          "dcl": {
+            "median": 589.2999999523163,
+            "min": 587.8000000715256,
+            "max": 597.2999999523163,
+            "samples": [
+              589.8999999761581,
+              588,
+              587.8000000715256,
+              589.2999999523163,
+              597.2999999523163
+            ]
+          },
+          "load": {
+            "median": 1327.8000000715256,
+            "min": 1327,
+            "max": 1335.1999999284744,
+            "samples": [
+              1327.8000000715256,
+              1327,
+              1327.9000000953674,
+              1327.3999999761581,
+              1335.1999999284744
+            ]
+          },
+          "fcp": {
+            "median": 1212,
+            "min": 1200,
+            "max": 1232,
+            "samples": [
+              1208,
+              1212,
+              1200,
+              1232,
+              1224
+            ]
+          }
+        },
+        "loadEnd": 8.314453125,
+        "valid": true
+      },
+      "hugo": {
+        "loadStart": 6.5693359375,
+        "client": {
+          "requests": 4,
+          "transferBytes": 36661,
+          "jsRequests": 0,
+          "jsTransferBytes": 0,
+          "jsBytes": 0,
+          "other": [
+            "image /img/photo-3.jpg",
+            "stylesheet /site.css",
+            "image /img/photo-4.jpg"
+          ],
+          "domElements": 107
+        },
+        "lighthouse": {
+          "article": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1051.982,
+              "min": 1051.3595,
+              "max": 1052.2017,
+              "samples": [
+                1052.2017,
+                1051.982,
+                1051.3595
+              ]
+            },
+            "fcp": {
+              "median": 751.982,
+              "min": 751.3595,
+              "max": 752.2017000000001,
+              "samples": [
+                752.2017000000001,
+                751.982,
+                751.3595
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.982,
+              "min": 751.3595,
+              "max": 752.2017000000001,
+              "samples": [
+                752.2017000000001,
+                751.982,
+                751.3595
+              ]
+            },
+            "domSize": {
+              "median": 101,
+              "min": 101,
+              "max": 101,
+              "samples": [
+                101,
+                101,
+                101
+              ]
+            },
+            "bytes": {
+              "median": 36882,
+              "min": 36882,
+              "max": 36882,
+              "samples": [
+                36882,
+                36882,
+                36882
+              ]
+            },
+            "warnings": []
+          },
+          "index": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 901.7927999999999,
+              "min": 901.5678,
+              "max": 901.8911,
+              "samples": [
+                901.5678,
+                901.7927999999999,
+                901.8911
+              ]
+            },
+            "fcp": {
+              "median": 751.7927999999999,
+              "min": 751.5678,
+              "max": 751.8911,
+              "samples": [
+                751.5678,
+                751.7927999999999,
+                751.8911
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 751.7927999999999,
+              "min": 751.5678,
+              "max": 751.8911,
+              "samples": [
+                751.5678,
+                751.7927999999999,
+                751.8911
+              ]
+            },
+            "domSize": {
+              "median": 138,
+              "min": 138,
+              "max": 138,
+              "samples": [
+                138,
+                138,
+                138
+              ]
+            },
+            "bytes": {
+              "median": 3988,
+              "min": 3988,
+              "max": 3988,
+              "samples": [
+                3988,
+                3988,
+                3988
+              ]
+            },
+            "warnings": []
+          }
+        },
+        "nav": {
+          "ttfb": {
+            "median": 1.600000023841858,
+            "min": 1.5,
+            "max": 4.299999952316284,
+            "samples": [
+              4.299999952316284,
+              3.200000047683716,
+              1.600000023841858,
+              1.5,
+              1.5
+            ]
+          },
+          "dcl": {
+            "median": 588.7999999523163,
+            "min": 588.5,
+            "max": 589.3999999761581,
+            "samples": [
+              588.5,
+              588.7000000476837,
+              589.3999999761581,
+              588.8999999761581,
+              588.7999999523163
+            ]
+          },
+          "load": {
+            "median": 1327.8999999761581,
+            "min": 1327.5999999046326,
+            "max": 1336.5,
+            "samples": [
+              1335.5,
+              1336.5,
+              1327.8999999761581,
+              1327.6000000238419,
+              1327.5999999046326
+            ]
+          },
+          "fcp": {
+            "median": 1220,
+            "min": 1208,
+            "max": 1224,
+            "samples": [
+              1224,
+              1224,
+              1220,
+              1220,
+              1208
+            ]
+          }
+        },
+        "loadEnd": 22.318359375,
+        "valid": true
+      },
+      "sveltekit": {
+        "loadStart": 7.93115234375,
+        "client": {
+          "requests": 14,
+          "transferBytes": 78769,
+          "jsRequests": 10,
+          "jsTransferBytes": 40401,
+          "jsBytes": 90899,
+          "other": [
+            "stylesheet /site.css",
+            "image /img/photo-3.jpg",
+            "image /img/photo-4.jpg"
+          ],
+          "domElements": 120
+        },
+        "lighthouse": {
+          "article": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1504.1796,
+              "min": 1503.2394,
+              "max": 1504.7820000000004,
+              "samples": [
+                1504.1796,
+                1504.7820000000004,
+                1503.2394
+              ]
+            },
+            "fcp": {
+              "median": 1427.6122500000001,
+              "min": 1427.0246249999998,
+              "max": 1427.98875,
+              "samples": [
+                1427.6122500000001,
+                1427.98875,
+                1427.0246249999998
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 1427.6122500000001,
+              "min": 1427.0246249999998,
+              "max": 1427.98875,
+              "samples": [
+                1427.6122500000001,
+                1427.98875,
+                1427.0246249999998
+              ]
+            },
+            "domSize": {
+              "median": 104,
+              "min": 104,
+              "max": 104,
+              "samples": [
+                104,
+                104,
+                104
+              ]
+            },
+            "bytes": {
+              "median": 78990,
+              "min": 78990,
+              "max": 78990,
+              "samples": [
+                78990,
+                78990,
+                78990
+              ]
+            },
+            "warnings": []
+          },
+          "index": {
+            "score": {
+              "median": 100,
+              "min": 100,
+              "max": 100,
+              "samples": [
+                100,
+                100,
+                100
+              ]
+            },
+            "lcp": {
+              "median": 1503.0681,
+              "min": 1502.5753499999998,
+              "max": 1503.29445,
+              "samples": [
+                1503.29445,
+                1503.0681,
+                1502.5753499999998
+              ]
+            },
+            "fcp": {
+              "median": 1427.55675,
+              "min": 1427.1461249999998,
+              "max": 1427.745375,
+              "samples": [
+                1427.745375,
+                1427.55675,
+                1427.1461249999998
+              ]
+            },
+            "tbt": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "cls": {
+              "median": 0,
+              "min": 0,
+              "max": 0,
+              "samples": [
+                0,
+                0,
+                0
+              ]
+            },
+            "si": {
+              "median": 1427.55675,
+              "min": 1427.1461249999998,
+              "max": 1427.745375,
+              "samples": [
+                1427.745375,
+                1427.55675,
+                1427.1461249999998
+              ]
+            },
+            "domSize": {
+              "median": 141,
+              "min": 141,
+              "max": 141,
+              "samples": [
+                141,
+                141,
+                141
+              ]
+            },
+            "bytes": {
+              "median": 47081,
+              "min": 47081,
+              "max": 47081,
+              "samples": [
+                47081,
+                47081,
+                47081
+              ]
+            },
+            "warnings": []
+          }
+        },
+        "nav": {
+          "ttfb": {
+            "median": 1.9000000953674316,
+            "min": 1.399999976158142,
+            "max": 11.399999976158142,
+            "samples": [
+              11.399999976158142,
+              1.399999976158142,
+              1.4000000953674316,
+              3.299999952316284,
+              1.9000000953674316
+            ]
+          },
+          "dcl": {
+            "median": 1205.2999999523163,
+            "min": 1197.5999999046326,
+            "max": 1226.3000000715256,
+            "samples": [
+              1205.2999999523163,
+              1205.2000000476837,
+              1211.4000000953674,
+              1197.5999999046326,
+              1226.3000000715256
+            ]
+          },
+          "load": {
+            "median": 2083.4000000953674,
+            "min": 2082,
+            "max": 2090.600000023842,
+            "samples": [
+              2090.600000023842,
+              2083.399999976158,
+              2083.4000000953674,
+              2082,
+              2083.600000023842
+            ]
+          },
+          "fcp": {
+            "median": 1204,
+            "min": 1200,
+            "max": 1228,
+            "samples": [
+              1204,
+              1204,
+              1216,
+              1200,
+              1228
+            ]
+          }
+        },
+        "loadEnd": 8.6865234375,
+        "valid": true
+      }
+    }
+  },
+  "dynamic": {
+    "1000": {
+      "seconds": 10,
+      "note": "closed loop over 20 article URLs, keep-alive, identity encoding; CPU = server process ps time delta",
+      "rivet-dynamic": {
+        "c1": {
+          "rps": {
+            "median": 3312.0875132278247,
+            "min": 3204.1384936778277,
+            "max": 3538.3611664862583,
+            "samples": [
+              3538.3611664862583,
+              3204.1384936778277,
+              3312.0875132278247
+            ]
+          },
+          "p50": {
+            "median": 0.284834,
+            "min": 0.269541,
+            "max": 0.2905,
+            "samples": [
+              0.269541,
+              0.2905,
+              0.284834
+            ]
+          },
+          "p99": {
+            "median": 0.771,
+            "min": 0.730458,
+            "max": 0.803542,
+            "samples": [
+              0.730458,
+              0.803542,
+              0.771
+            ]
+          },
+          "ttfbP50": {
+            "median": 0.282958,
+            "min": 0.267625,
+            "max": 0.2885,
+            "samples": [
+              0.267625,
+              0.2885,
+              0.282958
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.294366282229334,
+            "min": 0.2747004295726882,
+            "max": 0.3042881218400849,
+            "samples": [
+              0.2747004295726882,
+              0.3042881218400849,
+              0.294366282229334
+            ]
+          },
+          "bytesPerReq": {
+            "median": 13478.56110742105,
+            "min": 13478.559796517071,
+            "max": 13478.612480217047,
+            "samples": [
+              13478.612480217047,
+              13478.559796517071,
+              13478.56110742105
+            ]
+          }
+        },
+        "c10": {
+          "rps": {
+            "median": 4156.378149824331,
+            "min": 3848.123670259926,
+            "max": 4248.679033164699,
+            "samples": [
+              4248.679033164699,
+              4156.378149824331,
+              3848.123670259926
+            ]
+          },
+          "p50": {
+            "median": 2.065792,
+            "min": 2.04625,
+            "max": 2.26325,
+            "samples": [
+              2.04625,
+              2.065792,
+              2.26325
+            ]
+          },
+          "p99": {
+            "median": 5.134041,
+            "min": 4.877042,
+            "max": 5.599125,
+            "samples": [
+              4.877042,
+              5.134041,
+              5.599125
+            ]
+          },
+          "ttfbP50": {
+            "median": 2.064125,
+            "min": 2.044667,
+            "max": 2.261083,
+            "samples": [
+              2.044667,
+              2.064125,
+              2.261083
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.2662785942799413,
+            "min": 0.2606077711920218,
+            "max": 0.2863081319823331,
+            "samples": [
+              0.2606077711920218,
+              0.2662785942799413,
+              0.2863081319823331
+            ]
+          },
+          "bytesPerReq": {
+            "median": 13478.606523464749,
+            "min": 13478.599922057678,
+            "max": 13478.6546241415,
+            "samples": [
+              13478.6546241415,
+              13478.606523464749,
+              13478.599922057678
+            ]
+          }
+        },
+        "loads": [
+          [
+            6.8046875,
+            6.1123046875
+          ],
+          [
+            5.45849609375,
+            5.1103515625
+          ],
+          [
+            8.078125,
+            7.29638671875
+          ]
+        ],
+        "errors": 0
+      },
+      "static:rivet": {
+        "c1": {
+          "rps": {
+            "median": 10475.263860339612,
+            "min": 10455.924019937045,
+            "max": 10498.472179049053,
+            "samples": [
+              10475.263860339612,
+              10455.924019937045,
+              10498.472179049053
+            ]
+          },
+          "p50": {
+            "median": 0.085834,
+            "min": 0.085791,
+            "max": 0.086542,
+            "samples": [
+              0.086542,
+              0.085791,
+              0.085834
+            ]
+          },
+          "p99": {
+            "median": 0.200334,
+            "min": 0.196375,
+            "max": 0.203792,
+            "samples": [
+              0.200334,
+              0.196375,
+              0.203792
+            ]
+          },
+          "ttfbP50": {
+            "median": 0.084042,
+            "min": 0.083958,
+            "max": 0.08475,
+            "samples": [
+              0.08475,
+              0.083958,
+              0.084042
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.09200459066564652,
+            "min": 0.09191789303233795,
+            "max": 0.09278970530676924,
+            "samples": [
+              0.09278970530676924,
+              0.09200459066564652,
+              0.09191789303233795
+            ]
+          },
+          "bytesPerReq": {
+            "median": 13557.6,
+            "min": 13557.588264990236,
+            "max": 13557.602588947333,
+            "samples": [
+              13557.602588947333,
+              13557.6,
+              13557.588264990236
+            ]
+          }
+        },
+        "c10": {
+          "rps": {
+            "median": 27261.07276633294,
+            "min": 26332.306864787515,
+            "max": 27301.371606524703,
+            "samples": [
+              27261.07276633294,
+              26332.306864787515,
+              27301.371606524703
+            ]
+          },
+          "p50": {
+            "median": 0.346875,
+            "min": 0.343041,
+            "max": 0.354,
+            "samples": [
+              0.346875,
+              0.354,
+              0.343041
+            ]
+          },
+          "p99": {
+            "median": 0.984541,
+            "min": 0.975583,
+            "max": 1.010958,
+            "samples": [
+              0.975583,
+              1.010958,
+              0.984541
+            ]
+          },
+          "ttfbP50": {
+            "median": 0.345125,
+            "min": 0.341292,
+            "max": 0.35225,
+            "samples": [
+              0.345125,
+              0.35225,
+              0.341292
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.0769211017654805,
+            "min": 0.07592878151337451,
+            "max": 0.08008992553042013,
+            "samples": [
+              0.0769211017654805,
+              0.08008992553042013,
+              0.07592878151337451
+            ]
+          },
+          "bytesPerReq": {
+            "median": 13557.599390518608,
+            "min": 13557.59924656988,
+            "max": 13557.602566971245,
+            "samples": [
+              13557.602566971245,
+              13557.59924656988,
+              13557.599390518608
+            ]
+          }
+        },
+        "loads": [
+          [
+            6.1123046875,
+            5.443359375
+          ],
+          [
+            5.1103515625,
+            6.875
+          ],
+          [
+            7.1123046875,
+            6.2578125
+          ]
+        ],
+        "errors": 0
+      },
+      "static:hugo": {
+        "c1": {
+          "rps": {
+            "median": 10815.679585404709,
+            "min": 10627.335792825123,
+            "max": 10892.71984701066,
+            "samples": [
+              10815.679585404709,
+              10627.335792825123,
+              10892.71984701066
+            ]
+          },
+          "p50": {
+            "median": 0.085333,
+            "min": 0.084708,
+            "max": 0.0865,
+            "samples": [
+              0.085333,
+              0.0865,
+              0.084708
+            ]
+          },
+          "p99": {
+            "median": 0.170791,
+            "min": 0.17,
+            "max": 0.180792,
+            "samples": [
+              0.17,
+              0.170791,
+              0.180792
+            ]
+          },
+          "ttfbP50": {
+            "median": 0.0835,
+            "min": 0.082875,
+            "max": 0.084625,
+            "samples": [
+              0.0835,
+              0.084625,
+              0.082875
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.08635594552363693,
+            "min": 0.08519388954171564,
+            "max": 0.08835651241131415,
+            "samples": [
+              0.08635594552363693,
+              0.08835651241131415,
+              0.08519388954171564
+            ]
+          },
+          "bytesPerReq": {
+            "median": 7369.057496695064,
+            "min": 7369.056501197333,
+            "max": 7369.061774281574,
+            "samples": [
+              7369.056501197333,
+              7369.061774281574,
+              7369.057496695064
+            ]
+          }
+        },
+        "c10": {
+          "rps": {
+            "median": 28035.08076787543,
+            "min": 27235.34549103593,
+            "max": 28509.6586728555,
+            "samples": [
+              28509.6586728555,
+              28035.08076787543,
+              27235.34549103593
+            ]
+          },
+          "p50": {
+            "median": 0.340875,
+            "min": 0.338417,
+            "max": 0.347,
+            "samples": [
+              0.338417,
+              0.340875,
+              0.347
+            ]
+          },
+          "p99": {
+            "median": 0.626959,
+            "min": 0.615666,
+            "max": 0.7275,
+            "samples": [
+              0.615666,
+              0.626959,
+              0.7275
+            ]
+          },
+          "ttfbP50": {
+            "median": 0.339125,
+            "min": 0.336708,
+            "max": 0.34525,
+            "samples": [
+              0.336708,
+              0.339125,
+              0.34525
+            ]
+          },
+          "cpuMsPerReq": {
+            "median": 0.07387036482186934,
+            "min": 0.07204439113019201,
+            "max": 0.07589164420881034,
+            "samples": [
+              0.07204439113019201,
+              0.07387036482186934,
+              0.07589164420881034
+            ]
+          },
+          "bytesPerReq": {
+            "median": 7369.045471445307,
+            "min": 7369.045259617715,
+            "max": 7369.05830800839,
+            "samples": [
+              7369.045471445307,
+              7369.05830800839,
+              7369.045259617715
+            ]
+          }
+        },
+        "loads": [
+          [
+            5.24755859375,
+            5.45849609375
+          ],
+          [
+            6.875,
+            8.078125
+          ],
+          [
+            6.2578125,
+            5.935546875
+          ]
+        ],
+        "errors": 0
+      }
+    }
+  }
+}

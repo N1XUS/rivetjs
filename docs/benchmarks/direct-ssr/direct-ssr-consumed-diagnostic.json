@@ -1,0 +1,3218 @@
+{
+  "options": {
+    "build": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/builds.json",
+    "proof": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/clean-proof.json",
+    "out": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/pure-results.json",
+    "rows": [
+      100,
+      1000,
+      5000
+    ],
+    "iterations": 20,
+    "warmup": 5,
+    "repeats": 5
+  },
+  "node": "v24.14.1",
+  "platform": "darwin",
+  "arch": "arm64",
+  "gcExposed": true,
+  "buildManifest": {
+    "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/builds.json",
+    "sha256": "d2c00c20b56771f927e096bc4f24e6b0fd4b912558318a49fe77021ac547bebf",
+    "metadata": {
+      "baseline": {
+        "revision": "742d2ec5b42f41f623a1a0d31e3c378ee26244fa",
+        "directory": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/baseline-source",
+        "sources": [
+          {
+            "path": "libs/compiler/html.mjs",
+            "sha256": "c106dc497c05a8d12177ff60e543ace2e40d07bfcff63012175cb7c113c8f232"
+          },
+          {
+            "path": "libs/compiler/index.d.ts",
+            "sha256": "feafd6f83c43e3edfa869bd1db99dd3058df87873f3a9dc9ea1b071b5efaec36"
+          },
+          {
+            "path": "libs/compiler/index.mjs",
+            "sha256": "d037729b784517bb6c5dcf9dbe447e9df2b73ceec221fae47bdeb642d6dc42bb"
+          },
+          {
+            "path": "libs/compiler/package.json",
+            "sha256": "e927da73101d34b3331f5fa29d8dd7693d1138eee7ac5844c089341155611f33"
+          },
+          {
+            "path": "libs/compiler/project.json",
+            "sha256": "50f5caf232efb2c6c971b6d0eb70dfa47985ee24b1cd3911adeae8418c74418b"
+          },
+          {
+            "path": "libs/compiler/tests/async-dom.test.mjs",
+            "sha256": "57b436166fc5e32e1c21810c4fcb293846d1b0376864fc651c0f68684d3e1e83"
+          },
+          {
+            "path": "libs/compiler/tests/async-siblings.test.mjs",
+            "sha256": "f54331c29e58256db00a429d0e2164f64a9370f82d9013acc1e12527563000c2"
+          },
+          {
+            "path": "libs/compiler/tests/compiler-dom.test.mjs",
+            "sha256": "5a183617ee310cbd84817e752939753b8fd09faf9f2b5cedc6f5bc0ffc766de9"
+          },
+          {
+            "path": "libs/compiler/tests/compiler-dom/compiler.test.mjs",
+            "sha256": "43a678df9d3c0be0be6392d90597e1c819909eb864877fe9e7ad7c43e12778f2"
+          },
+          {
+            "path": "libs/compiler/tests/compiler-dom/fixture.tsx",
+            "sha256": "4be501e58a69ab13c0b30b3865e27c256d738de0c46718aea863bb231c0005ea"
+          },
+          {
+            "path": "libs/compiler/tests/compiler.test.mjs",
+            "sha256": "293117fd4be704a3ebfb686cc711b551bd05e4e72f36b95e9a11c47c8f72e48e"
+          },
+          {
+            "path": "libs/compiler/tests/server-direct-protocol.test.mjs",
+            "sha256": "e590a4e4aabf3004c59af64eb8f7e683a2183bebd5c25f40ead7a5b8d967af43"
+          },
+          {
+            "path": "libs/compiler/tests/vite.test.mjs",
+            "sha256": "3a0ef85577eedcf95b248c0e52e1e6316a1e0780e1b9a8f6eb38767881dd4398"
+          },
+          {
+            "path": "libs/compiler/vite.d.ts",
+            "sha256": "75876bd9f4c8e9bb77f9c2e54b714155d65b0ed7313fc1a7363a253b686b9007"
+          },
+          {
+            "path": "libs/compiler/vite.mjs",
+            "sha256": "e5eb91565d9f99eb88780d662ab10e79c37bd16ffa2777205d7ef134676591e4"
+          },
+          {
+            "path": "libs/reactivity/index.d.ts",
+            "sha256": "0066b58937433add4c4669506579a11d4012784b0bd717c321977b5d20fe7452"
+          },
+          {
+            "path": "libs/reactivity/index.mjs",
+            "sha256": "03845955cebc8aa4a63cb43ed26bca7c823e36eb402ce6680c5bb34f1ad79189"
+          },
+          {
+            "path": "libs/reactivity/package.json",
+            "sha256": "07d190a43cedfa73beeba0a46ae6174b0739ded5314dbfca3c8fec2c8a4de54d"
+          },
+          {
+            "path": "libs/reactivity/project.json",
+            "sha256": "7ef1f4ea651b322ccab9ad5ff31037025b5d53d807f8ca53c48deb603ef24a50"
+          },
+          {
+            "path": "libs/reactivity/tests/large-batch.test.mjs",
+            "sha256": "a6c2478f514c34cd12da7286dfc09820ab8920fa28e8c1cf2b8dfa4b90a26c5a"
+          },
+          {
+            "path": "libs/reactivity/tests/reactivity.test.mjs",
+            "sha256": "9084f566668b50dba68de04e07cbdc3154aecd242b377bc8c9b14057441de64e"
+          },
+          {
+            "path": "libs/runtime/async.d.ts",
+            "sha256": "907b7f62eaf994d99ea4053ac05f8aa05e4ab8fcc7c5f2293ec44598debc1f36"
+          },
+          {
+            "path": "libs/runtime/async.mjs",
+            "sha256": "2ccdaf6b5b813859194367881976964abff5aad2e9461826db3b45c470830a26"
+          },
+          {
+            "path": "libs/runtime/dom-router.d.ts",
+            "sha256": "df7b2d216671f8e01cd8b92afbe2a275b4b3d487e31ab877c6eb667e437a744d"
+          },
+          {
+            "path": "libs/runtime/dom-router.mjs",
+            "sha256": "b8911fc49c1e0878208cdf284958da4a728c52c27872ab6d70f1cd0eaed66bb3"
+          },
+          {
+            "path": "libs/runtime/dom.d.ts",
+            "sha256": "478acaf33824fdc1a21b00c7e99b9c8c8ccf9557a481174f777b5ccecc336b62"
+          },
+          {
+            "path": "libs/runtime/dom.mjs",
+            "sha256": "e694c46510cceabef61c8c07a3230e15b1f83137528b180b833b2fe11c8e635a"
+          },
+          {
+            "path": "libs/runtime/jsx-runtime.d.ts",
+            "sha256": "63b5deb27eb2d331e759d4511f1177dc2f40be275721294301b4d8a3d5b3aad8"
+          },
+          {
+            "path": "libs/runtime/jsx-runtime.mjs",
+            "sha256": "a3e8bd21a5623f7e75f3f075fd971457b4f2b17feeb35183a0244db0bf1f534d"
+          },
+          {
+            "path": "libs/runtime/lazy.d.ts",
+            "sha256": "8e3662bac2fe6b548732768243a1f6cd387e48051bf6c42ffb349acb02ccfc16"
+          },
+          {
+            "path": "libs/runtime/lazy.mjs",
+            "sha256": "587c67b22b78058fe378d55ac5174cdbb0c582e3b823ed7b0e4d807731dbf4b7"
+          },
+          {
+            "path": "libs/runtime/omitted.mjs",
+            "sha256": "41321534280ffa3a5b691acb5ab1a66dc382aad908a81ff84e10faf6ac533244"
+          },
+          {
+            "path": "libs/runtime/package.json",
+            "sha256": "a2d9b4e69f21aa3ee1f6aba944f5dce56f71900c3bd16acc28b7be6fbcee3a75"
+          },
+          {
+            "path": "libs/runtime/project.json",
+            "sha256": "ea256cb246030e8146e6242149e8a712f618d3cdb6eb325d42c5b9d37eebf033"
+          },
+          {
+            "path": "libs/runtime/router.d.ts",
+            "sha256": "9f4c77c0fdfc84402fd944961625f1b087ea00e625b8a98ad2ccede146a482a8"
+          },
+          {
+            "path": "libs/runtime/router.mjs",
+            "sha256": "2681a01a91e8b691563a10ece73491d0b7238151da9469d082013b9e1e6a629d"
+          },
+          {
+            "path": "libs/runtime/server-async.d.ts",
+            "sha256": "9450f3d8767dedef785af4f4b4101c0bc95d83002a3f4268a8ecfd1a016141e0"
+          },
+          {
+            "path": "libs/runtime/server-async.mjs",
+            "sha256": "6a7fd16211006c07a40355f60fbf9b19b85212b05cd50d0c86f59d3f680f4580"
+          },
+          {
+            "path": "libs/runtime/server-router.d.ts",
+            "sha256": "91942593b97336e8b83660245c438cd89c357d3ed573b153eb8fea200b6a75a1"
+          },
+          {
+            "path": "libs/runtime/server-router.mjs",
+            "sha256": "88e9e999da353c0dc861a31015c1fe3d3b9b86f676c7ea2b165346547a06681f"
+          },
+          {
+            "path": "libs/runtime/server-structural.mjs",
+            "sha256": "4513f4ff2a86b2d75d26db71c153af951c4e89c0b2457cc0cb47deb9694369f7"
+          },
+          {
+            "path": "libs/runtime/server.d.ts",
+            "sha256": "05e087ddc9cad9ef0d1a5d23cb62ce3ec81940bccb89b56b7ec447233f3cc042"
+          },
+          {
+            "path": "libs/runtime/server.mjs",
+            "sha256": "8ef88e98110031c3cb243c9af726aba547fabf59e46b9fd09c2269b9d808a63f"
+          },
+          {
+            "path": "libs/runtime/template.mjs",
+            "sha256": "43e8a8224065f984ad05394a7de8c662bc52be24bc441869cbb95e330a4c2125"
+          },
+          {
+            "path": "libs/runtime/tests/async-types.tsx",
+            "sha256": "48ce812ff7349bde2c6a29d98327f63835eb8fbcc4194b8b223a3465cce304de"
+          },
+          {
+            "path": "libs/runtime/tests/async.test.mjs",
+            "sha256": "8fed35bd1072f2518d5027950c136cb8ee74d51b3342ee842a440efc694966fb"
+          },
+          {
+            "path": "libs/runtime/tests/dom-async.test.mjs",
+            "sha256": "eb67d09fd6db51467fcf4fd440697e815085f20782cedf5883ea16b82c07952e"
+          },
+          {
+            "path": "libs/runtime/tests/dom-async/fixture.tsx",
+            "sha256": "87694edd194754be2f6adb2be89f47adbb1f1353836ae9d037602f731c09a229"
+          },
+          {
+            "path": "libs/runtime/tests/dom-async/types.tsx",
+            "sha256": "27d4059225ffb1e1dc5a4f364ed198c03df48672d5cd7339c6a63fb44d49c7fb"
+          },
+          {
+            "path": "libs/runtime/tests/dom-router.test.mjs",
+            "sha256": "9544f1130dcd2de633b823f563736cb5b7145548aa22abaffb10a7099690e4be"
+          },
+          {
+            "path": "libs/runtime/tests/dom-router/fixture.tsx",
+            "sha256": "a2f4c046f172fcd6fdb2af6bb42381b1d890595ff436f6e3163f65ff39a276ba"
+          },
+          {
+            "path": "libs/runtime/tests/dom-router/types.tsx",
+            "sha256": "20a62a721bf7d905450ae33ce068d0a08c9adc575974eefa996a0a27182de9bb"
+          },
+          {
+            "path": "libs/runtime/tests/dom.test.mjs",
+            "sha256": "2c6e50296c28f5ef76b78edbe979b46bbc6e1779582b9ada0a560ff7112e1629"
+          },
+          {
+            "path": "libs/runtime/tests/dom/abi.mjs",
+            "sha256": "684433cb9b6f91abcfe7e522c28297021bef0d5412e057cdac5846012b37d5e4"
+          },
+          {
+            "path": "libs/runtime/tests/dom/types.tsx",
+            "sha256": "fc10e2a21c43889f400c2bb74262eb7168f7acea06343e7eb30a6d18ea36faa2"
+          },
+          {
+            "path": "libs/runtime/tests/lazy.test.mjs",
+            "sha256": "3acea10b52897b4cd4f8f1584094dca1429b51aaf97f613bede7e70bf7c82166"
+          },
+          {
+            "path": "libs/runtime/tests/omitted.test.mjs",
+            "sha256": "7b8ba580e7cf0ad38941a8b49f60f8e048bbcd44f2312ee3bc016bafe29180a4"
+          },
+          {
+            "path": "libs/runtime/tests/router.test.mjs",
+            "sha256": "ea9bd02c4a292a0f917a7caf01cd03f69e79fcf6a51efe0de7d1ed5f124255aa"
+          },
+          {
+            "path": "libs/runtime/tests/server-async.test.mjs",
+            "sha256": "6c4c88609b2386a8bab1043f6fe13b98e7f7c8f6f395c4a0f2b800305000edd2"
+          },
+          {
+            "path": "libs/runtime/tests/server-compiled.test.mjs",
+            "sha256": "300d91904a3fc4c95bfc7ed104728923faa0c3c50a6793fc2896f7a8c3ef8e5d"
+          },
+          {
+            "path": "libs/runtime/tests/server-direct-protocol.test.mjs",
+            "sha256": "1f6212e4444281a6ec7d402f642281eea1ba3fc5372dc56d950f97fa60f05a49"
+          },
+          {
+            "path": "libs/runtime/tests/server-router-types.tsx",
+            "sha256": "9e974de22c8951d6ead7d5e3f9ea9562155173205978d669b3f506d1515b7676"
+          },
+          {
+            "path": "libs/runtime/tests/server-router.test.mjs",
+            "sha256": "1da00316d0b66c477c0f76efac6e9663c513b786e7a9c65fac8f2de00f4a6567"
+          },
+          {
+            "path": "libs/runtime/tests/server-structural.test.mjs",
+            "sha256": "2aab0144fd3f0fa155bb49c9dc1bfbffcb80a12c8032a9fc31f6a15825f19699"
+          },
+          {
+            "path": "libs/runtime/tests/server.test.mjs",
+            "sha256": "335c0b603df797c697ed0260e6e1ed84b2b5f2883f4cab0dde70a4aefcb4d9b1"
+          }
+        ]
+      },
+      "directOption": "experimentalServerDirect",
+      "coverageMarker": "_renderDirectToWriter",
+      "node": "v24.14.1",
+      "installedVersions": {
+        "typescript": "5.9.3",
+        "entities": "7.0.0",
+        "esbuild": "0.28.2"
+      },
+      "artifacts": [
+        {
+          "lane": "preserved-baseline",
+          "fields": 10,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/preserved-baseline-10.mjs",
+          "sha256": "00380accb37edb14d12def7baac76ff629159d4e20e27eb7bd67992fae3aefd5",
+          "bytes": 6645,
+          "gzipBytes": 2835,
+          "brotliBytes": 2526,
+          "emittedSourceBytes": 1527,
+          "emittedSourceSha256": "8b68e60cbce3863f46c2fe264ece0b418ba38d36bdafd9082b9c96cb1401160c",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/template.mjs": {
+              "bytesInOutput": 1398
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/omitted.mjs": {
+              "bytesInOutput": 80
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/reactivity/index.mjs": {
+              "bytesInOutput": 1089
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 36
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-async.mjs": {
+              "bytesInOutput": 62
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server.mjs": {
+              "bytesInOutput": 3153
+            },
+            "<stdin>": {
+              "bytesInOutput": 801
+            }
+          }
+        },
+        {
+          "lane": "new-OFF",
+          "fields": 10,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-OFF-10.mjs",
+          "sha256": "873c1a80448e85a812052debdb98b0decc7d21a93b95f77a9c16d0f1f1575e76",
+          "bytes": 6826,
+          "gzipBytes": 2912,
+          "brotliBytes": 2593,
+          "emittedSourceBytes": 1527,
+          "emittedSourceSha256": "8b68e60cbce3863f46c2fe264ece0b418ba38d36bdafd9082b9c96cb1401160c",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1398
+            },
+            "libs/runtime/omitted.mjs": {
+              "bytesInOutput": 80
+            },
+            "libs/reactivity/index.mjs": {
+              "bytesInOutput": 1089
+            },
+            "libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 36
+            },
+            "libs/runtime/server-async.mjs": {
+              "bytesInOutput": 62
+            },
+            "libs/runtime/server.mjs": {
+              "bytesInOutput": 3333
+            },
+            "<stdin>": {
+              "bytesInOutput": 802
+            }
+          }
+        },
+        {
+          "lane": "new-ON",
+          "fields": 10,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-ON-10.mjs",
+          "sha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+          "bytes": 14233,
+          "gzipBytes": 4173,
+          "brotliBytes": 3670,
+          "emittedSourceBytes": 17421,
+          "emittedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+          "consumedRootLowered": true,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1402
+            },
+            "libs/runtime/omitted.mjs": {
+              "bytesInOutput": 80
+            },
+            "libs/reactivity/index.mjs": {
+              "bytesInOutput": 1091
+            },
+            "libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 36
+            },
+            "libs/runtime/server-async.mjs": {
+              "bytesInOutput": 63
+            },
+            "libs/runtime/server.mjs": {
+              "bytesInOutput": 3389
+            },
+            "libs/runtime/server-direct.mjs": {
+              "bytesInOutput": 1650
+            },
+            "<stdin>": {
+              "bytesInOutput": 6496
+            }
+          }
+        },
+        {
+          "lane": "hand",
+          "fields": 10,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/hand-10.mjs",
+          "sha256": "d8a40719a4c549b6e845a91890da894ebdca8830446cef942d110679d755fc9c",
+          "bytes": 3777,
+          "gzipBytes": 1230,
+          "brotliBytes": 1008,
+          "emittedSourceBytes": 4837,
+          "emittedSourceSha256": "fe82c8683e72ffbf1e17160d3d587dd3c2adb236d25d5116131c3f5db2f48e3e",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1136
+            },
+            "<stdin>": {
+              "bytesInOutput": 2616
+            }
+          }
+        },
+        {
+          "lane": "preserved-baseline",
+          "fields": 50,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/preserved-baseline-50.mjs",
+          "sha256": "b20706326802f50bb8b8fda4eddfbe4ef4c44687be859df480342dd72435b5ec",
+          "bytes": 8085,
+          "gzipBytes": 3079,
+          "brotliBytes": 2648,
+          "emittedSourceBytes": 3767,
+          "emittedSourceSha256": "2115756ab8e0b43fcfc3ef89e8e95fbc5ca5b68851ce062897faf4f1261e4a52",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/template.mjs": {
+              "bytesInOutput": 1398
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/omitted.mjs": {
+              "bytesInOutput": 80
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/reactivity/index.mjs": {
+              "bytesInOutput": 1089
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 36
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server-async.mjs": {
+              "bytesInOutput": 62
+            },
+            "apps/ssr-bench/experiments/consumed-root/prepared/baseline-source/libs/runtime/server.mjs": {
+              "bytesInOutput": 3153
+            },
+            "<stdin>": {
+              "bytesInOutput": 2241
+            }
+          }
+        },
+        {
+          "lane": "new-OFF",
+          "fields": 50,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-OFF-50.mjs",
+          "sha256": "f47c072c835a67b6de0b232b748a20ca8789b5f910a7481e5fd630787cc0866c",
+          "bytes": 8266,
+          "gzipBytes": 3152,
+          "brotliBytes": 2720,
+          "emittedSourceBytes": 3767,
+          "emittedSourceSha256": "2115756ab8e0b43fcfc3ef89e8e95fbc5ca5b68851ce062897faf4f1261e4a52",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1398
+            },
+            "libs/runtime/omitted.mjs": {
+              "bytesInOutput": 80
+            },
+            "libs/reactivity/index.mjs": {
+              "bytesInOutput": 1089
+            },
+            "libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 36
+            },
+            "libs/runtime/server-async.mjs": {
+              "bytesInOutput": 62
+            },
+            "libs/runtime/server.mjs": {
+              "bytesInOutput": 3333
+            },
+            "<stdin>": {
+              "bytesInOutput": 2242
+            }
+          }
+        },
+        {
+          "lane": "new-ON",
+          "fields": 50,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/new-ON-50.mjs",
+          "sha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+          "bytes": 31882,
+          "gzipBytes": 5696,
+          "brotliBytes": 4388,
+          "emittedSourceBytes": 63632,
+          "emittedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+          "consumedRootLowered": true,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1408
+            },
+            "libs/runtime/omitted.mjs": {
+              "bytesInOutput": 81
+            },
+            "libs/reactivity/index.mjs": {
+              "bytesInOutput": 1092
+            },
+            "libs/runtime/server-structural.mjs": {
+              "bytesInOutput": 37
+            },
+            "libs/runtime/server-async.mjs": {
+              "bytesInOutput": 67
+            },
+            "libs/runtime/server.mjs": {
+              "bytesInOutput": 3405
+            },
+            "libs/runtime/server-direct.mjs": {
+              "bytesInOutput": 1660
+            },
+            "<stdin>": {
+              "bytesInOutput": 24106
+            }
+          }
+        },
+        {
+          "lane": "hand",
+          "fields": 50,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/hand-50.mjs",
+          "sha256": "021a2c9e492ad07c6f92b5a814b403fe4dab3866f4324aaf11a0829d8b5e6f0a",
+          "bytes": 11792,
+          "gzipBytes": 1886,
+          "brotliBytes": 1419,
+          "emittedSourceBytes": 19077,
+          "emittedSourceSha256": "56a45715fda8f7747b06597c3575b0f413d8316fb91d3a2a911f20279d2c5ac7",
+          "consumedRootLowered": false,
+          "bundlerInputs": {
+            "libs/runtime/template.mjs": {
+              "bytesInOutput": 1153
+            },
+            "<stdin>": {
+              "bytesInOutput": 10613
+            }
+          }
+        }
+      ],
+      "proofs": [
+        {
+          "fields": 10,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.mjs",
+          "sha256": "91a53334ca259ef413f615b97bd2e29c1ed5fd5d12cb87a0fd4e386a89dfc264",
+          "bytes": 14420,
+          "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.emitted.mjs",
+          "sourceSha256": "badc7a0a8b636731a2783f5bd90f3c0820699f199693a5b689aaf010af3911b7",
+          "timedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+          "timedArtifactSha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+          "sites": {
+            "roots": 1,
+            "cleanSetup": 1,
+            "cleanEntry": 1,
+            "setupFallback": 1,
+            "materialized": 1
+          },
+          "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+        },
+        {
+          "fields": 50,
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.mjs",
+          "sha256": "cd907f818e7895c9dce131bacfcc40103475912d186eb49ceeaa71c82f9769d0",
+          "bytes": 32074,
+          "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.emitted.mjs",
+          "sourceSha256": "32254ceae3d8e80f2a71a8c32649a7ff5c862b6c30ef2ee5b243c21bd7da58ee",
+          "timedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+          "timedArtifactSha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+          "sites": {
+            "roots": 1,
+            "cleanSetup": 1,
+            "cleanEntry": 1,
+            "setupFallback": 1,
+            "materialized": 1
+          },
+          "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+        }
+      ],
+      "fixtureSources": [
+        {
+          "fields": 10,
+          "bytes": 1186,
+          "sha256": "c79da9bf61f490ed4eb356c77bdd3bba285b7becdb5f1eb17d038fedd9a9e305",
+          "handSha256": "fe82c8683e72ffbf1e17160d3d587dd3c2adb236d25d5116131c3f5db2f48e3e"
+        },
+        {
+          "fields": 50,
+          "bytes": 3186,
+          "sha256": "62f5cb6366a62dc0065d4d19702a6e9e38a684e8014876afcf08141f6c63fe80",
+          "handSha256": "56a45715fda8f7747b06597c3575b0f413d8316fb91d3a2a911f20279d2c5ac7"
+        }
+      ],
+      "sources": [
+        {
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/fixture.mjs",
+          "bytes": 3801,
+          "sha256": "b4aa686549e0a0e900f8e51ad9611f73895871a756c5e1014c78fb4578adb19f"
+        },
+        {
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/build.mjs",
+          "bytes": 9882,
+          "sha256": "0d6d4603620d1606b6804ec47d60e179681eef5b3064dd1d5f0cfc10dae62981"
+        },
+        {
+          "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/proof.mjs",
+          "bytes": 4439,
+          "sha256": "f2fa0ade80610936d5527c4292341e33b6629ab6bb7580696470897cad241dd3"
+        }
+      ],
+      "currentSources": [
+        {
+          "path": "libs/compiler/html.mjs",
+          "sha256": "c106dc497c05a8d12177ff60e543ace2e40d07bfcff63012175cb7c113c8f232"
+        },
+        {
+          "path": "libs/compiler/index.mjs",
+          "sha256": "1952c4600329f273ee1dead6ae84df509f464f9ad50db7a50ae07179d3a90478"
+        },
+        {
+          "path": "libs/compiler/tests/async-dom.test.mjs",
+          "sha256": "57b436166fc5e32e1c21810c4fcb293846d1b0376864fc651c0f68684d3e1e83"
+        },
+        {
+          "path": "libs/compiler/tests/async-siblings.test.mjs",
+          "sha256": "f54331c29e58256db00a429d0e2164f64a9370f82d9013acc1e12527563000c2"
+        },
+        {
+          "path": "libs/compiler/tests/compiler-dom.test.mjs",
+          "sha256": "5a183617ee310cbd84817e752939753b8fd09faf9f2b5cedc6f5bc0ffc766de9"
+        },
+        {
+          "path": "libs/compiler/tests/compiler-dom/compiler.test.mjs",
+          "sha256": "43a678df9d3c0be0be6392d90597e1c819909eb864877fe9e7ad7c43e12778f2"
+        },
+        {
+          "path": "libs/compiler/tests/compiler.test.mjs",
+          "sha256": "293117fd4be704a3ebfb686cc711b551bd05e4e72f36b95e9a11c47c8f72e48e"
+        },
+        {
+          "path": "libs/compiler/tests/server-direct-protocol.test.mjs",
+          "sha256": "e590a4e4aabf3004c59af64eb8f7e683a2183bebd5c25f40ead7a5b8d967af43"
+        },
+        {
+          "path": "libs/compiler/tests/server-direct.test.mjs",
+          "sha256": "ab8a1e391237f4a952cbd2ff4e4d4d8cf5634bbe165ad014f0287fe94fc7ce91"
+        },
+        {
+          "path": "libs/compiler/tests/vite.test.mjs",
+          "sha256": "3a0ef85577eedcf95b248c0e52e1e6316a1e0780e1b9a8f6eb38767881dd4398"
+        },
+        {
+          "path": "libs/compiler/vite.mjs",
+          "sha256": "e5eb91565d9f99eb88780d662ab10e79c37bd16ffa2777205d7ef134676591e4"
+        },
+        {
+          "path": "libs/reactivity/index.mjs",
+          "sha256": "03845955cebc8aa4a63cb43ed26bca7c823e36eb402ce6680c5bb34f1ad79189"
+        },
+        {
+          "path": "libs/reactivity/tests/large-batch.test.mjs",
+          "sha256": "a6c2478f514c34cd12da7286dfc09820ab8920fa28e8c1cf2b8dfa4b90a26c5a"
+        },
+        {
+          "path": "libs/reactivity/tests/reactivity.test.mjs",
+          "sha256": "9084f566668b50dba68de04e07cbdc3154aecd242b377bc8c9b14057441de64e"
+        },
+        {
+          "path": "libs/runtime/async.mjs",
+          "sha256": "2ccdaf6b5b813859194367881976964abff5aad2e9461826db3b45c470830a26"
+        },
+        {
+          "path": "libs/runtime/dom-router.mjs",
+          "sha256": "b8911fc49c1e0878208cdf284958da4a728c52c27872ab6d70f1cd0eaed66bb3"
+        },
+        {
+          "path": "libs/runtime/dom.mjs",
+          "sha256": "e694c46510cceabef61c8c07a3230e15b1f83137528b180b833b2fe11c8e635a"
+        },
+        {
+          "path": "libs/runtime/jsx-runtime.mjs",
+          "sha256": "a3e8bd21a5623f7e75f3f075fd971457b4f2b17feeb35183a0244db0bf1f534d"
+        },
+        {
+          "path": "libs/runtime/lazy.mjs",
+          "sha256": "587c67b22b78058fe378d55ac5174cdbb0c582e3b823ed7b0e4d807731dbf4b7"
+        },
+        {
+          "path": "libs/runtime/omitted.mjs",
+          "sha256": "41321534280ffa3a5b691acb5ab1a66dc382aad908a81ff84e10faf6ac533244"
+        },
+        {
+          "path": "libs/runtime/router.mjs",
+          "sha256": "2681a01a91e8b691563a10ece73491d0b7238151da9469d082013b9e1e6a629d"
+        },
+        {
+          "path": "libs/runtime/server-async.mjs",
+          "sha256": "6a7fd16211006c07a40355f60fbf9b19b85212b05cd50d0c86f59d3f680f4580"
+        },
+        {
+          "path": "libs/runtime/server-direct.mjs",
+          "sha256": "b52a5a1be19aaeeae8f62da4e42524dcbec18fdeeb43c90f346cbe9008fe4240"
+        },
+        {
+          "path": "libs/runtime/server-router.mjs",
+          "sha256": "88e9e999da353c0dc861a31015c1fe3d3b9b86f676c7ea2b165346547a06681f"
+        },
+        {
+          "path": "libs/runtime/server-structural.mjs",
+          "sha256": "4513f4ff2a86b2d75d26db71c153af951c4e89c0b2457cc0cb47deb9694369f7"
+        },
+        {
+          "path": "libs/runtime/server.mjs",
+          "sha256": "92f73e31e5803af357c9a21ca949dc7f729a1246e74b71c8049a50bab78a6e1a"
+        },
+        {
+          "path": "libs/runtime/template.mjs",
+          "sha256": "43e8a8224065f984ad05394a7de8c662bc52be24bc441869cbb95e330a4c2125"
+        },
+        {
+          "path": "libs/runtime/tests/async.test.mjs",
+          "sha256": "8fed35bd1072f2518d5027950c136cb8ee74d51b3342ee842a440efc694966fb"
+        },
+        {
+          "path": "libs/runtime/tests/dom-async.test.mjs",
+          "sha256": "eb67d09fd6db51467fcf4fd440697e815085f20782cedf5883ea16b82c07952e"
+        },
+        {
+          "path": "libs/runtime/tests/dom-router.test.mjs",
+          "sha256": "9544f1130dcd2de633b823f563736cb5b7145548aa22abaffb10a7099690e4be"
+        },
+        {
+          "path": "libs/runtime/tests/dom.test.mjs",
+          "sha256": "2c6e50296c28f5ef76b78edbe979b46bbc6e1779582b9ada0a560ff7112e1629"
+        },
+        {
+          "path": "libs/runtime/tests/dom/abi.mjs",
+          "sha256": "684433cb9b6f91abcfe7e522c28297021bef0d5412e057cdac5846012b37d5e4"
+        },
+        {
+          "path": "libs/runtime/tests/lazy.test.mjs",
+          "sha256": "3acea10b52897b4cd4f8f1584094dca1429b51aaf97f613bede7e70bf7c82166"
+        },
+        {
+          "path": "libs/runtime/tests/omitted.test.mjs",
+          "sha256": "7b8ba580e7cf0ad38941a8b49f60f8e048bbcd44f2312ee3bc016bafe29180a4"
+        },
+        {
+          "path": "libs/runtime/tests/router.test.mjs",
+          "sha256": "ea9bd02c4a292a0f917a7caf01cd03f69e79fcf6a51efe0de7d1ed5f124255aa"
+        },
+        {
+          "path": "libs/runtime/tests/server-async.test.mjs",
+          "sha256": "6c4c88609b2386a8bab1043f6fe13b98e7f7c8f6f395c4a0f2b800305000edd2"
+        },
+        {
+          "path": "libs/runtime/tests/server-compiled.test.mjs",
+          "sha256": "300d91904a3fc4c95bfc7ed104728923faa0c3c50a6793fc2896f7a8c3ef8e5d"
+        },
+        {
+          "path": "libs/runtime/tests/server-direct-protocol.test.mjs",
+          "sha256": "1f6212e4444281a6ec7d402f642281eea1ba3fc5372dc56d950f97fa60f05a49"
+        },
+        {
+          "path": "libs/runtime/tests/server-router.test.mjs",
+          "sha256": "1da00316d0b66c477c0f76efac6e9663c513b786e7a9c65fac8f2de00f4a6567"
+        },
+        {
+          "path": "libs/runtime/tests/server-structural.test.mjs",
+          "sha256": "2aab0144fd3f0fa155bb49c9dc1bfbffcb80a12c8032a9fc31f6a15825f19699"
+        },
+        {
+          "path": "libs/runtime/tests/server.test.mjs",
+          "sha256": "335c0b603df797c697ed0260e6e1ed84b2b5f2883f4cab0dde70a4aefcb4d9b1"
+        }
+      ],
+      "sharedWriter": {
+        "path": "/Users/denisseverin/Projects/claude-test/rivet/libs/server-emitter/writers.mjs",
+        "bytes": 2896,
+        "sha256": "18703dc90c5628a7ae6e5a38941423cafde72b2e40ba31bc9fb8d556505a9ca7"
+      },
+      "scope": "Same authored source, imported shared NodeStreamWriter and external fresh-input helper; bundles include each actual runtime. Preserved source compiler uses the recorded installed TypeScript/entities versions and shared esbuild. Temporary dependency symlink removed after preparation. Separate untimed proof bundles instrument generated-root branch counts, never timed bundles. Hand is a clean primitive desired-shape reference, not generic primordial/owner/admission equivalence. No signal and no timing in build."
+    }
+  },
+  "cleanProof": {
+    "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/clean-proof.json",
+    "sha256": "59e183620bf6ba3699e339f9633becaf579da7fe0ed7805374e32818d37b312b",
+    "metadata": {
+      "options": {
+        "build": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/builds.json",
+        "out": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/clean-proof.json",
+        "rows": [
+          100,
+          1000,
+          5000
+        ]
+      },
+      "node": "v24.14.1",
+      "manifestSha256": "d2c00c20b56771f927e096bc4f24e6b0fd4b912558318a49fe77021ac547bebf",
+      "results": [
+        {
+          "fields": 10,
+          "rows": 100,
+          "before": {
+            "cleanSetup": 0,
+            "cleanEntry": 0,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 10,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.mjs",
+            "sha256": "91a53334ca259ef413f615b97bd2e29c1ed5fd5d12cb87a0fd4e386a89dfc264",
+            "bytes": 14420,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.emitted.mjs",
+            "sourceSha256": "badc7a0a8b636731a2783f5bd90f3c0820699f199693a5b689aaf010af3911b7",
+            "timedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+            "timedArtifactSha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "316fe91f0d9a000fc54fdb2919845c140be586b5a64cdb6cc5b624375f4c3063",
+          "logicalChunkHash": "04cdfeb74d3e3cb46a65e138fc0188a9b37662dc6a9e359af5257d67a5f4b419",
+          "physicalChunkHash": "4eda9f0a37816189996c7f6127bb43f409d06c6418573ad161fc5546cc69dce9",
+          "delta": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        },
+        {
+          "fields": 10,
+          "rows": 1000,
+          "before": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 1100,
+            "cleanEntry": 1100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 10,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.mjs",
+            "sha256": "91a53334ca259ef413f615b97bd2e29c1ed5fd5d12cb87a0fd4e386a89dfc264",
+            "bytes": 14420,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.emitted.mjs",
+            "sourceSha256": "badc7a0a8b636731a2783f5bd90f3c0820699f199693a5b689aaf010af3911b7",
+            "timedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+            "timedArtifactSha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "666d137db4122f260342b4b68de46ec02250e65d6292973669981b23c61241c0",
+          "logicalChunkHash": "3d7406f86144af68c8cffc712883ce447574c271d110229584c7cd0339d55b9f",
+          "physicalChunkHash": "0942ca2bfaa2e57855208ba59b32891b0f8c6ab178e64306cca4a470703d4f0d",
+          "delta": {
+            "cleanSetup": 1000,
+            "cleanEntry": 1000,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        },
+        {
+          "fields": 10,
+          "rows": 5000,
+          "before": {
+            "cleanSetup": 1100,
+            "cleanEntry": 1100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 6100,
+            "cleanEntry": 6100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 10,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.mjs",
+            "sha256": "91a53334ca259ef413f615b97bd2e29c1ed5fd5d12cb87a0fd4e386a89dfc264",
+            "bytes": 14420,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-10.emitted.mjs",
+            "sourceSha256": "badc7a0a8b636731a2783f5bd90f3c0820699f199693a5b689aaf010af3911b7",
+            "timedSourceSha256": "a37ec8247ebd448fae2e5d5aa6e4c28f14a745db0d5146ce89a4d3441a26881c",
+            "timedArtifactSha256": "5ad8abdc95c2e90e24357041f11fef9af9cd0829a1e89d6be8c239c52fb56d2e",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "e9b907e8ae0019a475c25e0d7ef5de872f5d1958fa8fc2bb0aa73f8e4b7c546d",
+          "logicalChunkHash": "8933fab1161a6508b221fe46c037054ecdb9d03e55412b0136baa8f11021a508",
+          "physicalChunkHash": "1501af96869119eb49cf6e82ef383c0fba158d0dca5d52ea61e8d52984a2e2ce",
+          "delta": {
+            "cleanSetup": 5000,
+            "cleanEntry": 5000,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        },
+        {
+          "fields": 50,
+          "rows": 100,
+          "before": {
+            "cleanSetup": 0,
+            "cleanEntry": 0,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 50,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.mjs",
+            "sha256": "cd907f818e7895c9dce131bacfcc40103475912d186eb49ceeaa71c82f9769d0",
+            "bytes": 32074,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.emitted.mjs",
+            "sourceSha256": "32254ceae3d8e80f2a71a8c32649a7ff5c862b6c30ef2ee5b243c21bd7da58ee",
+            "timedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+            "timedArtifactSha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "5257ff486d4a64e74d7e227b48721bee018af3ae863138cb75e01f5e2eb8078d",
+          "logicalChunkHash": "2084cfc8c17ae3280abe21692b211fbc19410d4e7df19f529c9558fc5919e964",
+          "physicalChunkHash": "bb20a5c8455965bd22007c57f0a9431f1e88ba2b64f7c08d4ddbda560fdc4731",
+          "delta": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        },
+        {
+          "fields": 50,
+          "rows": 1000,
+          "before": {
+            "cleanSetup": 100,
+            "cleanEntry": 100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 1100,
+            "cleanEntry": 1100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 50,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.mjs",
+            "sha256": "cd907f818e7895c9dce131bacfcc40103475912d186eb49ceeaa71c82f9769d0",
+            "bytes": 32074,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.emitted.mjs",
+            "sourceSha256": "32254ceae3d8e80f2a71a8c32649a7ff5c862b6c30ef2ee5b243c21bd7da58ee",
+            "timedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+            "timedArtifactSha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "621c5655006b0f45e61a3e61a9ea93ea99cbe11058723a6e60066b16d16aeca1",
+          "logicalChunkHash": "a3e348ab58088b07ea3e0f273b772d459a5a14ee6167ffa705b685271479c342",
+          "physicalChunkHash": "73652c67220b425142864b447ea5f751b6a755b84fc3bbaf695c9a951ac52f46",
+          "delta": {
+            "cleanSetup": 1000,
+            "cleanEntry": 1000,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        },
+        {
+          "fields": 50,
+          "rows": 5000,
+          "before": {
+            "cleanSetup": 1100,
+            "cleanEntry": 1100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "after": {
+            "cleanSetup": 6100,
+            "cleanEntry": 6100,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "proof": {
+            "fields": 50,
+            "path": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.mjs",
+            "sha256": "cd907f818e7895c9dce131bacfcc40103475912d186eb49ceeaa71c82f9769d0",
+            "bytes": 32074,
+            "sourcePath": "/Users/denisseverin/Projects/claude-test/rivet/apps/ssr-bench/experiments/consumed-root/prepared/proof-50.emitted.mjs",
+            "sourceSha256": "32254ceae3d8e80f2a71a8c32649a7ff5c862b6c30ef2ee5b243c21bd7da58ee",
+            "timedSourceSha256": "87d3011572ac226fdb41f05d6d0d0d8f018e0521800bb073879d438f364e20fc",
+            "timedArtifactSha256": "40f10844a655fdd97cdff289f137d9e9bb871f3f04c7804e6fb25bdcacd22c00",
+            "sites": {
+              "roots": 1,
+              "cleanSetup": 1,
+              "cleanEntry": 1,
+              "setupFallback": 1,
+              "materialized": 1
+            },
+            "differences": "Untimed only: null-prototype module counters; increments at generated clean-setup return, phase1 admission, generic constructor fallback return and actual shadow call. No runtime guards/intrinsics replaced."
+          },
+          "htmlSha256": "3df778cdd0ccfeb734340e2afe2c75b83db46ed22a2838869339e98910e64a8e",
+          "logicalChunkHash": "67cec9d1cd1815aa8adabaaaf12e54d887ceb7666daf8c5f3800796edfe17b31",
+          "physicalChunkHash": "62c5aeeee70847fc20075efc17bf7b5624bc20c9afcfd243ac5881ef4af1ff5c",
+          "delta": {
+            "cleanSetup": 5000,
+            "cleanEntry": 5000,
+            "setupFallback": 0,
+            "materialized": 0
+          },
+          "completeOutputParity": true
+        }
+      ],
+      "scope": "Untimed instrumentation of actual generated-root branches for full fixture; timed artifacts untouched and guard intrinsics not replaced. Counts demonstrate clean setup/admission vs generic setupfallback/shadow in the proof build. They are not allocation-volume evidence and do not prove all primordial/owner/fallback semantics. Separate proof-module startup counters differ from timed module source as explicitly fingerprinted."
+    }
+  },
+  "sources": [
+    {
+      "path": "fixture.mjs",
+      "sha256": "b4aa686549e0a0e900f8e51ad9611f73895871a756c5e1014c78fb4578adb19f"
+    },
+    {
+      "path": "build.mjs",
+      "sha256": "0d6d4603620d1606b6804ec47d60e179681eef5b3064dd1d5f0cfc10dae62981"
+    },
+    {
+      "path": "probe-support.mjs",
+      "sha256": "d5cb45f7ebb4e92c05ce9768d1177ab9f7c643215d532bf8d9d66f1a13d8f8ce"
+    },
+    {
+      "path": "pure-probe.mjs",
+      "sha256": "29ca3534b787cfe1417a60cf923328bd5f6c1442ad7c83c6ffb350a2cf46e714"
+    }
+  ],
+  "oracles": [
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "sha256": "97f57f91706db0d5ce5bc62b7d3d09dd84c22e18eb98c16531668c75edd7e31a",
+      "utf8Bytes": 60610,
+      "writes": 4,
+      "units": 56410,
+      "endpoints": 56898,
+      "logicalWrites": 401,
+      "logicalChunkHash": "976e7b4c11462b3c7700184d02f1f8cbc4af923cdc52dc4fb6708f9af6d9136f",
+      "physicalChunkHash": "bd4463af85a36a553adf22b51206e7764340a5be993d57fe88b5e258d1b7254b"
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "sha256": "97f57f91706db0d5ce5bc62b7d3d09dd84c22e18eb98c16531668c75edd7e31a",
+      "utf8Bytes": 60610,
+      "writes": 4,
+      "units": 56410,
+      "endpoints": 56898,
+      "logicalWrites": 401,
+      "logicalChunkHash": "976e7b4c11462b3c7700184d02f1f8cbc4af923cdc52dc4fb6708f9af6d9136f",
+      "physicalChunkHash": "bd4463af85a36a553adf22b51206e7764340a5be993d57fe88b5e258d1b7254b"
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "sha256": "97f57f91706db0d5ce5bc62b7d3d09dd84c22e18eb98c16531668c75edd7e31a",
+      "utf8Bytes": 60610,
+      "writes": 4,
+      "units": 56410,
+      "endpoints": 56898,
+      "logicalWrites": 401,
+      "logicalChunkHash": "976e7b4c11462b3c7700184d02f1f8cbc4af923cdc52dc4fb6708f9af6d9136f",
+      "physicalChunkHash": "bd4463af85a36a553adf22b51206e7764340a5be993d57fe88b5e258d1b7254b"
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "sha256": "97f57f91706db0d5ce5bc62b7d3d09dd84c22e18eb98c16531668c75edd7e31a",
+      "utf8Bytes": 60610,
+      "writes": 4,
+      "units": 56410,
+      "endpoints": 56898,
+      "logicalWrites": 401,
+      "logicalChunkHash": "976e7b4c11462b3c7700184d02f1f8cbc4af923cdc52dc4fb6708f9af6d9136f",
+      "physicalChunkHash": "bd4463af85a36a553adf22b51206e7764340a5be993d57fe88b5e258d1b7254b"
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "sha256": "fe9125bab7cb7c1b1363c1f860a4d9a05b9c6b9235890ebe14cf4ccd60c10581",
+      "utf8Bytes": 616810,
+      "writes": 38,
+      "units": 574810,
+      "endpoints": 579446,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "07842614faff2def2cd57ba8be70b88e878fe245715eea905e2bd38da8047855",
+      "physicalChunkHash": "2886dcf55ca4faad2239c8d89db75427b61e90ec7e8f607c77c04f0a24156ec0"
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "sha256": "fe9125bab7cb7c1b1363c1f860a4d9a05b9c6b9235890ebe14cf4ccd60c10581",
+      "utf8Bytes": 616810,
+      "writes": 38,
+      "units": 574810,
+      "endpoints": 579446,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "07842614faff2def2cd57ba8be70b88e878fe245715eea905e2bd38da8047855",
+      "physicalChunkHash": "2886dcf55ca4faad2239c8d89db75427b61e90ec7e8f607c77c04f0a24156ec0"
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "sha256": "fe9125bab7cb7c1b1363c1f860a4d9a05b9c6b9235890ebe14cf4ccd60c10581",
+      "utf8Bytes": 616810,
+      "writes": 38,
+      "units": 574810,
+      "endpoints": 579446,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "07842614faff2def2cd57ba8be70b88e878fe245715eea905e2bd38da8047855",
+      "physicalChunkHash": "2886dcf55ca4faad2239c8d89db75427b61e90ec7e8f607c77c04f0a24156ec0"
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "sha256": "fe9125bab7cb7c1b1363c1f860a4d9a05b9c6b9235890ebe14cf4ccd60c10581",
+      "utf8Bytes": 616810,
+      "writes": 38,
+      "units": 574810,
+      "endpoints": 579446,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "07842614faff2def2cd57ba8be70b88e878fe245715eea905e2bd38da8047855",
+      "physicalChunkHash": "2886dcf55ca4faad2239c8d89db75427b61e90ec7e8f607c77c04f0a24156ec0"
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "sha256": "b9e5bae62550cb8fcfa4f5b4f85f0c0323649727bb69c43ef66164634bfbd16e",
+      "utf8Bytes": 3132810,
+      "writes": 188,
+      "units": 2922810,
+      "endpoints": 2943796,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "51c9855719f2b8d4fe4810beeb61fbee9164f3a39b83a6bbdc6767ad1375f13f",
+      "physicalChunkHash": "526c74ce5ac7177e8c8320c49f73eba60d381200c939e9aff7b365ce5c1a7434"
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "sha256": "b9e5bae62550cb8fcfa4f5b4f85f0c0323649727bb69c43ef66164634bfbd16e",
+      "utf8Bytes": 3132810,
+      "writes": 188,
+      "units": 2922810,
+      "endpoints": 2943796,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "51c9855719f2b8d4fe4810beeb61fbee9164f3a39b83a6bbdc6767ad1375f13f",
+      "physicalChunkHash": "526c74ce5ac7177e8c8320c49f73eba60d381200c939e9aff7b365ce5c1a7434"
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "sha256": "b9e5bae62550cb8fcfa4f5b4f85f0c0323649727bb69c43ef66164634bfbd16e",
+      "utf8Bytes": 3132810,
+      "writes": 188,
+      "units": 2922810,
+      "endpoints": 2943796,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "51c9855719f2b8d4fe4810beeb61fbee9164f3a39b83a6bbdc6767ad1375f13f",
+      "physicalChunkHash": "526c74ce5ac7177e8c8320c49f73eba60d381200c939e9aff7b365ce5c1a7434"
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "sha256": "b9e5bae62550cb8fcfa4f5b4f85f0c0323649727bb69c43ef66164634bfbd16e",
+      "utf8Bytes": 3132810,
+      "writes": 188,
+      "units": 2922810,
+      "endpoints": 2943796,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "51c9855719f2b8d4fe4810beeb61fbee9164f3a39b83a6bbdc6767ad1375f13f",
+      "physicalChunkHash": "526c74ce5ac7177e8c8320c49f73eba60d381200c939e9aff7b365ce5c1a7434"
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "sha256": "baadf77f60b43117912d7bb9bf7650ef90043b1f526818d3aed047cb18ab9860",
+      "utf8Bytes": 264210,
+      "writes": 15,
+      "units": 244010,
+      "endpoints": 245840,
+      "logicalWrites": 401,
+      "logicalChunkHash": "c9faebff52ab76920e7cd909fb358c96435b2b82de8b55ee426580046e0a5fd6",
+      "physicalChunkHash": "1dc87c1d2b45b0eac8b303f69a124aa2522427367f2ed72a4dace8750f808f33"
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "sha256": "baadf77f60b43117912d7bb9bf7650ef90043b1f526818d3aed047cb18ab9860",
+      "utf8Bytes": 264210,
+      "writes": 15,
+      "units": 244010,
+      "endpoints": 245840,
+      "logicalWrites": 401,
+      "logicalChunkHash": "c9faebff52ab76920e7cd909fb358c96435b2b82de8b55ee426580046e0a5fd6",
+      "physicalChunkHash": "1dc87c1d2b45b0eac8b303f69a124aa2522427367f2ed72a4dace8750f808f33"
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "sha256": "baadf77f60b43117912d7bb9bf7650ef90043b1f526818d3aed047cb18ab9860",
+      "utf8Bytes": 264210,
+      "writes": 15,
+      "units": 244010,
+      "endpoints": 245840,
+      "logicalWrites": 401,
+      "logicalChunkHash": "c9faebff52ab76920e7cd909fb358c96435b2b82de8b55ee426580046e0a5fd6",
+      "physicalChunkHash": "1dc87c1d2b45b0eac8b303f69a124aa2522427367f2ed72a4dace8750f808f33"
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "sha256": "baadf77f60b43117912d7bb9bf7650ef90043b1f526818d3aed047cb18ab9860",
+      "utf8Bytes": 264210,
+      "writes": 15,
+      "units": 244010,
+      "endpoints": 245840,
+      "logicalWrites": 401,
+      "logicalChunkHash": "c9faebff52ab76920e7cd909fb358c96435b2b82de8b55ee426580046e0a5fd6",
+      "physicalChunkHash": "1dc87c1d2b45b0eac8b303f69a124aa2522427367f2ed72a4dace8750f808f33"
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "sha256": "7ec16a070d9cec0a616e823c67746e14c9858644aa28fb8bb13eabe0b8e3d578",
+      "utf8Bytes": 2692410,
+      "writes": 143,
+      "units": 2490410,
+      "endpoints": 2507856,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "ca17a69e372a3039bb3f2d22d7db42d49d3c598ba529aec46fbb7f4444a73ad3",
+      "physicalChunkHash": "ebde97be8f612413907c85c9c221994a3bac043517e49da7b3250b49dc64376a"
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "sha256": "7ec16a070d9cec0a616e823c67746e14c9858644aa28fb8bb13eabe0b8e3d578",
+      "utf8Bytes": 2692410,
+      "writes": 143,
+      "units": 2490410,
+      "endpoints": 2507856,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "ca17a69e372a3039bb3f2d22d7db42d49d3c598ba529aec46fbb7f4444a73ad3",
+      "physicalChunkHash": "ebde97be8f612413907c85c9c221994a3bac043517e49da7b3250b49dc64376a"
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "sha256": "7ec16a070d9cec0a616e823c67746e14c9858644aa28fb8bb13eabe0b8e3d578",
+      "utf8Bytes": 2692410,
+      "writes": 143,
+      "units": 2490410,
+      "endpoints": 2507856,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "ca17a69e372a3039bb3f2d22d7db42d49d3c598ba529aec46fbb7f4444a73ad3",
+      "physicalChunkHash": "ebde97be8f612413907c85c9c221994a3bac043517e49da7b3250b49dc64376a"
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "sha256": "7ec16a070d9cec0a616e823c67746e14c9858644aa28fb8bb13eabe0b8e3d578",
+      "utf8Bytes": 2692410,
+      "writes": 143,
+      "units": 2490410,
+      "endpoints": 2507856,
+      "logicalWrites": 4001,
+      "logicalChunkHash": "ca17a69e372a3039bb3f2d22d7db42d49d3c598ba529aec46fbb7f4444a73ad3",
+      "physicalChunkHash": "ebde97be8f612413907c85c9c221994a3bac043517e49da7b3250b49dc64376a"
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "sha256": "9213ea68556564644b683251a465364cc6a0e986237f9580c67bdff258038d51",
+      "utf8Bytes": 13688410,
+      "writes": 810,
+      "units": 12678410,
+      "endpoints": 12777230,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "9c2b093704c760f6e150cbda74c6b8c0ad9a647afbfc1db4c5cf0c62c65fa7d0",
+      "physicalChunkHash": "8fee565d9524ad547371f27e5e5f3e8d54037970937c7046217699f95aa059e8"
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "sha256": "9213ea68556564644b683251a465364cc6a0e986237f9580c67bdff258038d51",
+      "utf8Bytes": 13688410,
+      "writes": 810,
+      "units": 12678410,
+      "endpoints": 12777230,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "9c2b093704c760f6e150cbda74c6b8c0ad9a647afbfc1db4c5cf0c62c65fa7d0",
+      "physicalChunkHash": "8fee565d9524ad547371f27e5e5f3e8d54037970937c7046217699f95aa059e8"
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "sha256": "9213ea68556564644b683251a465364cc6a0e986237f9580c67bdff258038d51",
+      "utf8Bytes": 13688410,
+      "writes": 810,
+      "units": 12678410,
+      "endpoints": 12777230,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "9c2b093704c760f6e150cbda74c6b8c0ad9a647afbfc1db4c5cf0c62c65fa7d0",
+      "physicalChunkHash": "8fee565d9524ad547371f27e5e5f3e8d54037970937c7046217699f95aa059e8"
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "sha256": "9213ea68556564644b683251a465364cc6a0e986237f9580c67bdff258038d51",
+      "utf8Bytes": 13688410,
+      "writes": 810,
+      "units": 12678410,
+      "endpoints": 12777230,
+      "logicalWrites": 20001,
+      "logicalChunkHash": "9c2b093704c760f6e150cbda74c6b8c0ad9a647afbfc1db4c5cf0c62c65fa7d0",
+      "physicalChunkHash": "8fee565d9524ad547371f27e5e5f3e8d54037970937c7046217699f95aa059e8"
+    }
+  ],
+  "results": [
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 15.005,
+      "wallMs": 9.591457999999989,
+      "heapBefore": 14288504,
+      "heapAfter": 15574504,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 16.874,
+      "wallMs": 11.020749999999992,
+      "heapBefore": 14298640,
+      "heapAfter": 15502712,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 16.119,
+      "wallMs": 12.40016700000001,
+      "heapBefore": 14329120,
+      "heapAfter": 20308104,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 9.495,
+      "wallMs": 6.883250000000004,
+      "heapBefore": 14339512,
+      "heapAfter": 15138632,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 16.783,
+      "wallMs": 10.695792000000012,
+      "heapBefore": 14385040,
+      "heapAfter": 15621856,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 13.894,
+      "wallMs": 11.823707999999982,
+      "heapBefore": 14325656,
+      "heapAfter": 20392016,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 8.955,
+      "wallMs": 7.277375000000006,
+      "heapBefore": 14366536,
+      "heapAfter": 15478056,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 17.579,
+      "wallMs": 10.297500000000042,
+      "heapBefore": 14375032,
+      "heapAfter": 15610240,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 16.105,
+      "wallMs": 12.344749999999976,
+      "heapBefore": 14380472,
+      "heapAfter": 20406480,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 8.716,
+      "wallMs": 7.133749999999964,
+      "heapBefore": 14419400,
+      "heapAfter": 15149416,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 17.483,
+      "wallMs": 10.193208000000027,
+      "heapBefore": 14425096,
+      "heapAfter": 15615952,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 14.82,
+      "wallMs": 9.608082999999965,
+      "heapBefore": 14425848,
+      "heapAfter": 15577216,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 9.162,
+      "wallMs": 7.361207999999976,
+      "heapBefore": 14417896,
+      "heapAfter": 15152488,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 18.047,
+      "wallMs": 9.961708999999985,
+      "heapBefore": 14426496,
+      "heapAfter": 15635656,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 16.129,
+      "wallMs": 10.503166000000022,
+      "heapBefore": 14423864,
+      "heapAfter": 15569096,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 14.178,
+      "wallMs": 11.66595799999999,
+      "heapBefore": 14426280,
+      "heapAfter": 20409336,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 23.255,
+      "wallMs": 9.970041999999978,
+      "heapBefore": 14426024,
+      "heapAfter": 15655552,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 19.83,
+      "wallMs": 9.869041000000038,
+      "heapBefore": 14443944,
+      "heapAfter": 15360848,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 18.256,
+      "wallMs": 12.028082999999981,
+      "heapBefore": 14464480,
+      "heapAfter": 20296840,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 8.938,
+      "wallMs": 6.643457999999953,
+      "heapBefore": 14492048,
+      "heapAfter": 15268616,
+      "writes": 80,
+      "units": 1128200,
+      "endpoints": 1137960
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 96.046,
+      "wallMs": 83.35699999999997,
+      "heapBefore": 20895456,
+      "heapAfter": 29088920,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 96.781,
+      "wallMs": 82.85675000000003,
+      "heapBefore": 20842656,
+      "heapAfter": 44763000,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 113.44,
+      "wallMs": 95.42066599999998,
+      "heapBefore": 20830000,
+      "heapAfter": 43518776,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 74.36,
+      "wallMs": 63.64633299999991,
+      "heapBefore": 20851640,
+      "heapAfter": 46968584,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 92.511,
+      "wallMs": 78.98108300000001,
+      "heapBefore": 20897392,
+      "heapAfter": 44813552,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 111.877,
+      "wallMs": 95.102083,
+      "heapBefore": 20844368,
+      "heapAfter": 42931696,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 74.865,
+      "wallMs": 63.902250000000095,
+      "heapBefore": 20854304,
+      "heapAfter": 46971248,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 92.17,
+      "wallMs": 79.59862500000008,
+      "heapBefore": 20912120,
+      "heapAfter": 45862456,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 112.305,
+      "wallMs": 94.96549999999979,
+      "heapBefore": 20848496,
+      "heapAfter": 42933280,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 77.287,
+      "wallMs": 65.77945899999986,
+      "heapBefore": 20855784,
+      "heapAfter": 46971848,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 91.307,
+      "wallMs": 79.85000000000014,
+      "heapBefore": 20905208,
+      "heapAfter": 45857080,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 89.821,
+      "wallMs": 78.50870799999984,
+      "heapBefore": 20848192,
+      "heapAfter": 44743944,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 74.552,
+      "wallMs": 63.87324999999987,
+      "heapBefore": 20848040,
+      "heapAfter": 46965952,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 88.737,
+      "wallMs": 77.62349999999992,
+      "heapBefore": 20898160,
+      "heapAfter": 45848064,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 89.006,
+      "wallMs": 78.39095799999996,
+      "heapBefore": 20851024,
+      "heapAfter": 44744840,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 111.197,
+      "wallMs": 95.39404100000002,
+      "heapBefore": 20857600,
+      "heapAfter": 42938824,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 90.664,
+      "wallMs": 79.69104100000004,
+      "heapBefore": 20864360,
+      "heapAfter": 45811144,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 88.705,
+      "wallMs": 78.14562500000011,
+      "heapBefore": 20860472,
+      "heapAfter": 44751168,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 111.52,
+      "wallMs": 95.3247080000001,
+      "heapBefore": 20853192,
+      "heapAfter": 42934944,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 75.913,
+      "wallMs": 64.88841700000012,
+      "heapBefore": 20856344,
+      "heapAfter": 46967352,
+      "writes": 760,
+      "units": 11496200,
+      "endpoints": 11588920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 398.327,
+      "wallMs": 386.51441699999987,
+      "heapBefore": 49584968,
+      "heapAfter": 86490816,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 399.055,
+      "wallMs": 386.10283400000026,
+      "heapBefore": 49541496,
+      "heapAfter": 86436656,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 488.363,
+      "wallMs": 481.5251250000001,
+      "heapBefore": 49557096,
+      "heapAfter": 91195552,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 320.961,
+      "wallMs": 309.29862499999945,
+      "heapBefore": 49587936,
+      "heapAfter": 90701416,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 403.079,
+      "wallMs": 390.1563750000005,
+      "heapBefore": 49597664,
+      "heapAfter": 86494952,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 481.96,
+      "wallMs": 465.91445900000053,
+      "heapBefore": 49549656,
+      "heapAfter": 91190368,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 324.585,
+      "wallMs": 313.36179100000027,
+      "heapBefore": 49599384,
+      "heapAfter": 90711984,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 402.366,
+      "wallMs": 388.735917,
+      "heapBefore": 49598376,
+      "heapAfter": 86501848,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 478.884,
+      "wallMs": 464.57800000000043,
+      "heapBefore": 49552200,
+      "heapAfter": 91188088,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 321.85,
+      "wallMs": 310.0717080000004,
+      "heapBefore": 49598184,
+      "heapAfter": 90710784,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 399.696,
+      "wallMs": 386.4468339999994,
+      "heapBefore": 49599064,
+      "heapAfter": 86506664,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 397.944,
+      "wallMs": 385.2669590000005,
+      "heapBefore": 49543832,
+      "heapAfter": 86438144,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 325.307,
+      "wallMs": 313.2306660000013,
+      "heapBefore": 49590024,
+      "heapAfter": 90704864,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 405.198,
+      "wallMs": 391.6668329999993,
+      "heapBefore": 49591848,
+      "heapAfter": 86495288,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 399.696,
+      "wallMs": 386.5505830000002,
+      "heapBefore": 49542752,
+      "heapAfter": 86437064,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 476.831,
+      "wallMs": 461.94254199999887,
+      "heapBefore": 49556032,
+      "heapAfter": 91196728,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 402.563,
+      "wallMs": 389.56475000000137,
+      "heapBefore": 49558032,
+      "heapAfter": 86459928,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 400.471,
+      "wallMs": 387.31695800000125,
+      "heapBefore": 49557280,
+      "heapAfter": 86456656,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 480.776,
+      "wallMs": 466.00983300000007,
+      "heapBefore": 49558600,
+      "heapAfter": 91194472,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 10,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 324.517,
+      "wallMs": 312.7412920000006,
+      "heapBefore": 49600576,
+      "heapAfter": 90713176,
+      "writes": 3760,
+      "units": 58456200,
+      "endpoints": 58875920
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 35.818,
+      "wallMs": 29.135792000000947,
+      "heapBefore": 17408496,
+      "heapAfter": 39531136,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 34.362,
+      "wallMs": 28.227708000000348,
+      "heapBefore": 17380880,
+      "heapAfter": 39504656,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 34.734,
+      "wallMs": 29.95783300000039,
+      "heapBefore": 17422552,
+      "heapAfter": 23705296,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 30.643,
+      "wallMs": 25.61016699999891,
+      "heapBefore": 17431584,
+      "heapAfter": 23923056,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 36.419,
+      "wallMs": 29.392916999999215,
+      "heapBefore": 17783944,
+      "heapAfter": 39906960,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 33.98,
+      "wallMs": 32.14691700000003,
+      "heapBefore": 17427064,
+      "heapAfter": 23576688,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 28.078,
+      "wallMs": 26.49933299999975,
+      "heapBefore": 17400800,
+      "heapAfter": 23540824,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 36.175,
+      "wallMs": 28.599874999999884,
+      "heapBefore": 17402280,
+      "heapAfter": 39538792,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 35.314,
+      "wallMs": 31.832832999998573,
+      "heapBefore": 17403552,
+      "heapAfter": 23561992,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 27.18,
+      "wallMs": 25.628083999999944,
+      "heapBefore": 17414400,
+      "heapAfter": 23548816,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 35.074,
+      "wallMs": 28.259667000000263,
+      "heapBefore": 17419496,
+      "heapAfter": 39535424,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 34.501,
+      "wallMs": 28.23804199999904,
+      "heapBefore": 17424040,
+      "heapAfter": 39535752,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 27.723,
+      "wallMs": 26.05304099999921,
+      "heapBefore": 17415984,
+      "heapAfter": 23549368,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 35.659,
+      "wallMs": 28.69499999999971,
+      "heapBefore": 17411984,
+      "heapAfter": 39529824,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 34.967,
+      "wallMs": 28.370249999999942,
+      "heapBefore": 17407464,
+      "heapAfter": 39526240,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 34.177,
+      "wallMs": 31.87195900000006,
+      "heapBefore": 17408672,
+      "heapAfter": 23556128,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 41.502,
+      "wallMs": 28.11908300000141,
+      "heapBefore": 17414512,
+      "heapAfter": 39653800,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 41.532,
+      "wallMs": 28.77258400000028,
+      "heapBefore": 17445576,
+      "heapAfter": 39603504,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 38.665,
+      "wallMs": 31.826332999999067,
+      "heapBefore": 17473392,
+      "heapAfter": 23668192,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 100,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 30.773,
+      "wallMs": 25.826084000000264,
+      "heapBefore": 17508232,
+      "heapAfter": 23994520,
+      "writes": 300,
+      "units": 4880200,
+      "endpoints": 4916800
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 283.178,
+      "wallMs": 270.48758299999827,
+      "heapBefore": 44964920,
+      "heapAfter": 69663984,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 289.732,
+      "wallMs": 281.7424580000006,
+      "heapBefore": 44582328,
+      "heapAfter": 69259840,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 319.186,
+      "wallMs": 281.98104200000125,
+      "heapBefore": 44593600,
+      "heapAfter": 53338536,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 302.588,
+      "wallMs": 251.13012499999968,
+      "heapBefore": 44618920,
+      "heapAfter": 51530032,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 282.029,
+      "wallMs": 271.4660409999997,
+      "heapBefore": 44857192,
+      "heapAfter": 69534640,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 321.905,
+      "wallMs": 285.6035000000011,
+      "heapBefore": 44604256,
+      "heapAfter": 52806792,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 303.022,
+      "wallMs": 252.45979199999965,
+      "heapBefore": 44607560,
+      "heapAfter": 51520928,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 280.566,
+      "wallMs": 272.4720839999991,
+      "heapBefore": 44860600,
+      "heapAfter": 69533320,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 322.269,
+      "wallMs": 285.96258299999863,
+      "heapBefore": 44606944,
+      "heapAfter": 52809552,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 304.755,
+      "wallMs": 253.7835840000007,
+      "heapBefore": 44610408,
+      "heapAfter": 51523776,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 281.286,
+      "wallMs": 270.92504199999894,
+      "heapBefore": 44861392,
+      "heapAfter": 69532176,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 280.26,
+      "wallMs": 269.7830839999988,
+      "heapBefore": 44595568,
+      "heapAfter": 69272912,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 301.715,
+      "wallMs": 251.216124999999,
+      "heapBefore": 44595216,
+      "heapAfter": 51509296,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 284.85,
+      "wallMs": 273.5998749999999,
+      "heapBefore": 44847400,
+      "heapAfter": 69516072,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 281.657,
+      "wallMs": 270.5635829999992,
+      "heapBefore": 44596848,
+      "heapAfter": 69260720,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 329.847,
+      "wallMs": 290.9070839999986,
+      "heapBefore": 44613216,
+      "heapAfter": 52817496,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 281.369,
+      "wallMs": 271.42912499999875,
+      "heapBefore": 44619504,
+      "heapAfter": 69281544,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 281.964,
+      "wallMs": 272.1122910000013,
+      "heapBefore": 44613776,
+      "heapAfter": 69273384,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 329.457,
+      "wallMs": 291.66058300000077,
+      "heapBefore": 44609920,
+      "heapAfter": 52808104,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 1000,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 302.184,
+      "wallMs": 251.28529100000014,
+      "heapBefore": 44611352,
+      "heapAfter": 51517424,
+      "writes": 2860,
+      "units": 49808200,
+      "endpoints": 50157120
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1387.106,
+      "wallMs": 1376.7489999999998,
+      "heapBefore": 167750888,
+      "heapAfter": 175493816,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1381.418,
+      "wallMs": 1374.5745410000018,
+      "heapBefore": 167390808,
+      "heapAfter": 226816416,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1447.274,
+      "wallMs": 1407.1896670000024,
+      "heapBefore": 167383688,
+      "heapAfter": 216580096,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 0,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1282.008,
+      "wallMs": 1228.8330830000014,
+      "heapBefore": 167622064,
+      "heapAfter": 222727856,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1387.307,
+      "wallMs": 1374.8264999999992,
+      "heapBefore": 167634568,
+      "heapAfter": 227060728,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1449.551,
+      "wallMs": 1408.8819999999978,
+      "heapBefore": 167383392,
+      "heapAfter": 216578952,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1301.678,
+      "wallMs": 1247.7757500000007,
+      "heapBefore": 167633248,
+      "heapAfter": 222696768,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 1,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1392.026,
+      "wallMs": 1383.590333,
+      "heapBefore": 167635280,
+      "heapAfter": 175382512,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1459.063,
+      "wallMs": 1418.036957999997,
+      "heapBefore": 167385184,
+      "heapAfter": 216580712,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1288.435,
+      "wallMs": 1235.246791999998,
+      "heapBefore": 167635240,
+      "heapAfter": 222698760,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1377.113,
+      "wallMs": 1363.455584000003,
+      "heapBefore": 167637352,
+      "heapAfter": 175396112,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 2,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1405.11,
+      "wallMs": 1391.7840419999993,
+      "heapBefore": 167398264,
+      "heapAfter": 226836336,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1295.458,
+      "wallMs": 1242.0865410000042,
+      "heapBefore": 167619984,
+      "heapAfter": 222683472,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1398.328,
+      "wallMs": 1385.2150420000035,
+      "heapBefore": 167619920,
+      "heapAfter": 175375880,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1403.445,
+      "wallMs": 1391.3830839999937,
+      "heapBefore": 167371528,
+      "heapAfter": 226796624,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 3,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1459.554,
+      "wallMs": 1425.9466250000041,
+      "heapBefore": 167392016,
+      "heapAfter": 216539568,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "preserved-baseline",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1410.734,
+      "wallMs": 1395.8978750000024,
+      "heapBefore": 167393944,
+      "heapAfter": 175957200,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-OFF",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1397.869,
+      "wallMs": 1384.1560420000023,
+      "heapBefore": 167395136,
+      "heapAfter": 226833176,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "new-ON",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1457.949,
+      "wallMs": 1423.2454590000052,
+      "heapBefore": 167394512,
+      "heapAfter": 216536232,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    },
+    {
+      "fields": 50,
+      "rows": 5000,
+      "lane": "hand",
+      "repeat": 4,
+      "iterations": 20,
+      "completedPages": 20,
+      "cpuMs": 1306.77,
+      "wallMs": 1258.780375000002,
+      "heapBefore": 167639592,
+      "heapAfter": 222703080,
+      "writes": 16200,
+      "units": 253568200,
+      "endpoints": 255544600
+    }
+  ],
+  "eligibility": "Inline native JSX directly consumed by named imported renderToWriter within renderCard function block; author already awaits each renderCard from loop. Primitive fields/real attribute records, no AbortSignal. Signal/object/component/structural/eval/map/callback producers and renderToString coverage are not claimed. Separate untimed proof verifies actual generated clean setup/admission with zero shadow/setupfallback for every size; timed artifacts are uninstrumented. This is not actual allocation-volume evidence or exhaustive guarded semantic equivalence.",
+  "methodology": "Host pure-render diagnostic only, no HTTP/competitor/.NET claims. Same exact source against genuine preserved742d2ec compiler/runtime snapshot versus current optionOFF/ON; separate clean-data handwritten desired-shape reference. All lanes use the same imported NodeStreamWriter and accepting observable sink. Fresh config/seed/writer/captures and every author-await loop iteration are measured; no finalHTML cache. Full byte plus logical/physical chunk schedules verified outside timing. Constant-cost output counters verified per trial. Five rotated repeats by default. Heap drift is neither allocations nor retained memory. Bundles include actual runtimes; external fixture helper/shared writer footprint recorded separately."
+}

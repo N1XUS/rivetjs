@@ -1,0 +1,24 @@
+import { signal } from "@rivetjs/reactivity";
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export interface <%= className %>Props {
+  /** Button text. */
+  label?: string;
+  children?: Content;
+}
+
+/**
+ * <%= className %>. The click handler is an inline arrow: the compiler captures it, so on a resumed page the button
+ * works without running the component in the browser (its code loads on first interaction).
+ */
+export function <%= className %>(props: <%= className %>Props) {
+  const count = signal(0);
+  return (
+    <div class="<%= cssName %>">
+      {props.children}
+      <button type="button" onClick={() => count.update((n) => n + 1)}>
+        {props.label ?? "Clicked"} {count()}
+      </button>
+    </div>
+  );
+}

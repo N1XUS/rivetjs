@@ -1,0 +1,4 @@
+/* ui page-CSS fixtures: the starter-ui stylesheet (templates/starter-ui/src/styles.css). */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";

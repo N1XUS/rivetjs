@@ -1,0 +1,36 @@
+/* Plain CSS: the viewport's cdk-* classes, no utilities in the markup. */
+@import "@rivetjs/cdk/scrolling.css";
+
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+
+/* .cdk-virtual-scroll-viewport is the element; .cdk-virtual-scrollable is added when it scrolls itself. */
+.cdk-virtual-scroll-viewport.cdk-virtual-scrollable {
+  width: 320px;
+  height: 240px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+/* Orientation classes: cdk-virtual-scroll-orientation-vertical / -horizontal. */
+.cdk-virtual-scroll-orientation-vertical .cdk-virtual-scroll-content-wrapper {
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+/* Rows inside the translated content wrapper. */
+.cdk-virtual-scroll-content-wrapper > .item {
+  box-sizing: border-box;
+  height: 44px;
+  margin-top: 4px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+}

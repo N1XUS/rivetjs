@@ -1,0 +1,120 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 and HeroUI Pro have no masonry / bento grid). Masonry + Bento in the HeroUI visual language on HeroUI tokens. Placement = `@rivetjs/cdk/masonry` (inline absolute positions / CSS columns / native grid from the server, transforms in measured mode): this sheet only draws the item surfaces, focus / selected rings, loader and empty state. */
+/* -------------------------------------------------------------------------------------------------
+ * Masonry / Bento Component Styles
+ * Blocks: masonry, bento (elements grid / item / loader / empty)
+ * State: root [data-layout="exact" | "justified" | "mixed" | "measure" | "virtual" | "dense" | "skyline" | "auto"]; grid [data-measured];
+ * item [data-focus-visible], [data-selected], [data-disabled]; loader [data-loading]
+ * Variables: --masonry-radius, --bento-radius
+ * -----------------------------------------------------------------------------------------------*/
+
+/* Grid custom properties registered as lengths: each masked column width is computed once on the grid instead of per
+   item (style recalc ~3x faster for 1k items; layout identical without it). Same names as `@rivetjs/cdk/masonry.css`. */
+@property --rv-mw { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m0 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w0 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m1 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w1 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m2 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w2 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m3 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w3 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m4 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w4 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m5 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w5 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m6 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w6 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m7 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w7 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m8 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w8 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m9 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w9 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m10 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w10 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-m11 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --rv-w11 { syntax: "<length>"; inherits: true; initial-value: 0px; }
+
+/**
+ * Blocks: masonry / bento - the container (inline-size container set inline by the cdk)
+ */
+.masonry,
+.bento {
+  --masonry-radius: min(24px, var(--radius-3xl));
+  --bento-radius: min(28px, var(--radius-3xl));
+  @apply block w-full;
+}
+
+/**
+ * Element: grid - the role=grid / list element (positions are inline)
+ */
+.masonry__grid,
+.bento__grid {
+  @apply outline-none;
+}
+
+/**
+ * Element: item - one tile surface; direct images / videos fill it
+ */
+.masonry__item,
+.bento__item {
+  @apply overflow-hidden outline-none;
+  border-radius: var(--masonry-radius);
+  transition: box-shadow 150ms var(--ease-out, ease-out), opacity 150ms ease-out;
+
+  & > [role="gridcell"] {
+    @apply h-full w-full;
+  }
+
+  & :is(img, picture, video) {
+    @apply block h-full w-full object-cover;
+  }
+
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-selected="true"] {
+    box-shadow:
+      0 0 0 2px var(--background),
+      0 0 0 4px var(--accent);
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.bento__item {
+  border-radius: var(--bento-radius);
+}
+
+/* Measured masonry: items move by transform once measured; no transition (reflow is instant, like the first paint;
+   relayouts after an item change animate through the cdk FLIP, not CSS). */
+.masonry:is([data-layout="measure"], [data-layout="mixed"]) .masonry__item {
+  transition: none;
+}
+
+/**
+ * Element: loader - shown while `isLoading` (spinner / skeleton goes in `renderLoader`)
+ */
+.masonry__loader,
+.bento__loader {
+  @apply flex items-center justify-center py-6 text-sm text-muted;
+
+  &[hidden] {
+    @apply hidden;
+  }
+}
+
+/**
+ * Element: empty - `renderEmptyState` row
+ */
+.masonry__empty,
+.bento__empty {
+  @apply flex items-center justify-center py-10 text-sm text-muted;
+}

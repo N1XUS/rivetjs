@@ -1,0 +1,107 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no citations). Feature set inspired by HeroUI Pro's public ChatSource docs; independent implementation on HeroUI tokens. Preview composes `.tooltip`; ChatSources composes `.disclosure*`. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatSource Component Styles
+ * Blocks: chat-source (trigger / trigger-link / icon / icon-fallback / document-icon / title / preview / preview-site
+ *         / preview-domain / preview-title / preview-description), chat-sources (heading / trigger / indicator / content
+ *         / body / list / favicons / favicon)
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-source {
+  @apply inline-flex max-w-full align-middle;
+}
+
+.chat-source__trigger {
+  @apply inline-flex max-w-full;
+}
+
+.chat-source__trigger-link {
+  cursor: var(--cursor-interactive);
+  @apply inline-flex h-6 max-w-56 items-center gap-1.5 rounded-full bg-default px-2 text-xs font-medium text-foreground no-underline outline-none transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+
+  &:hover {
+    @apply bg-default-hover;
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+.chat-source__icon,
+.chat-source__icon-fallback {
+  @apply size-4 shrink-0 rounded-full object-cover;
+}
+
+.chat-source__icon-fallback {
+  @apply inline-flex items-center justify-center bg-accent-soft text-[9px] leading-none font-semibold text-accent-soft-foreground;
+}
+
+.chat-source__document-icon {
+  @apply size-3.5 shrink-0 text-muted;
+}
+
+.chat-source__title {
+  @apply truncate;
+}
+
+.chat-source__preview {
+  @apply flex max-w-72 flex-col gap-1 px-3 py-2.5 text-start;
+}
+
+.chat-source__preview-site {
+  @apply flex items-center gap-1.5 text-xs text-muted;
+}
+
+.chat-source__preview-domain {
+  @apply truncate;
+}
+
+.chat-source__preview-title {
+  @apply text-sm leading-5 font-medium text-foreground;
+}
+
+.chat-source__preview-description {
+  @apply line-clamp-3 text-xs leading-4 text-muted;
+}
+
+/* Grouped sources */
+.chat-sources {
+  @apply flex w-full min-w-0 flex-col;
+}
+
+.chat-sources__heading {
+  @apply m-0 flex text-sm font-normal;
+}
+
+.chat-sources__trigger {
+  @apply -mx-1.5 flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm text-muted transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+
+  &:hover,
+  &[data-hovered="true"] {
+    @apply text-foreground;
+  }
+}
+
+.chat-sources__indicator {
+  @apply ms-0 size-3.5;
+}
+
+.chat-sources__body {
+  @apply pt-2;
+}
+
+.chat-sources__list {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.chat-sources__favicons {
+  @apply inline-flex items-center;
+}
+
+.chat-sources__favicon {
+  @apply size-4 shrink-0 rounded-full object-cover ring-2 ring-background;
+
+  & + & {
+    @apply -ms-1.5;
+  }
+}

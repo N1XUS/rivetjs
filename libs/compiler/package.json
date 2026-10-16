@@ -1,0 +1,76 @@
+{
+  "name": "@rivetjs/compiler",
+  "version": "0.0.0-experimental",
+  "description": "Rivet compiler (Rust/oxc → WebAssembly) and Vite plugin: JSX to streaming server output and DOM templates, ?image / ?svg / ?jsx imports.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./editor": {
+      "types": "./editor.ts",
+      "default": "./editor.ts"
+    },
+    "./codes": {
+      "types": "./codes.ts",
+      "default": "./codes.ts"
+    },
+    "./codes.json": "./codes.json",
+    "./format": {
+      "types": "./diagnostics-format.ts",
+      "default": "./diagnostics-format.ts"
+    },
+    "./images": {
+      "types": "./images/index.ts",
+      "default": "./images/index.ts"
+    },
+    "./images/client": {
+      "types": "./images/client.d.ts"
+    }
+  },
+  "scripts": {
+    "parity": "node oracle/check.ts",
+    "build:wasm": "rust/build.sh"
+  },
+  "dependencies": {
+    "svgo": "4.1.0"
+  },
+  "peerDependencies": {
+    "@rivetjs/bridge": "0.0.0-experimental",
+    "@rivetjs/devtools": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+    "sharp": "^0.35.5",
+    "vite": "^8.3.2"
+  },
+  "peerDependenciesMeta": {
+    "@rivetjs/bridge": {
+      "optional": true
+    },
+    "@rivetjs/devtools": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    },
+    "sharp": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/compiler"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

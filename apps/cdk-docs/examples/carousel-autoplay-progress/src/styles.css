@@ -1,0 +1,45 @@
+/* Tailwind, with the cdk state variants (focused:, orientation-*:, entering:, …). */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/tailwind.css";
+@source "./**/*.{ts,tsx}";
+
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+
+/* embla's autoplay progress: the bar slides across while the timer runs, hidden (and paused) when it stops. */
+.progress {
+  position: relative;
+  width: 8rem;
+  height: 0.375rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--color-slate-200);
+  transition: opacity 0.3s ease-in-out;
+}
+.progress[data-hidden] {
+  opacity: 0;
+}
+.progress-bar {
+  position: absolute;
+  inset: 0 auto 0 -100%;
+  width: 100%;
+  background: var(--color-indigo-600);
+  animation-name: autoplay-progress;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+}
+.progress[data-hidden] .progress-bar {
+  animation-play-state: paused;
+}
+@keyframes autoplay-progress {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}

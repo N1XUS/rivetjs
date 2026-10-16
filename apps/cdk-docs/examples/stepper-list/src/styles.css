@@ -1,0 +1,47 @@
+/* Plain CSS on the ol / li markup: aria-current marks the current step. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.rv-Stepper {
+  display: flex;
+  gap: 8px;
+  margin: 16px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.rv-Step {
+  counter-increment: step;
+}
+
+.rv-StepHeader {
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: white;
+  font: inherit;
+}
+
+.rv-StepHeader::before {
+  content: counter(step) ". ";
+}
+
+button.rv-StepHeader {
+  cursor: pointer;
+}
+
+.rv-Step[aria-current="step"] .rv-StepHeader {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+p {
+  margin: 0 16px;
+}

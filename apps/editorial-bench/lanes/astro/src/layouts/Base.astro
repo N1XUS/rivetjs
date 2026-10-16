@@ -1,0 +1,5 @@
+---
+const { title, description } = Astro.props;
+const nav = ["politics", "economy", "climate", "science", "health"];
+---
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{title} | The Daily Fixture</title><meta name="description" content={description}><link rel="stylesheet" href="/site.css"></head><body><header class="site"><a class="brand" href="/">The Daily Fixture</a><nav>{nav.map((t) => <a href={`/tags/${t}/`}>{t}</a>)}</nav></header><slot /><footer class="site"><p>The Daily Fixture · benchmark fixture content</p></footer></body></html>

@@ -1,0 +1,492 @@
+{
+  "sourceCommit": "e9aa38b",
+  "image": "sha256:7925f682857df6d9dc979311ac8a6f30a360f5973ede9c99ad9463e2f171d03c",
+  "artifactSha256": "c4e02c45baae89244e04687b476874532535b1455c055ebbafd8b246160ba97f",
+  "methodology": "Full current HTTP/RPC/render path in temporary 1CPU512MiB production image.20 warmups per size;500 sequential1000-row requests then2005000-row requests;host Node fetch validates field count/token/completion. Inspector profile overhead and short warmup invalidate throughput comparisons. URL-based self samples are diagnostic categories, not isolated CPUms; dynamically generated and native frames may lack URLs.",
+  "requests": [
+    {
+      "index": 0,
+      "rows": 1000,
+      "requests": 500,
+      "totalBytes": 344245390,
+      "counters": {
+        "completed": 500,
+        "failed": 0,
+        "cancelled": 0,
+        "rpcMs": 571.9939129999402,
+        "parseMs": 0.10313100006897002,
+        "renderMs": 2295.220746000283
+      },
+      "control": {
+        "cpuMs": 4224.54,
+        "wallMs": 4428.325543999992,
+        "samples": 2160
+      }
+    },
+    {
+      "index": 1,
+      "rows": 5000,
+      "requests": 200,
+      "totalBytes": 697698090,
+      "counters": {
+        "completed": 200,
+        "failed": 0,
+        "cancelled": 0,
+        "rpcMs": 871.8077139999368,
+        "parseMs": 0.03124999994179234,
+        "renderMs": 3940.9599589999416
+      },
+      "control": {
+        "cpuMs": 6190.642,
+        "wallMs": 6273.348669999992,
+        "samples": 2751
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "file": ".artifacts/ssr-bench/task7-request-profile/request-0.cpuprofile",
+      "bytes": 111611,
+      "sha256": "499baa5d04bbef69f7e523d1ba951e4b83cd3e364cb3c1c2bbc2bd243ee82941",
+      "samples": 2160,
+      "urlBasedSelfSampleCounts": {
+        "node": 138,
+        "idle": 709,
+        "compiled": 693,
+        "unattributed/native": 218,
+        "gc": 326,
+        "server/services": 7,
+        "grpc": 55,
+        "protobuf": 14
+      },
+      "topFrames": [
+        {
+          "samples": 709,
+          "frame": {
+            "functionName": "(idle)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 326,
+          "frame": {
+            "functionName": "(garbage collector)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 119,
+          "frame": {
+            "functionName": "C",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 440
+          }
+        },
+        {
+          "samples": 98,
+          "frame": {
+            "functionName": "",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 4622
+          }
+        },
+        {
+          "samples": 94,
+          "frame": {
+            "functionName": "T",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 4275
+          }
+        },
+        {
+          "samples": 48,
+          "frame": {
+            "functionName": "m",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3887
+          }
+        },
+        {
+          "samples": 46,
+          "frame": {
+            "functionName": "writev",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 45,
+          "frame": {
+            "functionName": "a",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 8310
+          }
+        },
+        {
+          "samples": 34,
+          "frame": {
+            "functionName": "(program)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 31,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 29,
+          "frame": {
+            "functionName": "Y",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 5127
+          }
+        },
+        {
+          "samples": 18,
+          "frame": {
+            "functionName": "Row$decode",
+            "scriptId": "402",
+            "url": "",
+            "lineNumber": 2,
+            "columnNumber": 26
+          }
+        },
+        {
+          "samples": 18,
+          "frame": {
+            "functionName": "p",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 5072
+          }
+        },
+        {
+          "samples": 16,
+          "frame": {
+            "functionName": "m",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3887
+          }
+        },
+        {
+          "samples": 15,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 14,
+          "frame": {
+            "functionName": "p",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 5072
+          }
+        },
+        {
+          "samples": 13,
+          "frame": {
+            "functionName": "Y",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 5127
+          }
+        },
+        {
+          "samples": 13,
+          "frame": {
+            "functionName": "m",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3887
+          }
+        },
+        {
+          "samples": 11,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 10,
+          "frame": {
+            "functionName": "C",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 440
+          }
+        }
+      ]
+    },
+    {
+      "file": ".artifacts/ssr-bench/task7-request-profile/request-1.cpuprofile",
+      "bytes": 90565,
+      "sha256": "ec3efd5d158a6b6d43e68fca323024d1696dcade2fde928b3bb3457b4c61d805",
+      "samples": 2751,
+      "urlBasedSelfSampleCounts": {
+        "node": 118,
+        "idle": 638,
+        "grpc": 18,
+        "protobuf": 4,
+        "compiled": 1122,
+        "unattributed/native": 372,
+        "gc": 478,
+        "server/services": 1
+      },
+      "topFrames": [
+        {
+          "samples": 638,
+          "frame": {
+            "functionName": "(idle)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 478,
+          "frame": {
+            "functionName": "(garbage collector)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 179,
+          "frame": {
+            "functionName": "",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 4622
+          }
+        },
+        {
+          "samples": 177,
+          "frame": {
+            "functionName": "C",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 440
+          }
+        },
+        {
+          "samples": 176,
+          "frame": {
+            "functionName": "T",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 4275
+          }
+        },
+        {
+          "samples": 110,
+          "frame": {
+            "functionName": "a",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 8310
+          }
+        },
+        {
+          "samples": 82,
+          "frame": {
+            "functionName": "m",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3887
+          }
+        },
+        {
+          "samples": 75,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 70,
+          "frame": {
+            "functionName": "writev",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 44,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 42,
+          "frame": {
+            "functionName": "p",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 5072
+          }
+        },
+        {
+          "samples": 35,
+          "frame": {
+            "functionName": "O",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 680
+          }
+        },
+        {
+          "samples": 34,
+          "frame": {
+            "functionName": "writev",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 34,
+          "frame": {
+            "functionName": "l",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3642
+          }
+        },
+        {
+          "samples": 30,
+          "frame": {
+            "functionName": "",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 30,
+          "frame": {
+            "functionName": "(program)",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 28,
+          "frame": {
+            "functionName": "",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 8756
+          }
+        },
+        {
+          "samples": 27,
+          "frame": {
+            "functionName": "writev",
+            "scriptId": "0",
+            "url": "",
+            "lineNumber": -1,
+            "columnNumber": -1
+          }
+        },
+        {
+          "samples": 24,
+          "frame": {
+            "functionName": "ct",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 486
+          }
+        },
+        {
+          "samples": 23,
+          "frame": {
+            "functionName": "m",
+            "scriptId": "378",
+            "url": "file:///workspace/apps/ssr-bench/dist/rivet-compiled.mjs",
+            "lineNumber": 0,
+            "columnNumber": 3887
+          }
+        }
+      ]
+    }
+  ],
+  "scripts": {
+    "rivet-profile-server.mjs": "import { Session } from 'node:inspector';\nimport { writeFile } from 'node:fs/promises';\nawait import('/workspace/apps/ssr-bench/server.mjs');\nconst session=new Session();session.connect();\nconst post=method=>new Promise((resolve,reject)=>session.post(method,(error,data)=>error?reject(error):resolve(data)));\nlet active=false,busy=false,index=0,cpu,start;\nprocess.on('SIGUSR2',async()=>{\n if(busy)return;busy=true;\n try{\n  if(!active){await post('Profiler.enable');await post('Profiler.start');cpu=process.cpuUsage();start=performance.now();active=true;console.log('PROFILE_STARTED',index);}\n  else {const {profile}=await post('Profiler.stop');const usage=process.cpuUsage(cpu);await writeFile(`/evidence/request-${index}.cpuprofile`,JSON.stringify(profile));await writeFile(`/evidence/request-${index}-control.json`,JSON.stringify({cpuMs:(usage.user+usage.system)/1000,wallMs:performance.now()-start,samples:profile.samples.length}));console.log('PROFILE_SAVED',index++);active=false;}\n }catch(error){console.error(error);process.exitCode=1;}finally{busy=false;}\n});\nconsole.log('PROFILE_READY');\n",
+    "rivet-request-profile-driver.mjs": "import {execFileSync} from 'node:child_process';\nimport {writeFile,readFile} from 'node:fs/promises';\nconst name='rivet-ssr-profile-e9aa38b';const base='http://127.0.0.1:18109';\nconst docker=(...args)=>execFileSync('docker',args,{encoding:'utf8'});\nconst pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));\nasync function waitLog(marker){for(let i=0;i<200;i++){if(docker('logs',name).includes(marker))return;await pause(50);}throw Error('Missing '+marker);}\nasync function page(rows,token){const response=await fetch(`${base}/page?rows=${rows}&token=${token}`,{signal:AbortSignal.timeout(15000)});const body=await response.text();if(response.status!==200||(body.match(/<dd\\b/g)||[]).length!==rows*10||!body.includes(`data-token=\"${token}\"`)||!body.includes('<!--complete-->'))throw Error('Invalid page');return Buffer.byteLength(body);}\nconst results=[];\ntry{\n await waitLog('PROFILE_READY');\n for(const [index,rows,count] of [[0,1000,500],[1,5000,200]]){\n  for(let i=0;i<20;i++)await page(rows,`warm-${rows}-${i}`);\n  const before=await(await fetch(base+'/metrics')).json();\n  docker('kill','--signal=USR2',name);await waitLog('PROFILE_STARTED '+index);\n  let totalBytes=0;\n  for(let i=0;i<count;i++)totalBytes+=await page(rows,`profile-${rows}-${i}`);\n  docker('kill','--signal=USR2',name);await waitLog('PROFILE_SAVED '+index);\n  const after=await(await fetch(base+'/metrics')).json();\n  const control=JSON.parse(await readFile(`.artifacts/ssr-bench/task7-request-profile/request-${index}-control.json`));\n  const counters=Object.fromEntries(['completed','failed','cancelled','rpcMs','parseMs','renderMs'].map(k=>[k,after[k]-before[k]]));\n  if(counters.completed!==count||counters.failed||counters.cancelled)throw Error('Counter mismatch');\n  const result={index,rows,requests:count,totalBytes,counters,control};results.push(result);console.log(JSON.stringify(result));\n }\n await writeFile('.artifacts/ssr-bench/task7-request-profile/requests.json',JSON.stringify(results,null,2)+'\\n');\n}finally{docker('stop',name);}\n"
+  },
+  "scriptSha256": {
+    "rivet-profile-server.mjs": "1caae296f912ca613e4f9ac017e7d472e18a6e623d4700a30449db8af8560cc8",
+    "rivet-request-profile-driver.mjs": "baaec5efd81a5ebf82e4af4d36b47c59ee237a501470191073b819f7a350a3e3"
+  }
+}

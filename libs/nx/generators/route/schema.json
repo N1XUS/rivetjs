@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetRoute",
+  "title": "Rivet route",
+  "description": "Adds a file route (page) to a Rivet app: dynamic segments ([param], [[optional]], [...rest]), groups ((name)), optional serverLoad / serverActions / serverGuard and a folder layout.",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Route path under src/routes: about, blog/[slug], docs/[[lang]]/[...path], (marketing)/pricing, blog/index.",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-prompt": "Route path (under src/routes, e.g. blog/[slug])?"
+    },
+    "project": {
+      "type": "string",
+      "description": "The Rivet app.",
+      "$default": { "$source": "projectName" },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "loader": { "type": "boolean", "default": false, "description": "Add serverLoad and a typed data prop." },
+    "action": { "type": "boolean", "default": false, "description": "Add serverActions and a form that posts to it (node adapter only)." },
+    "guard": { "type": "boolean", "default": false, "description": "Add serverGuard." },
+    "layout": { "type": "boolean", "default": false, "description": "Also create _layout.tsx in the route's folder (when it has none)." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["path", "project"],
+  "additionalProperties": false
+}

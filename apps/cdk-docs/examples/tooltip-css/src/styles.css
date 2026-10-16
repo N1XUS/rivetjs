@@ -1,0 +1,41 @@
+/* Plain CSS on the default class names and state attributes. No Tailwind, no theme. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+}
+.rv-Button {
+  padding: 0.3rem 0.8rem;
+  font: inherit;
+}
+.rv-Tooltip {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #fff;
+  font-size: 12px;
+  transform-origin: var(--trigger-anchor-point);
+}
+.rv-Tooltip[data-entering] {
+  animation: grow 120ms ease-out;
+}
+.rv-Tooltip[data-exiting] {
+  animation: grow 80ms ease-in reverse;
+}
+.rv-OverlayArrow .tip {
+  display: block;
+  width: 8px;
+  height: 4px;
+  background: #1e293b;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.rv-OverlayArrow[data-placement="bottom"] .tip {
+  transform: rotate(180deg);
+}
+@keyframes grow {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}

@@ -1,0 +1,1006 @@
+/* Optional default theme for the rv-* default classes (used only when a component's class prop is
+   omitted). Tokens: override --rv-* on :root. Light / dark via light-dark(), forced colors honoured,
+   logical properties only (RTL needs nothing). Layer rivet.theme, zero specificity. Looks only:
+   behaviour needs no stylesheet (positioning, stacking and visually hidden text are set inline). */
+@layer rivet.theme {
+  :where(:root) {
+    color-scheme: light dark;
+    --rv-color-accent: light-dark(#0f766e, #2dd4bf);
+    --rv-color-accent-text: light-dark(#ffffff, #042f2e);
+    --rv-color-surface: light-dark(#ffffff, #0f172a);
+    --rv-color-border: light-dark(#cbd5e1, #334155);
+    --rv-color-muted: light-dark(#64748b, #94a3b8);
+    --rv-color-selected: light-dark(#ccfbf1, #134e4a);
+    --rv-color-text: light-dark(#0f172a, #e2e8f0);
+    --rv-radius: 0.375rem;
+    --rv-focus-ring: 2px solid var(--rv-color-accent);
+  }
+  :where(.rv-Button, .rv-ToggleButton, .rv-Select-trigger) {
+    padding-block: 0.5rem;
+    padding-inline: 0.875rem;
+    border: 1px solid var(--rv-color-border);
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-surface);
+    color: var(--rv-color-text);
+    font: inherit;
+    cursor: pointer;
+  }
+  :where(.rv-ToggleButton)[aria-pressed="true"] {
+    background: var(--rv-color-accent);
+    color: var(--rv-color-accent-text);
+  }
+  :where(.rv-ListBox, .rv-Menu, .rv-GridList, .rv-Tree, .rv-Popover, .rv-Dialog, .rv-Tooltip) {
+    border: 1px solid var(--rv-color-border);
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-surface);
+    color: var(--rv-color-text);
+    padding: 0.25rem;
+  }
+  /* RAC composition Popover > Dialog / Menu / ListBox: the popover is the box, its content is not. */
+  :where(.rv-Popover) :where(.rv-Dialog, .rv-Menu, .rv-ListBox) {
+    border: 0;
+    padding: 0;
+    background: none;
+  }
+  :where(.rv-Tooltip) {
+    padding-block: 0.25rem;
+    padding-inline: 0.5rem;
+    font-size: 0.875em;
+  }
+  :where(.rv-ModalOverlay) :where(.rv-Dialog) {
+    padding: 1.25rem;
+    max-inline-size: min(32rem, calc(100vw - 2rem));
+  }
+  :where(.rv-ModalOverlay) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(15 23 42 / 0.5);
+  }
+  :where(.rv-OverlayArrow) {
+    display: block;
+    line-height: 0;
+  }
+  :where(.rv-ListBoxItem, .rv-MenuItem, .rv-GridListItem, .rv-TreeItem) {
+    display: block;
+    inline-size: 100%;
+    padding-block: 0.375rem;
+    padding-inline: 0.625rem;
+    border: 0;
+    border-radius: calc(var(--rv-radius) - 2px);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    text-decoration: none;
+    cursor: default;
+  }
+  :where(.rv-ListBoxItem, .rv-GridListItem, .rv-TreeItem)[aria-selected="true"] {
+    background: var(--rv-color-selected);
+  }
+  :where([data-trigger="ComboBox"]) :where(.rv-ListBoxItem)[data-focused],
+  :where(.rv-MenuItem)[data-focus-visible] {
+    outline: var(--rv-focus-ring);
+    outline-offset: -2px;
+  }
+  :where(.rv-ListBoxItem, .rv-MenuItem, .rv-GridListItem, .rv-TreeItem)[aria-disabled="true"] {
+    color: var(--rv-color-muted);
+  }
+  /* --- ListBox --- */
+  :where(.rv-ListBox)[data-orientation="horizontal"] {
+    display: flex;
+    gap: 0.25rem;
+  }
+  :where(.rv-ListBox)[data-layout="grid"] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.25rem;
+  }
+  :where(.rv-ListBoxSection, .rv-MenuSection) > :where(.rv-Header),
+  :where(.rv-GridListHeader, .rv-TreeHeader) {
+    padding-block: 0.25rem;
+    padding-inline: 0.625rem;
+    color: var(--rv-color-muted);
+    font-size: 0.875em;
+    font-weight: 600;
+  }
+  /* Empty state (renderEmptyState): the listbox carries data-empty. */
+  :where(.rv-ListBox, .rv-GridList, .rv-Tree)[data-empty] {
+    padding-block: 0.375rem;
+    padding-inline: 0.625rem;
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-ListBoxItem, .rv-MenuItem) :where([slot="description"]) {
+    display: block;
+    color: var(--rv-color-muted);
+    font-size: 0.875em;
+  }
+  /* --- end ListBox --- */
+  /* Select: the popover is as wide as the trigger (--trigger-width, set by overlay positioning). */
+  :where(.rv-Select-popover) {
+    width: var(--trigger-width);
+  }
+  :where(.rv-SelectValue)[data-placeholder] {
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-TabList) {
+    display: flex;
+    gap: 0.25rem;
+    border-block-end: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Tabs)[data-orientation="vertical"] {
+    display: flex;
+  }
+  :where(.rv-Tabs)[data-orientation="vertical"] > :where(.rv-TabList) {
+    flex-direction: column;
+    border-block-end: 0;
+    border-inline-end: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Tab) {
+    padding-block: 0.5rem;
+    padding-inline: 0.875rem;
+    border: 0;
+    border-block-end: 2px solid transparent;
+    background: none;
+    color: var(--rv-color-muted);
+    font: inherit;
+    cursor: pointer;
+  }
+  :where(.rv-Tab)[data-selected] {
+    border-block-end-color: var(--rv-color-accent);
+    color: var(--rv-color-text);
+  }
+  :where(.rv-TabPanel) {
+    padding: 1rem 0.25rem;
+  }
+  :where(.rv-TextField) {
+    display: grid;
+    gap: 0.25rem;
+  }
+  :where(.rv-Input, .rv-TextArea) {
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    border: 1px solid var(--rv-color-border);
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-surface);
+    color: var(--rv-color-text);
+    font: inherit;
+    field-sizing: content;
+    min-inline-size: 12rem;
+  }
+  :where(.rv-Input, .rv-TextArea):user-invalid,
+  :where(.rv-Input, .rv-TextArea)[aria-invalid="true"] {
+    border-color: light-dark(#b91c1c, #f87171);
+  }
+  :where(.rv-TextField) :where([slot="description"]) {
+    margin: 0;
+    color: var(--rv-color-muted);
+    font-size: 0.875rem;
+  }
+  :where(.rv-FieldError) {
+    margin: 0;
+    color: light-dark(#b91c1c, #f87171);
+    font-size: 0.875rem;
+  }
+  :where(.rv-Checkbox, .rv-Switch, .rv-Radio) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  :where(.rv-RadioGroup) {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  :where(.rv-RadioGroup)[data-orientation="horizontal"] {
+    display: flex;
+    gap: 1rem;
+  }
+  :where(.rv-TagList) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  :where(.rv-Tag) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding-block: 0.125rem;
+    padding-inline: 0.5rem;
+    border: 1px solid var(--rv-color-border);
+    border-radius: 999px;
+    background: var(--rv-color-surface);
+    font-size: 0.875em;
+  }
+  :where(.rv-Tag)[aria-selected="true"] {
+    background: var(--rv-color-selected);
+  }
+  :where(.rv-Tag)[aria-disabled="true"] {
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-DetailsDisclosure-summary) {
+    cursor: pointer;
+    padding-block: 0.5rem;
+  }
+  :where(
+    .rv-Button,
+    .rv-ToggleButton,
+    .rv-Select-trigger,
+    .rv-Tab,
+    .rv-TabPanel,
+    .rv-ListBoxItem,
+    .rv-GridListItem,
+    .rv-TreeItem,
+    .rv-Tag,
+    .rv-DetailsDisclosure-summary
+  ):focus-visible {
+    outline: var(--rv-focus-ring);
+    outline-offset: 2px;
+  }
+  :where(.rv-Button, .rv-ToggleButton):disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  /* DateField / DatePicker / DateRangePicker: the group looks like an input, segments like text. */
+  :where(.rv-DatePicker, .rv-DateRangePicker) > :where(.rv-Group),
+  :where(.rv-DateField, .rv-TimeField) > :where(.rv-DateInput) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding-block: 0.25rem;
+    padding-inline: 0.5rem;
+    border: 1px solid var(--rv-color-border);
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-surface);
+  }
+  :where(.rv-DatePicker, .rv-DateRangePicker)[data-invalid] > :where(.rv-Group),
+  :where(.rv-DateField, .rv-TimeField)[data-invalid] > :where(.rv-DateInput) {
+    border-color: light-dark(#b91c1c, #f87171);
+  }
+  :where(.rv-DateField, .rv-TimeField) {
+    display: inline-grid;
+    gap: 0.25rem;
+  }
+  :where(.rv-Group) :where(.rv-Button) {
+    padding-block: 0.125rem;
+    padding-inline: 0.375rem;
+  }
+  :where(.rv-DateSegment) {
+    padding-inline: 0.0625rem;
+    border-radius: 0.125rem;
+    font-variant-numeric: tabular-nums;
+  }
+  :where(.rv-DateSegment)[data-placeholder] {
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-DateSegment):focus {
+    outline: none;
+    background: var(--rv-color-accent);
+    color: var(--rv-color-accent-text);
+  }
+  /* WheelPicker / TimeWheels: drums side by side, a selection band behind the centre row, items fading towards the edges. */
+  :where(.rv-WheelPicker, .rv-TimeWheels) {
+    position: relative;
+    gap: 0.25rem;
+    padding-inline: 0.25rem;
+    --rv-wheel-item-height: 2.25rem;
+  }
+  :where(.rv-WheelPicker, .rv-TimeWheels)::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 50%;
+    block-size: var(--rv-wheel-item-height);
+    translate: 0 -50%;
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-selected);
+  }
+  :where(.rv-TimeWheels-run) {
+    gap: 0.25rem;
+  }
+  :where(.rv-Wheel) {
+    inline-size: 3.25rem;
+    block-size: calc(var(--rv-wheel-visible) * var(--rv-wheel-item-height, 2.25rem));
+    border-radius: var(--rv-radius);
+    cursor: grab;
+    mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+  }
+  :where(.rv-Wheel)[data-dragging] {
+    cursor: grabbing;
+  }
+  :where(.rv-Wheel):focus-visible {
+    outline: var(--rv-focus-ring);
+    outline-offset: -2px;
+  }
+  :where(.rv-WheelItem) {
+    block-size: var(--rv-wheel-item-height, 2.25rem);
+    line-height: var(--rv-wheel-item-height, 2.25rem);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-WheelItem)[data-selected] {
+    color: var(--rv-color-text);
+    font-weight: 600;
+  }
+  :where(.rv-WheelItem)[data-disabled] {
+    opacity: 0.35;
+  }
+  /* Calendar / RangeCalendar: header (previous, heading, next) above one grid per visible month. */
+  :where(.rv-Calendar, .rv-RangeCalendar) {
+    display: inline-block;
+    color: var(--rv-color-text);
+  }
+  :where(.rv-Calendar, .rv-RangeCalendar) > :where(header) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-block-end: 0.5rem;
+  }
+  :where(.rv-Calendar, .rv-RangeCalendar) > :where(header) > :where(.rv-Heading, .rv-CalendarHeading) {
+    flex: 1;
+    margin: 0;
+    font-size: 1em;
+    text-align: center;
+  }
+  :where(.rv-CalendarGrid) {
+    border-collapse: collapse;
+  }
+  :where(.rv-CalendarHeaderCell) {
+    padding-block-end: 0.25rem;
+    color: var(--rv-color-muted);
+    font-size: 0.875em;
+    font-weight: 600;
+  }
+  :where(.rv-CalendarCell) {
+    inline-size: 2rem;
+    line-height: 2rem;
+    border-radius: var(--rv-radius);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+  }
+  :where(.rv-CalendarCell)[data-outside-month] {
+    display: none;
+  }
+  :where(.rv-CalendarCell)[data-hovered] {
+    background: var(--rv-color-selected);
+  }
+  :where(.rv-CalendarCell)[data-selected] {
+    background: var(--rv-color-accent);
+    color: var(--rv-color-accent-text);
+  }
+  :where(.rv-RangeCalendar) :where(.rv-CalendarCell)[data-selected] {
+    border-radius: 0;
+    background: var(--rv-color-selected);
+    color: var(--rv-color-text);
+  }
+  :where(.rv-RangeCalendar) :where(.rv-CalendarCell):where([data-selection-start], [data-selection-end]) {
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-accent);
+    color: var(--rv-color-accent-text);
+  }
+  :where(.rv-CalendarCell):where([data-disabled], [data-unavailable]) {
+    color: var(--rv-color-muted);
+  }
+  :where(.rv-CalendarCell)[data-unavailable] {
+    text-decoration: line-through;
+  }
+  :where(.rv-CalendarCell)[data-invalid][data-selected] {
+    background: light-dark(#b91c1c, #f87171);
+    color: var(--rv-color-surface);
+  }
+  :where(.rv-CalendarCell)[data-focus-visible] {
+    outline: var(--rv-focus-ring);
+    outline-offset: 2px;
+  }
+  /* Sidebar (shadcn/ui 4.21.4 new-york-v4 ui/sidebar.tsx layout classes, MIT, © 2023 shadcn): the root keeps
+     data-state / data-collapsible / data-variant / data-side (upstream `group peer`), the gap reserves the width,
+     the fixed container slides / shrinks. Widths: --sidebar-width, --sidebar-width-icon (SidebarProvider style). */
+  /* Upstream sizes assume Tailwind preflight's border-box (`h-8 p-2` = 32px, not 48px). */
+  :where([class^="rv-Sidebar"], [class*=" rv-Sidebar"]) {
+    box-sizing: border-box;
+  }
+  :where(.rv-SidebarProvider) {
+    display: flex;
+    min-block-size: 100svh;
+    inline-size: 100%;
+  }
+  :where(.rv-SidebarProvider:has(> .rv-Sidebar[data-variant="inset"])) {
+    background: var(--rv-color-sidebar, light-dark(#f8fafc, #0b1222));
+  }
+  :where(.rv-Sidebar) {
+    color: var(--rv-color-text);
+  }
+  /* Desktop panel hidden below 768 px (upstream `hidden md:block`): the trigger opens the mobile sheet there. */
+  @media (max-width: 767px) {
+    :where(.rv-Sidebar[data-state]) {
+      display: none;
+    }
+  }
+  :where(.rv-Sidebar:not([data-state])) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    inline-size: var(--sidebar-width);
+    background: var(--rv-color-sidebar, light-dark(#f8fafc, #0b1222));
+  }
+  :where(.rv-Sidebar-gap) {
+    position: relative;
+    inline-size: var(--sidebar-width);
+    background: transparent;
+    transition: inline-size 200ms linear;
+  }
+  :where(.rv-Sidebar[data-collapsible="offcanvas"]) :where(.rv-Sidebar-gap) {
+    inline-size: 0;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-Sidebar-gap) {
+    inline-size: var(--sidebar-width-icon);
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]:is([data-variant="floating"], [data-variant="inset"])) :where(.rv-Sidebar-gap) {
+    inline-size: calc(var(--sidebar-width-icon) + 1rem);
+  }
+  :where(.rv-Sidebar-container) {
+    position: fixed;
+    inset-block: 0;
+    z-index: 10;
+    display: flex;
+    block-size: 100svh;
+    inline-size: var(--sidebar-width);
+    transition-property: inset-inline-start, inset-inline-end, inline-size;
+    transition-duration: 200ms;
+    transition-timing-function: linear;
+  }
+  :where(.rv-Sidebar[data-side="left"]) :where(.rv-Sidebar-container) {
+    inset-inline-start: 0;
+  }
+  :where(.rv-Sidebar[data-side="right"]) :where(.rv-Sidebar-container) {
+    inset-inline-end: 0;
+  }
+  :where(.rv-Sidebar[data-side="left"][data-collapsible="offcanvas"]) :where(.rv-Sidebar-container) {
+    inset-inline-start: calc(var(--sidebar-width) * -1);
+  }
+  :where(.rv-Sidebar[data-side="right"][data-collapsible="offcanvas"]) :where(.rv-Sidebar-container) {
+    inset-inline-end: calc(var(--sidebar-width) * -1);
+  }
+  :where(.rv-Sidebar[data-variant="sidebar"][data-side="left"]) :where(.rv-Sidebar-container) {
+    border-inline-end: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Sidebar[data-variant="sidebar"][data-side="right"]) :where(.rv-Sidebar-container) {
+    border-inline-start: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Sidebar[data-variant="sidebar"][data-collapsible="icon"]) :where(.rv-Sidebar-container) {
+    inline-size: var(--sidebar-width-icon);
+  }
+  :where(.rv-Sidebar:is([data-variant="floating"], [data-variant="inset"])) :where(.rv-Sidebar-container) {
+    padding: 0.5rem;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]:is([data-variant="floating"], [data-variant="inset"])) :where(.rv-Sidebar-container) {
+    inline-size: calc(var(--sidebar-width-icon) + 1rem + 2px);
+  }
+  :where(.rv-Sidebar-inner, .rv-Sidebar-sheet-inner) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    inline-size: 100%;
+    background: var(--rv-color-sidebar, light-dark(#f8fafc, #0b1222));
+  }
+  :where(.rv-Sidebar[data-variant="floating"]) :where(.rv-Sidebar-inner) {
+    border: 1px solid var(--rv-color-border);
+    border-radius: calc(var(--rv-radius) * 2);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+  :where(.rv-SidebarInset) {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    inline-size: 100%;
+    background: var(--rv-color-surface);
+  }
+  :where(.rv-Sidebar[data-variant="inset"] ~ .rv-SidebarInset) {
+    margin: 0.5rem;
+    margin-inline-start: 0;
+    border-radius: calc(var(--rv-radius) * 2);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+  }
+  :where(.rv-Sidebar[data-variant="inset"][data-state="collapsed"] ~ .rv-SidebarInset) {
+    margin-inline-start: 0.5rem;
+  }
+  :where(.rv-SidebarRail) {
+    position: absolute;
+    inset-block: 0;
+    z-index: 20;
+    inline-size: 1rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    translate: -50% 0;
+    /* upstream `transition-all ease-linear` (Tailwind default duration 150ms). */
+    transition: all 150ms linear;
+  }
+  :where(.rv-SidebarRail)::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 50%;
+    inline-size: 2px;
+  }
+  :where(.rv-SidebarRail:hover)::after {
+    background: var(--rv-color-border);
+  }
+  :where(.rv-Sidebar[data-side="left"]) :where(.rv-SidebarRail) {
+    inset-inline-end: -1rem;
+    cursor: w-resize;
+  }
+  :where(.rv-Sidebar[data-side="right"]) :where(.rv-SidebarRail) {
+    inset-inline-start: 0;
+    cursor: e-resize;
+  }
+  :where(.rv-Sidebar[data-side="left"][data-state="collapsed"]) :where(.rv-SidebarRail) {
+    cursor: e-resize;
+  }
+  :where(.rv-Sidebar[data-side="right"][data-state="collapsed"]) :where(.rv-SidebarRail) {
+    cursor: w-resize;
+  }
+  :where(.rv-Sidebar[data-collapsible="offcanvas"]) :where(.rv-SidebarRail) {
+    translate: 0 0;
+  }
+  :where(.rv-Sidebar[data-collapsible="offcanvas"]) :where(.rv-SidebarRail)::after {
+    inset-inline-start: 100%;
+  }
+  :where(.rv-Sidebar[data-side="left"][data-collapsible="offcanvas"]) :where(.rv-SidebarRail) {
+    inset-inline-end: -0.5rem;
+  }
+  :where(.rv-Sidebar[data-side="right"][data-collapsible="offcanvas"]) :where(.rv-SidebarRail) {
+    inset-inline-start: -0.5rem;
+  }
+  /* Rivet `resizable`: an 8 px hit area centred on the panel's inner edge, a 1 px line on hover / 2 px while dragging. */
+  :where(.rv-SidebarResizeHandle) {
+    position: absolute;
+    inset-block: 0;
+    z-index: 20;
+    inline-size: 0.5rem;
+    cursor: col-resize;
+    outline: none;
+    user-select: none;
+  }
+  :where(.rv-Sidebar[data-side="left"]) :where(.rv-SidebarResizeHandle) {
+    inset-inline-end: -0.25rem;
+  }
+  :where(.rv-Sidebar[data-side="right"]) :where(.rv-SidebarResizeHandle) {
+    inset-inline-start: -0.25rem;
+  }
+  :where(.rv-SidebarResizeHandle)::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: calc(50% - 1px);
+    inline-size: 2px;
+    transition: background-color 150ms linear;
+  }
+  :where(.rv-SidebarResizeHandle:hover, .rv-SidebarResizeHandle[data-dragging])::after {
+    background: var(--rv-color-border);
+  }
+  :where(.rv-SidebarResizeHandle:focus-visible)::after {
+    background: var(--rv-color-accent);
+  }
+  /* While dragging the width follows the pointer (no collapse transition). */
+  :where(.rv-Sidebar[data-resizing]) :where(.rv-Sidebar-gap, .rv-Sidebar-container) {
+    transition: none;
+  }
+  :where(.rv-SidebarHeader, .rv-SidebarFooter) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+  :where(.rv-SidebarContent) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-block-size: 0;
+    overflow: auto;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-SidebarContent) {
+    overflow: hidden;
+  }
+  :where(.rv-SidebarSeparator) {
+    margin-inline: 0.5rem;
+    border: 0;
+    border-block-start: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-SidebarInput) {
+    block-size: 2rem;
+    inline-size: 100%;
+    padding-inline: 0.5rem;
+    border: 1px solid var(--rv-color-border);
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-surface);
+    color: inherit;
+    font: inherit;
+  }
+  :where(.rv-SidebarGroup) {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    min-inline-size: 0;
+    padding: 0.5rem;
+  }
+  :where(.rv-SidebarGroupLabel) {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    block-size: 2rem;
+    padding-inline: 0.5rem;
+    border: 0;
+    border-radius: var(--rv-radius);
+    background: none;
+    color: var(--rv-color-muted);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition:
+      margin 200ms linear,
+      opacity 200ms linear;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-SidebarGroupLabel) {
+    margin-block-start: -2rem;
+    opacity: 0;
+  }
+  :where(.rv-SidebarGroupAction, .rv-SidebarMenuAction) {
+    position: absolute;
+    inset-inline-end: 0.75rem;
+    inset-block-start: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    inline-size: 1.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--rv-radius);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  :where(.rv-SidebarMenuAction) {
+    inset-inline-end: 0.25rem;
+    inset-block-start: 0.375rem;
+  }
+  :where(.rv-SidebarMenuButton[data-size="sm"] ~ .rv-SidebarMenuAction, .rv-SidebarMenuButton[data-size="sm"] ~ .rv-SidebarMenuBadge) {
+    inset-block-start: 0.25rem;
+  }
+  :where(.rv-SidebarMenuButton[data-size="lg"] ~ .rv-SidebarMenuAction, .rv-SidebarMenuButton[data-size="lg"] ~ .rv-SidebarMenuBadge) {
+    inset-block-start: 0.625rem;
+  }
+  :where(.rv-SidebarMenuAction[data-show-on-hover="true"]) {
+    opacity: 0;
+  }
+  :where(.rv-SidebarMenuItem:hover, .rv-SidebarMenuItem:focus-within) :where(.rv-SidebarMenuAction[data-show-on-hover="true"]),
+  :where(.rv-SidebarMenuAction[data-show-on-hover="true"][aria-expanded="true"]) {
+    opacity: 1;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"])
+    :where(.rv-SidebarGroupAction, .rv-SidebarMenuAction, .rv-SidebarMenuBadge, .rv-SidebarMenuSub, .rv-SidebarMenuSubButton) {
+    display: none;
+  }
+  :where(.rv-SidebarGroupContent) {
+    inline-size: 100%;
+    font-size: 0.875rem;
+  }
+  :where(.rv-SidebarMenu, .rv-SidebarMenuSub) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    inline-size: 100%;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  :where(.rv-SidebarMenuItem, .rv-SidebarMenuSubItem) {
+    position: relative;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    inline-size: 100%;
+    block-size: 2rem;
+    padding: 0.5rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--rv-radius);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition-property: inline-size, block-size, padding;
+    transition-duration: 150ms;
+    /* Tailwind's default `transition-*` timing (upstream `transition-[width,height,padding]`). */
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  :where(.rv-SidebarMenuItem:has(> .rv-SidebarMenuAction)) :where(.rv-SidebarMenuButton) {
+    padding-inline-end: 2rem;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton) :where(svg) {
+    flex-shrink: 0;
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton) > :where(span:last-child) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton, .rv-SidebarMenuAction, .rv-SidebarGroupAction):hover,
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton)[data-active="true"] {
+    background: var(--rv-color-hover, light-dark(#e2e8f0, #1e293b));
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton)[data-active="true"] {
+    font-weight: 500;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton, .rv-SidebarGroupLabel, .rv-SidebarGroupAction, .rv-SidebarMenuAction)[data-focus-visible],
+  :where(.rv-SidebarRail, .rv-SidebarGroupLabel, .rv-SidebarGroupAction):focus-visible {
+    outline: var(--rv-focus-ring);
+    outline-offset: -2px;
+  }
+  :where(.rv-SidebarMenuButton, .rv-SidebarMenuSubButton)[data-disabled] {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  :where(.rv-SidebarMenuButton)[data-variant="outline"] {
+    background: var(--rv-color-surface);
+    box-shadow: 0 0 0 1px var(--rv-color-border);
+  }
+  :where(.rv-SidebarMenuButton)[data-size="sm"] {
+    block-size: 1.75rem;
+    font-size: 0.75rem;
+  }
+  :where(.rv-SidebarMenuButton)[data-size="lg"] {
+    block-size: 3rem;
+  }
+  /* `[data-sidebar]` lifts this over the `[data-size]` heights (upstream: `size-8!`). */
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-SidebarMenuButton)[data-sidebar] {
+    inline-size: 2rem;
+    block-size: 2rem;
+    padding: 0.5rem;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-SidebarMenuButton[data-size="lg"])[data-sidebar] {
+    padding: 0;
+  }
+  :where(.rv-SidebarMenuBadge) {
+    position: absolute;
+    inset-inline-end: 0.25rem;
+    inset-block-start: 0.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    block-size: 1.25rem;
+    min-inline-size: 1.25rem;
+    padding-inline: 0.25rem;
+    border-radius: var(--rv-radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    user-select: none;
+  }
+  :where(.rv-SidebarMenuSkeleton) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    block-size: 2rem;
+    padding-inline: 0.5rem;
+  }
+  :where(.rv-SidebarMenuSkeleton-icon, .rv-SidebarMenuSkeleton-text) {
+    border-radius: var(--rv-radius);
+    background: var(--rv-color-border);
+  }
+  :where(.rv-SidebarMenuSkeleton-icon) {
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+  :where(.rv-SidebarMenuSkeleton-text) {
+    flex: 1;
+    block-size: 1rem;
+    max-inline-size: var(--skeleton-width);
+  }
+  :where(.rv-SidebarMenuSub) {
+    margin-inline: 0.875rem;
+    padding-block: 0.125rem;
+    padding-inline: 0.625rem;
+    border-inline-start: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-SidebarMenuSubButton) {
+    block-size: 1.75rem;
+    padding-block: 0;
+  }
+  :where(.rv-SidebarMenuSubButton)[data-size="sm"] {
+    font-size: 0.75rem;
+  }
+  :where(.rv-SidebarTrigger) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    padding: 0;
+  }
+  /* Sidebar Rivet extensions (feature set inspired by HeroUI Pro's public docs; independent implementation): tree items,
+     guide lines, an actions group, pages, backdrops, reduce motion. */
+  :where(.rv-SidebarMenuIndicator) {
+    display: inline-flex;
+    flex-shrink: 0;
+    margin-inline-start: auto;
+  }
+  :where([aria-expanded="true"]) > :where(.rv-SidebarMenuIndicator) {
+    rotate: 90deg;
+  }
+  :where(.rv-SidebarMenuSub-panel) {
+    overflow: hidden;
+    block-size: var(--disclosure-panel-height);
+  }
+  :where(.rv-SidebarMenuSub-panel) > :where(.rv-SidebarMenuSub) {
+    margin-block-start: 0.25rem;
+  }
+  :where(.rv-Sidebar[data-collapsible="icon"]) :where(.rv-SidebarMenuSub-panel, .rv-SidebarMenuIndicator, .rv-SidebarMenuActions) {
+    display: none;
+  }
+  :where(.rv-SidebarMenu[data-guide-lines="none"], .rv-SidebarMenu[data-guide-lines="hover"]) :where(.rv-SidebarMenuSub) {
+    border-inline-start-color: transparent;
+  }
+  :where(.rv-SidebarMenu[data-guide-lines="hover"]:is(:hover, :focus-within)) :where(.rv-SidebarMenuSub) {
+    border-inline-start-color: var(--rv-color-border);
+  }
+  :where(.rv-SidebarMenuActions) {
+    position: absolute;
+    inset-inline-end: 0.25rem;
+    inset-block-start: 0.375rem;
+    display: flex;
+    gap: 0.125rem;
+  }
+  :where(.rv-SidebarMenuActions) > :where(.rv-SidebarMenuAction) {
+    position: static;
+  }
+  :where(.rv-SidebarMenuItem:has(> .rv-SidebarMenuActions)) :where(.rv-SidebarMenuButton) {
+    padding-inline-end: 3.5rem;
+  }
+  :where(.rv-SidebarMenuActions[data-show-on-hover="true"]) {
+    opacity: 0;
+  }
+  :where(.rv-SidebarMenuItem:hover, .rv-SidebarMenuItem:focus-within) > :where(.rv-SidebarMenuActions[data-show-on-hover="true"]),
+  :where(.rv-SidebarMenuActions[data-show-on-hover="true"]:has([aria-expanded="true"])) {
+    opacity: 1;
+  }
+  :where(.rv-SidebarPage:not([hidden])) {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 0;
+  }
+  :where(.rv-Sidebar-overlay[data-backdrop="blur"]) {
+    backdrop-filter: blur(4px);
+  }
+  :where(.rv-Sidebar-overlay[data-backdrop="opaque"]) {
+    background: rgb(0 0 0 / 0.8);
+  }
+  :where(.rv-Sidebar-overlay[data-backdrop="transparent"]) {
+    background: transparent;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :where(.rv-SidebarMenuIndicator) {
+      transition: rotate 200ms ease;
+    }
+    :where(.rv-SidebarMenuSub-panel) {
+      transition: block-size 200ms ease;
+    }
+    :where(.rv-SidebarMenu[data-guide-lines="hover"]) :where(.rv-SidebarMenuSub) {
+      transition: border-color 150ms ease;
+    }
+  }
+  /* reduceMotion (provider / menu / mobile sheet): no sidebar transitions or sheet animation. */
+  :where([data-reduce-motion="true"])
+    :where(
+      .rv-Sidebar-gap,
+      .rv-Sidebar-container,
+      .rv-SidebarGroupLabel,
+      .rv-SidebarMenuButton,
+      .rv-SidebarMenuSubButton,
+      .rv-SidebarMenuIndicator,
+      .rv-SidebarMenuSub,
+      .rv-SidebarMenuSub-panel
+    ) {
+    transition: none;
+  }
+  :where(.rv-Sidebar-overlay, .rv-Sidebar-sheet)[data-reduce-motion="true"]:is([data-entering], [data-exiting]) {
+    animation: none;
+  }
+  /* Mobile sheet (upstream <Sheet side>): the overlay layer underlay + a full-height panel at the side. */
+  :where(.rv-Sidebar-overlay) {
+    background: rgb(0 0 0 / 0.5);
+  }
+  :where(.rv-Sidebar-sheet) {
+    position: fixed;
+    inset-block: 0;
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    inline-size: min(var(--sidebar-width), 75vw);
+    color: var(--rv-color-text);
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+  }
+  :where(.rv-Sidebar-sheet[data-side="left"]) {
+    inset-inline-start: 0;
+    border-inline-end: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Sidebar-sheet[data-side="right"]) {
+    inset-inline-end: 0;
+    border-inline-start: 1px solid var(--rv-color-border);
+  }
+  :where(.rv-Sidebar-dialog) {
+    display: flex;
+    flex-direction: column;
+    block-size: 100%;
+    outline: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Sidebar mobile sheet: slide in from its side (upstream Sheet animate-in / slide-in-from-left). */
+    :where(.rv-Sidebar-overlay)[data-entering] {
+      animation: rv-fade 300ms;
+    }
+    :where(.rv-Sidebar-overlay)[data-exiting] {
+      animation: rv-fade 300ms reverse;
+    }
+    :where(.rv-Sidebar-sheet[data-side="left"])[data-entering] {
+      animation: rv-sidebar-slide-left 300ms ease-out;
+    }
+    :where(.rv-Sidebar-sheet[data-side="left"])[data-exiting] {
+      animation: rv-sidebar-slide-left 300ms ease-in reverse;
+    }
+    :where(.rv-Sidebar-sheet[data-side="right"])[data-entering] {
+      animation: rv-sidebar-slide-right 300ms ease-out;
+    }
+    :where(.rv-Sidebar-sheet[data-side="right"])[data-exiting] {
+      animation: rv-sidebar-slide-right 300ms ease-in reverse;
+    }
+    @keyframes rv-sidebar-slide-left {
+      from {
+        translate: -100% 0;
+      }
+    }
+    @keyframes rv-sidebar-slide-right {
+      from {
+        translate: 100% 0;
+      }
+    }
+    /* Overlay enter / exit (RAC data-entering / data-exiting; <Transition> waits for the animation). */
+    :where(.rv-ModalOverlay, .rv-Popover, .rv-Select-popover, .rv-Tooltip)[data-entering] {
+      animation: rv-fade 120ms;
+    }
+    :where(.rv-ModalOverlay, .rv-Popover, .rv-Select-popover, .rv-Tooltip)[data-exiting] {
+      animation: rv-fade 120ms reverse;
+    }
+    @keyframes rv-fade {
+      from {
+        opacity: 0;
+      }
+    }
+  }
+  @media (forced-colors: active) {
+    :where(.rv-ListBoxItem, .rv-GridListItem, .rv-TreeItem)[aria-selected="true"],
+    :where(.rv-ToggleButton)[aria-pressed="true"] {
+      background: Highlight;
+      color: HighlightText;
+      forced-color-adjust: none;
+    }
+    :where([data-trigger="ComboBox"]) :where(.rv-ListBoxItem)[data-focused] {
+      outline-color: Highlight;
+    }
+  }
+}

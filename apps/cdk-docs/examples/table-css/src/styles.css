@@ -1,0 +1,59 @@
+/* Plain CSS over the default class names and the state attributes. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+
+.rv-Table {
+  margin: 1rem;
+  border-collapse: collapse;
+  border: 1px solid #e2e8f0;
+  outline: none;
+}
+
+.rv-Table[data-focus-visible] {
+  outline: 2px solid #2563eb;
+}
+
+.rv-TableHeader {
+  background: #f8fafc;
+}
+
+.rv-Column {
+  padding: 6px 12px;
+  text-align: left;
+  font-weight: 600;
+  outline: none;
+}
+
+.rv-Row {
+  border-top: 1px solid #e2e8f0;
+  outline: none;
+  cursor: default;
+}
+
+.rv-Row[data-hovered] {
+  background: #f1f5f9;
+}
+
+.rv-Row[data-selected] {
+  background: #2563eb;
+  color: white;
+}
+
+.rv-Row[data-disabled] {
+  color: #94a3b8;
+}
+
+.rv-Row[data-focus-visible],
+.rv-Cell[data-focus-visible],
+.rv-Column[data-focus-visible] {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.rv-Cell {
+  padding: 6px 12px;
+  outline: none;
+}

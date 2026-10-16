@@ -1,0 +1,12 @@
+---
+layout: base.njk
+pagination:
+  data: site.authors
+  size: 1
+  alias: who
+permalink: "/authors/{{ who.slug }}/"
+eleventyComputed:
+  pageTitle: "{{ who.name }}"
+  pageDescription: "Stories by {{ who.name }}."
+---
+{% set items = collections.articles | byAuthor(who.slug, site.listLimit) %}<main class="list"><h1>{{ who.name }}</h1>{% include "teasers.njk" %}</main>

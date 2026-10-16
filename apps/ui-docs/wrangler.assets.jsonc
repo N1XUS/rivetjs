@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "rivetjs-ui-assets",
+  "compatibility_date": "2026-10-16",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "./dist/cloudflare/assets" },
+  "routes": [
+    { "pattern": "ui.rivetjs.severyn.pro/assets/*", "zone_name": "severyn.pro" },
+    { "pattern": "ui.rivetjs.severyn.pro/pagefind/*", "zone_name": "severyn.pro" },
+  ],
+}

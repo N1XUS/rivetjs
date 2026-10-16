@@ -1,0 +1,45 @@
+/* Plain CSS on the default class names; state from data attributes. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.rv-RadioGroup {
+  display: grid;
+  gap: 6px;
+  margin: 16px;
+  max-width: 320px;
+}
+.rv-RadioGroup[data-orientation="horizontal"] {
+  grid-auto-flow: column;
+}
+.rv-RadioGroup > .rv-Label {
+  font-weight: 600;
+}
+.rv-Radio {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.rv-Radio[data-selected] {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+.rv-Radio[data-disabled] {
+  color: #94a3b8;
+}
+.rv-Radio input {
+  accent-color: #0f766e;
+}
+.rv-Radio:has(input:focus-visible) {
+  outline: 2px solid #14b8a6;
+}
+.rv-RadioGroup .rv-Text {
+  color: #64748b;
+  font-size: 12px;
+}
+.rv-RadioGroup[data-invalid] .rv-Radio {
+  border-color: #b91c1c;
+}

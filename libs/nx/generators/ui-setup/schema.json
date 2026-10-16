@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetUiSetup",
+  "title": "Set up @rivetjs/ui",
+  "description": "Adds @rivetjs/ui to a Rivet app: Tailwind v4 in the Vite config, the ui styles in src/styles.css, and the dependencies (ui, kit, lucide).",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "The Rivet app.",
+      "$default": { "$source": "argv", "index": 0 },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "rivetVersion": { "type": "string", "description": "@rivetjs/* dependency spec (default: this plugin's version)." },
+    "skipPackageJson": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Do not change package.json files." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["project"],
+  "additionalProperties": false
+}

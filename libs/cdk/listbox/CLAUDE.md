@@ -1,0 +1,58 @@
+# @rivetjs/cdk/listbox
+> **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
+
+RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSection` (+ `Header`, `Text`, `Separator`, `Collection`, `SelectionIndicator` inside), `ListBoxLoadMoreItem`, render props, `items` preset. Runs on `../collections/` (live mode) + `../selection/*`.
+
+## Entry points
+- `@rivetjs/cdk/listbox` -> `index.tsx`: `ListBox`, `ListBoxItem`, `ListBoxSection`, `ListBoxLoadMoreItem`, `ListBoxContext`, `ListStateContext`, `ListBoxDataContext`, `getItemId`; types `ListBoxProps`, `ListBoxRenderProps`, `ListBoxItemProps`, `ListBoxItemRenderProps`, `ListBoxSectionProps`, `ListBoxLoadMoreItemProps`, `ListData`, `Key`, `Selection`, `SelectionMode`, `SelectionBehavior`, `ListState`
+- `@rivetjs/cdk/listbox/behaviour` -> `behaviour.tsx` (react-aria useListBox / useOption / useListBoxSection for custom markup): `createListData`, `listBoxProps`, `optionProps`, `listBoxSectionProps`, `nodeSelectionManager`, `listBoxCollectionOptions`, `listBoxLinkBehavior`, handlers `listBoxKeyDown` / `KeyDownCapture` / `KeyUp` / `PointerDown` / `PointerUp` / `PointerCancel` / `Click` / `DoubleClick` / `DragStart` / `MouseDown` / `FocusIn` / `FocusOut` / `VirtualFocus` / `ClearVirtualFocus` / `PointerOver` / `PointerOut` / `AutoFocus` (`(event, props, state)`), types `ListData`, `AriaListBoxOptions`, `ListBoxBehaviourProps`
+- state: `@rivetjs/cdk/collections/list-state` (`createListState`); selection: `../selection/*`
+
+## Layout
+- `index.tsx` - RAC parts; root `<div role="listbox">`, option `<div role="option">` / `<a role="option" href>`, section `<section role="group">`, header `<header>`, load-more sentinel
+- `behaviour.tsx` - option data, attribute bags, delegated handlers
+- tests: `tests/listbox.browser.test.tsx` (RAC ListBox.test.js port, Chromium), `tests/listbox-ssr.test.ts`, `tests/collection-components.test.ts` (fixtures `tests/fixtures/collection-parts.tsx`); stories `tests-components/listbox.test.ts` (route `app/src/routes/listbox.tsx`), `dom-events-collections.test.ts`, `dev-resume.test.ts` (`ListBoxInner$` chunk), `axe.test.ts`
+- docs: `apps/cdk-docs/content/components/listbox.md`; examples `apps/cdk-docs/examples/listbox-{basic,behaviour,controlled,css,disabled,dom-events,events,keyboard,layout,links,sections,selection-behavior,selection-modes,slots,tailwind}/`
+
+## Upstream
+- `index.tsx`: react-aria-components ListBox.tsx; `behaviour.tsx`: react-aria useListBox.ts, useOption.ts, useListBoxSection.ts (Apache-2.0, © Adobe; NOTICE)
+- Deviations: no drag and drop (`dragAndDropHooks`, drop indicators: C8); `ListBoxContext` not re-provided to options (holds JSX children); no FocusScope / SharedElementTransition wrapper; live-mode filtering hides options but keeps empty sections; `dependencies` ignored
+
+## Rules / invariants
+- RAC defaults: `selectionMode` "none"; root is the tab stop (`tabindex=0`) until an option is focused, options `-1`; `data-*` state values `"true"` (`dataBool`)
+- Default classes: `rv-ListBox`, `rv-ListBoxItem`, `rv-ListBoxSection`, `rv-Header`, `rv-Text`, `rv-ListBoxLoadingIndicator`; `class` / `style` accept render-prop functions with accessor render props (`({ isSelected }) => isSelected() ? … : …`)
+- Root attrs: `role="listbox"`, `aria-multiselectable`, `aria-orientation`, `data-orientation`, `data-layout`, `data-empty`, `data-focused` (listbox element itself focused, not within), `data-focus-visible` (bound to ListData signals), `data-rk` (`listBoxNavigationKeys`: arrows / Home / End / Page / Space / Enter, + Left / Right for horizontal or grid)
+- Option attrs: id `getItemId(listId, key)`, `data-key` (+ `data-key-type="number"`), `aria-selected` / `data-selected`, `aria-disabled` / `data-disabled`, `data-rv-disabled` (item's own `isDisabled`, read by `../collections/dom.ts`), `data-focused` / `data-focus-visible`, `data-hovered` / `data-pressed` (written by handlers), `data-selection-mode`
+- Item `isDisabled`: `optionProps(itemIsDisabled)` → `nodeSelectionManager` → `manager.isDisabled` (respects `disabledBehavior="selection"`: focusable, not selectable); useOption override `isDisabled` separate
+- `nodeSelectionManager(state, key, isDisabled)` is memoized per selection state × key × disabled (module `WeakMap` of `Map`s; `OneNodeCollection` = prototype methods, no closures): option bindings read it several times per run (F5 step a: selection update 1 of 1000 2.5 → 1.7 ms, mount −2..6%, heap +230 KB / 1000 options). `SelectionManager._isSelectAll` is cached per selection value, so a reused manager never reports a stale select-all. Option `aria-selected` / `tabIndex` / `isFocused` are keyed reads (`../selection/keyed.ts`): a selection change re-runs only the options whose state changed (1000 options: 2.4 → 0.06 ms per change; ui ListBox 4.7 → 0.06)
+- Item callbacks (`onAction`, `onPress*`, `onClick`, `onHover*`) travel as non-bubbling custom events on the option (`rv-item-action`, `rv-item-press`, `rv-hover-start` / `-end`) marked `data-rv-action` / `data-rv-press`; attached only when given. `onKeyDown` / `onKeyUp` on items via `keyboardKeyDown` / `keyboardKeyUp` (`../interactions/keyboard.tsx`)
+- Links: `href` items open via `RouterProvider` (`../utils/links.tsx`) else `openLink`; `listBoxLinkBehavior`: "action" with `selectionBehavior="replace"`, else "override"
+- First-click latency (UI-COLD 2026-10-08): the default root `<div role="listbox">` carries `preload="visible"` (not on the `render` path): the root handlers' chunks + their dependency chunks (option `aria-selected` / `data-*` bindings) are fetched when visible, nothing runs. Without it (no idle boot since the slot-id change) a cold ColorSwatchPicker click updated the value ~300 ms before the option's `aria-selected` (ui `colors.test.ts`). A closed Select / ComboBox popover list is not visible: no cost there.
+- PROPS-CAPTURE: destructure props into locals before closures / attribute bags; never capture props objects, state classes or managers in resumable closures
+- `renderEmptyState` must be a function; `isEmpty` = `items` length, else built size of children (build pass) when `renderEmptyState` given, else false; with a parent `ListStateContext`, its collection size
+- Long press items (Rivet, 2026-10-09): an option marked `data-rv-long-press` (cdk `itemMorphProps`, `../morph/item.tsx`) selects on press up (`itemOptions` `shouldSelectOnPressUp`), so a hold that opens an item morph cancels the press before anything selects (mouse presses select on press down otherwise)
+- `UNSTABLE_itemBehavior` overrides per-item press behaviour (`../selection/selectable-item.ts`)
+- live props (P5): `ListBoxItem` keeps `isDisabled` (→ `optionProps(itemIsDisabled)` read at use, `data-rv-disabled` through the spread as an accessor) and class / style / children live (live view); the rest of the body is read once (untracked `listBoxItem()`); live-mode filtering stays tracked in the outer render (server: the row region depends on it). Tests `tests/live-props.browser.test.tsx`, story `tests-components/live-props.test.ts`
+- Live props (P5): ListBox root `class` / `style` / `children` read live (`renderProps(…, props)` when a prop is live, untracked; items as before)
+
+## Commands
+- `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx` (77 tests)
+- `npx vitest run --project cdk libs/cdk/tests/listbox-ssr.test.ts libs/cdk/tests/collection-components.test.ts`
+- `STORIES_DIST=dist-<lane> npx vitest run --project cdk-components libs/cdk/tests-components/listbox.test.ts libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/dev-resume.test.ts`
+- `node libs/docs-kit/cli.ts examples apps/cdk-docs listbox-basic …`
+
+## Gotchas
+- `ListBoxSection` without a `Header`: `aria-labelledby` uses `slotIdRef(heading, false)` (children are built before the section's attributes, so the server knows whether a Header claimed the id): a section named by `aria-label` only gets no IDREF to a missing heading (RAC). Test `tests/listbox-ssr.test.ts`.
+- `ListBoxItem` label / description ids: `slotIdRef(id, false)` (UIID 2026-10-12; were kept by expectation: an IDREF to nothing for a ui `Label` (not the item's label Text slot) or a missing Description). The option's attributes are written before its children, so the server probes them first (`probeSlots([[TextContext, textSlots], [SelectionIndicatorContext, …]], children)`, `#server`; same providers as the real `content`; only for non-text children)
+- `aria-labelledby` from the context may be an accessor (Select's `menuProps`: trigger label ids): ListBoxInner reads it inside the binding (COMBOBOX-DEV 2026-10-08; was the stringified function source in the attribute)
+- OPEN: component bodies run untracked — a signal read inside a nested component during a build pass, or a dynamic `{() => cond() ? <ListBoxItem/> : null}` child, does not update; derive `items` at the host (see `../collections/CLAUDE.md`)
+- Keeping a live-mode children thunk as a region breaks the synchronous `provide()` context ("ListBoxItem cannot be rendered outside a collection") - don't
+- Real `mouse.wheel` doesn't reach a section `onWheel` on a resumed page (`dispatchEvent` does): runtime issue (Lane R)
+- Old function-child API `(item) => item().label` and `optionClass` / `sectionClass` / `headerClass` are gone: use `<ListBoxItem>` parts + `class`
+- False `[click-events]` a11y dev warning on `div[role=listbox]`
+- Id: `props.id` wins over a context `MergedId` (Autocomplete / ComboBox) — `contextProps` writes the own id into it; ListBoxInner remaps the parent's `aria-labelledby` self-reference (generated id → own id). Hidden path returns null during `probeCollection` (`isCollectionProbe()`)
+
+## See also
+- [../CLAUDE.md](../CLAUDE.md), [../collections/CLAUDE.md](../collections/CLAUDE.md), [../selection/CLAUDE.md](../selection/CLAUDE.md), [../select/CLAUDE.md](../select/CLAUDE.md), [../combobox/CLAUDE.md](../combobox/CLAUDE.md), [../_adapters/CLAUDE.md](../_adapters/CLAUDE.md)
+- `apps/cdk-docs/content/components/listbox.md`, `apps/cdk-docs/content/foundations/collections.md`
+- `render` (RAC DOMRenderProps) on ListBox, ListBoxItem (div/a), ListBoxSection; early-return attrs path, custom events as `on<Type>` keys; tests `tests/render-leftovers.browser.test.tsx`.

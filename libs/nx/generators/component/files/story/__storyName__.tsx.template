@@ -1,0 +1,24 @@
+import { <%= className %> } from "<%= importPath %>";
+
+export const head = { title: "<%= className %> story" };
+
+/** Story page of <%= className %> (<%= url %>): its states side by side. */
+export default function <%= className %>Story() {
+  return (
+    <main>
+      <h1><%= className %></h1>
+      <section>
+        <h2>Default</h2>
+<% if (overlay) { %>        <<%= className %> label="Open">{() => <p>Panel content</p>}</<%= className %>>
+<% } else { %>        <<%= className %> />
+<% } %>      </section>
+      <section>
+        <h2>With content</h2>
+<% if (overlay) { %>        <<%= className %> label="More">{() => <ul><li>One</li><li>Two</li></ul>}</<%= className %>>
+<% } else { %>        <<%= className %> label="Likes">
+          <p>Children render above the button.</p>
+        </<%= className %>>
+<% } %>      </section>
+    </main>
+  );
+}

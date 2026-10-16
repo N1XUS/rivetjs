@@ -1,0 +1,262 @@
+{
+  "/carousel light": [
+    "color-contrast"
+  ],
+  "/data-display-pro light": [
+    "aria-prohibited-attr"
+  ],
+  "/data-grid light": [
+    "aria-required-attr"
+  ],
+  "/disclosure light": [
+    "aria-valid-attr-value"
+  ],
+  "/forms light": [
+    "aria-valid-attr-value",
+    "label"
+  ],
+  "/morph-icons dark": [
+    "color-contrast"
+  ],
+  "/reanimate light": [
+    "label"
+  ],
+  "/resume light": [
+    "aria-allowed-role"
+  ],
+  "/scroll-area light": [
+    "scrollable-region-focusable"
+  ],
+  "/scroll-shadow-browser light": [
+    "scrollable-region-focusable"
+  ],
+  "/selection-indicator light": [
+    "aria-valid-attr-value"
+  ],
+  "/sidebar-resize light": [
+    "aria-required-attr"
+  ],
+  "/tabs light": [
+    "aria-valid-attr-value"
+  ],
+  "/visual/autocomplete-indicator-open dark": [
+    "color-contrast"
+  ],
+  "/visual/checkbox light": [
+    "color-contrast"
+  ],
+  "/visual/combo-box-indicator-open dark": [
+    "color-contrast"
+  ],
+  "/visual/list-box light": [
+    "aria-required-children"
+  ],
+  "/ai-chat dark": [
+    "color-contrast"
+  ],
+  "/avatar-group dark": [
+    "color-contrast"
+  ],
+  "/button dark": [
+    "color-contrast"
+  ],
+  "/button-group dark": [
+    "color-contrast"
+  ],
+  "/calendar dark": [
+    "color-contrast"
+  ],
+  "/card dark": [
+    "color-contrast"
+  ],
+  "/carousel dark": [
+    "color-contrast"
+  ],
+  "/collections dark": [
+    "color-contrast"
+  ],
+  "/colors dark": [
+    "color-contrast"
+  ],
+  "/combo-box-dev dark": [
+    "color-contrast"
+  ],
+  "/data-display-pro dark": [
+    "aria-prohibited-attr",
+    "color-contrast"
+  ],
+  "/data-grid dark": [
+    "aria-required-attr",
+    "color-contrast"
+  ],
+  "/dates dark": [
+    "color-contrast"
+  ],
+  "/disclosure dark": [
+    "aria-valid-attr-value"
+  ],
+  "/forms dark": [
+    "aria-valid-attr-value",
+    "color-contrast",
+    "label"
+  ],
+  "/inline-select-cold dark": [
+    "color-contrast"
+  ],
+  "/pickers dark": [
+    "color-contrast"
+  ],
+  "/pro-forms dark": [
+    "color-contrast"
+  ],
+  "/progress dark": [
+    "color-contrast"
+  ],
+  "/reanimate dark": [
+    "color-contrast",
+    "label"
+  ],
+  "/removed-region dark": [
+    "color-contrast"
+  ],
+  "/removed-region-auth dark": [
+    "color-contrast"
+  ],
+  "/resume dark": [
+    "aria-allowed-role"
+  ],
+  "/scroll-area dark": [
+    "scrollable-region-focusable"
+  ],
+  "/scroll-shadow-browser dark": [
+    "scrollable-region-focusable"
+  ],
+  "/select-cold dark": [
+    "color-contrast"
+  ],
+  "/selection-indicator dark": [
+    "aria-valid-attr-value"
+  ],
+  "/sidebar-resize dark": [
+    "aria-required-attr"
+  ],
+  "/slider dark": [
+    "color-contrast"
+  ],
+  "/stepper dark": [
+    "color-contrast"
+  ],
+  "/tabs dark": [
+    "aria-valid-attr-value",
+    "color-contrast"
+  ],
+  "/toggle-buttons dark": [
+    "color-contrast"
+  ],
+  "/toggles dark": [
+    "color-contrast"
+  ],
+  "/visual/button dark": [
+    "color-contrast"
+  ],
+  "/visual/button-group dark": [
+    "color-contrast"
+  ],
+  "/visual/calendar dark": [
+    "color-contrast"
+  ],
+  "/visual/card dark": [
+    "color-contrast"
+  ],
+  "/visual/checkbox dark": [
+    "color-contrast"
+  ],
+  "/visual/chip dark": [
+    "color-contrast"
+  ],
+  "/visual/color-picker dark": [
+    "color-contrast"
+  ],
+  "/visual/combo-box dark": [
+    "color-contrast"
+  ],
+  "/visual/date-picker dark": [
+    "color-contrast"
+  ],
+  "/visual/empty-state dark": [
+    "color-contrast"
+  ],
+  "/visual/input dark": [
+    "color-contrast"
+  ],
+  "/visual/input-group dark": [
+    "color-contrast"
+  ],
+  "/visual/input-group-buttons dark": [
+    "color-contrast"
+  ],
+  "/visual/link dark": [
+    "color-contrast"
+  ],
+  "/visual/list-box dark": [
+    "aria-required-children",
+    "color-contrast"
+  ],
+  "/visual/morph-chevron dark": [
+    "color-contrast"
+  ],
+  "/visual/number-field dark": [
+    "color-contrast"
+  ],
+  "/visual/progress dark": [
+    "color-contrast"
+  ],
+  "/visual/radio-group dark": [
+    "color-contrast"
+  ],
+  "/visual/search-field dark": [
+    "color-contrast"
+  ],
+  "/visual/select dark": [
+    "color-contrast"
+  ],
+  "/visual/select-indicator-open dark": [
+    "color-contrast"
+  ],
+  "/visual/select-variants dark": [
+    "color-contrast"
+  ],
+  "/visual/separator dark": [
+    "color-contrast"
+  ],
+  "/visual/slider dark": [
+    "color-contrast"
+  ],
+  "/visual/spinner dark": [
+    "color-contrast"
+  ],
+  "/visual/surface dark": [
+    "color-contrast"
+  ],
+  "/visual/switch dark": [
+    "color-contrast"
+  ],
+  "/visual/tabs dark": [
+    "color-contrast"
+  ],
+  "/visual/tag-group dark": [
+    "color-contrast"
+  ],
+  "/visual/textfield dark": [
+    "color-contrast"
+  ],
+  "/visual/toggle-button-group dark": [
+    "color-contrast"
+  ],
+  "/wave1 dark": [
+    "color-contrast"
+  ],
+  "/wave1-markup dark": [
+    "color-contrast"
+  ]
+}

@@ -1,0 +1,106 @@
+/* Ported from HeroUI v3.2.6 packages/styles/utilities/index.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* === Focus Ring === */
+@utility focus-ring {
+  @apply ring-2 ring-focus ring-offset-0 ring-offset-background outline-none;
+  /* Overrides the ring offset from the theme variables */
+  --tw-ring-offset-width: var(--ring-offset-width);
+}
+
+@utility focus-field-ring {
+  @apply ring-2 ring-focus ring-offset-0 outline-none;
+  /* No separation - ring sits directly against the element */
+  --tw-ring-offset-width: 0px;
+}
+
+@utility invalid-field-ring {
+  /* Unfocused: show 1px outline */
+  @apply outline-1 outline-danger outline-solid;
+  --tw-ring-offset-width: 3px;
+
+  /* Focused: show 2px ring in danger color, remove outline */
+  &:focus,
+  &:focus-visible,
+  &[data-focused="true"],
+  &[data-focus-visible="true"],
+  &:focus-within,
+  &[data-focus-within="true"] {
+    @apply ring-2 ring-danger ring-offset-0;
+    --tw-ring-offset-width: 0px;
+  }
+}
+
+@utility no-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/**
+ * Widens the pressable area of a control smaller than the minimum target size with a transparent
+ * overlay, leaving its size, its visible content and the surrounding layout untouched: 24 x 24 on
+ * fine pointers (WCAG 2.5.8), 44 x 44 on coarse pointers (Rivet: identity spec §3.2, TWEAKS.md TW-138).
+ * The overlay is the host box grown on each side by `max(0, (target - size) / 2)`, so a host already
+ * larger than the target (a checkbox row with its label) keeps its own box. The host must establish
+ * a containing block (`relative` or `absolute`), otherwise the overlay escapes to the nearest one.
+ */
+@utility touch-target {
+  --touch-target: 24px;
+  @media (pointer: coarse) {
+    --touch-target: 44px;
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: min(0px, calc(50% - var(--touch-target) / 2));
+    inset-inline: min(0px, calc(50% - var(--touch-target) / 2));
+  }
+}
+
+/* === Statuses === */
+@utility status-focused {
+  @apply focus-ring;
+}
+
+@utility status-focused-field {
+  @apply focus-field-ring;
+}
+
+@utility status-invalid-field {
+  @apply invalid-field-ring;
+}
+
+@utility status-disabled {
+  opacity: var(--disabled-opacity);
+  cursor: var(--cursor-disabled);
+  pointer-events: none;
+}
+
+@utility status-pending {
+  @apply pointer-events-none;
+}
+
+/* === Scrollbars (standards-only; apply per scroll slot in component CSS) === */
+@utility scrollbar {
+  scrollbar-width: var(--scrollbar-width);
+  scrollbar-color: var(--scrollbar-color);
+  scrollbar-gutter: var(--scrollbar-gutter);
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-gutter: auto;
+}
+
+@utility scrollbar-default {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+  scrollbar-gutter: auto;
+}
+
+/* Direct properties only — does not inherit none to nested scroll slots */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  scrollbar-color: auto;
+  scrollbar-gutter: auto;
+  -ms-overflow-style: none;
+}

@@ -1,0 +1,150 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no segmented control). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --segment, --accent-soft, --radius, focus ring). Behaviour = RAC ToggleButtonGroup (single selection, radiogroup) + SelectionIndicator via @rivetjs/cdk; the indicator glides between items with CSS transitions (SharedElement: translate + size), none with reduced motion. */
+/* -------------------------------------------------------------------------------------------------
+ * Segment Component Styles
+ * Block: segment (parts: item[data-selected] / indicator / label / separator)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: segment - the track holding the items
+ */
+.segment {
+  @apply relative inline-flex w-fit items-center gap-0.5 p-1 select-none;
+
+  --segment-height: calc(var(--spacing) * 8);
+  --segment-padding-x: calc(var(--spacing) * 3.5);
+  --segment-font-size: var(--text-sm);
+  --segment-gap: calc(var(--spacing) * 1.5);
+  border-radius: calc(var(--radius) * 2.5);
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.segment--default {
+  @apply bg-default;
+}
+
+.segment--ghost {
+  @apply bg-transparent;
+}
+
+.segment--sm {
+  --segment-height: calc(var(--spacing) * 7);
+  --segment-padding-x: calc(var(--spacing) * 2.5);
+  --segment-font-size: var(--text-xs);
+  --segment-gap: calc(var(--spacing) * 1);
+}
+
+.segment--lg {
+  --segment-height: calc(var(--spacing) * 10);
+  --segment-padding-x: calc(var(--spacing) * 4.5);
+  --segment-font-size: var(--text-base);
+  --segment-gap: calc(var(--spacing) * 2);
+}
+
+/**
+ * Element: item - one ToggleButton (role=radio)
+ */
+.segment__item {
+  @apply relative isolate inline-flex shrink-0 items-center justify-center font-medium whitespace-nowrap text-muted outline-none no-highlight;
+
+  height: var(--segment-height);
+  padding-inline: var(--segment-padding-x);
+  gap: var(--segment-gap);
+  font-size: var(--segment-font-size);
+  border-radius: calc(var(--radius) * 2);
+  cursor: var(--cursor-interactive);
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    opacity var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    @apply size-4 shrink-0;
+  }
+
+  &[data-selected="true"] {
+    @apply text-segment-foreground;
+  }
+
+  .segment--ghost &[data-selected="true"] {
+    @apply text-accent-soft-foreground;
+  }
+
+  @media (hover: hover) {
+    &:not([data-selected="true"]):not([data-disabled="true"]):hover,
+    &[data-hovered="true"]:not([data-selected="true"]):not([data-disabled="true"]) {
+      @apply text-foreground;
+    }
+  }
+
+  &[data-pressed="true"]:not([data-disabled="true"]) .segment__label {
+    @apply scale-[0.97];
+  }
+
+  &:focus-visible:not([data-focused]),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/**
+ * Element: indicator - SelectionIndicator behind the selected item (moves between items)
+ */
+.segment__indicator {
+  @apply pointer-events-none absolute inset-0 bg-segment shadow-surface;
+
+  z-index: -1;
+  border-radius: inherit;
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition-duration: var(--duration-base);
+  transition-property: translate, width, height;
+  transition-timing-function: var(--ease-out-fluid);
+  @apply motion-reduce:transition-none;
+
+  .segment--ghost & {
+    @apply bg-accent-soft shadow-none;
+  }
+}
+
+/**
+ * Element: label - the item content above the indicator
+ */
+.segment__label {
+  @apply inline-flex items-center;
+
+  gap: var(--segment-gap);
+  transition: scale var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+}
+
+/**
+ * Element: separator - divider between items, hidden next to the selected item
+ */
+.segment__separator {
+  @apply pointer-events-none h-1/2 w-px shrink-0 self-center rounded-sm bg-muted/25;
+
+  margin-inline: calc(var(--spacing) * -0.25);
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  .segment__item[data-selected="true"] + &,
+  &:has(+ .segment__item[data-selected="true"]) {
+    @apply opacity-0;
+  }
+}

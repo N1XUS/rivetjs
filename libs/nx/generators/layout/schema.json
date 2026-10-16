@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "RivetLayout",
+  "title": "Rivet layout",
+  "description": "Adds a _layout.tsx to a folder of a Rivet app's routes (the root layout without a directory), optionally with a serverGuard for everything below it.",
+  "type": "object",
+  "properties": {
+    "directory": {
+      "type": "string",
+      "default": "",
+      "description": "Folder under src/routes the layout wraps (blog, (marketing)); empty for the root layout.",
+      "$default": { "$source": "argv", "index": 0 }
+    },
+    "project": {
+      "type": "string",
+      "description": "The Rivet app.",
+      "$default": { "$source": "projectName" },
+      "x-dropdown": "projects",
+      "x-prompt": "Which project?"
+    },
+    "guard": { "type": "boolean", "default": false, "description": "Add a serverGuard for the whole folder." },
+    "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
+  },
+  "required": ["project"],
+  "additionalProperties": false
+}

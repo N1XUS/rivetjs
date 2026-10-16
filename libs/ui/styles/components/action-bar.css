@@ -1,0 +1,95 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no action bar). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens. The pill is the vendored attached toolbar (`toolbar toolbar--attached`: surface, radius, overlay shadow); enter / exit = CSS transitions on `data-open` (`@starting-style` + `display` allow-discrete: no JS presence), none with reduced motion. */
+/* -------------------------------------------------------------------------------------------------
+ * ActionBar Component Styles
+ * Block: action-bar (parts: wrapper / prefix / content / suffix / label)
+ * Variables: --action-bar-offset (distance from the viewport bottom), --action-bar-transition-duration.
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: action-bar - fixed, bottom-centre layer; lets pointer events through outside the pill
+ */
+.action-bar {
+  --action-bar-offset: calc(var(--spacing) * 6);
+  --action-bar-transition-duration: var(--duration-base);
+  @apply pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4;
+  bottom: max(var(--action-bar-offset), env(safe-area-inset-bottom));
+}
+
+/**
+ * Element: wrapper - the visible pill (a toolbar)
+ */
+.action-bar__wrapper {
+  @apply pointer-events-auto max-w-full;
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  transition:
+    opacity var(--action-bar-transition-duration) var(--ease-smooth),
+    translate var(--action-bar-transition-duration) var(--ease-smooth),
+    scale var(--action-bar-transition-duration) var(--ease-smooth),
+    display var(--action-bar-transition-duration) allow-discrete;
+
+  .action-bar:not([data-open="true"]) & {
+    display: none;
+    opacity: 0;
+    translate: 0 0.75rem;
+    scale: 0.96;
+  }
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 0.75rem;
+    scale: 0.96;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+/* The horizontal pill keeps its sections on one row. */
+.action-bar--horizontal .action-bar__wrapper {
+  @apply flex flex-row items-center;
+}
+
+.action-bar--vertical .action-bar__wrapper {
+  @apply flex flex-col items-stretch;
+}
+
+/**
+ * Elements: prefix / content / suffix - leading, middle and trailing sections
+ */
+.action-bar__prefix,
+.action-bar__content,
+.action-bar__suffix {
+  @apply flex min-w-0 items-center gap-1;
+
+  .action-bar--vertical & {
+    @apply flex-col items-stretch;
+  }
+}
+
+.action-bar__prefix {
+  @apply shrink-0 ps-2 text-sm font-medium whitespace-nowrap text-foreground;
+
+  .action-bar--vertical & {
+    @apply ps-0 pt-1 text-center;
+  }
+}
+
+.action-bar__content {
+  @apply flex-1;
+}
+
+.action-bar__suffix {
+  @apply shrink-0;
+}
+
+/**
+ * Element: label - button text that collapses to screen-reader-only below 640px (icon-only buttons on phones)
+ */
+@media (width < 40rem) {
+  .action-bar__label {
+    @apply sr-only;
+  }
+}

@@ -1,0 +1,77 @@
+// Ported from react-resizable-panels (lib/global/event-handlers/onDocumentPointerMove.ts, v4.14.3), MIT, © Brian Vaughn.
+// Rivet: engine file kept as upstream (framework-free); `.ts` import specifiers.
+import { updateCursorStyle } from "../cursor/updateCursorStyle.ts";
+import { getMountedAxes } from "../mutable-state/axes.ts";
+import { getInteractionState, updateInteractionState } from "../mutable-state/interactions.ts";
+import { abortActivePointerResize } from "../utils/abortActivePointerResize.ts";
+import { findMatchingHitRegions } from "../utils/findMatchingHitRegions.ts";
+import { updateActiveHitRegions } from "../utils/updateActiveHitRegion.ts";
+
+export function onDocumentPointerMove(event: PointerEvent) {
+  if (event.defaultPrevented) {
+    return;
+  }
+
+  const interactionState = getInteractionState();
+  const mountedAxes = getMountedAxes();
+
+  switch (interactionState.state) {
+    case "active": {
+      // Edge case (see #340)
+      // Detect when the pointer has been released outside an iframe on a different domain
+      if (
+        // Skip this check for "pointerleave" events, else Firefox triggers a false positive (see #514)
+        event.buttons === 0
+      ) {
+        // This event is a later hover, not the release position.
+        // Commit the last preview without incorporating movement after the button was released.
+        abortActivePointerResize(event.currentTarget as Document);
+
+        return;
+      }
+
+      for (const hitRegion of interactionState.hitRegions) {
+        if (hitRegion.separator) {
+          const { element } = hitRegion.separator;
+          if (element.isConnected && !element.hasPointerCapture?.(event.pointerId)) {
+            element.setPointerCapture?.(event.pointerId);
+          }
+        }
+      }
+
+      updateActiveHitRegions({
+        commit: false,
+        document: event.currentTarget as Document,
+        event,
+        hitRegions: interactionState.hitRegions,
+        initialLayoutMap: interactionState.initialLayoutMap,
+        mountedAxes,
+        pointerDownAtPoint: interactionState.pointerDownAtPoint,
+        prevCursorFlags: interactionState.cursorFlags,
+      });
+      break;
+    }
+    default: {
+      // Update HitRegions if a drag has not been started
+      const hitRegions = findMatchingHitRegions(event, mountedAxes);
+
+      if (hitRegions.length === 0) {
+        if (interactionState.state !== "inactive") {
+          updateInteractionState({
+            cursorFlags: 0,
+            state: "inactive",
+          });
+        }
+      } else {
+        updateInteractionState({
+          cursorFlags: 0,
+          hitRegions,
+          state: "hover",
+        });
+      }
+
+      updateCursorStyle(event.currentTarget as Document);
+      break;
+    }
+  }
+}

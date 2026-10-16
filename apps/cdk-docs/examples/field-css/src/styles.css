@@ -1,0 +1,36 @@
+/* Plain CSS: default classes rv-Label, rv-Text, rv-FieldError; Text also renders its slot attribute. */
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+}
+.field {
+  display: grid;
+  gap: 4px;
+  margin: 16px;
+  max-width: 280px;
+}
+.rv-Label {
+  font-weight: 600;
+}
+.field input {
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+.field input[aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+.rv-Text[slot="description"] {
+  color: #64748b;
+  font-size: 12px;
+}
+.rv-FieldError {
+  color: #b91c1c;
+  font-size: 12px;
+}
+.rv-FieldError svg {
+  vertical-align: -1px;
+}

@@ -1,0 +1,22 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+/* A custom shadow token: one value per theme + a Tailwind utility (`shadow-raised`). */
+@layer base {
+  :root,
+  [data-theme="light"] {
+    --raised-shadow: 0 16px 32px -12px rgb(0 0 0 / 0.22), 0 4px 8px -4px rgb(0 0 0 / 0.08);
+  }
+  .dark,
+  [data-theme="dark"] {
+    --raised-shadow: 0 0 0 1px rgb(255 255 255 / 0.1) inset;
+  }
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}
+@theme inline {
+  --shadow-raised: var(--raised-shadow);
+}

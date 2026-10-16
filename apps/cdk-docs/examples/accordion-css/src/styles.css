@@ -1,0 +1,62 @@
+/* Plain CSS on the default rv-* classes, [data-expanded] and the trigger's [aria-expanded]. */
+body {
+  margin: 0;
+  font:
+    14px/1.5 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+
+.rv-DisclosureGroup {
+  margin: 16px;
+  max-width: 28rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.rv-Disclosure + .rv-Disclosure {
+  border-top: 1px solid #cbd5e1;
+}
+
+.rv-Disclosure[data-expanded] {
+  background: #f8fafc;
+}
+
+.rv-Disclosure h3 {
+  margin: 0;
+}
+
+.rv-Disclosure .rv-Button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rv-Disclosure .chevron {
+  transition: transform 150ms;
+}
+
+.rv-Disclosure .rv-Button[aria-expanded="true"] {
+  color: #4338ca;
+}
+
+.rv-Disclosure[data-expanded] .chevron {
+  transform: rotate(180deg);
+}
+
+.rv-Disclosure .rv-Button[data-focus-visible] {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+.rv-DisclosurePanel {
+  padding: 0 14px 12px;
+  color: #475569;
+}

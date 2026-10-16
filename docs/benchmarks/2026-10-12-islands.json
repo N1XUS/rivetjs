@@ -1,0 +1,2160 @@
+{
+  "generatedBy": "apps/island-bench/report.ts",
+  "subject": "rivet-bridge-react",
+  "results": {
+    "stamp": "2026-10-12T16:03:06.880Z",
+    "host": {
+      "loaded": true,
+      "notes": [
+        "server: bench lock acquired at load 4.68 (loaded host: maxLoad waived)",
+        "browser: bench lock acquired at load 6.4 (loaded host: maxLoad waived)",
+        "server: bench lock acquired at load 16.21 (loaded host: maxLoad waived)",
+        "browser: bench lock acquired at load 12.81 (loaded host: maxLoad waived)",
+        "server: bench lock acquired at load 5.37 (loaded host: maxLoad waived)",
+        "browser: bench lock acquired at load 13.49 (loaded host: maxLoad waived)",
+        "browser: bench lock acquired at load 5.55 (loaded host: maxLoad waived)",
+        "browser: bench lock acquired at load 3.85"
+      ],
+      "env": {
+        "NODE_ENV": "production (every lane's build + server)"
+      }
+    },
+    "versions": {
+      "node": "v26.5.1",
+      "react": "19.3.0",
+      "react-dom": "19.3.0",
+      "vite": "8.3.2",
+      "next": "16.4.0",
+      "next react": "19.3.0",
+      "astro": "7.3.8",
+      "@astrojs/react": "7.0.1",
+      "@astrojs/node": "11.1.7",
+      "@astrojs/preact": "6.0.6",
+      "astro-preact preact": "10.29.8",
+      "rivet preact": "11.0.1",
+      "playwright": "1.63.0",
+      "chrome": "153.0.8010.12"
+    },
+    "skipped": {},
+    "build": {
+      "rivet-bridge-react": {
+        "ms": 642,
+        "peakRssMb": 288,
+        "treePeakRssMb": 288
+      },
+      "astro-react": {
+        "ms": 1383,
+        "peakRssMb": 338,
+        "treePeakRssMb": 338
+      },
+      "next": {
+        "ms": 2509,
+        "peakRssMb": 813,
+        "treePeakRssMb": 1059
+      },
+      "rivet-native": {
+        "ms": 450,
+        "peakRssMb": 263,
+        "treePeakRssMb": 263
+      },
+      "rivet-bridge-preact": {
+        "ms": 401,
+        "peakRssMb": 261,
+        "treePeakRssMb": 261
+      },
+      "rivet-bridge-preact-p10": {
+        "ms": 393,
+        "peakRssMb": 273,
+        "treePeakRssMb": 273
+      },
+      "astro-preact": {
+        "ms": 1284,
+        "peakRssMb": 355,
+        "treePeakRssMb": 355
+      }
+    },
+    "server": {
+      "rivet-bridge-react": {
+        "c1": {
+          "rps": 3448.9712873140347,
+          "ttfbP50": 0.22187500000291038,
+          "completeP50": 0.2338750000053551,
+          "completeP99": 0.6281250000029104,
+          "cpuMsPerPage": 0.22731226442447086,
+          "peakRssMb": 199.71875,
+          "pageBytes": 109317,
+          "pageBytesGzip": 10717,
+          "requests": 52942,
+          "load": [
+            4.94,
+            10.24
+          ]
+        },
+        "c10": {
+          "rps": 4705.367512266703,
+          "ttfbP50": 1.6408749999973224,
+          "completeP50": 1.6535000000003492,
+          "completeP99": 19.303209000005154,
+          "cpuMsPerPage": 0.20310176333120883,
+          "peakRssMb": 211.9375,
+          "pageBytes": 109324,
+          "pageBytesGzip": 10717,
+          "requests": 71338,
+          "load": [
+            5.19,
+            9.9
+          ]
+        }
+      },
+      "rivet-bridge-react-full": {
+        "c1": {
+          "rps": 3084.5198536868256,
+          "ttfbP50": 0.25466600000072503,
+          "completeP50": 0.267041999992216,
+          "completeP99": 0.5477079999982379,
+          "cpuMsPerPage": 0.2481212749416947,
+          "peakRssMb": 201.203125,
+          "pageBytes": 112751,
+          "pageBytesGzip": 12769,
+          "requests": 46969,
+          "load": [
+            5.49,
+            10.99
+          ]
+        },
+        "c10": {
+          "rps": 4441.3393148616415,
+          "ttfbP50": 1.7407919999968726,
+          "completeP50": 1.7532910000008997,
+          "completeP99": 19.951541999995243,
+          "cpuMsPerPage": 0.22071003268120162,
+          "peakRssMb": 219.515625,
+          "pageBytes": 112758,
+          "pageBytesGzip": 12769,
+          "requests": 66589,
+          "load": [
+            5.45,
+            10.35
+          ]
+        }
+      },
+      "astro-react": {
+        "c1": {
+          "rps": 1716.9203214892514,
+          "ttfbP50": 0.46868749998975545,
+          "completeP50": 0.48293750001175795,
+          "completeP99": 1.0512500000004366,
+          "cpuMsPerPage": 0.5140403805987468,
+          "peakRssMb": 278.9375,
+          "pageBytes": 114118,
+          "pageBytesGzip": 12706,
+          "requests": 25254,
+          "load": [
+            5.89,
+            12.25
+          ]
+        },
+        "c10": {
+          "rps": 2334.109931103951,
+          "ttfbP50": 3.7964999999967404,
+          "completeP50": 3.8102504999988014,
+          "completeP99": 21.76854099999764,
+          "cpuMsPerPage": 0.4606953245418737,
+          "peakRssMb": 492.390625,
+          "pageBytes": 114118,
+          "pageBytesGzip": 12706,
+          "requests": 35129,
+          "load": [
+            6.86,
+            11.51
+          ]
+        }
+      },
+      "next": {
+        "c1": {
+          "rps": 96.92004015274564,
+          "ttfbP50": 8.312917000002926,
+          "completeP50": 8.461708000002545,
+          "completeP99": 27.022040999989258,
+          "cpuMsPerPage": 12.958963282937367,
+          "peakRssMb": 347.75,
+          "pageBytes": 373098,
+          "pageBytesGzip": 31697,
+          "requests": 1436,
+          "load": [
+            6.59,
+            8.86
+          ]
+        },
+        "c10": {
+          "rps": 111.47699930338129,
+          "ttfbP50": 87.4452089999977,
+          "completeP50": 87.58258399998886,
+          "completeP99": 113.60487499998999,
+          "cpuMsPerPage": 11.818181818181815,
+          "peakRssMb": 547.25,
+          "pageBytes": 373098,
+          "pageBytesGzip": 31697,
+          "requests": 1660,
+          "load": [
+            6.79,
+            8.88
+          ]
+        }
+      },
+      "rivet-native": {
+        "c1": {
+          "rps": 2692.393226787725,
+          "ttfbP50": 0.295124999996915,
+          "completeP50": 0.30835449999722186,
+          "completeP99": 0.7062080000032438,
+          "cpuMsPerPage": 0.27827116637063354,
+          "peakRssMb": 136.03125,
+          "pageBytes": 114104,
+          "pageBytesGzip": 13061,
+          "requests": 40844,
+          "load": [
+            6.57,
+            6.6
+          ]
+        },
+        "c10": {
+          "rps": 4041.857844032351,
+          "ttfbP50": 1.9969170000003942,
+          "completeP50": 2.0084585000004154,
+          "completeP99": 19.81287500000326,
+          "cpuMsPerPage": 0.2322148971760307,
+          "peakRssMb": 189.171875,
+          "pageBytes": 114104,
+          "pageBytesGzip": 13061,
+          "requests": 60524,
+          "load": [
+            6.43,
+            6.59
+          ]
+        }
+      },
+      "rivet-bridge-preact": {
+        "c1": {
+          "rps": 3601.3115878005124,
+          "ttfbP50": 0.20683400001144037,
+          "completeP50": 0.21779199998127297,
+          "completeP99": 0.6130000000121072,
+          "cpuMsPerPage": 0.22213583606375298,
+          "peakRssMb": 222.78125,
+          "pageBytes": 109585,
+          "pageBytesGzip": 10792,
+          "requests": 52758,
+          "load": [
+            5.66,
+            20.5
+          ]
+        },
+        "c10": {
+          "rps": 4597.445279629261,
+          "ttfbP50": 1.577416500003892,
+          "completeP50": 1.5906460000114748,
+          "completeP99": 20.493833000015,
+          "cpuMsPerPage": 0.20757496966545333,
+          "peakRssMb": 246.375,
+          "pageBytes": 109592,
+          "pageBytesGzip": 10792,
+          "requests": 70112,
+          "load": [
+            6.09,
+            19.33
+          ]
+        }
+      },
+      "astro-preact": {
+        "c1": {
+          "rps": 1496.363363937218,
+          "ttfbP50": 0.4931670000005397,
+          "completeP50": 0.5109165000030771,
+          "completeP99": 2.003499999991618,
+          "cpuMsPerPage": 0.5426356589147288,
+          "peakRssMb": 280.40625,
+          "pageBytes": 114162,
+          "pageBytesGzip": 12706,
+          "requests": 21510,
+          "load": [
+            11.75,
+            14.06
+          ]
+        },
+        "c10": {
+          "rps": 1939.1541591962794,
+          "ttfbP50": 3.452458999992814,
+          "completeP50": 3.4704170000040904,
+          "completeP99": 29.171375000005355,
+          "cpuMsPerPage": 0.42812801027507236,
+          "peakRssMb": 388.234375,
+          "pageBytes": 114162,
+          "pageBytesGzip": 12706,
+          "requests": 32667,
+          "load": [
+            13.21,
+            15.33
+          ]
+        }
+      },
+      "rivet-bridge-preact-p10": {
+        "c1": {
+          "rps": 3259.754703358938,
+          "ttfbP50": 0.21187499999359716,
+          "completeP50": 0.22335450000537094,
+          "completeP99": 0.8598329999949783,
+          "cpuMsPerPage": 0.23230223743733952,
+          "peakRssMb": 222.78125,
+          "pageBytes": 109606,
+          "pageBytesGzip": 10804,
+          "requests": 38309,
+          "load": [
+            6.48,
+            17.78
+          ]
+        },
+        "c10": {
+          "rps": 4888.234719004261,
+          "ttfbP50": 1.5636670000094455,
+          "completeP50": 1.575416999985464,
+          "completeP99": 19.375124999991385,
+          "cpuMsPerPage": 0.20134501732219276,
+          "peakRssMb": 219.421875,
+          "pageBytes": 109606,
+          "pageBytesGzip": 10804,
+          "requests": 68080,
+          "load": [
+            8.21,
+            16.92
+          ]
+        }
+      }
+    },
+    "browser": {
+      "fast3g": {
+        "rivet-bridge-react": {
+          "bytesBeforeInput": 333774,
+          "bytesGzipBeforeInput": 80530,
+          "jsBytesGzipBeforeInput": 69420,
+          "jsBytesBeforeInput": 223387,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 29.861,
+          "cls": 0,
+          "counterPaint": 57.85000002384186,
+          "pickerPaint": 15.749999940395355,
+          "chartPaint": 16.399999976158142,
+          "chartReadyMs": -696.8512704999885,
+          "samples": 10
+        },
+        "rivet-bridge-react-full": {
+          "bytesBeforeInput": 396892,
+          "bytesGzipBeforeInput": 107727,
+          "jsBytesGzipBeforeInput": 94622,
+          "jsBytesBeforeInput": 283272,
+          "jsRequestsBeforeInput": 16,
+          "scriptMsUntilIdle": 36.9945,
+          "cls": 0,
+          "counterPaint": 56.35000002384186,
+          "pickerPaint": 16.19999998807907,
+          "chartPaint": 16.100000023841858,
+          "chartReadyMs": 1200.441061999998,
+          "samples": 10
+        },
+        "astro-react": {
+          "bytesBeforeInput": 338714,
+          "bytesGzipBeforeInput": 82749,
+          "jsBytesGzipBeforeInput": 69709,
+          "jsBytesBeforeInput": 223607,
+          "jsRequestsBeforeInput": 5,
+          "scriptMsUntilIdle": 38.104,
+          "cls": 0,
+          "counterPaint": 55.84999996423721,
+          "pickerPaint": 16.300000071525574,
+          "chartPaint": 16.600000023841858,
+          "chartReadyMs": 638.0997709999938,
+          "samples": 10
+        },
+        "next": {
+          "bytesBeforeInput": 833727,
+          "bytesGzipBeforeInput": 167644,
+          "jsBytesGzipBeforeInput": 135613,
+          "jsBytesBeforeInput": 459029,
+          "jsRequestsBeforeInput": 6,
+          "scriptMsUntilIdle": 154.88150000000002,
+          "cls": 0,
+          "counterPaint": 56.59999996423721,
+          "pickerPaint": 15.949999988079071,
+          "chartPaint": 16,
+          "chartReadyMs": -697.4801455000124,
+          "samples": 10
+        },
+        "rivet-native": {
+          "bytesBeforeInput": 114994,
+          "bytesGzipBeforeInput": 13395,
+          "jsBytesGzipBeforeInput": 0,
+          "jsBytesBeforeInput": 0,
+          "jsRequestsBeforeInput": 0,
+          "scriptMsUntilIdle": 1.7365,
+          "cls": 0,
+          "counterPaint": 1427.25,
+          "pickerPaint": 534.0500000119209,
+          "chartPaint": 1160.3499999642372,
+          "chartReadyMs": 21.8182500000039,
+          "samples": 10
+        },
+        "rivet-bridge-preact": {
+          "bytesBeforeInput": 127129,
+          "bytesGzipBeforeInput": 18184,
+          "jsBytesGzipBeforeInput": 7056,
+          "jsBytesBeforeInput": 16675,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 3.184,
+          "cls": 0,
+          "counterPaint": 52.950000047683716,
+          "pickerPaint": 15.949999988079071,
+          "chartPaint": 16.500000059604645,
+          "chartReadyMs": -696.820354000025,
+          "samples": 10
+        },
+        "astro-preact": {
+          "bytesBeforeInput": 134193,
+          "bytesGzipBeforeInput": 20890,
+          "jsBytesGzipBeforeInput": 7850,
+          "jsBytesBeforeInput": 19056,
+          "jsRequestsBeforeInput": 6,
+          "scriptMsUntilIdle": 6.63,
+          "cls": 0,
+          "counterPaint": 54.30000001192093,
+          "pickerPaint": 15.800000011920929,
+          "chartPaint": 16.299999952316284,
+          "chartReadyMs": 635.5787295000046,
+          "samples": 10
+        },
+        "rivet-bridge-preact-p10": {
+          "bytesBeforeInput": 126945,
+          "bytesGzipBeforeInput": 18000,
+          "jsBytesGzipBeforeInput": 6860,
+          "jsBytesBeforeInput": 16470,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 3.632,
+          "cls": 0,
+          "counterPaint": 56.09999996423721,
+          "pickerPaint": 16.19999998807907,
+          "chartPaint": 16.69999998807907,
+          "chartReadyMs": -697.4967705000017,
+          "samples": 10
+        }
+      },
+      "unthrottled": {
+        "rivet-bridge-react": {
+          "bytesBeforeInput": 333573,
+          "bytesGzipBeforeInput": 80473,
+          "jsBytesGzipBeforeInput": 69420,
+          "jsBytesBeforeInput": 223387,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 7.3229999999999995,
+          "cls": 0,
+          "counterPaint": 49.699999928474426,
+          "pickerPaint": 16.200000047683716,
+          "chartPaint": 16.800000071525574,
+          "chartReadyMs": -697.2402089999523,
+          "samples": 5
+        },
+        "rivet-bridge-react-full": {
+          "bytesBeforeInput": 396892,
+          "bytesGzipBeforeInput": 107727,
+          "jsBytesGzipBeforeInput": 94622,
+          "jsBytesBeforeInput": 283272,
+          "jsRequestsBeforeInput": 16,
+          "scriptMsUntilIdle": 8.841,
+          "cls": 0,
+          "counterPaint": 54.10000002384186,
+          "pickerPaint": 16.100000023841858,
+          "chartPaint": 16.100000023841858,
+          "chartReadyMs": 23.92499999998836,
+          "samples": 5
+        },
+        "astro-react": {
+          "bytesBeforeInput": 338714,
+          "bytesGzipBeforeInput": 82749,
+          "jsBytesGzipBeforeInput": 69709,
+          "jsBytesBeforeInput": 223607,
+          "jsRequestsBeforeInput": 5,
+          "scriptMsUntilIdle": 9.904,
+          "cls": 0,
+          "counterPaint": 56.799999952316284,
+          "pickerPaint": 16.699999928474426,
+          "chartPaint": 16.100000023841858,
+          "chartReadyMs": 25.78029099997366,
+          "samples": 5
+        },
+        "next": {
+          "bytesBeforeInput": 833727,
+          "bytesGzipBeforeInput": 167644,
+          "jsBytesGzipBeforeInput": 135613,
+          "jsBytesBeforeInput": 459029,
+          "jsRequestsBeforeInput": 6,
+          "scriptMsUntilIdle": 12.656,
+          "cls": 0,
+          "counterPaint": 55.299999952316284,
+          "pickerPaint": 16.399999976158142,
+          "chartPaint": 16.100000023841858,
+          "chartReadyMs": -698.5412910000305,
+          "samples": 5
+        },
+        "rivet-native": {
+          "bytesBeforeInput": 114994,
+          "bytesGzipBeforeInput": 13395,
+          "jsBytesGzipBeforeInput": 0,
+          "jsBytesBeforeInput": 0,
+          "jsRequestsBeforeInput": 0,
+          "scriptMsUntilIdle": 0.488,
+          "cls": 0,
+          "counterPaint": 32.39999997615814,
+          "pickerPaint": 33.09999990463257,
+          "chartPaint": 33.10000002384186,
+          "chartReadyMs": -81.10716700000921,
+          "samples": 5
+        },
+        "rivet-bridge-preact": {
+          "bytesBeforeInput": 127129,
+          "bytesGzipBeforeInput": 18184,
+          "jsBytesGzipBeforeInput": 7056,
+          "jsBytesBeforeInput": 16675,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 0.898,
+          "cls": 0,
+          "counterPaint": 52,
+          "pickerPaint": 16,
+          "chartPaint": 16.100000023841858,
+          "chartReadyMs": -698.4269579998218,
+          "samples": 11
+        },
+        "astro-preact": {
+          "bytesBeforeInput": 134193,
+          "bytesGzipBeforeInput": 20890,
+          "jsBytesGzipBeforeInput": 7850,
+          "jsBytesBeforeInput": 19056,
+          "jsRequestsBeforeInput": 6,
+          "scriptMsUntilIdle": 1.539,
+          "cls": 0,
+          "counterPaint": 50.10000002384186,
+          "pickerPaint": 15.799999952316284,
+          "chartPaint": 16,
+          "chartReadyMs": 65.20158400014043,
+          "samples": 11
+        },
+        "rivet-bridge-preact-p10": {
+          "bytesBeforeInput": 126945,
+          "bytesGzipBeforeInput": 18000,
+          "jsBytesGzipBeforeInput": 6860,
+          "jsBytesBeforeInput": 16470,
+          "jsRequestsBeforeInput": 4,
+          "scriptMsUntilIdle": 0.9129999999999999,
+          "cls": 0,
+          "counterPaint": 40,
+          "pickerPaint": 16,
+          "chartPaint": 16,
+          "chartReadyMs": -698.341541999951,
+          "samples": 11
+        }
+      }
+    }
+  },
+  "rows": [
+    {
+      "section": "server c1",
+      "metric": "server CPU / page",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 0.22731226442447086,
+        "rivet-bridge-react-full": 0.2481212749416947,
+        "astro-react": 0.5140403805987468,
+        "next": 12.958963282937367,
+        "rivet-native": 0.27827116637063354
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.2613842763840277
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 57.00952087098339
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.224180169403463
+        }
+      }
+    },
+    {
+      "section": "server c1",
+      "metric": "TTFB p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 0.22187500000291038,
+        "rivet-bridge-react-full": 0.25466600000072503,
+        "astro-react": 0.46868749998975545,
+        "next": 8.312917000002926,
+        "rivet-native": 0.295124999996915
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.1123943661233016
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 37.46666816853581
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "server c1",
+      "metric": "complete p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 0.2338750000053551,
+        "rivet-bridge-react-full": 0.267041999992216,
+        "astro-react": 0.48293750001175795,
+        "next": 8.461708000002545,
+        "rivet-native": 0.30835449999722186
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.0649385355454837
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 36.18047247379496
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "server c1",
+      "metric": "requests / s",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 3448.9712873140347,
+        "rivet-bridge-react-full": 3084.5198536868256,
+        "astro-react": 1716.9203214892514,
+        "next": 96.92004015274564,
+        "rivet-native": 2692.393226787725
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.1181549968600761
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.0088126654138545
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 35.585739356674516
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.2810057806559623
+        }
+      }
+    },
+    {
+      "section": "server c1",
+      "metric": "peak server RSS",
+      "unit": "MB",
+      "values": {
+        "rivet-bridge-react": 199.71875,
+        "rivet-bridge-react-full": 201.203125,
+        "astro-react": 278.9375,
+        "next": 347.75,
+        "rivet-native": 136.03125
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.3966515412298546
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.741198560475669
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.6811140666562353
+        }
+      }
+    },
+    {
+      "section": "server c1",
+      "metric": "HTML bytes",
+      "unit": "B",
+      "values": {
+        "rivet-bridge-react": 109317,
+        "rivet-bridge-react-full": 112751,
+        "astro-react": 114118,
+        "next": 373098,
+        "rivet-native": 114104
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1.03141322941537
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.0439181463084424
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 3.4129915749608934
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1.043790078395858
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "server CPU / page",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 0.20310176333120883,
+        "rivet-bridge-react-full": 0.22071003268120162,
+        "astro-react": 0.4606953245418737,
+        "next": 11.818181818181815,
+        "rivet-native": 0.2322148971760307
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.268298004831171
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 58.18847470521109
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "TTFB p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 1.6408749999973224,
+        "rivet-bridge-react-full": 1.7407919999968726,
+        "astro-react": 3.7964999999967404,
+        "next": 87.4452089999977,
+        "rivet-native": 1.9969170000003942
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.3137045783517545
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 53.29181625665599
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.216983012114666
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "complete p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 1.6535000000003492,
+        "rivet-bridge-react-full": 1.7532910000008997,
+        "astro-react": 3.8102504999988014,
+        "next": 87.58258399998886,
+        "rivet-native": 2.0084585000004154
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.3043547021457496
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 52.9679975808711
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.2146710009071613
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "requests / s",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 4705.367512266703,
+        "rivet-bridge-react-full": 4441.3393148616415,
+        "astro-react": 2334.109931103951,
+        "next": 111.47699930338129,
+        "rivet-native": 4041.857844032351
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1.059447877923123
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.0159151244608395
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 42.20931260861433
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.1641595755808183
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "peak server RSS",
+      "unit": "MB",
+      "values": {
+        "rivet-bridge-react": 211.9375,
+        "rivet-bridge-react-full": 219.515625,
+        "astro-react": 492.390625,
+        "next": 547.25,
+        "rivet-native": 189.171875
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 2.323282217634916
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 2.582129165437924
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.8925833087584784
+        }
+      }
+    },
+    {
+      "section": "server c10",
+      "metric": "HTML bytes",
+      "unit": "B",
+      "values": {
+        "rivet-bridge-react": 109324,
+        "rivet-bridge-react-full": 112758,
+        "astro-react": 114118,
+        "next": 373098,
+        "rivet-native": 114104
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1.0314112180308075
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.0438513043796422
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 3.4127730416011124
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1.0437232446672278
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 80530,
+        "rivet-bridge-react-full": 107727,
+        "astro-react": 82749,
+        "next": 167644,
+        "rivet-native": 13395
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.337725071401962
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.02755494846641
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 2.081758350925121
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.16633552713274555
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "bytes before input (raw)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 333774,
+        "rivet-bridge-react-full": 396892,
+        "astro-react": 338714,
+        "next": 833727,
+        "rivet-native": 114994
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.189104004506043
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.0148004338264813
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 2.49787880422082
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.3445265359195144
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "JS bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 69420,
+        "rivet-bridge-react-full": 94622,
+        "astro-react": 69709,
+        "next": 135613,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.3630365888792855
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.9535148372227025
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "JS requests before input",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 4,
+        "rivet-bridge-react-full": 16,
+        "astro-react": 5,
+        "next": 6,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 4
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.25
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "script CPU until idle (hydration)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 29.861,
+        "rivet-bridge-react-full": 36.9945,
+        "astro-react": 38.104,
+        "next": 154.88150000000002,
+        "rivet-native": 1.7365
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.2388901912193162
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.2760456783095007
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 5.186748601855263
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.05815277452195171
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "CLS",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 0,
+        "rivet-bridge-react-full": 0,
+        "astro-react": 0,
+        "next": 0,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, counter (load)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 57.85000002384186,
+        "rivet-bridge-react-full": 56.35000002384186,
+        "astro-react": 55.84999996423721,
+        "next": 56.59999996423721,
+        "rivet-native": 1427.25
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 0.9654278295802873
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 24.671564380497564
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, picker (idle)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 15.749999940395355,
+        "rivet-bridge-react-full": 16.19999998807907,
+        "astro-react": 16.300000071525574,
+        "next": 15.949999988079071,
+        "rivet-native": 534.0500000119209
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 33.90793663701533
+        }
+      }
+    },
+    {
+      "section": "browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, chart (visible)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 16.399999976158142,
+        "rivet-bridge-react-full": 16.100000023841858,
+        "astro-react": 16.600000023841858,
+        "next": 16,
+        "rivet-native": 1160.3499999642372
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 70.75304888116594
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 80473,
+        "rivet-bridge-react-full": 107727,
+        "astro-react": 82749,
+        "next": 167644,
+        "rivet-native": 13395
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.3386725982627714
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.0282827780746338
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 2.0832328855641022
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.16645334460005218
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "bytes before input (raw)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 333573,
+        "rivet-bridge-react-full": 396892,
+        "astro-react": 338714,
+        "next": 833727,
+        "rivet-native": 114994
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.1898205190468054
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1.015411918830361
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 2.4993839429450224
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.34473413615610377
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "JS bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-react": 69420,
+        "rivet-bridge-react-full": 94622,
+        "astro-react": 69709,
+        "next": 135613,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 1.3630365888792855
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.9535148372227025
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "JS requests before input",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 4,
+        "rivet-bridge-react-full": 16,
+        "astro-react": 5,
+        "next": 6,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "WIN",
+          "ratio": 4
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.25
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "script CPU until idle (hydration)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 7.3229999999999995,
+        "rivet-bridge-react-full": 8.841,
+        "astro-react": 9.904,
+        "next": 12.656,
+        "rivet-native": 0.488
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.3524511812098867
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.7282534480404208
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.06663935545541445
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "CLS",
+      "unit": "",
+      "values": {
+        "rivet-bridge-react": 0,
+        "rivet-bridge-react-full": 0,
+        "astro-react": 0,
+        "next": 0,
+        "rivet-native": 0
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "first input → paint, counter (load)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 49.699999928474426,
+        "rivet-bridge-react-full": 54.10000002384186,
+        "astro-react": 56.799999952316284,
+        "next": 55.299999952316284,
+        "rivet-native": 32.39999997615814
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1.0885311891690075
+        },
+        "astro-react": {
+          "verdict": "WIN",
+          "ratio": 1.1428571435424506
+        },
+        "next": {
+          "verdict": "WIN",
+          "ratio": 1.112676056979901
+        },
+        "rivet-native": {
+          "verdict": "LOSE",
+          "ratio": 0.6519114692713578
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "first input → paint, picker (idle)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 16.200000047683716,
+        "rivet-bridge-react-full": 16.100000023841858,
+        "astro-react": 16.699999928474426,
+        "next": 16.399999976158142,
+        "rivet-native": 33.09999990463257
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 2.043209864642267
+        }
+      }
+    },
+    {
+      "section": "browser unthrottled",
+      "metric": "first input → paint, chart (visible)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-react": 16.800000071525574,
+        "rivet-bridge-react-full": 16.100000023841858,
+        "astro-react": 16.100000023841858,
+        "next": 16.100000023841858,
+        "rivet-native": 33.10000002384186
+      },
+      "verdicts": {
+        "rivet-bridge-react-full": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "astro-react": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "next": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-native": {
+          "verdict": "WIN",
+          "ratio": 1.9702380882690147
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "server CPU / page",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 0.23230223743733952,
+        "rivet-bridge-preact": 0.22213583606375298,
+        "astro-preact": 0.5426356589147288
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.3359037127702984
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.4428100775193804
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "TTFB p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 0.21187499999359716,
+        "rivet-bridge-preact": 0.20683400001144037,
+        "astro-preact": 0.4931670000005397
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.327631858479968
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.38436137179217
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "complete p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 0.22335450000537094,
+        "rivet-bridge-preact": 0.21779199998127297,
+        "astro-preact": 0.5109165000030771
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.287469023416995
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.34589195217
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "requests / s",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 3259.754703358938,
+        "rivet-bridge-preact": 3601.3115878005124,
+        "astro-preact": 1496.363363937218
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.1784512919254455
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.406709275696762
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "peak server RSS",
+      "unit": "MB",
+      "values": {
+        "rivet-bridge-preact-p10": 222.78125,
+        "rivet-bridge-preact": 222.78125,
+        "astro-preact": 280.40625
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.2586618038995652
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.2586618038995652
+        }
+      }
+    },
+    {
+      "section": "preact server c1",
+      "metric": "HTML bytes",
+      "unit": "B",
+      "values": {
+        "rivet-bridge-preact-p10": 109606,
+        "rivet-bridge-preact": 109585,
+        "astro-preact": 114162
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1.041567067496305
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1.0417666651457773
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "server CPU / page",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 0.20134501732219276,
+        "rivet-bridge-preact": 0.20757496966545333,
+        "astro-preact": 0.42812801027507236
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.126340229169818
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.06252233092016
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "TTFB p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 1.5636670000094455,
+        "rivet-bridge-preact": 1.577416500003892,
+        "astro-preact": 3.452458999992814
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.2079247051782502
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.188679400769737
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "complete p50",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 1.575416999985464,
+        "rivet-bridge-preact": 1.5906460000114748,
+        "astro-preact": 3.4704170000040904
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.2028561327166782
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.181765773138118
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "requests / s",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 4888.234719004261,
+        "rivet-bridge-preact": 4597.445279629261,
+        "astro-preact": 1939.1541591962794
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 2.5208076912411577
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.37085084639932
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "peak server RSS",
+      "unit": "MB",
+      "values": {
+        "rivet-bridge-preact-p10": 219.421875,
+        "rivet-bridge-preact": 246.375,
+        "astro-preact": 388.234375
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.7693512782169052
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.5757864028411974
+        }
+      }
+    },
+    {
+      "section": "preact server c10",
+      "metric": "HTML bytes",
+      "unit": "B",
+      "values": {
+        "rivet-bridge-preact-p10": 109606,
+        "rivet-bridge-preact": 109592,
+        "astro-preact": 114162
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1.041567067496305
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1.0417001240966495
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 18000,
+        "rivet-bridge-preact": 18184,
+        "astro-preact": 20890
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.1605555555555556
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.1488121425428948
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "bytes before input (raw)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 126945,
+        "rivet-bridge-preact": 127129,
+        "astro-preact": 134193
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1.0570955925794636
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1.0555656065885832
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "JS bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 6860,
+        "rivet-bridge-preact": 7056,
+        "astro-preact": 7850
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "JS requests before input",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 4,
+        "rivet-bridge-preact": 4,
+        "astro-preact": 6
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "script CPU until idle (hydration)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 3.632,
+        "rivet-bridge-preact": 3.184,
+        "astro-preact": 6.63
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.8254405286343611
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 2.082286432160804
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "CLS",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 0,
+        "rivet-bridge-preact": 0,
+        "astro-preact": 0
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, counter (load)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 56.09999996423721,
+        "rivet-bridge-preact": 52.950000047683716,
+        "astro-preact": 54.30000001192093
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, picker (idle)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 16.19999998807907,
+        "rivet-bridge-preact": 15.949999988079071,
+        "astro-preact": 15.800000011920929
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser Fast 3G + 4× CPU",
+      "metric": "first input → paint, chart (visible)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 16.69999998807907,
+        "rivet-bridge-preact": 16.500000059604645,
+        "astro-preact": 16.299999952316284
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 18000,
+        "rivet-bridge-preact": 18184,
+        "astro-preact": 20890
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.1605555555555556
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.1488121425428948
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "bytes before input (raw)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 126945,
+        "rivet-bridge-preact": 127129,
+        "astro-preact": 134193
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1.0570955925794636
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1.0555656065885832
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "JS bytes before input (gzip est.)",
+      "unit": "KB",
+      "values": {
+        "rivet-bridge-preact-p10": 6860,
+        "rivet-bridge-preact": 7056,
+        "astro-preact": 7850
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "JS requests before input",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 4,
+        "rivet-bridge-preact": 4,
+        "astro-preact": 6
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        },
+        "rivet-bridge-preact": {
+          "verdict": "WIN",
+          "ratio": 1.5
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "script CPU until idle (hydration)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 0.9129999999999999,
+        "rivet-bridge-preact": 0.898,
+        "astro-preact": 1.539
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "CLS",
+      "unit": "",
+      "values": {
+        "rivet-bridge-preact-p10": 0,
+        "rivet-bridge-preact": 0,
+        "astro-preact": 0
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "first input → paint, counter (load)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 40,
+        "rivet-bridge-preact": 52,
+        "astro-preact": 50.10000002384186
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "WIN",
+          "ratio": 1.2525000005960465
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "first input → paint, picker (idle)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 16,
+        "rivet-bridge-preact": 16,
+        "astro-preact": 15.799999952316284
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    },
+    {
+      "section": "preact browser unthrottled",
+      "metric": "first input → paint, chart (visible)",
+      "unit": "ms",
+      "values": {
+        "rivet-bridge-preact-p10": 16,
+        "rivet-bridge-preact": 16.100000023841858,
+        "astro-preact": 16
+      },
+      "verdicts": {
+        "rivet-bridge-preact-p10": {
+          "verdict": "TIE",
+          "ratio": 1
+        },
+        "rivet-bridge-preact": {
+          "verdict": "TIE",
+          "ratio": 1
+        }
+      }
+    }
+  ],
+  "losses": [
+    {
+      "section": "c1",
+      "metric": "peak server RSS",
+      "lane": "rivet-native",
+      "ratio": 0.6811140666562353,
+      "need": "smaller server bundle (React DOM server is bundled into the SSR entry) and fewer retained buffers"
+    },
+    {
+      "section": "c10",
+      "metric": "peak server RSS",
+      "lane": "rivet-native",
+      "ratio": 0.8925833087584784,
+      "need": "smaller server bundle (React DOM server is bundled into the SSR entry) and fewer retained buffers"
+    },
+    {
+      "section": "Fast 3G + 4× CPU",
+      "metric": "bytes before input (gzip est.)",
+      "lane": "rivet-native",
+      "ratio": 0.16633552713274555,
+      "need": "an island-only boot path: a page whose interactive parts are all foreign islands still loads the Rivet resume entry + reactivity + DOM runtime (≈ 53 KB raw) next to React; a small island loader (Astro's is ~3 KB) would remove it"
+    },
+    {
+      "section": "Fast 3G + 4× CPU",
+      "metric": "bytes before input (raw)",
+      "lane": "rivet-native",
+      "ratio": 0.3445265359195144,
+      "need": "same as the gzip row: island-only boot path without the full resume runtime"
+    },
+    {
+      "section": "Fast 3G + 4× CPU",
+      "metric": "JS bytes before input (gzip est.)",
+      "lane": "rivet-native",
+      "ratio": 0,
+      "need": "island-only boot path (see bytes)"
+    },
+    {
+      "section": "Fast 3G + 4× CPU",
+      "metric": "JS requests before input",
+      "lane": "rivet-native",
+      "ratio": 0,
+      "need": "group the facade + island + adapter modules per policy into one chunk (`resume.chunks: \"group\"` / ChunkGroup) and modulepreload them from the head"
+    },
+    {
+      "section": "Fast 3G + 4× CPU",
+      "metric": "script CPU until idle (hydration)",
+      "lane": "rivet-native",
+      "ratio": 0.05815277452195171,
+      "need": "less boot work before the islands hydrate (resume runtime evaluation)"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "bytes before input (gzip est.)",
+      "lane": "rivet-native",
+      "ratio": 0.16645334460005218,
+      "need": "an island-only boot path: a page whose interactive parts are all foreign islands still loads the Rivet resume entry + reactivity + DOM runtime (≈ 53 KB raw) next to React; a small island loader (Astro's is ~3 KB) would remove it"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "bytes before input (raw)",
+      "lane": "rivet-native",
+      "ratio": 0.34473413615610377,
+      "need": "same as the gzip row: island-only boot path without the full resume runtime"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "JS bytes before input (gzip est.)",
+      "lane": "rivet-native",
+      "ratio": 0,
+      "need": "island-only boot path (see bytes)"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "JS requests before input",
+      "lane": "rivet-native",
+      "ratio": 0,
+      "need": "group the facade + island + adapter modules per policy into one chunk (`resume.chunks: \"group\"` / ChunkGroup) and modulepreload them from the head"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "script CPU until idle (hydration)",
+      "lane": "rivet-native",
+      "ratio": 0.06663935545541445,
+      "need": "less boot work before the islands hydrate (resume runtime evaluation)"
+    },
+    {
+      "section": "unthrottled",
+      "metric": "first input → paint, counter (load)",
+      "lane": "rivet-native",
+      "ratio": 0.6519114692713578,
+      "need": "hydrate `load` islands earlier (preload the React client + island module from the head)"
+    }
+  ]
+}

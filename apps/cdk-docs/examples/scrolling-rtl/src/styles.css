@@ -1,0 +1,31 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.track {
+  width: 300px;
+  height: 80px;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.wide {
+  width: 1000px;
+  height: 200px;
+  background: repeating-linear-gradient(90deg, #fff 0 49px, #e0e7ff 49px 50px);
+}
+button {
+  font: inherit;
+}
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}

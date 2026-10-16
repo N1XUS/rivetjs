@@ -1,0 +1,83 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no chat loader). Feature set inspired by HeroUI Pro's public ChatLoader docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * ChatLoader Component Styles
+ * Block: chat-loader (skeleton: avatar / content / line) + __dots / __dot, __pulse / __pulse-dot, __spinner
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-loader {
+  @apply flex w-full items-start gap-3;
+}
+
+.chat-loader__avatar {
+  @apply size-8 shrink-0 rounded-full;
+}
+
+.chat-loader__content {
+  @apply flex min-w-0 flex-1 flex-col gap-2 pt-1.5;
+}
+
+.chat-loader__line {
+  @apply h-3 w-full rounded-full;
+}
+
+.chat-loader__dots {
+  @apply inline-flex h-6 items-center gap-1 text-muted;
+}
+
+.chat-loader__dot {
+  @apply size-1.5 rounded-full bg-current;
+  animation: chat-loader-bounce 1.2s var(--ease-in-out, ease-in-out) infinite;
+
+  &:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  &:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes chat-loader-bounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    translate: 0 0;
+  }
+  30% {
+    opacity: 1;
+    translate: 0 -3px;
+  }
+}
+
+.chat-loader__pulse {
+  @apply inline-flex h-6 items-center;
+}
+
+.chat-loader__pulse-dot {
+  @apply size-3 rounded-full bg-foreground;
+  animation: chat-loader-pulse 1.4s var(--ease-in-out, ease-in-out) infinite;
+}
+
+@keyframes chat-loader-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.4;
+    scale: 0.7;
+  }
+}
+
+.chat-loader__spinner {
+  @apply inline-flex h-6 items-center gap-2 text-sm text-muted;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-loader__dot,
+  .chat-loader__pulse-dot {
+    animation: none;
+  }
+}

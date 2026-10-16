@@ -1,0 +1,7 @@
+import { expect, test } from "vitest";
+import { renderToString } from "@rivetjs/runtime/testing/server";
+import { LikeButton } from "./LikeButton.tsx";
+
+test("renders the like count on the server", async () => {
+  expect(await renderToString(() => <LikeButton />)).toContain("Liked 0 times");
+});

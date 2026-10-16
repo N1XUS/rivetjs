@@ -1,0 +1,125 @@
+/* Calendars ship no styles: a small look on the default class names (theme.css is not imported here). */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) {
+  display: inline-block;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) .rv-Heading {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) .rv-Button {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: none;
+  cursor: pointer;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) .rv-Button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.rv-CalendarGrid {
+  border-collapse: collapse;
+}
+.rv-CalendarHeaderCell {
+  padding: 0.25rem 0;
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.rv-CalendarCell {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  outline: none;
+}
+.rv-CalendarCell[data-hovered] {
+  background: #f1f5f9;
+}
+.rv-CalendarCell[data-focus-visible] {
+  box-shadow: 0 0 0 2px #2563eb;
+}
+.rv-CalendarCell[data-selected] {
+  background: #2563eb;
+  color: #fff;
+}
+.rv-RangeCalendar .rv-CalendarCell[data-selected] {
+  border-radius: 0;
+  background: #dbeafe;
+  color: #1e3a8a;
+}
+.rv-RangeCalendar .rv-CalendarCell:is([data-selection-start], [data-selection-end]) {
+  background: #2563eb;
+  color: #fff;
+}
+.rv-RangeCalendar .rv-CalendarCell[data-selection-start] {
+  border-start-start-radius: 0.375rem;
+  border-end-start-radius: 0.375rem;
+}
+.rv-RangeCalendar .rv-CalendarCell[data-selection-end] {
+  border-start-end-radius: 0.375rem;
+  border-end-end-radius: 0.375rem;
+}
+.rv-CalendarCell[data-outside-month] {
+  visibility: hidden;
+}
+.rv-CalendarCell[data-disabled] {
+  color: #cbd5e1;
+  cursor: default;
+}
+.rv-CalendarCell[data-unavailable] {
+  color: #ef4444;
+  text-decoration: line-through;
+  cursor: default;
+}
+.rv-CalendarCell[data-invalid] {
+  background: #dc2626;
+  color: #fff;
+}
+.rv-CalendarCell[data-today] {
+  font-weight: 700;
+}
+:is(.rv-Calendar, .rv-RangeCalendar) [slot="errorMessage"] {
+  margin-top: 0.25rem;
+  color: #dc2626;
+  font-size: 0.8rem;
+}
+output,
+.value {
+  display: block;
+  color: #475569;
+}
+button.action {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+}

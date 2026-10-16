@@ -1,0 +1,107 @@
+{
+  "scope": "Diagnostic CPU cost of renderPage using accepting discard sink. Excludes HTTP/RPC/backpressure and is not end-to-end .NET comparison.",
+  "controls": {
+    "image": "sha256:4d059000d8ec8c5c8901041455f6a1e3bf96d4e580ee057836eb3db6ca1f7022",
+    "cpus": 1,
+    "memoryMiB": 512,
+    "warmupRenders": 200,
+    "measuredRenders": 2000,
+    "rows": 1000,
+    "processIsolation": "Fresh Docker container per probe; mount specialized artifact over image artifact only for specialized variant."
+  },
+  "probeSource": "import {createHash} from 'node:crypto';\nimport {readFile} from 'node:fs/promises';\nconst file='/workspace/apps/ssr-bench/dist/rivet-compiled.mjs';\nconst {renderPage}=await import(file);\nconst page={title:'Profile fixture',token:'profile',rows:Array.from({length:1000},(_,i)=>({id:String(i),values:Array.from({length:10},(_,j)=>`row-${i}-field-${j}`)}))};\nconst chunks=[];await renderPage(page,{}, {destroyed:false,writableEnded:false,write(s){chunks.push(s);return true;}});\nconst html=chunks.join('');\nconst sink={destroyed:false,writableEnded:false,units:0,write(s){this.units+=s.length;return true;}};\nfor(let i=0;i<200;i++)await renderPage(page,{},sink);\nsink.units=0;\nconst cpu=process.cpuUsage();const start=performance.now();\nfor(let i=0;i<2000;i++)await renderPage(page,{},sink);\nconst wall=performance.now()-start;const used=process.cpuUsage(cpu);\nconsole.log(JSON.stringify({renders:2000,rows:1000,cpuMs:(used.user+used.system)/1000,wallMs:wall,utf16UnitsWritten:sink.units,htmlSha256:createHash('sha256').update(html).digest('hex'),artifactSha256:createHash('sha256').update(await readFile(file)).digest('hex'),scope:'Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.'}));\n",
+  "probeSourceSha256": "31d2896d538486de32b0598b54787ef9f3d8df28b49cffd0d0c27cc05881ab04",
+  "records": [
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 5009.797,
+      "wallMs": 5021.027336,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "04d51fc636dd2ae1f3933b7d3f4ac3305ab341e4fa94014d39a550ee305af6a4",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "current",
+      "repeat": 0
+    },
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 4789.805,
+      "wallMs": 4792.815627,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "8399ddb46058fb34eec76a83d35e37f392706e79b63f5b559b1bb60225f90238",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "specialized",
+      "repeat": 0
+    },
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 4707.73,
+      "wallMs": 4730.201794,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "8399ddb46058fb34eec76a83d35e37f392706e79b63f5b559b1bb60225f90238",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "specialized",
+      "repeat": 1
+    },
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 5147.212,
+      "wallMs": 5147.32096,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "04d51fc636dd2ae1f3933b7d3f4ac3305ab341e4fa94014d39a550ee305af6a4",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "current",
+      "repeat": 1
+    },
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 5074.001,
+      "wallMs": 5062.626711,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "04d51fc636dd2ae1f3933b7d3f4ac3305ab341e4fa94014d39a550ee305af6a4",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "current",
+      "repeat": 2
+    },
+    {
+      "renders": 2000,
+      "rows": 1000,
+      "cpuMs": 4721.013,
+      "wallMs": 4720.81696,
+      "utf16UnitsWritten": 1576874000,
+      "htmlSha256": "1cef5911cd0a23798f0a7bab8a8fa21e7ce90c9f3a3c902ea344bb9c5b0db29f",
+      "artifactSha256": "8399ddb46058fb34eec76a83d35e37f392706e79b63f5b559b1bb60225f90238",
+      "scope": "Diagnostic accepting discard sink: no HTTP/RPC/backpressure, not end-to-end capacity.",
+      "variant": "specialized",
+      "repeat": 2
+    }
+  ],
+  "profiles": [
+    {
+      "variant": "current",
+      "file": ".artifacts/ssr-bench/task7-profile-current/compiled.cpuprofile",
+      "bytes": 31019,
+      "sha256": "002f1c37afcd7aeabb54da5989c1ceac8b629243ed13a6c7db2530b7c0118171"
+    },
+    {
+      "variant": "specialized",
+      "file": ".artifacts/ssr-bench/task7-profile-specialized/compiled.cpuprofile",
+      "bytes": 32484,
+      "sha256": "ac094da262a7ba365b5ec3ae0cc2afff47f4c570854fcd99e913c6244c62437c"
+    }
+  ],
+  "specializedArtifact": {
+    "rawBytes": 8452,
+    "gzipBytes": 3542,
+    "sha256": "8399ddb46058fb34eec76a83d35e37f392706e79b63f5b559b1bb60225f90238"
+  }
+}

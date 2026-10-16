@@ -1,0 +1,41 @@
+{
+  "name": "@rivetjs/mcp",
+  "version": "0.0.0-experimental",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Rivet MCP server (stdio): offline docs search, components, compiler diagnostics and fixes for AI assistants.",
+  "keywords": [
+    "rivet",
+    "mcp",
+    "model-context-protocol",
+    "ai"
+  ],
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "bin": {
+    "rivet-mcp": "./cli.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@rivetjs/compiler": "0.0.0-experimental",
+    "@rivetjs/language-core": "0.0.0-experimental",
+    "typescript": "5.9.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@rivetjs/docs-kit": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/mcp",
+    "bundle": "./bundle.ts"
+  }
+}

@@ -1,0 +1,609 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`api-route > handlers per method; static apps refused 1`] = `
+"import type { RequestEvent } from "@rivetjs/router";
+
+/** \`GET /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
+export const onGet = async ({ params }: RequestEvent) => {
+  return Response.json({ ok: true, params }, { headers: { "cache-control": "no-store" } });
+};
+
+/** \`POST /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
+export const onPost = async ({ request, params }: RequestEvent) => {
+  const body: unknown = await request.json().catch(() => null);
+  return Response.json({ ok: true, params, body }, { status: 201 });
+};
+
+/** \`DELETE /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
+export const onDelete = async ({ params }: RequestEvent) => {
+  console.log("delete", params);
+  return new Response(null, { status: 204 });
+};
+"
+`;
+
+exports[`application > --adapter=node on a static starter: no prerender, the server starter's serve.js 1`] = `
+"import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+
+// Route files and the components they import resume automatically (\`resume.appModules\`, default true).
+export default defineConfig({
+  plugins: [rivetRouter({ styles: ["src/styles.css"] }), tailwindcss()],
+});
+"
+`;
+
+exports[`application > --no-tailwind on the static starter; --tailwind on the minimal one 1`] = `
+"import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+
+// Pages in src/routes are rendered to HTML files at build time (\`mode: "static"\`).
+// Route files and the components they import resume automatically (\`resume.appModules\`, default true).
+export default defineConfig({
+  plugins: [rivetRouter({ mode: "static", styles: ["src/styles.css"] })],
+});
+"
+`;
+
+exports[`application > --no-tailwind on the static starter; --tailwind on the minimal one 2`] = `
+"import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({ plugins: [rivetRouter({ mode: "static", styles: ["src/styles.css"] }), tailwindcss()] });
+"
+`;
+
+exports[`application > static starter: create-rivet files, project.json, vitest, no npm scripts 1`] = `
+[
+  ".agents/skills/rivet-add-route/LICENSE.txt",
+  ".agents/skills/rivet-add-route/SKILL.md",
+  ".agents/skills/rivet-add-ui-page/LICENSE.txt",
+  ".agents/skills/rivet-add-ui-page/SKILL.md",
+  ".agents/skills/rivet-fix-resumability-error/LICENSE.txt",
+  ".agents/skills/rivet-fix-resumability-error/SKILL.md",
+  ".agents/skills/rivet-form-in-drawer/LICENSE.txt",
+  ".agents/skills/rivet-form-in-drawer/SKILL.md",
+  ".agents/skills/rivet-port-react-component/LICENSE.txt",
+  ".agents/skills/rivet-port-react-component/SKILL.md",
+  ".agents/skills/rivet-ui-design/LICENSE.txt",
+  ".agents/skills/rivet-ui-design/SKILL.md",
+  ".agents/skills/rivet-ui-design/references/component-composition.md",
+  ".agents/skills/rivet-ui-design/references/interactions.md",
+  ".agents/skills/rivet-ui-design/references/rivet-implementation.md",
+  ".agents/skills/rivet-ui-design/references/structure-and-layout.md",
+  ".agents/skills/rivet-ui-design/references/visual-foundations.md",
+  ".claude/skills/rivet-add-route/LICENSE.txt",
+  ".claude/skills/rivet-add-route/SKILL.md",
+  ".claude/skills/rivet-add-ui-page/LICENSE.txt",
+  ".claude/skills/rivet-add-ui-page/SKILL.md",
+  ".claude/skills/rivet-fix-resumability-error/LICENSE.txt",
+  ".claude/skills/rivet-fix-resumability-error/SKILL.md",
+  ".claude/skills/rivet-form-in-drawer/LICENSE.txt",
+  ".claude/skills/rivet-form-in-drawer/SKILL.md",
+  ".claude/skills/rivet-port-react-component/LICENSE.txt",
+  ".claude/skills/rivet-port-react-component/SKILL.md",
+  ".claude/skills/rivet-ui-design/LICENSE.txt",
+  ".claude/skills/rivet-ui-design/SKILL.md",
+  ".claude/skills/rivet-ui-design/references/component-composition.md",
+  ".claude/skills/rivet-ui-design/references/interactions.md",
+  ".claude/skills/rivet-ui-design/references/rivet-implementation.md",
+  ".claude/skills/rivet-ui-design/references/structure-and-layout.md",
+  ".claude/skills/rivet-ui-design/references/visual-foundations.md",
+  ".cursor/rules/rivet-add-route.mdc",
+  ".cursor/rules/rivet-add-ui-page.mdc",
+  ".cursor/rules/rivet-fix-resumability-error.mdc",
+  ".cursor/rules/rivet-form-in-drawer.mdc",
+  ".cursor/rules/rivet-port-react-component.mdc",
+  ".cursor/rules/rivet-ui-design.mdc",
+  ".cursor/rules/rivet.mdc",
+  ".github/copilot-instructions.md",
+  ".gitignore",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "README.md",
+  "package.json",
+  "prerender.js",
+  "project.json",
+  "serve.js",
+  "src/components/Counter.test.tsx",
+  "src/components/Counter.tsx",
+  "src/document.ts",
+  "src/routes/_layout.tsx",
+  "src/routes/about.tsx",
+  "src/routes/index.tsx",
+  "src/styles.css",
+  "tsconfig.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+]
+`;
+
+exports[`application > static starter: create-rivet files, project.json, vitest, no npm scripts 2`] = `
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "web",
+  "projectType": "application",
+  "sourceRoot": "apps/web/src",
+  "tags": [],
+  "targets": {},
+}
+`;
+
+exports[`application > static starter: create-rivet files, project.json, vitest, no npm scripts 3`] = `
+"import { defineConfig } from "vitest/config";
+import { rivetTest } from "@rivetjs/testing/vite";
+
+// Two projects: components in happy-dom (DOM target), \`*.server.test.tsx\` as server HTML in Node.
+export default defineConfig({
+  plugins: [rivetTest()],
+  test: {
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          include: ["src/**/*.test.tsx"],
+          exclude: ["src/**/*.server.test.tsx"],
+          environment: "happy-dom",
+        },
+      },
+      { extends: true, test: { name: "server", include: ["src/**/*.server.test.tsx"], environment: "node" } },
+    ],
+  },
+});
+"
+`;
+
+exports[`application > static starter: create-rivet files, project.json, vitest, no npm scripts 4`] = `
+"import { expect, test } from "vitest";
+import { fire, render } from "@rivetjs/runtime/testing";
+import { Counter } from "./Counter.tsx";
+
+test("counts clicks", () => {
+  const view = render(() => <Counter />);
+  const button = view.find("button");
+  fire(button, "click");
+  expect(button.textContent).toBe("Clicked 1 times");
+});
+"
+`;
+
+exports[`application --deploy > bun: create-rivet's adapter, .gitignore and files; Nx targets 1`] = `
+{
+  "deploy": undefined,
+  "outputs": [
+    "{projectRoot}/dist",
+  ],
+  "preview": {
+    "command": "bun dist/server/bun.js",
+    "cwd": "{projectRoot}",
+  },
+}
+`;
+
+exports[`application --deploy > cloudflare: create-rivet's adapter, .gitignore and files; Nx targets 1`] = `
+{
+  "deploy": {
+    "command": "wrangler deploy",
+    "cwd": "{projectRoot}",
+  },
+  "outputs": [
+    "{projectRoot}/dist",
+    "{projectRoot}/.wrangler/deploy",
+  ],
+  "preview": {
+    "command": "wrangler dev",
+    "cwd": "{projectRoot}",
+  },
+}
+`;
+
+exports[`application --deploy > deno: create-rivet's adapter, .gitignore and files; Nx targets 1`] = `
+{
+  "deploy": undefined,
+  "outputs": [
+    "{projectRoot}/dist",
+  ],
+  "preview": {
+    "command": "deno run --allow-net --allow-read --allow-env dist/server/deno.js",
+    "cwd": "{projectRoot}",
+  },
+}
+`;
+
+exports[`application --deploy > netlify: create-rivet's adapter, .gitignore and files; Nx targets 1`] = `
+{
+  "deploy": undefined,
+  "outputs": [
+    "{projectRoot}/dist",
+    "{projectRoot}/.netlify/v1",
+  ],
+  "preview": {},
+}
+`;
+
+exports[`application --deploy > vercel: create-rivet's adapter, .gitignore and files; Nx targets 1`] = `
+{
+  "deploy": {
+    "command": "vercel deploy --prebuilt",
+    "cwd": "{projectRoot}",
+  },
+  "outputs": [
+    "{projectRoot}/dist",
+    "{projectRoot}/.vercel/output",
+  ],
+  "preview": {},
+}
+`;
+
+exports[`component > basic component + test in an app 1`] = `
+"import { signal } from "@rivetjs/reactivity";
+import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export interface UserCardProps {
+  /** Button text. */
+  label?: string;
+  children?: Content;
+}
+
+/**
+ * UserCard. The click handler is an inline arrow: the compiler captures it, so on a resumed page the button
+ * works without running the component in the browser (its code loads on first interaction).
+ */
+export function UserCard(props: UserCardProps) {
+  const count = signal(0);
+  return (
+    <div class="user-card">
+      {props.children}
+      <button type="button" onClick={() => count.update((n) => n + 1)}>
+        {props.label ?? "Clicked"} {count()}
+      </button>
+    </div>
+  );
+}
+"
+`;
+
+exports[`component > basic component + test in an app 2`] = `
+"import { expect, test } from "vitest";
+import { fire, render } from "@rivetjs/runtime/testing";
+import { UserCard } from "./UserCard.tsx";
+
+test("UserCard counts clicks", () => {
+  const view = render(() => <UserCard label="Count" />);
+  const button = view.find("button");
+  fire(button, "click");
+  expect(button.textContent).toBe("Count 1");
+});
+"
+`;
+
+exports[`component > library: exported from src/index.ts once 1`] = `
+"export { Kit, type KitProps } from "./Kit.tsx";
+export { Badge, type BadgeProps } from "./Badge.tsx";
+"
+`;
+
+exports[`component > overlay: render-function children, inline handlers; story route 1`] = `
+"import { signal } from "@rivetjs/reactivity";
+import type { Slot } from "@rivetjs/runtime/jsx-runtime";
+
+export interface PopoverProps {
+  /** Trigger text (also the panel's accessible name). */
+  label: string;
+  /**
+   * Render-function children (\`{() => <p>…</p>}\`): the content of the closed panel is created when it opens, also on a
+   * resumed page. Plain JSX children would be created right away and kept for later, which a resumed page cannot save.
+   */
+  children: Slot;
+}
+
+/** Popover: a trigger and a panel that opens below it. Handlers are inline arrows (resumable). */
+export function Popover(props: PopoverProps) {
+  const open = signal(false);
+  return (
+    <div class="popover">
+      <button type="button" aria-expanded={open() ? "true" : "false"} onClick={() => open.update((value) => !value)}>
+        {props.label}
+      </button>
+      {open() && (
+        <div role="dialog" aria-label={props.label}>
+          {props.children()}
+          <button type="button" onClick={() => open.set(false)}>
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+"
+`;
+
+exports[`component > overlay: render-function children, inline handlers; story route 2`] = `
+"import { Popover } from "../../overlays/Popover.tsx";
+
+export const head = { title: "Popover story" };
+
+/** Story page of Popover (/stories/popover): its states side by side. */
+export default function PopoverStory() {
+  return (
+    <main>
+      <h1>Popover</h1>
+      <section>
+        <h2>Default</h2>
+        <Popover label="Open">{() => <p>Panel content</p>}</Popover>
+      </section>
+      <section>
+        <h2>With content</h2>
+        <Popover label="More">
+          {() => (
+            <ul>
+              <li>One</li>
+              <li>Two</li>
+            </ul>
+          )}
+        </Popover>
+      </section>
+    </main>
+  );
+}
+"
+`;
+
+exports[`i18n-setup > config, catalogs, plugin first, gitignored dts 1`] = `
+"import type { I18nRouteConfig } from "@rivetjs/i18n/router";
+
+// Locales (the default first), ICU catalogs per locale, and how the locale appears in URLs. Used by the i18n() Vite
+// plugin (vite.config.ts) and by \`i18nGuard(config)\` in a \`[[lang]]\` layout (see the Locale URLs guide).
+export const config = {
+  locales: ["en", "de"],
+  defaultLocale: "en",
+  catalogs: "locales/{locale}.json",
+  routing: { prefix: "always" },
+} satisfies I18nRouteConfig & { catalogs: string };
+"
+`;
+
+exports[`i18n-setup > config, catalogs, plugin first, gitignored dts 2`] = `
+"import { defineConfig } from "vite";
+import tailwindcss from "@tailwindcss/vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+import { i18n } from "@rivetjs/i18n/vite";
+import { config as i18nConfig } from "./i18n.config.ts";
+
+// Pages render on the server for each request; \`serverLoad\`, \`serverActions\` and \`serverGuard\` exports in route files run there.
+export default defineConfig({
+  plugins: [i18n(i18nConfig), rivetRouter({ styles: ["src/styles.css"] }), tailwindcss()],
+});
+"
+`;
+
+exports[`i18n-setup > config, catalogs, plugin first, gitignored dts 3`] = `
+{
+  "home": {
+    "items": "{count, plural, one {# Eintrag} other {# Einträge}}",
+    "title": "Willkommen",
+  },
+}
+`;
+
+exports[`init > registers the plugin once, adds tooling, ignores .rivet 1`] = `
+{
+  "options": {
+    "buildTargetName": "build",
+    "checkTargetName": "check",
+    "devTargetName": "dev",
+    "previewTargetName": "preview",
+    "testTargetName": "test",
+    "typecheckTargetName": "typecheck",
+  },
+  "plugin": "@rivetjs/nx/plugin",
+}
+`;
+
+exports[`layout > guarded group layout; root layout exists already 1`] = `
+"import { redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
+
+/** Runs for every page and endpoint in this folder, before their loaders. */
+export const serverGuard = ({ cookies, url }: RequestEvent) => {
+  if (!cookies.get("session")) return redirect("/login?next=" + encodeURIComponent(url.pathname));
+};
+
+/** Wraps every page in src/routes/(private). Stays mounted across client navigation between them. */
+export default function PrivateLayout({ children }: LayoutProps) {
+  return <div class="private-layout">{children}</div>;
+}
+"
+`;
+
+exports[`library > publishable: package build target + tsconfig.lib.json 1`] = `
+{
+  "cache": true,
+  "dependsOn": [
+    "^build",
+  ],
+  "executor": "@rivetjs/nx:package",
+  "inputs": [
+    "default",
+    "^default",
+    "!{projectRoot}/**/*.test.{ts,tsx}",
+    "!{projectRoot}/vitest.config.{ts,mts,js,mjs}",
+  ],
+  "options": {
+    "outputPath": "dist/libs/kit",
+    "tsConfig": "tsconfig.lib.json",
+  },
+  "outputs": [
+    "{options.outputPath}",
+  ],
+}
+`;
+
+exports[`library > source exports per subpath, sideEffects false, vitest 1`] = `
+[
+  "README.md",
+  "package.json",
+  "project.json",
+  "src/UiKit.test.tsx",
+  "src/UiKit.tsx",
+  "src/button/Button.tsx",
+  "src/button/index.ts",
+  "src/date-picker/DatePicker.tsx",
+  "src/date-picker/index.ts",
+  "src/index.ts",
+  "tsconfig.json",
+  "vitest.config.ts",
+]
+`;
+
+exports[`library > source exports per subpath, sideEffects false, vitest 2`] = `
+{
+  "devDependencies": {
+    "@rivetjs/testing": "0.0.0-experimental",
+    "happy-dom": "^20.14.5",
+    "vitest": "^5.0.3",
+  },
+  "exports": {
+    ".": {
+      "default": "./src/index.ts",
+      "types": "./src/index.ts",
+    },
+    "./button": {
+      "default": "./src/button/index.ts",
+      "types": "./src/button/index.ts",
+    },
+    "./date-picker": {
+      "default": "./src/date-picker/index.ts",
+      "types": "./src/date-picker/index.ts",
+    },
+  },
+  "name": "@proj/ui-kit",
+  "peerDependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental",
+  },
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "version": "0.0.1",
+}
+`;
+
+exports[`library > source exports per subpath, sideEffects false, vitest 3`] = `
+"import type { Content } from "@rivetjs/runtime/jsx-runtime";
+
+export interface DatePickerProps {
+  children?: Content;
+}
+
+/** DatePicker (\`@proj/ui-kit/date-picker\`: imported alone, nothing else of the library is bundled). */
+export function DatePicker(props: DatePickerProps) {
+  return <div class="date-picker">{props.children}</div>;
+}
+"
+`;
+
+exports[`route > server app: action form, plain page, index of a group 1`] = `
+"import { redirect, type RequestEvent } from "@rivetjs/router";
+
+export const serverActions = {
+  /** Handles \`<form method="post" action="?/save">\`. Works without JavaScript. */
+  save: async ({ request, url }: RequestEvent) => {
+    const text = String((await request.formData()).get("text") ?? "").trim();
+    console.log("saved", text.slice(0, 200));
+    // Post/redirect/get: reloading the page does not submit the form again.
+    return redirect(url.pathname, 303);
+  },
+};
+
+export const head = { title: "Contact" };
+
+/** Contact (/contact). */
+export default function ContactPage() {
+  return (
+    <main>
+      <h1>Contact</h1>
+      <form method="post" action="?/save">
+        <label for="text">Text</label>
+        <input id="text" name="text" required />
+        <button>Save</button>
+      </form>
+    </main>
+  );
+}
+"
+`;
+
+exports[`route > server app: action form, plain page, index of a group 2`] = `
+"export const head = { title: "Pricing" };
+
+/** Pricing (/pricing). */
+export default function PricingPage() {
+  return (
+    <main>
+      <h1>Pricing</h1>
+    </main>
+  );
+}
+"
+`;
+
+exports[`route > static app: loader + guard + entries + folder layout 1`] = `
+"import { deny, type PageProps, type RequestEvent } from "@rivetjs/router";
+
+/** Runs on the server before the loader. Return \`redirect()\`, \`deny()\` or \`notFound()\` to stop the request. */
+export const serverGuard = ({ url }: RequestEvent) => {
+  if (url.searchParams.has("deny")) return deny();
+};
+
+/** Parameter values to prerender (static mode): one page per entry. */
+export const serverEntries = () => [{ slug: "example" }];
+
+/** Data for the page, loaded on the server; removed from the browser build with everything only it uses. */
+export const serverLoad = ({ params }: RequestEvent) => ({
+  title: \`Blog Slug: \${params.slug ?? ""}\`,
+});
+
+export const head = { title: "Blog Slug" };
+
+/** Blog Slug (/blog/:slug). */
+export default function BlogSlugPage({ data, params }: PageProps<typeof serverLoad>) {
+  return (
+    <main>
+      <h1>{data.title}</h1>
+      <p>slug: {params.slug}</p>
+    </main>
+  );
+}
+"
+`;
+
+exports[`route > static app: loader + guard + entries + folder layout 2`] = `
+"import type { LayoutProps } from "@rivetjs/router";
+
+/** Wraps every page in src/routes/blog. Stays mounted across client navigation between them. */
+export default function BlogLayout({ children }: LayoutProps) {
+  return <div class="blog-layout">{children}</div>;
+}
+"
+`;
+
+exports[`ui-setup > Tailwind + ui styles + deps on the minimal starter; idempotent 1`] = `
+"import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({ plugins: [rivetRouter({ mode: "static", styles: ["src/styles.css"] }), tailwindcss()] });
+"
+`;
+
+exports[`ui-setup > Tailwind + ui styles + deps on the minimal starter; idempotent 2`] = `
+"@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+/* Scan the app's source for class names (explicit, so it also works in ignored folders). */
+@source "./**/*.{ts,tsx}";
+"
+`;

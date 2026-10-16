@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-07",
+  "note": "medians (ms; heapKB; levels). rivet = lane CTX working tree, rivet-base = HEAD 79b231c0, solid-stable = apps/bench-stable. Two runs: rivet vs solid-stable, rivet vs rivet-base (interleaved per sample).",
+  "samples": 15,
+  "rounds": 3,
+  "results": {
+    "server": {
+      "deep-100": {
+        "render": {
+          "rivet": 0.024,
+          "solid-stable": 0.009,
+          "rivet-base": 0.026
+        },
+        "bytes": {
+          "rivet": 2236,
+          "solid-stable": 2236,
+          "rivet-base": 2236
+        }
+      },
+      "deep-500": {
+        "render": {
+          "rivet": 0.263,
+          "solid-stable": 0.05,
+          "rivet-base": 0.27
+        },
+        "bytes": {
+          "rivet": 11036,
+          "solid-stable": 11036,
+          "rivet-base": 11036
+        }
+      },
+      "providers-50": {
+        "render": {
+          "rivet": 0.387,
+          "solid-stable": 0.407,
+          "rivet-base": 1.247
+        },
+        "bytes": {
+          "rivet": 10007,
+          "solid-stable": 10007,
+          "rivet-base": 10007
+        }
+      },
+      "tree-1023": {
+        "render": {
+          "rivet": 0.903,
+          "solid-stable": 0.598,
+          "rivet-base": 1.412
+        },
+        "bytes": {
+          "rivet": 19430,
+          "solid-stable": 19430,
+          "rivet-base": 19430
+        }
+      },
+      "update-1000": {
+        "render": {
+          "rivet": 0.287,
+          "solid-stable": 0.151,
+          "rivet-base": 0.282
+        },
+        "bytes": {
+          "rivet": 8007,
+          "solid-stable": 8007,
+          "rivet-base": 8007
+        }
+      },
+      "error-500": {
+        "render": {
+          "rivet": 0.082,
+          "solid-stable": 0.123,
+          "rivet-base": 0.082
+        },
+        "bytes": {
+          "rivet": 15,
+          "solid-stable": 1379,
+          "rivet-base": 15
+        }
+      },
+      "themed-500": {
+        "render": {
+          "rivet": 0.241,
+          "solid-stable": 0.031,
+          "rivet-base": 0.239
+        },
+        "bytes": {
+          "rivet": 12041,
+          "solid-stable": 12041,
+          "rivet-base": 12041
+        }
+      }
+    },
+    "dom": {
+      "deep-100": {
+        "mount": {
+          "rivet": 0.18,
+          "solid-stable": 0.195,
+          "rivet-base": 0.25
+        },
+        "dispose": {
+          "rivet": 0.02,
+          "solid-stable": 0.03,
+          "rivet-base": 0.03
+        },
+        "elements": {
+          "rivet": 102,
+          "solid-stable": 102,
+          "rivet-base": 102
+        },
+        "heapKB": {
+          "rivet": 39.293,
+          "solid-stable": 71.609,
+          "rivet-base": 39.301
+        }
+      },
+      "deep-500": {
+        "mount": {
+          "rivet": 1.14,
+          "solid-stable": 1.185,
+          "rivet-base": 1.665
+        },
+        "dispose": {
+          "rivet": 0.055,
+          "solid-stable": 0.105,
+          "rivet-base": 0.06
+        },
+        "elements": {
+          "rivet": 502,
+          "solid-stable": 502,
+          "rivet-base": 502
+        },
+        "heapKB": {
+          "rivet": 175.516,
+          "solid-stable": 342.781,
+          "rivet-base": 176.355
+        }
+      },
+      "providers-50": {
+        "mount": {
+          "rivet": 0.555,
+          "solid-stable": 0.645,
+          "rivet-base": 2.695
+        },
+        "dispose": {
+          "rivet": 0.03,
+          "solid-stable": 0.04,
+          "rivet-base": 0.2
+        },
+        "elements": {
+          "rivet": 1001,
+          "solid-stable": 1001,
+          "rivet-base": 1001
+        },
+        "heapKB": {
+          "rivet": 27.539,
+          "solid-stable": 95.832,
+          "rivet-base": 36.336
+        }
+      },
+      "tree-1023": {
+        "mount": {
+          "rivet": 0.97,
+          "solid-stable": 2.055,
+          "rivet-base": 3.58
+        },
+        "dispose": {
+          "rivet": 0.16,
+          "solid-stable": 0.365,
+          "rivet-base": 0.78
+        },
+        "elements": {
+          "rivet": 1023,
+          "solid-stable": 1023,
+          "rivet-base": 1023
+        },
+        "heapKB": {
+          "rivet": 388.566,
+          "solid-stable": 1946.086,
+          "rivet-base": 682.094
+        }
+      },
+      "update-1000": {
+        "mount": {
+          "rivet": 0.685,
+          "solid-stable": 0.54,
+          "rivet-base": 0.725
+        },
+        "update": {
+          "rivet": 1.24,
+          "solid-stable": 2.11,
+          "rivet-base": 1.245
+        },
+        "dispose": {
+          "rivet": 0.105,
+          "solid-stable": 0.12,
+          "rivet-base": 0.11
+        },
+        "elements": {
+          "rivet": 1001,
+          "solid-stable": 1001,
+          "rivet-base": 1001
+        },
+        "heapKB": {
+          "rivet": 206.324,
+          "solid-stable": 206.758,
+          "rivet-base": 202.961
+        }
+      },
+      "error-500": {
+        "mount": {
+          "rivet": 1.175,
+          "solid-stable": 1.135,
+          "rivet-base": 1.205
+        },
+        "update": {
+          "rivet": 0.09,
+          "solid-stable": 0.18,
+          "rivet-base": 0.095
+        },
+        "dispose": {
+          "rivet": 0.005,
+          "solid-stable": 0.005,
+          "rivet-base": 0.01
+        },
+        "elements": {
+          "rivet": 1,
+          "solid-stable": 1,
+          "rivet-base": 1
+        },
+        "heapKB": {
+          "rivet": 162.863,
+          "solid-stable": 336.988,
+          "rivet-base": 160.195
+        }
+      },
+      "themed-500": {
+        "mount": {
+          "rivet": 1.3,
+          "solid-stable": 1.265,
+          "rivet-base": 1.31
+        },
+        "update": {
+          "rivet": 1.27,
+          "solid-stable": 5.82,
+          "rivet-base": 2.79
+        },
+        "dispose": {
+          "rivet": 0.095,
+          "solid-stable": 0.05,
+          "rivet-base": 0.1
+        },
+        "elements": {
+          "rivet": 502,
+          "solid-stable": 502,
+          "rivet-base": 502
+        },
+        "heapKB": {
+          "rivet": 210.164,
+          "solid-stable": 423.508,
+          "rivet-base": 212.93
+        }
+      },
+      "max-depth": {
+        "levels": {
+          "rivet": 1079,
+          "solid-stable": 632,
+          "rivet-base": 775
+        }
+      }
+    }
+  }
+}

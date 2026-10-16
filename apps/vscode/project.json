@@ -1,0 +1,22 @@
+{
+  "name": "vscode",
+  "projectType": "application",
+  "implicitDependencies": ["typescript-plugin"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "node apps/vscode/build.ts" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "vitest run --project vscode" }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "tsc -p apps/vscode" }
+    }
+  }
+}

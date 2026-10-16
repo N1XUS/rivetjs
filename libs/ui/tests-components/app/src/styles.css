@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+/* Every theme preset under [data-ui-preset] (visual route theme-swap, theme-swap.test.ts). */
+@import "@rivetjs/ui/styles/themes/presets.css" layer(theme);
+@source "../../../src";
+/* Visual matrix routes render ui-docs example demos (visual.manifest.ts). A file glob: Tailwind matches a glob
+   against files, so a directory glob (examples, any name, src) scanned nothing and the demos lost their own utilities. */
+@source "../../../../../apps/ui-docs/examples/*/src/**/*.tsx";

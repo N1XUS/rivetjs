@@ -1,0 +1,43 @@
+<% if (routerImports.length) { %>import { <%- routerImports.join(", ") %> } from "@rivetjs/router";
+<% } %><% if (guard) { %>
+/** Runs on the server before the loader. Return `redirect()`, `deny()` or `notFound()` to stop the request. */
+export const serverGuard = ({ url }: RequestEvent) => {
+  if (url.searchParams.has("deny")) return deny();
+};
+<% } %><% if (entries) { %>
+/** Parameter values to prerender (static mode): one page per entry. */
+export const serverEntries = () => [<%- entries %>];
+<% } %><% if (loader) { %>
+/** Data for the page, loaded on the server; removed from the browser build with everything only it uses. */
+export const serverLoad = (<% if (params.length) { %>{ params }<% } else { %>_event<% } %>: RequestEvent) => ({
+  title: <%- loaderTitle %>,
+});
+<% } %><% if (action) { %>
+export const serverActions = {
+  /** Handles `<form method="post" action="?/save">`. Works without JavaScript. */
+  save: async ({ request, url }: RequestEvent) => {
+    const text = String((await request.formData()).get("text") ?? "").trim();
+    console.log("saved", text.slice(0, 200));
+    // Post/redirect/get: reloading the page does not submit the form again.
+    return redirect(url.pathname, 303);
+  },
+};
+<% } %>
+export const head = { title: "<%= title %>" };
+
+/** <%= title %> (<%= url %>). */
+export default function <%= componentName %>(<%- props %>) {
+  return (
+    <main>
+      <h1><% if (loader) { %>{data.title}<% } else { %><%= title %><% } %></h1><% for (const param of params) { %>
+      <p>
+        <%= param.name %>: {params.<%= param.name %>}
+      </p><% } %><% if (action) { %>
+      <form method="post" action="?/save">
+        <label for="text">Text</label>
+        <input id="text" name="text" required />
+        <button>Save</button>
+      </form><% } %>
+    </main>
+  );
+}

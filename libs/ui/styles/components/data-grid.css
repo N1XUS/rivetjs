@@ -1,0 +1,329 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 OSS has no data grid). Feature set inspired by HeroUI Pro's public DataGrid docs; independent implementation (no Pro source, styles or class names). Look = the vendored HeroUI OSS `table*` classes (table.css) + HeroUI tokens; behaviour-critical styles (sticky header / pinned cells, table layout, row heights, spacer rows) are inline styles of @rivetjs/cdk/data-grid. */
+/* Rivet: modified, see TWEAKS.md */
+/* -------------------------------------------------------------------------------------------------
+ * DataGrid Component Styles
+ * Block: data-grid (on `.table-root`; parts: scroll-container / content / column / row / cell / checkbox /
+ * sort-indicator / expand / drag-handle / drop-indicator / empty)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Element: scroll-container - scrolls both axes (the cdk sets overflow + height inline)
+ */
+.data-grid__scroll-container {
+  @apply scrollbar;
+  scrollbar-gutter: auto;
+  /* Frame: the body is a rounded card below the sticky header at rest AND while rows scroll / virtualize under it or
+     columns scroll sideways (per-cell corner radii only round the first / last rendered row). The mask sits on the
+     scroll container's box, so it does not move with the content. `--rv-dg-header-height` = the cdk header row height. */
+  --data-grid-radius: min(32px, var(--radius-2xl));
+  --data-grid-header: var(--rv-dg-header-height, 0px);
+  --data-grid-fill: linear-gradient(#000 0 0);
+  --data-grid-corner-ss: radial-gradient(circle at 100% 100%, #000 calc(var(--data-grid-radius) - 0.5px), transparent calc(var(--data-grid-radius) + 0.5px));
+  --data-grid-corner-se: radial-gradient(circle at 0 100%, #000 calc(var(--data-grid-radius) - 0.5px), transparent calc(var(--data-grid-radius) + 0.5px));
+  --data-grid-corner-es: radial-gradient(circle at 100% 0, #000 calc(var(--data-grid-radius) - 0.5px), transparent calc(var(--data-grid-radius) + 0.5px));
+  --data-grid-corner-ee: radial-gradient(circle at 0 0, #000 calc(var(--data-grid-radius) - 0.5px), transparent calc(var(--data-grid-radius) + 0.5px));
+}
+
+/* Primary: header strip unmasked (the root rounds its top) + a rounded rectangle from the header's bottom edge down */
+.table-root--primary .data-grid__scroll-container {
+  mask:
+    var(--data-grid-fill) 0 0 / 100% var(--data-grid-header) no-repeat,
+    var(--data-grid-fill) var(--data-grid-radius) var(--data-grid-header) / calc(100% - 2 * var(--data-grid-radius)) calc(100% - var(--data-grid-header))
+      no-repeat,
+    var(--data-grid-fill) 0 calc(var(--data-grid-header) + var(--data-grid-radius)) / 100%
+      calc(100% - var(--data-grid-header) - 2 * var(--data-grid-radius)) no-repeat,
+    var(--data-grid-corner-ss) 0 var(--data-grid-header) / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-se) 100% var(--data-grid-header) / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-es) 0 100% / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-ee) 100% 100% / var(--data-grid-radius) var(--data-grid-radius) no-repeat;
+}
+
+/* Secondary: the header is a standalone rounded card (rows scrolling under its corners stay hidden), flat rows below */
+.table-root--secondary .data-grid__scroll-container {
+  mask:
+    var(--data-grid-fill) var(--data-grid-radius) 0 / calc(100% - 2 * var(--data-grid-radius)) var(--data-grid-header) no-repeat,
+    var(--data-grid-fill) 0 var(--data-grid-radius) / 100% calc(var(--data-grid-header) - 2 * var(--data-grid-radius)) no-repeat,
+    var(--data-grid-corner-ss) 0 0 / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-se) 100% 0 / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-es) 0 calc(var(--data-grid-header) - var(--data-grid-radius)) / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-corner-ee) 100% calc(var(--data-grid-header) - var(--data-grid-radius)) / var(--data-grid-radius) var(--data-grid-radius) no-repeat,
+    var(--data-grid-fill) 0 var(--data-grid-header) / 100% calc(100% - var(--data-grid-header)) no-repeat;
+}
+
+/**
+ * Element: column - sticky header cells need their own background (the sticky `th`, not the `thead`, paints); one line
+ * (ellipsis) so the header row keeps the cdk `headingHeight` the frame mask, scroll padding and virtual window assume
+ */
+.data-grid__column {
+  @apply overflow-hidden bg-surface-secondary align-middle text-ellipsis whitespace-nowrap;
+
+  &[data-allows-sorting="true"] {
+    @apply select-none;
+  }
+
+  &[data-column="__rv_select"] {
+    @apply px-2;
+  }
+
+  &[data-column="__rv_drag"] {
+    @apply px-1.5;
+  }
+
+  /* the select column keeps the column separator (as the HeroUI table's selection column); the drag column has none */
+  &[data-column="__rv_drag"]::after {
+    content: none;
+  }
+}
+
+.table-root--secondary .data-grid__column {
+  @apply bg-surface-secondary;
+}
+
+/* Column resizer: the vendored hit area straddles the column edge (`translate-x-1/2`), which puts the next sticky header
+   cell over half of it and lets the last column's resizer / active line poke past the table (extra horizontal overflow
+   outside the rounded frame). Keep the whole hit area inside its own column, indicator on the column's end edge. */
+.data-grid .table__column-resizer {
+  translate: 0 -50%;
+  padding-inline: 0.75rem 0;
+}
+
+/**
+ * Element: cell - vertical alignment from the root's `data-vertical-align`; utility columns are compact
+ */
+.data-grid__cell {
+  @apply overflow-hidden text-ellipsis;
+
+  /* utility columns: content fits the fixed width (36 px drag column: 24 px handle), no ellipsis glyph */
+  &[data-column="__rv_select"] {
+    @apply px-2 text-clip;
+  }
+
+  &[data-column="__rv_drag"] {
+    @apply px-1.5 text-clip;
+  }
+}
+
+/* Virtualized: rows are exactly `rowHeight` (the cdk sizes the `tr` and the spacer rows from it): no vertical cell
+   padding and one line, or the vendored `py-3` cells grow every row and the window / spacer math drifts */
+.data-grid[data-virtualized="true"] .data-grid__cell {
+  @apply py-0 whitespace-nowrap;
+}
+
+.data-grid[data-vertical-align="top"] .data-grid__cell {
+  @apply align-top;
+}
+
+.data-grid[data-vertical-align="bottom"] .data-grid__cell {
+  @apply align-bottom;
+}
+
+/* Tree column: the cdk indents with a spacer (`treeIndent` px per level), not the vendored level padding */
+.data-grid .table__cell[data-tree-column] {
+  @apply ps-4;
+}
+
+.data-grid__cell[data-tree-column] {
+  @apply whitespace-nowrap;
+}
+
+/* Pinned cells stay opaque in every row state while columns scroll under them: the background colour is the opaque
+   surface behind the cells (primary: the root's surface-secondary; secondary: the page background) and the vendored
+   state colour (table.css: surface, surface/40 hover, surface/10 selected, accent-soft drop target; secondary:
+   transparent, default/50 hover) is layered on top as an image, so pinned cells look exactly like their row. */
+/* Registered so the row-state layer of pinned cells eases like the plain cells' background-color */
+@property --data-grid-pinned-state {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+.data-grid .data-grid__cell[data-pinned] {
+  --data-grid-pinned-state: var(--surface);
+  background-color: var(--surface-secondary);
+  background-image: linear-gradient(var(--data-grid-pinned-state), var(--data-grid-pinned-state));
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    --data-grid-pinned-state var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+}
+
+.data-grid.table-root--secondary .data-grid__cell[data-pinned] {
+  --data-grid-pinned-state: transparent;
+  background-color: var(--background);
+}
+
+@media (hover: hover) {
+  .data-grid .table__row:is(:hover, [data-hovered="true"]) .data-grid__cell[data-pinned] {
+    --data-grid-pinned-state: color-mix(in oklab, var(--surface) 40%, transparent);
+  }
+
+  .data-grid.table-root--secondary .table__row:is(:hover, [data-hovered="true"]) .data-grid__cell[data-pinned] {
+    --data-grid-pinned-state: color-mix(in oklab, var(--default) 50%, transparent);
+  }
+}
+
+.data-grid .table__row[data-selected="true"] .data-grid__cell[data-pinned] {
+  --data-grid-pinned-state: color-mix(in oklab, var(--surface) 10%, transparent);
+}
+
+.data-grid .table__row[data-drop-target="true"] .data-grid__cell[data-pinned] {
+  --data-grid-pinned-state: var(--accent-soft);
+}
+
+/* Pinned edge shadow, only while content is scrolled under the pinned side */
+.data-grid[data-scrolled-start] :is(.data-grid__cell, .data-grid__column)[data-pinned-edge="start"] {
+  box-shadow: 6px 0 8px -6px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+.data-grid[data-scrolled-end] :is(.data-grid__cell, .data-grid__column)[data-pinned-edge="end"] {
+  box-shadow: -6px 0 8px -6px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+[dir="rtl"] .data-grid[data-scrolled-start] :is(.data-grid__cell, .data-grid__column)[data-pinned-edge="start"] {
+  box-shadow: -6px 0 8px -6px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+[dir="rtl"] .data-grid[data-scrolled-end] :is(.data-grid__cell, .data-grid__column)[data-pinned-edge="end"] {
+  box-shadow: 6px 0 8px -6px color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+
+/**
+ * Element: row - interactive rows (row actions / selection) show the interactive cursor
+ */
+.data-grid:is([data-selection-mode="single"], [data-selection-mode="multiple"]) .data-grid__row {
+  cursor: var(--cursor-interactive);
+}
+
+/**
+ * Element: checkbox - the cdk `role="checkbox"` span takes the vendored checkbox classes
+ */
+.data-grid__checkbox {
+  @apply inline-flex items-center justify-center align-middle;
+
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/* Row checkboxes sit on the row surface: the vendored `checkbox--secondary` look (as the HeroUI table's row checkboxes:
+   default fill, no shadow), so an unchecked box stays visible on the white / dark surface; select-all stays primary */
+.data-grid__cell .data-grid__checkbox .checkbox__control {
+  @apply shadow-none;
+}
+
+/* Rivet: excludes the pressed indeterminate box, so checkbox.css's pressed fill applies whatever order the per-component
+   files load in (`:where`: specificity unchanged; TWEAKS.md TW-117) */
+.data-grid__cell
+  .data-grid__checkbox:not([aria-checked="true"]):where(
+    :not([data-indeterminate="true"]:is(:active, [data-pressed="true"], :has([data-slot="checkbox-content"][data-pressed="true"])))
+  )
+  .checkbox__control {
+  background-color: var(--default);
+}
+
+/**
+ * Element: sort-indicator - hidden until the column is sorted (hover previews it)
+ */
+.data-grid__sort-indicator {
+  @apply ms-1 align-middle text-muted opacity-0 transition-opacity duration-(--duration-fast) motion-reduce:transition-none;
+
+  &[data-direction] {
+    @apply text-foreground opacity-100;
+  }
+
+  & svg {
+    @apply size-3;
+  }
+
+  .data-grid__column[data-allows-sorting="true"]:hover &:not([data-direction]) {
+    @apply opacity-50;
+  }
+}
+
+/**
+ * Element: expand - tree toggle; the chevron turns when expanded
+ */
+.data-grid__expand {
+  @apply me-1 inline-flex size-5 shrink-0 items-center justify-center rounded-md align-middle text-muted outline-none;
+  cursor: var(--cursor-interactive);
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  &[data-placeholder] {
+    @apply pointer-events-none;
+  }
+
+  & svg {
+    @apply size-3.5 transition-transform duration-(--duration-fast) ease-out motion-reduce:transition-none;
+  }
+
+  &[data-expanded="true"] svg {
+    @apply rotate-90;
+  }
+
+  @media (hover: hover) {
+    &:not([data-placeholder]):hover {
+      @apply bg-default text-foreground;
+    }
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+[dir="rtl"] .data-grid__expand:not([data-expanded="true"]) svg {
+  @apply rotate-180;
+}
+
+/**
+ * Element: drag-handle - row reorder grip
+ */
+.data-grid__drag-handle {
+  @apply inline-flex size-6 items-center justify-center rounded-md align-middle text-muted outline-none;
+  cursor: grab;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  & svg {
+    @apply size-4;
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      @apply bg-default text-foreground;
+    }
+  }
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+.data-grid__row[data-dragging] {
+  @apply opacity-50;
+}
+
+/**
+ * Element: drop-indicator - one line between rows while dragging (the cdk positions it)
+ */
+.data-grid__drop-indicator {
+  @apply z-10;
+  border-top: 2px solid var(--accent);
+  margin-top: -1px;
+}
+
+/**
+ * Element: empty - the empty-state row
+ */
+.data-grid__empty td {
+  @apply bg-surface px-4 py-9 text-center text-sm text-muted;
+}
+
+.table-root--secondary .data-grid__empty td {
+  @apply bg-transparent;
+}

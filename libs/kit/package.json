@@ -1,0 +1,81 @@
+{
+  "name": "@rivetjs/kit",
+  "version": "0.0.0-experimental",
+  "description": "Rivet kit: document head (title, meta, links, scripts, JSON-LD, fonts), CSP, Transition, lucide Icon, scoped styles.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "rivet": {
+    "source": true
+  },
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    },
+    "./dom": {
+      "types": "./dom.ts",
+      "default": "./dom.ts"
+    },
+    "./image": {
+      "types": "./image.ts",
+      "default": "./image.ts"
+    },
+    "./font": {
+      "types": "./font.ts",
+      "default": "./font.ts"
+    },
+    "./vite": {
+      "types": "./vite.ts",
+      "default": "./vite.ts"
+    },
+    "./client": {
+      "types": "./client.d.ts"
+    },
+    "./transition": {
+      "types": "./transition.tsx",
+      "default": "./transition.tsx"
+    },
+    "./icon": {
+      "types": "./icon.tsx",
+      "default": "./icon.tsx"
+    }
+  },
+  "dependencies": {
+    "@rivetjs/reactivity": "0.0.0-experimental",
+    "@rivetjs/router": "0.0.0-experimental",
+    "@rivetjs/runtime": "0.0.0-experimental"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "@capsizecss/metrics": "^3.0.0 || ^4.0.0",
+    "@capsizecss/unpack": "^3.0.0 || ^4.0.0",
+    "lucide": ">=1",
+    "vite": "^8.3.2"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "@capsizecss/unpack": {
+      "optional": true
+    },
+    "@capsizecss/metrics": {
+      "optional": true
+    },
+    "lucide": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@capsizecss/metrics": "4.3.0",
+    "@capsizecss/unpack": "4.0.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/kit"
+  }
+}

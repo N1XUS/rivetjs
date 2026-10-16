@@ -1,0 +1,85 @@
+/* Plain CSS on the default rv-* classes and the state attributes. No Tailwind. */
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  max-width: 260px;
+  margin: 16px;
+}
+.rv-Select {
+  display: grid;
+  gap: 4px;
+}
+.rv-Select .rv-Label {
+  font-weight: 600;
+}
+.rv-Select[data-open] .rv-Label {
+  color: #0f766e;
+}
+.rv-Select-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  text-align: start;
+}
+.rv-Select-trigger[aria-expanded="true"] {
+  border-color: #0f766e;
+}
+.rv-Select[data-focus-visible] .rv-Select-trigger {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+.rv-Select[data-invalid] .rv-Select-trigger {
+  border-color: #dc2626;
+}
+.rv-SelectValue[data-placeholder] {
+  color: #64748b;
+}
+.rv-Select-popover {
+  /* --trigger-width: the trigger's width, set by the positioning. */
+  width: var(--trigger-width);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
+}
+.rv-Select-popover[data-entering] {
+  animation: fade 120ms;
+}
+.rv-Select-popover[data-exiting] {
+  animation: fade 120ms reverse;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+.rv-ListBox {
+  padding: 4px;
+  outline: none;
+}
+.rv-ListBoxItem {
+  padding: 4px 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: default;
+}
+.rv-ListBoxItem[data-focused] {
+  background: #f1f5f9;
+}
+.rv-ListBoxItem[aria-selected="true"] {
+  font-weight: 600;
+  color: #0f766e;
+}
+.rv-ListBoxItem[aria-disabled="true"] {
+  opacity: 0.4;
+}

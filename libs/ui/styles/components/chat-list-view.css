@@ -1,0 +1,83 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no chat list). Feature set inspired by HeroUI Pro's public ChatListView docs; independent implementation on HeroUI tokens (menu-item look). */
+/* -------------------------------------------------------------------------------------------------
+ * ChatListView Component Styles
+ * Block: chat-list-view (parts: item / icon / item-content / title / preview / meta / section)
+ * Modifiers: chat-list-view--default / chat-list-view--compact
+ * -----------------------------------------------------------------------------------------------*/
+
+.chat-list-view {
+  @apply flex w-full min-w-0 flex-col gap-0.5;
+}
+
+.chat-list-view__section {
+  @apply px-3 pt-3 pb-1 text-xs font-medium text-muted first:pt-0;
+}
+
+.chat-list-view__item {
+  cursor: var(--cursor-interactive);
+  @apply relative flex w-full min-w-0 items-center gap-3 rounded-xl px-3 py-2 text-start text-sm text-foreground no-highlight outline-none select-none;
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      @apply bg-default;
+    }
+  }
+
+  &[data-pressed="true"] {
+    @apply bg-default-hover;
+  }
+
+  &[data-current="true"] {
+    @apply bg-default font-medium;
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-disabled="true"],
+  &:disabled {
+    @apply status-disabled;
+  }
+}
+
+.chat-list-view__icon {
+  @apply inline-flex size-5 shrink-0 items-center justify-center text-muted;
+
+  & svg {
+    @apply size-4;
+  }
+
+  &:has(> .avatar) {
+    @apply size-8;
+  }
+}
+
+.chat-list-view__item-content {
+  @apply flex min-w-0 flex-1 flex-col;
+}
+
+.chat-list-view__title {
+  @apply truncate;
+}
+
+.chat-list-view__preview {
+  @apply truncate text-xs font-normal text-muted;
+}
+
+.chat-list-view__meta {
+  @apply ms-auto shrink-0 text-xs font-normal text-muted tabular-nums;
+}
+
+.chat-list-view--compact .chat-list-view__item {
+  @apply py-1.5;
+}
+
+.chat-list-view--compact .chat-list-view__preview {
+  @apply hidden;
+}

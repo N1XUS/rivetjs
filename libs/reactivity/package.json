@@ -1,0 +1,33 @@
+{
+  "name": "@rivetjs/reactivity",
+  "version": "0.0.0-experimental",
+  "description": "Fine-grained signals for Rivet: signal, computed, effect, owners and disposal, stores, resume hooks.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "development": "./dev.ts",
+      "default": "./index.ts"
+    },
+    "./debug": {
+      "types": "./debug.ts",
+      "default": "./debug.ts"
+    },
+    "./store": {
+      "types": "./store.ts",
+      "development": "./store-dev.ts",
+      "default": "./store.ts"
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "../../dist/libs/reactivity"
+  }
+}

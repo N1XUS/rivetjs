@@ -1,0 +1,33 @@
+body {
+  margin: 0;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.demo {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin: 16px;
+}
+.demo {
+  justify-items: stretch;
+}
+p {
+  margin: 0;
+}
+hr.rv-Separator {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #cbd5e1;
+  margin: 0;
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 24px;
+}
+.rv-Separator[aria-orientation="vertical"] {
+  align-self: stretch;
+  width: 1px;
+  background: #cbd5e1;
+}

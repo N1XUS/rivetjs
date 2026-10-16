@@ -1,0 +1,29 @@
+/* Ported from HeroUI v3.2.6 packages/styles/components/list-box.css (Apache-2.0, © 2025 NextUI Inc.). */
+/* Rivet: modified, see TWEAKS.md */
+/* ==========================================================================
+   Base list-box styles
+   ========================================================================== */
+
+.list-box {
+  @apply relative w-full overflow-clip p-1;
+  /* Rivet: items keep their own radius unless a popover sets it for this list (TWEAKS.md TW-123) */
+  --r-inner: initial;
+
+  /**
+   * Spacing between direct children.
+   *
+   * NOTE: We intentionally avoid `display: flex` + `gap` here because
+   * react-aria's Virtualizer renders a `position: relative` content
+   * div with an explicit large height (e.g. 50000px) as the only child
+   * of the ListBox. Flex shrinking would collapse that height and break
+   * scrollbar sizing during virtualized scroll.
+   */
+  & > * + * {
+    @apply mt-1;
+  }
+
+  /* This makes the horizontal separator take up 94% of the width and be centered */
+  [data-slot="separator"][data-orientation="horizontal"] {
+    @apply ms-[3%] w-[94%];
+  }
+}

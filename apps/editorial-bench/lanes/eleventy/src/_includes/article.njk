@@ -1,0 +1,4 @@
+---
+layout: base.njk
+---
+<main class="layout"><article><h1>{{ title }}</h1><p class="meta">By <a href="/authors/{{ authorSlug }}/">{{ author }}</a> · <time datetime="{{ iso }}">{{ iso | day }}</time></p><ul class="tags">{% for t in tags %}<li><a href="/tags/{{ t }}/">{{ t }}</a></li>{% endfor %}</ul><div class="body">{{ content | safe }}</div></article><aside class="related"><h2>Related</h2><ul>{% for s in related %}{% set r = collections.articles | bySlug(s) %}<li><a href="/articles/{{ s }}/">{{ r.data.title }}</a><time datetime="{{ r.data.iso }}">{{ r.data.iso | day }}</time></li>{% endfor %}</ul></aside></main>

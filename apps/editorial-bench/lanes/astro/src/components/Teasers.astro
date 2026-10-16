@@ -1,0 +1,5 @@
+---
+import { day } from "../lib/site.mjs";
+const { items } = Astro.props;
+---
+<ul class="teasers">{items.map((a) => <li class="teaser"><h2><a href={`/articles/${a.slug}/`}>{a.title}</a></h2><p class="meta">{a.author} · <time datetime={a.date}>{day(a.date)}</time></p><p>{a.description}</p></li>)}</ul>

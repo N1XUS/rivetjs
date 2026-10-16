@@ -1,0 +1,130 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no native select). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI field tokens (--field, --field-border*, --field-foreground, rounded-field, shadow-field, focus / invalid / disabled status utilities), matching the look of the HeroUI Select trigger. Behaviour = a real <select> (@rivetjs/cdk/native-select inside a cdk TextField). */
+/* -------------------------------------------------------------------------------------------------
+ * NativeSelect Component Styles
+ * Block: native-select (parts: trigger = positioned wrapper / select / indicator / option / optgroup)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: native-select - the field (label, trigger, description, error)
+ */
+.native-select {
+  @apply flex flex-col gap-(--field-gap-help);
+
+  &[data-invalid="true"] {
+    [data-slot="description"] {
+      @apply hidden;
+    }
+  }
+}
+
+.native-select--full-width {
+  @apply w-full;
+}
+
+/**
+ * Element: trigger - positioned wrapper holding the select and its indicator
+ */
+.native-select__trigger {
+  @apply relative inline-flex w-fit min-w-40 items-center;
+}
+
+.native-select__trigger--full-width {
+  @apply w-full;
+}
+
+/**
+ * Element: select - the native <select>, styled like a HeroUI field trigger
+ */
+.native-select__select {
+  @apply min-h-9 w-full appearance-none truncate rounded-field border bg-field py-2 ps-3 pe-8 text-base text-field-foreground shadow-field outline-none sm:text-sm;
+
+  border-width: var(--border-width-field);
+  border-color: var(--field-border);
+  cursor: var(--cursor-interactive);
+
+  /**
+   * Transitions
+   * CRITICAL: motion-reduce must be AFTER transition for correct override specificity
+   */
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover:not(:focus-visible),
+    &[data-hovered="true"]:not([data-focus-visible="true"]) {
+      @apply bg-field-hover;
+      border-color: var(--field-border-hover);
+    }
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused-field;
+    border-color: var(--field-border-focus);
+    background-color: var(--field-focus);
+  }
+
+  &[data-invalid="true"] {
+    @apply status-invalid-field;
+    background-color: var(--field-focus);
+  }
+
+  &:disabled,
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+/* Secondary variant: filled default surface, no shadow (like the secondary text fields) */
+.native-select--secondary .native-select__select {
+  @apply shadow-none;
+  background-color: var(--default);
+
+  @media (hover: hover) {
+    &:hover:not(:focus-visible),
+    &[data-hovered="true"]:not([data-focus-visible="true"]) {
+      background-color: var(--default-hover);
+    }
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"],
+  &[data-invalid="true"] {
+    background-color: var(--default);
+  }
+}
+
+/**
+ * Element: indicator - decorative chevron over the select's inline end (clicks pass through)
+ */
+.native-select__indicator {
+  @apply pointer-events-none absolute inset-y-0 end-2.5 my-auto flex size-4 shrink-0 items-center justify-center text-field-placeholder;
+
+  .native-select__trigger:has(.native-select__select:disabled) & {
+    @apply opacity-50;
+  }
+
+  /* Default indicator = morph chevron (morph-icon.css, TW-149). A native <select> exposes no open state to markup: the
+     chevron folds up only where the browser matches `:open` on a <select> (progressive; elsewhere it stays ⌄). */
+  &[data-slot="native-select-default-indicator"] {
+    --morph-chevron-size: var(--native-select-indicator-size, 1rem);
+    --morph-chevron-stroke: var(--native-select-indicator-stroke, calc(var(--morph-chevron-size) / 12));
+    --morph-chevron-duration: var(--native-select-indicator-duration, var(--duration-morph-chevron));
+    @apply size-(--morph-chevron-size);
+  }
+}
+
+.native-select__trigger:has(.native-select__select:open) .native-select__indicator.morph-chevron {
+  --morph-p: 1;
+}
+
+/**
+ * Element: option / optgroup - the picker list is drawn by the platform; only colors are set
+ */
+.native-select__option,
+.native-select__optgroup {
+  @apply bg-overlay text-overlay-foreground;
+}

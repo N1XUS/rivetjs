@@ -1,0 +1,5 @@
+{
+  "extends": "../../../../tsconfig.base.json",
+  "compilerOptions": { "module": "esnext", "moduleResolution": "bundler", "jsxImportSource": "@solidjs/web", "strict": false, "types": ["node", "vite/client"] },
+  "include": ["src"]
+}

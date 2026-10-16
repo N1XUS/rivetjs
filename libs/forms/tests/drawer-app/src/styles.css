@@ -1,0 +1,9 @@
+body { font-family: system-ui, sans-serif; margin: 0; color: #0f172a; background: #f8fafc; }
+main { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem; }
+.stack { display: grid; gap: 0.5rem; }
+.input { padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; font: inherit; }
+.input[aria-invalid="true"] { border-color: #b91c1c; }
+.error { color: #b91c1c; font-size: 0.875rem; margin: 0; }
+.button { justify-self: start; padding: 0.5rem 1rem; border: 0; border-radius: 0.375rem; background: #0f766e; color: white; font-weight: 600; }
+.rv-ModalOverlay { background: rgb(15 23 42 / 0.4); }
+.drawer { position: fixed; inset: 0 0 0 auto; width: min(24rem, 100vw); background: white; padding: 1.5rem; box-shadow: -8px 0 24px rgb(15 23 42 / 0.2); }

@@ -1,0 +1,69 @@
+{
+  "name": "rivet-workspace",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rivetjs/rivet.git"
+  },
+  "workspaces": [
+    "libs/*",
+    "apps/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "docs:build:cloudflare": "node scripts/docs-cloudflare.ts",
+    "docs:deploy:ui:cloudflare": "env -u WRANGLER_CI_MATCH_TAG -u WRANGLER_CI_OVERRIDE_NAME wrangler deploy --config apps/ui-docs/wrangler.assets.jsonc && wrangler deploy --config apps/ui-docs/wrangler.jsonc",
+    "build": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx run-many -t build",
+    "test": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx run-many -t test",
+    "test:ssr": "vitest run --project runtime --project ssr-bench-all libs/runtime/tests/node-writer.test.ts apps/ssr-bench/tests/emitter.test.ts apps/ssr-bench/tests/rest.test.ts",
+    "test:ssr:integration": "vitest run --project ssr-bench-all apps/ssr-bench/tests/integration.test.ts",
+    "bench:ssr": "node apps/ssr-bench/run-python.ts apps/ssr-bench/benchmark.py",
+    "bench:ssr:report": "node apps/ssr-bench/run-python.ts apps/ssr-bench/serve-report.py",
+    "build:dom-bench": "node apps/dom-bench/build.ts",
+    "bench:dom": "node apps/dom-bench/run.ts",
+    "bench:dom:report": "node apps/dom-bench/report.ts",
+    "dev": "node apps/playground/server.ts --dev",
+    "start:playground": "node apps/playground/server.ts",
+    "audit:playground": "node apps/playground/lighthouse.ts",
+    "rivet:check": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx run-many -t rivet-check",
+    "typecheck": "NX_DAEMON=false NX_ISOLATE_PLUGINS=false nx run-many -t typecheck --parallel=1 && node scripts/check-tsx-projects.ts",
+    "zero-cost": "sh scripts/zero-cost/check.sh",
+    "size-report": "node scripts/size-report.mjs",
+    "format": "node scripts/format-check.ts --write",
+    "format:check": "node scripts/format-check.ts"
+  },
+  "devDependencies": {
+    "@nx/devkit": "23.2.1",
+    "@sparticuz/chromium": "153.0.0",
+    "@types/node": "26.6.4",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
+    "@vitest/browser-playwright": "5.0.3",
+    "axe-core": "4.13.0",
+    "color-space": "^1.16.0",
+    "delta-e": "^0.0.8",
+    "fast-check": "^4.10.2",
+    "happy-dom": "20.14.5",
+    "motion": "14.1.0",
+    "nx": "23.2.1",
+    "playwright": "1.63.0",
+    "prettier": "3.9.9",
+    "sass": "1.105.1",
+    "sharp": "0.35.5",
+    "typescript": "5.9.3",
+    "verdaccio": "6.10.4",
+    "vitest": "5.0.3",
+    "wrangler": "4.151.0"
+  },
+  "overrides": {
+    "nx": {
+      "axios": "1.20.0",
+      "brace-expansion": "5.0.12",
+      "smol-toml": "1.9.0"
+    }
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

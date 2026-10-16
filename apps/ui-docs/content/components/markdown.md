@@ -1,0 +1,75 @@
+---
+title: Markdown
+description: "Safe Markdown for model answers, rendered as real elements and updated block by block while it streams."
+template: reference
+status: experimental
+related: [components/code-block, components/chat-message]
+---
+
+`Markdown` renders CommonMark plus the GFM parts chat answers use (tables, task lists, strikethrough, autolinks) with the Rivet UI typography. `@rivetjs/cdk/markdown` parses the text into plain data and the component builds elements from it: raw HTML stays text and links are limited to http(s), mailto, tel and relative URLs, so model output can never inject markup.
+
+Accessibility: headings, lists, tables and quotes are their native elements; images keep their alt text; task-list checkboxes are read-only.
+
+## Usage
+
+```tsx
+import { Markdown } from "@rivetjs/ui/markdown";
+```
+
+::example{id=markdown-basic}
+
+## Anatomy
+
+```tsx
+<Markdown content={() => text()} isStreaming={() => streaming()} />
+```
+
+Fill the signal from a `fetch` body with `streamText(signal, response.body)` from `@rivetjs/cdk/chat`: one signal write per chunk.
+
+## Streaming
+
+Pass an accessor as `content` and `isStreaming`. The text is split into top-level blocks; finished blocks keep their DOM nodes (keyed rows). The block being written is keyed down to its words: a chunk only appends word spans, which fade and un-blur in, and each new block (paragraph, list item, code block) eases in. While streaming, open marks in the last block (`**`, `__`, `~~`, a backtick) are closed for display, a soft pulsing caret follows the text, and the root's height grows smoothly (`followHeight` from `@rivetjs/cdk/chat`). An open code fence streams as plain words in the code block frame and is highlighted once it closes. Fenced code renders as a [CodeBlock](/components/code-block/). Reduced motion: no fades, no height easing.
+
+::example{id=markdown-streaming}
+
+## With Streamdown
+
+There is no Streamdown adapter: the built-in streaming mode above covers mark repair and the caret.
+
+## CSS Classes
+
+| Class                                                        | Applied                                        |
+| ------------------------------------------------------------ | ---------------------------------------------- |
+| `markdown`                                                   | root                                           |
+| `markdown__code-block[data-streaming]`                       | a fence still open while streaming             |
+| `markdown__heading` / `--1` … `--6`                          | headings                                       |
+| `markdown__paragraph`                                        | paragraphs                                     |
+| `markdown__list` / `--ordered` / `markdown__list-item`       | lists                                          |
+| `markdown__task-checkbox`                                    | task list box                                  |
+| `markdown__blockquote`                                       | quotes                                         |
+| `markdown__table-wrapper` / `markdown__table`                | tables (scrolling wrapper)                     |
+| `markdown__code-block`                                       | fenced code (a `code-block`)                   |
+| `markdown__inline-code`                                      | inline code                                    |
+| `markdown__strong` / `__del` / `__link` / `__image` / `__hr` | inline marks, links, images, rules             |
+| `markdown__caret`                                            | streaming caret                                |
+| `markdown__tail`                                             | streaming blocks wrapper (`display: contents`) |
+| `markdown__live`                                             | a block entering while streaming               |
+| `markdown__word`                                             | a streamed word (fades in)                     |
+
+## API Reference
+
+| Prop          | Type                       | Default |
+| ------------- | -------------------------- | ------- |
+| `content`     | `string \| () => string`   | —       |
+| `children`    | `string`                   | —       |
+| `isStreaming` | `boolean \| () => boolean` | `false` |
+| `showCaret`   | `boolean`                  | `true`  |
+| `class`       | `string`                   | —       |
+
+Other `div` attributes pass to the root. Not supported: per-element `components` overrides, reference links, footnotes, raw HTML blocks.
+
+::api{symbol="@rivetjs/ui/markdown#MarkdownProps"}
+
+## Resumability
+
+Parsed and rendered on the server; a static answer ships no parser. A streaming accessor re-parses only the last block per update; the parser loads with the first change.

@@ -1,0 +1,10 @@
+dist/
+results/
+lanes/*/node_modules
+lanes/*/dist/
+lanes/*/build.log
+lanes/*/public/site.css
+lanes/next/.next/
+lanes/next/next-env.d.ts
+lanes/astro-react/.astro/
+lanes/astro-preact/.astro/

@@ -1,0 +1,96 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no scroll area, only ScrollShadow). Behaviour = Radix UI ScrollArea (@radix-ui/react-scroll-area 1.3.0, MIT, © 2022 WorkOS) via @rivetjs/cdk/scroll-area; look = HeroUI scrollbar tokens (--scrollbar-thumb / --scrollbar-track), radii, focus ring. Positioning, overflow axes and native-scrollbar hiding are inline styles of the cdk parts. */
+/* -------------------------------------------------------------------------------------------------
+ * ScrollArea Component Styles
+ * Block: scroll-area (parts: viewport / scrollbar[data-orientation][data-state] / thumb / corner)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: scroll-area - the root; clips the viewport to its radius
+ */
+.scroll-area {
+  @apply overflow-hidden;
+  --scroll-area-size: 10px;
+  --scroll-area-padding: 2px;
+}
+
+.scroll-area--sm {
+  --scroll-area-size: 6px;
+  --scroll-area-padding: 1px;
+}
+
+/**
+ * Element: viewport - the native scroll container
+ */
+.scroll-area__viewport {
+  @apply size-full rounded-[inherit] outline-none;
+
+  &:focus-visible {
+    @apply status-focused;
+  }
+}
+
+/**
+ * Element: scrollbar - the track along an edge (cdk sets position + the thumb size variable)
+ */
+.scroll-area__scrollbar {
+  @apply flex touch-none select-none;
+  padding: var(--scroll-area-padding);
+  background-color: var(--scrollbar-track);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  &[data-orientation="vertical"] {
+    @apply h-full;
+    width: var(--scroll-area-size);
+  }
+
+  &[data-orientation="horizontal"] {
+    @apply flex-col;
+    height: var(--scroll-area-size);
+  }
+
+  &:hover {
+    background-color: color-mix(in oklch, var(--foreground) 5%, transparent);
+  }
+
+  /* type="hover" / "scroll": fade in and out (the cdk Presence keeps the hidden scrollbar until the animation ends) */
+  &[data-state="visible"] {
+    @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0;
+  }
+
+  &[data-state="hidden"] {
+    @apply animate-out duration-(--duration-base) ease-smooth fade-out;
+  }
+
+  @apply motion-reduce:animate-none;
+}
+
+/**
+ * Element: thumb - thin, rounded; grows darker on hover / drag
+ */
+.scroll-area__thumb {
+  @apply relative flex-1 rounded-full;
+  background-color: var(--scrollbar-thumb);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  /* a larger hit area than the visible thumb (touch / precise pointers) */
+  &::before {
+    @apply absolute top-1/2 left-1/2 size-full min-h-11 min-w-11 -translate-1/2 content-[""];
+  }
+
+  .scroll-area__scrollbar:hover > & {
+    background-color: color-mix(in oklch, var(--foreground) 25%, transparent);
+  }
+
+  &:active {
+    background-color: color-mix(in oklch, var(--foreground) 35%, transparent);
+  }
+}
+
+/**
+ * Element: corner - where both scrollbars meet
+ */
+.scroll-area__corner {
+  background-color: var(--scrollbar-track);
+}

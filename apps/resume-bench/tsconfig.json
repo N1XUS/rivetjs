@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["*.ts", "lanes/*/*.ts", "types.d.ts"],
+  "exclude": ["node_modules", "dist", ".build", "results", "lanes/solid/src", "lanes/qwik/src", "lanes/rivet/*.tsx"]
+}

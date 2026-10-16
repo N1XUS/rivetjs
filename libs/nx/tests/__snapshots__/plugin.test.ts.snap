@@ -1,0 +1,139 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createNodes > static app with tests: every target, prerendering build, cache inputs/outputs 1`] = `
+{
+  "build": {
+    "cache": true,
+    "dependsOn": [
+      "^build",
+    ],
+    "executor": "@rivetjs/nx:build",
+    "inputs": [
+      "default",
+      "^default",
+      "!{projectRoot}/**/*.test.{ts,tsx}",
+      "!{projectRoot}/**/*.spec.{ts,tsx}",
+      "!{projectRoot}/vitest.config.{ts,mts,js,mjs}",
+      "!{projectRoot}/.rivet/**/*",
+      "!{projectRoot}/dist/**/*",
+      "!{projectRoot}/coverage/**/*",
+      "!{projectRoot}/src/rivet-i18n.d.ts",
+      "!{projectRoot}/.vercel/**/*",
+      "!{projectRoot}/.netlify/**/*",
+      "!{projectRoot}/.wrangler/**/*",
+    ],
+    "metadata": {
+      "description": "Client + server build, then prerender every page (static mode)",
+      "technologies": [
+        "rivet",
+        "vite",
+      ],
+    },
+    "options": {},
+    "outputs": [
+      "{projectRoot}/dist",
+    ],
+  },
+  "check": {
+    "cache": true,
+    "executor": "@rivetjs/nx:check",
+    "inputs": [
+      "default",
+      "^default",
+      "!{projectRoot}/.rivet/**/*",
+      "!{projectRoot}/dist/**/*",
+      "!{projectRoot}/coverage/**/*",
+      "!{projectRoot}/src/rivet-i18n.d.ts",
+      "!{projectRoot}/.vercel/**/*",
+      "!{projectRoot}/.netlify/**/*",
+      "!{projectRoot}/.wrangler/**/*",
+    ],
+    "metadata": {
+      "description": "Rivet diagnostics (rivet-check: compiler + serializability + route links)",
+      "technologies": [
+        "rivet",
+        "vite",
+      ],
+    },
+    "options": {},
+    "outputs": [],
+  },
+  "dev": {
+    "continuous": true,
+    "executor": "@rivetjs/nx:dev",
+    "metadata": {
+      "description": "Vite dev server (pages resume like production; hot reload)",
+      "technologies": [
+        "rivet",
+        "vite",
+      ],
+    },
+    "options": {},
+  },
+  "preview": {
+    "continuous": true,
+    "dependsOn": [
+      "build",
+    ],
+    "executor": "@rivetjs/nx:preview",
+    "metadata": {
+      "description": "Serve the build with the project's serve.js",
+      "technologies": [
+        "rivet",
+        "vite",
+      ],
+    },
+    "options": {},
+  },
+  "test": {
+    "cache": true,
+    "executor": "@rivetjs/nx:test",
+    "inputs": [
+      "default",
+      "^default",
+      "!{projectRoot}/.rivet/**/*",
+      "!{projectRoot}/dist/**/*",
+      "!{projectRoot}/coverage/**/*",
+      "!{projectRoot}/src/rivet-i18n.d.ts",
+      "!{projectRoot}/.vercel/**/*",
+      "!{projectRoot}/.netlify/**/*",
+      "!{projectRoot}/.wrangler/**/*",
+    ],
+    "metadata": {
+      "description": "Vitest with rivetTest() (DOM + server targets)",
+      "technologies": [
+        "rivet",
+        "vitest",
+      ],
+    },
+    "options": {},
+    "outputs": [
+      "{projectRoot}/coverage",
+    ],
+  },
+  "typecheck": {
+    "cache": true,
+    "executor": "@rivetjs/nx:typecheck",
+    "inputs": [
+      "default",
+      "^default",
+      "!{projectRoot}/.rivet/**/*",
+      "!{projectRoot}/dist/**/*",
+      "!{projectRoot}/coverage/**/*",
+      "!{projectRoot}/src/rivet-i18n.d.ts",
+      "!{projectRoot}/.vercel/**/*",
+      "!{projectRoot}/.netlify/**/*",
+      "!{projectRoot}/.wrangler/**/*",
+    ],
+    "metadata": {
+      "description": "tsc --noEmit (after rivet sync for routed apps)",
+      "technologies": [
+        "rivet",
+        "typescript",
+      ],
+    },
+    "options": {},
+    "outputs": [],
+  },
+}
+`;

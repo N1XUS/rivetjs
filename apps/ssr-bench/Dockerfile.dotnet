@@ -1,0 +1,12 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:83e0db97c45d2e39b80123fe42940a23c423405a17f80b608a4b8768033d6392 AS build
+ARG PROJECT
+WORKDIR /src
+COPY apps/ssr-bench/proto ./proto
+COPY apps/ssr-bench/dotnet ./dotnet
+RUN dotnet restore dotnet/${PROJECT}/${PROJECT}.csproj --locked-mode && dotnet publish dotnet/${PROJECT}/${PROJECT}.csproj -c Release --no-restore -o /out
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:57460add89e2b3dd1950c41d8b7dc96eeb7a24d13d98e3656ce9997a8b746bd6
+WORKDIR /app
+COPY --from=build /out ./
+ARG PROJECT
+ENV APP_PROJECT=${PROJECT} ASPNETCORE_URLS=http://0.0.0.0:8080 DOTNET_ENVIRONMENT=Production
+ENTRYPOINT ["sh","-c","exec dotnet ${APP_PROJECT}.dll"]

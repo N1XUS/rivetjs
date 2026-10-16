@@ -1,0 +1,49 @@
+{
+  "executors": {
+    "build": {
+      "implementation": "./executors/build/executor",
+      "schema": "./executors/build/schema.json",
+      "description": "Client + server Vite builds (one client build per locale with i18n), then prerender for static apps."
+    },
+    "dev": {
+      "implementation": "./executors/dev/executor",
+      "schema": "./executors/dev/schema.json",
+      "description": "Vite dev server."
+    },
+    "serve": {
+      "implementation": "./executors/dev/executor",
+      "schema": "./executors/dev/schema.json",
+      "description": "Vite dev server (alias of dev)."
+    },
+    "preview": {
+      "implementation": "./executors/preview/executor",
+      "schema": "./executors/preview/schema.json",
+      "description": "Serve the build: the project's serve.js, the router's Node server, or vite preview."
+    },
+    "prerender": {
+      "implementation": "./executors/prerender/executor",
+      "schema": "./executors/prerender/schema.json",
+      "description": "Render every page of an existing build to HTML files (prerenderBuild)."
+    },
+    "check": {
+      "implementation": "./executors/check/executor",
+      "schema": "./executors/check/schema.json",
+      "description": "Rivet diagnostics (rivet sync + rivet-check)."
+    },
+    "test": {
+      "implementation": "./executors/test/executor",
+      "schema": "./executors/test/schema.json",
+      "description": "Vitest with the project's rivetTest() config."
+    },
+    "typecheck": {
+      "implementation": "./executors/typecheck/executor",
+      "schema": "./executors/typecheck/schema.json",
+      "description": "tsc --noEmit (rivet sync first for routed apps)."
+    },
+    "package": {
+      "implementation": "./executors/package/executor",
+      "schema": "./executors/package/schema.json",
+      "description": "Publishable library package: .js / .jsx (JSX preserved) + .d.ts and a mapped package.json."
+    }
+  }
+}

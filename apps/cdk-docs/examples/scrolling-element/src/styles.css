@@ -1,0 +1,29 @@
+body {
+  margin: 16px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #0f172a;
+}
+/* The ancestor scrolls; the viewport inside it is as tall as its spacer. */
+.scroller {
+  width: 320px;
+  height: 260px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+.intro {
+  margin: 0;
+  padding: 12px;
+  background: #eef2ff;
+}
+.row {
+  box-sizing: border-box;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+button {
+  font: inherit;
+  margin-bottom: 8px;
+}
