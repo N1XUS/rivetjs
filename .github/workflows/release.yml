@@ -1,6 +1,6 @@
 # Manual release of every publishable lib (one version) to npm; provenance for public repositories.
 # Runs only from the Actions tab (workflow_dispatch); `dry-run` (default true) publishes nothing and pushes nothing.
-# Needs the NPM_TOKEN secret (a granular npm token with publish rights on @rivetjs/* and create-rivet).
+# Needs the NPM secret (a granular npm token with publish rights on @rivetjs/* and create-rivet).
 # Steps: scripts/release/release.ts (version, changelog, package, tarball smoke, create-rivet e2e, npm publish),
 # then commit workspace manifests + lockfile + CHANGELOG.md, tag v<version>, push. See scripts/CLAUDE.md "Release".
 name: Release
@@ -73,7 +73,7 @@ jobs:
           BUMP: ${{ inputs.version || inputs.bump }}
           PREID: ${{ inputs.preid }}
           DIST_TAG: ${{ inputs.dist-tag }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM }}
           NPM_CONFIG_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
         run: node scripts/release/release.ts "$BUMP" --preid "$PREID" ${DIST_TAG:+--tag "$DIST_TAG"} --apply --publish
 
