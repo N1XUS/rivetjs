@@ -49,6 +49,7 @@ Docs site of `@rivetjs/cdk` (headless components + foundations), second site on 
 - Resumability in example code: callbacks as inline arrows or local consts; closed-overlay content / slots containing components as render functions `{() => …}`.
 - Tailwind examples: `styles.css` = `@layer theme, base, rivet, components, utilities; @import "tailwindcss"; @import "@rivetjs/cdk/tailwind.css"; @source "./**/*.{ts,tsx}";`. Plain-CSS examples: no Tailwind import, rules on `rv-*` classes and `[data-*]` / `[aria-*]`.
 - `src/generated/examples.json` is what `<Example>` reads (server only, from disk); `examples/_quarantine.json` = known check failures (id → step + reason), reported as quarantined by the build.
+- Native-select checks (`calendar-pickers`, `range-calendar-pickers`) use Home/End/ArrowDown on Linux and letter type-ahead on other platforms: Cloudflare's Chromium 153 headless-shell ignores select type-ahead, while local macOS Chromium ignores the navigation-key selection path. Both paths assert the same calendar updates; this changes check inputs only, not components or their shown source.
 
 ## Icons (HIGH PRIORITY)
 - Never hand-write SVG paths; never use UTF symbols or emoji (✓ × ▾ ▸ → ★ 🗑 …) as icons. Use lucide (`lucide` package, icon data).

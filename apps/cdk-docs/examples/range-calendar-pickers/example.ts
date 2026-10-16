@@ -14,11 +14,11 @@ export default defineExample({
     { expect: ['#month option[value="10"]', "Oct"] },
     { expect: ["#year option[selected]", "2026"] },
     { attr: ['#range [data-date="2026-10-12"]', "data-selection-start", "true"] },
-    // Typing on a focused select picks the matching option (change event): the calendar follows.
-    { press: ["#month", "d"] },
+    // Linux headless-shell needs navigation keys; macOS native selects support type-ahead instead.
+    { press: ["#month", process.platform === "linux" ? "End" : "d"] },
     { attr: ["#range", "aria-label", "Project, December 2026"] },
     { matches: '#range [data-date="2026-12-15"]' },
-    { press: ["#year", "2"] },
+    { press: ["#year", process.platform === "linux" ? "ArrowDown" : "2"] },
     { attr: ["#range", "aria-label", "Project, December 2027"] },
     // Paging updates the pickers.
     { click: '#range button[aria-label="Next"]' },
