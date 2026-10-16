@@ -18,6 +18,8 @@ After reading this page you can turn it on in your editor and in CI, and you kno
 
 ## Turn it on
 
+The Rivet starters already install the plugin. In an existing app, run `npm install -D @rivetjs/typescript-plugin @rivetjs/language-core`.
+
 Add the plugin to `compilerOptions.plugins` in your `tsconfig.json`:
 
 ```json title="tsconfig.json"
@@ -115,7 +117,7 @@ The extension works with the bundled TypeScript too. It adds:
 - a status bar item showing the file's mode: `Rivet: resume`, `dom` or `off`,
 - settings `rivet.inlayHints`, `rivet.typeAware` and `rivet.regions` (colors code by where it runs; off by default).
 
-The extension is not on the Marketplace yet, because the packages are not published.
+The extension is not on the Marketplace yet. The TypeScript plugin and language core are published on npm; install them with `npm install -D @rivetjs/typescript-plugin @rivetjs/language-core`.
 
 ## Check in CI
 

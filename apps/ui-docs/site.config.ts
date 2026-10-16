@@ -15,8 +15,8 @@ export const site = {
   /** Branch or tag the source links point at. */
   repoRef: "main",
   /** npm version or dist-tag that starters install. */
-  packageVersion: "experimental",
+  packageVersion: "0.1.0-alpha.0",
   /** Version label in the top bar. */
-  version: "0.0.0-experimental",
+  version: "0.1.0-alpha.0",
 } as const;
 export type Site = typeof site;

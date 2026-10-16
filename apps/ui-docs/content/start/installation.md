@@ -26,7 +26,7 @@ npm create rivet@latest my-app -- --template ui
 
 (`pnpm create rivet my-app --template ui`, `yarn create rivet my-app --template ui` and `bun create rivet my-app --template ui` work too.)
 
-**Existing app:** add the packages. They are not published yet; inside the Rivet repository they resolve from the workspace. Once published:
+**Existing app:** install the packages from npm. The first release is `0.1.0-alpha.0` on the `latest` tag; APIs may change.
 
 **npm**
 

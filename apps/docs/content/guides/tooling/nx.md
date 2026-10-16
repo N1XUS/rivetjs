@@ -10,8 +10,8 @@ related: [start/quick-start, guides/tooling/vite, guides/tooling/testing, guides
 
 After reading this page you can start an Nx workspace with Rivet or add Rivet to one you have, generate code with the plugin, and know what each target runs and caches.
 
-:::warning[Packages are not on npm yet]
-`@rivetjs/nx` is released together with the other `@rivetjs/*` packages, which are not on npm yet. Until they are, the commands below work only inside a clone of the Rivet repository (see [Quick start](../../start/quick-start.md), option 3).
+:::note[Alpha release]
+`@rivetjs/nx` is available on npm as `0.1.0-alpha.0` on the `latest` tag, together with the other `@rivetjs/*` packages. The commands below work in a new or existing Nx workspace. APIs may change.
 :::
 
 ## Start a new workspace

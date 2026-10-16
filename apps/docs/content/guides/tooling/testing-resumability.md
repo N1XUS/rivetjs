@@ -8,7 +8,7 @@ related: [guides/tooling/testing, learn/resuming, best-practices/serializable-ca
 
 A handler on a resumed page runs with values the server wrote into the page. `serializeAndRevive` checks those values in a plain Node test: it builds a value where a component body runs, writes it the way a page render does, and reads it back the way the browser does. After reading this page you can test that your captures resume (functions, `let` variables, signals, stores, classes, `reconstruct`) and that the ones that cannot fail with the error a real page shows. This answers a common request for resumable frameworks: testing resumability without a browser.
 
-:::warning[Private and experimental]
+:::warning[Experimental testing API]
 `@rivetjs/runtime/testing/resume` runs under the Node loader hook `@rivetjs/runtime/testing/register` (Vitest `execArgv: ["--import", "@rivetjs/runtime/testing/register"]` with `experimental: { viteModuleRunner: false }`). The `rivetTest()` Vite plugin does not compile resume modules yet. The API may change.
 :::
 

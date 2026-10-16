@@ -84,7 +84,7 @@ To share it with your team, put it in `.mcp.json` at the project root instead:
 ```
 
 :::note
-The packages are not on npm yet. In a clone of the Rivet repository, use `node libs/mcp/cli.ts` as the command. It builds its docs data from the repository's docs sources when it starts.
+`@rivetjs/mcp` is available on npm as `0.1.0-alpha.0`. The `npx` commands above use its bundled docs data. For development inside a clone of the Rivet repository, `node libs/mcp/cli.ts` reads the current docs sources.
 :::
 
 ## Project instructions

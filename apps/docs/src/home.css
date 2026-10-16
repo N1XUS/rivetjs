@@ -293,7 +293,7 @@
     }
   }
 
-  /* Pre-release chip beside every npm create command (index.tsx PreRelease). */
+  /* Published alpha chip beside every npm create command (index.tsx ReleaseTag). */
   .lp-prerelease {
     align-self: flex-start;
   }

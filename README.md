@@ -18,11 +18,11 @@ cd my-app
 npm run dev
 ```
 
-The packages are not on npm yet; until then, create a project inside a clone of this repository: `npm ci`, then `node libs/create-rivet/cli.ts my-app --template static --no-install --no-git` (see the docs quick start, `apps/docs/content/start/quick-start.md`).
+All 20 packages are available on npm as `0.1.0-alpha.0` on the `latest` tag. Create an app with the command above; this is an alpha release and APIs may change.
 
 ## Documentation hosting
 
-The main docs app is connected to Cloudflare Workers Builds from `N1XUS/rivetjs`, production branch `main`. CDK and UI hosting configurations are prepared for later; their deployments are not enabled. Keep the build root at the repository root and disable preview builds (the checked-in configs select production domains).
+The framework, CDK and UI docs deploy through Cloudflare Workers Builds from `N1XUS/rivetjs`, production branch `main`, at `rivetjs.severyn.pro`, `cdk.rivetjs.severyn.pro` and `ui.rivetjs.severyn.pro`. Keep the build root at the repository root and disable preview builds (the checked-in configs select production domains).
 
 | Site | Build command | Deploy command |
 | --- | --- | --- |

@@ -8,8 +8,8 @@ related: [guides/tooling/vite, guides/tooling/testing-resumability, guides/state
 
 Rivet code is tested at three levels: components rendered in a DOM (fast, many tests), the HTML the server writes, and whole pages that resume in a real browser. After reading this page you have a Vitest setup for the first two and know what to watch for in end-to-end tests.
 
-:::warning[Private and experimental]
-`@rivetjs/testing` is a dev-only package inside the Rivet repository and not on npm yet. Its API may change.
+:::note[Alpha release]
+`@rivetjs/testing` is available on npm as `0.1.0-alpha.0`. Install it as a dev dependency with `npm install -D @rivetjs/testing`. Its API may change.
 :::
 
 ## Packages

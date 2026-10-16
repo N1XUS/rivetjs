@@ -3,11 +3,12 @@
 // Order here is reading order (prev/next). Every page must appear exactly once; the build fails on
 // orphans and on entries without a file.
 
+import { site } from "../site.config.ts";
 import type { NavArea, NavSection } from "@rivetjs/docs-kit/tools/nav.ts";
 
 export const areas: NavArea[] = [
   { id: "guide", title: "Guide" },
-  { id: "ui", title: "UI" },
+  { id: "ui", title: "UI", href: site.sites.ui + "/" },
 ];
 
 export const nav: NavSection[] = [
@@ -100,6 +101,7 @@ export const nav: NavSection[] = [
         ],
       },
       { title: "Forms", pages: ["guides/forms/forms", { path: "guides/forms/forms-in-overlays", tag: "new" }] },
+      { title: "UI packages", pages: ["ui/overview", "ui/kit"] },
       { title: "Styling", pages: ["guides/styling/css-and-tailwind", "guides/styling/scoped-styles"] },
       {
         title: "Motion",
@@ -195,33 +197,6 @@ export const nav: NavSection[] = [
       },
       { title: "Reference", pages: ["reference/file-conventions", "reference/jsx", "reference/config", { path: "reference/motion", tag: "new" }, "reference/glossary"] },
       { title: "Project", pages: ["about/roadmap", "about/benchmarks"] },
-    ],
-  },
-  {
-    id: "ui",
-    title: "UI",
-    area: "ui",
-    groups: [
-      { title: "Packages", pages: ["ui/overview", "ui/kit", { path: "ui/heroui-port", tag: "updated" }] },
-      {
-        title: "Components",
-        pages: [
-          { path: "ui/components/button", tag: "new" },
-          { path: "ui/components/link", tag: "new" },
-          { path: "ui/components/chip", tag: "new" },
-          { path: "ui/components/badge", tag: "new" },
-          { path: "ui/components/alert", tag: "new" },
-          { path: "ui/components/avatar", tag: "new" },
-          { path: "ui/components/typography", tag: "new" },
-          { path: "ui/components/kbd", tag: "new" },
-          { path: "ui/components/spinner", tag: "new" },
-          { path: "ui/components/skeleton", tag: "new" },
-          { path: "ui/components/empty-state", tag: "new" },
-          { path: "ui/components/separator", tag: "new" },
-          { path: "ui/components/field-primitives", tag: "new" },
-          { path: "ui/components/scroll-shadow", tag: "new" },
-        ],
-      },
     ],
   },
 ];

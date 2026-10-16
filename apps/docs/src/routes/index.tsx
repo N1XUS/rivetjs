@@ -1,6 +1,6 @@
 import { site } from "virtual:docs/site";
 import "../home-ui.css";
-import { Accessibility, ArrowDown, ArrowRight, BookOpen, Cable, FileCode, FileText, FormInput, Hourglass, Languages, MousePointerClick, Plug, Route, Scale, Server, Terminal, Waves, Wrench, Zap } from "lucide";
+import { Accessibility, ArrowDown, ArrowRight, BookOpen, Cable, FileCode, FileText, FormInput, Package, Languages, MousePointerClick, Plug, Route, Scale, Server, Terminal, Waves, Wrench, Zap } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 import { buttonVariants } from "@rivetjs/ui/button";
 import { CopyButton } from "@rivetjs/docs-kit/components/CodeBlock.tsx";
@@ -35,13 +35,13 @@ const CREATE = "npm create rivet@latest";
 const SSR = homeStrip.find((chart) => chart.id === "ssr")!;
 const LEAD = `Compiled JSX. ${SSR.big} less server CPU than ASP.NET Razor. Resumed in the browser, never hydrated.`;
 
-/** Beside every `npm create` command until the first release is on npm. Plain home CSS (`.lp-chip`, the ui soft
+/** Published alpha version beside every `npm create` command. Plain home CSS (`.lp-chip`, the ui soft
  * warning chip's look): no `@rivetjs/ui` above the fold, so its theme tokens stay out of the inline critical CSS. */
-function PreRelease() {
+function ReleaseTag() {
   return (
     <span class="lp-chip lp-chip-warning lp-prerelease">
-      <Icon icon={Hourglass} size={12} />
-      Pre-release · npm publish pending
+      <Icon icon={Package} size={12} />
+      {site.version + " · on npm"}
     </span>
   );
 }
@@ -66,7 +66,7 @@ export default function Home() {
                 <pre>{CREATE}</pre>
                 <CopyButton />
               </div>
-              <PreRelease />
+              <ReleaseTag />
               <a class="lp-btn lp-hero-secondary" href="#numbers">
                 See the numbers
                 <Icon icon={ArrowDown} size={16} />
@@ -325,7 +325,7 @@ export default function Home() {
             <pre>{CREATE}</pre>
             <CopyButton />
           </div>
-          <PreRelease />
+          <ReleaseTag />
           <a class="lp-textlink" href={site.repo} rel="noopener">
             Star on GitHub
             <Icon icon={ArrowRight} size={14} />

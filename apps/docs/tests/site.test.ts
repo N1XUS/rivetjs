@@ -76,8 +76,11 @@ test("home: benchmarks with losses and their source, real compiler output, how t
   assert.match(home, /data-layout="stacked"/);
   assert.match(home, /data-pane="dom"[^]*__rivet/);
   assert.match(home, /<pre>npm create rivet@latest<\/pre>/);
-  assert.doesNotMatch(home, /not on npm yet|not published|coming soon/i, "one pre-release statement only: the chip beside the command (ruling 2026-10-12)");
-  assert.equal(home.match(/Pre-release · npm publish pending/g)?.length, home.match(/<pre>npm create rivet@latest<\/pre>/g)?.length, "a pre-release chip beside every npm create command");
+  assert.doesNotMatch(home, /not on npm yet|not published|coming soon/i, "no obsolete unpublished-package warnings");
+  assert.equal(home.match(/0\.1\.0-alpha\.0 · on npm/g)?.length, home.match(/<pre>npm create rivet@latest<\/pre>/g)?.length, "the published alpha version beside every npm create command");
+  assert.doesNotMatch(home, /npm publish pending/);
+  assert.match(home, /href="https:\/\/ui\.rivetjs\.severyn\.pro\/"[^>]*>UI<\/a>/);
+  assert.ok(!existsSync(resolve(client, "ui/components/button/index.html")), "old UI component pages are removed");
   assert.doesNotMatch(home, /<dialog/);
 });
 

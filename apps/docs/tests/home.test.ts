@@ -205,6 +205,8 @@ test("home numbers: count-up and bars reach their final values in view; reduced 
   try {
     const colors = await reduced.locator(".lp-chart .cu").evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).color));
     for (const color of colors) assert.notEqual(color, "rgba(0, 0, 0, 0)", "real number text shows");
+    // The deferred sheets can start reduced-motion 0.01ms transitions just after load.
+    await reduced.waitForFunction(() => document.getAnimations().length === 0);
     assert.equal(await reduced.evaluate(() => document.getAnimations().length), 0);
   } finally {
     await reduced.close();

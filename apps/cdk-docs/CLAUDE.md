@@ -4,6 +4,7 @@
 Docs site of `@rivetjs/cdk` (headless components + foundations), second site on `@rivetjs/docs-kit` (same engine as `apps/docs`). Engine internals: [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md).
 
 ## Layout
+- Published alpha docs: version labels and StackBlitz package specs use `0.1.0-alpha.0`; installation guides use public npm packages. Production hosting is enabled at `cdk.rivetjs.severyn.pro`. The three documented interaction quarantines remain explicit in build output.
 - Deployment quarantine (user approved 2026-10-16): `examples/_quarantine.json` records `merge-props` (extra cold replay blur/focus log entries), `radio-group-events` (focus lost after cold selection), and `toggle-button-group-options` (first cold ArrowDown does not advance). The existing build reports these failures and leaves their measurements empty; no checks are removed.
 - Modal example checks (`dialog-nested`, `dialog-trigger`, `modal-basic`) accept inert on the target or an ancestor: `ariaHideOutside` marks the outermost page/portal wrapper, not necessarily the trigger/dialog itself.
 - `wrangler.jsonc`: production static assets from `dist/client`, Worker `rivetjs-cdk`, custom domain `cdk.rivetjs.severyn.pro`. Cloudflare repo-root build: `npm run docs:build:cloudflare -- apps/cdk-docs`; deploy with `--config apps/cdk-docs/wrangler.jsonc`. Production origins and sibling links are set by that script; source links use `N1XUS/rivetjs`.

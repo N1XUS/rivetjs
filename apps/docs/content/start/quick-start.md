@@ -8,15 +8,15 @@ related: [start/project-structure, start/tutorial/index, gotchas/dev-and-product
 
 After this page you have a running Rivet app: two pages, a layout and a button that counts. One command creates it.
 
-:::warning[Packages are not on npm yet]
-Rivet is experimental. The `@rivetjs/*` packages and `create-rivet` are not published to npm yet. Until they are, `npm create rivet@latest` and `npm install` outside the Rivet repository fail, and the StackBlitz button below cannot install the packages. Option 3, from a clone of the repository, works today with the same command-line tool.
+:::note[Available on npm]
+`create-rivet` and the `@rivetjs/*` packages are published as `0.1.0-alpha.0` on the `latest` tag. You can create an app outside this repository. Rivet is an alpha release; APIs may change.
 :::
 
 ## You need
 
 - Node.js 24 or newer (`node --version`).
 - npm (comes with Node.js), or pnpm, Yarn or Bun.
-- Git, to clone the repository (option 3).
+- Git (optional), to initialise the new project’s repository.
 
 ## Option 1: create a project
 
@@ -89,40 +89,16 @@ The static starter is a small site whose pages become HTML files at build time.
 
 ::starter{template=starter-static}
 
-StackBlitz runs `npm install` and then `npm run dev`. This works once the packages are on npm.
+StackBlitz runs `npm install` and then `npm run dev`. The starter installs the published Rivet packages.
 
-## Option 3: create a project inside the repository
+## Build and preview
 
-The repository contains the starters in the `templates` folder and the command-line tool in `libs/create-rivet`. Inside the repository, Node.js finds the Rivet packages in the repository's own `node_modules`, so no npm release is needed.
-
-### 1. Clone and install
+From your new app:
 
 ```bash
-git clone https://github.com/rivetjs/rivet.git
-cd rivet
-npm ci
+npm run build
+npm run preview
 ```
-
-### 2. Create the project
-
-Run the tool from the repository root. Keep the new folder inside the repository, so the packages can still be found, and skip the install:
-
-```bash
-node libs/create-rivet/cli.ts my-app --template static --no-install --no-git
-cd my-app
-```
-
-Do not run `npm install` in `my-app`: it would try to download the packages from npm.
-
-### 3. Start the dev server
-
-```bash
-npm run dev
-```
-
-Vite prints a local address, usually `http://localhost:5173`. Open it. You see "Hello from Rivet" and a button. Edit `src/routes/index.tsx` and save: the page updates and the count stays.
-
-### 4. Build and preview
 
 The dev server resumes pages like production until you edit a file, but it is not what your visitors get: code is not bundled or minified, the runtime runs with extra development checks, and the first edit switches the page to rendering in the browser (so hot reload keeps state). To see the real behaviour and size, build:
 
@@ -181,8 +157,6 @@ Every starter also has:
 
 ## Common mistakes
 
-- **Running `npm install` in a project made inside the repository.** It tries to fetch `@rivetjs/*` from npm and fails. Run `npm ci` once at the repository root instead, and create the project with `--no-install`.
-- **Creating the project outside the repository before the packages are published.** Node.js then cannot find the packages. Keep the folder inside the cloned repository until then.
 - **Options without `--` after `npm create`.** npm keeps options such as `--template` for itself. Write `npm create rivet@latest my-app -- --template ui`; pnpm, Yarn and Bun pass them on without `--`.
 - **Judging speed in dev mode.** `npm run dev` resumes pages, but after your first edit the browser renders the whole page, code is not bundled, and development checks add work. Use `npm run build` and `npm run preview` to judge speed and size. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 

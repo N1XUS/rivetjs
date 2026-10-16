@@ -11,7 +11,7 @@ related: [guides/routing/actions-and-forms, guides/components/forms-and-input, b
 ::example{id=contact-form}
 
 :::note
-This package is experimental, and like all Rivet packages it is not on npm yet.
+This package is available on npm as `0.1.0-alpha.0`. Install it with `npm install @rivetjs/forms`. Its APIs are experimental.
 :::
 
 ## Describe the form

@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Add @rivetjs/cdk to a Rivet app - one import path per component and module, TypeScript source compiled with your app, optional CSS and Tailwind setup.
+description: Add @rivetjs/cdk to a Rivet app - one import path per component and module, JSX compiled with your app, optional CSS and Tailwind setup.
 template: guide
 status: experimental
 related: [start/introduction, start/styling, components/overview, foundations/overview]
@@ -8,8 +8,12 @@ related: [start/introduction, start/styling, components/overview, foundations/ov
 
 `@rivetjs/cdk` works in any Rivet app (the starters in `templates/`). After this page you can import a component, know which import path holds what, and have Tailwind set up for the state variants.
 
-:::warning[Not on npm yet]
-`@rivetjs/cdk` is experimental and private (`0.0.0-experimental`). Like the other `@rivetjs/*` packages it is not published to npm yet: use it inside a clone of the Rivet repository (`npm ci` at the root), where Node.js finds it in the workspace `node_modules`. See [Quick start](site:docs/start/quick-start/).
+:::note[Alpha release]
+`@rivetjs/cdk` is available on npm as `0.1.0-alpha.0` on the `latest` tag. Its APIs are experimental. Start with a [Rivet app](site:docs/start/quick-start/), then install the package:
+
+```bash
+npm install @rivetjs/cdk
+```
 :::
 
 ## Add the package
@@ -17,9 +21,9 @@ related: [start/introduction, start/styling, components/overview, foundations/ov
 ```json title="package.json"
 {
   "dependencies": {
-    "@rivetjs/cdk": "experimental",
-    "@rivetjs/reactivity": "experimental",
-    "@rivetjs/runtime": "experimental"
+    "@rivetjs/cdk": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0"
   }
 }
 ```
@@ -117,7 +121,7 @@ None is required. Components need no stylesheet.
 
 ## Source package
 
-`@rivetjs/cdk` ships TypeScript source, not a build. Its `package.json` has `"rivet": { "source": true }`: the Rivet Vite plugin compiles its `.ts` / `.tsx` files like your own code, in resume mode, with stable module ids (`@rivetjs/cdk/<path>`).
+`@rivetjs/cdk` ships JavaScript, JSX and TypeScript declarations. Its `package.json` has `"rivet": { "source": true }`: the Rivet Vite plugin compiles its JavaScript / JSX modules like your own code, in resume mode, with stable module ids (`@rivetjs/cdk/<path>`).
 
 - Callbacks and slot props you pass to cdk components are compiled as resumable symbols, the same as for your own components.
 - Each cdk component becomes its own chunk, loaded only when needed.

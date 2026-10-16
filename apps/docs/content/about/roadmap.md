@@ -5,7 +5,7 @@ template: page
 related: [about/benchmarks, start/what-is-rivet]
 ---
 
-Rivet is experimental. Everything below works in the repository, but packages are not published on npm yet, and APIs can still change. "Done" means built and tested, not stable.
+Rivet is experimental. The first npm release, `0.1.0-alpha.0`, is available on the `latest` tag. APIs can still change. "Done" means built and tested, not stable.
 
 ## Done
 
