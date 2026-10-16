@@ -8,11 +8,25 @@ import { afterAll, test } from "vitest";
 import { commitsSince, lastTag, parseCommit, renderChangelog } from "../release/changelog.ts";
 import { bumpManifest, bumpWorkspace, currentVersion, nextVersion, ORDER, publishableLibs, ROOT } from "../release/version.ts";
 import { assertLocalRegistry, assertNpmTargets, localNpmArgs, localNpmEnv, stripRegistryKeys } from "../release/verdaccio.ts";
-import { dryRunArgs, publishArgs } from "../release/release.ts";
+import { dryRunArgs, publishArgs, resumeIndex, assertPublishedIntegrity } from "../release/release.ts";
 import { PACKAGES } from "../package/smoke.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "release-"));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+test("release recovery validates its starting package and refuses missing or different published contents", () => {
+  const libs = publishableLibs();
+  assert.equal(resumeIndex(libs, undefined), 0);
+  assert.equal(
+    resumeIndex(libs, "create-rivet"),
+    libs.findIndex((lib) => lib.dir === "create-rivet"),
+  );
+  assert.throws(() => resumeIndex(libs, "typo"), /unknown recovery package/);
+  assert.doesNotThrow(() => assertPublishedIntegrity("@rivetjs/runtime", "sha512-abc", "sha512-abc"));
+  for (const remote of [undefined, "", "sha512-different"]) {
+    assert.throws(() => assertPublishedIntegrity("@rivetjs/runtime", "sha512-abc", remote), /published contents differ/);
+  }
+});
 
 test("nextVersion: placeholder counts as unreleased, semver bumps, prerelease ids, explicit versions", () => {
   assert.equal(nextVersion("0.0.0-experimental", "minor"), "0.1.0");

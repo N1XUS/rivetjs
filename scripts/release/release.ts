@@ -32,10 +32,22 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { commitsSince, lastTag, renderChangelog } from "./changelog.ts";
-import { bumpFile, bumpWorkspace, currentVersion, nextVersion, publishableLibs, ROOT } from "./version.ts";
+import { bumpFile, bumpWorkspace, currentVersion, nextVersion, publishableLibs, ROOT, type Lib } from "./version.ts";
 import { assertLocalRegistry, assertNpmTargets, localNpmArgs, localNpmEnv, stripRegistryKeys, USERCONFIG } from "./verdaccio.ts";
 
 const step = (title: string) => console.log(`\n== ${title}`);
+
+/** Recovery skips only packages whose exact tarball is already published. */
+export function resumeIndex(libs: Lib[], from: string | undefined): number {
+  if (!from) return 0;
+  const index = libs.findIndex((lib) => lib.dir === from);
+  if (index < 0) throw new Error(`unknown recovery package: ${from}`);
+  return index;
+}
+
+export function assertPublishedIntegrity(name: string, local: string, remote: unknown): void {
+  if (!local || local !== remote) throw new Error(`${name}: published contents differ; refusing to skip this package`);
+}
 
 /** The local path's pre-publish probe: same flags as the real publish, `--dry-run --offline` (no request to any host). */
 export function dryRunArgs(dist: string, tag: string, npmArgs: string[]): string[] {
@@ -85,6 +97,7 @@ export function main(argv: string[]): void {
       apply: { type: "boolean", default: false },
       publish: { type: "boolean", default: false },
       registry: { type: "string" },
+      "resume-from": { type: "string" },
       "skip-package": { type: "boolean", default: false },
       "skip-smoke": { type: "boolean", default: false },
       "skip-e2e": { type: "boolean", default: false },
@@ -93,6 +106,7 @@ export function main(argv: string[]): void {
   const bump = positionals[0];
   if (!bump || positionals.length > 1) throw new Error("usage: node scripts/release/release.ts <major|minor|patch|prerelease|x.y.z> [--apply] [--tag t] …");
   if (values.publish && !values.apply) throw new Error("--publish needs --apply (the published version must be the committed one)");
+  if (values["resume-from"] && !values.publish) throw new Error("--resume-from requires --publish (CI recovery only)");
   if (values.registry && values.publish) throw new Error("--registry (local publish) and --publish (npmjs, CI only) exclude each other");
   if (values.registry && values.apply)
     throw new Error("--registry (local publish) and --apply exclude each other: a local publish never writes the source tree");
@@ -111,6 +125,7 @@ export function main(argv: string[]): void {
 
   step("1. version");
   const libs = publishableLibs();
+  const resume = resumeIndex(libs, values["resume-from"]);
   const current = currentVersion(libs);
   const next = nextVersion(current, bump, values.preid);
   const tag = values.tag ?? (next.includes("-") ? "next" : "latest");
@@ -170,7 +185,17 @@ export function main(argv: string[]): void {
     }
     assertNpmTargets(local, npmArgs, process.env);
   }
-  for (const lib of libs) {
+  // Check every skipped package before uploading any new package. Registry errors, pending scans,
+  // and different tarballs all stop recovery rather than silently accepting an inconsistent release.
+  for (const lib of libs.slice(0, resume)) {
+    const packed = JSON.parse(sh("npm", ["pack", lib.dist, "--dry-run", "--json"], { capture: true }));
+    const published = JSON.parse(
+      sh("npm", ["view", `${lib.name}@${next}`, "dist.integrity", "--json", "--registry", "https://registry.npmjs.org/"], { capture: true }),
+    );
+    assertPublishedIntegrity(lib.name, packed[0]?.integrity, published);
+    console.log(`  verified existing ${lib.name}@${next}: identical tarball`);
+  }
+  for (const lib of libs.slice(resume)) {
     if (local) {
       // The exact command, as a dry run first: npm must name the local registry (manifest + every config layer applied).
       const probe = sh("npm", dryRunArgs(lib.dist, tag, npmArgs), { capture: true });

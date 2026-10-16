@@ -29,6 +29,10 @@ on:
         description: "Dry run: npm publish --dry-run, no commit, no tag, no push"
         type: boolean
         default: true
+      resume-from:
+        description: "Recover a partial release from this lib directory; earlier tarballs must match npm exactly"
+        type: string
+        required: false
 
 concurrency:
   group: release
@@ -75,7 +79,8 @@ jobs:
           DIST_TAG: ${{ inputs.dist-tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM }}
           NPM_CONFIG_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
-        run: node scripts/release/release.ts "$BUMP" --preid "$PREID" ${DIST_TAG:+--tag "$DIST_TAG"} --apply --publish
+          RESUME_FROM: ${{ inputs.resume-from }}
+        run: node scripts/release/release.ts "$BUMP" --preid "$PREID" ${DIST_TAG:+--tag "$DIST_TAG"} ${RESUME_FROM:+--resume-from "$RESUME_FROM"} --apply --publish
 
       - name: Commit, tag, push
         if: ${{ !inputs.dry-run }}
