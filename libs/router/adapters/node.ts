@@ -291,7 +291,7 @@ const SIBLING: Record<Exclude<Encoding, null>, ".zst" | ".br" | ".gz"> = { zstd:
  * partial file; the temp is never served). False when the directory is not writable.
  */
 async function persist(path: string, bytes: Buffer): Promise<boolean> {
-  const temp = join(dirname(path), `.${basename(path)}.${process.pid}-${Date.now().toString(36)}.tmp`);
+  const temp = join(dirname(path), `.${basename(path)}.${process.pid}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.tmp`);
   try {
     await writeFile(temp, bytes);
     await rename(temp, path);
@@ -512,10 +512,11 @@ function indexFiles(client: string): Map<string, StaticFile> {
     return out;
   }
   const inside = (real: string) => real === root || real.startsWith(root + sep);
-  const sizeOf = (path: string) => {
+  /** Size of a precompressed sibling, −1 when absent or older than its source (a copy-over deploy left a stale copy). */
+  const sizeOf = (path: string, sourceMtime: number) => {
     try {
       const info = statSync(path);
-      return info.isFile() ? info.size : -1;
+      return info.isFile() && info.mtimeMs >= sourceMtime ? info.size : -1;
     } catch {
       return -1;
     }
@@ -546,7 +547,14 @@ function indexFiles(client: string): Map<string, StaticFile> {
         walk(real, name, open);
         open.delete(real);
       } else if (info.isFile())
-        out.set(name, { path: real, size: info.size, mtime: info.mtimeMs, zstd: sizeOf(real + ".zst"), br: sizeOf(real + ".br"), gzip: sizeOf(real + ".gz") });
+        out.set(name, {
+          path: real,
+          size: info.size,
+          mtime: info.mtimeMs,
+          zstd: sizeOf(real + ".zst", info.mtimeMs),
+          br: sizeOf(real + ".br", info.mtimeMs),
+          gzip: sizeOf(real + ".gz", info.mtimeMs),
+        });
     }
   };
   walk(root, "", new Set([root]));
@@ -673,6 +681,7 @@ export function createListener(options: ServeOptions): {
     wake: (() => void) | null = null;
   const memory = options.idleMemory !== false && idleMemorySupported() ? idleMemory(() => inflight) : null;
   const cache = new Map<string, Buffer>(); // compressed static bodies by path|etag|encoding
+  const pending = new Map<string, Promise<Buffer>>(); // compressions in flight by the same key: N concurrent first requests compress once
   const index = client && options.static !== "fs" ? indexFiles(client) : null;
   const metas = new WeakMap<StaticFile, FileMeta>();
 
@@ -763,23 +772,32 @@ export function createListener(options: ServeOptions): {
       const key = found.path + "|" + etag + "|" + encoding;
       let body = cache.get(key);
       if (!body) {
+        // A sibling older than its source is a stale copy (copy-over deploy): ignored and overwritten below.
         const sibling =
           found[encoding] ??
           (await stat(found.path + ext).then(
-            (s) => (s.isFile() ? s.size : -1),
+            (s) => (s.isFile() && s.mtimeMs >= found.mtime ? s.size : -1),
             () => -1,
           ));
         if (sibling >= 0) body = await readFile(found.path + ext);
         else {
-          body = await compressBest(encoding, await readFile(found.path));
-          if (cache.size > 512) cache.clear();
-          cache.set(key, body);
-          if (precompress && immutable(pathname)) {
-            const bytes = body;
-            void persist(found.path + ext, bytes).then((written) => {
-              if (written && index) found[encoding] = bytes.length;
-            });
+          let job = pending.get(key);
+          if (!job) {
+            job = readFile(found.path)
+              .then((raw) => compressBest(encoding, raw))
+              .then((bytes) => {
+                if (cache.size > 512) cache.clear();
+                cache.set(key, bytes);
+                if (precompress && immutable(pathname))
+                  void persist(found.path + ext, bytes).then((written) => {
+                    if (written && index) found[encoding] = bytes.length;
+                  });
+                return bytes;
+              })
+              .finally(() => pending.delete(key));
+            pending.set(key, job);
           }
+          body = await job;
         }
       }
       res.writeHead(200, { ...headers, "Content-Encoding": encoding, "Content-Length": String(body.length) });

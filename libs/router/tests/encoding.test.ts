@@ -4,7 +4,7 @@
 // and the opt-outs (`compress: { zstd: false }`, `{ precompress: false }`, `false`).
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -242,6 +242,53 @@ for (const mode of ["index", "fs"] as const)
       { static: mode },
     );
   });
+
+test("a sibling older than its source is a stale copy: ignored, recompressed and overwritten", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rivet-encoding-"));
+  await mkdir(join(dir, "assets"));
+  const source = "body{color:red}".repeat(100);
+  // A copy-over deploy: the sibling (old bytes) predates the file that replaced its source.
+  await writeFile(join(dir, "assets", "a-1.css.zst"), zstdCompressSync("stale"));
+  await utimes(join(dir, "assets", "a-1.css.zst"), new Date(Date.now() - 60_000), new Date(Date.now() - 60_000));
+  await writeFile(join(dir, "assets", "a-1.css"), source);
+  for (const mode of ["index", "fs"] as const) {
+    const serving = await serve({ handler: () => new Response("app", { status: 404 }), client: dir, port: 0, static: mode });
+    try {
+      const reply = await get(serving.url + "/assets/a-1.css", { "accept-encoding": CHROME });
+      assert.equal(reply.headers["content-encoding"], "zstd");
+      assert.equal(decode(reply), source, `static: ${mode}: the source's bytes, not the stale copy`);
+      await until(async () => zstdDecompressSync(await readFile(join(dir, "assets", "a-1.css.zst"))).toString() === source, "stale sibling overwritten");
+    } finally {
+      await serving.close();
+    }
+  }
+  await rm(dir, { recursive: true, force: true });
+});
+
+test("concurrent first requests for one file compress it once", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rivet-encoding-"));
+  await mkdir(join(dir, "assets"));
+  const source = "body{color:red}".repeat(5000);
+  await writeFile(join(dir, "assets", "b-1.css"), source);
+  const serving = await serve({ handler: () => new Response("app", { status: 404 }), client: dir, port: 0 });
+  try {
+    const replies = await Promise.all(Array.from({ length: 8 }, () => get(serving.url + "/assets/b-1.css", { "accept-encoding": CHROME })));
+    for (const reply of replies) {
+      assert.equal(reply.headers["content-encoding"], "zstd");
+      assert.equal(decode(reply), source);
+    }
+    // One job: every answer carries the same bytes, and exactly one sibling (no temp left behind) exists.
+    assert.ok(
+      replies.every((reply) => reply.body.equals(replies[0].body)),
+      "one compression shared by every request",
+    );
+    await until(async () => (await readdir(join(dir, "assets"))).includes("b-1.css.zst"), ".zst sibling written");
+    assert.deepEqual((await readdir(join(dir, "assets"))).sort(), ["b-1.css", "b-1.css.zst"]);
+  } finally {
+    await serving.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
 
 test("a precompressed sibling written by an earlier process is served as it is", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rivet-encoding-"));
