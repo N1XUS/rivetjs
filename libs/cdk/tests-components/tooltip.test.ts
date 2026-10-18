@@ -106,6 +106,42 @@ test("does not show on pointer focus (focus-visible only)", async () => {
   await page.close();
 });
 
+// Resume fuzz shape (`/tooltip` #styled-button, BLUR-FIX 2026-10-18): the resumed page's first input is a mouse click
+// on a `delay={0}` trigger — hover, press and focus arrive in one gesture, replayed cold when the trigger's chunk is not
+// loaded yet. As on a client-rendered page, the pointer focus shows no ring (the trigger's region re-created during the
+// replay refocuses its replacement without switching the modality to keyboard / virtual).
+const firstClick = async () => {
+  const opened = await open();
+  await opened.page.mouse.move(1279, 799);
+  await opened.page.locator("#styled-button").click();
+  await opened.page.waitForTimeout(400);
+  return opened;
+};
+
+test("a first mouse click on a resumed trigger keeps focus on it without a focus ring", async () => {
+  const { page, seen } = await firstClick();
+  assert.equal(await page.evaluate(() => document.activeElement?.id), "styled-button");
+  assert.equal(await page.locator("#styled-button").getAttribute("data-focus-visible"), null);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+// Open (pre-dates the route default; 862805e7 fails it too): on a cold first click the replayed `pointerenter` opens
+// the `delay={0}` tooltip and installs its close-on-press document listener, but the replayed `pointerdown` only runs
+// resumed handlers on the event path — a listener attached during the replay never sees it — so the press does not
+// close the tooltip. The fuzz saw it once route chunks left the trigger's chunk unloaded at the first click
+// (`/tooltip` #styled-button: `aria-describedby="styled"`). Owner: runtime / cdk (cold press, docs/guides/resumability.md
+// "Cold press"). Delete `.fails` when fixed.
+test.fails("a first mouse click on a resumed trigger opens no tooltip", async () => {
+  const { page } = await firstClick();
+  try {
+    assert.equal(await page.locator("#styled").count(), 0);
+    assert.equal(await describedBy(page, "#styled-button"), null);
+  } finally {
+    await page.close();
+  }
+});
+
 test("should support render props", async () => {
   const { page } = await open();
   await hover(page, "#render-button");

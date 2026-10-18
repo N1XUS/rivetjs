@@ -631,27 +631,25 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     // A spread taking over the handler of the event being dispatched binds after that dispatch
     // (window bubble, or a task when propagation stops): its new listener must not run for it too.
     const type = current?.type;
+    // A region whose server content holds the target of a focus change in flight re-creates once the browser finished
+    // delivering that focus change to the element: replacing it inside the first event sends the rest of the sequence
+    // to a detached node (a blur commits `change` first, then `blur` / `focusout`; a focus fires `focus`, then
+    // `focusin`). A resumed form's delegated `focusout` then never saw the field the user left (ui TextField under
+    // `@rivetjs/forms`, whose cdk `change` handler re-creates the field; route builds have the region's chunk ready at
+    // the first change). Like the spread takeover, the re-creation runs from a window-bubble listener for the
+    // sequence's last event — still inside the user's trusted dispatch, after every document-level handler, so the
+    // `keep` refocus below never runs outside a user event (the first fix re-created in a timer task, refocusing
+    // outside any dispatch). Fallback: a task (an Enter-committed `change` has no blur; propagation stopped; a cold replay,
+    // whose `blur` / `focusout` replay from the chain queued behind it). A cold `focus`, any other event (a click ends
+    // its sequence) or a `change` of a non-text control (checkbox, select: no blur follows) re-creates at once.
+    const tail = name === "#" ? settling(node) : null;
     const start =
       type && name?.includes(" @" + type)
-        ? () => {
-            let done = false;
-            const later = () => done || ((done = true), go());
-            addEventListener(type, later, { once: true });
-            setTimeout(later);
-          }
-        : name === "#" && inFlight(node)
-          ? // A region whose server content holds the target of a focus-change event being dispatched re-creates one
-            // task later: the browser still delivers the rest of that sequence to the element — a blur commits `change`
-            // first, then `blur` / `focusout` (with `activeElement` already cleared), a focus `focus` then `focusin` —
-            // and replacing it inside the first event sends the rest to a detached element (a resumed form's delegated
-            // `focusout` handler never saw the field the user left: ui TextField under `@rivetjs/forms`, whose cdk
-            // `change` handler re-created the field; ROUTE-CHUNKS 2026-10-18, route builds have every chunk of the
-            // region ready at the first change). A cold replay of such an event (`current`: its handler runs from the
-            // replay chain, outside any dispatch) defers the same way — the chain replays the `blur` / `focusout` queued
-            // behind it before the task runs. Other events (a click ends its sequence) re-create at once, as before.
-            () => {
+        ? () => after(type, go)
+        : tail !== null
+          ? () => {
               const done = _activating.start?.();
-              setTimeout(() => {
+              after(tail, () => {
                 try {
                   go();
                 } finally {
@@ -691,11 +689,29 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
   // Whether a node sits in a region's server content (strictly between its markers).
   const inside = (range: Markers | undefined, node: Node): boolean =>
     !!(range?.end && range.start.compareDocumentPosition(node) & 4 && range.end.compareDocumentPosition(node) & 2);
-  // Whether a focus-change event being dispatched (a resumed handler's `current`, else `window.event`: one a spread's own
-  // listener handles) targets a node of the region's server content.
-  const inFlight = (node: number): boolean => {
-    const event = current ?? (doc.defaultView ?? window).event;
-    return !!event && /^(change|blur|focus)$/.test(event.type) && event.target instanceof Node && inside(markers().get(node), event.target);
+  // The event ending the focus change in flight that targets a node of the region's server content: `focusout` /
+  // `focusin` while the browser dispatches it ("": a cold replay — the resumed handler's `current`, outside any
+  // dispatch — of a blur's `change` / `blur`), null for none.
+  const settling = (node: number): string | null => {
+    const live = (doc.defaultView ?? window).event,
+      event = current ?? live,
+      target = event?.target as HTMLInputElement | undefined;
+    if (!event || !(target instanceof Node) || !inside(markers().get(node), target)) return null;
+    if (event.type === "focus") return event === live ? "focusin" : null;
+    return event.type === "blur" ||
+      (event.type === "change" && (target.localName === "textarea" || /^(text|search|url|tel|email|password|number)$/.test(target.type)))
+      ? event === live
+        ? "focusout"
+        : ""
+      : null;
+  };
+  // Run `fn` once, when an event of `type` reaches the window (bubble phase: after the document's listeners), else in
+  // the next task.
+  const after = (type: string, fn: () => void): void => {
+    let done = false;
+    const later = () => done || ((done = true), fn());
+    if (type) addEventListener(type, later, { once: true });
+    setTimeout(later);
   };
   // Resumed state of a row / branch region dies with it.
   const kill = (id: number) => () => {

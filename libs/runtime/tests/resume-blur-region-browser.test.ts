@@ -1,8 +1,11 @@
-// Resume: a region re-created by the `change` the browser fires at the start of a blur is re-created one task later,
-// after the blur's `blur` / `focusout` reached the field (`activate`: the event in flight targets the region's content).
-// Replacing the field inside `change` sent the `focusout` to a detached element, so a form's delegated handler never
-// saw the field the user left (ui TextField under `@rivetjs/forms`; route-chunk builds have the region's chunk ready
-// at the first change, component builds only hid it behind chunk loads — ROUTE-CHUNKS 2026-10-18).
+// Resume: a region re-created by the `change` the browser fires at the start of a blur is re-created from a window
+// `focusout` listener, after the blur's `blur` / `focusout` reached the field (`activate` / `settling`: the event in
+// flight targets the region's content). Replacing the field inside `change` sent the `focusout` to a detached element,
+// so a form's delegated handler never saw the field the user left (ui TextField under `@rivetjs/forms`; route-chunk
+// builds have the region's chunk ready at the first change, component builds only hid it behind chunk loads —
+// ROUTE-CHUNKS 2026-10-18). A region its input's `focus` re-creates does so from the window `focusin` listener: the
+// replacement's refocus (`keep`) runs inside the user's trusted focus sequence, never from a timer (a refocus without
+// a user event, the 2026-10-18 timer fix: BLUR-FIX).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -12,6 +15,7 @@ import { compileResume, compileSymbolModule, importServer } from "./resume/compi
 import type { ResumeSymbol } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
+import type { Page } from "playwright";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 
@@ -33,10 +37,23 @@ const files: Record<string, Served> = {
 };
 for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
 
+// Before the page's scripts: records every programmatic `focus()` with the event being dispatched at the time.
+const recordFocusCalls = () => {
+  const calls: string[] = ((window as unknown as { __focusCalls: string[] }).__focusCalls = []);
+  const focus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+    const event = window.event;
+    calls.push(this.id + " in " + (event ? event.type + (event.isTrusted ? "" : " (untrusted)") : "no event"));
+    focus.call(this, options);
+  };
+};
+const focusCalls = (page: Page) => page.evaluate(() => (window as unknown as { __focusCalls: string[] }).__focusCalls);
+
 test("resume: the change at the start of a blur re-creates the field's region after its focusout", async () => {
   await withPage(files, async (page) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    await page.addInitScript(recordFocusCalls);
     await page.goto("http://rivet.test/");
     // The field's chunk is evaluated once the probe's click took effect: the blur's `change` then runs live, inside
     // the browser's dispatch (a cold replay runs outside it and sends the focusout to the old element anyway).
@@ -49,6 +66,27 @@ test("resume: the change at the start of a blur re-creates the field's region af
     // The form saw the focusout while the field was still in the document; the region re-created after it.
     await page.waitForFunction(() => document.querySelector("#blurs")!.textContent === "1", undefined, { timeout: 3000 });
     assert.equal(await page.evaluate(() => document.querySelector<HTMLInputElement>("#field")!.hasAttribute("data-r")), false);
+    // Focus had left the field when the region re-created: nothing refocused.
+    assert.deepEqual(await focusCalls(page), []);
+    assert.deepEqual(errors, []);
+  });
+});
+
+test("resume: a mouse focus re-creating the field's region refocuses the replacement inside the trusted focusin", async () => {
+  await withPage(files, async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.addInitScript(recordFocusCalls);
+    await page.goto("http://rivet.test/");
+    await page.click("#probe");
+    await page.waitForFunction(() => document.querySelector("#probed")!.textContent === "1", undefined, { timeout: 3000 });
+    await page.click("#focus-field");
+    await page.waitForFunction(() => document.querySelector("#focused")!.textContent === "1", undefined, { timeout: 3000 });
+    // Re-created (no server marker attribute), and the replacement holds focus.
+    assert.equal(await page.evaluate(() => document.querySelector<HTMLInputElement>("#focus-field")!.hasAttribute("data-r")), false);
+    assert.equal(await page.evaluate(() => document.activeElement?.id), "focus-field");
+    // The only programmatic focus is the `keep` refocus, inside the browser's own focus sequence.
+    assert.deepEqual(await focusCalls(page), ["focus-field in focusin"]);
     assert.deepEqual(errors, []);
   });
 });
