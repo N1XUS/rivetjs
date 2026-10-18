@@ -8,6 +8,13 @@ import { docsSite } from "@rivetjs/docs-kit/vite.ts";
  * planner prefetch ~39 cdk modules once visible; load them on intent (pointer / focus) instead.
  */
 const CDK_ON_INTENT = [{ match: "@rivetjs/cdk/", strategy: "intent" as const }];
+/**
+ * Chunk-policy experiments (derived-client plan M1, `docs/design/plans/2026-10-18-derived-client.md`): the measurement
+ * builds set `RIVET_RESUME_CHUNKS` (`component` | `group` | `route`) and `RIVET_RESUME_MERGE` (bytes, or `off`); unset =
+ * the compiler defaults (what the site ships).
+ */
+const CHUNKS = process.env.RIVET_RESUME_CHUNKS as "component" | "group" | "route" | undefined;
+const MERGE = process.env.RIVET_RESUME_MERGE === "off" ? false : process.env.RIVET_RESUME_MERGE ? Number(process.env.RIVET_RESUME_MERGE) : undefined;
 
 /**
  * @rivetjs/ui docs: a static site on @rivetjs/docs-kit (same engine as apps/docs and apps/cdk-docs). `images`: examples
@@ -22,7 +29,7 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
-      resume: { preload: { rules: CDK_ON_INTENT } },
+      resume: { preload: { rules: CDK_ON_INTENT }, ...(CHUNKS ? { chunks: CHUNKS } : {}), ...(MERGE !== undefined ? { merge: MERGE } : {}) },
     }),
     tailwindcss(),
   ],
