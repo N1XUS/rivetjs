@@ -16,7 +16,7 @@ So I built Rivet: a Rust/oxc JSX compiler that turns components into flat byte p
 
 ## Nobody asked about Razor
 
-When I showed people the benchmark, nobody asked how the list tape works or why the Rust renderer spike died. Almost everyone asked some version of the same question: "Cool. Can I keep my React components?"
+When I showed people the benchmark, nobody asked how the list tape works or why the Rust renderer spike died. The question that kept coming back was not about any of that. It was "Cool. Can I keep my React components?"
 
 Fair. Nobody is going to rewrite their TanStack Table, Radix dialog and react-hook-form + zod form in a framework that's twelve days old. (First commit 2 October; 1,547 commits since, 1,486 of them co-authored by Claude. The agent still doesn't sleep.) "Just rewrite it in my framework" is the most popular sentence in frontend that nobody has ever acted on.
 
