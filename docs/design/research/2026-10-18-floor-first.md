@@ -34,12 +34,17 @@ Seven pieces. F1–F3 are the ones no competitor has; F4 is the big bet; F5–F7
 - The **writer** executes the stream: wasm now (the row emitter is the prototype), a native addon (N-API) next, the native host in F4 last. Render-side allocation drops to the op buffer; GC share (6–10 %) and `writeBytes` dispatch (19 %) go with it.
 - The same segment table is the client's template source for the rendered layer (round 2) — one representation of markup for server, edge and browser.
 
-### F2. Spliced compression (never compress the template per request)
+### F2. Spliced compression (never compress the template per request) — **withdrawn by X1 (§8); replaced by F2′ below**
 
 - Precompress each static segment once at build time as a **spliceable compressed block** against the route dictionary (F3): a block that references only itself and the dictionary, never earlier page bytes. Per response the writer emits one compressed frame = `[precompressed static blocks] + [small compressed or raw blocks for the dynamic data]`. CPU per request for compression ≈ compressing the data only; the template costs a memcpy.
 - Candidates: zstd (raw / RLE / compressed blocks inside one frame; browsers accept `Content-Encoding: zstd` and dictionary `dcz`), brotli (meta-blocks; uncompressed meta-blocks are spliceable, compressed ones need window discipline). Spike X1 settles which decoders tolerate which splices (Chrome, Firefox, Safari; CDN passthrough).
 - Fallback where splicing is refused: per-route dictionary + zstd level 1 on the whole page (≈ 500 MB/s with a dictionary that already holds the template → an 88 KB page ≈ 0.15 ms, ≈ 10× cheaper than brotli q5 and smaller output).
 - This is where "beat everyone" is largest: every competitor spends 0.6–1.8 ms per page here or hands it to a CDN that spends it for them. The fair comparison gains an **encoded** profile (`--encoding br|zstd|dcz`) so the claim is measured, not inferred.
+
+### F2′. Origin encoding: zstd by default, template-informed sequences in the native writer
+
+- X1 (§8) measured that whole-page zstd −1 costs 0.18–0.25× brotli q5 at +5–10 % bytes, decodes in Chromium, and is cheaper than any JS-level splice of precompressed parts. Rule: the origin encodes `zstd` (−1 for large data-dense pages, −3 for content pages) when the client accepts it, brotli q4 otherwise; immutable assets stay precompressed brotli q11. Every ssr-bench / editorial-bench number gains an encoded column (R-A).
+- Compression is still the largest per-page CPU term for big pages (1000 rows: zstd −1 1.3 ms vs 0.46 ms render), and it is the same for every framework that chooses the same codec. The one way below it is to stop *searching* for matches: the compiler already knows them. **Template-informed sequences**: the segment table is the dictionary, the op stream *is* the sequence list (each `SEG` = a match into the dictionary, each hole = a literal run), and the writer calls `ZSTD_compressSequences()` — entropy coding of the holes' literals plus sequence encoding, no match finder. Native-only (zstd C API; Node's binding has no sequence interface) → part of the native writer / host (F4). Bound to measure (X2′): compression CPU ≈ literals only, i.e. ≈ 10–15 % of a page's bytes on the table shape, ≈ 25 % on the article → an estimated 3–6× over zstd −1 at the same or better density.
 
 ### F3. Dictionary transport (the browser already has the template)
 
@@ -75,7 +80,7 @@ Seven pieces. F1–F3 are the ones no competitor has; F4 is the big bet; F5–F7
 | Metric (1000 rows c1 unless noted) | Rivet today | Floor-first target | Best competitor |
 | --- | --- | --- | --- |
 | CPU / page, identity | 0.46 static / 3.04 resumable | ≤ 0.2 both (same wire, same host) | Solid static 1.34, Razor 1.64, Solid hydratable 1.74 |
-| CPU / page, encoded (br q5 equivalent output) | 0.46 + ~1.0 (est.) | ≤ 0.25 | competitor render + ~1.0 |
+| CPU / page, encoded | 0.46 + 7.4 (br q5, measured X1) | ≤ 0.2 + 1.3 (zstd −1, measured) now; ≤ 0.2 + ~0.3 with template-informed sequences (F2′, bound) | competitor render + 7.4 (brotli q5 default) or + 1.3 if they switch codec |
 | Peak RSS | 88 / 166 MiB | ≤ 20 MiB | Solid 100, Razor 122 |
 | Wire bytes, 2nd page of a session | full brotli page | ≈ data delta (`dcz`) | full brotli page (every MPA), JSON + runtime (SPAs) |
 | JS before first input | 0 static; 15.6 KB router; 150–180 KB widgets | 0 external (inline program ≈ 0 B on the wire after the first page); widgets' chunks at idle, delta-compressed | Astro 0; others ≥ runtime |
@@ -93,7 +98,8 @@ Unchanged: values-only wire format, four layers, derived slices, adopted boundar
 
 | Spike | What | Bar |
 | --- | --- | --- |
-| **X1 splice tolerance** (1–2 days) | serve a page as `zstd` / `dcz` / `br` frames built from precompressed static blocks + small dynamic blocks; verify decode in Chrome, Firefox, Safari (Playwright WebKit) and through a CDN passthrough; measure compression CPU per page vs brotli q5 / zstd -1 whole-page | a splice scheme every current browser decodes; CPU ≤ 10 % of whole-page brotli q5 |
+| **X1 splice tolerance** — DONE 2026-10-18 (§8) | as below; harness `apps/ssr-bench/spikes/splice/` | decode: yes (Chromium 141); CPU bar: not met by splicing, met by zstd −1 (0.18×) → F2 withdrawn, F2′ adopted |
+| **X2′ template-informed sequences** (2 days, native) | a C or Rust program: segment table + op stream → `ZSTD_compressSequences` vs `ZSTD_compress` −1 / −3 on the X1 shapes; bytes + µs | ≥ 3× over zstd −1 at ≤ +5 % bytes; decodes as plain `zstd` |
 | **X2 op-stream writer in Node** (1 week) | segment table + op buffer + N-API (or wasm) writer on the ssr-bench static page and `/resume`; with uWS | ≥ 1.5× CPU/page vs HEAD static at 1000 rows c1 / c10; allocation −50 % |
 | **X3 dictionary transport end-to-end** (2 days) | per-route dictionary on editorial-bench and the docs site; bytes for 2nd page, navigation, live patch, chunk delta after a deploy | 2nd-page bytes ≤ 40 % of brotli; chunk delta ≤ 20 % |
 | **X4 native host prototype** (3 weeks, only if X2 < 2×) | Rust host + embedded isolate running the real router + loaders of ssr-bench `router-app`; op stream over shared memory; fair comparison all cases | ≥ 2.5× CPU/page vs HEAD, RSS ≤ 25 MiB, loaders unchanged |
@@ -117,3 +123,28 @@ X1 and X3 are cheap and independent of everything else; X2 decides between "Node
 - A native host is a runtime: packaging, Node API compatibility for loaders, debugging, platform adapters (Vercel / Netlify / Workers keep the Node path; the native host is for self-hosted and the edge binary). Scope it as a product line, not a flag.
 - Op-stream compile shape: components still run in JS; the win is bounded by how much of the per-page time is string work + GC (today ~30–40 % of the Rivet-owned share) unless the host changes (F4). X2's bar is set accordingly.
 - Measurement discipline: every number above marked "est." is a bound from existing reports, not a measurement; the harness changes come first.
+
+
+## 8. X1 result (2026-10-18, this container: Node 24.14.1 zlib zstd / brotli, Chromium 141.0.7390.37, 1 vCPU cloud host, no bench lock — ratios only)
+
+Harness: `apps/ssr-bench/spikes/splice/splice.ts bench` (encode CPU per page, bytes, Node frame-by-frame decode) and `browser.ts` (Chromium fetch of every shape × scheme, decoded text compared with the identity response). Shapes: the ssr-bench fixture table at 100 / 1000 rows (seeded pseudo-random values; a first run with repetitive synthetic strings gave 10× better ratios for every codec and was discarded) and an article page (≈ 25 KB static chrome + 8 KB dynamic body). Schemes: whole-page brotli q4 / q5 / q6, whole-page zstd −1 / −3, full splice (every static segment a precompressed zstd −19 frame, every hole a hand-built single-raw-block frame), hybrid (static frames; the hole-dense region zstd −1 / −3 per request as one frame).
+
+| shape | scheme | bytes | ratio | encode µs / page | vs br q5 |
+| --- | --- | ---: | ---: | ---: | ---: |
+| table 1000 (757 KB) | br q5 | 69,156 | 0.091 | 7,422 | 1.00× |
+| table 1000 | br q4 | 79,652 | 0.105 | 3,989 | 0.54× |
+| table 1000 | zstd −1 | 76,370 | 0.101 | 1,317 | 0.18× |
+| table 1000 | zstd −3 | 72,591 | 0.096 | 1,799 | 0.24× |
+| table 1000 | full splice | 998,343 | 1.318 | 8,688 | 1.17× |
+| table 1000 | hybrid, dense zstd −1 | 76,398 | 0.101 | 6,364 | 0.86× |
+| table 100 (76 KB) | br q5 / zstd −1 / hybrid −1 | 7,534 / 8,830 / 8,942 | 0.099 / 0.116 / 0.117 | 787 / 199 / 496 | 1.00× / 0.25× / 0.63× |
+| article (33 KB) | br q5 / zstd −1 / zstd −3 | 5,715 / 7,150 / 6,536 | 0.171 / 0.214 / 0.196 | 580 / 117 / 313 | 1.00× / 0.20× / 0.54× |
+| article | full splice / hybrid −1 / hybrid −3 | 19,082 / 7,187 / 6,931 | 0.572 / 0.216 / 0.208 | 402 / 397 / 367 | 0.69× / 0.68× / 0.63× |
+
+Decode: Chromium 141 decoded all 24 shape × scheme bodies byte-exactly, including multi-frame zstd with hand-built raw frames (Node's own `zstdDecompressSync` / streaming decoder stop after the first frame — a Node limitation, not a format one). Firefox / WebKit are not installed in this container: untested (WebKit has no `zstd` content-encoding as far as known → brotli path).
+
+Findings:
+1. **Splicing loses.** A raw frame costs 9–16 bytes per hole: +32 % over *identity* on the table, and on the article the uncompressed body dominates (0.57×). The hybrid (compress the dense region per request) lands within 1 % of whole-page zstd at the same level — the static chrome compresses to nearly nothing either way — and costs more CPU in JS than compressing the whole page, because zstd −1 runs at ≈ 570 MB/s while assembling thousands of parts in JS does not. Precompressed frames give nothing a dictionary does not give better (F3). F2 withdrawn.
+2. **The codec is the lever.** brotli q5 (the usual origin / CDN default) costs 7.4 ms at 1000 rows — 16× Rivet's render — and 0.6 ms on a 33 KB article. zstd −1 costs 0.18–0.25× of that at +5–17 % bytes (−3: 0.24–0.54× at +5–14 %). For the editorial / table shapes brotli q4 is the brotli sweet spot (0.54×, +15 % bytes) but still 3× zstd −1. Adopted as F2′: origin zstd by default; measure encoded.
+3. **Compression stays the largest per-page cost on large pages even at zstd −1** (1.3 ms vs 0.46 ms render at 1000 rows), and that cost is codec-bound, identical for every framework on the same codec. Beating it needs the compiler's knowledge: the segment table as dictionary and the op stream as a precomputed sequence list (`ZSTD_compressSequences`, no match finder) — F2′ second half, spike X2′, native writer only.
+4. Methodology: assembling the identity page from 33 k small parts in JS cost 4.7 ms here (10× the real `SlabWriter` path); every scheme's cost above excludes it. Numbers are from a loaded 1-vCPU cloud container and are ratios only; the bench host re-run is still owed for absolute values and for Firefox.
