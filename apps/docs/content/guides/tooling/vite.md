@@ -77,7 +77,7 @@ rivetRouter({
 | --- | --- |
 | `modules` | Root-relative source files compiled in resume mode |
 | `entry` | Optional module whose default export is `createResume({ contexts })`, for context values the browser needs |
-| `chunks` | `"component"` (default), `"group"` or `"route"`; see [Chunks](../performance/chunks.md) |
+| `chunks` | `"route"` (default), `"component"` or `"group"`; see [Chunks](../performance/chunks.md) |
 | `lazy` | When lazy imports prefetch: `"idle"` or `"intent"` (the router sets `"intent"`) |
 | `preload.rules` | Preload overrides; see [Preloading](../performance/preloading.md) |
 

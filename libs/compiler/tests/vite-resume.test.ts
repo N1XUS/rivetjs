@@ -51,6 +51,7 @@ export function Second() {
         rivet({
           resume: {
             modules: ["src/page.tsx"],
+            chunks: "component",
             preload: {
               rules: [
                 { match: "src/page.tsx#Second", strategy: "idle" },
@@ -300,18 +301,20 @@ export function App() { return <div><R1 /><R2 /><R3 /><R4 /><R5 /></div>; }
       "src/r5.tsx",
       ...["a", "b", "c", "d", "e", "f", "g"].map((n) => `src/lib/${n}.tsx`),
     ];
-    const run = async (chunks: "component" | "route", merge?: false) => {
-      const out = "dist-" + chunks + (merge === false ? "-split" : "");
+    const run = async (chunks: "component" | "route" | undefined, merge?: false) => {
+      const out = "dist-" + (chunks ?? "default") + (merge === false ? "-split" : "");
       await build({
         configFile: false,
         root,
         logLevel: "silent",
-        plugins: [rivet({ resume: { modules, chunks, ...(merge === false ? { merge } : {}) } })],
+        plugins: [rivet({ resume: { modules, ...(chunks ? { chunks } : {}), ...(merge === false ? { merge } : {}) } })],
         build: { outDir: out, manifest: true, minify: false },
       });
       return JSON.parse(await readFile(resolve(root, out + "/.vite/rivet-resume.json"), "utf8")) as BuiltManifest & { fetchAhead?: boolean };
     };
-    const m = await run("route");
+    // Route mode is the default: every route-mode branch must read the resolved strategy, not the raw option (a
+    // defaulted build once used the per-chunk part scheme and never imported the placed parts: "no chunk holds").
+    const m = await run(undefined);
     const url = (id: string, manifest = m) => manifest.symbols[Object.keys(manifest.symbols).find((s) => s.startsWith(id))!]!;
     // A: routes 1 + 2; B: routes 2 + 3; C (renamed `Cee`): route 3 only. Shared modules are placed by the bundler: A and
     // B are not import-adjacent, so each sits in its own chunk (the routes using it), not a route chunk, not main.
@@ -364,7 +367,7 @@ export function ${name}() { const n = signal(1); return <b onClick={() => n.set(
         configFile: false,
         root,
         logLevel: "silent",
-        plugins: [rivet({ resume: { modules: ["src/page.tsx", "src/a.tsx", "src/b.tsx"], ...(merge === false ? { merge } : {}) } })],
+        plugins: [rivet({ resume: { modules: ["src/page.tsx", "src/a.tsx", "src/b.tsx"], chunks: "component", ...(merge === false ? { merge } : {}) } })],
         build: { outDir: out, manifest: true, minify: false },
       });
       const manifest: BuiltManifest = JSON.parse(await readFile(resolve(root, out, ".vite/rivet-resume.json"), "utf8"));

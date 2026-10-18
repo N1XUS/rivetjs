@@ -509,9 +509,11 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
   // entry is a context reference the decoder never holds).
   function arm(ref: number, source: Signal<unknown>): void {
     // A ref() holding a server element inside a region: removing the region (Show off, row dropped,
-    // re-creation) resets it, like bindRef's unmount cleanup on client renders.
-    const held = untrack(source) as Element | undefined;
-    const region = held && refRegions.get(held);
+    // re-creation) resets it, like bindRef's unmount cleanup on client renders. Only an element names a region: a
+    // falsy value (0, "", false) must not pass itself on as the region (`held && …` did: a counter at 0 got the cleanup
+    // of region 0 — the Router — and was reset to `undefined` by the first client navigation, ROUTE-CHUNKS 2026-10-18).
+    const held = untrack(source);
+    const region = held ? refRegions.get(held as Element) : undefined;
     if (region !== undefined) runWithOwner(ownerOf(region), () => onCleanup(() => untrack(source) === held && source.set(undefined)));
     const bindings = stubs.get(ref);
     if (!bindings) return;
@@ -588,10 +590,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           // Focus inside the server content (the trigger that was just pressed, say) moves to its
           // replacement with the same id, unless the new content moved focus itself.
           const focused = doc.activeElement;
-          const keep =
-            focused && focused !== doc.body && focused.id && range.start.compareDocumentPosition(focused) & 4 && range.end.compareDocumentPosition(focused) & 2
-              ? focused.id
-              : null;
+          const keep = focused && focused !== doc.body && focused.id && inside(range, focused) ? focused.id : null;
           if (rows) {
             // A keyed list: its For adopts the server rows; only rows it drops or re-creates die.
             const adopted = rowList(rows).map(([row, item, flags], index): AdoptedRow => {
@@ -640,7 +639,27 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             addEventListener(type, later, { once: true });
             setTimeout(later);
           }
-        : go;
+        : name === "#" && inFlight(node)
+          ? // A region whose server content holds the target of a focus-change event being dispatched re-creates one
+            // task later: the browser still delivers the rest of that sequence to the element — a blur commits `change`
+            // first, then `blur` / `focusout` (with `activeElement` already cleared), a focus `focus` then `focusin` —
+            // and replacing it inside the first event sends the rest to a detached element (a resumed form's delegated
+            // `focusout` handler never saw the field the user left: ui TextField under `@rivetjs/forms`, whose cdk
+            // `change` handler re-created the field; ROUTE-CHUNKS 2026-10-18, route builds have every chunk of the
+            // region ready at the first change). A cold replay of such an event (`current`: its handler runs from the
+            // replay chain, outside any dispatch) defers the same way — the chain replays the `blur` / `focusout` queued
+            // behind it before the task runs. Other events (a click ends its sequence) re-create at once, as before.
+            () => {
+              const done = _activating.start?.();
+              setTimeout(() => {
+                try {
+                  go();
+                } finally {
+                  done?.();
+                }
+              });
+            }
+          : go;
     if (ready(chunks)) start();
     else
       api
@@ -668,6 +687,15 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       for (let i = 0; i < sources.length; i++) if (!Object.is(sources[i]!(), values[i])) return true;
       return false;
     };
+  };
+  // Whether a node sits in a region's server content (strictly between its markers).
+  const inside = (range: Markers | undefined, node: Node): boolean =>
+    !!(range?.end && range.start.compareDocumentPosition(node) & 4 && range.end.compareDocumentPosition(node) & 2);
+  // Whether a focus-change event being dispatched (a resumed handler's `current`, else `window.event`: one a spread's own
+  // listener handles) targets a node of the region's server content.
+  const inFlight = (node: number): boolean => {
+    const event = current ?? (doc.defaultView ?? window).event;
+    return !!event && /^(change|blur|focus)$/.test(event.type) && event.target instanceof Node && inside(markers().get(node), event.target);
   };
   // Resumed state of a row / branch region dies with it.
   const kill = (id: number) => () => {

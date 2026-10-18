@@ -26,7 +26,7 @@ test("every code the compiler or language service emits is registered", () => {
   assert.ok(vite.has("RV2010"), "vite.ts emits RV2010");
   for (const code of [...compiler, ...language, ...vite]) assert.ok(codeInfo(code), `${code} is emitted but not registered in codes.json`);
   // Compiler diagnostics fail the build, except the compile warnings (T10 fix 2: `warnings`, never suppressing code).
-  const warnings = new Set(["RV2013", "RV2014", "RV2015"]);
+  const warnings = new Set(["RV2013", "RV2014", "RV2015", "RV2104"]);
   for (const code of compiler) assert.equal(codeInfo(code)!.severity, warnings.has(code) ? "warning" : "error", code);
   assert.equal(codeInfo("RV2101")!.severity, "warning");
   assert.equal(codeInfo("RV3101")!.severity, "warning");

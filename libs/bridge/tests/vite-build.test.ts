@@ -220,7 +220,9 @@ export const mixed = (manifest: never) => resumableToString(() => <Page />, { ma
     assert.ok(!lean.includes(manifest.runtime) && (!manifest.loader || !lean.includes(manifest.loader)), lean);
     // Bytes the lean path adds to the HTML: records + the inline boot (< 1.5 KB), no state script / loader.
     const tail = lean.slice(lean.indexOf("</main>") + 7);
-    assert.ok(tail.length < 2048, tail.length + " B tail");
+    // Records (two islands, each with its chunk + merged shared chunk URLs: 2026-10-18 `merge` default 65536 names the
+    // shared chunk `rivet-merge-…`, +8 B of URL) + the inline boot.
+    assert.ok(tail.length < 2304, tail.length + " B tail");
     // The visible island is a record, loaded only when visible (not preloaded).
     assert.ok(lean.includes(JSON.stringify(manifest.islands!["src/Hooks.fake.js#Badge"])), lean);
     // Mixed route (live prop + callback writing a Rivet signal + a text binding): the full tail, as before T7b.

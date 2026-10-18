@@ -50,12 +50,13 @@ export interface RivetResumeOptions {
   /** Root-relative resume entry whose default export is `createResume(...)`; defaults to an empty one. */
   entry?: string;
   /**
-   * Chunk grouping: "component" (default) one chunk per component; "group" one chunk per `<ChunkGroup>`
-   * subtree (components rendered in several groups, or none, keep their own chunk); "route" one chunk
-   * per lazy-import target's static module graph (`lazyComponent` / route imports), a main chunk, and shared
-   * chunks for the modules several routes reach, clustered by the routes using them under `merge` / `cap`
-   * (ROUTE-CHUNKS cluster 2026-10-18; `merge: false` = one chunk per exact set of routes). Chunks of the same
-   * group / route prefetch each other once one is used.
+   * Chunk grouping: "route" (default since 2026-10-18, derived-client plan M1) one chunk per lazy-import target's
+   * static module graph (`lazyComponent` / route imports), a main chunk, and the modules several routes reach
+   * placed by the bundler into shared chunks (merged under `merge` / `cap`); "component" one chunk per component;
+   * "group" one chunk per `<ChunkGroup>` subtree (components rendered in several groups, or none, keep their own
+   * chunk). Chunks of the same group / route prefetch each other once one is used. Measured (ui-docs frames, Slow 4G):
+   * route needs a quarter of the files of component through the first click for about a fifth more bytes, and
+   * the first click downloads nothing.
    */
   chunks?: "component" | "group" | "route";
   /**
@@ -75,7 +76,8 @@ export interface RivetResumeOptions {
    * together merge into one chunk while the source bytes entries (symbol chunks, lazily imported modules, app entry,
    * runtime) load without needing them stay under this budget per request saved — summed over entries and checked per
    * merge, so the budget is amortised: one entry can pay more (`chunk-groups.ts`). Chunks every page loads never take
-   * page code; a merged chunk never closes an import cycle. Default 2048; `false` = the bundler's automatic split.
+   * page code; a merged chunk never closes an import cycle. Default 65536 (2048 until 2026-10-18: 64 K cut the
+   * files of a page by a third to a half at flat bytes on the ui-docs frames); `false` = the bundler's automatic split.
    * Skipped when the build sets `codeSplitting: false`, `manualChunks` or `advancedChunks`.
    */
   merge?: number | false;
@@ -620,6 +622,8 @@ function rivetPlugin(
   const chunks = new Map<string, Chunk>(); // virtual id → chunk
   let merged = new Map<string, string>(); // module id → shared chunk name (`resume.merge`, buildEnd → outputOptions)
   const parts = new Map<string, { file: string; symbols: ResumeSymbol[] }>(); // part id → part
+  /** Chunk grouping in force (`resume.chunks`, default route): read here, never the raw option (undefined = default). */
+  const chunkStrategy = (): "component" | "group" | "route" => resume?.chunks ?? "route";
   // Route mode: modules several routes reach are no chunks of their own (ROUTE-CHUNKS placed parts, 2026-10-18): their
   // part module is imported by every route chunk reaching it and the bundler places it, with its import closure, in a
   // shared chunk by the routes using it (merged under `resume.merge` / `cap` at buildEnd, on the real module graph).
@@ -1082,7 +1086,7 @@ function rivetPlugin(
       chunks.clear();
       placed.clear();
       parts.clear();
-      const strategy = resume.chunks ?? "component";
+      const strategy = chunkStrategy();
       if (!["component", "group", "route"].includes(strategy)) this.error('resume.chunks must be "component", "group" or "route"');
       if (resume.merge !== undefined && resume.merge !== false && !(typeof resume.merge === "number" && resume.merge >= 0))
         this.error("resume.merge must be a byte budget (a number ≥ 0) or false");
@@ -1347,12 +1351,12 @@ function rivetPlugin(
       if (part)
         return (
           _compileSymbolModule(part.symbols, part.file, contributed(false)) +
-          (resume?.chunks === "route" ? registration(moduleId(part.file), part.symbols) : "")
+          (chunkStrategy() === "route" ? registration(moduleId(part.file), part.symbols) : "")
         );
       const chunk = chunks.get(id);
       if (!chunk) return null;
       // Route chunks: side-effect imports of the route's own parts and the placed parts it reaches (one part per file).
-      if (resume?.chunks === "route" && id.startsWith(CHUNK + "route:")) {
+      if (chunkStrategy() === "route" && id.startsWith(CHUNK + "route:")) {
         let source = "";
         for (const [file, symbols] of chunk.parts) {
           const partId = PART + file;
@@ -1380,7 +1384,7 @@ function rivetPlugin(
     // Shared chunk merging (`resume.merge`): the module graph is complete at buildEnd; outputOptions hands the
     // groups to Rolldown's codeSplitting (deps not pulled in: every module is placed by its own group or left alone).
     buildEnd(error) {
-      const budget = resume?.merge ?? 2048;
+      const budget = resume?.merge ?? 65536;
       // Server builds (another environment of this plugin instance) leave the client's groups alone.
       if (budget === false || !resume || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
       merged = new Map();
@@ -1469,7 +1473,15 @@ function rivetPlugin(
             if (output.type === "chunk") for (const id of output.moduleIds) if (id.startsWith(PART)) holder.set(id, output);
           for (const [file, entry] of placed) {
             const output = holder.get(PART + file);
-            if (!output) this.error(`resume: no chunk holds the symbols of ${moduleId(file)}`);
+            if (!output) {
+              const importers = [...chunks].filter(([, chunk]) => chunk.shared?.includes(file)).map(([id]) => id.slice(CHUNK.length));
+              const emitted = Object.values(bundle).flatMap((o) =>
+                o.type === "chunk" && o.facadeModuleId?.startsWith(CHUNK + "route:") ? [o.facadeModuleId.slice(CHUNK.length)] : [],
+              );
+              this.error(
+                `resume: no chunk holds the symbols of ${moduleId(file)} (part imported by ${importers.length} route chunks: ${importers.join(", ") || "none"}; route chunks emitted: ${emitted.join(", ") || "none"})`,
+              );
+            }
             const url = base + output.fileName;
             sizes[url] = Buffer.byteLength(output.code);
             placedChunks.add(output.fileName);
@@ -1607,7 +1619,7 @@ function rivetPlugin(
           ...(Object.keys(preload).length ? { preload } : {}),
           ...(groups.length ? { groups } : {}),
           // Route chunks: few, page-sized handler chunks — servers fetch a page's ahead (`data-fo`) when the app prefetches.
-          ...(resume.chunks === "route" ? { fetchAhead: true } : {}),
+          ...(chunkStrategy() === "route" ? { fetchAhead: true } : {}),
         };
         const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
         this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });

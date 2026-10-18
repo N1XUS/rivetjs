@@ -30,16 +30,16 @@ Set `resume.chunks` in the Vite config:
 
 | Value | Chunks |
 | --- | --- |
-| `"component"` (default) | One chunk per component |
+| `"route"` (default) | One chunk per lazily loaded route or `lazyComponent`, a main chunk, and shared chunks for the components several routes use |
+| `"component"` | One chunk per component |
 | `"group"` | One chunk per `<ChunkGroup>` subtree |
-| `"route"` | One chunk per lazily loaded route or `lazyComponent`, a main chunk, and shared chunks for the components several routes use |
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { chunks: "route" } })],
+  plugins: [rivetRouter({ resume: { chunks: "component" } })],
 });
 ```
 
@@ -47,13 +47,13 @@ The grouping changes only the browser chunks and the manifest. Server output sta
 
 ### Which one to pick
 
-`"component"` stays the default: it downloads the least code for one interaction. `"route"` needs far fewer files through the first click (a quarter on the Rivet UI docs) for about a fifth more bytes, and its first click downloads nothing.
+`"route"` is the default: it needs far fewer files through the first click (a quarter of `"component"`'s on the Rivet UI docs) for about a fifth more bytes, and its first click downloads nothing. `"component"` downloads the least code for one interaction.
 
 | App shape | Pick | What changes |
 | --- | --- | --- |
-| Pages built from a component library: one click touches many small components | `"component"` with a larger `merge`, such as `16384` | Fewer files at about the same bytes. A select box example: 77 files before the first click with the default, 58 with `16384`, 49 with `65536`. |
+| Pages built from a component library where one interaction must download the least code | `"component"` | One chunk per component: the first click fetches that component's handlers and nothing else. A select box example: 79 files before the first click at `merge: 2048`, 48 at the default `65536`. |
 | Pages made of separate widgets: a search box, a comment section, a cart | `"group"` | Each widget's code arrives together, so the second click in a widget downloads nothing. |
-| File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` with `merge: 65536` | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. On the Rivet UI docs (one component library shared by 1,000 example pages), a select box page needs 24 files and 178 KB through its first click instead of 81 files and 146 KB with the default: a quarter of the files for a fifth more bytes. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
+| File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` (the default) | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. On the Rivet UI docs (one component library shared by 1,000 example pages), a select box page needs 24 files and 178 KB through its first click instead of 81 files and 146 KB with `"component"`: a quarter of the files for a fifth more bytes. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
 | Pages with framework islands (React, Preact) | `"route"` | Fewer files: 15 to 10 on the bridge demo's orders page. |
 
 With `"route"`, each page's components land in the route's own chunk. A component several routes use is placed by the bundler like any shared code: in a chunk that exactly the routes using it load, then merged with its neighbours under the budget of [Fewer shared chunks](#fewer-shared-chunks) and the `cap` on shared chunks per route. A component that no lazily loaded route reaches lands in the main chunk. Imports through `index.ts` files, such as `import { Select } from "@rivetjs/ui"`, count as imports of the components they name. Three cases are not followed yet, and their components land in the main chunk: a `.tsx` file that re-exports with `export *`, `export * as name from`, and re-exports written in the route module itself.
@@ -66,7 +66,7 @@ Try a grouping, build, and compare in the browser's network panel. See [Measurin
 
 The bundler puts shared code into one chunk per set of chunks that use it, so no page downloads a byte it does not need. With a component library this means many small files: a page with one select box can load 100 or more chunks before its first click, and each file is one more request.
 
-The build merges small shared chunks that the same chunks load. Merging can make a page download code it does not use. The build allows a merge only while the extra code stays small for each request it saves: by default 2048 bytes of source per request saved. The budget is an average over all the chunks a merge affects, so one page can still download more than that. On the Rivet UI docs site the median page downloads 0.2 % fewer bytes, but one page in ten downloads 7 % more and the worst page 27 % more.
+The build merges small shared chunks that the same chunks load. Merging can make a page download code it does not use. The build allows a merge only while the extra code stays small for each request it saves: by default 65536 bytes of source per request saved. The budget is an average over all the chunks a merge affects, so one page can still download more than that. On the Rivet UI docs site the median page downloads 0.2 % fewer bytes, but one page in ten downloads 7 % more and the worst page 27 % more.
 
 Merging never touches the runtime and app entry chunks, which every page loads: no page code joins them. A merged chunk never imports another chunk that imports it back, so modules run in the same order as without merging. Merging happens only in production builds; the dev server serves modules one by one. It is skipped when your Vite config sets `codeSplitting: false`, `manualChunks` or `advancedChunks`, so your own chunking wins.
 
@@ -74,7 +74,7 @@ Change the budget with `resume.merge`, or turn merging off with `false`:
 
 ```ts title="vite.config.ts"
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { merge: 4096 } })],
+  plugins: [rivetRouter({ resume: { merge: 16384 } })],
 });
 ```
 
@@ -82,7 +82,7 @@ The budget bounds bytes, not files. To bound files, set `resume.cap`: the most s
 
 ```ts title="vite.config.ts"
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { chunks: "route", merge: 65536, cap: 3 } })],
+  plugins: [rivetRouter({ resume: { cap: 3 } })],
 });
 ```
 

@@ -172,10 +172,11 @@ test("nested layouts: persistence, reactive layout props, kept loaders", steps(a
       await fresh.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 100))));
       assert.equal(await fresh.evaluate(() => !!(document as unknown as { $r?: { r(): unknown } }).$r?.r()), false, "runtime not booted at idle");
       const prefetched = await fresh.$$eval('link[rel="modulepreload"][fetchpriority="low"]', (links) => links.map((link) => new URL((link as HTMLLinkElement).href).pathname));
-      assert.ok(prefetched.some((url) => /resume-entry/.test(url)) && prefetched.some((url) => /resume-App/.test(url)), prefetched.join());
+      // The App's symbols: `resume-App` in component mode, the main route chunk (`resume-route_main`) in route mode (default).
+      assert.ok(prefetched.some((url) => /resume-entry/.test(url)) && prefetched.some((url) => /resume-(App|route_main)/.test(url)), prefetched.join());
       assert.deepEqual(
-        scripts.filter((url) => /resume-(entry|App)/.test(url)).sort(),
-        prefetched.filter((url) => /resume-(entry|App)/.test(url)).sort(),
+        scripts.filter((url) => /resume-(entry|App|route_main)/.test(url)).sort(),
+        prefetched.filter((url) => /resume-(entry|App|route_main)/.test(url)).sort(),
         "runtime / App chunk only fetched (modulepreload) before the click",
       );
       const before = scripts.length;

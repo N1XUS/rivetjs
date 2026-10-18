@@ -10,6 +10,8 @@ interface Exports {
   panic_len?(): number;
   source_hash_ptr?(): number;
   source_hash_len?(): number;
+  /** M2 lane A: the build understands `resume.model: "derived"` + `moduleFacts` `boundaries` (absent on older builds). */
+  has_derived_model?(): number;
 }
 
 /** A compiler panic (RV9001): the request trapped; the instance was replaced. */
@@ -110,4 +112,12 @@ export function wasmSourceHash(): string {
   const wasm = instance();
   const len = wasm.source_hash_len?.() ?? 0;
   return len ? decoder.decode(new Uint8Array(wasm.memory.buffer, wasm.source_hash_ptr!(), len)) : "";
+}
+
+/**
+ * Whether the loaded module implements the derived resume model (M2 lane A: `resume.model: "derived"`, `resume.boundaries`
+ * / `resume.independent`, `moduleFacts` `boundaries`; export `has_derived_model`). Tests of that model skip without it.
+ */
+export function hasDerivedModel(): boolean {
+  return (instance().has_derived_model?.() ?? 0) === 1;
 }
