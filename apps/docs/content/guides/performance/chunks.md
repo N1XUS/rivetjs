@@ -47,13 +47,13 @@ The grouping changes only the browser chunks and the manifest. Server output sta
 
 ### Which one to pick
 
-`"component"` stays the default: it downloads the least code for one interaction, and no other grouping made pages need fewer requests in our measurements.
+`"component"` stays the default: it downloads the least code for one interaction. `"route"` needs far fewer files through the first click (a quarter on the Rivet UI docs) for about a fifth more bytes, and its first click downloads nothing.
 
 | App shape | Pick | What changes |
 | --- | --- | --- |
 | Pages built from a component library: one click touches many small components | `"component"` with a larger `merge`, such as `16384` | Fewer files at about the same bytes. A select box example: 77 files before the first click with the default, 58 with `16384`, 49 with `65536`. |
 | Pages made of separate widgets: a search box, a comment section, a cart | `"group"` | Each widget's code arrives together, so the second click in a widget downloads nothing. |
-| File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. The page downloads 4 to 12 % more bytes, in about as many files. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
+| File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` with `merge: 65536` | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. On the Rivet UI docs (one component library shared by 1,000 example pages), a select box page needs 24 files and 178 KB through its first click instead of 81 files and 146 KB with the default: a quarter of the files for a fifth more bytes. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
 | Pages with framework islands (React, Preact) | `"route"` | Fewer files: 15 to 10 on the bridge demo's orders page. |
 
 With `"route"`, each page's components land in the route's own chunk. A component several routes use is placed by the bundler like any shared code: in a chunk that exactly the routes using it load, then merged with its neighbours under the budget of [Fewer shared chunks](#fewer-shared-chunks) and the `cap` on shared chunks per route. A component that no lazily loaded route reaches lands in the main chunk. Imports through `index.ts` files, such as `import { Select } from "@rivetjs/ui"`, count as imports of the components they name. Three cases are not followed yet, and their components land in the main chunk: a `.tsx` file that re-exports with `export *`, `export * as name from`, and re-exports written in the route module itself.
