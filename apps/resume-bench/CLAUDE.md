@@ -18,7 +18,7 @@ Real-Chrome resumability/hydration benchmark: the same SSR'd page (1,000 rows, c
 - `lanes/<lane>/build.ts` — `export async function build(outDir)` → `outDir/index.html` (complete SSR doc for `/`) + assets; `check.ts` / `render.ts` / `src/` per framework.
   - `rivet/` — `page.tsx`, `detail.tsx` (lazy), `server.tsx` (`resumableToString` + router); Vite + `@rivetjs/compiler/vite` resume modules.
   - `solid/` (2.0.0-rc.13), `solid-stable/` (1.9.15), `qwik/` (2.0.0-rc.0), `qwik-stable/` (1.20.1).
-  - `rivet-derived/` — spike S2 lane (`docs/design/research/2026-10-18-beyond-resume-hydration.md` §8): the fixture as a hand-written *derived client* — `build.ts` emits the static page + a values tail (`<script type="application/json" id="rv">`: loader data + keyed signal values, no handler / binding records, no `data-r`) + the inline loader (`src/loader.js`, holds cold events, idle `modulepreload` fetch-ahead, evaluates the slice on the first input / visible / scroll), `src/d.js` = the route slice as a compiler would emit it (per-site handlers, per-signal edit lists, O(1) list adoption, route swap keeping the list section alive), `src/detail.js` (lazy route), `src/a.js` (idle analytics). esbuild-minified, no framework runtime. Stands in for compiler output; passes `--verify`.
+  - `rivet-derived/` — spike S2 lane (`docs/design/research/2026-10-18-beyond-resume-hydration.md` §8): the fixture as a hand-written *derived client* — `build.ts` emits the static page + a values tail (`<script type="application/json" id="rv">`: loader data + keyed signal values, no handler / binding records, no `data-r`) + the inline loader (`src/loader.js`, holds cold events, idle `modulepreload` fetch-ahead, evaluates the slice on the first input / visible / scroll), `src/d.js` = the route slice as a compiler would emit it (per-site handlers, per-signal edit lists, O(1) list adoption, route swap keeping the list section alive), `src/detail.js` (lazy route), `src/a.js` (idle analytics). esbuild-minified, no framework runtime. Stands in for compiler output; passes `--verify`. Loader rules learned from the first run (research record §12): definitions-only modules + the values parse are evaluated at idle (first input synchronous), the lazy route chunk is in the fetch-ahead closure, the list writer has a keyed-reconcile fast path. Results: research record §12 (Chromium 141, this lane vs rivet / solid-stable / qwik-stable / solid / qwik, slow).
 - `FIXTURE.md` — the DOM/behaviour contract every lane must implement + runner metric definitions.
 - `.build/` (work), `dist/<lane>/` (built lanes), `results/` — all gitignored.
 
@@ -43,7 +43,7 @@ Real-Chrome resumability/hydration benchmark: the same SSR'd page (1,000 rows, c
 ## Result files
 
 - `results/<ISO-stamp>.json` (versions, builds, table, runs, errors) + `results/traces/<run-id>/<condition>/<scenario>/<lane>-r<repeat>.json.gz` (open in DevTools Performance).
-- `results/` is gitignored; one run (`2026-10-03T13-07-11-549Z.json`) is force-tracked as evidence.
+- `results/` is gitignored; runs force-tracked as evidence: `2026-10-03T13-07-11-549Z.json`, `2026-10-18T12-30-51-794Z.json` (spike S2: `rivet-derived` vs the five lanes, Chromium 141, slow, cloud host).
 - HTTP/2 screen: `.artifacts/http2-bench/runs/<run-id>/results.json`.
 
 ## Gotchas

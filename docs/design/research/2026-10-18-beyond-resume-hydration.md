@@ -184,3 +184,32 @@ Findings:
 2. **Against the gate** (§8 S1: ≥ 2× CPU vs HEAD resume): met at 100 rows with the rows tail (2.3×), and at both sizes without it (3.0× / 2.0×); with the rows tail at 1000 rows 1.5×, because resume's overhead there is dominated by the same data serialization. The decisive quantity is not the model but **whether rendered data is shipped twice**; the compiler can prove when it need not be (values rendered verbatim, invertible bindings), which this harness only bounds.
 3. HTML: structural-dom = static + 139 B; with the rows tail, −3 % raw / −7 % br vs resume (the per-element ids and per-site markers gone, the data unchanged).
 4. Not measured here: peak RSS per lane (in-process harness; the Docker fair comparison owns that), the ui dashboard showcase (widget-heavy page: adopted-layer cost, spike S3), Firefox. Absolute ms are from a loaded cloud host; ratios only.
+
+
+## 12. S2 result (2026-10-18, this container: Chromium 141.0.7390.37 via `RESUME_BENCH_CHROME`, Slow 4G + 4× CPU, 5 repeats, lanes interleaved, no traces, 4 vCPU cloud host with no bench lock — ratios and bytes are the signal)
+
+Lane `apps/resume-bench/lanes/rivet-derived/`: the fixture as a hand-written derived client (static page + values tail + inline loader + route slice + lazy detail chunk + idle analytics chunk; esbuild-minified; no framework runtime; passes `--verify`). Sizes: loader 714 B br inline, slice 1,021 B br, detail 164 B, analytics 65 B, document 5.3 KB br incl. the 1.9 KB values tail (items as JSON, as every lane ships them). Two runs: the first exposed three loader-level gaps (the slice evaluated and the values parsed at the first input instead of at idle; the lazy route chunk not fetched ahead; the list rebuilt on an unchanged filter result), all things Rivet's current planner already does, so the lane was corrected and re-measured. Second run, medians (min–max), columns = Rivet HEAD / **derived** / Solid 1.9.15 / Qwik 1.20 / Solid 2 rc / Qwik 2 rc:
+
+| scenario | metric | Rivet | **derived** | Solid 1 | Qwik 1 | Solid 2 | Qwik 2 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| load | documentBytes | 9,840 | **5,511** | 7,123 | 20,567 | 7,149 | 19,316 |
+| load | jsBytesBeforeInteraction | 25,514 | **1,911** | 8,308 | 27,476 | 23,091 | 39,561 |
+| click | paint / latency | 53.8 / 29.0 | **26.1 / 7.1** | 25.3 / 7.8 | 51.2 / 27.7 | 26.5 / 9.3 | 45.5 / 31.4 |
+| keyClick | paint / latency | 25.5 / 5.2 | **19.9 / 4.2** | 21.7 / 4.5 | 38.8 / 24.1 | 22.4 / 6.2 | 35.8 / 21.8 |
+| tapClick | paint / latency | 41.5 / 26.0 | **39.4 / 24.1** | 36.2 / 21.7 | 54.9 / 39.5 | 37.4 / 23.2 | 52.2 / 39.3 |
+| hoverClick | paint / latency | 47.2 / 23.5 | **23.9 / 7.8** | 25.0 / 9.9 | 48.8 / 33.1 | 29.8 / 12.1 | 52.2 / 39.8 |
+| filter | paint / latency | 113.4 / 56.0 | **96.8 / 33.3** | 80.5 / 39.3 | 266 / 239 | 88.7 / 39.4 | 293 / 263 |
+| filterKey | paint / latency | 89.4 / 57.6 | **95.6 / 54.8** | 78.4 / 40.5 | 216 / 175 | 69.4 / 42.1 | 214 / 187 |
+| filterSettled | paint / latency | 132.5 / 119.8 | **96.6 / 81.8** | 94.9 / 77.8 | 323 / 278 | 123.5 / 110.9 | 311 / 284 |
+| navigate | paint / latency | 65.6 / 38.3 | **61.6 / 44.8** | 217 / 204 | 92.8 / 82.5 | 244 / 234 | 142 / 132 |
+| scrollClick | paint / latency | 31.0 / 13.7 | **26.3 / 5.7** | 31.5 / 9.5 | 49.8 / 27.4 | 29.4 / 8.7 | 51.6 / 23.1 |
+| scrollClick | maxFrameGap / dropped | 16.8 / 0 | 16.8 / 0 | 16.8 / 0 | 16.8 / 0 | 16.8 / 0 | 16.8 / 0 |
+
+Verdict against the §8 S2 bars: **pass**. Bytes before interaction 1.9 KB ≤ Solid's 8.3 KB (4.3× less; 13× less than HEAD); document 5.5 KB ≤ Solid's 7.1 KB (HEAD 9.8). Paint latency ≤ HEAD on every scenario (filterKey 95.6 vs 89.4 is inside both ranges). First-DOM-mutation latency vs HEAD: click 4.1×, hoverClick 3.0×, scrollClick 2.4×, keyClick 1.24× (both at the floor, Solid 4.5). Against Solid 1.9 (hydrated at load, the best latency peer): a tie on every latency metric within ranges, navigation 3.5× faster, with 4.3× less JS and a 23 % smaller document. `tbtBeforeInteraction` is noise-level across lanes on this host (Qwik 1 lowest; its document is streamed differently) and not a framework signal here.
+
+What the spike taught, to carry into the compiler:
+1. "Nothing runs before input" is the wrong absolute. A module whose top level only defines functions, and a `JSON.parse` of the values tail, cost ~1 ms at 4× CPU and buy a synchronous first input (click latency 19.7 → 7.1 ms). Rule: fetch ahead at idle **and** evaluate definitions-only modules + parse values at idle; never run page code before input.
+2. Lazy route chunks are part of the route's fetch-ahead closure (navigate 217 → 62 ms); the planner's `lazy` list already does this in Rivet.
+3. The derived list writer needs the keyed-reconcile fast path (unchanged result → no DOM work); every lane's reconciler has it.
+4. The values tail is the next byte lever (1.9 of 5.3 KB br here): rows rendered verbatim need not ship (S1 §11 `structural-dom`).
+Owed on the bench host: absolute numbers, Firefox, the `fast` condition, the dashboard-shaped page (S3).
