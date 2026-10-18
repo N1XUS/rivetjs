@@ -2,7 +2,7 @@
 // runtimes implement `node:fs` / `node:path`), looked up per GET/HEAD by URL path. Same rules as the
 // node adapter: below the base only, no `\0` or dot segments (except a root `.well-known/`), hashed
 // `<base>/assets/` immutable, everything else `no-cache` + weak ETag (304 on `If-None-Match`),
-// precompressed `.br` / `.gz` siblings when the client accepts them. Directory pages
+// precompressed `.zst` / `.br` / `.gz` siblings when the client accepts them (zstd first). Directory pages
 // (`a/index.html`, `a.html`, as the static adapter writes them) answer at `/a` and `/a/`.
 import { readdirSync, realpathSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
@@ -41,6 +41,7 @@ interface Indexed {
   readonly etag: string;
   readonly modified: string;
   readonly immutable: boolean;
+  readonly zst?: string;
   readonly br?: string;
   readonly gz?: string;
 }
@@ -61,6 +62,7 @@ export function staticFiles(client: string, base: string, immutable: readonly st
     const segments = key.split("/");
     if (segments.some((segment, i) => segment.startsWith(".") && !(i === 0 && segment === ".well-known"))) continue;
     if (/\.(br|gz)$/.test(key) && names.has(full.slice(0, -3))) continue;
+    if (key.endsWith(".zst") && names.has(full.slice(0, -4))) continue;
     const info = statSync(full);
     const url = base + "/" + key;
     const file: Indexed = {
@@ -69,6 +71,7 @@ export function staticFiles(client: string, base: string, immutable: readonly st
       etag: `W/"${info.size.toString(16)}-${Math.floor(info.mtimeMs).toString(16)}"`,
       modified: info.mtime.toUTCString(),
       immutable: immutable.some((prefix) => url.startsWith(prefix)),
+      ...(names.has(full + ".zst") ? { zst: full + ".zst" } : {}),
       ...(names.has(full + ".br") ? { br: full + ".br" } : {}),
       ...(names.has(full + ".gz") ? { gz: full + ".gz" } : {}),
     };
@@ -97,13 +100,14 @@ export function staticFiles(client: string, base: string, immutable: readonly st
       ETag: file.etag,
       "Last-Modified": file.modified,
     };
-    if (file.br || file.gz) {
+    if (file.zst || file.br || file.gz) {
       headers.Vary = "Accept-Encoding";
       const accept = request.headers.get("accept-encoding") ?? "";
-      const encoding = file.br && /\bbr\b/.test(accept) ? "br" : file.gz && /\bgzip\b/.test(accept) ? "gzip" : null;
-      if (encoding) {
-        headers["Content-Encoding"] = encoding;
-        return { path: encoding === "br" ? file.br! : file.gz!, headers };
+      const path =
+        file.zst && /\bzstd\b/.test(accept) ? file.zst : file.br && /\bbr\b/.test(accept) ? file.br : file.gz && /\bgzip\b/.test(accept) ? file.gz : null;
+      if (path) {
+        headers["Content-Encoding"] = path === file.zst ? "zstd" : path === file.br ? "br" : "gzip";
+        return { path, headers };
       }
     }
     return { path: file.path, headers };

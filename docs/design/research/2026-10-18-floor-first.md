@@ -148,3 +148,42 @@ Findings:
 2. **The codec is the lever.** brotli q5 (the usual origin / CDN default) costs 7.4 ms at 1000 rows — 16× Rivet's render — and 0.6 ms on a 33 KB article. zstd −1 costs 0.18–0.25× of that at +5–17 % bytes (−3: 0.24–0.54× at +5–14 %). For the editorial / table shapes brotli q4 is the brotli sweet spot (0.54×, +15 % bytes) but still 3× zstd −1. Adopted as F2′: origin zstd by default; measure encoded.
 3. **Compression stays the largest per-page cost on large pages even at zstd −1** (1.3 ms vs 0.46 ms render at 1000 rows), and that cost is codec-bound, identical for every framework on the same codec. Beating it needs the compiler's knowledge: the segment table as dictionary and the op stream as a precomputed sequence list (`ZSTD_compressSequences`, no match finder) — F2′ second half, spike X2′, native writer only.
 4. Methodology: assembling the identity page from 33 k small parts in JS cost 4.7 ms here (10× the real `SlabWriter` path); every scheme's cost above excludes it. Numbers are from a loaded 1-vCPU cloud container and are ratios only; the bench host re-run is still owed for absolute values and for Firefox.
+
+## 9. E1 / E2 result (2026-10-18, this container: Node 24.14.1 zlib zstd / brotli, 1 vCPU cloud host, no bench lock — ratios only)
+
+Harness: `apps/ssr-bench/spikes/encoded/encoded.ts` (M5 E1). The server process renders the ssr-bench table page (compiled with the real server compiler, the `rivet-compiled` lane's shape, X1's seeded data) at 100 / 1000 rows and the X1 article shape as a Rivet component, through the router's `renderDocument` and the real `@rivetjs/router/node` adapter (`serve()`, direct bodies) after E2 (zstd by default). A child process drives 200 keep-alive requests per cell over one socket, decodes every body and checks it against the identity body's SHA-256, and reports the bytes read from the socket (headers + body); the server's `process.cpuUsage()` (user + system, every thread) around the child is the server CPU per request — render, HTTP parsing, compression and the socket writes included. 7 rounds, encodings interleaved, median round. The brotli q5 column is an in-process encode-only reference on the same identity body (the usual CDN / origin default), measured in the same run. Raw: `2026-10-18-floor-first-encoded.json`.
+
+| page | encoding | body bytes | wire bytes / request | vs identity | server CPU µs / request | encode µs (− identity) | vs br q5 encode |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| table100 (74.6 KB) | identity | 76,379 | 76,674 | 1.000 | 589 | — | — |
+| table100 | gzip 6 | 8,298 | 8,593 | 0.112 | 1,535 | 946 | 0.99× |
+| table100 | br q4 | 8,584 | 8,877 | 0.116 | 1,311 | 722 | 0.75× |
+| table100 | zstd −3 | 8,499 | 8,794 | 0.115 | 1,133 | 544 | 0.57× |
+| table100 | br q5 (reference) | 7,534 | — | — | — | 958 | 1.00× |
+| table1000 (739.7 KB) | identity | 757,418 | 757,889 | 1.000 | 1,773 | — | — |
+| table1000 | gzip 6 | 72,389 | 72,685 | 0.096 | 14,045 | 12,273 | 1.63× |
+| table1000 | br q4 | 79,652 | 79,946 | 0.105 | 9,423 | 7,650 | 1.01× |
+| table1000 | zstd −1 | 76,370 | 76,666 | 0.101 | 4,119 | 2,347 | 0.31× |
+| table1000 | br q5 (reference) | 69,156 | — | — | — | 7,549 | 1.00× |
+| article (32.6 KB) | identity | 33,364 | 33,613 | 1.000 | 445 | — | — |
+| article | gzip 6 | 6,466 | 6,761 | 0.201 | 1,481 | 1,036 | 1.10× |
+| article | br q4 | 6,921 | 7,214 | 0.215 | 1,268 | 823 | 0.87× |
+| article | zstd −3 | 6,471 | 6,766 | 0.201 | 1,003 | 558 | 0.59× |
+| article | br q5 (reference) | 5,671 | — | — | — | 943 | 1.00× |
+
+Session (one keep-alive connection: article document → client navigation to the 100-row table = the router's JSON data answer → navigation to a second article = its JSON data answer → one action = a 39-byte JSON answer; identity bodies 33,364 + 16,270 + 21,898 + 39 bytes; 100 sessions × 7 rounds, median):
+
+| encoding | wire bytes / session | vs identity | server CPU µs / session |
+| --- | ---: | ---: | ---: |
+| identity | 72,540 | 1.000 | 2,095 |
+| gzip 6 | 17,172 | 0.237 | 4,266 |
+| br q4 | 18,497 | 0.255 | 4,065 |
+| zstd (−3) | 17,647 | 0.243 | 3,220 |
+
+Findings:
+1. **E2 gate on the large page: met at the edge.** zstd −1 on the 757 KB table costs 0.31× the brotli q5 encode (bar ≤ 0.3×, within this host's run-to-run noise: the three runs of the day gave 0.31–0.39×) at +10 % bytes (bar ≤ +15 %). Against the adapter's own brotli (q4, the fallback for Safari) zstd is 3.3× cheaper for −4 % bytes; against gzip 6, 5.2× cheaper for +5 %. The whole encoded page now costs 2.3× the identity request (4.1 vs 1.8 ms) instead of 5.3× (brotli q4) or 7.9× (gzip).
+2. **Content-sized pages at −3 are 0.57–0.59× of brotli q5**, not 0.3× — the plan's ruling is −3 for content (bytes: the article at −3 is +14 % over q5 and −6 % under the adapter's q4; X1 measured −1 at +17–25 %). On a 33 KB article compression is still 1.3× the whole identity request (render + transport, 445 µs) even at zstd −3; the dictionary transport (E3) is what removes that, not a level.
+3. **Async one-shot compression costs more than it saves on this host.** The first E2 build sent bodies > 256 KiB through the async `zstdCompress` convenience path (as brotli / gzip do): the thread-pool round trips cost 3.5–4.5 ms per 757 KB page through the adapter vs 1.8–2.4 ms for the synchronous call in isolation. The adapter now compresses zstd synchronously up to 4 MiB (`ZSTD_SYNC`; ≈ 350 MB/s → ≤ 12 ms blocked at the cap); brotli / gzip keep the 256 KiB async threshold. Re-measured: 2,347 µs (0.31×) vs 3,551–4,514 µs async (0.39–0.57×).
+4. **Session bytes**: a 3-page session is 17.6 KB on the wire with zstd (0.24× identity); the two navigations' JSON data answers (16 + 22 KB identity) compress like the pages. E3's bar (2nd-page bytes ≤ 40 % of brotli) is measured against this table.
+5. Methodology / caveats: the measured "encode µs" is CPU(encoding) − CPU(identity), and the identity request pays more socket writes (757 KB in a dozen chunks vs one 76 KB buffer), so the encode cost is if anything understated for the large page. Numbers are from a loaded 1-vCPU container (median of 7 rounds, encodings interleaved; the identity row moved ±10 % between the day's runs); ratios only, the bench host re-run under the lock is owed for absolute values. The Docker `apps/ssr-bench` / `apps/editorial-bench` loadgen `--encoding` columns (the plan's wording) are not built: this harness is the in-process equivalent (same adapter, same validation).
+

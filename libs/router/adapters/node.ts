@@ -1,12 +1,23 @@
 // Node HTTP adapter: serves built client assets and streams a web-standard handler's Responses.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createReadStream, readdirSync, realpathSync, statSync } from "node:fs";
-import { readFile, realpath, stat } from "node:fs/promises";
+import { readFile, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
 import type { AddressInfo, Socket } from "node:net";
-import { extname, join, resolve, sep } from "node:path";
+import { basename, dirname, extname, join, resolve, sep } from "node:path";
 import { Readable, Transform, type Writable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { brotliCompress, brotliCompressSync, constants as zlib, createBrotliCompress, createGzip, gzip, gzipSync } from "node:zlib";
+import {
+  brotliCompress,
+  brotliCompressSync,
+  constants as zlib,
+  createBrotliCompress,
+  createGzip,
+  createZstdCompress,
+  gzip,
+  gzipSync,
+  zstdCompress,
+  zstdCompressSync,
+} from "node:zlib";
 import { promisify } from "node:util";
 import { availableParallelism } from "node:os";
 import { loadBuild } from "./build.ts";
@@ -33,6 +44,13 @@ export interface RequestContext {
 }
 /** A request handler (web `Request` → `Response`) served by the Node adapter. */
 export type Handler = (request: Request, context: RequestContext) => Response | Promise<Response>;
+/** `serve({ compress })` as an object: which codecs and whether immutable files' compressed copies are written to disk. */
+export interface CompressOptions {
+  /** Offer `zstd` (default true). `false`: brotli / gzip only. */
+  zstd?: boolean;
+  /** Write immutable files' compressed copies next to them on their first request (default true). */
+  precompress?: boolean;
+}
 /** Options of `serve()`. */
 export interface ServeOptions {
   handler: Handler;
@@ -50,8 +68,16 @@ export interface ServeOptions {
    * later are not served. `"fs"`: look each GET up on disk (a directory that changes while serving).
    */
   static?: "index" | "fs";
-  /** Compress responses by `Accept-Encoding` (default true). */
-  compress?: boolean;
+  /**
+   * Compress responses by `Accept-Encoding` (default true): `zstd` when the client accepts it (level 1 for bodies of
+   * 256 KiB and more, 3 below; streamed bodies by what is collected when streaming starts), else brotli (q4), else gzip
+   * (6). Immutable `client` files are precompressed once per file at the best quality (brotli q11, zstd 19, gzip 9) on
+   * their first request and written next to the file (`.br` / `.zst` / `.gz`, hidden temp + rename; a read-only
+   * directory keeps them in memory only), so the next process start serves them from disk; build-time siblings are
+   * used as they are. `{ zstd: false }`: brotli / gzip only (no zstd work at all); `{ precompress: false }`: nothing
+   * written to disk. `false`: no compression (a proxy that compresses).
+   */
+  compress?: boolean | CompressOptions;
   /**
    * Send `103 Early Hints` when the app asks (`createApp({ earlyHints })`; `start({ earlyHints })` sets both), to
    * HTTP/1.1 clients only (1xx are not allowed for 1.0). Browsers use 103s over HTTP/2+ only: behind a proxy or CDN
@@ -145,21 +171,30 @@ const MIME: Record<string, string> = {
 const COMPRESSIBLE = /^(text\/|application\/(json|javascript|xml|manifest\+json|wasm)|image\/svg\+xml)/;
 const MIN_COMPRESS = 1024;
 const brotli = promisify(brotliCompress),
-  gz = promisify(gzip);
+  gz = promisify(gzip),
+  zstd = promisify(zstdCompress);
 
-/** Pick `br` or `gzip` from an Accept-Encoding header: the higher `q` (a tie: `br`); q=0 excludes. */
-export function negotiate(header: string | null | undefined): "br" | "gzip" | null {
+/** A response encoding the adapter produces. */
+export type Encoding = "zstd" | "br" | "gzip" | null;
+
+/**
+ * Pick `zstd`, `br` or `gzip` from an Accept-Encoding header: the highest `q` (a tie: `zstd`, then `br`); q=0 excludes.
+ * `zstd: false` never picks zstd (`serve({ compress: { zstd: false } })`).
+ */
+export function negotiate(header: string | null | undefined, zstd = true): Encoding {
   if (!header) return null;
   // Browsers send a handful of distinct headers: parse once per string (bounded: client-controlled text).
-  let hit = negotiated.get(header);
+  const memo = zstd ? negotiated : negotiatedNoZstd;
+  let hit = memo.get(header);
   if (hit === undefined) {
-    hit = parseEncoding(header);
-    if (negotiated.size < 64) negotiated.set(header, hit);
+    hit = parseEncoding(header, zstd);
+    if (memo.size < 64) memo.set(header, hit);
   }
   return hit;
 }
-const negotiated = new Map<string, "br" | "gzip" | null>();
-function parseEncoding(header: string): "br" | "gzip" | null {
+const negotiated = new Map<string, Encoding>(),
+  negotiatedNoZstd = new Map<string, Encoding>();
+function parseEncoding(header: string, zstd: boolean): Encoding {
   const accepted = new Map<string, number>();
   for (const part of header.toLowerCase().split(",")) {
     const [name, ...params] = part.trim().split(";");
@@ -167,8 +202,10 @@ function parseEncoding(header: string): "br" | "gzip" | null {
     accepted.set(name!.trim(), q ? Number(q[1]) : 1);
   }
   const weight = (name: string) => accepted.get(name) ?? accepted.get("*") ?? 0;
-  const br = weight("br"),
+  const zs = zstd ? weight("zstd") : 0,
+    br = weight("br"),
     gzip = weight("gzip");
+  if (zs > 0 && zs >= br && zs >= gzip) return "zstd";
   return br > 0 && br >= gzip ? "br" : gzip > 0 ? "gzip" : null;
 }
 
@@ -203,17 +240,33 @@ export function byteRange(header: string | undefined, size: number): [number, nu
 }
 
 // Bodies up to this size that finish before the event loop turns are compressed in one synchronous
-// call (tens of microseconds for a page; a streaming compressor costs ~0.5 ms to set up).
+// call (tens of microseconds for a page; a streaming compressor costs ~0.5 ms to set up). zstd −1 runs at
+// ≈ 350 MB/s here, so its one-shot call stays synchronous up to `ZSTD_SYNC` (the thread-pool round trip of the async
+// convenience path cost ≈ +1 ms on a 757 KB page through the adapter: `docs/design/research/2026-10-18-floor-first.md` §9).
 const ONE_SHOT_SYNC = 256 * 1024;
+const ZSTD_SYNC = 4 * 1024 * 1024;
+// Per-request codec levels (floor-first X1, `docs/design/research/2026-10-18-floor-first.md` §8): zstd −1 on large
+// bodies (0.18× brotli q5's CPU at +10 % bytes on a 757 KB table), −3 on content-sized ones (0.5× at +14 %); brotli
+// q4 is the brotli sweet spot (0.54×) for clients without zstd; gzip last.
+const LARGE_BODY = 256 * 1024;
 const HTML_BROTLI = { [zlib.BROTLI_PARAM_QUALITY]: 4, [zlib.BROTLI_PARAM_MODE]: zlib.BROTLI_MODE_TEXT };
-function compressOnce(encoding: "br" | "gzip", body: Uint8Array): Buffer | Promise<Buffer> {
+const zstdLevel = (size: number) => ({ [zlib.ZSTD_c_compressionLevel]: size >= LARGE_BODY ? 1 : 3 });
+function compressOnce(encoding: Exclude<Encoding, null>, body: Uint8Array): Buffer | Promise<Buffer> {
+  if (encoding === "zstd") {
+    const params = zstdLevel(body.length);
+    return body.length > ZSTD_SYNC ? zstd(body, { params }) : zstdCompressSync(body, { params });
+  }
   const params = { ...HTML_BROTLI, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length };
   if (body.length > ONE_SHOT_SYNC) return encoding === "br" ? brotli(body, { params }) : gz(body, { level: 6 });
   return encoding === "br" ? brotliCompressSync(body, { params }) : gzipSync(body, { level: 6 });
 }
 
-/** Streaming compressor that flushes every chunk, so streamed HTML reaches the browser promptly. */
-function compressor(encoding: "br" | "gzip"): Transform {
+/**
+ * Streaming compressor that flushes every chunk, so streamed HTML reaches the browser promptly. `collected`: bytes
+ * in hand when streaming starts (a body already past `LARGE_BODY` takes zstd's large-body level).
+ */
+function compressor(encoding: Exclude<Encoding, null>, collected = 0): Transform {
+  if (encoding === "zstd") return createZstdCompress({ flush: zlib.ZSTD_e_flush, params: zstdLevel(collected) });
   return encoding === "br"
     ? createBrotliCompress({
         flush: zlib.BROTLI_OPERATION_FLUSH,
@@ -222,10 +275,36 @@ function compressor(encoding: "br" | "gzip"): Transform {
     : createGzip({ flush: zlib.Z_SYNC_FLUSH, level: 6 });
 }
 
+/** Best-quality compression of a body compressed once and reused (client files, stored pages): brotli q11, zstd 19, gzip 9. */
+function compressBest(encoding: Exclude<Encoding, null>, body: Uint8Array): Promise<Buffer> {
+  if (encoding === "zstd") return zstd(body, { params: { [zlib.ZSTD_c_compressionLevel]: 19 } });
+  if (encoding === "br")
+    return brotli(body, {
+      params: { [zlib.BROTLI_PARAM_QUALITY]: 11, [zlib.BROTLI_PARAM_MODE]: zlib.BROTLI_MODE_TEXT, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length },
+    });
+  return gz(body, { level: 9 });
+}
+const SIBLING: Record<Exclude<Encoding, null>, ".zst" | ".br" | ".gz"> = { zstd: ".zst", br: ".br", gzip: ".gz" };
+
+/**
+ * Write a compressed copy next to its file (hidden temp name, then rename: a concurrent reader or worker never sees a
+ * partial file; the temp is never served). False when the directory is not writable.
+ */
+async function persist(path: string, bytes: Buffer): Promise<boolean> {
+  const temp = join(dirname(path), `.${basename(path)}.${process.pid}-${Date.now().toString(36)}.tmp`);
+  try {
+    await writeFile(temp, bytes);
+    await rename(temp, path);
+    return true;
+  } catch {
+    await rm(temp, { force: true }).catch(() => {});
+    return false;
+  }
+}
+
 /** The one dot-named directory served (RFC 8615: `security.txt`, `assetlinks.json`, ACME challenges), at the root only. */
 /** Bytes a streamed direct body may queue in the response before the renderer waits for `drain`. */
 const MAX_BUFFERED = 256 * 1024;
-type Encoding = "br" | "gzip" | null;
 
 /**
  * A rendered page's body taken straight from the renderer (`server/body.ts`): no web stream, read
@@ -329,7 +408,7 @@ function sendDirect(
       vary();
     }
     head();
-    const packer = encoding ? compressor(encoding) : null;
+    const packer = encoding ? compressor(encoding, size) : null;
     if (packer) pipeline(packer, res).catch(close);
     const to = (target = packer ?? res);
     const chunks = collected,
@@ -401,13 +480,17 @@ const hidden = (decoded: string): boolean => {
   return false;
 };
 
-/** A client file: real path, size, mtime; with an index, the precompressed siblings' sizes (−1: none). */
+/**
+ * A client file: real path, size, mtime; with an index, the precompressed siblings' sizes (−1: none; set once the
+ * adapter writes one).
+ */
 interface StaticFile {
   readonly path: string;
   readonly size: number;
   readonly mtime: number;
-  readonly br?: number;
-  readonly gz?: number;
+  zstd?: number;
+  br?: number;
+  gzip?: number;
 }
 /** Response metadata of a `StaticFile` (`serve` `metaOf`). */
 interface FileMeta {
@@ -462,7 +545,8 @@ function indexFiles(client: string): Map<string, StaticFile> {
         open.add(real);
         walk(real, name, open);
         open.delete(real);
-      } else if (info.isFile()) out.set(name, { path: real, size: info.size, mtime: info.mtimeMs, br: sizeOf(real + ".br"), gz: sizeOf(real + ".gz") });
+      } else if (info.isFile())
+        out.set(name, { path: real, size: info.size, mtime: info.mtimeMs, zstd: sizeOf(real + ".zst"), br: sizeOf(real + ".br"), gzip: sizeOf(real + ".gz") });
     }
   };
   walk(root, "", new Set([root]));
@@ -526,7 +610,11 @@ export function createListener(options: ServeOptions): {
   drain: () => void;
   idle: () => Promise<void>;
 } {
-  const { handler, compress = true, earlyHints = false, onError = (error: unknown) => console.error(error) } = options;
+  const { handler, earlyHints = false, onError = (error: unknown) => console.error(error) } = options;
+  const compress = options.compress !== false;
+  const codecs = typeof options.compress === "object" ? options.compress : null;
+  const withZstd = codecs?.zstd !== false;
+  const precompress = compress && codecs?.precompress !== false;
   const prefix = normalizeBase(options.base);
   const immutable = options.immutable ?? ((pathname: string) => pathname.startsWith(prefix + "/assets/"));
   // Header names compare case-insensitively: `res.writeHead` sends differently cased keys as separate
@@ -666,31 +754,33 @@ export function createListener(options: ServeOptions): {
       else await pipeline(createReadStream(found.path, { start: from, end: to }), res);
       return true;
     }
-    const encoding = compress && COMPRESSIBLE.test(type) && found.size >= MIN_COMPRESS ? negotiate(req.headers["accept-encoding"]) : null;
+    const encoding = compress && COMPRESSIBLE.test(type) && found.size >= MIN_COMPRESS ? negotiate(req.headers["accept-encoding"], withZstd) : null;
     if (encoding) {
-      const ext = encoding === "br" ? ".br" : ".gz";
-      // Prefer a build-time precompressed sibling; otherwise compress once and keep it in memory.
-      const sibling =
-        (encoding === "br" ? found.br : found.gz) ??
-        (await stat(found.path + ext).then(
-          (s) => (s.isFile() ? s.size : -1),
-          () => -1,
-        ));
-      let body: Buffer;
-      if (sibling >= 0) body = await readFile(found.path + ext);
-      else {
-        const key = found.path + "|" + etag + "|" + encoding;
-        let cached = cache.get(key);
-        if (!cached) {
-          const raw = await readFile(found.path);
-          cached =
-            encoding === "br"
-              ? await brotli(raw, { params: { [zlib.BROTLI_PARAM_QUALITY]: 11, [zlib.BROTLI_PARAM_SIZE_HINT]: raw.length } })
-              : await gz(raw, { level: 9 });
+      const ext = SIBLING[encoding];
+      // A copy compressed in this process (bounded memory), else a precompressed sibling on disk (build-time, or
+      // written by an earlier process), else compress once at the best quality: kept in memory, and for an immutable
+      // file written next to it (hidden temp + rename) so later starts read it from disk.
+      const key = found.path + "|" + etag + "|" + encoding;
+      let body = cache.get(key);
+      if (!body) {
+        const sibling =
+          found[encoding] ??
+          (await stat(found.path + ext).then(
+            (s) => (s.isFile() ? s.size : -1),
+            () => -1,
+          ));
+        if (sibling >= 0) body = await readFile(found.path + ext);
+        else {
+          body = await compressBest(encoding, await readFile(found.path));
           if (cache.size > 512) cache.clear();
-          cache.set(key, cached);
+          cache.set(key, body);
+          if (precompress && immutable(pathname)) {
+            const bytes = body;
+            void persist(found.path + ext, bytes).then((written) => {
+              if (written && index) found[encoding] = bytes.length;
+            });
+          }
         }
-        body = cached;
       }
       res.writeHead(200, { ...headers, "Content-Encoding": encoding, "Content-Length": String(body.length) });
       res.end(req.method === "HEAD" ? undefined : body);
@@ -714,6 +804,7 @@ export function createListener(options: ServeOptions): {
   interface PageOut {
     plain: Record<string, string>;
     unchanged: Record<string, string>;
+    zstd?: Promise<Buffer>;
     br?: Promise<Buffer>;
     gzip?: Promise<Buffer>;
   }
@@ -747,20 +838,14 @@ export function createListener(options: ServeOptions): {
     }
     const encoding =
       compress && req.method !== "HEAD" && page.body.byteLength >= MIN_COMPRESS && COMPRESSIBLE.test(out.plain["content-type"] ?? "")
-        ? negotiate(req.headers["accept-encoding"])
+        ? negotiate(req.headers["accept-encoding"], withZstd)
         : null;
     if (!encoding) {
       res.writeHead(200, { ...out.plain, age, "x-rivet-cache": "HIT", "content-length": String(page.body.byteLength) });
       res.end(req.method === "HEAD" ? undefined : page.body);
       return;
     }
-    const body = await (out[encoding] ??= (
-      encoding === "br"
-        ? brotli(page.body, {
-            params: { [zlib.BROTLI_PARAM_QUALITY]: 11, [zlib.BROTLI_PARAM_MODE]: zlib.BROTLI_MODE_TEXT, [zlib.BROTLI_PARAM_SIZE_HINT]: page.body.byteLength },
-          })
-        : gz(page.body, { level: 9 })
-    ).then((packed) => (page.charge(packed.length), packed)));
+    const body = await (out[encoding] ??= compressBest(encoding, page.body).then((packed) => (page.charge(packed.length), packed)));
     res.writeHead(200, { ...out.plain, age, "x-rivet-cache": "HIT", "content-encoding": encoding, "content-length": String(body.length) });
     res.end(body);
   }
@@ -777,7 +862,7 @@ export function createListener(options: ServeOptions): {
     const type = response.headers.get("content-type") ?? "";
     const body = response.body;
     const encoding =
-      compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) ? negotiate(req.headers["accept-encoding"]) : null;
+      compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) ? negotiate(req.headers["accept-encoding"], withZstd) : null;
     const vary = () => (headers.vary = response.headers.has("vary") ? response.headers.get("vary") + ", Accept-Encoding" : "Accept-Encoding");
     if (!body || req.method === "HEAD") {
       if (encoding) vary();
@@ -832,10 +917,12 @@ export function createListener(options: ServeOptions): {
       res.end(chunks[chunks.length - 1]);
       return;
     }
+    let collected = 0;
     if (encoding) {
       delete headers["content-length"];
       headers["content-encoding"] = encoding;
       vary();
+      for (const chunk of chunks) collected += chunk.byteLength;
     }
     res.writeHead(response.status, response.statusText || undefined, headers);
     const rest = pending;
@@ -850,7 +937,7 @@ export function createListener(options: ServeOptions): {
       })(),
       { objectMode: false },
     );
-    await (encoding ? pipeline(source, compressor(encoding), res) : pipeline(source, res));
+    await (encoding ? pipeline(source, compressor(encoding, collected), res) : pipeline(source, res));
   }
 
   const reject = (res: ServerResponse, status: number, message: string) =>

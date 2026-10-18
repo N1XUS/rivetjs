@@ -39,7 +39,7 @@ Add `.vercel/` to `.gitignore`.
 
 ## Node.js or Edge
 
-The default is a Node.js function (`nodejs24.x`). It uses the same response path as the [Node adapter](node.md): page bytes go straight from the renderer to the socket, compressed with Brotli or gzip, and stream as they render.
+The default is a Node.js function (`nodejs24.x`). It uses the same response path as the [Node adapter](node.md): page bytes go straight from the renderer to the socket, compressed with zstd, Brotli or gzip, and stream as they render.
 
 ```ts
 rivetRouter({ adapter: { name: "vercel", runtime: "edge", regions: ["iad1"] } });
@@ -53,7 +53,7 @@ rivetRouter({ adapter: { name: "vercel", runtime: "edge", regions: ["iad1"] } })
 | `nodeVersion`                                   | `24`             | Node.js major version (`20`, `22`, `24`)                  |
 | `regions`                                       | Vercel's default | Function regions                                          |
 | `maxDuration`, `memory`                         | Vercel's default | Node.js function limits (seconds, MB)                     |
-| `compress`                                      | `true`           | Brotli/gzip in the Node.js function                       |
+| `compress`                                      | `true`           | zstd / Brotli / gzip in the Node.js function (`{ zstd: false }`: Brotli / gzip only) |
 | `isr`                                           | off              | `{ expiration }`: regenerate prerendered pages, see below |
 | `origin`, `maxBody`, `stream`, `headers`, `csp` |                  | Same as the [Node adapter](node.md#options)               |
 

@@ -221,7 +221,7 @@ The Node adapter serves the built files in `dist/client` before it asks the rout
 | `/assets/…` (file names contain a content hash) | `public, max-age=31536000, immutable` |
 | Other files | `no-cache`, with an `ETag` so the browser can revalidate cheaply |
 
-Files are compressed with Brotli or gzip when the browser accepts it. Change which paths count as hashed with the `immutable` option.
+Files are compressed with zstd, Brotli or gzip when the browser accepts it; hashed files are compressed once at the best quality and the copy is written next to the file. Change which paths count as hashed with the `immutable` option.
 
 ::api{symbol="@rivetjs/router/node#start"}
 

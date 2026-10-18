@@ -182,7 +182,7 @@ Returns `{ pages: string[], fallback: string[] }`.
 | `immutable` | `(pathname) => boolean` | starts with `/assets/` | Files that get `Cache-Control: immutable`. |
 | `port` | `number` | `3000` | Port. |
 | `host` | `string` | `"127.0.0.1"` | Host. |
-| `compress` | `boolean` | `true` | Compress responses by `Accept-Encoding`. |
+| `compress` | `boolean` \| `{ zstd?: boolean, precompress?: boolean }` | `true` | Compress responses by `Accept-Encoding`: zstd when accepted (level 3; 1 for bodies of 256 KB and more), else Brotli (4), else gzip (6). Immutable `client` files are compressed once at the best quality on their first request and written next to the file (`.zst` / `.br` / `.gz`). `{ zstd: false }`: Brotli / gzip only. `{ precompress: false }`: nothing written to disk. See [Node](../guides/deploy/node.md#what-the-server-does-for-you). |
 | `grace` | `number` (ms) | `10000` | Time to finish open requests on close. |
 | `onError` | `(error, request?) => void` | `console.error` | Unexpected failures. |
 | `headers` | `Record<string, string>` | `nosniff` + referrer policy | Extra headers on every response. |

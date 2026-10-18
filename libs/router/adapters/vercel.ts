@@ -10,7 +10,7 @@ import type { ErrorInfo } from "../server/handler.ts";
 import type { BodyLimit } from "../server/security.ts";
 import type { AppConfig } from "../server/app.ts";
 import { assemble, type BuildManifests } from "./assemble.ts";
-import { createListener } from "./node.ts";
+import { createListener, type CompressOptions } from "./node.ts";
 
 export interface VercelOptions {
   /** Fixed public origin; default: the request's `Host` + `X-Forwarded-Proto` (Vercel's proxy sets both). */
@@ -25,11 +25,12 @@ export interface VercelOptions {
   /** Preload planner (`createApp` `preload`): `background` byte budget of idle-time visible prefetch, `lean` (nothing before an interaction); per page when a function. */
   preload?: AppConfig["preload"];
   /**
-   * Brotli/gzip in the function (default true, as the node adapter). Vercel's CDN documents its
+   * zstd / brotli / gzip in the function (default true, as the node adapter; `{ zstd, precompress }` as there — the
+   * function has no client files, so nothing is written). Vercel's CDN documents its
    * automatic compression by MIME allowlist (https://vercel.com/docs/compression), which does not list
    * `text/html`; an encoded response passes through as is.
    */
-  compress?: boolean;
+  compress?: boolean | CompressOptions;
   /** Set when the build has ISR pages: their prerender functions get the page path as `__rivet_path`. */
   isr?: unknown;
 }
@@ -69,7 +70,7 @@ export function create(entry: GeneratedEntry, build: BuildManifests, options: Ve
     trustProxy: 1,
     // A function instance has no idle phase worth shrinking the heap for.
     idleMemory: false,
-    ...(options.compress === false ? { compress: false } : {}),
+    ...(options.compress !== undefined ? { compress: options.compress } : {}),
     ...(options.origin ? { origin: options.origin } : {}),
     ...(options.headers ? { headers: options.headers } : {}),
     ...(options.onError ? { onError: options.onError } : {}),

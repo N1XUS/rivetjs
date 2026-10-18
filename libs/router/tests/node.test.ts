@@ -57,11 +57,12 @@ async function withServer(handler: Handler, fn: (url: string, dir: string) => Pr
   return errors;
 }
 
-test("negotiate prefers br, honours q=0 and wildcards", () => {
+test("negotiate prefers zstd, then br, honours q=0 and wildcards", () => {
   assert.equal(negotiate("gzip, deflate, br"), "br");
+  assert.equal(negotiate("gzip, deflate, br, zstd"), "zstd");
   assert.equal(negotiate("gzip"), "gzip");
   assert.equal(negotiate("br;q=0, gzip;q=0.5"), "gzip");
-  assert.equal(negotiate("*"), "br");
+  assert.equal(negotiate("*"), "zstd");
   assert.equal(negotiate("identity"), null);
   assert.equal(negotiate(undefined), null);
   // Memoised per header string (bounded): repeated and past-the-cap headers answer the same.

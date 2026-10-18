@@ -32,7 +32,7 @@ The build runs on Node.js with Vite; only the server runs on Deno. It listens on
 
 ## What the server does
 
-- **Files.** `dist/client` is served first: `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`, other files with `no-cache` and an `ETag`; `.br` / `.gz` siblings when the browser accepts them. Prerendered pages answer at their clean URL.
+- **Files.** `dist/client` is served first: `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`, other files with `no-cache` and an `ETag`; `.zst` / `.br` / `.gz` siblings when the browser accepts them (zstd first). Prerendered pages answer at their clean URL.
 - **Pages.** Everything else renders and streams. Deno compresses responses itself.
 - **Platform data.** `event.platform.clientAddress` is the visitor's address; `event.platform.ctx` is Deno's connection info. Read environment variables with `Deno.env.get()`.
 
