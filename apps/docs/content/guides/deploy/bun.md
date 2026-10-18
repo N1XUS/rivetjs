@@ -32,7 +32,7 @@ The build still runs on Node.js with Vite; only the server runs on Bun. The serv
 
 ## What the server does
 
-- **Files.** `dist/client` is served first: `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`, other files with `no-cache` and an `ETag`. A `.br` or `.gz` file next to a file is sent when the browser accepts it. Prerendered pages answer at their clean URL.
+- **Files.** `dist/client` is served first: `/assets/*` with `Cache-Control: public, max-age=31536000, immutable`, other files with `no-cache` and an `ETag`. A `.zst`, `.br` or `.gz` file next to a file is sent when the browser accepts it (zstd first). Prerendered pages answer at their clean URL.
 - **Pages.** Everything else renders and streams. `Bun.serve` does not compress, so put a CDN or proxy in front for compressed HTML.
 - **Platform data.** `event.platform.clientAddress` is the visitor's address; `event.platform.ctx` is Bun's server. Read environment variables with `process.env` or `Bun.env`.
 

@@ -59,6 +59,11 @@ import { _onClientOnly, _onAsync, _onAsyncContent } from "./server-async.ts";
 import { _onSuspense, _SUSPENSE } from "./server-suspense-slot.ts";
 import { _onSlot } from "./slot.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
+// Derived model (M2 lane A, R1): the boundary recorder; its compiler ABI is re-exported below.
+import { createDerived, derivedPatch, derivedTail, withDerived } from "./server-derived.ts";
+import type { DerivedRender } from "./server-derived.ts";
+export { _rB, _rBEnd, _rBOut, _rBAttr, _rSig, _rSigStore } from "./server-derived.ts";
+export type { Boundary as DerivedBoundary } from "./server-derived.ts";
 import type { BoundaryFallback } from "./server-boundary.ts";
 import type { Context, Disposer, EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { _storePaths } from "@rivetjs/reactivity/store";
@@ -136,6 +141,15 @@ export interface ResumableOptions {
    * against its location), so a prerendered page's state carries no build-time origin (`http://localhost`).
    */
   origin?: string;
+  /**
+   * Resume model (plan `docs/design/plans/2026-10-18-derived-client.md` M2). `serialized` (default): the recorder below
+   * (records, state table, loader). `derived`: modules compiled with `resume: { model: "derived" }` call only the boundary
+   * recorder (`server-derived.ts`: `_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore`); the tail is one
+   * `<script type="rivet/boundaries">` of values (boundary records + keyed state + wake lists), no state table / loader
+   * unless a serialized-model record was made too (`.ts` helpers calling `_r*` directly). `For` rows and `Show` /
+   * `Switch` branches keep their `<!--rN[-->…<!--]-->` markers; out-of-order streaming is not entered (no site scopes).
+   */
+  model?: "serialized" | "derived";
 }
 /** Options of streaming resumable rendering. */
 export interface StreamingResumableOptions extends ResumableOptions {
@@ -675,6 +689,8 @@ _onBranch((pick, keyed, render) => {
     const [key, value] = pick();
     const get: ConstantGetter<unknown> = () => value;
     get[CONSTANT] = value;
+    // Derived model: no branch record; the branch keeps its `<!--rN[-->…<!--]-->` markers (the adopt run's branch anchors).
+    if (recorder?.derived && !site) return compiledTemplate(REGION, [recorder.next++, render(key, get)]);
     return render(key, get);
   }
   const { value: picked, signals } = _trackReads(pick);
@@ -754,6 +770,8 @@ const forRow = (list: object, item: unknown, key: unknown, index: number, render
     const at: ConstantGetter<number> = () => index;
     at[CONSTANT] = index;
     if (!recorder) return render(get, at);
+    // Derived model: no row records; the row keeps its `<!--rN[-->…<!--]-->` markers (the adopt run's row anchors).
+    if (recorder.derived && !parent) return compiledTemplate(REGION, [recorder.next++, render(get, at)]);
     // No region: rows are not adoptable, but their elements still count as list rows for preload planning.
     const before = recorder.elements.length;
     const value = render(get, at);
@@ -1733,7 +1751,17 @@ class Stream {
             if (events.length) delta.ev = events;
             if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
             if (boot) (delta as StatePatch).boot = 1;
-            await write(this.addon(delta, rx) + '<template data-a="' + next.A + '">' + next.html + "</template>" + patch(next.A, delta) + swap(next.A));
+            await write(
+              this.addon(delta, rx) +
+                '<template data-a="' +
+                next.A +
+                '">' +
+                next.html +
+                "</template>" +
+                patch(next.A, delta) +
+                (this.root.derived ? derivedPatch(this.root.derived, next.A) : "") +
+                swap(next.A),
+            );
           }
           this.settle(next);
           continue;
@@ -1790,7 +1818,17 @@ class Stream {
       if (events.length) delta.ev = events;
       if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
       if (boot) (delta as StatePatch).boot = 1;
-      await write(this.addon(delta, rx) + '<template data-a="' + region + '">' + html + "</template>" + patch(region, delta) + swap(region));
+      await write(
+        this.addon(delta, rx) +
+          '<template data-a="' +
+          region +
+          '">' +
+          html +
+          "</template>" +
+          patch(region, delta) +
+          (this.root.derived ? derivedPatch(this.root.derived, region) : "") +
+          swap(region),
+      );
       return true;
     }
     return false;
@@ -1848,9 +1886,12 @@ class Recorder {
   declare segment: Segment | null;
   declare enc: Encoding | null;
   declare stream: Stream | null;
+  /** Derived model (`options.model === "derived"`): the boundary recorder of this render (`server-derived.ts`). */
+  declare derived: DerivedRender | null;
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
+    this.derived = options.model === "derived" ? createDerived() : null;
     this.next = 0;
     this.pending = null;
     this.events = new Set();
@@ -4549,8 +4590,10 @@ function planPreload({
 
 const tailOf = (recorder: Recorder) => (): ServerValue => {
   if (recorder.pending) throw new Error("Internal error: unclosed resumable element");
-  if (!recorder.used) return null;
-  return recorder.lean?.tail(recorder, deferredState(recorder)) ?? encodeState(recorder);
+  const state = recorder.used ? (recorder.lean?.tail(recorder, deferredState(recorder)) ?? encodeState(recorder)) : null;
+  // Derived model: the boundaries script follows the content (and any serialized-model state a `.ts` helper recorded).
+  const derived = recorder.derived ? derivedTail(recorder.derived) : null;
+  return derived ? (state ? [state, derived] : derived) : state;
 };
 
 const deferredState =
@@ -4582,7 +4625,8 @@ export function renderResumable(factory: () => ServerValue, writer: { write(chun
   const recorder = new Recorder(options);
   let shell: void | Promise<void>;
   try {
-    shell = store.run(recorder, () => renderToWriter([factory(), tailOf(recorder)], writer as ServerWriter, options));
+    const render = () => renderToWriter([factory(), tailOf(recorder)], writer as ServerWriter, options);
+    shell = store.run(recorder, () => (recorder.derived ? withDerived(recorder.derived, render) : render()));
   } catch (error) {
     // A synchronous throw (no ErrorBoundary): boundaries streamed so far left their parents, so only the stream ends them.
     recorder.stream?.abandon();
@@ -4604,7 +4648,8 @@ export function renderResumable(factory: () => ServerValue, writer: { write(chun
 export function resumableToString(factory: () => ServerValue, options: ResumableOptions): string | Promise<string>;
 export function resumableToString(factory: () => ServerValue, options: RecorderOptions = {}): string | Promise<string> {
   const recorder = new Recorder({ ...options, stream: undefined });
-  return store.run(recorder, () => renderToString([factory(), tailOf(recorder)], options));
+  const render = () => renderToString([factory(), tailOf(recorder)], options);
+  return store.run(recorder, () => (recorder.derived ? withDerived(recorder.derived, render) : render()));
 }
 
 export { typeName as _typeName };

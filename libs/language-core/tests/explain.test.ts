@@ -1,6 +1,6 @@
 // Diagnostic explanations (explain.json): one per registered code, and every Avoid / Prefer pair does what it says.
 import { describe, expect, it } from "vitest";
-import { compile } from "@rivetjs/compiler";
+import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import { CODES } from "@rivetjs/compiler/codes";
 import { explainCode, explainedCodes, explanationMarkdown } from "../explain.ts";
 import table from "../explain.json" with { type: "json" };
@@ -23,6 +23,8 @@ const RESUME = new Set([
   "RV2102",
   "RV3009",
 ]);
+/** Codes of the derived resume model (M2): the pair compiles with `resume: { module, model: "derived" }`; skipped on a wasm build without it. */
+const DERIVED = new Set(["RV2103", "RV2104"]);
 const SERVER_EXPORTS = new Set(["RV3007", "RV3008", "RV3009"]);
 const STYLES = new Set(["RV5001", "RV5002"]);
 /** Not reproducible by a single-file compile: i18n catalogs (RV4xxx), options / panics, type-aware and project checks, RV2009 (hash collision), RV2010 (Vite build: two installed copies), RV2145 / RV2146 / RV2148 (Vite build: bridge ownership, framework exports in browser code, Rivet runtime in a framework module), RV2149 (browser: framework island hydration recovery), RV2150 (server: Preact useId mask probe). */
@@ -48,9 +50,11 @@ describe("explain", () => {
     const wrong: string[] = [];
     for (const explanation of explainedCodes()) {
       if (SKIP.test(explanation.code) || explanation.retired) continue;
+      if (DERIVED.has(explanation.code) && !hasDerivedModel()) continue;
       const options = {
         filename: "src/a.tsx",
         ...(RESUME.has(explanation.code) ? { resume: { module: "src/a.tsx" } } : {}),
+        ...(DERIVED.has(explanation.code) ? { resume: { module: "src/a.tsx", model: "derived" } } : {}),
         ...(SERVER_EXPORTS.has(explanation.code) ? { serverExports: true } : {}),
         ...(STYLES.has(explanation.code) ? { styles: { scope: "a" } } : {}),
       };

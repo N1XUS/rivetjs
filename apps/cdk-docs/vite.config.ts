@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite, DOCS_LAZY_OWNED } from "@rivetjs/docs-kit/vite.ts";
 
 /**
  * Frame controls (theme menu, drawer, search) are cdk components whose hover handlers would make the
@@ -13,7 +13,13 @@ const CDK_ON_INTENT = [{ match: "@rivetjs/cdk/", strategy: "intent" as const }];
 export default defineConfig({
   plugins: [
     docsSite(),
-    rivetRouter({ mode: "static", styles: ["src/styles.css"], prefetch: "document", prefetchPaths: false, resume: { preload: { rules: CDK_ON_INTENT } } }),
+    rivetRouter({
+      mode: "static",
+      styles: ["src/styles.css"],
+      prefetch: "document",
+      prefetchPaths: false,
+      resume: { preload: { rules: CDK_ON_INTENT }, lazyOwned: [...DOCS_LAZY_OWNED] },
+    }),
     tailwindcss(),
   ],
   define: {

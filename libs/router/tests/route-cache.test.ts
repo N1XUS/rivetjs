@@ -6,7 +6,7 @@
 // Run: `npx vitest run --project router libs/router/tests/route-cache.test.ts`.
 import { afterEach, test, vi } from "vitest";
 import assert from "node:assert/strict";
-import { brotliDecompressSync } from "node:zlib";
+import { brotliDecompressSync, zstdDecompressSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import {
   compileRules,
@@ -371,7 +371,7 @@ test("rivetRouter routeRules: checked at config time, exported by the server ent
   assert.ok(rivetRouter({ routeRules: rules }).length);
 });
 
-test("node adapter: stored pages are served before a Request is built (304, br once per page, HEAD)", async () => {
+test("node adapter: stored pages are served before a Request is built (304, br / zstd once per page, HEAD)", async () => {
   const renders = { n: 0 };
   const app = createApp({ entry: { ...entry(renders), page: () => () => "x".repeat(4000) + ++renders.n } as never, routeRules: { "/a": { swr: 60 } } });
   const serving = await serve({ handler: app, port: 0 });
@@ -404,6 +404,11 @@ test("node adapter: stored pages are served before a Request is built (304, br o
     assert.equal(br.headers["content-encoding"], "br");
     assert.equal(br.headers.vary, "Accept-Encoding");
     assert.match(brotliDecompressSync(br.body).toString(), /x{4000}2/);
+    // zstd (level 19, once per page) when the client accepts it; a `{ zstd: false }` server keeps brotli.
+    const zs = await raw({ "accept-encoding": "gzip, deflate, br, zstd" });
+    assert.equal(zs.headers["content-encoding"], "zstd");
+    assert.equal(zs.headers.vary, "Accept-Encoding");
+    assert.match(zstdDecompressSync(zs.body).toString(), /x{4000}2/);
     const cond = await raw({ "if-none-match": etag });
     assert.equal(cond.status, 304);
     assert.equal(cond.headers.vary, "Accept-Encoding");

@@ -29,6 +29,7 @@ const sources: Record<string, string> = {
   "/resume-kinds.ts": "resume-kinds.ts",
   "/resume-builtins.ts": "resume-builtins.ts",
   "/resume-loader-module.ts": "resume-loader-module.ts",
+  "/resume-symbols.ts": "resume-symbols.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
 };
@@ -37,6 +38,7 @@ export const rewrite = (code: string): string =>
   code
     .replaceAll("@rivetjs/runtime/dom-resume", "/dom-resume.ts")
     .replaceAll("@rivetjs/runtime/resume-format", "/resume-format.ts")
+    .replaceAll("@rivetjs/runtime/resume-symbols", "/resume-symbols.ts")
     .replaceAll("@rivetjs/runtime/dom", "/dom.ts")
     .replaceAll("@rivetjs/runtime/style", "/style.ts")
     .replaceAll("@rivetjs/runtime/slot", "/slot.ts")

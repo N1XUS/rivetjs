@@ -46,8 +46,8 @@ export interface VercelAdapterOptions extends TargetOptions {
    * after `expiration` seconds (`false`: never). Cached pages share one CSP nonce: see the deploy guide.
    */
   readonly isr?: { readonly expiration: number | false };
-  /** Brotli/gzip in the Node.js function (default true; see `@rivetjs/router/vercel`). */
-  readonly compress?: boolean;
+  /** zstd / brotli / gzip in the Node.js function (default true; `{ zstd: false }` for brotli / gzip only; see `@rivetjs/router/vercel`). */
+  readonly compress?: boolean | { readonly zstd?: boolean; readonly precompress?: boolean };
 }
 /**
  * Netlify, Frameworks API (https://docs.netlify.com/build/frameworks/frameworks-api/): a

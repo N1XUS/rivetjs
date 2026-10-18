@@ -19,6 +19,20 @@
  * Groups merge only along import edges, so a merged chunk stays a connected piece of the module graph. Only merged
  * groups of several owners get a name: an unmerged owner set is the bundler's own chunk, a single-owner group belongs
  * in its entry's chunk. Input order does not matter: modules are sorted by id first (names are stable).
+ *
+ * Two passes beyond import adjacency (ROUTE-CHUNKS placed parts, 2026-10-18, ui-docs select frame: 17 of 35 files were
+ * 0.1–2 KB chunks): the owner walk goes through SMALL barrels (≤ `SMALL_BARREL` imports: a component's own `index.ts`
+ * re-exporting its files — stopping there left every `*.styles.ts` / `.css` pair unowned, hence ungrouped, one request
+ * each), and after the budget pass a HUB pass merges groups loaded by at least a quarter of the owners of the
+ * most-shared group with each other (widely shared helpers are not import-adjacent; sharing most owners makes their
+ * merge cost per request tiny; relative, since entries also count module-reference chunks and lazy targets), under the
+ * same budget and guards.
+ *
+ * `cap` (ROUTE-CHUNKS placed parts, 2026-10-18): after the budget pass, an entry that still loads more than `cap`
+ * groups keeps merging the cheapest pair of its groups, adjacent or not (the budget no longer limits; pinned owners and
+ * cycles still do), until it loads `cap` or no pair of its groups can merge. Pinned entries (every page loads them) are
+ * skipped: their owner sets over-count through barrels, and a cap there would fold page code into one chunk every page
+ * downloads. A merge never raises another entry's count, so one pass over the entries settles every one.
  */
 
 /** One module of the graph: size in bytes, static imports (ids), whether it may be grouped. */
@@ -49,13 +63,37 @@ export interface CoLoadModule {
 export interface CoLoadOptions {
   /** Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Default 2048. */
   budget?: number;
+  /** Most groups one entry (not a pinned one) loads after merging; unset = the budget alone decides. */
+  cap?: number;
 }
 
 /** Prefix of every group name (Rolldown merges groups of one name: never collide with the user's own groups). */
 export const MERGE_PREFIX = "rivet-merge-";
+/** A barrel with at most this many imports is a module split in files (a component's `index.ts`): the owner walk goes through it. */
+const SMALL_BARREL = 4;
+/** Groups loaded by at least this share of the owners of the most-shared group (and ≥ 2) are hubs: they may merge with each other without an import edge. */
+const HUB_SHARE = 0.25;
 
 /** Module id → group name for every grouped module (modules left out keep the bundler's automatic chunking). */
 export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOptions = {}): Map<string, string> {
+  return coLoad(input, options).names;
+}
+
+/** What `coLoadGroups` decided per module, for the offline replay (`spikes/merge-replay.ts`). */
+export interface CoLoadInspection {
+  names: Map<string, string>;
+  /** Module id → why it is not in a named group: never groupable, frozen (a pinned entry may load it through a barrel),
+   * owned by no entry, or in a group of one owner set (the bundler's own chunk) / one owner. */
+  reason: Map<string, "ungroupable" | "frozen" | "unowned" | "own-chunk" | "single-owner" | "grouped">;
+  /** Module id → owners the walk found (entries), and how many of them are pinned. */
+  owners: Map<string, { count: number; pinned: number }>;
+}
+
+export function coLoadInspect(input: readonly CoLoadModule[], options: CoLoadOptions = {}): CoLoadInspection {
+  return coLoad(input, options);
+}
+
+function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadInspection {
   const budget = options.budget ?? 2048;
   // Sorted by id: group order, tie-breaks and name suffixes never depend on the bundler's module order.
   const modules = [...input].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
@@ -78,7 +116,7 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
       if (seen[m] === e) continue;
       seen[m] = e;
       visit(m);
-      if (modules[m]!.barrel && m !== entry && !through) continue;
+      if (modules[m]!.barrel && m !== entry && !through && imports[m]!.length > SMALL_BARREL) continue;
       for (const next of imports[m]!) if (seen[next] !== e) stack.push(next);
     }
   };
@@ -234,6 +272,18 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
       if (c <= budget) heap.push(c, g, h, version[g]!, version[h]!);
     }
   };
+  const merge = (a: number, b: number) => {
+    const A = groups[a]!,
+      B = groups[b]!;
+    for (let w = 0; w < words; w++) A.owners[w]! |= B.owners[w]!;
+    A.count = popcount(A.owners);
+    A.bytes += B.bytes;
+    A.sets += B.sets;
+    for (const m of B.members) (A.members.push(m), (groupOf[m] = a));
+    B.members = [];
+    B.alive = false;
+    version[a]!++;
+  };
   for (let g = 0; g < groups.length; g++) offer(g);
   for (let top; (top = heap.pop());) {
     const [popped, a, b, va, vb] = top;
@@ -245,23 +295,70 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
       continue;
     }
     if (reaches(a, b) || reaches(b, a)) continue;
-    const A = groups[a]!,
-      B = groups[b]!;
-    for (let w = 0; w < words; w++) A.owners[w]! |= B.owners[w]!;
-    A.count = popcount(A.owners);
-    A.bytes += B.bytes;
-    A.sets += B.sets;
-    for (const m of B.members) (A.members.push(m), (groupOf[m] = a));
-    B.members = [];
-    B.alive = false;
-    version[a]!++;
+    merge(a, b);
     offer(a);
+  }
+  // Hub pass: groups most entries load merge with each other (not import-adjacent: never offered above), cheapest first.
+  for (;;) {
+    const most = Math.max(0, ...groups.map((group) => (group.alive ? group.count : 0)));
+    const hubs = groups.flatMap((group, g) => (group.alive && group.count >= Math.max(2, most * HUB_SHARE) ? [g] : []));
+    let best: [number, number] | null = null,
+      least = Infinity;
+    for (let i = 0; i < hubs.length; i++)
+      for (let j = i + 1; j < hubs.length; j++) {
+        const c = cost(hubs[i]!, hubs[j]!);
+        if (c < least && c <= budget && !reaches(hubs[i]!, hubs[j]!) && !reaches(hubs[j]!, hubs[i]!)) ((least = c), (best = [hubs[i]!, hubs[j]!]));
+      }
+    if (!best) break;
+    merge(best[0], best[1]);
+  }
+  // Cap pass: every unpinned entry over the cap merges the cheapest pair of its groups until it holds or nothing merges.
+  if (options.cap !== undefined) {
+    const owns = (e: number) => groups.flatMap((group, g) => (group.alive && group.owners[e >>> 5]! & (1 << (e & 31)) ? [g] : []));
+    for (let e = 0; e < entries.length; e++)
+      if (!modules[entries[e]!]!.pinned)
+        for (let list = owns(e); list.length > options.cap; list = owns(e)) {
+          let best: [number, number] | null = null,
+            least = Infinity;
+          for (let i = 0; i < list.length; i++)
+            for (let j = i + 1; j < list.length; j++) {
+              const c = cost(list[i]!, list[j]!);
+              if (c < least && !reaches(list[i]!, list[j]!) && !reaches(list[j]!, list[i]!)) ((least = c), (best = [list[i]!, list[j]!]));
+            }
+          if (!best) break;
+          merge(best[0], best[1]);
+        }
   }
   // Names: prefix + the group's largest module + a counter (the bundler merges groups of one name into one chunk).
   // Only merged groups get one: an unmerged owner set is the bundler's own chunk already, and a group of a single owner
   // is part of that entry's chunk (naming it would split it off into an extra request).
   const names = new Map<string, string>();
   const used = new Map<string, number>();
+  const reason: CoLoadInspection["reason"] = new Map();
+  const ownerInfo: CoLoadInspection["owners"] = new Map();
+  modules.forEach((module, m) => {
+    const set = ownersOf[m];
+    let pinnedOwners = 0;
+    if (set) for (let w = 0; w < words; w++) pinnedOwners += popcount1(set[w]! & pinned[w]!);
+    ownerInfo.set(module.id, { count: set ? popcount(set) : 0, pinned: pinnedOwners });
+    const g = groupOf[m]!;
+    reason.set(
+      module.id,
+      !module.groupable
+        ? "ungroupable"
+        : frozen[m]
+          ? "frozen"
+          : !set
+            ? "unowned"
+            : g < 0
+              ? "unowned"
+              : groups[g]!.count < 2
+                ? "single-owner"
+                : groups[g]!.sets < 2
+                  ? "own-chunk"
+                  : "grouped",
+    );
+  });
   for (const group of groups) {
     if (!group.alive || group.sets < 2 || group.count < 2) continue;
     let largest = group.members[0]!;
@@ -271,7 +368,7 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
     used.set(base, n + 1);
     for (const m of group.members) names.set(modules[m]!.id, MERGE_PREFIX + (n ? base + "-" + n : base));
   }
-  return names;
+  return { names, reason, owners: ownerInfo };
 }
 
 /**

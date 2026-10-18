@@ -253,6 +253,18 @@
       "docs": "https://rivetjs.dev/errors/RV2102"
     },
     {
+      "code": "RV2103",
+      "severity": "error",
+      "title": "Render is not deterministic under the derived resume model (Date.now / Math.random / performance.now / crypto.randomUUID / new Date() while rendering a boundary)",
+      "docs": "https://rivetjs.dev/errors/RV2103"
+    },
+    {
+      "code": "RV2104",
+      "severity": "warning",
+      "title": "Keyed state (signal / createStore) created conditionally or in a loop under the derived resume model",
+      "docs": "https://rivetjs.dev/errors/RV2104"
+    },
+    {
       "code": "RV2145",
       "severity": "error",
       "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",

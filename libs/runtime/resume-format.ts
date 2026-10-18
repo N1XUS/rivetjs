@@ -1154,3 +1154,25 @@ export type LoaderDocument = Document & {
   /** Rows add-on (`resume-rows.ts`, pages with path-addressed rows): element of an id / id of an element. */
   $rw?: (x: number | Element, observer?: IntersectionObserver) => Element | string | undefined;
 };
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Derived model (M2 lane A, `server-derived.ts`; plan docs/design/plans/2026-10-18-derived-client.md): the values-only
+// tail `<script type="rivet/boundaries">` (and `data-patch="<marker>"` scripts after streamed segments). Nothing of the
+// serialized state above appears in it: no table, no handler / binding entries.
+
+/**
+ * One boundary: `[id, parent id (0 = page root), flags, component name, keyed values, props?]`. `flags`: 1 independent
+ * (props are values: `props` present), 2 the element root carries `data-b` (else `<!--b<id>-->` … `<!--/b-->` around
+ * its output), 4 a keyed value was not JSON data (left out: render, do not adopt), 8 independence demoted at render
+ * (props held a non-data value), 16 no output (`_rBOut` never ran). Keyed values: a flat `[key, value, key, value, …]`
+ * list in creation order (key = module prefix + site ordinal from the compiler, `#n` suffix for a repeated site).
+ */
+export type BoundaryRecord = [id: number, parent: number, flags: number, name: string, signals: unknown[], props?: object];
+
+/** The boundaries tail: records (new ones only in a patch) and the wake lists (`"<id>.<key>"` → reader boundary ids;
+ * a patch re-sends a list whole when it grew). */
+export interface BoundaryTail {
+  v: 1;
+  b: BoundaryRecord[];
+  w?: Record<string, number[]>;
+}

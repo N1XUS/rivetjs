@@ -1,6 +1,6 @@
 # Rivet resumability design
 
-Date: 2026-10-03. Status: approved design; implementation via four sub-project plans. Sub-project 1 (Core) implemented — [docs/guides/resumability.md](../../guides/resumability.md).
+Date: 2026-10-03. Status: approved design; implementation via four sub-project plans. Replacement proposed 2026-10-18: [structural resume](2026-10-18-structural-resume-design.md) (rulings pending). Sub-project 1 (Core) implemented — [docs/guides/resumability.md](../../guides/resumability.md).
 
 ## Goal
 

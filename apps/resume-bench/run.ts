@@ -664,7 +664,12 @@ async function main() {
   const servers: Record<string, Awaited<ReturnType<typeof serve>>> = Object.fromEntries(
     await Promise.all(LANES.map(async (lane) => [lane, await serve(dist(lane))])),
   );
-  const browser = await chromium.launch({ channel: "chrome", headless: !flag("headed"), args: ["--use-mock-keychain", "--password-store=basic"] });
+  // RESUME_BENCH_CHROME=<executable> runs a pinned Chromium instead of the installed Chrome channel (cloud containers).
+  const browser = await chromium.launch({
+    ...(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" }),
+    headless: !flag("headed"),
+    args: ["--use-mock-keychain", "--password-store=basic"],
+  });
   console.log("chrome", browser.version());
   try {
     if (flag("verify")) {

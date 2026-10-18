@@ -11,6 +11,7 @@ const definitions = {
   qwik: { label: "Qwik (preview)", releaseChannel: "preview", runtime: "@qwik.dev/core", packages: ["@qwik.dev/core", "vite"], rendering: "resume" },
   solid: { label: "Solid (preview)", releaseChannel: "preview", runtime: "solid-js", packages: ["solid-js", "@solidjs/web", "@solidjs/vite-plugin", "@solidjs/compiler", "vite"], rendering: "hydrate" },
   "qwik-stable": { label: "Qwik (stable)", releaseChannel: "stable", runtime: "@builder.io/qwik", packages: ["@builder.io/qwik", "vite"], rendering: "resume" },
+  "rivet-derived": { label: "Rivet derived (spike S2)", releaseChannel: "experimental", runtime: "@rivetjs/runtime", packages: ["@rivetjs/runtime", "esbuild"], rendering: "derived" },
   "solid-stable": { label: "Solid (stable)", releaseChannel: "stable", runtime: "solid-js", packages: ["solid-js", "babel-preset-solid", "@babel/core", "vite-plugin-solid", "vite"], rendering: "hydrate" },
 } as const;
 export type Lane = keyof typeof definitions;
@@ -88,7 +89,9 @@ export async function writeBuildManifest(lane: Lane, outDir: string): Promise<vo
         ? { compiler: "@solidjs/vite-plugin", ssr: true, clientApi: "hydrate", serverApi: "renderToStream", dataApi: "createMemo" }
         : lane.startsWith("qwik")
           ? { compiler: "qwikVite", serverApi: "renderToString", loader: "framework default", scrollListener: lane === "qwik-stable" ? "useOnWindow (stable API has no per-hook passive option)" : "useOnWindow (passive: true)" }
-          : { compiler: "@rivetjs/compiler/vite", resume: true },
+          : lane === "rivet-derived"
+            ? { compiler: "hand-written (spike S2: derived client)", loader: "inline, holds events, idle fetch-ahead, evaluate on input", runtime: "none" }
+            : { compiler: "@rivetjs/compiler/vite", resume: true },
     sources: await Promise.all([...new Set(sourcePaths)].sort().map(async (path) => ({ path: relative(repository, path), sha256: await hash(path) }))),
     artifacts: await Promise.all((await files(outDir)).filter((path) => !path.endsWith("/build-manifest.json")).map(async (path) => ({ path: relative(outDir, path), sha256: await hash(path) }))),
   };

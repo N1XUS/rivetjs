@@ -27,3 +27,8 @@ Measured by lane CODE-SMELL-A 2026-10-11 (Node 26 in-process micro-benchmarks, i
 - **Getter scans: keep the per-key descriptor loop.** Over an 8-key static bag `Object.getOwnPropertyDescriptors` is 5.4× slower and `__lookupGetter__` +39% (alloc-free, still slower); `for…in` is only −5% and walks inherited keys / proxy traps — not worth the semantic change (CODE-SMELL-B).
 - **Allocate result lists on first need.** `mergeRefs` building its cleanup list only once a ref returns one: 16.0 → 10.8 ns, 185 → 1 B per call; `liveOptions` indexing `keys` then `controlled` instead of joining them: −15%, −231 B per part.
 - **Short exclusion lists: `includes`, not a `Set`.** A 3-key `liveOmit` with a fresh `Set` is +24% (the Set costs more than the scans it saves).
+
+Measured by lane RESUME-DROP-MARKERS 2026-10-18 (Chromium 141 CPU profiles of the resume-bench `filter` keystroke, 4× CPU; numbers in `apps/resume-bench/CLAUDE.md`).
+
+- **Every `removeChild` costs; a comment's about a third of an element's.** Removing 1,800 marker comments next to 900 `<li>`s was +16 ms on a 46 ms removal pass (4×). A `Range.deleteContents` per contiguous run saves nothing (Blink removes node by node inside it); only a whole-parent wipe (`textContent = ""` / `replaceChildren`) is bulk, and it re-inserts what is kept (focus / media / animation state lost), so it stays limited to the nothing-kept path. Leave inert markers in place instead of removing them one by one (`dom-adopt.ts` `left`).
+

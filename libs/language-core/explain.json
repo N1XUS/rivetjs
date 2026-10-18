@@ -228,9 +228,7 @@
     },
     {
       "code": "RV2009",
-      "messages": [
-        "Cannot resume {module}: module references `{first}` and `{second}` share the browser name `{name}`; rename one import"
-      ],
+      "messages": ["Cannot resume {module}: module references `{first}` and `{second}` share the browser name `{name}`; rename one import"],
       "fix": "Import one of the two values under another exported name (re-export it from a small module) so their module reference names differ.",
       "avoid": "import { fmt } from \"./a\";\nimport { fmt as fmt2 } from \"./b\";\nexport function A() { return <List items={[fmt, fmt2]} />; }",
       "prefer": "import { fmt } from \"./a\";\nimport { fmtB } from \"./b-reexport\";\nexport function A() { return <List items={[fmt, fmtB]} />; }",
@@ -326,6 +324,27 @@
       "quickFix": "rivetReconstruct: \"Build it in the browser: reconstruct(() => …)\" → const x = reconstruct(() => new X(…)); reads become x() (+ import from @rivetjs/runtime/dom)"
     },
     {
+      "code": "RV2103",
+      "messages": [
+        "Render is not deterministic: `{call}` runs while rendering `{Component}`; move it into a keyed signal (its value is shipped) or a clientEffect"
+      ],
+      "fix": "Compute the value once into state the page ships (`const seed = signal(Math.random())` — the browser adopts the server value) or read it in a `clientEffect` / handler; `Date.now()`, `Math.random()`, `performance.now()`, `crypto.randomUUID()` / `getRandomValues()` and `new Date()` without arguments are reported in a boundary's render path.",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function Stamp() {\n  const n = signal(0);\n  const t = Date.now();\n  return <button onClick={() => n.set(t)}>{n()}</button>;\n}",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function Stamp() {\n  const n = signal(0);\n  const t = signal(Date.now());\n  return <button onClick={() => n.set(t())}>{n()}</button>;\n}",
+      "note": "Derived resume model only (`resume: { model: \"derived\" }`, plan M2 C2). The browser derives an interactive component's structure by running its compiled DOM function over the server nodes (adopt run): the render must be a function of its props, keyed state and route data. A non-deterministic read outside keyed state would make the adopt run disagree with the markup. Handlers, effects, client events and other browser-only closures are not checked (they never run on the server). Error: the module does not compile under the derived model."
+    },
+    {
+      "code": "RV2104",
+      "messages": [
+        "Keyed state `signal()` is created inside {an `if` | a conditional expression | a logical expression | a loop | a `switch` | a `try`}: the browser adopts keyed state by creation order, so a render that skips or repeats it adopts the wrong values; create it unconditionally at the top of the body",
+        "Keyed state `createStore()` is created inside {…}: the browser adopts keyed state by creation order, so a render that skips or repeats it adopts the wrong values; create it unconditionally at the top of the body"
+      ],
+      "fix": "Create every `signal()` / `createStore()` of a component (or of a hook it calls) unconditionally, before any branch or loop; branch on the value instead (`const n = signal(props.start ?? 0)`).",
+      "avoid": "import { signal } from \"@rivetjs/reactivity\";\nexport function Late(props) {\n  const n = props.start != null ? signal(props.start) : signal(0);\n  return <button onClick={() => n.set(1)}>{n()}</button>;\n}",
+      "prefer": "import { signal } from \"@rivetjs/reactivity\";\nexport function Late(props) {\n  const n = signal(props.start ?? 0);\n  return <button onClick={() => n.set(1)}>{n()}</button>;\n}",
+      "note": "Derived resume model only (`resume: { model: \"derived\" }`, plan M2 C2). Under that model every `signal(x)` / `createStore(x)` call of a resume module compiles to a keyed registration (`_rSig(key, x)`: key = module prefix + source-order ordinal, an occurrence suffix when one site registers twice in a boundary); the server ships the values, the browser adopts them in the same order. A site inside an `if` / `?:` / `&&` / loop / `switch` / `try` is still keyed, but a render that takes another path adopts the wrong values. Warning: the module compiles."
+    },
+    {
       "code": "RV2145",
       "messages": [
         "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",
@@ -362,7 +381,9 @@
     },
     {
       "code": "RV2150",
-      "messages": ["Preact useId mask not applied (probe rendered {html}): Preact island ids would not be unique. This Preact version is not supported by @rivetjs/bridge-preact; update it or pin preact to a supported version."],
+      "messages": [
+        "Preact useId mask not applied (probe rendered {html}): Preact island ids would not be unique. This Preact version is not supported by @rivetjs/bridge-preact; update it or pin preact to a supported version."
+      ],
       "fix": "Install a Preact version inside `@rivetjs/bridge-preact`'s peer range that the adapter supports (pin `preact` to the last working version), or update `@rivetjs/bridge-preact`.",
       "avoid": "// package.json\n\"preact\": \"^11\"   // a minor that moved Preact's internal useId mask",
       "prefer": "// package.json\n\"preact\": \"11.0.1\"  // a version @rivetjs/bridge-preact supports",

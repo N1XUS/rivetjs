@@ -2,7 +2,7 @@
 // chunk grouping. Parsing and lowering run in the Rust/oxc WebAssembly module (./wasm.ts).
 import { call, CompilerPanic } from "./wasm.ts";
 
-export { CompilerPanic } from "./wasm.ts";
+export { CompilerPanic, hasDerivedModel } from "./wasm.ts";
 export { RUNTIME_ABI } from "./abi.ts";
 export { CODES, RESERVED, codeInfo, docsUrl, type CodeInfo, type ReservedRange, type Severity } from "./codes.ts";
 
@@ -39,7 +39,7 @@ export interface CompileOptions {
   /** Server list-mount plans for `.map` rows (default true; off in resume mode). */
   serverListMounts?: boolean;
   /** Resume mode; `module` is the symbol id prefix (defaults to the filename). */
-  resume?: { module?: string } | null;
+  resume?: ResumeOptions | null;
   /** Also return a source map of `code` to `source` (`map`). The emitted code is unchanged. */
   sourceMap?: boolean;
   /**
@@ -82,6 +82,28 @@ export interface CompileOptions {
    * `rivet()` (vite.ts) passes them for resume modules.
    */
   resolvedImports?: Record<string, string>;
+}
+
+/** Resume options of `compile()` / `check()`. */
+export interface ResumeOptions {
+  /** Symbol id prefix (defaults to the filename). */
+  module?: string;
+  /**
+   * Resume model (derived client, plan `docs/design/plans/2026-10-18-derived-client.md` M2). `serialized` (default): today's
+   * records (`_rOn` / `_rBind` / `_rFn` … + the state table). `derived`: the server target is plain server output plus
+   * boundary / keyed-state calls (`_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore` from
+   * `@rivetjs/runtime/server-resume`) and nothing else — values only on the wire. The DOM target is unchanged by it
+   * (C3 adopt mode is a later task). Needs a wasm build with `hasDerivedModel()`.
+   */
+  model?: "serialized" | "derived";
+  /**
+   * Derived model: the build's cross-module verdict (`boundaryFacts()` in `facts-fixpoint.ts`) — names of this module's
+   * components that are interactive (their subtree, through rendered components, holds a resume site). Absent: the
+   * compiler closes over the module alone (own sites + rendered components of the same module).
+   */
+  boundaries?: string[];
+  /** Derived model: names of this module's components the build proved independent (every input is data). */
+  independent?: string[];
 }
 
 /** Scoped style options of `compile()` for css`` blocks. */
@@ -209,7 +231,7 @@ export interface CheckSite {
 /** Options of `check()`: file name, resume mode and the targets to check. */
 export interface CheckOptions {
   filename?: string;
-  resume?: { module?: string } | null;
+  resume?: ResumeOptions | null;
   /** Default both. */
   targets?: ("server" | "dom")[];
   /** See `CompileOptions.sourcePackages`. */
@@ -283,10 +305,30 @@ export interface ModuleFacts {
   groups: { key: string; preload: string | null; tags: Set<string> }[];
   preload: string | null;
   defaultName: string | null;
+  /**
+   * `boundaries: true` only (derived model, M2 C1): per module-level component, the facts the boundary fixpoint
+   * (`facts-fixpoint.ts` `boundaryFacts`) closes over. Empty on older wasm builds (`hasDerivedModel()` false).
+   */
+  boundaries: Map<string, ComponentBoundaryFacts>;
   /** `serverExports` only: facts are of the browser source; these list what was removed. */
   serverExports?: string[];
   serverImports?: string[];
   serverErrors?: { message: string; line: number | null; column: number | null }[];
+}
+
+/** Module-level facts of one component for the derived model (`ModuleFacts.boundaries`). */
+export interface ComponentBoundaryFacts {
+  /** Its own subtree holds a resume site (handler, binding, model, ref, client effect / event, computed, local function, spread). */
+  interactive: boolean;
+  /** It (or a nested function / hook of it) calls `useContext` / a `use…Context` helper: its inputs are not only props. */
+  context: boolean;
+  /** `object`: `function C(props)`; `destructured`: `function C({ a })`; `none`: no parameter. */
+  params: "none" | "object" | "destructured";
+  /** Component tags it renders (PascalCase / `ns.Tag`), first appearance order. */
+  renders: Set<string>;
+  /** Every component element it renders, source order: the tag and whether the call site passes data only (no spread,
+   * literal / data-literal / data-const attributes, text or site-free static element children). */
+  calls: { tag: string; data: boolean }[];
 }
 
 /** Options of `moduleFacts()`. */
@@ -295,6 +337,8 @@ export interface ModuleFactsOptions {
   serverExports?: boolean;
   /** Resume build: server-only code may not render JSX. */
   resume?: boolean;
+  /** Derived model (M2 C1): also compute `ModuleFacts.boundaries` (runs the resume analysis on the module). */
+  boundaries?: boolean;
 }
 
 interface RawFacts {
@@ -305,12 +349,20 @@ interface RawFacts {
   groups: { key: string; preload: string | null; tags: string[] }[];
   preload: string | null;
   defaultName: string | null;
+  boundaries?: [
+    string,
+    { interactive: boolean; context: boolean; params: "none" | "object" | "destructured"; renders: string[]; calls: [string, boolean][] },
+  ][];
   serverExports?: string[];
   serverImports?: string[];
   serverErrors?: { message: string; line: number | null; column: number | null }[];
 }
 
-/** Static facts of one module: imports, lazy edges, components and what they render, chunk groups, preload. */
+/**
+ * Static facts of one module: imports, lazy edges, components and what they render, chunk groups, preload; with
+ * `boundaries: true` also the derived model's per-component facts (`boundaryFacts()` in `./facts-fixpoint.ts` closes them
+ * over the module graph).
+ */
 export function moduleFacts(source: string, filename: string, options?: ModuleFactsOptions): ModuleFacts {
   const raw = call<RawFacts>(options ? { op: "moduleFacts", source, filename, options } : { op: "moduleFacts", source, filename });
   const server = raw.serverExports ? { serverExports: raw.serverExports, serverImports: raw.serverImports, serverErrors: raw.serverErrors } : {};
@@ -323,6 +375,12 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
     groups: raw.groups.map((group) => ({ ...group, tags: new Set(group.tags) })),
     preload: raw.preload,
     defaultName: raw.defaultName,
+    boundaries: new Map(
+      (raw.boundaries ?? []).map(([name, facts]) => [
+        name,
+        { ...facts, renders: new Set(facts.renders), calls: facts.calls.map(([tag, data]) => ({ tag, data })) } satisfies ComponentBoundaryFacts,
+      ]),
+    ),
   };
 }
 
@@ -331,6 +389,8 @@ export interface ComponentGroups {
   group(file: string, name: string): string | null;
   groupPreload(id: string): string | null;
   route(file: string): string;
+  /** Lazy roots whose static graph reaches the file (`route` keys derive from them); null when none does. */
+  roots(file: string): string[] | null;
   modulePreload(file: string): string | null;
 }
 
@@ -425,6 +485,10 @@ export function groupComponents(
     group: (file, name) => group.get(key(file, name)) ?? null,
     groupPreload: (id) => groupPreload.get(id) ?? null,
     route,
+    roots: (file) => {
+      const by = reach.get(file);
+      return by ? [...by] : null;
+    },
     modulePreload: (file) => facts.get(file)?.preload ?? null,
   };
 }

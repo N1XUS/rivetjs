@@ -30,7 +30,7 @@
   - Stored pages answer with `Vary` = response names ∪ `varies`; the node adapter adds `Accept-Encoding` (identity, encoded, 304) when a compressed copy exists.
   - Keys of client-chosen input are admitted on their second miss (doorkeeper `secondMiss`): a query string, a non-empty value of a `varies` / learned header, or any key when there is no fixed origin (forged `Host`; O3). Attacker-chosen query strings, header values and hosts never evict useful pages. Others are admitted on the first miss.
 - D4 **Store.**
-  - Process-local and bounded: `maxBytes` 32 MiB (body + key + headers + adapter br / gzip copies via `CachedPage.charge`), `maxEntries` 5,000.
+  - Process-local and bounded: `maxBytes` 32 MiB (body + key + headers + adapter zstd / br / gzip copies via `CachedPage.charge`), `maxEntries` 5,000.
   - CLOCK eviction, the same scheme as `@rivetjs/runtime/server-cache` (a hit writes one flag).
   - Entry = body bytes, headers, weak ETag (`W/"<sha-1 base64url>"`, WebCrypto), `Last-Modified`, created / stale / expires times, tags.
   - Concurrent misses for one key share one render (single flight). A stale hit inside `swr` is served at once and starts one background refresh.
@@ -50,7 +50,7 @@
   - Uncached rendered pages stay streamed with no ETag: a validator there needs the whole body, which costs the streaming TTFB and saves no CPU.
 - D7 **Hit path.**
   - Web-standard: `createApp` wraps its handler, so fetch / Workers / Bun / Deno get the cache.
-  - Node fast path: the listener asks the cache before building a `Request` (`ROUTE_CACHE` hook on the handler) and writes stored bytes, with brotli / gzip variants compressed once per entry and memoized like static files.
+  - Node fast path: the listener asks the cache before building a `Request` (`ROUTE_CACHE` hook on the handler) and writes stored bytes, with zstd / brotli / gzip variants compressed once per entry and memoized like static files.
   - Target: CPU/req and rps within 1.3× of `static:rivet`.
 - D8 **Fragment cache.** `createApp({ renderCache })` (`createRenderCache()` from `@rivetjs/runtime/server-cache`) opens `withRenderCache` around every render (scope: cache, locale variant, nonce, signal, resumable). `cached()` / `shell()` / `_cached` components then hit across requests on misses and uncached routes. The module is loaded on demand: 0 B when unused.
 - D9 **Zero cost.** `server/route-cache.ts` is imported dynamically by `createApp` only when rules exist (the same pattern as `strict-csp.ts`). The handler gains no code on its hot path.
