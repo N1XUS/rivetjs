@@ -213,3 +213,25 @@ What the spike taught, to carry into the compiler:
 3. The derived list writer needs the keyed-reconcile fast path (unchanged result → no DOM work); every lane's reconciler has it.
 4. The values tail is the next byte lever (1.9 of 5.3 KB br here): rows rendered verbatim need not ship (S1 §11 `structural-dom`).
 Owed on the bench host: absolute numbers, Firefox, the `fast` condition, the dashboard-shaped page (S3).
+
+
+## 13. S3 result (2026-10-18, this container: Chromium 141 via `RESUME_BENCH_CHROME`, ui-docs built in-container, 5 repeats per profile)
+
+Harness: `apps/resume-bench/spikes/s3-dashboard.ts` on the built ui-docs **dashboard showcase frame** (`/examples/showcase-dashboard/frame/`: Kpi cards with sparklines, area + donut charts, a DataGrid, a period Segment driving a keyed `<Show>`, a SearchField filter) as Rivet renders and resumes it today. Scenarios: the first click on the period Segment ("7 days" — the keyed `Show` re-creates the KPI + chart subtree on the client: a client run of most of the page, i.e. an upper bound for an adopt run of it), then typing into the orders SearchField (DataGrid filter). Caveat: docs example frames plan preloads with `preload.background = 0` (intent / eager only, `docs/benchmarks/2026-10-11-preload-background.md`), so the chunks a click needs are fetched at the click; an app page with the default 1 MiB budget prefetches more at idle. The nx build's final docs-kit Chromium check phase failed in this container (Playwright build 1243 not installed); the prerendered output is complete.
+
+| metric | slow (Slow 4G + 4× CPU) | fast (unthrottled) |
+| --- | ---: | ---: |
+| document bytes (served, compressed) | 16,597 | 16,597 |
+| resume state bytes (raw, `rivet/state`) | 27,789 | 27,789 |
+| JS requests / bytes before input (3 s idle) | 29 / 70,397 | 29 / 70,397 |
+| period click → DOM change / paint (ms) | **2,255 / 2,295** (2,237–2,338) | 108 / 117 (107–159) |
+| JS requests / bytes fetched by that click | **74 / 76,185** | 74 / 76,185 |
+| search typing → DOM change / paint (ms) | 183 / 200 | 7.8 / 28 |
+| JS requests fetched by the search | 6 | 7 |
+
+Findings:
+1. **Request count, not CPU, is the first-interaction cost on a widget page.** Unthrottled the period click costs 108 ms (chunk fetch + the client re-creation of KPIs + charts); under Slow 4G the same click costs 2.25 s because 74 chunks (one per component / symbol, 76 KB) are fetched on the click over a 150 ms RTT link. This is the per-component chunking the route-chunks experiment could not get under 61 requests (`docs/benchmarks/2026-10-12-route-chunks.md`) and the case the derived client's route-closure bundling (round 2 §3.7, spike S5) exists for: one route slice + one component chunk, fetched ahead at idle, would leave the click with the CPU part only.
+2. **The adopt-run bound for this page is ≈ 100 ms unthrottled** (≈ 300–400 ms at 4× CPU once the network is out of the picture), measured as today's client re-creation of the KPI + chart subtree, which creates nodes an adopt run would not. That is the honest cost of the adopted layer on a page whose widgets (charts, grid, segment) all live on it (P1: cdk / ui are sidecar-tier, i.e. adopted-layer, components). It is also the cost Solid pays at load for the same page, and what any framework pays to re-render charts on a period change — the derived model's lever is that it is paid once, on the touched widget, after a 1–3-request fetch-ahead, not 74 requests deep.
+3. **State: 27.8 KB raw for one frame** (document 16.6 KB compressed). The values-only wire format (S1 §11: bookkeeping ≈ 0, the rest is data) would keep the loader data and drop the records; the lazy-state note's bound tables say the same for Select / ComboBox.
+4. **Typing is fine today** (search 7.8 ms unthrottled, 183 ms slow = 6 chunk fetches): a derived slice for the filter would make it ≈ the slow-link floor (one fetch-ahead, 0 at the key).
+Owed: the same page with the default preload budget (an app route, not a docs frame), the bench host for absolute numbers, and the derived + adopted prototype of this page (the real S3 gate: first click ≤ HEAD + one frame with ≤ 3 requests).
