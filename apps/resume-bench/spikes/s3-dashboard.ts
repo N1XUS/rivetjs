@@ -15,7 +15,10 @@ const repeats = Number(opt("--repeats", "5"));
 const slow = !argv.includes("--fast");
 const frame = `${base}/examples/showcase-dashboard/frame/`;
 
-const browser = await chromium.launch(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" });
+const browser = await chromium.launch({
+  ...(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" }),
+  args: ["--use-mock-keychain", "--password-store=basic"],
+});
 const median = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
   return s.length ? s[Math.floor(s.length / 2)]! : NaN;
@@ -51,6 +54,9 @@ async function run(): Promise<Sample> {
     });
     await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   }
+  page.on("crash", () => console.error("page crashed"));
+  page.on("pageerror", (e) => console.error("pageerror", e.message.split("\n")[0]));
+  browser.on("disconnected", () => console.error("browser disconnected"));
   const js: { url: string; bytes: number; at: number }[] = [];
   let documentBytes = 0;
   page.on("response", async (r) => {
@@ -67,7 +73,11 @@ async function run(): Promise<Sample> {
     addEventListener("click", (e) => (w.__s3.marks.click = e.timeStamp), true);
     addEventListener("keydown", (e) => (w.__s3.marks.keydown ??= e.timeStamp), true);
   });
+  const t0 = Date.now();
+  const step = (m: string) => process.env.S3_DEBUG && console.error(`  ${((Date.now() - t0) / 1000).toFixed(1)}s ${m}`);
+  step("goto");
   await page.goto(frame, { waitUntil: "load" });
+  step("loaded");
   await page.waitForTimeout(3000); // before input: idle preloads done
   const stateBytes = await page.evaluate(() => [...document.querySelectorAll('script[type="rivet/state"]')].reduce((n, s) => n + s.textContent!.length, 0));
   const jsEvaluatedBefore = await page.evaluate(() => performance.getEntriesByType("resource").filter((e) => /\.js(\?|$)/.test(e.name)).length);
@@ -75,14 +85,16 @@ async function run(): Promise<Sample> {
   const jsBytesBefore = js.reduce((n, j) => n + j.bytes, 0);
 
   // first interaction: the period segment → keyed Show re-creates KPIs + charts
-  const until = (sel: string, test: string) =>
+  // The frame is served under a hash-based CSP (no unsafe-eval): the predicate is a fixed in-page function, never built
+  // from a string.
+  const until = (sel: string, text: string) =>
     page.evaluate(
-      ([sel, test]) =>
+      ([sel, text]) =>
         new Promise<{ change: number; paint: number }>((done) => {
           const w = window as unknown as { __s3: { marks: Record<string, number> } };
           const check = () => {
             const el = document.querySelector(sel);
-            if (!el || !new Function("el", `return ${test}`)(el)) return false;
+            if (!el || !el.textContent!.includes(text)) return false;
             const change = performance.now();
             requestAnimationFrame(() => {
               const ch = new MessageChannel();
@@ -96,13 +108,15 @@ async function run(): Promise<Sample> {
           mo.observe(document, { subtree: true, childList: true, characterData: true, attributes: true });
           void w;
         }),
-      [sel, test] as const,
+      [sel, text] as const,
     );
+  step("period click");
   const periodBefore = js.length;
   // ui Segment = radiogroup; the selected item carries aria-checked="true" (libs/ui/tests/segment.server.test.tsx)
-  const periodDone = until('#period [role="radio"][aria-checked="true"]', 'el.textContent.includes("7 days")');
+  const periodDone = until('#period [role="radio"][aria-checked="true"]', "7 days");
   await page.click("#period >> text=7 days");
   const period = await periodDone;
+  step("period done");
   const clickMark = await page.evaluate(() => (window as unknown as { __s3: { marks: Record<string, number> } }).__s3.marks.click);
   await page.waitForTimeout(1500);
   const periodJs = js.slice(periodBefore);
@@ -110,6 +124,7 @@ async function run(): Promise<Sample> {
   // search: type into the orders SearchField, wait for the grid to shrink
   const rowsBefore = await page.evaluate(() => document.querySelectorAll('[role="row"]').length);
   const searchBefore = js.length;
+  step("search");
   const search = page.locator('input[type="search"], [role="searchbox"]').first();
   await search.click();
   const searchDone = page.evaluate(
@@ -134,6 +149,7 @@ async function run(): Promise<Sample> {
   await page.keyboard.type("zz");
   const searchResult = await Promise.race([searchDone, page.waitForTimeout(15000).then(() => null)]);
   const keyMark = await page.evaluate(() => (window as unknown as { __s3: { marks: Record<string, number> } }).__s3.marks.keydown);
+  step("done");
   await context.close();
   return {
     documentBytes,
