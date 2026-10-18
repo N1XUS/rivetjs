@@ -1,6 +1,6 @@
 # Structural resume — resume vs hydration, and the model that beats both (2026-10-18)
 
-- Status: **design + ruling proposal**, lane RESUME-V2. No code in this change. Needs user rulings R1–R4 (§9) before the spike (§7).
+- Status: **design, round 1** (lane RESUME-V2). Round 2 (`../research/2026-10-18-beyond-resume-hydration.md`, same day, after the user's challenge to "delete") widens this into the **derived client** model: this spec's mechanism is its *adopted* layer, used only for sites whose reads the compiler cannot prove; provable sites get a cheaper *derived* layer (compiled interaction slices, no runtime, no second execution), common interactions a *native* layer. §7 spikes and §9 rulings are superseded by the research record's §8 / §9 (S2 derived slices decides first; serialized resume's machinery is not deleted before S2 reports). Everything else here (wire format, boundaries, keyed state, wake lists, adopt lowering, chunks) stands as the adopted layer's design. No code.
 - Question (user, 2026-10-18): is resumability the way to go, or hydration? Invent something better for (1) SSR speed, (2) SSR CPU / memory / bytes, (3) client JS bytes and chunks per page, not only FCP / LCP.
 - Short answer: **neither, as practised.** Serialized resume (Qwik, Rivet today) pays on every request for a closure graph the browser almost never reads. Hydration pays on every page load for code that re-renders what the HTML already shows. The model below, *structural resume*, ships **values only** and derives the **structure** (which code handles which element, which binding reads which signal, which row holds which item) from the compiled program at interaction time. It keeps Rivet's two real properties (zero JS executed before input, O(touched) work on the first interaction) and drops the costs that are intrinsic to serializing closures: 3–7× server CPU over the static render, +20–30 % HTML, 1.4–2× peak memory, 60+ chunks per widget page, and a 250-line rulebook.
 
@@ -148,7 +148,7 @@ Honest costs: the first interaction on a page whose spine is heavy (a route comp
 
 RESUME-COMPILE §6.3 measured, on the dashboard, "all modules plain under `resumableToString` (recorder present, nothing recorded): 0.683 vs static 0.746 ms" — i.e. a recorder that records nothing is free, and the entire 2.9–4.4× is records + encode + compile shape. Structural resume records: boundary open / close (two calls per interactive component), keyed signal creation (one array push), tracked reads of keyed signals (one `Set.add` per boundary-first read), and one `JSON.stringify` of values. No interning, no `needs`, no `packBindings`, no `planPreload` per element (the plan is per route at build time), no `compactTable`. That is the same order as the id scope's counter work, hence the 1.1–1.3× bound. The gate measures it (S1).
 
-## 7. Spike and gates (before any migration)
+## 7. Spike and gates (before any migration) — superseded by the research record §8 (S1 unchanged, S2 derived slices added first, S3 = this spec's client gate)
 
 Harness: the RESUME-COMPILE in-process A/B shape (`resumableToString` vs `renderToString` on the ui showcases + the ssr-bench `/resume` page), resume-bench (Slow 4G + 4× CPU) and the size report. Pass bars are the roadmap's: a default needs ≥ 1.3×; no regression on any resume-bench scenario beyond noise.
 
@@ -173,7 +173,7 @@ Ownership for the rewrite follows the repo rules: one lane per layer (compiler p
 
 ## 9. Rulings needed (user)
 
-- **R1 — model.** Adopt structural resume as *the* resume model (serialized resume + Function Bridge deleted after the gates), vs keep serialized resume as an opt-in per component. Recommendation: delete; an opt-in keeps 100 KB of runtime and the rulebook alive for a case no measurement has asked for yet.
+- **R1 — model.** Superseded by R1′ in the research record: structural resume is the adopted layer of the derived client; serialized resume's machinery stays until spike S2 is measured, then becomes either deleted or the implementation of an explicit `serialize(expr)`.
 - **R2 — messaging.** Keep "resumable" as the word (it still is: nothing runs before input, state resumes from values) and drop "no hydration" as a claim in favour of "no eager work"; or rename. Recommendation: keep "resumable".
 - **R3 — gate.** S1 + S2 pass bars as in §7, measured on the bench host under the bench lock, before compiler work. Recommendation: yes; S2 includes the 1000-row shared-signal first change as a named loss budget (≤ 1 frame).
 - **R4 — order.** Pause Function Bridge T22–T29, lazy-state, ROW-ABI, RESUME-ROWS-REMOVE and DOM-EMIT resume rows (all optimise the model this spec retires) until the gate decides. Recommendation: pause.
