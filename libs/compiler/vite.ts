@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -1400,13 +1400,18 @@ function rivetPlugin(
             !own &&
             info.code != null &&
             (!id.startsWith("\0") || id.startsWith(PART)) &&
-            /\.[cm]?[jt]sx?(\?|$)/.test(id) &&
+            // `.css` too: a stylesheet import is a (near-empty) module placed with its importer; left alone it stays a
+            // request of its own once the importer merges away (ui `*.styles.ts` + `.css` pairs).
+            /\.(?:[cm]?[jt]sx?|css)(\?|$)/.test(id) &&
             !/[?&](worker|sharedworker|url|raw)\b/.test(id),
           barrel: info.code != null && isBarrel(info.code),
           // The app entry and the resume runtime load on every page: nothing merges into them.
           pinned: info.isEntry && !id.startsWith(CHUNK),
         });
       }
+      // `RIVET_MERGE_DUMP=<file>`: the merge input (modules, options) as JSON, to replay `coLoadGroups` offline
+      // (`libs/compiler/spikes/merge-replay.ts`) while tuning the policy instead of rebuilding the site.
+      if (process.env.RIVET_MERGE_DUMP) writeFileSync(process.env.RIVET_MERGE_DUMP, JSON.stringify({ budget, cap: resume.cap, nodes }));
       merged = coLoadGroups(nodes, { budget, cap: resume.cap });
     },
     // Rolldown reads output options before the build: the group's name function reads `merged` at chunking time.

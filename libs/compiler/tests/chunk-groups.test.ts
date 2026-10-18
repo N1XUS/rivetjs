@@ -51,9 +51,15 @@ test("the cost counts what the merged group imports: an entry that newly loads i
   assert.equal(coLoadGroups(light).get("/s/nav.ts"), coLoadGroups(light).get("/s/group.ts"));
 });
 
-test("groups merge only along import edges", () => {
-  // x {a} and z {a,b} are not adjacent: no merge even with a huge budget.
-  const graph = [entry("a", ["/s/x.ts", "/s/z.ts"]), entry("b", ["/s/z.ts"]), mod("/s/x.ts", 10), mod("/s/z.ts", 10)];
+test("groups merge only along import edges (below the hub share)", () => {
+  // x {a} and z {a,b} are not adjacent: no merge even with a huge budget. Six entries: neither is a hub.
+  const graph = [
+    entry("a", ["/s/x.ts", "/s/z.ts"]),
+    entry("b", ["/s/z.ts"]),
+    ...["c", "d", "e", "f"].map((n) => entry(n, [])),
+    mod("/s/x.ts", 10),
+    mod("/s/z.ts", 10),
+  ];
   assert.equal(coLoadGroups(graph, { budget: 1e9 }).size, 0);
 });
 
@@ -66,15 +72,16 @@ test("pinned entries (loaded on every page) never take page code", () => {
   assert.ok(coLoadGroups(unpinned, { budget: 1e9 }).get("/s/core.ts"));
 });
 
-test("the owner walk stops at barrels (the bundler links importers to the re-exported modules they use)", () => {
+test("the owner walk stops at large barrels (the bundler links importers to the re-exported modules they use)", () => {
   // a and b both import the barrel; through it one + two would look used by both and take c (a only) in.
   const graph = [
     entry("a", ["/s/c.ts", "/s/index.ts"]),
     entry("b", ["/s/index.ts", "/s/two.ts"]),
     mod("/s/c.ts", 10, ["/s/one.ts"]),
-    mod("/s/index.ts", 40, ["/s/one.ts", "/s/two.ts"], { barrel: true }),
+    mod("/s/index.ts", 40, ["/s/one.ts", "/s/two.ts", "/s/three.ts", "/s/four.ts", "/s/five.ts"], { barrel: true }),
     mod("/s/one.ts", 10_000),
     mod("/s/two.ts", 10_000),
+    ...["three", "four", "five"].map((n) => mod(`/s/${n}.ts`, 10)),
   ];
   assert.equal(coLoadGroups(graph).size, 0);
   const flat = coLoadGroups(graph.map((m) => ({ ...m, barrel: false })));
@@ -198,15 +205,16 @@ test("the budget is amortised over entries and checked per merge step (not a per
   assert.notEqual(coLoadGroups(big).get(sats[0]!), coLoadGroups(big).get("/s/hub.ts"));
 });
 
-test("an always-loaded entry importing a barrel: what it may load through it is never grouped", () => {
+test("an always-loaded entry importing a large barrel: what it may load through it is never grouped", () => {
   // app (pinned) → index (barrel) → X; X {s1,s2} → Y {s1,s2,s3}. X may be on every page: Y must not join it.
   const graph = [
     entry("app", ["/s/index.ts"], { pinned: true }),
     entry("s1", ["/s/X.ts"]),
     entry("s2", ["/s/X.ts"]),
     entry("s3", ["/s/Y.ts"]),
-    mod("/s/index.ts", 50, ["/s/X.ts", "/s/other.ts"], { barrel: true }),
+    mod("/s/index.ts", 50, ["/s/X.ts", "/s/other.ts", "/s/o2.ts", "/s/o3.ts", "/s/o4.ts"], { barrel: true }),
     mod("/s/other.ts", 10),
+    ...["o2", "o3", "o4"].map((n) => mod(`/s/${n}.ts`, 10)),
     mod("/s/X.ts", 500, ["/s/Y.ts"]),
     mod("/s/Y.ts", 3000),
   ];
@@ -300,4 +308,50 @@ test("cap: an entry over the cap merges the cheapest pair of its groups past the
   // A pinned entry over the cap itself is skipped: its owner sets over-count (barrels), a cap would merge page code.
   const pinnedA = graph.map((m) => (m.id === "a" ? { ...m, pinned: true } : m));
   assert.equal(coLoadGroups(pinnedA, { budget: 0, cap: 1 }).size, 0);
+});
+
+test("the owner walk goes through small barrels (a component's index.ts), not large ones", () => {
+  // a, b → card.tsx → ./card/index.ts (barrel: card.styles.ts); c uses the barrel directly. Through the small barrel
+  // the styles get owners {a,b,c}, adjacent to the card {a,b}: merged within budget (c takes the card's 3000 B for 2
+  // requests saved). A 5-import barrel still stops the walk: its leaves stay unowned.
+  const small = [
+    entry("a", ["/s/card.tsx"]),
+    entry("b", ["/s/card.tsx"]),
+    entry("c", ["/s/card/index.ts"]),
+    mod("/s/card.tsx", 3000, ["/s/card/index.ts"]),
+    mod("/s/card/index.ts", 50, ["/s/card/card.styles.ts"], { barrel: true }),
+    mod("/s/card/card.styles.ts", 200),
+  ];
+  const groups = coLoadGroups(small);
+  assert.ok(groups.get("/s/card/card.styles.ts"));
+  assert.equal(groups.get("/s/card/card.styles.ts"), groups.get("/s/card.tsx"));
+  const wide = [
+    entry("a", ["/s/card.tsx"]),
+    entry("b", ["/s/card.tsx"]),
+    mod("/s/card.tsx", 3000, ["/s/lib/index.ts"]),
+    mod("/s/lib/index.ts", 50, ["/s/lib/a.ts", "/s/lib/b.ts", "/s/lib/c.ts", "/s/lib/d.ts", "/s/lib/e.ts"], { barrel: true }),
+    ...["a", "b", "c", "d", "e"].map((n) => mod(`/s/lib/${n}.ts`, 200)),
+  ];
+  assert.equal(coLoadGroups(wide).get("/s/lib/a.ts"), undefined);
+});
+
+test("hub pass: groups most entries load merge with each other without an import edge", () => {
+  // Four entries; x {a,b,c} and y {b,c,d} are small helpers no module of the other imports: not adjacent, but hubs.
+  const graph = [
+    entry("a", ["/s/x.ts"]),
+    entry("b", ["/s/x.ts", "/s/y.ts"]),
+    entry("c", ["/s/x.ts", "/s/y.ts"]),
+    entry("d", ["/s/y.ts"]),
+    mod("/s/x.ts", 300),
+    mod("/s/y.ts", 300),
+  ];
+  const groups = coLoadGroups(graph);
+  assert.ok(groups.get("/s/x.ts"));
+  assert.equal(groups.get("/s/x.ts"), groups.get("/s/y.ts"));
+  // Over budget (a loads y's 300, d loads x's 300: 300 per request saved) they stay apart.
+  assert.equal(coLoadGroups(graph, { budget: 200 }).size, 0);
+  // Hubs are relative to the most-shared group: next to w (16 entries), x and y (3 each: under a quarter) are no hubs.
+  const wide = [...graph, ...["e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p"].map((n) => entry(n, ["/s/w.ts"])), mod("/s/w.ts", 100)];
+  for (const e of wide) if (e.entry && ["a", "b", "c", "d"].includes(e.id)) e.imports = [...e.imports, "/s/w.ts"];
+  assert.equal(coLoadGroups(wide).get("/s/x.ts"), undefined);
 });
