@@ -356,6 +356,8 @@ interface Chunk {
 
 const CHUNK = "\0rivet-resume-chunk:";
 const PART = "\0rivet-resume-part:";
+/** Vite's `__vitePreload` helper module (virtual). */
+const VITE_PRELOAD_HELPER = "\0vite/preload-helper.js";
 
 /** Appended to a route-mode part module: registers its symbols (by the id after `#`) under the module id. */
 function registration(mod: string, symbols: ResumeSymbol[]): string {
@@ -1399,7 +1401,9 @@ function rivetPlugin(
           groupable:
             !own &&
             info.code != null &&
-            (!id.startsWith("\0") || id.startsWith(PART)) &&
+            // Virtual modules keep the bundler's placement, except our part modules and Vite's preload helper (a plain
+            // function every chunk with a dynamic import imports: a request of its own on every page otherwise).
+            (!id.startsWith("\0") || id.startsWith(PART) || id === VITE_PRELOAD_HELPER) &&
             // `.css` too: a stylesheet import is a (near-empty) module placed with its importer; left alone it stays a
             // request of its own once the importer merges away (ui `*.styles.ts` + `.css` pairs).
             /\.(?:[cm]?[jt]sx?|css)(\?|$)/.test(id) &&
