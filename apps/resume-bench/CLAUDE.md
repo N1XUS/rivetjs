@@ -18,6 +18,7 @@ Real-Chrome resumability/hydration benchmark: the same SSR'd page (1,000 rows, c
 - `lanes/<lane>/build.ts` — `export async function build(outDir)` → `outDir/index.html` (complete SSR doc for `/`) + assets; `check.ts` / `render.ts` / `src/` per framework.
   - `rivet/` — `page.tsx`, `detail.tsx` (lazy), `server.tsx` (`resumableToString` + router); Vite + `@rivetjs/compiler/vite` resume modules.
   - `solid/` (2.0.0-rc.13), `solid-stable/` (1.9.15), `qwik/` (2.0.0-rc.0), `qwik-stable/` (1.20.1).
+  - `rivet-derived/` — spike S2 lane (`docs/design/research/2026-10-18-beyond-resume-hydration.md` §8): the fixture as a hand-written *derived client* — `build.ts` emits the static page + a values tail (`<script type="application/json" id="rv">`: loader data + keyed signal values, no handler / binding records, no `data-r`) + the inline loader (`src/loader.js`, holds cold events, idle `modulepreload` fetch-ahead, evaluates the slice on the first input / visible / scroll), `src/d.js` = the route slice as a compiler would emit it (per-site handlers, per-signal edit lists, O(1) list adoption, route swap keeping the list section alive), `src/detail.js` (lazy route), `src/a.js` (idle analytics). esbuild-minified, no framework runtime. Stands in for compiler output; passes `--verify`.
 - `FIXTURE.md` — the DOM/behaviour contract every lane must implement + runner metric definitions.
 - `.build/` (work), `dist/<lane>/` (built lanes), `results/` — all gitignored.
 
@@ -52,6 +53,7 @@ Real-Chrome resumability/hydration benchmark: the same SSR'd page (1,000 rows, c
 - Filter paint is frame-quantized and load-sensitive (RESUME-FILTER 2026-10-11, traces): after the input task every lane's main thread sits idle ~20–45 ms until the next BeginMainFrame (PrePaint), so `paintLatency` lands bimodally (~72 / ~88 ms slow) and only the input task (`latency`, Rivet ~17 ms vs Solid 1 ~12 ms) is framework work. The 2026-10-09 "regression" (Rivet 72 → 118 ms) was host load (load ~34; Solid 1 +16, Qwik +36 in the same run); at load < 10, HEAD 3f53e0d1: filter Rivet 86.7 / Solid 1 87.7 / Solid 2 88.4 ms paint median (n=8). Later keys after `g` cost ~1 ms each; an unchanged-list bailout in `_for` and ownerless adopted rows measured no gain (patch not landed).
 - `tsconfig.json` excludes `lanes/*/src` and `lanes/rivet/*.tsx` — those are type-checked only by their own builds.
 - Without `--build` the existing `dist/<lane>` is measured; the runner rejects stale build manifests — rebuild after compiler/runtime changes.
+- `RESUME_BENCH_CHROME=<executable>` launches that Chromium instead of the `chrome` channel (cloud containers: `/opt/pw-browsers/chromium`); results record the browser build either way.
 
 ## See also
 
