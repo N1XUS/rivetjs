@@ -1,6 +1,6 @@
 # Resumability
 
-Status: [resumability design](../design/specs/2026-10-03-resumability-design.md) SP1 (Core) implemented ([plan](../design/plans/2026-10-03-resumability-core.md)); SP2/SP3 partial: structural regions, `For`, `clientOnly`, router, preload scheduler. Playground `/` and `/items/:id` resume; the former `/csr` demo redirects (308) to them.
+Status: [resumability design](../design/specs/2026-10-03-resumability-design.md) SP1 (Core) implemented ([structural resume](../design/specs/2026-10-18-structural-resume-design.md) proposes replacing this serialized model; rulings pending, nothing below changes until its gates pass) ([plan](../design/plans/2026-10-03-resumability-core.md)); SP2/SP3 partial: structural regions, `For`, `clientOnly`, router, preload scheduler. Playground `/` and `/items/:id` resume; the former `/csr` demo redirects (308) to them.
 
 ## Use
 

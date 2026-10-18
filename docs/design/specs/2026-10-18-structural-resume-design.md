@@ -1,0 +1,183 @@
+# Structural resume — resume vs hydration, and the model that beats both (2026-10-18)
+
+- Status: **design + ruling proposal**, lane RESUME-V2. No code in this change. Needs user rulings R1–R4 (§9) before the spike (§7).
+- Question (user, 2026-10-18): is resumability the way to go, or hydration? Invent something better for (1) SSR speed, (2) SSR CPU / memory / bytes, (3) client JS bytes and chunks per page, not only FCP / LCP.
+- Short answer: **neither, as practised.** Serialized resume (Qwik, Rivet today) pays on every request for a closure graph the browser almost never reads. Hydration pays on every page load for code that re-renders what the HTML already shows. The model below, *structural resume*, ships **values only** and derives the **structure** (which code handles which element, which binding reads which signal, which row holds which item) from the compiled program at interaction time. It keeps Rivet's two real properties (zero JS executed before input, O(touched) work on the first interaction) and drops the costs that are intrinsic to serializing closures: 3–7× server CPU over the static render, +20–30 % HTML, 1.4–2× peak memory, 60+ chunks per widget page, and a 250-line rulebook.
+
+## 1. What the measurements say about today's model
+
+Every number is from the repo's own reports at HEAD-ish; ratios are the signal (hosts were loaded).
+
+| Axis | Rivet static (same page, no resume) | Rivet serialized resume | Best hydrating peer | Source |
+| --- | --- | --- | --- | --- |
+| SSR CPU / page, 1000 rows c1 | 0.46 ms | **3.04 ms (6.6× static)** | Solid 1.9 hydratable 1.74 ms (LOSE 1.75×) | `benchmarks/2026-10-09-fair-comparison.md` |
+| SSR CPU, ui showcases (in-process, median) | dashboard 0.56 / mail 0.30 / chat 0.14 / settings 0.28 ms | 1.66 / 1.15 / 0.61 / 1.10 ms (**3–4.4×**) | — | `specs/2026-10-09-resume-static-subtrees-design.md` §1 |
+| Where resume CPU goes (dashboard) | — | encode 35 %, recorder self 8 %, props shape 9 %, cdk live 3 %, GC 6 %; static traversal 28 % | — | same, §10 |
+| Peak working set, 1000 rows c1 | 87.9 MiB | **166 MiB (1.9× static)** | Solid 100–142 MiB (LOSE every lane) | fair comparison |
+| HTML bytes, 1000 rows | — | 836 KB (**+18–28 %**: state script, `data-r` ids, per-site markers) | Solid 706 KB | fair comparison |
+| Resume state per widget page (br) | 0 | Select 3.3 KB, ComboBox 4.4 KB, DatePicker 5.6 KB, showcases 6–8.7 KB; −40 % needs "not shipping the component's state" | — | `specs/2026-10-12-lazy-resume-state.md` |
+| Inline loader | 0 | 1.9 KB br on every resumable page | — | `guides/resumability.md` "Measured" |
+| JS before input, router page (no input) | 0 | 4 requests, 43.8 KB min / 15.6 KB br (runtime entry, App, dom, navigation) | Solid stable (resume-bench) 8.3 KB | guide; fair comparison "Resume" |
+| JS before input, ui-docs widget frames | — | **61–77 requests**, 150–180 KB gzip; no grouping reaches ≤ 5 | — | `benchmarks/2026-10-12-route-chunks.md` |
+| First interaction, cold (`example:counter`) | — | 4 requests, 53 KB min / 19.5 KB br for one click | — | `scripts/size-report/baseline.md` |
+| First interaction, cold, Fast 3G + 4× CPU | — | 1.43 s (counter), 0.53–1.16 s (picker / chart) — nothing was fetched before input | React islands 16–57 ms (hydrated at load / idle) | `benchmarks/2026-10-12-islands.notes.md` |
+| First click → paint, Slow 4G + 4× CPU | — | 33.0 ms (TIE Qwik 32.9; Solid 58.2) | first DOM mutation: Rivet 15.3 ms vs Solid 6.5 (LOSE) | fair comparison "Resume" |
+| krausest bundle | — | 8.25 kB br | Solid 4.5 kB | `benchmarks/perf-scoreboard.md` |
+| Code carrying the model | — | `server-resume.ts` 228 KB, `resume-format.ts` 61 KB, `dom-resume.ts` 71 KB of source; compiler `resume.rs` 3.9 k lines + 2.2 k in `resume/*`; Function Bridge 29 tasks, 51-case failure corpus; resume fuzz with pinned `recreated` findings | — | repo |
+
+Two findings matter more than any single row:
+
+1. **The server cost is intrinsic, not an implementation gap.** Lane RESUME-COMPILE tried to compile static subtrees away (ceiling 1.03–1.10×) and then to precompute per-component encode plans with an oracle that replays every `needs` / `packBindings` / `compactTable` decision — a strict upper bound on any compile-time plan — and got **1.11–1.23×** (§10). The cost lives in the interactive components: interning their captures, recording their sites, their live-props compile shape. That is the cost of describing a closure graph per request. It cannot go below ~2.5× static with this model.
+2. **Rivet already hydrates on resumed pages, by accident.** The first change of any signal read without its own site re-runs the component in the browser ("region re-creation"): locals start fresh, server nodes are replaced, focus and resumed handlers inside are lost (`research/2026-10-12-region-recreation.md`). `_regionState`, the `display: contents` anchor, the reverted root region, RESUME-KEEP-ROWS, RESUME-ACCESSOR-ROW, and most of the guide's "Limits" section are patches on that seam. The model promises "no component runs in the browser" and then runs components in the browser — in the worst way.
+
+Hydration's record, for balance: its server side is cheap — Solid hydratable costs 1.74 ms against its own static 1.34 (keys per dynamic element, serialized props, no handlers) — but Rivet static renders the same page in 0.46; it then executes the page's code at load (8–23 KB JS before input in resume-bench, 5–7 ms TBT), re-creating effects for content that will never change. Islands (Astro, bridges T7b) fix the eager part by hand-drawn boundaries with data-only props — and the bridges lane measured exactly that shape as the winner: lean islands-only boot = 4 requests vs 16 for the full resume driver, HTML 3.4 KB smaller, server cost of the per-render collector "nothing measurable" (`2026-10-12-islands.notes.md`). Structural resume is that contract applied to Rivet's own components, with boundaries the compiler draws.
+
+## 2. The invariant both models serve, and what each ships
+
+For one interaction the browser needs: the handler's code, the state it reads and writes, the bindings that depend on what it writes, and their code. Everything else is waste.
+
+| | Serialized resume (today) | Hydration | **Structural resume** |
+| --- | --- | --- | --- |
+| Ships per request | values **and structure**: every handler record + captures, every binding's dep list, region tree, symbol ids, provider lists | values (props / loader data) + hydration keys | **values only**: props at independent boundaries, keyed body-signal values, loader data (shared with the router's `_data`), boundary ids |
+| Structure comes from | the HTML (state table) | re-running the whole page | **the compiled program, run lazily per boundary in adopt mode** |
+| Runs before input | nothing | the page | nothing |
+| First interaction | handler + its bindings (O(touched)) | nothing extra (already hydrated) | the boundary spine of the target, adopted (O(spine); rows lazy) |
+| Server CPU over its own static render | 3–7× | ≈ 1.3× (Solid 1.9: 1.74 vs 1.34 ms static at 1000 rows; keys + props) | **≈ 1.1–1.3×** (static render + value capture; §6) |
+| Semantics in the browser | capture rules (Function Bridge) | plain JS | plain JS |
+
+## 3. The model
+
+### 3.1 Definitions
+
+- **Boundary** — a component instance the compiler marks interactive: its subtree contains a site (event, binding that reads state, `model:`, `ref`, `clientEffect` / `clientEvent`, `clientOnly`, `Async`, router region, island). Components without any site compile exactly as today's plain server output and get no marker (zero cost; STATIC-ZERO-JS stays).
+- **Independent boundary** — a boundary whose inputs are *values*: every prop is data (JSON-exact primitives / plain objects / arrays, `Date` / `Map` / `Set` / the C1 built-ins), a keyed signal / store reference (§3.3), a route-data reference, or a lazy slot that is itself static JSX; and every context it consumes is a value or keyed reference. A function prop, a live getter prop (`x={count()}`), a JSX-children prop with sites, or a context holding functions makes it **dependent**: it materialises as part of its nearest independent ancestor's run (the **spine**). The route component is always independent (loader data + params).
+- **Keyed state** — every `signal()` / `createStore()` / `_regionState()` created in a component body gets a key `(boundary id, ordinal)` at compile time. The server encodes the value of each keyed signal at the end of the render (shell flush or its streamed segment). The browser creates a keyed signal **once**: a boundary run finding its key already revived adopts that signal instead of creating a new one. This is `_regionState` generalised to every body signal and is what removes "locals start fresh" for good.
+- **Wake list** — a keyed signal records, on the server, the boundaries that read it (one `Set` per keyed signal, written on tracked reads; no per-site records). The browser revives it with that list: the first write to a signal materialises the boundaries on its list that are not yet materialised, so a child writing a parent's signal updates the parent's text without the parent ever having been "hydrated" eagerly. This replaces today's per-binding stubs at boundary granularity.
+- **Adopt run** — a boundary's compiled DOM function executed over its existing server nodes: templates walk instead of clone, handlers attach (delegated), effects are created, `For` / `Show` / `Switch` adopt by markers (`dom-adopt.ts` today, extended to templates), keyed signals adopt values. No node is created, replaced or moved; focus, selection, scroll and media state survive by construction.
+- **Lazy materialisation** — an adopt run that reaches a dependent child runs it; one that reaches an **independent** child defers it (holds its props getter object and marker; materialised on its own event, trigger or wake). A `For` adopts in O(1): it takes the items array and the row end markers and materialises a row only when an event lands in it, a wake reaches it, or the list reconciles.
+
+### 3.2 What crosses the wire
+
+Per page: one tail script, plain JSON (native `JSON.parse`), plus markers.
+
+| Item | Today | Structural |
+| --- | --- | --- |
+| Handler records (`data-events`, per element `data-r`, symbol ids, captures) | per element | **none** — handlers are found by the boundary's adopt run |
+| Binding records (dep lists, text / attr markers per site) | per site | **none** — a sole dynamic text child needs no marker (the walk declares its Text node, as the DOM target already does); mixed-content and structural slots keep a marker pair on the server (today's region markers without ids), which `_insert` adopts as the slot's current content |
+| Region tree, provider lists `[12]`, Show / For specs `[8]` `[10]` `[13]` | per region | boundary records: `[id, parentId, chunk, props?, signals?, flags]`; `For` row markers and Show / Switch branch markers stay (they are what adoption walks) |
+| Object table (interned captures, `{f}` / `{c}` / `{x}` / `{cls}` / `{k:"cell"}` …) | per page | **none**; values are JSON; shared loader data is one `{j}` tree referenced by key (today's `j` entry) |
+| Keyed signal values | `_regionState` only | every body signal, value only (a Select ≈ 5–10 numbers / booleans / short strings) |
+| Loader | 1.9 KB br inline | ≤ 1 KB br: capture listeners, cold-event hold + replay (kept as is), boundary lookup, chunk import; no manifest walk, no row expansion, no `data-rk` hold (keys list moves to the boundary record) |
+| Markers | `data-r` per interactive element, `<!--rN-->…<!--/-->` per text site, region pairs | `data-b="<id>"` on a boundary with one element root, else a comment pair; `For` / branch markers as today |
+
+Bound for a widget page: select-default 3,386 B br state → props `{}` + ~10 values + 3–6 boundary records ≈ **150–300 B**; the lazy-state note's bound tables show every other −40 % lever is closed, so this is the only way to that number. 1000-row page: 1000 handler records + 1000 attribute records → 0; loader data unchanged (it is the rows); HTML drops **below** Solid hydratable (no `data-hk` per dynamic element either).
+
+### 3.3 Server
+
+- Compiler (server target, resume mode): a component with sites compiles to today's plain server output plus: `_b(id)` / `_bEnd()` around its render (boundary record open / close: parent pointer, independence flag from facts, props snapshot for independent boundaries — the props object is already data there), keyed `signal(x)` → `_sig(k, x)` (ordinal per body), tracked reads of keyed signals add the current boundary to the wake set. No `_rFn`, `_rProps`, `_rMember`, `_rCell`, `_rMod`, `_rGroup`, `_rClass`, no live-props recipes, no site records, no `_trackReads` through computeds. Streaming (`Async` / `Suspense` segments) appends boundary records per segment as today's patches do; keyed values of a boundary are taken at its segment's flush.
+- Runtime: a thin per-render context on the existing id scope (`withIdScope`) instead of the AsyncLocalStorage recorder + object graph; at the end, `JSON.stringify` of an array of records. Peak memory ≈ static render.
+- Determinism contract (what the client's adopt run may assume): the component is a function of its props, keyed state and route data. Violations are the usual hydration-mismatch class; see §3.6 for how they are made loud instead of silent.
+
+### 3.4 Client
+
+1. **Loader** (inline, ≤ 1 KB br): one capture listener per event type the page uses; on an event, walk `composedPath()` to the nearest `data-b` (or marker-bounded) boundary, follow parent pointers to the nearest independent one, import its chunk (one per route closure, §3.7; already fetched ahead at idle on non-lean pages), hold the event with the existing live snapshot (value / checked / files / focus), then call the runtime. Cold-event chain, held link / submit replay, the mousedown focus rule, `__rvIM`: unchanged (they are about events, not about the model).
+2. **Runtime** (`@rivetjs/runtime/dom` + an adopt module): materialise the spine from the independent ancestor down (adopt run); the target's dependent components run as part of it; independent siblings are deferred; `For` rows materialise only the row holding the target. Then dispatch the held event to the now-attached delegated handler (same `_dispatch` path as a client-rendered page, so the first-mouse-click defer and batching apply unchanged).
+3. **Triggers without events** — `clientEffect` / `clientEvent` / `clientOnly` / islands with `when: load | idle | visible | media`: the boundary record carries the trigger flags; the loader materialises that boundary at its trigger (today's `data-boot` / IntersectionObserver / idle paths, simplified: they boot a boundary, not "the runtime").
+4. **Writes** — a revived keyed signal's first write materialises its wake list (boundaries that read it on the server and are not yet materialised), then notifies as usual. After materialisation, fine-grained reactivity is the only mechanism: no stubs, no regions, no "re-creation on the first change".
+5. **Navigation / live pages** — the router materialises the route boundary on the first navigation (as today it revives the router region); a `live` page's `data` is a keyed signal whose wake list is the boundaries that read it.
+
+### 3.5 Adopt mode lowering (compiler, DOM target)
+
+The DOM target emits one function per component today (`_tpl` clone + `firstChild` / `nextSibling` walk + bindings + `_c(child, props)`). Adopt mode is the same function with the runtime in a mode flag (Solid's approach), not a second compile output:
+
+- `_tpl(html)` clone → `_adoptRoot()`: the walk's `firstChild` / `nextSibling` chain runs over the live nodes. Template placeholders (`" "` text for sole dynamic text) are what the server rendered, so the declared nodes line up. Comments the server wrote for anchors / markers are skipped by the walk (`_adoptNext` skips comment nodes not owned by structure).
+- Text / attribute / class / style bindings: **static-dep stubs** where the compiler can read the dependency set syntactically — the expression reads only this body's keyed signals / computeds directly (no helper calls, no props getters — a getter hides its reads in the parent — and no member chains that could hide a read): emit `_fxLazy(signalList, el, writer)`: subscribe without evaluating; the first notification turns it into the normal `_fx1` writer. Everything else evaluates once on adoption; adopt-mode writers compare against the live node once before writing (the production writers never read back — `_tx` writes `data` unconditionally because the read-back costs ~30 % on updates — so the compare is an adopt-only path). Delegated handlers attach by walking the same chain — no per-element id.
+- `_for` in adopt mode: takes the server rows by end markers (existing `AdoptedRow`), keys them lazily (`by` over the items array), and runs a row function only on demand (event in the row, wake, reconcile). Uniform-row plans (`$rows`) stay a server-side emitter optimisation; they no longer produce resume records.
+- `_show` / `_switch` / `_cond`: adopt the server branch by marker (existing `AdoptedBranch`), the condition becomes a stub on its static deps or evaluates once.
+- Keyed `signal(x)` → `_sig(k, x)`: adopt the revived value when present, else create (client-rendered subtrees and new rows create).
+- `_c(Child, props)`: dependent child → run now (adopt); independent child (facts) → `_defer(bid, Child, props)`: records the thunk against the boundary id found by walking to the child's `data-b`.
+- `ref` → the walked node; `clientEffect` / `clientEvent` → owned by the boundary's owner; `clientOnly` / `lazyComponent` / `Async` continuation → as today's DOM target (creation inside an adopted slot is allowed, as the 2026-10-03 spec already rules).
+- Dev builds: the same lowering through the dev façade; the dev adopt verifier (§3.6) is a façade concern.
+
+### 3.6 Determinism, diagnostics, dev
+
+- Compiler diagnostics (resume mode): `Date.now` / `Math.random` / `crypto.randomUUID` / `performance.now` / `new Date()` without arguments / `navigator` / `localStorage` read in a component body outside handlers, effects and client events → RV21xx "render is not deterministic: move it into a keyed signal (value shipped) or a `clientEffect`" (today's browser-globals diagnostic generalised). `createId` is seeded per boundary (the id scope already is per render; the record carries the seed).
+- Dev adopt verifier (dev façade only): the adopt walk checks tag name, static attributes and sole-text content against what the template would have produced; a mismatch names the component, the node and both values, once, and falls back to a client render of that boundary. Production never checks (the walk trusts the markup, as Solid's does).
+- Resume fuzz stays the oracle, and its job gets simpler: resumed page and CSR page now run **the same component code** on the same inputs; the only legitimate differences are mount-time effects (already `design: true` pins). Every `recreated` pin is void by construction.
+
+### 3.7 Chunks and bytes before input
+
+- Unit of loading = the **route closure**: every boundary of a route imports from one chunk per route (its interactive components' static import closure), plus one shared chunk per module set reached by ≥ 2 routes and ≥ a byte floor (rolldown `advancedChunks` `minShareCount` / `minSize`; small shared modules duplicate). Target: **≤ 3 requests** per route before input (loader inline, route chunk, ≤ 1 shared) — the ROUTE-CHUNKS experiment kept 61–87 requests because symbol chunks stayed per component and the bundler split per owner set; with boundaries loading whole components there is no reason to keep symbol chunks at all.
+- Fetch-ahead stays the default on non-lean pages: route chunk + shared hinted at idle with `modulepreload`, **never evaluated** before input (route mode's `data-fo` today: "first interaction downloads nothing"). Fast 3G cold click (1.4 s today on rivet-native) becomes fetch-at-idle + adopt. `lean` pages fetch nothing; Save-Data / 2G as today.
+- Runtime before input: 0 bytes evaluated. Runtime on first input: reactivity + `dom` + adopt module. Dropped from the shipped runtime: `resume-format` decoder (61 KB source), `dom-resume` revive / stub / region machinery (71 KB), `resume-builtins`, the rows / expand / stream add-ons, the loader module's manifest walk. The krausest bundle is unaffected (DOM target); the resume-specific runtime should land at the size of a hydration walk over the DOM runtime (measured at S3, with `dom-adopt.ts` today's 10.7 KB source as the starting point).
+
+### 3.8 What changes for each feature
+
+| Feature | Serialized resume | Structural |
+| --- | --- | --- |
+| Handlers / `model:` / `ref` | records + captures (Function Bridge) | attached by the adopt run; closures are real closures |
+| Text / attribute bindings | per-site records, stubs | static-dep stubs or one evaluation on adoption |
+| `For` | row records (`$rows` plans, compact rows, flags 1 / 2, `[13]` signals), adoption by item equality | O(1) adopt, rows materialised on demand, keyed by `by` over the items array |
+| `Show` / `Switch` | branch specs `[8]` / `[10]`, creation-order adoption rules | branch adoption by marker, condition stub |
+| Component-root `Show`, destructured props, projections (`globalDOMProps`) | whole component re-created on the first change (fresh locals) | the boundary materialises in place; keyed state adopts values — the "Limits" section of the guide empties |
+| Live props (`_rProps` recipes, forward boxes, `_rMember`) | serialized | plain getter objects; a getter prop makes the child dependent (runs in the spine) |
+| Function Bridge (`_rFn`, `_rMod`, cells, groups, narrow captures, store paths, data classes, `reconstruct`) | required | **not needed**: nothing serializes a closure. `reconstruct` stays only for values the author wants built in the browser inside a `clientEffect` |
+| Contexts (`createContext(d, { id })`, `[12]` lists, `resumableContext`) | token registry + provider lists | a consumer boundary is independent iff the provided value is data / keyed; else the provider is on its spine. No token ids |
+| `clientEffect` / `clientEvent` / `clientOnly` / `lazyComponent` | records + `when` triggers | boundary flags + the same triggers |
+| Streaming `Async` / `Suspense` / `ErrorBoundary` | patches on the object table, link entries `[site, content, site, 3]` | records appended per segment; an error under a materialised boundary is the DOM `ErrorBoundary`'s as on any client page |
+| Islands (`@rivetjs/bridge`) | special-cased lean boot (T7b) | **the same mechanism**: an island is an independent boundary whose adopt run is the adapter's `hydrate` |
+| Dev server resume | state + loader + per-component Vite chunks | boundary records + loader; a component edit re-runs that boundary (HMR becomes "materialise + replace this boundary", not "switch the page to CSR") |
+| Devtools | regions / sites panels | boundaries (materialised or not), keyed state, wake lists |
+
+## 4. Why not the alternatives
+
+- **Keep serialized resume and optimise** — RESUME-COMPILE proved the ceiling (≤ 1.23× on the server); the lazy-state note proved the bytes ceiling (−7…−19 % without re-creation); the chunk experiment proved ≤ 5 requests is unreachable with symbol chunks. Three independent lanes hit the same wall: the model.
+- **Switch to Solid-style hydration** — the server side would be fine (≈ 1.3× static, the same order as this spec's bound); the client side is the problem: the page's code executes at load, effects are created for content that never changes, JS before input is the page, islands are drawn by hand. It would make Rivet a Solid with a faster string emitter.
+- **DOM-as-state (read values back from the markup, ship nothing)** — covers `{count()}` in an `<output>` and little else (formatting, hidden state, filtered lists); fragile; rejected as a model, possible later as a per-binding optimisation to elide keyed values that are provably readable back.
+- **Serialized resume only for `For` rows inside structural boundaries** — tempting (rows are the one case where closure resume is cheaper per interaction), but a resumed row handler capturing a parent local reintroduces the capture rules and the split-brain between a revived capture and the parent's later run. Lazy row materialisation gives the O(1) click without serializing anything; the one case it is slower is the first parent-signal change that touches every row (1000 row runs ≈ a Solid hydration of the list, once). Measured at the gate (§7 S2). If a page class needs it, closure resume returns as an opt-in on the component, not as the default.
+
+## 5. Expected effect per user axis (bounds, to be measured at the gate)
+
+1. **SSR speed** — resumable render → static render + value capture. Bounds: 1000 rows 3.04 → ≈ 0.5–0.6 ms (the static lane is 0.46; the capture adds one `Set` write per tracked keyed read and one JSON array), i.e. **≈ 3× less CPU than Solid hydratable** on the like-for-like interactive comparison (where today Rivet loses 1.75×) and below static Razor (1.64 ms). Showcases 3–4.4× → ≈ 1.1–1.3×. The static lanes (Razor 3.6×, text grid) are untouched by this spec.
+2. **SSR resources** — peak memory ≈ static (no recorder graph, no object table; 1000 rows c1: 166 → the static lane's 88 MiB class, below every Solid lane); HTML −20–30 % at 1000 rows and −3 KB br per widget page; TTFB follows CPU; throughput follows CPU (1000 rows: 297 → ~1,000 req/s class at c1).
+3. **Client** — JS before input: 0 evaluated; fetched at idle ≤ 3 requests per route (today 4 on a router page, 61–77 on widget frames); first interaction: no reviver / decoder in the runtime (bytes to measure; expect the resume-specific runtime to shrink from ~24 KB br "runtime JS" rows to the DOM runtime + ~2 KB); LCP / FCP: smaller HTML, loader ≤ 1 KB, no state table in the critical path; TBT 0 kept; INP first click: fetch-ahead + adopt of the spine (the one new cost; gate S2).
+
+Honest costs: the first interaction on a page whose spine is heavy (a route component that renders a 1000-row list and 20 widgets with getter props) runs that spine once in adopt mode. Mitigations are in the model (independent children deferred, rows lazy, static-dep stubs); the residual is measured, not assumed. Determinism is a contract authors can break (handled loudly, §3.6), where serialized resume broke silently (region re-creation).
+
+## 6. Where the server bound comes from
+
+RESUME-COMPILE §6.3 measured, on the dashboard, "all modules plain under `resumableToString` (recorder present, nothing recorded): 0.683 vs static 0.746 ms" — i.e. a recorder that records nothing is free, and the entire 2.9–4.4× is records + encode + compile shape. Structural resume records: boundary open / close (two calls per interactive component), keyed signal creation (one array push), tracked reads of keyed signals (one `Set.add` per boundary-first read), and one `JSON.stringify` of values. No interning, no `needs`, no `packBindings`, no `planPreload` per element (the plan is per route at build time), no `compactTable`. That is the same order as the id scope's counter work, hence the 1.1–1.3× bound. The gate measures it (S1).
+
+## 7. Spike and gates (before any migration)
+
+Harness: the RESUME-COMPILE in-process A/B shape (`resumableToString` vs `renderToString` on the ui showcases + the ssr-bench `/resume` page), resume-bench (Slow 4G + 4× CPU) and the size report. Pass bars are the roadmap's: a default needs ≥ 1.3×; no regression on any resume-bench scenario beyond noise.
+
+| Spike | What | Pass |
+| --- | --- | --- |
+| S1 server | hand-lower the ssr-bench `/resume` page and the dashboard showcase to the structural server shape (plain server output + `_b` / `_sig` / wake sets + JSON tail); measure CPU / page, RSS, HTML bytes vs HEAD resume and vs static | ≥ 2× CPU vs HEAD resume on both; HTML ≤ Solid hydratable at 1000 rows |
+| S2 client | hand-written adopt runtime for those two pages (template walk, `_for` lazy rows, keyed signals, wake list); resume-bench `click`, `keyClick`, `filter`, `navigate`, `scrollClick`, `hoverClick` + a dashboard "click a KPI chip" and "first change of a shared signal across 1000 rows" case | paint latency ≤ HEAD + one frame (16 ms at 4× CPU) on every scenario; filter / navigate not worse than HEAD |
+| S3 bytes / chunks | route-closure bundling with `advancedChunks` on ui-docs frames (select / date-picker / combo-box), bridge-demo, starter | ≤ 3 requests before input, bytes ≤ HEAD component mode, 0 evaluated before input |
+| S4 parity | resume fuzz on the spike's story routes (cdk Select, GridList, Tabs, Toast) with the adopt runtime | no `recreated` findings; mismatches = mount-time effects only |
+
+S1 is cheap (the static-twin harness exists in spirit; the server shape is a subset of today's output). S2 is the real risk and the real work (~1–2 weeks hand-written). Only after S1 + S2 pass does the compiler work start.
+
+## 8. Migration (if the gates pass)
+
+1. Compiler: boundary facts (interactive, independent) in `facts.rs`; server resume target emits `_b` / `_sig` and nothing else; DOM target gains adopt-mode lowering (same function, mode flag) + static-dep stub emission; delete `resume.rs` sites / recipes / Function Bridge lowering (`resume/{cells,classes,escape,groups,refs,stores}.rs`, `resume_props.rs`, `resume_structural.rs`); new modules under `rust/src/compile/` per the Rust rule (root agent only).
+2. Runtime: `server-resume.ts` → the boundary recorder (small); delete `resume-format.ts` object graph, `dom-resume.ts` regions / stubs / revive, `resume-builtins.ts`, rows / expand / stream add-ons; `dom-adopt.ts` grows the template walk, lazy rows, keyed state and wake lists; loader rewritten to the boundary protocol (budget ≤ 1 KB br); `@rivetjs/bridge` lean boot becomes the generic boundary boot.
+3. Router / forms / cdk / ui / motion: remove `_regionState` call sites (keyed state is automatic), `resumableContext` tokens, `display: contents` anchors, `registerClass` / `[revive]` for widgets, `_rUnrecorded`; render-function-children rules for closed overlays go away (a closed popover is an unmaterialised boundary).
+4. Docs: `guides/resumability.md` shrinks to the model + the determinism contract; `apps/docs/content/learn/resuming.md` and the homepage claims change from "no hydration" to "nothing runs until you touch it, and then only what you touched"; llms / MCP / skills regenerate; the 2026-10-03 spec and the Function Bridge spec / plan are marked superseded (history kept).
+5. Zero-cost / size-report / fuzz / oracle corpus re-baselined (intended deltas, said so in the commit).
+
+Ownership for the rewrite follows the repo rules: one lane per layer (compiler patches queued to the root, runtime, consumers), gates per phase, old path deleted in the same change as the new default (experimental-framework rule: no compat shims).
+
+## 9. Rulings needed (user)
+
+- **R1 — model.** Adopt structural resume as *the* resume model (serialized resume + Function Bridge deleted after the gates), vs keep serialized resume as an opt-in per component. Recommendation: delete; an opt-in keeps 100 KB of runtime and the rulebook alive for a case no measurement has asked for yet.
+- **R2 — messaging.** Keep "resumable" as the word (it still is: nothing runs before input, state resumes from values) and drop "no hydration" as a claim in favour of "no eager work"; or rename. Recommendation: keep "resumable".
+- **R3 — gate.** S1 + S2 pass bars as in §7, measured on the bench host under the bench lock, before compiler work. Recommendation: yes; S2 includes the 1000-row shared-signal first change as a named loss budget (≤ 1 frame).
+- **R4 — order.** Pause Function Bridge T22–T29, lazy-state, ROW-ABI, RESUME-ROWS-REMOVE and DOM-EMIT resume rows (all optimise the model this spec retires) until the gate decides. Recommendation: pause.
+
+## 10. Decision
+
+Proposed: structural resume replaces serialized resume. The measurements say the current model is at its ceiling on every axis the user named, that its complexity is the cost of serializing closures, and that Rivet already re-runs components in the browser on the first change. The replacement keeps what resumability was for and removes what it was paying for. Spike first, gates as in §7, no compiler work before S1 + S2.
