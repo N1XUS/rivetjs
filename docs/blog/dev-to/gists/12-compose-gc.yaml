@@ -1,0 +1,14 @@
+# apps/ssr-bench/compose.yaml — every Node lane, identical quota and GC profile.
+x-node: &node
+  image: ${RIVET_BENCH_NODE_IMAGE:-rivet-ssr-bench-node:local}
+  cpus: 1.0
+  mem_limit: 512m
+  init: true
+  # GC profile, identical for EVERY Node lane (benchmark.py --gc tuned|default sets SSR_BENCH_NODE_FLAGS; unset =
+  # tuned). Under a 1-CPU quota V8's parallel GC helper threads (sized for all host cores) burn the quota between
+  # requests (single-threaded GC measured ~45% less CPU per 1,000-row Rivet page); an 8 MiB semi-space cuts CPU
+  # ~10% at 1,000 rows for ~18 MiB more peak memory. Empty string = Node defaults.
+  command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/server.mjs
+
+# Razor gets the counterpart: no background GC thread + a larger gen0 budget.
+# DOTNET_GC_ENV: "${SSR_BENCH_DOTNET_GC_ENV-DOTNET_gcConcurrent=0 DOTNET_GCgen0size=0x1000000}"

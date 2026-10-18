@@ -1,0 +1,23 @@
+<!-- What the browser receives for todo.tsx (items from a signal so the list gets a region marker).
+     data-r = element id for handlers/attributes; <!--r1-->…<!--/--> = a text binding;
+     <!--r2[-->…<!--]--> = a region that is re-created when a dependency changes.
+     The state script is one interned table: "t" holds values, "s" maps symbols to chunks,
+     "e" maps element ids to [symbol, captures, chunks], "b" lists bindings and their deps.
+     After it: the inline loader (~2.2 KB brotli). No component code is referenced until you interact. -->
+<section class="idle" data-r="0">
+  <p>Done: <!--r1-->0<!--/--></p>
+  <ul><!--r2[--><li>Write post</li><li>Ship it</li><!--]--></ul>
+  <button data-r="3">Mark one done</button>
+</section>
+<script type="rivet/state" data-region="0" data-events="click">
+{"v":1,"h":"h1","rt":"/rt.js","c":["/c/TodoList.js"],
+ "s":{"src/todo.tsx#TodoList$0":0,"src/todo.tsx#TodoList$3":0,"src/todo.tsx#TodoList$1":0,"src/todo.tsx#TodoList$2":0},
+ "t":[{"s":1},0,{"s":3},{"l":["Write post","Ship it"]}],
+ "e":{"3":{"click":["src/todo.tsx#TodoList$3",[0],[0]]}},
+ "m":{},
+ "b":[[0,"class","src/todo.tsx#TodoList$0",[0],[0],[0],-1],
+      [1,null,"src/todo.tsx#TodoList$1",[0],[0],[0],-1],
+      [2,"#","src/todo.tsx#TodoList$2",[2],[2],[0],-1,null]],
+ "fx":[],"ce":[]}
+</script>
+<script>(function(){const p=document,y=p.currentScript?.previousElementSibling;if(!y)return;/* …2.2 KB loader… */})()</script>
