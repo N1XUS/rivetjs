@@ -108,7 +108,7 @@ Unchanged: values-only wire format, four layers, derived slices, adopted boundar
 
 X1 and X3 are cheap and independent of everything else; X2 decides between "Node stays" and X4. S2 decides the rendering model. All five fit in the repo's existing harnesses.
 
-## 6. Rulings (user)
+## 6. Rulings (user) — **taken 2026-10-18: R-A yes, R-B yes (E1–E3 in the plan's server track), R-C native host subsumed by the backend-agnostic direction (not built), R-D yes after dictionaries, R-E not now** (`../plans/2026-10-18-derived-client.md`)
 
 - **R-A.** Measure encoded, not identity: the fair comparison gains an encoded profile and a session scenario; the "beat everyone" claim is made on those.
 - **R-B.** Pursue F1–F3 now (compiler segment table, op-stream writer, spliced compression, dictionary transport). They are host-independent and attack the largest unmeasured cost.

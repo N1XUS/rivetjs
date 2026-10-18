@@ -1,0 +1,73 @@
+# Derived client — implementation plan (2026-10-18)
+
+- Status: **approved 2026-10-18** (user: "go with the plan"). Lane RESUME-V2. Records: `../research/2026-10-18-beyond-resume-hydration.md` (model, S1 / S2 / S3), `../specs/2026-10-18-structural-resume-design.md` (adopted layer), `../research/2026-10-18-floor-first.md` (server stances, X1), `../research/2026-10-18-backend-agnostic.md` (direction, P1).
+- Rulings taken:
+  - **R1′–R4′ yes**: the derived client (native / derived / adopted / rendered layers, values-only wire) replaces serialized resume. Function Bridge T22–T29, SELECT-STATE / lazy-state, ROW-ABI, RESUME-ROWS-REMOVE and DOM-EMIT resume rows are **paused**; serialized resume's code stays in the tree until M6's gate, then goes; `serialize(expr)` is the escape hatch.
+  - **Route bundles first** (S3: 74 requests at the first click is the widget-page cost): milestone M1, independent of the compiler rewrite.
+  - **R-A / R-B yes**: measure encoded, origin zstd by default, dictionary transport next (server track E1–E3). Template-informed sequences (X2′) and anything native stay on the bench host.
+  - **R-F planned, not now**: backend-agnostic rendering is a direction; the portable IR falls out of M2 / M4's segment table. No executor work in this plan.
+  - **R-E not now**: MPA-first stays a starter option to measure, not the default.
+- Rules of the repo apply unchanged: compiler Rust edits by the root agent only (lanes queue patch files), docs follow code in the same change, zero-cost / size / fuzz gates per milestone, every lib CLAUDE.md updated with its code.
+
+## Milestones
+
+| # | Milestone | Owner lanes | Gate (measured, same harness as the spike) |
+| --- | --- | --- | --- |
+| **M1** | **Route bundles**: chunking policy = one route chunk + a bounded number of size-capped shared chunks clustered by co-usage (not one per owner set); fetch-ahead at idle for the route closure incl. lazy routes; idle evaluation of definitions-only chunks + values parse; the planner's `visible` / background budgets re-expressed on the new units | compiler `vite.ts` / `chunk-groups.ts` (TS), runtime loader module, router preload | ui-docs frames (select / date-picker / combo-box) and the dashboard frame: **≤ 5 JS requests before input at ≤ +30 % bytes** vs today; dashboard first click (`apps/resume-bench/spikes/s3-dashboard.ts`) **≤ 400 ms slow** (today 2,255); resume-bench no regression; size-report |
+| **M2** | **Values-only wire + boundary runtime (adopted layer)**, behind `resume: { model: "derived" }`: compiler server resume target emits `_b` / `_sig` and nothing else (boundary facts: interactive / independent); runtime boundary recorder + JSON tail; keyed state; wake lists; loader on the boundary protocol (≤ 1 KB br); `dom-adopt` template walk, lazy `For` rows, branch adoption; dev adopt verifier; islands on the same boot | compiler (Rust patches, root builds), runtime, bridge | S1 shape in Docker (`apps/ssr-bench` rivet-resume lane on the new model): CPU / page ≤ 1.3× static, RSS ≤ static + 10 %; resume fuzz (cdk + ui story routes) with **no `recreated` findings**; S3 dashboard first click ≤ M1 result |
+| **M3** | **Derived slices**: compiler static-dependency analysis per site (syntactic reads of keyed signals / computeds), site paths from structural anchors, per-signal edit lists, row writers parameterised by row, slice chunk per route; loader dispatch by path; demotion of unprovable sites to the adopted layer; interaction map (devtools + `check-examples` column) | compiler (Rust), runtime, devtools, docs-kit | resume-bench: within 10 % of the hand lane `rivet-derived` on every S2 metric; `jsBytesBeforeInteraction` ≤ 2.5 KB; cold click ≤ 8 ms slow; fuzz parity kept |
+| **M4** | **Native lowering** (S4 audit first): `Show`-driven dialogs / popovers / disclosure → `command` / `commandfor` / `popover` / `<details>` where the a11y parity table passes; everything else unchanged | cdk, ui, compiler | per-row parity verdicts; zero JS for the lowered rows on their stories; fuzz parity |
+| **M5** | **Server track** (parallel from day 1): E1 encoded column + session scenario in ssr-bench / editorial-bench; E2 origin `zstd` (−1 large pages, −3 content) in the node adapter + docs-kit serve, brotli q4 fallback, precompressed immutable assets; E3 dictionary transport (`Use-As-Dictionary` per route, `dcz` for later pages / patches / chunks, inline loader + slice) on editorial-bench and the docs sites | router adapters, docs-kit, ssr-bench harness | E1 reports exist before any claim; E2: encoded CPU / page ≤ 0.3× brotli q5 at ≤ +15 % bytes; E3: 2nd-page bytes ≤ 40 % of brotli, chunk delta after a deploy ≤ 20 % |
+| **M6** | **Delete serialized resume**: `server-resume` recorder / encoder, `resume-format` object graph, `dom-resume` regions / stubs / revive, `resume-builtins`, rows / expand / stream add-ons, Function Bridge lowering (`resume/{cells,classes,escape,groups,refs,stores}.rs`, `resume_props.rs`, `resume_structural.rs`); `_regionState` / `resumableContext` / `registerClass` call sites in cdk / ui / router / forms / motion; docs (`guides/resumability.md` → the model + determinism contract; `apps/docs/content/learn/resuming.md`; homepage claims), llms / MCP / skills regenerated; zero-cost, size-report, oracle corpus re-baselined (stated in the commit) | all | every gate above green on the new model; the old path has no remaining consumer; `scripts/zero-cost/check.sh` identical for the plain server / DOM targets |
+
+Order: M1 → M2 → M3 → M6 on the client track; M4 after M3; M5 in parallel from the start. M2 and M3 are each behind the `model` flag until their gate passes, so the shipped default moves once per milestone, never half-way.
+
+## M1 — route bundles (first)
+
+Why first: S3 measured 74 requests / 76 KB fetched at the dashboard's first click (2.25 s on Slow 4G + 4× CPU, 108 ms unthrottled); ROUTE-CHUNKS could not get widget frames under 61 requests because `route` mode still emits one shared chunk per owner **set** and the merge budget (2 KB default, 64 KB tried) only reaches 29–49. The question M1 answers is the request/bytes curve, and the policy that lands is whichever point meets the gate.
+
+Tasks:
+1. **T1 measurement harness** (TS, no framework change): a probe over built ui-docs frames + the dashboard frame: JS requests / bytes / evaluated before input (3 s idle), first-click requests + latency (S3 script generalised: `--frames`, `--click`), slow + fast. Runs here (pinned Chromium) and on the bench host.
+2. **T2 policy experiments** on the ui-docs client build (`rivet({ resume: { chunks, merge } })`): (a) `component` + merge 2 K (today), (b) `route` + merge 64 K / 256 K / 1 M, (c) **co-usage clustering**: a new `chunks: "bundle"` policy = route chunk per lazy root + shared chunks built by clustering modules on their owner sets with a hard size cap per shared chunk (e.g. 96 KB min) and a cap on the number of shared chunks a route may need (e.g. 3), duplicating nothing (modules stay singletons); rolldown `codeSplitting.groups` with `name` per module from the clustering. Report the curve.
+3. **T3 fetch-ahead + idle evaluation**: on the chosen policy, the planner hints the route closure (route chunk + its shared chunks + lazy routes) at idle on non-lean pages (`data-fo` exists) and the loader module evaluates definitions-only chunks + parses the values at idle (S2 lesson 1: Rivet's planner does this for `e` / `i` chunks; make it the rule for the route closure).
+4. **T4 gate + docs**: ui-docs frames ≤ 5 requests before input at ≤ +30 % bytes; dashboard first click ≤ 400 ms slow; `docs/benchmarks/2026-10-12-route-chunks.md` follow-up section + `apps/docs/content/guides/performance/chunks.md` "Which one to pick" updated; default switched when the gate holds for ui-docs, bridge-demo and the starters; size-report, zero-cost (manifest / loader deltas stated).
+
+Non-goals in M1: no change to what chunks contain (symbols today, slices after M3), no compiler Rust.
+
+## M2 — adopted layer (values-only wire + boundary runtime)
+
+Compiler patch list (root agent builds the wasm once per batch; lanes write patches to the queue):
+- C1 facts: `interactive` (subtree has a site) and `independent` (props + consumed contexts are data / keyed refs / static slots) per component, exported in `moduleFacts`; fixpoint across modules in `vite.ts` like `staticComponents`.
+- C2 server resume target under `model: "derived"`: `_b(id, parent, flags)` / `_bEnd()` around interactive components, `signal(x)` in bodies → `_sig(k, x)`, store / `_regionState` likewise; **no** `_rFn` / `_rProps` / `_rMember` / `_rCell` / `_rMod` / `_rGroup` / `_rClass` / site records; `For` row markers + branch markers kept; sole dynamic text = no marker; mixed content / structural slots = marker pair.
+- C3 DOM target adopt mode (same function, runtime flag): `_tpl` clone → walk over live nodes; `_fxLazy(deps, el, writer)` for static-dep bindings (deps = syntactic reads of this body's keyed signals / computeds); `_for` adopt + lazy rows; `_show` / `_switch` branch adoption; `_sig` adopt; `_c(child)` → run (dependent) or `_defer` (independent); diagnostics RV21xx for non-deterministic body reads.
+Runtime:
+- R1 `server-resume` → boundary recorder (per-render context on the id scope; `Set` wake lists on keyed reads; JSON tail; streaming segments append records).
+- R2 loader on the boundary protocol (`data-b` / marker lookup, parent pointers, chunk import, cold-event hold + replay unchanged, triggers for `clientEffect` / `clientEvent` / `clientOnly` / islands, keys hold from the boundary record), budget ≤ 1 KB br.
+- R3 `dom-adopt` template walk, lazy `For` rows (O(1) adopt, materialise on event / wake / reconcile), keyed state adoption, wake-list materialisation on first write, deferred independent children; dev adopt verifier in the dev façade.
+- R4 bridge: islands = independent boundaries whose adopt run is the adapter's hydrate; the lean boot becomes the generic one.
+- R5 router / forms / live pages on keyed `data`.
+Gates as in the table; the resume fuzz oracle (CSR vs resumed) is the correctness gate for both M2 and M3.
+
+## M3 — derived slices
+
+- C4 static dependency analysis per site (reads of the body's keyed signals / computeds; props getters, helper calls, member chains → unknown → adopted); C5 site paths from structural anchors (boundary root, row start, branch marker); C6 per-signal edit lists + parameterised row writers; C7 slice chunk per route (handlers, edit lists, recipes for pure derivations, paths); C8 interaction map data (tier per site + the deciding construct).
+- R6 slice loader dispatch (event → anchor → path → site), overlay values, keyed-signal writes through the overlay so a later adopt run sees them; R7 devtools interaction map; R8 `check-examples` tier column.
+- Gate: resume-bench vs the hand lane `rivet-derived` (`apps/resume-bench/lanes/rivet-derived/`, kept as the reference until M3 lands, then deleted).
+
+## M5 — server track (parallel)
+
+- E1 harness: `--encoding identity|br|zstd|dcz` on ssr-bench and editorial-bench (loadgen validates the decoded body), a session scenario (3 pages, 1 navigation, 1 action: wire bytes), fair-report columns.
+- E2 node adapter + docs-kit serve: `zstd` when accepted (−1 ≥ 256 KB bodies, −3 below), brotli q4 fallback, immutable assets precompressed q11 / zstd −19; X1 numbers are the baseline (`research/2026-10-18-floor-first.md` §8).
+- E3 dictionary transport: per-route dictionary = segment table + loader + slice (after M3; before it, the route chunk), `Use-As-Dictionary` match patterns from the manifest, `Available-Dictionary` cache-key vary, `dcz` / `dcb` encode with the stored dictionary; measured on editorial-bench (2nd page, navigation) and the docs sites (chunk delta after a deploy).
+
+## Measurement discipline
+
+- Every milestone's gate runs the same harness the spike used, in the same place: in-container for ratios (pinned Chromium via `RESUME_BENCH_CHROME`), the bench host under the lock for absolute numbers before any public claim. Numbers in docs name the host and the load.
+- Spike artifacts stay until the milestone that replaces them lands, then are deleted: `apps/ssr-bench/spikes/{splice,structural}`, `apps/resume-bench/spikes/s3-dashboard.ts`, `apps/resume-bench/lanes/rivet-derived`, `libs/compiler/spikes/portability`.
+
+## Risks (carried from the records, with the mitigation that is in the plan)
+
+- Soundness of the static dependency analysis → conservative demotion to the adopted layer; the fuzz oracle compares both code paths on every story route.
+- First-click CPU on a widget page (S3: ≈ 100 ms unthrottled for the dashboard's keyed subtree) → M1 removes the network part first; M2's lazy rows / deferred children bound the rest; the gate is one frame over M1's number.
+- Two shipped models during M2 / M3 → the `model` flag; CI runs both fuzz projects on both until M6.
+- Compile time → per-module facts + fixpoint, as `staticComponents` today; no whole-program bundler pass.

@@ -142,7 +142,7 @@ How the three questions the user asked resolve:
 
 S2 is cheap (one fixture, hand-written) and answers the model question: if a hand-derived vanilla program does not beat today's resume and Solid on that fixture, the derived layer is not worth a compiler. S1 + S3 answer the server and widget questions. Only then compiler work.
 
-## 9. Rulings (supersede R1–R4 of the earlier spec)
+## 9. Rulings (supersede R1–R4 of the earlier spec) — **taken 2026-10-18: R1′ delete at M6 after the gates, R2′ keep "resumable" + "derived", R3′ stances as stated with MPA-first as a starter option only, R4′ paused** (`../plans/2026-10-18-derived-client.md`)
 
 - **R1′ — model.** Derived client with four compiler-chosen layers; serialized resume's machinery stays until S2 is measured, then is either deleted or kept as the implementation of `serialize(expr)`. Recommendation: decide after S2, not before.
 - **R2′ — word.** Keep "resumable" (the native + derived layers are resumability in Qwik's own definition — pause on the server, continue in the browser without replaying — minus the serialization), add "derived" to the vocabulary; drop "no hydration" as a slogan.
