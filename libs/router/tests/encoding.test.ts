@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { brotliDecompressSync, gunzipSync, zstdCompressSync, zstdDecompressSync } from "node:zlib";
 import { negotiate, serve, type Handler, type ServeOptions } from "../adapters/node.ts";
+import { staticFiles } from "../adapters/files.ts";
 
 interface Reply {
   status: number;
@@ -286,6 +287,35 @@ test("concurrent first requests for one file compress it once", async () => {
     assert.deepEqual((await readdir(join(dir, "assets"))).sort(), ["b-1.css", "b-1.css.zst"]);
   } finally {
     await serving.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("Bun / Deno static index: siblings picked by q (q=0 excludes, `*` covers unnamed codings, tie order zstd / br / gzip)", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rivet-encoding-"));
+  await mkdir(join(dir, "assets"));
+  await writeFile(join(dir, "assets", "a-1.css"), "body{}");
+  await writeFile(join(dir, "assets", "a-1.css.zst"), "z");
+  await writeFile(join(dir, "assets", "a-1.css.br"), "b");
+  await writeFile(join(dir, "assets", "a-1.css.gz"), "g");
+  await writeFile(join(dir, "assets", "b-1.css"), "body{}");
+  await writeFile(join(dir, "assets", "b-1.css.gz"), "g");
+  try {
+    const lookup = staticFiles(dir, "", [join(dir, "assets")]);
+    const pick = (accept: string, name = "a-1.css") => {
+      const found = lookup(new Request("http://x/assets/" + name, { headers: { "accept-encoding": accept } }), "/assets/" + name);
+      assert.ok(found && found !== 304);
+      return [found.headers["Content-Encoding"], found.path.slice(found.path.lastIndexOf("."))];
+    };
+    assert.deepEqual(pick(CHROME), ["zstd", ".zst"]);
+    assert.deepEqual(pick("gzip, br, zstd;q=0"), ["br", ".br"], "zstd refused");
+    assert.deepEqual(pick("gzip;q=0.9, br;q=0.5"), ["gzip", ".gz"], "weights, not header order");
+    assert.deepEqual(pick("*"), ["zstd", ".zst"]);
+    assert.deepEqual(pick("*;q=0.5, zstd;q=0"), ["br", ".br"]);
+    assert.deepEqual(pick("identity"), [undefined, ".css"]);
+    assert.deepEqual(pick(CHROME, "b-1.css"), ["gzip", ".gz"], "the only sibling that exists");
+    assert.deepEqual(pick("br, zstd", "b-1.css"), [undefined, ".css"], "no accepted sibling exists");
+  } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });

@@ -46,6 +46,50 @@ interface Indexed {
   readonly gz?: string;
 }
 
+/** A response encoding the adapters produce. */
+export type Encoding = "zstd" | "br" | "gzip" | null;
+
+/**
+ * `q` per content coding of an `Accept-Encoding` header, parsed once per distinct string (browsers send a handful;
+ * bounded: client-controlled text). `weightOf` applies `*` to codings the header does not name.
+ */
+export function acceptWeights(header: string): Map<string, number> {
+  let accepted = weights.get(header);
+  if (accepted === undefined) {
+    accepted = new Map();
+    for (const part of header.toLowerCase().split(",")) {
+      const [name, ...params] = part.trim().split(";");
+      const q = params.map((p) => /^\s*q=([\d.]+)\s*$/.exec(p)).find(Boolean);
+      accepted.set(name!.trim(), q ? Number(q[1]) : 1);
+    }
+    if (weights.size < 64) weights.set(header, accepted);
+  }
+  return accepted;
+}
+const weights = new Map<string, Map<string, number>>();
+export const weightOf = (accepted: Map<string, number>, name: string): number => accepted.get(name) ?? accepted.get("*") ?? 0;
+
+/**
+ * Pick `zstd`, `br` or `gzip` from an Accept-Encoding header: the highest `q` (a tie: `zstd`, then `br`); q=0 excludes.
+ * `zstd: false` never picks zstd (`serve({ compress: { zstd: false } })`).
+ */
+export function negotiate(header: string | null | undefined, zstd = true): Encoding {
+  if (!header) return null;
+  const memo = zstd ? negotiated : negotiatedNoZstd;
+  let hit = memo.get(header);
+  if (hit === undefined) {
+    const accepted = acceptWeights(header);
+    const zs = zstd ? weightOf(accepted, "zstd") : 0,
+      br = weightOf(accepted, "br"),
+      gzip = weightOf(accepted, "gzip");
+    hit = zs > 0 && zs >= br && zs >= gzip ? "zstd" : br > 0 && br >= gzip ? "br" : gzip > 0 ? "gzip" : null;
+    if (memo.size < 64) memo.set(header, hit);
+  }
+  return hit;
+}
+const negotiated = new Map<string, Encoding>(),
+  negotiatedNoZstd = new Map<string, Encoding>();
+
 /** Index `client` (served under `base`); returns the per-request lookup. */
 export function staticFiles(client: string, base: string, immutable: readonly string[]): (request: Request, pathname: string) => StaticFile | 304 | null {
   const files = new Map<string, Indexed>();
@@ -102,11 +146,21 @@ export function staticFiles(client: string, base: string, immutable: readonly st
     };
     if (file.zst || file.br || file.gz) {
       headers.Vary = "Accept-Encoding";
-      const accept = request.headers.get("accept-encoding") ?? "";
-      const path =
-        file.zst && /\bzstd\b/.test(accept) ? file.zst : file.br && /\bbr\b/.test(accept) ? file.br : file.gz && /\bgzip\b/.test(accept) ? file.gz : null;
+      // The best-weighted coding among the siblings that exist (`q=0` excludes; a tie: zstd, then br).
+      const accepted = acceptWeights(request.headers.get("accept-encoding") ?? "");
+      let path: string | undefined,
+        encoding = "",
+        best = 0;
+      for (const [name, sibling] of [
+        ["zstd", file.zst],
+        ["br", file.br],
+        ["gzip", file.gz],
+      ] as const) {
+        const q = sibling ? weightOf(accepted, name) : 0;
+        if (q > best) ((best = q), (path = sibling), (encoding = name));
+      }
       if (path) {
-        headers["Content-Encoding"] = path === file.zst ? "zstd" : path === file.br ? "br" : "gzip";
+        headers["Content-Encoding"] = encoding;
         return { path, headers };
       }
     }

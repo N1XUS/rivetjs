@@ -21,6 +21,7 @@ import {
 import { promisify } from "node:util";
 import { availableParallelism } from "node:os";
 import { loadBuild } from "./build.ts";
+import { negotiate, type Encoding } from "./files.ts";
 import type { BodyLimit } from "../server/security.ts";
 import type { ErrorInfo } from "../server/handler.ts";
 import type { AppConfig } from "../server/app.ts";
@@ -174,40 +175,8 @@ const brotli = promisify(brotliCompress),
   gz = promisify(gzip),
   zstd = promisify(zstdCompress);
 
-/** A response encoding the adapter produces. */
-export type Encoding = "zstd" | "br" | "gzip" | null;
-
-/**
- * Pick `zstd`, `br` or `gzip` from an Accept-Encoding header: the highest `q` (a tie: `zstd`, then `br`); q=0 excludes.
- * `zstd: false` never picks zstd (`serve({ compress: { zstd: false } })`).
- */
-export function negotiate(header: string | null | undefined, zstd = true): Encoding {
-  if (!header) return null;
-  // Browsers send a handful of distinct headers: parse once per string (bounded: client-controlled text).
-  const memo = zstd ? negotiated : negotiatedNoZstd;
-  let hit = memo.get(header);
-  if (hit === undefined) {
-    hit = parseEncoding(header, zstd);
-    if (memo.size < 64) memo.set(header, hit);
-  }
-  return hit;
-}
-const negotiated = new Map<string, Encoding>(),
-  negotiatedNoZstd = new Map<string, Encoding>();
-function parseEncoding(header: string, zstd: boolean): Encoding {
-  const accepted = new Map<string, number>();
-  for (const part of header.toLowerCase().split(",")) {
-    const [name, ...params] = part.trim().split(";");
-    const q = params.map((p) => /^\s*q=([\d.]+)\s*$/.exec(p)).find(Boolean);
-    accepted.set(name!.trim(), q ? Number(q[1]) : 1);
-  }
-  const weight = (name: string) => accepted.get(name) ?? accepted.get("*") ?? 0;
-  const zs = zstd ? weight("zstd") : 0,
-    br = weight("br"),
-    gzip = weight("gzip");
-  if (zs > 0 && zs >= br && zs >= gzip) return "zstd";
-  return br > 0 && br >= gzip ? "br" : gzip > 0 ? "gzip" : null;
-}
+// `negotiate` / `Encoding` live in `files.ts` (pure; shared with the Bun / Deno static index) and stay exported here.
+export { negotiate, type Encoding } from "./files.ts";
 
 /** `If-None-Match` (a list, `*`, weak or strong tags) matches `etag` (weak comparison, as for GET). */
 export function etagMatches(header: string | undefined, etag: string): boolean {
