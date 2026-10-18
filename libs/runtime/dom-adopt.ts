@@ -66,6 +66,18 @@ const direct = (owner: Owner | null, at: Owner | null): boolean => {
   return true;
 };
 const hold = (dispose: () => void) => (_: { owner: Owner | null }) => onCleanup(dispose);
+// Markers of adopted rows the list dropped during the region read's first run (RESUME-DROP-MARKERS, 2026-10-18): left in
+// place as inert comments — `_region`'s seed skips them, so the first reconcile removes only the rows' content, one
+// `removeChild` per element instead of three (resume-bench `filter`: 2,700 → 900 removals per first keystroke, the
+// comment removals alone were ~1/3 of the input task at 4× CPU). A kept row keeps its markers as its anchors (they
+// move with it, so a later row-template lookup — `dom-resume.ts` `build()`, `end.previousElementSibling` — still
+// finds its element); rows dropped later remove theirs with their nodes, as before. Null outside such a first run.
+let left: Set<Node> | null = null;
+const holdRow = (r: AdoptedRow) => (_: { owner: Owner | null }) =>
+  onCleanup(() => {
+    if (left !== null) left.add(r.start).add(r.end);
+    r.dispose();
+  });
 const nodes = (start: Node, end: Node): Node[] => {
   const out: Node[] = [];
   for (let n: Node | null = start; n !== null; n = n === end ? null : n.nextSibling) out.push(n);
@@ -95,7 +107,7 @@ function takeRows(owner: Owner | null, by: (item: never, index: number) => unkno
       owner: null,
       pass: 0,
     };
-    _rootIn(owner, hold(r.dispose), row);
+    _rootIn(owner, holdRow(r), row);
     items.push(r.item);
     list.push(row);
     let at = r.flags & 1 ? r.index : -1;
@@ -179,7 +191,7 @@ export function _region(
   // have taken server nodes elsewhere).
   const collect = (): void => {
     seed.length = 0;
-    for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling) seed.push(n);
+    for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling) if (left === null || !left.has(n)) seed.push(n);
   };
   let first = true,
     took = false;
@@ -194,7 +206,9 @@ export function _region(
         collect();
       }
     const outer = pending,
+      outerLeft = left,
       p: Pending = (pending = { at: getOwner(), rows, changed, branches, next: 0, took: false });
+    left = rows !== null ? new Set() : null;
     // Installed on first use: before it, no region is being re-created (`_serverBranch` → undefined).
     _adoption.rows = takeRows;
     _adoption.branch = takeBranch;
@@ -221,6 +235,7 @@ export function _region(
       took = p.took;
       pending = outer;
       collect();
+      left = outerLeft;
     }
   };
   _insert(null, wrapped, end, seed);
