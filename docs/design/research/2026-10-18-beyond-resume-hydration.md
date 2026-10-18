@@ -162,3 +162,25 @@ Server-driven: [HTMX 4 vs Datastar 2026](https://kishansavaliya.com/blog/hyperme
 Platform: [HTML invoker commands (InfoQ)](https://www.infoq.com/news/2026/01/html-invoker-commands), [Invoker commands guide](https://blog.openreplay.com/invoker-commands-api-guide/), [declarative dialog / popover control (Chrome guidance)](https://github.com/GoogleChrome/modern-web-guidance/blob/main/skills/modern-web-guidance/guides/ui-behaviors/declarative-dialog-popover-control.md), [Speculation Rules: instant navigations](https://www.corewebvitals.io/pagespeed/speculation-rules), [Speculation Rules + View Transitions (ICS)](https://ics.media/en/entry/260415/), [It's time for modern CSS to kill the SPA](https://www.jonoalderson.com/conjecture/its-time-for-modern-css-to-kill-the-spa/), [Improving Google Search with compression dictionaries](https://developer.chrome.com/blog/search-compression-dictionaries), [Shared compression dictionaries (DebugBear)](https://www.debugbear.com/blog/shared-compression-dictionaries).
 Survey: [State of JavaScript 2025: front-end frameworks](https://2025.stateofjs.com/en-US/libraries/front-end-frameworks/), [State of JS 2025 (InfoQ)](https://www.infoq.com/news/2026/03/state-of-js-survey-2025), [State of JavaScript 2025 takeaways](https://strapi.io/blog/state-of-javascript-2025-key-takeaways).
 Incremental computation (adjacent): [Incremental computation and the web (Jane Street)](https://blog.janestreet.com/incrementality-and-the-web/), [A static slicing method for functional programs](https://dl.acm.org/doi/10.1145/3302516.3307345).
+
+
+## 11. S1 result (2026-10-18, this container: Node 24.14.1, 4 vCPU cloud host, no bench lock — ratios only)
+
+Harness: `apps/ssr-bench/spikes/structural/bench.ts` — the ssr-bench `/resume` page standalone (nested layout with a signal + handler, 1000 keyed `<For>` rows with a per-row click handler, reactive `data-state`, link), compiled in-process three ways and rendered in interleaved rounds (7 rounds × 20 samples at 100 rows, × 4 at 1000; min / median ms per render): **resume** = today's serialized resume (`resumableToString`, server resume target); **static** = plain `renderToString` (the floor); **structural** = plain server target of a hand-lowered source carrying what the structural / derived model records — `_b` boundary records per interactive component, `_sig` keyed signals with wake sets on tracked reads (one `Set.add` per boundary-first read), one JSON tail with the rows as loader data (as every lane ships them); **structural-dom** = the same without the rows in the tail (every row value is rendered verbatim as a sole text child, so a compiler can read the rows back from the DOM on first use — the DOM-as-value-store case of round 1 §3, bound only, not built).
+
+| rows | lane | ms / render (min) | median | × static | HTML bytes | HTML br |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| 100 | resume | 0.373 | 0.590 | 2.97× | 103,225 | 16,231 |
+| 100 | static | 0.152 | 0.198 | 1.00× | 78,260 | 7,592 |
+| 100 | structural | 0.191 | 0.252 | 1.27× | 94,604 | 12,717 |
+| 100 | structural-dom | 0.152 | 0.197 | 0.99× | 78,399 | 7,694 |
+| 1000 | resume | 4.193 | 4.589 | 1.93× | 971,983 | 130,334 |
+| 1000 | static | 2.142 | 2.377 | 1.00× | 779,999 | 71,580 |
+| 1000 | structural | 2.653 | 3.022 | 1.27× | 941,882 | 121,206 |
+| 1000 | structural-dom | 2.095 | 2.321 | 0.98× | 780,138 | 71,712 |
+
+Findings:
+1. **The model's own bookkeeping costs nothing measurable.** Boundary records, keyed signal values and wake sets land within noise of the plain render (0.98–0.99× static) and add 139 bytes to the page. The whole structural overhead (1.27×) is `JSON.stringify` of the rows — the loader data every lane serializes today (the resume lane's `j` tree, Solid's seroval payload).
+2. **Against the gate** (§8 S1: ≥ 2× CPU vs HEAD resume): met at 100 rows with the rows tail (2.3×), and at both sizes without it (3.0× / 2.0×); with the rows tail at 1000 rows 1.5×, because resume's overhead there is dominated by the same data serialization. The decisive quantity is not the model but **whether rendered data is shipped twice**; the compiler can prove when it need not be (values rendered verbatim, invertible bindings), which this harness only bounds.
+3. HTML: structural-dom = static + 139 B; with the rows tail, −3 % raw / −7 % br vs resume (the per-element ids and per-site markers gone, the data unchanged).
+4. Not measured here: peak RSS per lane (in-process harness; the Docker fair comparison owns that), the ui dashboard showcase (widget-heavy page: adopted-layer cost, spike S3), Firefox. Absolute ms are from a loaded cloud host; ratios only.

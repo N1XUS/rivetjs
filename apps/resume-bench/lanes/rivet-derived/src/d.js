@@ -48,6 +48,13 @@ const write = {
     // Same filter as every lane (FIXTURE.md).
     const q = v.query.toLowerCase();
     const list = q ? items.filter((item) => item.label.toLowerCase().includes(q)) : items;
+    // keyed reconcile fast path: an unchanged list touches nothing (a later key with the same result set)
+    const kids = ul.children;
+    if (kids.length === list.length) {
+      let i = 0;
+      while (i < list.length && kids[i] === byId[list[i].id]) i++;
+      if (i === list.length) return;
+    }
     ul.replaceChildren(...list.map((item) => byId[item.id]));
   },
 };

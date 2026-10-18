@@ -120,22 +120,26 @@ async function main() {
   const { renderToString } = await import("@rivetjs/runtime/server");
   const { resumableToString } = await import("@rivetjs/runtime/server-resume");
 
+  const structuralRender = (data: Data, withRows: boolean) => {
+    const c = structMod.ctx;
+    c.b = [];
+    c.s = [];
+    c.w = {};
+    c.cur = 0;
+    c.next = 0;
+    const html = renderToString(() => structMod.App({ data }));
+    const wake: Record<string, number[]> = {};
+    for (const k in c.w) wake[k] = [...c.w[k]];
+    // `j`: the loader data, as every lane ships it today; `structural-dom` leaves it out — every row value is rendered
+    // verbatim as a sole text child, so a compiler could read the rows back from the DOM on first use (bound only)
+    const tail = JSON.stringify(withRows ? { b: c.b, s: c.s, w: wake, j: data.rows } : { b: c.b, s: c.s, w: wake });
+    return (html as string) + '<script type="application/json" id="rv">' + tail + "</script>";
+  };
   const lanes: Record<string, (data: Data) => string | Promise<string>> = {
     resume: (data) => resumableToString(() => resumeMod.App({ data }), { manifest }),
     static: (data) => renderToString(() => plainMod.App({ data })),
-    structural: (data) => {
-      const c = structMod.ctx;
-      c.b = [];
-      c.s = [];
-      c.w = {};
-      c.cur = 0;
-      c.next = 0;
-      const html = renderToString(() => structMod.App({ data }));
-      const wake: Record<string, number[]> = {};
-      for (const k in c.w) wake[k] = [...c.w[k]];
-      const tail = JSON.stringify({ b: c.b, s: c.s, w: wake, j: data.rows });
-      return (html as string) + '<script type="application/json" id="rv">' + tail + "</script>";
-    },
+    structural: (data) => structuralRender(data, true),
+    "structural-dom": (data) => structuralRender(data, false),
   };
 
   console.log(`| rows | lane | ms / render (min) | ms / render (median) | vs static (median) | HTML bytes | HTML br |`);
@@ -143,7 +147,7 @@ async function main() {
   for (const rows of rowsList) {
     const page = makePage(rows);
     const data: Data = { title: page.title as string, token: page.token as string, rows: page.rows as Row[] };
-    const times: Record<string, number[]> = { resume: [], static: [], structural: [] };
+    const times: Record<string, number[]> = { resume: [], static: [], structural: [], "structural-dom": [] };
     const bytes: Record<string, string> = {};
     for (const name of Object.keys(lanes)) bytes[name] = await lanes[name](data);
     const n = Math.max(3, Math.round(samples / Math.max(1, rows / 200)));

@@ -6,13 +6,16 @@
   const d = document;
   const q = []; // held events: [type, target, value]
   let m, p;
+  // fetch-ahead of the route closure (slice + its lazy route), never evaluated by the hint itself
   const hint = () => {
     if (hint.done) return;
     hint.done = 1;
-    const l = d.createElement("link");
-    l.rel = "modulepreload";
-    l.href = "/d.js";
-    d.head.append(l);
+    for (const href of ["/d.js", "/detail.js"]) {
+      const l = d.createElement("link");
+      l.rel = "modulepreload";
+      l.href = href;
+      d.head.append(l);
+    }
   };
   const load = () =>
     (p ||= import("/d.js").then((x) => {
@@ -53,6 +56,9 @@
     requestIdleCallback(() => {
       hint();
       import("/a.js").then((a) => a.pageview(location.pathname));
+      // Idle evaluation of the slice (definitions only, no page code) + the values parse, so the first input runs
+      // synchronously — what Rivet's planner does for prefetched chunks ("evaluated in a later idle slice").
+      requestIdleCallback(() => load());
     });
   });
   addEventListener("popstate", () => load().then((x) => x.route()));
