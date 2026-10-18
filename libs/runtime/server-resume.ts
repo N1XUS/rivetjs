@@ -54,16 +54,27 @@ import { rowPaths } from "./server-resume-paths.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, _onForRow, _onForRows, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
 const noop = (): void => {};
+/**
+ * Derived model (M2 lane A, R1): `./server-derived.ts` installs these on import (the compiled derived module imports its
+ * `_rB` / `_rSig` ABI from `@rivetjs/runtime/server-derived`), so pages of the serialized model carry none of it.
+ */
+export interface DerivedHooks {
+  create(): DerivedRender;
+  run<T>(ctx: DerivedRender, fn: () => T): T;
+  tail(ctx: DerivedRender): ServerValue;
+  patch(ctx: DerivedRender, marker: number): string;
+}
+let derivedHooks: DerivedHooks | null = null;
+/** Installed by `server-derived.ts` on import. */
+export function _setDerived(hooks: DerivedHooks): void {
+  derivedHooks = hooks;
+}
 import { ROUTER, _hrefs } from "./server-router.ts";
 import { _onClientOnly, _onAsync, _onAsyncContent } from "./server-async.ts";
 import { _onSuspense, _SUSPENSE } from "./server-suspense-slot.ts";
 import { _onSlot } from "./slot.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
-// Derived model (M2 lane A, R1): the boundary recorder; its compiler ABI is re-exported below.
-import { createDerived, derivedPatch, derivedTail, withDerived } from "./server-derived.ts";
 import type { DerivedRender } from "./server-derived.ts";
-export { _rB, _rBEnd, _rBOut, _rBAttr, _rSig, _rSigStore } from "./server-derived.ts";
-export type { Boundary as DerivedBoundary } from "./server-derived.ts";
 import type { BoundaryFallback } from "./server-boundary.ts";
 import type { Context, Disposer, EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { _storePaths } from "@rivetjs/reactivity/store";
@@ -144,7 +155,8 @@ export interface ResumableOptions {
   /**
    * Resume model (plan `docs/design/plans/2026-10-18-derived-client.md` M2). `serialized` (default): the recorder below
    * (records, state table, loader). `derived`: modules compiled with `resume: { model: "derived" }` call only the boundary
-   * recorder (`server-derived.ts`: `_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore`); the tail is one
+   * recorder (`@rivetjs/runtime/server-derived`: `_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore`; a render
+   * with `model: "derived"` before that module loaded renders as the plain server target — no boundary, no tail); the tail is one
    * `<script type="rivet/boundaries">` of values (boundary records + keyed state + wake lists), no state table / loader
    * unless a serialized-model record was made too (`.ts` helpers calling `_r*` directly). `For` rows and `Show` /
    * `Switch` branches keep their `<!--rN[-->…<!--]-->` markers; out-of-order streaming is not entered (no site scopes).
@@ -1759,7 +1771,7 @@ class Stream {
                 next.html +
                 "</template>" +
                 patch(next.A, delta) +
-                (this.root.derived ? derivedPatch(this.root.derived, next.A) : "") +
+                (this.root.derived ? derivedHooks!.patch(this.root.derived, next.A) : "") +
                 swap(next.A),
             );
           }
@@ -1826,7 +1838,7 @@ class Stream {
           html +
           "</template>" +
           patch(region, delta) +
-          (this.root.derived ? derivedPatch(this.root.derived, region) : "") +
+          (this.root.derived ? derivedHooks!.patch(this.root.derived, region) : "") +
           swap(region),
       );
       return true;
@@ -1886,12 +1898,12 @@ class Recorder {
   declare segment: Segment | null;
   declare enc: Encoding | null;
   declare stream: Stream | null;
-  /** Derived model (`options.model === "derived"`): the boundary recorder of this render (`server-derived.ts`). */
+  /** Derived model (`options.model === "derived"` + `server-derived.ts` loaded): the boundary recorder of this render. */
   declare derived: DerivedRender | null;
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
-    this.derived = options.model === "derived" ? createDerived() : null;
+    this.derived = options.model === "derived" && derivedHooks ? derivedHooks.create() : null;
     this.next = 0;
     this.pending = null;
     this.events = new Set();
@@ -4592,7 +4604,7 @@ const tailOf = (recorder: Recorder) => (): ServerValue => {
   if (recorder.pending) throw new Error("Internal error: unclosed resumable element");
   const state = recorder.used ? (recorder.lean?.tail(recorder, deferredState(recorder)) ?? encodeState(recorder)) : null;
   // Derived model: the boundaries script follows the content (and any serialized-model state a `.ts` helper recorded).
-  const derived = recorder.derived ? derivedTail(recorder.derived) : null;
+  const derived = recorder.derived ? derivedHooks!.tail(recorder.derived) : null;
   return derived ? (state ? [state, derived] : derived) : state;
 };
 
@@ -4626,7 +4638,7 @@ export function renderResumable(factory: () => ServerValue, writer: { write(chun
   let shell: void | Promise<void>;
   try {
     const render = () => renderToWriter([factory(), tailOf(recorder)], writer as ServerWriter, options);
-    shell = store.run(recorder, () => (recorder.derived ? withDerived(recorder.derived, render) : render()));
+    shell = store.run(recorder, () => (recorder.derived ? derivedHooks!.run(recorder.derived, render) : render()));
   } catch (error) {
     // A synchronous throw (no ErrorBoundary): boundaries streamed so far left their parents, so only the stream ends them.
     recorder.stream?.abandon();
@@ -4649,7 +4661,7 @@ export function resumableToString(factory: () => ServerValue, options: Resumable
 export function resumableToString(factory: () => ServerValue, options: RecorderOptions = {}): string | Promise<string> {
   const recorder = new Recorder({ ...options, stream: undefined });
   const render = () => renderToString([factory(), tailOf(recorder)], options);
-  return store.run(recorder, () => (recorder.derived ? withDerived(recorder.derived, render) : render()));
+  return store.run(recorder, () => (recorder.derived ? derivedHooks!.run(recorder.derived, render) : render()));
 }
 
 export { typeName as _typeName };

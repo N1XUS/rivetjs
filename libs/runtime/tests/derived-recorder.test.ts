@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { resumableToString, _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore } from "@rivetjs/runtime/server-resume";
+import { resumableToString } from "@rivetjs/runtime/server-resume";
+import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore } from "@rivetjs/runtime/server-derived";
 import { isData } from "../server-derived.ts";
 import { compileResume, importServer } from "./resume/compile.ts";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
@@ -22,7 +23,7 @@ const manifest = { hash: "t", runtime: "/rt.js", symbols: {} as Record<string, s
 const page = (lowered: boolean) => `
 import { signal } from "@rivetjs/reactivity";
 import { For, Show } from "@rivetjs/runtime/dom";
-${lowered ? 'import { _rB, _rBOut, _rBEnd, _rSig } from "@rivetjs/runtime/server-resume";' : ""}
+${lowered ? 'import { _rB, _rBOut, _rBEnd, _rSig } from "@rivetjs/runtime/server-derived";' : ""}
 export function Layout(props) {
   ${lowered ? 'const B = _rB("Layout", 0); try {' : ""}
   const theme = ${lowered ? '_rSig("k-0", "light")' : 'signal("light")'};

@@ -35,6 +35,7 @@ export const compileSymbolModule: ResumeCompiler["_compileSymbolModule"] = (symb
 
 const specifiers = [
   "@rivetjs/runtime/server-resume",
+  "@rivetjs/runtime/server-derived",
   "@rivetjs/runtime/server",
   "@rivetjs/runtime/style",
   "@rivetjs/runtime/slot",

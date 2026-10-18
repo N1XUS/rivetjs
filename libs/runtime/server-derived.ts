@@ -9,6 +9,10 @@
 //   _rSig(key, init[, options])               // keyed state: `signal(init)` whose value ships and whose tracked reads
 //   _rSigStore(key, init)                     // record the reading boundary (wake list); `createStore(init)` likewise
 //
+// Own subpath (`@rivetjs/runtime/server-derived`, pay-per-use): the compiled module imports the ABI from here and this
+// module installs the recorder hooks into `server-resume.ts` on import (`_setDerived`), so serialized-model pages and
+// bundles never carry it (zero-cost gate: `/server-resume` unchanged by this file).
+//
 // Nothing else is recorded: no handler / binding / site records, no object table, no captures. The tail is one JSON
 // script (`<script type="rivet/boundaries">`, `BoundaryTail` in resume-format.ts): boundary records with their keyed
 // values, plus wake lists (which boundaries read which keys). The current boundary is the innermost body being
@@ -21,6 +25,7 @@ import type { Store } from "@rivetjs/reactivity/store";
 import { compiledTemplate, template, _attributeRecord } from "./template.ts";
 import { _scopedRecord } from "./server-structural.ts";
 import { escapeJSON } from "./resume-format.ts";
+import { _setDerived } from "./server-resume.ts";
 import type { BoundaryRecord, BoundaryTail } from "./resume-format.ts";
 import type { ServerValue } from "./server.ts";
 
@@ -241,3 +246,5 @@ export function derivedPatch(ctx: DerivedRender, marker: number): string {
   const tail = flush(ctx);
   return tail ? '<script type="rivet/boundaries" data-patch="' + marker + '">' + escapeJSON(JSON.stringify(tail)) + "</script>" : "";
 }
+
+_setDerived({ create: createDerived, run: withDerived, tail: derivedTail, patch: derivedPatch });
