@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite, DOCS_LAZY_OWNED } from "@rivetjs/docs-kit/vite.ts";
 
 /**
  * Frame controls (theme menu, drawer, search) are cdk components whose hover handlers would make the
@@ -32,6 +32,7 @@ export default defineConfig({
       prefetchPaths: false,
       resume: {
         preload: { rules: CDK_ON_INTENT },
+        lazyOwned: [...DOCS_LAZY_OWNED],
         ...(CHUNKS ? { chunks: CHUNKS } : {}),
         ...(MERGE !== undefined ? { merge: MERGE } : {}),
         ...(CAP !== undefined ? { cap: CAP } : {}),

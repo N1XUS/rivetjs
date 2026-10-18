@@ -1501,12 +1501,20 @@ function rivetPlugin(
                   ? real(id)
                   : []
                 : [id.split("?")[0]!];
+        // Module ids an app module of the chunk imports dynamically, once per chunk (route chunks reach the same shared
+        // chunks over and over: ui-docs' 1,181 route closures × a 1,000-import registry took the build past 10 GB when
+        // this ran per (chunk, dynamic) pair with a `getModuleInfo` per module).
+        const appDynamics = new Map<string, Set<string>>();
         const appImported = (chunk: Rollup.OutputChunk, dynamic: string): boolean => {
+          let targets = appDynamics.get(chunk.fileName);
+          if (!targets) {
+            targets = new Set();
+            for (const id of chunk.moduleIds)
+              if (sourcesOf(id).some(insideApp)) for (const to of this.getModuleInfo(id)?.dynamicallyImportedIds ?? []) targets.add(to);
+            appDynamics.set(chunk.fileName, targets);
+          }
           const target = byFile.get(dynamic);
-          const targets = new Set(target ? target.moduleIds : []);
-          return chunk.moduleIds.some(
-            (id) => sourcesOf(id).some(insideApp) && (this.getModuleInfo(id)?.dynamicallyImportedIds ?? []).some((to) => targets.has(to)),
-          );
+          return !!target && target.moduleIds.some((id) => targets.has(id));
         };
         const byFile = new Map(
           Object.values(bundle)
