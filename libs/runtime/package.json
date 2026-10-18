@@ -102,6 +102,10 @@
       "types": "./resume-loader-module.ts",
       "default": "./resume-loader-module.ts"
     },
+    "./resume-symbols": {
+      "types": "./resume-symbols.ts",
+      "default": "./resume-symbols.ts"
+    },
     "./image": {
       "types": "./image.ts",
       "default": "./image.ts"

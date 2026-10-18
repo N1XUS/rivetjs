@@ -26,6 +26,7 @@ import { _takeover } from "./dom-v2-spread.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
 import { createRouter } from "./dom-router.ts";
 import { createDecoder, _placeholderContext } from "./resume-format.ts";
+import { _rSyms } from "./resume-symbols.ts";
 import { DEV } from "#dev";
 import type { Context, Disposer, Owner, Signal } from "@rivetjs/reactivity";
 import type { AdoptedBranch, AdoptedRow } from "./dom-adopt.ts";
@@ -376,8 +377,12 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             )
           : "Resume symbol is not loaded: " + id,
       );
-    // Multi-module (chunk group / route) chunks resolve ids themselves: names may repeat across modules.
-    const fn = (module.__rivet ? (module.__rivet as (id: string) => unknown)(id) : module[id.slice(id.indexOf("#") + 1)]) as SymbolFn | undefined;
+    // A placed symbol module registered its table by module id (`_rSym`, route mode); multi-module (chunk group) chunks
+    // resolve ids themselves (`__rivet`: names may repeat across modules); else the chunk exports the symbol by name.
+    const hash = id.indexOf("#"),
+      table = _rSyms[id.slice(0, hash)];
+    const fn = (table?.[id.slice(hash + 1)] ?? (module.__rivet ? (module.__rivet as (id: string) => unknown)(id) : module[id.slice(hash + 1)])) as
+      SymbolFn | undefined;
     if (typeof fn == "function") return fn;
     // Deploy skew: the chunk (another build) has no such symbol — ids are content hashes, so the page's code is gone.
     // Never run another function: the loader's guarded `fail` (cancelable `rivet:resume-error` {skew}, then a reload).

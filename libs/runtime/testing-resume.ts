@@ -16,6 +16,7 @@ import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { createDecoder, _placeholderContext } from "@rivetjs/runtime/resume-format";
 import type { ResumeState, SymbolRef } from "@rivetjs/runtime/resume-format";
 import { DEV } from "#dev";
+import { _rSyms } from "@rivetjs/runtime/resume-symbols";
 
 export interface SerializeAndReviveOptions {
   /**
@@ -177,7 +178,9 @@ function hooks(state: ResumeState, loaded: (Record<string, unknown> | undefined)
             )
           : "Resume symbol is not loaded: " + id,
       );
-    const fn = (module.__rivet ? (module.__rivet as (id: string) => unknown)(id) : module[id.slice(id.indexOf("#") + 1)]) as
+    const hash = id.indexOf("#"),
+      table = _rSyms[id.slice(0, hash)];
+    const fn = (table?.[id.slice(hash + 1)] ?? (module.__rivet ? (module.__rivet as (id: string) => unknown)(id) : module[id.slice(hash + 1)])) as
       ((...c: unknown[]) => unknown) | undefined;
     if (typeof fn == "function") return fn;
     throw Object.assign(new Error((DEV ? "Resume symbol is missing from its chunk (deploy skew): " : "Resume symbol is not loaded: ") + id), { skew: id });

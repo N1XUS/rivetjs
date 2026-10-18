@@ -228,21 +228,27 @@ test("chunk strategies: ChunkGroup and route grouping, component-level preload, 
     const route = await buildGroups(root, "route");
     assert.equal(url(route, "src/page.tsx#Page"), url(route, "src/card.tsx#Card"));
     assert.notEqual(url(route, "src/page.tsx#Page"), url(route, "src/detail.tsx#Detail"));
-    // Same symbol names from two modules in one chunk resolve through __rivet(id).
+    // Route chunks import one part per module, and each part registers its symbols under its module id (`_rSym`), so
+    // the same symbol names from two modules stay apart without `__rivet(id)` or the chunk's export names.
     const main = await readFile(resolve(root, "dist-route" + url(route, "src/page.tsx#Page")), "utf8");
-    assert.match(main, /__rivet/);
+    assert.doesNotMatch(main, /\b__rivet\b/);
+    for (const [file, name] of [
+      ["src/page.tsx", "Label"],
+      ["src/card.tsx", "Label"],
+    ]) {
+      const id = Object.keys(route.symbols).find((s) => s.startsWith(file + "#" + name))!;
+      const suffix = id.slice(id.indexOf("#") + 1).replace(/\$/g, "\\$");
+      assert.match(main, new RegExp(`_rSym\\(${JSON.stringify(file)}, \\{[^}]*(?:"${suffix}"|${suffix}): `), file);
+    }
+    // The chunk evaluates (registration runs) and exports nothing of its own.
     const mod = await import(resolve(root, "dist-route" + url(route, "src/page.tsx#Page")));
-    const ids = Object.keys(route.symbols).filter((s) => route.symbols[s] === url(route, "src/page.tsx#Page"));
-    for (const id of ids) assert.equal(typeof mod.__rivet(id), "function", id);
-    const pageLabel = ids.find((s) => s.startsWith("src/page.tsx#Label")),
-      cardLabel = ids.find((s) => s.startsWith("src/card.tsx#Label"));
-    assert.notEqual(mod.__rivet(pageLabel), mod.__rivet(cardLabel));
+    assert.deepEqual(Object.keys(mod), []);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-test("route chunks: imports through a .ts barrel reach their leaves; shared modules cluster by the routes using them; fetchAhead", async () => {
+test("route chunks: imports through a .ts barrel reach their leaves; shared modules are placed by the bundler; fetchAhead", async () => {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-route-"));
   try {
@@ -307,28 +313,26 @@ export function App() { return <div><R1 /><R2 /><R3 /><R4 /><R5 /></div>; }
     };
     const m = await run("route");
     const url = (id: string, manifest = m) => manifest.symbols[Object.keys(manifest.symbols).find((s) => s.startsWith(id))!]!;
-    // A: routes 1 + 2; B: routes 2 + 3; C (renamed `Cee`): route 3 only. Shared modules cluster by the routes using them
-    // under the merge budget: route 2 loads A and B in one chunk (routes 1 and 3 each take a few hundred bytes of the
-    // other's handler); none of them in main.
-    assert.equal(url("src/lib/a.tsx#A"), url("src/lib/b.tsx#B"));
-    assert.match(url("src/lib/a.tsx#A"), /resume-shared-/);
+    // A: routes 1 + 2; B: routes 2 + 3; C (renamed `Cee`): route 3 only. Shared modules are placed by the bundler: A and
+    // B are not import-adjacent, so each sits in its own chunk (the routes using it), not a route chunk, not main.
+    const routes = ["src/r1.tsx#R1", "src/r2.tsx#R2", "src/r3.tsx#R3", "src/r4.tsx#R4", "src/r5.tsx#R5", "src/app.tsx#App"].map((id) => url(id));
+    assert.notEqual(url("src/lib/a.tsx#A"), url("src/lib/b.tsx#B"));
+    assert.ok(!routes.includes(url("src/lib/a.tsx#A")) && !routes.includes(url("src/lib/b.tsx#B")));
     assert.equal(url("src/lib/c.tsx#C"), url("src/r3.tsx#R3"));
-    assert.notEqual(url("src/lib/a.tsx#A"), url("src/app.tsx#App"));
     // D is exported by the barrel but imported by no route: main (with the app), never in a route's chunk.
     assert.equal(url("src/lib/d.tsx#D"), url("src/app.tsx#App"));
     // The compound reaches both modules it imports: route 4 only.
     assert.equal(url("src/lib/e.tsx#E"), url("src/r4.tsx#R4"));
     assert.equal(url("src/lib/f.tsx#F"), url("src/r4.tsx#R4"));
-    // G behind the cycle, imported by routes 4 and 5: a shared chunk of its own (no route in common with A / B), not main.
-    assert.match(url("src/lib/g.tsx#G"), /resume-shared-/);
+    // G behind the cycle, imported by routes 4 and 5: placed too (no route in common with A / B), not main.
+    assert.ok(!routes.includes(url("src/lib/g.tsx#G")));
     assert.notEqual(url("src/lib/g.tsx#G"), url("src/lib/a.tsx#A"));
-    // A page's shared chunks are siblings (one group): loading one prefetches the others.
-    assert.ok(m.groups.some((g) => g.includes(url("src/lib/a.tsx#A")) && g.includes(url("src/lib/b.tsx#B"))));
+    // Placed chunks carry sizes and deps like symbol chunks (the server plans and fetches them ahead).
+    assert.ok(m.sizes[url("src/lib/a.tsx#A")]! > 0);
     assert.equal(m.fetchAhead, true);
-    // `merge: false`: one shared chunk per exact set of routes (A: 1 + 2, B: 2 + 3 apart).
+    // `merge: false`: the bundler's split alone — the same placement here.
     const split = await run("route", false);
     assert.notEqual(url("src/lib/a.tsx#A", split), url("src/lib/b.tsx#B", split));
-    assert.match(url("src/lib/a.tsx#A", split), /resume-shared-a-/);
     assert.equal((await run("component")).fetchAhead, undefined);
   } finally {
     await rm(root, { recursive: true, force: true });

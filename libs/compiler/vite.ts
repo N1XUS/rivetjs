@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { coLoadGroups, isBarrel, MERGE_PREFIX, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
+import { coLoadGroups, isBarrel, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import {
   compile,
@@ -350,10 +350,18 @@ interface Chunk {
   symbols: ResumeSymbol[];
   preload: string | null;
   sibling: string;
+  /** Route chunks: shared (placed) modules the route reaches, imported for their registration side effect. */
+  shared?: string[];
 }
 
 const CHUNK = "\0rivet-resume-chunk:";
 const PART = "\0rivet-resume-part:";
+
+/** Appended to a route-mode part module: registers its symbols (by the id after `#`) under the module id. */
+function registration(mod: string, symbols: ResumeSymbol[]): string {
+  const table = symbols.map((symbol) => `${JSON.stringify(symbol.id.slice(symbol.id.indexOf("#") + 1))}: ${symbol.name}`).join(", ");
+  return `import { _rSym } from "@rivetjs/runtime/resume-symbols";\n_rSym(${JSON.stringify(mod)}, { ${table} });\n`;
+}
 const ENTRY = "\0rivet-resume-entry";
 const MANIFEST = ".vite/rivet-resume.json";
 // V8 explicit compile hint: compile every function when the script is compiled (module scripts: on the
@@ -610,6 +618,13 @@ function rivetPlugin(
   const chunks = new Map<string, Chunk>(); // virtual id → chunk
   let merged = new Map<string, string>(); // module id → shared chunk name (`resume.merge`, buildEnd → outputOptions)
   const parts = new Map<string, { file: string; symbols: ResumeSymbol[] }>(); // part id → part
+  // Route mode: modules several routes reach are no chunks of their own (ROUTE-CHUNKS placed parts, 2026-10-18): their
+  // part module is imported by every route chunk reaching it and the bundler places it, with its import closure, in a
+  // shared chunk by the routes using it (merged under `resume.merge` / `cap` at buildEnd, on the real module graph).
+  // The manifest then points their symbols at whichever chunk holds the part. One emitted chunk per exact set of routes
+  // was both the request count and a Rolldown stack overflow (ui-docs: 193 nested sets over 1,036 frames), and
+  // clustering those sets up front could not see the closures and lazy imports a merge drags along.
+  const placed = new Map<string, { symbols: ResumeSymbol[]; preload: string | null }>(); // shared file → its symbols
   const posix = (path: string) => path.split(sep).join("/");
   // Dev server: symbols of the resume modules compiled for SSR (symbol id → its module's source and symbol).
   // id → defining file → its symbol (fix round 2, L2: a shared canonical module reference id has several definers; it
@@ -1063,6 +1078,7 @@ function rivetPlugin(
       // Dev renders without resumability: symbol chunks and the manifest exist only in client builds.
       if (!resume || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
       chunks.clear();
+      placed.clear();
       parts.clear();
       const strategy = resume.chunks ?? "component";
       if (!["component", "group", "route"].includes(strategy)) this.error('resume.chunks must be "component", "group" or "route"');
@@ -1115,25 +1131,11 @@ function rivetPlugin(
         resolved.set(filename, map);
       }
       const groups = groupComponents(facts, resolved, through);
-      // Route mode: modules several routes reach cluster into shared chunks by the routes using them (`merge` budget
-      // per request saved, then `cap` per route) instead of one chunk per exact set of routes — thousands of nested
-      // sets (ui-docs: 193 sets over 1,036 lazy frames) are both the request count and a Rolldown stack overflow.
-      const cluster = new Map<string, string>();
-      if (strategy === "route" && resume.merge !== false) {
-        const byRoot = new Map<string, string[]>();
-        const shared: CoLoadModule[] = [];
-        for (const filename of resumable) {
-          const roots = groups.roots(filename);
-          if (!roots || roots.length < 2) continue;
-          for (const r of roots) (byRoot.get(r) ?? byRoot.set(r, []).get(r)!).push(filename);
-          const size = (compiled.get(filename)?.symbols ?? []).reduce((n, symbol) => n + symbol.source.length, 0);
-          shared.push({ id: filename, size, imports: [], entry: false, groupable: true });
-        }
-        for (const [r, files] of byRoot) shared.push({ id: r, size: 0, imports: files, entry: true, groupable: false });
-        for (const [filename, name] of coLoadGroups(shared, { budget: resume.merge ?? 2048, cap: resume.cap, adjacency: "owners" }))
-          cluster.set(filename, "route:shared:" + name.slice(MERGE_PREFIX.length));
-      }
-      const routeKey = (filename: string) => cluster.get(filename) ?? groups.route(filename);
+      // Route keys: `route:<root>` (one route), `route:main` (no route); a module several routes reach is placed (above).
+      const routeKey = (filename: string) => {
+        const key = groups.route(filename);
+        return key.startsWith("route:shared:") ? "route:placed:" + filename : key;
+      };
       // Function Bridge T3 (fix H2, round 2 N3): module references, one symbol per canonical id. An import reference (a
       // value of a module that does not stamp it itself) gets one chunk per id, importing only that value from its
       // specifier, so a page needing it never loads another component's chunk or module graph. An own reference (the
@@ -1249,21 +1251,16 @@ function rivetPlugin(
           }
           const group = groups.group(filename, symbol.component);
           const key = strategy === "group" && group ? group : strategy === "route" ? routeKey(filename) : filename + "?" + symbol.component;
+          if (key.startsWith("route:placed:")) {
+            let entry = placed.get(filename);
+            if (!entry) placed.set(filename, (entry = { symbols: [], preload: groups.modulePreload(filename) }));
+            entry.symbols.push(symbol);
+            continue;
+          }
           const id = CHUNK + key;
           let chunk = chunks.get(id);
           if (!chunk) {
-            const label =
-              strategy === "component" || (strategy === "group" && !group)
-                ? symbol.component
-                : key.startsWith("route:shared:")
-                  ? "shared-" +
-                    (cluster.has(filename)
-                      ? key.slice("route:shared:".length)
-                      : filename
-                          .replace(/^.*\//, "")
-                          .replace(/\.[^.]*$/, "")
-                          .replace(/[^\w-]/g, "_"))
-                  : key.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_");
+            const label = strategy === "component" || (strategy === "group" && !group) ? symbol.component : key.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_");
             chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: group ?? routeSibling(routeKey(filename)) }));
             this.emitFile({ type: "chunk", id, name: "resume-" + label, preserveSignature: "strict" });
           }
@@ -1274,6 +1271,20 @@ function rivetPlugin(
           // Component-level preload: the module's `export const preload`, else its ChunkGroup's `preload` prop.
           chunk.preload ??= groups.modulePreload(filename) ?? (group && groups.groupPreload(group));
         }
+      // Every route reaching a placed module imports its part (a route without symbols of its own gets an empty chunk
+      // of imports): the part is placed by the routes using it, and never dropped as unreferenced.
+      for (const [filename, entry] of placed) {
+        parts.set(PART + filename, { file: filename, symbols: entry.symbols });
+        for (const route of groups.roots(filename) ?? []) {
+          const id = CHUNK + "route:" + route;
+          let chunk = chunks.get(id);
+          if (!chunk) {
+            chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: "route:" + route }));
+            this.emitFile({ type: "chunk", id, name: "resume-" + route.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_"), preserveSignature: "strict" });
+          }
+          (chunk.shared ??= []).push(filename);
+        }
+      }
       this.emitFile({ type: "chunk", id: resume.entry ? resolve(root, resume.entry) : ENTRY, name: "resume-entry", preserveSignature: "strict" });
       if (builtinsId) this.emitFile({ type: "chunk", id: builtinsId, name: "resume-builtins", preserveSignature: "strict" });
       if (loaderId) this.emitFile({ type: "chunk", id: loaderId, name: "resume-loader", preserveSignature: "strict" });
@@ -1330,9 +1341,25 @@ function rivetPlugin(
       }
       if (id === ENTRY) return 'import { createResume } from "@rivetjs/runtime/dom-resume";\nexport default createResume({});\n';
       const part = parts.get(id);
-      if (part) return _compileSymbolModule(part.symbols, part.file, contributed(false));
+      // Route mode parts register their symbols by module id (`_rSym`): a placed part's chunk exports are the bundler's.
+      if (part)
+        return (
+          _compileSymbolModule(part.symbols, part.file, contributed(false)) +
+          (resume?.chunks === "route" ? registration(moduleId(part.file), part.symbols) : "")
+        );
       const chunk = chunks.get(id);
       if (!chunk) return null;
+      // Route chunks: side-effect imports of the route's own parts and the placed parts it reaches (one part per file).
+      if (resume?.chunks === "route" && id.startsWith(CHUNK + "route:")) {
+        let source = "";
+        for (const [file, symbols] of chunk.parts) {
+          const partId = PART + file;
+          parts.set(partId, { file, symbols });
+          source += `import ${JSON.stringify(partId)};\n`;
+        }
+        for (const file of chunk.shared ?? []) source += `import ${JSON.stringify(PART + file)};\n`;
+        return source;
+      }
       if (chunk.parts.size === 1) {
         const [[file, symbols]] = chunk.parts as unknown as [[string, ResumeSymbol[]]];
         return _compileSymbolModule(symbols, file, contributed(false));
@@ -1369,7 +1396,12 @@ function rivetPlugin(
           // Dynamic-import targets (lazy routes, islands, library `import()`) load on their own: owners too.
           entry: own,
           // Virtual modules, assets and worker / url / raw imports keep the bundler's placement.
-          groupable: !own && info.code != null && !id.startsWith("\0") && /\.[cm]?[jt]sx?(\?|$)/.test(id) && !/[?&](worker|sharedworker|url|raw)\b/.test(id),
+          groupable:
+            !own &&
+            info.code != null &&
+            (!id.startsWith("\0") || id.startsWith(PART)) &&
+            /\.[cm]?[jt]sx?(\?|$)/.test(id) &&
+            !/[?&](worker|sharedworker|url|raw)\b/.test(id),
           barrel: info.code != null && isBarrel(info.code),
           // The app entry and the resume runtime load on every page: nothing merges into them.
           pinned: info.isEntry && !id.startsWith(CHUNK),
@@ -1419,6 +1451,26 @@ function rivetPlugin(
             }
           }
           if (output.facadeModuleId === ENTRY || (resume.entry && output.facadeModuleId === resolve(root, resume.entry))) runtime = base + output.fileName;
+        }
+        // Placed parts (route mode): a shared module's symbols live in whichever chunk the bundler put its part in.
+        const placedChunks = new Set<string>();
+        if (placed.size) {
+          const holder = new Map<string, Rollup.OutputChunk>();
+          for (const output of Object.values(bundle))
+            if (output.type === "chunk") for (const id of output.moduleIds) if (id.startsWith(PART)) holder.set(id, output);
+          for (const [file, entry] of placed) {
+            const output = holder.get(PART + file);
+            if (!output) this.error(`resume: no chunk holds the symbols of ${moduleId(file)}`);
+            const url = base + output.fileName;
+            sizes[url] = Buffer.byteLength(output.code);
+            placedChunks.add(output.fileName);
+            for (const symbol of entry.symbols) {
+              symbols[symbol.id] = url;
+              const rule = rules.find(({ match }) => (typeof match === "string" ? symbol.id.startsWith(match) : match.test(symbol.id)));
+              const strategy = entry.preload ?? rule?.strategy;
+              if (strategy) preload[symbol.id] = strategy;
+            }
+          }
         }
         // Dynamic imports reachable through each symbol chunk's static graph (lazy routes/components it
         // may load on use): intent prefetches them after the chunk.
@@ -1480,6 +1532,7 @@ function rivetPlugin(
           for (const name of seen) sizes[base + name] ??= Buffer.byteLength((byFile.get(name)?.code ?? "") as string);
         };
         if (runtime) closure(runtime.slice(base.length));
+        for (const name of placedChunks) closure(name);
         // Framework island chunks (`rivet({ bridges })`): island key → URL, sizes + static closures (the framework runtime),
         // so the server's `_rPreload(key)` plans them like symbol chunks.
         const islands: Record<string, string> = {};
