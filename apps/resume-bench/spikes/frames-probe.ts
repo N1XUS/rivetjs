@@ -7,12 +7,16 @@
 //     --url http://127.0.0.1:4327 --frames select-default,date-picker-basic,combo-box-default,showcase-dashboard \
 //     --click 'select-default=[data-slot=select-trigger],date-picker-basic=button[data-slot=date-picker-button],combo-box-default=button,showcase-dashboard=#period >> text=7 days' \
 //     [--repeats 3] [--fast] [--label component]
+//   … --paths /orders,/orders/new --click '/orders=th >> text=Customer'   (page paths instead of example frames)
 import { chromium } from "playwright";
 
 const argv = process.argv.slice(2);
 const opt = (name: string, def: string) => (argv.includes(name) ? argv[argv.indexOf(name) + 1]! : def);
 const base = opt("--url", "http://127.0.0.1:4327");
-const frames = opt("--frames", "showcase-dashboard").split(",");
+// `--frames a,b` probes docs example frames (`/examples/<id>/frame/`); `--paths /x,/y` probes page paths as given.
+const paths = opt("--paths", "");
+const frames = paths ? paths.split(",") : opt("--frames", "showcase-dashboard").split(",");
+const pageUrl = (frame: string) => (paths ? `${base}${frame}` : `${base}/examples/${frame}/frame/`);
 const repeats = Number(opt("--repeats", "3"));
 const slow = !argv.includes("--fast");
 const label = opt("--label", "");
@@ -63,7 +67,7 @@ async function probe(frame: string): Promise<Sample> {
     (window as unknown as { __m1: Record<string, number> }).__m1 = {};
     addEventListener("click", (e) => ((window as unknown as { __m1: Record<string, number> }).__m1.click = e.timeStamp), true);
   });
-  await page.goto(`${base}/examples/${frame}/frame/`, { waitUntil: "load" });
+  await page.goto(pageUrl(frame), { waitUntil: "load" });
   await page.waitForTimeout(3000);
   const requestsBefore = js.length;
   const bytesBefore = js.reduce((n, j) => n + j.bytes, 0);
