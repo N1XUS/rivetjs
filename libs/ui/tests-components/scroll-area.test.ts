@@ -5,7 +5,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -20,7 +20,8 @@ async function onPage(body: (page: Page) => Promise<void>): Promise<void> {
   }
 }
 
-const SCROLL_AREA_SCRIPT = /scroll-area|ScrollArea|presence/i;
+// Scroll-area code: chunks holding its symbols + the shared code only they import (build manifest; route chunks by default).
+const scrollAreaScripts = (scripts: readonly string[]) => among(scripts, codeOf(/^@rivetjs\/(cdk|ui)\/scroll-area\/|#ScrollArea\w*\$/));
 const tag = (html: string, id: string) => new RegExp(`<div[^>]*id="${id}"[^>]*>`).exec(html)?.[0] ?? "";
 
 test("scroll-area: SSR classes + data-slot, shadow viewport, native overflow before activation", () =>
@@ -54,18 +55,11 @@ test("scroll-area: no scroll-area code runs before interaction (chunks preloaded
     await page.waitForLoadState("networkidle");
     // cdk activators are `preload="visible"`: fetched when in view, nothing runs (no boot, no scroll-area style yet).
     assert.equal(await page.locator("style[data-rv-scroll-area-style]").count(), 0, "no scroll-area code ran");
-    assert.ok(
-      seen.scripts.some((u) => SCROLL_AREA_SCRIPT.test(u)),
-      "scroll-area chunks preloaded when visible",
-    );
+    assert.ok(scrollAreaScripts(seen.scripts).length > 0, "scroll-area chunks preloaded when visible");
     const loaded = seen.scripts.length;
     await page.hover("#sa-hover-viewport");
     await page.waitForSelector("#sa-hover-thumb", { state: "attached" });
-    assert.deepEqual(
-      seen.scripts.slice(loaded).filter((u) => SCROLL_AREA_SCRIPT.test(u)),
-      [],
-      "the first hover needs no further scroll-area chunk",
-    );
+    assert.deepEqual(scrollAreaScripts(seen.scripts.slice(loaded)), [], "the first hover needs no further scroll-area chunk");
     await page.waitForFunction(() => document.querySelector("#sa-hover-y")?.getAttribute("data-state") === "visible");
     assert.equal(await page.getAttribute("#sa-hover-y", "data-slot"), "scroll-area-scrollbar");
     assert.equal(await page.getAttribute("#sa-hover-thumb", "class"), "scroll-area__thumb");

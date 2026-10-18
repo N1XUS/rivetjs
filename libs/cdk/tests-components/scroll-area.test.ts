@@ -7,7 +7,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -192,7 +192,8 @@ test("resumed: the thumb re-measures when the content grows", async () => {
   await page.close();
 });
 
-const scrollAreaScripts = (scripts: string[]) => scripts.filter((url) => /scroll-area|ScrollArea|ScrollAreaColdStory|presence/i.test(url));
+// Scroll-area / presence code: chunks holding their symbols + the shared code only they import (build manifest).
+const scrollAreaScripts = (scripts: string[]) => among(scripts, codeOf(/^@rivetjs\/cdk\/(scroll-area|presence)\/|#ScrollArea\w*\$/));
 const openCold = async () => {
   const page = await s.browser.newPage({ viewport: { width: 900, height: 1000 } });
   const seen = watch(page);

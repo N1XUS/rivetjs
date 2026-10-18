@@ -218,7 +218,7 @@ export const mixed = (manifest: never) => resumableToString(() => <Page />, { ma
       assert.ok(!/rivet\/state|data-region/.test(code), url + " carries resume runtime code");
     }
     assert.ok(!lean.includes(manifest.runtime) && (!manifest.loader || !lean.includes(manifest.loader)), lean);
-    // Bytes the lean path adds to the HTML: records + the inline boot (< 1.5 KB), no state script / loader.
+    // Bytes the lean path adds to the HTML: records + the inline boot (< 2,304 B), no state script / loader.
     const tail = lean.slice(lean.indexOf("</main>") + 7);
     // Records (two islands, each with its chunk + merged shared chunk URLs: 2026-10-18 `merge` default 65536 names the
     // shared chunk `rivet-merge-…`, +8 B of URL) + the inline boot.

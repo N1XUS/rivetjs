@@ -394,8 +394,9 @@ function hintEagerCompile(bundle: Rollup.OutputBundle, root: (output: Rollup.Out
 }
 
 /** Compile project JSX/TSX for Vite's DOM or SSR environment. Styles use Vite's normal pipeline.
- * `resume.modules` (root-relative paths) compile in resume mode: the client build emits one symbol
- * chunk per component plus the resume runtime entry, and writes `.vite/rivet-resume.json`.
+ * `resume.modules` (root-relative paths) compile in resume mode: the client build emits symbol chunks
+ * grouped by `resume.chunks` (default one per route) plus the resume runtime entry, and writes
+ * `.vite/rivet-resume.json`.
  * Transformed modules carry source maps in dev and when `build.sourcemap` is set. On the dev server,
  * client modules hot-replace their exported components in place, keeping component state
  * (`@rivetjs/runtime/hot`; a module comment `@refresh reset` opts out of keeping it). Plugins with an

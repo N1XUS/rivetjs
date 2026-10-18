@@ -5,7 +5,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { BrowserContext, Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -41,7 +41,8 @@ test("cold page: the first menu click needs no further chunk (preloaded when vis
   await page.click("#inbox");
   await page.waitForFunction(() => document.getElementById("pressed")?.textContent === "1");
   assert.deepEqual(
-    seen.scripts.slice(before).filter((url) => /\/resume-(Sidebar|SidebarStory|SidebarProvider|SidebarMenuButton|Button)-|\/sidebar-/.test(url)),
+    // Sidebar / Button symbol chunks + the shared code only they import (build manifest; route chunks by default).
+    among(seen.scripts.slice(before), codeOf(/#(Sidebar\w*|Button)\$|^@rivetjs\/cdk\/sidebar\//)),
     [],
     "sidebar chunks loaded by the first click",
   );

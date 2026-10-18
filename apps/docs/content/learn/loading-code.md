@@ -10,7 +10,7 @@ In a Rivet page, the browser does not download one big bundle. The build splits 
 
 ## What it is
 
-The build makes a :term[chunk]{id=chunk} (one JavaScript file) per component that has browser code. A component's chunk holds only its browser parts: event handlers, client effects, and the code that updates the page when a signal changes. The rest of the component, the part that writes HTML, stays on the server.
+The build puts the browser code of each page into a :term[chunk]{id=chunk} (one JavaScript file): by default one chunk per route, plus a main chunk for code that every page shares, such as layouts. A chunk holds only the browser parts of the components: event handlers, client effects, and the code that updates the page when a signal changes. The rest of each component, the part that writes HTML, stays on the server. Code that several routes use goes into shared chunks, so a page never downloads another page's handlers.
 
 The browser also needs a few shared files:
 
@@ -20,11 +20,11 @@ The browser also needs a few shared files:
 
 ## Why it matters
 
-Each user pays only for what they use. A visitor who reads an article and leaves downloads no code from your components. A visitor who clicks "Like" downloads the "Like" handler, a few hundred bytes, and nothing for the comments, the menu or the footer.
+Each user pays only for what they use. A visitor who reads an article and leaves downloads no code from your components. A visitor who clicks "Like" downloads the browser parts of that page, usually a few kilobytes, and never the code that writes its HTML or the code of other pages.
 
 ## How it works
 
-Here are two components. Each has its own chunk:
+Here are two components on one page. Their handlers share the page's chunk:
 
 ::example{id=lazy-chunk-demo}
 
@@ -69,7 +69,7 @@ For one element, with the `preload` attribute:
 For a whole component, with a module export:
 
 ```tsx title="src/components/Chat.tsx"
-// Fetch this component's chunk when the browser is idle.
+// Fetch the chunk that holds this component's code when the browser is idle.
 export const preload = "idle";
 ```
 
@@ -83,11 +83,11 @@ export const preload = "idle";
 
 ## Group code differently
 
-By default each component is one chunk. The `resume.chunks` option in `vite.config.ts` can group them per `<ChunkGroup>` (a part of the page you mark) or per route instead. Fewer, larger chunks mean fewer requests but more unused code. Small shared chunks that load together are merged automatically (`resume.merge`). See [chunks](../guides/performance/chunks.md).
+By default each route is one chunk. The `resume.chunks` option in `vite.config.ts` can split them per component (`"component"`, the default until 2026-10-18) or per `<ChunkGroup>` (a part of the page you mark) instead. Fewer, larger chunks mean fewer requests but more unused code. Small shared chunks that load together are merged automatically (`resume.merge`). See [chunks](../guides/performance/chunks.md).
 
 ## What it means for your code
 
-- **Small components make small chunks.** A handler in a big component still loads only its own browser parts, but splitting interactive parts into separate components gives you separate files.
+- **Only browser parts are sent.** A big component sends only its handlers and bindings, never its HTML code. With `chunks: "component"`, splitting interactive parts into separate components also gives you separate files.
 - **Code a handler imports loads with it.** A large library used in a handler is fetched together with that handler's chunk. Load rarely used libraries with `import()` inside the handler.
 - **Measure with a production build.** The dev server loads everything differently. See [measuring](../guides/performance/measuring.md).
 

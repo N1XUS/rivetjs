@@ -24,7 +24,7 @@ The server HTML of a ToggleButton and a ListBox (from the example below, runtime
 
 - **Full ARIA state.** Roles, names, `aria-selected`, `aria-pressed`, `aria-expanded`, the roving tab stop, hidden tab panels: screen readers and Tab work before any JavaScript.
 - **Native behaviour.** Buttons are `<button>`, fields are inputs, Disclosure is `<details>`, Select and ComboBox submit through hidden form fields: forms post without JavaScript.
-- **No component code on the critical path.** The page carries a small inline loader and a preload plan. Each component's chunk (its handlers and bindings only) is fetched on intent (hover, focus, touch), when the element is visible, or when idle; the first event waits for it and then runs as usual.
+- **No component code on the critical path.** The page carries a small inline loader and a preload plan. The chunk holding a component's handlers and bindings (by default the route's chunk) is fetched on intent (hover, focus, touch), when the element is visible, or when idle; with document prefetch on, a page also downloads its own chunks after it loaded, without running them. The first event waits for its chunk and then runs as usual.
 - **`data-rk` holds cold keys.** Composite widgets (ListBox, Menu, Tabs, Select, ComboBox, Toolbar, Calendar) list the keys they handle. While their code loads, the loader prevents the default action of those keys, so a first :kbd[ArrowDown] does not scroll the page; the widget's handler then runs for that key.
 - **Closed overlays render nothing.** A closed Dialog, Popover, Menu or Tooltip has no markup on the server; its content is created when it opens.
 
@@ -104,6 +104,6 @@ Component props are live. A prop expression that reads a signal updates only the
 
 ## Checks
 
-- `npm run build && npm run preview`, then watch the network panel: the HTML renders and works for reading and Tab before any script runs; component chunks arrive afterwards, in the background (lists in view when visible or idle, buttons on intent). The docs examples print the count ("N script(s) before interaction").
+- `npm run build && npm run preview`, then watch the network panel: the HTML renders and works for reading and Tab before any script runs; handler chunks arrive afterwards, in the background (lists in view when visible or idle, buttons on intent). The docs examples print the count ("N script(s) before interaction").
 - The server prints "not serializable" with the file and the capture: fix the callback or the slot, not the component.
 - In development, Rivet logs accessibility warnings for markup it renders (missing names, unreachable click targets, duplicate ids); `data-rivet-a11y="off"` on `<html>` turns them off.

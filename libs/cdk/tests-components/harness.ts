@@ -1,4 +1,5 @@
 // Story app harness: production build (client + server), node adapter, one Chromium for a test file.
+import { readFileSync } from "node:fs";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
 import { buildApp, dist } from "./app/serve.ts";
@@ -76,13 +77,72 @@ export const scriptsBeforeDeferred = (page: Page): Promise<string[]> =>
       .map((entry) => new URL(entry.name).pathname);
   });
 
-/** Library chunks requested so far (aria / cdk symbols and modules). */
-export const libraryScripts = (seen: Watch): string[] =>
-  seen.scripts.filter((url) =>
-    /resume-(ListBox|ListBoxView|ListBoxOptions|Tabs|Menu|MenuTrigger|SubmenuTrigger|MenuView|ComboBox|Select|Autocomplete|Dialog|Popover|ToggleButton|Button|Checkbox|Switch|RadioGroup|TextField|Disclosure)-|behaviour|collections-|selection-|interactions-|overlay-|options-/.test(
-      url,
-    ),
-  );
+interface ResumeManifest {
+  runtime: string;
+  symbols: Record<string, string>;
+  deps?: Record<string, string[]>;
+}
+let manifest: ResumeManifest | undefined;
+const path = (url: string) => new URL(url, "http://x").pathname;
+const resumeManifest = (): ResumeManifest => (manifest ??= JSON.parse(readFileSync(dist + "/client/.vite/rivet-resume.json", "utf8")) as ResumeManifest);
+
+/**
+ * Paths of the chunks holding the resume symbols whose id (`<module>#<Component>$<hash>`, cdk modules as
+ * `@rivetjs/cdk/<path>`) matches, read from the build's `.vite/rivet-resume.json`. Chunk file names depend on
+ * `resume.chunks` (route chunks by default: `resume-<route file>-…`, placed shared code in `rivet-merge-…`), the
+ * symbol → chunk map does not.
+ */
+export const chunksOf = (match: RegExp): Set<string> =>
+  new Set(Object.entries(resumeManifest().symbols).flatMap(([id, url]) => (match.test(id) ? [path(url)] : [])));
+
+/** The chunks plus their static import closure (manifest `deps`). */
+export const closureOf = (chunks: Iterable<string>): Set<string> => {
+  const deps = resumeManifest().deps ?? {};
+  const out = new Set<string>();
+  for (const chunk of chunks) {
+    out.add(chunk);
+    for (const dependency of deps[chunk] ?? []) out.add(path(dependency));
+  }
+  return out;
+};
+
+/** The script paths among `scripts` that are in `chunks` (a `.deps.js` list counts as its chunk). */
+export const among = (scripts: readonly string[], chunks: ReadonlySet<string>): string[] =>
+  scripts.filter((url) => chunks.has(url.replace(/\.deps\.js$/, ".js")));
+
+/** The script paths among `scripts` that are a chunk holding a matching symbol (or its `.deps.js` list). */
+export const scriptsOf = (scripts: readonly string[], match: RegExp): string[] => among(scripts, chunksOf(match));
+
+/**
+ * The chunks holding matching symbols plus the shared chunks they import that neither the runtime nor the router App
+ * (loaded on every page) imports: the code a page downloads only for those symbols.
+ */
+export const codeOf = (match: RegExp): Set<string> => {
+  const own = chunksOf(match);
+  const always = closureOf([path(resumeManifest().runtime), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
+  return new Set([...own, ...[...closureOf(own)].filter((chunk) => !always.has(chunk))]);
+};
+
+/**
+ * Chunk paths the page itself hints before any input: the preload plan (`data-preload`: scheduled fetch + evaluate) and
+ * the fetch-ahead list (`data-fo`: low priority after `load`, fetched, never evaluated). Under route chunks one chunk holds
+ * every component of the page, so a hint for one component brings the others' code along — a "no X code before
+ * interaction" check compares against these, not against an empty list. Includes the hinted chunks' static import
+ * closure (manifest `deps`: a preloaded route chunk pulls its shared `rivet-merge-…` imports). A `.deps.js` list counts
+ * as its chunk.
+ */
+export const hinted = async (page: Page): Promise<Set<string>> => {
+  const urls = await page.evaluate(() => {
+    const plan = document.querySelector<HTMLElement>("script[data-preload]")?.dataset.preload;
+    const planned = plan ? (JSON.parse(plan) as unknown[]).slice(1).map((entry) => (entry as [string])[0]) : [];
+    const ahead = (document.querySelector<HTMLElement>("script[data-fo]")?.dataset.fo ?? "").split(" ").filter(Boolean);
+    return [...planned, ...ahead];
+  });
+  return closureOf(urls.map((url) => path(url).replace(/\.deps\.js$/, ".js")));
+};
+
+/** Library chunks requested so far: aria / cdk code (in route mode the story route's own chunk holds it too). */
+export const libraryScripts = (seen: Watch): string[] => among(seen.scripts, codeOf(/^@rivetjs\/cdk\//));
 
 /** Focused element: id, role, data-key. */
 export const focused = (page: Page) =>

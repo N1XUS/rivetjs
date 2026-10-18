@@ -13,7 +13,7 @@ In Rivet, the browser does not run your components again. It picks up where the 
 
 - **Less data in the page.** A signal is written into the page only when browser code uses it. A signal in a small component is captured by that component's handlers only.
 - **Smaller updates.** When a signal changes, Rivet updates the parts that read it. If a large parent reads it in a JSX expression (`{open() ? <Panel /> : null}`), the whole expression is rebuilt. Read it deep in the tree and only that small part changes.
-- **Less code loaded.** Each component's browser code is its own chunk. A click in a small component loads that component's code, not the code of the page around it.
+- **Less code sent.** Browser code is cut per handler and binding: a signal read deep in a small component pulls in only the small part that reads it, not a re-render of the page around it. With `chunks: "component"`, each component's code is also its own file, so a click loads only that component's code.
 - **Easier to read.** The state and the code that changes it sit in one file.
 
 ## Do

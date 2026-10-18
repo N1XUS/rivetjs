@@ -6,7 +6,7 @@ Status: [resumability design](../design/specs/2026-10-03-resumability-design.md)
 
 - Router apps (`rivetRouter`): every app `.tsx` module a route imports resumes automatically (`resume.appModules`, default true); `resume.modules` is only needed for modules not statically reachable. Plain `rivet({ resume })` needs every app module listed (or `appModules: true`).
 - Vite: `rivet({ resume: { modules: ["src/page.tsx"], entry: "src/resume-entry.ts", preload: { rules: [{ match, strategy }] } } })`.
-  - client build: one symbol chunk per component + runtime entry chunk + `.vite/rivet-resume.json` (`{ hash, runtime, symbols: { id: url }, sizes: { url: bytes }, preload?: { id: strategy } }`).
+  - client build: symbol chunks grouped by `resume.chunks` (default one per route, [Chunks](#chunks)) + runtime entry chunk + `.vite/rivet-resume.json` (`{ hash, runtime, symbols: { id: url }, sizes: { url: bytes }, preload?: { id: strategy } }`).
   - SSR build: listed modules compile with recorder slots.
 - Entry (optional): `export default createResume({ contexts: [[Token, value]] })` from `@rivetjs/runtime/dom-resume`.
 - Server: `renderResumable(() => <Page/>, writer, { manifest, signal, nonce })` or `resumableToString(...)` from `@rivetjs/runtime/server-resume`.
@@ -149,12 +149,12 @@ Status: [resumability design](../design/specs/2026-10-03-resumability-design.md)
 ## Chunks
 
 - vite `resume.chunks`:
-  - `"component"`: one chunk per component;
+  - `"component"` (the default until 2026-10-18): one chunk per component;
   - `"group"`: one chunk per `<ChunkGroup>` subtree (`ChunkGroup` from `@rivetjs/runtime`, renders children only; renamed from `Island` 2026-10-12); components rendered in several groups, or none, keep their own chunk;
   - `"route"` (default since 2026-10-18): one chunk per lazy-import target's static module graph (`lazyComponent` / route imports), plus `main` (reached by no lazy root); modules several routes reach are placed by the bundler (one part module per file, imported by every route chunk reaching it, registered by module id — `_rSym`) into shared chunks merged under `resume.merge` / `cap`; `merge: false` leaves the bundler's split. Siblings per route prefetch together; manifest `fetchAhead`.
 - Grouping ([facts.rs](../../libs/compiler/rust/src/facts.rs) + `groupComponents` in [index.ts](../../libs/compiler/index.ts)): static module facts (imports, `import()` edges, rendered component tags, chunk groups) + Vite resolution; changes chunks + manifest only, never server output.
 - Runtime `symbol()` resolves an id in order: the registry a route-mode part filled at evaluation (`_rSym(moduleId, table)` from `@rivetjs/runtime/resume-symbols`; placed shared parts have no stable export names), then a multi-module chunk's `__rivet(id)` (chunk-group chunks: symbol names may repeat across modules), then the chunk's export by name.
-- vite `resume.merge` (default 65536 source bytes since 2026-10-18, 2048 before; `false` = off): shared (non-entry) modules merge into fewer chunks when the extra bytes per request saved stay under the budget — amortised over entries per merge step, not a per-entry cap (ui-docs preload bytes p90 +7 %, max +27 %, full state max +64 %); entries (symbol chunks, runtime, app entry, dynamic-import targets) never change; the always-loaded entries take no page code, also through barrels; no merge closes a chunk import cycle; owner sets come from the static graph, so modules the bundler tree-shakes away still count as owned (the main source of the tails) (`libs/compiler/chunk-groups.ts`).
+- vite `resume.merge` (default 65536 source bytes since 2026-10-18, 2048 before; `false` = off): shared (non-entry) modules merge into fewer chunks when the extra bytes per request saved stay under the budget — amortised over entries per merge step, not a per-entry cap (at 2048 with component chunks: ui-docs preload bytes p90 +7 %, max +27 %, full state max +64 %, `docs/benchmarks/2026-10-12-preload-group.md`; route chunks at 65536 against component + 2048 through the first click: ui-docs frames −46 to −73 % files at +20 to +34 % bytes, `docs/benchmarks/2026-10-12-route-chunks.md` follow-up); entries (symbol chunks, runtime, app entry, dynamic-import targets) never change; the always-loaded entries take no page code, also through barrels; no merge closes a chunk import cycle; owner sets come from the static graph, so modules the bundler tree-shakes away still count as owned (the main source of the tails) (`libs/compiler/chunk-groups.ts`).
 - Relative `import()` inside symbol bodies resolves against the source module.
 
 ## Security (injected markup)

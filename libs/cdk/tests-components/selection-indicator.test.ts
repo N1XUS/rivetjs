@@ -4,7 +4,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { stories, watch, type Stories, hinted } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -60,9 +60,15 @@ test("selection indicator: server-rendered in the selected tab only, no library 
   assert.deepEqual(await holders(page, "#ind-none [role=tab]"), ["overview"]);
   assert.equal(await page.getAttribute("#ind-tabs-tab-overview .rv-SelectionIndicator", "data-entering"), null);
   assert.equal(await page.getAttribute("#ind-tabs-tab-overview .rv-SelectionIndicator", "class"), "rv-SelectionIndicator");
-  // Idle / visible prefetch may bring the Tabs chunk (as on /tabs); the SharedElement code waits for the first change.
+  // Idle / visible prefetch may bring the Tabs chunk (as on /tabs) — under route chunks the same chunk holds the
+  // SharedElement code, so what arrives before input must be the page's own hints; nothing runs before the first change.
   await page.waitForTimeout(1500);
-  assert.deepEqual(code, [], "no SharedElement code before interaction");
+  const hints = await hinted(page);
+  assert.deepEqual(
+    code.filter((url) => !hints.has(url)),
+    [],
+    "SharedElement code before interaction comes from the page's own preload / fetch-ahead hints only",
+  );
   await page.click("#ind-tabs-tab-faq");
   await page.waitForFunction(() => document.querySelector("#ind-tabs-tab-faq .rv-SelectionIndicator"));
   // Response bodies are read asynchronously: give the last one a moment.

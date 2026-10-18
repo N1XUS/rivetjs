@@ -8,15 +8,24 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page, Route } from "playwright";
-import { stories, watch, type Stories, type Watch } from "./harness.ts";
+import { among, chunksOf, codeOf, stories, watch, type Stories, type Watch } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories({ preload: { background: 0 } })));
 afterAll(async () => s?.close());
 
-/** Drag-drop handler chunks (component symbols). */
-const DRAG_CHUNK = /\/resume-(Drag|DragHandle|DropList|DropListGroup)-/;
-const dragScripts = (seen: Watch) => seen.scripts.filter((url) => DRAG_CHUNK.test(url));
+/**
+ * Drag-drop handler chunks: the chunks holding the component symbols, from the build manifest (`resume-Drag-…` etc. with
+ * `chunks: "component"`, the story route's chunk by default). `DRAG` is the one holding `Drag`'s own handlers.
+ */
+const dragChunks = () => chunksOf(/#(Drag|DragHandle|DropList|DropListGroup)\$/);
+const dragScripts = (seen: Watch) => among(seen.scripts, dragChunks());
+const dragLoaded = (page: Page, options?: { timeout: number }) =>
+  page.waitForFunction(
+    (chunks) => performance.getEntriesByType("resource").some((entry) => chunks.includes(new URL(entry.name).pathname)),
+    [...chunksOf(/#Drag\$/)],
+    options,
+  );
 const text = (page: Page, id: string) => page.evaluate((id) => document.getElementById(id)?.textContent ?? null, id);
 const order = (page: Page) => page.evaluate(() => [...document.querySelectorAll("#list > .cdk-drag")].map((el) => el.textContent));
 const center = (page: Page, id: string) =>
@@ -29,8 +38,10 @@ const center = (page: Page, id: string) =>
 async function holdScripts(page: Page) {
   const held: Route[] = [];
   let open = false;
+  // The drag-drop symbol chunks + the shared code only they import (`drag-…` module chunks with component chunks).
+  const code = codeOf(/#(Drag|DragHandle|DropList|DropListGroup|DragDropStory)\$/);
   await page.route(/\/assets\/.*\.js$/, (route) => {
-    if (open || !/resume-(Drag|DragHandle|DropList|DropListGroup|DragDropStory)-|drag-/.test(route.request().url())) return route.continue();
+    if (open || !code.has(new URL(route.request().url()).pathname.replace(/\.deps\.js$/, ".js"))) return route.continue();
     held.push(route);
   });
   return {
@@ -69,8 +80,8 @@ test("nothing drag-drop related loads before the lists are visible; scrolling th
   await page.waitForTimeout(800);
   assert.deepEqual(dragScripts(seen), []);
   await page.evaluate(() => document.getElementById("list")!.scrollIntoView());
-  await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => /\/resume-Drag-/.test(entry.name)), null, { timeout: 5000 });
-  assert.ok(dragScripts(seen).some((url) => /resume-Drag-/.test(url)));
+  await dragLoaded(page, { timeout: 5000 });
+  assert.ok(among(seen.scripts, chunksOf(/#Drag\$/)).length > 0);
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
@@ -153,7 +164,7 @@ test("cold press: a mousedown before the code loaded is replayed and the drag co
   await page.waitForTimeout(200);
   assert.ok(hold.count > 0, "drag-drop code was still loading");
   hold.release();
-  await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => /\/resume-Drag-/.test(entry.name)));
+  await dragLoaded(page);
   await page.waitForTimeout(800);
   const to = await center(page, "item-Two");
   await page.mouse.move(from.x, from.y + 20, { steps: 4 });
@@ -178,7 +189,7 @@ test("cold press released before the code loaded: the replayed press starts no d
   await page.waitForTimeout(200);
   assert.ok(hold.count > 0, "drag-drop code was still loading");
   hold.release();
-  await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => /\/resume-Drag-/.test(entry.name)));
+  await dragLoaded(page);
   await page.waitForTimeout(300);
   await page.mouse.move(from.x, from.y + 60, { steps: 6 });
   await page.waitForTimeout(100);

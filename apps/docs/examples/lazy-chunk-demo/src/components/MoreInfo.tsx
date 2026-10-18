@@ -1,6 +1,6 @@
 import { signal } from "@rivetjs/reactivity";
 
-// A second component: its code is a separate file. Using the Like button does not load it.
+// A second component: its click code is in the same file, so after the Like button it needs no download.
 export function MoreInfo() {
   const open = signal(false);
   return (

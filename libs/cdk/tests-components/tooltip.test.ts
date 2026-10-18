@@ -6,7 +6,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -39,7 +39,8 @@ test("closed tooltips render nothing at SSR; no tooltip code before interaction"
   const { page, seen } = await open();
   assert.equal(await page.locator("[role=tooltip]").count(), 0);
   assert.equal(await describedBy(page, "#edit-button"), null);
-  assert.ok(!seen.scripts.some((url) => /tooltip|Tooltip/.test(url)), "no tooltip chunk at load: " + seen.scripts.join(","));
+  // Tooltip code: chunks holding its symbols + the shared code only they import (build manifest; route chunks by default).
+  assert.deepEqual(among(seen.scripts, codeOf(/^@rivetjs\/cdk\/tooltip\/|#Tooltip\w*\$/)), [], "no tooltip chunk at load: " + seen.scripts.join(","));
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

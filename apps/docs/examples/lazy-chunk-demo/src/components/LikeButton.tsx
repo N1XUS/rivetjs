@@ -1,6 +1,6 @@
 import { signal } from "@rivetjs/reactivity";
 
-// Its click code is one small file. The browser fetches it when you point at or press the button.
+// Its click code goes into the page's small file. The browser fetches it when you point at or press the button.
 export function LikeButton() {
   const likes = signal(0);
   return (

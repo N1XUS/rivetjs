@@ -97,7 +97,7 @@ The value must be a string literal: `eager`, `idle`, `visible`, `intent` or `int
 
 ## Change it for a component
 
-Export `preload` from the component's module. It applies to every handler in the module:
+Export `preload` from the component's module. It applies to every handler in the module. Code downloads per chunk: with the default `chunks: "route"`, the module shares its route's chunk, so the export decides when that whole chunk loads.
 
 ```tsx title="src/components/SearchBox.tsx"
 import { signal } from "@rivetjs/reactivity";

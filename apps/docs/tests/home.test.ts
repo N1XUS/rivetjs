@@ -31,6 +31,17 @@ afterAll(async () => {
   await new Promise((done) => server?.close(done));
 });
 
+/**
+ * Chunk file names (`assets/…`) holding the resume symbols whose id matches, from the build's `.vite/rivet-resume.json`:
+ * route chunks by default (`resume-index_tsx-…` for the home page), `resume-ResumeDemo-…` with `chunks: "component"`.
+ */
+const chunksOf = (match: RegExp): Set<string> => {
+  const resume = JSON.parse(readFileSync(resolve(client, ".vite/rivet-resume.json"), "utf8")) as { symbols: Record<string, string> };
+  return new Set(Object.entries(resume.symbols).flatMap(([id, url]) => (match.test(id) ? [new URL(url, "http://x").pathname.slice(1)] : [])));
+};
+const DEMO = /^src\/components\/home\/ResumeDemo\.tsx#/;
+const basename = (file: string) => file.slice(file.lastIndexOf("/") + 1);
+
 async function home(options: { reducedMotion?: "reduce" | "no-preference"; width?: number } = {}): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: options.width ?? 1300, height: 850 }, reducedMotion: options.reducedMotion ?? "no-preference" });
   await page.goto(origin + "/", { waitUntil: "load" });
@@ -258,7 +269,11 @@ test("resume demo: no script before the click, the readout names exactly the chu
     await page.waitForFunction(() => document.querySelector(".rd-files")?.textContent);
     await page.waitForLoadState("networkidle");
     const names = (await demo.locator(".rd-files").textContent())!.split(" · ");
-    assert.ok(names.some((name) => name.startsWith("resume-ResumeDemo-")), names.join(", "));
+    const demoChunks = [...chunksOf(DEMO)].map(basename);
+    assert.ok(
+      demoChunks.length > 0 && names.some((name) => demoChunks.includes(name)),
+      `the demo's chunk (${demoChunks.join(", ")}) is listed: ${names.join(", ")}`,
+    );
     // Every listed file was fetched; the bytes in the readout equal the bodies the network delivered.
     const firstClick = names.map((name) => scripts.get(name));
     assert.ok(firstClick.every((size) => size !== undefined), `listed but not fetched: ${names.filter((name) => !scripts.has(name)).join(", ")}`);
@@ -282,21 +297,24 @@ test("resume demo: an earlier theme interaction does not appear in this example'
     await page.getByRole("button", { name: "Theme", exact: true }).click();
     await page.waitForLoadState("networkidle");
     await page.keyboard.press("Escape");
-    const prior = await page.evaluate(() =>
-      performance
-        .getEntriesByType("resource")
-        .map((entry) => new URL(entry.name).pathname)
-        .filter((path) => path.includes("ThemeMenu") && path.endsWith(".js")),
+    // The chunks holding the frame widgets' symbols (theme menu + its popover, mobile menu, search button, router App):
+    // `resume-ThemeMenu-…` etc. with component chunks; the main route chunk (`resume-route_main-…`, layouts + App) or
+    // shared chunks by default.
+    const frame = chunksOf(/(ThemeMenu|MobileMenu|SearchButton)\.tsx#|^@rivetjs\/cdk\/popover\/|^\.rivet\/app\.tsx#/);
+    const theme = chunksOf(/ThemeMenu\.tsx#/);
+    const prior = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => new URL(entry.name).pathname.slice(1)));
+    assert.ok(
+      prior.some((path) => theme.has(path)),
+      "the theme was really loaded before the demo",
     );
-    assert.ok(prior.length > 0, "the theme was really loaded before the demo");
     await page.locator(".rd button").click();
     await page.waitForFunction(() => document.querySelector(".rd-files")?.textContent);
     const names = (await page.locator(".rd-files").textContent())!.split(" · ");
+    const demo = chunksOf(DEMO);
     assert.ok(
-      names.some((name) => name.startsWith("resume-ResumeDemo-")),
+      names.some((name) => [...demo].some((file) => basename(file) === name)),
       names.join(", "),
     );
-    assert.ok(!names.some((name) => /ThemeMenu|popover|resume-App|resume-MobileMenu|resume-SearchButton/.test(name)), names.join(", "));
     // Independent Vite output graph: every listed JS file must belong to this handler or its shared runtime/loader.
     const manifest = JSON.parse(readFileSync(resolve(client, ".vite/manifest.json"), "utf8")) as Record<string, { file: string; imports?: string[] }>;
     const allowed = new Set<string>();
@@ -306,8 +324,10 @@ test("resume demo: an earlier theme interaction does not appear in this example'
       allowed.add(entry.file);
       for (const key of entry.imports ?? []) visit(key);
     };
-    for (const [key, entry] of Object.entries(manifest)) if (/\/(?:resume-ResumeDemo|resume-entry|resume-loader)-/.test(entry.file)) visit(key);
+    for (const [key, entry] of Object.entries(manifest)) if (demo.has(entry.file) || /\/(?:resume-entry|resume-loader)-/.test(entry.file)) visit(key);
     for (const name of names) assert.ok(allowed.has("assets/" + name.replace(/\.deps\.js$/, ".js")), `${name} belongs to the demo dependency graph`);
+    // No frame widget's chunk is listed unless the demo's own graph imports it (a shared chunk both use).
+    for (const file of frame) if (!allowed.has(file)) assert.ok(!names.includes(basename(file)), `${basename(file)} (frame widget) listed: ${names.join(", ")}`);
     const downloaded = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => new URL(entry.name).pathname.slice(1)));
     const expected = downloaded.filter((path) => allowed.has(path)).map((path) => path.slice(path.lastIndexOf("/") + 1));
     assert.deepEqual(names.filter((name) => !name.endsWith(".deps.js")).sort(), expected.sort(), "all actually downloaded dependencies are included");

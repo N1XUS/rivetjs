@@ -61,7 +61,10 @@ export interface CoLoadModule {
 }
 
 export interface CoLoadOptions {
-  /** Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Default 2048. */
+  /**
+   * Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Unset = 2048, the unit
+   * tests' scale; the Vite plugin always passes `resume.merge` (default 65536 since 2026-10-18, `vite.ts`).
+   */
   budget?: number;
   /** Most groups one entry (not a pinned one) loads after merging; unset = the budget alone decides. */
   cap?: number;

@@ -4,7 +4,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, chunksOf, closureOf, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -26,10 +26,15 @@ const hover = async (page: Page, selector: string) => {
 test("closed previews render nothing at SSR; no preview code before interaction", async () => {
   const { page, seen } = await open();
   assert.equal(await page.locator("#docs-preview").count(), 0);
-  // The trigger's own hover chunk (`resume-PreviewTrigger`) may prefetch while visible (planner latency ruling 2026-10-08);
-  // the preview / popover code may not.
-  const early = seen.scripts.filter((url) => !/resume-PreviewTrigger-/.test(url));
-  assert.ok(!early.some((url) => /preview|Preview|popover|Popover/.test(url)), "no preview chunk at load: " + early.join(","));
+  // The trigger's own hover chunk may prefetch while visible (planner latency ruling 2026-10-08); the preview / popover
+  // code may not. Chunks from the build manifest: with `chunks: "component"` the trigger (`resume-PreviewTrigger-…`)
+  // and the popover are separate files; with the default route chunks the popover code the story route alone uses
+  // shares the trigger's route chunk (prefetched with it, not run), so only popover code outside the trigger's chunk and
+  // its imports is checked.
+  const trigger = closureOf(chunksOf(/#PreviewTrigger\$/));
+  const popover = [...codeOf(/#Popover\w*\$/)].filter((chunk) => !trigger.has(chunk));
+  const early = among(seen.scripts, new Set(popover));
+  assert.deepEqual(early, [], "no preview chunk at load: " + seen.scripts.join(","));
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

@@ -3,7 +3,7 @@
 // buttons, a cold mouse drag (first mousedown replayed into embla's DragHandler), arrow keys, dots, loop.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
-import { stories, watch, type Stories } from "./harness.ts";
+import { among, chunksOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -84,7 +84,8 @@ test("carousel: the first press needs no further chunk (root + viewport handler 
   await page.click("#basic-next");
   await page.waitForFunction(() => document.querySelector("#basic-selected")?.textContent === "2");
   assert.deepEqual(
-    seen.scripts.slice(before).filter((url) => /\/resume-/.test(url)),
+    // Any chunk holding resume symbols (`resume-…`, or a merged `rivet-merge-…` holding placed route-mode parts).
+    among(seen.scripts.slice(before), chunksOf(/#/)),
     [],
     "chunks loaded by the first press",
   );
@@ -96,16 +97,25 @@ test("carousel: the first press needs no further chunk (root + viewport handler 
 // chunks were in, the Carousel root's `focusin` chunk was not — the press ran at pointerdown, the loader held the
 // click behind the cold focusin replay, and RA's 80 ms "no click after pointerup" fallback cancelled the press
 // before the held click reached it. Deterministic: the root chunk is held until well after the click.
+// Chunks come from the build manifest: with `chunks: "component"` the root (`resume-Carousel-…`) and the Next button
+// (`resume-CarouselNext-…`) are two files and the test replays the measured race (Next live, root cold); with the
+// default route chunks one file holds both (same module), so holding it holds Next too and the click is fully cold.
 test("carousel: a cold press whose click is held behind a loading chunk still selects", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
+  const root = chunksOf(/#Carousel\$/);
+  const nextOnly = [...chunksOf(/#CarouselNext\$/)].filter((chunk) => !root.has(chunk));
+  assert.ok(root.size > 0, "the Carousel root has resume symbols");
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));
-  await page.route(/\/resume-Carousel-[^/]*\.js$/, async (route) => {
-    await gate;
-    await route.continue();
-  });
-  const next = page.waitForResponse(/\/resume-CarouselNext-[^/]*\.js$/);
+  await page.route(
+    (url) => root.has(url.pathname),
+    async (route) => {
+      await gate;
+      await route.continue();
+    },
+  );
+  const next = nextOnly.length ? page.waitForResponse((response) => nextOnly.includes(new URL(response.url()).pathname)) : null;
   await page.goto(s.origin + "/carousel");
   await next;
   // the visible-preloaded Button / CarouselNext chunks are evaluated in an idle slice

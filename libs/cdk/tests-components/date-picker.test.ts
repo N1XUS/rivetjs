@@ -6,7 +6,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { markDeferred, scriptsBeforeDeferred, stories, watch, type Stories } from "./harness.ts";
+import { among, codeOf, markDeferred, scriptsBeforeDeferred, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -36,8 +36,8 @@ const description = (page: Page, selector: string) =>
         .trim(),
     selector,
   );
-const libraryScripts = (seen: { scripts: string[] }) =>
-  seen.scripts.filter((url) => /DatePicker|DateRangePicker|DateInput|DateField|Calendar|behaviour|overlay-/.test(url));
+// Date code: chunks holding the date components' symbols + the shared code only they import (build manifest).
+const libraryScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/#(DatePicker|DateRangePicker|DateInput|DateField|Calendar)\w*\$/));
 
 test("datepicker: SSR markup — parts, labels, placeholder segments, closed popover renders nothing (RAC 'provides slots')", async () => {
   const page = await s.browser.newPage();

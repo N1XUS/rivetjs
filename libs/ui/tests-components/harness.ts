@@ -1,4 +1,5 @@
 // Story app harness: production build (client + server), node adapter, one Chromium for a test file.
+import { readFileSync } from "node:fs";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
 import { buildApp, dist } from "./app/serve.ts";
@@ -41,13 +42,69 @@ export function watch(page: Page): Watch {
   return seen;
 }
 
-/** Library chunks requested so far (aria / cdk symbols and modules). */
-export const libraryScripts = (seen: Watch): string[] =>
-  seen.scripts.filter((url) =>
-    /resume-(ListBox|ListBoxView|ListBoxOptions|Tabs|Menu|MenuTrigger|SubmenuTrigger|MenuView|ComboBox|Select|Autocomplete|Dialog|Popover|ToggleButton|Button|Checkbox|Switch|RadioGroup|TextField|Disclosure)-|behaviour|collections-|selection-|interactions-|overlay-|options-/.test(
-      url,
-    ),
-  );
+interface ResumeManifest {
+  runtime: string;
+  loader?: string;
+  symbols: Record<string, string>;
+  deps?: Record<string, string[]>;
+}
+let manifest: ResumeManifest | undefined;
+const path = (url: string) => new URL(url, "http://x").pathname;
+const resumeManifest = (): ResumeManifest => (manifest ??= JSON.parse(readFileSync(dist + "/client/.vite/rivet-resume.json", "utf8")) as ResumeManifest);
+
+/**
+ * Paths of the chunks holding the resume symbols whose id (`<module>#<Component>$<hash>`, library modules as
+ * `@rivetjs/ui/<path>` / `@rivetjs/cdk/<path>`) matches, read from the build's `.vite/rivet-resume.json`. Chunk file
+ * names depend on `resume.chunks` (route chunks by default: `resume-<route file>-…`, placed shared code in
+ * `rivet-merge-…`), the symbol → chunk map does not.
+ */
+export const chunksOf = (match: RegExp): Set<string> =>
+  new Set(Object.entries(resumeManifest().symbols).flatMap(([id, url]) => (match.test(id) ? [path(url)] : [])));
+
+/** The chunks plus their static import closure (manifest `deps`). */
+const closureOf = (chunks: Iterable<string>): Set<string> => {
+  const deps = resumeManifest().deps ?? {};
+  const out = new Set<string>();
+  for (const chunk of chunks) {
+    out.add(chunk);
+    for (const dependency of deps[chunk] ?? []) out.add(path(dependency));
+  }
+  return out;
+};
+
+/** The script paths among `scripts` that are in `chunks` (a `.deps.js` list counts as its chunk). */
+export const among = (scripts: readonly string[], chunks: ReadonlySet<string>): string[] =>
+  scripts.filter((url) => chunks.has(url.replace(/\.deps\.js$/, ".js")));
+
+/** The script paths among `scripts` that are a chunk holding a matching symbol (or its `.deps.js` list). */
+export const scriptsOf = (scripts: readonly string[], match: RegExp): string[] => among(scripts, chunksOf(match));
+
+/**
+ * The chunks holding matching symbols plus the shared chunks they import that neither the runtime nor the router App
+ * (loaded on every page) imports: the code a page downloads only for those symbols.
+ */
+export const codeOf = (match: RegExp): Set<string> => {
+  const own = chunksOf(match);
+  const always = runtimeChunks();
+  return new Set([...own, ...[...closureOf(own)].filter((chunk) => !always.has(chunk))]);
+};
+
+/**
+ * Runtime chunks every resumed page may load before an interaction: the resume runtime entry, the router App (its
+ * symbols: link handling; `resume-route_main` in route mode, `resume-App` in component mode) and the layouts sharing
+ * its chunk, their static import closures (DOM runtime, reactivity, Vite's preload helper, merged shared chunks), and
+ * the resume loader module (LOADER-DIET's deferred half of the inline loader; it evaluates no component code). Read
+ * from the build manifest, so it follows `resume.chunks` / `resume.merge`.
+ */
+const runtimeChunks = (): Set<string> => {
+  const m = resumeManifest();
+  const out = closureOf([path(m.runtime), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
+  if (m.loader) out.add(path(m.loader));
+  return out;
+};
+
+/** Library chunks requested so far: chunks holding ui / cdk symbols (in route mode, the story route's own chunk too). */
+export const libraryScripts = (seen: Watch): string[] => scriptsOf(seen.scripts, /^@rivetjs\/(ui|cdk)\//);
 
 /** Focused element: id, role, data-key. */
 export const focused = (page: Page) =>
@@ -56,13 +113,11 @@ export const focused = (page: Page) =>
     return { id: el?.id ?? "", role: el?.getAttribute("role") ?? "", key: el?.getAttribute("data-key") ?? "" };
   });
 
-/** Runtime entry chunks every resumed page preloads (resume runtime, format, router App, DOM runtime + spread, shared `reactivity` chunk: split out once cdk modules join the bundle; runtime `props` (live props): split out once the scroll-shadow route joined; `resume-loader`: the resume loader module, LOADER-DIET's deferred half of the former inline loader, imported after the first frame on pages with `data-preload` — it evaluates no component code). The router client stays inside `resume-App`: `@rivetjs/forms` (ui `Form`) reaches the router through `Symbol.for("rivet.router")` instead of importing it (FOLD 2026-10-12). Exact names: each
- * alternative + `-` + the 8-char Vite hash (`[\w-]`, hashes may contain `-`), so `dom` cannot match `dom-<anything>-<hash>.js`. */
-export const RUNTIME_ENTRY =
-  /\/assets\/(resume-entry|resume-format|resume-loader|resume-App|dom-router|dom|dom-v2-spread|dom-v2-controls|preload-helper|reactivity|props)-[\w-]{8}\.js$/;
-
-/** Scripts requested so far other than the runtime entry chunks: ui components, `dom.*` symbols, route modules. */
-export const nonRuntimeScripts = (seen: Watch): string[] => seen.scripts.filter((url) => !RUNTIME_ENTRY.test(url));
+/** Scripts requested so far other than the runtime chunks: ui components, `dom.*` symbols, route modules. */
+export const nonRuntimeScripts = (seen: Watch): string[] => {
+  const runtime = runtimeChunks();
+  return seen.scripts.filter((url) => !runtime.has(url.replace(/\.deps\.js$/, ".js")));
+};
 
 /** One animation frame of {@link traceFade}: the element's computed opacity + backdrop blur, state attributes, running animation count. */
 export interface FadeSample {

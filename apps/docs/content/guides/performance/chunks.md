@@ -16,7 +16,7 @@ A production client build of resumed pages contains:
 
 - **The runtime entry.** The code that reads the page state and starts the browser side. It loads before the first handler runs.
 - **Shared chunks.** Code used by several chunks, such as DOM helpers or a component library. Small shared modules that load together are merged (see [Fewer shared chunks](#fewer-shared-chunks)).
-- **Component chunks.** The browser code of your components. By default there is one per component.
+- **Handler chunks.** The browser code of your components. By default there is one per route (named after the route file, such as `resume-index_tsx-….js`) and one main chunk (`resume-route_main-….js`) for the code no lazily loaded route reaches, such as layouts. With `chunks: "component"` there is one per component (`resume-Counter-….js`).
 - **The built-in values chunk.** It reads regular expressions, `URLSearchParams`, binary data and errors back from the page state. It loads only on pages, route data and form answers that hold such a value.
 - **`.vite/rivet-resume.json`.** A manifest that maps each piece of code to its chunk URL, with sizes. The server uses it to write the page.
 
@@ -31,7 +31,7 @@ Set `resume.chunks` in the Vite config:
 | Value | Chunks |
 | --- | --- |
 | `"route"` (default) | One chunk per lazily loaded route or `lazyComponent`, a main chunk, and shared chunks for the components several routes use |
-| `"component"` | One chunk per component |
+| `"component"` | One chunk per component (the default until 2026-10-18) |
 | `"group"` | One chunk per `<ChunkGroup>` subtree |
 
 ```ts title="vite.config.ts"
@@ -51,7 +51,7 @@ The grouping changes only the browser chunks and the manifest. Server output sta
 
 | App shape | Pick | What changes |
 | --- | --- | --- |
-| Pages built from a component library where one interaction must download the least code | `"component"` | One chunk per component: the first click fetches that component's handlers and nothing else. A select box example: 79 files before the first click at `merge: 2048`, 48 at the default `65536`. |
+| Pages built from a component library where one interaction must download the least code | `"component"` | One chunk per component: the first click fetches that component's handlers and nothing else. A select box example: 77 files before the first click at `merge: 2048`, 49 at the default `65536`, at the same bytes. |
 | Pages made of separate widgets: a search box, a comment section, a cart | `"group"` | Each widget's code arrives together, so the second click in a widget downloads nothing. |
 | File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` (the default) | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. On the Rivet UI docs (one component library shared by 1,000 example pages), a select box page needs 24 files and 178 KB through its first click instead of 81 files and 146 KB with `"component"`: a quarter of the files for a fifth more bytes. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
 | Pages with framework islands (React, Preact) | `"route"` | Fewer files: 15 to 10 on the bridge demo's orders page. |
@@ -66,7 +66,7 @@ Try a grouping, build, and compare in the browser's network panel. See [Measurin
 
 The bundler puts shared code into one chunk per set of chunks that use it, so no page downloads a byte it does not need. With a component library this means many small files: a page with one select box can load 100 or more chunks before its first click, and each file is one more request.
 
-The build merges small shared chunks that the same chunks load. Merging can make a page download code it does not use. The build allows a merge only while the extra code stays small for each request it saves: by default 65536 bytes of source per request saved. The budget is an average over all the chunks a merge affects, so one page can still download more than that. On the Rivet UI docs site the median page downloads 0.2 % fewer bytes, but one page in ten downloads 7 % more and the worst page 27 % more.
+The build merges small shared chunks that the same chunks load. Merging can make a page download code it does not use. The build allows a merge only while the extra code stays small for each request it saves: by default 65536 bytes of source per request saved (2048 until 2026-10-18). The budget is an average over all the chunks a merge affects, so one page can still download more than that. With component chunks and the former 2048 budget, the median Rivet UI docs page downloaded 0.2 % fewer bytes than without merging, but one page in ten downloaded 7 % more and the worst page 27 % more.
 
 Merging never touches the runtime and app entry chunks, which every page loads: no page code joins them. A merged chunk never imports another chunk that imports it back, so modules run in the same order as without merging. Merging happens only in production builds; the dev server serves modules one by one. It is skipped when your Vite config sets `codeSplitting: false`, `manualChunks` or `advancedChunks`, so your own chunking wins.
 
@@ -86,7 +86,7 @@ export default defineConfig({
 });
 ```
 
-A larger budget means fewer requests and more unused bytes. On the Rivet UI docs site the default cuts the code an example page preloads from a median of 77 files to 50, at the same median size.
+A larger budget means fewer requests and more unused bytes. On the Rivet UI docs site, the former 2048 budget cut the code an example page preloads from a median of 77 files to 50, at the same median size. With route chunks, raising it to the default 65536 cut a select box example from 91 files before the first click to 35.
 
 ## Group with `ChunkGroup`
 
@@ -126,7 +126,7 @@ In a file-routed app, every page is loaded this way. Code for other pages loads 
 ## Common mistakes
 
 - **Components outside `src/routes` resume only through `appModules`.** It is on by default in `rivetRouter`. With `resume: { appModules: false }`, list them in `resume.modules`, or their handlers do not work in production.
-- **A component element in a resume module adds a chunk piece.** Rendering `<Picture />` or another static helper as an element makes a small piece of browser code. For markup that never changes, call the helper as a function; see [Images](../assets/images.md#picture-adds-code-to-a-component-chunk).
+- **A component element in a resume module adds a chunk piece.** Rendering `<Picture />` or another static helper as an element makes a small piece of browser code. For markup that never changes, call the helper as a function; see [Images](../assets/images.md#picture-adds-browser-code).
 - **Judging chunk sizes in dev.** The dev server does not split code this way. Build for production first.
 
 ## See also

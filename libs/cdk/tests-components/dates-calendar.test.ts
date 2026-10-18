@@ -6,7 +6,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories, type Watch } from "./harness.ts";
+import { scriptsOf, stories, watch, type Stories, type Watch, hinted } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -15,7 +15,8 @@ afterAll(async () => s?.close());
 const cell = (root: string, date: string) => `#${root} [data-date="${date}"]:not([data-outside-month])`;
 const activeDate = (page: Page) => page.evaluate(() => document.activeElement?.getAttribute("data-date") ?? document.activeElement?.tagName ?? "");
 const waitActive = (page: Page, date: string) => page.waitForFunction((d) => document.activeElement?.getAttribute("data-date") === d, date, { timeout: 5000 });
-const dateScripts = (seen: Watch) => seen.scripts.filter((url) => /Calendar|calendar|behaviour/.test(url));
+// Calendar symbol chunks (build manifest: `resume-Calendar…` with component chunks, the route's chunk by default).
+const dateScripts = (seen: Watch) => scriptsOf(seen.scripts, /^@rivetjs\/cdk\/calendar\/|#Calendar\w*\$/);
 
 test("calendar: server ARIA, visible preload only (nothing boots, no handler runs) before interaction, cold arrow key held", async () => {
   const page = await s.browser.newPage();
@@ -44,15 +45,12 @@ test("calendar: server ARIA, visible preload only (nothing boots, no handler run
   // handler runs before the first input. Settle the preload first, so the checks do not race its fetches.
   await page.waitForLoadState("networkidle");
   assert.equal(await page.locator("script[data-boot]").count(), 0, "nothing boots at load");
-  const planned = await page.evaluate(() => {
-    const plan = document.querySelector<HTMLElement>("script[data-preload]")?.dataset.preload;
-    return plan ? (JSON.parse(plan) as unknown[]).slice(1).map((entry) => (entry as [string])[0]) : [];
-  });
-  const symbols = dateScripts(seen).filter((url) => /\/resume-/.test(url));
+  const hints = await hinted(page);
+  const symbols = dateScripts(seen);
   assert.deepEqual(
-    symbols.filter((url) => !planned.includes(url)),
+    symbols.filter((url) => !hints.has(url.replace(/\.deps\.js$/, ".js"))),
     [],
-    "calendar symbol chunks before input come from the visible preload plan only",
+    "calendar symbol chunks before input come from the page's own preload / fetch-ahead hints only",
   );
   assert.equal(await page.locator("#cal [data-focused], #cal [data-hovered], #cal [data-pressed]").count(), 0, "no calendar handler ran");
   assert.equal(await page.getAttribute(cell("cal", "2026-10-14"), "tabindex"), "0");

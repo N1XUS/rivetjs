@@ -197,9 +197,9 @@ Because a descriptor is plain JSON, you can use it without `Picture`:
 
 If an image is used only in server code, it may be missing from the client output when you run `vite build` and `vite build --ssr` as two steps. Vite then warns that image variants "may be missing from the client build". Build with Vite's app builder instead (`vite build --app`, or `createBuilder({ builder: {} })` and `buildApp()`), which builds the server first and then the client.
 
-### Picture adds code to a component chunk
+### Picture adds browser code
 
-In a component that resumes, a `<Picture />` element becomes a small piece of browser code in that component's [chunk](../performance/chunks.md). The image never changes, so you can avoid this by calling `Picture` as a function and rendering the result. The playground does this for its banner:
+In a component that resumes, a `<Picture />` element becomes a small piece of browser code in the [chunk](../performance/chunks.md) that holds the component's code. The image never changes, so you can avoid this by calling `Picture` as a function and rendering the result. The playground does this for its banner:
 
 ```tsx
 import type { CompiledElement } from "@rivetjs/runtime/jsx-runtime";

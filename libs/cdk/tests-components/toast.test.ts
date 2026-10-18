@@ -3,13 +3,14 @@
 // portal as a landmark region with the toast; close button, F6 landmark navigation, timer dismissal.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
-import { stories, watch, libraryScripts, type Stories } from "./harness.ts";
+import { among, codeOf, stories, watch, libraryScripts, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
 afterAll(async () => s?.close());
 
-const toastScripts = (seen: { scripts: string[] }) => seen.scripts.filter((url) => /toast|landmark|Toast/i.test(url));
+// Toast / landmark code: chunks holding their symbols + the shared code only they import (build manifest).
+const toastScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/^@rivetjs\/cdk\/(toast|landmark)\/|#Toast\w*\$/));
 
 test("toast: no region on the server, region appears with the first toast after resume", async () => {
   const page = await s.browser.newPage();

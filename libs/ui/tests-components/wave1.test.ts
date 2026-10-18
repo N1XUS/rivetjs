@@ -3,7 +3,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, nonRuntimeScripts, type Stories } from "./harness.ts";
+import { stories, watch, nonRuntimeScripts, scriptsOf, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -132,11 +132,8 @@ test("wave1: every wave-1 component renders on the server (data-slot per part), 
     await page.waitForLoadState("networkidle");
     // Documented (libs/ui/CLAUDE.md Known diffs): cdk Button / Link preload their resume chunks + the route module on load; the markup-only
     // route below carries the strict gate.
-    const preloaded = nonRuntimeScripts(seen);
-    assert.ok(
-      preloaded.some((url) => /\/resume-Button-/.test(url)),
-      "Button resume chunk preloaded: " + preloaded.join(","),
-    );
+    // The chunk holding Button's symbols: `resume-Button-…` with `chunks: "component"`, the route's (or a shared) chunk by default.
+    assert.ok(scriptsOf(seen.scripts, /#Button\$/).length > 0, "Button resume chunk preloaded: " + seen.scripts.join(","));
     assert.deepEqual(seen.errors, []);
   }));
 

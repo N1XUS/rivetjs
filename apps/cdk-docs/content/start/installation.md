@@ -124,7 +124,7 @@ None is required. Components need no stylesheet.
 `@rivetjs/cdk` ships JavaScript, JSX and TypeScript declarations. Its `package.json` has `"rivet": { "source": true }`: the Rivet Vite plugin compiles its JavaScript / JSX modules like your own code, in resume mode, with stable module ids (`@rivetjs/cdk/<path>`).
 
 - Callbacks and slot props you pass to cdk components are compiled as resumable symbols, the same as for your own components.
-- Each cdk component becomes its own chunk, loaded only when needed.
+- cdk component code joins your app's chunks (by default the chunk of each route that uses it; code several routes use goes into shared chunks) and loads only when needed.
 - `"sideEffects": ["*.css"]`: only the CSS files have side effects; unused modules are dropped.
 
 ## Tailwind v4
