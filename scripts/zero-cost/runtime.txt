@@ -15,13 +15,14 @@
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache b590dd2a63f6 31694
 @rivetjs/runtime/props e7a083669b54 9737
-@rivetjs/runtime/dom-resume 1a40cc19bd00 43367
+@rivetjs/runtime/dom-resume b5c71966b602 43414
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ad5a7200976 8151
 @rivetjs/runtime/hot-reactivity 4618858dff1b 16456
 @rivetjs/runtime/resume-format 32b1d2b966ab 13078
 @rivetjs/runtime/resume-builtins 2b1ce9fab926 2136
 @rivetjs/runtime/resume-loader-module dd6138219abf 1269
+@rivetjs/runtime/resume-symbols 932601d697c9 60
 @rivetjs/runtime/image 0de77cc9b31f 10324
 @rivetjs/runtime/image/dom 2850ec23f843 11042
 @rivetjs/runtime/style 4a43b7cf2eb5 7637
@@ -33,4 +34,4 @@
 @rivetjs/runtime/testing 71f234f8296e 14168
 @rivetjs/runtime/testing/server ca2448f21f0f 21587
 @rivetjs/runtime/testing/register ee215ae102b9 2942
-@rivetjs/runtime/testing/resume 26e2184d39b0 92634
+@rivetjs/runtime/testing/resume 141adbdf6d33 92680

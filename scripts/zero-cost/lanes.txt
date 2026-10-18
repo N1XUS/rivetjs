@@ -1,4 +1,4 @@
-builds.json d19fab5cd3ab
+builds.json 6e65155f7d99
 client-stable/assets/CHQowWH8-bundle-graph.json 2001e8bc2908
 client-stable/build/q-0U1Cmwdf.js 604017aac87c
 client-stable/build/q-3j5WJmUx.js bb047e08bb1e
@@ -7,7 +7,7 @@ client-stable/build/q-CmNEcz82.js e97f1418b97b
 client-stable/build/q-Dj_XpQMX.js 0b9f3404f586
 client-stable/build/q-g-eKjtNN.js d064f5c94078
 client-stable/build/q-naDMFAHy.js e66bc4197388
-client-stable/q-manifest.json fd452559c61d
+client-stable/q-manifest.json 92689af09d35
 client/assets/DUZ0mmnB-bundle-graph.json 6c242545a3f2
 client/build/q-1C3WhREl.js 132f759f30b1
 client/build/q-B2AkDwbb.js 0d3934dfabc3
@@ -17,7 +17,7 @@ client/build/q-CUYixTZy.js 5481c10b1a69
 client/build/q-CZ_V8GsQ.js 00840b1db47a
 client/build/q-Cr5wFq9C.js bd26ece830e9
 client/build/q-GHqBqFGF.js 0eeac36e0222
-client/q-manifest.json e857e34d716e
+client/q-manifest.json a8098d71a17c
 qwik-server/qwik.js 5588999ce371
 qwik-stable-server/qwik-stable.js 4c1201940f5c
 qwik-stable.mjs 3b1399687b9b
@@ -27,8 +27,8 @@ rivet-for.mjs 4ac763dc7538
 rivet-router-bunserve.mjs 400b5e5dfd8c
 rivet-router-uws.mjs 66f091d10aa7
 rivet-router.mjs 5c29c86e12bf
-rivet-router/client/.vite/manifest.json e28daf9c4d86
-rivet-router/client/.vite/rivet-resume.json 007e29332757
+rivet-router/client/.vite/manifest.json cdce99230d7c
+rivet-router/client/.vite/rivet-resume.json 3976bd41443b
 rivet-router/client/assets/dom-D5LchTOv.js 36e56381f4ed
 rivet-router/client/assets/dom-v2-spread-CF33Bnnf.js a173679dc71b
 rivet-router/client/assets/link-Dn1kJBpr.js bc6433c22002
@@ -45,8 +45,8 @@ rivet-router/client/assets/resume-ResumeLayout-DUfwRdW8.js 5e4b90367032
 rivet-router/client/assets/resume-ResumePage-xltZZTyq.deps.js a231e9feeac7
 rivet-router/client/assets/resume-ResumePage-xltZZTyq.js 165a672b7eac
 rivet-router/client/assets/resume-builtins-Bml1wg2k.js 32e247d7ec71
-rivet-router/client/assets/resume-entry-D-SZoQni.deps.js 261f26904203
-rivet-router/client/assets/resume-entry-D-SZoQni.js bffc8c4e24d4
+rivet-router/client/assets/resume-entry-DkV5OiJh.deps.js 261f26904203
+rivet-router/client/assets/resume-entry-DkV5OiJh.js fb35e43fee71
 rivet-router/client/assets/resume-format-D2ixM6vx.js 32b0a6b78667
 rivet-router/client/assets/resume-loader-DEOXaVdQ.js afe6e8bb8a46
 rivet-router/server/assets/content.server-CeyquBDs.js 70b41966c8ff
