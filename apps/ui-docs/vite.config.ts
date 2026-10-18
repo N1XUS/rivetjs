@@ -10,11 +10,12 @@ import { docsSite } from "@rivetjs/docs-kit/vite.ts";
 const CDK_ON_INTENT = [{ match: "@rivetjs/cdk/", strategy: "intent" as const }];
 /**
  * Chunk-policy experiments (derived-client plan M1, `docs/design/plans/2026-10-18-derived-client.md`): the measurement
- * builds set `RIVET_RESUME_CHUNKS` (`component` | `group` | `route`) and `RIVET_RESUME_MERGE` (bytes, or `off`); unset =
+ * builds set `RIVET_RESUME_CHUNKS` (`component` | `group` | `route`) and `RIVET_RESUME_MERGE` (bytes, or `off`) + `RIVET_RESUME_CAP`; unset =
  * the compiler defaults (what the site ships).
  */
 const CHUNKS = process.env.RIVET_RESUME_CHUNKS as "component" | "group" | "route" | undefined;
 const MERGE = process.env.RIVET_RESUME_MERGE === "off" ? false : process.env.RIVET_RESUME_MERGE ? Number(process.env.RIVET_RESUME_MERGE) : undefined;
+const CAP = process.env.RIVET_RESUME_CAP ? Number(process.env.RIVET_RESUME_CAP) : undefined;
 
 /**
  * @rivetjs/ui docs: a static site on @rivetjs/docs-kit (same engine as apps/docs and apps/cdk-docs). `images`: examples
@@ -29,7 +30,12 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
-      resume: { preload: { rules: CDK_ON_INTENT }, ...(CHUNKS ? { chunks: CHUNKS } : {}), ...(MERGE !== undefined ? { merge: MERGE } : {}) },
+      resume: {
+        preload: { rules: CDK_ON_INTENT },
+        ...(CHUNKS ? { chunks: CHUNKS } : {}),
+        ...(MERGE !== undefined ? { merge: MERGE } : {}),
+        ...(CAP !== undefined ? { cap: CAP } : {}),
+      },
     }),
     tailwindcss(),
   ],

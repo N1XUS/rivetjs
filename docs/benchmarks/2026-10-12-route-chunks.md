@@ -71,3 +71,15 @@ Fast 3G = 562.5 ms RTT, 1.44 Mbit/s, 4× CPU. `after` = click once no JS arrived
 
 - Fetch-ahead on a slow network: click after the idle downloads finished (Fast 3G; needs a longer quiet window in `probe.mjs`).
 - Raise the default merge budget (16 K / 64 K cut requests 25–50 % at flat bytes here)? Needs the docs-site byte distribution (p90 / max) like `2026-10-12-preload-group.md` before changing.
+
+## Follow-up (M1 T2, 2026-10-18, derived-client plan `docs/design/plans/2026-10-18-derived-client.md`)
+
+Probe: `apps/resume-bench/spikes/frames-probe.ts` (Chromium 141, cloud container, 4 cores; CDP Slow 4G + 4× CPU; JS requests / KB / modules evaluated before input = 3 s idle after `load`; first click: requests + KB it adds, latency to the first DOM change; medians of 3). Builds: `node libs/docs-kit/cli.ts build apps/ui-docs --no-checks --no-search --dist <dir>` with the env overrides of `apps/ui-docs/vite.config.ts`. Clicks: select trigger, date-picker trigger, combo-box trigger, dashboard period segment "7 days". Numbers are not comparable with the 2026-10-12 table (different host, throttled, content-length bytes instead of gzip).
+
+| Build | select-default | date-picker-basic | combo-box-default | showcase-dashboard |
+| --- | --- | --- | --- | --- |
+| component, merge 2048 (default) | 79 / 144.6 KB · click +2 / 1.1 KB, 16 ms | 63 / 161.5 · +31 / 21.3, 28 | 78 / 143.3 · +15 / 9.5, 32 | 29 / 68.7 · +50 / 62.7, 19 |
+| component, merge 262144 | 48 / 141.8 · +2 / 1.1, 12 | 24 / 146.5 · +40 / 30.2, 29 | 41 / 147.3 · +15 / 9.8, 29 | 22 / 116.0 · +52 / 59.2, 19 |
+| route, merge 64 K / 256 K / 1 M (per-set shared chunks) | build crash (below) | | | |
+
+- **Route mode did not build** at ui-docs scale (1,036 lazy frames; 1,500 symbol chunks of which 193 `route:shared:<set>` chunks, the largest set 1,036 roots; `merge` off too): Rolldown 1.2.12's `rolldown-worker` thread overflows its 2 MB stack in a ~5,150-frame recursion (gdb: one repeating frame inside the binding; SIGSEGV after ~45 s), Rolldown 1.2.14 ran past 8.7 GB RSS instead (killed), a 256 MB `RUST_MIN_STACK` was killed at 16 GB. Folding every shared set into `route:main` (one shared chunk) builds in 3 min — the per-exact-set shared entries are the trigger — but that chunk is 908 KB (everything two or more frames share). Fix: shared symbol modules cluster by the routes using them (`coLoadGroups` with `adjacency: "owners"`, `merge` budget then `cap` per route) instead of one chunk per exact set; `merge: false` keeps the exact sets.

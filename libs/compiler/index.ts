@@ -331,6 +331,8 @@ export interface ComponentGroups {
   group(file: string, name: string): string | null;
   groupPreload(id: string): string | null;
   route(file: string): string;
+  /** Lazy roots whose static graph reaches the file (`route` keys derive from them); null when none does. */
+  roots(file: string): string[] | null;
   modulePreload(file: string): string | null;
 }
 
@@ -425,6 +427,10 @@ export function groupComponents(
     group: (file, name) => group.get(key(file, name)) ?? null,
     groupPreload: (id) => groupPreload.get(id) ?? null,
     route,
+    roots: (file) => {
+      const by = reach.get(file);
+      return by ? [...by] : null;
+    },
     modulePreload: (file) => facts.get(file)?.preload ?? null,
   };
 }

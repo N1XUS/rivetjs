@@ -16,9 +16,15 @@
  * - the merged chunk would not form an import cycle with a chunk outside it (a path A → X → B through any other
  *   group or ungrouped module — a dynamic-import target, a virtual module, an entry — would make B's chunk and X's
  *   import each other: evaluation order breaks, TDZ errors).
- * Groups merge only along import edges, so a merged chunk stays a connected piece of the module graph. Only merged
- * groups of several owners get a name: an unmerged owner set is the bundler's own chunk, a single-owner group belongs
- * in its entry's chunk. Input order does not matter: modules are sorted by id first (names are stable).
+ * Groups merge only along import edges (`adjacency: "imports"`, default), so a merged chunk stays a connected piece of
+ * the module graph; `adjacency: "owners"` merges groups that share an owner instead (route symbol modules: no import
+ * edges between them, ROUTE-CHUNKS cluster 2026-10-18). Only merged groups of several owners get a name: an unmerged
+ * owner set is the bundler's own chunk, a single-owner group belongs in its entry's chunk. Input order does not matter:
+ * modules are sorted by id first (names are stable).
+ *
+ * `cap`: after the budget pass, an entry that still loads more than `cap` groups keeps merging the cheapest pair of
+ * its groups (the budget no longer limits; pinned owners and cycles still do) until it loads `cap` or no pair of its
+ * groups can merge. A merge never raises another entry's count, so one pass over the entries settles every one.
  */
 
 /** One module of the graph: size in bytes, static imports (ids), whether it may be grouped. */
@@ -49,6 +55,10 @@ export interface CoLoadModule {
 export interface CoLoadOptions {
   /** Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Default 2048. */
   budget?: number;
+  /** Most groups one entry loads after merging; unset = the budget alone decides. */
+  cap?: number;
+  /** Which groups may merge: ones joined by an import edge (default), or ones sharing an owner. */
+  adjacency?: "imports" | "owners";
 }
 
 /** Prefix of every group name (Rolldown merges groups of one name: never collide with the user's own groups). */
@@ -149,6 +159,20 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
       }
     return out;
   };
+  const forEachOwner = (set: Uint32Array, visit: (e: number) => void) => {
+    for (let w = 0; w < words; w++) for (let bits = set[w]!; bits; bits &= bits - 1) visit((w << 5) + (31 - Math.clz32(bits & -bits)));
+  };
+  // `adjacency: "owners"`: the groups each entry owns (merged groups are appended; dead ones are skipped on read).
+  const byOwner: number[][] = entries.map(() => []);
+  if (options.adjacency === "owners") groups.forEach((group, g) => forEachOwner(group.owners, (e) => byOwner[e]!.push(g)));
+  const sharing = (g: number): Set<number> => {
+    const out = new Set<number>();
+    forEachOwner(groups[g]!.owners, (e) => {
+      for (const h of byOwner[e]!) if (h !== g && groups[h]!.alive) out.add(h);
+    });
+    return out;
+  };
+  const candidates = options.adjacency === "owners" ? sharing : adjacent;
   const pinned = new Uint32Array(words);
   entries.forEach((entry, e) => {
     if (modules[entry]!.pinned) pinned[e >>> 5]! |= 1 << (e & 31);
@@ -229,10 +253,23 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
   // other merges change what groups import).
   const heap = new PairHeap();
   const offer = (g: number) => {
-    for (const h of adjacent(g)) {
+    for (const h of candidates(g)) {
       const c = cost(g, h);
       if (c <= budget) heap.push(c, g, h, version[g]!, version[h]!);
     }
+  };
+  const merge = (a: number, b: number) => {
+    const A = groups[a]!,
+      B = groups[b]!;
+    for (let w = 0; w < words; w++) A.owners[w]! |= B.owners[w]!;
+    A.count = popcount(A.owners);
+    A.bytes += B.bytes;
+    A.sets += B.sets;
+    for (const m of B.members) (A.members.push(m), (groupOf[m] = a));
+    B.members = [];
+    B.alive = false;
+    version[a]!++;
+    if (options.adjacency === "owners") forEachOwner(B.owners, (e) => byOwner[e]!.push(a));
   };
   for (let g = 0; g < groups.length; g++) offer(g);
   for (let top; (top = heap.pop());) {
@@ -245,17 +282,24 @@ export function coLoadGroups(input: readonly CoLoadModule[], options: CoLoadOpti
       continue;
     }
     if (reaches(a, b) || reaches(b, a)) continue;
-    const A = groups[a]!,
-      B = groups[b]!;
-    for (let w = 0; w < words; w++) A.owners[w]! |= B.owners[w]!;
-    A.count = popcount(A.owners);
-    A.bytes += B.bytes;
-    A.sets += B.sets;
-    for (const m of B.members) (A.members.push(m), (groupOf[m] = a));
-    B.members = [];
-    B.alive = false;
-    version[a]!++;
+    merge(a, b);
     offer(a);
+  }
+  // Cap pass: every entry over the cap merges the cheapest pair of its groups until it holds or nothing merges.
+  if (options.cap !== undefined) {
+    const owns = (e: number) => groups.flatMap((group, g) => (group.alive && group.owners[e >>> 5]! & (1 << (e & 31)) ? [g] : []));
+    for (let e = 0; e < entries.length; e++)
+      for (let list = owns(e); list.length > options.cap; list = owns(e)) {
+        let best: [number, number] | null = null,
+          least = Infinity;
+        for (let i = 0; i < list.length; i++)
+          for (let j = i + 1; j < list.length; j++) {
+            const c = cost(list[i]!, list[j]!);
+            if (c < least && !reaches(list[i]!, list[j]!) && !reaches(list[j]!, list[i]!)) ((least = c), (best = [list[i]!, list[j]!]));
+          }
+        if (!best) break;
+        merge(best[0], best[1]);
+      }
   }
   // Names: prefix + the group's largest module + a counter (the bundler merges groups of one name into one chunk).
   // Only merged groups get one: an unmerged owner set is the bundler's own chunk already, and a group of a single owner

@@ -32,7 +32,7 @@ Set `resume.chunks` in the Vite config:
 | --- | --- |
 | `"component"` (default) | One chunk per component |
 | `"group"` | One chunk per `<ChunkGroup>` subtree |
-| `"route"` | One chunk per lazily loaded route or `lazyComponent`, a main chunk, and one shared chunk per set of routes that use the same components |
+| `"route"` | One chunk per lazily loaded route or `lazyComponent`, a main chunk, and shared chunks for the components several routes use, clustered by the routes using them |
 
 ```ts title="vite.config.ts"
 import { defineConfig } from "vite";
@@ -56,7 +56,7 @@ The grouping changes only the browser chunks and the manifest. Server output sta
 | File-routed app with document prefetch on, where the first click must not wait for the network | `"route"` | The page downloads its own handler code after it loaded and the browser is idle, without running it. The first click downloads nothing. The page downloads 4 to 12 % more bytes, in about as many files. On a slow network over HTTP/1.1, a cold first click was 0.5 to 1.5 seconds faster in our measurements, because the page needs fewer files; over HTTP/2 it was the same. |
 | Pages with framework islands (React, Preact) | `"route"` | Fewer files: 15 to 10 on the bridge demo's orders page. |
 
-With `"route"`, each page's components land in the route's own chunk, or in a shared chunk that exactly the routes using them load. A component that no lazily loaded route reaches lands in the main chunk. Imports through `index.ts` files, such as `import { Select } from "@rivetjs/ui"`, count as imports of the components they name. Three cases are not followed yet, and their components land in the main chunk: a `.tsx` file that re-exports with `export *`, `export * as name from`, and re-exports written in the route module itself.
+With `"route"`, each page's components land in the route's own chunk, or in a shared chunk when several routes use them. Shared chunks are clustered: components used by nearly the same routes share one chunk, under the same budget as [Fewer shared chunks](#fewer-shared-chunks) and the `cap` on shared chunks per route. With `merge: false`, exactly the routes using a component load its chunk, one chunk per set of routes; on a site with many routes that is hundreds of small files. A component that no lazily loaded route reaches lands in the main chunk. Imports through `index.ts` files, such as `import { Select } from "@rivetjs/ui"`, count as imports of the components they name. Three cases are not followed yet, and their components land in the main chunk: a `.tsx` file that re-exports with `export *`, `export * as name from`, and re-exports written in the route module itself.
 
 The early download of a route's handler code happens only while document prefetch is on (`rivetRouter({ prefetch })`, see [the router options](../../reference/config.md)), and never with Save-Data on or on [lean pages](preloading.md#lean-pages). Code downloaded this way never runs before it is needed. [Scheduled preloads](preloading.md) still run their chunks when the browser is idle, with either grouping: on the select box example, 76 modules ran before the first click.
 
@@ -75,6 +75,14 @@ Change the budget with `resume.merge`, or turn merging off with `false`:
 ```ts title="vite.config.ts"
 export default defineConfig({
   plugins: [rivetRouter({ resume: { merge: 4096 } })],
+});
+```
+
+The budget bounds bytes, not files. To bound files, set `resume.cap`: the most shared chunks one chunk may load (with `chunks: "route"`, one route). A chunk over the cap keeps merging its cheapest pair of shared chunks past the budget until it holds. Chunks every page loads still take no page code, and modules still run in their import order.
+
+```ts title="vite.config.ts"
+export default defineConfig({
+  plugins: [rivetRouter({ resume: { chunks: "route", merge: 65536, cap: 3 } })],
 });
 ```
 

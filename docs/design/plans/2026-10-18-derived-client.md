@@ -34,6 +34,8 @@ Tasks:
 
 Non-goals in M1: no change to what chunks contain (symbols today, slices after M3), no compiler Rust.
 
+Status (2026-10-18): T1 done (`apps/resume-bench/spikes/frames-probe.ts`, baseline in `docs/benchmarks/2026-10-12-route-chunks.md` "Follow-up"). T2: (a) measured; (b) could not be measured — `route` mode's one-chunk-per-exact-set sharing crashes Rolldown 1.2.12 at ui-docs scale (193 nested shared sets over 1,036 frames: worker-thread stack overflow; 1.2.14 runs out of memory) — so (c) landed first and *in* route mode rather than as a fourth `chunks` value: shared symbol modules cluster by the routes using them (`coLoadGroups` `adjacency: "owners"`, `merge` budget, then `resume.cap` shared chunks per route; the same `cap` bounds the bundler's shared code chunks per entry), `merge: false` keeps the exact sets. Curve: benchmark note follow-up.
+
 ## M2 — adopted layer (values-only wire + boundary runtime)
 
 Compiler patch list (root agent builds the wasm once per batch; lanes write patches to the queue):

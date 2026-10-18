@@ -271,3 +271,45 @@ test("isBarrel: re-export-only modules and mostly-re-export package indexes", ()
   const many = Array.from({ length: 12 }, (_, i) => `export { default as I${i} } from "./icons/i${i}.js";`).join("\n");
   assert.equal(isBarrel(many + "\nconst helper = (x) => x;\nexport { helper };\n"), true);
 });
+
+test("cap: an entry over the cap merges the cheapest pair of its groups past the budget; pinned owners still block", () => {
+  // a loads x {a,b}, y {a,c}, z {a,d}: three groups, each shared with one other entry. Budget 0 merges nothing.
+  const graph = [
+    entry("a", ["/s/x.ts", "/s/y.ts", "/s/z.ts"]),
+    entry("b", ["/s/x.ts"]),
+    entry("c", ["/s/y.ts"]),
+    entry("d", ["/s/z.ts"]),
+    mod("/s/x.ts", 100),
+    mod("/s/y.ts", 5000),
+    mod("/s/z.ts", 200),
+  ];
+  assert.equal(coLoadGroups(graph, { budget: 0 }).size, 0);
+  // Cap 2: the cheapest pair (x + z: b and d load 200 / 100 extra) merges; y stays apart.
+  const two = coLoadGroups(graph, { budget: 0, cap: 2 });
+  assert.ok(two.get("/s/x.ts"));
+  assert.equal(two.get("/s/x.ts"), two.get("/s/z.ts"));
+  assert.equal(two.get("/s/y.ts"), undefined);
+  // Cap 1: everything a loads merges into one chunk.
+  const one = coLoadGroups(graph, { budget: 0, cap: 1 });
+  assert.equal(new Set([one.get("/s/x.ts"), one.get("/s/y.ts"), one.get("/s/z.ts")]).size, 1);
+  // A pinned entry (every page) never takes page code, cap or not.
+  const pinnedGraph = graph.map((m) => (m.id === "b" ? { ...m, pinned: true } : m));
+  const capped = coLoadGroups(pinnedGraph, { budget: 0, cap: 1 });
+  assert.equal(capped.get("/s/x.ts"), undefined);
+  assert.equal(capped.get("/s/y.ts"), capped.get("/s/z.ts"));
+});
+
+test('adjacency "owners": groups with no import edges merge by shared owner (route symbol modules)', () => {
+  // Routes r1 {A}, r2 {A, B}, r3 {B}: A and B share r2 only. Import adjacency: never (no edges); owner adjacency: cheap.
+  const graph = [entry("r1", ["/s/a.tsx"]), entry("r2", ["/s/a.tsx", "/s/b.tsx"]), entry("r3", ["/s/b.tsx"]), mod("/s/a.tsx", 300), mod("/s/b.tsx", 300)];
+  assert.equal(coLoadGroups(graph, { budget: 1e9 }).size, 0);
+  const owners = coLoadGroups(graph, { budget: 2048, adjacency: "owners" });
+  assert.ok(owners.get("/s/a.tsx"));
+  assert.equal(owners.get("/s/a.tsx"), owners.get("/s/b.tsx"));
+  // Over budget (r1 loads B's 300, r3 loads A's 300: 600 per request saved) they stay apart; cap 1 merges them anyway.
+  assert.equal(coLoadGroups(graph, { budget: 500, adjacency: "owners" }).size, 0);
+  assert.equal(
+    coLoadGroups(graph, { budget: 500, cap: 1, adjacency: "owners" }).get("/s/a.tsx"),
+    coLoadGroups(graph, { budget: 500, cap: 1, adjacency: "owners" }).get("/s/b.tsx"),
+  );
+});

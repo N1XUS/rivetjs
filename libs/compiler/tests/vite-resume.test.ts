@@ -242,7 +242,7 @@ test("chunk strategies: ChunkGroup and route grouping, component-level preload, 
   }
 });
 
-test("route chunks: imports through a .ts barrel reach their leaves; shared modules split per set of routes; fetchAhead", async () => {
+test("route chunks: imports through a .ts barrel reach their leaves; shared modules cluster by the routes using them; fetchAhead", async () => {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-route-"));
   try {
@@ -294,21 +294,24 @@ export function App() { return <div><R1 /><R2 /><R3 /><R4 /><R5 /></div>; }
       "src/r5.tsx",
       ...["a", "b", "c", "d", "e", "f", "g"].map((n) => `src/lib/${n}.tsx`),
     ];
-    const run = async (chunks: "component" | "route") => {
+    const run = async (chunks: "component" | "route", merge?: false) => {
+      const out = "dist-" + chunks + (merge === false ? "-split" : "");
       await build({
         configFile: false,
         root,
         logLevel: "silent",
-        plugins: [rivet({ resume: { modules, chunks } })],
-        build: { outDir: "dist-" + chunks, manifest: true, minify: false },
+        plugins: [rivet({ resume: { modules, chunks, ...(merge === false ? { merge } : {}) } })],
+        build: { outDir: out, manifest: true, minify: false },
       });
-      return JSON.parse(await readFile(resolve(root, "dist-" + chunks + "/.vite/rivet-resume.json"), "utf8")) as BuiltManifest & { fetchAhead?: boolean };
+      return JSON.parse(await readFile(resolve(root, out + "/.vite/rivet-resume.json"), "utf8")) as BuiltManifest & { fetchAhead?: boolean };
     };
     const m = await run("route");
-    const url = (id: string) => m.symbols[Object.keys(m.symbols).find((s) => s.startsWith(id))!]!;
-    // A: routes 1 + 2; B: routes 2 + 3; C (renamed `Cee`): route 3 only — one chunk per set of routes, none in main.
-    assert.notEqual(url("src/lib/a.tsx#A"), url("src/lib/b.tsx#B"));
-    assert.match(url("src/lib/a.tsx#A"), /resume-shared-a-/);
+    const url = (id: string, manifest = m) => manifest.symbols[Object.keys(manifest.symbols).find((s) => s.startsWith(id))!]!;
+    // A: routes 1 + 2; B: routes 2 + 3; C (renamed `Cee`): route 3 only. Shared modules cluster by the routes using them
+    // under the merge budget: route 2 loads A and B in one chunk (routes 1 and 3 each take a few hundred bytes of the
+    // other's handler); none of them in main.
+    assert.equal(url("src/lib/a.tsx#A"), url("src/lib/b.tsx#B"));
+    assert.match(url("src/lib/a.tsx#A"), /resume-shared-/);
     assert.equal(url("src/lib/c.tsx#C"), url("src/r3.tsx#R3"));
     assert.notEqual(url("src/lib/a.tsx#A"), url("src/app.tsx#App"));
     // D is exported by the barrel but imported by no route: main (with the app), never in a route's chunk.
@@ -316,11 +319,16 @@ export function App() { return <div><R1 /><R2 /><R3 /><R4 /><R5 /></div>; }
     // The compound reaches both modules it imports: route 4 only.
     assert.equal(url("src/lib/e.tsx#E"), url("src/r4.tsx#R4"));
     assert.equal(url("src/lib/f.tsx#F"), url("src/r4.tsx#R4"));
-    // G behind the cycle, imported by routes 4 and 5: their shared chunk, not main.
-    assert.match(url("src/lib/g.tsx#G"), /resume-shared-g-/);
+    // G behind the cycle, imported by routes 4 and 5: a shared chunk of its own (no route in common with A / B), not main.
+    assert.match(url("src/lib/g.tsx#G"), /resume-shared-/);
+    assert.notEqual(url("src/lib/g.tsx#G"), url("src/lib/a.tsx#A"));
     // A page's shared chunks are siblings (one group): loading one prefetches the others.
     assert.ok(m.groups.some((g) => g.includes(url("src/lib/a.tsx#A")) && g.includes(url("src/lib/b.tsx#B"))));
     assert.equal(m.fetchAhead, true);
+    // `merge: false`: one shared chunk per exact set of routes (A: 1 + 2, B: 2 + 3 apart).
+    const split = await run("route", false);
+    assert.notEqual(url("src/lib/a.tsx#A", split), url("src/lib/b.tsx#B", split));
+    assert.match(url("src/lib/a.tsx#A", split), /resume-shared-a-/);
     assert.equal((await run("component")).fetchAhead, undefined);
   } finally {
     await rm(root, { recursive: true, force: true });

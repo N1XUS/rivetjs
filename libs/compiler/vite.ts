@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { coLoadGroups, isBarrel, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
+import { coLoadGroups, isBarrel, MERGE_PREFIX, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import {
   compile,
@@ -52,8 +52,10 @@ export interface RivetResumeOptions {
   /**
    * Chunk grouping: "component" (default) one chunk per component; "group" one chunk per `<ChunkGroup>`
    * subtree (components rendered in several groups, or none, keep their own chunk); "route" one chunk
-   * per lazy-import target's static module graph (`lazyComponent` / route imports), plus a main and a
-   * shared chunk. Chunks of the same group / route prefetch each other once one is used.
+   * per lazy-import target's static module graph (`lazyComponent` / route imports), a main chunk, and shared
+   * chunks for the modules several routes reach, clustered by the routes using them under `merge` / `cap`
+   * (ROUTE-CHUNKS cluster 2026-10-18; `merge: false` = one chunk per exact set of routes). Chunks of the same
+   * group / route prefetch each other once one is used.
    */
   chunks?: "component" | "group" | "route";
   /**
@@ -77,6 +79,13 @@ export interface RivetResumeOptions {
    * Skipped when the build sets `codeSplitting: false`, `manualChunks` or `advancedChunks`.
    */
   merge?: number | false;
+  /**
+   * Most shared chunks one entry (a symbol chunk; with `chunks: "route"` a route's chunk) may load after merging
+   * (ROUTE-CHUNKS cluster 2026-10-18): an entry over the cap keeps merging the cheapest pair of its shared chunks past
+   * the budget, pinned chunks and import order still respected. Applies to the bundler's shared code chunks and, in
+   * route mode, to the shared symbol chunks. Unset = the budget alone decides.
+   */
+  cap?: number;
   /**
    * Preload overrides. Automatic: click/submit/input handlers prefetch on intent; handlers repeated on
    * 3+ elements (list rows) and hover-like events when visible; window/document client events at idle;
@@ -1059,6 +1068,7 @@ function rivetPlugin(
       if (!["component", "group", "route"].includes(strategy)) this.error('resume.chunks must be "component", "group" or "route"');
       if (resume.merge !== undefined && resume.merge !== false && !(typeof resume.merge === "number" && resume.merge >= 0))
         this.error("resume.merge must be a byte budget (a number ≥ 0) or false");
+      if (resume.cap !== undefined && !(Number.isInteger(resume.cap) && resume.cap >= 1)) this.error("resume.cap must be an integer ≥ 1");
       const compiled = new Map<string, CompileResult>(),
         facts = new Map<string, ModuleFacts>(),
         resolved = new Map<string, Map<string, string>>(),
@@ -1105,6 +1115,25 @@ function rivetPlugin(
         resolved.set(filename, map);
       }
       const groups = groupComponents(facts, resolved, through);
+      // Route mode: modules several routes reach cluster into shared chunks by the routes using them (`merge` budget
+      // per request saved, then `cap` per route) instead of one chunk per exact set of routes — thousands of nested
+      // sets (ui-docs: 193 sets over 1,036 lazy frames) are both the request count and a Rolldown stack overflow.
+      const cluster = new Map<string, string>();
+      if (strategy === "route" && resume.merge !== false) {
+        const byRoot = new Map<string, string[]>();
+        const shared: CoLoadModule[] = [];
+        for (const filename of resumable) {
+          const roots = groups.roots(filename);
+          if (!roots || roots.length < 2) continue;
+          for (const r of roots) (byRoot.get(r) ?? byRoot.set(r, []).get(r)!).push(filename);
+          const size = (compiled.get(filename)?.symbols ?? []).reduce((n, symbol) => n + symbol.source.length, 0);
+          shared.push({ id: filename, size, imports: [], entry: false, groupable: true });
+        }
+        for (const [r, files] of byRoot) shared.push({ id: r, size: 0, imports: files, entry: true, groupable: false });
+        for (const [filename, name] of coLoadGroups(shared, { budget: resume.merge ?? 2048, cap: resume.cap, adjacency: "owners" }))
+          cluster.set(filename, "route:shared:" + name.slice(MERGE_PREFIX.length));
+      }
+      const routeKey = (filename: string) => cluster.get(filename) ?? groups.route(filename);
       // Function Bridge T3 (fix H2, round 2 N3): module references, one symbol per canonical id. An import reference (a
       // value of a module that does not stamp it itself) gets one chunk per id, importing only that value from its
       // specifier, so a page needing it never loads another component's chunk or module graph. An own reference (the
@@ -1116,7 +1145,7 @@ function rivetPlugin(
       const routeSibling = (key: string) => (key.startsWith("route:shared:") ? "route:shared" : key);
       const chunkKey = (filename: string, component: string) => {
         const group = groups.group(filename, component);
-        return strategy === "group" && group ? group : strategy === "route" ? groups.route(filename) : filename + "?" + component;
+        return strategy === "group" && group ? group : strategy === "route" ? routeKey(filename) : filename + "?" + component;
       };
       // Fix round 3, G2: one import reference id must name one file. Two importers whose specifier resolves to different
       // files (two installed copies of a package: an eager route and a lazy one, nested node_modules) would share the id,
@@ -1219,7 +1248,7 @@ function rivetPlugin(
             }
           }
           const group = groups.group(filename, symbol.component);
-          const key = strategy === "group" && group ? group : strategy === "route" ? groups.route(filename) : filename + "?" + symbol.component;
+          const key = strategy === "group" && group ? group : strategy === "route" ? routeKey(filename) : filename + "?" + symbol.component;
           const id = CHUNK + key;
           let chunk = chunks.get(id);
           if (!chunk) {
@@ -1228,12 +1257,14 @@ function rivetPlugin(
                 ? symbol.component
                 : key.startsWith("route:shared:")
                   ? "shared-" +
-                    filename
-                      .replace(/^.*\//, "")
-                      .replace(/\.[^.]*$/, "")
-                      .replace(/[^\w-]/g, "_")
+                    (cluster.has(filename)
+                      ? key.slice("route:shared:".length)
+                      : filename
+                          .replace(/^.*\//, "")
+                          .replace(/\.[^.]*$/, "")
+                          .replace(/[^\w-]/g, "_"))
                   : key.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_");
-            chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: group ?? routeSibling(groups.route(filename)) }));
+            chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: group ?? routeSibling(routeKey(filename)) }));
             this.emitFile({ type: "chunk", id, name: "resume-" + label, preserveSignature: "strict" });
           }
           let list = chunk.parts.get(filename);
@@ -1344,7 +1375,7 @@ function rivetPlugin(
           pinned: info.isEntry && !id.startsWith(CHUNK),
         });
       }
-      merged = coLoadGroups(nodes, { budget });
+      merged = coLoadGroups(nodes, { budget, cap: resume.cap });
     },
     // Rolldown reads output options before the build: the group's name function reads `merged` at chunking time.
     outputOptions(options) {
