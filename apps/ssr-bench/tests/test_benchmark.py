@@ -271,7 +271,7 @@ class BenchmarkTests(unittest.TestCase):
             for name,service in config['services'].items():
                 if name in ('backend','dotnet'):continue
                 command=service['command']
-                if name.endswith('-bun'):  # JavaScriptCore: GC env only (no semi-space knob)
+                if name.endswith(('-bun','-bunserve')):  # JavaScriptCore (bun / Bun.serve lanes): GC env only (no semi-space knob)
                     self.assertIn('$BUN_GC_ENV',command[-1].replace('$$','$'),name)
                     self.assertEqual(service['environment'].get('BUN_GC_ENV',''),settings['SSR_BENCH_BUN_GC_ENV'],f'{name} {profile}')
                 elif name.endswith('-deno'):  # same V8 flags as Node, via --v8-flags
