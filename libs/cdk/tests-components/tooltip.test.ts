@@ -126,13 +126,11 @@ test("a first mouse click on a resumed trigger keeps focus on it without a focus
   await page.close();
 });
 
-// Open (pre-dates the route default; 862805e7 fails it too): on a cold first click the replayed `pointerenter` opens
-// the `delay={0}` tooltip and installs its close-on-press document listener, but the replayed `pointerdown` only runs
-// resumed handlers on the event path — a listener attached during the replay never sees it — so the press does not
-// close the tooltip. The fuzz saw it once route chunks left the trigger's chunk unloaded at the first click
-// (`/tooltip` #styled-button: `aria-describedby="styled"`). Owner: runtime / cdk (cold press, docs/guides/resumability.md
-// "Cold press"). Delete `.fails` when fixed.
-test.fails("a first mouse click on a resumed trigger opens no tooltip", async () => {
+// Cold replay fidelity (COLDFIX 2026-10-19): the replayed `pointerenter` opens the `delay={0}` tooltip and installs its
+// close-on-press document capture listener; the replayed `pointerdown` (dispatched before that listener existed) must
+// reach it, as on a loaded page (dom-resume `late`; docs/guides/resumability.md "Cold press"). 862805e7 and the route
+// default before the fix failed it (`aria-describedby="styled"`).
+test("a first mouse click on a resumed trigger opens no tooltip", async () => {
   const { page } = await firstClick();
   try {
     assert.equal(await page.locator("#styled").count(), 0);

@@ -5,8 +5,6 @@
 import type { FuzzOptions, FuzzPin } from "@rivetjs/testing/fuzz";
 
 // Root causes shared by several routes.
-const COLD_STEPPER =
-  "cold first stepper press, split live / cold (RESUME-PINS diagnosis 2026-10-13): after the settle the pointerdown handler's chunk is evaluated but the mousedown one's is not, so the live press start steps the value and focuses the input, then the browser's mousedown default (no RA preventFocus yet: that handler is cold) moves focus to the stepper — the input's blur runs RA commitAndAnnounce, whose DOM text still shows the old value, so it announces the new one (live announcer); a loaded page keeps focus on the input (no blur, no announce). Follow-up (runtime): queue a pointerdown cold while the same element's mousedown chunk is unevaluated, or evaluate an element's press chunks together; docs/guides/resumability.md \"Cold press\"";
 const COLD_HOVER = "cold hover: the pointer entered before the hover handler's chunk loaded; no hover start is replayed";
 const NO_REGION = "re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha)";
 const MOUNT_EFFECT = "a mount-time browser effect runs on a client render only (a resumed page runs no component code until a change)";
@@ -106,7 +104,6 @@ export const pins: FuzzPin[] = [
     owner: "cdk",
     note: "scheduler (T-lane): SchedulerMonth resumed symbols read fields of an undefined cell / week (`label`, `dayNumber`, `segments`, …) after month-grid keys (CDK-PINS fuzz 2026-10-12)",
   },
-  { route: "/number-field", kind: "mismatch", step: 1, match: 'resumed: <div data-live-announcer="true"', owner: "runtime", note: COLD_STEPPER },
   {
     route: "/region-state-repro",
     kind: "recreated",
@@ -146,7 +143,22 @@ export const pins: FuzzPin[] = [
     note: "follows the server TabPanel tabindex=0 (the panel takes focus on the resumed page)",
   },
   { route: "/tag-group", kind: "recreated", match: "rv-Tag", owner: "cdk", note: "Tags " + NO_REGION },
-  { route: "/tag-group", kind: "missing", match: "resumed gone", owner: "cdk", note: "follows the Tag re-creation (the bound element left the resumed page)" },
+  // COLDFIX 2026-10-19: the cold replay no longer re-creates the Tags before the remove button click (the replayed focus
+  // events of a cold press are dropped), so the old "resumed gone" finding is gone and the fuzz now reaches the removal.
+  {
+    route: "/tag-group",
+    kind: "mismatch",
+    match: 'csr only [data-focused="true" tabindex="0" :focus]',
+    owner: "cdk",
+    note: "removing the focused tag (its Remove button) re-creates the Tags (" + NO_REGION + "); focus stays on the body instead of moving to the next tag",
+  },
+  {
+    route: "/tag-group",
+    kind: "mismatch",
+    match: 'csr: <div aria-describedby="#5" aria-label="Gaming"',
+    owner: "cdk",
+    note: "follows the lost focus after a tag removal (above): ArrowDown moves nothing on the resumed page",
+  },
 ];
 
 /** Per-route fuzz options. */

@@ -79,7 +79,22 @@ export const pins: FuzzPin[] = [
     "follows the ToggleButtonGroup re-creation (re-created buttons lose the press style)",
   ),
   pin("/visual/tag-group", "recreated", "div.tag.tag--md", "cdk", "Tags " + NO_REGION),
-  pin("/visual/tag-group", "missing", "resumed gone", "cdk", "follows the Tag re-creation (the bound element left the resumed page)"),
+  // COLDFIX 2026-10-19: the cold replay no longer re-creates the Tags early (a cold press's queued focus events are
+  // dropped), so the old "resumed gone" finding is gone and the fuzz reaches the tag removal (same as cdk `/tag-group`).
+  pin(
+    "/visual/tag-group",
+    "mismatch",
+    'csr only [data-focused="true" tabindex="0" :focus]',
+    "cdk",
+    "removing the focused tag re-creates the Tags (" + NO_REGION + "); focus stays on the body instead of moving to the next tag",
+  ),
+  pin(
+    "/visual/tag-group",
+    "mismatch",
+    /csr: <div aria-label="Gaming" aria-selected="true"/,
+    "cdk",
+    "follows the lost focus after a tag removal (above): Enter selects nothing",
+  ),
 ];
 
 /** Per-route fuzz options. */

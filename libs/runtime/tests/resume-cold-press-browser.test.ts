@@ -250,3 +250,25 @@ test("resume: the loader records the last input modality before any chunk ran (w
     assert.equal(await modality(), "mouse", "a lone modifier / a Control chord is no keyboard modality");
   });
 });
+
+test("resume: a listener a replayed handler attached sees the cold events replayed after it (close-on-press shape)", async () => {
+  await cold(async (page) => {
+    await page.click("#late");
+    await counted(page, "__lateClick");
+    assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__late), 1);
+    // `once`: the replay removed it, so a live second click reaches only the listener its own mousedown added (3 if kept).
+    await page.click("#late");
+    await page.waitForTimeout(50);
+    assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__late), 2, "the second press installs a new one");
+  });
+});
+
+test("resume: a canceled cold press replays none of the focus events its native mouse focus queued", async () => {
+  await cold(async (page) => {
+    await page.click("#drop");
+    await counted(page, "__drop");
+    await page.waitForTimeout(100);
+    assert.equal(await active(page), "before");
+    assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__dropFocus), undefined);
+  });
+});

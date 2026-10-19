@@ -232,6 +232,57 @@ const at = (event: Event, current: EventTarget | null, fn: () => unknown, path?:
   }
 };
 
+// Listeners a cold replay attaches (COLDFIX 2026-10-19): a replayed handler adding a native listener (cdk TooltipTrigger's
+// close-on-press document capture `pointerdown` on hover, RA usePress's document `pointerup` on press start) gets none of
+// the cold events dispatched before it, which still replay behind it on the chain: a loaded page delivers them. While a
+// chain is queued, `EventTarget.prototype` add / remove record such listeners (`replayed` set: inside a replay; `null`:
+// a `drain()` there, whose `load` clientEvent listeners a loaded page attached before the event, so they see it too);
+// each later replayed event dispatched before a listener was added runs it, in path order after its resumed handlers
+// (on a loaded page those run from the loader's document capture listener first). The original (trusted) event object.
+type Added = [target: EventTarget, type: string, fn: EventListenerOrEventListenerObject, capture: boolean, at: number, during: Event | null, options: unknown];
+const proto = EventTarget.prototype,
+  nativeAdd = proto.addEventListener,
+  nativeRemove = proto.removeEventListener;
+let added: Added[] = [],
+  replayed: Event | null | undefined;
+const captures = (o: unknown): boolean => !!(typeof o == "object" ? (o as AddEventListenerOptions | null)?.capture : o);
+const same = (r: Added, t: EventTarget, type: string, fn: unknown, o: unknown) => r[0] === t && r[1] === type && r[2] === fn && r[3] === captures(o);
+function addRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | AddEventListenerOptions): void {
+  nativeAdd.call(this, type, fn, o);
+  if (replayed !== undefined && fn && !added.some((r) => same(r, this, type, fn, o))) added.push([this, type, fn, captures(o), performance.now(), replayed, o]);
+}
+function removeRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
+  nativeRemove.call(this, type, fn, o);
+  added = added.filter((r) => !same(r, this, type, fn, o));
+}
+const record = (on: unknown): void => {
+  if (on) ((proto.addEventListener = addRecorded), (proto.removeEventListener = removeRecorded));
+  else if (proto.addEventListener === addRecorded) ((proto.addEventListener = nativeAdd), (proto.removeEventListener = nativeRemove), (added = []));
+};
+const late = (event: Event, path: EventTarget[]): void => {
+  const list = added.filter((r) => r[1] === event.type && r[5] !== event && event.timeStamp < r[4]),
+    // A resumed handler stopped propagation: on a loaded page only document / window capture listeners still follow.
+    stopped = event.cancelBubble;
+  if (!list.length) return;
+  const order: [EventTarget, boolean][] = [...path].reverse().map((t) => [t, true]);
+  for (const t of path.slice(0, event.bubbles ? path.length : 1)) order.push([t, false]);
+  for (const [t, capture] of order) {
+    if (event.cancelBubble && (!stopped || !capture || ((t as Node).nodeType > 0 && (t as Node).nodeType != 9))) break;
+    for (const r of list)
+      if (r[0] === t && r[3] === capture && added.includes(r)) {
+        const o = r[6] as AddEventListenerOptions | undefined,
+          aborted = typeof o == "object" && o?.signal?.aborted;
+        if (aborted || (typeof o == "object" && o?.once)) t.removeEventListener(r[1], r[2], capture);
+        if (!aborted)
+          try {
+            at(event, t, () => (typeof r[2] == "function" ? r[2].call(t, event) : r[2].handleEvent(event)), path);
+          } catch (error) {
+            reportError(error);
+          }
+      }
+  }
+};
+
 // Live props (LIVE-PROPS P3): a decoded forward box (`[key, …sources]`: the last source whose `key` is not
 // `undefined`) and the props object rebuilt around them. Same brand + reading rule as `props.ts` `_members` (member
 // capture prologues in symbol chunks); kept local so the resume runtime chunk does not import `props.ts` (rolldown
@@ -293,9 +344,15 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
   let chain: Promise<unknown> = Promise.resolve(),
     held = 0,
     // Cold press bookkeeping: the last cold pointerdown press recorded (its mousedown links to it).
-    down: Event | undefined;
+    down: Event | undefined,
+    // Whether the last cold event was a press that moved focus natively at dispatch (`cold`: its focus events follow).
+    pressed: unknown;
   // Cold presses: a pointerdown and its mousedown, both queued (the pointerdown puts focus back, the mousedown follows).
   const linked = new WeakSet<Event>(),
+    // Cold focus / blur events of a cold press's native mouse focus: the replay re-creates that move (focus back, then the
+    // default's focus unless a handler canceled it), so these never replay (a loaded page fires them once, or not at all
+    // when the mousedown was canceled: RA's collection mousedown on a TagGroup / GridList root, `/tag-group`).
+    moved = new WeakSet<Event>(),
     // A pressed element whose native focus move a replayed handler canceled → per canceled press (in replay = dispatch
     // order): the element focused at its dispatch, when it was undone, its dispatch time. A later-replayed press
     // dispatched before the undo puts focus back past it, walking strictly back in dispatch time (A B A canceled: the
@@ -310,7 +367,10 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
   // App's `rivet:go` listener attached asks again then (no polling).
   const drain = (): void => {
     if (!eager.length) return;
+    const during = replayed;
+    replayed &&= null;
     while (eager.length) eager.shift()!();
+    replayed = during;
     doc.dispatchEvent(new Event("rivet:attach"));
   };
   // Z1: the link intent that booted a lazy router page, while its pending listeners attach (`start`).
@@ -1064,6 +1124,14 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // the finger lifts); its mousedown has the same target.
       if (event.type === "pointerdown") down = (event as PointerEvent).pointerType !== "touch" ? event : undefined;
       else if (event.type === "mousedown" && down?.target === event.target) (linked.add(down).add(event), (down = undefined));
+      if (/^(focus|blur)/.test(event.type)) pressed && moved.add(event);
+      else pressed = (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event);
+      // The path at dispatch (empty once dispatched: queued before the runtime started → the target's ancestors now).
+      const path = event.composedPath();
+      if (!path.length)
+        for (let n = event.target as (Node & { host?: Node; defaultView?: Window }) | null; n; n = (n.parentNode ?? n.host ?? n.defaultView) as typeof n)
+          path.push(n);
+      record(1);
       chain = chain
         .then(() => api.ensure(hit[1]))
         .then(
@@ -1076,6 +1144,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             // form state (a replayed toggle starts from it).
             const queued = --held;
             held = 0;
+            replayed = event;
             // A cold press's default focus move (the mousedown's) ran natively at dispatch (the browser's mouse focus:
             // no focus-visible ring), before the handlers loaded. Natively they run first: a pointerdown handler
             // focusing the target (RA usePress, a menu trigger's press start), a canceling mousedown one (a radio
@@ -1098,11 +1167,14 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
               while (was && (u = undone.get(was)?.findLast((e) => e[2] < ts && event.timeStamp < e[1]))) ((was = u[0] as HTMLElement | null), (ts = u[2]));
               was && was !== doc.body ? was.focus({ preventScroll: true }) : press[0]?.blur();
             }
-            const kept = deliver(this, event, hit[0], !!replay || !!press, live);
+            let kept = false;
+            if (!moved.has(event)) ((kept = deliver(this, event, hit[0], !!replay || !!press, live)), late(event, path), (kept ||= canceled.has(event)));
             queueMicrotask(() => {
-              held += queued;
+              replayed = undefined;
               // An unpaired pointerdown's default focus follows even when canceled (only a canceled mousedown keeps
-              // focus where it was).
+              // focus where it was). Before the count returns: its focus events are nested too (queued behind the cold
+              // click, a `focusin` replayed after the click moved focus into a DatePicker's popover kept the picker's
+              // `data-focus-within`, `/render-resumed` / `/date-picker`).
               if (press && !(pair && type === "pointerdown"))
                 if (!kept || type === "pointerdown")
                   press[0] ? press[0].focus({ preventScroll: true, focusVisible: false } as FocusOptions) : (doc.activeElement as HTMLElement | null)?.blur?.();
@@ -1110,6 +1182,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
                   const list = undone.get(press[0]) ?? [];
                   (undone.set(press[0], list), list.push([live[3] as Element | null, performance.now(), event.timeStamp]));
                 }
+              held += queued;
+              held || record(0);
               kept || (replay && replay());
             });
           },

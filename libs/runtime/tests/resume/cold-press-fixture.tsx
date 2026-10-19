@@ -244,6 +244,42 @@ function CycC() {
   );
 }
 
+/** A replayed handler installing a document listener (cdk TooltipTrigger close-on-press, RA usePress document
+ * `pointerup`): the cold click replayed after it reaches that listener (COLDFIX 2026-10-19). */
+function Late() {
+  return (
+    <button
+      id="late"
+      type="button"
+      onMouseDown={() => {
+        document.addEventListener("click", () => count("__late"), { capture: true, once: true });
+        count("__lateDown");
+      }}
+      onClick={() => count("__lateClick")}
+    >
+      late
+    </button>
+  );
+}
+
+/** A collection root's shape (RA useSelectableCollection mousedown): the cancel keeps focus where it was, so the focus
+ * the native mouse focus queued never replays (COLDFIX 2026-10-19, cdk fuzz `/tag-group`). */
+function Drop() {
+  return (
+    <button
+      id="drop"
+      type="button"
+      onMouseDown={(event: MouseEvent) => {
+        event.preventDefault();
+        count("__drop");
+      }}
+      onFocus={() => count("__dropFocus")}
+    >
+      drop
+    </button>
+  );
+}
+
 export function Page() {
   return (
     <main>
@@ -264,6 +300,8 @@ export function Page() {
       <CycB />
       <CycC />
       <InertKeep />
+      <Late />
+      <Drop />
     </main>
   );
 }
