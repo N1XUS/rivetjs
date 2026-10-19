@@ -8,7 +8,7 @@ import type { EditorRoute } from "./manifest.ts";
 import { internalPath, matchRoute } from "./routes.ts";
 
 /** Modules whose `Link` export takes a route path in `to`. */
-export const LINK_MODULES = ["@rivetjs/router", "@rivetjs/router/client"];
+export const LINK_MODULES = ["@rivetjs/router", "@rivetjs/router/client", "@rivetjs/router/link"];
 
 export interface LinkTarget {
   literal: TS.StringLiteral | TS.NoSubstitutionTemplateLiteral;
