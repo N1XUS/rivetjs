@@ -182,16 +182,19 @@ const FORWARDED_ATTR = /^(?:aria-|data-)|^(?:id|role|title|lang|dir)$/;
  * - `attrs`: the context's DOM attributes (`aria-*`, `data-*`, `id`, `role`, `title`, …) the props leave
  *   `undefined`, for the element: spread `{...readAttrs(attrs)}` (accessor values allowed);
  * - a disabled element takes none (RA: `isDisabled ? {} : domProps`); the context `ref` is returned for
- *   `mergeRefValues`.
+ *   `mergeRefValues`. An accessor `isDisabled` (live / accessor prop) is never read here: the context handlers do
+ *   nothing and its attributes read `undefined` while it is true (read at event time / in the attribute binding) —
+ *   a render-time read would re-create the component's enclosing region on its first change on a resumed page.
  */
 export function mergeFocusableContext<P extends object>(
   props: P,
   ctx: { ref?: unknown; [key: string]: unknown } | null | undefined,
-  isDisabled?: boolean,
+  isDisabled?: boolean | (() => boolean | undefined),
 ): [P, unknown, Record<string, unknown> | undefined] {
   if (!ctx) return [props, undefined, undefined];
-  const { ref, ...domProps } = ctx;
-  if (isDisabled) return [props, ref, undefined];
+  const { ref, ...context } = ctx;
+  if (isDisabled === true) return [props, ref, undefined];
+  const domProps = typeof isDisabled === "function" ? gateContext(context, isDisabled) : context;
   if (hasLive(props)) return liveFocusableMerge(props, ref, domProps);
   const out = { ...props } as Record<string, unknown>;
   let attrs: Record<string, unknown> | undefined;
@@ -205,6 +208,27 @@ export function mergeFocusableContext<P extends object>(
     }
   }
   return [out as P, ref, attrs];
+}
+
+// Accessor `isDisabled`: context handlers skip and context DOM attributes read `undefined` while it is true (RA
+// re-renders with `{}`). The wrappers are returned arrows (resumable symbols; captures: the context value, the accessor).
+function gateContext(context: Record<string, unknown>, isDisabled: () => boolean | undefined): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key in context) {
+    const value = context[key];
+    if (/^on[A-Z]/.test(key) && typeof value === "function") out[key] = gatedHandler(value as (...a: unknown[]) => unknown, isDisabled);
+    else if (FORWARDED_ATTR.test(key)) out[key] = gatedAttr(value, isDisabled);
+    else out[key] = value;
+  }
+  return out;
+}
+
+function gatedHandler(handler: (...a: unknown[]) => unknown, isDisabled: () => boolean | undefined): (...a: unknown[]) => unknown {
+  return (...args: unknown[]) => (isDisabled() ? undefined : handler(...args));
+}
+
+function gatedAttr(value: unknown, isDisabled: () => boolean | undefined): () => unknown {
+  return () => (isDisabled() ? undefined : typeof value === "function" ? (value as () => unknown)() : value);
 }
 
 // Live props (P5): own getters stay unread — runtime `mergeProps(context, props, handlers)`: own defined values win

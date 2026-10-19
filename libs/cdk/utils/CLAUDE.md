@@ -42,7 +42,7 @@ React Aria utilities: prop/ref merging, numbers, transitions, labels, DOM helper
 - `npx vitest run --project cdk-components libs/cdk/tests-components/links.test.ts`
 
 ## Gotchas
-- `data-attrs.tsx` `mergeFocusableContext`: own + context handlers chained with `chain2` (`../interactions/merge-props.tsx`); module-level curried chains are not serializable
+- `data-attrs.tsx` `mergeFocusableContext`: own + context handlers chained with `chain2` (`../interactions/merge-props.tsx`); module-level curried chains are not serializable. `isDisabled` accessor (never read at render): `gateContext` wraps context handlers (`gatedHandler`: no-op while disabled) and forwarded attrs (`gatedAttr`: `undefined` while disabled) — returned arrows of module functions (resumable); `out[key] = () => …` in a loop is not (server "function is not serializable")
 - `tests-components/links.test.ts`: 2 known failures (baseline, ../CLAUDE.md)
 
 ## See also

@@ -18,6 +18,9 @@ export default function TooltipStory() {
   const open2 = signal(false);
   const changes2 = signal("");
   const anchor2 = ref<HTMLSpanElement>();
+  // Live `isDisabled` on the trigger Button (ui InputGroup "With TextArea" send button): updates in place.
+  const prompt = signal("");
+  const sends = signal(0);
   return (
     <section>
       <h1>Tooltip</h1>
@@ -102,6 +105,18 @@ export default function TooltipStory() {
           </Button>
           <Tooltip id="events">With handlers</Tooltip>
         </TooltipTrigger>
+      </div>
+      <div>
+        <Button id="live-disabled-fill" onPress={() => prompt.set(prompt() ? "" : "Hi")}>
+          Fill prompt
+        </Button>
+        <TooltipTrigger delay={0}>
+          <Button id="live-disabled-button" isDisabled={!prompt().trim()} onPress={() => sends.set(sends() + 1)}>
+            Send
+          </Button>
+          <Tooltip id="live-disabled">Send prompt</Tooltip>
+        </TooltipTrigger>
+        <output id="live-disabled-sends">{sends()}</output>
       </div>
       <p id="focus-log">log={focusLog()}</p>
       <p id="tooltip-changes">changes={changes()}</p>

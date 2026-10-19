@@ -64,10 +64,7 @@ export function WithTextArea() {
               </Tooltip.Content>
             </Tooltip>
             <Tooltip delay={0}>
-              {/* Not yet ported: upstream disables this button while the prompt is empty (`isDisabled={!value.trim()}`); a cdk Button
-                  with a live `isDisabled` inside a TooltipTrigger throws "Cannot run with a disposed owner" on a resumed page (cdk
-                  bug), so it stays enabled here and `handleSubmit` ignores an empty prompt. */}
-              <Button isIconOnly aria-label="Send prompt" isPending={isSubmitting} onPress={handleSubmit}>
+              <Button isIconOnly aria-label="Send prompt" isDisabled={!value().trim()} isPending={isSubmitting} onPress={handleSubmit}>
                 {({ isPending }) => (isPending() ? <Spinner color="current" size="sm" /> : <Icon icon={ArrowUp} size={16} />)}
               </Button>
               <Tooltip.Content class="flex items-center gap-1">

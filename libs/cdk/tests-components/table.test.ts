@@ -1,6 +1,6 @@
 // Table on a resumed page (story `/table`): server markup (grid / columnheader / rowheader roles,
 // aria-sort, ids, hidden descriptions), no library JS before interaction, then resumed sorting,
-// row selection (row press, selection checkbox, select all), keyboard navigation, onRowAction,
+// row selection (row press, selection checkboxes by mouse, select all by mouse + Space), keyboard navigation, onRowAction,
 // column resizing (keyboard) and the empty state.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
@@ -118,20 +118,65 @@ test("table: resumed row action (row press with nothing selected)", async () => 
   await page.close();
 });
 
-// Skipped: the takeover order (runtime-bugs.md K3-rt-1: the column header's still-delegated press handler ran before
-// the activated checkbox spread and prevented the native toggle) is fixed in dom-resume `dispatch` — after networkidle
-// this passes. Still open: focusing the header checkbox right after load (cold focusin) ends with focus on the first
-// row (`tr[data-key=p1]`), so Space selects p1 instead of all.
-test.skip("table: resumed select all (keyboard on the visually hidden checkbox input)", async () => {
+// Select all + row selection checkboxes by mouse on a cold page (the gap "select-all checkbox is dead, row checkboxes
+// toggle once by mouse" no longer reproduces: CDK-RESUME-BUGS 2026-10-19 found it fixed at 671410c4 and at 28f317fc, in
+// this story, cdk-docs table-basic and ui-docs table-selection / table-custom-cells). Each click is the page's first
+// trusted mouse click or follows one: the selection output is awaited, never read right after the click.
+test("table: resumed selection checkboxes (cold mouse clicks: row box toggles every time, select all toggles all)", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/table");
-  await page.focus("#tbl-pets thead input");
-  await page.keyboard.press("Space");
+  const rowBox = "#tbl-pets tbody tr[data-key=p2] label";
+  await page.click(rowBox);
+  await untilText(page, "#tbl-selected", "p2");
+  assert.equal(await page.isChecked("#tbl-pets tbody tr[data-key=p2] input"), true);
+  await page.waitForFunction(() => (document.querySelector("#tbl-pets thead input") as HTMLInputElement).indeterminate);
+  await page.click(rowBox);
+  await untilText(page, "#tbl-selected", "");
+  assert.equal(await page.isChecked("#tbl-pets tbody tr[data-key=p2] input"), false);
+  await page.click(rowBox);
+  await untilText(page, "#tbl-selected", "p2");
+  await page.click("#tbl-pets thead label");
   await untilText(page, "#tbl-selected", "all");
   assert.deepEqual(await attrs(page, "#tbl-pets tbody [role=row]", ["aria-selected"]), [["true"], ["true"], ["true"]]);
+  assert.equal(await page.isChecked("#tbl-pets thead input"), true);
+  await page.click("#tbl-pets thead label");
+  await untilText(page, "#tbl-selected", "");
+  assert.deepEqual(await attrs(page, "#tbl-pets tbody [role=row]", ["aria-selected"]), [["false"], ["false"], ["false"]]);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+test("table: resumed select all first, then keyboard Space on the focused select-all checkbox", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/table");
+  // A pointer focus on the header checkbox makes its column the focused key (RA useGridCell: focus not visible).
+  await page.click("#tbl-pets thead label");
+  await untilText(page, "#tbl-selected", "all");
+  await page.waitForFunction(() => document.activeElement === document.querySelector("#tbl-pets thead input"));
   await page.keyboard.press("Space");
   await untilText(page, "#tbl-selected", "");
+  await page.keyboard.press("Space");
+  await untilText(page, "#tbl-selected", "all");
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+// The old skipped test focused the header checkbox with `page.focus` and pressed Space. Playwright's `focus` calls
+// `element.focus()` twice: on a warm page the first call's focusin moves focus to the first row (RA
+// useSelectableCollection: no focused key and focus visible → the first row) and the second call brings it back, on a
+// cold page both calls precede the replayed focusin, so focus ended on p1. One programmatic focus behaves the same
+// cold and warm (RA): pinned here.
+test("table: one keyboard / programmatic focus on the select-all checkbox with nothing focused moves to the first row (RA), cold and warm", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  for (const warm of [false, true]) {
+    await page.goto(s.origin + "/table");
+    if (warm) await page.waitForLoadState("networkidle");
+    await page.evaluate(() => (document.querySelector("#tbl-pets thead input") as HTMLInputElement).focus());
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-key") === "p1");
+  }
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

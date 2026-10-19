@@ -213,14 +213,12 @@ export function Button(inProps: ButtonProps) {
     ref = mergeRefValues(ref, responderRef as RefValue<HTMLButtonElement> | undefined);
   }
   // RA useButton → useFocusable: FocusableContext (TooltipTrigger) props / handlers / ref reach the <button>.
-  // `isDisabled` is read only with a context (it is unused without one): an accessor read here would make the
-  // whole Button re-render on its first change on a resumed page (Calendar page buttons), dropping focus.
+  // `isDisabled` is never read here: an accessor / live one goes to the merge as an accessor (gated at event time and
+  // in the attribute binding). A read here would make the Button's enclosing region re-create it on its first change
+  // on a resumed page (Calendar page buttons dropped focus; a live `isDisabled` under a TooltipTrigger threw).
   const focusable = useContext(FocusableContext);
-  const [focusableMerged, focusableRef, focusAttrs] = mergeFocusableContext(
-    props,
-    focusable,
-    !!focusable && !!read(props.isDisabled as MaybeAccessor<boolean | undefined>),
-  );
+  const disabledAt = focusable ? (liveAt(props, "isDisabled") as MaybeAccessor<boolean | undefined>) : undefined;
+  const [focusableMerged, focusableRef, focusAttrs] = mergeFocusableContext(props, focusable, typeof disabledAt === "function" ? disabledAt : !!disabledAt);
   props = focusableMerged;
   ref = mergeRefValues(ref, focusableRef as RefValue<HTMLButtonElement> | undefined);
   // Live props (P5): with a live prop the state / ARIA props are read through a narrow view (getters unread, read in

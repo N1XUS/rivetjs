@@ -24,7 +24,7 @@
 - Live by default (LIVE-SWEEP round 2): `TooltipTrigger` runs `liveOptions(props, TRIGGER_LIVE = [isDisabled, delay, closeDelay, trigger, shouldCloseOnPress], ["isOpen"])` (gated by `hasLive`); the state keeps `delay` / `closeDelay` (creation values) + `state.live`, read at event time by `tooltipDelay` / `tooltipCloseDelay`; trigger options `read()` `trigger` / `shouldCloseOnPress` in the handlers; `Tooltip` `trigger` (standalone) via `liveAt` + `read` in the pointer handlers. Read once: `defaultOpen`, `placement` / offsets (positioning options at open), `id`
 
 ## Tests
-- `tests/tooltip.test.ts` (useTooltipTriggerState / useTooltip / useTooltipTrigger), `tests/tooltip.browser.test.tsx` (RAC Tooltip.test.js port; skips: `UNSTABLE_portalContainer`, Button tabindex 0), `tests-components/tooltip.test.ts`, `dom-events-overlays.test.ts`
+- `tests/tooltip.test.ts` (useTooltipTriggerState / useTooltip / useTooltipTrigger), `tests/tooltip.browser.test.tsx` (RAC Tooltip.test.js port; skips: `UNSTABLE_portalContainer`, Button tabindex 0), `tests-components/tooltip.test.ts` (+ trigger Button with a live `isDisabled`: updates in place on a resumed page, tooltip only while enabled), `dom-events-overlays.test.ts`
 
 ## Gotchas
 - Rivet Button renders no `tabindex` (RA useFocusable sets 0) — button lane

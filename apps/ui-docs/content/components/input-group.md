@@ -160,10 +160,6 @@ Combine both prefix and suffix elements.
 
 Use **InputGroup.TextArea** for multiline text inputs with prefix and suffix elements. When a textarea is present, the container automatically adjusts its height to accommodate the content and aligns prefix/suffix elements to the top.
 
-:::warning
-Not yet ported: the send button is not disabled while the prompt is empty: a cdk Button with a live `isDisabled` inside a TooltipTrigger throws on a resumed page (cdk bug); `handleSubmit` ignores an empty prompt.
-:::
-
 ::example{id=input-group-with-textarea}
 
 ### Usage Example

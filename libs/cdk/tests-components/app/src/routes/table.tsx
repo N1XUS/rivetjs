@@ -18,6 +18,9 @@ const PETS: Pet[] = [
   { id: "p3", name: "Coco", kind: "Parrot", age: 7 },
 ];
 
+// Selection checkboxes get a box (the label holds only the visually hidden input): mouse clicks need a target.
+const BOX = { display: "inline-block", inlineSize: "16px", blockSize: "16px", border: "1px solid" };
+
 export default function TableStory() {
   const sort = signal<SortDescriptor | null>(null);
   const selected = signal<Selection>(new Set<Key>());
@@ -46,7 +49,7 @@ export default function TableStory() {
       >
         <TableHeader>
           <Column id="select">
-            <Checkbox slot="selection" />
+            <Checkbox slot="selection" style={BOX} />
           </Column>
           <Column id="name" isRowHeader allowsSorting>
             Name
@@ -62,7 +65,7 @@ export default function TableStory() {
           {(pet: Pet) => (
             <Row id={pet.id}>
               <Cell>
-                <Checkbox slot="selection" />
+                <Checkbox slot="selection" style={BOX} />
               </Cell>
               <Cell>{pet.name}</Cell>
               <Cell>{pet.kind}</Cell>

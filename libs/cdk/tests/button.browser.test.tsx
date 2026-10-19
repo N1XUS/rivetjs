@@ -506,6 +506,33 @@ describe("Button (Rivet)", () => {
     expect(getByRole("button")).not.toHaveAttribute("aria-describedby");
   });
 
+  it("FocusableContext: an accessor / live isDisabled gates the context props at event time (same element, never read at render)", async () => {
+    for (const form of ["accessor", "live"] as const) {
+      const disabled = signal(true);
+      const calls: string[] = [];
+      const { getByRole } = renderUI(() => (
+        <FocusableProvider aria-describedby="tip" onFocus={() => calls.push("ctx-focus")} onPointerEnter={() => calls.push("ctx-enter")}>
+          {form === "accessor" ? <Button isDisabled={() => disabled()}>Trigger</Button> : <Button isDisabled={disabled()}>Trigger</Button>}
+        </FocusableProvider>
+      ));
+      const target = getByRole("button");
+      expect(target).not.toHaveAttribute("aria-describedby");
+      disabled.set(false);
+      expect(getByRole("button")).toBe(target);
+      expect(target).toHaveAttribute("aria-describedby", "tip");
+      await user.hover(target);
+      target.focus();
+      expect(calls).toEqual(["ctx-enter", "ctx-focus"]);
+      target.blur();
+      await user.unhover(target);
+      disabled.set(true);
+      expect(target).not.toHaveAttribute("aria-describedby");
+      target.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
+      expect(calls).toEqual(["ctx-enter", "ctx-focus"]);
+      cleanup();
+    }
+  });
+
   it("FocusableContext DOM attributes: aria-haspopup, accessor aria-expanded, aria-controls, data-*; own props win", () => {
     const open = signal(false);
     const { getByRole } = renderUI(() => (

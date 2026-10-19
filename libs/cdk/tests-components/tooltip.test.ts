@@ -314,3 +314,31 @@ test("standalone Tooltip with isOpen + onOpenChange opens on a resumed page", as
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
+
+// ui InputGroup "With TextArea": the send button's live `isDisabled` (`isDisabled={!prompt().trim()}`) inside a
+// TooltipTrigger. Before: Button read it at render for the FocusableContext merge, so its first change re-created
+// the trigger's region and the re-creation threw "Cannot run with a disposed owner" (console error, ui press lost).
+test("live isDisabled on a trigger Button updates in place on a resumed page; the tooltip follows it", async () => {
+  const { page, seen } = await open();
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => message.type() === "error" && consoleErrors.push(message.text()));
+  const send = page.locator("#live-disabled-button");
+  await send.evaluate((el) => ((el as unknown as { rvMark: number }).rvMark = 1));
+  assert.equal(await send.getAttribute("data-disabled"), "true");
+  assert.equal(await send.isDisabled(), true);
+  await page.click("#live-disabled-fill");
+  await page.waitForFunction(() => !(document.getElementById("live-disabled-button") as HTMLButtonElement).disabled);
+  assert.equal(await send.getAttribute("data-disabled"), null);
+  assert.equal(await send.evaluate((el) => (el as unknown as { rvMark?: number }).rvMark), 1, "same element (not re-created)");
+  await hover(page, "#live-disabled-button");
+  await shown(page, "live-disabled");
+  assert.equal(await describedBy(page, "#live-disabled-button"), "live-disabled");
+  await send.click();
+  await page.waitForFunction(() => document.getElementById("live-disabled-sends")?.textContent === "1");
+  await page.click("#live-disabled-fill");
+  await page.waitForFunction(() => (document.getElementById("live-disabled-button") as HTMLButtonElement).disabled);
+  assert.equal(await send.evaluate((el) => (el as unknown as { rvMark?: number }).rvMark), 1);
+  assert.deepEqual(seen.errors, []);
+  assert.deepEqual(consoleErrors, []);
+  await page.close();
+});
