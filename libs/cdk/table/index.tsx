@@ -32,7 +32,7 @@
 // - Header placeholder cells (nested columns, react-stately level) render nothing — RAC renders
 //   `node.render` of a placeholder (no render: throws); RAC `Column` is a leaf, so RAC tables never
 //   have them.
-import { computed, createContext, provide, signal, untrack, useContext } from "@rivetjs/reactivity";
+import { computed, createContext, provide, runWithOwner, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Portal, Show, clientEffect, ref as elementRef } from "@rivetjs/runtime/dom";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import {
@@ -131,8 +131,10 @@ import {
   renderProps,
   resumableContext,
   type ContextValue,
+  type LiveRenderProps,
   type RefValue,
   type RenderProps,
+  type RenderPropsHookRetVal,
   type SlotProps,
   type StyleRenderProps,
 } from "../slots/index.tsx";
@@ -146,7 +148,8 @@ import {
   hoverStateOver,
   type InteractionStateOptions,
 } from "../utils/data-attrs.tsx";
-import { useFocusRing } from "../focus/focus-ring.tsx";
+import { focusRingBlur, focusRingFocus, useFocusRing } from "../focus/focus-ring.tsx";
+import { isFocusVisible } from "../interactions/focus-visible.tsx";
 import { focusSafely, getFocusableTreeWalker } from "../focus/index.ts";
 import { getItemElement } from "../collections/dom.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
@@ -1262,6 +1265,175 @@ const ROW_OWNED = [
   "id",
 ] as const;
 
+/**
+ * A row's resume state (CELL-DIET 2026-10-19): the one value its handlers and bindings capture; the row state computed,
+ * render props, focus ring and interaction options derive from it per instance (`rowOf`), as for `CellData`.
+ */
+interface RowData {
+  key: Key;
+  view: () => TableStateLike<unknown>;
+  isVirtualized: boolean;
+  locale: string;
+  router: ReturnType<typeof useRouter>;
+  expandButtonId: string;
+  hasChildItems: boolean | undefined;
+  onHoverStart: RowProps<unknown>["onHoverStart"];
+  onHoverChange: RowProps<unknown>["onHoverChange"];
+  onHoverEnd: RowProps<unknown>["onHoverEnd"];
+  hovered: Signal<boolean>;
+  pressed: Signal<boolean>;
+  focusVisible: Signal<boolean>;
+  /** Focus-within ring signals (RA `useFocusRing({ within: true })`). */
+  withinFocused: Signal<boolean>;
+  withinVisible: Signal<boolean>;
+  /** Static render props (unset when live: `live` holds the per-key views). */
+  class: RowProps<unknown>["class"];
+  style: RowProps<unknown>["style"];
+  live: LiveRenderProps<RowRenderProps> | undefined;
+}
+
+interface RowState {
+  aria: ReturnType<typeof tableRowProps>;
+  hasChildItems: boolean;
+  isExpanded: boolean;
+  level: number;
+  selectionMode: SelectionMode;
+  selectionBehavior: SelectionBehavior;
+}
+
+interface RowDerived {
+  st: () => RowState | null;
+  values: RowRenderProps;
+  rp: RenderPropsHookRetVal;
+  interaction: InteractionStateOptions;
+  ring: Parameters<typeof focusRingFocus>[0];
+}
+
+const rowDerived = /* @__PURE__ */ new WeakMap<RowData, RowDerived>();
+// Row slot values shared by every row (one resume entry each): context consumers copy them, never write.
+const NO_SLOT_PROPS = {};
+const DRAG_SLOT_PROPS = { style: { pointerEvents: "none" } };
+const ROW_BUTTONS = { slots: { [DEFAULT_SLOT]: NO_SLOT_PROPS, chevron: NO_SLOT_PROPS, drag: DRAG_SLOT_PROPS } };
+
+function rowOptions(r: RowData, v: TableStateLike<unknown>, el?: Element | null): AriaTableRowProps<unknown> {
+  return {
+    node: v.collection.getItem(r.key) as GridNode<unknown>,
+    isVirtualized: r.isVirtualized,
+    shouldSelectOnPressUp: false,
+    expandButtonId: r.expandButtonId,
+    router: r.router,
+    locale: r.locale,
+    ref: (el as HTMLElement | null | undefined) ?? undefined,
+  };
+}
+
+/** The derived parts of a row (built once per `RowData`; owner as `cellOf`). */
+function rowOf(r: RowData): RowDerived {
+  let d = rowDerived.get(r);
+  if (!d) rowDerived.set(r, (d = untrack(() => runWithOwner(null, () => deriveRow(r)))));
+  return d;
+}
+
+function initRow(r: RowData): RowDerived {
+  const d = deriveRow(r);
+  rowDerived.set(r, d);
+  return d;
+}
+
+function deriveRow(r: RowData): RowDerived {
+  const { view, key, locale } = r;
+  const st = computed((): RowState | null => {
+    const v = view();
+    const n = v.collection.getItem(key) as GridNode<unknown> | null;
+    if (!n) return null;
+    const aria = tableRowProps(rowOptions(r, v), v, locale);
+    const hasChildItems = !!r.hasChildItems || v.collection.getItem((n as { lastChildKey?: Key | null }).lastChildKey!)?.type !== "cell";
+    return {
+      aria,
+      hasChildItems,
+      isExpanded: hasChildItems && v.expandedKeys.has(key),
+      level: n.level + 1,
+      selectionMode: v.selectionManager.selectionMode,
+      selectionBehavior: v.selectionManager.selectionBehavior,
+    };
+  });
+  const interaction: InteractionStateOptions = {
+    // because of https://bugs.webkit.org/show_bug.cgi?id=214609, hover only when selectable or with an action.
+    isDisabled: () => !st()?.aria.allowsSelection && !st()?.aria.hasAction,
+    onHoverStart: r.onHoverStart,
+    onHoverChange: r.onHoverChange,
+    onHoverEnd: r.onHoverEnd,
+    states: { isHovered: r.hovered, isFocusVisible: r.focusVisible },
+  };
+  const values: RowRenderProps = {
+    isHovered: () => r.hovered(),
+    isPressed: () => r.pressed(),
+    // Provided to the row's content (SelectionIndicatorContext, the selection checkbox): captures only `r`.
+    isSelected: () => !!rowOf(r).st()?.aria.isSelected,
+    isFocused: () => !!st()?.aria.isFocused,
+    isFocusVisible: () => r.focusVisible(),
+    isDisabled: () => !!st()?.aria.isDisabled,
+    selectionMode: () => st()?.selectionMode ?? "none",
+    selectionBehavior: () => st()?.selectionBehavior ?? "toggle",
+    allowsDragging: () => false,
+    isDragging: () => false,
+    isDropTarget: () => false,
+    isFocusVisibleWithin: () => r.withinVisible(),
+    id: key,
+    hasChildItems: () => !!st()?.hasChildItems,
+    isExpanded: () => !!st()?.isExpanded,
+    level: () => st()?.level ?? 1,
+    state: view,
+  };
+  const rp = untrack(() =>
+    renderProps(
+      { class: r.class, style: r.style, values, defaultClassName: "rv-Row", defaultStyle: { "--table-row-level": untrack(values.level) } },
+      r.live as never,
+    ),
+  );
+  // useFocusRing({ within: true }) over the row's own signals (the binding of `data-focus-visible-within` reads them).
+  const ring = {
+    props: { within: true },
+    focused: r.withinFocused,
+    visible: r.withinVisible,
+    state: { isFocused: false, isFocusVisible: isFocusVisible(), unsubscribe: null },
+  };
+  return { st, values, rp, interaction, ring };
+}
+
+/** Row `isPressed` lives in the press memo of the row element: re-read it after the row's press handlers. */
+function rowSyncPressed(r: RowData, target: EventTarget | null): void {
+  const v = r.view();
+  if (v.collection.getItem(r.key)) r.pressed.set(tableRowProps(rowOptions(r, v, target as Element | null), v, r.locale).isPressed);
+}
+
+/** A row event through a grid row handler (+ the pressed re-read). */
+function rowOn(r: RowData, e: Event, fn: (e: never, props: AriaTableRowProps<unknown>, state: TableStateLike<unknown>) => void, sync?: boolean): void {
+  const v = r.view();
+  fn(e as never, rowOptions(r, v), v);
+  if (sync) rowSyncPressed(r, e.currentTarget);
+}
+
+/** The row's own attributes after the user's DOM props (one spread binding). */
+function rowAttrs(r: RowData): Record<string, unknown> {
+  const { st, values, rp } = rowOf(r);
+  const selectionMode = values.selectionMode();
+  return {
+    ...(st()?.aria.rowProps ?? { role: "row" }),
+    class: rp.class(),
+    style: rp.style(),
+    "data-disabled": dataBool(values.isDisabled()),
+    "data-selected": dataBool(values.isSelected()),
+    "data-focused": dataBool(values.isFocused()),
+    "data-pressed": dataBool(r.pressed()),
+    "data-selection-mode": selectionMode === "none" ? undefined : selectionMode,
+    "data-expanded": dataBool(values.isExpanded()),
+    "data-has-child-items": dataBool(values.hasChildItems()),
+    "data-level": values.level(),
+    "data-focus-visible-within": dataBool(values.isFocusVisibleWithin()),
+  };
+}
+
 /** A row within a `<Table>`. */
 export const Row = /* @__PURE__ */ createBranchComponent(
   TableRowNode,
@@ -1269,200 +1441,126 @@ export const Row = /* @__PURE__ */ createBranchComponent(
     const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
     const internal = useContext(TableInternalContext)!;
     const key = item.key;
-    const isVirtualized = internal.isVirtualized;
     const locale = internal.locale;
-    const router = useRouter();
     const rowBase = `${internal.gridId}-${normalizeKey(key)}`;
     const expandButtonId = rowBase + "-expand";
     const checkboxId = rowBase + "-checkbox";
     const isTreeGrid = internal.data.treeColumn != null;
-    const { hasChildItems: hasChildItemsProp, onHoverStart, onHoverChange, onHoverEnd } = props;
-    const ropts = (v: TableStateLike<unknown>, el?: Element | null): AriaTableRowProps<unknown> => ({
-      node: v.collection.getItem(key) as GridNode<unknown>,
-      isVirtualized,
-      shouldSelectOnPressUp: false,
-      expandButtonId,
-      router,
+    const live = hasLive(props);
+    const r: RowData = {
+      key,
+      view,
+      isVirtualized: internal.isVirtualized,
       locale,
-      ref: (el as HTMLElement | null | undefined) ?? undefined,
-    });
-    const row = elementRef<HTMLTableRowElement>();
-    const rowRef = mergeRefValues<HTMLTableRowElement>(row as RefValue<HTMLTableRowElement>, forwardedRef as RefValue<HTMLTableRowElement> | undefined);
-    const st = computed(() => {
-      const v = view();
-      const n = v.collection.getItem(key) as GridNode<unknown> | null;
-      if (!n) return null;
-      const aria = tableRowProps(ropts(v), v, locale);
-      const hasChildItems = !!hasChildItemsProp || v.collection.getItem((n as { lastChildKey?: Key | null }).lastChildKey!)?.type !== "cell";
-      return {
-        aria,
-        hasChildItems,
-        isExpanded: hasChildItems && v.expandedKeys.has(key),
-        level: n.level + 1,
-        selectionMode: v.selectionManager.selectionMode,
-        selectionBehavior: v.selectionManager.selectionBehavior,
-      };
-    });
-    const hovered = signal(false);
-    const pressed = signal(false);
-    const focusVisible = signal(false);
-    const within = useFocusRing({ within: true });
-    const interaction: InteractionStateOptions = {
-      // because of https://bugs.webkit.org/show_bug.cgi?id=214609, hover only when selectable or with an action.
-      isDisabled: () => !st()?.aria.allowsSelection && !st()?.aria.hasAction,
-      onHoverStart,
-      onHoverChange,
-      onHoverEnd,
-      states: { isHovered: hovered, isFocusVisible: focusVisible },
+      router: useRouter(),
+      expandButtonId,
+      hasChildItems: props.hasChildItems,
+      onHoverStart: props.onHoverStart,
+      onHoverChange: props.onHoverChange,
+      onHoverEnd: props.onHoverEnd,
+      hovered: signal(false),
+      pressed: signal(false),
+      focusVisible: signal(false),
+      withinFocused: signal(false),
+      withinVisible: signal(false),
+      class: live ? undefined : props.class,
+      style: live ? undefined : props.style,
+      live: live ? (liveRenderProps(props, ["class", "style"]) as LiveRenderProps<RowRenderProps>) : undefined,
     };
-    // Row `isPressed` lives in the press memo of the row element: re-read it after the row's press handlers.
-    const syncPressed = (target: EventTarget | null) => {
-      const v = view();
-      if (v.collection.getItem(key)) pressed.set(tableRowProps(ropts(v, target as Element | null), v, locale).isPressed);
-    };
-    const selectionMode = () => st()?.selectionMode ?? "none";
-    const values: RowRenderProps = {
-      isHovered: () => hovered(),
-      isPressed: () => pressed(),
-      isSelected: () => !!st()?.aria.isSelected,
-      isFocused: () => !!st()?.aria.isFocused,
-      isFocusVisible: () => focusVisible(),
-      isDisabled: () => !!st()?.aria.isDisabled,
-      selectionMode,
-      selectionBehavior: () => st()?.selectionBehavior ?? "toggle",
-      allowsDragging: () => false,
-      isDragging: () => false,
-      isDropTarget: () => false,
-      isFocusVisibleWithin: () => within.isFocusVisible(),
-      id: key,
-      hasChildItems: () => !!st()?.hasChildItems,
-      isExpanded: () => !!st()?.isExpanded,
-      level: () => st()?.level ?? 1,
-      state: view,
-    };
-    const rp = untrack(() =>
-      renderProps(
-        {
-          class: props.class,
-          style: props.style,
-          values,
-          defaultClassName: "rv-Row",
-          defaultStyle: { "--table-row-level": untrack(values.level) },
+    const { values } = initRow(r);
+    // useTableSelectionCheckbox (Rivet: the id derives from the table id + row key, see header). One slots value for
+    // CheckboxContext + CheckboxFieldContext; closures capture `r` (the row region's providers are in its resume state).
+    const checkboxSlots = {
+      slots: {
+        [DEFAULT_SLOT]: NO_SLOT_PROPS,
+        selection: {
+          id: checkboxId,
+          "aria-label": untrack(() => tableSelectionCheckboxProps({ key, id: checkboxId, locale }, view()).checkboxProps["aria-label"]),
+          "aria-labelledby": untrack(() => `${checkboxId} ${getRowLabelledBy(view(), key)}`),
+          isSelected: values.isSelected,
+          isDisabled: () => !r.view().selectionManager.canSelectItem(r.key),
+          onChange: (isSelected: boolean) => tableSelectionCheckboxChange(isSelected, { key: r.key }, r.view()),
         },
-        hasLive(props) ? (liveRenderProps(props) as never) : undefined,
-      ),
-    );
-    // useTableSelectionCheckbox (Rivet: the id derives from the table id + row key, see header).
-    const checkboxProps = {
-      id: checkboxId,
-      "aria-label": untrack(() => tableSelectionCheckboxProps({ key, id: checkboxId, locale }, view()).checkboxProps["aria-label"]),
-      "aria-labelledby": untrack(() => `${checkboxId} ${getRowLabelledBy(view(), key)}`),
-      isSelected: () => !!st()?.aria.isSelected,
-      isDisabled: () => !view().selectionManager.canSelectItem(key),
-      onChange: (isSelected: boolean) => tableSelectionCheckboxChange(isSelected, { key }, view()),
+      },
     };
-    const chevron = isTreeGrid
+    const buttons = isTreeGrid
       ? {
-          id: expandButtonId,
-          "aria-label": () => st()?.aria.expandButtonProps["aria-label"],
-          "aria-labelledby": untrack(() => st()?.aria.expandButtonProps["aria-labelledby"]),
-          isDisabled: () => !!st()?.aria.expandButtonProps.isDisabled,
-          excludeFromTabOrder: true,
-          preventFocusOnPress: true,
-          "data-react-aria-prevent-focus": "true",
-          onPress: () => {
-            const v = view();
-            tableRowExpandPress(ropts(v), v);
+          slots: {
+            [DEFAULT_SLOT]: NO_SLOT_PROPS,
+            chevron: {
+              id: expandButtonId,
+              "aria-label": () => rowOf(r).st()?.aria.expandButtonProps["aria-label"],
+              "aria-labelledby": untrack(() => rowOf(r).st()?.aria.expandButtonProps["aria-labelledby"]),
+              isDisabled: () => !!rowOf(r).st()?.aria.expandButtonProps.isDisabled,
+              excludeFromTabOrder: true,
+              preventFocusOnPress: true,
+              "data-react-aria-prevent-focus": "true",
+              onPress: () => {
+                const v = r.view();
+                tableRowExpandPress(rowOptions(r, v), v);
+              },
+            },
+            drag: DRAG_SLOT_PROPS,
           },
         }
-      : {};
+      : ROW_BUTTONS;
     const { onPointerDown, onPointerUp, onPointerCancel, onPointerEnter, onPointerLeave, onDblClick } = props;
     const dom = globalDOMProps(props, ROW_OWNED);
     const branchRenderer = useContext(CollectionRendererContext);
     const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
-    // The built renderer only reads the parent key: a plain object, not the node class instance (resumable capture).
-    const branchParent = { key: key };
     return (
       <tr
         {...dom}
-        {...(st()?.aria.rowProps ?? { role: "row" })}
-        ref={rowRef as never}
-        class={rp.class()}
-        style={rp.style()}
-        data-disabled={dataBool(values.isDisabled())}
-        data-selected={dataBool(values.isSelected())}
-        data-focused={dataBool(values.isFocused())}
-        data-pressed={dataBool(pressed())}
-        data-selection-mode={selectionMode() === "none" ? undefined : selectionMode()}
-        data-expanded={dataBool(values.isExpanded())}
-        data-has-child-items={dataBool(values.hasChildItems())}
-        data-level={values.level()}
-        data-focus-visible-within={dataBool(values.isFocusVisibleWithin())}
+        {...rowAttrs(r)}
+        ref={forwardedRef as never}
         onKeyDown={(e) => {
-          const v = view();
-          gridRowKeyDown(e, ropts(v), v);
-          if (!e.cancelBubble) tableRowKeyDown(e, ropts(v), v);
-          syncPressed(e.currentTarget);
+          const v = r.view();
+          gridRowKeyDown(e, rowOptions(r, v), v);
+          if (!e.cancelBubble) tableRowKeyDown(e, rowOptions(r, v), v);
+          rowSyncPressed(r, e.currentTarget);
         }}
-        onKeyUp={(e) => {
-          const v = view();
-          gridRowKeyUp(e, ropts(v), v);
-          syncPressed(e.currentTarget);
-        }}
+        onKeyUp={(e) => rowOn(r, e, gridRowKeyUp, true)}
         onFocusIn={(e) => {
           // The row's own focus (was a native `focus` listener per row; it ran before this focusin): its `blur` binds while focused.
-          focusStateIn(interaction, e);
-          const v = view();
-          gridRowFocus(e, ropts(v), v);
-          (within.focusProps.onFocusIn as (e: FocusEvent) => void)(e);
+          const d = rowOf(r);
+          focusStateIn(d.interaction, e);
+          rowOn(r, e, gridRowFocus);
+          focusRingFocus(d.ring, e);
         }}
-        onFocusOut={(e) => (within.focusProps.onFocusOut as (e: FocusEvent) => void)(e)}
-        onPointerOver={(e) => hoverStateOver(interaction, e)}
+        onFocusOut={(e) => focusRingBlur(rowOf(r).ring, e)}
+        onPointerOver={(e) => hoverStateOver(rowOf(r).interaction, e)}
         onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
         onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
         onPointerDown={(e) => {
-          const v = view();
-          gridRowPointerDown(e, ropts(v), v);
-          syncPressed(e.currentTarget);
+          rowOn(r, e, gridRowPointerDown, true);
           onPointerDown?.(e as never);
         }}
         onPointerUp={(e) => {
-          const v = view();
-          gridRowPointerUp(e, ropts(v), v);
-          syncPressed(e.currentTarget);
+          rowOn(r, e, gridRowPointerUp, true);
           onPointerUp?.(e as never);
         }}
         onPointerCancel={(e) => {
-          const v = view();
-          gridRowPointerCancel(e, ropts(v), v);
-          syncPressed(e.currentTarget);
+          rowOn(r, e, gridRowPointerCancel, true);
           onPointerCancel?.(e as never);
         }}
-        onClick={(e) => {
-          const v = view();
-          gridRowClick(e, ropts(v), v);
-          syncPressed(e.currentTarget);
-        }}
+        onClick={(e) => rowOn(r, e, gridRowClick, true)}
         onDblClick={(e) => {
-          const v = view();
-          gridRowDoubleClick(e, ropts(v), v);
+          rowOn(r, e, gridRowDoubleClick);
           onDblClick?.(e as never);
         }}
-        onDragStart={(e) => {
-          const v = view();
-          gridRowDragStart(e, ropts(v), v);
-        }}
+        onDragStart={(e) => rowOn(r, e, gridRowDragStart)}
       >
         <Provider
           values={[
-            [CheckboxContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],
-            [CheckboxFieldContext, { slots: { [DEFAULT_SLOT]: {}, selection: checkboxProps } }],
-            [ButtonContext, { slots: { [DEFAULT_SLOT]: {}, chevron, drag: { style: { pointerEvents: "none" } } } }],
+            [CheckboxContext, checkboxSlots],
+            [CheckboxFieldContext, checkboxSlots],
+            [ButtonContext, buttons],
             [SelectionIndicatorContext, { isSelected: values.isSelected }],
             [RowFocusContext, { isFocusVisibleWithinRow: values.isFocusVisibleWithin }],
           ]}
         >
-          {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+          {/* The built renderer only reads the parent key: the row data (`key`), not the node class instance (resumable capture). */}
+          {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: r as never }) as never}
         </Provider>
       </tr>
     );
@@ -1525,36 +1623,91 @@ export interface CellProps extends RenderProps<CellRenderProps>, GlobalDOMAttrib
 
 const CELL_OWNED = ["onPointerDown", "onPointerUp", "onPointerEnter", "onPointerLeave", "onClick", "style", "id"] as const;
 
-/** A cell within a table row. */
-export const Cell = /* @__PURE__ */ createLeafComponent(TableCellNode, function Cell(props: CellProps, forwardedRef: unknown, cell: Node<unknown>) {
-  const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
-  const internal = useContext(TableInternalContext)!;
-  const rowFocus = useContext(RowFocusContext);
-  const key = cell.key;
-  const rowKey = cell.parentKey!;
-  const isVirtualized = internal.isVirtualized;
-  const { focusMode, allowsArrowNavigation } = props;
-  const nodeOf = (v: TableStateLike<unknown>): GridNode<unknown> | null => {
-    const n = v.collection.getItem(key) as (GridNode<unknown> & { column?: GridNode<unknown> }) | null;
-    if (n) n.column = v.collection.columns[n.index];
-    return n;
-  };
-  const copts = (v: TableStateLike<unknown>, n: GridNode<unknown>, el?: Element | null): GridCellProps => ({
+/**
+ * A cell's resume state (CELL-DIET 2026-10-19): the one value its handlers and bindings capture. Everything else (the
+ * cell state computed, render props, interaction options) derives from it per instance (`cellOf`), on the server, on a
+ * client render and lazily on a resumed page — so a server-rendered cell encodes one object + its three signals, not
+ * ~25 captured closures / objects (1000-row table: 145 → … table entries per row).
+ */
+interface CellData {
+  key: Key;
+  rowKey: Key;
+  view: () => TableStateLike<unknown>;
+  isVirtualized: boolean;
+  focusMode: CellProps["focusMode"];
+  allowsArrowNavigation: CellProps["allowsArrowNavigation"];
+  /** The row's `isFocusVisibleWithinRow` (RowFocusContext). */
+  within: () => boolean;
+  hovered: Signal<boolean>;
+  focused: Signal<boolean>;
+  focusVisible: Signal<boolean>;
+  /** Static render props (unset when live: `live` holds the per-key views). */
+  class: CellProps["class"];
+  style: CellProps["style"];
+  children: CellProps["children"];
+  live: LiveRenderProps<CellRenderProps> | undefined;
+}
+
+interface CellDerived {
+  st: () => (ReturnType<typeof tableCellProps> & CellStateExtra) | null;
+  values: CellRenderProps;
+  rp: RenderPropsHookRetVal;
+  interaction: InteractionStateOptions;
+}
+interface CellStateExtra {
+  isSelected: boolean;
+  isDisabled: boolean;
+  hasChildItems: boolean;
+  isExpanded: boolean;
+  level: number;
+  columnIndex: number | null | undefined;
+  isTreeColumn: boolean;
+}
+
+const cellDerived = /* @__PURE__ */ new WeakMap<CellData, CellDerived>();
+
+function cellNode(c: CellData, v: TableStateLike<unknown>): GridNode<unknown> | null {
+  const n = v.collection.getItem(c.key) as (GridNode<unknown> & { column?: GridNode<unknown> }) | null;
+  if (n) n.column = v.collection.columns[n.index];
+  return n;
+}
+
+function cellOptions(c: CellData, n: GridNode<unknown>): GridCellProps {
+  return {
     node: n,
-    isVirtualized,
-    focusMode,
-    allowsArrowNavigation,
+    isVirtualized: c.isVirtualized,
+    focusMode: c.focusMode,
+    allowsArrowNavigation: c.allowsArrowNavigation,
     shouldSelectOnPressUp: false,
-    ref: (el as HTMLElement | null | undefined) ?? undefined,
-  });
+    ref: undefined,
+  };
+}
+
+/**
+ * The derived parts of a cell: built by the component (`initCell`, under its owner) or, on a resumed page, on first
+ * use outside any owner (page lifetime, as the resume decoder creates captured computeds) — never under the binding /
+ * handler that asked first (its re-run would dispose the memoized computed).
+ */
+function cellOf(c: CellData): CellDerived {
+  let d = cellDerived.get(c);
+  if (!d) cellDerived.set(c, (d = untrack(() => runWithOwner(null, () => deriveCell(c)))));
+  return d;
+}
+
+function initCell(c: CellData): void {
+  cellDerived.set(c, deriveCell(c));
+}
+
+function deriveCell(c: CellData): CellDerived {
+  const { view, rowKey } = c;
   const st = computed(() => {
     const v = view();
-    const n = nodeOf(v);
+    const n = cellNode(c, v);
     if (!n) return null;
     const row = v.collection.getItem(rowKey) as (GridNode<unknown> & { lastChildKey?: Key | null }) | null;
     const hasChildItems = !!row && (!!row.props?.hasChildItems || v.collection.getItem(row.lastChildKey!)?.type !== "cell");
     return {
-      ...tableCellProps(copts(v, n), v),
+      ...tableCellProps(cellOptions(c, n), v),
       isSelected: v.selectionManager.isSelected(rowKey),
       isDisabled: v.selectionManager.isDisabled(rowKey),
       hasChildItems,
@@ -1565,84 +1718,111 @@ export const Cell = /* @__PURE__ */ createLeafComponent(TableCellNode, function 
       isTreeColumn: (n as { column?: GridNode<unknown> }).column?.key === v.treeColumn,
     };
   });
-  // Cell events with the node for the event (skipped once the cell left the collection).
-  const on = (e: Event, fn: (e: never, props: GridCellProps, state: TableStateLike<unknown>) => void) => {
-    const v = view();
-    const n = nodeOf(v);
-    if (n) fn(e as never, copts(v, n), v);
-  };
-  const hovered = signal(false);
-  const focused = signal(false);
-  const focusVisible = signal(false);
-  const interaction: InteractionStateOptions = { states: { isHovered: hovered, isFocused: focused, isFocusVisible: focusVisible } };
   const values: CellRenderProps = {
     isPressed: () => !!st()?.isPressed,
-    isFocused: () => focused(),
-    isFocusVisible: () => focusVisible(),
-    isHovered: () => hovered(),
+    isFocused: () => c.focused(),
+    isFocusVisible: () => c.focusVisible(),
+    isHovered: () => c.hovered(),
     isSelected: () => !!st()?.isSelected,
     isDisabled: () => !!st()?.isDisabled,
-    isFocusVisibleWithinRow: rowFocus.isFocusVisibleWithinRow,
-    id: key,
+    isFocusVisibleWithinRow: c.within,
+    id: c.key,
     columnIndex: () => st()?.columnIndex,
     isTreeColumn: () => !!st()?.isTreeColumn,
     isExpanded: () => !!st()?.isExpanded,
     hasChildItems: () => !!st()?.hasChildItems,
     level: () => st()?.level ?? 1,
   };
-  const rp = untrack(() =>
-    renderProps(
-      { class: props.class, style: props.style, children: props.children, values, defaultClassName: "rv-Cell" },
-      hasLive(props) ? (liveRenderProps(props) as never) : undefined,
-    ),
-  );
+  const rp = untrack(() => renderProps({ class: c.class, style: c.style, children: c.children, values, defaultClassName: "rv-Cell" }, c.live as never));
+  const interaction: InteractionStateOptions = { states: { isHovered: c.hovered, isFocused: c.focused, isFocusVisible: c.focusVisible } };
+  return { st: st as CellDerived["st"], values, rp, interaction };
+}
+
+/** A cell event with the node for the event (skipped once the cell left the collection). */
+function cellOn(c: CellData, e: Event, fn: (e: never, props: GridCellProps, state: TableStateLike<unknown>) => void): void {
+  const v = c.view();
+  const n = cellNode(c, v);
+  if (n) fn(e as never, cellOptions(c, n), v);
+}
+
+/** The cell's own attributes after the user's DOM props (one spread binding). */
+function cellAttrs(c: CellData): Record<string, unknown> {
+  const { st, values, rp } = cellOf(c);
+  return {
+    ...(st()?.gridCellProps ?? { role: "gridcell" }),
+    class: rp.class(),
+    style: rp.style(),
+    "data-focus-visible-within-row": dataBool(c.within()),
+    "data-pressed": dataBool(values.isPressed()),
+    "data-selected": dataBool(values.isSelected()),
+    "data-column-index": values.columnIndex() ?? undefined,
+    "data-expanded": dataBool(values.isExpanded()),
+    "data-has-child-items": dataBool(values.hasChildItems()),
+    "data-level": values.level(),
+    "data-tree-column": dataBool(values.isTreeColumn()),
+    "data-disabled": dataBool(values.isDisabled()),
+  };
+}
+
+/** A cell within a table row. */
+export const Cell = /* @__PURE__ */ createLeafComponent(TableCellNode, function Cell(props: CellProps, forwardedRef: unknown, cell: Node<unknown>) {
+  const view = useContext(TableStateContext)! as () => TableStateLike<unknown>;
+  const internal = useContext(TableInternalContext)!;
+  const rowFocus = useContext(RowFocusContext);
+  const live = hasLive(props);
+  const c: CellData = {
+    key: cell.key,
+    rowKey: cell.parentKey!,
+    view,
+    isVirtualized: internal.isVirtualized,
+    focusMode: props.focusMode,
+    allowsArrowNavigation: props.allowsArrowNavigation,
+    within: rowFocus.isFocusVisibleWithinRow,
+    hovered: signal(false),
+    focused: signal(false),
+    focusVisible: signal(false),
+    class: live ? undefined : props.class,
+    style: live ? undefined : props.style,
+    children: live ? undefined : props.children,
+    live: live ? (liveRenderProps(props) as LiveRenderProps<CellRenderProps>) : undefined,
+  };
+  initCell(c);
   const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onClick } = props;
   const dom = globalDOMProps(props, CELL_OWNED);
   return (
     <td
       {...dom}
-      {...(st()?.gridCellProps ?? { role: "gridcell" })}
+      {...cellAttrs(c)}
       ref={forwardedRef as never}
-      class={rp.class()}
-      style={rp.style()}
-      data-focus-visible-within-row={dataBool(rowFocus.isFocusVisibleWithinRow())}
-      data-pressed={dataBool(values.isPressed())}
-      data-selected={dataBool(values.isSelected())}
-      data-column-index={values.columnIndex() ?? undefined}
-      data-expanded={dataBool(values.isExpanded())}
-      data-has-child-items={dataBool(values.hasChildItems())}
-      data-level={values.level()}
-      data-tree-column={dataBool(values.isTreeColumn())}
-      data-disabled={dataBool(values.isDisabled())}
-      onKeyDownCapture={(e) => on(e, gridCellKeyDownCapture)}
+      onKeyDownCapture={(e) => cellOn(c, e, gridCellKeyDownCapture)}
       onKeyDown={(e) => {
-        on(e, gridCellKeyDown);
+        cellOn(c, e, gridCellKeyDown);
       }}
       onKeyUp={(e) => {
-        on(e, gridCellKeyUp);
+        cellOn(c, e, gridCellKeyUp);
       }}
       onFocusIn={(e) => {
         // The cell's own focus (was a native `focus` listener per cell, before this focusin); its `blur` binds while focused.
-        focusStateIn(interaction, e);
-        on(e, gridCellFocus);
+        focusStateIn(cellOf(c).interaction, e);
+        cellOn(c, e, gridCellFocus);
       }}
-      onPointerOver={(e) => hoverStateOver(interaction, e)}
+      onPointerOver={(e) => hoverStateOver(cellOf(c).interaction, e)}
       onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
       onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
       onPointerDown={(e) => {
-        on(e, gridCellPointerDown);
+        cellOn(c, e, gridCellPointerDown);
         onPointerDown?.(e as never);
       }}
       onPointerUp={(e) => {
-        on(e, gridCellPointerUp);
+        cellOn(c, e, gridCellPointerUp);
         onPointerUp?.(e as never);
       }}
       onClick={(e) => {
-        on(e, gridCellClick);
+        cellOn(c, e, gridCellClick);
         onClick?.(e as never);
       }}
     >
-      {provide(CollectionRendererContext, DefaultCollectionRenderer, () => rp.children()) as never}
+      {provide(CollectionRendererContext, DefaultCollectionRenderer, () => cellOf(c).rp.children()) as never}
     </td>
   );
 });

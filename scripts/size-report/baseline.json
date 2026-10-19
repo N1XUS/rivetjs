@@ -123,7 +123,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7369,
+          "htmlBr": 7322,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1316,10 +1316,10 @@
             "min": 187822,
             "br": 63550
           },
-          "interactionRequests": 7,
+          "interactionRequests": 8,
           "interactionJS": {
-            "min": 176827,
-            "br": 59221
+            "min": 178971,
+            "br": 60154
           },
           "interactionFiles": [
             "resume-entry.js",
@@ -1328,7 +1328,8 @@
             "routes.js",
             "rivet-merge-index.js",
             "maximize-2.js",
-            "minimize-2.js"
+            "minimize-2.js",
+            "resume-builtins.js"
           ]
         }
       }
