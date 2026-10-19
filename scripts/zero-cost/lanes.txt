@@ -27,13 +27,13 @@ rivet-for.mjs 4ac763dc7538
 rivet-router-bunserve.mjs 400b5e5dfd8c
 rivet-router-uws.mjs 2e0a32c8d399
 rivet-router.mjs 34417ee36c65
-rivet-router/client/.vite/manifest.json 59a05ddcfeec
-rivet-router/client/.vite/rivet-resume.json c79d383155f8
+rivet-router/client/.vite/manifest.json 2dad8ed1aaf5
+rivet-router/client/.vite/rivet-resume.json 95d56745dec9
 rivet-router/client/assets/page-DiUoE9PX.js 3b31076c348d
 rivet-router/client/assets/resume-QEF57T3E.js 4fa3a980f3aa
 rivet-router/client/assets/resume-builtins-Bml1wg2k.js 32e247d7ec71
-rivet-router/client/assets/resume-entry-BWXtO6hH.deps.js 768ab6db3b1b
-rivet-router/client/assets/resume-entry-BWXtO6hH.js 6b62de759de8
+rivet-router/client/assets/resume-entry-C74wXAZL.deps.js 768ab6db3b1b
+rivet-router/client/assets/resume-entry-C74wXAZL.js 905d113a1a6b
 rivet-router/client/assets/resume-index_tsx-Dz--nVzj.deps.js b23a4a370c54
 rivet-router/client/assets/resume-index_tsx-Dz--nVzj.js 7abcee3a96b2
 rivet-router/client/assets/resume-loader-DEOXaVdQ.js afe6e8bb8a46
