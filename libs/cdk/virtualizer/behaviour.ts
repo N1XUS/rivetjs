@@ -4,7 +4,7 @@
 // Apache-2.0, © Adobe): layout + layoutOptions, persisted keys, item measurement, load more.
 // Resume: the model is plain signals + JSON + resumable functions; engine instances live only in the browser
 // (one driver per scroller element, in a lazily created WeakMap).
-import { computed, createRoot, effect, untrack, type Signal } from "@rivetjs/reactivity";
+import { computed, createRoot, effect, runWithOwner, untrack, type Signal } from "@rivetjs/reactivity";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { direction as directionOf } from "../bidi/index.ts";
 import type { Key } from "../collections/index.ts";
@@ -195,7 +195,14 @@ export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element 
   drivers ??= new WeakMap();
   const existing = drivers.get(el);
   if (existing) return existing;
+  // Detached from the caller's owner: `createRoot` attaches to the current owner, and the first caller may be the
+  // rows' `For` binding (`visibleViews` on a resumed page's first projection), which disposes its children on its
+  // next run — the cached driver then kept dead effects and an items change no longer reached the engine
+  // (cdk-docs `virtualizer-items`, cold scroll then filter, 2026-10-19). The driver lives with its element.
+  return runWithOwner(null, () => createDriver(model, el));
+}
 
+function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Driver {
   const dir = (): Direction => model.dir ?? directionOf(el);
   const collection = computed(() => collectionOf(model) as Collection<Node<unknown>>);
   const layout = untrack(() => model.layout()) as unknown as Layout<Node<unknown>>;
@@ -226,7 +233,7 @@ export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element 
     initialVisibleRect: new Rect(getScrollLeft(el, dir()), el.scrollTop, el.clientWidth, el.clientHeight),
   });
   const driver: Driver = { state, scrollView, loadingMore: false, lastItems: undefined };
-  drivers.set(el, driver);
+  drivers!.set(el, driver);
   scrollView.updateSize();
 
   // Project engine views into the model (the rows' For), then measure estimated views once rendered.
@@ -287,7 +294,7 @@ export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element 
   return driver;
 }
 
-// The driver's projection effect: detached from any component owner (the driver outlives region re-creation).
+// The driver's projection effect: its own root (created under the detached driver, so it outlives region re-creation).
 function computedEffect(fn: () => void): void {
   createRoot(() => effect(fn));
 }

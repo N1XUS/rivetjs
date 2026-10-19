@@ -280,6 +280,17 @@ function Drop() {
   );
 }
 
+/** A range calendar's shape: the root commits on `focusout` when focus leaves mid-selection (a cold press from outside). */
+function Leave() {
+  return (
+    <div id="leave" onFocusOut={() => count("__leaveOut")} onPointerDown={() => count("__leavePress")}>
+      <button id="leave-cell" type="button">
+        cell
+      </button>
+    </div>
+  );
+}
+
 export function Page() {
   return (
     <main>
@@ -302,6 +313,7 @@ export function Page() {
       <InertKeep />
       <Late />
       <Drop />
+      <Leave />
     </main>
   );
 }

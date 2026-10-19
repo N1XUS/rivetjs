@@ -334,7 +334,7 @@
 @rivetjs/bridge-preact/server fc1962a61f07 1263
 @rivetjs/bridge-preact/client a8c2cae94ddc 967
 @rivetjs/bridge-preact/types 56e1b0c10087 9
-@rivetjs/cdk/masonry [dom] e4f474b230f5 88273
-@rivetjs/cdk/masonry [server] 3f5799538500 79467
+@rivetjs/cdk/masonry [dom] 629ba2c66a68 88308
+@rivetjs/cdk/masonry [server] 5f2cf6564302 79498
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
 @rivetjs/cdk/flip 94e1c39bc99c 3782

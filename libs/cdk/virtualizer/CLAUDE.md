@@ -16,7 +16,7 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 
 ## Layout
 - `index.tsx` - barrel; `virtualizer.tsx` - `<Virtualizer>` + nested `VirtualizerChildren`
-- `behaviour.ts` - serializable `VirtualizerModel`, server first window (`initialWindow`), browser driver (one per scroller element, lazy WeakMap)
+- `behaviour.ts` - serializable `VirtualizerModel`, server first window (`initialWindow`), browser driver (one per scroller element, lazy WeakMap; created detached — `runWithOwner(null, …)` — because `createRoot` attaches to the current owner and the first caller may be the rows' `For` `each` binding (`visibleViews` on a resumed page), which disposed the driver's effects on its next run: cdk-docs `virtualizer-items` cold scroll + filter kept dead engine effects, 2026-10-19; story `#filtered` + `tests/virtualizer-browser.test.ts` "reactive items")
 - `state.ts` - `createVirtualizerState` (useVirtualizerState; one render effect; holds class instances, browser/test only)
 - `virtualizer-core.ts`, `layout.ts`, `layout-info.ts`, `reusable-view.ts`, `overscan-manager.ts`, `scroll-anchor.ts`, `point.ts`, `size.ts`, `rect.ts`, `utils.ts`, `types.ts` - react-stately virtualizer
 - `list-layout.ts`, `grid-layout.ts`, `waterfall-layout.ts`, `table-layout.ts`, `table-column-layout.ts` - react-stately layouts / table utils

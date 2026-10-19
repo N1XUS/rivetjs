@@ -26,7 +26,10 @@ test("list: server window, no library JS before scroll, new window on scroll, ke
   await page.goto(s.origin + "/virtualizer");
   // Server window: 300px viewport + overscan at 32px estimated rows (rows 0..13).
   const first = await views(page, "#list");
-  assert.deepEqual(first.map((v) => v.key), [...Array(14).keys()]);
+  assert.deepEqual(
+    first.map((v) => v.key),
+    [...Array(14).keys()],
+  );
   assert.deepEqual(first[1], { key: 1, top: "32px", right: "", height: "32px" });
   assert.equal(await page.$eval("#list .rv-Virtualizer-content", (el) => (el as HTMLElement).style.height), "320000px");
   assert.equal(await page.getAttribute("#list", "role"), "list");
@@ -45,7 +48,10 @@ test("list: server window, no library JS before scroll, new window on scroll, ke
   await settle(page);
   const far = await views(page, "#list");
   assert.ok(far.length > 5 && far.length <= 25, `only the window is in the DOM (${far.length})`);
-  assert.ok(far.every((v) => v.key > 50 && v.key < 150), far.map((v) => v.key).join());
+  assert.ok(
+    far.every((v) => v.key > 50 && v.key < 150),
+    far.map((v) => v.key).join(),
+  );
   // Variable heights: every 7th row measures 64px and pushes its successor.
   const r98 = far.find((v) => v.key === 98)!;
   const r99 = far.find((v) => v.key === 99)!;
@@ -59,7 +65,27 @@ test("list: server window, no library JS before scroll, new window on scroll, ke
   assert.ok(await page.evaluate(() => (window as unknown as W).kept === document.querySelector('#list [data-rv-view="100"]')), "row node reused");
   assert.deepEqual(seen.errors, []);
   await page.close();
+});
 
+test("reactive items: a filter typed after a cold keyboard scroll re-projects the window", async () => {
+  // The driver used to be created under the rows' For binding (first projection on a resumed page), which disposed
+  // it on its next run: the engine kept dead effects and the later items change never reached it (2026-10-19).
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/virtualizer");
+  await page.press("#filtered", "ArrowDown"); // native scroll, cold `scroll` events replayed once the engine loads
+  await page.waitForFunction(() => (document.querySelector("#filtered") as HTMLElement).scrollTop > 0);
+  await settle(page);
+  await page.fill("#filter", "123");
+  await page.waitForFunction(() => !!document.querySelector('#filtered [data-rv-view="123"]'), undefined, { timeout: 5000 });
+  const keys = (await views(page, "#filtered")).map((v) => v.key);
+  assert.ok(
+    keys.every((k) => String(k).includes("123")),
+    keys.join(),
+  );
+  assert.equal(await page.$eval("#filtered .rv-Virtualizer-content", (el) => (el as HTMLElement).style.height), "640px");
+  assert.deepEqual(seen.errors, []);
+  await page.close();
 });
 
 test("rtl horizontal: views positioned from the right, negative scrollLeft normalized", async () => {
@@ -67,7 +93,10 @@ test("rtl horizontal: views positioned from the right, negative scrollLeft norma
   const seen = watch(page);
   await page.goto(s.origin + "/virtualizer");
   const first = await views(page, "#rtl");
-  assert.deepEqual(first.map((v) => v.key), [0, 1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(
+    first.map((v) => v.key),
+    [0, 1, 2, 3, 4, 5, 6],
+  );
   assert.deepEqual(first[2], { key: 2, top: "0px", right: "100px", height: "60px" });
   await page.$eval("#rtl", (el) => (el.scrollLeft = -1000));
   await page.waitForFunction(() => !!document.querySelector('#rtl [data-rv-view="22"]'));

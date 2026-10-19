@@ -346,7 +346,10 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     // Cold press bookkeeping: the last cold pointerdown press recorded (its mousedown links to it).
     down: Event | undefined,
     // Whether the last cold event was a press that moved focus natively at dispatch (`cold`: its focus events follow).
-    pressed: unknown;
+    pressed: unknown,
+    // The focus-back of a cold press is running (`cold`): its focus / blur events reach no resumed handler — on a loaded
+    // page there was no move to undo (a range calendar's root `focusout` committed the selection the press started).
+    undoing = false;
   // Cold presses: a pointerdown and its mousedown, both queued (the pointerdown puts focus back, the mousedown follows).
   const linked = new WeakSet<Event>(),
     // Cold focus / blur events of a cold press's native mouse focus: the replay re-creates that move (focus back, then the
@@ -1114,6 +1117,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     /** Path-addressed row elements (state `w`): the element of an id, or the id of an element (the loader's `$rw`). */
     q: (x: number | Element): Element | string | undefined => (typeof x == "number" ? build().get("" + x) : (build(), pathIds.get(x))),
     on(event: Event, hit: Hit): boolean {
+      // A focus-back's focus events (`undoing`): consumed, never delivered or queued.
+      if (undoing) return true;
       if (held || !ready(hit[1])) return false;
       deliver(this, event, hit[0]);
       return true;
@@ -1165,7 +1170,12 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
                 ts = event.timeStamp,
                 u: [Element | null, number, number] | undefined;
               while (was && (u = undone.get(was)?.findLast((e) => e[2] < ts && event.timeStamp < e[1]))) ((was = u[0] as HTMLElement | null), (ts = u[2]));
-              was && was !== doc.body ? was.focus({ preventScroll: true }) : press[0]?.blur();
+              undoing = true;
+              try {
+                was && was !== doc.body ? was.focus({ preventScroll: true }) : press[0]?.blur();
+              } finally {
+                undoing = false;
+              }
             }
             let kept = false;
             if (!moved.has(event)) ((kept = deliver(this, event, hit[0], !!replay || !!press, live)), late(event, path), (kept ||= canceled.has(event)));

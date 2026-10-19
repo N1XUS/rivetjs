@@ -272,3 +272,16 @@ test("resume: a canceled cold press replays none of the focus events its native 
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__dropFocus), undefined);
   });
 });
+
+test("resume: the focus-back of a cold press fires no focusout into the resumed handlers (range calendar commit shape)", async () => {
+  await cold(async (page) => {
+    // Focus sits outside `#leave` (`#before`): the press's native focus move puts it on the cell. Once the chunk loaded
+    // the runtime moves focus back to `#before` (the cell's `focusout` bubbles to `#leave`), runs the handlers, then
+    // focuses the cell as the default would. On a loaded page `#leave` never sees a `focusout` for this press.
+    await page.click("#leave-cell");
+    await counted(page, "__leavePress");
+    await page.waitForTimeout(100);
+    assert.equal(await active(page), "leave-cell");
+    assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__leaveOut), undefined);
+  });
+});
