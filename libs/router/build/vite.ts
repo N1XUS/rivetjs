@@ -27,6 +27,7 @@ export type { InlineStylesheets } from "./route-css.ts";
 export { mergeRouteCSS } from "./route-css.ts";
 import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
+import { lazyRowsHarness } from "./lazy-rows.ts";
 import type { createApp as CreateApp, GeneratedEntry } from "../server/app.ts";
 import type { DocumentShell } from "../server/render.ts";
 import { adapterOptions, targetBuildConfig, targetEntryPlugin, type AdapterName, type AdapterOptions } from "../adapters/target-build.ts";
@@ -842,6 +843,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   return [
     router,
     ...plugins,
+    // Measurement only (`RIVET_LAZY_ROWS=swap`, dev / lazy-rows tools): inert otherwise.
+    lazyRowsHarness(() => resolve(root, outDir, "entry.server.tsx")),
     ...(adapter ? [targetEntryPlugin(adapter, { serverEntry: () => resolve(root, outDir, "entry.server.tsx"), mode: () => mode })] : []),
   ];
 }

@@ -225,6 +225,13 @@ Status: [resumability design](../design/specs/2026-10-03-resumability-design.md)
 - Knobs: `RIVET_FUZZ_ROUTES=` (substrings or `/regex/`), `RIVET_FUZZ_SHARD=i/n`, `RIVET_FUZZ_STEPS=` (per route, default 40, seeded sample of element groups above it), `RIVET_FUZZ_SEED=` (sample seed, default 1), `RIVET_FUZZ_LOG=1` (findings + totals), `RIVET_FUZZ_OUT=<file>` (one JSON line per route result). With `RIVET_FUZZ_STEPS` / `RIVET_FUZZ_SEED` set the pin tests are skipped (pins hold for the default plan only). Each repro log ends with its rerun command (`RIVET_FUZZ_ROUTES='/^<route>$/' npx vitest run --project <app>-resume-fuzz --maxWorkers=1`). CI: job `resume-fuzz`, app × 3 shards.
 - Not covered: elements that appear after a step (overlay content) are reached only through keys; dev builds; hydration of framework islands.
 
+## Measuring list rows
+
+- Lazy collection rows (spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`) baseline tools, T1.
+- `node libs/docs-kit/cli.ts check-examples <app root> <id…>`: each `measure <id>:` line ends with `rows:` — per For group: `recorded` / `lazy`, symbol, row count, per-row state bytes raw / brotli (the For's share of `rivet/state`; derivation in `libs/docs-kit/CLAUDE.md`).
+- `node scripts/lazy-rows/probe.ts [<app>:<id>…] [--json]`: HTML raw / br, state raw / br split per For (+ `saved` = brotli bytes the share costs), server CPU per render (median of 20 after 5 warm-up), first-row click-to-interactive (Chromium, ×1 / ×4 CPU throttle, median of 5 loads); env printed. See `scripts/CLAUDE.md`.
+- `RIVET_LAZY_ROWS=swap` (env only; dev server + those two tools, ignored with a warning by other production builds; no config / plugin option): every For row inside a region renders unrecorded, the region re-creates on the first pointerdown / keydown (create + swap). Measurement baseline only, never ship it: event target replaced under the pointer, input values / focus lost, rows outside a region scope stay dead.
+
 ## First mouse click: deferred flush
 
 - Rule (reactivity `_dispatch`, every handler path: `_on` / `_listen` / `_spread`, `clientEvent`, resumed `dispatch`): the first `event.isTrusted && type === "click" && pointerType === "mouse"` per document (`event.view`, WeakSet) whose handlers queued effects, outside a batch → handler runs synchronously (preventDefault / stopPropagation / writes; signal + computed reads see new values), flush posted as a MessageChannel task. Handlers of the same event share it. Later clicks on that document, keyboard / touch / pen / untrusted events: synchronous flush as before.

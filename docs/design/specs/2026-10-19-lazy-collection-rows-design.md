@@ -21,6 +21,28 @@ Every one of those entries is **a function of three things the page already has*
 
 Uniform rows already get this on the server side: an eligible native-element row renders from a compiled row plan (`$rows`, one template + compact rows `{i, d, a}`, `docs/guides/resumability.md` "uniform `For` rows"). Component rows — cdk `Row` / `Cell`, `ListBoxItem`, anything with contexts, render props or a `_c(child)` — are not eligible and pay per row. That is every collection component in cdk / ui.
 
+### T1 baseline (2026-10-19, `node scripts/lazy-rows/probe.ts`, commit 2ad091cf = T2 landed)
+
+Node v26.5.1, Chromium 153.0.8010.12, Apple M4 Pro ×14, load average ~5. Server: 5 warm-up + median of 20 in-process renders; click: median of 5 cold loads per CPU rate; first interaction = first body row clicked until its state changes (virtualizer-items: key `1` into the filter until the count changes). Rows = For groups by region symbol, share of `rivet/state` raw / br (saved = brotli bytes the share costs the page); `eligible` = compiler `forRows` verdict (T2) of the Fors in that component (groups whose For sits in another component carry none). Bytes equal f045f405 (before T2).
+
+| page | HTML raw / br | state raw / br | server CPU / wall per render | first interaction ×1 / ×4 | recorded For shares |
+| --- | ---: | ---: | ---: | ---: | --- |
+| ui-docs `table-virtualization` | 71.7 KB / 11.4 KB | 41.0 KB / 6.2 KB | 26.7 / 14.5 ms | 20.6 / 28.6 ms | `Row` ×30 (cells) 8.5 KB / 1.3 KB br (saved 1.0 KB); `TableBody` ×10 5.3 KB / 920 B (774); `TableHeaderRow` (eligible) ×3 2.6 KB / 791 B; `VirtualizerRoot` (eligible) ×2 828 / 364 B; `TableHeader` (eligible) ×1 443 / 220 B |
+| ui-docs `list-box-virtualization` | 106.4 KB / 10.9 KB | 83.0 KB / 6.2 KB | 10.1 / 4.9 ms | 42.6 / 64.1 ms | `VirtualizerRoot` (eligible) ×11 9.6 KB / 1.3 KB br (saved 1.3 KB) |
+| ui-docs `table-selection` | 60.0 KB / 13.2 KB | 39.0 KB / 8.1 KB | 5.7 / 3.7 ms | 47.5 / 64.4 ms | `Row` ×20 17.5 KB / 2.9 KB br (saved 2.3 KB); `TableHeaderRow` (eligible) ×5 6.5 KB / 1.8 KB; `TableBody` ×4 2.1 KB / 574 B; `Table` ×2 615 / 306 B; `TableHeader` (eligible) ×1 202 / 122 B |
+| cdk-docs `virtualizer-items` | 19.0 KB / 4.9 KB | 7.1 KB / 1.3 KB | 2.7 / 2.1 ms | 41.0 / 54.7 ms | `Virtualizer` (eligible) ×11 2.2 KB / 391 B br (saved 365 B) |
+
+`RIVET_LAZY_ROWS=swap` (same commit and load; every For reports `lazy`, share 0):
+
+| page | HTML raw / br | state raw / br | server CPU / wall | first interaction ×1 / ×4 |
+| --- | ---: | ---: | ---: | ---: |
+| `table-virtualization` | 47.4 KB / 7.1 KB | 20.0 KB / 2.6 KB | 20.2 / 12.1 ms | 66.2 / 67.1 ms |
+| `list-box-virtualization` | 100.7 KB / 10.0 KB | 78.5 KB / 5.7 KB | 7.2 / 4.7 ms | 46.1 / 67.2 ms |
+| `table-selection` | 41.7 KB / 9.8 KB | 21.9 KB / 4.9 KB | 3.7 / 2.6 ms | first click lost (create + swap replaced the target): ~1.0 / 4.1 s = probe retry timeout + second click |
+| `virtualizer-items` | 16.1 KB / 4.4 KB | 4.8 KB / 896 B | 2.3 / 1.8 ms | 45.6 / 63.6 ms |
+
+Reading: state br −58% (table-virtualization), −40% (table-selection), −8% (list-box: most of its state sits outside the rows), −31% (virtualizer-items) and server CPU −24% / −35% / −29% / −17% are the ceiling record suppression (T4) can take on these windows (rows still render; only recording + encode go). Create + swap costs the first interaction (×3 on table-virtualization, a lost click on table-selection): the adopt-mode materialisation (§3.4) is what has to keep it at today's numbers.
+
 ## 2. Principle
 
 **Per-row wire = the row's key, and nothing else.** A row is `row(item, index)` evaluated against the collection's shared state. The server renders it (markup) and records nothing inside it. The browser materialises a row when something needs it: an event inside it, a signal it read changing, or a reconcile that keeps it. Materialising = running the row function **in adopt mode** over the row's existing server nodes (structural resume §3.1 "Adopt run": templates walk instead of clone, handlers attach, effects are created; no node is created, replaced or moved; focus / selection / scroll survive). Rows never touched cost their markers and their key.
@@ -72,7 +94,7 @@ Row-local state (a `signal()` in the row function or inside `Row` / `Cell`, `_re
 
 Materialising a row runs its compiled DOM function in adopt mode. That is structural spec §3.5 (C3 in the M2 plan: `_tpl` clone → `_adoptRoot()` walk, `_c` dependent children run, `_for` / `_show` adopt by markers, dev verifier §3.6). This spec does not need C3 for whole boundaries — **only for the row function and the components it calls** — but the lowering is the same code path, so the row slice is C3's first consumer and its first gate. Nothing here is throwaway when M2 lands: the row region record becomes the boundary record's `For` entry; the loader's "nearest marker → materialise" walk is the boundary walk restricted to rows; the serialized wire around it is what M2 deletes at M6.
 
-Interim without C3 — *create + swap* (run the row function in create mode and replace the row's nodes, as today's region re-creation does) — is **rejected** as a shipping mode: the event target is replaced under the pointer, text inputs lose their value, focus moves (every `recreated` fuzz pin is this class). It is allowed only as a measurement harness for T1 (bytes, server CPU) behind `resume: { rows: "swap" }`, never default.
+Interim without C3 — *create + swap* (run the row function in create mode and replace the row's nodes, as today's region re-creation does) — is **rejected** as a shipping mode: the event target is replaced under the pointer, text inputs lose their value, focus moves (every `recreated` fuzz pin is this class). It is allowed only as a measurement harness for T1 (bytes, server CPU) behind the env-only `RIVET_LAZY_ROWS=swap` (dev server + `check-examples` / `scripts/lazy-rows/probe.ts` builds; no `rivet.config` / plugin option; runtime `server-lazy-rows.ts`, no package export: zero bytes in production bundles), never default. T1 lowers it without compiler changes: every For row under a recorder renders unrecorded and the enclosing region gets the `interaction` mount trigger (create + swap of the whole region, not per row).
 
 ## 4. Expected numbers (bounds; T6 measures)
 

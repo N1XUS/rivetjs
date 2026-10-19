@@ -15,7 +15,7 @@ import { framePath } from "../frame-theme.ts";
 import { writeAtomic } from "./lock.ts";
 
 /** Chromium launch flags (no keychain prompts on macOS). */
-const CHROMIUM_ARGS = ["--use-mock-keychain", "--password-store=basic"];
+export const CHROMIUM_ARGS = ["--use-mock-keychain", "--password-store=basic"];
 /** Steps that act on the page (the first one starts the "after the first interaction" window); the rest only wait. */
 const INPUT_STEPS = ["click", "fill", "press", "key", "dblclick", "rightclick", "longpress", "hover", "wheel", "drag", "tap"] as const;
 /**
@@ -72,8 +72,8 @@ export function checkKey(html: string, requested: ReadonlySet<string>, steps: re
   return sha(FORMAT + "\n" + JSON.stringify(steps ?? []) + "\n" + html.replace(ASSET_URL, (url) => (requested.has(url) ? url : "/assets/*")));
 }
 
-/** Serve the built client dir (folders → index.html) on a local port for the checks. */
-async function serveClient(client: string): Promise<{ url: string; close(): Promise<void> }> {
+/** Serve the built client dir (folders → index.html) on a local port for the checks (and `scripts/lazy-rows/probe.ts`). */
+export async function serveClient(client: string): Promise<{ url: string; close(): Promise<void> }> {
   const { serve } = await import("@rivetjs/router/node");
   return serve({
     client,
