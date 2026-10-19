@@ -143,6 +143,8 @@ Order: T1 ‖ T2 → T3 ‖ T4 → T5 → T6 → T7. T2 and T5's compiler parts 
 
 ## 10. Rulings proposed
 
+Ruled 2026-10-19 (user delegated the call): R1–R5 accepted as proposed below. T1 may start.
+
 - **R1 — rows first inside M2's client track.** Yes: build adopt-mode lowering for row functions (T5) before whole-boundary adoption; the row slice has the largest measured win and the smallest surface.
 - **R2 — no shipping interim.** `create + swap` only as T1's measurement flag. Reason: it is the `recreated` failure class the fuzz pins today.
 - **R3 — one rule per `For`.** A `For` is lazy or recorded, never mixed; non-eligible rows make the whole `For` recorded and visible in `check-examples`.
