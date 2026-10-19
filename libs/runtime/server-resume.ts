@@ -39,6 +39,7 @@ import {
   createEncoder,
   escapeJSON,
   revive,
+  RESUME_VERSION,
   serialize,
   symbolOf,
   typeName,
@@ -52,7 +53,8 @@ import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
 import { EXPAND, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
-import { CONSTANT, _onForRow, _onForRows, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
+import { _inIdScope, _rowIdPrefix } from "./id.ts";
 const noop = (): void => {};
 /**
  * Derived model (M2 lane A, R1): `./server-derived.ts` installs these on import (the compiled derived module imports its
@@ -94,6 +96,7 @@ import type {
   Special,
   HandlerEntry,
   Literal,
+  LazyRowsEntry,
   ModelEntry,
   PreloadEntry,
   RegionLocals,
@@ -404,7 +407,17 @@ const reset = (): ServerValue => (RESET ??= compiledTemplate(_markFragments(["",
 let unrecordedRender: Recorder | undefined;
 _setUnrecorded((fn) => {
   const recorder = store.getStore();
-  if (!recorder) return fn();
+  if (!recorder) {
+    // Inside a lazy row (recorder exited already): the pass records nothing into the row either.
+    if (lazyRow === null) return fn();
+    const lazy = lazyRow;
+    lazyRow = null;
+    try {
+      return fn();
+    } finally {
+      lazyRow = lazy;
+    }
+  }
   const previous = unrecordedRender;
   unrecordedRender = recorder;
   try {
@@ -680,6 +693,7 @@ function providersOf(frame: Frame | null): unknown[] | null {
 // Client-only components mount into their enclosing region at a trigger (a For row's: the list's).
 _onClientOnly((when) => {
   const recorder = store.getStore();
+  if (!recorder) return lazyReason("a clientOnly component");
   let scope = recorder?.region;
   // A branch hosting client-only code is not adopted: its region re-creates it at the trigger.
   while (scope?.row || scope?.branch || scope?.boundary) {
@@ -838,6 +852,7 @@ const forRow = (list: object, item: unknown, key: unknown, index: number, render
   return (record.wrap = compiledTemplate(REGION, [scope.id, value]) as unknown as RowRecord["wrap"]) as unknown as ServerValue;
 };
 _onForRow(forRow);
+_onPortal(() => lazyReason("a Portal"));
 // A row's own reads: the region's reads too (re-read into its collector), and the site's row reads (`rowReads`).
 function readRow(site: Scope, signals: readonly Signal<unknown>[]): void {
   const list = (site.rowReads ??= []);
@@ -861,6 +876,194 @@ _onForRows((list, items, keys, rows, render) => {
     rowContext = outer;
   }
 });
+// ---- LAZY-ROWS T4: lazy row region records (spec docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.1) ----
+// A keyed `<For>` the compiler marked lazy (`$lazy: [flags, key?]`, its `children` a resumable row function) renders its rows
+// with recording suppressed — the recorder is exited (`store.exit`, as in `_rUnrecorded`): no ids, handlers, bindings, row
+// records or captures inside a row — and records ONE entry for the For (`LazyRowsEntry`, state `L`): its id, row function,
+// items, `by`, the rows' signal reads and per-row `_regionState` values. Each row keeps its marker pair (ids consecutive
+// after the For's) and renders under the id seed `_rowIdPrefix(forId, index)` (`@rivetjs/runtime/id`), so a re-run of the
+// row function for that row (browser materialisation, T5) creates the same markup and ids. Sites a re-run cannot replay
+// (client-only code, Async / Suspense, Portal, client effects / listeners) turn
+// the whole For back to recorded rows (R3): its rows render again through the row hooks (dev: a warning naming the For).
+// Off unless `RIVET_LAZY_ROWS=on` (server env, read per render) until the browser side (T5) ships.
+interface LazyFor {
+  forId: number;
+  /** The scope the For rendered in (its region: `regionOf` at encode time). */
+  scope: Scope | null;
+  symbol: string;
+  rowFn: object;
+  items: readonly unknown[];
+  /** Key path (`$lazy[1]`) or the `by` function (flag 2). */
+  by: unknown;
+  flags: number;
+  /** Signals the rows' renders read (deduplicated). */
+  reads: Signal<unknown>[];
+  /** Per row: its `_regionState` values and nested counts (`RegionLocals` shape), creation order. */
+  locals: ({ l: unknown[]; n: number[] } | undefined)[] | null;
+  recorder: Recorder;
+  /** The row rendering now (`_regionState` slots; slot content the traversal renders later). */
+  row: number;
+  /** The rows were written (recorded as an entry): a reason found now is `late`. */
+  done: boolean;
+  /** Why the For cannot be lazy (first reason found while its rows render). */
+  reason: string | null;
+  /** A reason found in the traversal, after the rows were written: the entry is dropped (rows stay inert). */
+  late: string | null;
+  /** Handler / model sites the rows hold: the page resumes (`recorder.used`). */
+  sites: number;
+  /** Their event types, added to the page (`data-events`) only when the For stays lazy (a fallback page = the `off` page). */
+  events: Set<string>;
+}
+let lazyRow: LazyFor | null = null;
+/** `RIVET_LAZY_ROWS=on` (server env): lazy row records for `$lazy` Fors. Read once per render. */
+const lazyRowsOn = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS === "on";
+// A lazy row is rendering (recorder exited): what a row would record goes to `lazyRow`.
+const inLazyRow = (): LazyFor | null => (lazyRow !== null && store.getStore() === undefined ? lazyRow : null);
+// A site a row re-run cannot replay: the For falls back (or, found in the traversal, its entry is dropped).
+function lazyReason(reason: string): void {
+  const lazy = inLazyRow();
+  if (lazy === null) return;
+  if (lazy.done) lazy.late ??= reason;
+  else lazy.reason ??= reason;
+}
+// Dev: one warning per row symbol and reason (`DEV` folds the body away in production).
+const lazyWarned = new Set<string>();
+function lazyWarn(symbol: string, forId: number, reason: string, inert?: boolean): void {
+  if (!DEV || lazyWarned.has(symbol + "\n" + reason)) return;
+  lazyWarned.add(symbol + "\n" + reason);
+  console.warn(
+    "Rivet resume: <For>" +
+      (forId >= 0 ? " r" + forId : "") +
+      " (row " +
+      symbol +
+      ") " +
+      (inert
+        ? "wrote lazy rows the browser cannot materialise (" + reason + ", found after the rows were written): they stay inert"
+        : "records its rows instead of lazy rows: " + reason) +
+      ". docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.3",
+  );
+}
+const addReads = (lazy: LazyFor, signals: readonly Signal<unknown>[]): void => {
+  for (let i = 0; i < signals.length; i++) if (!lazy.reads.includes(signals[i]!)) lazy.reads.push(signals[i]!);
+};
+// Run `fn` as part of lazy row `row` (slot content the traversal renders after the rows): still unrecorded, same row.
+function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
+  const outer = lazyRow,
+    unrecorded = unrecordedRender,
+    at = lazy.row;
+  lazyRow = lazy;
+  unrecordedRender = lazy.recorder;
+  lazy.row = row;
+  try {
+    const tracked = _trackReads(() => store.exit(fn));
+    if (tracked.signals.length) addReads(lazy, tracked.signals);
+    return tracked.value;
+  } finally {
+    lazyRow = outer;
+    unrecordedRender = unrecorded;
+    lazy.row = at;
+  }
+}
+// `_regionState` in a lazy row: its value is kept per row (state `[k, RegionLocals]`), the slot before the ones its
+// `create()` records (`n`), as a site's locals.
+function lazyLocal<T>(lazy: LazyFor, create: () => T): T {
+  const locals = ((lazy.locals ??= [])[lazy.row] ??= { l: [], n: [] });
+  const i = locals.l.push(undefined) - 1;
+  locals.n.push(0);
+  const value = create();
+  locals.l[i] = value;
+  locals.n[i] = locals.l.length - i - 1;
+  return value;
+}
+// One lazy row: its marker pair (id forId + 1 + index) around the row rendered under its id seed. The row renders to HTML
+// here, inside the row's context (recorder exited, `lazyRow` set, id seed provided): every site of its content — slot
+// content too, which the traversal would otherwise render after the For's decision — is seen before the decision, so a
+// fallback reason is never found after the rows were written. Pending async content is itself a reason.
+function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCall[0]): ServerValue {
+  const get: ConstantGetter<unknown> = () => item,
+    at: ConstantGetter<number> = () => index;
+  get[CONSTANT] = item;
+  at[CONSTANT] = index;
+  lazy.row = index;
+  const { signal, variant } = lazy.recorder.options;
+  const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () =>
+    renderToString(_scopedRecord(getOwner(), render(get, at), noop), { signal, variant }),
+  );
+  if (typeof html !== "string") {
+    html.then(noop, noop);
+    lazy.reason ??= "async content";
+    return "";
+  }
+  return compiledTemplate(REGION, [lazy.forId + 1 + index, template([html])]);
+}
+_onForLazy((_list, items, verdict, children, by, render) => {
+  const recorder = store.getStore();
+  if (!recorder?.lazyRows || recorder.derived) return undefined;
+  const flags = verdict[0] as number,
+    key = verdict[1],
+    meta = metaOf(children);
+  // Before any row renders: the row function and `by` resume by recipe, the items are a plain dense array.
+  let reason: string | null = null;
+  if (meta === undefined || meta.live || meta.fw) reason = "the row function is not a resumable function";
+  else if (flags & 2 ? !metaOf(by as object) : typeof key !== "string") reason = "`by` is neither a key path nor a resumable function";
+  else if (Object.getPrototypeOf(items) !== Array.prototype) reason = "`each` is not a plain array";
+  else for (let k = 0; k < items.length && reason === null; k++) if (!(k in items)) reason = "`each` has holes";
+  const symbol = meta?.id ?? "?";
+  if (reason !== null) {
+    lazyWarn(symbol, -1, reason);
+    return undefined;
+  }
+  const forId = recorder.next++;
+  recorder.next += items.length;
+  const lazy: LazyFor = {
+    forId,
+    scope: recorder.region,
+    symbol,
+    rowFn: children,
+    items,
+    by: flags & 2 ? by : key,
+    flags: flags & 3,
+    reads: [],
+    locals: null,
+    recorder,
+    row: 0,
+    done: false,
+    reason: null,
+    late: null,
+    sites: 0,
+    events: new Set(),
+  };
+  const rows: ServerValue[] = new Array(items.length);
+  const outer = lazyRow,
+    unrecorded = unrecordedRender;
+  lazyRow = lazy;
+  unrecordedRender = recorder;
+  try {
+    // One read collector for the whole For (a nested `_trackReads` does not forward): the rows' reads are not the enclosing
+    // site's (it is not re-created on them); they ship with the entry.
+    const tracked = _trackReads(() =>
+      store.exit(() => {
+        for (let k = 0; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
+      }),
+    );
+    addReads(lazy, tracked.signals);
+  } finally {
+    lazyRow = outer;
+    unrecordedRender = unrecorded;
+  }
+  if (lazy.reason !== null) {
+    // R3: the whole For records its rows (rendered again through the row hooks); its ids were never written.
+    recorder.next = forId;
+    lazyWarn(symbol, forId, lazy.reason);
+    return undefined;
+  }
+  lazy.done = true;
+  for (const type of lazy.events) recorder.events.add(type);
+  if (lazy.sites || lazy.reads.length) recorder.used = true;
+  recorder.lazy.push(lazy);
+  return rows as unknown as ServerValue;
+});
+
 // ---- R-PLAN: resumable keyed `<For>` rows from a compiled row plan ----
 // The compiler (resume server target) passes `$rows: [plan, write, env]` for a keyed `<For>` whose row is one native template
 // with only `_rOn` / `_rAttr` / `_rId` resume sites: `plan` (`_rRowPlan`, module level) = the row's list plan + its sites,
@@ -1355,6 +1558,7 @@ const regionPlan = (list: ListPlan): ListPlan => {
 // scope behaves like the page root for rows, branches, client-only mounts and streaming (no output change).
 _onAsyncContent(() => {
   const recorder = store.getStore();
+  if (!recorder) return (lazyReason("an Async boundary"), null);
   const region = recorder?.region;
   if (!region) return null;
   const scope: Scope = { parent: region, id: null, mount: null, async: true, held: true };
@@ -1378,7 +1582,13 @@ _onAsyncContent(() => {
 _onSlot((fn) => {
   const recorder = store.getStore();
   const region = recorder?.region;
-  if (!region) return fn;
+  if (!region) {
+    // Made in a lazy row: when the traversal renders it (recorder back), it still renders as part of that row.
+    const lazy = recorder ? null : lazyRow;
+    if (lazy === null) return fn;
+    const row = lazy.row;
+    return () => (store.getStore() === undefined ? fn() : inLazy(lazy, row, fn));
+  }
   return () => {
     let r = recorder!.region;
     while (r && r !== region) r = r.parent;
@@ -1404,6 +1614,7 @@ _observeProvide((token, value) => {
 // writes `<!--rA[-->fallback<!--]-->` now and streams its content after the shell.
 _onAsync(() => {
   const recorder = store.getStore();
+  if (!recorder) return (lazyReason("an Async boundary"), null);
   const scope = recorder?.region;
   // Inside a Suspense, the Suspense streams (or not) for all of its Asyncs.
   if (!recorder?.stream || useContext(_SUSPENSE) || !scope || scope.row || scope.branch || scope.async || scope.id !== null) return null;
@@ -1416,6 +1627,7 @@ _onAsync(() => {
 // the content as one segment. What the content recorded moves into the segment's recorder view.
 _onSuspense(() => {
   const recorder = store.getStore();
+  if (!recorder) return (lazyReason("a Suspense boundary"), null);
   const scope = recorder?.region;
   if (!recorder?.stream || !scope || scope.row || scope.branch || scope.async || scope.id !== null) return null;
   const from = lengths(recorder),
@@ -1455,7 +1667,7 @@ const resetOf = (site: Scope | null): (() => void) => {
   if (site) resets.set(reset, site);
   return reset;
 };
-const LISTS = ["elements", "texts", "regions", "effects", "clientEvents", "asyncs", "links", "lists", "paths", "preloads"] as const;
+const LISTS = ["elements", "texts", "regions", "effects", "clientEvents", "asyncs", "links", "lists", "paths", "preloads", "lazy"] as const;
 const lengths = (recorder: Recorder): number[] => LISTS.map((key) => recorder[key].length);
 // Remove records [from, to) (to the end without `to`); dropped streamed boundaries are never written.
 function cut(recorder: Recorder, from: number[], to?: number[]): void {
@@ -1482,8 +1694,9 @@ const inside = (scope: Scope | null, ancestor: Scope): boolean => {
 // A value's slot comes before the ones its `create()` records (`nested`: how many), so the browser
 // skips those when it adopts the value without calling `create()`.
 _setRegionStateHook((create) => {
-  const scope = store.getStore()?.region;
-  if (!scope?.site) return create();
+  const recorder = store.getStore();
+  const scope = recorder?.region;
+  if (!scope?.site) return recorder === undefined && lazyRow !== null ? lazyLocal(lazyRow, create) : create();
   const locals = (scope.locals ??= []),
     nested = (scope.nested ??= []);
   const i = locals.push(undefined) - 1;
@@ -1638,6 +1851,7 @@ const viewOf = (root: Recorder, segment: Segment): Recorder => {
     lists: [],
     paths: [],
     preloads: [],
+    lazy: [],
   });
 };
 
@@ -1907,10 +2121,16 @@ class Recorder {
   declare stream: Stream | null;
   /** Derived model (`options.model === "derived"` + `server-derived.ts` loaded): the boundary recorder of this render. */
   declare derived: DerivedRender | null;
+  /** `RIVET_LAZY_ROWS=on` at the render's start: `$lazy` Fors write lazy row records (LAZY-ROWS T4). */
+  declare lazyRows: boolean;
+  /** Lazy Fors rendered while this recorder evaluated (state `L`). */
+  declare lazy: LazyFor[];
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
     this.derived = options.model === "derived" && derivedHooks ? derivedHooks.create() : null;
+    this.lazyRows = lazyRowsOn();
+    this.lazy = [];
     this.next = 0;
     this.pending = null;
     this.events = new Set();
@@ -1958,7 +2178,11 @@ export function _rOn(
   present?: unknown,
 ): null {
   const recorder = store.getStore();
-  if (!recorder || present === false) return null;
+  if (!recorder || present === false) {
+    // A lazy row's handler: nothing recorded, but the page listens for its type (the row materialises on it).
+    if (present !== false && lazyRow !== null && !recorder) lazyListen(lazyRow, type);
+    return null;
+  }
   const element = recorder.element();
   const key = flags?.capture ? type + "!" : type;
   if (element.spread?.includes(key)) throw new TypeError(clash(type));
@@ -1977,6 +2201,13 @@ const EVENT_TYPE = /^[\w:.-]+$/;
 function listen(recorder: Recorder, type: string): void {
   if (!EVENT_TYPE.test(type)) throw new TypeError("Cannot resume a handler for event type " + JSON.stringify(type) + ": use letters, digits, _ : . - only");
   recorder.events.add(type);
+}
+function lazyListen(lazy: LazyFor, type: string): void {
+  lazy.sites++;
+  if (lazy.recorder.events.has(type) || lazy.events.has(type)) return;
+  if (lazy.done) listen(lazy.recorder, type);
+  else if (EVENT_TYPE.test(type)) lazy.events.add(type);
+  else listen(lazy.recorder, type); // throws: the type check of `listen`
 }
 
 /**
@@ -2008,7 +2239,8 @@ export function _rId(): ServerValue {
  */
 export function _rBind(id: string, read: () => ServerValue, captures: Captures, region?: 1): ServerValue {
   const recorder = store.getStore();
-  if (!recorder) return read();
+  // A lazy row calls function children here, as a recorded render does (the traversal would call them recorded).
+  if (!recorder) return lazyRow !== null ? children(read()) : read();
   const scope: Scope = { parent: recorder.region, id: null, mount: null, site: true };
   recorder.region = scope;
   let tracked;
@@ -2140,7 +2372,8 @@ export function _rChild(value: unknown): ServerValue {
   if (typeof value !== "function") return value as ServerValue;
   const meta = fns.get(value);
   let recorder: Recorder | undefined;
-  return meta && (recorder = store.getStore()) ? _rBind(meta.id, value as () => ServerValue, siteCaptures(meta, recorder)) : (value as ServerValue);
+  if (meta && !(recorder = store.getStore()) && lazyRow !== null) return children(value);
+  return meta && recorder ? _rBind(meta.id, value as () => ServerValue, siteCaptures(meta, recorder)) : (value as ServerValue);
 }
 
 /**
@@ -2156,7 +2389,7 @@ export function _rChild(value: unknown): ServerValue {
  */
 export function _rSpread(id: string, read: () => object | null | undefined, captures: Captures, tag: string, namespace?: "svg" | "mathml"): ServerValue {
   const recorder = store.getStore();
-  if (!recorder) return spreadAttributes(read(), tag, namespace);
+  if (!recorder) return lazyRow === null ? spreadAttributes(read(), tag, namespace) : lazySpread(lazyRow, read(), tag, namespace);
   let handlers: [type: string, symbol: string, captures: Captures][] | null = null,
     names: string[] | null = null,
     own: Signal<unknown>[] = EMPTY_READS,
@@ -2233,13 +2466,29 @@ export function _rSpread(id: string, read: () => object | null | undefined, capt
   return value;
 }
 
+// A spread in a lazy row: the types of its handlers are listened for (the row materialises on them).
+function lazySpread(lazy: LazyFor, object: object | null | undefined, tag: string, namespace?: "svg" | "mathml"): ServerValue {
+  for (const key in object) {
+    const item = (object as Record<string, unknown>)[key];
+    if (/^on[A-Z]/.test(key) && typeof item === "function")
+      lazyListen(lazy, key.slice(2, key.endsWith("Capture") && key.length > 9 ? -7 : undefined).toLowerCase());
+  }
+  const records = spreadAttributes(object, tag, namespace) as ServerValue;
+  // Its function `children` run now (the traversal would run them recorded).
+  resolveSpreadContent(children);
+  return records;
+}
+
 /**
  * `model:` state; the signal itself is the resumable state. Returns an untracked reader of its
  * current value: the browser model binding owns updates, so an enclosing region must not depend on it.
  */
 export function _rModel<S>(kind: "value" | "checked", state: S): S {
   const recorder = store.getStore();
-  if (!recorder) return state;
+  if (!recorder) {
+    if (lazyRow !== null) lazyListen(lazyRow, kind === "value" ? "input" : "change");
+    return state;
+  }
   const info = _inspect(state);
   if (info?.kind !== "signal") throw new TypeError("Cannot resume model:" + kind + ": state must be a signal");
   recorder.element().model = [kind, state as Signal<unknown>];
@@ -2606,7 +2855,7 @@ function onlyLocations(signals: readonly object[]): boolean {
 /** Browser-only effect: recorded, never run. */
 export function _rEffect(id: string, captures: Captures, options?: { when?: string }): void {
   const recorder = store.getStore();
-  if (!recorder) return;
+  if (!recorder) return lazyReason("a client effect");
   recorder.used = true;
   recorder.effects.push([id, captures, options?.when ?? null, recorder.region]);
 }
@@ -2680,7 +2929,7 @@ export function _renderNonce(): string | undefined {
 /** Browser-only listener: recorded, never attached. */
 export function _rClientEvent(id: string, captures: Captures, target: unknown, type: string, options?: ClientEventOptions): void {
   const recorder = store.getStore();
-  if (!recorder) return;
+  if (!recorder) return lazyReason("a clientEvent listener");
   // `standalone: false` (the router's listeners in static builds): recorded, but alone they do not make the page
   // resumable — a page with nothing else to resume ships no state, loader or preloads (zero JS).
   if (options?.standalone !== false) recorder.used = true;
@@ -3516,6 +3765,55 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         templated.tpl,
       ] as unknown as BindingEntry);
   }
+  // Lazy row region records (LAZY-ROWS T4, `LazyRowsEntry`): one per lazy For. One that does not encode (or found a
+  // fallback reason in the traversal) is left out: its rows stay inert markup (re-created with their region).
+  const L: LazyRowsEntry[] = [];
+  for (const lazy of recorder.lazy) {
+    if (lazy.late !== null) {
+      lazyWarn(lazy.symbol, lazy.forId, lazy.late, true);
+      continue;
+    }
+    try {
+      const rowFn = encoder.ref(lazy.rowFn),
+        items = encoder.ref(lazy.items),
+        by = typeof lazy.by === "string" ? lazy.by : encoder.ref(lazy.by),
+        refs = typeof by === "number" ? [rowFn, items, by] : [rowFn, items];
+      let flags = lazy.flags,
+        reads: number[] | 0 = 0;
+      if (lazy.reads.length)
+        try {
+          reads = lazy.reads.map(encoder.ref);
+        } catch {
+          flags |= 8;
+        }
+      const entry: LazyRowsEntry = [lazy.forId, regionOf(lazy.scope), rowFn, items, by, flags, []];
+      if (lazy.locals) {
+        const state: (number | RegionLocals)[] = [];
+        lazy.locals.forEach((locals, k) => {
+          if (locals === undefined) return;
+          const l = locals.l.map((value) => {
+            try {
+              const ref = encoder.ref(value);
+              refs.push(ref);
+              return ref;
+            } catch {
+              return null; // not serializable: the row's re-run creates it afresh
+            }
+          });
+          state.push(k, locals.n.some((n) => n > 0) ? { l, n: locals.n } : { l });
+        });
+        entry.push(reads, state);
+        entry[5] = flags | 4;
+      } else {
+        entry[5] = flags;
+        if (reads !== 0) entry.push(reads);
+      }
+      entry[6] = needs(lazy.symbol, refs);
+      L.push(entry);
+    } catch (error) {
+      lazyWarn(lazy.symbol, lazy.forId, "its row function, items or `by` did not encode (" + String((error as Error)?.message ?? error) + ")", true);
+    }
+  }
   const fx = recorder.effects.map(([symbol, values, when, scope]): EffectEntry => {
     const refs = captures(symbol, values);
     return [symbol, refs, when, needs(symbol, refs), regionOf(scope)];
@@ -3578,6 +3876,7 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   for (const [content, site] of recorder.links) if (site.id !== null) a.push([site.id, content.id!, site.id, 3]);
   if (a.length) out.a = a;
   if (recorder.paths.length) out.w = recorder.paths;
+  if (L.length) out.L = L;
   if (templatedRows) out.rx = true;
   // Listeners that load on interaction (`preload: "intent" | "interaction"`) don't boot the page: the runtime
   // attaches them whenever it starts. Document / window `click` ones (a router's link interception) start it
@@ -4383,8 +4682,8 @@ function stateJSON(state: object): string {
 function encodeState(recorder: Recorder, ahead = false): ServerValue {
   const { manifest = {} as BuildManifest, nonce } = recorder.options;
   const { t0, events, schedule, boot, rx, rr, ...part } = encodeRecords(recorder, recorder);
-  const { c, s, l, x, g, t, e, m, b, fx, ce, a, n, w } = part;
-  const state = { v: 1, h: manifest.hash ?? null, rt: manifest.runtime ?? null, c, s } as ResumeState;
+  const { c, s, l, x, g, t, e, m, b, fx, ce, a, n, w, L } = part;
+  const state = { v: RESUME_VERSION, h: manifest.hash ?? null, rt: manifest.runtime ?? null, c, s } as ResumeState;
   if (l) state.l = l;
   if (x) state.x = x;
   if (g) state.g = g;
@@ -4392,6 +4691,7 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   if (a) state.a = a;
   if (n) state.n = n;
   if (w) state.w = w;
+  if (L) state.L = L;
   // ` nonce="…"` (sanitized to base64 characters, so the attribute encoder never escapes it).
   const attrs = nonce ? _attributeRecord("nonce", String(nonce).replace(/[^\w+/=-]/g, ""), "html") : null;
   // Pending streamed boundaries: [marker, fallback region, region] triples, for the stream add-on.

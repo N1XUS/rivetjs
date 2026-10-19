@@ -25,7 +25,7 @@ import { _model } from "./dom-v2-controls.ts";
 import { _takeover } from "./dom-v2-spread.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
 import { createRouter } from "./dom-router.ts";
-import { createDecoder, _placeholderContext } from "./resume-format.ts";
+import { createDecoder, RESUME_VERSION, _placeholderContext } from "./resume-format.ts";
 import { _rSyms } from "./resume-symbols.ts";
 import { DEV } from "#dev";
 import type { Context, Disposer, Owner, Signal } from "@rivetjs/reactivity";
@@ -1017,6 +1017,11 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     start(nextState: ResumeState, nextDoc: Document = document, nextApi?: LoaderApi) {
       if (state || (DEV && stopped)) return;
       state = nextState;
+      // Dev: a state of another format version (`RESUME_VERSION`: server and browser runtime from different builds).
+      if (DEV && nextState.v !== RESUME_VERSION)
+        console.warn(
+          "Rivet resume: this page's rivet/state is format v" + nextState.v + ", the runtime reads v" + RESUME_VERSION + " (server and browser builds differ)",
+        );
       doc = nextDoc;
       api = nextApi!;
       // Context values for captures and for regions created in the browser.

@@ -10,16 +10,17 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import type { Plugin } from "vite";
 
-/** The measurement mode env var; the only value is `swap`. */
+/** The measurement mode env var: `swap` here; `on` / `off` belong to the runtime (server lazy row records, LAZY-ROWS T4, read at render). */
 export const LAZY_ROWS_ENV = "RIVET_LAZY_ROWS";
 /** Set by the measurement tools for their build children: production builds honour `RIVET_LAZY_ROWS` only with it. */
 export const LAZY_ROWS_HARNESS_ENV = "RIVET_LAZY_ROWS_HARNESS";
 
-/** Whether the swap harness applies to a Vite run (`command`): dev server, or a harness build. Throws on unknown values. */
+/** Whether the swap harness applies to a Vite run (`command`): dev server, or a harness build. `on` / `off` → null (runtime
+ * values, no build change). Throws on unknown values. */
 export function lazyRowsMode(command: "serve" | "build", env: Readonly<Record<string, string | undefined>> = process.env): "swap" | null {
   const value = env[LAZY_ROWS_ENV];
-  if (!value) return null;
-  if (value !== "swap") throw new Error(`${LAZY_ROWS_ENV}=${value}: the only measurement mode is "swap"`);
+  if (!value || value === "on" || value === "off") return null;
+  if (value !== "swap") throw new Error(`${LAZY_ROWS_ENV}=${value}: the only measurement mode is "swap" ("on" / "off": server lazy row records)`);
   if (command === "serve" || env[LAZY_ROWS_HARNESS_ENV] === "1") return "swap";
   console.warn(`rivetRouter: ${LAZY_ROWS_ENV}=swap ignored: a measurement mode for the dev server and the lazy-rows tools only`);
   return null;

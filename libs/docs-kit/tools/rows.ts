@@ -20,8 +20,9 @@
 // only, `{ saved: true }`) = brotli of the whole state minus brotli of the state without the share.
 // Lazy rows (`RIVET_LAZY_ROWS=swap` measurement builds, `libs/runtime/server-lazy-rows.ts`): a For whose rows render
 // unrecorded writes `<!--L-->` before its first row and `<!--l-->` before every row; it reports `lazy` with that count.
-// Lazy rows proper (T4, not landed; provisional contract in the LAZY-T1 report): a region entry carrying the row-region
-// record `R` at `R_SLOT` reports `lazy`, rows = the row-region markers directly inside its region.
+// Lazy rows proper (LAZY-ROWS T4, server env `RIVET_LAZY_ROWS=on`): every state `L` entry (`LazyRowsEntry`
+// `[forId, region, rowFn, items, by, flags, chunks, reads?, state?]`) reports `lazy`: symbol = its region's symbol, rows =
+// the items list length (else the row markers `forId + 1 + k` under one parent), share = the entry's wire JSON.
 // Eligibility facts (compiler `forRows`, LAZY-ROWS T2): `facts(symbol)` = the verdicts of the keyed Fors in the group
 // symbol's component (`module#Component`): `eligible` when all are lazy-eligible (recorded until T4), else their reasons.
 // `rowFacts(root)` compiles the group's source module on demand (server target, resume mode, no app plugins: the
@@ -67,8 +68,6 @@ export interface PageRows {
 const STATE = /<script type="rivet\/state"[^>]*>([\s\S]*?)<\/script>/;
 const br = (text: string) => brotliCompressSync(Buffer.from(text)).length;
 
-/** Slot of the row-region record `R` in a region entry (T4, provisional). */
-export const R_SLOT = 14;
 /** Eligibility of the keyed Fors behind a group symbol (`module#Component$hash`); undefined when unknown. */
 export type ForFacts = (symbol: string) => { lazy: boolean; reason?: string } | undefined;
 
@@ -383,7 +382,7 @@ export function pageRows(html: string, options: { saved?: boolean; facts?: ForFa
     if (options.saved) result.saved = whole - br(JSON.stringify(without(wire, state, g, owner, fors, groupOfNode, wireB)));
     return result;
   });
-  // Lazy Fors: rows marked `<!--l-->` inside a region (swap harness), or region entries with a row-region record.
+  // Lazy Fors: rows marked `<!--l-->` inside a region (swap harness), or state `L` entries (T4).
   const regions = new Map<number, BindingEntry>();
   for (const entry of state.b) if (entry[1] === "#") regions.set(entry[0], entry);
   const lazyFor = (symbol: string, count: number, rows: number): ForRows => ({
@@ -401,8 +400,19 @@ export function pageRows(html: string, options: { saved?: boolean; facts?: ForFa
     const region = regions.get(at);
     out.push(lazyFor(region ? symbolName(region[2], symbols) : "?", count || 1, rows));
   }
-  for (const [node, entry] of regions)
-    if (Array.isArray(entry[R_SLOT]) && !lazy.has(node)) out.push(lazyFor(symbolName(entry[2], symbols), 1, childRegions.get(node) ?? 0));
+  for (const entry of wire.L ?? []) {
+    const region = regions.get(entry[1]);
+    // Rows: the items list length (plain JSON `{j}` / array entry), else the row markers after the For id that share the first one's parent.
+    const items = table[entry[3]] as unknown;
+    let rows = Array.isArray(items) ? items.length : Array.isArray((items as { j?: unknown } | null)?.j) ? (items as { j: unknown[] }).j.length : -1;
+    if (rows < 0) {
+      const at = parent.get(entry[0] + 1);
+      rows = 0;
+      while (parent.has(entry[0] + 1 + rows) && parent.get(entry[0] + 1 + rows) === at) rows++;
+    }
+    const json = JSON.stringify(entry);
+    out.push({ ...lazyFor(region ? symbolName(region[2], symbols) : "?", 1, rows), raw: json.length, brotli: br(json) });
+  }
   out.sort((a, b) => a.depth - b.depth || b.raw - a.raw);
   return { state: { raw: Buffer.byteLength(text), ...(options.saved ? { brotli: br(text) } : {}) }, fors: out };
 }

@@ -57,6 +57,8 @@ Today (`docs/guides/resumability.md` "`For` inside a region"): region entry `row
 
 Lazy: the region entry carries **one row-region record** `R = [forId, rowFnRef, itemsRef, byRef, flags]` and, per row, only what adoption needs:
 
+As built (T4, 2026-10-19): the record is a top-level state list `L` (one `LazyRowsEntry` per lazy For: `[forId, region, rowFn, items, by, flags, chunks, reads?, state?]`, `libs/runtime/resume-format.ts`), not a region-entry slot: a lazy For may sit at the page root, streamed patches append to it, and old decoders ignore it. Format v2. Off by default (`RIVET_LAZY_ROWS=on`, server env) until T5; contract in `libs/runtime/docs/resume.md` "Row functions".
+
 | Per row | Today | Lazy |
 | --- | --- | --- |
 | Row markers `<!--rN[-->…<!--]-->` | yes | yes (unchanged; they bound the adopt walk and give the row index) |
@@ -109,6 +111,22 @@ Interim without C3 — *create + swap* (run the row function in create mode and 
 
 ListBox / GridList / Menu / Tree scale the same way: the per-item 0.9–2.7 KB goes to the marker pair.
 
+### T4 measured (2026-10-19, server records only; browser materialisation = T5)
+
+`node scripts/lazy-rows/probe.ts --dist <d> --cpu 1 --loads 1`, then the same with `RIVET_LAZY_ROWS=on` into a second dist (the env reaches the prerender and the in-process handler). Snapshot = 2ad091cf + LAZY-T1 + T4; Node v26.5.1, Apple M4 Pro ×14, load average 3.4–5.6. Server CPU = median of 20 renders after 5 warm-up, wall in brackets.
+
+| page | HTML raw / br, off → on | `rivet/state` raw / br, off → on | server CPU per render, off → on | Fors (on) |
+| --- | ---: | ---: | ---: | --- |
+| ui-docs:table-virtualization | 73.4 KB / 11.8 KB → 48.7 KB / 7.4 KB | 42.0 KB / 6.37 KB → 20.6 KB / 2.73 KB (−57% br) | 24.6 (14.2) → 21.6 (12.6) ms (−12%) | lazy `VirtualizerRoot` ×2 (`L` entry 41 B) |
+| ui-docs:list-box-virtualization | 109.0 KB / 11.2 KB → 96.8 KB / 9.3 KB | 85.0 KB / 6.40 KB → 74.4 KB / 4.87 KB (−24% br) | 9.5 (5.4) → 8.5 (4.9) ms (−11%) | lazy `VirtualizerRoot` ×11 (37 B) |
+| ui-docs:table-selection | 61.4 KB / 13.5 KB → same bytes | 39.9 KB / 8.31 KB → same bytes | 6.8 (3.9) → 12.1 (5.9) ms (+79%) | recorded: fallback, a client effect in the rows (cdk Table row checkbox) |
+| cdk-docs:virtualizer-items | 19.4 KB / 5.05 KB → 16.7 KB / 4.62 KB | 7.32 KB / 1.31 KB → 5.11 KB / 0.94 KB (−28% br) | 2.5 (1.8) → 3.0 (2.2) ms (+22%, noise level: ±0.5 ms run to run) | lazy `Virtualizer` ×11 (28 B) |
+
+- State against the T1 swap ceiling (−58% / −8% / −40% / −31% br): reached on table-virtualization, above it on list-box-virtualization (lazy rows also drop the row-local records the swap kept), 0 on table-selection (fallback), close on virtualizer-items.
+- The lazy For on both ui-docs pages is the outer virtualizer loop: everything inside its rows (cdk Table / ListBox rows and cells) is row content, plain markup, inert until T5 materialises it.
+- Fallback cost: a For that falls back renders its rows twice (the lazy attempt, then recorded). table-selection +79% server CPU with `on`. Default `off` never tries.
+- Browser bytes, default `off`: runtime / page / eager JS unchanged in every size-report app; stream add-on 712 → 714 B br (patch `L` merge). Server bundles +1.6–3.5 KB min / +0.42–1.2 KB br (lazy row hooks, always installed; never run with `off`).
+
 ## 5. cdk collections
 
 cdk rows are not a user `<For>`: `CollectionRoot` / `CollectionBranch` render built nodes through `renderNodeAt(collection, key)` (per-row `computed` keyed by `sameRender`, `node.render(node)` untracked; `libs/cdk/collections/CLAUDE.md`), and `Collection items` rows go through a `For` keyed by `itemId`. For this spec the row function of a cdk collection is **`(key) => renderNodeAt(collection, key)`**, a resumable function of the collection accessor — which is already what the server records as the row's item ref. Required cdk changes:
@@ -156,7 +174,7 @@ Harness: `resume-bench` lanes (`click`, `keyClick`, `filter`, `scrollClick`, `ho
 | T1 | Measurement harness: per-page `rows: lazy / recorded` column in `check-examples`, state / HTML / server-CPU probe on the four pages above; the `swap` interim flag for a bytes-only baseline | runtime, docs-kit | — |
 | T2 | Compiler (Rust, root agent): row-function symbol for keyed `For` rows (register the row arrow as a resumable function with captures when the `For` is eligible; `by` as symbol / key path), eligibility facts per `For`, RV21xx determinism diagnostics on row bodies | compiler | — |
 | T3 | cdk: collection rows through the structural `For` with `(key) => renderNodeAt(collection, key)`; client lazy build pass for JSX-children collections; seeded ids per row; byte-equal id test per row kind | cdk | T2 |
-| T4 | Server: lazy row region recording (`R` record, suppressed row scopes, per-row keyed state when present, seeded id scope per row), fallback to today's records on non-eligible Fors, `rivet/state` format bump for `R` | runtime (`server-resume`, `server-structural`, `resume-format`) | T2 |
+| T4 (done 2026-10-19, behind `RIVET_LAZY_ROWS=on`) | Server: lazy row region recording (`R` record, suppressed row scopes, per-row keyed state when present, seeded id scope per row), fallback to today's records on non-eligible Fors, `rivet/state` format bump for `R` | runtime (`server-resume`, `server-structural`, `resume-format`) | T2 |
 | T5 | Browser: adopt-mode DOM lowering for row functions and the components they call (structural §3.5 restricted to rows = M2 C3's first consumer); loader marker walk → `materialise(forId, index)`; `_for` adopt-mode reconcile without materialising kept rows; row wake lists; dev verifier per row | compiler (C3, root agent) + runtime (`dom-adopt`, `dom-resume`, loader) | T2, T4 |
 | T6 | Gate run (§8) on the bench host under the bench lock; loss budget for select-all; Fast 3G cold click on a `lean` page | runtime | T5 |
 | T7 | Docs follow code: `docs/guides/resumability.md` rows rows, `apps/docs/content/learn/resuming.md`, cdk / runtime CLAUDE.md, llms / MCP / skills regenerated; `check-examples` column documented | docs | T6 |
@@ -166,6 +184,8 @@ Order: T1 ‖ T2 → T3 ‖ T4 → T5 → T6 → T7. T2 and T5's compiler parts 
 ## 10. Rulings proposed
 
 Ruled 2026-10-19 (user delegated the call): R1–R5 accepted as proposed below. T1 may start.
+
+R6 (T4 intake, 2026-10-19): a client effect or `clientEvent` inside a row is a fallback reason in T4 (the whole For records its rows: every cdk Table with selection checkboxes falls back). T5 lifts it: row effects run at materialise time, so the row-level effect stops being a reason once the adopt lowering lands; T6 measures table-selection on that path.
 
 - **R1 — rows first inside M2's client track.** Yes: build adopt-mode lowering for row functions (T5) before whole-boundary adoption; the row slice has the largest measured win and the smallest surface.
 - **R2 — no shipping interim.** `create + swap` only as T1's measurement flag. Reason: it is the `recreated` failure class the fuzz pins today.

@@ -1052,6 +1052,36 @@ export interface RegionLocals {
 /** Region entry [12]: identified providers enclosing the site, [token id, value ref, …] (re-provided around the re-creation);
  * on the wire a number when the list is shared: the index of the table array holding it (token refs + value refs). */
 export type RegionProviders = (string | number)[];
+/**
+ * Lazy row region record (`ResumeRecords.L`, LAZY-ROWS T4; spec docs/design/specs/2026-10-19-lazy-collection-rows-design.md
+ * §3.1 `R`): one per keyed `For` the compiler marked lazy (`$lazy`) whose rows rendered without records —
+ * `[forId, region, rowFn, items, by, flags, chunks, reads?, state?]`:
+ * - `forId`: the For's resume id; row k is the region marker pair `<!--r<forId + 1 + k>[-->…<!--]-->` (ids consecutive,
+ *   so the writer's marker stride usually leaves them out), rendered under the id seed `_rowIdPrefix(forId, k)`
+ *   (`@rivetjs/runtime/id`: `rvr<forId>_<k>_` + n);
+ * - `region`: the enclosing recorded region id (-1: page root); `rowFn`: table ref of the row function (an `{f}` entry,
+ *   called `(item accessor, index accessor)`); `items`: table ref of the rendered items array (row k's item = items[k],
+ *   in DOM order); `by`: the key path string (`""` = the item itself) or the table ref of the `by` function (flag 2);
+ * - `flags`: 1 a row reads its index, 2 `by` is a function, 4 `state` present, 8 the rows' signal reads did not encode
+ *   (the browser treats every row as reading something that changed);
+ * - `chunks`: chunk indexes of the row function's symbol + everything its captures, the items and `by` reach;
+ * - `reads`: signal refs the rows' renders read (deduplicated; 0 when none) — no row has bindings of its own on the wire;
+ * - `state` (flag 4): `[k, RegionLocals, …]` for the rows whose render created `_regionState` values (refs; null: not
+ *   serializable), in creation order — the row function's re-run adopts them instead of calling `create()`.
+ * No per-row id, key, handler, binding, capture or provider entry: keys are `by(items[k])`, everything else is recomputed by
+ * re-running `rowFn` for row k (browser materialisation, T5).
+ */
+export type LazyRowsEntry = [
+  forId: number,
+  region: number,
+  rowFn: number,
+  items: number,
+  by: number | string,
+  flags: number,
+  chunks: number[],
+  reads?: number[] | 0,
+  state?: (number | RegionLocals)[],
+];
 /** Model entry: [kind, signal ref, extra chunks?]. */
 export type ModelEntry = [kind: "value" | "checked", ref: number, extra?: number[]];
 /** Client effect entry: [symbol, refs, when, chunks, region]. */
@@ -1113,9 +1143,15 @@ export interface ResumeRecords {
    */
   w?: RowPathsEntry[];
   a?: AsyncEntry[];
+  /** Lazy row region records (`LazyRowsEntry`), in render order; patches append (a segment's own Fors). */
+  L?: LazyRowsEntry[];
 }
+/** The `rivet/state` format version (`ResumeState.v`): 2 since lazy row region records (`L`, LAZY-ROWS T4 2026-10-19).
+ * Breaking format changes bump it; the server writes it, the dev runtime warns on a mismatch (no compatibility decoding). */
+export const RESUME_VERSION = 2;
 /** The page's `rivet/state` script. */
 export interface ResumeState extends ResumeRecords {
+  /** Format version: `RESUME_VERSION`. */
   v: number;
   h: string | null;
   rt: string | null;

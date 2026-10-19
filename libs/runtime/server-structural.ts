@@ -100,6 +100,22 @@ export function _onForRows(fn: ForRowsHook): void {
   rowsHook = fn;
 }
 
+/** Resume lazy rows hook (LAZY-ROWS T4): renders a `$lazy` For's rows as one row region record (no per-row records),
+ * or returns undefined (then the rows plan / row hooks record every row, R3: one rule per For). */
+export type ForLazyHook = (
+  list: object,
+  items: readonly unknown[],
+  lazy: readonly unknown[],
+  children: (item: () => unknown, index: () => number) => ServerValue,
+  by: (item: never, index: number) => unknown,
+  render: (get: () => unknown, at: () => number) => ServerValue,
+) => ServerValue | undefined;
+let lazyHook: ForLazyHook | null = null;
+/** Resume ABI: render compiler-marked lazy Fors (`$lazy`, spec 2026-10-19 lazy collection rows §3.1) during resumable renders. */
+export function _onForLazy(fn: ForLazyHook): void {
+  lazyHook = fn;
+}
+
 type ListMount = (
   items: readonly unknown[],
   original: (item: unknown, index: number) => unknown,
@@ -130,12 +146,15 @@ interface ForProps<T, K> {
   /** Compiler-private resumable row plan (`[plan, write, env]`, R-PLAN, `server-resume` `_rRowPlan`): rows written from one
    * tape with their resume records known up front; used by the resume rows hook. */
   $rows?: readonly unknown[];
+  /** Compiler-private lazy row verdict (`[flags]` / `[flags, "key.path"]`, LAZY-ROWS T2): `children` is a resumable row
+   * function (`_rFn`); the resume lazy hook may render the rows without per-row records. */
+  $lazy?: readonly unknown[];
 }
 /** Snapshot a keyed list; constant row/index getters match the compiled DOM authoring ABI. */
 export function For<T, K>(props: ForProps<T, K>): ServerScope {
   const each = eachHook === null ? props.each : (eachHook(props) as readonly T[]),
-    { by, children, $list, $rows } = props;
-  return scoped((capture) => capture(() => forRows(each, by, children, $list, $rows))) as unknown as ServerScope;
+    { by, children, $list, $rows, $lazy } = props;
+  return scoped((capture) => capture(() => forRows(each, by, children, $list, $rows, $lazy))) as unknown as ServerScope;
 }
 
 // The row loop lives in a module-level function, not in the per-For closure: V8 keeps a function's optimized
@@ -147,6 +166,7 @@ function forRows<T, K>(
   children: (item: () => T, index: () => number) => ServerValue,
   $list: readonly [ListPlan, (tape: unknown[], base: number, item: T, index: number) => void] | undefined,
   $rows?: readonly unknown[],
+  $lazy?: readonly unknown[],
 ): unknown {
   // A value (live-props getter, `each={xs()}`) or an accessor (`each={xs}`).
   const items = typeof each === "function" ? each() : each;
@@ -188,6 +208,13 @@ function forRows<T, K>(
   const instance = {},
     list = [...keys],
     render = (get: () => unknown, at: () => number) => children(get as () => T, at);
+  if ($lazy !== undefined && lazyHook !== null) {
+    const value = lazyHook(instance, items, $lazy, children as never, by as never, render);
+    if (value !== undefined) {
+      if (Array.isArray(value)) ROWS.add(value);
+      return value;
+    }
+  }
   if ($rows !== undefined && rowsHook !== null) {
     const value = rowsHook(instance, items, list, $rows, render);
     if (value !== undefined) return value;
@@ -312,7 +339,13 @@ export function Dynamic(props: { component: ((props: never) => unknown) | string
   return template(fragments, slots);
 }
 
+let portalHook: (() => void) | null = null;
+/** Resume ABI: observe server `Portal`s (a lazy For row holding one records its rows instead, LAZY-ROWS T4). */
+export function _onPortal(fn: () => void): void {
+  portalHook = fn;
+}
 /** `Portal` renders nothing on the server: its content is browser-only (see the DOM `Portal`). */
 export function Portal(_props: { mount?: unknown; children?: unknown }): ServerValue {
+  if (portalHook !== null) portalHook();
   return null;
 }

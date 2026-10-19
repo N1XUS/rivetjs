@@ -41,6 +41,7 @@ const specifiers = [
   "@rivetjs/runtime/slot",
   "@rivetjs/runtime/resume-format",
   "@rivetjs/runtime/props",
+  "@rivetjs/runtime/id",
   // Projection captures (`globalDOMProps(props)`) import the cdk helper from the symbol module.
   "@rivetjs/cdk/dom-props",
   "@rivetjs/reactivity/store",

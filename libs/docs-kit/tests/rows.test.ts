@@ -131,12 +131,13 @@ test("pageRows: lazy rows (swap harness markers) report `lazy`; pages without Fo
     rows.fors.map((f) => [f.symbol, f.mode, f.fors, f.rows, f.raw]),
     [["m.tsx#List$a", "lazy", 1, 3, 0]],
   );
-  // T4's row-region record at R_SLOT (provisional): lazy, rows = row regions directly inside the region.
-  const record = { ...lazy, b: [[7, "#", 0, [], [], [0], -1, null, 0, 0, null, null, null, null, [3, 0, 2, 1, 0]]] };
-  const recorded = pageRows(page("<ul><!--r7[--><!--r1[--><li>a</li><!--]--><!--r[--><li>b</li><!--]--><!--]--></ul>", record))!;
+  // T4's lazy row record (state `L`): lazy, symbol = its region's, rows = markers forId + 1 + k, share = the entry.
+  const entry = [8, 7, 1, 2, "", 0, [0]];
+  const record = { ...lazy, b: [[7, "#", 0, [], [], [0], -1]], L: [entry] };
+  const recorded = pageRows(page("<ul><!--r7[--><!--r9[--><li>a</li><!--]--><!--r10[--><li>b</li><!--]--><!--]--></ul>", record))!;
   assert.deepEqual(
-    recorded.fors.map((f) => [f.mode, f.rows]),
-    [["lazy", 2]],
+    recorded.fors.map((f) => [f.symbol, f.mode, f.rows, f.raw]),
+    [["m.tsx#List$a", "lazy", 2, JSON.stringify(entry).length]],
   );
   assert.equal(rowsColumn(pageRows(page("<p></p>", { ...state, b: [], e: {}, t: [] }))), "rows: -");
   assert.equal(pageRows("<p>static</p>"), null);

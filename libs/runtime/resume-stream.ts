@@ -9,7 +9,7 @@
 // finishes parsing (cut stream) continue in the browser.
 import type { AsyncEntry, LoaderDocument, ResumeState, StatePatch } from "./resume-format.ts";
 
-/** Patch fields merged by key (objects) or appended (lists). */
+/** Patch fields merged by key (objects) or appended (lists; `L`: lazy row records, before the runtime registers the patch). */
 type Merged = Record<string, Record<string, unknown> | unknown[] | undefined>;
 
 export function stream(): void {
@@ -28,7 +28,7 @@ export function stream(): void {
       s.c.push(...x.c!);
       for (const k of ["e", "m", "l"]) Object.assign(((s as unknown as Merged)[k] ??= {}), (x as unknown as Merged)[k]);
       d.$rx?.(s, x.b!, x);
-      for (const k of ["s", "b", "fx", "ce", "x", "w"]) (((s as unknown as Merged)[k] ??= []) as unknown[]).push(...(((x as unknown as Merged)[k] as unknown[]) || []));
+      for (const k of ["s", "b", "fx", "ce", "x", "w", "L"]) (((s as unknown as Merged)[k] ??= []) as unknown[]).push(...(((x as unknown as Merged)[k] as unknown[]) || []));
       if (x.g) s.g = x.g;
     }
     for (const entry of x.a || []) {

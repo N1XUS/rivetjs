@@ -10,6 +10,9 @@ test("lazyRowsMode: off without the env var; swap in dev or a harness build; a p
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
   try {
     assert.equal(lazyRowsMode("build", {}), null);
+    // `on` / `off`: the runtime reads them at render (server lazy row records, T4); no build change, no warning.
+    assert.equal(lazyRowsMode("serve", { [LAZY_ROWS_ENV]: "on" }), null);
+    assert.equal(lazyRowsMode("build", { [LAZY_ROWS_ENV]: "off" }), null);
     assert.equal(lazyRowsMode("serve", { [LAZY_ROWS_ENV]: "swap" }), "swap");
     assert.equal(lazyRowsMode("build", { [LAZY_ROWS_ENV]: "swap", [LAZY_ROWS_HARNESS_ENV]: "1" }), "swap");
     assert.equal(lazyRowsMode("build", { [LAZY_ROWS_ENV]: "swap" }), null);

@@ -8,7 +8,9 @@
 //   by a request, so they cannot collide with a request's `rv` ids;
 // - `rvc` + n: created in the browser (`id-dom.ts`, `browser` export condition), so a region re-created
 //   after resume never collides with server markup;
-// - `rv-<hash>-` + n: fragments of `@rivetjs/runtime/server-cache` (rendered once, replayed into many pages).
+// - `rv-<hash>-` + n: fragments of `@rivetjs/runtime/server-cache` (rendered once, replayed into many pages);
+// - `rvr<for>_<index>_` + n: one row of a lazy `For` (LAZY-ROWS, `_rowIdPrefix`): seeded from the For's id and the
+//   row's index, so the server render and a later browser materialisation of that row create the same ids.
 import { createContext, provide, useContext } from "@rivetjs/reactivity";
 
 /** @internal One id counter: `prefix` + decimal `n`. */
@@ -47,6 +49,13 @@ export function withIdScope<T>(prefix: string, fn: () => T): T {
 export function _idScope(): IdScope | null {
   return useContext(SCOPE);
 }
+
+/**
+ * @internal Id prefix of row `index` of the lazy `For` with resume id `forId` (spec 2026-10-19 lazy collection rows §3.1 /
+ * §3.2): the server renders each lazy row under `{ prefix: _rowIdPrefix(forId, index), n: 0 }` (`_inIdScope`), and the
+ * browser materialises it under the same seed, so ids inside the row (`createId`, cdk `useId`) are byte-equal.
+ */
+export const _rowIdPrefix = (forId: number, index: number): string => "rvr" + forId + "_" + index + "_";
 
 /** @internal Run `fn` with `scope` as its id counter (render cache probes: the caller reads `scope.n` afterwards). */
 export function _inIdScope<T>(scope: IdScope, fn: () => T): T {

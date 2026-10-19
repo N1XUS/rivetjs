@@ -2,7 +2,7 @@
 // (CSR mounts, regions re-created after resume) are `rvc` + decimal counter, apart from server `rv` /
 // `rvs` ids (namespaces: `id.ts`).
 import { _nextId } from "./id.ts";
-export { withIdScope, _nextId, _idScope, _inIdScope } from "./id.ts";
+export { withIdScope, _nextId, _idScope, _inIdScope, _rowIdPrefix } from "./id.ts";
 
 const client = { prefix: "rvc", n: 0 };
 
