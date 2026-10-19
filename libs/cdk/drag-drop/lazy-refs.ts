@@ -40,6 +40,8 @@ export function dragHostEvent<T>(event: Event, setup: DragSetup<T>): void {
   const instance = drags.get(element) as DragInstance<T> | undefined;
   if (instance) instance._setInputs(setup);
   const drag = instance ?? new DragInstance<T>(element, setup);
+  // Dies with its element's `ref()` (a resumed row dropped, a client unmount): see `DragInstance._releaseWith`.
+  if (!drag._releaseWith(setup.element)) return;
   // The wake event, or a native `dragstart`: the ref's own listener prevents it when needed, except
   // for the `dragstart` that created the ref (its listener was added during the dispatch).
   if (event.type === "dragstart") {

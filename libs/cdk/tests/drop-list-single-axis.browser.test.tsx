@@ -8,9 +8,14 @@
 // resets" tests the resets `<style>` going first in <head> (`drag-drop-registry.ts`); "global preview
 // typography" tests the inherited text styles a body-level preview carries (`drag-drop/dom/inherited-text.ts`).
 // "replayed press text selection" tests `DragRef._pointerDownFromHost` clearing the selection a cold press started;
-// "fast cold-press replay" tests `lazy-refs.ts` treating any press handled after its dispatch as replayed (KANBAN-BUILD).
+// "fast cold-press replay" tests `lazy-refs.ts` treating any press handled after its dispatch as replayed (KANBAN-BUILD);
+// "resumed row removal" tests `DragInstance._releaseWith`: a lazily created instance dies with its element's ref (ARM-FIX).
 import { afterEach, describe, expect, it } from "@rivetjs/testing/jasmine";
 import { dispatchMouseEvent } from "@rivetjs/testing/fake-events";
+import { signal } from "@rivetjs/reactivity";
+import { dragDropRegistry } from "../drag-drop/drag-drop-registry.ts";
+import { dragHostEvent, dropListInstance } from "../drag-drop/lazy-refs.ts";
+import { drags } from "../drag-drop/directives/registry.ts";
 import { createComponent, destroyFixtures, startDraggingViaMouse, wait } from "./drag-test-utils.tsx";
 import {
   ConnectedDropZones,
@@ -593,6 +598,128 @@ describe("Single-axis drop list", () => {
       expect(fixture.componentInstance.startedSpy).toHaveBeenCalledTimes(1);
       dispatchMouseEvent(document, "mouseup", x, y + 30);
       fixture.detectChanges();
+      await wait(0);
+    });
+  });
+
+  describe("resumed row removal (Rivet: a lazily created instance dies with its element's ref)", () => {
+    /**
+     * A server-rendered `<Drag>` row on a resumed page: no component code ran, so the element's own handler
+     * (`dragHostEvent`) creates the instance on the first press from the setup it captured, whose `element` is the
+     * revived `ref()` holding the server element. The resume runtime resets that ref when the row's region dies (a
+     * `For` drops the row, its region re-creates); `drag.tsx`'s client-render cleanup never runs for it.
+     */
+    const serverRow = (list: HTMLElement) => {
+      const row = document.createElement("div");
+      row.className = "cdk-drag";
+      row.setAttribute("data-rv-drag", "");
+      row.textContent = "server row";
+      list.append(row);
+      // A revived ref() is a signal holding the element.
+      const element = signal<HTMLElement | undefined>(row);
+      return { row, element };
+    };
+    /** The resumed handler's call: the replayed press (dispatch over, `currentTarget` shadowed). */
+    const replayPress = (row: HTMLElement, element: () => HTMLElement | undefined) => {
+      const { left, top } = row.getBoundingClientRect();
+      const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0, buttons: 1, detail: 1, clientX: left + 5, clientY: top + 5 });
+      Object.defineProperty(press, "currentTarget", { configurable: true, value: row });
+      try {
+        dragHostEvent(press, { inputs: {}, element });
+      } finally {
+        delete (press as { currentTarget?: unknown }).currentTarget;
+      }
+      return { x: left + 5, y: top + 5 };
+    };
+    const registered = () => (dragDropRegistry(document) as unknown as { _dragInstances: Set<unknown> })._dragInstances.size;
+
+    it("should destroy a pressed row's instance once the row is dropped and its ref resets", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const listElement = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drop-list")!;
+      const list = dropListInstance(listElement)!;
+      expect(list).toBeTruthy();
+      const baseline = registered();
+      const items = list.getSortedItems().length;
+
+      const { row, element } = serverRow(listElement);
+      const { x, y } = replayPress(row, element);
+      expect(drags.has(row)).toBe(true);
+      expect(registered()).toBe(baseline + 1);
+      expect(list.getSortedItems().length).toBe(items + 1);
+
+      // The replayed click drops the row: the region cleanup resets its revived ref.
+      row.remove();
+      element.set(undefined);
+      fixture.detectChanges();
+      await wait(0);
+      expect(drags.has(row)).toBe(false);
+      expect(registered()).toBe(baseline);
+      expect(list.getSortedItems().length).toBe(items);
+
+      // Its pending sequence went with it: the next held move starts nothing and throws nothing.
+      const errors: string[] = [];
+      const onError = (event: ErrorEvent) => {
+        errors.push(event.message);
+        event.preventDefault();
+      };
+      window.addEventListener("error", onError);
+      try {
+        dispatchMouseEvent(document, "mousemove", x + 200, y + 60);
+      } finally {
+        window.removeEventListener("error", onError);
+      }
+      expect(errors).toEqual([]);
+      expect(fixture.componentInstance.startedSpy).not.toHaveBeenCalled();
+      expect(document.querySelector(".cdk-drag-preview")).toBeNull();
+      dispatchMouseEvent(document, "mouseup", x + 200, y + 60);
+      await wait(0);
+    });
+
+    it("should keep a row's instance while its ref holds the element", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const listElement = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drop-list")!;
+      const list = dropListInstance(listElement)!;
+      const baseline = registered();
+      const { row, element } = serverRow(listElement);
+      const { x, y } = replayPress(row, element);
+      dispatchMouseEvent(document, "mousemove", x, y + 30);
+      fixture.detectChanges();
+      dispatchMouseEvent(document, "mouseup", x, y + 30);
+      fixture.detectChanges();
+      await wait(0);
+      // A sort moves the row (same element): the ref keeps it, so does the list.
+      listElement.prepend(row);
+      element.set(row);
+      await wait(0);
+      expect(drags.has(row)).toBe(true);
+      expect(registered()).toBe(baseline + 1);
+      expect(list.getSortedItems().some((item) => item.element === row)).toBe(true);
+      row.remove();
+      element.set(undefined);
+      await wait(0);
+      expect(registered()).toBe(baseline);
+    });
+
+    it("should create no instance for a press replayed after the row's region died", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const listElement = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drop-list")!;
+      const list = dropListInstance(listElement)!;
+      const baseline = registered();
+      const items = list.getSortedItems().length;
+      const { row, element } = serverRow(listElement);
+      // The row's region died before the press replayed (its ref decoded reset, `dom-resume` `arm`).
+      row.remove();
+      element.set(undefined);
+      const { x, y } = replayPress(row, element);
+      expect(drags.has(row)).toBe(false);
+      expect(registered()).toBe(baseline);
+      expect(list.getSortedItems().length).toBe(items);
+      dispatchMouseEvent(document, "mousemove", x, y + 60);
+      expect(fixture.componentInstance.startedSpy).not.toHaveBeenCalled();
+      dispatchMouseEvent(document, "mouseup", x, y + 60);
       await wait(0);
     });
   });

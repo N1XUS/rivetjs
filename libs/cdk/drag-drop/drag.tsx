@@ -69,7 +69,10 @@ export function Drag<T = any>(props: DragProps<T>) {
     onDropped: props.onDropped,
     onMoved: props.onMoved,
   };
-  const setup: DragSetup<T> = { inputs, config, dir };
+  // Client render: set once rendered. Resumed page: revived holding the server element, reset when its region dies;
+  // the instance (created by the first press) is destroyed with it (`DragInstance._releaseWith`).
+  const element = ref<HTMLElement>();
+  const setup: DragSetup<T> = { inputs, config, dir, element };
   // Read every prop up front: an element with a spread resumes as one binding over all its
   // attributes, and reading `props` there would capture the whole props object (children included).
   const dom = globalDOMProps(props, OWNED);
@@ -97,8 +100,6 @@ export function Drag<T = any>(props: DragProps<T>) {
     onTouchStart?.(event as never);
   };
 
-  // Client render only: on the server the ref stays empty.
-  const element = ref<HTMLElement>();
   const node =
     elementType === "li" ? (
       <li
@@ -217,7 +218,8 @@ export function Drag<T = any>(props: DragProps<T>) {
     );
 
   // Client-rendered: join a list that is being dragged over (Angular `addItem` on construction) and
-  // destroy the instance with the element (`ngOnDestroy`). Server-rendered drags live with the page.
+  // destroy the instance with the element (`ngOnDestroy`). Server-rendered drags (resumed page, no component code):
+  // the instance goes when the revived element ref resets (its region died), `DragInstance._releaseWith`.
   // (`getOwner()` is set on the server too: the element ref is what tells a client render apart.)
   queueMicrotask(() => {
     const el = element();

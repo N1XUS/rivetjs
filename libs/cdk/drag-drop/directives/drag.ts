@@ -126,6 +126,12 @@ export interface DragSetup<T = any> {
   config?: DragDropConfig | null;
   /** `DirectionalityContext` value where the `<Drag>` rendered (else the document's). */
   dir?: Directionality | null;
+  /**
+   * Rivet: the `<Drag>` element's `ref()`. The instance is destroyed once it lets go of the element: a client unmount
+   * (`bindRef`'s cleanup) or, on a resumed page, the end of the server element's region (a row a `For` drops, a
+   * re-created region: the revived ref resets).
+   */
+  element?: () => HTMLElement | undefined;
 }
 
 /** Element that can be moved inside a `DropList` container (Angular `CdkDrag`). */
@@ -163,6 +169,7 @@ export class DragInstance<T = any> {
   private _dragDropRegistry: DragDropRegistry;
   private _destroyed = false;
   private _disposeSync: Disposer | null = null;
+  private _disposeRelease: Disposer | null = null;
   private _containerBeforeStarted: { unsubscribe(): void } | null = null;
   private _movedSubscription: { unsubscribe(): void } | null = null;
   private _handles: DragHandleInstance[] = [];
@@ -353,6 +360,30 @@ export class DragInstance<T = any> {
     this._syncHostClasses();
   }
 
+  /**
+   * Rivet: destroy the instance once `element` (the `<Drag>`'s `ref()`, `DragSetup.element`) stops holding this
+   * element (Angular `ngOnDestroy`). A server-rendered `<Drag>` runs no component code on a resumed page, so its lazily
+   * created instance had no destroy hook: a row a resumed `For` dropped stayed in the registry (`_dragInstances`, the
+   * document `touchmove` listener), its list's items and its sync effects. The resume runtime resets a revived ref when
+   * the region of its server element dies; client renders reset it on unmount (`bindRef`), like `drag.tsx`'s cleanup.
+   * False: destroyed (the element already left).
+   */
+  _releaseWith(element: (() => HTMLElement | undefined) | undefined): boolean {
+    if (element && !this._disposeRelease && !this._destroyed) {
+      const release = (this._disposeRelease = createRoot((dispose) => {
+        let held = false;
+        effect(() => {
+          if (element() === this.element) held = true;
+          // Never held: a ref that already let go (its region died before this handler ran, a replayed press).
+          else if (held || !this.element.isConnected) untrack(() => this.destroy());
+        });
+        return dispose;
+      }).value);
+      if (this._destroyed) release();
+    }
+    return !this._destroyed;
+  }
+
   /** Rivet: sync what the DOM holds (handles, container state) before the ref sees a pointer down. */
   _beforePointerDown(): void {
     this._syncHandles();
@@ -370,6 +401,7 @@ export class DragInstance<T = any> {
 
     this._dragDropRegistry.removeDirectiveNode(this.element);
     this._disposeSync?.();
+    this._disposeRelease?.();
     this._containerBeforeStarted?.unsubscribe();
     this._movedSubscription?.unsubscribe();
     this._dragRef.dispose();

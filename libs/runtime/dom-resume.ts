@@ -575,9 +575,14 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     // re-creation) resets it, like bindRef's unmount cleanup on client renders. Only an element names a region: a
     // falsy value (0, "", false) must not pass itself on as the region (`held && …` did: a counter at 0 got the cleanup
     // of region 0 — the Router — and was reset to `undefined` by the first client navigation, ROUTE-CHUNKS 2026-10-18).
+    // Decoded once the region is dead (its re-creation disposed the owner, then decoded the region's `_regionState` locals
+    // / provider values, which hold the ref: cdk Button in TooltipTrigger, ARM-FIX 2026-10-19): reset now, what the
+    // cleanup would have done; the re-created element takes the ref (`bindRef`). Its disposed owner threw before.
     const held = untrack(source);
     const region = held ? refRegions.get(held as Element) : undefined;
-    if (region !== undefined) runWithOwner(ownerOf(region), () => onCleanup(() => untrack(source) === held && source.set(undefined)));
+    if (region !== undefined)
+      if (isDead(region)) source.set(undefined);
+      else runWithOwner(ownerOf(region), () => onCleanup(() => untrack(source) === held && source.set(undefined)));
     const bindings = stubs.get(ref);
     if (!bindings) return;
     readers.set(source, bindings);
