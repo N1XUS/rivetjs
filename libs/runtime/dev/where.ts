@@ -10,8 +10,8 @@ import { _debug } from "@rivetjs/reactivity/debug";
 
 /** Docs pages dev warnings link to (same placeholder origin as the RV code registry). */
 export const DOCS = {
-  a11y: "https://rivetjs.dev/guides/tooling/dev-server-and-hot-reload#accessibility-warnings",
-  warnings: "https://rivetjs.dev/guides/tooling/dev-server-and-hot-reload#warnings-and-errors",
+  a11y: "https://rivetjs.severyn.pro/guides/tooling/dev-server-and-hot-reload#accessibility-warnings",
+  warnings: "https://rivetjs.severyn.pro/guides/tooling/dev-server-and-hot-reload#warnings-and-errors",
 };
 
 type Fn = (...args: never[]) => unknown;

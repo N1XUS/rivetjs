@@ -522,7 +522,7 @@ templates/               starters (Q10)
 - **Q10 Starter location.**
   - Options: (A) repo-root `templates/`; (B) `apps/docs/templates`; (C) a separate repo.
   - Rec: A (shared by docs, `create-rivet`, mirror; outside workspaces).
-- **Q11 Domain and name.** "Rivet" collides with other projects (e.g. rivet.gg). Needs a domain decision (`rivetjs.dev`?) before deploy and the mirror repo org.
+- **Q11 Domain and name.** "Rivet" collides with other projects (e.g. rivet.gg). Decided 2026-10-19: docs at `rivetjs.severyn.pro` (cdk / ui subdomains); diagnostic `docs:` links (`libs/compiler/codes.json`) use it. Mirror repo org still open.
 - **Q12 Benchmarks page.**
   - Options: (A) a summary page with links to raw results, losses shown; (B) none until the Razor goal is met.
   - Rec: A (matches the honesty rule).

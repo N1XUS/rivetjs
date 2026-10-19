@@ -46,7 +46,7 @@ The router plugin watches every import in the browser build. If a browser module
 ```txt
 [rivet:router] /app/src/lib/db.server.ts is server-only and cannot be imported by browser code (imported from src/routes/account.tsx)
   fix: read it in a server export (`serverLoad`, `serverActions`, `onGet`, …) and pass the data to the page; type-only imports (`import type`) are fine
-  docs: https://rivetjs.dev/guides/security/server-only-code
+  docs: https://rivetjs.severyn.pro/guides/security/server-only-code
 ```
 
 The dev server reports the same error. The server build may import these files freely.

@@ -608,7 +608,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           message:
             `[rivet:router] ${id} is server-only and cannot be imported by browser code (imported from ${posix(importer)})` +
             "\n  fix: read it in a server export (`serverLoad`, `serverActions`, `onGet`, …) and pass the data to the page; type-only imports (`import type`) are fine" +
-            "\n  docs: https://rivetjs.dev/guides/security/server-only-code",
+            "\n  docs: https://rivetjs.severyn.pro/guides/security/server-only-code",
           id: importer,
           plugin: "vite-plugin-rivet-router",
         });

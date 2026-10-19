@@ -206,7 +206,7 @@ export const DEV = {
           '\n  fix: read it during the server render, or read it by a literal path (read(store, "' +
           (path || "path") +
           '")) in the resumed code' +
-          "\n  docs: https://rivetjs.dev/guides/state/stores#in-a-resumed-page",
+          "\n  docs: https://rivetjs.severyn.pro/guides/state/stores#in-a-resumed-page",
       );
     };
   },

@@ -16,7 +16,7 @@ Files named `*.server.ts` are different. The build refuses to put them in browse
 ```txt
 [rivet:router] ../db.server.ts is server-only and cannot be imported by browser code (imported from /app/src/routes/products.tsx)
   fix: read it in a server export (`serverLoad`, `serverActions`, `onGet`, …) and pass the data to the page; type-only imports (`import type`) are fine
-  docs: https://rivetjs.dev/guides/security/server-only-code
+  docs: https://rivetjs.severyn.pro/guides/security/server-only-code
 ```
 
 Type-only imports are fine: `import type { User } from "../db.server.ts"` (or `import { type User }`) is removed before bundling and passes the check.

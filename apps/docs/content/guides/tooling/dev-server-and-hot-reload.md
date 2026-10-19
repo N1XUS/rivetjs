@@ -89,7 +89,7 @@ Every warning or error Rivet prints in the terminal or the browser console says 
 ```text
 [RV1016] /app/src/routes/index.tsx:12:7: Event handler onClick expression is evaluated once at render …
   fix: Wrap the handler expression in an arrow so it is re-read per event: onClick={(event) => (s() ? a : b)?.(event)}.
-  docs: https://rivetjs.dev/errors/RV1016
+  docs: https://rivetjs.severyn.pro/errors/RV1016
 ```
 
 - **Who reported it.** Compile errors start with their `RVnnnn` code. Other messages start with the package that printed them: `[rivet:router]`, `[rivet:i18n]`, `[rivet:cdk]`.
@@ -108,7 +108,7 @@ In dev, Rivet checks the rendered page for common accessibility problems and war
 Rivet a11y [accessible-name]: <button> has no accessible name — add text content, aria-label or aria-labelledby.
   in <IconButton> (src/icon-button.tsx:3:17) ← <Toolbar> (src/toolbar.tsx:8:17)
   element: main > div.toolbar > button
-  docs: https://rivetjs.dev/guides/tooling/dev-server-and-hot-reload#accessibility-warnings
+  docs: https://rivetjs.severyn.pro/guides/tooling/dev-server-and-hot-reload#accessibility-warnings
 ```
 
 - `in` names the components that rendered the element. Elements from server HTML that no client component rendered say so, with the page path.

@@ -107,7 +107,7 @@ export function remedyLines(code: string | undefined, fix?: string, docs?: strin
  *       > 12 |     <button onClick={handler()}>
  *            |                     ^
  *       fix: Wrap the handler in an arrow …
- *       docs: https://rivetjs.dev/errors/RV1016
+ *       docs: https://rivetjs.severyn.pro/errors/RV1016
  */
 export function formatDiagnostic(report: DiagnosticReport, options: FormatOptions = {}): string {
   const head = (report.origin ? "[rivet:" + report.origin + "] " : "") + (report.code ? report.code + " " : "") + report.message;
