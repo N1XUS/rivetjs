@@ -1,4 +1,5 @@
 // Port of HeroUI v3.2.6 `apps/docs/src/demos/en/list-box/virtualization.tsx` (Apache-2.0, © 2025 NextUI Inc.; modified).
+import { ListLayout, CollectionVirtualizer } from "@rivetjs/cdk/virtualizer";
 import { Description } from "@rivetjs/ui/description";
 import { Label } from "@rivetjs/ui/label";
 import { ListBox } from "@rivetjs/ui/list-box";
@@ -80,17 +81,19 @@ export function Virtualization() {
   const users = generateUsers(1000);
 
   return (
-    <ListBox aria-label="Virtualized list with 1000 items" class="h-[400px] w-[300px] overflow-y-auto" items={users}>
-      {(user: User) => (
-        <ListBox.Item id={user.id} textValue={user.name}>
-          <div class="flex flex-col">
-            <Label>{user.name}</Label>
-            <Description>{user.email}</Description>
-          </div>
-          <ListBox.ItemIndicator />
-        </ListBox.Item>
-      )}
-    </ListBox>
+    <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 48, gap: 4, padding: 4 }} initialSize={{ width: 300, height: 400 }}>
+      <ListBox aria-label="Virtualized list with 1000 items" class="h-[400px] w-[300px] overflow-y-auto p-0" items={users}>
+        {(user: User) => (
+          <ListBox.Item id={user.id} textValue={user.name}>
+            <div class="flex flex-col">
+              <Label>{user.name}</Label>
+              <Description>{user.email}</Description>
+            </div>
+            <ListBox.ItemIndicator />
+          </ListBox.Item>
+        )}
+      </ListBox>
+    </CollectionVirtualizer>
   );
 }
 // #endregion

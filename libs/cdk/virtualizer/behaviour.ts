@@ -10,7 +10,7 @@ import { direction as directionOf } from "../bidi/index.ts";
 import type { Key } from "../collections/index.ts";
 import { createCollection, loaderNode, type Collection, type CollectionOptions, type Node } from "./collection.ts";
 import { createScrollView, getScrollLeft, layoutInfoToStyle, measureItem, setScrollLeft, type ScrollView } from "./dom.ts";
-import type { Layout } from "./layout.ts";
+import { Layout } from "./layout.ts";
 import type { LayoutInfo } from "./layout-info.ts";
 import { Rect } from "./rect.ts";
 import type { ReusableView } from "./reusable-view.ts";
@@ -47,14 +47,33 @@ export interface VirtualView<T = unknown> {
 }
 
 export type MaybeAccessor<T> = T | (() => T);
+
+/** A layout class (`ListLayout`, `TableLayout`, …) or a factory (`() => new ListLayout()`): resumable, never an instance. */
+export type LayoutInput<O> = (new () => Layout<Node<any>, O>) | (() => Layout<Node<any>, O>);
+
+/** A layout instance from a class or a factory (RAC `Virtualizer` takes a class or an instance). */
+export function createLayout<O>(layout: LayoutInput<O>): Layout<Node<any>, O> {
+  const fn = layout as { prototype?: unknown };
+  return fn.prototype instanceof Layout ? new (layout as new () => Layout<Node<any>, O>)() : (layout as () => Layout<Node<any>, O>)();
+}
 const read = <T>(value: MaybeAccessor<T>): T => (typeof value === "function" ? (value as () => T)() : value);
 
 /** Serializable component state. */
 export interface VirtualizerModel<T, O> {
   id: string;
+  /** Standalone `<Virtualizer items>`: the data (collection mode: unused, `source` holds the host's collection). */
   items: MaybeAccessor<readonly T[]>;
-  /** Layout factory (`() => new ListLayout()`), called on the server and once in the browser. */
-  layout: () => Layout<Node<T>, O>;
+  /**
+   * Collection mode (a collection component inside `<Virtualizer layout>`, RAC CollectionRenderer): the host's built
+   * collection (an accessor: a rebuilt collection re-renders the window).
+   */
+  source?: (() => Collection<Node<T>> | null | undefined) | undefined;
+  /** Collection mode: the host's focused key (persisted, RAC `usePersistedKeys`). */
+  focus?: (() => Key | null) | undefined;
+  /** Collection mode: the host's scroll container (a ref accessor; standalone: the element with `id`). */
+  scrollRef?: (() => Element | null | undefined) | undefined;
+  /** Layout factory (`() => new ListLayout()`) or class (`ListLayout`), instantiated on the server and once in the browser. */
+  layout: LayoutInput<O>;
   layoutOptions?: O;
   collection: CollectionOptions<T>;
   initialSize: { width: number; height: number };
@@ -73,6 +92,7 @@ export interface VirtualizerModel<T, O> {
 }
 
 function collectionOf<T, O>(model: VirtualizerModel<T, O>): Collection<Node<T>> {
+  if (model.source) return (model.source() ?? createCollection<T>([], {})) as Collection<Node<T>>;
   const loading = model.isLoading === undefined && !model.onLoadMore ? null : !!read(model.isLoading ?? false);
   return createCollection(read(model.items), model.collection, loading === null ? [] : [loaderNode<T>(LOADER_KEY, loading)]);
 }
@@ -81,8 +101,35 @@ const persistedOf = <T, O>(model: VirtualizerModel<T, O>): Set<Key> => {
   const keys = new Set(model.persistedKeys);
   const focused = model.focusedKey();
   if (focused != null) keys.add(focused);
+  const hostFocused = model.focus?.();
+  if (hostFocused != null) keys.add(hostFocused);
+  // Collection mode: the view holding DOM focus stays until focus moves on — the focused key changes before its
+  // item renders (and before the engine sees the scroll that brings it in), and removing the focused element
+  // would blur the collection (fast keyboard navigation across the window edge).
+  if (model.focus) {
+    const active = activeViewKey(model);
+    if (active != null) keys.add(active);
+  }
   return keys;
 };
+
+function activeViewKey<T, O>(model: VirtualizerModel<T, O>): Key | null {
+  if (typeof document === "undefined") return null;
+  const scroller = scrollerOf(model);
+  const active = document.activeElement;
+  const view = active && scroller?.contains(active) ? active.closest<HTMLElement>("[data-rv-view]") : null;
+  return view && scroller!.contains(view) ? keyOfView(untrack(model.views), view.dataset.rvView!) : null;
+}
+
+/** The view key whose `String(key)` is `text` (keys render as `data-rv-view` text), at any depth. */
+function keyOfView<T>(views: readonly VirtualView<T>[], text: string): Key | null {
+  for (const view of views) {
+    if (String(view.key) === text) return view.key;
+    const nested = view.children.length ? keyOfView(view.children, text) : null;
+    if (nested != null) return nested;
+  }
+  return null;
+}
 
 const sameStyle = (a: StyleObject, b: StyleObject): boolean => {
   const ka = Object.keys(a).filter((k) => a[k] != null),
@@ -153,7 +200,7 @@ const sizeOfContent = (size: Size) => ({ width: size.width, height: size.height 
 export function initialWindow<T, O>(model: VirtualizerModel<T, O>): { views: VirtualView<T>[]; contentSize: { width: number; height: number } } {
   return untrack(() => {
     const collection = collectionOf(model);
-    const layout = model.layout();
+    const layout = createLayout(model.layout) as unknown as Layout<Node<T>, O>;
     const virtualizer = new Virtualizer<Node<T>, unknown>({
       collection,
       layout,
@@ -163,7 +210,7 @@ export function initialWindow<T, O>(model: VirtualizerModel<T, O>): { views: Vir
     const views = virtualizer.render({
       layout,
       collection,
-      persistedKeys: new Set(model.persistedKeys),
+      persistedKeys: persistedOf(model),
       visibleRect: new Rect(0, 0, width, height),
       size: new Size(width, height),
       invalidationContext: model.layoutOptions != null ? { layoutOptions: model.layoutOptions } : {},
@@ -183,6 +230,12 @@ interface Driver {
 
 let drivers: WeakMap<Element, Driver> | undefined;
 
+/** The scroll container of `model`: the host's `scrollRef` (collection mode), else the element with `model.id`. */
+function scrollerOf<T, O>(model: VirtualizerModel<T, O>): Element | null {
+  if (typeof document === "undefined") return null;
+  return (model.scrollRef ? model.scrollRef() : document.getElementById(model.id)) ?? null;
+}
+
 const viewElement = (root: Element, key: Key): HTMLElement | null => {
   for (const el of root.querySelectorAll<HTMLElement>("[data-rv-view]")) if (el.dataset.rvView === String(key)) return el;
   return null;
@@ -190,8 +243,9 @@ const viewElement = (root: Element, key: Key): HTMLElement | null => {
 
 /** The browser driver of `model` (created on first use: engine, scroll view, measurement). */
 export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element | null): Driver | null {
-  const el = (element ?? (typeof document === "undefined" ? null : document.getElementById(model.id))) as HTMLElement | null;
-  if (!el) return null;
+  const el = (element ?? scrollerOf(model)) as HTMLElement | null;
+  // Not in the document yet (a client render's first pass): no size to start from.
+  if (!el || !el.isConnected) return null;
   drivers ??= new WeakMap();
   const existing = drivers.get(el);
   if (existing) return existing;
@@ -205,7 +259,7 @@ export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element 
 function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Driver {
   const dir = (): Direction => model.dir ?? directionOf(el);
   const collection = computed(() => collectionOf(model) as Collection<Node<unknown>>);
-  const layout = untrack(() => model.layout()) as unknown as Layout<Node<unknown>>;
+  const layout = untrack(() => createLayout(model.layout)) as unknown as Layout<Node<unknown>>;
   let state: VirtualizerState<Node<unknown>, unknown> | undefined;
   const scrollView = createScrollView(el, {
     contentSize: () => untrack(() => state?.contentSize() ?? new Size(model.contentSize().width, model.contentSize().height)),
@@ -301,15 +355,74 @@ function computedEffect(fn: () => void): void {
 
 /** Rows of the model: the server window, or (browser) the driver's projection; reads `items` for reactivity. */
 export function visibleViews<T, O>(model: VirtualizerModel<T, O>): VirtualView<T>[] {
-  if (typeof model.items === "function") (model.items as () => readonly T[])();
+  if (model.source) {
+    // Collection mode: a rebuilt collection or a focus move (persisted key) starts the driver on a resumed page.
+    model.source();
+    model.focus?.();
+  } else if (typeof model.items === "function") (model.items as () => readonly T[])();
   if (typeof model.isLoading === "function") model.isLoading();
-  if (typeof document !== "undefined") untrack(() => driverOf(model));
+  if (typeof document !== "undefined") untrack(() => driverOf(model) ?? (model.source && startWhenMounted(model)));
   return model.views();
+}
+
+let mounting: WeakSet<object> | undefined;
+
+/**
+ * Collection mode, client render: the host element exists but is not in the document during its first pass. Start
+ * the engine once it is (RAC measures the scroll view on mount); the server window stays until then.
+ */
+function startWhenMounted<T, O>(model: VirtualizerModel<T, O>): null {
+  if ((mounting ??= new WeakSet()).has(model) || !scrollerOf(model)) return null;
+  mounting.add(model);
+  queueMicrotask(() => {
+    mounting!.delete(model);
+    untrack(() => driverOf(model));
+  });
+  return null;
 }
 
 /** Keys of `views`: the rows' `For` items. Keys keep their identity across windows, so resumed server rows are
  * adopted and kept (a `For` re-creates an adopted row whose item changed; view descriptors change on every move). */
 export const viewKeys = <T>(views: readonly VirtualView<T>[]): Key[] => views.map((view) => view.key);
+
+const byLayoutOrder = (a: VirtualView<unknown>, b: VirtualView<unknown>): number => a.y - b.y || a.x - b.x;
+
+/** Keys in layout order (top to bottom, then start to end); the engine's reusable views come in recycling order. */
+export const orderedViewKeys = <T>(views: readonly VirtualView<T>[]): Key[] =>
+  (views as VirtualView<unknown>[])
+    .slice()
+    .sort(byLayoutOrder)
+    .map((view) => view.key);
+
+/** `rowOrder` parent of the root views. */
+export const ROOT_VIEW = {};
+let orders: WeakMap<object, Map<unknown, Key[]>> | undefined;
+
+/**
+ * The keyed rows' order: layout order (top to bottom) — except while DOM focus is inside the collection, when kept
+ * keys keep their DOM order and new ones go last. A keyed list moves (detaches) a kept row to reorder it, and a
+ * detached focused option / cell loses focus (keyboard navigation across the window edge inserts rows before the
+ * focused one). Positions are absolute: DOM order is not visual order; options carry `aria-posinset`, rows
+ * `aria-rowindex` (RAC renders in the engine's recycling order).
+ */
+export function rowOrder(model: VirtualizerModel<unknown, unknown>, parent: unknown, views: readonly VirtualView<unknown>[]): Key[] {
+  const next = orderedViewKeys(views);
+  if (typeof document === "undefined") return next;
+  const byParent = (orders ??= new WeakMap()).get(model) ?? new Map<unknown, Key[]>();
+  orders.set(model, byParent);
+  const prev = byParent.get(parent);
+  const scroller = model.scrollRef?.();
+  if (prev && scroller?.contains(document.activeElement)) {
+    const present = new Set(next);
+    const kept = prev.filter((key) => present.has(key));
+    const known = new Set(kept);
+    for (const key of next) if (!known.has(key)) kept.push(key);
+    byParent.set(parent, kept);
+    return kept;
+  }
+  byParent.set(parent, next);
+  return next;
+}
 
 let indexes: WeakMap<readonly VirtualView<unknown>[], Map<Key, VirtualView<unknown>>> | undefined;
 let last: WeakMap<object, Map<Key, VirtualView<unknown>>> | undefined;
@@ -333,6 +446,19 @@ export function viewOf<T, O>(model: VirtualizerModel<T, O>, views: readonly Virt
   seen.set(key, view);
   return view as VirtualView<T>;
 }
+
+let trees: WeakMap<readonly VirtualView<unknown>[], Map<Key, VirtualView<unknown>>> | undefined;
+/**
+ * Collection mode: the child views of the view with key `parentKey` (a host part's `CollectionBranch`: section items,
+ * table header rows / columns, body rows, cells), from the whole projected tree; `[]` when it is not rendered.
+ */
+export function childViews<T, O>(model: VirtualizerModel<T, O>, parentKey: Key): VirtualView<T>[] {
+  const views = model.views();
+  let tree = (trees ??= new WeakMap()).get(views);
+  if (!tree) trees.set(views, (tree = flatten(views as VirtualView<unknown>[])));
+  return (tree.get(parentKey)?.children ?? EMPTY) as VirtualView<T>[];
+}
+const EMPTY: VirtualView<never>[] = [];
 
 /** Scroll handler of the scroller: drive the engine, load more near the end, then the caller's `onScroll`. */
 export function virtualizerScroll<T, O>(model: VirtualizerModel<T, O>, event: Event): void {

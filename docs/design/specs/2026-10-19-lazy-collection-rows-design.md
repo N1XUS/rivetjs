@@ -6,7 +6,7 @@
 
 ## 1. Problem, measured
 
-ui-docs `table-virtualization` (cdk `Table`, 1000 rows × 3 cells, nothing virtualized — the name is the Virtualizer gap, `../../../libs/cdk/CLAUDE.md`):
+ui-docs `table-virtualization` (cdk `Table`, 1000 rows × 3 cells; numbers below are the page as it was when this was written, every row rendered — since COLLECTION-VIRT landed the same evening the example renders inside `<Virtualizer layout={TableLayout}>` (11 rows in the DOM, HTML 73 KB, state 42 KB raw / 6.4 KB br). The per-row costs below still apply to every non-virtualized collection and to each materialised window):
 
 | | HEAD before today | after CELL-DIET | per row |
 | --- | ---: | ---: | ---: |
@@ -99,7 +99,7 @@ cdk rows are not a user `<For>`: `CollectionRoot` / `CollectionBranch` render bu
 ## 6. Interactions with the rest of the plan
 
 - **STATE-DIET** (chunk-list dedupe in `e` / `b`): lands regardless; it is the non-row state's format. **CELL-DIET**: stays (fallback rows, client render cost, `WeakMap` pattern is the lazy-friendly shape). **ListBox diet**: superseded.
-- **Virtualizer**: `table-virtualization` still names a cdk gap (Table in a Virtualizer). With lazy rows a 1000-row static table is cheap enough that the example can keep 1000 rows honestly; the Virtualizer gap stays a behaviour feature (scroll windows), not a weight fix.
+- **Virtualizer**: cdk ListBox / Table now render inside `<Virtualizer>` (COLLECTION-VIRT, 2026-10-19): the ui-docs examples ship the first window only. Lazy rows remain the fix for non-virtualized collections (any list the author does not window) and for the rows a window does render; the two compose (a virtualized collection's rows are lazy rows of its `For`).
 - **M1 route bundles**: independent. The row function's chunk is the route chunk; `preload="visible"` rules for ≥ 3-row handler symbols (`docs/guides/resumability.md` loader rules) keep their meaning on the For's symbol.
 - **M3 derived slices** (research Q4: "per-row edits are the row's writer with `i` as a parameter"): a row whose sites all have provable reads never materialises at all — the slice edits the row by path. Lazy rows are the adopted fallback for rows M3 cannot prove; both share the row region record and the marker-index addressing.
 - **M6**: deletes the serialized per-row path (§3.3 fallback goes with it; non-eligible rows then render client-side in create mode as the `rendered` layer, with the diagnostic made an error).

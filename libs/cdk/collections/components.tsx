@@ -616,6 +616,11 @@ export interface CollectionRootProps {
   idScope?: Key | undefined;
   /** A set of keys for items that should always be persisted in the DOM (virtualizers). */
   persistedKeys?: Set<Key> | null | undefined;
+  /**
+   * Rivet: the host's focused key (an accessor, e.g. the selection state's `focusedKey` signal): virtualizers keep it
+   * rendered (RAC `usePersistedKeys(focusedKey)`; a signal, not a set, so it resumes without a closure over the host state).
+   */
+  focusedKey?: (() => Key | null) | undefined;
   /** The scroll container (virtualizers). */
   scrollRef?: unknown;
   renderDropIndicator?: CollectionBranchProps["renderDropIndicator"];
@@ -632,6 +637,11 @@ export interface CollectionRenderer {
   CollectionRoot: (props: CollectionRootProps) => unknown;
   /** Renders the child items of a branch. */
   CollectionBranch: (props: CollectionBranchProps) => unknown;
+  /**
+   * Rivet: the host forwards its scroll container's `scroll` events here (virtualizers: the engine follows the scroll
+   * position; RAC's useScrollView listens on `scrollRef` itself, a resumed page needs the host element's handler).
+   */
+  onScroll?: ((event: Event) => void) | undefined;
 }
 
 /** A built collection, an accessor of one, or null (live mode). */

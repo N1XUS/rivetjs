@@ -376,7 +376,7 @@ Deviations:
 
 ## Not yet supported
 
-- Drag and drop (`dragAndDropHooks`, drop indicators) and virtualized lists inside `Virtualizer`.
+- Drag and drop (`dragAndDropHooks`, drop indicators). Virtualized lists: `<CollectionVirtualizer layout={ListLayout}>` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); sections inside a virtualized ListBox are not supported yet.
 - `dependencies` is accepted and ignored.
 - A dynamic function child (`{() => cond() ? <ListBoxItem/> : null}`) does not update: derive `items` instead.
 

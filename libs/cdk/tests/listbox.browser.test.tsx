@@ -4,10 +4,11 @@
 // PointerEvent, real timers); `React.createRef` → `ref()`; `rerender` → signals; testers from `@rivetjs/testing/user`;
 // default classes `rv-*`; `data-rac` marker → default classes.
 // Skipped: "custom render function" (+ "as a link": no `render` prop); every drag and drop case ("draggable options",
-// "drag and drop" describe: C8); "virtualizer" / "async loading > virtualized" (Virtualizer lane); "Activity" cases
+// "drag and drop" describe: C8); "async loading > virtualized" (loader views); "Activity" cases
 // (React-only); "inside modals" (Modal lane); "keyboard modifier keys" platform mocks (covered by
 // selection/useSelectableCollection ports).
-// Change: "long press" drives pointer events (the tester's TouchEvent init is rejected by Chromium).
+// Change: "long press" drives pointer events (the tester's TouchEvent init is rejected by Chromium). "should support
+// virtualizer": real sizes (a 100 x 100 scroller and `initialSize`) instead of mocked clientWidth / clientHeight.
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import "@rivetjs/testing/jest-dom";
 import { signal } from "@rivetjs/reactivity";
@@ -22,6 +23,7 @@ import { Text } from "../text/index.tsx";
 import { ListBox, ListBoxContext, ListBoxItem, ListBoxLoadMoreItem, ListBoxSection, type ListBoxItemProps, type ListBoxProps } from "../listbox/index.tsx";
 import { Provider } from "../slots/index.tsx";
 import { RouterProvider } from "../utils/links.tsx";
+import { ListLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 
 afterEach(cleanup);
 
@@ -1213,6 +1215,69 @@ describe("ListBox", () => {
       expect(getAllByRole("option")[0]).toHaveAttribute("aria-selected", "true");
       expect(outer).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("ListBox virtualizer", () => {
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+  it("should support virtualizer", async () => {
+    const user = userEvent.setup();
+    const items = Array.from({ length: 50 }, (_, i) => ({ id: i, name: "Item " + i }));
+    const { getByRole } = renderIt(() => (
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 25 }} initialSize={{ width: 100, height: 100 }}>
+        <ListBox aria-label="Test" items={items} selectionMode="single" style={{ display: "block", width: "100px", height: "100px", overflow: "auto" }}>
+          {(item: { id: number; name: string }) => <ListBoxItem>{item.name}</ListBoxItem>}
+        </ListBox>
+      </CollectionVirtualizer>
+    ));
+    const listbox = getByRole("listbox");
+    // Each row is 25px tall, the scroller 100px: 4 rows in view plus overscan.
+    let options = within(listbox).getAllByRole("option");
+    expect(texts(options)).toEqual(["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6"]);
+    expect(options[0]).toHaveAttribute("aria-posinset", "1");
+    expect(options[0]).toHaveAttribute("aria-setsize", "50");
+    listbox.scrollTop = 200;
+    fireEvent.scroll(listbox);
+    await frame();
+    options = within(listbox).getAllByRole("option");
+    expect(texts(options)).toEqual(["Item 7", "Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14"]);
+    expect(options[0]).toHaveAttribute("aria-posinset", "8");
+    // The content takes no pointer events while scrolling (until 300 ms after the last scroll event).
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await user.click(options[1]!);
+    expect(options[1]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(options[1]);
+    // The focused option stays rendered and keyboard focus scrolls the next ones in.
+    const settle = async () => {
+      for (let last = -1; last !== listbox.scrollTop;) {
+        last = listbox.scrollTop;
+        await frame();
+        await frame();
+      }
+    };
+    const inView = (el: Element | null) => {
+      const box = listbox.getBoundingClientRect();
+      const rect = el!.getBoundingClientRect();
+      return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1;
+    };
+    await user.keyboard("{End}");
+    await settle();
+    expect(document.activeElement?.textContent).toBe("Item 49");
+    expect(inView(document.activeElement)).toBe(true);
+    await user.keyboard("{Home}");
+    await settle();
+    expect(document.activeElement?.textContent).toBe("Item 0");
+    expect(listbox.scrollTop).toBe(0);
+    // PageDown (the layout is the layout delegate): the last option in view first, then one page further.
+    await user.keyboard("{PageDown}");
+    await settle();
+    expect(document.activeElement?.textContent).toBe("Item 3");
+    await user.keyboard("{PageDown}");
+    await settle();
+    // ListKeyboardDelegate.getKeyPageBelow over the layout's rects (25px rows, 100px page).
+    expect(document.activeElement?.textContent).toBe("Item 6");
+    expect(inView(document.activeElement)).toBe(true);
   });
 });
 

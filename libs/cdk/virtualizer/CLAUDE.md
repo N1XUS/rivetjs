@@ -1,10 +1,10 @@
 # @rivetjs/cdk/virtualizer
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
-React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Table, Waterfall) and the react-aria / RAC `Virtualizer` component (ScrollView, VirtualizerItem). Server renders the first window; browser runs the engine from the first scroll / focus.
+React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Table, Waterfall) and the react-aria / RAC `Virtualizer` component (ScrollView, VirtualizerItem). Server renders the first window; browser runs the engine from the first scroll / focus. Two modes: standalone (`items` + render function) and collection mode (RAC `CollectionRenderer`: `<Virtualizer layout={ListLayout}><ListBox/></Virtualizer>`, `layout={TableLayout}` around `Table`; COLLECTION-VIRT 2026-10-19).
 
 ## Entry points
-- `@rivetjs/cdk/virtualizer` -> `index.tsx` (explicit package.json entry): `Virtualizer`, `VirtualizerProps` + `export *` from `engine.ts`
+- `@rivetjs/cdk/virtualizer` -> `index.tsx` (explicit package.json entry): `Virtualizer`, `VirtualizerProps`, `CollectionVirtualizer`, `CollectionVirtualizerProps` + `export *` from `engine.ts`
 - `engine.ts` (no component; importable from plain .ts / node - not a package subpath, reached via the barrel):
   - engine: `VirtualizerEngine` (= core `Virtualizer` class, renamed), `createVirtualizerState`, `Point`, `Size`, `Rect`, `LayoutInfo`, `Layout`, `ReusableView`, `RootView`, `ChildView`, `OverscanManager`, `isSetEqual`
   - layouts: `ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`, `TableColumnLayout`, `calculateColumnSizes`
@@ -15,15 +15,17 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - `@rivetjs/cdk/virtualizer/behaviour` -> `behaviour.ts`: model + driver (`driverOf`, `visibleViews`, `viewKeys`, `viewOf`, `virtualizerScroll`, `virtualizerFocusIn`, `contentStyle`, `scrollerStyle`)
 
 ## Layout
-- `index.tsx` - barrel; `virtualizer.tsx` - `<Virtualizer>` + nested `VirtualizerChildren`
-- `behaviour.ts` - serializable `VirtualizerModel`, server first window (`initialWindow`), browser driver (one per scroller element, lazy WeakMap; created detached — `runWithOwner(null, …)` — because `createRoot` attaches to the current owner and the first caller may be the rows' `For` `each` binding (`visibleViews` on a resumed page), which disposed the driver's effects on its next run: cdk-docs `virtualizer-items` cold scroll + filter kept dead engine effects, 2026-10-19; story `#filtered` + `tests/virtualizer-browser.test.ts` "reactive items")
+- `index.tsx` - barrel; `virtualizer.tsx` - `<Virtualizer items>` + nested `VirtualizerChildren` (imports nothing from `collections/`: Masonry and items users carry no collection renderer — a dispatching overload cost masonry-expand +19.7 KB min page JS, reverted at intake 2026-10-19); `collection-renderer.tsx` - `<CollectionVirtualizer>` (+ `CollectionVirtualizerProps`): builds a plain `VirtualizerLink` (layout, options, initialSize, dir, root model) and provides `rendererOf(link)` as `CollectionRendererContext`
+- `collection-renderer.tsx` - collection mode (RAC Virtualizer.tsx `CollectionRoot` / `CollectionBranch`): `rendererOf(link)` (memo per link; PascalCase factory `VirtualizerRenderer` so its object-literal arrows resume over `link` only), `VirtualizerRoot` (host model: `source` = host collection accessor, `focus` = host focused key, `scrollRef`), `VirtualizerBranch` (child views of a part's view: sections, table rows / cells), `VirtualizerView` (wrapper + node part + renderer `Provider`), layout delegate (`layoutRect` / `layoutVisibleRect` / `layoutContentSize`: Page Up / Down), `virtualizerLinkScroll` (host forwards scroll events via `renderer.onScroll`)
+- `behaviour.ts` - serializable `VirtualizerModel` (collection mode: `source` / `focus` / `scrollRef`), `rowOrder` (stable DOM order while focus is inside the scroller), `startWhenMounted` (client-only render: engine starts in a microtask once the scroller is connected), server first window (`initialWindow`), browser driver (one per scroller element, lazy WeakMap; created detached — `runWithOwner(null, …)` — because `createRoot` attaches to the current owner and the first caller may be the rows' `For` `each` binding (`visibleViews` on a resumed page), which disposed the driver's effects on its next run: cdk-docs `virtualizer-items` cold scroll + filter kept dead engine effects, 2026-10-19; story `#filtered` + `tests/virtualizer-browser.test.ts` "reactive items")
 - `state.ts` - `createVirtualizerState` (useVirtualizerState; one render effect; holds class instances, browser/test only)
 - `virtualizer-core.ts`, `layout.ts`, `layout-info.ts`, `reusable-view.ts`, `overscan-manager.ts`, `scroll-anchor.ts`, `point.ts`, `size.ts`, `rect.ts`, `utils.ts`, `types.ts` - react-stately virtualizer
 - `list-layout.ts`, `grid-layout.ts`, `waterfall-layout.ts`, `table-layout.ts`, `table-column-layout.ts` - react-stately layouts / table utils
 - `collection.ts`, `table-collection.ts` - minimal Node / Collection adapters from plain arrays
 - `dom.ts` - ScrollView / VirtualizerItem / RTL helpers
 - tests: `tests/virtualizer-engine.test.ts` (LayoutInfo, GridLayout, virtualized RAC ListBox / GridList / Table / Menu cases), `tests/virtualizer-scroll-anchor.test.ts`, `tests/virtualizer-browser.test.ts` (resumed story), `tests-components/dom-events-collections.test.ts`
-- story routes: `tests/app/src/routes/virtualizer.tsx`, `tests-components/app/src/routes/dom-events-collections.tsx`
+- collection mode tests: `tests/listbox.browser.test.tsx` + `tests/table.browser.test.tsx` ("should support virtualizer", RAC ports), `tests-components/virtualized-collections.test.ts` (resumed: server window, cold scroll / click / ArrowDown ×30 / select / End / Home / PageDown)
+- story routes: `tests/app/src/routes/virtualizer.tsx`, `tests-components/app/src/routes/dom-events-collections.tsx`, `tests-components/app/src/routes/virtualized-collections.tsx`
 - docs examples: `apps/cdk-docs/examples/virtualizer-*/`
 
 ## Upstream
@@ -40,16 +42,24 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - `initialSize` (default 800 x 600) must match the scroller's CSS size for a correct server window
 - Focused key persisted automatically; `persistedKeys` always rendered; loader sentinel key `LOADER_KEY` when `isLoading` / `onLoadMore`
 - Spread element reads every prop up front (virtualizer.tsx:113)
+- Collection mode: `layout` = a class or factory (`LayoutInput<O>`, engine.ts), never an instance (it would be serialized). Host contract (`../collections/components.tsx`): `CollectionRoot({ collection: accessor, scrollRef, focusedKey })`, host forwards its scroller `scroll` to `renderer.onScroll`, sets `isVirtualized` on selection options (no scroll restore / scrollIntoView by the selectable collection), aria-posinset / setsize on items, aria-rowcount / rowindex on tables
+- Parts below the host resolve the renderer from `link` (`rendererOf`), never from context: a resumed page re-creates a part's `CollectionBranch` binding without the server's providers (default renderer → table rows without cells)
+- Row DOM order = layout order, except while DOM focus is inside the scroller: kept keys keep their order, new keys append (`rowOrder`). The runtime `For` reconcile moves kept nodes with `replaceChild`, which blurs the focused option (fast ArrowDown lost focus); the view holding DOM focus is persisted too (`persistedOf` → `activeViewKey`)
+- `driverOf` needs `scroller.isConnected` (client-only first pass has a detached scroller)
 
 ## Commands
 - `npx vitest run --project cdk libs/cdk/tests/virtualizer-engine.test.ts libs/cdk/tests/virtualizer-scroll-anchor.test.ts libs/cdk/tests/virtualizer-browser.test.ts`
-- `npx vitest run --project cdk-components libs/cdk/tests-components/dom-events-collections.test.ts`
+- `npx vitest run --project cdk-components libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/virtualized-collections.test.ts`
+- `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx libs/cdk/tests/table.browser.test.tsx -t virtualizer`
 
 ## Gotchas
 - Nested views (sections, table rows) render behind a `computed` boolean (`nested()`), not `view().children.length ? …`: the ternary re-ran on every layout pass and re-created nested rows (resumed page: "Missing resumable element" from their stale server bindings) — `tests/virtualizer-sections.browser.test.tsx`. `viewOf` returns a removed row's last descriptor from a per-model cache; the driver's projection seeds it with the views it replaces (`remember`, behaviour.ts), else a resumed page's first scroll / click (no row accessor ran yet) threw `Cannot read properties of undefined (reading 'type')` (same test file)
 - `collection.ts` / `table-collection.ts` are stopgaps: headers say replace with `@rivetjs/cdk/collections` once "the cdk-collections branch lands" (collection.ts:4-5, table-collection.ts:3-4) - collections now exist; migration pending
 - Scroller sets `onFocusIn` after `{...dom}` but it is not in `OWNED` - user `onFocusIn` may be overridden (virtualizer.tsx:30 vs :136; verify)
 - `state.ts` state holds class instances - never serialize / pass across resume
+- Collection mode resumability: a host closure built as a conditional arrow (`v ? () => … : undefined`) or assigned by index (`attrs[k] = () => …`) is not a `_rFn` and fails silently or with "function is not serializable" on resume — use local const arrows / object-literal arrows (`Object.assign(attrs, { … })`)
+- Not covered: GridList / Tree / Menu, ListBox sections, Table column resizing inside a Virtualizer, a Virtualizer around a popover ListBox (Autocomplete / ComboBox / Select)
+- Content has `pointer-events: none` for ~300 ms after a scroll (isScrolling): tests clicking right after a scroll wait
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../scrolling/CLAUDE.md](../scrolling/CLAUDE.md) (Angular CDK alternative), [../collections/CLAUDE.md](../collections/CLAUDE.md)

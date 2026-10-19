@@ -1,0 +1,54 @@
+/* Plain CSS: the Table is the scroll container (client size 358 x 278 inside the border = the Virtualizer initialSize); rows and cells are positioned views, the header row is sticky. */
+body {
+  margin: 16px;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+.rv-Table {
+  width: 360px;
+  height: 280px;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.rv-Column {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 600;
+  background: #f8fafc;
+  border-bottom: 1px solid #cbd5e1;
+}
+.rv-Row {
+  height: 100%;
+  outline: none;
+}
+.rv-Row[data-selected] {
+  background: #e0e7ff;
+}
+.rv-Cell {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+  outline: none;
+}
+.rv-Row[data-focus-visible],
+.rv-Cell[data-focus-visible] {
+  box-shadow: inset 0 0 0 2px #6366f1;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+output {
+  color: #475569;
+}

@@ -107,11 +107,7 @@ Use `renderEmptyState` on `Table.Body` to display a custom message when the tabl
 
 A table can be virtualized through [Virtualizer](https://react-aria.adobe.com/Virtualizer), enabling efficient rendering of large datasets by displaying only the rows visible within the viewport.
 
-For now the cdk Table does not render inside the [cdk Virtualizer](site:cdk/foundations/virtualizer/): the demo renders all 1000 rows.
-
-:::warning
-Not yet ported: Table inside the cdk Virtualizer (`TableLayout`; renders every row, no virtualization)
-:::
+Wrap `Table.Content` in the [cdk Virtualizer](site:cdk/foundations/virtualizer/#collection-components) with a `TableLayout` (`@rivetjs/cdk/virtualizer`). The table then renders `div`s with grid roles, and its header row is sticky. Give `Table.Content` a fixed size and set `initialSize` to it: the server renders the first window at that size. Column resizing does not apply to a virtualized table yet.
 
 ::example{id=table-virtualization}
 
@@ -362,7 +358,7 @@ Re-exported from the cdk `Collection` (`@rivetjs/cdk/collections/components`; Re
 
 ### TableLayout
 
-Not yet ported: the cdk Table does not run inside the cdk `Virtualizer` yet. The [cdk Virtualizer](site:cdk/foundations/virtualizer/) ships its own `TableLayout` with these options.
+`TableLayout` and `CollectionVirtualizer` come from `@rivetjs/cdk/virtualizer`. The options go in the `CollectionVirtualizer`'s `layoutOptions`.
 
 | Name | Type | Default | Description |
 |------|------|---------|-------------|

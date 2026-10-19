@@ -17,10 +17,11 @@
 //   list's `onAction(key)`, then the bubbling `react-aria-item-action` (useSelectableItem).
 // - Option hover callbacks: `rv-hover-start` / `rv-hover-end` events on the option element (same scheme).
 // - Items marked `data-rv-long-press` (a long press interaction, `@rivetjs/cdk/morph/item`) select on press up.
-// Deviation: no drag and drop (C8), no `isVirtualized` posinset/setsize (Virtualizer lane).
+// Deviation: no drag and drop (C8).
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Collection, FocusStrategy, Key, KeyboardDelegate, Node, Orientation, SelectionBehavior } from "../collections/types.ts";
 import { listCollection, listSelectionManager, type ListState } from "../collections/list-state.ts";
+import { getItemCount } from "../collections/nodes.ts";
 import { SelectionManager } from "../selection/manager.ts";
 import { isFocusedKey } from "../selection/keyed.ts";
 import {
@@ -322,20 +323,28 @@ export function optionProps(
   const states = () => selectableItemStates(options());
   const isFocused = () => states().isFocused;
   const id = getItemId(data.id, key);
+  const attrs: Record<string, unknown> = {
+    id,
+    role: "option",
+    "data-key": String(key),
+    "data-key-type": typeof key === "number" ? "number" : undefined,
+    "data-collection": data.id,
+    "aria-label": props["aria-label"],
+    "aria-labelledby": props.labelId,
+    "aria-describedby": props.descriptionId,
+    "aria-disabled": () => (states().isDisabled ? "true" : undefined),
+    "aria-selected": () => (state.selectionState.selectionMode === "none" ? undefined : states().isSelected ? "true" : "false"),
+    tabIndex: () => (read(data.shouldUseVirtualFocus) || states().isDisabled ? undefined : isFocusedKey(state.selectionState, key) ? 0 : -1),
+  };
+  if (data.isVirtualized)
+    // useOption: a virtualized list renders a window of its options; their position comes from the collection.
+    // (Object-literal arrows: resumable closures.)
+    Object.assign(attrs, {
+      "aria-posinset": () => optionPosInSet(state, key),
+      "aria-setsize": () => optionSetSize(state),
+    });
   return {
-    optionProps: {
-      id,
-      role: "option",
-      "data-key": String(key),
-      "data-key-type": typeof key === "number" ? "number" : undefined,
-      "data-collection": data.id,
-      "aria-label": props["aria-label"],
-      "aria-labelledby": props.labelId,
-      "aria-describedby": props.descriptionId,
-      "aria-disabled": () => (states().isDisabled ? "true" : undefined),
-      "aria-selected": () => (state.selectionState.selectionMode === "none" ? undefined : states().isSelected ? "true" : "false"),
-      tabIndex: () => (read(data.shouldUseVirtualFocus) || states().isDisabled ? undefined : isFocusedKey(state.selectionState, key) ? 0 : -1),
-    },
+    optionProps: attrs,
     isSelected: () => states().isSelected,
     isDisabled: () => states().isDisabled,
     isFocused,
@@ -346,6 +355,20 @@ export function optionProps(
     hasAction: () => states().hasAction,
   };
 }
+
+/** The built collection of a list state (a virtualized ListBox renders from it). */
+function builtOf(state: ListState): Collection<Node<unknown>> | undefined {
+  const c = state.collection as Collection<Node<unknown>> | (() => Collection<Node<unknown>>) | undefined;
+  return typeof c === "function" ? c() : c;
+}
+const optionPosInSet = (state: ListState, key: Key): number | undefined => {
+  const index = builtOf(state)?.getItem(key)?.index;
+  return index == null ? undefined : index + 1;
+};
+const optionSetSize = (state: ListState): number | undefined => {
+  const c = builtOf(state);
+  return c ? getItemCount(c) : undefined;
+};
 
 // ---------------------------------------------------------------------------------------------
 // Delegated handlers (on the listbox element)

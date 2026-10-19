@@ -82,7 +82,7 @@ function generateUsers(n: number): User[] {
   return users;
 }
 
-// Rivet: no Virtualizer around a ListBox yet (cdk `Virtualizer` is standalone): the 1000 options render in a scrolling list.
+// Rivet: no Virtualizer around the popover ListBox yet (the cdk Virtualizer covers page-level ListBox / Table): the 1000 options render in a scrolling list.
 const allUsers = generateUsers(1000);
 
 export function Virtualization() {

@@ -36,6 +36,7 @@ import {
   DefaultCollectionRenderer,
   SectionContext,
   buildCollectionFrom,
+  collectionOf,
   createBranchComponent,
   createLeafComponent,
   isCollectionProbe,
@@ -217,7 +218,17 @@ export function ListBox<T = object>(inProps: ListBoxProps<T>) {
 
 function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefValue<HTMLDivElement> | undefined; children: unknown }) {
   const { props, listBoxRef, children } = input;
-  const layoutDelegate = useContext(CollectionRendererContext).layoutDelegate;
+  const renderer = useContext(CollectionRendererContext);
+  const layoutDelegate = renderer.layoutDelegate;
+  const items = props.items;
+  const dependencies = props.dependencies;
+  const content = () => Collection({ items: items as Iterable<unknown>, children, dependencies });
+  // RAC: inside a Virtualizer the list renders from its built collection (only the visible window has options).
+  // A closure + module memo (as Select): the computed holding the JSX content is rebuilt from it in the browser.
+  // (A local const arrow: the compiler makes it resumable; an arrow inside a conditional expression is not.)
+  const builtKey = renderer.isVirtualized ? {} : null;
+  const virtualCollection = () => virtualListCollection(builtKey!, content) as ICollection<Node<T>>;
+  const collection = builtKey ? virtualCollection : undefined;
   // Live props: a controlled `selectedKeys={keys()}` stays live (accessor; never written); the copy reads no
   // `selectedKeys` getter (a resumed region is not re-created on a change).
   const selectedKeys = liveKeys(props, "selectedKeys");
@@ -229,12 +240,9 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
     id: props.id ?? mergedIdOf((useContext(SelectableCollectionContext) as { id?: unknown } | null)?.id) ?? createId(),
     items: undefined,
     children: undefined,
-    collection: undefined,
+    collection,
     layoutDelegate,
   });
-  const items = props.items;
-  const dependencies = props.dependencies;
-  const content = () => Collection({ items: items as Iterable<unknown>, children, dependencies });
   // isEmpty: the items' length, or (with an empty state to show) the size of a built collection of the children.
   const empty = props.renderEmptyState;
   // Static children do not change: their emptiness is computed once (a build pass, only with an empty state).
@@ -242,6 +250,15 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
     items != null ? false : empty && children != null ? untrack(() => buildCollectionFrom(() => Collection({ children })).size === 0) : children == null;
   const isEmpty = () => (items != null ? isEmptyIterable(typeof items === "function" ? (items as () => Iterable<T>)() : items) : staticEmpty);
   return <ListBoxInner state={state} props={own} listBoxRef={listBoxRef} content={content} isEmpty={isEmpty} />;
+}
+
+const builtLists = new WeakMap<object, () => ICollection<Node<unknown>>>();
+
+/** The built collection of a virtualized ListBox's content (one computed per instance key). */
+function virtualListCollection(instance: object, content: () => unknown): ICollection<Node<unknown>> {
+  let built = builtLists.get(instance);
+  if (!built) builtLists.set(instance, (built = collectionOf(content) as () => ICollection<Node<unknown>>));
+  return built();
 }
 
 /** Rivet: keys the listbox handles (`data-rk`): the resume loader holds them, so a cold key never scrolls the page. */
@@ -285,6 +302,11 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
   // RAC mergeIds: the ListBox's own id wins over the parent's (ComboBox listbox / Autocomplete collection id).
   const id = (props.id as string | undefined) || state.id;
   const data = createListData(props, id, state.collection ? undefined : filter, useContext(RouterContext));
+  const renderer = useContext(CollectionRendererContext);
+  // Resumable (as GridList): the render path's lazy collection slot captures `customRenderer`, undefined for the default renderer.
+  const customRenderer = renderer === DefaultCollectionRenderer ? undefined : renderer;
+  const isVirtualized = !!renderer.isVirtualized && !!state.collection;
+  if (isVirtualized) data.isVirtualized = true;
   // A parent's built collection (filtered like RAC UNSTABLE_useFilteredListState); live mode: none.
   const provided = state.collection;
   const builtCollection = (): ICollection<Node<unknown>> => {
@@ -307,6 +329,7 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
     onFocus: props.onFocus,
     onBlur: props.onBlur,
     onFocusChange: props.onFocusChange,
+    isVirtualized: isVirtualized || undefined,
   };
   // mergeIds: a parent's label self-reference (ComboBox `labelsProps(listBoxId, …)`) follows the merged id.
   // A host's accessor (Select: the menu is labelled by its Label only while one renders) is read in the binding.
@@ -369,9 +392,14 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
     });
   }
   const setRef = mergeRefValues(root as RefValue<HTMLDivElement>, userRef);
-  const renderer = useContext(CollectionRendererContext);
-  // Resumable (as GridList): the render path's lazy collection slot captures `customRenderer`, undefined for the default renderer.
-  const customRenderer = renderer === DefaultCollectionRenderer ? undefined : renderer;
+  // Virtualized: the listbox element is the scroll container (RAC scrollRef); its focused option stays rendered.
+  const focusedKey = isVirtualized ? state.selectionState.focusedKey : undefined;
+  const virtualScroll = isVirtualized ? customRenderer?.onScroll : undefined;
+  const virtualScrolled = (e: Event) => {
+    virtualScroll?.(e);
+    onScroll?.(e);
+  };
+  const scrolled = virtualScroll ? virtualScrolled : onScroll;
   const sharedElements: SharedElementScope = {};
   if (props.render) {
     // The body is a compiled `<Provider>` binding (resumable, as Menu), not the eager `provide()` chain of the default
@@ -386,7 +414,7 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
           [SharedElementContext, sharedElements],
         ]}
       >
-        {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection, content, scrollRef: root }) as never}
+        {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection, content, scrollRef: root, focusedKey }) as never}
       </Provider>
     );
     const attrs = {
@@ -464,7 +492,7 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
         listBoxDragStart(e, behaviour, state);
         onDragStart?.(e);
       },
-      onScroll: (e: Event) => onScroll?.(e),
+      onScroll: (e: Event) => scrolled?.(e),
       // Custom events: the spread takes `on<Type>` keys (no `on:` form).
       "onReact-aria-focus": (e: Event) => listBoxVirtualFocusEvent(e, behaviour, state),
       "onReact-aria-clear-focus": (e: Event) => listBoxClearFocusEvent(e, behaviour, state),
@@ -488,7 +516,7 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
       provide(SeparatorContext, { elementType: "div" } as never, () =>
         provide(SectionContext, { name: "ListBoxSection", render: ListBoxSectionInner as never }, () =>
           // RAC: the options share one SharedElementTransition scope (a SelectionIndicator animates between them).
-          provide(SharedElementContext, sharedElements, () => renderer.CollectionRoot({ collection, content, scrollRef: root })),
+          provide(SharedElementContext, sharedElements, () => renderer.CollectionRoot({ collection, content, scrollRef: root, focusedKey })),
         ),
       ),
     ),
@@ -570,7 +598,7 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
         listBoxDragStart(e, behaviour, state);
         onDragStart?.(e);
       }}
-      onScroll={onScroll}
+      onScroll={scrolled}
       on:react-aria-focus={(e: Event) => listBoxVirtualFocusEvent(e, behaviour, state)}
       on:react-aria-clear-focus={(e: Event) => listBoxClearFocusEvent(e, behaviour, state)}
     >
@@ -812,6 +840,9 @@ function listBoxItem(props: ListBoxItemProps, forwardedRef: unknown, item: Node<
   const ariaDisabled = optionAttrs["aria-disabled"] as () => string | undefined;
   const ariaSelected = optionAttrs["aria-selected"] as () => string | undefined;
   const tabIndex = optionAttrs.tabIndex as () => number | undefined;
+  // useOption (virtualized list): the option's position in the whole collection.
+  const posInSet = optionAttrs["aria-posinset"] as (() => number | undefined) | undefined;
+  const setSize = optionAttrs["aria-setsize"] as (() => number | undefined) | undefined;
   const ref = forwardedRef as never;
   // `ping` / `referrerpolicy` are missing from the anchor typings: spread.
   // `data-rv-disabled` (the item's own isDisabled, read by DOM collections) goes through the spread: an accessor when live.
@@ -840,6 +871,8 @@ function listBoxItem(props: ListBoxItemProps, forwardedRef: unknown, item: Node<
         "aria-describedby": () => describedBy?.(),
         "aria-disabled": () => ariaDisabled(),
         "aria-selected": () => ariaSelected(),
+        "aria-posinset": () => posInSet?.(),
+        "aria-setsize": () => setSize?.(),
         tabindex: () => (href ? (tabIndex() ?? -1) : tabIndex()),
         "data-selected": () => dataBool(opt.isSelected()),
         "data-disabled": () => dataBool(opt.isDisabled()),
@@ -881,6 +914,8 @@ function listBoxItem(props: ListBoxItemProps, forwardedRef: unknown, item: Node<
         aria-describedby={describedBy?.()}
         aria-disabled={ariaDisabled()}
         aria-selected={ariaSelected()}
+        aria-posinset={posInSet?.()}
+        aria-setsize={setSize?.()}
         tabIndex={tabIndex() ?? -1}
         data-selected={dataBool(opt.isSelected())}
         data-disabled={dataBool(opt.isDisabled())}
@@ -915,6 +950,8 @@ function listBoxItem(props: ListBoxItemProps, forwardedRef: unknown, item: Node<
         aria-describedby={describedBy?.()}
         aria-disabled={ariaDisabled()}
         aria-selected={ariaSelected()}
+        aria-posinset={posInSet?.()}
+        aria-setsize={setSize?.()}
         tabIndex={tabIndex()}
         data-selected={dataBool(opt.isSelected())}
         data-disabled={dataBool(opt.isDisabled())}

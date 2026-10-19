@@ -16,12 +16,12 @@ import {
   viewKeys,
   viewOf,
   visibleViews,
+  type LayoutInput,
   type MaybeAccessor,
   type VirtualizerModel,
   type VirtualView,
 } from "./behaviour.ts";
 import type { CollectionOptions, Node } from "./collection.ts";
-import type { Layout } from "./layout.ts";
 import type { Direction } from "./types.ts";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
@@ -33,8 +33,8 @@ const OWNED = ["onScroll", "dir"] as const;
 export interface VirtualizerProps<T, O> extends Omit<GlobalDOMAttributes<HTMLDivElement>, "dir" | "onScroll"> {
   /** The data: an array, or an accessor (`() => list()`) whose changes re-render the window. */
   items: MaybeAccessor<readonly T[]>;
-  /** Layout factory, e.g. `() => new ListLayout()` (a resumable function: called on the server and on first scroll). */
-  layout: () => Layout<Node<any>, O>;
+  /** Layout class (`ListLayout`) or factory (`() => new ListLayout()`): resumable, instantiated on the server and on first scroll. */
+  layout: LayoutInput<O>;
   /** Options for the layout (JSON: `{ rowHeight: 32 }`, `{ minItemSize: { width: 120, height: 120 } }`). */
   layoutOptions?: O;
   /** View content: `(item, view) => …`; `view().type` tells items from sections / headers / loaders. */
@@ -78,7 +78,10 @@ export interface VirtualizerProps<T, O> extends Omit<GlobalDOMAttributes<HTMLDiv
 
 /**
  * Renders a scrollable collection with a layout (ListLayout, GridLayout, TableLayout, WaterfallLayout): only
- * views inside the visible rect (plus overscan and persisted keys) are in the DOM.
+ * views inside the visible rect (plus overscan and persisted keys) are in the DOM. Renders its own views
+ * (`children(item, view)`) from `items`; a cdk collection component (`ListBox`, `Table`) is virtualized by
+ * `CollectionVirtualizer` (`./collection-renderer.tsx`), kept apart so this component and its users (Masonry)
+ * carry none of the collection renderer.
  */
 export function Virtualizer<T, O = unknown>(props: VirtualizerProps<T, O>) {
   const collection: CollectionOptions<T> = {};

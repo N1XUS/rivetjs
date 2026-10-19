@@ -1,4 +1,5 @@
 // Port of HeroUI v3.2.6 `apps/docs/src/demos/en/table/virtualization.tsx` (Apache-2.0, © 2025 NextUI Inc.; modified).
+import { TableLayout, CollectionVirtualizer } from "@rivetjs/cdk/virtualizer";
 import { Table } from "@rivetjs/ui/table";
 
 export const head = { title: "Table: Virtualization" };
@@ -92,32 +93,34 @@ function generateUsers(count: number): User[] {
 const virtualizedUsers = generateUsers(1000);
 
 export function Virtualization() {
-  // Not yet ported: cdk Table inside the cdk Virtualizer (TableLayout); all 1000 rows render.
+  // The server renders the first window at `initialSize`: the scroll container has that size (a fixed width).
   return (
-    <Table>
+    <Table class="w-fit max-w-full">
       <Table.ScrollContainer>
-        <Table.Content aria-label="Virtualized table with 1000 rows" class="h-[300px] min-w-[700px] overflow-auto">
-          <Table.Header class="h-full w-full">
-            <Table.Column isRowHeader id="name" minWidth={160}>
-              Name
-            </Table.Column>
-            <Table.Column id="role" minWidth={220}>
-              Role
-            </Table.Column>
-            <Table.Column id="email" minWidth={240}>
-              Email
-            </Table.Column>
-          </Table.Header>
-          <Table.Body items={virtualizedUsers}>
-            {(user: User) => (
-              <Table.Row>
-                <Table.Cell>{user.name}</Table.Cell>
-                <Table.Cell>{user.role}</Table.Cell>
-                <Table.Cell>{user.email}</Table.Cell>
-              </Table.Row>
-            )}
-          </Table.Body>
-        </Table.Content>
+        <CollectionVirtualizer layout={TableLayout} layoutOptions={{ rowHeight: 40, headingHeight: 36 }} initialSize={{ width: 700, height: 300 }}>
+          <Table.Content aria-label="Virtualized table with 1000 rows" class="h-[300px] w-[700px] overflow-auto">
+            <Table.Header class="h-full w-full">
+              <Table.Column isRowHeader id="name" minWidth={160}>
+                Name
+              </Table.Column>
+              <Table.Column id="role" minWidth={220}>
+                Role
+              </Table.Column>
+              <Table.Column id="email" minWidth={240}>
+                Email
+              </Table.Column>
+            </Table.Header>
+            <Table.Body items={virtualizedUsers}>
+              {(user: User) => (
+                <Table.Row>
+                  <Table.Cell>{user.name}</Table.Cell>
+                  <Table.Cell>{user.role}</Table.Cell>
+                  <Table.Cell>{user.email}</Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+          </Table.Content>
+        </CollectionVirtualizer>
       </Table.ScrollContainer>
     </Table>
   );

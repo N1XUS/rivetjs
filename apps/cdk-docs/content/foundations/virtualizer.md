@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/scrolling, foundations/collections, foundations/selection, foundations/keyboard-navigation]
 ---
 
-`@rivetjs/cdk/virtualizer` ports the React Spectrum virtualizer: the react-stately engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and the react-aria `ScrollView` and item measurement. The `<Virtualizer>` component follows the react-aria-components `Virtualizer`: you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM.
+`@rivetjs/cdk/virtualizer` ports the React Spectrum virtualizer: the react-stately engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and the react-aria `ScrollView` and item measurement. The `<Virtualizer>` component follows the react-aria-components `Virtualizer`: you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox` or `Table` (see [Collection components](#collection-components)).
 
 - **Server**: the engine runs at `initialSize` and renders the first window; views are absolutely positioned.
 - **Browser**: no library code runs until the first scroll or focus on the scroller (`preload="interaction"`). Then the engine starts from the scroller's real size and adopts the server rows, keyed by item key.
@@ -52,7 +52,7 @@ import { Virtualizer, ListLayout, GridLayout, WaterfallLayout, Size } from "@riv
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
 | `items` | `readonly T[] \| () => readonly T[]` | (required) | The data. An accessor re-renders the window when it changes. |
-| `layout` | `() => Layout<Node<any>, O>` | (required) | Layout factory, e.g. `() => new GridLayout()`. A resumable function, called on the server and once in the browser. Pass the factory, not an instance. |
+| `layout` | `LayoutInput<O>` | (required) | Layout class (`GridLayout`) or factory (`() => new GridLayout()`). Instantiated on the server and once in the browser. Never an instance. |
 | `layoutOptions` | `O` | none | Options of the layout (JSON; see [Layouts](#layouts)). |
 | `children` | `(item: () => T, view: () => VirtualView<T>) => …` | (required) | View content. `view().type` tells items from sections, headers and loaders. |
 | `initialSize` | `{ width, height }` | `800 x 600` | Viewport size of the server window. Match the scroller's CSS size. |
@@ -106,7 +106,7 @@ import { Virtualizer, ListLayout, GridLayout, WaterfallLayout, Size } from "@riv
 | `ListLayout` | `orientation` (`vertical`), `rowSize` (48) or `estimatedRowSize`, `headingSize` (48) or `estimatedHeadingSize`, `loaderSize` (48), `gap` (0), `padding` (0), `dropIndicatorThickness` (2); deprecated aliases `rowHeight`, `estimatedRowHeight`, `headingHeight`, `estimatedHeadingHeight`, `loaderHeight` |
 | `GridLayout` | `minItemSize` (200 x 200), `maxItemSize` (Infinity), `preserveAspectRatio` (false), `minSpace` (18 x 18), `maxHorizontalSpace` (Infinity), `maxColumns` (Infinity), `dropIndicatorThickness` (2), `loaderHeight` (48), `direction` (`ltr`) |
 | `WaterfallLayout` | `minItemSize` (200 x 200), `maxItemSize` (Infinity), `minSpace` (18 x 18), `maxHorizontalSpace` (Infinity), `maxColumns` (Infinity), `dropIndicatorThickness` (2), `loaderHeight` (48) |
-| `TableLayout` | ListLayout options with `rowHeight`, `estimatedRowHeight`, `headingHeight`, `estimatedHeadingHeight`, `loaderHeight`, plus `columnWidths` (`Map`). Engine use only: it needs a `TableCollection` (see [Not yet supported](#not-yet-supported)). |
+| `TableLayout` | ListLayout options with `rowHeight`, `estimatedRowHeight`, `headingHeight`, `estimatedHeadingHeight`, `loaderHeight`, plus `columnWidths` (`Map`). For a wrapped `Table` (see [Collection components](#collection-components)) or the engine with a `TableCollection`. |
 
 - Sizes in `layoutOptions` may be plain `{ width, height }` objects: the layouts read only `width` / `height`, and plain objects survive resume. The option types say `Size`, so plain objects need `as Size`.
 - Drag and drop targets on every layout: `getDropTargetFromPoint`, `getDropTargetLayoutInfo`.
@@ -160,6 +160,42 @@ A node of type `"section"` holds its children: a `"header"` node and the rows. `
 Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER_KEY`, `"rv-virtualizer-loader"`, type `loader`) after the items. While `isLoading` is true, the loader view has `loaderSize`; otherwise its size is 0. `onLoadMore` fires when `scrollHeight - scrollTop - clientHeight` is less than `loadMoreOffset` viewport heights. It fires again only after `items` changes or loading ends.
 
 ::example{id=virtualizer-load-more}
+
+## Collection components
+
+`<CollectionVirtualizer>` wraps one collection component, as React Aria's `Virtualizer` does (a separate component from `<Virtualizer items>`, so pages with the standalone one ship none of the collection renderer). It provides a virtualized `CollectionRenderer`, so the component renders only the visible window of its collection.
+
+```tsx
+<CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 278, height: 278 }}>
+  <ListBox aria-label="People" items={people}>
+    {(person) => <ListBoxItem id={person.id}>{person.name}</ListBoxItem>}
+  </ListBox>
+</CollectionVirtualizer>
+```
+
+| Component | Layout | Notes |
+| --- | --- | --- |
+| `ListBox` | `ListLayout` | Options get `aria-posinset` / `aria-setsize`. |
+| `Table` | `TableLayout` | Renders `div`s with grid roles instead of `table` / `tr` / `td` (RAC `useElementType`). The header row is sticky. Rows get `aria-rowindex`. |
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `children` | the collection component | (required) | One `ListBox` or `Table`. |
+| `layout` | `LayoutInput<O>` | (required) | `ListLayout` / `TableLayout` (class or factory). |
+| `layoutOptions` | `O` | none | JSON layout options, e.g. `{ rowHeight: 32 }`. |
+| `initialSize` | `{ width, height }` | `800 x 600` | Size of the server window. Use the component's client size (inside borders). |
+| `dir` | `"ltr" \| "rtl"` | none | Physical view positions; without it, logical `inset-inline-start`. |
+
+- The component's own element is the scroll container. Give it a size and `overflow: auto`.
+- Spacing comes from the layout (`gap`, `padding`). The view wrappers are absolutely positioned.
+- Focus: the focused item stays rendered (a persisted key), and keyboard navigation scrolls it into view. :kbd[PageUp] / :kbd[PageDown] use the layout's rects. :kbd[Home] / :kbd[End] reach the ends of the whole collection.
+- Selection, `onAction` and typeahead work as without the Virtualizer. They act on the whole collection, not only the rendered window.
+- Resumed pages: the server renders the first window at `initialSize`. The engine starts on the first scroll or focus move, and the server rows are adopted by key.
+- DOM order is not visual order. Kept rows keep their DOM position while focus is inside, so a focused option is never moved.
+
+::example{id=virtualizer-listbox}
+
+::example{id=virtualizer-table}
 
 ## Scrolling and focus
 
@@ -257,13 +293,12 @@ Everything outside the component is framework-free and imported from `@rivetjs/c
 - Deviations:
   - Rows are keyed by item key and kept while in view. DOM nodes are not recycled across different items.
   - Rows hold the server-rendered `estimated` size until the first scroll measures them.
-  - `layout` is a factory, not a class, and `layoutOptions` are JSON.
+  - `layout` is a class or a factory, never an instance, and `layoutOptions` are JSON.
   - The collection adapter is local (plain item arrays, `getType` / `getChildren`). It will move to `@rivetjs/cdk/collections`.
 
 ## Not yet supported
 
-- Wrapping collection components (`ListBox`, `GridList`, `Table`, `Tree`, `Menu`) as in React Aria (`<Virtualizer layout={ListLayout}><ListBox/></Virtualizer>`). `<Virtualizer>` renders its own items, and `ListBox` is not virtualized.
-- `TableLayout` through `<Virtualizer>`: the component builds a list collection, while `TableLayout` needs a `TableCollection` (`createTableCollection` + engine).
+- Wrapping `GridList`, `Tree` and `Menu` (only `ListBox` and `Table` render through the virtualized renderer), and ListBox sections, `Table` column resizing, `GridLayout` / `WaterfallLayout` for a wrapped ListBox.
 - Window scrolling (`allowsWindowScrolling`) in `<Virtualizer>`. `createScrollView` and `createVirtualizerState` support it.
-- A `scrollToItem` / scroll-into-view API, and scrolling a newly focused item into view.
+- A `scrollToItem` / scroll-into-view API on the standalone `<Virtualizer>` (wrapped collection components scroll their focused item in).
 - Drag and drop rendering (drop indicators). The layouts compute drop targets.

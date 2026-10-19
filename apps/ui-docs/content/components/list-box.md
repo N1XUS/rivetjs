@@ -12,7 +12,7 @@ Notes:
 
 - `class`, not `className`. Render props are accessors (`({ isSelected }) => isSelected() ? … : …`). `selectedKeys` takes a signal (two-way) or a value (controlled).
 - The default item indicator is the lucide `Check` icon with the Rivet UI stroke-draw animation.
-- Virtualization: the cdk `Virtualizer` renders its own items and is not a ListBox renderer yet, so the virtualization demo renders all 1000 options without it.
+- Virtualization: wrap the ListBox in the cdk `CollectionVirtualizer` with a `ListLayout` (`@rivetjs/cdk/virtualizer`). Give the ListBox a fixed size and `p-0` (the layout's `padding` replaces the list's own), and set `initialSize` to that size: the server renders the first window at it.
 - `ListBox.Item` `render` renders a `div` (Rivet types the item attributes as `div`).
 
 Accessibility: ARIA `listbox` with `option`s (`aria-selected`), keyboard navigation (arrows, Home / End, Page Up / Down), typeahead on `textValue`, sections as labelled `group`s.
@@ -70,11 +70,7 @@ export default () => (
 
 ### Virtualization
 
-React component libraries virtualize a ListBox through a list layout inside a `Virtualizer`. The [cdk Virtualizer](site:cdk/foundations/virtualizer/) is a standalone renderer, not a ListBox layout yet, so this demo renders all options.
-
-:::warning
-Not yet ported: ListBox inside the cdk Virtualizer (renders all options, no virtualization)
-:::
+A ListBox inside the [cdk Virtualizer](site:cdk/foundations/virtualizer/#collection-components) with a `ListLayout` renders only the options in view (plus overscan and the focused option). The server renders the first window at `initialSize`. After the first scroll or focus move, the browser renders the rest as you scroll. Keyboard navigation scrolls offscreen options into view.
 
 ::example{id=list-box-virtualization}
 
@@ -247,7 +243,7 @@ When using render functions with ListBox.Item or ListBox.ItemIndicator, these va
 
 ### ListLayout
 
-Not yet available: a `ListLayout` (row / heading heights, gap, padding) for the `Virtualizer`; see the [cdk Virtualizer](site:cdk/foundations/virtualizer/) for its own layout options.
+`ListLayout` and `CollectionVirtualizer` come from `@rivetjs/cdk/virtualizer`. The options go in the `CollectionVirtualizer`'s `layoutOptions`: `rowHeight` / `estimatedRowHeight`, `headingHeight` / `estimatedHeadingHeight`, `loaderHeight`, `gap`, `padding`. See the [cdk Virtualizer](site:cdk/foundations/virtualizer/#layouts) for the full list.
 
 ::api{symbol="@rivetjs/ui/list-box#ListBoxRootProps"}
 

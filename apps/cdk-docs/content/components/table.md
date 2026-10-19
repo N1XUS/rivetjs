@@ -459,16 +459,15 @@ Deviations:
 
 - Render props are accessors; `class` is RAC `className`; `TableStateContext` / `TableColumnResizeStateContext` hold accessors of the state.
 - Ids derive from the table id (`<table>-<column>`, `<table>-<row>-<column>`), so the server and the client agree without a counter.
-- `aria-colcount` / `aria-rowindex` are only set on virtualized tables (none yet).
+- `aria-colcount` / `aria-rowindex` are only set on virtualized tables (`<CollectionVirtualizer layout={TableLayout}>`).
 - `dependencies` is accepted and ignored: signals re-render.
 - No `SharedElementTransition` around the rows.
 
 ## Not yet supported
 
-- Virtualized tables and drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button).
+- Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button); column resizing inside a `CollectionVirtualizer`.
 - The `render` (DOM render) prop.
 - `SelectionIndicator` inside a row (needs a `SharedElementTransition`; it throws).
-- On a resumed page the select-all checkbox does not respond to a click, and a row's selection checkbox toggles only once by mouse; :kbd[Space], row presses and :kbd[Ctrl]+:kbd[A] work.
 
 ## Common mistakes
 

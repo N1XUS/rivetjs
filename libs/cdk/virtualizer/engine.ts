@@ -1,5 +1,5 @@
 // Engine, layouts and DOM helpers of @rivetjs/cdk/virtualizer (no component: importable from plain .ts / node).
-export { LOADER_KEY, initialWindow, projectViews, type VirtualView, type VirtualizerModel } from "./behaviour.ts";
+export { LOADER_KEY, initialWindow, projectViews, type LayoutInput, type VirtualView, type VirtualizerModel } from "./behaviour.ts";
 export { Virtualizer as VirtualizerEngine, type VirtualizerOptions } from "./virtualizer-core.ts";
 export { createVirtualizerState, type VirtualizerState, type VirtualizerStateOptions } from "./state.ts";
 export { Point } from "./point.ts";

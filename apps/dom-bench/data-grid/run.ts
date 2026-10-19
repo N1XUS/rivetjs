@@ -1,7 +1,7 @@
 // Data-grid suite runner: Chromium (Playwright), cross-origin isolated, fresh page per sample, lanes interleaved.
 // Times = script + style + layout (operation, then a forced layout read), median of samples; heap after GC.
 // node apps/dom-bench/data-grid/run.ts [--samples 5] [--cpu 1] [--out file.json]
-//   scenarios: data-grid 1k / 10k virtual / 10k plain, cdk-table 1k / 10k (no virtualization in the RAC port).
+//   scenarios: data-grid 1k / 10k virtual / 10k plain, cdk-table 1k / 10k (not wrapped in a cdk Virtualizer; a TableLayout lane is not measured yet).
 //   ops: mount, sort (age asc → desc), filter (substring, ~10 % rows), clear filter, select all, scroll (60 steps of
 //   one viewport, per-step time + rAF frame intervals while scrolling one step per frame).
 import { mkdir, writeFile } from "node:fs/promises";

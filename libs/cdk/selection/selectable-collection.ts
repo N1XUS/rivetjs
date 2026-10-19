@@ -379,6 +379,8 @@ const memoOf = (owner: object): CollectionMemo => {
 
 /** scroll on the scrollable body: remember the position (restored when focus re-enters). */
 export function selectableCollectionScroll(options: AriaSelectableCollectionOptions, e: Ev<Event>): void {
+  // RA: not for a virtualized collection (the virtualizer owns its scroll position).
+  if (options.isVirtualized) return;
   const r = resolve(options, e);
   const m = memoOf(r.ref ?? options);
   m.scrollTop = r.scrollRef?.scrollTop ?? 0;
@@ -420,7 +422,7 @@ export function selectableCollectionFocus(options: AriaSelectableCollectionOptio
     if (relatedTarget && current && current.compareDocumentPosition(relatedTarget) & Node.DOCUMENT_POSITION_FOLLOWING) {
       navigate(manager.lastSelectedKey ?? delegate.getLastKey?.());
     } else navigate(manager.firstSelectedKey ?? delegate.getFirstKey?.());
-  } else if (r.scrollRef) {
+  } else if (!options.isVirtualized && r.scrollRef) {
     // Restore the scroll position to what it was before.
     r.scrollRef.scrollTop = m.scrollTop;
     r.scrollRef.scrollLeft = m.scrollLeft;
@@ -530,6 +532,32 @@ export function selectableCollectionAutoFocus(options: AriaSelectableCollectionO
   return true;
 }
 
+/** useSelectableItem's focus + useSelectableCollection's scroll-into-view for the focused item element. */
+function focusItem(r: Resolved, element: HTMLElement, didAutoFocus: boolean): void {
+  if (!r.shouldUseVirtualFocus) {
+    if (element.ownerDocument.activeElement !== element) focusSafely(element);
+  } else moveVirtualFocus(element);
+  const modality = getInteractionModality();
+  if ((modality === "keyboard" || didAutoFocus) && r.scrollRef) {
+    scrollIntoView(r.scrollRef, element);
+    // Avoid scroll in iOS VO, since it may cause overlay to close.
+    if (modality !== "virtual") scrollIntoViewport(element, { containingElement: r.ref });
+  }
+}
+
+/** Virtualized collections: focus the item of `key` after the render that adds it (a microtask, then a few frames). */
+function whenRendered(r: Resolved, key: Key, didAutoFocus: boolean): void {
+  let frames = 0;
+  const attempt = () => {
+    const manager = r.manager;
+    if (untrack(() => manager.focusedKey) !== key || !untrack(() => manager.isFocused) || !r.ref) return;
+    const element = getItemElement(r.ref, key);
+    if (element) focusItem(r, element, didAutoFocus);
+    else if (frames++ < 3) requestAnimationFrame(attempt);
+  };
+  queueMicrotask(attempt);
+}
+
 /**
  * react-aria's post-render effects, run after a handler changed state: move DOM (or virtual) focus
  * to the focused item, scroll it into view (keyboard modality / after auto focus), and focus the
@@ -544,18 +572,11 @@ export function syncFocus(options: AriaSelectableCollectionOptions, previousKey:
   const changed = focusedKey !== previousKey;
   if (isFocused && focusedKey != null && (changed || m.didAutoFocus) && r.ref) {
     const element = getItemElement(r.ref, focusedKey);
-    if (element) {
-      // useSelectableItem: focus the item that became the focused key.
-      if (!r.shouldUseVirtualFocus) {
-        if (element.ownerDocument.activeElement !== element) focusSafely(element);
-      } else moveVirtualFocus(element);
-      const modality = getInteractionModality();
-      if ((modality === "keyboard" || m.didAutoFocus) && r.scrollRef) {
-        scrollIntoView(r.scrollRef, element);
-        // Avoid scroll in iOS VO, since it may cause overlay to close.
-        if (modality !== "virtual") scrollIntoViewport(element, { containingElement: r.ref });
-      }
-    }
+    const didAutoFocus = m.didAutoFocus;
+    if (element) focusItem(r, element, didAutoFocus);
+    // Virtualized: the item renders once the virtualizer persists the new focused key (RA: useSelectableItem's
+    // effect after that render) — focus and scroll it in when it appears.
+    else if (options.isVirtualized) whenRendered(r, focusedKey, didAutoFocus);
   }
   // If the focused key becomes null (e.g. the last item is deleted), focus the whole collection.
   if (!r.shouldUseVirtualFocus && isFocused && focusedKey == null && previousKey != null && r.ref) focusSafely(r.ref);

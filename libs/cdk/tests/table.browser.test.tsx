@@ -4,9 +4,9 @@
 // `rerender(<X …/>)` → `cleanup()` + `render` (or a signal for the controlled prop); testers from
 // `@rivetjs/testing/user`; default classes `rv-*`; `useTableOptions` → `tableOptions`; the sort indicator glyphs
 // (▲ ▼) → text, the checkbox SVG → none (icon rule); `TableContext` / `TableStateContext` reads are accessors.
-// Skipped (reasons inline): `render` prop (not supported by cdk parts); RAC Virtualizer / TableLayout (no
-// virtualized table yet); drag and drop (DnD lane); `data-rac` (Rivet renders none); Suspense / React
-// `useSyncExternalStore` render counting (React internals).
+// Skipped (reasons inline): `render` prop (not supported by cdk parts); drag and drop (DnD lane); `data-rac` (Rivet renders none); Suspense / React
+// `useSyncExternalStore` render counting (React internals). "should support virtualizer": real sizes (a 100 x 100
+// scroller and `initialSize`) instead of mocked clientWidth / clientHeight.
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import "@rivetjs/testing/jest-dom";
 import { signal } from "@rivetjs/reactivity";
@@ -31,6 +31,7 @@ import {
   TableLoadMoreItem,
   tableOptions,
 } from "../table/index.tsx";
+import { TableLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 
 const renderIt = (fn: () => unknown) => {
   const result = render(fn as never);
@@ -855,7 +856,67 @@ describe("Table", () => {
     expect(items[1]).not.toHaveAttribute("data-focus-visible-within", "true");
   });
 
-  it.skip("should support virtualizer (no virtualized Table: RAC Virtualizer + TableLayout not ported to the native table)", () => {});
+  it("should support virtualizer", async () => {
+    const items = Array.from({ length: 1000 }, (_, i) => ({ id: i, foo: `Foo ${i}`, bar: `Bar ${i}` }));
+    const { getByRole } = renderIt(() => (
+      <CollectionVirtualizer layout={TableLayout} layoutOptions={{ rowHeight: 25, headingHeight: 25 }} initialSize={{ width: 100, height: 100 }}>
+        <Table aria-label="Test" style={{ display: "block", width: "100px", height: "100px", overflow: "auto" }}>
+          <TableHeader>
+            <Column isRowHeader>Foo</Column>
+            <Column>Bar</Column>
+          </TableHeader>
+          <TableBody items={items}>
+            {(item: { id: number; foo: string; bar: string }) => (
+              <Row>
+                <Cell>{item.foo}</Cell>
+                <Cell>{item.bar}</Cell>
+              </Row>
+            )}
+          </TableBody>
+        </Table>
+      </CollectionVirtualizer>
+    ));
+    const grid = getByRole("grid");
+    // RAC useElementType: divs with grid roles.
+    expect(grid.tagName).toBe("DIV");
+    let rows = within(grid).getAllByRole("row");
+    expect(rows.map((r) => r.textContent)).toEqual(["FooBar", "Foo 0Bar 0", "Foo 1Bar 1", "Foo 2Bar 2", "Foo 3Bar 3", "Foo 4Bar 4", "Foo 5Bar 5"]);
+    expect(rows[1]).toHaveAttribute("aria-rowindex", "2");
+    expect(grid).toHaveAttribute("aria-rowcount", "1001");
+    grid.scrollTop = 200;
+    fireEvent.scroll(grid);
+    await frame();
+    rows = within(grid).getAllByRole("row");
+    expect(rows.map((r) => r.textContent)).toEqual([
+      "FooBar",
+      "Foo 7Bar 7",
+      "Foo 8Bar 8",
+      "Foo 9Bar 9",
+      "Foo 10Bar 10",
+      "Foo 11Bar 11",
+      "Foo 12Bar 12",
+      "Foo 13Bar 13",
+    ]);
+    expect(rows[1]).toHaveAttribute("aria-rowindex", "9");
+    // Cells of rows rendered in the browser.
+    expect(
+      within(rows[1]!)
+        .getAllByRole("gridcell")
+        .map((c) => c.textContent),
+    ).toEqual(["Bar 7"]);
+    // The content takes no pointer events while scrolling (until 300 ms after the last scroll event).
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await user.click(within(rows[1]!).getByRole("rowheader"));
+    expect(document.activeElement).toBe(within(rows[1]!).getByRole("rowheader"));
+    for (let i = 0; i < 10; i++) await user.keyboard("{ArrowDown}");
+    await frame();
+    await frame();
+    expect(document.activeElement?.textContent).toBe("Foo 17");
+    const box = grid.getBoundingClientRect();
+    const focused = (document.activeElement as HTMLElement).getBoundingClientRect();
+    expect(focused.top).toBeGreaterThanOrEqual(box.top);
+    expect(focused.bottom).toBeLessThanOrEqual(box.bottom + 1);
+  });
   it.skip("should support nested collections with colliding keys (TagGroup not ported yet)", () => {});
 
   describe("colSpan", () => {

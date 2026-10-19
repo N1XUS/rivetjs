@@ -25,8 +25,9 @@
 //   inside `<table>` would be foster-parented by the HTML parser).
 // - Selection checkbox / expand button ids derive from the table id + row key (byte-stable server HTML).
 // Deviations:
-// - Native table elements only (`table` / `thead` / `tr` / `th` / `td`): the Virtualizer table layout
-//   (`isVirtualized` → `div` elements) is not wired yet.
+// - Inside a `<CollectionVirtualizer layout={TableLayout}>` (RAC useElementType) every part renders a `div` with its role
+//   (the JSX of each part is duplicated per element type: one compiled template per tag, the native path untouched);
+//   the grid element is the scroll container (it forwards `scroll` to the renderer) and the focused key is persisted.
 // - Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button) not wired yet (DnD lane).
 // - No `FocusScope` wrapper (nothing here reads its context); the SharedElementTransition scope is a `SharedElementContext` provider entry.
 // - Header placeholder cells (nested columns, react-stately level) render nothing — RAC renders
@@ -562,6 +563,84 @@ export function Table(inProps: TableProps) {
       locale,
     });
   };
+  if (isVirtualized) {
+    // RAC useElementType: inside a Virtualizer the table is `div`s (absolutely positioned views; a `<table>` cannot
+    // hold the view wrappers). The grid element is the scroll container; its focused row / cell stays rendered.
+    const virtualScroll = customRenderer?.onScroll;
+    const focusedKey = data.selectionState.focusedKey;
+    return (
+      <>
+        <div
+          {...dom}
+          {...attrs()}
+          ref={rootRef as never}
+          class={rp.class()}
+          style={style()}
+          slot={slot}
+          data-focused={dataBool(focused())}
+          data-focus-visible={dataBool(focusVisible())}
+          onKeyDownCapture={(e) => {
+            const v = view();
+            gridKeyDownCapture(e, gridOf(v, e), v);
+          }}
+          onKeyDown={(e) => {
+            const v = view();
+            gridKeyDown(e, gridOf(v, e), v);
+          }}
+          onFocusIn={(e) => {
+            const v = view();
+            gridFocus(e, gridOf(v, e), v);
+            onFocusInFromContext?.(e);
+          }}
+          onFocusOut={(e) => {
+            focusMemo.blurred = e.relatedTarget == null ? (e.target as Element) : null;
+            const v = view();
+            gridBlur(e, gridOf(v, e), v);
+          }}
+          onFocus={(e) => focusStateFocus(rootInteraction, e)}
+          onBlur={(e) => focusStateBlur(rootInteraction, e)}
+          onMouseDown={(e) => {
+            const v = view();
+            gridMouseDown(e, gridOf(v, e), v);
+            onMouseDown?.(e as never);
+          }}
+          onScroll={(e) => {
+            virtualScroll?.(e);
+            onScroll?.(e as never);
+          }}
+        >
+          <Provider
+            values={[
+              [TableStateContext, view],
+              [TableColumnResizeStateContext, layout],
+              [TableOptionsContext, options],
+              [TableInternalContext, internal],
+              [SelectableCollectionContext, null],
+              [FieldInputContext, null],
+              // RAC: the rows share one SharedElementTransition scope (a SelectionIndicator animates between them).
+              [SharedElementContext, sharedElements],
+            ]}
+          >
+            {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: collection as never, scrollRef: el, focusedKey }) as never}
+          </Provider>
+        </div>
+        <div id={sortDescriptionId} hidden>
+          {sortDescription() ?? ""}
+        </div>
+        <div id={internal.sortableDescriptionId} hidden>
+          {formatMessage(tableStrings, locale, "sortable")}
+        </div>
+        <div id={descriptionId} hidden>
+          {longPressDescription() ?? ""}
+        </div>
+        {resizeData ? (
+          <div id={internal.resizerDescriptionId} hidden>
+            {formatMessage(tableStrings, locale, "resizerDescription")}
+          </div>
+        ) : null}
+      </>
+    );
+  }
   return (
     <>
       <table
@@ -676,6 +755,30 @@ export const TableHeader = /* @__PURE__ */ createBranchComponent(
     const { onPointerEnter, onPointerLeave } = props;
     const dom = globalDOMProps(props, HOVER_OWNED);
     const rowKeys = (): Key[] => internal.collection().headerRows.map((row) => row.key);
+    if (internal.isVirtualized) {
+      // Virtualized (RAC useElementType): `div` row group inside the header view.
+      return (
+        <div
+          {...dom}
+          role="rowgroup"
+          ref={ref as never}
+          class={rp.class()}
+          style={rp.style()}
+          onPointerEnter={(e) => {
+            hoverStateEnter(interaction, e);
+            onPointerEnter?.(e as never);
+          }}
+          onPointerLeave={(e) => {
+            hoverStateLeave(interaction, e);
+            onPointerLeave?.(e as never);
+          }}
+        >
+          <For each={rowKeys} by={(k: Key) => k}>
+            {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
+          </For>
+        </div>
+      );
+    }
     return (
       <thead
         {...dom}
@@ -725,6 +828,29 @@ function TableHeaderRow(props: { rowKey: Key }) {
     for (const n of internal.collection().getChildren(rowKey)) keys.push(n.key);
     return keys;
   };
+  if (isVirtualized) {
+    // Virtualized: `div` row; the virtualizer renders the column views.
+    const branchRenderer = useContext(CollectionRendererContext);
+    const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
+    return (
+      <div {...attrs()}>
+        <Provider
+          values={[
+            [CheckboxContext, { slots: { selection: checkboxProps } }],
+            [CheckboxFieldContext, { slots: { selection: checkboxProps } }],
+          ]}
+        >
+          {/* The virtualizer renders the header row's column views (positioned by the layout). */}
+          {
+            (customBranch ?? DefaultCollectionRenderer).CollectionBranch({
+              collection: internal.collection as never,
+              parent: { key: rowKey } as never,
+            }) as never
+          }
+        </Provider>
+      </div>
+    );
+  }
   return (
     <tr {...attrs()}>
       <Provider
@@ -870,6 +996,82 @@ export const Column = /* @__PURE__ */ createLeafComponent(TableColumnNode, funct
   };
   const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onClick } = props;
   const dom = globalDOMProps(props, COLUMN_OWNED);
+  if (isVirtualized) {
+    // Virtualized (RAC useElementType): `div` column header inside its view.
+    return (
+      <div
+        {...dom}
+        {...attrs()}
+        ref={thRef as never}
+        class={rp.class()}
+        style={style()}
+        data-resizing={dataBool(isResizing())}
+        data-allows-sorting={dataBool(allowsSorting())}
+        data-sort-direction={sortDirection()}
+        onKeyDownCapture={(e) => {
+          const v = view();
+          gridCellKeyDownCapture(e, hopts(v), v);
+        }}
+        onKeyDown={(e) => {
+          const v = view();
+          gridCellKeyDown(e, hopts(v), v);
+          pressKeyDown(press(v), e);
+        }}
+        onKeyUp={(e) => {
+          const v = view();
+          gridCellKeyUp(e, hopts(v), v);
+        }}
+        onFocusIn={(e) => {
+          const v = view();
+          gridCellFocus(e, hopts(v), v);
+        }}
+        onFocus={(e) => {
+          focusStateFocus(interaction, e);
+        }}
+        onBlur={(e) => {
+          focusStateBlur(interaction, e);
+        }}
+        onPointerEnter={(e) => {
+          hoverStateEnter(interaction, e);
+          pressPointerEnter(press(view()), e);
+          onPointerEnter?.(e as never);
+        }}
+        onPointerLeave={(e) => {
+          hoverStateLeave(interaction, e);
+          pressPointerLeave(press(view()), e);
+          onPointerLeave?.(e as never);
+        }}
+        onPointerDown={(e) => {
+          const v = view();
+          gridCellPointerDown(e, hopts(v), v);
+          pressPointerDown(press(v), e);
+          onPointerDown?.(e as never);
+        }}
+        onPointerUp={(e) => {
+          const v = view();
+          gridCellPointerUp(e, hopts(v), v);
+          pressPointerUp(press(v), e);
+          onPointerUp?.(e as never);
+        }}
+        onMouseDown={(e) => pressMouseDown(press(view()), e)}
+        onClick={(e) => {
+          const v = view();
+          gridCellClick(e, hopts(v), v);
+          pressClick(press(v), e);
+          onClick?.(e as never);
+        }}
+        onDragStart={(e) => pressDragStart(press(view()), e)}
+      >
+        {
+          // A binding (not a Provider child slot): a render function that reads render-prop accessors
+          // and returns text re-runs on change, as RAC re-renders.
+          provide(ColumnResizerContext, { columnKey: key, triggerRef: th }, () =>
+            provide(CollectionRendererContext, DefaultCollectionRenderer, () => rp.children()),
+          ) as never
+        }
+      </div>
+    );
+  }
   return (
     <th
       {...dom}
@@ -1142,6 +1344,25 @@ export const TableBody = /* @__PURE__ */ createBranchComponent(TableBodyNode, fu
   const numColumns = () => internal.collection().columnCount;
   const dom = globalDOMProps(props, ["style", "id"]);
   // TODO (upstream): TableBody doesn't support being the scrollable body of the table yet.
+  if (internal.isVirtualized) {
+    // Virtualized (RAC useElementType): `div` row group; the virtualizer renders the row views.
+    return (
+      <div {...dom} role="rowgroup" ref={ref as never} class={rp.class()} style={rp.style()} data-empty={dataBool(isEmpty())}>
+        {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+        {renderEmptyState ? (
+          <Show when={isEmpty}>
+            {() => (
+              <div role="row" style={{ height: "100%" }}>
+                <div role="rowheader" aria-colspan={numColumns()} style={{ height: "100%" }}>
+                  {renderEmptyState(values) as never}
+                </div>
+              </div>
+            )}
+          </Show>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <tbody {...dom} role="rowgroup" ref={ref as never} class={rp.class()} style={rp.style()} data-empty={dataBool(isEmpty())}>
       {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
@@ -1179,6 +1400,14 @@ export const TableFooter = /* @__PURE__ */ createBranchComponent(TableFooterNode
   const dom = globalDOMProps(props, ["style", "id"]);
   const className = props.class || "rv-TableFooter";
   const style = props.style;
+  if (internal.isVirtualized) {
+    // Virtualized (RAC useElementType): `div` row group.
+    return (
+      <div {...dom} role="rowgroup" ref={ref as never} class={className} style={style}>
+        {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
+      </div>
+    );
+  }
   return (
     <tfoot {...dom} role="rowgroup" ref={ref as never} class={className} style={style}>
       {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: branchParent as never }) as never}
@@ -1508,6 +1737,65 @@ export const Row = /* @__PURE__ */ createBranchComponent(
     const dom = globalDOMProps(props, ROW_OWNED);
     const branchRenderer = useContext(CollectionRendererContext);
     const customBranch = branchRenderer === DefaultCollectionRenderer ? undefined : branchRenderer;
+    if (r.isVirtualized) {
+      // Virtualized (RAC useElementType): `div` row inside its view; the virtualizer renders the cell views.
+      return (
+        <div
+          {...dom}
+          {...rowAttrs(r)}
+          ref={forwardedRef as never}
+          onKeyDown={(e) => {
+            const v = r.view();
+            gridRowKeyDown(e, rowOptions(r, v), v);
+            if (!e.cancelBubble) tableRowKeyDown(e, rowOptions(r, v), v);
+            rowSyncPressed(r, e.currentTarget);
+          }}
+          onKeyUp={(e) => rowOn(r, e, gridRowKeyUp, true)}
+          onFocusIn={(e) => {
+            // The row's own focus (was a native `focus` listener per row; it ran before this focusin): its `blur` binds while focused.
+            const d = rowOf(r);
+            focusStateIn(d.interaction, e);
+            rowOn(r, e, gridRowFocus);
+            focusRingFocus(d.ring, e);
+          }}
+          onFocusOut={(e) => focusRingBlur(rowOf(r).ring, e)}
+          onPointerOver={(e) => hoverStateOver(rowOf(r).interaction, e)}
+          onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
+          onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
+          onPointerDown={(e) => {
+            rowOn(r, e, gridRowPointerDown, true);
+            onPointerDown?.(e as never);
+          }}
+          onPointerUp={(e) => {
+            rowOn(r, e, gridRowPointerUp, true);
+            onPointerUp?.(e as never);
+          }}
+          onPointerCancel={(e) => {
+            rowOn(r, e, gridRowPointerCancel, true);
+            onPointerCancel?.(e as never);
+          }}
+          onClick={(e) => rowOn(r, e, gridRowClick, true)}
+          onDblClick={(e) => {
+            rowOn(r, e, gridRowDoubleClick);
+            onDblClick?.(e as never);
+          }}
+          onDragStart={(e) => rowOn(r, e, gridRowDragStart)}
+        >
+          <Provider
+            values={[
+              [CheckboxContext, checkboxSlots],
+              [CheckboxFieldContext, checkboxSlots],
+              [ButtonContext, buttons],
+              [SelectionIndicatorContext, { isSelected: values.isSelected }],
+              [RowFocusContext, { isFocusVisibleWithinRow: values.isFocusVisibleWithin }],
+            ]}
+          >
+            {/* The built renderer only reads the parent key: the row data (`key`), not the node class instance (resumable capture). */}
+            {(customBranch ?? DefaultCollectionRenderer).CollectionBranch({ collection: internal.collection as never, parent: r as never }) as never}
+          </Provider>
+        </div>
+      );
+    }
     return (
       <tr
         {...dom}
@@ -1789,6 +2077,45 @@ export const Cell = /* @__PURE__ */ createLeafComponent(TableCellNode, function 
   initCell(c);
   const { onPointerDown, onPointerUp, onPointerEnter, onPointerLeave, onClick } = props;
   const dom = globalDOMProps(props, CELL_OWNED);
+  if (c.isVirtualized) {
+    // Virtualized (RAC useElementType): `div` cell inside its view.
+    return (
+      <div
+        {...dom}
+        {...cellAttrs(c)}
+        ref={forwardedRef as never}
+        onKeyDownCapture={(e) => cellOn(c, e, gridCellKeyDownCapture)}
+        onKeyDown={(e) => {
+          cellOn(c, e, gridCellKeyDown);
+        }}
+        onKeyUp={(e) => {
+          cellOn(c, e, gridCellKeyUp);
+        }}
+        onFocusIn={(e) => {
+          // The cell's own focus (was a native `focus` listener per cell, before this focusin); its `blur` binds while focused.
+          focusStateIn(cellOf(c).interaction, e);
+          cellOn(c, e, gridCellFocus);
+        }}
+        onPointerOver={(e) => hoverStateOver(cellOf(c).interaction, e)}
+        onPointerEnter={onPointerEnter ? (e) => onPointerEnter(e as never) : undefined}
+        onPointerLeave={onPointerLeave ? (e) => onPointerLeave(e as never) : undefined}
+        onPointerDown={(e) => {
+          cellOn(c, e, gridCellPointerDown);
+          onPointerDown?.(e as never);
+        }}
+        onPointerUp={(e) => {
+          cellOn(c, e, gridCellPointerUp);
+          onPointerUp?.(e as never);
+        }}
+        onClick={(e) => {
+          cellOn(c, e, gridCellClick);
+          onClick?.(e as never);
+        }}
+      >
+        {provide(CollectionRendererContext, DefaultCollectionRenderer, () => cellOf(c).rp.children()) as never}
+      </div>
+    );
+  }
   return (
     <td
       {...dom}
@@ -1857,6 +2184,27 @@ export const TableLoadMoreItem = /* @__PURE__ */ createLeafComponent(
     const className = props.class || "rv-TableLoadingIndicator";
     const style = { "--table-row-level": level, ...userStyle };
     const dom = globalDOMProps(props, ["style", "id"]);
+    if (internal.isVirtualized) {
+      // Virtualized (RAC useElementType): `div`s inside the loader view.
+      return (
+        <>
+          <div style={{ height: "0" }} inert>
+            <div style={{ padding: "0", border: "0" }}>
+              <div data-testid="loadMoreSentinel" ref={sentinel} style={{ position: "relative", height: "1px", width: "1px" }} />
+            </div>
+          </div>
+          <Show when={() => !!read(isLoading) && children != null}>
+            {() => (
+              <div {...dom} ref={ref as never} role="row" class={className} style={style} aria-level={level} data-level={level}>
+                <div role="rowheader" aria-colspan={numColumns()}>
+                  {children as never}
+                </div>
+              </div>
+            )}
+          </Show>
+        </>
+      );
+    }
     return (
       <>
         {/* Always render the sentinel. For now onus is on the user for styling when using flex + gap. */}

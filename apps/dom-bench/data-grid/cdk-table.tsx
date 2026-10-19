@@ -1,4 +1,4 @@
-// Lane `cdk-table`: the RAC-faithful @rivetjs/cdk/table (collection build, no virtualization), same columns / features:
+// Lane `cdk-table`: the RAC-faithful @rivetjs/cdk/table (collection build, not wrapped in a Virtualizer), same columns / features:
 // multiple selection with checkboxes, client sort + filter through computed items (RAC docs pattern).
 import { computed, signal } from "@rivetjs/reactivity";
 import { render } from "@rivetjs/runtime/dom";
