@@ -23,8 +23,9 @@ test("@rivetjs/bridge subpaths resolve and import", async () => {
 test("@rivetjs/bridge-react: subpaths resolve, peers pinned to one major", async () => {
   const react = manifest("bridge-react");
   assert.equal(react.sideEffects, false);
+  // The core peer follows the workspace version (bumped by `scripts/release`), the framework peers are the plan's ranges.
   assert.deepEqual(react.peerDependencies, {
-    "@rivetjs/bridge": "0.0.0-experimental",
+    "@rivetjs/bridge": manifest("bridge").version,
     "@vitejs/plugin-react": ">=6.0.0 <7",
     react: ">=19.0.0 <20",
     "react-dom": ">=19.0.0 <20",
