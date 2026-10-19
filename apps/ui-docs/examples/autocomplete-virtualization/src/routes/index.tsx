@@ -1,5 +1,6 @@
 // Port of HeroUI v3.2.6 `apps/docs/src/demos/en/autocomplete/virtualization.tsx` (Apache-2.0, © 2025 NextUI Inc.; modified).
 import { createFilter } from "@rivetjs/cdk/i18n/filter";
+import { ListLayout, CollectionVirtualizer } from "@rivetjs/cdk/virtualizer";
 import { signal } from "@rivetjs/reactivity";
 import { Autocomplete } from "@rivetjs/ui/autocomplete";
 import { Description } from "@rivetjs/ui/description";
@@ -82,7 +83,6 @@ function generateUsers(n: number): User[] {
   return users;
 }
 
-// Rivet: no Virtualizer around the popover ListBox yet (the cdk Virtualizer covers page-level ListBox / Table): the 1000 options render in a scrolling list.
 const allUsers = generateUsers(1000);
 
 export function Virtualization() {
@@ -114,17 +114,19 @@ export function Virtualization() {
               <SearchField.ClearButton />
             </SearchField.Group>
           </SearchField>
-          <ListBox class="max-h-[300px] overflow-y-auto" items={filteredUsers} renderEmptyState={() => <EmptyState>No results found</EmptyState>}>
-            {(user: User) => (
-              <ListBox.Item id={user.id} textValue={user.name}>
-                <div class="flex flex-col">
-                  <Label>{user.name}</Label>
-                  <Description>{user.email}</Description>
-                </div>
-                <ListBox.ItemIndicator />
-              </ListBox.Item>
-            )}
-          </ListBox>
+          <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 48, gap: 4, padding: 4 }} initialSize={{ width: 300, height: 300 }}>
+            <ListBox class="h-[300px] overflow-y-auto p-0" items={filteredUsers} renderEmptyState={() => <EmptyState>No results found</EmptyState>}>
+              {(user: User) => (
+                <ListBox.Item id={user.id} textValue={user.name}>
+                  <div class="flex flex-col">
+                    <Label>{user.name}</Label>
+                    <Description>{user.email}</Description>
+                  </div>
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              )}
+            </ListBox>
+          </CollectionVirtualizer>
         </Autocomplete.Filter>
       </Autocomplete.Popover>
     </Autocomplete>

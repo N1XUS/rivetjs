@@ -19,6 +19,9 @@
 //   `class` / `style` / `children` function asks for render props.
 // - `className` → `class` (default `rv-GridList`, `rv-GridListItem`, `rv-GridListSection`,
 //   `rv-GridListHeader`, `rv-GridListLoadingIndicator`).
+// - Inside a `<CollectionVirtualizer layout={ListLayout | GridLayout}>` (RAC Virtualizer) the GridList builds its
+//   collection (`builtCollectionOf`): rows render from it as views, handlers navigate it, the grid element is the
+//   scroll container (scroll forwarded to the renderer), the focused row is persisted, rows get `aria-rowindex`.
 // Deviation: `isEmpty` is known for `items` collections and, when `renderEmptyState` is set, for static
 //   children (built with `collectionOf`); static children without `renderEmptyState` count as non-empty.
 // Deviation: react-aria `useHasTabbableChild` (empty state with a tabbable child) is not tracked: an
@@ -36,6 +39,7 @@ import {
   Collection,
   CollectionRendererContext,
   DefaultCollectionRenderer,
+  builtCollectionOf,
   collectionOf,
   createBranchComponent,
   createLeafComponent,
@@ -113,6 +117,7 @@ import {
   gridListItemPointerDown,
   gridListItemPointerUp,
   gridListItemProps,
+  gridListRowIndex,
   gridListKeyDown,
   gridListKeyDownCapture,
   gridListMouseDown,
@@ -231,6 +236,8 @@ export interface GridListInternal {
   version: () => unknown;
   /** Autocomplete filter (SelectableCollectionContext): rows it returns false for do not render. */
   filter?: ((textValue: string, node: Node<any>) => boolean) | undefined;
+  /** Rivet: the built collection of a virtualized GridList (rows read their `aria-rowindex` from it). */
+  collection?: (() => ICollection<Node<any>>) | undefined;
 }
 /** The GridList a part renders in (null outside a GridList, and inside a row's content). */
 export const GridListInternalContext = resumableContext(createContext<GridListInternal | null>(null, { id: "rv-gridlist-internal" }));
@@ -265,8 +272,20 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
   const isVirtualized = !!renderer.isVirtualized,
     layoutDelegate = renderer.layoutDelegate;
   const { locale, direction } = useLocale();
+  const content = () => (
+    <Collection items={items} idScope={idScope}>
+      {children}
+    </Collection>
+  );
+  // RAC: inside a Virtualizer the list renders from its built collection (only the visible window has rows; the
+  // handlers navigate the built collection, not the rendered DOM). A local const arrow (resumable) over a per-instance
+  // memo key; an arrow inside a conditional expression would not resume.
+  const builtKey = isVirtualized ? {} : null;
+  const virtualCollection = () => builtCollectionOf(builtKey!, content) as unknown as ICollection<Node<T>>;
+  const collection = builtKey ? virtualCollection : undefined;
   const state = createListState<T>({
     id: props.id,
+    collection,
     selectionMode: props.selectionMode,
     selectionBehavior: props.selectionBehavior,
     // Live props: a controlled `selectedKeys={keys()}` stays live (accessor; never written).
@@ -330,11 +349,6 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
       }),
   });
 
-  const content = () => (
-    <Collection items={items} idScope={idScope}>
-      {children}
-    </Collection>
-  );
   const itemsOf = items;
   const isEmpty: () => boolean =
     itemsOf != null
@@ -375,7 +389,8 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
     const empty = isEmpty();
     const collection = buildCollection<T>([]);
     const v: GridListStateLike<T> = {
-      collection: { ...collection, size: empty ? 0 : 1 } as unknown as ICollection<Node<T>>,
+      // Virtualized: the built collection (useGridList `aria-rowcount` = its size).
+      collection: builtKey ? virtualCollection() : ({ ...collection, size: empty ? 0 : 1 } as unknown as ICollection<Node<T>>),
       selectionManager: listSelectionManager(state, collection),
       disabledKeys: state.disabledKeys,
       list: shared,
@@ -391,11 +406,20 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
       list: shared,
     });
   };
-  const internal: GridListInternal = { state, shared, locale, direction, keyboardNavigationBehavior, isVirtualized, version, filter };
+  const internal: GridListInternal = { state, shared, locale, direction, keyboardNavigationBehavior, isVirtualized, version, filter, collection };
   const dom = globalDOMProps(props, GRID_OWNED);
   const slot = props.slot || undefined;
   const gridEl = createRef<HTMLDivElement>();
   const rootRef = mergeRefValues<HTMLDivElement>(ref, gridEl);
+  // Virtualized: the grid element is the scroll container (RAC scrollRef); its focused row stays rendered and its
+  // scroll events reach the renderer (the engine follows the scroll position).
+  const rootCollection = collection ?? null;
+  const focusedKey = builtKey ? state.selectionState.focusedKey : undefined;
+  const virtualScroll = builtKey ? customRenderer?.onScroll : undefined;
+  const scrolled = (e: Event) => {
+    virtualScroll?.(e);
+    onScroll?.(e as never);
+  };
   // react-aria useSelectableCollection autoFocus mount effect (retried until the grid has items).
   if (autoFocus !== undefined)
     clientEffect(() => {
@@ -460,7 +484,7 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
       },
       onFocus: (e: FocusEvent) => focusStateFocus(ring, e as never),
       onBlur: (e: FocusEvent) => focusStateBlur(ring, e as never),
-      onScroll: (e: Event) => onScroll?.(e as never),
+      onScroll: (e: Event) => scrolled(e),
       children: () => [
         <Provider
           values={[
@@ -468,7 +492,15 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
             [SharedElementContext, sharedElements],
           ]}
         >
-          {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: null, content, idScope }) as never}
+          {
+            (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
+              collection: rootCollection,
+              content,
+              idScope,
+              scrollRef: gridEl,
+              focusedKey,
+            }) as never
+          }
         </Provider>,
         <Show when={isEmpty}>
           {() =>
@@ -535,7 +567,7 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
         }}
         onFocus={(e) => focusStateFocus(ring, e)}
         onBlur={(e) => focusStateBlur(ring, e)}
-        onScroll={onScroll ? (e) => onScroll(e) : undefined}
+        onScroll={virtualScroll || onScroll ? scrolled : undefined}
       >
         <Provider
           values={[
@@ -544,7 +576,15 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
             [SharedElementContext, sharedElements],
           ]}
         >
-          {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: null, content, idScope }) as never}
+          {
+            (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
+              collection: rootCollection,
+              content,
+              idScope,
+              scrollRef: gridEl,
+              focusedKey,
+            }) as never
+          }
         </Provider>
         <Show when={isEmpty}>
           {() =>
@@ -636,6 +676,7 @@ export const GridListItem = /*#__PURE__*/ createLeafComponent(
     const ctx = useContext(GridListInternalContext);
     if (!ctx) throw new Error("GridListItem must be rendered inside a GridList.");
     const { state, shared, locale, direction, keyboardNavigationBehavior, isVirtualized } = ctx;
+    const built = ctx.collection;
     const key = item.key;
     const spec = rowSpec(key, item, props as Record<string, any>);
     // Live `isDisabled` (LIVE-SWEEP round 2): the row's spec with the current value (read in the computed / at event time).
@@ -666,6 +707,8 @@ export const GridListItem = /*#__PURE__*/ createLeafComponent(
         list: shared,
       };
       const result = gridListItemProps(itemOptions(node), v);
+      // RA useGridListItem (virtualized): the row's index in the whole collection (the one-node collection's is 1).
+      if (built) result.rowProps["aria-rowindex"] = gridListRowIndex(built(), key);
       const checkbox = gridListSelectionCheckboxProps({ key, locale, id: checkboxId }, v).checkboxProps;
       return {
         ...result,

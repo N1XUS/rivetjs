@@ -276,7 +276,7 @@ Ports React Aria Components `Menu.tsx` (`MenuTrigger`, `Menu`, `MenuItem`, `Menu
 Deviations:
 
 - Render props are accessors.
-- No virtualizer; `isEmpty` counts rendered items.
+- Virtualized menus: `<CollectionVirtualizer layout={ListLayout}>` around the `Menu` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); submenus inside a virtualized menu are not covered. `isEmpty` counts rendered items.
 - Filtering inside `Autocomplete` keeps empty sections.
 - No `--trigger-width` on the popover.
 

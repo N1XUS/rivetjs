@@ -1,7 +1,7 @@
 # @rivetjs/cdk/virtualizer
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
-React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Table, Waterfall) and the react-aria / RAC `Virtualizer` component (ScrollView, VirtualizerItem). Server renders the first window; browser runs the engine from the first scroll / focus. Two modes: standalone (`items` + render function) and collection mode (RAC `CollectionRenderer`: `<Virtualizer layout={ListLayout}><ListBox/></Virtualizer>`, `layout={TableLayout}` around `Table`; COLLECTION-VIRT 2026-10-19).
+React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Table, Waterfall) and the react-aria / RAC `Virtualizer` component (ScrollView, VirtualizerItem). Server renders the first window; browser runs the engine from the first scroll / focus. Two modes: standalone (`items` + render function) and collection mode (RAC `CollectionRenderer`: `<CollectionVirtualizer layout={ListLayout}>` around ListBox (+ sections) / GridList / Menu / Tree, `GridLayout` around GridList, `TableLayout` around `Table`; COLLECTION-VIRT 2026-10-19, COLLECTION-VIRT-2 2026-10-19).
 
 ## Entry points
 - `@rivetjs/cdk/virtualizer` -> `index.tsx` (explicit package.json entry): `Virtualizer`, `VirtualizerProps`, `CollectionVirtualizer`, `CollectionVirtualizerProps` + `export *` from `engine.ts`
@@ -24,13 +24,13 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - `collection.ts`, `table-collection.ts` - minimal Node / Collection adapters from plain arrays
 - `dom.ts` - ScrollView / VirtualizerItem / RTL helpers
 - tests: `tests/virtualizer-engine.test.ts` (LayoutInfo, GridLayout, virtualized RAC ListBox / GridList / Table / Menu cases), `tests/virtualizer-scroll-anchor.test.ts`, `tests/virtualizer-browser.test.ts` (resumed story), `tests-components/dom-events-collections.test.ts`
-- collection mode tests: `tests/listbox.browser.test.tsx` + `tests/table.browser.test.tsx` ("should support virtualizer", RAC ports), `tests-components/virtualized-collections.test.ts` (resumed: server window, cold scroll / click / ArrowDown ×30 / select / End / Home / PageDown)
+- collection mode tests: `tests/{listbox,table,grid-list,menu,tree}.browser.test.tsx` ("should support virtualizer" / "<X> virtualizer", RAC ports), `tests-components/virtualized-collections.test.ts` (resumed: server window, cold scroll / click / ArrowDown ×30 / select / End / Home / PageDown on ListBox, ListBox sections, GridList, Menu, Tree, Table)
 - story routes: `tests/app/src/routes/virtualizer.tsx`, `tests-components/app/src/routes/dom-events-collections.tsx`, `tests-components/app/src/routes/virtualized-collections.tsx`
 - docs examples: `apps/cdk-docs/examples/virtualizer-*/`
 
 ## Upstream
 - react-spectrum `react-stately/src/virtualizer/*`, `react-stately/src/layout/{ListLayout,GridLayout,WaterfallLayout,TableLayout}.ts`, `react-stately/src/table/{TableColumnLayout,TableUtils}.ts`, `react-stately/src/list/ListCollection.ts`, `react-aria/src/virtualizer/{Virtualizer,ScrollView,VirtualizerItem,useVirtualizerItem,utils}`, RAC `Virtualizer.tsx` (Apache-2.0, © Adobe); RTL offset detection from react-window (MIT)
-- Deviations (headers): `Rect.intersects` and `getVisibleLayoutInfos` have no jsdom shortcut; view key counter per instance (no module state); `createVirtualizerState` uses signals + one effect; `createScrollView` = useScrollView as a plain controller (no flushSync); collections built from plain arrays (no JSX builder); table collection = one header row, no nested columns; TableColumnLayout without dev warning; drop target types local
+- Deviations (headers): ListLayout `buildSection` never skips a section header child (a cold-started engine lays out from the scrolled rect; upstream starts at 0); `Rect.intersects` and `getVisibleLayoutInfos` have no jsdom shortcut; view key counter per instance (no module state); `createVirtualizerState` uses signals + one effect; `createScrollView` = useScrollView as a plain controller (no flushSync); collections built from plain arrays (no JSX builder); table collection = one header row, no nested columns; TableColumnLayout without dev warning; drop target types local
 
 ## Rules / invariants
 - Model is plain signals + JSON + resumable functions; engine instances (classes) live only in the browser - never put them in serializable state
@@ -42,7 +42,7 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - `initialSize` (default 800 x 600) must match the scroller's CSS size for a correct server window
 - Focused key persisted automatically; `persistedKeys` always rendered; loader sentinel key `LOADER_KEY` when `isLoading` / `onLoadMore`
 - Spread element reads every prop up front (virtualizer.tsx:113)
-- Collection mode: `layout` = a class or factory (`LayoutInput<O>`, engine.ts), never an instance (it would be serialized). Host contract (`../collections/components.tsx`): `CollectionRoot({ collection: accessor, scrollRef, focusedKey })`, host forwards its scroller `scroll` to `renderer.onScroll`, sets `isVirtualized` on selection options (no scroll restore / scrollIntoView by the selectable collection), aria-posinset / setsize on items, aria-rowcount / rowindex on tables
+- Collection mode: `layout` = a class or factory (`LayoutInput<O>`, engine.ts), never an instance (it would be serialized). Host contract (`../collections/components.tsx`): `CollectionRoot({ collection: accessor, scrollRef, focusedKey })`, host forwards its scroller `scroll` to `renderer.onScroll`, sets `isVirtualized` on selection options (no scroll restore / scrollIntoView by the selectable collection), aria-posinset / setsize on items (per section: `itemPosition`, `../collections/nodes.ts`), aria-rowcount / rowindex on tables + grid lists. Hosts that navigate (ListBox, GridList, Menu) build their collection (`builtCollectionOf(instanceKey, content)`, `../collections/components.tsx`); Tree already builds. Menu: DOM-collection adapter gets `state.virtual = { collection, layoutDelegate }` (`../_adapters/selection.ts`: manager over the built collection, focus waits for the row to render — `whenRendered`); the popover / menu element is the scroller
 - Parts below the host resolve the renderer from `link` (`rendererOf`), never from context: a resumed page re-creates a part's `CollectionBranch` binding without the server's providers (default renderer → table rows without cells)
 - Row DOM order = layout order, except while DOM focus is inside the scroller: kept keys keep their order, new keys append (`rowOrder`). The runtime `For` reconcile moves kept nodes with `replaceChild`, which blurs the focused option (fast ArrowDown lost focus); the view holding DOM focus is persisted too (`persistedOf` → `activeViewKey`)
 - `driverOf` needs `scroller.isConnected` (client-only first pass has a detached scroller)
@@ -50,7 +50,7 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 ## Commands
 - `npx vitest run --project cdk libs/cdk/tests/virtualizer-engine.test.ts libs/cdk/tests/virtualizer-scroll-anchor.test.ts libs/cdk/tests/virtualizer-browser.test.ts`
 - `npx vitest run --project cdk-components libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/virtualized-collections.test.ts`
-- `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx libs/cdk/tests/table.browser.test.tsx -t virtualizer`
+- `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx libs/cdk/tests/table.browser.test.tsx libs/cdk/tests/grid-list.browser.test.tsx libs/cdk/tests/menu.browser.test.tsx libs/cdk/tests/tree.browser.test.tsx -t virtualizer`
 
 ## Gotchas
 - Nested views (sections, table rows) render behind a `computed` boolean (`nested()`), not `view().children.length ? …`: the ternary re-ran on every layout pass and re-created nested rows (resumed page: "Missing resumable element" from their stale server bindings) — `tests/virtualizer-sections.browser.test.tsx`. `viewOf` returns a removed row's last descriptor from a per-model cache; the driver's projection seeds it with the views it replaces (`remember`, behaviour.ts), else a resumed page's first scroll / click (no row accessor ran yet) threw `Cannot read properties of undefined (reading 'type')` (same test file)
@@ -58,7 +58,8 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - Scroller sets `onFocusIn` after `{...dom}` but it is not in `OWNED` - user `onFocusIn` may be overridden (virtualizer.tsx:30 vs :136; verify)
 - `state.ts` state holds class instances - never serialize / pass across resume
 - Collection mode resumability: a host closure built as a conditional arrow (`v ? () => … : undefined`) or assigned by index (`attrs[k] = () => …`) is not a `_rFn` and fails silently or with "function is not serializable" on resume — use local const arrows / object-literal arrows (`Object.assign(attrs, { … })`)
-- Not covered: GridList / Tree / Menu, ListBox sections, Table column resizing inside a Virtualizer, a Virtualizer around a popover ListBox (Autocomplete / ComboBox / Select)
+- Not covered: Table column resizing inside a Virtualizer, a Virtualizer around a Select / ComboBox popover ListBox (an Autocomplete-filtered popover ListBox works: ui-docs `autocomplete-virtualization`, server window + cold wheel + filter + select; keyboard virtual focus after `fill` is broken there without the Virtualizer too), load-more items in virtualized GridList / Tree / Menu
+- Section headers: ListLayout keeps a header rendered while any row of its section is visible (`isVisible` includes `header`); no `position: sticky` (RAC sets none on ListLayout either)
 - Content has `pointer-events: none` for ~300 ms after a scroll (isScrolling): tests clicking right after a scroll wait
 
 ## See also

@@ -1,0 +1,45 @@
+/* Plain CSS: the GridList is the scroll container (client size = the Virtualizer initialSize); GridLayout sizes and positions each card view. */
+body {
+  margin: 16px;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+output {
+  color: #475569;
+}
+.rv-GridList {
+  width: 300px;
+  height: 300px;
+  overflow: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+.rv-GridList:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+.rv-GridListItem {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: default;
+  outline: none;
+}
+.rv-GridListItem[data-focus-visible] {
+  box-shadow: 0 0 0 2px #6366f1;
+}
+.rv-GridListItem[data-selected] {
+  background: #e0e7ff;
+}

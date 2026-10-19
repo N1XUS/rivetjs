@@ -2,9 +2,10 @@
 // `CollectionRenderer` with `CollectionRoot` / `CollectionBranch` over useVirtualizerState + useScrollView, and
 // VirtualizerItem / useVirtualizerItem; React Spectrum, Apache-2.0, © Adobe) for the cdk collection components:
 // `<CollectionVirtualizer layout={ListLayout}><ListBox …/></CollectionVirtualizer>`, `<CollectionVirtualizer layout={TableLayout}><Table …/></CollectionVirtualizer>`.
+// Hosts: ListBox (+ sections), GridList (ListLayout / GridLayout), Menu, Tree (flattened rows), Table.
 // A separate component from the standalone `<Virtualizer items>` (`./virtualizer.tsx`) so items users (Masonry) ship none of this.
 // Rivet:
-// - The host (ListBox, Table) builds its collection and passes an accessor of it to `CollectionRoot` with its
+// - The host (ListBox, GridList, Menu, Tree, Table) builds its collection and passes an accessor of it to `CollectionRoot` with its
 //   scroll container (`scrollRef`, the host element) and its focused key (`focusedKey`, persisted); the engine
 //   is the standalone component's driver (`./behaviour.ts`): the server renders the first window at `initialSize`,
 //   the browser starts the engine on the first scroll (the host forwards its `scroll` events to `onScroll`), focus
@@ -210,12 +211,12 @@ export function VirtualizerBranch(props: { link: VirtualizerLink<any>; branch: C
 }
 
 /**
- * RAC `Virtualizer` for a collection component: wraps one `ListBox` / `Table` and renders its collection with
+ * RAC `Virtualizer` for a collection component: wraps one `ListBox` / `GridList` / `Menu` / `Tree` / `Table` and renders its collection with
  * `layout` — only the views in the visible rect (plus overscan and the focused item) are in the DOM. The component's
  * own element is the scroll container (give it a height and `overflow: auto`).
  */
 export interface CollectionVirtualizerProps<O> {
-  /** The collection component (`<ListBox>`, `<Table>`). */
+  /** The collection component (`<ListBox>`, `<GridList>`, `<Menu>`, `<Tree>`, `<Table>`). */
   children: unknown;
   /** Layout class (`ListLayout`, `TableLayout`, `GridLayout`, `WaterfallLayout`) or factory (`() => new ListLayout()`). */
   layout: LayoutInput<O>;

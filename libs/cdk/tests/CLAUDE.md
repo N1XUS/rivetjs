@@ -44,7 +44,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | a11y-live-announcer | a11y/live-announcer |
 | accordion | state/disclosure group state (Angular accordion.spec port; Accordion merged into Disclosure) |
 | disclosure-state / disclosure-behaviour | state/disclosure, disclosure/behaviour (ports of RS useDisclosureState / useDisclosureGroupState, RA useDisclosure tests) |
-| menu.browser (project `cdk-browser`) | menu, menu/behaviour, state/menu (RAC Menu.test.js subset + "inside Autocomplete"; `render` / virtualizer cases skipped) |
+| menu.browser (project `cdk-browser`) | menu, menu/behaviour, state/menu (RAC Menu.test.js subset + "inside Autocomplete" + "Menu virtualizer" (`CollectionVirtualizer` + ListLayout window, scroll, onAction); `render` cases skipped) |
 | date-picker-calendar-props | date-picker/behaviour `calendarProps` (isDateUnavailable passed through: serializable CalendarContext) |
 | virtualizer-sections.browser (project `cdk-browser`) | virtualizer nested section rows kept across a scroll (client render) |
 | menu-trigger-modality | menu/behaviour `menuTriggerKeyDown` (keyboard modality before opening; resumed-page regression) |
@@ -57,7 +57,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | interactions-browser | story `/press` (interactions/press, long-press) |
 | layout | layout |
 | list-state | collections/list-state |
-| listbox.browser / listbox-ssr / collection-components | listbox/index, listbox/behaviour, collections/components (port of RAC ListBox.test.js; drag-and-drop, virtualizer, `render` cases skipped; fixtures `fixtures/collection-parts.tsx`) |
+| listbox.browser / listbox-ssr / collection-components | listbox/index, listbox/behaviour, collections/components (port of RAC ListBox.test.js incl. "should support virtualizer"; drag-and-drop, `render` cases skipped; fixtures `fixtures/collection-parts.tsx`) |
 | calendar-cell-ssr | resumable server HTML of a live CalendarCell (ui `Calendar.Cell` shape: `splitProps` + spread) whose children function captures its `date` (server.ts; `renderPropsOf` per-key views) |
 | live-view-capture-ssr | resumable server HTML of 14 parts (Link, Group, Toolbar, Checkbox, Switch, TextField, SearchField, NumberField, Slider + SliderTrack, Meter, ProgressBar, RadioGroup, Text, Label) with live class / style and children (function + plain JSX) capturing a class instance (server.ts; per-key live views; known gaps listed in the file) |
 | fields-ssr | server HTML of form fields: RadioGroup FieldError default children (also while invalid under `validate`), CheckboxGroup item `required`, ToggleButton standalone `isSelected` signal / `isDisabled`, `autosizeProps` style object on TextArea, Slider thumb `aria-labelledby` only to rendered labels (server.ts) |
@@ -99,8 +99,8 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | tabs.browser | tabs/index, tabs/behaviour, state/tabs (port of RAC Tabs.test.js, 42 cases incl. links, tooltips (FocusableContext), press events, Menu / Select / ComboBox / DialogTrigger inside panels, added tabs, panel size transitions; changes: `dir="rtl"` element instead of I18nProvider, pointer events for the link-click case (usePress is pointer-only), Activity not ported) |
 | animation.browser | utils/animation (createEnterAnimation / createExitAnimation); portaled ModalOverlay with a transition backdrop fades in and out (BACKDROP-FIX) |
 | load-more-sentinel.browser | utils/load-more-sentinel (real IntersectionObserver) |
-| tree.browser / navigation-tree.browser | tree/index, tree/behaviour, navigation-tree/index (ports of RAC Tree.test.tsx + AriaTree test-util, NavigationTree.test.tsx; skipped: render prop, virtualizer, DnD, mouse link cases until B5 row click stops propagation, item press props until C6a) |
-| grid-list.browser / tag-group.browser | grid-list/*, tag-group/* (ports of RAC GridList.test.js, TagGroup.test.js, RA useTagGroup.test.js; skipped: render prop, virtualizer, DnD, combobox/toolbar nesting, tooltips) |
+| tree.browser / navigation-tree.browser | tree/index, tree/behaviour, navigation-tree/index (ports of RAC Tree.test.tsx + AriaTree test-util, NavigationTree.test.tsx; "Tree virtualizer" (window over the flattened expanded rows); skipped: render prop, DnD, mouse link cases until B5 row click stops propagation, item press props until C6a) |
+| grid-list.browser / tag-group.browser | grid-list/*, tag-group/* (ports of RAC GridList.test.js, TagGroup.test.js, RA useTagGroup.test.js; "GridList virtualizer" (ListLayout window + scroll); skipped: render prop, DnD, combobox/toolbar nesting, tooltips) |
 | data-list-data / data-async-list / data-tree-data / data-rivet (+ data-hook-utils) | data/* (ports of react-stately useListData / useAsyncList / useTreeData tests + Rivet signal cases) |
 | tree-key-manager | tree/tree-key-manager (port of Angular tree-key-manager.spec.ts) |
 | tree-control | tree/control (ports of Angular flat- / nested-tree-control.spec.ts) |

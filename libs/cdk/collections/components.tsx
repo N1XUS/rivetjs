@@ -225,6 +225,21 @@ export function collectionOf<C extends BaseCollection<any> = BaseCollection<any>
   return computed(() => buildCollectionFrom(content, createCollection));
 }
 
+let builtCollections: WeakMap<object, () => BaseCollection<any>> | undefined;
+
+/**
+ * Rivet: the built collection of a virtualized host's `content` (RAC: a collection inside a `Virtualizer` renders
+ * from its built collection, only the visible window has parts). One `collectionOf` computed per `instance` (a plain
+ * object the host creates in its body: serialized as data, so a resumed page rebuilds the computed from `content` on
+ * its first read). Created detached from the reading owner: the first read may be a binding that re-runs (the
+ * virtualizer's rows), which would dispose a computed it owns.
+ */
+export function builtCollectionOf<C extends BaseCollection<any> = BaseCollection<any>>(instance: object, content: unknown, createCollection?: () => C): C {
+  let built = (builtCollections ??= new WeakMap()).get(instance);
+  if (!built) builtCollections.set(instance, (built = runWithOwner(null, () => collectionOf(content, createCollection))));
+  return built() as C;
+}
+
 export interface CollectionBuilderProps<C extends BaseCollection<any>> {
   /** The collection content (plain JSX children are lazy). */
   content: unknown;

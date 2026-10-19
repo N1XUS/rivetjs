@@ -34,7 +34,7 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 | dates-calendar | `/calendar` (first test: visible preload may fetch, nothing boots — settles `networkidle`, then no `data-boot`, calendar `resume-*` chunks only from the `data-preload` plan, no `data-focused` / `data-hovered` / `data-pressed`; the cold ArrowDown still works. 2026-10-08: Button hover handlers plan `visible`, so a "no calendar fetch" assert raced the IntersectionObserver fetch) |
 | dev-resume | Vite dev server on app, `/listbox` (listbox/index.tsx symbol ids, dev chunks, a11y checks) |
 | dom-events-collections / -dates / -forms / -overlays | `/dom-events-*` (+ `/modal-open`) — globalDOMProps forwarding |
-| virtualized-collections | `/virtualized-collections` (server window only, no library code before interaction; cold wheel → click → ArrowDown ×30 → Space / End / Home / PageDown on the ListBox and the Table) |
+| virtualized-collections | `/virtualized-collections` (server window only, no library code before interaction; cold wheel → click → ArrowDown ×30 → Space / End / Home / PageDown on the ListBox, ListBox sections `#vsections` (per-section posinset), GridList `#vgrid`, Menu `#vmenu` (Enter → action), Tree `#vtree` (ArrowLeft collapse) and the Table) |
 | links | `/links` |
 | listbox | `/listbox`, `/tabs` |
 | overlays | `/modal`, `/popover` |

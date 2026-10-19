@@ -390,8 +390,10 @@ export class ListLayout<T, O extends ListLayoutOptions = ListLayoutOptions> exte
       if (child.type === "content") continue;
       const rowHeight = (this.rowSize ?? this.estimatedRowSize ?? DEFAULT_HEIGHT) + this.gap;
 
-      // Skip rows before the valid rectangle unless they are already cached.
-      if (offset + rowHeight < this.requestedRect[offsetProperty] && !this.isValid(node, offset)) {
+      // Skip rows before the valid rectangle unless they are already cached. Rivet: never the section header —
+      // a cold-started engine (resumed page, first scroll) lays out from the scrolled rect, not from 0 as upstream
+      // does, and a skipped header was estimated at the row height and never rendered (story `#vsections`).
+      if (child.type !== "header" && offset + rowHeight < this.requestedRect[offsetProperty] && !this.isValid(node, offset)) {
         offset += rowHeight;
         skipped++;
         continue;

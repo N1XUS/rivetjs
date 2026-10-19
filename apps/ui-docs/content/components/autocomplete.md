@@ -13,7 +13,7 @@ Notes:
 - `class`, not `className`. `value` / `isOpen` / `inputValue` take a signal (two-way) or a value; render props are accessors (`({ isPlaceholder, state }) => isPlaceholder() ? … : …`), and the selected keys come from `selectedKeys(state)` (`@rivetjs/cdk/select`).
 - `useFilter` is the cdk `createFilter` (`@rivetjs/cdk/i18n/filter`), created once at module level; pass the filter as an inline arrow (`filter={(text, input) => contains(text, input)}`) so it resumes.
 - The default indicator is a CSS morph chevron (see [Indicator](#indicator)); the clear icon is lucide `X`.
-- The asynchronous demo uses the cdk `createAsyncList` (react-stately `useAsyncList` port). The virtualization demo renders every option in a scrolling list: a `Virtualizer` around the ListBox inside the popover is not supported yet (a standalone `ListBox` virtualizes, see [ListBox](/components/list-box/#virtualization)).
+- The asynchronous demo uses the cdk `createAsyncList` (react-stately `useAsyncList` port). The virtualization demo wraps the popover's `ListBox` in the cdk `CollectionVirtualizer` (`ListLayout`, as [ListBox](/components/list-box/#virtualization)): only the visible options render, and filtering re-windows the list.
 
 ## Usage
 
@@ -185,10 +185,6 @@ When used inside a [Surface](/components/surface/) component, use `variant="seco
 ### Virtualization
 
 Autocomplete supports virtualization through [Virtualizer](https://react-aria.adobe.com/Virtualizer), enabling efficient rendering of large datasets by displaying only the rows visible within the viewport.
-
-:::warning
-Not yet ported: a `CollectionVirtualizer` around the popover's `ListBox`. The cdk [Virtualizer](site:cdk/foundations/virtualizer/#collection-components) virtualizes a page-level ListBox or Table; a filtered list in a popover is not covered yet. The demo below renders all 1000 filtered options in a scrolling list.
-:::
 
 ::example{id=autocomplete-virtualization}
 

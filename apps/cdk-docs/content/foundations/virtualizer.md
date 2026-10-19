@@ -6,7 +6,7 @@ status: experimental
 related: [foundations/scrolling, foundations/collections, foundations/selection, foundations/keyboard-navigation]
 ---
 
-`@rivetjs/cdk/virtualizer` ports the React Spectrum virtualizer: the react-stately engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and the react-aria `ScrollView` and item measurement. The `<Virtualizer>` component follows the react-aria-components `Virtualizer`: you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox` or `Table` (see [Collection components](#collection-components)).
+`@rivetjs/cdk/virtualizer` ports the React Spectrum virtualizer: the react-stately engine (`Virtualizer`, `Layout`, `LayoutInfo`, `Rect`, `ReusableView`, overscan, scroll anchoring), its layouts (`ListLayout`, `GridLayout`, `WaterfallLayout`, `TableLayout`), and the react-aria `ScrollView` and item measurement. The `<Virtualizer>` component follows the react-aria-components `Virtualizer`: you pass a `layout` and `layoutOptions`, and only the views inside the visible rect (plus overscan and persisted keys) are in the DOM. It renders its own `items`, or it wraps a `ListBox`, `GridList`, `Menu`, `Tree` or `Table` (see [Collection components](#collection-components)).
 
 - **Server**: the engine runs at `initialSize` and renders the first window; views are absolutely positioned.
 - **Browser**: no library code runs until the first scroll or focus on the scroller (`preload="interaction"`). Then the engine starts from the scroller's real size and adopts the server rows, keyed by item key.
@@ -175,13 +175,16 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 
 | Component | Layout | Notes |
 | --- | --- | --- |
-| `ListBox` | `ListLayout` | Options get `aria-posinset` / `aria-setsize`. |
+| `ListBox` | `ListLayout` | Options get `aria-posinset` / `aria-setsize`. Sections render with their header; positions count per section. |
+| `GridList` | `ListLayout`, `GridLayout` | Rows get `aria-rowindex`, the grid `aria-rowcount` / `aria-colcount`. With `GridLayout`, set `layout="grid"`: arrow keys move by row and column. |
+| `Menu` | `ListLayout` | Items get `aria-posinset` / `aria-setsize`. In a popover, the menu element is the scroll container: give `.rv-Menu` the size of `initialSize`. Submenus are not covered. |
+| `Tree` | `ListLayout` | The layout runs over the flattened rows (expanded items only). Expanding or collapsing re-lays out the window. |
 | `Table` | `TableLayout` | Renders `div`s with grid roles instead of `table` / `tr` / `td` (RAC `useElementType`). The header row is sticky. Rows get `aria-rowindex`. |
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |
-| `children` | the collection component | (required) | One `ListBox` or `Table`. |
-| `layout` | `LayoutInput<O>` | (required) | `ListLayout` / `TableLayout` (class or factory). |
+| `children` | the collection component | (required) | One `ListBox`, `GridList`, `Menu`, `Tree` or `Table`. |
+| `layout` | `LayoutInput<O>` | (required) | `ListLayout` / `GridLayout` / `TableLayout` (class or factory). |
 | `layoutOptions` | `O` | none | JSON layout options, e.g. `{ rowHeight: 32 }`. |
 | `initialSize` | `{ width, height }` | `800 x 600` | Size of the server window. Use the component's client size (inside borders). |
 | `dir` | `"ltr" \| "rtl"` | none | Physical view positions; without it, logical `inset-inline-start`. |
@@ -193,7 +196,17 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 - Resumed pages: the server renders the first window at `initialSize`. The engine starts on the first scroll or focus move, and the server rows are adopted by key.
 - DOM order is not visual order. Kept rows keep their DOM position while focus is inside, so a focused option is never moved.
 
+- Not covered yet: a `ListBox` in a `Select` / `ComboBox` popover (a popover `ListBox` filtered by `Autocomplete` virtualizes), load-more items (`*LoadMoreItem`) inside a virtualized collection, Table column resizing.
+
 ::example{id=virtualizer-listbox}
+
+::example{id=virtualizer-listbox-sections}
+
+::example{id=virtualizer-grid-list}
+
+::example{id=virtualizer-menu}
+
+::example{id=virtualizer-tree}
 
 ::example{id=virtualizer-table}
 
@@ -298,7 +311,7 @@ Everything outside the component is framework-free and imported from `@rivetjs/c
 
 ## Not yet supported
 
-- Wrapping `GridList`, `Tree` and `Menu` (only `ListBox` and `Table` render through the virtualized renderer), and ListBox sections, `Table` column resizing, `GridLayout` / `WaterfallLayout` for a wrapped ListBox.
+- A `ListBox` in a `Select` / `ComboBox` popover, load-more items inside a virtualized collection, `Table` column resizing, `GridLayout` / `WaterfallLayout` for a wrapped ListBox.
 - Window scrolling (`allowsWindowScrolling`) in `<Virtualizer>`. `createScrollView` and `createVirtualizerState` support it.
 - A `scrollToItem` / scroll-into-view API on the standalone `<Virtualizer>` (wrapped collection components scroll their focused item in).
 - Drag and drop rendering (drop indicators). The layouts compute drop targets.

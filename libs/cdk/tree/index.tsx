@@ -15,6 +15,8 @@
 //   `data-hovered` / `data-focused` / `data-focus-visible` written by the handlers, `data-*` values `"true"`.
 // - `expandedKeys` / `selectedKeys`: a plain value (controlled) or a Signal (two-way).
 // - `class` = RAC `className` (defaults `rv-Tree`, `rv-TreeItem`, `rv-TreeLoader`).
+// - Inside a `<CollectionVirtualizer layout={ListLayout}>` the flattened collection is the virtualizer's source: the
+//   treegrid element is the scroll container (scroll forwarded to the renderer), the focused row is persisted.
 // `render` (RAC DOMRenderProps) on Tree / TreeItem / TreeSection (`<div>`) and TreeHeader (via GridListHeader): given, the attributes object goes to `render(attrs, renderProps)`;
 //   the aria prop objects become one accessor per key (object-literal accessors over `gridAttr` / `row`: only literal arrows resume), the row content is the `children` accessor.
 // Deviations:
@@ -206,7 +208,7 @@ interface TreeInternal {
 const TreeInternalContext = resumableContext(createContext<TreeInternal | null>(null, { id: "rv-tree-internal" }));
 
 /** Global DOM events Tree handles itself; the user's run from its own handler. */
-const TREE_OWNED = ["onMouseDown", "style"] as const;
+const TREE_OWNED = ["onMouseDown", "onScroll", "style"] as const;
 
 /**
  * A tree provides users with a way to navigate nested hierarchical information, with support for
@@ -286,6 +288,8 @@ export function Tree<T>(inProps: TreeProps<T>) {
     disallowTypeAhead: props.disallowTypeAhead,
     linkBehavior: props.linkBehavior,
     isVirtualized: renderer.isVirtualized,
+    // RAC: inside a Virtualizer the layout is the keyboard delegate's layout delegate (Page Up / Down).
+    layoutDelegate: renderer.layoutDelegate,
     UNSTABLE_focusOnEntry: props.UNSTABLE_focusOnEntry,
     direction: props.direction,
     locale: props.locale,
@@ -334,6 +338,15 @@ export function Tree<T>(inProps: TreeProps<T>) {
     state: values.state,
   };
   const onMouseDown = props.onMouseDown;
+  const onScroll = (props as { onScroll?: (e: Event) => void }).onScroll;
+  // Virtualized (RAC Virtualizer + ListLayout over the flattened rows): the treegrid element is the scroll container,
+  // its scroll events reach the renderer and its focused row stays rendered.
+  const virtualScroll = renderer.isVirtualized ? customRenderer?.onScroll : undefined;
+  const focusedKey = renderer.isVirtualized ? state.selectionState.focusedKey : undefined;
+  const scrolled = (e: Event) => {
+    virtualScroll?.(e);
+    onScroll?.(e);
+  };
   const slot = props.slot || undefined;
   const dom = globalDOMProps(props, TREE_OWNED);
   const description = () => gridListHighlightDescription(gridOpts, view());
@@ -371,6 +384,7 @@ export function Tree<T>(inProps: TreeProps<T>) {
         gridListMouseDown(e as never, gridOpts, view());
         onMouseDown?.(e as never);
       },
+      onScroll: (e: Event) => scrolled(e),
       children: () => [
         <Provider
           values={[
@@ -379,7 +393,13 @@ export function Tree<T>(inProps: TreeProps<T>) {
             [SharedElementContext, sharedElements],
           ]}
         >
-          {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: flat as () => ICollection<Node<unknown>>, scrollRef: el }) as never}
+          {
+            (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
+              collection: flat as () => ICollection<Node<unknown>>,
+              scrollRef: el,
+              focusedKey,
+            }) as never
+          }
         </Provider>,
         renderEmptyState ? (
           <Show when={() => flat().size === 0}>
@@ -423,6 +443,7 @@ export function Tree<T>(inProps: TreeProps<T>) {
         gridListMouseDown(e, gridOpts, view());
         onMouseDown?.(e as never);
       }}
+      onScroll={virtualScroll || onScroll ? scrolled : undefined}
     >
       <Provider
         values={[
@@ -432,7 +453,13 @@ export function Tree<T>(inProps: TreeProps<T>) {
           [SharedElementContext, sharedElements],
         ]}
       >
-        {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection: flat as () => ICollection<Node<unknown>>, scrollRef: el }) as never}
+        {
+          (customRenderer ?? DefaultCollectionRenderer).CollectionRoot({
+            collection: flat as () => ICollection<Node<unknown>>,
+            scrollRef: el,
+            focusedKey,
+          }) as never
+        }
       </Provider>
       {renderEmptyState ? (
         <Show when={() => flat().size === 0}>

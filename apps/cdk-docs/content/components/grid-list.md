@@ -341,7 +341,7 @@ Deviations:
 
 ## Not yet supported
 
-- Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button) and virtualized lists.
+- Drag and drop (`dragAndDropHooks`, drop indicators, `slot="drag"` button). Virtualized lists: `<CollectionVirtualizer layout={ListLayout}>` or `layout={GridLayout}` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `GridListLoadMoreItem` inside it is not covered yet.
 - Focus restore after the focused row is removed (`gridListItemsChanged` is wired in TagGroup only).
 - `SelectionIndicator` inside a row: RAC wraps the rows in a `SharedElementTransition`, the port does not, so it throws.
 

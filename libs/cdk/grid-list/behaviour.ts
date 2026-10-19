@@ -521,14 +521,30 @@ function gridListItemAttrs(props: AriaGridListItemOptions, state: GridListStateL
     id: rowId,
   };
   if (props.focusMode === "child" && props.allowsArrowNavigation && d.shared.keyboardNavigationBehavior === "tab") attrs.tabIndex = -1;
-  if (props.isVirtualized) {
-    const { collection } = state;
-    const nodes = [...collection];
-    attrs["aria-rowindex"] = nodes.find((n) => n.type === "section")
-      ? [...collection.getKeys()].filter((key) => collection.getItem(key)?.type !== "section").findIndex((key) => key === node.key) + 1
-      : node.index + 1;
-  }
+  if (props.isVirtualized) attrs["aria-rowindex"] = gridListRowIndex(state.collection, node.key, node.index);
   return { ...attrs, ...d.treeAttrs };
+}
+
+const rowIndexes = new WeakMap<object, Map<Key, number> | null>();
+
+/**
+ * useGridListItem (virtualized) `aria-rowindex` of `key`: `node.index + 1`, or with sections its 1-based position
+ * among the collection's non-section keys. Rivet: the section scan is cached per committed collection (a virtualized
+ * GridList's rows each ask; upstream rescans per row).
+ */
+export function gridListRowIndex(collection: Collection<Node<unknown>>, key: Key, index = collection.getItem(key)?.index ?? 0): number {
+  let keys = rowIndexes.get(collection);
+  if (keys === undefined) {
+    keys = null;
+    for (const n of collection)
+      if (n.type === "section") {
+        keys = new Map();
+        for (const k of collection.getKeys()) if (collection.getItem(k)?.type !== "section") keys.set(k, keys.size + 1);
+        break;
+      }
+    if ((collection as { isFrozen?: boolean }).isFrozen !== false) rowIndexes.set(collection, keys);
+  }
+  return keys ? (keys.get(key) ?? 0) : index + 1;
 }
 
 /** Attributes of the grid cell inside the row. */

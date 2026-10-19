@@ -36,7 +36,7 @@ import {
   DefaultCollectionRenderer,
   SectionContext,
   buildCollectionFrom,
-  collectionOf,
+  builtCollectionOf,
   createBranchComponent,
   createLeafComponent,
   isCollectionProbe,
@@ -227,7 +227,7 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
   // A closure + module memo (as Select): the computed holding the JSX content is rebuilt from it in the browser.
   // (A local const arrow: the compiler makes it resumable; an arrow inside a conditional expression is not.)
   const builtKey = renderer.isVirtualized ? {} : null;
-  const virtualCollection = () => virtualListCollection(builtKey!, content) as ICollection<Node<T>>;
+  const virtualCollection = () => builtCollectionOf(builtKey!, content) as unknown as ICollection<Node<T>>;
   const collection = builtKey ? virtualCollection : undefined;
   // Live props: a controlled `selectedKeys={keys()}` stays live (accessor; never written); the copy reads no
   // `selectedKeys` getter (a resumed region is not re-created on a change).
@@ -250,15 +250,6 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
     items != null ? false : empty && children != null ? untrack(() => buildCollectionFrom(() => Collection({ children })).size === 0) : children == null;
   const isEmpty = () => (items != null ? isEmptyIterable(typeof items === "function" ? (items as () => Iterable<T>)() : items) : staticEmpty);
   return <ListBoxInner state={state} props={own} listBoxRef={listBoxRef} content={content} isEmpty={isEmpty} />;
-}
-
-const builtLists = new WeakMap<object, () => ICollection<Node<unknown>>>();
-
-/** The built collection of a virtualized ListBox's content (one computed per instance key). */
-function virtualListCollection(instance: object, content: () => unknown): ICollection<Node<unknown>> {
-  let built = builtLists.get(instance);
-  if (!built) builtLists.set(instance, (built = collectionOf(content) as () => ICollection<Node<unknown>>));
-  return built();
 }
 
 /** Rivet: keys the listbox handles (`data-rk`): the resume loader holds them, so a cold key never scrolls the page. */

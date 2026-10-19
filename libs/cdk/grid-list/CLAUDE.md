@@ -16,7 +16,8 @@ RAC GridList family + RA useGridList / useGridListItem / useGridListSection / us
 - Resumability: destructure props before closures; handler bags are inline object literals (`io = { dispatch: … }`), never arrows passed only as call args; no module-level fns / classes captured (`customRenderer ?? DefaultCollectionRenderer` at call time).
 - Chromium fires focusout when a focused row is removed → `manager.isFocused` false; `gridListItemsChanged` treats `activeElement == body` as was-focused.
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on GridList / Item / Section / Header (LoadMoreItem excluded)
-- Pending: `gridListItemsChanged` not wired into GridList (TagList only); virtualizer, DnD, ComboBox/Toolbar nesting.
+- Virtualized (`<CollectionVirtualizer layout={ListLayout | GridLayout}>`, COLLECTION-VIRT-2 2026-10-19): `isVirtualized` → built collection (`builtCollectionOf`) given to `createListState` + `CollectionRoot` (`scrollRef`, `focusedKey`); root scroll → `renderer.onScroll`; items get `aria-rowindex` via `gridListRowIndex(collection, key)` (`behaviour.ts`, section headers counted, WeakMap per frozen collection); internal context carries `collection`. Example `virtualizer-grid-list`, story `#vgrid`, `tests/grid-list.browser.test.tsx` "GridList virtualizer".
+- Pending: `gridListItemsChanged` not wired into GridList (TagList only); DnD, ComboBox/Toolbar nesting.
 - Live props (P5): GridList / GridListItem `class` / `style` / `children` render props read live (`renderProps(…, props)` when a prop is live, body untracked; rows kept); item `isDisabled` live (LIVE-SWEEP round 2): a live one is read through `specNow()` = `withDisabled(spec, current)` (`row.ts`; plain data) in the row's `aria` computed and at event time (`eventNode`)
 
 ## Tests

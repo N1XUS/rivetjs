@@ -19,6 +19,7 @@ import { Dialog, DialogTrigger } from "../dialog/index.tsx";
 import { Modal } from "../modal/index.tsx";
 import { Label } from "../label/index.tsx";
 import { RouterProvider } from "../utils/links.tsx";
+import { ListLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 import { I18nProvider } from "../i18n/i18n-provider.tsx";
 import {
   GridList,
@@ -723,7 +724,7 @@ describe("GridList", () => {
     });
   });
 
-  it.skip("should support virtualizer (RAC <Virtualizer> collection renderer not ported: integration point)", () => {});
+  // "should support virtualizer": ported below ("GridList virtualizer").
 
   it("should not propagate the checkbox context from selection into other cells", async () => {
     const { getByRole } = renderIt(() => (
@@ -1025,9 +1026,9 @@ describe("GridList", () => {
     });
 
     describe("virtualized", () => {
-      it.skip("should always render the sentinel even when virtualized (RAC <Virtualizer> renderer not ported)", () => {});
-      it.skip("should not reserve room for the loader if isLoading is false (RAC <Virtualizer> renderer not ported)", () => {});
-      it.skip("should have the correct row indicies after loading more items (RAC <Virtualizer> renderer not ported)", () => {});
+      it.skip("should always render the sentinel even when virtualized (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
+      it.skip("should not reserve room for the loader if isLoading is false (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
+      it.skip("should have the correct row indicies after loading more items (GridListLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
     });
   });
 
@@ -1315,5 +1316,67 @@ describe("GridList", () => {
         expect(document.activeElement).toBe(rows[0]);
       });
     });
+  });
+});
+
+// RAC GridList.test.js "should support virtualizer": real sizes (a 100 x 100 scroller and `initialSize`) instead of
+// mocked clientWidth / clientHeight; Rivet also checks aria-rowindex / aria-rowcount, focus and scroll-into-view.
+describe("GridList virtualizer", () => {
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const texts = (els: HTMLElement[]) => els.map((o) => o.textContent);
+  const settle = async (scroller: HTMLElement) => {
+    for (let last = -1; last !== scroller.scrollTop;) {
+      last = scroller.scrollTop;
+      await frame();
+      await frame();
+    }
+  };
+  const inView = (scroller: HTMLElement, el: Element | null) => {
+    const box = scroller.getBoundingClientRect();
+    const rect = el!.getBoundingClientRect();
+    return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1;
+  };
+  const items = Array.from({ length: 50 }, (_, i) => ({ id: i, name: "Item " + i }));
+  const firstWindow = ["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6"];
+  const scrolledWindow = ["Item 7", "Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14"];
+
+  it("should support virtualizer", async () => {
+    const user = userEvent.setup();
+    const { getByRole } = renderIt(() => (
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 25 }} initialSize={{ width: 100, height: 100 }}>
+        <GridList aria-label="Test" items={items} selectionMode="single" style={{ display: "block", width: "100px", height: "100px", overflow: "auto" }}>
+          {(item: { id: number; name: string }) => <GridListItem textValue={item.name}>{item.name}</GridListItem>}
+        </GridList>
+      </CollectionVirtualizer>
+    ));
+    const grid = getByRole("grid");
+    expect(grid).toHaveAttribute("aria-rowcount", "50");
+    expect(grid).toHaveAttribute("aria-colcount", "1");
+    let rows = within(grid).getAllByRole("row");
+    expect(texts(rows)).toEqual(firstWindow);
+    expect(rows[0]).toHaveAttribute("aria-rowindex", "1");
+    grid.scrollTop = 200;
+    fireEvent.scroll(grid);
+    await frame();
+    rows = within(grid).getAllByRole("row");
+    expect(texts(rows)).toEqual(scrolledWindow);
+    expect(rows[0]).toHaveAttribute("aria-rowindex", "8");
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await user.click(rows[1]!);
+    expect(rows[1]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(rows[1]);
+    await user.keyboard("{End}");
+    await settle(grid);
+    expect(document.activeElement?.textContent).toBe("Item 49");
+    expect(inView(grid, document.activeElement)).toBe(true);
+    // The focused row stays rendered next to the window.
+    expect(texts(within(grid).getAllByRole("row"))).toContain("Item 49");
+    await user.keyboard("{Home}");
+    await settle(grid);
+    expect(document.activeElement?.textContent).toBe("Item 0");
+    expect(grid.scrollTop).toBe(0);
+    await user.keyboard("{PageDown}");
+    await settle(grid);
+    expect(document.activeElement?.textContent).toBe("Item 3");
   });
 });

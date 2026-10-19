@@ -1,6 +1,6 @@
 // Ported from @react-stately/collections (getChildNodes.ts, getItemCount.ts), Apache-2.0, © Adobe.
 // Node traversal helpers shared by collections, selection managers and keyboard delegates.
-import type { Collection, Node } from "./types.ts";
+import type { Collection, Key, Node } from "./types.ts";
 
 export function getChildNodes<T>(node: Node<T>, collection: Collection<Node<T>>): Iterable<Node<T>> {
   // New API: call collection.getChildren with the node key.
@@ -80,4 +80,27 @@ export function getItemCount<T>(collection: Collection<Node<T>>): number {
   countItems(collection);
   countCache.set(collection, counter);
   return counter;
+}
+
+const positionCache = new WeakMap<object, Map<Key, readonly [number, number]>>();
+
+/**
+ * Rivet: `[aria-posinset, aria-setsize]` of the item `key` in a virtualized collection (only a window of its items is
+ * in the DOM, so the browser cannot count them): its 1-based position among the items of its section and that
+ * section's item count; top-level items count among the top-level items. Headers, separators and loaders are not
+ * counted. RA useOption / useMenuItem use `node.index + 1` (a section's header counted) of `getItemCount` (every item
+ * of every section): equal without sections, per section (role `group`) with them. Cached per committed collection.
+ */
+export function itemPosition<T>(collection: Collection<Node<T>>, key: Key): readonly [number, number] | undefined {
+  let cache = positionCache.get(collection);
+  if (!cache) positionCache.set(collection, (cache = new Map()));
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const node = collection.getItem(key);
+  if (!node || node.type !== "item") return undefined;
+  const parent = node.parentKey != null ? collection.getItem(node.parentKey) : null;
+  const keys: Key[] = [];
+  for (const sibling of parent ? getChildNodes(parent, collection) : collection) if (sibling.type === "item") keys.push(sibling.key);
+  keys.forEach((k, i) => cache.set(k, [i + 1, keys.length]));
+  return cache.get(key);
 }

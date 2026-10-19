@@ -6,7 +6,7 @@
 // (Rivet renders no marker attribute: the case asserts the RAC data-* state attributes instead).
 // Skipped: "should support custom render function" / "… as a link" (no RAC `render` prop); `portalContainer`
 // (decision 12: no portalContainer); "Subdialog" (Dialog inside SubmenuTrigger: lane C1a dialog parts, follow-up);
-// virtualized menus (VirtualizedMenu.test.tsx, no Virtualizer renderer for Menu yet); async loading
+// virtualized menus beyond "should support virtualizer" (VirtualizedMenu.test.tsx submenus / sections); async loading
 // `onLoadMore` intersection case (IntersectionObserver mock: covered by load-more-sentinel.browser.test.tsx).
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import "@rivetjs/testing/jest-dom";
@@ -24,6 +24,7 @@ import { Keyboard } from "../keyboard/index.tsx";
 import { Autocomplete } from "../autocomplete/index.tsx";
 import { SearchField } from "../search-field/index.tsx";
 import { Input } from "../input/index.tsx";
+import { ListLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 import { Menu, MenuContext, MenuItem, MenuSection, MenuTrigger, SubmenuTrigger, type MenuItemProps, type MenuProps, type Selection } from "../menu/index.tsx";
 
 afterEach(cleanup);
@@ -869,5 +870,69 @@ describe("Menu", () => {
         expect(input).toHaveAttribute("aria-activedescendant", first.id);
       });
     });
+  });
+});
+
+// RAC VirtualizedMenu.test.tsx (virtualized standalone menu): real sizes (a 100 x 100 scroller and `initialSize`)
+// instead of mocked clientWidth / clientHeight.
+describe("Menu virtualizer", () => {
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const texts = (els: HTMLElement[]) => els.map((o) => o.textContent);
+  const settle = async (scroller: HTMLElement) => {
+    for (let last = -1; last !== scroller.scrollTop;) {
+      last = scroller.scrollTop;
+      await frame();
+      await frame();
+    }
+  };
+  const inView = (scroller: HTMLElement, el: Element | null) => {
+    const box = scroller.getBoundingClientRect();
+    const rect = el!.getBoundingClientRect();
+    return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1;
+  };
+  const items = Array.from({ length: 50 }, (_, i) => ({ id: i, name: "Item " + i }));
+  const firstWindow = ["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6"];
+  const scrolledWindow = ["Item 7", "Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14"];
+
+  it("should support virtualizer", async () => {
+    const user = userEvent.setup();
+    const onAction = vi.fn();
+    const { getByRole } = within(
+      render((() => (
+        <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 25 }} initialSize={{ width: 100, height: 100 }}>
+          <Menu aria-label="Test" items={items} onAction={onAction} style={{ display: "block", width: "100px", height: "100px", overflow: "auto" }}>
+            {(item: { id: number; name: string }) => <MenuItem textValue={item.name}>{item.name}</MenuItem>}
+          </Menu>
+        </CollectionVirtualizer>
+      )) as never).container as HTMLElement,
+    );
+    const menu = getByRole("menu");
+    let menuItems = within(menu).getAllByRole("menuitem");
+    expect(texts(menuItems)).toEqual(firstWindow);
+    expect(menuItems[0]).toHaveAttribute("aria-posinset", "1");
+    expect(menuItems[0]).toHaveAttribute("aria-setsize", "50");
+    menu.scrollTop = 200;
+    fireEvent.scroll(menu);
+    await frame();
+    menuItems = within(menu).getAllByRole("menuitem");
+    expect(texts(menuItems)).toEqual(scrolledWindow);
+    expect(menuItems[0]).toHaveAttribute("aria-posinset", "8");
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await user.click(menuItems[1]!);
+    expect(onAction).toHaveBeenLastCalledWith(8);
+    menuItems[1]!.focus();
+    await user.keyboard("{End}");
+    await settle(menu);
+    expect(document.activeElement?.textContent).toBe("Item 49");
+    expect(inView(menu, document.activeElement)).toBe(true);
+    await user.keyboard("{Enter}");
+    expect(onAction).toHaveBeenLastCalledWith(49);
+    await user.keyboard("{Home}");
+    await settle(menu);
+    expect(document.activeElement?.textContent).toBe("Item 0");
+    expect(menu.scrollTop).toBe(0);
+    await user.keyboard("{PageDown}");
+    await settle(menu);
+    expect(document.activeElement?.textContent).toBe("Item 3");
   });
 });

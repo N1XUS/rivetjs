@@ -14,6 +14,7 @@ import { createId } from "@rivetjs/cdk/id";
 import { createMultipleSelectionState, type FocusStrategy, type MultipleSelectionState } from "../_adapters/collections.ts";
 import type { PressEvent } from "../interactions/press.tsx";
 import type { HoverEvent } from "../interactions/hover.tsx";
+import type { VirtualCollection } from "../_adapters/selection.ts";
 import { closeOverlay, createOverlayTriggerState, openOverlay, toggleOverlay, type OverlayTriggerProps, type OverlayTriggerState } from "./overlays.ts";
 import { createListState, getItemId, type Key, type ListProps, type ListState, type Selection, type SelectionMode } from "./list.ts";
 
@@ -234,7 +235,15 @@ export interface MenuProps extends Omit<
 /** react-stately `useTreeState` for a menu + RAC menu context (`menuData`: action, close; section selection). */
 export function createMenuState(
   props: MenuProps,
-  context: { root?: MenuTriggerState; level?: number; submenuTrigger?: SubmenuTriggerState; parentId?: string; id?: string } = {},
+  context: {
+    root?: MenuTriggerState;
+    level?: number;
+    submenuTrigger?: SubmenuTriggerState;
+    parentId?: string;
+    id?: string;
+    /** Rivet: a Menu inside a `CollectionVirtualizer` (its built collection + the layout delegate). */
+    virtual?: VirtualCollection;
+  } = {},
 ): MenuState {
   // Region state: a resumed page re-creating the menu's region (its first open) keeps it.
   return _regionState((): MenuState => {
@@ -268,6 +277,7 @@ export function createMenuState(
       delays: {},
       groups: {},
       itemCount: signal(0),
+      ...(context.virtual ? { virtual: context.virtual } : {}),
     };
   });
 }

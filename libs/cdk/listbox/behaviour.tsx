@@ -21,7 +21,7 @@
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Collection, FocusStrategy, Key, KeyboardDelegate, Node, Orientation, SelectionBehavior } from "../collections/types.ts";
 import { listCollection, listSelectionManager, type ListState } from "../collections/list-state.ts";
-import { getItemCount } from "../collections/nodes.ts";
+import { itemPosition } from "../collections/nodes.ts";
 import { SelectionManager } from "../selection/manager.ts";
 import { isFocusedKey } from "../selection/keyed.ts";
 import {
@@ -341,7 +341,7 @@ export function optionProps(
     // (Object-literal arrows: resumable closures.)
     Object.assign(attrs, {
       "aria-posinset": () => optionPosInSet(state, key),
-      "aria-setsize": () => optionSetSize(state),
+      "aria-setsize": () => optionSetSize(state, key),
     });
   return {
     optionProps: attrs,
@@ -361,13 +361,14 @@ function builtOf(state: ListState): Collection<Node<unknown>> | undefined {
   const c = state.collection as Collection<Node<unknown>> | (() => Collection<Node<unknown>>) | undefined;
   return typeof c === "function" ? c() : c;
 }
+// Position within the option's section (`itemPosition`: sections are groups; RA counts the header in `index`).
 const optionPosInSet = (state: ListState, key: Key): number | undefined => {
-  const index = builtOf(state)?.getItem(key)?.index;
-  return index == null ? undefined : index + 1;
-};
-const optionSetSize = (state: ListState): number | undefined => {
   const c = builtOf(state);
-  return c ? getItemCount(c) : undefined;
+  return c ? itemPosition(c, key)?.[0] : undefined;
+};
+const optionSetSize = (state: ListState, key: Key): number | undefined => {
+  const c = builtOf(state);
+  return c ? itemPosition(c, key)?.[1] : undefined;
 };
 
 // ---------------------------------------------------------------------------------------------

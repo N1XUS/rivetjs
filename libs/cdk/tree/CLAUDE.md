@@ -23,7 +23,8 @@ RAC Tree family + RA useTree/useTreeItem + Angular CDK TreeKeyManager/tree contr
 - `expandedKeys` / `selectedKeys`: plain value (controlled) or Signal (two-way). Local `isSignal` helper (reactivity does not export one).
 - NavigationTree has `render` prop supported: TreeItem adds `data-current`, `data-current-ancestor`, link-driven `data-focus-visible` + link/state contexts when `InternalNavigationTreeContext` present.
 - JSX passed as item props is evaluated in the collection build pass (`isHiddenPart()`): hideable parts (Input, …) render nothing — pass render functions.
-- Pending: DnD, virtualizer; row click stopPropagation (B5 selectable-item), item press props (C6a).
+- Virtualized (`<CollectionVirtualizer layout={ListLayout}>`, COLLECTION-VIRT-2 2026-10-19): ListLayout over the flattened expanded rows; `layoutDelegate` → grid options (PageUp / Down), `focusedKey` → `CollectionRoot`, root scroll → `renderer.onScroll` (`TREE_OWNED` incl. `onScroll`). Example `virtualizer-tree`, story `#vtree`, `tests/tree.browser.test.tsx` "Tree virtualizer".
+- Pending: DnD; row click stopPropagation (B5 selectable-item), item press props (C6a).
 - Open (docs lane D3, scratchpad bug log): `TreeSection` / `NavigationTreeSection` crash SSR (`TreeSection capture #4 … not serializable`); removing a row (`createTreeData.remove`) logs `Cannot read properties of null (reading 'key')`; row content does not re-render when a node's value changes (`createTreeData.update`); emptying `items` logs "Missing resumable element" (regressed with the `renderNodeAt` rework).
 - Live props (P5): Tree / TreeItem / TreeLoader `class` / `style` / `children` render props read live (`renderProps(…, props)`, untracked); rows kept on a live class change (`collections` `ownProps` + branch `nodeProps`); TreeItem `isDisabled` live (node props forward unread; locked by the LIVE-SWEEP round 2 test)
 

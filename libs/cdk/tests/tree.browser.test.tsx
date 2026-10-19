@@ -6,7 +6,7 @@
 // `@rivetjs/testing/user`; default classes `rv-*`; icon glyph buttons (⏷ ⏵ ⓘ ☰) → text labels; the stories
 // (`EmptyTreeStaticStory`, `LoadingStoryDepOnTopStory`, `TreeWithTextFieldStory`) are inlined, their MenuTrigger /
 // ComboBox cells replaced by Buttons / native inputs (same tab stops, none of the ported tests open them).
-// Skipped (reasons inline): RAC Virtualizer (no CollectionRenderer virtualizer in cdk yet);
+// Skipped (reasons inline): RAC Virtualizer cases beyond "should support virtualizer" (sections, loaders);
 // drag and drop (DnD lane); `data-rac` assertions (Rivet renders no `data-rac`).
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import "@rivetjs/testing/jest-dom";
@@ -21,6 +21,7 @@ import { Collection } from "../collections/components.tsx";
 import { Text } from "../text/index.tsx";
 import { TextField } from "../text-field/index.tsx";
 import { Input } from "../input/index.tsx";
+import { ListLayout, CollectionVirtualizer } from "../virtualizer/index.tsx";
 import { Toolbar } from "../toolbar/index.tsx";
 import { Tree, TreeHeader, TreeItem, TreeItemContent, TreeLoadMoreItem, TreeSection } from "../tree/index.tsx";
 
@@ -699,7 +700,7 @@ describe("Tree", () => {
     expect(new Set(onSelectionChange.mock.calls[1]![0])).toEqual(new Set(["projects"]));
   });
 
-  it.skip("should support virtualizer (no RAC Virtualizer CollectionRenderer in cdk yet)", () => {});
+  // "should support virtualizer": ported below ("Tree virtualizer").
 
   describe("general interactions", () => {
     it("should support hover on rows", async () => {
@@ -1693,7 +1694,7 @@ describe("Tree", () => {
       }
     });
 
-    it.skip("virtualized loaders (no RAC Virtualizer CollectionRenderer in cdk yet)", () => {});
+    it.skip("virtualized loaders (TreeLoadMoreItem inside CollectionVirtualizer not covered yet)", () => {});
   });
 
   describe("shouldSelectOnPressUp", () => {
@@ -2455,4 +2456,83 @@ AriaTreeTests({
 
 afterEach(() => {
   // AriaTreeTests renderers mount through `render`: unmounted by the file-level `cleanup`.
+});
+
+// RAC Tree.test.tsx "should support virtualizer" (ListLayout over the flattened expanded rows): real sizes (a 100 x 100
+// scroller and `initialSize`) instead of mocked clientWidth / clientHeight.
+describe("Tree virtualizer", () => {
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const texts = (els: HTMLElement[]) => els.map((o) => o.textContent);
+  const settle = async (scroller: HTMLElement) => {
+    for (let last = -1; last !== scroller.scrollTop;) {
+      last = scroller.scrollTop;
+      await frame();
+      await frame();
+    }
+  };
+  const inView = (scroller: HTMLElement, el: Element | null) => {
+    const box = scroller.getBoundingClientRect();
+    const rect = el!.getBoundingClientRect();
+    return rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1;
+  };
+  const items = Array.from({ length: 50 }, (_, i) => ({ id: i, name: "Item " + i }));
+  const firstWindow = ["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6"];
+  const scrolledWindow = ["Item 7", "Item 8", "Item 9", "Item 10", "Item 11", "Item 12", "Item 13", "Item 14"];
+
+  const folders = Array.from({ length: 10 }, (_, f) => ({
+    id: "f" + f,
+    name: "Folder " + f,
+    files: Array.from({ length: 4 }, (_, i) => ({ id: "f" + f + "-" + i, name: "File " + f + "." + i })),
+  }));
+  it("should support virtualizer", async () => {
+    const user = userEvent.setup();
+    const { getByRole } = renderIt(() => (
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 25 }} initialSize={{ width: 100, height: 100 }}>
+        <Tree
+          aria-label="Test"
+          items={folders}
+          defaultExpandedKeys={folders.map((f) => f.id)}
+          selectionMode="single"
+          style={{ display: "block", width: "100px", height: "100px", overflow: "auto" }}
+        >
+          {(folder: (typeof folders)[number]) => (
+            <TreeItem id={folder.id} textValue={folder.name}>
+              <TreeItemContent>{folder.name}</TreeItemContent>
+              <Collection items={folder.files}>
+                {(file: { id: string; name: string }) => (
+                  <TreeItem id={file.id} textValue={file.name}>
+                    <TreeItemContent>{file.name}</TreeItemContent>
+                  </TreeItem>
+                )}
+              </Collection>
+            </TreeItem>
+          )}
+        </Tree>
+      </CollectionVirtualizer>
+    ));
+    const tree = getByRole("treegrid");
+    let rows = within(tree).getAllByRole("row");
+    expect(texts(rows)).toEqual(["Folder 0", "File 0.0", "File 0.1", "File 0.2", "File 0.3", "Folder 1", "File 1.0"]);
+    expect(rows[1]).toHaveAttribute("aria-level", "2");
+    tree.scrollTop = 200;
+    fireEvent.scroll(tree);
+    await frame();
+    rows = within(tree).getAllByRole("row");
+    expect(texts(rows)).toEqual(["File 1.1", "File 1.2", "File 1.3", "Folder 2", "File 2.0", "File 2.1", "File 2.2", "File 2.3"]);
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await user.click(rows[3]!);
+    expect(rows[3]).toHaveAttribute("aria-selected", "true");
+    expect(document.activeElement).toBe(rows[3]);
+    await user.keyboard("{End}");
+    await settle(tree);
+    expect(document.activeElement?.textContent).toBe("File 9.3");
+    expect(inView(tree, document.activeElement)).toBe(true);
+    await user.keyboard("{Home}");
+    await settle(tree);
+    expect(document.activeElement?.textContent).toBe("Folder 0");
+    // Collapsing a folder removes its files from the flattened rows.
+    await user.keyboard("{ArrowLeft}");
+    await settle(tree);
+    expect(texts(within(tree).getAllByRole("row")).slice(0, 2)).toEqual(["Folder 0", "Folder 1"]);
+  });
 });

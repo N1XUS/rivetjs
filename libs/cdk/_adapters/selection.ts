@@ -20,9 +20,11 @@ import {
   getItemElement,
   getSearchCollator,
   isNonContiguousSelectionModifier,
+  type Collection,
   type FocusStrategy,
   type Key,
   type KeyboardDelegate,
+  type LayoutDelegate,
   type MultipleSelectionState,
   type Orientation,
 } from "./collections.ts";
@@ -77,6 +79,18 @@ export interface SelectableCollection extends MultipleSelectionState {
   readonly onAction?: ((key: Key) => void) | undefined;
   /** Sections with their own selection (RAC `MenuSection selectionMode`), by section key. */
   readonly groups?: Readonly<Record<string, MultipleSelectionState>> | undefined;
+  /**
+   * Rivet: a virtualized collection (RAC `Virtualizer`, only a window of items is rendered): the handlers navigate its
+   * built collection (an accessor) instead of the rendered DOM, page keys use the virtualizer's layout delegate, focus
+   * waits for the focused item to render and the scroll position is the virtualizer's.
+   */
+  readonly virtual?: VirtualCollection | undefined;
+}
+
+/** A virtualized collection's built collection and layout (see `SelectableCollection.virtual`). */
+export interface VirtualCollection {
+  readonly collection: () => Collection;
+  readonly layoutDelegate?: LayoutDelegate | undefined;
 }
 
 /** The manager selecting `key`: its section's own (GroupSelectionManager) or the collection's. */
@@ -98,8 +112,9 @@ export interface ItemPressHooks {
   onAction?(list: SelectableCollection, key: Key, root: HTMLElement): void;
 }
 
-/** Selection manager over the rendered collection under `root`. */
-export const managerOf = (list: MultipleSelectionState, root: HTMLElement): SelectionManager => new SelectionManager(domCollection(root), list);
+/** Selection manager over the rendered collection under `root` (a virtualized collection: its built collection). */
+export const managerOf = (list: MultipleSelectionState, root: HTMLElement): SelectionManager =>
+  new SelectionManager((list as SelectableCollection).virtual?.collection() ?? domCollection(root), list);
 
 /** Keyboard delegate of `root` (useSelectableList's default `ListKeyboardDelegate`). */
 export function delegateOf(list: SelectableCollection, root: HTMLElement, manager: SelectionManager): KeyboardDelegate {
@@ -112,6 +127,7 @@ export function delegateOf(list: SelectableCollection, root: HTMLElement, manage
     layout: list.options.layout ?? "stack",
     orientation: list.options.orientation ?? "vertical",
     direction: dirOf(root),
+    layoutDelegate: list.virtual?.layoutDelegate,
   });
 }
 
@@ -132,18 +148,35 @@ export function syncFocus(list: SelectableCollection, root: HTMLElement, previou
   const virtual = !!list.options.shouldUseVirtualFocus;
   if (focused && key != null && (key !== previous || force)) {
     const element = getItemElement(root, key);
-    if (element) {
-      if (virtual) moveVirtualFocus(element);
-      else if (document.activeElement !== element) focusSafely(element);
-      const modality = getInteractionModality();
-      if (modality === "keyboard" || force) {
-        scrollIntoView(root, element);
-        if (modality !== "virtual") scrollIntoViewport(element, { containingElement: root });
-      }
-    }
+    if (element) focusItem(virtual, root, element, force);
+    // Virtualized: the item renders once the virtualizer persists the new focused key (RA: useSelectableItem's
+    // effect after that render) — focus and scroll it in when it appears.
+    else if (list.virtual) whenRendered(list, root, key, force);
   }
   // The focused key went away (item removed): focus the collection itself.
   if (!virtual && focused && key == null && previous != null && root.isConnected) focusSafely(root);
+}
+
+function focusItem(virtual: boolean, root: HTMLElement, element: HTMLElement, force: boolean): void {
+  if (virtual) moveVirtualFocus(element);
+  else if (document.activeElement !== element) focusSafely(element);
+  const modality = getInteractionModality();
+  if (modality === "keyboard" || force) {
+    scrollIntoView(root, element);
+    if (modality !== "virtual") scrollIntoViewport(element, { containingElement: root });
+  }
+}
+
+/** Virtualized collections: focus the item of `key` after the render that adds it (a microtask, then a few frames). */
+function whenRendered(list: SelectableCollection, root: HTMLElement, key: Key, force: boolean): void {
+  let frames = 0;
+  const attempt = () => {
+    if (untrack(list.focusedKey) !== key || !untrack(list.isFocused)) return;
+    const element = getItemElement(root, key);
+    if (element) focusItem(!!list.options.shouldUseVirtualFocus, root, element, force);
+    else if (frames++ < 3) requestAnimationFrame(attempt);
+  };
+  queueMicrotask(attempt);
 }
 
 // Typeahead (useTypeSelect): `./type-select.ts` (its own module, so a closed Select trigger's typeahead does not
@@ -668,6 +701,8 @@ const scrollPositions = new WeakMap<object, { top: number; left: number }>();
 
 /** scroll on the collection root (remembered, restored when focus re-enters). */
 export function collectionScroll(list: SelectableCollection, e: Ev<Event>): void {
+  // RA: not for a virtualized collection (the virtualizer owns its scroll position).
+  if (list.virtual) return;
   scrollPositions.set(list, { top: e.currentTarget.scrollTop, left: e.currentTarget.scrollLeft });
 }
 
@@ -699,7 +734,7 @@ export function collectionFocusIn(list: SelectableCollection, e: Ev<FocusEvent>,
     // The server pre-sets the tab stop (RAC starts with focusedKey null): tabbing in with an empty
     // selection-follows-focus collection selects it, as RAC's first focus does.
     if (selectOnFocus && modality !== "pointer" && manager.isEmpty && !manager.isDisabled(manager.focusedKey)) manager.replaceSelection(manager.focusedKey);
-    const saved = scrollPositions.get(list);
+    const saved = list.virtual ? undefined : scrollPositions.get(list);
     if (saved) {
       root.scrollTop = saved.top;
       root.scrollLeft = saved.left;

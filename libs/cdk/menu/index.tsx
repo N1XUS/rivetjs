@@ -19,6 +19,9 @@
 //   (useSafelyMouseToSubmenu) attaches while the submenu is mounted.
 // - render props are accessors; `data-hovered` / `data-pressed` / `data-focus-visible` are written by the
 //   delegated handler (signals only when a `class` / `style` / `children` function asks for them).
+// - Inside a `<CollectionVirtualizer layout={ListLayout}>` the menu builds its collection (`builtCollectionOf`): the
+//   state's `virtual` (built collection + layout delegate) makes the delegated handler navigate it, items render as
+//   views with `aria-posinset` / `aria-setsize`, the menu element is the scroll container. Submenus: not covered.
 // - `class` = RAC `className` (defaults `rv-Menu`, `rv-MenuItem`, `rv-MenuSection`, `rv-MenuLoadingIndicator`).
 // - SelectableCollectionContext (Autocomplete) merges under the menu props: `shouldUseVirtualFocus` /
 //   `disallowTypeAhead` / `autoFocus` may be accessors (read in bindings; a client effect mirrors them into
@@ -26,8 +29,8 @@
 //   `Show`, live collection); `onFocusIn` goes on the menu element; `react-aria-focus` /
 //   `react-aria-clear-focus` are handled on the menu element.
 // `render` (RAC DOMRenderProps) on Menu (`<div>`), MenuSection (`<section>`) and MenuItem (`<div>` / `<a>`): given, the attributes object goes to `render(attrs, renderProps)`. Deviations: no FocusScope around the menu (the popover's focus scope contains focus;
-//   a standalone menu has no FocusManager); no virtualizer; `isEmpty` counts rendered (visible) items (live
-//   collection); live-mode filtering keeps empty sections (RAC drops them); no `--trigger-width` on the popover.
+//   a standalone menu has no FocusManager); `isEmpty` counts rendered (visible) items (live collection; a
+//   virtualized menu: its rendered window); live-mode filtering keeps empty sections (RAC drops them); no `--trigger-width` on the popover.
 import { _regionState, onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
@@ -59,10 +62,13 @@ import {
   SectionContext,
   createBranchComponent,
   createLeafComponent,
+  builtCollectionOf,
   isCollectionProbe,
   isHidden,
   type CollectionProps,
 } from "../collections/components.tsx";
+import { itemPosition } from "../collections/nodes.ts";
+import type { VirtualCollection } from "../_adapters/selection.ts";
 import { CollectionNode, ItemNode, LoaderNode, SectionNode } from "../collections/base.ts";
 import { HeaderContext } from "../header/index.tsx";
 import { SeparatorContext } from "../separator/index.tsx";
@@ -123,6 +129,12 @@ function liveItemDisabled(state: MenuState, key: Key, own: () => unknown): () =>
   return () => itemDisabled(state, key, !!own());
 }
 /** `aria-disabled` of a live disabled flag. */
+/** `aria-posinset` (0) / `aria-setsize` (1) of a virtualized menu's item (`itemPosition`: per section). */
+function menuItemPosition(state: MenuState, key: Key, part: 0 | 1): number | undefined {
+  const collection = state.virtual?.collection();
+  return collection ? itemPosition(collection as never, key)?.[part] : undefined;
+}
+
 function ariaDisabledOf(disabled: () => boolean): () => "true" | undefined {
   return () => (disabled() ? "true" : undefined);
 }
@@ -382,6 +394,16 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
   const triggerState = useContext(RootMenuTriggerStateContext);
   const scope = useContext(SubmenuScopeContext);
   const userOnClose = props.onClose;
+  const items = props.items,
+    children = props.children;
+  const content = () => <Collection items={items as never} children={children} />;
+  const renderer = useContext(CollectionRendererContext);
+  // RAC: inside a Virtualizer the menu renders from its built collection (only the visible window has items; the
+  // delegated handler navigates the built collection, page keys use the layout). A local const arrow (resumable)
+  // over a per-instance memo key.
+  const builtKey = renderer.isVirtualized ? {} : null;
+  const virtualCollection = () => builtCollectionOf(builtKey!, content) as unknown as ReturnType<VirtualCollection["collection"]>;
+  const virtual: VirtualCollection | undefined = builtKey ? { collection: virtualCollection, layoutDelegate: renderer.layoutDelegate as never } : undefined;
   const state = createMenuState(
     {
       selectionMode: props.selectionMode,
@@ -405,6 +427,7 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
       level: scope ? scope.sub.submenuLevel + 1 : 0,
       ...(scope ? { submenuTrigger: scope.sub, parentId: scope.parentId } : {}),
       ...(props.id ? { id: props.id } : {}),
+      ...(virtual ? { virtual } : {}),
     },
   );
   // MenuTrigger's reactive menu id (DialogContext `idRef` pattern): the trigger's aria-controls follows a Menu `id`
@@ -458,10 +481,12 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
     });
   });
 
-  const items = props.items,
-    children = props.children;
-  const content = () => <Collection items={items as never} children={children} />;
-  const { CollectionRoot } = useContext(CollectionRendererContext);
+  const { CollectionRoot } = renderer;
+  // Virtualized: the menu element is the scroll container (RAC scrollRef); its focused item stays rendered and its
+  // scroll events reach the renderer.
+  const rootCollection = builtKey ? virtualCollection : null;
+  const focusedKey = builtKey ? state.focusedKey : undefined;
+  const virtualScroll = builtKey ? renderer.onScroll : undefined;
   // Items first (they count themselves for `data-empty`), then the element.
   const body = (
     <Provider
@@ -479,7 +504,7 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
         [RootMenuTriggerStateContext, state.root],
       ]}
     >
-      {() => CollectionRoot({ collection: null, content }) as Content}
+      {() => CollectionRoot({ collection: rootCollection as never, content, scrollRef: element, focusedKey }) as Content}
     </Provider>
   );
   const renderEmptyState = props.renderEmptyState;
@@ -548,6 +573,7 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
         onDragStart?.(e);
       },
       onScroll: (e: Event) => {
+        virtualScroll?.(e);
         menuEvent(e, aria, state);
         onScroll?.(e);
       },
@@ -631,6 +657,7 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
         onDragStart?.(e);
       }}
       onScroll={(e: Event) => {
+        virtualScroll?.(e);
         menuEvent(e, aria, state);
         onScroll?.(e);
       }}
@@ -970,6 +997,13 @@ export const MenuItem = /*#__PURE__*/ createLeafComponent(ItemNode, function Men
     "aria-haspopup": hasSubmenu ? "menu" : undefined,
     "data-has-submenu": dataBool(hasSubmenu),
   };
+  if (state.virtual)
+    // useMenuItem (virtualized): the item's position comes from the built collection (only a window is rendered).
+    // (Object-literal arrows: resumable closures.)
+    Object.assign(attrs, {
+      "aria-posinset": () => menuItemPosition(state, key, 0),
+      "aria-setsize": () => menuItemPosition(state, key, 1),
+    });
   const renderItem = () => {
     count();
     const content = body();

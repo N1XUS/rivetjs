@@ -1,0 +1,47 @@
+/* Plain CSS: the Menu inside the popover is the scroll container (client size = the Virtualizer initialSize). */
+body {
+  margin: 16px;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  color: #0f172a;
+}
+.stack {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+output {
+  color: #475569;
+}
+.rv-Button {
+  padding: 6px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+}
+.rv-Popover {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
+}
+.rv-Menu {
+  width: 220px;
+  height: 256px;
+  overflow: auto;
+  outline: none;
+}
+.rv-MenuItem {
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: default;
+  outline: none;
+}
+.rv-MenuItem[data-focused] {
+  background: #e0e7ff;
+}

@@ -340,7 +340,7 @@ Deviations:
 
 ## Not yet supported
 
-- Drag and drop (`dragAndDropHooks`, drop indicators, `Button slot="drag"`) and virtualized trees inside `Virtualizer`.
+- Drag and drop (`dragAndDropHooks`, drop indicators, `Button slot="drag"`). Virtualized trees: `<CollectionVirtualizer layout={ListLayout}>` (see [Virtualizer](../foundations/virtualizer.md#collection-components)); `TreeLoadMoreItem` and `TreeSection` inside it are not covered yet.
 - `dependencies` is accepted and ignored.
 - `TreeSection` / `TreeHeader` in server-rendered pages (see [Sections](#sections)).
 - Press events on items (`onPress*`); a row click does not stop propagation yet.
