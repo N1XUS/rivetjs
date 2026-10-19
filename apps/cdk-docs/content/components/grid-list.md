@@ -296,7 +296,7 @@ Rows must carry `data-key` and `data-collection` (the grid id): the handlers rea
 ## Resumability
 
 - The server renders every row with its final `aria-selected`, `aria-disabled` and `tabindex`, and the selection checkboxes checked. No GridList code runs before the first interaction.
-- Live collection: handlers read `data-key`, `data-text-value`, `aria-disabled`, `data-href` back from the DOM, so no item model is serialized.
+- The collection is built from the children or `items` (as React Aria builds it): the rows render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
 - Callbacks (`onAction`, `onSelectionChange`, `onLoadMore`, press / hover events) must be inline arrows or local functions. For derived `items`, pass a `computed` (or a signal).
 - `GridListLoadMoreItem` observes its sentinel once the GridList code has loaded.
 - `on…Capture` handlers do not resume yet.
@@ -333,7 +333,6 @@ expect([...(picked() as Set<Key>)]).toEqual(["dog"]);
 
 Deviations:
 
-- Live collection: rows render in place and the handlers read the collection from the DOM.
 - Render props are accessors; `class` is RAC `className`.
 - `isEmpty` of static children is only known with `renderEmptyState` set; an empty grid is always tabbable (no `useHasTabbableChild`).
 - The description / section heading ids are always set on the server (like React SSR), even without a description `Text`.

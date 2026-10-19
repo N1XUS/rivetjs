@@ -6,10 +6,10 @@
 // @react-aria/gridlist port (`./behaviour.ts`).
 //
 // Rivet:
-// - B5 LIVE collection mode: the rows render in place (`data-key` on the row); the handlers read the
-//   collection back from the grid's DOM per event (`listStateView(state, shared)` →
-//   `listCollection(state)` → `domCollection`). Resumed pages need no item model; the grid and its
-//   rows resume from serializable state only (`createListState` signals + keys + plain item props).
+// - Rows render from the built collection (below; `data-key` on the row); the handlers read it per event
+//   (`listStateView(state, shared)` → `listCollection(state)`). Resumed pages ship no item model: the collection is
+//   rebuilt from the content, the grid and its rows resume from serializable state only (`createListState` signals +
+//   keys + plain item props).
 // - Row attributes are computed per row from a one-node collection of the row's own props
 //   (`rowCollection(spec)`) inside a `computed` (selection / focus / disabled reads are reactive);
 //   handlers rebuild the row node from the DOM collection per event (`eventNode`).
@@ -19,11 +19,13 @@
 //   `class` / `style` / `children` function asks for render props.
 // - `className` → `class` (default `rv-GridList`, `rv-GridListItem`, `rv-GridListSection`,
 //   `rv-GridListHeader`, `rv-GridListLoadingIndicator`).
-// - Inside a `<CollectionVirtualizer layout={ListLayout | GridLayout}>` (RAC Virtualizer) the GridList builds its
-//   collection (`builtCollectionOf`): rows render from it as views, handlers navigate it, the grid element is the
-//   scroll container (scroll forwarded to the renderer), the focused row is persisted, rows get `aria-rowindex`.
+// - The GridList builds its collection (`computed(buildCollectionFrom(content))` in the body; LAZY-ROWS T3, 2026-10-19:
+//   always, virtualized only before): rows render from it through the renderer's keyed `For` (`renderNodeAt`, lazy-row
+//   eligible), handlers navigate it; a resumed page rebuilds it from the content on first need. Inside a
+//   `<CollectionVirtualizer layout={ListLayout | GridLayout}>` (RAC Virtualizer) rows render as views, the grid element
+//   is the scroll container (scroll forwarded to the renderer), the focused row is persisted, rows get `aria-rowindex`.
 // Deviation: `isEmpty` is known for `items` collections and, when `renderEmptyState` is set, for static
-//   children (built with `collectionOf`); static children without `renderEmptyState` count as non-empty.
+//   children (the built collection's size); static children without `renderEmptyState` count as non-empty.
 // Deviation: react-aria `useHasTabbableChild` (empty state with a tabbable child) is not tracked: an
 //   empty grid is always tabbable.
 // Deviation: the description / section heading ids (react-aria `useSlotId`) are always set on the
@@ -39,10 +41,10 @@ import {
   Collection,
   CollectionRendererContext,
   DefaultCollectionRenderer,
-  builtCollectionOf,
-  collectionOf,
+  buildCollectionFrom,
   createBranchComponent,
   createLeafComponent,
+  type CollectionInput,
   type CollectionProps,
 } from "../collections/components.tsx";
 import { createListState, listSelectionManager, type ListState } from "../collections/list-state.ts";
@@ -277,12 +279,11 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
       {children}
     </Collection>
   );
-  // RAC: inside a Virtualizer the list renders from its built collection (only the visible window has rows; the
-  // handlers navigate the built collection, not the rendered DOM). A local const arrow (resumable) over a per-instance
-  // memo key; an arrow inside a conditional expression would not resume.
-  const builtKey = isVirtualized ? {} : null;
-  const virtualCollection = () => builtCollectionOf(builtKey!, content) as unknown as ICollection<Node<T>>;
-  const collection = builtKey ? virtualCollection : undefined;
+  // The list renders from its built collection (RAC: inside a Virtualizer only the visible window has rows; the
+  // handlers navigate the built collection, not the rendered DOM; LAZY-ROWS T3: every GridList, so its rows are the rows
+  // of the renderer's keyed `For`). A computed in the body: the compiler records it as a resumable computed (with the
+  // host's provider frame), so a resumed page rebuilds it from `content` on its first read.
+  const collection = computed(() => buildCollectionFrom(content) as unknown as ICollection<Node<T>>);
   const state = createListState<T>({
     id: props.id,
     collection,
@@ -358,10 +359,7 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
           return true;
         }
       : renderEmptyState
-        ? (() => {
-            const built = collectionOf(content);
-            return () => built().size === 0;
-          })()
+        ? () => collection().size === 0
         : () => false;
   const version = itemsOf != null ? (typeof itemsOf === "function" ? (itemsOf as () => unknown) : () => itemsOf) : () => null;
 
@@ -387,11 +385,11 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
   // Grid attributes (reactive): the render view only needs the size and the focused key.
   const gridAttrs = computed(() => {
     const empty = isEmpty();
-    const collection = buildCollection<T>([]);
+    const none = buildCollection<T>([]);
     const v: GridListStateLike<T> = {
       // Virtualized: the built collection (useGridList `aria-rowcount` = its size).
-      collection: builtKey ? virtualCollection() : ({ ...collection, size: empty ? 0 : 1 } as unknown as ICollection<Node<T>>),
-      selectionManager: listSelectionManager(state, collection),
+      collection: isVirtualized ? collection() : ({ ...none, size: empty ? 0 : 1 } as unknown as ICollection<Node<T>>),
+      selectionManager: listSelectionManager(state, none),
       disabledKeys: state.disabledKeys,
       list: shared,
     };
@@ -413,9 +411,9 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
   const rootRef = mergeRefValues<HTMLDivElement>(ref, gridEl);
   // Virtualized: the grid element is the scroll container (RAC scrollRef); its focused row stays rendered and its
   // scroll events reach the renderer (the engine follows the scroll position).
-  const rootCollection = collection ?? null;
-  const focusedKey = builtKey ? state.selectionState.focusedKey : undefined;
-  const virtualScroll = builtKey ? customRenderer?.onScroll : undefined;
+  const rootCollection = collection;
+  const focusedKey = isVirtualized ? state.selectionState.focusedKey : undefined;
+  const virtualScroll = isVirtualized ? customRenderer?.onScroll : undefined;
   const scrolled = (e: Event) => {
     virtualScroll?.(e);
     onScroll?.(e as never);
@@ -708,7 +706,7 @@ export const GridListItem = /*#__PURE__*/ createLeafComponent(
       };
       const result = gridListItemProps(itemOptions(node), v);
       // RA useGridListItem (virtualized): the row's index in the whole collection (the one-node collection's is 1).
-      if (built) result.rowProps["aria-rowindex"] = gridListRowIndex(built(), key);
+      if (isVirtualized && built) result.rowProps["aria-rowindex"] = gridListRowIndex(built(), key);
       const checkbox = gridListSelectionCheckboxProps({ key, locale, id: checkboxId }, v).checkboxProps;
       return {
         ...result,
@@ -1070,6 +1068,8 @@ export const GridListSection = /*#__PURE__*/ createBranchComponent(
   SectionNode,
   function GridListSection(props: GridListSectionProps<any>, forwardedRef: unknown, item: Node<any>) {
     const { CollectionBranch } = useContext(CollectionRendererContext);
+    // The grid list's built collection (rows render from it); null outside a GridList (live content).
+    const collection = (useContext(GridListInternalContext)?.collection ?? null) as CollectionInput;
     const heading = createSlotId();
     const ariaLabel = props["aria-label"];
     const aria = gridListSectionProps({ "aria-label": ariaLabel, headingId: heading.id });
@@ -1096,7 +1096,7 @@ export const GridListSection = /*#__PURE__*/ createBranchComponent(
               [GridListHeaderInnerContext, { ...aria.rowHeaderProps, id: heading }],
             ]}
           >
-            {CollectionBranch({ collection: null, parent: item }) as never}
+            {CollectionBranch({ collection, parent: item }) as never}
           </Provider>
         ),
       };
@@ -1121,7 +1121,7 @@ export const GridListSection = /*#__PURE__*/ createBranchComponent(
             [GridListHeaderInnerContext, { ...aria.rowHeaderProps, id: heading }],
           ]}
         >
-          {CollectionBranch({ collection: null, parent: item }) as never}
+          {CollectionBranch({ collection, parent: item }) as never}
         </Provider>
       </div>
     );

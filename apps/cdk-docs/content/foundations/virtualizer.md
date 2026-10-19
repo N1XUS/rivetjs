@@ -186,7 +186,7 @@ Give `onLoadMore` (and usually `isLoading`) to append a loader node (key `LOADER
 | `children` | the collection component | (required) | One `ListBox`, `GridList`, `Menu`, `Tree` or `Table`. |
 | `layout` | `LayoutInput<O>` | (required) | `ListLayout` / `GridLayout` / `TableLayout` (class or factory). |
 | `layoutOptions` | `O` | none | JSON layout options, e.g. `{ rowHeight: 32 }`. |
-| `initialSize` | `{ width, height }` | `800 x 600` | Size of the server window. Use the component's client size (inside borders). |
+| `initialSize` | `{ width, height }` | `800 x 600` | Size of the server window. Use the component's client size (inside borders, padding included): a resumed page keeps it until the first interaction. |
 | `dir` | `"ltr" \| "rtl"` | none | Physical view positions; without it, logical `inset-inline-start`. |
 
 - The component's own element is the scroll container. Give it a size and `overflow: auto`.

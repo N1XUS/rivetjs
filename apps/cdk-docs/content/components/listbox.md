@@ -331,7 +331,7 @@ The state is `createListState(props)` from `@rivetjs/cdk/collections/list-state`
 ## Resumability
 
 - The server renders every option with its final `aria-selected`, `aria-disabled` and `tabindex`. No ListBox code runs before the first interaction; `data-rk` holds a cold navigation key so it does not scroll the page while the handler loads.
-- The collection is the rendered options (live mode): handlers read `data-key`, `data-text-value`, `aria-disabled`, `href` back from the DOM, so no item model is serialized.
+- The collection is built from the children or `items` (as React Aria builds it): the options render from it, and no item model is serialized: the browser rebuilds it from the same children on the first interaction.
 - Option callbacks (`onAction`, press, hover, key events) are attached only when given. Callbacks must be inline arrows or local functions.
 - For derived `items`, pass a `computed` (or a signal).
 - `on…Capture` handlers do not resume yet.
@@ -369,7 +369,7 @@ expect([...(picked() as Set<Key>)]).toEqual(["banana"]);
 
 Deviations:
 
-- Live collections: options render in place and the handlers read the collection from the DOM; a parent state with a built collection (Select, ComboBox) renders node by node.
+- A parent state with its own built collection (Select, ComboBox) renders from that collection.
 - One delegated handler set on the listbox runs every option's selectable-item / hover logic.
 - Render props are accessors; `class` is RAC `className`.
 - `items` preset: `<ListBox items={…} />` without children renders each item as a `ListBoxItem`.

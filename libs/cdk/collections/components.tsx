@@ -159,8 +159,22 @@ export function buildCollectionFrom<C extends BaseCollection<any> = BaseCollecti
   } finally {
     run.o = null;
   }
-  return buildCollection(scope.specs, createCollection) as C;
+  const keyed = typeof content === "function" || (typeof content === "object" && content !== null);
+  try {
+    const built = buildCollection(scope.specs, createCollection) as C;
+    if (keyed) (lastBuilt ??= new WeakMap()).set(content as object, built);
+    return built;
+  } catch (error) {
+    // A rebuild between two unbatched writes (an item moved from one `items` signal to another: added to the first, not
+    // yet removed from the second) sees a key twice; RAC never builds that state (React batches the renders). Keep the
+    // content's last collection: the build read every source, so the second write rebuilds it. A first build throws.
+    const last = keyed ? lastBuilt?.get(content as object) : undefined;
+    if (last !== undefined && error instanceof Error && error.message.startsWith("Duplicate key ")) return last as C;
+    throw error;
+  }
 }
+/** The last collection each content built (`buildCollectionFrom`'s duplicate-key tolerance on rebuilds). */
+let lastBuilt: WeakMap<object, BaseCollection<any>> | undefined;
 
 /**
  * Rivet (server): evaluate `content` in build mode registering nothing, so the collection root in it (ListBox / Menu /
@@ -262,8 +276,56 @@ export function CollectionBuilder<C extends BaseCollection<any>>(props: Collecti
 /** Call lazy content / thunks; arrays element-wise. Results are discarded in build mode. */
 function evaluate(content: unknown): unknown {
   if (typeof content === "function" && (isSlot(content) || content.length === 0)) return evaluate((content as () => unknown)());
-  if (Array.isArray(content)) return content.map(evaluate);
+  if (Array.isArray(content)) {
+    if (!isServer && hasThunk(content)) {
+      const build = useContext(BuildContext);
+      if (build) return evaluateInOrder(content, build.specs);
+    }
+    return content.map(evaluate);
+  }
   return content;
+}
+
+// Build-pass order (browser). A children array is built eagerly: its parts register while JSX builds the array, and a
+// `{() => …}` / `<Show>` / `<For>` child (an accessor) registers only when `evaluate` calls it, after its siblings. In
+// build mode, parts return a per-spec mark (an empty comment: renders nothing; a node, so array copies — the dev
+// runtime maps component output — keep it), so the array says where each eager part's spec belongs; an accessor's
+// specs go where the accessor sits. Server: the build calls everything in document order already.
+let marks: WeakMap<object, CollectionNodeSpec<any>> | undefined;
+/** The value a part returns in build mode: `null` on the server, a mark of its spec in the browser. */
+const buildMark = (spec: CollectionNodeSpec<any>): unknown => {
+  if (isServer) return null;
+  // `globalThis.document`: the compiler rejects bare browser globals in a server-rendered module (RV2001).
+  const mark = globalThis.document.createComment("");
+  (marks ??= new WeakMap()).set(mark, spec);
+  return mark;
+};
+const isThunk = (value: unknown): boolean => typeof value === "function" && (isSlot(value) || value.length === 0);
+function hasThunk(content: readonly unknown[]): boolean {
+  for (const value of content) if (isThunk(value) || (Array.isArray(value) && hasThunk(value))) return true;
+  return false;
+}
+function evaluateInOrder(content: readonly unknown[], list: CollectionNodeSpec<any>[]): unknown {
+  const listed = new Set(list);
+  const order: CollectionNodeSpec<any>[] = [];
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) for (const item of value) walk(item);
+    else if (isThunk(value)) {
+      const start = list.length;
+      evaluate(value);
+      for (const spec of list.splice(start)) order.push(spec);
+    } else if (value !== null && typeof value === "object") {
+      const spec = marks?.get(value);
+      if (spec && listed.has(spec)) order.push(spec);
+    }
+  };
+  walk(content);
+  const placed = new Set(order);
+  let at = 0;
+  for (const spec of list) if (!placed.has(spec)) list[at++] = spec;
+  list.length = at;
+  for (const spec of order) list.push(spec);
+  return null;
 }
 
 /**
@@ -389,7 +451,7 @@ export function createLeafComponent<P extends object, E extends Element = HTMLEl
       const value = all.value ?? defaults?.value;
       // RAC passes node.props as given: `id` only when the user (or an `items` row) supplied one.
       const explicitId = resolveId(all, defaults, collectionCtx);
-      build.specs.push({
+      const spec: CollectionNodeSpec<any> = {
         type: NodeClass,
         id: explicitId ?? generatedId(build.parentKey, build.ids),
         value: value as never,
@@ -404,8 +466,9 @@ export function createLeafComponent<P extends object, E extends Element = HTMLEl
             p.ref,
             node as Node<T>,
           ),
-      });
-      return null;
+      };
+      build.specs.push(spec);
+      return buildMark(spec);
     }
     const scope = useContext(CollectionScopeContext);
     if (!scope) {
@@ -469,7 +532,7 @@ export function createBranchComponent<P extends { children?: unknown }, E extend
       provide(BuildContext, { specs: spec.children, parentKey: key, ids: { n: 0 }, run: build.run }, () =>
         provide(CollectionItemContext, null, () => tracked(build, () => evaluate(() => useChildren(childProps(props, all, id))))),
       );
-      return null;
+      return buildMark(spec);
     }
     const scope = useContext(CollectionScopeContext);
     const key = id ?? generatedId(scope?.parentKey, scope?.ids ?? { n: 0 });

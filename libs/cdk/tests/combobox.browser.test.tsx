@@ -529,7 +529,7 @@ describe("ComboBox", () => {
     function WithCreateOption() {
       const inputValue = signal("");
       // Rivet: the conditional "Create" item is a dynamic `{() => …}` child (tracked by the build pass), together with
-      // the items that follow it (a dynamic child registers after its eager JSX siblings); an explicit `id` keeps the
+      // the items that follow it (upstream shape kept; a dynamic child also keeps its place among eager siblings); an explicit `id` keeps the
       // generated ids of the static items stable, `textValue` because its children are not a string.
       return (
         <ComboBox allowsEmptyCollection inputValue={inputValue}>

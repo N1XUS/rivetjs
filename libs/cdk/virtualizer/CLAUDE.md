@@ -61,6 +61,8 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - Not covered: Table column resizing inside a Virtualizer, a Virtualizer around a Select / ComboBox popover ListBox (an Autocomplete-filtered popover ListBox works: ui-docs `autocomplete-virtualization`, server window + cold wheel + filter + select; keyboard virtual focus after `fill` is broken there without the Virtualizer too), load-more items in virtualized GridList / Tree / Menu
 - Section headers: ListLayout keeps a header rendered while any row of its section is visible (`isVisible` includes `header`); no `position: sticky` (RAC sets none on ListLayout either)
 - Content has `pointer-events: none` for ~300 ms after a scroll (isScrolling): tests clicking right after a scroll wait
+- `initialSize` must be the scroll container's client box (padding included, scrollbar excluded): a resumed page keeps the server window at `initialSize` until its first interaction, a client render measures at mount (story `/virtualized-collections`: 240 × 320 lists with the theme's 4px padding = 248 × 328; fuzz finding 2026-10-19).
+- Open (runtime, fuzz pin `/virtualized-collections` recreated): a section view's nested `For` (`VirtualizerBranch`) reads `views` on the server inside the root `For`'s row, so the first engine start re-creates the section and its rows on a resumed page.
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../scrolling/CLAUDE.md](../scrolling/CLAUDE.md) (Angular CDK alternative), [../collections/CLAUDE.md](../collections/CLAUDE.md)

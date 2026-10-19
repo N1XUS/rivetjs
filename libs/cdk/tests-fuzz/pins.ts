@@ -28,7 +28,7 @@ export const pins: FuzzPin[] = [
     owner: "cdk",
     note: "Select autoFocus: a client render never focuses the trigger (the focusable `clientEffect` calls no `focus()`, probe 2026-10-12); a document load focuses it through the native `autofocus`",
   },
-  ...["/grid-list", "/render-resumed", "/selection-indicator-groups"].map((route): FuzzPin => ({
+  ...["/grid-list", "/render-resumed", "/selection-indicator-groups", "/virtualized-collections"].map((route): FuzzPin => ({
     route,
     kind: "load",
     match: "resumed only [aria-labelledby=",
@@ -78,8 +78,21 @@ export const pins: FuzzPin[] = [
 
   // Open findings.
   { route: "/autocomplete", kind: "recreated", match: "div#ac-list", owner: "cdk", note: "Autocomplete ListBox " + NO_REGION },
-  { route: "/grid-list", kind: "recreated", match: "rv-GridListItem", owner: "cdk", note: "GridList rows " + NO_REGION },
   { route: "/lightbox", kind: "recreated", match: "rv-LightboxSlide", owner: "cdk", note: "Lightbox slides " + NO_REGION },
+  {
+    route: "/virtualized-collections",
+    kind: "recreated",
+    match: "section.rv-ListBoxSection",
+    owner: "runtime",
+    note: "virtualized ListBox sections (2026-10-19, LAZY-T3 triage; on base too): a section view's part renders a nested `For` (the virtualizer's child views, `VirtualizerBranch`) whose `each` reads the engine's `views` signal on the server inside the root `For`'s row; the first engine start (first click / focus) writes `views`, and the row region re-creates the section with its rows (the clicked option is replaced under the click: focus lands on the body)",
+  },
+  {
+    route: "/virtualized-collections",
+    kind: "mismatch",
+    match: /vsections/,
+    owner: "runtime",
+    note: "follows the section re-creation above: the clicked option lost focus on the resumed page, so the next keys select / move differently",
+  },
   {
     route: "/dom-events-collections",
     kind: "mismatch",

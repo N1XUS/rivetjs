@@ -88,7 +88,7 @@ describe("collection build pass tracks nested reads", () => {
     expect(container.textContent).toBe("YX");
   });
 
-  it("a dynamic child mixed with eager siblings registers after them (JSX evaluates the siblings first)", async () => {
+  it("a dynamic child mixed with eager siblings registers where it sits (build marks; JSX evaluates the siblings first)", async () => {
     const show = signal(true);
     render(() => (
       <BuiltList>
@@ -96,10 +96,34 @@ describe("collection build pass tracks nested reads", () => {
         <Item id="x">X</Item>
       </BuiltList>
     ));
-    expect(keysOf()).toEqual(["x", "create"]);
+    expect(keysOf()).toEqual(["create", "x"]);
     show.set(false);
     await flush();
     expect(keysOf()).toEqual(["x"]);
+  });
+
+  it("a dynamic child between eager siblings (root and nested) keeps document order across rebuilds", async () => {
+    const show = signal(false);
+    const { container } = render(() => (
+      <BuiltList>
+        <Item id="a">A</Item>
+        {() => (show() ? <Item id="b">B</Item> : null)}
+        <Item id="c">C</Item>
+        <Group id="g">
+          <Item id="y">Y</Item>
+          {() => (show() ? [<Item id="z1">Z1</Item>, <Item id="z2">Z2</Item>] : null)}
+          <Item id="w">W</Item>
+        </Group>
+      </BuiltList>
+    ));
+    expect(keysOf()).toEqual(["a", "c", "g", "y", "w"]);
+    show.set(true);
+    await flush();
+    expect(keysOf()).toEqual(["a", "b", "c", "g", "y", "z1", "z2", "w"]);
+    expect(container.textContent).toBe("ABCYZ1Z2W");
+    show.set(false);
+    await flush();
+    expect(keysOf()).toEqual(["a", "c", "g", "y", "w"]);
   });
 
   it("rebuilds through a nested Collection with a signal `items` inside a user component", async () => {

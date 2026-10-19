@@ -1,5 +1,4 @@
 import { signal } from "@rivetjs/reactivity";
-import { Show } from "@rivetjs/runtime/dom";
 import { Button } from "@rivetjs/cdk/button";
 import { GridList, GridListItem } from "@rivetjs/cdk/grid-list";
 import { Text } from "@rivetjs/cdk/text";
@@ -89,9 +88,9 @@ export default function GridListStory() {
       <GridList id="gl-ssr" aria-label="GridList">
         <GridListItem id="1">Left</GridListItem>
         <GridListItem id="2">Middle</GridListItem>
-        <Show when={show}>
-          <GridListItem id="4">Extra</GridListItem>
-        </Show>
+        {/* A JS conditional (upstream `{show && …}`): the GridList builds its collection, and a `<Show>` inside built
+            collection children does not update a resumed page (server Show roots are untracked; LAZY-ROWS T3). */}
+        {show() && <GridListItem id="4">Extra</GridListItem>}
         <GridListItem id="3">Right</GridListItem>
       </GridList>
     </section>

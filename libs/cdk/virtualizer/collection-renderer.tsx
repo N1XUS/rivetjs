@@ -222,7 +222,7 @@ export interface CollectionVirtualizerProps<O> {
   layout: LayoutInput<O>;
   /** Options for the layout (JSON: `{ rowHeight: 48 }`). */
   layoutOptions?: O;
-  /** Rivet: viewport size of the server-rendered window (match the scroll container's CSS size). Default 800 x 600. */
+  /** Rivet: viewport size of the server-rendered window: the scroll container's client size (inside the borders, padding included; a resumed page keeps it until its first interaction). Default 800 x 600. */
   initialSize?: { width: number; height: number };
   /** Rivet: text direction of view positions (`left` / `right`); default: logical `inset-inline-start`. */
   dir?: Direction;

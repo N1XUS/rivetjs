@@ -47,6 +47,10 @@ const FOLDERS: Folder[] = Array.from({ length: 100 }, (_, f) => ({
 
 const listed = (selection: Selection) => (selection === "all" ? "all" : [...selection].map(String).join(",") || "none");
 
+// `initialSize` = the scroller's client box: the 240 × 320 lists get the cdk theme's 4px padding (`@rivetjs/cdk/theme.css`),
+// so 248 × 328. The server renders the first window at `initialSize` and a resumed page keeps it until its first
+// interaction, while a client render measures at mount: a smaller guess gave the resumed rows 240px, the client's 248px
+// (resume fuzz `/virtualized-collections`, 2026-10-19).
 export default function VirtualizedCollectionsStory() {
   const picked = signal<Selection>(new Set<Key>());
   const rows = signal<Selection>(new Set<Key>());
@@ -57,7 +61,7 @@ export default function VirtualizedCollectionsStory() {
   return (
     <section>
       <h1>Virtualized collections</h1>
-      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 240, height: 320 }}>
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 248, height: 328 }}>
         <ListBox
           id="vlist"
           aria-label="People"
@@ -101,7 +105,7 @@ export default function VirtualizedCollectionsStory() {
         </Table>
       </CollectionVirtualizer>
       <p id="vtable-value">{listed(rows())}</p>
-      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32, headingHeight: 28 }} initialSize={{ width: 240, height: 320 }}>
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32, headingHeight: 28 }} initialSize={{ width: 248, height: 328 }}>
         <ListBox
           id="vsections"
           aria-label="Groups"
@@ -126,7 +130,7 @@ export default function VirtualizedCollectionsStory() {
         </ListBox>
       </CollectionVirtualizer>
       <p id="vsections-value">{listed(members())}</p>
-      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 240, height: 320 }}>
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 248, height: 328 }}>
         <GridList
           id="vgrid"
           aria-label="People grid"
@@ -144,7 +148,7 @@ export default function VirtualizedCollectionsStory() {
         </GridList>
       </CollectionVirtualizer>
       <p id="vgrid-value">{listed(cards())}</p>
-      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 240, height: 320 }}>
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 248, height: 328 }}>
         <Menu
           id="vmenu"
           aria-label="Actions"
@@ -160,7 +164,7 @@ export default function VirtualizedCollectionsStory() {
         </Menu>
       </CollectionVirtualizer>
       <p id="vmenu-value">{action()}</p>
-      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 240, height: 320 }}>
+      <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 248, height: 328 }}>
         <Tree
           id="vtree"
           aria-label="Files"

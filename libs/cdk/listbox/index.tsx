@@ -2,10 +2,12 @@
 // Parts: ListBox, ListBoxItem, ListBoxSection, ListBoxLoadMoreItem (+ Header / Text / Separator / Collection /
 // SelectionIndicator inside); contexts ListBoxContext, ListStateContext.
 // Rivet:
-// - Collections run in live mode (`../collections/components.tsx`): options render in place and the listbox reads
-//   its collection back from the rendered options at event time (no item model on resumed pages). A ListStateContext
-//   from a parent (Select, ComboBox) whose state carries a built `collection` renders node by node instead
-//   (`CollectionRoot({ collection })`), filtered by the SelectableCollectionContext `filter`.
+// - A standalone ListBox builds its collection (`computed(buildCollectionFrom(content))` in the body, B5 build mode;
+//   LAZY-ROWS T3, 2026-10-19 — live mode before) and renders node by node (`CollectionRoot({ collection })`): options
+//   are the rows of the renderer's keyed `For` (`(key) => renderNodeAt(collection, key)`, lazy-row eligible), the
+//   handlers navigate the built collection; a resumed page rebuilds it from the content on first need (no per-option
+//   state). A ListStateContext from a parent (Select, ComboBox) whose state carries a built `collection` renders from
+//   that one, filtered by the SelectableCollectionContext `filter`.
 // - One delegated handler set on the listbox element runs useSelectableList + every option's useSelectableItem /
 //   useHover (`./behaviour.tsx`); option `data-hovered` / `data-pressed` are written by those handlers, root
 //   `data-focused` / `data-focus-visible` bind to the ListData focus signals they set; option `data-selected` / `data-focused` / `data-focus-visible` / `data-disabled` bind
@@ -17,14 +19,13 @@
 //   objects with a `children` array → `ListBoxSection` + `Header`).
 // - Option label / description slot ids (useSlotId) are created only for non-text children (text children can hold
 //   no `<Text slot>`: RA's effect would drop the ids anyway).
-// - `isEmpty`: `items` length, else the built size of the children when `renderEmptyState` is given (a build pass),
-//   else false; with a parent state, its collection size.
+// - `isEmpty`: `items` length, else the built size of the children when `renderEmptyState` is given, else false; with a parent state, its collection size.
 // `render` (RAC DOMRenderProps) on ListBox (`<div>`), ListBoxSection (`<section>`) and ListBoxItem (`<div>` / `<a>`): given, the attributes object goes to `render(attrs, renderProps)`
 //   (custom events as `on<Type>` keys: `onRv-item-press`). Deviations: no drag and drop (`dragAndDropHooks`, drop indicators: C8); `ListBoxContext` is not re-provided to the
 //   options (its value holds the JSX children: not serializable); no FocusScope; the SharedElementTransition scope is
 //   a `SharedElementContext` provide;
 //   live-mode filtering hides options but keeps empty sections.
-import { createContext, provide, untrack, useContext } from "@rivetjs/reactivity";
+import { computed, createContext, provide, untrack, useContext } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
@@ -36,7 +37,6 @@ import {
   DefaultCollectionRenderer,
   SectionContext,
   buildCollectionFrom,
-  builtCollectionOf,
   createBranchComponent,
   createLeafComponent,
   isCollectionProbe,
@@ -223,12 +223,11 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
   const items = props.items;
   const dependencies = props.dependencies;
   const content = () => Collection({ items: items as Iterable<unknown>, children, dependencies });
-  // RAC: inside a Virtualizer the list renders from its built collection (only the visible window has options).
-  // A closure + module memo (as Select): the computed holding the JSX content is rebuilt from it in the browser.
-  // (A local const arrow: the compiler makes it resumable; an arrow inside a conditional expression is not.)
-  const builtKey = renderer.isVirtualized ? {} : null;
-  const virtualCollection = () => builtCollectionOf(builtKey!, content) as unknown as ICollection<Node<T>>;
-  const collection = builtKey ? virtualCollection : undefined;
+  // The list renders from its built collection (RAC: inside a Virtualizer only the visible window has options; LAZY-ROWS
+  // T3: every standalone list, so its options are the rows of the renderer's keyed `For`, `(key) => renderNodeAt(…)`).
+  // A computed in the body (the compiler records it as a resumable computed with the host's provider frame): a resumed
+  // page rebuilds it from `content` on its first read, so no per-option state ships.
+  const collection = computed(() => buildCollectionFrom(content) as unknown as ICollection<Node<T>>);
   // Live props: a controlled `selectedKeys={keys()}` stays live (accessor; never written); the copy reads no
   // `selectedKeys` getter (a resumed region is not re-created on a change).
   const selectedKeys = liveKeys(props, "selectedKeys");
@@ -246,8 +245,7 @@ function StandaloneListBox<T>(input: { props: ListBoxProps<T>; listBoxRef: RefVa
   // isEmpty: the items' length, or (with an empty state to show) the size of a built collection of the children.
   const empty = props.renderEmptyState;
   // Static children do not change: their emptiness is computed once (a build pass, only with an empty state).
-  const staticEmpty =
-    items != null ? false : empty && children != null ? untrack(() => buildCollectionFrom(() => Collection({ children })).size === 0) : children == null;
+  const staticEmpty = items != null ? false : empty && children != null ? untrack(() => collection().size === 0) : children == null;
   const isEmpty = () => (items != null ? isEmptyIterable(typeof items === "function" ? (items as () => Iterable<T>)() : items) : staticEmpty);
   return <ListBoxInner state={state} props={own} listBoxRef={listBoxRef} content={content} isEmpty={isEmpty} />;
 }
@@ -1017,8 +1015,10 @@ export const ListBoxLoadMoreItem = /*#__PURE__*/ createLeafComponent(
     const state = useContext(ListStateContext);
     const { isLoading, onLoadMore, scrollOffset } = props;
     const sentinel = createRef<HTMLDivElement>();
-    // RAC passes `state.collection`; live mode: the sentinel re-arms when the loading state changes.
-    const collection = state?.collection ? () => resolveCollection(state.collection as CollectionInput) : () => (read(isLoading), null);
+    // RAC passes `state.collection` (re-created on every ListBox render: a loading change re-arms the observer); Rivet: the
+    // sentinel re-arms when the collection or the loading state changes (a live `isLoading` does not rebuild the collection).
+    const built = state?.collection;
+    const collection = () => (read(isLoading), built ? resolveCollection(built as CollectionInput) : null);
     loadMoreSentinel({ collection, onLoadMore, scrollOffset }, sentinel);
     const dom = globalDOMProps(props, ["style"]);
     const cls = props.class ?? "rv-ListBoxLoadingIndicator";
