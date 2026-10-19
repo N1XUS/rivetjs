@@ -205,3 +205,41 @@ export function Page(p: { rows: { id: number; label: string }[] }) {
   };
   assert.equal(await render(true), await render(false));
 });
+
+test("a non-JSX row function keeps its nested sites: a `computed` created in the row registers on the server (Masonry rows)", async () => {
+  // Fix 2026-10-19: the row Fn site was added during the scan, so the row body counted as a site closure and its
+  // `computed(…)` stayed a plain call — "computed was not created in a resume-compiled component" at encode.
+  const source = `import { For } from "@rivetjs/runtime/server";
+import { signal, computed, untrack } from "@rivetjs/reactivity";
+export function Page(p: { rows: { id: number; label: string }[] }) {
+  const rows = signal(p.rows);
+  const keys = computed(() => rows().map((r) => r.id));
+  const itemOf = (key: number, label: () => string) => <li data-key={key}>{label()}</li>;
+  return <ul><For each={keys} by={(k) => k}>{(keyOf) => {
+    const key = untrack(keyOf);
+    const label = computed(() => rows().find((r) => r.id === key)?.label ?? "");
+    return itemOf(key, label);
+  }}</For></ul>;
+}`;
+  const server = compile(source, { target: "server", filename: "src/page.tsx", resume });
+  const dom = compile(source, { target: "dom", filename: "src/page.tsx", resume });
+  assert.deepEqual(server.diagnostics, []);
+  assert.ok(server.code.includes('"$lazy"'), "the For is lazy");
+  const row = server.code.slice(server.code.indexOf("children: __rivetR_fn("));
+  assert.match(row, /const label = __rivetR_computed\("src\/rows\.tsx#Page\$\w+", \(\) => rows\(\)/, "the row's computed is a site");
+  const manifest: ResumeManifest = { runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols!.map((s) => [s.id, "/c.js"])) };
+  const mod = await importServer<{ Page(p: { rows: { id: number; label: string }[] }): never }>(server.code);
+  const html = (await resumableToString(
+    () =>
+      mod.Page({
+        rows: [
+          { id: 1, label: "a" },
+          { id: 2, label: "b" },
+        ],
+      }),
+    { manifest },
+  )) as string;
+  // Text markers (`<!--r1-->a<!--/-->`) sit around the bound text.
+  assert.match(html, /<li data-key="1">(?:<!--[^>]*-->)*a<!--\/--><\/li>/);
+  assert.match(html, /<li data-key="2">(?:<!--[^>]*-->)*b<!--\/--><\/li>/);
+});

@@ -209,8 +209,15 @@ impl<'t, 'a> Analysis<'t, 'a> {
             site.opportunistic = true;
             if self.add(site, function).is_none() {
                 entry.reason = Some("row");
-            } else if let Some(by) = by {
-                if entry.by.is_some() {
+            } else if kind == SiteKind::Fn {
+                // A non-JSX row (`(k) => itemOf(k, …)`) runs on the server too: its own `computed(…)` / handler / `equals`
+                // sites must register as before T2 (fix 2026-10-19: `add` marked the Fn closure a site closure, so the scan
+                // skipped the row body and a `computed` created in it was "not created in a resume-compiled component" at
+                // encode — cdk Masonry rows). A Slot row is a render kind and is scanned inside already.
+                self.site_closures.remove(&function);
+            }
+            if entry.reason.is_none() && entry.by.is_some() {
+                if let Some(by) = by {
                     self.escaping(by);
                 }
             }
