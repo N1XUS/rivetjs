@@ -1,8 +1,10 @@
 // Test helper: a parsed resume state (or patch) in the readable shape tests assert on — wire symbol indexes back to
-// symbol ids (`s` as id → chunk), table entries in full form (`{y}` repeats, compact `{f|c|k: [..]}`, `{w}` shapes),
-// table-held binding names and provider token ids back to strings. `page` carries the symbol list + table across patches.
+// symbol ids (`s` as id → chunk), table entries in full form (`{R}` relocations and repeated handler maps / bindings
+// decoded by the page's repeat add-on, `{y}` repeats, compact `{f|c|k: [..]}`, `{w}` shapes), table-held binding names and provider
+// token ids back to strings. `page` carries the symbol list + table across patches.
 import { full, repeated } from "@rivetjs/runtime/resume-format";
-import type { EntryRecord, TableEntry } from "@rivetjs/runtime/resume-format";
+import type { BindingEntry, EntryRecord, LoaderDocument, ResumeState, TableEntry } from "@rivetjs/runtime/resume-format";
+import { REPEAT } from "../../resume-loader.min.ts";
 
 export interface WireSymbols {
   ids: string[];
@@ -41,6 +43,15 @@ export function readable<T>(input: T, page: WireSymbols = { ids: [], chunks: [],
   // Index-aligned with the page table (patches continue at t0).
   page.table.length = t0;
   for (const entry of t) page.table.push(entry);
+  // Table relocations (`{R}`), repeated handler maps / bindings (`RepeatedHandlers` / `RepeatedBinding`): decoded as the
+  // page's repeat add-on does (in place, from t0).
+  {
+    const d = {} as LoaderDocument,
+      e = state.e ?? {};
+    new Function("document", REPEAT)(d);
+    d.$rx!({ t: page.table, e } as unknown as ResumeState, (state.b ?? []) as BindingEntry[], { t0, e } as never);
+    for (let i = 0; i < t.length; i++) t[i] = page.table[t0 + i] as TableEntry;
+  }
   const table = page.table as TableEntry[];
   for (let i = 0; i < t.length; i++) {
     let entry = t[i]!;

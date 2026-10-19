@@ -1,4 +1,12 @@
-import type { ResumeState } from "@rivetjs/runtime/resume-format";
+import type { HandlerEntry, ResumeState } from "@rivetjs/runtime/resume-format";
+
+// A raw state's handlers of an element: a repeated map (`RepeatedHandlers`, `[back, …relocation]`) copies the chunk lists
+// of element `id - back` verbatim (only its capture refs differ, unused here).
+const handlersOf = (e: Record<string, unknown>, id: string): Record<string, HandlerEntry> | undefined => {
+  let value = e[id];
+  while (Array.isArray(value)) value = e[(id = String(+id - (value[0] as number)))];
+  return value as Record<string, HandlerEntry> | undefined;
+};
 
 /** Intersect actual downloads with this button's compiled handler/runtime dependency graph, never the whole page. */
 export async function loadedFor(event: Event): Promise<[string, string]> {
@@ -7,11 +15,11 @@ export async function loadedFor(event: Event): Promise<[string, string]> {
   if (!id) return ["not measured", "the example's handler was not found"];
   const script = [...document.querySelectorAll<HTMLScriptElement>('script[type="rivet/state"]')].find((node) => {
     const state = JSON.parse(node.textContent!) as ResumeState;
-    return state.e[id]?.click;
+    return handlersOf(state.e, id)?.click;
   });
   if (!script?.hasAttribute("data-deps")) return ["not measured", "dependency information is available in a production build"];
   const state = JSON.parse(script.textContent!) as ResumeState;
-  const handler = state.e[id]!.click!;
+  const handler = handlersOf(state.e, id)!.click!;
   const roots = new Set([state.rt!, ...handler[2].concat(handler[3] ?? []).map((index) => state.c[index]!)]);
   const path = (url: string) => {
     const resolved = new URL(url, location.href);

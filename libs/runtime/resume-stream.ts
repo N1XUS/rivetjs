@@ -27,7 +27,7 @@ export function stream(): void {
       s.t.push(...x.t);
       s.c.push(...x.c!);
       for (const k of ["e", "m", "l"]) Object.assign(((s as unknown as Merged)[k] ??= {}), (x as unknown as Merged)[k]);
-      d.$rx?.(s, x.b!);
+      d.$rx?.(s, x.b!, x);
       for (const k of ["s", "b", "fx", "ce", "x", "w"]) (((s as unknown as Merged)[k] ??= []) as unknown[]).push(...(((x as unknown as Merged)[k] as unknown[]) || []));
       if (x.g) s.g = x.g;
     }

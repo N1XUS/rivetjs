@@ -1,5 +1,8 @@
 // Resume object table. Every value is interned into one flat table and referenced by index, so
 // sharing and cycles survive and the client decodes lazily, one reference at a time.
+// Wire-only compaction (the server table stays full): compact recipes (`full`), `{y}` repeats (`repeated`), `{w}` object
+// shapes; `{R}` relocations (`Relocation`) and, in the state's `e` / `b`, repeated handler maps / bindings
+// (`RepeatedHandlers` / `RepeatedBinding`) are rewritten by the inline repeat add-on before anything reads them.
 import type { Context, Signal } from "@rivetjs/reactivity";
 import { DEV } from "#dev";
 import { BINARY, ERRORS, builtin } from "./resume-kinds.ts";
@@ -133,6 +136,16 @@ export interface EntryRecord {
    * index `w` — objects of one shape spell their keys once per segment.
    */
   w?: number;
+  /**
+   * Wire form only (state / patch `t`, written when the page ships the repeat add-on `resume-repeat.ts`, server `rr`):
+   * `[back, floor offset, delta, …]` = the entry at index `index - back` again (same segment; any wire form of a recipe
+   * `c` / `f` / `k` — compact, `y`, `R` — or of an `o` / `{w, o}` object), its references relocated (`Relocation` with
+   * floors `index + offset`: the recipe's captures and numeric `q`, the object's value refs); symbol / kind, flags and keys
+   * copied. Collections (a table's rows and cells) record each row's recipes and props objects again with the row's own
+   * values: a row repeats the previous row with constant offsets. The add-on rewrites these in place into the base's wire
+   * form before the decoder runs (the decoder never reads `R`).
+   */
+  R?: number[];
 }
 export type TableEntry = Literal | number[] | EntryRecord;
 /** Equality options a decoded signal/computed receives; `arm` enables a signal's comparator. */
@@ -913,6 +926,45 @@ export function reachableSymbols(table: readonly TableEntry[], refs: Iterable<nu
 export type SymbolRef = string | number;
 /** Handler entry: [symbol, capture refs, chunks, extra chunks of bindings it can update]. */
 export type HandlerEntry = [symbol: SymbolRef, refs: number[], chunks: number[], extra?: number[]];
+/**
+ * Wire only (state / patch `e[id]`, written when the page ships the repeat add-on `resume-repeat.ts`, server `rr`):
+ * `[back, floor, delta, …]` = the handlers of element `id - back` (same segment, decoded first: ids ascend), each handler's
+ * capture refs relocated (`Relocation`); symbols, types (in order) and chunk lists copied. Decoded into the full map
+ * before anything reads the state (loader parse / stream merge, `$rx`); raw-state readers use `handlersOf`.
+ */
+export type RepeatedHandlers = number[];
+/**
+ * Wire only (state / patch `b`, repeat add-on): `[-1 - back, node delta, region delta?, floor, delta, …]` = the plain
+ * binding (7 slots: no region data) `back` entries earlier in the same list, node [0] and region [6] moved by the deltas
+ * (region delta present when the entry's length is odd, else the node's), refs [3] and signals [4] relocated
+ * (`Relocation`). Recognized by [0] < -1.
+ */
+export type RepeatedBinding = number[];
+/**
+ * Piecewise ref relocation of a repeat: `floor, delta` pairs, floors ascending; a ref takes the delta of the last floor ≤
+ * it, a ref below the first floor stays (refs shared by every element: contexts, props, page signals).
+ */
+export type Relocation = number[];
+/** Decode a relocated ref (`Relocation` pairs in `map`). */
+export const relocate = (ref: number, map: Relocation): number => {
+  let k = map.length;
+  while ((k -= 2) >= 0 && ref < map[k]!);
+  return k < 0 ? ref : ref + map[k + 1]!;
+};
+/** A raw (not loader-decoded) state's handlers of element `id`, repeats (`RepeatedHandlers`) decoded; tools and tests. */
+export function handlersOf(e: Record<string, unknown>, id: number | string): Record<string, HandlerEntry> | undefined {
+  const value = e[id] as Record<string, HandlerEntry> | RepeatedHandlers | undefined;
+  if (!Array.isArray(value)) return value;
+  const from = handlersOf(e, +id - value[0]!),
+    map = value.slice(1),
+    out: Record<string, HandlerEntry> = {};
+  for (const type in from) {
+    const entry = from[type]!.slice() as HandlerEntry;
+    entry[1] = entry[1].map((ref) => relocate(ref, map));
+    out[type] = entry;
+  }
+  return out;
+}
 /** Compact templated list rows: ids `i + k * d` (else `ids`), items table array `a` (else refs `r`), `x` index flag. */
 export interface CompactRows {
   i?: number;
@@ -1030,7 +1082,8 @@ export type AsyncEntry = [marker: number, fallback: number, region: number, stat
 /** Preload plan entry: [url, "e" | "i" | "v", element ids?]. */
 /** `e` eager, `i` idle, `v` visible (viewport only), `P` visible + background prefetch at idle (planner budget); `v` / `P` carry observed ids. */
 export type PreloadEntry = [url: string, strategy: string, ids?: number[]];
-/** Entries a shell or patch carries. */
+/** Entries a shell or patch carries (`e` / `b` as decoded: on the wire they may hold `RepeatedHandlers` /
+ * `RepeatedBinding` forms and compact row templates, which the repeat / expand add-ons decode before any reader). */
 export interface ResumeRecords {
   /** Chunk URLs. */
   c: string[];
@@ -1149,8 +1202,9 @@ export interface LoaderHooks {
 export type LoaderDocument = Document & {
   $r?: LoaderHooks;
   $rp?: (state: ResumeState) => void;
-  /** Expand add-on (`resume-expand.ts`, pages with compact row templates): expand `list`'s row templates into entries. */
-  $rx?: (state: ResumeState, list: BindingEntry[]) => void;
+  /** Expand / repeat add-ons (`resume-expand.ts`, pages with compact row templates; `resume-repeat.ts`, pages with repeated
+   * entries): decode `list` (and `patch`'s handlers, merged into `state`; default the state itself) into full entries. */
+  $rx?: (state: ResumeState, list: BindingEntry[], patch?: StatePatch | ResumeState) => void;
   /** Rows add-on (`resume-rows.ts`, pages with path-addressed rows): element of an id / id of an element. */
   $rw?: (x: number | Element, observer?: IntersectionObserver) => Element | string | undefined;
 };

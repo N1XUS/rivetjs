@@ -21,7 +21,7 @@ Example file-routed app on `@rivetjs/router`: compiled JSX, Tailwind 4, signals,
 - `src/services/server.ts` — seeded server services; `src/context.ts` — `Item` type.
 - `src/resume-demo.tsx`, `src/page-views.tsx` (+ `src/analytics.ts` idle chunk), `src/browser-widget.tsx` (client-only), `src/styles.css`, `src/assets/`.
 - `tests/` — vitest `playground` project: `build` (strict JSX TS check + build output), `server`, `resume` (Playwright), `slots` (Playwright).
-  - `resume.test` loader budget mirrors `libs/runtime/tests/resume-loader.test.ts` (1,912 B br; the expand add-on `$rx` is the only other inline script allowed). Lazy router (Z1): pages carry only fetch-only hints for runtime + router chunks (state `data-fo`, added as low-priority modulepreload links by the loader module after `load` + web fonts; no eager preloads); `/` has no `data-preload` (read the runtime from state `rt`).
+  - `resume.test` loader budget mirrors `libs/runtime/tests/resume-loader.test.ts` (1,912 B br; the `$rx` add-ons (expand, repeat) are the only other inline scripts allowed). Lazy router (Z1): pages carry only fetch-only hints for runtime + router chunks (state `data-fo`, added as low-priority modulepreload links by the loader module after `load` + web fonts; no eager preloads); `/` has no `data-preload` (read the runtime from state `rt`).
 
 ## Rules / invariants
 

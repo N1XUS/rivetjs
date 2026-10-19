@@ -49,7 +49,7 @@ import {
   _setUnrecorded,
 } from "./resume-format.ts";
 import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
-import { EXPAND, LOADER, LOADER_KEYS, ROWS, STREAM } from "./resume-loader.min.ts";
+import { EXPAND, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, _onForRow, _onForRows, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
@@ -102,6 +102,7 @@ import type {
   RowTemplate,
   StatePatch,
   SymbolList,
+  SymbolRef,
   TableEntry,
   TemplateBinding,
 } from "./resume-format.ts";
@@ -371,6 +372,8 @@ interface Encoded extends Omit<StatePatch, "boot"> {
   n?: number[];
   /** Compact row templates (region entries [8] / [9]): the page needs the expand add-on (`EXPAND`). */
   rx?: boolean;
+  /** Relocated table entries / repeated handler / binding entries (`compactTable` `{R}`, `repeatEntries`): the page needs the repeat add-on (`REPEAT`). */
+  rr?: boolean;
 }
 type Equals = ((a: unknown, b: unknown) => boolean) | null;
 
@@ -1718,16 +1721,18 @@ class Stream {
     );
   }
   /**
-   * The add-ons a segment's patch needs, unless the page shipped them: rows (path-addressed rows, `w`) and expand (compact
-   * row templates, `rx`; before the patch: the stream add-on expands it when merging).
+   * The add-ons a segment's patch needs, unless the page shipped them: rows (path-addressed rows, `w`), expand (compact
+   * row templates, `rx`) and repeat (repeated entries, `rr`); before the patch: the stream add-on decodes it when merging.
    */
-  addon(delta: StatePatch, rx?: boolean): string {
+  addon(delta: StatePatch, rx?: boolean, rr?: boolean): string {
     const root = this.root,
       nonce = root.options.nonce,
       open = "<script" + (nonce ? ' nonce="' + String(nonce).replace(/[^\w+/=-]/g, "") + '"' : "") + ">";
     let out = "";
     if (delta.w && !root.rowsAddon) ((root.rowsAddon = true), (out += open + ROWS + "</script>"));
-    if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + EXPAND + "</script>"));
+    // The expand add-on replaces `$rx` (it chains to nothing): a repeat add-on shipped before it ships again after it.
+    if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + EXPAND + "</script>"), (root.repeatAddon = false));
+    if (rr && !root.repeatAddon) ((root.repeatAddon = true), (out += open + REPEAT + "</script>"));
     return out;
   }
   /** After the shell: write segments in completion order (each after its parent), then stop. */
@@ -1759,12 +1764,12 @@ class Stream {
             if (!(await this.caught(next, write, patch, swap))) await continued(next);
           } else {
             next.out = "content";
-            const { events, schedule, boot, rx, ...delta } = encodeRecords(this.root, next.view!, [[next.A, next.F, next.M.id!, 1]]);
+            const { events, schedule, boot, rx, rr, ...delta } = encodeRecords(this.root, next.view!, [[next.A, next.F, next.M.id!, 1]]);
             if (events.length) delta.ev = events;
             if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
             if (boot) (delta as StatePatch).boot = 1;
             await write(
-              this.addon(delta, rx) +
+              this.addon(delta, rx, rr) +
                 '<template data-a="' +
                 next.A +
                 '">' +
@@ -1826,12 +1831,12 @@ class Stream {
       const dropped = this.segments.filter((segment) => !segment.out && inside(segment.M, content));
       for (const segment of dropped) entries.push([segment.A, segment.F, segment.M.id!, 1]);
       for (const segment of dropped) drop(this, segment);
-      const { events, schedule, boot, rx, ...delta } = encodeRecords(this.root, view, entries);
+      const { events, schedule, boot, rx, rr, ...delta } = encodeRecords(this.root, view, entries);
       if (events.length) delta.ev = events;
       if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
       if (boot) (delta as StatePatch).boot = 1;
       await write(
-        this.addon(delta, rx) +
+        this.addon(delta, rx, rr) +
           '<template data-a="' +
           region +
           '">' +
@@ -1888,6 +1893,8 @@ class Recorder {
   declare rowsAddon: boolean;
   /** The page shipped the expand add-on (`EXPAND`: compact row templates, before the state or a patch with them). */
   declare expandAddon: boolean;
+  /** The page shipped the repeat add-on (`REPEAT`: repeated handler / binding entries, before the state or a patch). */
+  declare repeatAddon: boolean;
   declare region: Scope | null;
   declare used: boolean;
   /** `_rLean` tail provider of this render (framework bridges): may replace the state + loader tail. */
@@ -1920,6 +1927,7 @@ class Recorder {
     this.paths = [];
     this.rowsAddon = false;
     this.expandAddon = false;
+    this.repeatAddon = false;
     this.region = null; // innermost region scope being evaluated (synchronously)
     this.used = false;
     this.late = false;
@@ -3552,7 +3560,19 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
     .filter((group) => group.length > 1);
   if (siblings.length) out.g = siblings;
   out.s = wireSymbols(encoder, t0, s, enc.symbols, chunk, e, b, fx, ce);
-  Object.assign(out, { t: compactTable(encoder.table, t0, enc.symbols), e, m, b, fx, ce });
+  // Repeated entries (collections: rows / cells record the same recipes, objects, handlers and bindings per element) as
+  // wire repeats (table `{R}`, `RepeatedHandlers` / `RepeatedBinding`), when together they save more than the repeat
+  // add-on costs (nothing once the page shipped it); else the table again without `{R}`.
+  const cost = root.repeatAddon ? 0 : REPEAT.length;
+  const t = compactTable(encoder.table, t0, enc.symbols, true);
+  const relocations = tableRelocations,
+    tableSaved = tableSavedBytes;
+  Object.assign(out, { t, e, m, b, fx, ce });
+  const repeated = repeatEntries(e, b, cost - tableSaved);
+  // (Wire forms typed as the decoded entries the browser reads.)
+  if (repeated) ((out.e = repeated[0] as typeof e), (out.b = repeated[1] as typeof b), (out.rr = true));
+  else if (relocations && tableSaved > cost) out.rr = true;
+  else if (relocations) out.t = compactTable(encoder.table, t0, enc.symbols, false);
   if (DEV) assertAcyclic(encoder.table, t0);
   for (const segment of recorder.asyncs) a.push([segment.A, segment.F, segment.M.id!, 0]);
   for (const [content, site] of recorder.links) if (site.id !== null) a.push([site.id, content.id!, site.id, 3]);
@@ -3806,6 +3826,7 @@ const tail = (loader: string, stream: boolean): readonly string[] =>
 const TAILS = [tail(LOADER, false), tail(LOADER_KEYS, false), tail(LOADER, true), tail(LOADER_KEYS, true)] as const;
 const ROWS_SCRIPT = Object.freeze(["<script", ">" + ROWS + "</script>"]);
 const EXPAND_SCRIPT = Object.freeze(["<script", ">" + EXPAND + "</script>"]);
+const REPEAT_SCRIPT = Object.freeze(["<script", ">" + REPEAT + "</script>"]);
 
 // `JSON.stringify(state)`, byte for byte, ~1.6× faster: V8's fast serializer bails out to its slow
 // path for a whole call once it meets an object with integer keys, and the element-id maps (`e`, `m`,
@@ -3835,12 +3856,18 @@ const plain = (entry: EntryRecord): boolean => {
   }
   return true;
 };
-function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<string, number>): TableEntry[] {
+// `compactTable`'s `{R}` entries and the bytes they saved (estimated), read right after a call.
+let tableRelocations = 0,
+  tableSavedBytes = 0;
+function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<string, number>, relocate: boolean): TableEntry[] {
+  tableRelocations = tableSavedBytes = 0;
   const out = table.slice(t0),
     // Symbol (page index; computeds -1 - index) / kind → [first, latest] full entry index.
     bases = new Map<string | number, number[]>(),
     // Object key list → the first `o` / `p` entry with it (`shape`).
     shapes = new Map<string, number>(),
+    // Recipe key (as `bases`) / `o` key list → the latest entry with it, any wire form (`R` relocation bases).
+    latest = new Map<string | number, number>(),
     // Captures / comparator of each recipe entry (from t0), read once: `repeats` compares these arrays instead of the
     // entries themselves (dozens of entry shapes made its property loads deopt-loop in Maglev: ~640 recompiles / 700
     // renders).
@@ -3851,7 +3878,26 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
     if (entry === null || typeof entry !== "object" || Array.isArray(entry)) continue;
     if (entry.a === undefined) {
       const pairs = entry.o ?? entry.p;
-      if (pairs !== undefined && pairs.length > 2) shape(out, shapes, pairs, entry.o !== undefined, i, t0);
+      if (pairs === undefined || pairs.length <= 2) continue;
+      const key = shape(out, shapes, pairs, entry.o !== undefined, i, t0);
+      if (key === undefined || entry.o === undefined || Object.keys(entry).length !== 1) continue;
+      // A props / state object of the latest one's keys with relocated value refs: `R` when not longer than its wire form.
+      const from = latest.get("o" + key);
+      latest.set("o" + key, i);
+      if (from === undefined || !relocate) continue;
+      const source = (table[from] as EntryRecord).o!;
+      let ok = true;
+      for (let k = 1; k < pairs.length && ok; k += 2) ok = relocate1(source[k] as number, (pairs[k] as number) - (source[k] as number));
+      if (!ok) {
+        relocationReset();
+        continue;
+      }
+      const R = relocationOf(from, i),
+        wire = out[i - t0] as EntryRecord;
+      let size = 0;
+      if (wire.w !== undefined) size = 12 + digits(wire.w) + listLength(wire.o as number[]);
+      else for (let k = 0; k < pairs.length; k += 2) size += (pairs[k] as string).length + 4 + digits(pairs[k + 1] as number);
+      if (8 + listLength(R) <= size) ((out[i - t0] = { R }), tableRelocations++, (tableSavedBytes += size - 8 - listLength(R)));
       continue;
     }
     // A class instance (T23): its class by page symbol index (a registered id, T25, stays a string); never compact / repeated (one field object each).
@@ -3883,10 +3929,37 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
         : -1;
       if (base >= 0) {
         out[i - t0] = { y: base };
+        latest.set(key, i);
         continue;
+      }
+      // The latest entry of the key (any wire form) with relocated captures: `R` when not longer than the compact form.
+      // Never a `y` base (`repeated` reads its base's wire entry in full): `candidates` keep full entries only.
+      const from = simple && relocate ? latest.get(key) : undefined;
+      if (from !== undefined) {
+        const source = args[from - t0]!,
+          q = equals[from - t0];
+        let ok = source.length === entry.a.length && (typeof q === "number" ? typeof entry.q === "number" : q === entry.q) && relocation(source, entry.a);
+        if (ok && typeof q === "number") ok = relocate1(q, (entry.q as number) - q);
+        if (ok) {
+          const R = relocationOf(from, i),
+            head = id === undefined ? kind! : (index ?? id),
+            size =
+              (typeof head === "string" ? head.length + 2 : digits(head)) +
+              listLength(entry.a) +
+              (typeof entry.q === "number" ? 5 + digits(entry.q) : entry.q === false ? 9 : 0) +
+              (entry.v !== undefined ? 6 : 0);
+          if (listLength(R) - 1 <= size) {
+            out[i - t0] = { R };
+            tableRelocations++;
+            tableSavedBytes += size + 1 - listLength(R);
+            latest.set(key, i);
+            continue;
+          }
+        } else relocationReset();
       }
       if (simple) candidates[1] = i;
     }
+    if (simple) latest.set(key, i);
     if (simple) {
       // Compact wire form: `{f | c | k: [symbol index | kind, ...captures], q?}` (resume-format `full`).
       const head = id === undefined ? kind! : (index ?? id);
@@ -4078,8 +4151,9 @@ function partsOf(id: string): SymbolParts {
 }
 // Object shapes (wire only): an `o` / `p` entry whose key list equals an earlier one's in the segment is written as
 // `{w: base, o | p: values}` (the base's keys, in order; resume-format `EntryRecord.w`). Key lists of ≥ 2 keys whose
-// keys outweigh the base ref.
-function shape(out: TableEntry[], shapes: Map<string, number>, pairs: readonly unknown[], refs: boolean, i: number, t0: number): void {
+// keys outweigh the base ref. Returns the key list's key, undefined when the entry became a shape base (written in full:
+// later `w` entries read its keys).
+function shape(out: TableEntry[], shapes: Map<string, number>, pairs: readonly unknown[], refs: boolean, i: number, t0: number): string | undefined {
   let key = "",
     bytes = 0;
   for (let k = 0; k < pairs.length; k += 2) {
@@ -4087,15 +4161,33 @@ function shape(out: TableEntry[], shapes: Map<string, number>, pairs: readonly u
     key += name.length + ":" + name;
     bytes += name.length + 3;
   }
-  if (bytes < 12) return;
+  if (bytes < 12) return key;
   const base = shapes.get(key);
   if (base === undefined) {
     shapes.set(key, i);
-    return;
+    return undefined;
   }
   const values: unknown[] = new Array(pairs.length >> 1);
   for (let k = 1; k < pairs.length; k += 2) values[k >> 1] = pairs[k];
   out[i - t0] = refs ? { w: base, o: values as number[] } : { w: base, p: values as (Literal | [number])[] };
+  return key;
+}
+// JSON length of an integer (wire size estimates).
+const digits = (n: number): number =>
+  n < 0 ? 1 + digits(-n) : n < 10 ? 1 : n < 100 ? 2 : n < 1e3 ? 3 : n < 1e4 ? 4 : n < 1e5 ? 5 : n < 1e6 ? 6 : String(n).length;
+// JSON length of a list of integers' elements and commas.
+const listLength = (list: readonly number[]): number => {
+  let n = list.length;
+  for (let k = 0; k < list.length; k++) n += digits(list[k]!);
+  return n;
+};
+// Relocation (`R`, resume-format `EntryRecord.R`) of the entry at `index` from `base`: the scratch (`relocation`) as
+// `[back, floor - index, delta, …]`, or undefined.
+function relocationOf(base: number, index: number): number[] {
+  const R = [index - base];
+  relocationMap(R);
+  for (let k = 1; k < R.length; k += 2) R[k]! -= index;
+  return R;
 }
 // Whether the plain recipe at `index` repeats the one at `base` (same symbol / kind: the `bases` key) with its references
 // past `base` moved by the distance.
@@ -4108,6 +4200,155 @@ function repeats(args: readonly (number[] | undefined)[], equals: readonly unkno
   if (ba.length !== ea.length) return false;
   for (let k = 0; k < ba.length; k++) if (ea[k] !== (ba[k]! > base ? ba[k]! + by : ba[k])) return false;
   return typeof bq === "number" ? eq === (bq > base ? bq + by : bq) : eq === bq;
+}
+
+// ---- Repeated entries (wire only; decoded by the repeat add-on `resume-repeat.ts`, resume-format `RepeatedHandlers` /
+// `RepeatedBinding`) ----
+// Collections record the same handler map / binding per element (a table's rows and cells, list items), differing only
+// in their captures: an element's handlers equal to a recent element's of the same shape (types in order, symbols, capture
+// counts, chunk lists) are written `[back, floor, delta, …]`, a plain binding (no region data) equal to a recent one of
+// its shape (name, symbol, ref / signal counts, chunks) `[-1 - back, node delta, region delta (when not the node's), floor,
+// delta, …]`: the source's refs relocated by a piecewise map (a ref takes the delta of the last floor ≤ it; below the first
+// floor it stays). Only within a segment's own entries; the source is the most recent match (candidates per first symbol,
+// newest first), so a row repeats the previous row (small, regular maps). Shapes compare structurally (no key strings: the
+// encode stays allocation-light). Estimated JSON bytes (6 per ref, 2 per chunk index) decide each repeat and whether the
+// page writes any.
+
+// The relocation being built: source refs ascending with their deltas (module level: no per-render allocation).
+const RELOC_FROM: number[] = [],
+  RELOC_DELTA: number[] = [];
+let relocSize = 0;
+/** Add `from → from + delta`; false when `from` already maps to another delta (the caller then `relocationReset`s). */
+function relocate1(from: number, delta: number): boolean {
+  let k = relocSize;
+  while (k > 0 && RELOC_FROM[k - 1]! > from) k--;
+  if (k > 0 && RELOC_FROM[k - 1] === from) return RELOC_DELTA[k - 1] === delta;
+  for (let j = relocSize; j > k; j--) ((RELOC_FROM[j] = RELOC_FROM[j - 1]!), (RELOC_DELTA[j] = RELOC_DELTA[j - 1]!));
+  RELOC_FROM[k] = from;
+  RELOC_DELTA[k] = delta;
+  relocSize++;
+  return true;
+}
+/** Add `from[i] → to[i]` (same length) to the relocation being built; false on a conflict. */
+function relocation(from: readonly number[], to: readonly number[]): boolean {
+  for (let i = 0; i < from.length; i++) if (!relocate1(from[i]!, to[i]! - from[i]!)) return false;
+  return true;
+}
+const relocationReset = (): void => void (relocSize = 0);
+/** Append the relocation being built to `out` (floors ascending, a run of equal deltas one floor, the leading run of delta
+ * 0 none) and reset it. */
+function relocationMap(out: number[]): void {
+  let delta = 0;
+  for (let k = 0; k < relocSize; k++)
+    if (RELOC_DELTA[k] !== delta) {
+      delta = RELOC_DELTA[k]!;
+      out.push(RELOC_FROM[k]!, delta);
+    }
+  relocSize = 0;
+}
+// Same handler shape: types in order, symbols, capture counts, chunk lists.
+function sameHandlers(a: Record<string, HandlerEntry>, types: readonly string[], b: Record<string, HandlerEntry>, own: readonly string[]): boolean {
+  if (types.length !== own.length) return false;
+  for (let i = 0; i < types.length; i++) {
+    const type = types[i]!;
+    if (type !== own[i]) return false;
+    const x = a[type]!,
+      y = b[type]!;
+    if (x[0] !== y[0] || x[1].length !== y[1].length || !sameList(x[2], y[2]) || !sameList(x[3], y[3])) return false;
+  }
+  return true;
+}
+// Recent candidates per first symbol (newest last; at most CANDIDATES).
+const CANDIDATES = 4;
+const remember = (map: Map<SymbolRef, number[]>, key: SymbolRef, index: number): void => {
+  const list = map.get(key);
+  if (list === undefined) map.set(key, [index]);
+  else {
+    if (list.length === CANDIDATES) list.shift();
+    list.push(index);
+  }
+};
+/**
+ * Wire `e` / `b` with repeats (see above), or undefined when they would save no more than `cost` bytes (the repeat
+ * add-on, unless the page shipped it). `e` / `b` themselves are left as they are.
+ */
+function repeatEntries(e: Record<string, Record<string, HandlerEntry>>, b: BindingEntry[], cost: number): [Record<string, unknown>, unknown[]] | undefined {
+  let saved = 0,
+    any = false;
+  const recent = new Map<SymbolRef, number[]>(),
+    ids = Object.keys(e),
+    types: string[][] = new Array(ids.length),
+    forms: (number[] | undefined)[] = new Array(ids.length);
+  for (let i = 0; i < ids.length; i++) {
+    const id = +ids[i]!,
+      handlers = e[id]!,
+      own = (types[i] = Object.keys(handlers));
+    if (own.length === 0) continue;
+    const key = handlers[own[0]!]![0],
+      list = recent.get(key);
+    remember(recent, key, i);
+    if (list === undefined) continue;
+    for (let c = list.length - (list[list.length - 1] === i ? 2 : 1); c >= 0; c--) {
+      const at = list[c]!,
+        source = e[ids[at]!]!;
+      if (!sameHandlers(source, types[at]!, handlers, own)) continue;
+      let ok = true,
+        full = 0;
+      for (let k = 0; k < own.length && ok; k++) {
+        const s = source[own[k]!]!;
+        ok = relocation(s[1], handlers[own[k]!]![1]);
+        full += own[k]!.length + 8 + 6 * s[1].length + 2 * (s[2].length + (s.length > 3 ? s[3]!.length + 3 : 0));
+      }
+      if (!ok) {
+        relocationReset();
+        continue;
+      }
+      const form = [id - +ids[at]!];
+      relocationMap(form);
+      if (6 * form.length < full) {
+        forms[i] = form;
+        saved += full - 6 * form.length;
+        any = true;
+      }
+      break;
+    }
+  }
+  recent.clear();
+  const bindings: (number[] | undefined)[] = new Array(b.length);
+  for (let j = 0; j < b.length; j++) {
+    const entry = b[j]!;
+    // Plain bindings only: region entries carry rows / branches / locals of their own.
+    if (entry.length !== 7) continue;
+    const list = recent.get(entry[2]);
+    remember(recent, entry[2], j);
+    if (list === undefined) continue;
+    for (let c = list.length - (list[list.length - 1] === j ? 2 : 1); c >= 0; c--) {
+      const from = list[c]!,
+        source = b[from]!;
+      if (source[1] !== entry[1] || source[3].length !== entry[3].length || source[4].length !== entry[4].length || !sameList(source[5], entry[5])) continue;
+      if (!relocation(source[3], entry[3]) || !relocation(source[4], entry[4])) {
+        relocationReset();
+        continue;
+      }
+      const node = entry[0] - source[0],
+        region = entry[6] - source[6],
+        form = node === region ? [-1 - (j - from), node] : [-1 - (j - from), node, region];
+      relocationMap(form);
+      const full = 6 * (entry[3].length + entry[4].length) + 2 * entry[5].length + 20;
+      if (6 * form.length < full) {
+        bindings[j] = form;
+        saved += full - 6 * form.length;
+        any = true;
+      }
+      break;
+    }
+  }
+  if (!any || saved <= cost) return undefined;
+  const wireE: Record<string, unknown> = {};
+  for (let i = 0; i < ids.length; i++) wireE[ids[i]!] = forms[i] ?? e[ids[i]!];
+  const wireB: unknown[] = new Array(b.length);
+  for (let j = 0; j < b.length; j++) wireB[j] = bindings[j] ?? b[j];
+  return [wireE, wireB];
 }
 
 // The table in slices of TABLE_SLICE entries, byte for byte `JSON.stringify(table)`: V8 (Node 26) serializes a table of
@@ -4141,7 +4382,7 @@ function stateJSON(state: object): string {
 /** `ahead`: fetch-ahead (`data-fo`) even though the options say `lean` (the D-lean deferred state, `deferredState`). */
 function encodeState(recorder: Recorder, ahead = false): ServerValue {
   const { manifest = {} as BuildManifest, nonce } = recorder.options;
-  const { t0, events, schedule, boot, rx, ...part } = encodeRecords(recorder, recorder);
+  const { t0, events, schedule, boot, rx, rr, ...part } = encodeRecords(recorder, recorder);
   const { c, s, l, x, g, t, e, m, b, fx, ce, a, n, w } = part;
   const state = { v: 1, h: manifest.hash ?? null, rt: manifest.runtime ?? null, c, s } as ResumeState;
   if (l) state.l = l;
@@ -4192,11 +4433,17 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   const tail = compiledTemplate(fragments, a ? [head, attrs, attrs] : [head, attrs]);
   // Path-addressed rows (`w`): the rows add-on goes before the state script (the loader binds to the script right
   // before it, and schedules visible preloads of row elements while it runs).
-  // Compact row templates (`rx`): the expand add-on too (the loader expands the state with it when parsing).
-  const before = [...(w ? [compiledTemplate(ROWS_SCRIPT, [attrs])] : []), ...(rx ? [compiledTemplate(EXPAND_SCRIPT, [attrs])] : [])];
+  // Compact row templates (`rx`) / repeated entries (`rr`): the expand / repeat add-ons too (the loader decodes the state
+  // with them when parsing).
+  const before = [
+    ...(w ? [compiledTemplate(ROWS_SCRIPT, [attrs])] : []),
+    ...(rx ? [compiledTemplate(EXPAND_SCRIPT, [attrs])] : []),
+    ...(rr ? [compiledTemplate(REPEAT_SCRIPT, [attrs])] : []),
+  ];
   const out = before.length ? [...before, tail] : tail;
   if (w) recorder.rowsAddon = true;
   if (rx) recorder.expandAddon = true;
+  if (rr) recorder.repeatAddon = true;
   return out;
 }
 
