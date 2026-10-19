@@ -131,11 +131,63 @@ export function Sales() {
 
 App singletons (an analytics client, an API client) work the same way: a module-level `export const analytics = reconstruct(() => createAnalytics(key))` replaces passing the value to `createResume({ contexts })` in the resume entry. On the server such a module-level value is one instance per process: it is created on the first request that reads it and shared by every later request, so its factory must not read request state (cookies, the user, context values); build per-request values with `reconstruct` inside the component.
 
+## Large data in resume state
+
+Every captured value is written into the page, in the `<script type="rivet/state">` the browser parses before the first interaction. A handler that captures a whole list sends that list a second time, next to the HTML that already shows it. In development the server warns when one captured value takes 8 KB or more of that state:
+
+```text
+Rivet resume: <Picker> onClick handler captures `products` (src/routes/shop.tsx#Picker$k2f): array of 1,000 objects, 61.3 KB of rivet/state (warning threshold 8.0 KB; this page's state so far 64.0 KB) — every captured value is written into the page as data and parsed before the first interaction
+  fix: 1. do not capture it: …
+  docs: https://rivetjs.severyn.pro/learn/resuming#large-data-in-resume-state
+```
+
+- The warning names the component, the site (a handler, a binding, a region, a `For`'s row items, a provider value, or a function or `computed` the site reaches), the capture as written, the value's shape and the bytes it adds. A value that several sites share counts once, at the first site that captures it.
+- It prints once per site and server process. A page whose whole state passes 64 KB also gets one summary with its three largest sites.
+- Thresholds, in bytes, from the server environment: `RIVET_STATE_WARN_BYTES` for one value (default `8192`) and `RIVET_STATE_BUDGET_BYTES` for the page (default `65536`). `off` or `0` turns one off. Production builds print nothing and contain none of this code.
+- Not counted as captures: `Async` results that no handler or binding captures (they are HTML), and lazy row records.
+
+What to change, in this order:
+
+1. **Do not capture it.** Read the data on the server and capture only what the browser code needs: an id, a key, a count. A handler that reads members of a `const` object captures just those members, so `onClick={() => cart.add(product.id)}` ships one number:
+
+   ```tsx
+   import { signal } from "@rivetjs/reactivity";
+
+   export function AddButton(props: { product: { id: number; name: string; specs: string[] } }) {
+     const product = props.product;
+     const cart = signal<number[]>([]);
+     return <button onClick={() => cart.update((ids) => [...ids, product.id])}>Add {product.name}</button>;
+   }
+   ```
+
+2. **Load it in the browser.** Serve the data from an [endpoint](../guides/routing/endpoints.md) (`onGet`) and fetch it in the handler that needs it, or in a [`clientEffect`](../guides/state/effects.md#choose-when-it-starts) that fills a signal once the part is visible:
+
+   ```tsx
+   import { signal } from "@rivetjs/reactivity";
+   import { clientEffect } from "@rivetjs/runtime/dom";
+
+   export function Reviews() {
+     const reviews = signal<{ id: number; text: string }[]>([]);
+     clientEffect(
+       () => {
+         fetch("/api/reviews")
+           .then((res) => res.json())
+           .then((list) => reviews.set(list));
+       },
+       { when: "visible" },
+     );
+     return <p>{reviews().length} reviews</p>;
+   }
+   ```
+
+3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. Today each row still ships its item and its own handler and binding records. Lazy rows (server env `RIVET_LAZY_ROWS=on`) cut a row to its key and ship the items once; they are experimental and the rows stay inert in the browser until that work lands.
+4. **A library object** (a chart, an editor, an SDK client): build it with [`reconstruct`](#library-objects-reconstruct). The browser builds it on first use; nothing about it ships.
+
 ## What it means for your code
 
 - **The component body runs once, on the server.** A `console.log` there prints in the terminal, never in the browser console. See [component did not run again](../gotchas/component-did-not-run-again.md).
 - **Write browser behaviour as handlers or client effects.** `onClick`, `onInput`, `onSubmit`, `clientEffect` and `clientEvent` are the places where code runs in the browser.
-- **Keep captures small and plain.** Capture an id, not a whole object with methods. A handler or binding that only reads members of a `const` object (`store.count`) captures just those members, so the object's other fields stay out of the page; using the object any other way (passing it, spreading it, calling one of its methods) captures it whole.
+- **Keep captures small and plain.** Capture an id, not a whole object with methods (in development, large ones warn: [large data in resume state](#large-data-in-resume-state)). A handler or binding that only reads members of a `const` object (`store.count`) captures just those members, so the object's other fields stay out of the page; using the object any other way (passing it, spreading it, calling one of its methods) captures it whole.
 - **A captured `let` behaves like a JavaScript variable.** When a `let` is reassigned anywhere (in the component, a handler, another function or a class field), Rivet keeps it in one shared box: every handler sees the same value, and the page starts from the value it had when rendering finished. It is not reactive (use a signal to update the page). A handler passed by name (`onClick={h}`) stays the function `h` held when the JSX ran, as in the browser. `var`, destructured `let`s and loop variables (`for (let i …)`) are captured by value, and so is every `let` of a component that calls `eval`.
 - **Values built in the component arrive as data.** A constant made by calling a function (`const columns = buildColumns()`, `const rows = items.map(…)`) is sent to the browser as it was when the page was sent; the browser does not call that function again. Changes made to the object later, while the rest of a streamed page is still loading, do not reach the browser. If a library function must run in the browser (to register a listener or a global), call it in `clientEffect`.
 - **Components outside `src/routes` resume too.** `rivetRouter` resumes every `.tsx`/`.jsx` component file in your project that a route imports; no list needed. To opt out, set `resume: { appModules: false }` and list files in `resume.modules`.

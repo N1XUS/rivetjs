@@ -226,6 +226,14 @@ Status: [resumability design](../design/specs/2026-10-03-resumability-design.md)
 - Knobs: `RIVET_FUZZ_ROUTES=` (substrings or `/regex/`), `RIVET_FUZZ_SHARD=i/n`, `RIVET_FUZZ_STEPS=` (per route, default 40, seeded sample of element groups above it), `RIVET_FUZZ_SEED=` (sample seed, default 1), `RIVET_FUZZ_LOG=1` (findings + totals), `RIVET_FUZZ_OUT=<file>` (one JSON line per route result). With `RIVET_FUZZ_STEPS` / `RIVET_FUZZ_SEED` set the pin tests are skipped (pins hold for the default plan only). Each repro log ends with its rerun command (`RIVET_FUZZ_ROUTES='/^<route>$/' npx vitest run --project <app>-resume-fuzz --maxWorkers=1`). CI: job `resume-fuzz`, app × 3 shards.
 - Not covered: elements that appear after a step (overlay content) are reached only through keys; dev builds; hydration of framework islands.
 
+## State size warnings (dev)
+
+- STATE-WARN 2026-10-19, server render under the `development` condition only (`server-resume.ts` `devStateSites` → `dev/on.ts` `stateCaptures` / `stateBytes`; 0 B in production).
+- Per capture value ≥ `RIVET_STATE_WARN_BYTES` (default 8192 B, wire JSON of the table entries it reaches first): one warning per site and process, naming component, site kind (handler / binding / region / For row items / Show branch value / `_regionState` / provider value / function or computed recipe), capture name (dev manifest `captures`, else `#i`), shape, bytes, page total so far; `fix:` (do not capture → endpoint + fetch / `clientEffect` → keyed `For` (+ lazy rows status) → `reconstruct`); `docs:` `learn/resuming#large-data-in-resume-state`.
+- Page total ≥ `RIVET_STATE_BUDGET_BYTES` (default 65536 B): one summary per render with the 3 largest sites (summed per site, `×N`), deduplicated per process by those sites. `off` / `0` disables either.
+- Never counted: lazy row records (`L`), uncaptured `Async` payloads. Shared values count once (first site in encode order).
+- Measured on docs pages (dev build, `NODE_ENV=development` + `--conditions=development` `check-examples`, 2026-10-19): apps/docs 10 examples silent at the defaults (largest: 4.9 KB docs-kit `<App>` frame region at 2 KB / 16 KB test thresholds); ui-docs `list-box-virtualization` warns (`VirtualizerRenderer` recipe capture 68.3 KB; page 83.0 KB → summary), `table-virtualization` warns (15.4 KB, page 41.0 KB), `table-selection` silent (39.0 KB page, largest site 3.7 KB).
+
 ## Measuring list rows
 
 - Lazy collection rows (spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`) baseline tools, T1.

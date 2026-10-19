@@ -31,6 +31,37 @@ const moduleRefs = new Map<string, { value: unknown; modules: Set<string> }>();
 // `at file:///x/a.tsx:1:2`, `at f (/x/a.tsx:1:2)` → `/x/a.tsx` (query and position dropped).
 const FRAME = /(?:^|[\s(])((?:file:\/\/|\/|[A-Za-z]:[\\/])[^()]*?)(?:\?[^():]*)?(?::\d+){1,2}\)?$/;
 const watched = new WeakSet<Promise<unknown>>(); // resume chunk loads already logged on failure
+// Resume state size (STATE-WARN): per render (root recorder), the state bytes written so far, the capture sites encoded
+// but not yet reported (their warnings need the page total) and every site's bytes (summary).
+interface StateCapture {
+  key: string;
+  site: string;
+  shape: string;
+  bytes: number;
+}
+interface StateRender {
+  total: number;
+  pending: StateCapture[];
+  sites: Map<string, { site: string; shape: string; bytes: number; count: number }>;
+  summarized: boolean;
+}
+const states = new WeakMap<object, StateRender>();
+const STATE_DOCS = "https://rivetjs.severyn.pro/learn/resuming#large-data-in-resume-state";
+const STATE_FIX =
+  "\n  fix: 1. do not capture it: read it on the server (route loader, component body) and capture only what the browser code needs (an id, a key, a count)" +
+  '\n       2. load it in the browser instead: serve it from an endpoint (onGet) and fetch it in the handler that needs it, or in clientEffect(() => …, { when: "visible" }) into a signal' +
+  "\n       3. a list: keyed <For each={…} by={…}> rows; today each row still ships its item and its own handler / binding records (lazy rows, RIVET_LAZY_ROWS=on, cut a row to its key and ship the items once; experimental: rows stay inert in the browser until LAZY-ROWS T5)" +
+  "\n       4. a library object (a chart, an editor, an SDK client): reconstruct(() => …) builds it in the browser, nothing ships" +
+  "\n  docs: " +
+  STATE_DOCS;
+// `RIVET_STATE_WARN_BYTES` / `RIVET_STATE_BUDGET_BYTES` (server env): a byte count, `0` / `off` = no warning.
+const stateLimit = (name: string, fallback: number): number => {
+  const value = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[name];
+  if (value === undefined || value === "") return fallback;
+  const n = value === "off" ? 0 : Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+const kb = (bytes: number): string => (bytes < 1024 ? bytes + " B" : (bytes / 1024).toFixed(1) + " KB");
 export const DEV = {
   /** Report to the devtools hook, if a devtools host installed one (`@rivetjs/devtools`). */
   emit(type: string, data: object): void {
@@ -249,6 +280,91 @@ export const DEV = {
         },
       });
     }
+  },
+  /**
+   * Resume state size: the capture sites one encoded segment wrote (`server-resume.ts` `devStateSites`: site label,
+   * value shape, wire bytes the site added first), reported by the next `stateBytes` call of the same render.
+   */
+  stateCaptures(root: object, captures: StateCapture[]): void {
+    let state = states.get(root);
+    if (!state) states.set(root, (state = { total: 0, pending: [], sites: new Map(), summarized: false }));
+    for (const capture of captures) {
+      state.pending.push(capture);
+      const known = state.sites.get(capture.key);
+      if (known) ((known.bytes += capture.bytes), known.count++);
+      else state.sites.set(capture.key, { site: capture.site, shape: capture.shape, bytes: capture.bytes, count: 1 });
+    }
+  },
+  /**
+   * Resume state size: one segment's `rivet/state` JSON (`bytes`) was written. Warns once per capture site and process
+   * when one captured value took ≥ `RIVET_STATE_WARN_BYTES` (default 8 KiB), and once per render when the page's state
+   * passes `RIVET_STATE_BUDGET_BYTES` (default 64 KiB): its 3 largest sites (deduplicated per process by those sites).
+   */
+  stateBytes(root: object, bytes: number): void {
+    const state = states.get(root);
+    if (!state) return;
+    state.total += bytes;
+    const limit = stateLimit("RIVET_STATE_WARN_BYTES", 8192),
+      budget = stateLimit("RIVET_STATE_BUDGET_BYTES", 65536);
+    const pending = state.pending;
+    state.pending = [];
+    if (limit > 0)
+      for (const capture of pending) {
+        if (capture.bytes < limit) continue;
+        DEV.emit("resume.state", { site: capture.site, shape: capture.shape, bytes: capture.bytes, total: state.total });
+        if (warned.has("state " + capture.key)) continue;
+        warned.add("state " + capture.key);
+        console.warn(
+          "Rivet resume: " +
+            capture.site +
+            ": " +
+            capture.shape +
+            ", " +
+            kb(capture.bytes) +
+            " of rivet/state (warning threshold " +
+            kb(limit) +
+            "; this page's state so far " +
+            kb(state.total) +
+            ") — every captured value is written into the page as data and parsed before the first interaction" +
+            STATE_FIX,
+        );
+      }
+    if (budget <= 0 || state.summarized || state.total < budget) return;
+    state.summarized = true;
+    // Captured bytes only: a state of lazy row records (no capture sites) and table structure has nothing to point at.
+    const sites = [...state.sites.values()].sort((a, b) => b.bytes - a.bytes);
+    if (!sites.length) return;
+    let captured = 0;
+    for (const site of sites) captured += site.bytes;
+    const top = sites.slice(0, 3);
+    const signature = "state budget " + top.map((site) => site.site).join("\n");
+    if (warned.has(signature)) return;
+    warned.add(signature);
+    DEV.emit("resume.stateBudget", { total: state.total, budget, top: top.map(({ site, bytes, count }) => ({ site, bytes, count })) });
+    console.warn(
+      "Rivet resume: this page's rivet/state is " +
+        kb(state.total) +
+        " (budget " +
+        kb(budget) +
+        "), " +
+        kb(captured) +
+        " of it captured values; largest captures:" +
+        top
+          .map(
+            (site, i) =>
+              "\n  " +
+              (i + 1) +
+              ". " +
+              kb(site.bytes) +
+              "  " +
+              site.site +
+              ": " +
+              site.shape +
+              (site.count > 1 ? " (×" + site.count.toLocaleString("en-US") + ")" : ""),
+          )
+          .join("") +
+        STATE_FIX,
+    );
   },
   /** Property access segment: `.name` or `["a-b"]`. */
   key: (key: string): string => (/^[A-Za-z_$][\w$]*$/.test(key) ? "." + key : "[" + JSON.stringify(key) + "]"),

@@ -98,6 +98,8 @@ Every warning or error Rivet prints in the terminal or the browser console says 
 
 Messages from the browser reach the terminal through Vite (`[vite] (client) [console.warn] …`), with the same lines.
 
+The server also warns when a captured value takes 8 KB or more of the page's resume state, and once when the page's state passes 64 KB, with the sites that take the most (``Rivet resume: <Picker> onClick handler captures `products` …: array of 1,000 objects, 61.3 KB of rivet/state``). See [large data in resume state](../../learn/resuming.md#large-data-in-resume-state).
+
 `rivet-check` prints a code frame, `fix:` and `docs:` lines under each diagnostic. See [Language service](language-service.md).
 
 ## Accessibility warnings
