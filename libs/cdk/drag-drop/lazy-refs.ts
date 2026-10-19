@@ -6,15 +6,18 @@
 // Cold presses: the loader replays a `mousedown` / `touchstart` once the component chunks are in
 // (async). The replayed event is forwarded with its age: the ref counts the drag-start delay from the
 // original press and cancels the pending sequence when the press was released meanwhile
-// (`DragRef._pointerDownFromHost`). An item whose `<DropList>` chunk is still loading waits for the
-// list to register before it handles the press (so it never starts in standalone mode).
+// (`DragRef._pointerDownFromHost`). A replay is a press handled after its dispatch ended
+// (`eventPhase` NONE), however soon: preloaded / merged chunks replay it within a few ms, and its
+// `mouseup` / `touchend` (no resumed handler, so never held by the loader) reached no listener.
+// An item whose `<DropList>` chunk is still loading waits for the list to register before it
+// handles the press (so it never starts in standalone mode).
 import { DragInstance, type DragSetup } from "./directives/drag.ts";
 import { DropListInstance, type DropListSetup } from "./directives/drop-list.ts";
 import { DRAG_ATTR, closestDropListElement, dragOf, dropListOf, drags, dropLists, isWake, wake, whenRegistered } from "./directives/registry.ts";
 import { handleElements } from "./directives/drag-handle.ts";
 import { toggleNativeDragInteractions } from "./dom/styling.ts";
 
-/** A press handled this much later than it happened (ms) was replayed after its code loaded. */
+/** A press handled this much later than it happened (ms) is treated as replayed even during its dispatch. */
 const REPLAYED_AFTER = 50;
 
 /** Handler of a `<Drag>` element (`mousedown`, `touchstart`, `dragstart` + the wake event). */
@@ -45,7 +48,12 @@ export function dragHostEvent<T>(event: Event, setup: DragSetup<T>): void {
   }
   drag._beforePointerDown();
   const age = performance.now() - event.timeStamp;
-  drag._dragRef._pointerDownFromHost(event as MouseEvent | TouchEvent, age > REPLAYED_AFTER ? age : 0);
+  // Replayed: its dispatch is over (the loader's replay, `whenRegistered` above), or handled late. Age alone missed a
+  // replay faster than REPLAYED_AFTER: the press released before the code loaded then kept its sequence, and the next
+  // move started a drag of an element the replayed click may already have removed (KANBAN-BUILD 2026-10-19: ui-docs
+  // `showcase-kanban`, "Cannot read properties of null (reading 'insertBefore')" in `_startDragSequence`).
+  const replayed = event.eventPhase === Event.NONE || age > REPLAYED_AFTER;
+  drag._dragRef._pointerDownFromHost(event as MouseEvent | TouchEvent, replayed ? Math.max(age, Number.MIN_VALUE) : 0);
 }
 
 /** Handler of a `<DropList>` element (`mousedown`, `touchstart` and the wake event): creates its instance. */

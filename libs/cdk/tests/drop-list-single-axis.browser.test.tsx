@@ -7,7 +7,8 @@
 // (`drag-drop/dom/layout-shift.ts`; upstream the items jump); "layered styles win over the preview
 // resets" tests the resets `<style>` going first in <head> (`drag-drop-registry.ts`); "global preview
 // typography" tests the inherited text styles a body-level preview carries (`drag-drop/dom/inherited-text.ts`).
-// "replayed press text selection" tests `DragRef._pointerDownFromHost` clearing the selection a cold press started.
+// "replayed press text selection" tests `DragRef._pointerDownFromHost` clearing the selection a cold press started;
+// "fast cold-press replay" tests `lazy-refs.ts` treating any press handled after its dispatch as replayed (KANBAN-BUILD).
 import { afterEach, describe, expect, it } from "@rivetjs/testing/jasmine";
 import { dispatchMouseEvent } from "@rivetjs/testing/fake-events";
 import { createComponent, destroyFixtures, startDraggingViaMouse, wait } from "./drag-test-utils.tsx";
@@ -516,6 +517,83 @@ describe("Single-axis drop list", () => {
       fixture.detectChanges();
       await wait(0);
       getSelection()!.removeAllRanges();
+    });
+  });
+
+  describe("fast cold-press replay (Rivet: a press handled after its dispatch, sooner than REPLAYED_AFTER)", () => {
+    /**
+     * Calls the `<Drag>` element's own (delegated) mousedown handler the way the resume runtime replays a cold press:
+     * the original event, its dispatch over (`eventPhase` NONE), `currentTarget` shadowed — and a few ms after the
+     * press, as with preloaded / merged chunks. Its `mouseup` was never held by the loader (no resumed handler).
+     */
+    const replayPress = (element: HTMLElement) => {
+      const { left, top } = element.getBoundingClientRect();
+      const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true, button: 0, buttons: 1, detail: 1, clientX: left + 5, clientY: top + 5 });
+      expect(press.eventPhase).toBe(Event.NONE);
+      const handler = (element as unknown as { $$mousedown?: (event: Event) => void }).$$mousedown;
+      expect(typeof handler).toBe("function");
+      Object.defineProperty(press, "currentTarget", { configurable: true, value: element });
+      try {
+        handler!.call(element, press);
+      } finally {
+        delete (press as { currentTarget?: unknown }).currentTarget;
+      }
+      return { x: left + 5, y: top + 5 };
+    };
+    const releasedMove = (x: number, y: number) =>
+      document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true, cancelable: true, clientX: x, clientY: y, buttons: 0 }));
+
+    it("should start no drag on the next move when the press was released before the code loaded", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const element = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drag")!;
+      const { x, y } = replayPress(element);
+      releasedMove(x, y + 60);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.startedSpy).not.toHaveBeenCalled();
+      expect(element.classList.contains("cdk-drag-dragging")).toBe(false);
+      expect(document.querySelector(".cdk-drag-preview")).toBeNull();
+      // The sequence ended: later moves start nothing either.
+      releasedMove(x, y + 90);
+      expect(fixture.componentInstance.startedSpy).not.toHaveBeenCalled();
+      await wait(0);
+    });
+
+    it("should not throw when the replayed click removed the released item before the next move", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const element = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drag")!;
+      const { x, y } = replayPress(element);
+      // A resumed row dropped by the replayed click (ui-docs showcase-kanban "move to next column"): its server
+      // element leaves the document, its instance stays.
+      element.remove();
+      const errors: string[] = [];
+      const onError = (event: ErrorEvent) => {
+        errors.push(event.message);
+        event.preventDefault();
+      };
+      window.addEventListener("error", onError);
+      try {
+        releasedMove(x + 200, y + 60);
+      } finally {
+        window.removeEventListener("error", onError);
+      }
+      expect(errors).toEqual([]);
+      expect(fixture.componentInstance.startedSpy).not.toHaveBeenCalled();
+      await wait(0);
+    });
+
+    it("should keep the sequence when the replayed press is still held", async () => {
+      const fixture = createComponent(DraggableInDropZone);
+      fixture.detectChanges();
+      const element = fixture.nativeElement.querySelector<HTMLElement>(".cdk-drag")!;
+      const { x, y } = replayPress(element);
+      dispatchMouseEvent(document, "mousemove", x, y + 30);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.startedSpy).toHaveBeenCalledTimes(1);
+      dispatchMouseEvent(document, "mouseup", x, y + 30);
+      fixture.detectChanges();
+      await wait(0);
     });
   });
 
