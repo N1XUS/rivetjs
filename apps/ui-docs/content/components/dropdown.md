@@ -210,7 +210,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The Dropdown component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/dropdown.css)):
+The Dropdown component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/dropdown.css)):
 
 #### Base Classes
 - `.dropdown` - Base dropdown container
@@ -232,11 +232,11 @@ The Dropdown component uses these CSS classes ([View source styles](https://gith
 The Dropdown component uses Menu, MenuItem, and MenuSection as base components. These classes are also available for customization:
 
 #### Menu Classes
-- `.menu` - Base menu container ([menu.css](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/menu.css))
+- `.menu` - Base menu container ([menu.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu.css))
   - `[data-slot="separator"]` - Separator elements within the menu
 
 #### MenuItem Classes
-- `.menu-item` - Base menu item container ([menu-item.css](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/menu-item.css))
+- `.menu-item` - Base menu item container ([menu-item.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu-item.css))
 - `.menu-item__indicator` - Selection indicator (checkmark or dot)
   - `[data-slot="menu-item-indicator--checkmark"]` - Checkmark indicator SVG
   - `[data-slot="menu-item-indicator--dot"]` - Dot indicator SVG
@@ -259,7 +259,7 @@ The Dropdown component uses Menu, MenuItem, and MenuSection as base components. 
 - `.menu-item[aria-selected="true"]` - Selected item (ARIA)
 
 #### MenuSection Classes
-- `.menu-section` - Base menu section container ([menu-section.css](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/menu-section.css))
+- `.menu-section` - Base menu section container ([menu-section.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/menu-section.css))
 
 ### Interactive States
 

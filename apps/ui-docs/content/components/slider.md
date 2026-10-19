@@ -152,7 +152,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The Slider component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/slider.css)):
+The Slider component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/slider.css)):
 
 #### Base Classes
 - `.slider` - Base slider container

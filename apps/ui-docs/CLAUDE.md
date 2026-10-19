@@ -84,7 +84,7 @@ Docs site of `@rivetjs/ui` (`libs/ui`), third site on `@rivetjs/docs-kit` (same 
 
 - Brand gate: `npx vitest run --project ui-docs`.
 - Typecheck: `NX_DAEMON=false NX_ISOLATE_PLUGINS=false npx nx run ui-docs:typecheck --output-style=static --skip-nx-cache`.
-- Examples: `node libs/docs-kit/cli.ts examples apps/ui-docs <id> …`.
+- Examples: `node libs/docs-kit/cli.ts check-examples apps/ui-docs <id> …` (build + Chromium checks of those frames only; ≈ 40 s, peak tree RSS ≈ 2.2 GB for one id, 2026-10-19). `examples apps/ui-docs` only regenerates the frames + data.
 - Full build (examples + Chromium checks, routes, prerender, search, links; cold ≈ 2.8 min, peak tree RSS 2.4 GB incl. nx — was 3.4 GB (killed by the 3 GB cap) before the Vite build moved to child processes, 2026-10-09; per phase: `libs/docs-kit/CLAUDE.md`): `NX_DAEMON=false npx nx run ui-docs:build --output-style=static --skip-nx-cache` → `apps/ui-docs/dist/{client,server}`.
 - Serve: `npx nx run ui-docs:serve` (:4327), dev `npx nx run ui-docs:dev` (:4329: Vite only, example frames on demand). Ports 4320–4326 belong to the other two sites.
 - Content: `node libs/docs-kit/cli.ts check-content apps/ui-docs --strict`, `node libs/docs-kit/cli.ts check-snippets apps/ui-docs` (CI `gates`); CI job `ui-docs` runs the build.

@@ -13,7 +13,7 @@ npx skills add /path/to/rivet/skills --skill rivet-ui-design --agent codex claud
 After the bundles have been pushed to the public repository:
 
 ```sh
-npx skills add rivetjs/rivet --skill rivet-ui-design --agent codex claude-code cursor
+npx skills add N1XUS/rivetjs --skill rivet-ui-design --agent codex claude-code cursor
 ```
 
 The [skills CLI](https://github.com/vercel-labs/skills) supports `--global` for personal installation and `--list` for discovery. Other Rivet task skills in this directory can be selected with `--skill <name>`.

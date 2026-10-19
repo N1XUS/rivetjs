@@ -12,7 +12,7 @@ Rivet's goal is to render pages on the server faster than ASP.NET Razor, with le
 - Interactive (resumable) pages use 2.1× less CPU than Solid doing the same work at 1,000 rows. Plain hydratable Solid 1.9, which renders the rows without handlers, links or page data, still uses less CPU than Rivet at 1,000 rows (1.74 against 3.04 ms). Interactive pages also use more memory than every Solid lane.
 - In the browser, Rivet mounts and updates 1,000 rows faster than Solid and React. After resuming, a click is level with Qwik, and navigation is faster than Qwik and Solid. Solid is faster on the filter scenario in this run.
 
-This page explains what was measured. Each chart reads its numbers from the [full report](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/2026-10-09-fair-comparison.md) in the repository and links to it; the report also lists every loss.
+This page explains what was measured. Each chart reads its numbers from the [full report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-09-fair-comparison.md) in the repository and links to it; the report also lists every loss.
 
 All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64). Other jobs were running on the host during the runs (1-minute load average 5 to 27), so treat small gaps as noise. They are exploratory evidence for one implementation, not a ranking of frameworks.
 
@@ -86,12 +86,12 @@ The reports use these measures:
 
 | Report | What it compared |
 | --- | --- |
-| [SSR foundation results](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/ssr-foundation-results.md) | First baseline, before the JSX compiler: Razor, Solid, Qwik and an early Rivet emitter. At 1,000 rows and concurrency 1: 219.1 pages/s and 1.89 CPU ms/page for Razor, versus 176.9 pages/s and 4.42 CPU ms/page for Rivet. |
-| [Compiled SSR comparison](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/compiled-ssr-comparison.md) | The compiled JSX runtime and a Rust worker against .NET. .NET led throughput, CPU and latency; Rivet used less memory. |
-| [Optimized SSR comparison](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/optimized-ssr-comparison.md) | A large-page optimisation step. At 5,000 rows Rivet still used 2.5× .NET CPU per page. |
-| [Batched SSR comparison](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/batched-ssr-comparison.md) | A batched Rivet renderer against .NET. At 1,000 rows Rivet used 4.36× .NET CPU per page. |
-| [Fair comparison 2026-10-06](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/2026-10-06-fair-comparison.md) | The first like-for-like run of every lane (static and resumable classes, Bun and Deno, escaping, default GC). Superseded by the 2026-10-09 report. |
-| [Large DOM comparison](https://github.com/rivetjs/rivet/blob/main/docs/benchmarks/large-dom-comparison.md) | An early browser run with 5,000 rows (285,001 elements). Rivet mounted in 728.9 ms against 85.1 ms for Solid. Run on 2026-10-02, before the DOM v2 lowering. |
+| [SSR foundation results](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/ssr-foundation-results.md) | First baseline, before the JSX compiler: Razor, Solid, Qwik and an early Rivet emitter. At 1,000 rows and concurrency 1: 219.1 pages/s and 1.89 CPU ms/page for Razor, versus 176.9 pages/s and 4.42 CPU ms/page for Rivet. |
+| [Compiled SSR comparison](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/compiled-ssr-comparison.md) | The compiled JSX runtime and a Rust worker against .NET. .NET led throughput, CPU and latency; Rivet used less memory. |
+| [Optimized SSR comparison](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/optimized-ssr-comparison.md) | A large-page optimisation step. At 5,000 rows Rivet still used 2.5× .NET CPU per page. |
+| [Batched SSR comparison](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/batched-ssr-comparison.md) | A batched Rivet renderer against .NET. At 1,000 rows Rivet used 4.36× .NET CPU per page. |
+| [Fair comparison 2026-10-06](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-06-fair-comparison.md) | The first like-for-like run of every lane (static and resumable classes, Bun and Deno, escaping, default GC). Superseded by the 2026-10-09 report. |
+| [Large DOM comparison](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/large-dom-comparison.md) | An early browser run with 5,000 rows (285,001 elements). Rivet mounted in 728.9 ms against 85.1 ms for Solid. Run on 2026-10-02, before the DOM v2 lowering. |
 
 ## Run them yourself
 
@@ -102,4 +102,4 @@ npm run bench:ssr -- --quick
 npm run bench:ssr:report
 ```
 
-This needs Node 24+, Python 3.12+ and Docker. The browser benchmarks are `node apps/dom-bench/run.ts` and `node apps/resume-bench/run.ts --build`. See the [benchmark instructions](https://github.com/rivetjs/rivet/blob/main/apps/ssr-bench/README.md).
+This needs Node 24+, Python 3.12+ and Docker. The browser benchmarks are `node apps/dom-bench/run.ts` and `node apps/resume-bench/run.ts --build`. See the [benchmark instructions](https://github.com/N1XUS/rivetjs/blob/main/apps/ssr-bench/README.md).

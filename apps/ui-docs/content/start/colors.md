@@ -219,7 +219,7 @@ In CSS, read the variables directly or `@apply` the utilities:
 
 ## The theme file
 
-All values above come from one file, [`themes/default/variables.css`](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/themes/default/variables.css). It has four blocks:
+All values above come from one file, [`themes/default/variables.css`](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/themes/default/variables.css). It has four blocks:
 
 1. `:root, :host`: values shared by every theme (primitives, spacing, border widths, radius, cursors, accent and success, tooltip delays, skeleton animation).
 2. Light: `:root`, `.light`, `.default`, `[data-theme="light"]`, `[data-theme="default"]`.

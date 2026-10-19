@@ -126,7 +126,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The ToggleButtonGroup component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/toggle-button-group.css)):
+The ToggleButtonGroup component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/toggle-button-group.css)):
 
 #### Base & Layout Classes
 

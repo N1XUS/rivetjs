@@ -98,7 +98,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The Meter component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/meter.css)):
+The Meter component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/meter.css)):
 
 #### Base & Element Classes
 

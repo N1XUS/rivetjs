@@ -195,4 +195,4 @@ A field can also have its own async check, for example "is this user name free?"
 
 - [Actions and forms](../routing/actions-and-forms.md): what the router does with a post
 - [Forms and input](/guides/components/forms-and-input.md): inputs and events without the library
-- [Design spec](https://github.com/rivetjs/rivet/blob/main/docs/design/specs/2026-10-03-forms-design.md)
+- [Design spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-03-forms-design.md)

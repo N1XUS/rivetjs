@@ -55,4 +55,4 @@ Yes. The stylesheet is plain CSS over class names and works on any HTML; see [Co
 
 ## Get involved
 
-- [Rivet repository](https://github.com/rivetjs/rivet): issues and contributions.
+- [Rivet repository](https://github.com/N1XUS/rivetjs): issues and contributions.

@@ -322,11 +322,11 @@ Each component page lists its classes (block, elements, modifiers, states), for 
 
 The variables come from two files:
 
-- [`themes/default/variables.css`](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/themes/default/variables.css) declares the values, per theme:
+- [`themes/default/variables.css`](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/themes/default/variables.css) declares the values, per theme:
   1. **Base variables**, identical in every theme: primitives (`--white`, `--black`, `--snow`, `--eclipse`), spacing, border widths, radius, cursors.
   2. **Theme variables**, which differ between light and dark: colors, shadows and the scrollbar tokens (`--scrollbar-thumb`, `--scrollbar-width`, …).
   3. **Calculated variables**: hover states, soft variants, field states and border / separator levels, in the **Calculated Colors** part of each theme block, written with `color-mix()`.
-- [`themes/shared/theme.css`](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/themes/shared/theme.css) is the Tailwind bridge, plus the tokens that do not depend on the theme (radius scale, spacing steps, durations, easings, animations).
+- [`themes/shared/theme.css`](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/themes/shared/theme.css) is the Tailwind bridge, plus the tokens that do not depend on the theme (radius scale, spacing steps, durations, easings, animations).
 
 Shape tokens of the current theme, read live from this page's CSS:
 
@@ -432,7 +432,7 @@ Component scroll areas (tables, popovers, drawers and similar) share one scrollb
 </html>
 ```
 
-**Tokens.** Each theme block in [`variables.css`](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/themes/default/variables.css) sets:
+**Tokens.** Each theme block in [`variables.css`](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/themes/default/variables.css) sets:
 
 | Variable             | Description                                               |
 | -------------------- | --------------------------------------------------------- |

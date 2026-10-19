@@ -82,7 +82,7 @@ Two common components, in full:
 - **Button:** `.button`, `.button--{variant}`, `.button--{size}`, `.button--icon-only`
 - **Card:** `.card`, `.card--{variant}`, `.card__header`, `.card__title`, `.card__description`, `.card__content`, `.card__footer`
 
-Every component page lists its classes under Styling Reference ([Button](/components/button/#css-classes), [Card](/components/card/#css-classes)). The stylesheets themselves are in `@rivetjs/ui/styles/components/` ([source](https://github.com/rivetjs/rivet/tree/main/libs/ui/styles/components)).
+Every component page lists its classes under Styling Reference ([Button](/components/button/#css-classes), [Card](/components/card/#css-classes)). The stylesheets themselves are in `@rivetjs/ui/styles/components/` ([source](https://github.com/N1XUS/rivetjs/tree/main/libs/ui/styles/components)).
 
 Rules on these classes inside `@layer components` change a component everywhere, and new modifiers sit next to the built-in ones:
 

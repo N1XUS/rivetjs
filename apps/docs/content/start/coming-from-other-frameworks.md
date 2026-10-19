@@ -42,6 +42,8 @@ What to unlearn:
 - **Hooks rules do not apply.** `signal()` and `computed()` can be created anywhere: in a condition, in a module, in a plain function.
 - **No hydration.** React downloads and runs every component in the browser before the page reacts. Rivet loads the code of a handler when you are about to use it.
 
+You do not have to convert everything at once: React 19 and Preact components can stay as they are and run inside Rivet pages as islands. See [React and Preact components](../guides/components/framework-components.md).
+
 ## From Solid (and SolidStart)
 
 Solid's model is the closest: signals, components that run once, fine-grained updates.
@@ -113,7 +115,7 @@ Every signal library has a way to read a value without making the current comput
 1. **Start from a starter.** `npm create rivet@latest` with the `server` template (pages per request) or `static` (prerendered). See [quick start](quick-start.md).
 2. **Move the routes.** One file per URL in `src/routes`, layouts as `_layout.tsx`, params as `[name]`. See [file routes](../guides/routing/file-routes.md).
 3. **Move data loading to the server.** Put fetches that ran in effects or loaders into `serverLoad` next to the page, and mutations into `serverActions`. Pages get the result as `data`.
-4. **Convert components.** State to `signal` / `computed`, effects that touch the browser to `clientEffect`, lists to `<For>`. Keep handlers as inline arrows or local `const` functions.
+4. **Convert components.** State to `signal` / `computed`, effects that touch the browser to `clientEffect`, lists to `<For>`. Keep handlers as inline arrows or local `const` functions. React or Preact components you are not converting yet can stay as [islands](../guides/components/framework-components.md): rename them to `*.react.tsx` and add `react()` to `bridges`.
 5. **Keep shared components in the project.** Components outside `src/routes` resume without being listed: `rivetRouter` resumes every app component file a route imports.
 6. **Run the checks.** `npm run check` (`rivet-check`) reports what cannot resume, such as a class instance captured by a handler, or a browser global read during server rendering. The [language service](../guides/tooling/language-service.md) shows the same errors in your editor.
 7. **Measure a build, not dev.** `npm run build` and serve the result. See [dev and production differ](../gotchas/dev-and-production-differ.md).

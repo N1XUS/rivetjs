@@ -393,7 +393,7 @@ const FEATURES = [
 
 /** AI tooling commands, verbatim from content/guides/tooling/ai.md (site.test checks). */
 const AI_MCP = "claude mcp add rivet -- npx -y @rivetjs/mcp";
-const AI_SKILL = "npx skills add rivetjs/rivet --skill rivet-ui-design --agent codex claude-code cursor";
+const AI_SKILL = "npx skills add N1XUS/rivetjs --skill rivet-ui-design --agent codex claude-code cursor";
 const START = ["npm create rivet@latest my-app", "cd my-app", "npm run dev"];
 
 /** Bytes → "4.7 KB" (decimal kilobytes, as the editorial report). */

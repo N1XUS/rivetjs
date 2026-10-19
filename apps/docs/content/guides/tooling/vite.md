@@ -78,8 +78,11 @@ rivetRouter({
 | `modules` | Root-relative source files compiled in resume mode |
 | `entry` | Optional module whose default export is `createResume({ contexts })`, for context values the browser needs |
 | `chunks` | `"route"` (default), `"component"` or `"group"`; see [Chunks](../performance/chunks.md) |
+| `merge` / `cap` | Shared-chunk merge budget (default `65536` bytes, `false` keeps the bundler's split) and the most shared chunks one chunk may load; see [Fewer shared chunks](../performance/chunks.md#fewer-shared-chunks) |
 | `lazy` | When lazy imports prefetch: `"idle"` or `"intent"` (the router sets `"intent"`) |
 | `preload.rules` | Preload overrides; see [Preloading](../performance/preloading.md) |
+
+The full list, with types and defaults, is in [Config](../../reference/config.md#rivetresumeoptions).
 
 If a component's buttons do nothing in production, check that it is resume-compiled: with `appModules: false` (or plain `rivet()`), its file must be in `modules`.
 

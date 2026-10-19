@@ -39,7 +39,7 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 - `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx` (77 tests)
 - `npx vitest run --project cdk libs/cdk/tests/listbox-ssr.test.ts libs/cdk/tests/collection-components.test.ts`
 - `STORIES_DIST=dist-<lane> npx vitest run --project cdk-components libs/cdk/tests-components/listbox.test.ts libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/dev-resume.test.ts`
-- `node libs/docs-kit/cli.ts examples apps/cdk-docs listbox-basic …`
+- `node libs/docs-kit/cli.ts check-examples apps/cdk-docs listbox-basic …`
 
 ## Gotchas
 - `ListBoxSection` without a `Header`: `aria-labelledby` uses `slotIdRef(heading, false)` (children are built before the section's attributes, so the server knows whether a Header claimed the id): a section named by `aria-label` only gets no IDREF to a missing heading (RAC). Test `tests/listbox-ssr.test.ts`.

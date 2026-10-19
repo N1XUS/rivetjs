@@ -106,7 +106,7 @@ export async function aiOutputs(repo = REPO): Promise<Map<string, string>> {
     description:
       "Rivet design and framework skills (UI/CDK design, routes, forms in drawers, React ports, UI pages, resumability fixes) and the Rivet MCP server (docs search, components, compiler checks).",
     version: "0.0.0-experimental",
-    homepage: "https://github.com/rivetjs/rivet",
+    homepage: "https://github.com/N1XUS/rivetjs",
     license: "MIT",
     keywords: ["rivet", "jsx", "resumable", "mcp"],
   };

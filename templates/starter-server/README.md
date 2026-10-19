@@ -19,7 +19,7 @@ npm run check   # Rivet compiler diagnostics (CI)
 - Add a page or an API route: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`), "Actions and forms" (`guides/routing/actions-and-forms`).
 - Deploy: `npm run build && npm start` on any Node 24 host, or the `Dockerfile` (docs `guides/deploy/node`, `guides/deploy/docker`). Vercel / Netlify / Cloudflare / Bun / Deno: docs `guides/deploy/<target>` (one `adapter` option in `vite.config.ts`; new projects: `npm create rivet@latest -- --deploy <target>`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
-- Docs: https://github.com/rivetjs/rivet/tree/main/apps/docs/content (guides, reference, recipes).
+- Docs: https://github.com/N1XUS/rivetjs/tree/main/apps/docs/content (guides, reference, recipes).
 
 ## Tooling
 

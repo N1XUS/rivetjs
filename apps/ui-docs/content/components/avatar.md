@@ -94,7 +94,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The Avatar component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/avatar.css)):
+The Avatar component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/avatar.css)):
 
 #### Base Classes
 

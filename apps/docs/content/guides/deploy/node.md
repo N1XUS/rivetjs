@@ -109,7 +109,7 @@ In a container with a CPU limit, set `workers` to that limit: `"auto"` may count
 | `onError` | `console.error` | Called for unexpected errors |
 | `locales` | | i18n: one browser build per language, see [Translating text](../i18n/translating-text.md#build-one-app-per-language) |
 | `origin` | | Fixed public origin, such as `"https://shop.example"`. Set it behind a proxy (see below) |
-| `trustProxy` | `false` | `true`: take the origin from `X-Forwarded-Proto` / `X-Forwarded-Host` and the client address from `X-Forwarded-For` |
+| `trustProxy` | `false` | `true` (one proxy), a number of proxies, or `(address, hop) => boolean`: take the origin from `X-Forwarded-Proto` / `X-Forwarded-Host` and the client address from `X-Forwarded-For`, at the outermost trusted proxy |
 | `idleMemory` | `true` | Return heap memory to the OS when the server is idle after traffic. `false` turns it off. See [Memory when idle](#memory-when-idle) |
 | `preload` | `{ background: 1 MiB }` | `{ background }`: bytes of below-the-fold code each page downloads when the browser is idle; `0` turns it off, a function gets the request URL. See [Preloading](../performance/preloading.md#background-budget) |
 | `maxBody` | 1 MiB, multipart 10 MiB | Request body limit for `POST`/`PUT`/`PATCH`/`DELETE`: bytes, or `{ default, multipart }`. Larger bodies get `413` |
@@ -158,7 +158,7 @@ closeOnSignals(serving);
 Most hosts put a proxy or load balancer in front of Node:
 
 - **Set the public origin.** Behind a proxy that ends TLS, Node sees `http://` and an internal host, so the [cross-site check](../routing/actions-and-forms.md#cross-site-protection) rejects every form post with `403`. Pass `origin: "https://shop.example"`, or `trustProxy: true` if the proxy sets `X-Forwarded-Proto` and `X-Forwarded-Host`. Turn on `trustProxy` only behind a proxy that sets these headers: otherwise clients can fake them.
-- **Client address.** Loaders, actions, guards and handlers read the visitor's IP address as `event.platform.clientAddress`: the socket address, or with `trustProxy` the first `X-Forwarded-For` value. Use it for rate limits or logs.
+- **Client address.** Loaders, actions, guards and handlers read the visitor's IP address as `event.platform.clientAddress`: the socket address, or with `trustProxy` the `X-Forwarded-For` entry that the outermost trusted proxy appended. Entries to the left of it come from the client and are never used. Behind two proxies (a CDN, then a load balancer) pass `trustProxy: 2`. Use it for rate limits or logs.
 
 - Point health checks at `/readyz`, so traffic stops before the process exits.
 - If the proxy compresses too, turn one of them off (`compress: false`).

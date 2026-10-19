@@ -96,7 +96,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-Card uses [BEM](https://getbem.com/) naming for predictable styling ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/card.css)):
+Card uses [BEM](https://getbem.com/) naming for predictable styling ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/card.css)):
 
 #### Base Classes
 

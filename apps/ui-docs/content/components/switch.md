@@ -176,7 +176,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 #### Switch Classes
 
-The Switch component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/switch.css)):
+The Switch component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/switch.css)):
 
 - `.switch` - Base switch container
 - `.switch__content` - Optional content container
@@ -189,7 +189,7 @@ The Switch component uses these CSS classes ([View source styles](https://github
 
 #### SwitchGroup Classes
 
-The SwitchGroup component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/switch-group.css)):
+The SwitchGroup component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/switch-group.css)):
 
 - `.switch-group` - Switch group container
 - `.switch-group__items` - Container for switch items

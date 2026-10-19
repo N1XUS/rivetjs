@@ -15,7 +15,7 @@ npm run check   # Rivet compiler diagnostics (CI)
 - Add a page: a new file in `src/routes/` (`about.tsx` → `/about`). Docs "File routes" (`guides/routing/file-routes`).
 - Deploy: `npm run build`, then upload `dist/client` to any static host (docs "Deploy", `guides/deploy/static-hosts`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
-- Docs: https://github.com/rivetjs/rivet/tree/main/apps/docs/content (guides, reference, recipes).
+- Docs: https://github.com/N1XUS/rivetjs/tree/main/apps/docs/content (guides, reference, recipes).
 
 ## Tooling
 

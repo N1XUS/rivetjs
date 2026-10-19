@@ -94,4 +94,4 @@ An action may answer with a redirect to the page the form is on (post, redirect,
 - [Forms](./forms.md): describe, check and render a form
 - [Actions and forms](../routing/actions-and-forms.md): what the router does with a post
 - [Reload data after a change](../routing/loading-data.md#reload-data-after-a-change): `invalidate`
-- [Design spec](https://github.com/rivetjs/rivet/blob/main/docs/design/specs/2026-10-08-partial-render-design.md)
+- [Design spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-08-partial-render-design.md)

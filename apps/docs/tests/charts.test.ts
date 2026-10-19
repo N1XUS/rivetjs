@@ -20,7 +20,7 @@ test("every chart: id matches key, caption complete, source report exists, Rivet
   for (const [key, chart] of Object.entries(charts)) {
     assert.equal(chart.id, key);
     for (const field of ["machine", "date", "method"] as const) assert.ok(chart.caption[field], `${key} caption.${field}`);
-    const path = chart.caption.source.href.replace("https://github.com/rivetjs/rivet/blob/main/", "");
+    const path = chart.caption.source.href.replace("https://github.com/N1XUS/rivetjs/blob/main/", "");
     assert.ok(existsSync(repo + path), `${key}: ${path} exists`);
     assert.ok(
       chart.groups.some((group) => group.points.some((p) => p.rivet)),
@@ -138,7 +138,7 @@ test("homepage loss row: editorial numbers equal the JSON", () => {
   assert.equal(editorialLoss.rivetFetchedJS, editorial.serve["1000"].rivet.client.jsBytes);
   assert.equal(editorialLoss.rivetLcp, editorial.serve["1000"].rivet.lighthouse.article.lcp.median);
   assert.ok(editorialLoss.rivetLcp > editorialLoss.astroLcp, "still a loss: Rivet's article LCP is above Astro's");
-  assert.ok(existsSync(repo + editorialLoss.source.href.replace("https://github.com/rivetjs/rivet/blob/main/", "")));
+  assert.ok(existsSync(repo + editorialLoss.source.href.replace("https://github.com/N1XUS/rivetjs/blob/main/", "")));
 });
 
 test("home feature grid facts equal the JSON", () => {

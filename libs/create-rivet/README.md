@@ -1,6 +1,6 @@
 # create-rivet
 
-Create a [Rivet](https://github.com/rivetjs/rivet) app.
+Create a [Rivet](https://github.com/N1XUS/rivetjs) app.
 
 ```sh
 npm create rivet@latest my-app
@@ -43,4 +43,4 @@ With npm, options go after `--`.
 
 ## Nx monorepos
 
-The same templates as Nx projects, with cached `build` / `test` / `check` targets: [`@rivetjs/nx`](https://github.com/rivetjs/rivet/tree/main/libs/nx) (`npx create-nx-workspace@latest my-org --preset=@rivetjs/nx`, or `npx nx add @rivetjs/nx` in an existing workspace).
+The same templates as Nx projects, with cached `build` / `test` / `check` targets: [`@rivetjs/nx`](https://github.com/N1XUS/rivetjs/tree/main/libs/nx) (`npx create-nx-workspace@latest my-org --preset=@rivetjs/nx`, or `npx nx add @rivetjs/nx` in an existing workspace).

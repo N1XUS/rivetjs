@@ -1,6 +1,6 @@
 # @rivetjs/nx
 
-[Nx](https://nx.dev) plugin for [Rivet](https://github.com/rivetjs/rivet): a workspace preset, generators for apps,
+[Nx](https://nx.dev) plugin for [Rivet](https://github.com/N1XUS/rivetjs): a workspace preset, generators for apps,
 libraries, routes and components, executors, and inferred `build` / `dev` / `preview` / `test` / `check` /
 `typecheck` targets with Nx caching.
 
@@ -61,4 +61,4 @@ Every folder with a `package.json` or `project.json` and a Rivet Vite config (`r
 make `preview` run `wrangler dev` / Bun / Deno. `build`, `test`, `check`, `typecheck` are cached; `.rivet/`,
 `dist/` and `coverage/` are never inputs; `build` outputs `{projectRoot}/dist`.
 
-Docs: [Nx guide](https://github.com/rivetjs/rivet/blob/main/apps/docs/content/guides/tooling/nx.md).
+Docs: [Nx guide](https://github.com/N1XUS/rivetjs/blob/main/apps/docs/content/guides/tooling/nx.md).

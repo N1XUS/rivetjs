@@ -553,6 +553,7 @@ Coordinator rulings 2026-10-12: approach (B) hybrid (render-time decision, exact
   - `reference/config.md` (`rivet({ bridges })`);
   - `apps/docs/CLAUDE.md`.
 
+- Status 2026-10-19 (DOCS-SWEEP): `guides/components/framework-components.md` landed (React + Preact: install, ownership, policies, live props, callbacks, slots, nesting, errors, islands-only pages, limits) + nav, glossary, `coming-from-other-frameworks`, `reference/config.md` (`rivet({ bridges })`), roadmap. Still open: `reference/bridge.md`, the `learn/` page, examples, `preloading.md` policy rows.
 - [ ] Step 1: Pages. Every claim has a number from T1 / T7 (bytes table per framework, bench verdicts). Policy table with Astro / Qwik equivalents. Limits section (incl. the T-INTENT-COLD gap while it is open: an `intent` island replays only events after the runtime booted). "Islands-only pages" section (T7b, spec §3.12): when a page boots without the Rivet resume runtime, what keeps the full driver (the dev log line), bytes / requests from the T7b bench. "Wide islands, not leaf nodes".
 - [ ] Step 2: Examples run in docs-kit frames (`framePreload` budget 0 as today) and use lucide icons only.
 - [ ] Gates:

@@ -30,25 +30,33 @@ Rivet is experimental. The first npm release, `0.1.0-alpha.0`, is available on t
 - **Scoped styles.** `css` blocks in the component file and CSS module files, with class names unique to the file, shipped as per-route stylesheets. Experimental. See [scoped styles](../guides/styling/scoped-styles.md).
 - **Translations.** Compile-time i18n with ICU messages, locale URLs and no message runtime in the browser for static text. See [translating text](../guides/i18n/translating-text.md).
 - **Security.** Strict Content Security Policy with nonces (hashes for static pages) and optional Trusted Types. See [CSP](../guides/security/csp.md).
+- **Motion.** `@rivetjs/motion`: the Motion (motion.dev) API on Rivet signals, with entrances in CSS, exit and layout animations and scroll values. Experimental. See [motion](../guides/motion/index.md).
+- **React and Preact components.** `@rivetjs/bridge-react` and `@rivetjs/bridge-preact` render components of those frameworks as islands: server-rendered into the stream, hydrated by a `client` policy, with live props, callbacks and Rivet content in their slots. Experimental. See [React and Preact components](../guides/components/framework-components.md).
+
+### Components
+
+- **CDK.** `@rivetjs/cdk`: focus, overlays, collections, drag and drop, dates and unstyled, accessible components. See the [cdk docs](site:cdk/foundations/overview/).
+- **UI.** `@rivetjs/ui`: styled, resumable compound components with themes and a theme builder. Alpha. See the [UI docs](site:ui/).
 
 ### Tools
 
 - **DevTools** on the dev server: component tree, live signals, update highlights, hot reload and error logs.
 - **Language service.** Rivet compiler errors in your editor through a TypeScript plugin, a `rivet-check` command and a VS Code extension shell. Experimental. See [language service](../guides/tooling/language-service.md).
+- **Starters and Nx.** `npm create rivet@latest` with four starters, and the `@rivetjs/nx` plugin. See [quick start](../start/quick-start.md) and [Nx](../guides/tooling/nx.md).
+- **Testing.** `@rivetjs/testing`: component tests in happy-dom or a browser, user events, and resume tests. See [testing](../guides/tooling/testing.md).
+- **AI assistants.** An MCP server with docs search and code checks, and agent skills. See [AI assistants](../guides/tooling/ai.md).
 - **Benchmarks** against ASP.NET Razor, Solid, Qwik and React. See [benchmarks](benchmarks.md).
 
 ## In progress
 
-This has a written design. It is not available yet; names in the design may change.
+These have a written design. They are not available yet; names in the design may change.
 
 | Feature | What it adds | Design |
 | --- | --- | --- |
-| CDK and accessible components | `@rivetjs/cdk`: utilities (focus, overlays, collections, ids) and unstyled, accessible components. | [spec](https://github.com/rivetjs/rivet/blob/main/docs/design/specs/2026-10-03-cdk-and-aria-design.md) |
-
-See [UI overview](../ui/overview.md).
+| Solid, Vue and Svelte components | Bridges for three more frameworks, and keeping an island alive across client navigation (`persist`). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-11-framework-bridges-design.md) |
 
 ## Goals that are not met yet
 
 - **Server speed.** The goal is to beat ASP.NET Razor on CPU per page, response time, time to first byte and memory. Static pages meet it in the latest measurements except one case: on a page of short text fields at concurrency 10, CPU per page is level and Razor's median response is faster. Interactive (resumable) pages still use more CPU than plain hydratable Solid 1.9 at 1,000 rows and more memory than Solid. See [benchmarks](benchmarks.md).
 - **Large pages in the browser.** Mounting very large pages and their memory use are known costs.
-- **npm packages.** Nothing is published yet.
+- **Stable APIs.** Packages are on npm as an alpha. Names and behaviour still change between releases.

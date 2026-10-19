@@ -65,6 +65,7 @@ export const nav: NavSection[] = [
           "guides/components/async",
           "guides/components/suspense",
           "guides/components/browser-only",
+          { path: "guides/components/framework-components", tag: "new" },
           "guides/components/slots",
           { path: "guides/components/error-boundaries", tag: "new" },
           { path: "guides/components/dynamic-and-portal", tag: "new" },

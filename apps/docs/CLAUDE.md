@@ -50,7 +50,7 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 
 ## Commands (repo root; `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` first)
 - Typecheck + content/nav check: `NX_DAEMON=false npx nx run docs:typecheck --output-style=static --skip-nx-cache` (runs `prepare`: regenerates routes).
-- Build + test some examples: `node libs/docs-kit/cli.ts examples apps/docs <id> <id> …`.
+- Build + test some examples: `node libs/docs-kit/cli.ts check-examples apps/docs <id> <id> …` (production build of those frames only + their Chromium checks, out `apps/docs/.artifacts/check-examples/`). `examples apps/docs` only regenerates the frames + data and lists code-only examples.
 - Full build: `NX_DAEMON=false npx nx run docs:build --output-style=static --skip-nx-cache` (cold, checks included: ≈ 12 s, peak tree RSS 1.5 GB incl. nx, 2026-10-09). Then `npx nx run docs:test` (vitest `docs`, depends on build). Units only: `npx vitest run --project docs tests/content.test.ts`.
 - Serve built site: `npx nx run docs:serve` (:4321): watches content/examples/src/config + templates/ + libs/ and rebuilds incrementally, swapping atomically; `node libs/docs-kit/cli.ts serve apps/docs --no-watch` serves dist as is; `--port` overrides. Dev: `npx nx run docs:dev` = `serve apps/docs --dev` (Vite :4320 only: docs pages and example frames on demand, HMR).
 - Content lint only: `node libs/docs-kit/cli.ts check-content apps/docs [--strict]`.
@@ -59,6 +59,7 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 ## Gotchas
 
 - `content/guides/tooling/ai.md` documents portable `rivet-ui-design` installation for Codex/Claude Code/Cursor, local-clone and post-push remote commands, complete-bundle copying, automatic/explicit invocation, and optional MCP. The public bundles and starter copies are generated from `libs/mcp/ai`; keep this guide aligned with that source.
+- `content/guides/components/framework-components.md` is the user guide of `@rivetjs/bridge` + `@rivetjs/bridge-react` / `-preact` (plan T17 part 1): keep its policy table, island options, ownership rules and limits aligned with `libs/bridge*/CLAUDE.md` (no Solid / Vue / Svelte or `persist` until they ship).
 - `content/_charts.ts` imports `docs/benchmarks/*.json`: `serve` does not watch `docs/`, so a regenerated report needs a content touch or rebuild.
 - Generated routes in `src/routes/(docs)/` are overwritten on every prepare/build: edit the `.md`.
 - `src/styles.css` has `@source not "./generated/**"`: Tailwind otherwise scans the 21 MB examples manifest + `api.json` (Vite phase 16.7 s → 7.5 s); classes only present as text in that data are intentionally not generated.

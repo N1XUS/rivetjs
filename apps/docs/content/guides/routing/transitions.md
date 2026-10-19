@@ -201,4 +201,4 @@ clientEvent(document, "rivet:before-swap", (event: CustomEvent) => {
 
 - [Links and navigation](./links-and-navigation.md)
 - [Layouts](./layouts.md)
-- [Design spec](https://github.com/rivetjs/rivet/blob/main/docs/design/specs/2026-10-03-route-transitions-design.md)
+- [Design spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-03-route-transitions-design.md)

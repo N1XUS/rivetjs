@@ -1,6 +1,6 @@
 # Rivet UI starter
 
-A static site built with [`@rivetjs/ui`](https://github.com/rivetjs/rivet/tree/main/libs/ui) (styled, resumable components) and Tailwind CSS v4. Pages in `src/routes` become HTML files at build time; the button keeps working in the browser without re-running your components.
+A static site built with [`@rivetjs/ui`](https://github.com/N1XUS/rivetjs/tree/main/libs/ui) (styled, resumable components) and Tailwind CSS v4. Pages in `src/routes` become HTML files at build time; the button keeps working in the browser without re-running your components.
 
 ```sh
 npm install
@@ -22,7 +22,7 @@ npm run check     # Rivet compiler diagnostics (CI)
 - Add a page: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`).
 - Deploy: `npm run build`, then upload `dist/client` to any static host (docs `guides/deploy/static-hosts`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
-- Docs: https://github.com/rivetjs/rivet/tree/main/apps/docs/content (guides, reference, recipes).
+- Docs: https://github.com/N1XUS/rivetjs/tree/main/apps/docs/content (guides, reference, recipes).
 
 ## Tooling
 

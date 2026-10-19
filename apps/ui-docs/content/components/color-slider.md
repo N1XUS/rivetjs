@@ -116,7 +116,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The ColorSlider component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/color-slider.css)):
+The ColorSlider component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/color-slider.css)):
 
 #### Base Classes
 - `.color-slider` - Base slider container

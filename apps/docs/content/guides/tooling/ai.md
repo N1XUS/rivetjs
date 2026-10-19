@@ -123,7 +123,7 @@ npx skills add /path/to/rivet/skills --skill rivet-ui-design --agent codex claud
 Once these bundles are available on the repository's public branch, the equivalent remote command is:
 
 ```sh
-npx skills add rivetjs/rivet --skill rivet-ui-design --agent codex claude-code cursor
+npx skills add N1XUS/rivetjs --skill rivet-ui-design --agent codex claude-code cursor
 ```
 
 Installation is project-scoped by default. Add `--global` for a personal installation available across projects. To install without the CLI, copy the **whole** `skills/rivet-ui-design` directory into `.agents/skills/` for Codex/Cursor or `.claude/skills/` for Claude Code. Cursor also supports `.cursor/skills/`; choose one skill location per tool rather than installing multiple copies. Preserve the references and license when copying or redistributing it.

@@ -61,7 +61,7 @@ Docs site of `@rivetjs/cdk` (headless components + foundations), second site on 
 
 ## Commands (repo root; `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` first)
 - Typecheck + content/nav check: `NX_DAEMON=false npx nx run cdk-docs:typecheck --output-style=static --skip-nx-cache` (runs `prepare`: regenerates routes; fails on nav orphans, long descriptions, TS errors in examples).
-- Build + test some examples: `node libs/docs-kit/cli.ts examples apps/cdk-docs <id> <id> …`.
+- Build + test some examples: `node libs/docs-kit/cli.ts check-examples apps/cdk-docs <id> <id> …` (production build of those frames only + their Chromium checks, out `apps/cdk-docs/.artifacts/check-examples/`). `examples apps/cdk-docs` only regenerates the frames + data and lists code-only examples.
 - Full build (all examples, routes, prerender, Chromium checks, search, link check; cold ≈ 2.5 min, peak tree RSS 2.4 GB incl. nx — was 4.0 GB before the Vite build moved to child processes, 2026-10-09; per phase: `libs/docs-kit/CLAUDE.md`): `NX_DAEMON=false npx nx run cdk-docs:build --output-style=static --skip-nx-cache`.
 - Serve built site: `npx nx run cdk-docs:serve` (:4323): watches content/examples/src/config + templates/ + libs/ and rebuilds incrementally, swapping atomically; `node libs/docs-kit/cli.ts serve apps/cdk-docs --no-watch` serves dist as is; `--port` overrides. Dev: `npx nx run cdk-docs:dev` (Vite :4325 only: docs pages and example frames on demand, HMR).
 - Content lint only: `node libs/docs-kit/cli.ts check-content apps/cdk-docs [--strict]`; code fences: `node libs/docs-kit/cli.ts check-snippets apps/cdk-docs` (CI `gates` job).

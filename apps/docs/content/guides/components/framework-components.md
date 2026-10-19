@@ -1,0 +1,179 @@
+---
+title: React and Preact components
+description: Use React 19 and Preact components in Rivet pages as islands: server-rendered into the stream, hydrated by a client policy, with live props and callbacks.
+template: guide
+status: experimental
+related: [guides/components/browser-only, guides/components/slots, guides/performance/chunks, reference/config]
+---
+
+A framework bridge lets you use components written for another framework as JSX tags in a Rivet page. The component renders on the server through that framework's own SSR, straight into Rivet's HTML stream, and starts in the browser only when its `client` policy says so. Everything around it stays Rivet: compiled, resumable, and free of JavaScript until someone interacts. After reading this page you can add React or Preact components to a Rivet app, choose when each one loads, pass it live values and callbacks, and put Rivet content inside it.
+
+:::note
+Bridges are experimental. Two adapters exist today: `@rivetjs/bridge-react` (React 19) and `@rivetjs/bridge-preact` (Preact 10.29+ and 11). Solid, Vue and Svelte adapters are planned.
+:::
+
+## Install
+
+```sh
+npm install @rivetjs/bridge @rivetjs/bridge-react react react-dom
+```
+
+`@vitejs/plugin-react` 6 is optional: install it for React Fast Refresh and the React Compiler, and the bridge adds it for its own files. Without it, Vite compiles React JSX by itself.
+
+For Preact: `npm install @rivetjs/bridge @rivetjs/bridge-preact preact preact-render-to-string` (`@preact/preset-vite` is the optional plugin).
+
+## Configure Vite
+
+Pass the bridge to `rivetRouter()`:
+
+```ts title="vite.config.ts"
+import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+import { react } from "@rivetjs/bridge-react/vite";
+
+export default defineConfig({
+  plugins: [rivetRouter({ bridges: [react()] })],
+});
+```
+
+Without the file router, `rivet({ bridges: [react()] })` from `@rivetjs/compiler/vite` takes the same list. Bridges work in `server` and `static` mode. `preact()` from `@rivetjs/bridge-preact/vite` works the same way, and both can be in one list.
+
+## Which files are React
+
+Rivet and React both use JSX, so every file has exactly one owner. React owns:
+
+- files named `*.react.tsx` or `*.react.jsx`,
+- files that start with a `/** @jsxImportSource react */` comment,
+- folders and npm packages you list in `react({ include: ["src/react/**", "@mui/material"] })`.
+
+`exclude` takes the same patterns and wins over everything else. Every other `.tsx` file is Rivet. A file that both Rivet and a bridge claim stops the build with `RV2145`. Preact uses `*.preact.tsx`, `@jsxImportSource preact` and `preact({ include })`.
+
+For editor types, import the adapter's JSX types once anywhere in the project:
+
+```ts
+import "@rivetjs/bridge-react/types";
+```
+
+Then a React component used in a Rivet file is type-checked with its own props, plus the island options below.
+
+## Use a component
+
+Write the React component as usual:
+
+```tsx title="src/components/RevenueChart.react.tsx"
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
+
+export function RevenueChart(props: { data: { month: string; paid: number }[] }) {
+  return (
+    <BarChart width={640} height={260} data={props.data}>
+      <XAxis dataKey="month" />
+      <YAxis />
+      <Bar dataKey="paid" isAnimationActive={false} />
+    </BarChart>
+  );
+}
+```
+
+Import it in a Rivet route and render it like any component:
+
+```tsx title="src/routes/index.tsx"
+import "@rivetjs/bridge-react/types";
+import type { PageProps } from "@rivetjs/router";
+import { RevenueChart } from "../components/RevenueChart.react.tsx";
+
+export const serverLoad = () => ({ revenue: [{ month: "Jan", paid: 120 }, { month: "Feb", paid: 180 }] });
+
+export default function Overview({ data }: PageProps<typeof serverLoad>) {
+  return (
+    <main>
+      <h1>Overview</h1>
+      <RevenueChart client="visible" data={data.revenue} />
+    </main>
+  );
+}
+```
+
+React renders the chart on the server (`renderToString`, or its streaming API when something suspends), so the HTML arrives with the page. When the chart scrolls into view, the browser loads React and the component and hydrates it. Without a `client` prop, an island stays static HTML and ships no JavaScript at all.
+
+## When it starts: client
+
+| `client` | The island hydrates |
+| --- | --- |
+| none | never: static HTML. With a live prop, on the first change of that prop |
+| `"load"` | right after the page is ready |
+| `"idle"` | when the browser is idle |
+| `"visible"` | when it scrolls into view |
+| `"interaction"` | on the first pointer down or key press anywhere on the page |
+| `"intent"` | on hover, focus or touch of the island; a click during loading is replayed once after hydration |
+| `"media:(max-width: 600px)"` | when the media query matches |
+| `"only"` | not rendered on the server: the `fallback` shows until the component mounts in the browser |
+
+Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` or `client={{ on: "idle", timeout: 500 }}`. `preload` fetches the code earlier than it runs, with the same values as Rivet's [preload strategies](../performance/preloading.md): `client="visible" preload="idle"` downloads at idle and hydrates when visible.
+
+If you know Astro: `client="visible"` is `client:visible`, written as a normal prop so it is typed and can take options.
+
+## Props are live
+
+Pass values, not signals. A prop that reads a signal follows it: each Rivet update re-renders the island once, through React's own `root.render`.
+
+```tsx
+const range = signal("30d");
+<RevenueChart client="idle" data={series(range())} />;
+```
+
+A static island (no `client`) with a live prop loads nothing until the prop changes. On the first change it hydrates with the old values, so the HTML matches, and then renders the new ones. Passing the signal itself (`count={count}`) passes a function, which React sees as a callback.
+
+`client`, `preload` and `fallback` are read once and never reach the component.
+
+## Callbacks into Rivet
+
+A function prop calls back into Rivet. Write it as an inline arrow or a local constant, as for any [event handler](events.md), so it can resume:
+
+```tsx
+const range = signal("30d");
+<RangePicker client="load" value={range()} onChange={(next) => range.set(next)} />;
+```
+
+The call runs as one Rivet batch: when React's `onChange` returns, the Rivet DOM around the island already shows the new value. A callback that throws goes to the nearest Rivet error handler; if nothing handles it, React gets the error.
+
+## Rivet content inside React
+
+Props typed as `ReactNode`, `children` included, accept Rivet content. React renders an empty hole there, and Rivet writes its own HTML into it:
+
+```tsx
+<Card client="load" title={<b>Revenue</b>}>
+  <p>
+    Rivet content inside React: <button onClick={() => range.set("30d")}>Reset</button>
+  </p>
+</Card>
+```
+
+That content stays Rivet's. It resumes like the rest of the page, its handlers work before and after React hydrates, and React re-renders keep the same nodes. A React island can sit inside another island's slot: the inner one hydrates first and keeps its root when the outer one updates.
+
+Render props (a slot that React calls with arguments) are not supported. Use a callback and a live prop instead.
+
+## Errors
+
+- **On the server**, a component that throws renders its `fallback` prop when it has one. Without one, the error (`RV2144 react island … failed to render`) goes to the nearest [error boundary](error-boundaries.md).
+- **In the browser**, a hydration mismatch makes React render the island again on the client, and the console shows `RV2149` with the island id.
+- **If the island's code fails to load** (offline, a new deploy), the server HTML stays and the console shows one error.
+
+## Pages with only islands
+
+When a page's only browser code is islands with plain JSON props, Rivet skips its own resume state and loader. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. Rivet content in a slot, `client="intent"`, callbacks and live props need Rivet's full runtime, and then it loads as usual. On file-router pages the router waits until the first link hover, focus or click.
+
+## Common mistakes
+
+- **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.
+- **Expecting clicks before hydration to work.** Events inside an island that has not started yet are lost. `intent` replays a click that arrives while the island loads, but not one that arrives before Rivet's own runtime has started on the page. Pick `load` for controls people press right away.
+- **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, but its runtime alone is about 58 KB compressed (Preact's is about 4 KB), so make islands wide (a whole table, a whole form), not one per button.
+- **Sharing React context between islands.** Each island is a separate root, so React context does not cross from one island to another, and Rivet context does not reach React.
+- **Stopping propagation in React.** `stopPropagation` in a React handler stops the event at the island, so Rivet handlers above it do not run.
+
+## See also
+
+- [Browser-only code](browser-only.md)
+- [Slots](slots.md)
+- [Chunks](../performance/chunks.md): route chunks suit pages with islands.
+- [Config](../../reference/config.md): the `bridges` option.
+- [Bridges demo benchmark](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-12-bridges-demo.md): a React dashboard on Next 16 and inside Rivet.

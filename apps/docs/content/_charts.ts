@@ -10,7 +10,7 @@ import { advantage, formatValue, type BenchChartSpec, type ChartPoint, type Proo
 import fair from "../../../docs/benchmarks/2026-10-09-fair-comparison.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
 
-const REPO = "https://github.com/rivetjs/rivet/blob/main/";
+const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
 const FAIR = { label: "Fair comparison 2026-10-09 (full report)", href: REPO + "docs/benchmarks/2026-10-09-fair-comparison.md" };
 
 interface Stat {

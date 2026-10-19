@@ -81,10 +81,6 @@ The explicit parts stay available for a styled backdrop or container:
 
 ### Scroll Behavior
 
-:::warning
-This demo switches the scroll mode with the cdk RadioGroup and the radio classes.
-:::
-
 ::example{id=modal-scroll-comparison}
 
 ### Controlled State
@@ -161,7 +157,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The Modal component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/modal.css)):
+The Modal component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/modal.css)):
 
 #### Base Classes
 

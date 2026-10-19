@@ -135,7 +135,7 @@ Rivet UI follows the [BEM](https://getbem.com/) methodology to ensure component 
 
 ### CSS Classes
 
-The TagGroup component uses these CSS classes ([View source styles](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/tag-group.css) and [tag.css](https://github.com/rivetjs/rivet/blob/main/libs/ui/styles/components/tag.css)):
+The TagGroup component uses these CSS classes ([View source styles](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/tag-group.css) and [tag.css](https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/components/tag.css)):
 
 #### Base Classes
 - `.tag-group` - Base tag group container

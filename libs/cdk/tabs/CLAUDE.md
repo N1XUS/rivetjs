@@ -40,7 +40,7 @@ RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, rend
 ## Commands
 - `npx vitest run --project cdk-browser libs/cdk/tests/tabs.browser.test.tsx libs/cdk/tests/shared-element.browser.test.tsx`
 - `npx vitest run --project cdk-components libs/cdk/tests-components/tabs.test.ts libs/cdk/tests-components/tabs-state.test.ts libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/selection-indicator.test.ts libs/cdk/tests-components/axe.test.ts`
-- `node libs/docs-kit/cli.ts examples apps/cdk-docs tabs-basic tabs-controlled … dom-props-forward styling-theme`
+- `node libs/docs-kit/cli.ts check-examples apps/cdk-docs tabs-basic tabs-controlled … dom-props-forward styling-theme`
 
 ## Gotchas
 - `TabsContext` is not re-provided inside panels as RAC does (cleared to null for nested Tabs)

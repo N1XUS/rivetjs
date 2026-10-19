@@ -33,11 +33,12 @@ export default defineConfig({
 | `mode` | `"server"` \| `"static"` \| `"csr"` | `"server"` | `server`: render per request. `static`: prerender to files. `csr`: single-page app, no server code allowed. |
 | `resume` | `Partial<RivetResumeOptions>` | route files + app modules | Passed to the compiler. Route files are added to `modules` for you, and `appModules` (default `true`) resumes every app `.tsx`/`.jsx` component file a route imports; `appModules: false` opts out, then list other components in `modules`. `lazy` defaults to `"intent"` here. |
 | `images` | `ImagesConfig` \| `true` | off | Image imports (`?image`, `?jsx`). Same as `rivet({ images })`. |
-| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()` from `@rivetjs/bridge-react/vite`, `preact()` from `@rivetjs/bridge-preact/vite`): those components render as islands in the routed pages. Same as `rivet({ bridges })`. Server and static modes only. |
+| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()` from `@rivetjs/bridge-react/vite`, `preact()` from `@rivetjs/bridge-preact/vite`): those components render as islands in the routed pages. Same as `rivet({ bridges })`. Server and static modes only. See [React and Preact components](../guides/components/framework-components.md). |
 | `devtools` | `boolean` | `true` | DevTools on the dev server, if `@rivetjs/devtools` is installed. |
 | `transitions` | `boolean` \| `TransitionOptions` | off | View transitions and pending UI for client navigation. `true` uses the defaults below. |
 | `head` | `"components"` \| `"early"` | `"components"` with `kit()`, else `"early"` | `components`: hold `<head>` until the page rendered, so kit head components apply. `early`: route `head` exports only. Experimental. |
 | `css` | `RivetCSSOptions` | see below | Scoped styles options, passed to `rivet({ css })`. Experimental. |
+| `staticIcons` | `boolean` | `true` | `<Icon>` from `@rivetjs/kit/icon` with a `lucide` icon and constant props compiles to its inline `<svg>` (no component call). `false` keeps every call. Same as `rivet({ staticIcons })`. |
 | `trailingSlash` | `"ignore"` \| `"never"` \| `"always"` | `"ignore"` | `ignore`: `/a` and `/a/` both serve the page. `never` / `always`: page requests in the other form get a `308` to `/a` / `/a/`; `<Link>` and `navigate()` write that form; static builds write `a.html` (`never`) or `a/index.html`. See [links and navigation](../guides/routing/links-and-navigation.md#trailing-slashes). |
 | `preload` | `{ background?: number }` | `{ background: 1 MiB }` | Bytes of below-the-fold `visible` code each page also downloads when the browser is idle; `0` turns it off. A server's own `preload` option wins. See [Preloading](../guides/performance/preloading.md#background-budget). |
 | `routeRules` | `Record<string, RouteRule>` | none | Headers and page caching per path pattern (`/about`, `/blog/*`, `/docs/**`): `{ headers, cache: { maxAge, swr, tags, varies, query, cookies } \| false, swr, isr, cdn }`. Cached pages are rendered once and then served from the server's memory, with `ETag` / `Last-Modified` (`304`) and `s-maxage` for CDNs. JSON data only. Applies to the server adapters (Node, fetch); the static adapter ignores rules (prerendered files get the host's headers). `isr` needs a fixed origin (`start({ origin })` or `routeCache: { origin }`). Dev applies `headers` only. A server's own `routeRules` option replaces it. See [route rules](../guides/routing/headers-and-caching.md#route-rules-and-page-caching). |
@@ -46,7 +47,7 @@ export default defineConfig({
 | `prefetchPaths` | `boolean` | `true` | Client-routed apps: whether links whose path matches no route take part in document prefetch (each page carries a pattern of all route paths). `false` prefetches only `reload` and `rel="external"` links and leaves the pattern out. |
 | `clientRouter` | `boolean` | `false` in `static`, `true` in `server` | `true`: every resumed page ships the client router, so links, back and forward update the page in place. `false`: the router alone does not make a page ship JavaScript. A page with nothing else to resume ships none, and its links load documents. Interactive pages still navigate in place. Ignored in `csr`. See [static hosts](../guides/deploy/static-hosts.md#pages-without-javascript). |
 | `announce` | `boolean` | `true` | Announce the new page to screen readers after client navigation. |
-| `searchParams`, `navigate`, `params`, `activeLinks` | `boolean` | detected from your sources | Include the router code for `useSearchParams()`, `navigate()` / `invalidate()` / `setSearchParams()`, `useParams()` and `<Link active>`. Set `true` when only a dependency uses them. |
+| `searchParams`, `navigate`, `forms`, `params`, `activeLinks` | `boolean` | detected from your sources | Include the router code for `useSearchParams()`, `navigate()` / `invalidate()` / `setSearchParams()`, enhanced `@rivetjs/forms` submits (also `@rivetjs/ui` `Form`; implies `navigate`), `useParams()` and `<Link active>`. Set `true` when only a dependency uses them. |
 | `dev.resume` | `boolean` | `true` | Dev server: pages resume like production; the first edit switches a page to rendering in the browser. `false`: dev pages render in the browser from the first load. |
 
 Builds: `vite build` writes `dist/client`, `vite build --ssr` writes `dist/server`. In `csr` mode the client build also writes `index.html`, and `--ssr` is an error.
@@ -69,9 +70,13 @@ Also import `@rivetjs/router/transitions.css` in your stylesheet. See [transitio
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `resume` | `RivetResumeOptions` | off | Modules that compile so they can resume. Without it, nothing resumes. |
-| `images` | `ImagesConfig` \| `true` | off | Adds the image plugin (needs `sharp`). Then `rivet()` returns two plugins. |
+| `images` | `ImagesConfig` \| `true` | off | Adds the image plugin (needs `sharp`). Then `rivet()` returns an array of plugins. |
+| `bridges` | `BridgeEntry[]` | none | Framework bridges (`react()`, `preact()`): React / Preact components as islands. Then `rivet()` returns an array of plugins. See [React and Preact components](../guides/components/framework-components.md). |
 | `devtools` | `boolean` | `true` | DevTools on the dev server when installed. Builds never include them. |
 | `css` | `RivetCSSOptions` | see below | `css` blocks and `*.module.*` naming. |
+| `include` | Vite `FilterPattern` | every `.tsx` / `.jsx` outside `node_modules` | Modules the compiler transforms (globs relative to the root, or RegExps). |
+| `exclude` | Vite `FilterPattern` | none | Modules never transformed, for example another framework's files. Wins over `include`. |
+| `staticIcons` | `boolean` | `true` | Compile `<Icon icon={X} />` (`@rivetjs/kit/icon`, a `lucide` icon, constant props) to its inline `<svg>`. `false` keeps every call. |
 
 ### RivetResumeOptions
 
@@ -163,13 +168,22 @@ Returns `{ pages: string[], fallback: string[] }`.
 
 ## start
 
-`import { start } from "@rivetjs/router/node"`. Serves a production build of a file-routed app. Takes every `serve` option except `handler` and `client`, plus:
+`import { start } from "@rivetjs/router/node"`. Serves a production build of a file-routed app. Takes every `serve` option except `handler` and `client`, plus the options below. The [Node deploy guide](../guides/deploy/node.md#options) explains each one.
 
 | Option | Type | Default | Meaning |
 | --- | --- | --- | --- |
 | `dist` | `string` | `"dist"` | Build folder. |
 | `stream` | `{ deadline?: number }` | off | Stream pending `Async` boundaries. `deadline` (ms) hands the rest to the browser. |
 | `locales` | `string[]` | none | With i18n: per-locale client builds. |
+| `resolveLocale` | `(request) => string \| undefined` (may be async) | none | With i18n: the locale of error pages when the URL has none. |
+| `maxBody` | `number` \| `{ default, multipart }` | 1 MiB, multipart 10 MiB | Request body limit for unsafe methods; larger bodies get `413`. |
+| `csp` | `false` \| `{ trustedTypes?, directives? }` \| `(nonce) => string` | strict CSP with a nonce | Content-Security-Policy of HTML pages. See [CSP](../guides/security/csp.md). |
+| `preload` | `{ background?: number; lean?: boolean }` or a function of the request | `{ background: 1 MiB }` | Preload planner per page. See [Preloading](../guides/performance/preloading.md). |
+| `routeRules` | `Record<string, RouteRule>` | the build's (`rivetRouter({ routeRules })`) | Headers and page caching per path; replaces the build's rules. |
+| `routeCache` | `{ maxBytes?, maxEntries?, origin? }` | 32 MiB, 5,000 pages | Bounds of the route rules' page store. |
+| `renderCache` | `RenderCache` | none | Cross-request fragment cache (`createRenderCache()` from `@rivetjs/runtime/server-cache`). |
+| `workers` | `number` \| `"auto"` | `1` | Worker processes (`node:cluster`); `"auto"` = one per CPU core. |
+| `earlyHints` | `boolean` \| `{ runtime?, links? }` | off | `103 Early Hints` for pages. See [Early hints](../guides/routing/headers-and-caching.md#early-hints). |
 
 ## serve
 
@@ -179,10 +193,17 @@ Returns `{ pages: string[], fallback: string[] }`.
 | --- | --- | --- | --- |
 | `handler` | `Handler` | required | Answers requests that are not files in `client`. |
 | `client` | `string` | none | Folder of static files served before the handler. |
-| `immutable` | `(pathname) => boolean` | starts with `/assets/` | Files that get `Cache-Control: immutable`. |
+| `base` | `string` | none | URL base path (`/app`): `client` files are served under it. |
+| `static` | `"index"` \| `"fs"` | `"index"` | `index`: the `client` folder is indexed once at start (files added later are not served). `fs`: look up each request on disk. |
+| `immutable` | `(pathname) => boolean` | starts with `<base>/assets/` | Files that get `Cache-Control: immutable`. |
 | `port` | `number` | `3000` | Port. |
 | `host` | `string` | `"127.0.0.1"` | Host. |
 | `compress` | `boolean` \| `{ zstd?: boolean, precompress?: boolean }` | `true` | Compress responses by `Accept-Encoding`: zstd when accepted (level 3; 1 for bodies of 256 KB and more), else Brotli (4), else gzip (6). Immutable `client` files are compressed once at the best quality on their first request and written next to the file (`.zst` / `.br` / `.gz`). `{ zstd: false }`: Brotli / gzip only. `{ precompress: false }`: nothing written to disk. See [Node](../guides/deploy/node.md#what-the-server-does-for-you). |
+| `earlyHints` | `boolean` | `false` | Send the `103 Early Hints` the handler asks for (HTTP/1.1 clients). |
+| `reusePort` | `boolean` | `false` | Bind with `SO_REUSEPORT` so several processes share the port (Linux, FreeBSD; needs a fixed `port`). |
+| `origin` | `string` | none | Fixed public origin for request URLs, for servers behind a proxy. |
+| `trustProxy` | `boolean` \| `number` \| `(address, hop) => boolean` | `false` | Which proxy hops to trust for `X-Forwarded-For` / `-Proto` / `-Host`. |
+| `idleMemory` | `boolean` | `true` | Return heap memory to the OS when the server goes idle after traffic. |
 | `grace` | `number` (ms) | `10000` | Time to finish open requests on close. |
 | `onError` | `(error, request?) => void` | `console.error` | Unexpected failures. |
 | `headers` | `Record<string, string>` | `nosniff` + referrer policy | Extra headers on every response. |
