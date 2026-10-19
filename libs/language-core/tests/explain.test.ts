@@ -21,6 +21,8 @@ const RESUME = new Set([
   "RV2014",
   "RV2015",
   "RV2102",
+  "RV2105",
+  "RV2106",
   "RV3009",
 ]);
 /** Codes of the derived resume model (M2): the pair compiles with `resume: { module, model: "derived" }`; skipped on a wasm build without it. */

@@ -146,6 +146,8 @@ export function P() { const items = signal(["a"]); return <section><List id="l">
       ["region", ["items"]],
       ["slot", ["items"]],
       // `{i()}` reads only the For row getter: a plain cell, no symbol (FLATTEN-CMP-1).
+      // LAZY-ROWS T2: the lazy-eligible For's row function is a slot symbol (no captures).
+      ["slot", []],
     ],
   );
   const inner = server.symbols!.find((s) => s.kind === "region" && s.source.includes("() => (<For"))!;

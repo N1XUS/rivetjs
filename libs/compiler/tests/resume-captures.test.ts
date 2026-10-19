@@ -99,10 +99,16 @@ test("K1: an extracted function capturing a class instance compiles (serializati
 
 test("K1: components imported from @rivetjs/* keep plain function props", () => {
   const { server: s } = clean(
+    `import { signal } from "@rivetjs/reactivity";\nimport { Show } from "@rivetjs/runtime/server";
+export function L() { const on = signal(true); return <div><Show when={on} fallback={<i />}>{(v) => <b>{String(v())}</b>}</Show></div>; }`,
+  );
+  assert.doesNotMatch(s.code, /__rivetR_fn/);
+  // LAZY-ROWS T2: the one exception — a lazy-eligible keyed `For`'s row function is a resumable row symbol.
+  const { server: f } = clean(
     `import { signal } from "@rivetjs/reactivity";\nimport { For } from "@rivetjs/runtime/server";
 export function L() { const items = signal([1]); return <ul><For each={items}>{(i) => <li>{i}</li>}</For></ul>; }`,
   );
-  assert.doesNotMatch(s.code, /__rivetR_fn/);
+  assert.match(f.code, /"\$lazy": \[0\],\s*children: __rivetR_fn\("a\.tsx#L\$\w+", \(i\) => /);
 });
 
 test("G25 b: conditional JSX function props and children become slot symbols", () => {

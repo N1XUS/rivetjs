@@ -38,7 +38,11 @@ test("lifted read, shared row captures and hoisted key keep server output identi
   assert.doesNotMatch(plain, /__rivetCaps\b|__rivetBy/);
   assert.match(plain, /__rivetR_attr\("data-state", "[^"]+", \(\) => /);
   // Symbol ids are content hashes: the plain variant's (other code) differ — compared through the fast ones (same order).
-  const [symbols, plainSymbols] = [compileResume(source(false), "dom").symbols, compileResume(source(true), "dom").symbols];
+  // LAZY-ROWS T2: the plain variant's `by` reads the props (no key path) — its own Fn symbol, dropped from the pairing.
+  const [symbols, plainSymbols] = [
+    compileResume(source(false), "dom").symbols,
+    compileResume(source(true), "dom").symbols.filter((s) => !(s.kind === "fn" && s.source.includes("r.id + 0"))),
+  ];
   assert.equal(symbols.length, plainSymbols.length);
   const manifestOf = (list: typeof symbols): ResumeManifest => ({
     runtime: "/rt.js",

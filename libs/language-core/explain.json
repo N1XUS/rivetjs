@@ -345,6 +345,27 @@
       "note": "Derived resume model only (`resume: { model: \"derived\" }`, plan M2 C2). Under that model every `signal(x)` / `createStore(x)` call of a resume module compiles to a keyed registration (`_rSig(key, x)`: key = module prefix + source-order ordinal, an occurrence suffix when one site registers twice in a boundary); the server ships the values, the browser adopts them in the same order. A site inside an `if` / `?:` / `&&` / loop / `switch` / `try` is still keyed, but a render that takes another path adopts the wrong values. Warning: the module compiles."
     },
     {
+      "code": "RV2105",
+      "messages": [
+        "Keyed `For` row renders non-deterministically: `{call}` runs while rendering the row; a lazy row renders again in the browser, so read it outside the row (loader data, a prop, a signal) or in a handler / clientEffect (the For's rows stay recorded)"
+      ],
+      "fix": "Compute the value outside the row (in the component body, loader data or a prop) and read that inside the row, or move the read into a handler / `clientEffect`; `Date.now()`, `Date()`, `new Date()` without arguments, `Math.random()`, `performance.now()`, `crypto.randomUUID()` and `crypto.getRandomValues()` are reported on a keyed `For` row's render path.",
+      "avoid": "import { For } from \"@rivetjs/runtime/dom\";\nexport function Feed(props: { items: { id: string; title: string }[] }) {\n  return (\n    <ul>\n      <For each={props.items} by={(item) => item.id}>\n        {(item) => <li data-seen={Date.now()}>{item().title}</li>}\n      </For>\n    </ul>\n  );\n}",
+      "prefer": "import { For } from \"@rivetjs/runtime/dom\";\nexport function Feed(props: { items: { id: string; title: string }[]; seen: number }) {\n  return (\n    <ul>\n      <For each={props.items} by={(item) => item.id}>\n        {(item) => <li data-seen={props.seen}>{item().title}</li>}\n      </For>\n    </ul>\n  );\n}",
+      "note": "Resume mode (lazy collection rows, LAZY-ROWS T2). A warning: the module compiles and the `For` keeps today's per-row resume records. A lazy row (the `For`'s row function as a resumable symbol, materialised in the browser per row) must render the same markup in the browser as on the server; a time / random read in the row's render path would not. Handlers, effects, client events, refs and timer callbacks inside the row are not its render and are not checked. Reported once per `For`, on the server compile."
+    },
+    {
+      "code": "RV2106",
+      "messages": [
+        "Keyed `For` row holds {site}, which a lazy row cannot replay: move it out of the row or into a component the row renders lazily (the For's rows stay recorded)",
+        "Keyed `For` row holds a `ref` into `{name}`, declared outside the row, which a lazy row cannot replay: keep the ref local to the row or read the element through the event (the For's rows stay recorded)"
+      ],
+      "fix": "Render the client-only / streaming / portal content outside the row (one instance next to the list), or keep it in a component the row renders; for a ref, declare it inside the row (`{(row) => { const el = ref(); … }}`) or read the element from the event (`event.currentTarget`).",
+      "avoid": "import { For, ref } from \"@rivetjs/runtime/dom\";\nexport function Menu(props: { items: { id: string; label: string }[] }) {\n  const last = ref<HTMLElement>();\n  return (\n    <ul onKeyDown={() => last.current?.focus()}>\n      <For each={props.items} by={(item) => item.id}>\n        {(item) => <li ref={last}>{item().label}</li>}\n      </For>\n    </ul>\n  );\n}",
+      "prefer": "import { For } from \"@rivetjs/runtime/dom\";\nexport function Menu(props: { items: { id: string; label: string }[] }) {\n  return (\n    <ul onKeyDown={(event) => (event.currentTarget.lastElementChild as HTMLElement | null)?.focus()}>\n      <For each={props.items} by={(item) => item.id}>\n        {(item) => <li tabIndex={-1}>{item().label}</li>}\n      </For>\n    </ul>\n  );\n}",
+      "note": "Resume mode (lazy collection rows, LAZY-ROWS T2). A warning: the module compiles and the `For` keeps today's per-row resume records. A lazy row is re-run in the browser over its server markup (adopt mode); `clientOnly(…)` / an element of a `clientOnly` component, `<Async>`, a `<Portal>` element and a `ref` into a local declared outside the row cannot be replayed that way, so the whole `For` stays recorded (one rule per `For`). Reported once per `For`, on the server compile."
+    },
+    {
       "code": "RV2145",
       "messages": [
         "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",

@@ -47,11 +47,13 @@ test("1: For row getter reads (row() / index()) are plain cells; signal reads, J
   assert.match(code, /"<a", ">go<\/a>"/);
   assert.deepEqual(symbols, [
     ["region", ["props", "sel"]], // the For
+    ["slot", ["sel"]], // LAZY-ROWS T2: the lazy-eligible For's row function
     ["attr", ["sel", "row"]], // data-sel reads a signal
     ["bind", ["sel", "row"]], // {sel() === row().id ? "*" : ""}
     ["bind", ["row"]], // a JSX branch keeps its site
     ["region", ["row"]], // a user component
     ["region", ["props"]], // Q's For
+    ["slot", []], // LAZY-ROWS T2: Q's row function
     ["bind", ["row"]], // a reassigned row parameter is no getter
     ["bind", ["props"]], // .map
     ["bind", ["props"]], // props.get(): any other call

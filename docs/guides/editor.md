@@ -71,6 +71,7 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 | RV2006 | JSX inside handlers (RV2004, capture-phase handlers, retired: `onXCapture` resumes) |
 | RV2101 | Captured value not serializable (type-aware, warning) |
 | RV2103 / RV2104 | Derived resume model (`resume: { model: "derived" }`, M2): a boundary's render reads `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `new Date()` (error) / keyed state (`signal()` / `createStore()`) created inside an `if` / conditional / loop / `switch` / `try` (warning) |
+| RV2105 / RV2106 | Keyed `For` row cannot render lazily (resume server target, warning; the For's rows stay recorded): the row reads `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `crypto.getRandomValues()` / `new Date()` while rendering / holds a `clientOnly` component, `<Async>`, a `Portal` or a `ref` into a local declared outside the row |
 | RV3001–RV3006 | Helper import shape (re-exports, namespaces, aliases, `clientOnly`) |
 | RV3007 / RV3008 / RV3009 | Route module server exports shape (`export *`, declarations) / server-only code reaching the browser / server-only code rendering JSX |
 | RV3101 | Link matches no route (warning) |

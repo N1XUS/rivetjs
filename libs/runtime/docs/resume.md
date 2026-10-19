@@ -53,6 +53,14 @@ Server renders once; the browser never re-runs a component. Files: `server-resum
 - Framework islands (bridge ABI): `_rPreload(url, strategy, ids?)` plans an island chunk like a symbol of that chunk (manifest-known URLs only; dev warns on unknown); `when("visible")` on an inline `display: contents` island root observes its element descendants through nested contents wrappers (≤ 48; none: idle). `_markup(html)` (`./server-markup`) writes the framework's HTML verbatim.
 - `renderResumable` without `stream` = same contract as `renderToWriter`; `resumableToString` never streams.
 
+## Row functions (LAZY-ROWS ABI, compiler T2 2026-10-19; runtime T4 pending)
+
+- Spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md` §3.3. Compiler emits, server resume target, per lazy-eligible keyed `For` (verdict `libs/compiler/rust/src/resume/rows.rs`): `children: _rFn(rowId, row, caps)` (row function registered like any Slot / Fn site; browser symbol `kind: "slot"` for a JSX row, `"fn"` otherwise, compiled by `_compileSymbolModule`) and compiler-private prop `"$lazy": [flags]` / `[flags, "key.path"]`.
+- `flags`: 1 = row reads its index parameter; 2 = `by` is a function with a recipe (`by: _rFn(byId, by, caps)`).
+- `key` (present iff `by` is a key-path arrow): `by(item)` = item value at the dotted path, `""` = item itself; server keying still calls the authored `by`.
+- Ineligible Fors: no `$lazy`, no row `_rFn`, unchanged bytes. `$rows` (R-PLAN) may sit next to `$lazy`.
+- Runtime today: `For` ignores `$lazy`; `_rFn` on `children` only registers the row function (rows render eagerly + stay recorded). T4: server `R` record reads `$lazy` and stops recording row entries; browser renders rows from the row symbol. T5 hook: adopt-mode DOM lowering of the row symbol in `_compileSymbolModule` (not started).
+
 ## Gotchas / open bugs
 
 - Explicit `onXCapture={…}` attributes compile to `_rOn(…, { capture: 1 })` (entry key `type!`), like spread `onXCapture`; the old "Capture-phase handlers are not resumable" diagnostic is gone (wave 2).

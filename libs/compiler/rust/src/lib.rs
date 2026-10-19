@@ -214,6 +214,11 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
         }
         result.insert("cssClasses".into(), Value::Object(classes));
     }
+    // LAZY-ROWS T2: per structural `<For>` lazy-rows verdict (resume mode; absent when the module has none).
+    if !output.for_rows.is_empty() {
+        let rows: Vec<Value> = output.for_rows.iter().map(|f| for_row_json(f, None)).collect();
+        result.insert("forRows".into(), Value::Array(rows));
+    }
     if let Some((symbols, scope)) = output.resumed {
         result.insert("symbols".into(), json!(symbols));
         result.insert("scope".into(), json!(scope));
@@ -295,6 +300,7 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
     let mut seen: std::collections::HashMap<(String, Option<(u32, u32)>), usize> = std::collections::HashMap::new();
     let mut sites = Vec::new();
     let mut classes: Vec<(String, bool)> = Vec::new();
+    let mut for_rows = Vec::new();
     for target in &targets {
         let output = compile(
             source,
@@ -321,6 +327,9 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
         }
         if classes.is_empty() {
             classes = output.classes;
+        }
+        if for_rows.is_empty() {
+            for_rows = output.for_rows;
         }
         for d in output.diagnostics {
             if let Some(&at) = seen.get(&(d.message.clone(), d.span)) {
@@ -350,7 +359,41 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
     }
     let diagnostics: Vec<Value> = entries.into_iter().map(|(_, _, entry)| Value::Object(entry)).collect();
     let classes: Vec<Value> = classes.into_iter().map(|(name, revive)| json!({ "name": name, "kind": if revive { "revive" } else { "data" } })).collect();
-    json!({ "diagnostics": diagnostics, "sites": sites, "classes": classes })
+    let mut result = json!({ "diagnostics": diagnostics, "sites": sites, "classes": classes });
+    if !for_rows.is_empty() {
+        let rows: Vec<Value> = for_rows.iter().map(|f| for_row_json(f, Some(&utf16 as &dyn Fn(u32) -> u32))).collect();
+        result["forRows"] = Value::Array(rows);
+    }
+    result
+}
+
+/// LAZY-ROWS T2: one `forRows` entry — `{ line, column, lazy, reason?, symbol?, key?, by?, index? }`; `check` adds the
+/// element's UTF-16 `start` / `end`.
+fn for_row_json(fact: &crate::resume::ForRowFact, utf16: Option<&dyn Fn(u32) -> u32>) -> Value {
+    let mut entry = Map::new();
+    if let Some(utf16) = utf16 {
+        entry.insert("start".into(), json!(utf16(fact.span.0)));
+        entry.insert("end".into(), json!(utf16(fact.span.1)));
+    }
+    entry.insert("line".into(), json!(fact.line));
+    entry.insert("column".into(), json!(fact.column));
+    entry.insert("lazy".into(), json!(fact.lazy));
+    if let Some(reason) = fact.reason {
+        entry.insert("reason".into(), json!(reason));
+    }
+    if let Some(symbol) = &fact.symbol {
+        entry.insert("symbol".into(), json!(symbol));
+    }
+    if let Some(key) = &fact.key {
+        entry.insert("key".into(), json!(key));
+    }
+    if fact.by_fn {
+        entry.insert("by".into(), json!(true));
+    }
+    if fact.index {
+        entry.insert("index".into(), json!(true));
+    }
+    Value::Object(entry)
 }
 
 /// Handle one JSON request.

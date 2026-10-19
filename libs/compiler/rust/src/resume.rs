@@ -32,6 +32,9 @@ mod stores;
 // Function Bridge C12 / T24: module data classes register (`_rClass`); class-field arrows capture `this`; RV2102.
 mod classes;
 pub use classes::ClassReg;
+// LAZY-ROWS T2 (2026-10-19): per keyed `<For>` lazy-rows eligibility; eligible row functions become symbols.
+mod rows;
+pub use rows::{ForRow, ForRowFact, for_row_facts, for_row_warnings};
 pub(crate) use groups::{early_exit, split_group_message};
 
 /// Local module components (function components whose bodies read nothing outside their own sites)
@@ -361,6 +364,8 @@ pub struct Resumed {
     pub classes: Vec<ClassReg>,
     /// Function Bridge C12 / T24: class-field arrows of registered classes → symbol id (server `_rFn(id, arrow, [this])`).
     pub class_arrows: FxHashMap<NodeId, String>,
+    /// LAZY-ROWS T2: every structural `<For>` (source order) with its lazy-rows verdict (`rows.rs`).
+    pub for_rows: Vec<ForRow>,
 }
 
 /// Function Bridge C3: a module reference stamped by the server epilogue: `_rMod(() => value, "id"[, 1])` (1 = an import).
@@ -422,6 +427,8 @@ struct Analysis<'t, 'a> {
     /// T4b review L3 (T8): closures of `sites[..closures_indexed]` (`holder_site`'s "already a site" test, extended lazily).
     closures: FxHashSet<NodeId>,
     closures_indexed: usize,
+    /// LAZY-ROWS T2: structural `<For>` verdicts (`rows.rs`).
+    for_rows: Vec<ForRow>,
 }
 
 /// Function-like node TypeScript names `isFunction` here (methods and accessors included via
@@ -1448,6 +1455,11 @@ impl<'t, 'a> Analysis<'t, 'a> {
     /// `@rivetjs/aria`: resume-compiled like application code) are user components.
     fn scan_component(&mut self, el: &'a JSXElement<'a>) {
         let tree = self.tree;
+        // LAZY-ROWS T2: a structural `For` gets its lazy-rows verdict (and, when lazy, its row / `by` sites) here; its other
+        // props stay framework props (the return below).
+        if rows::structural_for(tree, el) {
+            self.scan_for_rows(el);
+        }
         if let JSXElementName::IdentifierReference(tag) = &el.opening_element.name {
             if let Some((_, from)) = self.import_of_ident(tag) {
                 let package = |p: &str| from == p || from.strip_prefix(p).is_some_and(|rest| rest.starts_with('/'));
@@ -3057,6 +3069,7 @@ pub fn analyze(
         rejected: FxHashSet::default(),
         closures: FxHashSet::default(),
         closures_indexed: 0,
+        for_rows: Vec::new(),
     };
     // Pass 1: candidate sites, outermost only. Ref-binding callbacks mark their target locals.
     a.scan(tree.root(), false, diags);
@@ -3619,6 +3632,13 @@ pub fn analyze(
         }
     }
     let cell_refs = cells.uses.values().flatten().map(|(node, _, text)| (*node, text.clone())).collect();
+    // LAZY-ROWS T2: a row (or `by`) site that did not survive pass 2 leaves its For recorded.
+    let mut for_rows = std::mem::take(&mut a.for_rows);
+    for entry in for_rows.iter_mut() {
+        if entry.reason.is_none() && (entry.row.is_none_or(|r| a.map.get(r).is_none()) || entry.by.is_some_and(|b| a.map.get(b).is_none())) {
+            entry.reason = Some("row");
+        }
+    }
     Resumed {
         child_returns: a.child_returns,
         sites: a.sites,
@@ -3636,6 +3656,7 @@ pub fn analyze(
         store_paths,
         classes: class_regs,
         class_arrows,
+        for_rows,
     }
 }
 

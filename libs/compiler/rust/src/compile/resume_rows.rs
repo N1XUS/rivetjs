@@ -47,8 +47,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if params.items.iter().any(|p| !matches!(p.pattern.kind, BindingPatternKind::BindingIdentifier(_)) || p.pattern.optional) {
             return None;
         }
-        // A row function that is itself a resume site (a symbol) keeps the authored lowering.
-        if self.site_index(self.id(&**callback)).is_some() {
+        // A row function that is itself a resume site (a symbol) keeps the authored lowering — except a lazy row (LAZY-T2,
+        // 2026-10-19): the plan stays, `children` is registered as the row symbol (`_rFn(rowId, children, captures)`).
+        let row_site = self.site_index(self.id(&**callback));
+        if row_site.is_some() && self.lazy_rows(el).is_none() {
             return None;
         }
         let body = as_element(strip_parens(callback.get_expression()?))?;
@@ -78,6 +80,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let mut statements = shared;
             statements.push(format!("return {};", lowered.print()));
             Expr::ArrowBlock(names, statements)
+        };
+        let children = match row_site {
+            Some(site) => {
+                let args = vec![self.site_str(site), children, self.capture_list(site)];
+                self.r("fn", args)
+            }
+            None => children,
         };
         Some((children, rows))
     }

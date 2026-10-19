@@ -48,6 +48,8 @@ pub fn classify(message: &str) -> &'static str {
         _ if starts("`.bind` of `") && (contains("is not resumable") || contains("may not resume")) => "RV2013",
         _ if starts("`.bind(…)` inside an object literal") => "RV2014",
         _ if starts("Component returns a function that cannot resume") => "RV2015",
+        _ if starts("Keyed `For` row renders non-deterministically") => "RV2105",
+        _ if starts("Keyed `For` row holds ") => "RV2106",
         _ if starts("Target helper re-exports") => "RV3001",
         _ if starts("Import target helpers as named bindings") || starts("Target runtime namespaces") => "RV3002",
         _ if starts("Import structural helpers as named bindings") => "RV3003",

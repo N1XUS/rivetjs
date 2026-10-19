@@ -265,6 +265,18 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV2104"
     },
     {
+      "code": "RV2105",
+      "severity": "warning",
+      "title": "Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / Date() / new Date()): its rows stay recorded instead of lazy (resume)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2105"
+    },
+    {
+      "code": "RV2106",
+      "severity": "warning",
+      "title": "Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2106"
+    },
+    {
       "code": "RV2145",
       "severity": "error",
       "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",

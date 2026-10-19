@@ -151,6 +151,7 @@ Each diagnostic starts with a line like `src/routes/index.tsx:4:17 - error RV200
 | `RV2012`–`RV2014` | `.bind` that may not resume: spread `this`, a target Rivet cannot resume, inside an object literal a handler reaches. Warnings (the module still compiles: the receiver may be an object with its own `bind`); `RV2012` / `RV2013` are errors when the callee is provably a function (declared in the component or module, or an import) |
 | `RV2015` | A component returns a function that cannot resume (an anonymous default export, a wrapper call such as `memo(…)`, a returned `let`): return an inline arrow from a named component (warning) |
 | `RV2101` | Captured value cannot be serialized (warning) |
+| `RV2105`, `RV2106` | A `For` row that cannot render lazily: it reads the clock or a random value while rendering, or holds a `clientOnly` component, `<Async>`, a `Portal` or a `ref` to a variable outside the row. Warnings: the page works the same |
 | `RV3101` | Link matches no route (warning) |
 | `RV4001`–`RV4005` | i18n `t()` calls: keys, params, arguments, tags, config |
 

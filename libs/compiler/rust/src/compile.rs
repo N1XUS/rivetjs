@@ -51,6 +51,9 @@ mod resume_hoist;
 // Function Bridge C6 / T8 (2026-10-11) — server resume: boxed `let` declarations (`const x = _rCell(init)`; which
 // `let`s and their references: `resume/cells.rs`).
 mod resume_cells;
+// exception: lane LAZY-T2 (2026-10-19) — server resume: compiler-private `$lazy` on lazy-eligible keyed `<For>`s (verdict:
+// `resume/rows.rs`).
+mod lazy_rows;
 
 pub const TARGET_HELPERS: &[&str] = &["Provider", "For", "Async", "lazyComponent", "clientOnly"];
 const SVG_TAGS: &[&str] = &[
@@ -186,6 +189,8 @@ pub struct Output {
     /// `Options::check`, resume mode: the module classes registered for resume (name, `static [revive]` class) — the
     /// compiler's data-class verdict, for the language service's type-aware RV2101 (Function Bridge T28).
     pub classes: Vec<(String, bool)>,
+    /// LAZY-ROWS T2, resume mode: every structural `<For>` with its lazy-rows verdict (`compile` / `check` JSON `forRows`).
+    pub for_rows: Vec<resume::ForRowFact>,
 }
 
 pub struct Diags<'t, 'a> {
@@ -583,6 +588,8 @@ pub struct Compiler<'t, 'a> {
     resumed: Option<Resumed>,
     /// Function Bridge T6: statement list → hoisted function-declaration Fn sites registered at its top (server resume).
     hoisted_at: FxHashMap<NodeId, Vec<usize>>,
+    /// LAZY-ROWS T2: `forRows` facts of the module (resume mode).
+    for_rows: Vec<resume::ForRowFact>,
     twins: FxHashMap<NodeId, Twin>,
     twin_order: Vec<NodeId>,
     edges: FxHashMap<NodeId, Vec<NodeId>>,
@@ -658,7 +665,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         "dom" => "dom",
         _ => {
             early.add("Unknown compilation target", None);
-            return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None };
+            return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
         }
     };
     let allocator = Allocator::default();
@@ -672,7 +679,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         early.add_parse_error(error.message.to_string(), span, source);
     }
     if parsed.panicked {
-        return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None };
+        return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
@@ -701,6 +708,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         used_resume: Vec::new(),
         resumed: None,
         hoisted_at: FxHashMap::default(),
+        for_rows: Vec::new(),
         twins: FxHashMap::default(),
         twin_order: Vec::new(),
         edges: FxHashMap::default(),
@@ -889,7 +897,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let resumed = resume::analyze(tree, module, &mut self.diags, &self.static_decls, &options.source_packages, &options.resolved_imports);
             if self.server {
                 resume::browser_global_reads(tree, &resumed, &mut self.diags);
+                // exception: lane LAZY-T2 (2026-10-19) — RV2105 / RV2106 on keyed `For` rows (server target only).
+                resume::for_row_warnings(&resumed, &mut self.diags);
             }
+            self.for_rows = resume::for_row_facts(tree, &resumed);
             self.resumed = Some(resumed);
             if self.server {
                 self.hoisted_at = self.hoisted_containers();
@@ -908,7 +919,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if options.check {
             let sites = self.resumed.as_ref().map(|r| resume::site_infos(tree, r)).unwrap_or_default();
             let classes = self.resumed.as_ref().map(|r| r.classes.iter().map(|c| (c.name.clone(), c.revive)).collect()).unwrap_or_default();
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites, classes, css: None };
+            let for_rows = std::mem::take(&mut self.for_rows);
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites, classes, css: None, for_rows };
         }
         let top = self.reps.pop().unwrap_or_default();
         let mut body = self.render(program.span, &top);
@@ -1028,7 +1040,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
         let text = format!("{hashbang}{imports}{resume_imports}{hoists}{body}");
         if self.diags.has_errors() {
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None };
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
         }
         let (clean, segments) = if self.mapping { map::extract(&text) } else { (text, Vec::new()) };
         let mapped = self.mapping.then_some((source, segments.as_slice()));
@@ -1036,12 +1048,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
             Ok(output) => output,
             Err(message) => {
                 self.diag(format!("Internal error: emitted code failed to parse: {message}"), None);
-                return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None };
+                return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
             }
         };
         let Some(resumed) = self.resumed.take() else {
             let css = self.styles_output();
-            return Output { code, diagnostics: self.diags.list, resumed: None, map: source_map, sites: Vec::new(), classes: Vec::new(), css };
+            return Output { code, diagnostics: self.diags.list, resumed: None, map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows: Vec::new() };
         };
         // DOM resume output: the module stays a CSR module and also exposes the module-scope values its
         // symbols reference, so per-component symbol modules can import them.
@@ -1054,7 +1066,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 format!("Cannot resume {component}: the module exports a different binding as `{name}` than the `{name}` its symbols reference; rename the local or the export"),
                 None,
             );
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None };
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
         }
         // Static-call bindings are compiled away (their import is elided); symbols re-import them.
         let statics: Vec<&str> = self
@@ -1077,7 +1089,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             ));
         }
         let css = self.styles_output();
-        Output { code, diagnostics: self.diags.list, resumed: Some((resumed.symbols, scope)), map: source_map, sites: Vec::new(), classes: Vec::new(), css }
+        let for_rows = std::mem::take(&mut self.for_rows);
+        Output { code, diagnostics: self.diags.list, resumed: Some((resumed.symbols, scope)), map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows }
     }
 
     fn emit_plan(&mut self, plans: &[Plan], n: usize, emitted: &mut FxHashSet<String>) {
@@ -1708,6 +1721,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     props.push((Key::Str("$rows".into()), rows));
                 }
                 rest.clear();
+            }
+            // exception: lane LAZY-T2 (2026-10-19) — a lazy-eligible keyed `<For>` (server resume): `$lazy: [flags, key?]`.
+            if let Some(lazy) = self.lazy_rows(el) {
+                props.push((Key::Str("$lazy".into()), lazy));
             }
             // Plain children with elements / expressions are lazy: a thunk the component calls where
             // it renders them (after its providers). Text-only children stay a string.

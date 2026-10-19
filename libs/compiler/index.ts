@@ -21,7 +21,8 @@ export interface Diagnostic {
 
 /** A compiler warning (`warnings`, T10 fix 2): reported, never suppresses the code (RV2012 / RV2013 / RV2014 when the
  * receiver is not provably a function — the runtime "not serializable" error stays the ground truth; RV2015 a component's
- * returned accessor that cannot resume). */
+ * returned accessor that cannot resume; RV2105 / RV2106 a keyed `For` row that keeps its rows recorded: a non-deterministic
+ * read / a site a lazy row cannot replay, server target only). */
 export interface CompileWarning {
   category: "warning";
   code: string;
@@ -155,6 +156,30 @@ export interface ResumeSymbol {
   aliases?: string[];
 }
 
+/**
+ * Lazy-rows verdict of one structural keyed `<For>` (LAZY-ROWS T2, resume mode; spec
+ * `docs/design/specs/2026-10-19-lazy-collection-rows-design.md` §3.3). `lazy`: its row function is a resumable row symbol
+ * (`symbol`) and the server passes `$lazy`; otherwise `reason` names why its rows stay recorded: `row` (not one inline
+ * function literal with identifier parameters, or it reads `this` / `arguments`), `spread` (spread props), `by` (`by` is
+ * neither a key path arrow nor an inline function), `nondeterministic` (RV2105), `clientOnly` / `async` / `portal` / `ref`
+ * (RV2106), `capture` (the row captures JSX content: `children`, a JSX-valued local).
+ */
+export interface ForRowFact {
+  /** 1-based line and UTF-16 column of the `<For` element. */
+  line: number;
+  column: number;
+  lazy: boolean;
+  reason?: "row" | "spread" | "by" | "nondeterministic" | "clientOnly" | "async" | "portal" | "ref" | "capture";
+  /** Lazy only: the row function's symbol id. */
+  symbol?: string;
+  /** Lazy only: `by` as a key path (`"id"`, `"a.b"`, `""` = the item itself). */
+  key?: string;
+  /** Lazy only: `by` is a function with its own recipe (`_rFn`). */
+  by?: true;
+  /** The row function reads its index parameter. */
+  index?: true;
+}
+
 /** Output of `compile()`: code, diagnostics and the extras the options asked for (symbols, map, css). */
 export interface CompileResult {
   code: string;
@@ -163,6 +188,8 @@ export interface CompileResult {
   warnings?: CompileWarning[];
   /** Resume mode only. */
   symbols?: ResumeSymbol[];
+  /** Resume mode only (absent when the module has no structural `<For>`): one lazy-rows verdict per keyed `For`, source order. */
+  forRows?: ForRowFact[];
   /** Resume mode only: module-scope value names referenced by symbols, sorted. */
   scope?: string[];
   /** Source map v3 JSON (with `sourceMap: true`). */
@@ -245,6 +272,8 @@ export interface CheckResult {
   sites: CheckSite[];
   /** Resume mode only: module classes registered for resume (`data`: data class, `revive`: own / inherited `static [revive]`). */
   classes?: { name: string; kind: "data" | "revive" }[];
+  /** Resume mode only (absent without a structural `<For>`): `compile`'s `forRows` plus the element's UTF-16 range. */
+  forRows?: (ForRowFact & { start: number; end: number })[];
 }
 
 /** Editor/CLI check: every target's diagnostics (codes, ranges) and resume sites; no code generated. */
