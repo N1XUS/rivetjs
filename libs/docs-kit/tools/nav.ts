@@ -5,8 +5,12 @@
 /** Status tag after a page title in the side nav. */
 export type NavTag = "new" | "updated";
 
-/** A page of a group: its content path, or the path with a status tag. */
-export type NavPage = string | { path: string; tag: NavTag };
+/**
+ * A page of a group: its content path, or the path with a status tag and / or child pages. `children` = content
+ * paths routed right after the page (reading order, prev / next) but not listed in the side nav: the page's link
+ * stands for them (marked current on a child page). For large generated sets such as `errors/RVxxxx`.
+ */
+export type NavPage = string | { path: string; tag?: NavTag; children?: readonly string[] };
 
 /** A collapsible group of the side nav (open when it holds the current page). */
 export interface NavGroup {
@@ -33,3 +37,6 @@ export interface NavSection {
 
 export const navPath = (page: NavPage): string => (typeof page === "string" ? page : page.path);
 export const navTag = (page: NavPage): NavTag | undefined => (typeof page === "string" ? undefined : page.tag);
+export const navChildren = (page: NavPage): readonly string[] => (typeof page === "string" ? [] : (page.children ?? []));
+/** Every content path of a nav entry in reading order: the page, then its children. */
+export const navPaths = (page: NavPage): string[] => [navPath(page), ...navChildren(page)];

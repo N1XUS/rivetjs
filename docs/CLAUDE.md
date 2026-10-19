@@ -28,7 +28,7 @@ Internal, contributor-facing docs (user-facing docs live in `apps/docs/content` 
 | `suspense.md` | Suspense + transitions (`@rivetjs/runtime/dom`, server twins). |
 | `aria.md` | cdk/aria overview, dev a11y checks, status. |
 | `devtools.md` | `@rivetjs/devtools` panels and protocol. |
-| `editor.md` | Language service: TS plugin, language-core, VS Code. |
+| `editor.md` | Language service: TS plugin, language-core, VS Code; code table (public per-code pages: `apps/docs/content/errors/`, generated). |
 | `testing.md` | Component testing: Vitest runner (root `vitest.config.ts` node/dev/browser projects), register hook / `rivetTest()`, `@rivetjs/runtime/testing` helpers, `@rivetjs/testing` toolkit. |
 | `vite-integration.md` | Compiler Vite plugin, server/DOM output selection, CSS, `?image`. |
 

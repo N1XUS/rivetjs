@@ -12,7 +12,7 @@ import { loadApp, type DocsSite } from "../app.ts";
 import { exampleIds, loadExample, shownFile } from "../examples.ts";
 import { splitFrontmatter, validateFrontmatter, type Frontmatter } from "../content/frontmatter.ts";
 import { glossaryTerms } from "../content/generate.ts";
-import { navPath, type NavArea, type NavSection } from "../nav.ts";
+import { navPaths, type NavArea, type NavSection } from "../nav.ts";
 
 export interface LlmsPage {
   /** Content path (`guides/components`; `index` = home). */
@@ -73,8 +73,7 @@ export async function loadLlmsSource(root: string): Promise<LlmsSource> {
   for (const section of navModule.nav) {
     const area = areas.find((candidate) => candidate.id === section.area);
     for (const group of section.groups)
-      for (const entry of group.pages) {
-        const path = navPath(entry);
+      for (const path of group.pages.flatMap(navPaths)) {
         const file = resolve(contentDir, path + ".md");
         const text = await readFile(file, "utf8");
         const { raw, body } = splitFrontmatter(text, `content/${path}.md`);

@@ -15,10 +15,13 @@ export const topItems = (areas: NavAreas): { id: string; title: string; href: st
 
 const trail = (path: string) => (path.endsWith("/") ? path : path + "/");
 
+/** The item is the page at `href` or stands for it (one of its `children`). */
+export const holds = (item: NavItem, href: string): boolean => item.href === href || !!item.children?.includes(href);
+
 /** Section that lists the page at `path` (exact page match), if any. */
 export function sectionOf(sections: NavData, path: string): Section | undefined {
   const href = trail(path);
-  return sections.find((section) => section.groups.some((group) => group.items.some((item) => item.href === href)));
+  return sections.find((section) => section.groups.some((group) => group.items.some((item) => holds(item, href))));
 }
 
 /** Top-bar item for `path`: the page's area; API / examples routes by prefix. */
@@ -56,7 +59,7 @@ export function sideModel(sections: NavData, areas: NavAreas, areaId: string, pa
   return own.map((section) => ({
     ...(labelled ? { title: section.title } : {}),
     groups: section.groups.map((group) => {
-      const current = group.items.some((item) => item.href === href);
+      const current = group.items.some((item) => holds(item, href));
       return { title: group.title, items: group.items, open: current || small, current };
     }),
   }));
@@ -71,7 +74,7 @@ export function breadcrumbOf(sections: NavData, areas: NavAreas, path: string): 
   const crumbs: { title: string; href: string }[] = [];
   if (area) crumbs.push({ title: area.title, href: area.href });
   if (section.title !== area?.title) crumbs.push({ title: section.title, href: section.href });
-  const group = section.groups.find((g) => g.items.some((item) => item.href === href));
+  const group = section.groups.find((g) => g.items.some((item) => holds(item, href)));
   if (group && group.title !== section.title) crumbs.push({ title: group.title, href: group.items[0]!.href });
   return crumbs;
 }

@@ -369,12 +369,12 @@
   .side-link:hover::before {
     background: var(--line-strong);
   }
-  .side-link[aria-current="page"] {
+  .side-link[aria-current] {
     color: var(--accent);
     background: linear-gradient(90deg, var(--accent-soft), transparent 85%);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   }
-  .side-link[aria-current="page"]::before {
+  .side-link[aria-current]::before {
     background: var(--brand-gradient-vertical);
   }
   .side-link-text {
@@ -1796,10 +1796,10 @@
   .side-group li a:hover {
     color: var(--fg-strong);
   }
-  .side-group li a[aria-current="page"] {
+  .side-group li a[aria-current] {
     color: var(--accent-strong);
   }
-  .side-group li a[aria-current="page"]::before {
+  .side-group li a[aria-current]::before {
     position: absolute;
     top: 0.25rem;
     bottom: 0.25rem;

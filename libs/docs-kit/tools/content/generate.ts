@@ -9,7 +9,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { splitFrontmatter, validateFrontmatter, type Frontmatter } from "./frontmatter.ts";
 import { createHighlight, type Highlight } from "./highlight.ts";
 import { attr, renderMarkdown, slugger, text, type Heading } from "./markdown.ts";
-import { navPath, navTag, type NavArea, type NavSection } from "../nav.ts";
+import { navChildren, navPath, navPaths, navTag, type NavArea, type NavSection } from "../nav.ts";
+import { generateErrorPages } from "../errors.ts";
 import { loadApp } from "../app.ts";
 import type { BenchChartSpec } from "../../components/chart-model.ts";
 
@@ -108,6 +109,8 @@ export async function generateContent(
   const { site, templates, repo } = await loadApp(root);
   const write = options.dryRun ? async () => false : put;
   const contentDir = resolve(root, "content");
+  // Diagnostic code pages (site `errorPages`): committed Markdown under content/errors/, refreshed before the pages are read.
+  if (site.errorPages && !options.dryRun) await generateErrorPages(root);
   const navModule = (await import(pathToFileURL(resolve(contentDir, "_nav.ts")).href + "?t=" + Date.now())) as { nav: NavSection[]; areas?: NavArea[] };
   const nav = navModule.nav;
   const areas = navModule.areas;
@@ -136,8 +139,7 @@ export async function generateContent(
   const seen = new Set<string>();
   for (const section of nav)
     for (const group of section.groups)
-      for (const entry of group.pages) {
-        const path = navPath(entry);
+      for (const path of group.pages.flatMap(navPaths)) {
         if (seen.has(path)) throw new Error(`content/_nav.ts: ${path} is listed twice`);
         seen.add(path);
         if (!files.includes(path)) {
@@ -380,7 +382,8 @@ export async function generateContent(
         const page = byPath.get(navPath(entry));
         if (!page) return [];
         const tag = navTag(entry);
-        return [{ href: page.href, title: page.title, status: page.status, ...(tag ? { tag } : {}) }];
+        const children = navChildren(entry).flatMap((path) => (byPath.has(path) ? [byPath.get(path)!.href] : []));
+        return [{ href: page.href, title: page.title, status: page.status, ...(tag ? { tag } : {}), ...(children.length ? { children } : {}) }];
       }),
     })),
   }));

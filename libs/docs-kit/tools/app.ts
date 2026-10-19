@@ -29,6 +29,12 @@ export interface DocsSite {
    * still works), no idle background prefetch (`preload.background: 0`). Only the resume loader ships up front.
    */
   leanPages?: readonly string[];
+  /**
+   * Diagnostic code reference (`tools/errors.ts`): `content/errors/index.md` + one page per code of
+   * `libs/compiler/codes.json` (prose from `libs/language-core/explain.json`), committed, refreshed by every
+   * prepare / build; `docs-kit errors <app> --check` fails on stale pages. The framework site only.
+   */
+  errorPages?: boolean;
   /** Critical CSS (tools/critical-css.ts) of the built pages. */
   criticalCss?: {
     /**

@@ -20,5 +20,7 @@ export const site = {
   version: "0.1.0-alpha.0",
   /** Pages that run no code before the first interaction (docs-kit `leanPages`): the home page is the proof. */
   leanPages: ["/"],
+  /** Diagnostic code pages `/errors/RVxxxx` (docs-kit `tools/errors.ts`), generated from the code registry. */
+  errorPages: true,
 } as const;
 export type Site = typeof site;

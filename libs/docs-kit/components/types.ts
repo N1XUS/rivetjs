@@ -9,6 +9,8 @@ export interface NavItem {
   status: Status;
   /** Side-nav tag (`_nav.ts` `{ path, tag }`). */
   tag?: "new" | "updated";
+  /** Hrefs of child pages (`_nav.ts` `{ path, children }`): routed, not listed; this link stands for them. */
+  children?: string[];
 }
 /** Side-nav sections in nav order; each group is a collapsible group of the area's side nav. */
 export type NavData = {

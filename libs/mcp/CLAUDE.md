@@ -33,5 +33,5 @@ Rivet MCP server (Model Context Protocol, stdio) for AI assistants: offline docs
 
 ## Gotchas
 - Doc links inside the data are doc ids; links in the web llms outputs are URLs on `site.origin` — same documents, different `link`.
-- Explanations live in `libs/language-core/explain.json` (one per `libs/compiler/codes.json` code, tested); a new RV code needs an entry there.
+- Explanations live in `libs/language-core/explain.json` (one per `libs/compiler/codes.json` code, tested); a new RV code needs an entry there. The same entries render the docs pages `/errors/RVxxxx` (committed `apps/docs/content/errors/`, docs-kit `tools/errors.ts`): docs search / `get_doc` serve them as ordinary pages of the llms outputs.
 - In `scripts/package/smoke.ts` `PACKAGES` since 2026-10-09 (packed with ~31 MB `data/`, installed offline, `.` imported under Node + `tsc`; +6 s, peak RSS 1.2 GB vs 0.9 GB without). Not in `create-e2e.ts` (no starter depends on it). The stdio bin was smoke-tested by hand 2026-10-08 from a packed copy.

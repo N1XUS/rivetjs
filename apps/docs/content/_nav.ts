@@ -1,8 +1,10 @@
 // Site navigation: areas (top-bar sections) → sections (side-nav headings) → groups (collapsible in the
-// side nav) → content paths (files under content/, without `.md`; `{ path, tag }` adds a New/Updated tag).
+// side nav) → content paths (files under content/, without `.md`; `{ path, tag }` adds a New/Updated tag;
+// `{ path, children }` routes child pages after the page without listing them in the side nav).
 // Order here is reading order (prev/next). Every page must appear exactly once; the build fails on
 // orphans and on entries without a file.
 
+import { CODES } from "@rivetjs/compiler/codes";
 import { site } from "../site.config.ts";
 import type { NavArea, NavSection } from "@rivetjs/docs-kit/tools/nav.ts";
 
@@ -196,7 +198,18 @@ export const nav: NavSection[] = [
           "gotchas/changing-built-ins",
         ],
       },
-      { title: "Reference", pages: ["reference/file-conventions", "reference/jsx", "reference/config", { path: "reference/motion", tag: "new" }, "reference/glossary"] },
+      {
+        title: "Reference",
+        pages: [
+          "reference/file-conventions",
+          "reference/jsx",
+          "reference/config",
+          { path: "reference/motion", tag: "new" },
+          "reference/glossary",
+          // One page per diagnostic code (generated: docs-kit tools/errors.ts); the side nav lists the index only.
+          { path: "errors/index", children: CODES.map((info) => `errors/${info.code}`) },
+        ],
+      },
       { title: "Project", pages: ["about/roadmap", "about/benchmarks"] },
     ],
   },

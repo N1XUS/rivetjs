@@ -1,5 +1,5 @@
 {
-  "$comment": "Fix texts per RV code (`explain.ts` `explainCode`): what the code means in practice and the mechanical fix, for AI assistants (MCP explain_diagnostic / check_code), rivet check and editors. Severity, title and docs URL stay in libs/compiler/codes.json; every code there has an entry here (tests/explain.test.ts). `messages` = the emitted texts ({x} = placeholder); `avoid` triggers the code, `prefer` compiles clean (verified 2026-10-08 against both targets); `quickFix` = the language-core code fix that applies, if any.",
+  "$comment": "Fix texts per RV code (`explain.ts` `explainCode`): what the code means in practice and the mechanical fix, for AI assistants (MCP explain_diagnostic / check_code), rivet check and editors. Severity, title and docs URL stay in libs/compiler/codes.json; every code there has an entry here (tests/explain.test.ts). Also the prose of the docs pages /errors/RVxxxx (docs-kit tools/errors.ts → apps/docs/content/errors/, regenerate after edits). `messages` = the emitted texts ({x} = placeholder); `avoid` triggers the code, `prefer` compiles clean (verified 2026-10-08 against both targets); `quickFix` = the language-core code fix that applies, if any.",
   "codes": [
     {
       "code": "RV1000",
@@ -494,8 +494,8 @@
       "code": "RV3101",
       "messages": ["No route matches \"{path}\" (routes from {routesDir ?? \"the router\"})."],
       "fix": "Point the Link at an existing route path (check src/routes), or add the missing route file.",
-      "avoid": "import { Link } from \"@rivetjs/router\";\nexport const A = () => <Link to=\"/abuot\">About</Link>;",
-      "prefer": "import { Link } from \"@rivetjs/router\";\nexport const A = () => <Link to=\"/about\">About</Link>;",
+      "avoid": "import { Link } from \"@rivetjs/router/client\";\nexport const A = () => <Link to=\"/abuot\">About</Link>;",
+      "prefer": "import { Link } from \"@rivetjs/router/client\";\nexport const A = () => <Link to=\"/about\">About</Link>;",
       "note": "Language service only; warning; TS-side text (not Rust). Could suggest nearest route."
     },
     {

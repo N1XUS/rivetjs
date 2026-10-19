@@ -25,10 +25,10 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 ## Features
 
 - Compiler diagnostics while typing: same text as the build, exact range, both targets (server + DOM), resume mode per manifest. tsserver code = `70000 + n` for `RVn` (source `rivet`); TypeScript's own syntax errors win over compiler parse errors.
-- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); ref callback → `const xRef = ref<…>()` + `ref={xRef}` (+ import; first), or `ref={(el) => (local = el)}` + `let local!: …`; capture-phase handler → bubbling; `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`; captured class instance (RV2003 / RV2102) → `const x = reconstruct(() => <init>)` + reads `x()` (+ import from `@rivetjs/runtime/dom`; `rivetReconstruct`).
+- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); ref callback → `const xRef = ref<…>()` + `ref={xRef}` (+ import; first), or `ref={(el) => (local = el)}` + `let local!: …`; `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`; captured class instance (RV2003 / RV2102) → `const x = reconstruct(() => <init>)` + reads `x()` (+ import from `@rivetjs/runtime/dom`; `rivetReconstruct`).
 - Resume boundary: inlay hint at each browser-only closure (`client · count, step`; VS Code: native provider from `_rivet:sites` labels, other editors: tsserver `provideInlayHints`); hover on `onClick` / `clientEffect` / a local function shows symbol id, where it runs and its captures; hover on a captured variable says it is serialized into resume state.
 - RV2101 (warning, type-aware): a captured value whose type resume state cannot carry (class instance, Promise, symbol, DOM node, WeakMap…), including ones the syntax-only compiler cannot see (`const store = makeStore()`). Callables are skipped (signals and symbol functions are fine at runtime). Instances of classes the compiler registers in a resume module (data class / `static [revive]`, check op `classes`; T28) are not flagged.
-- Links: `<Link to="…">` from `@rivetjs/router` / `@rivetjs/router/client` (plugin option `linkModules`).
+- Links: `<Link to="…">` from `@rivetjs/router` / `@rivetjs/router/client` / `@rivetjs/router/link` (plugin option `linkModules`).
   - `to` typed as a route union (generated): TypeScript checks and completes; the plugin adds go-to-route-file and hover only.
   - `to` typed `string`: plugin completes route paths, warns RV3101 for literal internal paths that match no route, plus go-to-route-file and hover (route id, file, params).
 - `preload="…"` on elements is typed (`eager | idle | visible | intent | interaction`), so TypeScript completes and checks it.
@@ -43,6 +43,8 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 - Every diagnostic carries a `docs` URL (`docsUrl(code)` from `@rivetjs/compiler/codes`); Vite build errors print `[RVxxxx] file:line:col: message` with the same URL as `url`.
 
 ## Codes
+
+Public reference: one page per code at `/errors/RVxxxx` on the framework docs site (`apps/docs/content/errors/`, generated from `libs/compiler/codes.json` + `libs/language-core/explain.json` by docs-kit `tools/errors.ts`). Internal summary:
 
 | Code | Meaning |
 | --- | --- |

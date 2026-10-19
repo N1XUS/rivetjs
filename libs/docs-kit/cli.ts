@@ -1,10 +1,10 @@
 // Docs site commands, run against one app root:
-//   node libs/docs-kit/cli.ts <build|check-examples|examples|api|prepare|check-content|check-snippets|serve|llms> <app root> [options]
+//   node libs/docs-kit/cli.ts <build|check-examples|examples|api|prepare|check-content|check-snippets|serve|llms|errors> <app root> [options]
 import { resolve } from "node:path";
 
 const [command, root, ...args] = process.argv.slice(2);
 if (!command || !root) {
-  console.error("usage: docs-kit <build|check-examples|examples|api|prepare|check-content|check-snippets|serve|llms> <app root> [options]");
+  console.error("usage: docs-kit <build|check-examples|examples|api|prepare|check-content|check-snippets|serve|llms|errors> <app root> [options]");
   process.exit(2);
 }
 const appRoot = resolve(root);
@@ -32,6 +32,9 @@ switch (command) {
     break;
   case "serve":
     await (await import("./tools/serve.ts")).serveCommand(appRoot, args);
+    break;
+  case "errors":
+    await (await import("./tools/errors.ts")).errorsCommand(appRoot, args);
     break;
   case "llms":
     await (await import("./tools/llms/generate.ts")).llmsCommand(appRoot, args);

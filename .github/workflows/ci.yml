@@ -104,6 +104,8 @@ jobs:
           node libs/docs-kit/cli.ts check-snippets apps/docs
           node libs/docs-kit/cli.ts check-snippets apps/cdk-docs
           node libs/docs-kit/cli.ts check-snippets apps/ui-docs
+      - name: Diagnostic code pages (apps/docs/content/errors from codes.json + explain.json; not stale)
+        run: node libs/docs-kit/cli.ts errors apps/docs --check
       - name: AI outputs (llms.txt, llms-full.txt, per-page Markdown; deterministic, complete)
         run: |
           node libs/docs-kit/cli.ts llms apps/docs --check

@@ -4,16 +4,16 @@
     "brotli": 1967
   },
   "cdk": {
-    "tests": 5218,
-    "a11y": 614
+    "tests": 5243,
+    "a11y": 620
   },
   "inlineJs": {
     "bytes": 7714,
     "scripts": 3
   },
   "html": {
-    "bytes": 123793,
-    "brotli": 23282
+    "bytes": 125086,
+    "brotli": 23385
   },
   "lighthouse": {
     "date": "2026-10-12",

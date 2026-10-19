@@ -61,12 +61,13 @@ export default function Page() {
 
 ### Quick fixes
 
-- A browser global read during server rendering: wrap it in `clientEffect(() => { … })` and add the import.
-- An invalid `preload` value: replace it with the closest valid one.
-- Children inside a void element (like `<input>`): make it self-closing.
-- A ref callback in the wrong form: rewrite it to `ref={(el) => (local = el)}` with `let local!: …`.
-- A capture-phase handler: switch it to a bubbling one.
-- A captured class instance that cannot be sent (`RV2003`, `RV2102`): build it in the browser with `const m = reconstruct(() => new WeakMap())` and read it as `m()` (adds the import).
+- A browser global read during server rendering ([RV2001](../../errors/RV2001.md)): wrap it in `clientEffect(() => { … })` and add the import.
+- An invalid `preload` value ([RV1102](../../errors/RV1102.md)): replace it with the closest valid one.
+- Children inside a void element like `<input>` ([RV1008](../../errors/RV1008.md)) or a `<textarea>` with `model:value` ([RV1009](../../errors/RV1009.md)): make it self-closing.
+- A handler expression that reads state when it binds ([RV1016](../../errors/RV1016.md)): wrap it in an arrow.
+- A ref callback in the wrong form ([RV2002](../../errors/RV2002.md)): use `const el = ref<…>()` or rewrite it to `ref={(el) => (local = el)}`.
+- A captured class instance that cannot be sent ([RV2003](../../errors/RV2003.md), [RV2102](../../errors/RV2102.md)): build it in the browser with `const m = reconstruct(() => new WeakMap())` and read it as `m()` (adds the import).
+- A namespace import of a target helper ([RV3002](../../errors/RV3002.md)): import the helper as a named binding.
 
 ### Where code runs
 
@@ -134,28 +135,9 @@ Each diagnostic starts with a line like `src/routes/index.tsx:4:17 - error RV200
 
 ## Error codes
 
-| Code | Meaning |
-| --- | --- |
-| `RV1000` | Parse error |
-| `RV1002` | Spread children |
-| `RV1008` | Children inside a void element |
-| `RV1012`, `RV1013` | Unknown event, global event attribute |
-| `RV1101`, `RV1102` | Unsafe attribute, invalid `preload` value |
-| `RV2001` | Browser global read during server rendering |
-| `RV2002`, `RV2005` | Ref callback must assign a local (quick fix: use `ref()`); ref-bound local assigned elsewhere |
-| `RV2003`, `RV2007` | Capturing `new …`, capturing `this` |
-| `RV2102` | Capturing an instance of a class that cannot resume as data (`#private` field, non-data base class, resource read while constructing) |
-| `RV2006` | JSX inside a handler |
-| `RV2009` | Two module references share a browser name (rename one import) |
-| `RV2011` | Mutually recursive functions separated by an early exit (move them together) |
-| `RV2012`–`RV2014` | `.bind` that may not resume: spread `this`, a target Rivet cannot resume, inside an object literal a handler reaches. Warnings (the module still compiles: the receiver may be an object with its own `bind`); `RV2012` / `RV2013` are errors when the callee is provably a function (declared in the component or module, or an import) |
-| `RV2015` | A component returns a function that cannot resume (an anonymous default export, a wrapper call such as `memo(…)`, a returned `let`): return an inline arrow from a named component (warning) |
-| `RV2101` | Captured value cannot be serialized (warning) |
-| `RV2105`, `RV2106` | A `For` row that cannot render lazily: it reads the clock or a random value while rendering, or holds a `clientOnly` component, `<Async>`, a `Portal` or a `ref` to a variable outside the row. Warnings: the page works the same |
-| `RV3101` | Link matches no route (warning) |
-| `RV4001`–`RV4005` | i18n `t()` calls: keys, params, arguments, tags, config |
+Every code has its own page with the message, the fix, a before / after pair and the quick fix, if there is one: [Diagnostic codes](../../errors/index.md) lists them all, and the `docs:` link of each diagnostic opens its page. Most codes come from the compiler; the language service adds [RV2101](../../errors/RV2101.md) and [RV3101](../../errors/RV3101.md), and `rivet-check` adds [RV7101](../../errors/RV7101.md) and [RV7102](../../errors/RV7102.md).
 
-For any code, `explain_diagnostic` in the [Rivet MCP server](ai.md) returns what it means, the fix, and a before / after pair.
+For any code, `explain_diagnostic` in the [Rivet MCP server](ai.md) returns the same explanation.
 
 ## Limits
 

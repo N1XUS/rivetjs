@@ -8,7 +8,12 @@ import type { NavData, NavItem } from "./types.ts";
 function Item({ item, current }: { item: NavItem; current: string }) {
   return (
     <li>
-      <a class="side-link" href={item.href} data-rivet-reload="" aria-current={item.href === current ? "page" : undefined}>
+      <a
+        class="side-link"
+        href={item.href}
+        data-rivet-reload=""
+        aria-current={item.href === current ? "page" : item.children?.includes(current) ? "true" : undefined}
+      >
         <span class="side-link-text">{item.title}</span>
         {item.tag ? <span class={"nav-tag nav-tag-" + item.tag}>{item.tag === "new" ? "New" : "Updated"}</span> : null}
         {/* Only "Planned" here: most pages are experimental, the page header shows the status. */}
