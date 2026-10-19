@@ -462,7 +462,7 @@ exports[`library > source exports per subpath, sideEffects false, vitest 1`] = `
 exports[`library > source exports per subpath, sideEffects false, vitest 2`] = `
 {
   "devDependencies": {
-    "@rivetjs/testing": "0.0.0-experimental",
+    "@rivetjs/testing": "0.1.0-alpha.0",
     "happy-dom": "^20.14.5",
     "vitest": "^5.0.3",
   },
@@ -482,8 +482,8 @@ exports[`library > source exports per subpath, sideEffects false, vitest 2`] = `
   },
   "name": "@proj/ui-kit",
   "peerDependencies": {
-    "@rivetjs/reactivity": "0.0.0-experimental",
-    "@rivetjs/runtime": "0.0.0-experimental",
+    "@rivetjs/reactivity": "0.1.0-alpha.0",
+    "@rivetjs/runtime": "0.1.0-alpha.0",
   },
   "private": true,
   "sideEffects": false,
