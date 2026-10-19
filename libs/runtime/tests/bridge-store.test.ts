@@ -242,7 +242,7 @@ test.runIf(DEV_RUN)("dev: reading an unshipped path of a resumed store warns onc
     read(store, "user.bio" as never);
     assert.equal(warnings.length, 1, "once per path");
     assert.match(warnings[0]!, /^Rivet resume: store path "user\.bio" was not shipped .*shipped: (count|user\.name), (count|user\.name)/);
-    assert.match(warnings[0]!, /\n  fix: .*\n  docs: https:\/\/rivetjs\.dev\/guides\/state\/stores#in-a-resumed-page$/);
+    assert.match(warnings[0]!, /\n  fix: .*\n  docs: https:\/\/rivetjs\.severyn\.pro\/guides\/state\/stores#in-a-resumed-page$/);
     write(store, "extra" as never, 1 as never);
     read(store, "extra" as never);
     assert.equal(warnings.length, 1, "a written path is present");

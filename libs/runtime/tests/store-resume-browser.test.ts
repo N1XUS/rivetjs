@@ -119,7 +119,7 @@ test.runIf(DEV_RUN)("dev: a resumed read of an unshipped store path warns once, 
     assert.equal(store.length, 1, warnings.join("\n"));
     assert.match(
       store[0]!,
-      /^Rivet resume: store path "user\.bio" was not shipped .*\n {2}fix: .*\n {2}docs: https:\/\/rivetjs\.dev\/guides\/state\/stores#in-a-resumed-page$/s,
+      /^Rivet resume: store path "user\.bio" was not shipped .*\n {2}fix: .*\n {2}docs: https:\/\/rivetjs\.severyn\.pro\/guides\/state\/stores#in-a-resumed-page$/s,
     );
     assert.deepEqual(errors, []);
   });
