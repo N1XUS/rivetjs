@@ -30,7 +30,7 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 | checkbox | `/checkbox` |
 | color | `/color` (SSR gradients / labels / hex value; resumed keys + thumb drags on area / slider / wheel, hex field typing, swatch picker click + keys, ColorPicker sync) |
 | date-picker-state | state/date-field, state/date-picker, state/form-validation, date |
-| date-picker | `/date-picker` (RAC anatomy pickers, DateField, TimeField; 1 known failure: SSR "no library code" — runtime visible-preload of repeated symbols) |
+| date-picker | `/date-picker` (RAC anatomy pickers, DateField, TimeField; required checks wait for the error text (`waitDescription`): the first `invalid` sets `data-invalid` one chunk fetch before the FieldError region renders; 1 known failure: SSR "no library code" — runtime visible-preload of repeated symbols) |
 | dates-calendar | `/calendar` (first test: visible preload may fetch, nothing boots — settles `networkidle`, then no `data-boot`, calendar `resume-*` chunks only from the `data-preload` plan, no `data-focused` / `data-hovered` / `data-pressed`; the cold ArrowDown still works. 2026-10-08: Button hover handlers plan `visible`, so a "no calendar fetch" assert raced the IntersectionObserver fetch) |
 | dev-resume | Vite dev server on app, `/listbox` (listbox/index.tsx symbol ids, dev chunks, a11y checks) |
 | dom-events-collections / -dates / -forms / -overlays | `/dom-events-*` (+ `/modal-open`) — globalDOMProps forwarding |
@@ -38,7 +38,7 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 | listbox | `/listbox`, `/tabs` |
 | overlays | `/modal`, `/popover` |
 | preview-trigger | `/preview-trigger` (SSR / no chunk, hover delay + ARIA, safe area, keyboard, isDisabled) |
-| radio-group | `/radio-group` |
+| radio-group | `/radio-group` (cold click on a visible radio keeps its focus → arrow keys) |
 | region-state-repro | `/region-state-repro` |
 | resume-context | `/resume-context` (PortalProvider selector + `ref()` containers, I18nProvider outside a region; `resumableContext` registration of cdk contexts) |
 | select | `/select`, `/select-autofocus` |

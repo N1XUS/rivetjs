@@ -36,6 +36,21 @@ const description = (page: Page, selector: string) =>
         .trim(),
     selector,
   );
+/** Waits until that text matches: on a resumed page the first `invalid` activates the root's `data-invalid` binding
+ * before the FieldError region's own chunk has loaded (its text + the `aria-describedby` id follow one fetch later). */
+const waitDescription = (page: Page, selector: string, pattern: RegExp) =>
+  page.waitForFunction(
+    ([selector, source, flags]) =>
+      new RegExp(source!, flags).test(
+        (document.querySelector(selector!)!.getAttribute("aria-describedby") ?? "")
+          .split(" ")
+          .filter(Boolean)
+          .map((id) => document.getElementById(id)?.textContent ?? "")
+          .join(" ")
+          .trim(),
+      ),
+    [selector, pattern.source, pattern.flags] as const,
+  );
 // Date code: chunks holding the date components' symbols + the shared code only they import (build manifest).
 const libraryScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/#(DatePicker|DateRangePicker|DateInput|DateField|Calendar)\w*\$/));
 
@@ -200,7 +215,7 @@ test("datepicker: form value + required native validation (RAC 'form value', 'su
   assert.equal(await attr(page, "#dp-req", "aria-describedby"), null);
   await page.evaluate(() => (document.getElementById("dp-form") as HTMLFormElement).checkValidity());
   await page.waitForFunction(() => document.getElementById("dp-req")!.closest(".rv-DatePicker")!.hasAttribute("data-invalid"));
-  assert.match(await description(page, "#dp-req"), /Please fill out this field|Constraints not satisfied/);
+  await waitDescription(page, "#dp-req", /Please fill out this field|Constraints not satisfied/);
   await waitFocus(page, "#dp-req-field [data-type=month]");
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Tab");
@@ -299,7 +314,7 @@ test("daterangepicker: required — both inputs required, invalid on checkValidi
   assert.equal(await root(), false);
   await page.evaluate(() => (document.getElementById("drp-form") as HTMLFormElement).checkValidity());
   await page.waitForFunction(() => document.getElementById("drp-req")!.closest(".rv-DateRangePicker")!.hasAttribute("data-invalid"));
-  assert.match(await description(page, "#drp-req"), /Please fill out this field|Constraints not satisfied/);
+  await waitDescription(page, "#drp-req", /Please fill out this field|Constraints not satisfied/);
   await waitFocus(page, "#drp-req-start [data-type=month]");
   for (const key of ["ArrowUp", "Tab", "ArrowUp", "Tab", "ArrowUp", "Tab", "ArrowUp", "Tab", "ArrowUp", "Tab", "ArrowUp"]) await page.keyboard.press(key);
   await page.waitForFunction(() => (document.querySelector("input[name=to]") as HTMLInputElement).validity.valid);

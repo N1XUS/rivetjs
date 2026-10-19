@@ -225,8 +225,10 @@ function RadioGroupItems(props: RadioGroupItemsProps) {
                 onMouseDown={(event) => {
                   // RAC Radio mergeProps(DOMProps, labelProps): the user's handler first, then RA useRadio's
                   // "Prevent label from being focused when mouse down on it" (the click still focuses the input).
+                  // Not for a press on the preset's visible native radio itself: canceling its mousedown cancels its
+                  // focus (RA's input usePress focuses it on pointerdown), so arrow keys after a click had no target.
                   option.onMouseDown?.(event as MouseEvent & { currentTarget: HTMLLabelElement });
-                  event.preventDefault();
+                  if (!(event.target instanceof HTMLInputElement)) event.preventDefault();
                 }}
                 class={itemClass}
                 data-selected={state.selectedValue() === valueProp ? "true" : undefined}

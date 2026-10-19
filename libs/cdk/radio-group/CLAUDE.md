@@ -19,7 +19,7 @@
 
 ## Upstream
 - RAC `RadioGroup.tsx` (`RadioGroup` / `Radio`), react-aria `radio/useRadioGroup.ts`, `radio/useRadio.ts`, react-stately `radio/useRadioGroupState.ts` (Apache-2.0)
-- Deviations: items preset (index.tsx) = data-driven `items` + render slot, native radios stay visible (hide via `inputClass`, e.g. `sr-only`). Compound (parts.tsx): native radios sharing `name` keep arrows / tab stop / submit native (RA's JS roving tab index not ported); label activation native (press state from `pressProps`, no action); label `onMouseDown` → `preventDefault`; class props typed `ClassNameOrFunction<…>` (TS2430-safe in `.d.ts`)
+- Deviations: items preset (index.tsx) = data-driven `items` + render slot, native radios stay visible (hide via `inputClass`, e.g. `sr-only`). Compound (parts.tsx): native radios sharing `name` keep arrows / tab stop / submit native (RA's JS roving tab index not ported); label activation native (press state from `pressProps`, no action); label `onMouseDown` → `preventDefault`; items preset: label `onMouseDown` → `preventDefault` except when the target is the visible native radio itself (canceling it canceled the radio's focus, so arrow keys after a click on the circle had no target; RA input `usePress` focuses on pointerdown; the resumed cold replay reproduces the native cancel — fix 2026-10-19); class props typed `ClassNameOrFunction<…>` (TS2430-safe in `.d.ts`)
 
 ## Rules / invariants
 - group root: `role="radiogroup"`, `aria-orientation` + `data-orientation` (default `vertical`), `aria-invalid/disabled/readonly/required`, `data-disabled/readonly/required/invalid`; default class `rv-RadioGroup`
