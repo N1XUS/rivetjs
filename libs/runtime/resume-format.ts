@@ -1021,13 +1021,19 @@ export function handlersOf(e: Record<string, unknown>, id: number | string): Rec
   }
   return out;
 }
-/** Compact templated list rows: ids `i + k * d` (else `ids`), items table array `a` (else refs `r`), `x` index flag. */
+/** Compact templated list rows: ids `i + k * d` (else `ids`), items table array `a` (else refs `r`, or `rs`), `x` index flag. */
 export interface CompactRows {
   i?: number;
   d?: number;
   ids?: number[];
   a?: number;
   r?: number[];
+  /**
+   * Wire form only (DOM-DATA builds, `resume.domData`; server-dom-data.ts `domStrided`): the item refs `r` as runs, flat
+   * `[first, step, count, …]` (row items one table entry each: `[0, 0, 1, 2, 1, 999]` for refs 0, 2, 3 … 1000). The
+   * expand add-on of those builds (`EXPAND_DOM`, resume-expand.ts `strided`) rewrites them back to `r` before anything reads them.
+   */
+  rs?: number[];
   x?: 1;
   /** Some row's own render read signals: the browser re-creates the rows with their region, unless the region entry's
    * row reads ([13], `RowReads`) all still hold their server values. */

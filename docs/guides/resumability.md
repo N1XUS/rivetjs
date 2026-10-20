@@ -249,7 +249,8 @@ Status: [resumability design](../design/specs/2026-10-03-resumability-design.md)
 - What: list-row values (strings ≥ 8 chars, finite numbers) written as an element's whole text (`<dd>{row().x}</dd>`, not `<i>Note: {x}</i>`) or a plain attribute (not boolean / `hidden` / `popover` / URL, not a reactive attribute) are left out of `rivet/state`; plain JSON trees holding them become `D` entries (DOM paths from the row root). Keyed `For` plan rows and lazy rows; other text never.
 - Browser: a tree is read from the DOM on its first decode; every unread one at the first idle (snapshot): later DOM changes never reach the data. Wrong markup (missing element, other tag) throws a resume error (dev: `drift` hint).
 - Rule: server markup must not be changed before the runtime starts (scripts rewriting row text at load would change the data, only tags are checked).
-- Measured (`/resume?rows=1000&strings=2`): state 499 KB → 8 KB, page br q4 53.1 → 31.9 KB (lazy rows + domData: 29.6 KB); server CPU −0.3…+0.7 ms/page (+1.3…2.3 with lazy rows) — why default off.
+- Compact rows' item refs travel as strided runs (`rs`) in these builds; their expand add-on is `EXPAND_DOM` (DD-T3).
+- Measured (`/resume?rows=1000&strings=2`, after DD-T2T3): state 499 KB → 4 KB, page br q4 53.1 → 30.2 KB (lazy rows + domData: 29.5 KB); Docker harness CPU at or below the default (lazy rows + domData +2…+11 %) — why default off.
 - Tests: `libs/runtime/tests/resume-dom-data.test.ts`, `resume-dom-data-browser.test.ts`.
 
 ## First mouse click: deferred flush

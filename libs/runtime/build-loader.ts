@@ -11,7 +11,7 @@ import { loader } from "./resume-loader.ts";
 import { stream } from "./resume-stream.ts";
 import { rows } from "./resume-rows.ts";
 import { lazy } from "./resume-lazy.ts";
-import { expand } from "./resume-expand.ts";
+import { expand, strided } from "./resume-expand.ts";
 import { repeat } from "./resume-repeat.ts";
 
 const minify = async (fn: () => void): Promise<string> =>
@@ -38,6 +38,8 @@ export const minifiedLoader = async (keys = false): Promise<string> => (await mi
 export const minifiedStream = async (): Promise<string> => (await transform("(" + stream + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified expand add-on, shipped before the state script on pages with compact row templates. */
 export const minifiedExpand = async (): Promise<string> => (await transform("(" + expand + ")()", { minify: true, target: "es2020" })).code.trim();
+/** Minified strided refs part of the DOM-DATA builds' expand add-on (`EXPAND_DOM` = expand add-on + this). */
+export const minifiedStrided = async (): Promise<string> => (await transform("(" + strided + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified repeat add-on, shipped before the state script on pages with repeated handler / binding entries. */
 export const minifiedRepeat = async (): Promise<string> => (await transform("(" + repeat + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified rows add-on, shipped before the state script on pages with path-addressed rows (state `w`). */
@@ -51,6 +53,7 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
     addRows = await minifiedRows(),
     addLazy = await minifiedLazy(),
     addExpand = await minifiedExpand(),
+    addStrided = await minifiedStrided(),
     addRepeat = await minifiedRepeat();
   await writeFile(
     new URL("./resume-loader.min.ts", import.meta.url),
@@ -62,7 +65,9 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       "export const ROWS = " + JSON.stringify(addRows) + ";\n" +
       "export const LAZY = " + JSON.stringify(addLazy) + ";\n" +
       "export const EXPAND = " + JSON.stringify(addExpand) + ";\n" +
+      "/** EXPAND plus the strided item refs part (`rs`), for DOM-DATA builds (`resume.domData`). */\n" +
+      "export const EXPAND_DOM = EXPAND + " + JSON.stringify(addStrided) + ";\n" +
       "export const REPEAT = " + JSON.stringify(addRepeat) + ";\n",
   );
-  console.log(plain.length + " (keys " + keys.length + ") + " + add.length + " + rows " + addRows.length + " + lazy " + addLazy.length + " + expand " + addExpand.length + " + repeat " + addRepeat.length + " chars");
+  console.log(plain.length + " (keys " + keys.length + ") + " + add.length + " + rows " + addRows.length + " + lazy " + addLazy.length + " + expand " + addExpand.length + " (+ strided " + addStrided.length + ") + repeat " + addRepeat.length + " chars");
 }

@@ -207,7 +207,7 @@ export default defineConfig({
 
 ### Data from the page (experimental)
 
-Off by default. With `resume: { domData: true }` on `rivetRouter(…)` (or `rivet(…)`), loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 8 KB.
+Off by default. With `resume: { domData: true }` on `rivetRouter(…)` (or `rivet(…)`), loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 4 KB.
 
 ```ts
 // vite.config.ts
@@ -222,7 +222,7 @@ export default defineConfig({
 - **What qualifies.** Only text that is alone in its element: `<i>Note: {row().note}</i>` stays in the state. Strings with a carriage return, URLs in `href` / `src`, boolean attributes and attributes that change later stay in the state too.
 - **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data.
 - **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
-- **Why it is off by default.** It costs the server some time per render (up to about 0.7 ms per 1,000 rows without lazy rows, 1.3 to 2.3 ms with them), still being reduced.
+- **Why it is off by default.** Without lazy rows the server renders as fast as without it; with lazy rows it still costs about 2 to 11 % more server time per render, being reduced.
 
 ## What it means for your code
 

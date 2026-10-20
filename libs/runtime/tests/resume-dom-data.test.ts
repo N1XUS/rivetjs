@@ -8,7 +8,7 @@ import { rowTexts } from "../server-resume-paths.ts";
 import { createDecoder, createEncoder } from "../resume-format.ts";
 import type { DomTree, EntryRecord, TableEntry } from "../resume-format.ts";
 import { _domRegistry } from "../server-dom-data.ts";
-import type { DomRegistry } from "../server-dom-data.ts";
+import type { DomRegistry, DomSlot } from "../server-dom-data.ts";
 import { _domData } from "../dom-resume-data.ts";
 
 test("rowTexts: sole-child text slots and attribute slots, with their paths below the template root", () => {
@@ -25,17 +25,12 @@ test("rowTexts: sole-child text slots and attribute slots, with their paths belo
   assert.equal(rowTexts(["<pre>", "</pre>"], null), null);
 });
 
-// A registry as the recorder fills it: per row `anchor, n, n × (value, path)`, the row items mapped to their headers.
-const registry = (rows: [anchor: number, path: string, value: string | number][], items: [object, number][]): DomRegistry => {
+// A registry as the recorder fills it (by reference): one template of DOM-DATA slots `paths` (a leading `#`: a number's
+// path), per row its anchor, its item and its slot values (undefined: the row wrote nothing worth a reference there).
+const registry = (paths: string[], rows: [anchor: number, item: object, values: unknown[]][]): DomRegistry => {
   const dom = _domRegistry(),
-    heads = new Map<number, number>();
-  for (const [anchor, path, value] of rows) {
-    let head = heads.get(anchor);
-    if (head === undefined) heads.set(anchor, (head = dom.regs.push(anchor, 0) - 2));
-    dom.regs.push(value, path);
-    (dom.regs[head + 1] as number)++;
-  }
-  for (const [item, anchor] of items) dom.items.set(item, heads.get(anchor)!);
+    slots = paths.map((path, i): DomSlot => [i, path.replace(/^#/, ""), "#" + path.replace(/^#/, ""), 0, "", true]);
+  for (const [anchor, item, values] of rows) dom.row(anchor, values, 0, slots, item);
   return dom;
 };
 // A fake element tree: `[tag, text | attrs, children]`.
@@ -71,12 +66,8 @@ const rowElements = (list: typeof people, anchor = (k: number) => 5 + 3 * k) => 
 };
 const rowRegistry = (list: typeof people, skip = -1) =>
   registry(
-    list.flatMap((p, k): [number, string, string | number][] => [
-      [5 + 3 * k, "#li:@data-id", p.id],
-      [5 + 3 * k, "b:0", p.name],
-      ...(k === skip ? [] : ([[5 + 3 * k, "span:1", p.mail]] as [number, string, string][])),
-    ]),
-    list.map((p, k) => [p, 5 + 3 * k]),
+    ["#li:@data-id", "b:0", "span:1"],
+    list.map((p, k) => [5 + 3 * k, p, [p.id, p.name, k === skip ? undefined : p.mail]]),
   );
 
 test("an array of rows: one D tree with a rows node (anchors 5, 8, 11); the strings leave the table", () => {
@@ -107,20 +98,14 @@ test("a tree holding a rows node keeps its own literals; identity of shared shap
 
 test("a single tree under one anchor; below DOM_MIN saved characters it stays a j tree", () => {
   const user = { id: 7, name: "Grace Brewster Murray Hopper", bio: "Rear admiral, computer pioneer" };
-  const dom = registry(
-    [
-      [3, "h1:0", user.name],
-      [3, "p:1", user.bio],
-    ],
-    [[user, 3]],
-  );
+  const dom = registry(["h1:0", "p:1"], [[3, user, [user.name, user.bio]]]);
   const elements = { 3: el("section", "", [el("h1", user.name), el("p", user.bio)]) };
   const { table, entry, value } = roundTrip(user, dom, elements);
   assert.equal(entry.D![1], 3);
   assert.ok(!JSON.stringify(table).includes("Hopper"));
   assert.deepEqual(value, user);
   const small = { id: 1, name: "Ada Love" };
-  const out = roundTrip(small, registry([[3, "b:0", small.name]], [[small, 3]]), { 3: el("div", "", [el("b", small.name)]) });
+  const out = roundTrip(small, registry(["b:0"], [[3, small, [small.name]]]), { 3: el("div", "", [el("b", small.name)]) });
   assert.ok(out.entry.j !== undefined, "8 characters: not worth a D tree");
   assert.deepEqual(out.value, small);
 });
@@ -138,4 +123,58 @@ test("a row with no registration for a column (its element missing): a per-row e
   assert.equal(entry.D![5], 1);
   assert.ok(JSON.stringify(table).includes("customer.2@example.com"));
   assert.deepEqual(value, people);
+});
+
+test("an odd first row (its value too short for a reference): the column stays DOM-backed, row 0 is the exception", () => {
+  const list = people.map((p, k) => (k === 0 ? { ...p, mail: "a@b.co" } : p));
+  const dom = registry(
+    ["#li:@data-id", "b:0", "span:1"],
+    list.map((p, k) => [5 + 3 * k, p, [p.id, p.name, p.mail]]),
+  );
+  const { table, entry, value } = roundTrip(list, dom, rowElements(list));
+  assert.equal(entry.D![5], 1, "one exception: row 0's mail");
+  assert.ok(!JSON.stringify(table).includes("customer.2@example.com"));
+  assert.deepEqual(value, list);
+});
+
+test("registry by reference: row item trees one entry each share the first one's shape (one walk each), then a Dr run", () => {
+  const list = [0, 1, 2, 3].map((k) => ({ id: 10 + k, name: "Customer <" + k + "> Holdings", mail: "customer." + k + "@example.com", n: k }));
+  const dom = rowRegistry(list);
+  const elements = rowElements(list);
+  const encoder = createEncoder({ dom });
+  const refs = list.map((p) => encoder.ref(p));
+  const shapes = refs.map((r) => (encoder.table[r] as EntryRecord).D![0]);
+  assert.equal(new Set(shapes).size, 1, "one shape");
+  assert.deepEqual((encoder.table[refs[1]!] as EntryRecord).D, [shapes[0], 8, 1], "anchor + the one literal (n)");
+  const t = encoder.table.slice() as TableEntry[];
+  dom.runs(t, encoder.table);
+  // Row 0's entry, then its shape entry, then rows 1–3: one run.
+  assert.deepEqual(t[refs[1]!], { Dr: [shapes[0], 8, 3, 3, 1, 2, 3] });
+  const wire = JSON.parse(JSON.stringify(t)) as TableEntry[];
+  const reader = _domData({ element: (id) => elements[id] as unknown as Element, row: () => null });
+  reader.expand(wire);
+  // (The decoder's `D` case is a DOM_DATA build's: the reader directly.)
+  const decoder = createDecoder(wire);
+  assert.deepEqual(
+    refs.map((r) => reader.dom((wire[r] as EntryRecord).D!, decoder.get)),
+    list,
+  );
+  // A row whose tree differs from the shape (a key more): its own skeleton, its own shape.
+  const odd = { ...list[3]!, extra: "x" };
+  const dom2 = rowRegistry([...list.slice(0, 3), odd]);
+  const encoder2 = createEncoder({ dom: dom2 });
+  const refs2 = [...list.slice(0, 3), odd].map((p) => encoder2.ref(p));
+  assert.notEqual((encoder2.table[refs2[3]!] as EntryRecord).D![0], (encoder2.table[refs2[0]!] as EntryRecord).D![0]);
+});
+
+test("a row whose value is not the one its template wrote: no DOM leaf for it (fast walk falls back, the value stays literal)", () => {
+  const list = people.slice(0, 2);
+  const dom = registry(
+    ["#li:@data-id", "b:0", "span:1"],
+    list.map((p, k) => [5 + 3 * k, p, [p.id, p.name, k === 1 ? "something.else@example.com" : p.mail]]),
+  );
+  const encoder = createEncoder({ dom });
+  encoder.ref(list[0]);
+  const ref = encoder.ref(list[1]);
+  assert.ok(JSON.stringify(encoder.table[ref]).includes("customer.1@example.com"));
 });

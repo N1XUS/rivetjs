@@ -32,7 +32,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { brotliCompressSync } from "node:zlib";
-import { expand } from "../../runtime/resume-expand.ts";
+import { expand, strided } from "../../runtime/resume-expand.ts";
 import { repeat } from "../../runtime/resume-repeat.ts";
 import { full, repeated } from "../../runtime/resume-format.ts";
 import type { BindingEntry, CompactRows, EntryRecord, PackedBindings, ResumeState, RowTemplate, TableEntry } from "../../runtime/resume-format.ts";
@@ -125,6 +125,8 @@ function decode(state: ResumeState): void {
   scope.document = stub;
   try {
     expand();
+    // DOM-DATA builds' part of the expand add-on (`EXPAND_DOM`): strided item refs `rs` back to `r`.
+    strided();
     repeat();
     stub.$rx!(state, state.b);
   } finally {

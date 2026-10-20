@@ -1,6 +1,6 @@
 # DOM-backed loader data — strings the page already shows are read back from the DOM, not serialized again (2026-10-20)
 
-- Status: **design + prototype** (lane DOM-DATA). Prototype behind the build switch `rivet({ resume: { domData: true } })`, default **off**; measured on the ssr-bench `/resume?rows=1000&strings=2` grid.
+- Status: **design + prototype; T2 + T3 done** (lanes DOM-DATA, DD-T2T3 2026-10-20). Prototype behind the build switch `rivet({ resume: { domData: true } })`, default **off**; measured on the ssr-bench `/resume?rows=1000&strings=2` grid.
 - Position: complements lazy rows (`2026-10-19-lazy-collection-rows-design.md`). Lazy rows drop the per-row *records*; the loader data they leave behind (`data.rows`, captured by the page component and by every `For`'s `items`) is the remaining 400 KB. This spec removes that copy. It composes with lazy rows (§3.5) and works without them.
 - Compiler: **no change** (no Rust patch). Registration is runtime-side: row plans already know which tape slots are an element's whole text (§3.1).
 
@@ -59,10 +59,11 @@
   - Plan rows use element id `rows[k].id + 1` (structural id, `data-r` or a path id).
   - Lazy rows use the row region root, addressed as anchor `-1 - marker`: the element before the `]` end marker.
   - Paths are `tag:i.j` (element-child indexes below the anchor, with the tag checked) or `tag:i.j@name`.
-- **Registry** (`server-dom-data.ts` `DomRegistry`, one per render, `Recorder.dom`):
-  - one flat array `regs` holding, per row, `anchor, n, n × (value, path)`;
-  - `items: Map<item, header>`.
-  - Registration costs per row: one `Map.set` and a few pushes. There is no hashing of strings (an earlier global value→registration `Map` cost 1.1 ms/page in `Map.set` alone).
+- **Registry** (`server-dom-data.ts` `DomRegistry`, one per render, `Recorder.dom`), by reference since T2 (no value copy):
+  - `items: Map<item, handle>`; `info` = per row `anchor, base, block`;
+  - `sources[block]`: plan rows = the row plan's tape itself (one block per `rows` call, 3 numbers per row); lazy rows = one flat value array per template block (values pushed by reference; retaining each row's slots array raised GC);
+  - `slots[block]` = `DomSlot[]` `[slot, path, numberPath, attr, name, ok]`; `domAt` reads a value only when the encoder asks for it.
+  - Registration costs per row: one `Map.set` and three pushes. No hashing of strings (an earlier global value→registration `Map` cost 1.1 ms/page in `Map.set` alone). T1's `regs` copy (`anchor, n, n × (value, path)`, ~24 k slots) is gone.
 
 ### 3.2 Encoding (Q2) — `D` entries
 
@@ -85,7 +86,8 @@
   - With non-lazy rows each row item is its own entry (the row captures it first), so 1000 single `D` entries share one shape.
   - ≥ 3 consecutive single trees of one shape with arithmetic anchors become `{Dr: [shape, a0, stride, count, ...literals]}` plus `0` placeholders. The runtime `expand`s them back before decoding.
 - **Floor:** a tree saving < 32 characters stays `j` (`DOM_MIN`).
-- **Encoder cost:** the shape of the previous single tree is memoised (`DomLast`), so the per-row-entry case is compare-and-stream only.
+- **Encoder cost:** the shape of the previous single tree is memoised (`DomLast`, internal skeleton + texts identity), so the per-row-entry case is compare-and-stream only (`domCheck`: structure + identity walk that streams literals). Rows nodes use row 0's skeleton and merge every row's only on a miss (T2).
+- **Strided item refs (T3):** compact rows (`CompactRows`, region entry [8] with template [9]) whose items are no table array list them as refs `r` (1000 refs ≈ 4 KB). DOM-DATA builds write runs `rs: [first, step, count, …]` (step 0 = single) when shorter (`domStrided`, after `runs`, shell and patches). Browser: `EXPAND_DOM` = `EXPAND` + `resume-expand.ts` `strided` (wraps `d.$rx`, rebuilds `r` before the rows expansion; +211 B min), shipped instead of `EXPAND` (`DOM_DATA ? EXPAND_DOM : EXPAND`, folded away by default). No `RESUME_VERSION` bump: only domData builds write `rs`, and runtime + state come from one build.
 - **State flag:** `state.D = 1` when the table holds `D` entries.
 
 ### 3.3 Browser (Q3) — `dom-resume-data.ts`
@@ -135,7 +137,7 @@
   - `/resume-format`: +158 B min (the encoder's `dom.tree` call, the decoder's folded `D` case).
 - Opted in:
   - dom-resume 47,316 min / 16,316 br, i.e. +1,753 / +558;
-  - server-resume 122,093 min, i.e. +5,849 min / +1,678 br.
+  - server-resume 122,093 min, i.e. +5,849 min / +1,678 br (T1); zero-cost bundle after T2 + T3: 123,398 → 125,783 min (+2,385: fast walk, by-reference registry, `domStrided`; `EXPAND_DOM` text).
   - Zero-cost lines: `[domData]` for `/dom-resume` and `/server-resume`.
 - The lazy-rows `count` slot (§3.5) is a default-build format addition. It is written only when the items entry is not a `j` tree or a ref array. The loader-min regeneration changes the `LAZY` add-on (+4 B in `[lazyRows]` dom-resume).
 
@@ -154,6 +156,18 @@
   - `t` 2.9 KB.
 - Page br q4 31.9 KB alone (just above the ≲ 30 KB target); 29.6 KB with lazy rows (meets it). Solid 2 hydratable sits at ~1,091 KB raw; the domData page is 1,134 KB raw.
 - Follow-up to reach < 30 KB without lazy rows: strided packed-binding `r` refs. They touch the loader. Estimate ≈ 30.1 KB q4.
+
+T2 + T3 bytes (DD-T2T3, host build of `apps/ssr-bench`, same page):
+
+| page | raw | br q4 | br q11 | state raw | state br q4 | `b` raw |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| default | 1,624,591 | 53,078 | 39,816 | 498,559 | 23,673 | 4,192 |
+| `domData` T1 / T2 | 1,133,941 | 31,841 | 24,340 | 7,909 | 2,649 | 4,195 |
+| `domData` T3 | 1,130,274 | **30,223** | 23,646 | **4,031** | 926 | **317** |
+| lazy rows + `domData` T3 | 1,132,660 | 29,531 | 21,075 | 1,736 | 818 | 132 |
+
+- T2 writes byte-identical states to T1. T3: `b` 4,195 → 317 B (`rs: [0,2,2,3,1,998]`); page br q4 −1.6 KB = 30.2 KB (29.5 KiB): 0.2 KB over a decimal 30 KB. The state is 0.9 KB br of it (without any state: 29.4 KB); what is left is HTML + inline scripts (≈ 3.5 KB br).
+- Lazy rows: `b` is already 132 B (no compact rows), so T3 changes nothing there.
 
 Server CPU, ms/page:
 
@@ -175,8 +189,27 @@ Server CPU, ms/page:
 - Lazy rows + `domData`: +1.3 to +2.3 ms/page.
   - Main-thread profile: the `dom*` functions cost ~0.8 ms/page.
   - With `--single-threaded` the delta is +0.3–0.4 ms, so the rest is on V8 background threads.
-  - Open (T2).
+  - T2 below.
 - Static `/page` does not use resume: the difference is noise.
+
+T2 / T3 CPU, Docker harness (DD-T2T3): `rivet-ssr-bench-node:local`, 1 CPU, 512 MB, `--single-threaded-gc --max-semi-space-size=8`, backend container, loadgen v2 container closed loop 10 s; CPU = container `cpu_usage` delta / responses; one frontend under load at a time, order reversed each round; median of the rounds (runs A–D, 3–4 rounds each; host load 6–10, so ±10 % between runs):
+
+| ms/page | c1 | c10 |
+| --- | ---: | ---: |
+| default | 3.47 / 4.22 | 3.82 / 4.29 |
+| `domData` T1 | 4.22 | 4.67 |
+| `domData` T2 | 3.63 / 3.37 | 3.74 / 4.15 |
+| `domData` T3 | 3.75 | 4.08 |
+| lazy rows | 9.95 / 10.69 | 9.60 / 9.90 |
+| lazy rows + `domData` T1 | 11.42 | 10.23 |
+| lazy rows + `domData` T2 | 10.73 | 9.79 |
+| lazy rows + `domData` T3 | 11.84 | 10.55 |
+
+(`a / b` = run A or B / run C or D, same session.)
+- `domData` alone: T1 +22 %; T2 / T3 −20 … +5 % against the same run's default (below it in 5 of 6 points). Gate (≤ +2 %) met within the harness noise. Plausible cause: the 490 KB less state the server writes pays for the registry.
+- Lazy rows + `domData`: +2 … +11 % (T1 +7 … +15 %). Gate not met. Host profile: `dom*` 0.37–0.40 ms/page + the `domFits` scan ~0.09 ms; GC per 200 requests 413 → 447 ms (T1 +15 % values copied; T2 values by reference).
+- Host GC trace (200 requests): default 117 ms, `domData` T1 165 ms → T2 116 ms.
+- In process, ui-docs `table-virtualization` (`scripts/lazy-rows/probe.ts`, build with `domData` on vs off): no `D` entries (its rows are cdk collection rows, not plain loader JSON), bytes identical, server CPU 21.9 / 19.8 (off) vs 21.4 / 20.2 ms (on) per render: no cost when nothing registers.
 - Browser (Chromium, real ssr-bench pages, all four builds):
   - clicks in rows 1 / 500 / 1000 and, after idle, 250 select their row;
   - no page errors, no `rivet:resume-error`.
@@ -185,7 +218,7 @@ Server CPU, ms/page:
 ## 6. Risks and open points
 
 - DOM text edited before idle by non-resume code: the value comes back edited. Only tag checks guard it. Options: a per-tree hash (costs bytes), or the documented rule "do not mutate server markup before the runtime starts" (proposed).
-- CPU: lazy rows + `domData` adds ~1.3–2.3 ms/page (≈ 20–30 %), mostly off the main thread. Profile GC pressure from the registry (`regs` grows to ~24 k slots → large-object space). Candidate: a registry that holds the tape / slots reference per row instead of copying values.
+- CPU: lazy rows + `domData` adds +2 … +11 % on the Docker harness after T2 (by-reference registry landed; T1: +7 … +15 %). Left: the lazy rows node walk (1000 rows × 11 columns, `domCheck` + `domFits`) and the per-template value arrays (~11 k pushes). `domData` alone is at or below the default.
 - Registration covers list rows only. Single-element loader data (`<h1>{data.title}</h1>`) stays literal. Extending it needs per-site anchors (a `data-r` id) on non-row elements, which would cost bytes on every page: out of scope.
 - `textContent` of an element with comment children (`<!--…-->` text-split markers) is still exact: comments are not text. A sole-child slot never has them.
 - Sweep cost in the browser: 1000 rows × 11 reads at idle (not measured: no resume-bench lane for the grid).
@@ -209,14 +242,14 @@ Server CPU, ms/page:
    - reader + sweep;
    - the lazy `count` fix;
    - tests.
-2. T2: CPU. Registry by reference (no value copy), measured in the Docker harness. Target: the +2 % gate.
-3. T3: strided packed-binding `r` refs (state `b` 4.2 KB → ~0.3 KB), for the < 30 KB target without lazy rows.
+2. T2 (done, DD-T2T3): registry by reference (no value copy), structure + identity walk, rows nodes from row 0's skeleton. Docker harness: `domData` alone meets the +2 % gate; lazy rows + `domData` +2 … +11 % (not met).
+3. T3 (done, DD-T3): strided compact-row item refs `rs` + `EXPAND_DOM`: `b` 4,195 → 317 B, page br q4 31.8 → 30.2 KB (0.2 KB short of < 30 KB).
 4. T4: resume fuzz with `domData`. Add a grid lane to resume-bench (sweep cost, click-to-interactive).
 5. T5: default flip decision (with lazy rows' T6).
 
 ## 9. Rulings proposed
 
-1. Default **off** until T2 passes the CPU gate; then on together with lazy rows.
+1. Default **off** until T2 passes the CPU gate; then on together with lazy rows. After T2 / T3 (DD-T2T3): `domData` alone passes, lazy rows + `domData` does not; still off. What the flip would change (default build, this page): page br q4 53.1 → 30.2 KB (with lazy rows 50.2 → 29.5 KB), state 499 → 4.0 KB; CPU at or below the default without lazy rows, +2 … +11 % with them; runtime bytes for every app: `/dom-resume` 45,570 → 47,323 min (+1,753), `/server-resume` 117,550 → 125,783 min (+8,233).
 2. Snapshot at the first idle (not eager at start, not on every read).
 3. Content-addressed registration in the runtime; no compiler tagging, no Rust patch.
 4. Eligibility: whole-element text + plain attributes, strings ≥ 8 chars + finite numbers; CR / NUL / lone surrogates refused.

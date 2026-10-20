@@ -178,7 +178,10 @@ export function stateSites(
         site(symbol, "For", items, "row items");
       } else if (rows && !isBranches(rows) && typeof rows === "object") {
         const spec = rows as CompactRows;
-        if (spec.a !== undefined || spec.r !== undefined) site(symbol, "For", spec.a !== undefined ? [spec.a] : spec.r!, "row items");
+        // `rs` (DOM-DATA builds): the refs as runs `first, step, count`.
+        const strided = spec.rs && spec.rs.flatMap((first, i, runs) => (i % 3 ? [] : Array.from({ length: runs[i + 2]! }, (_, k) => first + k * runs[i + 1]!)));
+        const items = spec.a !== undefined ? [spec.a] : (spec.r ?? strided);
+        if (items) site(symbol, "For", items, "row items");
       }
       const branches = (isBranches(rows) ? rows : entry[10]) as BranchSpec | BranchSpec[] | 0 | undefined;
       if (branches)

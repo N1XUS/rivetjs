@@ -50,11 +50,12 @@ import {
   _setUnrecorded,
 } from "./resume-format.ts";
 import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
-import { EXPAND, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
+import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import { addReads, encodeLazy, lazyKeyed, lazyLocal, lazyRowsOn, lazyWarn } from "./server-resume-lazy.ts";
 import type { LazyFor as LazyRecord } from "./server-resume-lazy.ts";
 import { domServer } from "./dom-data-server.ts";
+import { DOM_DATA } from "./dom-data.ts";
 import type { DomRegistry, DomSlot } from "./server-dom-data.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
@@ -1961,7 +1962,7 @@ class Stream {
     if (delta.w && !root.rowsAddon) ((root.rowsAddon = true), (out += open + ROWS + "</script>"), (relazy = root.lazyAddon), (root.lazyAddon = false));
     if ((delta.L || relazy) && !root.lazyAddon) ((root.lazyAddon = true), (out += open + LAZY + "</script>"));
     // The expand add-on replaces `$rx` (it chains to nothing): a repeat add-on shipped before it ships again after it.
-    if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + EXPAND + "</script>"), (root.repeatAddon = false));
+    if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + (DOM_DATA ? EXPAND_DOM : EXPAND) + "</script>"), (root.repeatAddon = false));
     if (rr && !root.repeatAddon) ((root.repeatAddon = true), (out += open + REPEAT + "</script>"));
     return out;
   }
@@ -3893,6 +3894,8 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   else if (relocations) out.t = compactTable(encoder.table, t0, enc.symbols, false).t;
   // DOM-DATA: runs of DOM-backed rows (one shape, evenly spaced anchors) as one `Dr` entry + placeholders.
   if (root.dom !== null) root.dom.runs(out.t!, encoder.table);
+  // DOM-DATA builds: compact rows' item refs as runs (`rs`; their expand add-on `EXPAND_DOM` reads them back).
+  if (DOM_DATA && root.dom !== null) root.dom.strided(out.b!);
   if (DEV) assertAcyclic(encoder.table, t0);
   // Dev: per capture site, the bytes it adds to the state (warned once the state bytes are known, `DEV.stateBytes`).
   if (DEV) DEV.stateCaptures(root, DEV.stateSites(encoder.table, symbols, manifest.captures, t0, out.t!, e, m, b, fx, ce));
@@ -4153,7 +4156,8 @@ const tail = (loader: string, stream: boolean): readonly string[] =>
 const TAILS = [tail(LOADER, false), tail(LOADER_KEYS, false), tail(LOADER, true), tail(LOADER_KEYS, true)] as const;
 const ROWS_SCRIPT = Object.freeze(["<script", ">" + ROWS + "</script>"]);
 const LAZY_SCRIPT = Object.freeze(["<script", ">" + LAZY + "</script>"]);
-const EXPAND_SCRIPT = Object.freeze(["<script", ">" + EXPAND + "</script>"]);
+// DOM-DATA builds: the expand add-on with the strided item refs part (`rs`, `EXPAND_DOM`).
+const EXPAND_SCRIPT = Object.freeze(["<script", ">" + (DOM_DATA ? EXPAND_DOM : EXPAND) + "</script>"]);
 const REPEAT_SCRIPT = Object.freeze(["<script", ">" + REPEAT + "</script>"]);
 
 // `JSON.stringify(state)`, byte for byte, ~1.6× faster: V8's fast serializer bails out to its slow

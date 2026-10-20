@@ -1,25 +1,38 @@
 // DOM-backed loader data, server half (DOM-DATA, spec docs/design/specs/2026-10-20-dom-backed-loader-data-design.md):
-// the render's registry of values list rows wrote as an element's whole text / a plain attribute value (`domRows` for
-// keyed plan rows, `domLazyRow` for lazy rows), the encoder's `D` form of plain JSON trees holding them (`domTree`,
-// called by `resume-format.ts` `createEncoder({ dom })`) and the `Dr` run compaction of the state table (`domRuns`).
-// Only builds with `rivet({ resume: { domData: true } })` reach this module: the compiler plugin serves
+// the render's registry of the list rows whose template writes values as an element's whole text / a plain attribute
+// value (`domRows` for keyed plan rows, `domLazyRow` for lazy rows), the encoder's `D` form of plain JSON trees holding
+// them (`domTree`, called by `resume-format.ts` `createEncoder({ dom })`) and the `Dr` run compaction of the state table
+// (`domRuns`). Only builds with `rivet({ resume: { domData: true } })` reach this module: the compiler plugin serves
 // `dom-data-server.ts` with `_domRegistry` from here (default: null, so other servers carry none of it).
+// T2 (registry by reference): a row registers where its values already are (the plan's tape / the lazy template's slots,
+// an offset, the template's slots) — no value is copied; the encoder reads them back by slot. Row item trees of the
+// previous tree's skeleton are checked against it in one walk (no skeleton per row).
 import { ATTRIBUTE, booleanAttributes, COMPILED, _attributeName } from "./template.ts";
 import type { AttributeNamespace } from "./template.ts";
 import { rowTexts } from "./server-resume-paths.ts";
 import { URLS } from "./url.ts";
-import type { DomLast, DomTexts, DomTree, EntryRecord, Literal, TableEntry } from "./resume-format.ts";
+import type { BindingEntry, CompactRows, DomLast, DomTexts, DomTree, EntryRecord, Literal, TableEntry } from "./resume-format.ts";
 
-/** The registry of one render (server-resume `Recorder.dom`): per list row whose template wrote eligible values, `regs`
- * holds `anchor, n, n × (value, path below the anchor)`; `items` maps the row's item to that header. */
+/** The registry of one render (server-resume `Recorder.dom`). `items` maps a registered row's item to h: `info[h]` its
+ * anchor, `info[h + 1]` the offset of its slots in its block's source, `info[h + 2]` its block; per block, `sources` the
+ * array holding its rows' slot values (by reference: a plan's tape, a lazy row's template slots) and `slots` its
+ * template's DOM-DATA slots. */
 export interface DomRegistry extends DomTexts {
-  regs: unknown[];
+  info: number[];
+  sources: (readonly unknown[])[];
+  slots: DomSlot[][];
+  /** Lazy rows: per template (its slots), its block (the rows' values side by side). */
+  lazyBlocks: Map<DomSlot[], number>;
+  /** One row: anchor, its slot values (`source[base + slot]`), its template's slots, its item. */
+  row(anchor: number, source: readonly unknown[], base: number, slots: DomSlot[], item: unknown): void;
   /** Tape rows of a keyed row plan: row k's root is element id `rows[k].id + 1`. */
   rows(plan: DomPlan, tape: readonly unknown[], rows: readonly DomRow[], count: number, width: number): void;
   /** A lazy row's compiled template value, row region `marker`. */
   lazyRow(value: unknown, marker: number, item: unknown): void;
   /** Wire form: runs of single `D` trees → `Dr` entries (in place, `t`; `table`: the encoder's, for the shapes). */
   runs(t: TableEntry[], table: readonly TableEntry[]): void;
+  /** Wire form (DOM-DATA builds): compact rows' item refs `r` → runs `rs` when shorter (in place, the binding entries `b`). */
+  strided(b: readonly BindingEntry[]): void;
 }
 /** What a row plan carries for DOM-DATA (server-resume `RowPlan`): its template and its eligible slots (made on first use). */
 export interface DomPlan {
@@ -30,6 +43,14 @@ interface DomRow {
   id: number;
   item: unknown;
 }
+/**
+ * A DOM-DATA slot of a row template: its slot index, its path, the path for a number (`#…`). `attr` 1 (lazy templates'
+ * attribute slots, where the slot holds the attribute record): `name` = the attribute the paths were made for (set by
+ * the first row read; "" before), `ok` = it is a plain attribute (rows writing another name, or a name that is not, hold
+ * nothing there).
+ */
+export type DomSlot = [slot: number, path: string, number: string, attr: 0 | 1, name: string, ok: boolean];
+type Attribute = { [ATTRIBUTE]?: true; name: string; value: unknown; namespace: AttributeNamespace };
 const own = (out: Record<string, unknown>, key: string, value: unknown): unknown =>
   key === "__proto__" ? Object.defineProperty(out, key, { value, writable: true, enumerable: true, configurable: true }) : (out[key] = value);
 
@@ -37,27 +58,24 @@ const own = (out: Record<string, unknown>, key: string, value: unknown): unknown
 export function _domRegistry(): DomRegistry {
   const dom: DomRegistry = {
     items: new Map(),
-    regs: [],
+    info: [],
+    sources: [],
+    slots: [],
+    lazyBlocks: new Map(),
+    row: (anchor, source, base, slots, item) => {
+      if (item !== null && typeof item === "object" && !dom.items.has(item))
+        (dom.items.set(item, dom.info.push(anchor, base, dom.sources.push(source) - 1) - 3), dom.slots.push(slots));
+    },
     rows: (plan, tape, rows, count, width) => domRows(dom, plan, tape, rows, count, width),
     lazyRow: (value, marker, item) => domLazyRow(dom, value, marker, item),
-    tree: (value, shapeRef, last) => domTree(dom, value, shapeRef, last),
+    tree: (value, shapeRef, last) => domTree(dom, value, shapeRef, last as DomMemo),
     runs: domRuns,
+    strided: domStrided,
   };
   return dom;
 }
 
-// ---- registration ----
-/** A slot value worth a DOM reference: a string long enough to pay for it, or a finite number (`String(value)`, read back
- * with `Number`: paths `#…`; -0 never reaches a JSON tree). Whether the parser keeps a string as written (no CR, NUL,
- * lone surrogate) is the encoder's check, on the values it uses. */
-const domValue = (value: unknown): boolean => (typeof value === "string" ? value.length >= 8 : typeof value === "number" && Number.isFinite(value));
-/** Open a row's registrations (`DomTexts.regs` header `anchor, n`); `domClose` keeps them (n > 0) under the row's item. */
-const domOpen = (dom: DomRegistry, anchor: number): number => dom.regs.push(anchor, 0) - 2;
-function domClose(dom: DomRegistry, head: number, item: unknown): void {
-  const n = (dom.regs.length - head - 2) / 2;
-  if (n === 0 || item === null || typeof item !== "object" || dom.items.has(item)) dom.regs.length = head;
-  else ((dom.regs[head + 1] = n), dom.items.set(item, head));
-}
+// ---- registration (by reference) ----
 // Attributes the server writes as `String(value)` (escaped): not boolean / enumerated (`hidden`, `popover`) and not a URL
 // (the unsafe-URL rule may replace it). `name`: the output name.
 const domAttribute = (name: string): boolean => !booleanAttributes.has(name) && name !== "hidden" && name !== "popover" && !URLS.has(name);
@@ -69,32 +87,372 @@ function planTexts(plan: DomPlan): DomSlot[] | null {
   if (all === null) return null;
   const out: DomSlot[] = [];
   for (const [slot, path] of all) {
-    if (!path.endsWith("@")) out.push([slot, path, "#" + path]);
+    if (!path.endsWith("@")) out.push([slot, path, "#" + path, 0, "", true]);
     else if (!sites.includes(slot)) {
       const [name, namespace] = entries[slot] as [string, AttributeNamespace];
       const output = namespace === "html" ? _attributeName(name, namespace) : "";
-      if (output && domAttribute(output)) out.push([slot, path + output, "#" + path + output]);
+      if (output && domAttribute(output)) out.push([slot, path + output, "#" + path + output, 0, "", true]);
     }
   }
   return out.length ? out : null;
 }
-/** A DOM-DATA slot: its index, its path, the path for a number (`#…`); lazy templates' attribute slots: the name the
- * paths were made for (`domLazyRow`). */
-export type DomSlot = [slot: number, path: string, number: string, name?: string];
-/** Tape rows of a row plan (`planRows`): row k's root is element id `rows[k].id + 1` (structural ids, root-anchored plan). */
+/** Tape rows of a row plan (`planRows`): row k's root is element id `rows[k].id + 1` (structural ids, root-anchored plan),
+ * its values `tape[k * width + slot]`: one block for the plan's rows, three numbers per row. */
 function domRows(dom: DomRegistry, plan: DomPlan, tape: readonly unknown[], rows: readonly DomRow[], count: number, width: number): void {
   const texts = plan.texts === undefined ? (plan.texts = planTexts(plan)) : plan.texts;
   if (texts === null) return;
-  const regs = dom.regs;
+  const { info, items } = dom,
+    block = dom.sources.push(tape) - 1;
+  dom.slots.push(texts);
   for (let k = 0; k < count; k++) {
-    const head = domOpen(dom, rows[k]!.id + 1),
-      base = k * width;
-    for (let i = 0; i < texts.length; i++) {
-      const value = tape[base + texts[i]![0]];
-      if (domValue(value)) regs.push(value, typeof value === "number" ? texts[i]![2] : texts[i]![1]);
-    }
-    domClose(dom, head, rows[k]!.item);
+    const item = rows[k]!.item;
+    if (item !== null && typeof item === "object" && !items.has(item)) items.set(item, info.push(rows[k]!.id + 1, k * width, block) - 3);
   }
+}
+// Compiled templates of lazy rows: their DOM-DATA slots (`rowTexts`, slots in a start tag = attributes), per fragments,
+// and the same slots over the template's block (`[i, …]`: its rows' values sit side by side, n per row).
+const templateTexts = new WeakMap<readonly string[], [texts: DomSlot[], block: DomSlot[]] | null>();
+/** A lazy row's own template (`render(get, at)`'s value): its values, addressed from the row root (row region `marker`:
+ * anchor `-1 - marker`), when every content slot holds a primitive (a nested template could add elements before a path).
+ * The row's slots array dies with its HTML: the values (references) go to one array per template (`lazyBlocks`). */
+function domLazyRow(dom: DomRegistry, value: unknown, marker: number, item: unknown): void {
+  if (item === null || typeof item !== "object" || dom.items.has(item)) return;
+  if (value === null || typeof value !== "object" || !(value as { [COMPILED]?: true })[COMPILED]) return;
+  const { fragments, slots } = value as { fragments: readonly string[]; slots: readonly unknown[] };
+  let texts = templateTexts.get(fragments);
+  if (texts === undefined) {
+    const all = rowTexts(fragments, null);
+    templateTexts.set(
+      fragments,
+      (texts = all && [
+        all.map(([slot, path]): DomSlot => [slot, path, "#" + path, path.endsWith("@") ? 1 : 0, "", true]),
+        all.map(([, path], i): DomSlot => [i, path, "#" + path, 0, "", true]),
+      ]),
+    );
+  }
+  if (texts === null) return;
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
+    if ((slot !== null && typeof slot === "object" && !(slot as Attribute)[ATTRIBUTE]) || typeof slot === "function") return;
+  }
+  const [mine, shared] = texts;
+  let block = dom.lazyBlocks.get(mine);
+  if (block === undefined) (dom.lazyBlocks.set(mine, (block = dom.sources.push([]) - 1)), dom.slots.push(shared));
+  const values = dom.sources[block] as unknown[],
+    base = values.length;
+  for (let i = 0; i < mine.length; i++) {
+    const text = mine[i]!;
+    let v = slots[text[0]];
+    if (text[3] === 1) {
+      // An attribute record: the paths name the first name a row wrote (rows writing another hold nothing there).
+      const record = v as Attribute | null;
+      v = undefined;
+      if (record !== null && typeof record === "object" && record[ATTRIBUTE] && record.namespace === "html") {
+        if (text[4] === "") {
+          text[4] = record.name;
+          if ((text[5] = shared[i]![5] = domAttribute(record.name))) ((shared[i]![1] += record.name), (shared[i]![2] += record.name));
+        }
+        if (text[5] && text[4] === record.name) v = record.value;
+      }
+    }
+    values.push(v);
+  }
+  dom.items.set(item, dom.info.push(-1 - marker, base, block) - 3);
+}
+/** The value row h holds at DOM-DATA slot i of its template when it is worth a DOM reference (a string of ≥ 8 chars, a
+ * finite number: `String(value)`, read back with `Number`; -0 never reaches a JSON tree), else undefined. */
+function domAt(dom: DomRegistry, h: number, i: number): unknown {
+  const block = dom.info[h + 2]!,
+    value = dom.sources[block]![dom.info[h + 1]! + dom.slots[block]![i]![0]];
+  return typeof value === "string" ? (value.length >= 8 ? value : undefined) : typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+// ---- encoding: `j` trees whose values sit in the page's DOM (`DomTree`) ----
+// A registered string the browser's parser keeps as written: no CR (newline normalisation), no NUL, no lone surrogate
+// (the class test first: one scan for the common string).
+const UNFIT = /[\r\0\ud800-\udfff]/;
+const domFits = (value: unknown): boolean =>
+  typeof value === "number" ||
+  !UNFIT.test(value as string) ||
+  ((value as string).indexOf("\r") < 0 && (value as string).indexOf("\0") < 0 && (value as unknown as { isWellFormed(): boolean }).isWellFormed());
+const leaf = (v: unknown): boolean => v === null || typeof v !== "object";
+// Whether `value` could be a DOM leaf (`domAt`'s rule).
+const worth = (value: unknown): boolean => (typeof value === "string" ? value.length >= 8 : typeof value === "number" && Number.isFinite(value));
+/**
+ * Skeletons (internal form): leaf 0 = a literal, code c ≥ 2 = the value of DOM-DATA slot `(c - 2) >> 1` of the row's
+ * template (c odd: a number, its `#` path); arrays as arrays, objects as `DomObject` (keys in order), rows nodes as
+ * `DomRows`. The wire skeleton (`domWire`) replaces codes by path indexes.
+ */
+class DomObject {
+  keys: string[];
+  values: unknown[];
+  constructor(keys: string[], values: unknown[]) {
+    this.keys = keys;
+    this.values = values;
+  }
+}
+/** A rows node: an array of ≥ 2 registered row items of one template, evenly spaced anchors, one skeleton; its stream
+ * (exceptions as row, code, value; the rows' literals in turn) and what it saves. */
+class DomRows {
+  skeleton: unknown;
+  texts: DomSlot[];
+  first: number;
+  stride: number;
+  count: number;
+  exceptions: (number | Literal)[];
+  lits: (number | Literal)[];
+  constructor(skeleton: unknown, texts: DomSlot[], first: number, stride: number, count: number, exceptions: (number | Literal)[], lits: (number | Literal)[]) {
+    this.skeleton = skeleton;
+    this.texts = texts;
+    this.first = first;
+    this.stride = stride;
+    this.count = count;
+    this.exceptions = exceptions;
+    this.lits = lits;
+  }
+}
+/** A scan: what the DOM leaves save (chars), the slot after the last match (leaves come in template order mostly). */
+interface DomScan {
+  saved: number;
+  hint: number;
+}
+// The code of leaf `value` in row h (0: none, or the parser would change it).
+function domLeaf(dom: DomRegistry, value: unknown, h: number, scan: DomScan): number {
+  if (!worth(value)) return 0;
+  const n = dom.slots[dom.info[h + 2]!]!.length;
+  for (let i = scan.hint < n && domAt(dom, h, scan.hint) === value ? scan.hint : 0; i < n; i++)
+    if (domAt(dom, h, i) === value) {
+      scan.hint = i + 1;
+      if (!domFits(value)) return 0;
+      scan.saved += typeof value === "string" ? value.length : 2;
+      return 2 + 2 * i + (typeof value === "number" ? 1 : 0);
+    }
+  return 0;
+}
+// The skeleton of `value` for row h (-1: none, every leaf a literal); arrays in `rows` are rows nodes.
+function domSkeleton(dom: DomRegistry, value: unknown, h: number, scan: DomScan, rows: Map<unknown, DomRows> | null): unknown {
+  if (leaf(value)) return h >= 0 ? domLeaf(dom, value, h, scan) : 0;
+  const node = rows?.get(value);
+  if (node !== undefined) return node;
+  if (Array.isArray(value)) {
+    const out: unknown[] = new Array(value.length);
+    for (let i = 0; i < value.length; i++) out[i] = domSkeleton(dom, value[i], h, scan, rows);
+    return out;
+  }
+  const keys = Object.keys(value as object),
+    values: unknown[] = new Array(keys.length);
+  for (let i = 0; i < keys.length; i++) values[i] = domSkeleton(dom, (value as Record<string, unknown>)[keys[i]!], h, scan, rows);
+  return new DomObject(keys, values);
+}
+/** A walk of `value` along a skeleton for one row (`domRow`: its source, offset, template slots): literals in order,
+ * exceptions (null: a DOM leaf the row does not hold fails the walk), what the DOM leaves save, `miss`: literals the row
+ * does hold (the skeleton came from another row). */
+interface DomWalk {
+  lits: (number | Literal)[];
+  exceptions: (number | Literal)[] | null;
+  row: number;
+  saved: number;
+  miss: number;
+  source: readonly unknown[];
+  base: number;
+  texts: DomSlot[];
+}
+const domWalk = (lits: (number | Literal)[], exceptions: (number | Literal)[] | null): DomWalk => ({
+  lits,
+  exceptions,
+  row: 0,
+  saved: 0,
+  miss: 0,
+  source: lits,
+  base: 0,
+  texts: [],
+});
+// Walk row h next.
+function domRow(dom: DomRegistry, walk: DomWalk, h: number): void {
+  const block = dom.info[h + 2]!;
+  walk.source = dom.sources[block]!;
+  walk.base = dom.info[h + 1]!;
+  walk.texts = dom.slots[block]!;
+}
+// A leaf of code `code` (0: a literal) holding `value` (a JSON literal).
+function domLeafCheck(code: number, value: unknown, walk: DomWalk): boolean {
+  if (code === 0) {
+    walk.lits.push(value as Literal);
+    if (walk.exceptions !== null && worth(value))
+      for (let i = 0; i < walk.texts.length; i++) if (walk.source[walk.base + walk.texts[i]![0]] === value && domFits(value)) return (walk.miss++, true);
+    return true;
+  }
+  if (
+    walk.source[walk.base + walk.texts[(code - 2) >> 1]![0]] === value &&
+    (typeof value === "number") === ((code & 1) === 1) &&
+    worth(value) &&
+    domFits(value)
+  ) {
+    walk.saved += typeof value === "string" ? value.length : 2;
+    return true;
+  }
+  return walk.exceptions !== null && (walk.exceptions.push(walk.row, code, value as Literal), true);
+}
+// Whether `value` has the structure of `skeleton` (keys in order, lengths, leaves where it has leaves); streams `walk`.
+function domCheck(skeleton: unknown, value: unknown, walk: DomWalk): boolean {
+  if (typeof skeleton === "number") return leaf(value) && domLeafCheck(skeleton, value, walk);
+  if (Array.isArray(skeleton)) {
+    if (!Array.isArray(value) || value.length !== skeleton.length) return false;
+    for (let i = 0; i < skeleton.length; i++) {
+      const s = skeleton[i],
+        v = value[i];
+      if (typeof s === "number" ? !leaf(v) || !domLeafCheck(s, v, walk) : !domCheck(s, v, walk)) return false;
+    }
+    return true;
+  }
+  if (leaf(value) || Array.isArray(value)) return false;
+  const { keys, values } = skeleton as DomObject,
+    names = Object.keys(value as object);
+  if (names.length !== keys.length) return false;
+  for (let i = 0; i < keys.length; i++) {
+    const s = values[i],
+      v = (value as Record<string, unknown>)[keys[i]!];
+    if (names[i] !== keys[i] || (typeof s === "number" ? !leaf(v) || !domLeafCheck(s, v, walk) : !domCheck(s, v, walk))) return false;
+  }
+  return true;
+}
+// One structure for every row (keys in order, lengths): a code where the rows that have one agree on it, else 0;
+// undefined: the structures differ.
+function domMerge(a: unknown, b: unknown): unknown {
+  if (typeof a === "number" || typeof b === "number")
+    return typeof a === "number" && typeof b === "number" ? (a === b || b === 0 ? a : a === 0 ? b : 0) : undefined;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return undefined;
+    const out: unknown[] = new Array(a.length);
+    for (let i = 0; i < a.length; i++) if ((out[i] = domMerge(a[i], b[i])) === undefined) return undefined;
+    return out;
+  }
+  if (Array.isArray(b)) return undefined;
+  const x = a as DomObject,
+    y = b as DomObject;
+  if (x.keys.length !== y.keys.length) return undefined;
+  const values: unknown[] = new Array(x.keys.length);
+  for (let i = 0; i < x.keys.length; i++) if (x.keys[i] !== y.keys[i] || (values[i] = domMerge(x.values[i], y.values[i])) === undefined) return undefined;
+  return new DomObject(x.keys, values);
+}
+// A rows node over `list`, or null: every element a registered row of one template, anchors evenly spaced (one sign).
+// The skeleton is row 0's; every row is walked along it. When some row holds a value where row 0 has a literal (an odd
+// first row), the skeleton is the merge of every row's own (rows without a DOM leaf become exceptions).
+function domRowsNode(dom: DomRegistry, list: readonly unknown[], scan: DomScan): DomRows | null {
+  const { items, info } = dom,
+    count = list.length,
+    hs: number[] = new Array(count);
+  let first = 0,
+    stride = 0,
+    texts: DomSlot[] | undefined;
+  for (let k = 0; k < count; k++) {
+    const h = leaf(list[k]) ? undefined : items.get(list[k] as object);
+    if (h === undefined) return null;
+    const anchor = info[h]!,
+      mine = dom.slots[info[h + 2]!]!;
+    if (k === 0) ((first = anchor), (texts = mine));
+    else if ((k === 1 ? (stride = anchor - first) === 0 : anchor !== first + k * stride) || first < 0 !== anchor < 0 || mine !== texts) return null;
+    hs[k] = h;
+  }
+  let skeleton = domSkeleton(dom, list[0], hs[0]!, { saved: 0, hint: 0 }, null);
+  for (let pass = 0; pass < 2; pass++) {
+    const walk = domWalk([], []);
+    for (; walk.row < count; walk.row++) if ((domRow(dom, walk, hs[walk.row]!), !domCheck(skeleton, list[walk.row], walk))) return null;
+    if (walk.miss === 0 || pass === 1) {
+      if (walk.saved === 0) return null;
+      scan.saved += walk.saved;
+      return new DomRows(skeleton, texts!, first, stride, count, walk.exceptions!, walk.lits);
+    }
+    for (let k = 1; k < count && skeleton !== undefined; k++) skeleton = domMerge(skeleton, domSkeleton(dom, list[k], hs[k]!, { saved: 0, hint: 0 }, null));
+    if (skeleton === undefined) return null;
+  }
+  return null;
+}
+// Arrays of the tree that are rows nodes (outermost first; rows inside a row are plain row content), with what they save.
+function treeRows(dom: DomRegistry, value: unknown, rows: Map<unknown, DomRows>, scan: DomScan): void {
+  if (leaf(value)) return;
+  if (Array.isArray(value)) {
+    if (value.length > 1 && !leaf(value[0])) {
+      const node = domRowsNode(dom, value, scan);
+      if (node !== null) return void rows.set(value, node);
+    }
+    for (let i = 0; i < value.length; i++) treeRows(dom, value[i], rows, scan);
+  } else for (const key of Object.keys(value as object)) treeRows(dom, (value as Record<string, unknown>)[key], rows, scan);
+}
+/** A wire build: paths (deduplicated, `keys`), rows node skeletons (`subs`, deduplicated by JSON), the stream. */
+interface DomOut {
+  paths: string[];
+  keys: Map<string, number>;
+  subs: unknown[];
+  subKeys: string[];
+  lits: (number | Literal)[];
+}
+// The path index (≥ 1) of code `code` of a row of template `texts`.
+function domPath(out: DomOut, texts: DomSlot[], code: number): number {
+  const slot = texts[(code - 2) >> 1]!,
+    path = code & 1 ? slot[2] : slot[1];
+  let k = out.keys.get(path);
+  if (k === undefined) out.keys.set(path, (k = out.paths.push(path)));
+  return k;
+}
+// The wire skeleton of `skeleton` (codes → path indexes, rows nodes → -1 - sub index) and, with `value`, its literals
+// (depth-first; a rows node: first anchor, stride, count, n, n × (row, path index, value), then its rows' literals).
+function domWire(skeleton: unknown, value: unknown, texts: DomSlot[] | null, out: DomOut, stream: boolean): unknown {
+  if (typeof skeleton === "number") {
+    if (skeleton !== 0) return domPath(out, texts!, skeleton);
+    if (stream) out.lits.push(value as Literal);
+    return 0;
+  }
+  if (skeleton instanceof DomRows) {
+    const sub = domWire(skeleton.skeleton, undefined, skeleton.texts, out, false),
+      { exceptions, lits } = skeleton;
+    out.lits.push(skeleton.first, skeleton.stride, skeleton.count, exceptions.length / 3);
+    for (let i = 0; i < exceptions.length; i += 3) out.lits.push(exceptions[i]!, domPath(out, skeleton.texts, exceptions[i + 1] as number), exceptions[i + 2]!);
+    for (let i = 0; i < lits.length; i++) out.lits.push(lits[i]!);
+    const key = JSON.stringify(sub);
+    let k = out.subKeys.indexOf(key);
+    if (k < 0) ((k = out.subKeys.push(key) - 1), out.subs.push(sub));
+    return -1 - k;
+  }
+  if (Array.isArray(skeleton)) {
+    const list: unknown[] = new Array(skeleton.length);
+    for (let i = 0; i < skeleton.length; i++) list[i] = domWire(skeleton[i], stream ? (value as unknown[])[i] : undefined, texts, out, stream);
+    return list;
+  }
+  const { keys, values } = skeleton as DomObject,
+    object: Record<string, unknown> = {};
+  for (let i = 0; i < keys.length; i++)
+    own(object, keys[i]!, domWire(values[i], stream ? (value as Record<string, unknown>)[keys[i]!] : undefined, texts, out, stream));
+  return object;
+}
+// A DOM-backed tree saving less than this (characters of its DOM values) stays a `j` tree.
+const DOM_MIN = 32;
+/** The encoder's memo (`DomLast`): the previous single row tree's skeleton (internal form), its template, its shape. */
+interface DomMemo extends DomLast {
+  texts?: DomSlot[];
+}
+/** The `D` form `[shape, anchor | null, ...stream]` of a plain JSON tree whose values the render registered (`DomTexts`),
+ * or undefined. `shapeRef(key, shape)` interns the shape entry `[skeleton, paths, subs]`; `last`: a row item tree of the
+ * previous one's template is walked along its skeleton (no rows nodes) and shares its shape when it fits. */
+function domTree(dom: DomRegistry, value: object, shapeRef: (key: string, shape: unknown[]) => number, last: DomMemo): DomTree | undefined {
+  const h = dom.items.get(value) ?? -1,
+    texts = h >= 0 ? dom.slots[dom.info[h + 2]!]! : null;
+  if (texts !== null && last.ref >= 0 && last.texts === texts) {
+    const tree: DomTree = [last.ref, dom.info[h]!],
+      walk = domWalk(tree, null);
+    domRow(dom, walk, h);
+    if (domCheck(last.skeleton, value, walk)) return walk.saved >= DOM_MIN ? tree : undefined;
+  }
+  const scan: DomScan = { saved: 0, hint: 0 },
+    rows = new Map<unknown, DomRows>();
+  treeRows(dom, value, rows, scan);
+  const skeleton = domSkeleton(dom, value, h, scan, rows);
+  if (scan.saved < DOM_MIN) return undefined;
+  const out: DomOut = { paths: [], keys: new Map(), subs: [], subKeys: [], lits: [0, h >= 0 ? dom.info[h]! : null] },
+    shape = [domWire(skeleton, value, texts, out, true), out.paths, out.subs];
+  const ref = (out.lits[0] = shapeRef(JSON.stringify(shape), shape));
+  if (rows.size === 0 && texts !== null) ((last.skeleton = skeleton), (last.texts = texts), (last.paths = out.paths), (last.ref = ref));
+  return out.lits;
 }
 /** Wire form (DOM-DATA): ≥ 3 consecutive `D` entries of one single-tree shape, equal length and evenly spaced anchors become
  * `{Dr: [shape, first anchor, stride, count, ...literals of each]}` at the first index and 0 at the others (`DomTree`);
@@ -128,239 +486,23 @@ function domRuns(t: TableEntry[], table: readonly TableEntry[]): void {
     i += n;
   }
 }
-// Compiled templates of lazy rows: their sole-child text slots (`rowTexts`, slots in a start tag = attributes), per fragments.
-const templateTexts = new WeakMap<readonly string[], DomSlot[] | null>();
-/** A lazy row's own template (`render(get, at)`'s value): its texts, addressed from the row root (row region `marker`:
- * anchor `-1 - marker`), when every content slot holds a primitive (a nested template could add elements before a path). */
-function domLazyRow(dom: DomRegistry, value: unknown, marker: number, item: unknown): void {
-  if (value === null || typeof value !== "object" || !(value as { [COMPILED]?: true })[COMPILED]) return;
-  const { fragments, slots } = value as { fragments: readonly string[]; slots: readonly unknown[] };
-  let texts = templateTexts.get(fragments);
-  if (texts === undefined) {
-    const all = rowTexts(fragments, null);
-    templateTexts.set(fragments, (texts = all && all.map(([slot, path]): DomSlot => [slot, path, "#" + path])));
-  }
-  if (texts === null) return;
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
-    if (slot !== null && typeof slot === "object" && !(slot as { [ATTRIBUTE]?: true })[ATTRIBUTE]) return;
-    if (typeof slot === "function") return;
-  }
-  const head = domOpen(dom, -1 - marker),
-    regs = dom.regs;
-  for (let i = 0; i < texts.length; i++) {
-    const text = texts[i]!,
-      slot = slots[text[0]] as { [ATTRIBUTE]?: true; name: string; value: unknown; namespace: AttributeNamespace } | null;
-    if (text[3] === undefined && !text[1].endsWith("@")) {
-      if (domValue(slot)) regs.push(slot, typeof slot === "number" ? text[2] : text[1]);
-    } else if (slot !== null && typeof slot === "object" && slot[ATTRIBUTE] && slot.namespace === "html" && domValue(slot.value)) {
-      // Attribute paths name the attribute: made for the first row's name (the template's), remade when a row's differs.
-      if (text[3] !== slot.name) {
-        if (!domAttribute(slot.name)) continue;
-        const path = (text[3] === undefined ? text[1] : text[1].slice(0, text[1].indexOf("@") + 1)) + slot.name;
-        ((text[1] = path), (text[2] = "#" + path), (text[3] = slot.name));
-      }
-      regs.push(slot.value, typeof slot.value === "number" ? text[2] : text[1]);
+/** Wire form (DOM-DATA builds, T3): the item refs `r` of compact rows (region / `*` entries with a row template [9]) as
+ * runs `rs` = `[first, step, count, …]` when that is shorter — per-row item entries are consecutive table entries (a
+ * row's `D` tree each, the shape entry after the first), so 1000 refs become two runs. The DOM-DATA expand add-on
+ * (`EXPAND_DOM`, resume-expand.ts `strided`) rewrites them back to `r` before the loader / runtime read them. */
+function domStrided(b: readonly BindingEntry[]): void {
+  for (const entry of b) {
+    const rows = entry[9] ? (entry[8] as CompactRows | undefined) : undefined,
+      r = rows?.r;
+    if (r === undefined || r.length < 4) continue;
+    const runs: number[] = [];
+    for (let i = 0; i < r.length;) {
+      const step = i + 1 < r.length ? r[i + 1]! - r[i]! : 0;
+      let n = 1;
+      while (i + n < r.length && r[i + n]! - r[i + n - 1]! === step) n++;
+      runs.push(r[i]!, n > 1 ? step : 0, n);
+      i += n;
     }
+    if (JSON.stringify(runs).length < JSON.stringify(r).length) ((rows!.rs = runs), delete rows!.r);
   }
-  domClose(dom, head, item);
-}
-
-// ---- encoding: `j` trees whose values sit in the page's DOM (`DomTree`) ----
-// A registered string the browser's parser keeps as written: no CR (newline normalisation), no NUL, no lone surrogate.
-const domFits = (value: string | number): boolean =>
-  typeof value === "number" || (value.indexOf("\r") < 0 && value.indexOf("\0") < 0 && (value as unknown as { isWellFormed(): boolean }).isWellFormed());
-// The skeleton of a tree whose row registrations start at `start` (a `regs` header; -1: none): leaves 0 (a literal) or the path of
-// the registration holding this very value (the DOM has it); arrays in `rows` stay as they are (rows nodes). `saved[0]`
-// counts what the holes save.
-function domSkeleton(dom: DomRegistry, value: unknown, start: number, saved: number[], rows: Map<unknown, DomRows> | null): unknown {
-  if (value === null || typeof value !== "object") {
-    if (start >= 0 && (typeof value === "string" || typeof value === "number")) {
-      const regs = dom.regs,
-        end = start + 2 + 2 * (regs[start + 1] as number);
-      // Leaves come in template order mostly: the registration after the last match first (`saved[1]`).
-      let at = saved[1]! > start && saved[1]! < end && regs[saved[1]!] === value ? saved[1]! : start + 2;
-      for (; at < end; at += 2)
-        if (regs[at] === value) {
-          saved[1] = at + 2;
-          return domFits(value) ? ((saved[0]! += typeof value === "string" ? value.length : 2), regs[at + 1] as string) : 0;
-        }
-    }
-    return 0;
-  }
-  if (rows?.has(value)) return value;
-  if (Array.isArray(value)) {
-    const out: unknown[] = new Array(value.length);
-    for (let i = 0; i < value.length; i++) out[i] = domSkeleton(dom, value[i], start, saved, rows);
-    return out;
-  }
-  const out: Record<string, unknown> = {},
-    names = Object.keys(value);
-  for (let i = 0; i < names.length; i++) own(out, names[i]!, domSkeleton(dom, (value as Record<string, unknown>)[names[i]!], start, saved, rows));
-  return out;
-}
-const leaf = (v: unknown): boolean => v === null || typeof v !== "object";
-// One structure for every row (keys in order, lengths): a path leaf where the rows that have one agree on it (a row
-// without it is an exception: `domWire`), else 0 (literals); undefined: the structures differ.
-function domMerge(a: unknown, b: unknown): unknown {
-  if (leaf(a) || leaf(b)) return leaf(a) && leaf(b) ? (a === b || b === 0 ? a : a === 0 ? b : 0) : undefined;
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return undefined;
-    const out: unknown[] = new Array(a.length);
-    for (let i = 0; i < a.length; i++) if ((out[i] = domMerge(a[i], b[i])) === undefined) return undefined;
-    return out;
-  }
-  if (Array.isArray(b)) return undefined;
-  const keys = Object.keys(a as object),
-    other = Object.keys(b as object),
-    out: Record<string, unknown> = {};
-  if (keys.length !== other.length) return undefined;
-  for (let i = 0; i < keys.length; i++) {
-    if (keys[i] !== other[i]) return undefined;
-    const merged = domMerge((a as Record<string, unknown>)[keys[i]!], (b as Record<string, unknown>)[keys[i]!]);
-    if (merged === undefined) return undefined;
-    own(out, keys[i]!, merged);
-  }
-  return out;
-}
-/** A rows node: an array of ≥ 2 trees of one structure, each under its own anchor, the anchors evenly spaced (list rows). */
-interface DomRows {
-  skeleton: unknown;
-  skeletons: unknown[];
-  first: number;
-  stride: number;
-}
-// Arrays of the tree that are rows nodes (outermost first; rows inside a row are plain row content), with what they save.
-function treeRows(dom: DomRegistry, value: unknown, rows: Map<unknown, DomRows>, saved: number[]): void {
-  if (leaf(value)) return;
-  if (Array.isArray(value) && value.length > 1 && !leaf(value[0])) {
-    const own = [0, 0],
-      skeletons: unknown[] = [];
-    let merged: unknown,
-      first = 0,
-      stride = 0,
-      k = 0;
-    for (; k < value.length; k++) {
-      const head = leaf(value[k]) ? undefined : dom.items.get(value[k] as object);
-      if (head === undefined) break;
-      const anchor = dom.regs[head] as number,
-        skeleton = domSkeleton(dom, value[k], head, own, null);
-      skeletons.push(skeleton);
-      if (k === 0) ((merged = skeleton), (first = anchor));
-      else if ((k === 1 ? (stride = anchor - first) === 0 : anchor !== first + k * stride) || first < 0 !== anchor < 0) break;
-      else if (!domSame(merged, skeleton) && (merged = domMerge(merged, skeleton)) === undefined) break;
-    }
-    if (k === value.length && own[0]! > 0) {
-      rows.set(value, { skeleton: merged, skeletons, first, stride });
-      saved[0]! += own[0]!;
-      return;
-    }
-  }
-  if (Array.isArray(value)) for (let i = 0; i < value.length; i++) treeRows(dom, value[i], rows, saved);
-  else for (const key of Object.keys(value as object)) treeRows(dom, (value as Record<string, unknown>)[key], rows, saved);
-}
-// The wire skeleton and the literal stream of `value` (depth-first): path leaves → k ≥ 1 into `paths` (`mine`: the row's
-// own skeleton inside a rows node — a path leaf it does not hold in the DOM is an exception), rows nodes → -k into `subs`
-// (stream: first anchor, stride, count, n, n × [row, leaf k, value], then the rows' literals).
-interface DomOut {
-  paths: string[];
-  subs: unknown[];
-  lits: (number | Literal)[];
-  exceptions: (number | Literal)[] | null;
-  row: number;
-  rows: Map<unknown, DomRows>;
-}
-// `build` false: the stream only (the later rows of a rows node: the wire is the first row's).
-function domWire(skeleton: unknown, mine: unknown, value: unknown, out: DomOut, build: boolean): unknown {
-  if (typeof skeleton === "string") {
-    if (!build && mine === skeleton) return;
-    let k = out.paths.indexOf(skeleton);
-    if (k < 0) k = out.paths.push(skeleton) - 1;
-    if (mine !== skeleton) out.exceptions!.push(out.row, k + 1, value as Literal);
-    return k + 1;
-  }
-  if (skeleton === 0) return (out.lits.push(value as Literal), 0);
-  const rows = out.rows.get(skeleton);
-  if (rows !== undefined) {
-    const list = value as unknown[],
-      lits = out.lits,
-      outer = [out.exceptions, out.row] as const;
-    out.lits = [];
-    out.exceptions = [];
-    let wire: unknown;
-    for (out.row = 0; out.row < list.length; out.row++) {
-      const row = domWire(rows.skeleton, rows.skeletons[out.row], list[out.row], out, build && out.row === 0);
-      if (out.row === 0) wire = row;
-    }
-    lits.push(rows.first, rows.stride, list.length, out.exceptions.length / 3);
-    for (let i = 0; i < out.exceptions.length; i++) lits.push(out.exceptions[i]!);
-    for (let i = 0; i < out.lits.length; i++) lits.push(out.lits[i]!);
-    out.lits = lits;
-    [out.exceptions, out.row] = outer;
-    if (!build) return;
-    const key = JSON.stringify(wire);
-    let k = out.subs.findIndex((sub) => JSON.stringify(sub) === key);
-    if (k < 0) k = out.subs.push(wire) - 1;
-    return -1 - k;
-  }
-  if (Array.isArray(skeleton)) {
-    const list: unknown[] | undefined = build ? new Array(skeleton.length) : undefined;
-    for (let i = 0; i < skeleton.length; i++) {
-      const wire = domWire(skeleton[i], (mine as unknown[])[i], (value as unknown[])[i], out, build);
-      if (list) list[i] = wire;
-    }
-    return list;
-  }
-  const object: Record<string, unknown> | undefined = build ? {} : undefined,
-    names = Object.keys(skeleton as object);
-  for (let i = 0; i < names.length; i++) {
-    const key = names[i]!,
-      wire = domWire((skeleton as Record<string, unknown>)[key], (mine as Record<string, unknown>)[key], (value as Record<string, unknown>)[key], out, build);
-    if (object) own(object, key, wire);
-  }
-  return object;
-}
-// A DOM-backed tree saving less than this (characters of its DOM values) stays a `j` tree.
-const DOM_MIN = 32;
-// Whether two skeletons are the same (leaves equal, keys in order).
-function domSame(a: unknown, b: unknown): boolean {
-  if (leaf(a) || leaf(b)) return a === b;
-  if (Array.isArray(a)) {
-    if (!Array.isArray(b) || a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) if (!domSame(a[i], b[i])) return false;
-    return true;
-  }
-  if (Array.isArray(b)) return false;
-  const keys = Object.keys(a as object),
-    other = Object.keys(b as object);
-  if (keys.length !== other.length) return false;
-  for (let i = 0; i < keys.length; i++)
-    if (keys[i] !== other[i] || !domSame((a as Record<string, unknown>)[keys[i]!], (b as Record<string, unknown>)[keys[i]!])) return false;
-  return true;
-}
-/** The `D` form `[shape, anchor | null, ...stream]` of a plain JSON tree whose values the render registered (`DomTexts`),
- * or undefined. `shapeRef(key, shape)` interns the shape entry `[skeleton, paths, subs]`; `last` (a tree without rows
- * nodes) skips it for a tree of the previous one's skeleton. */
-function domTree(dom: DomRegistry, value: object, shapeRef: (key: string, shape: unknown[]) => number, last: DomLast): DomTree | undefined {
-  const saved = [0, 0],
-    rows = new Map<unknown, DomRows>();
-  treeRows(dom, value, rows, saved);
-  const head = dom.items.get(value),
-    anchor = head === undefined ? undefined : (dom.regs[head] as number),
-    skeleton = domSkeleton(dom, value, head ?? -1, saved, rows);
-  if (saved[0]! < DOM_MIN) return undefined;
-  const out: DomOut = { paths: [], subs: [], lits: [], exceptions: null, row: 0, rows },
-    tree: DomTree = [0, anchor ?? null];
-  if (rows.size === 0 && last.ref >= 0 && domSame(skeleton, last.skeleton)) {
-    out.paths = last.paths;
-    out.lits = tree;
-    domWire(skeleton, skeleton, value, out, false);
-    tree[0] = last.ref;
-    return tree;
-  }
-  out.lits = tree;
-  const shape = [domWire(skeleton, skeleton, value, out, true), out.paths, out.subs];
-  tree[0] = shapeRef(JSON.stringify(shape), shape);
-  if (rows.size === 0) ((last.skeleton = skeleton), (last.paths = out.paths), (last.ref = tree[0]));
-  return tree;
 }

@@ -1,10 +1,10 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { brotliCompressSync } from "node:zlib";
-import { EXPAND, LAZY, LOADER, LOADER_KEYS, ROWS, STREAM } from "../resume-loader.min.ts";
+import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, ROWS, STREAM } from "../resume-loader.min.ts";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { compileResume, importServer } from "./resume/compile.ts";
-import { minifiedExpand, minifiedLazy, minifiedLoader, minifiedRows, minifiedStream } from "../build-loader.ts";
+import { minifiedExpand, minifiedLazy, minifiedLoader, minifiedRows, minifiedStream, minifiedStrided } from "../build-loader.ts";
 import { loader } from "../resume-loader.ts";
 
 // Budget 2,329 B brotli: round 2 (lane SEC) added the state-script binding (U2), digit-only ids (SEC1) and the
@@ -98,6 +98,14 @@ test("shipped expand add-on is current, inline-safe and fits 320 B brotli", asyn
   const size = brotliCompressSync(EXPAND).length;
   assert.ok(size <= 320, `minified ${size} B`);
   console.log(`expand add-on brotli: ${size} B`);
+});
+
+test("DOM-DATA builds' expand add-on (EXPAND + strided item refs) is current, inline-safe and fits 448 B brotli", async () => {
+  assert.equal(EXPAND_DOM, EXPAND + (await minifiedStrided()), "stale resume-loader.min.mjs: run node libs/runtime/build-loader.ts");
+  assert.doesNotMatch(EXPAND_DOM, /<\/script|<!--/i);
+  const size = brotliCompressSync(EXPAND_DOM).length;
+  assert.ok(size <= 448, `minified ${size} B`);
+  console.log(`DOM-DATA expand add-on brotli: ${size} B (+${size - brotliCompressSync(EXPAND).length})`);
 });
 
 test("shipped lazy rows add-on is current, inline-safe and fits 512 B brotli", async () => {

@@ -1,6 +1,7 @@
 // Inline expand add-on, shipped only on pages whose state has compact row templates (region entry [8] / [9], For rows
 // with handlers or bindings), before the state script. Serialized with String(expand), so it must be self-contained:
 // browser globals only. The loader expands the state with `document.$rx` when parsing, the stream add-on each patch.
+// `strided` (below): the DOM-DATA builds' part of it (`EXPAND_DOM` = this add-on, then that one).
 import type { BindingEntry, CompactRows, HandlerEntry, LoaderDocument, ResumeState, RowTemplate } from "./resume-format.ts";
 
 export function expand(): void {
@@ -37,5 +38,26 @@ export function expand(): void {
           list.push(b);
         }
       }
+  };
+}
+
+/**
+ * DOM-DATA builds (`resume.domData`): compact rows' strided item refs (`CompactRows.rs`, runs `first, step, count`) back
+ * to `r`, before the expand add-on's `$rx` (which it wraps; shipped right after it in one script, `EXPAND_DOM`) reads
+ * them. Other builds never write `rs`: they ship `EXPAND` alone.
+ */
+export function strided(): void {
+  const d = document as LoaderDocument,
+    next = d.$rx!;
+  d.$rx = (s: ResumeState, list: BindingEntry[], p?: unknown): void => {
+    for (const region of list) {
+      const R = region[9] && (region[8] as CompactRows),
+        S = R && R.rs;
+      if (S) {
+        const r: number[] = (R.r = []);
+        for (let i = 0; i < S.length; i += 3) for (let k = 0; k < S[i + 2]!; k++) r.push(S[i]! + k * S[i + 1]!);
+      }
+    }
+    (next as (s: ResumeState, list: BindingEntry[], p?: unknown) => void)(s, list, p);
   };
 }
