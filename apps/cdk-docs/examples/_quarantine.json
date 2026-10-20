@@ -1,6 +1,1 @@
-{
-  "data-list": {
-    "step": "expect #animals-option-2 to be KANGAROO",
-    "reason": "Resumed built-collection rows never re-render on a node value change (createListData.update): renderNodes' For items are keys, the sameRender cut-off exists only for browser-created rows. Open since LAZY-ROWS T3 (ListBox live mode before); recorded 2026-10-20 (CDK-EX)."
-  }
-}
+{}

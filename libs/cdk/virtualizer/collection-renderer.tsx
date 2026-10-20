@@ -24,11 +24,15 @@ import { For, Provider } from "@rivetjs/runtime/dom";
 import {
   CollectionRendererContext,
   DefaultCollectionRenderer,
+  resumedKeys,
   sameRender,
+  serverRows,
   type CollectionBranchProps,
+  type CollectionInput,
   type CollectionRenderer,
   type CollectionRootProps,
 } from "../collections/components.tsx";
+import { rowKey, type RowBox } from "../collections/row-stamps.ts";
 import type { Collection as ICollection, Key, Node as CollectionNode } from "../collections/types.ts";
 import {
   childViews,
@@ -159,6 +163,28 @@ function VirtualizerView(props: {
 const leafViews = (views: readonly VirtualView<unknown>[]): boolean =>
   !views.some((view) => view.type === "section" || view.children.some((child) => child.children.length > 0));
 
+/**
+ * The keyed `For` of the rendered views below `parent` (the root / a section / a table body). Resumed page: an adopted view
+ * whose node changed since the server render is re-created (ROW-RERENDER, `resumedKeys`) — called in the region read that
+ * creates the For, so its `serverRows` baseline is recorded with (and adopted by) the For's region.
+ */
+function viewRows(
+  model: VirtualizerModel<unknown, unknown>,
+  parent: unknown,
+  views: () => VirtualView<unknown>[],
+  renderer: CollectionRenderer,
+  parentType?: string,
+): unknown {
+  const order = () => rowOrder(model, parent, views());
+  const source = model.source as CollectionInput,
+    each = resumedKeys(source, serverRows(source, order, parentType), order);
+  return (
+    <For each={each} by={(key: Key | RowBox) => key} lazy={() => leafViews(views())}>
+      {(key: () => Key | RowBox) => <VirtualizerView model={model} renderer={renderer} viewKey={rowKey(untrack(key))} views={views} />}
+    </For>
+  );
+}
+
 /** `CollectionRoot` of the virtualizer renderer: the sized content element and the root views. */
 export function VirtualizerRoot(props: { link: VirtualizerLink<any>; root: CollectionRootProps }) {
   const { link, root } = props;
@@ -195,9 +221,7 @@ export function VirtualizerRoot(props: { link: VirtualizerLink<any>; root: Colle
   const rootViews = () => visibleViews(model);
   return (
     <div role="presentation" class="rv-Virtualizer-content" style={contentStyle(model)}>
-      <For each={() => rowOrder(model, ROOT_VIEW, rootViews())} by={(key: Key) => key} lazy={() => leafViews(rootViews())}>
-        {(key: () => Key) => <VirtualizerView model={model} renderer={renderer} viewKey={untrack(key)} views={rootViews} />}
-      </For>
+      {viewRows(model, ROOT_VIEW, rootViews, renderer) as never}
     </div>
   );
 }
@@ -210,12 +234,8 @@ export function VirtualizerBranch(props: { link: VirtualizerLink<any>; branch: C
   // A part rendered outside the window (no root yet): render its children as the default renderer would.
   if (!model) return DefaultCollectionRenderer.CollectionBranch(props.branch);
   const parentKey = props.branch.parent.key;
-  const views = () => childViews(model, parentKey);
-  return (
-    <For each={() => rowOrder(model, parentKey, views())} by={(key: Key) => key} lazy={() => leafViews(views())}>
-      {(key: () => Key) => <VirtualizerView model={model} renderer={renderer} viewKey={untrack(key)} views={views} />}
-    </For>
-  );
+  const parentType = untrack(() => (model.source?.() as ICollection<CollectionNode<unknown>> | null | undefined)?.getItem(parentKey)?.type);
+  return viewRows(model, parentKey, () => childViews(model, parentKey), renderer, parentType);
 }
 
 /**
