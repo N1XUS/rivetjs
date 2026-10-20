@@ -427,22 +427,32 @@ export interface ComponentGroups {
   group(file: string, name: string): string | null;
   groupPreload(id: string): string | null;
   route(file: string): string;
-  /** Lazy roots whose static graph reaches the file (`route` keys derive from them); null when none does. */
+  /**
+   * Lazy roots whose static graph reaches the file (`route` keys derive from them), `MAIN_LATE_ROOT` when the shell
+   * reaches it only through late files; null when no lazy root does (`route:main`).
+   */
   roots(file: string): string[] | null;
   modulePreload(file: string): string | null;
 }
+
+/** The shell's route (`route:main`); `MAIN_LATE_ROOT` placed parts go to its intent chunk. */
+export const MAIN_ROOT = "main";
+/** The shell's name among a file's `roots` when it reaches the file only through late files (`route:main:intent`). */
+export const MAIN_LATE_ROOT = "main:intent";
 
 /**
  * Chunk grouping for resume symbols. `component` keeps one chunk per component; `group` groups
  * every component rendered inside a <ChunkGroup> subtree; `route` groups the modules reached from each
  * lazy import edge (defineRoute / lazyComponent targets). Grouping changes chunks and the manifest only.
  * `facts`: Map file → moduleFacts; `resolved`: Map file → Map specifier → resolved file (resumable
- * files only).
+ * files only). `through`: extra reach edges (barrel leaves); `late`: files of the intent class (their route's
+ * `:intent` chunk) — the shell's reach through them is `MAIN_LATE_ROOT`.
  */
 export function groupComponents(
   facts: Map<string, ModuleFacts>,
   resolved: Map<string, Map<string, string>>,
   through?: Map<string, Set<string>>,
+  late?: (file: string) => boolean,
 ): ComponentGroups {
   const target = (file: string, spec: string) => resolved.get(file)?.get(spec) ?? null;
   // Component graph: (file, name) → rendered (file, name).
@@ -507,10 +517,54 @@ export function groupComponents(
       for (const to of through?.get(file) ?? []) if (!roots.has(to)) stack.push(to);
     }
   }
+  // The shell's late reach (DOCS-COLD 2026-10-20): files no lazy root reaches are `route:main`. A file a lazy route
+  // reaches that the shell reaches ONLY through late files (`late`: intent class) counts the shell among its roots as
+  // `MAIN_LATE_ROOT`, so it is placed (imported by `route:main:intent` and the route's chunk) instead of keyed to that
+  // route: keyed there, the shell's first intent loaded the lazy route's chunk with everything else in it (docs: the
+  // theme menu's cdk popover part sat in the home page's intent chunk with its selects / sliders, 437 KB). Files the
+  // EAGER shell reaches keep the lazy routes' keys (`MAIN_ROOT` for them made `route:main` import their parts and the
+  // merge pull shared library chunks into the eager shell: cdk story app `rivet-merge-components` before any input).
+  // No `late`: nothing to walk. Walked on the first `route` / `roots` call: `late` may read state the caller fills after
+  // `groupComponents` returns.
+  let walked = !late;
+  const walkShell = () => {
+    walked = true;
+    // Eager paths first: a file reached by one is the eager shell's, a late path cannot downgrade it.
+    const eager = new Set<string>(),
+      lateOnly = new Set<string>();
+    const visit = (starts: string[], into: Set<string>, stop: (file: string) => boolean, onStop?: (file: string) => void) => {
+      for (const stack = starts; stack.length;) {
+        const file = stack.pop()!;
+        if (into.has(file)) continue;
+        into.add(file);
+        if (stop(file)) {
+          onStop?.(file);
+          continue;
+        }
+        for (const spec of facts.get(file)?.statics ?? []) {
+          const to = target(file, spec);
+          if (to && !roots.has(to)) stack.push(to);
+        }
+        for (const to of through?.get(file) ?? []) if (!roots.has(to)) stack.push(to);
+      }
+    };
+    const shell = [...facts.keys()].filter((file) => !reach.has(file));
+    const lateStarts: string[] = [];
+    visit(
+      shell,
+      eager,
+      (file) => !!late?.(file),
+      (file) => lateStarts.push(file),
+    );
+    for (const file of lateStarts) eager.delete(file);
+    visit(lateStarts, lateOnly, () => false);
+    for (const file of lateOnly) if (!eager.has(file)) reach.get(file)?.add(MAIN_LATE_ROOT);
+  };
   // Reached by several routes: one chunk per set of routes (a component library's modules split like the bundler's
   // shared chunks, not one chunk with every shared handler of the app).
   const sets = new Map<Set<string>, string>();
   const route = (file: string) => {
+    if (!walked) walkShell();
     const by = reach.get(file);
     if (!by) return "route:main";
     if (by.size === 1) return "route:" + [...by][0];
@@ -524,6 +578,7 @@ export function groupComponents(
     groupPreload: (id) => groupPreload.get(id) ?? null,
     route,
     roots: (file) => {
+      if (!walked) walkShell();
       const by = reach.get(file);
       return by ? [...by] : null;
     },

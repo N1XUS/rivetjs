@@ -5,19 +5,20 @@
 //
 // One implementation per helper: platform probes come from `../platform` (return `undefined` on the
 // server), DOM / shadow-DOM functions from `../utils/dom.ts`, `runAfterTransition` /
-// `focusWithoutScrolling` from `../utils/index.ts`, `chain` from `./merge-props.tsx`, `openLink` /
-// `linkState` from `../utils/links.tsx` (the flag usePress and focus-visible read is the one the
-// router sets). They are re-exported here for the hooks (and existing importers).
+// `focusWithoutScrolling` from the leaf `../utils/transitions.ts`, `linkState` from the leaf
+// `../utils/link-state.ts` (the flag usePress and focus-visible read is the one `openLink` sets).
+// They are re-exported here for the hooks. Leaves only (DOCS-COLD 2026-10-20): `chain` (`./merge-props.tsx`)
+// and `openLink` (`../utils/links.tsx`) are imported from their modules, so a focus / overlay helper
+// importing this file does not pull prop merging or the router module into its chunk.
 import { getEventTarget as domEventTarget } from "../utils/dom.ts";
 import { isIOS, isWebKit } from "../platform/index.ts";
 import { getActiveElement, getOwnerDocument, getOwnerWindow, isShadowRoot, nodeContains } from "../utils/dom.ts";
-import { focusWithoutScrolling, runAfterTransition } from "../utils/index.ts";
+import { focusWithoutScrolling, runAfterTransition } from "../utils/transitions.ts";
 
 export { isAndroid, isChrome, isFirefox, isIOS, isIPad, isIPhone, isMac, isWebKit, isVirtualClick, isVirtualPointerEvent } from "../platform/index.ts";
 export { getActiveElement, getOwnerDocument, getOwnerWindow, isFocusWithin, isShadowRoot, nodeContains } from "../utils/dom.ts";
-export { focusWithoutScrolling, runAfterTransition } from "../utils/index.ts";
-export { chain } from "./merge-props.tsx";
-export { linkState, openLink, type Modifiers } from "../utils/links.tsx";
+export { focusWithoutScrolling, runAfterTransition } from "../utils/transitions.ts";
+export { linkState } from "../utils/link-state.ts";
 
 export type PointerType = "mouse" | "pen" | "touch" | "keyboard" | "virtual";
 export type FocusableElement = HTMLElement | SVGElement;

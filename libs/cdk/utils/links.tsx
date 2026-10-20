@@ -8,13 +8,14 @@
 // ("native") router already navigates client-side when `openLink` dispatches its click — no
 // provider needed. `RouterProvider` is for other routers (or to map hrefs with `useHref`).
 // This is THE router module: `@rivetjs/cdk/link` re-exports it, `interactions/utils.ts` reads
-// `linkState` from here (usePress / focus-visible ignore the synthetic click `openLink` dispatches),
+// `linkState` from its leaf `./link-state.ts` (usePress / focus-visible ignore the synthetic click `openLink` dispatches),
 // `selection/*` and `_adapters/*` call `openLink` / `isOpeningLink` from here.
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
 import { createContext, provide, useContext } from "@rivetjs/reactivity";
 import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isIPad, isMac, isWebKit } from "../platform/index.ts";
 import { renderSlot } from "@rivetjs/runtime/slot";
+import { linkState } from "./link-state.ts";
 
 export type Href = string;
 /** Options passed through to the router's `navigate` (react-aria `RouterOptions`). */
@@ -68,11 +69,7 @@ export function shouldClientNavigate(link: HTMLAnchorElement, modifiers: Modifie
   );
 }
 
-/** Set while `openLink` dispatches its event (react-aria's `openLink.isOpening`); read by usePress / focus-visible / collections. */
-export const linkState = { isOpening: false };
-
-/** Whether `openLink` is dispatching its synthetic click (item click handlers let it through). */
-export const isOpeningLink = (): boolean => linkState.isOpening;
+export { isOpeningLink, linkState } from "./link-state.ts";
 
 /**
  * Open `target` as if clicked with `modifiers` (new tab / window / download follow the browser's

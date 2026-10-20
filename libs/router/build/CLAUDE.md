@@ -65,7 +65,7 @@ Build-time Node code: scan `src/routes/**` → route table → generate `.rivet/
 - `vite.ts` `preloadDeps` (`build.modulePreload.resolveDependencies`, unless user sets `modulePreload`): drops dynamic-import deps already in the host chunk's static closure (routes-500 App chunk 93.9 → 76.7 kB min).
 - `vite.ts` forwards `devtools`, `css`, `images` and `staticIcons` (only when set: unset = the compiler default, on) to `rivet()`. `bridges` (framework bridges, `rivet({ bridges })`): non-empty → `rivet()` returns the framework plugins + bridge host before the compiler, found by name (`vite-plugin-rivet`); csr mode throws (islands are server-rendered); test `tests/bridges-option.test.ts`.
 - `fetchAhead` (bridge D-lean, 2026-10-12): codegen adds `export const fetchAhead = true` to `entry.server.tsx` when document prefetch is on (`document` + `prefetch`); `createApp` passes it as `preload.ahead` (islands-only lean pages keep the runtime fetch-ahead; test `tests/preload-option.test.ts`).
-- `vite.ts` passes `resume.lazyOwned: [.rivet/app.tsx]` to `rivet()` (route chunks preloaded by the App's own dynamic imports are not inlined into `state.l`).
+- `vite.ts` passes `resume.lazyOwned: [.rivet/app.tsx]` to `rivet()` (route chunks preloaded by the App's own dynamic imports are not inlined into `state.l`, and never listed as lazies of the App's chunk — DOCS-COLD 2026-10-20: an intent on the docs App chunk prefetched the home page module, 409 KB).
 - Everything dev-only stays behind `serve` / `import.meta.hot` so builds carry none of it.
 
 ## Gotchas

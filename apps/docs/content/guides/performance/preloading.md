@@ -144,6 +144,8 @@ export default defineConfig({
 });
 ```
 
+With route chunks (the default), modules whose handlers all load on `"intent"` or `"interaction"` share one intent chunk per route. Add `chunk: "<name>"` to a rule to give the modules it matches their own intent chunk instead. That chunk downloads only when one of its own handlers is about to run, never alongside the route's other intent code. The Rivet docs sites put the generated router in its own chunk this way: `{ match: ".rivet/app.tsx#", strategy: "intent", chunk: "router" }`. A page then downloads the router only when a link is hovered or focused.
+
 ## Which setting wins
 
 From strongest to weakest:

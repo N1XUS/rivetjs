@@ -731,6 +731,35 @@ export const keep = shared;
       after.some((url) => /\/shared-.*\.js$/.test(url)),
       before.some((url) => /\/shared-.*\.js$/.test(url)),
     );
+    // DOCS-COLD: the owner's own chunk never lists the owner's imports, shared or not (intent on the docs router App's
+    // chunk prefetched the 409 KB home page module, also a static dep of the home route chunk). The page goes to its own
+    // intent chunk, so the owner's and the other importer's chunks differ; the owner's handler makes the import itself.
+    await writeFile(resolve(root, "src/nav.tsx"), `export function Nav() { return <a onClick={() => import("./shared.js")}>n</a>; }\n`);
+    await build({
+      configFile: false,
+      root,
+      logLevel: "silent",
+      plugins: [
+        rivet({
+          resume: {
+            modules: ["src/nav.tsx", "src/page.tsx"],
+            lazyOwned: ["src/nav.tsx"],
+            preload: { rules: [{ match: "src/page.tsx#", strategy: "intent" }] },
+          },
+        }),
+      ],
+      build: { outDir: "dist", manifest: true, minify: false, emptyOutDir: true },
+    });
+    const manifest: BuiltManifest = JSON.parse(await readFile(resolve(root, "dist/.vite/rivet-resume.json"), "utf8"));
+    const chunkOf = (file: string) => manifest.symbols[Object.keys(manifest.symbols).find((id) => id.startsWith(file + "#"))!]!;
+    const nav = chunkOf("src/nav.tsx"),
+      page = chunkOf("src/page.tsx");
+    assert.notEqual(nav, page);
+    assert.ok(!(manifest.lazy[nav] ?? []).some((url) => /\/shared-.*\.js$/.test(url)), (manifest.lazy[nav] ?? []).join());
+    assert.ok(
+      (manifest.lazy[page] ?? []).some((url) => /\/shared-.*\.js$/.test(url)),
+      (manifest.lazy[page] ?? []).join(),
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -907,14 +936,19 @@ export function Shortcut() { const k = signal(0); return <kbd onKeyDown={() => k
       resolve(root, "src/frame.tsx"),
       `import { Shortcut } from "./shortcut.tsx";
 import { Menu } from "./menu.tsx";
-export function Frame(props: { children?: unknown }) { return <header><Shortcut /><Menu />{props.children}</header>; }
+import { Both } from "./both.tsx";
+export function Frame(props: { children?: unknown }) { return <header><Shortcut /><Menu /><Both />{props.children}</header>; }
 `,
     );
+    // Rendered by the shell frame and by one lazy route. Reached by the shell only through a late (intent) file, it is
+    // placed for `route:main:intent` (DOCS-COLD: the docs theme menu's popover sat in the home route's intent chunk);
+    // reached by the eager shell, it keeps the route's key (no eager import of route code: cdk story app invariant).
+    await writeFile(resolve(root, "src/both.tsx"), user("Both", "b"));
     for (const name of ["R1", "R2"])
       await writeFile(
         resolve(root, `src/${name.toLowerCase()}.tsx`),
         `import { Tip } from "./tip.tsx";
-export default function ${name}() { return <Tip />; }
+${name === "R1" ? 'import { Both } from "./both.tsx";\n' : ""}export default function ${name}() { return <>${name === "R1" ? "<Both />" : ""}<Tip /></>; }
 `,
       );
     await writeFile(
@@ -927,8 +961,8 @@ export function App() { return <Frame><R1 /><R2 /></Frame>; }
 `,
     );
     await writeFile(resolve(root, "index.html"), "<!doctype html><p>static</p>");
-    const modules = ["src/app.tsx", "src/frame.tsx", "src/shortcut.tsx", "src/menu.tsx", "src/tip.tsx", "src/r1.tsx", "src/r2.tsx"];
-    const run = async (rules: { match: string; strategy: "intent" }[], out: string) => {
+    const modules = ["src/app.tsx", "src/frame.tsx", "src/shortcut.tsx", "src/menu.tsx", "src/tip.tsx", "src/both.tsx", "src/r1.tsx", "src/r2.tsx"];
+    const run = async (rules: { match: string; strategy: "intent"; chunk?: string }[], out: string) => {
       await build({
         configFile: false,
         root,
@@ -972,6 +1006,25 @@ export function App() { return <Frame><R1 /><R2 /></Frame>; }
       );
     for (const chunk of [shortcut]) assert.ok(!(m.deps[chunk] ?? []).includes(url(m, "src/tip.tsx#Tip")));
     assert.equal(m.fetchAhead, true);
+    // Shell + one route. No rules (eager frame): keyed to the route, nothing eager imports it (HEAD behaviour). Intent frame:
+    // placed, never in the eager closure.
+    assert.match(url(plain, "src/both.tsx#Both"), /resume-r1_tsx/);
+    assert.ok(!(plain.deps[url(plain, "src/shortcut.tsx#Shortcut")] ?? []).includes(url(plain, "src/both.tsx#Both")));
+    assert.doesNotMatch(url(m, "src/both.tsx#Both"), /resume-r1_tsx/);
+    assert.ok(!(m.deps[shortcut] ?? []).includes(url(m, "src/both.tsx#Both")), "late-only shell module stays out of the eager closure");
+    // A named rule (`chunk`): the menu gets its own intent chunk (`resume-route_main-menu`) and its own sibling group —
+    // the docs router App loads on a link's intent, never alongside the frame's other intent modules.
+    const named = await run(
+      [
+        { match: "src/menu.tsx#", strategy: "intent", chunk: "menu" },
+        ...["src/frame.tsx#", "src/tip.tsx#"].map((match) => ({ match, strategy: "intent" as const })),
+      ],
+      "dist-named",
+    );
+    const own = url(named, "src/menu.tsx#Menu");
+    assert.match(own, /\/resume-route_main-menu-[\w-]+\.js$/);
+    assert.match(url(named, "src/frame.tsx#Frame"), /\/resume-route_main-intent-[\w-]+\.js$/);
+    assert.ok(!named.groups.some((group) => group.includes(own) && group.length > 1), JSON.stringify(named.groups));
   } finally {
     await rm(root, { recursive: true, force: true });
   }

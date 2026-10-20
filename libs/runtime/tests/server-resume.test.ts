@@ -793,6 +793,13 @@ test("Z1: an intent document click listener does not boot; its chunk (+ runtime)
   assert.doesNotMatch(String(await resumableToString(() => lazyRouterMod.Nav(), { manifest: { ...manifest, loader: undefined } })), /data-fo=/);
   // Never in the evaluating preload schedule.
   assert.ok(!(scheduleOf(html) ?? []).some((entry) => Array.isArray(entry) && entry[0] === "/c/Nav.js"));
+  // Route chunk builds (`fetchAhead`), declared late (an app `preload.rules` rule / component `preload`; DOCS-COLD: docs rule their generated App on intent):
+  // the router chunk is left to the first link intent; the runtime is still fetched ahead.
+  const preload = Object.fromEntries(lazyRouterSymbols.map((s) => [s.id, "intent"]));
+  const lateScript = /<script type="rivet\/state"[^>]*>/.exec(
+    String(await resumableToString(() => lazyRouterMod.Nav(), { manifest: { ...manifest, fetchAhead: true, preload } as ResumeManifest })),
+  )![0];
+  assert.match(lateScript, / data-fo="\/rt\.js \/dom\.js"/);
 });
 
 const routeChunkSource = `

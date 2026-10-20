@@ -1,11 +1,15 @@
 // Search dialog: mounted in the browser on first use (dynamic import from SearchButton), queries the
-// Pagefind index (built over the prerendered site; on the dev server, an in-memory index of the dev pages). A cdk Modal on the div overlay layer (focus trap,
-// Escape, outside press, scroll lock, focus restore). Excerpts are split on <mark> into JSX nodes, so
-// no HTML string is ever parsed into the page.
-import { Dialog } from "@rivetjs/cdk/dialog";
-import { Modal, ModalOverlay } from "@rivetjs/cdk/modal";
+// Pagefind index (built over the prerendered site; on the dev server, an in-memory index of the dev pages). A modal on
+// the cdk div overlay layer built from the light cdk primitives only (DOCS-COLD 2026-10-20): `modalOverlay` (Escape,
+// outside press, scroll lock, everything outside `inert`) + `FocusScope` (focus trap, auto focus, focus restore) +
+// the overlay trigger state. The cdk `ModalOverlay` / `Modal` / `Dialog` components pull press / slots / collections
+// in (~190 KB on a cold Ctrl+K); this palette needs none of it. Excerpts are split on <mark> into JSX nodes, so no HTML
+// string is ever parsed into the page.
+import { FocusScope } from "@rivetjs/cdk/focus-scope";
+import { modalOverlay, modalUnderlayPointerDown } from "@rivetjs/cdk/modal-overlay";
+import { createOverlayTriggerState } from "@rivetjs/cdk/overlay-trigger-state";
 import { effect, signal } from "@rivetjs/reactivity";
-import { For, mount } from "@rivetjs/runtime/dom";
+import { For, Show, clientEffect, mount, ref } from "@rivetjs/runtime/dom";
 
 interface Hit {
   url: string;
@@ -64,9 +68,20 @@ async function failure(error: unknown): Promise<string> {
   return `Search failed: ${error instanceof Error ? error.message : String(error)}`;
 }
 
-/** Whether the dialog is open (two-way with the cdk ModalOverlay: Escape / outside press close it). */
+/** Whether the dialog is open (two-way with the overlay trigger state: Escape / outside press close it). */
 const open = signal(false);
+/** Shown: open, or closed while the exit animation runs. */
+const shown = signal(false);
 let mounted = false;
+/** Underlay + modal: behaviour-critical styles inline (the overlay layer stacks above the page; cdk `ModalOverlay` sets the same). */
+const UNDERLAY = { position: "fixed", inset: "0", zIndex: 100 };
+
+/** Run once the element's CSS animations end (none, e.g. reduced motion: at once). */
+const afterAnimations = (element: Element | undefined, done: () => void) => {
+  const running = element?.getAnimations?.({ subtree: true }) ?? [];
+  if (!running.length) return done();
+  void Promise.allSettled(running.map((animation) => animation.finished)).then(done);
+};
 
 function SearchDialog({ initial }: { initial: string }) {
   const query = signal(initial);
@@ -116,47 +131,74 @@ function SearchDialog({ initial }: { initial: string }) {
       go(active());
     }
   };
+  const state = createOverlayTriggerState({ isOpen: open });
+  // Content re-created on each open (its effects are the open modal's lifetime); query and results are kept.
   return (
-    <ModalOverlay isDismissable isOpen={open} class="search-overlay">
-      <Modal class="search-modal">
-        <Dialog class="search-dialog" aria-label="Search the documentation">
-          <div class="search-box">
-            <input
-              autoFocus
-              type="search"
-              placeholder="Search the docs"
-              aria-label="Search the docs"
-              role="combobox"
-              aria-expanded={hits().length > 0}
-              aria-controls="search-results"
-              aria-activedescendant={hits().length ? "search-hit-" + active() : ""}
-              autoComplete="off"
-              model:value={query}
-              onKeyDown={onKey}
-            />
-            <button type="button" class="search-close" onClick={() => open.set(false)} aria-label="Close search">
-              Esc
-            </button>
+    <Show when={shown}>
+      {() => {
+        const modal = ref<HTMLDivElement>();
+        const underlay = ref<HTMLDivElement>();
+        // While open: modal behaviour on the modal element (React Aria `useModalOverlay`), released on close / unmount.
+        clientEffect(() => {
+          const element = modal();
+          if (element && open()) return modalOverlay(element, { isDismissable: true }, state);
+        });
+        // Closed: exit animation (`data-exiting`), then unmount; reopened meanwhile: stays open.
+        clientEffect(() => {
+          const element = underlay();
+          if (!element) return;
+          if (open()) return element.removeAttribute("data-exiting");
+          element.setAttribute("data-exiting", "");
+          afterAnimations(element, () => {
+            if (!open()) shown.set(false);
+          });
+        });
+        return (
+          <div ref={underlay} class="search-overlay" data-entering="" style={UNDERLAY} onPointerDown={modalUnderlayPointerDown}>
+            <FocusScope contain restoreFocus autoFocus>
+              <div ref={modal} class="search-modal" data-entering="">
+                <section class="search-dialog" role="dialog" aria-modal="true" aria-label="Search the documentation" tabIndex={-1}>
+                  <div class="search-box">
+                    <input
+                      autoFocus
+                      type="search"
+                      placeholder="Search the docs"
+                      aria-label="Search the docs"
+                      role="combobox"
+                      aria-expanded={hits().length > 0}
+                      aria-controls="search-results"
+                      aria-activedescendant={hits().length ? "search-hit-" + active() : ""}
+                      autoComplete="off"
+                      model:value={query}
+                      onKeyDown={onKey}
+                    />
+                    <button type="button" class="search-close" onClick={() => open.set(false)} aria-label="Close search">
+                      Esc
+                    </button>
+                  </div>
+                  <p class="search-status" role="status">
+                    {status()}
+                  </p>
+                  <ul id="search-results" role="listbox" aria-label="Results" class="search-results">
+                    <For each={hits} by={(hit) => hit.url}>
+                      {(hit, index) => (
+                        <li id={"search-hit-" + index()} role="option" aria-selected={index() === active()}>
+                          <a href={hit().url} onClick={() => open.set(false)}>
+                            <span class="search-hit-title">{hit().title}</span>
+                            <span class="search-hit-section">{hit().section}</span>
+                            <span class="search-hit-excerpt">{hit().excerpt.map((part) => (typeof part === "string" ? part : <mark>{part.mark}</mark>))}</span>
+                          </a>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </section>
+              </div>
+            </FocusScope>
           </div>
-          <p class="search-status" role="status">
-            {status()}
-          </p>
-          <ul id="search-results" role="listbox" aria-label="Results" class="search-results">
-            <For each={hits} by={(hit) => hit.url}>
-              {(hit, index) => (
-                <li id={"search-hit-" + index()} role="option" aria-selected={index() === active()}>
-                  <a href={hit().url} onClick={() => open.set(false)}>
-                    <span class="search-hit-title">{hit().title}</span>
-                    <span class="search-hit-section">{hit().section}</span>
-                    <span class="search-hit-excerpt">{hit().excerpt.map((part) => (typeof part === "string" ? part : <mark>{part.mark}</mark>))}</span>
-                  </a>
-                </li>
-              )}
-            </For>
-          </ul>
-        </Dialog>
-      </Modal>
-    </ModalOverlay>
+        );
+      }}
+    </Show>
   );
 }
 
@@ -169,6 +211,7 @@ export function openSearch(initial = ""): void {
     mount(() => <SearchDialog initial={initial} />, host);
   }
   open.set(true);
-  // The Dialog focuses the `autofocus` input from a client effect; select its text after that.
+  shown.set(true);
+  // The FocusScope focuses the `autofocus` input from a client effect; select its text after that.
   requestAnimationFrame(() => document.querySelector<HTMLInputElement>(".search-box input")?.select());
 }

@@ -5163,14 +5163,19 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   // chunks too (ROUTE-CHUNKS), on non-lean pages — except chunks declared to load on intent / interaction (`late`: an
   // element `preload` directive, component-level `preload` or app `preload.rules` rule; automatic intent handlers stay):
   // their intent prefetch loads them (DOCS-JS: a docs page fetched its frame menus' cdk closure, ~330 KB, on every load).
+  // The same holds for a lazy router's chunks (`n`) an app rule / component `preload` declares late (DOCS-COLD: the docs
+  // sites rule the generated App on intent — every link reloads a document; its route tables + router client, ~43 KB, were
+  // fetched on every page): the first link intent loads them, a cold click without one waits for them (held, replayed).
   const own = !!manifest.fetchAhead && !!recorder.options.preload?.ahead && !recorder.options.preload.lean && c.length > 0;
   const fetchOnly =
     manifest.loader && ((n && (ahead || !recorder.options.preload?.lean)) || own)
       ? [
           ...new Set(
-            [state.rt, ...(n ?? []).map((i) => c[i]), ...(own ? (late?.length ? c.filter((_, i) => !late.includes(i)) : c) : [])].flatMap((url) =>
-              url ? [url, ...(manifest.deps?.[url] ?? [])] : [],
-            ),
+            [
+              state.rt,
+              ...(n ?? []).flatMap((i) => (late?.includes(i) ? [] : [c[i]])),
+              ...(own ? (late?.length ? c.filter((_, i) => !late.includes(i)) : c) : []),
+            ].flatMap((url) => (url ? [url, ...(manifest.deps?.[url] ?? [])] : [])),
           ),
         ].join(" ")
       : "";

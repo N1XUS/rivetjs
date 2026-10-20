@@ -41,8 +41,13 @@ export const DOCS_LAZY_OWNED: readonly string[] = [FRAMES_INDEX];
  * components would otherwise make the planner prefetch ~39 cdk modules once visible. With `chunks: "route"` these modules
  * also leave the eager main chunk (its intent sibling, `route:main:intent`) and the page fetch-ahead (`data-fo`): a docs
  * page boots and fetches ~150 KB instead of ~500 KB with cdk collections (DOCS-JS, 2026-10-20).
+ * The router's generated App (`.rivet/app.tsx`: route tables of every page, link interception, router client) is only
+ * used from a link intent / click (docs pages navigate with full loads): its own intent chunk `route:main:intent:router`
+ * (`resume-route_main-router`), out of the eager shell (−37 KB route tables + ~25 KB router client per page) and apart
+ * from the frame menus (DOCS-COLD, 2026-10-20).
  */
-export const DOCS_PRELOAD_RULES: readonly { match: string; strategy: "intent" }[] = [
+export const DOCS_PRELOAD_RULES: readonly { match: string; strategy: "intent"; chunk?: string }[] = [
+  { match: ".rivet/app.tsx#", strategy: "intent", chunk: "router" },
   { match: "@rivetjs/cdk/", strategy: "intent" },
   { match: "@rivetjs/docs-kit/components/ThemeMenu.tsx#", strategy: "intent" },
   { match: "@rivetjs/docs-kit/components/MobileMenu.tsx#", strategy: "intent" },

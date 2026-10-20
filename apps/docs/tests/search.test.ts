@@ -1,0 +1,101 @@
+// Search palette on the BUILT site (nx `docs:test` depends on `docs:build`), in Chromium: a cold keyboard shortcut
+// fetches only the palette and the light cdk overlay primitives (DOCS-COLD 2026-10-20: 187 KB before, the cdk Modal /
+// Dialog closure with collections), and the palette is a modal: focus inside, Escape / outside press close it, the
+// page around it is inert while open, focus returns, the query is kept for the next open.
+import { strict as assert } from "node:assert";
+import { existsSync, readFileSync } from "node:fs";
+import { createServer, type Server } from "node:http";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, beforeAll, test } from "vitest";
+import { chromium, type Browser, type Page } from "playwright";
+
+const client = resolve(fileURLToPath(new URL("..", import.meta.url)), "dist/client");
+const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
+let server: Server;
+let origin: string;
+let browser: Browser;
+
+beforeAll(async () => {
+  server = createServer((req, res) => {
+    let path = resolve(client, "." + decodeURIComponent(new URL(req.url!, "http://x").pathname));
+    if (existsSync(path) && !path.includes(".", path.lastIndexOf("/"))) path = resolve(path, "index.html");
+    if (!existsSync(path)) return void res.writeHead(404).end();
+    res.writeHead(200, { "content-type": TYPES[path.slice(path.lastIndexOf("."))] ?? "application/octet-stream" }).end(readFileSync(path));
+  });
+  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+  origin = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  browser = await chromium.launch();
+});
+afterAll(async () => {
+  await browser?.close();
+  await new Promise((done) => server?.close(done));
+});
+
+/** A docs page, settled (load + its idle work), with every JS response recorded as [path, bytes]. */
+async function docsPage(path: string): Promise<{ page: Page; js: [string, number][] }> {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const js: [string, number][] = [];
+  page.on("response", async (response) => {
+    const url = new URL(response.url());
+    if (url.pathname.endsWith(".js")) js.push([url.pathname, (await response.body().catch(() => Buffer.alloc(0))).length]);
+  });
+  await page.goto(origin + path, { waitUntil: "load" });
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(500);
+  return { page, js };
+}
+
+/** Raw bytes of the JS the palette's first paint needed (budget: the ~40 KB cdk overlay primitives + the palette). */
+const PALETTE_BUDGET = 48 * 1024;
+
+test("search: a cold Ctrl+K fetches only the palette + light overlay primitives; the input is focused", async () => {
+  const { page, js } = await docsPage("/start/tutorial/");
+  try {
+    const mark = js.length;
+    await page.keyboard.press("Control+k");
+    const input = page.getByRole("combobox", { name: "Search the docs" });
+    await input.waitFor({ state: "visible" });
+    await page.waitForFunction(() => document.activeElement?.matches(".search-box input"));
+    await page.waitForLoadState("networkidle");
+    const fetched = js.slice(mark);
+    const bytes = fetched.reduce((sum, [, size]) => sum + size, 0);
+    assert.ok(bytes <= PALETTE_BUDGET, `palette fetched ${bytes} B: ${fetched.map(([path, size]) => `${path} ${size}`).join(", ")}`);
+    assert.equal(await page.getByRole("dialog", { name: "Search the documentation" }).getAttribute("aria-modal"), "true");
+  } finally {
+    await page.close();
+  }
+});
+
+test("search: modal palette — Tab stays inside, outside is inert, Escape / outside press close, focus returns, query kept", async () => {
+  const { page } = await docsPage("/start/tutorial/");
+  try {
+    const trigger = page.locator(".search-button-bar");
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: "Search the documentation" });
+    await dialog.waitFor({ state: "visible" });
+    const input = page.getByRole("combobox", { name: "Search the docs" });
+    await page.waitForFunction(() => document.activeElement?.matches(".search-box input"));
+    await input.fill("signal");
+    // Focus trap: Tab cycles input → close button → input.
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press("Tab");
+      assert.ok(await page.evaluate(() => !!document.activeElement?.closest(".search-dialog")), "focus left the palette");
+    }
+    // The page around it: inert while open, scroll locked.
+    assert.equal(await page.evaluate(() => (document.querySelector(".site-main, main") as HTMLElement | null)?.closest("[inert]") !== null), true);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.documentElement).overflow), "hidden");
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    assert.equal(await page.evaluate(() => document.querySelector("[inert]")), null, "inert released");
+    assert.ok(await page.evaluate(() => document.activeElement?.matches(".search-button-bar")), "focus back on the trigger");
+    // Reopen: the query is kept; an outside press closes.
+    await trigger.click();
+    await dialog.waitFor({ state: "visible" });
+    assert.equal(await input.inputValue(), "signal");
+    await page.mouse.click(20, 780);
+    await dialog.waitFor({ state: "detached" });
+  } finally {
+    await page.close();
+  }
+});

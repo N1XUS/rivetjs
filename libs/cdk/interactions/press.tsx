@@ -34,7 +34,6 @@ import {
   linkState,
   nodeContains,
   nonTextInputTypes,
-  openLink,
   preventFocus,
   read,
   restoreTextSelection,
@@ -42,6 +41,7 @@ import {
   type MaybeAccessor,
   type PointerType,
 } from "./utils.ts";
+import { openLink } from "../utils/links.tsx";
 
 export type { PointerType } from "./utils.ts";
 
