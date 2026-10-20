@@ -1358,4 +1358,8 @@ export interface BoundaryTail {
   v: 1;
   b: BoundaryRecord[];
   w?: Record<string, number[]>;
+  /** Derived client (`derivedToString` / `renderDerived`): boundary name → its chunk URL (manifest `symbols`). */
+  m?: Record<string, string>;
+  /** Derived client: boundary id → the `keydown` keys its handlers hold while cold (space separated). */
+  k?: Record<string, string>;
 }

@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 const root = process.argv[2];
 // The switch modules' opted-in content: the compiler plugin's own table (`libs/compiler/switches.ts`).
-const { DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } = await import(pathToFileURL(`${root}/libs/compiler/switches.ts`).href);
+const { DERIVED_SWITCHES, DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } = await import(pathToFileURL(`${root}/libs/compiler/switches.ts`).href);
 /** A plugin loading the opted-in content of the runtime switch modules `names`. */
 const switches = (name, names) => ({
   name,
@@ -23,6 +23,9 @@ const LAZY = [switches("lazy-rows-switch", LAZY_SWITCHES)];
 // `[domData]` lines: the resume entry and the resumable server of a `rivet({ resume: { domData: true } })` build (DOM-DATA,
 // `domDataSwitch`).
 const DOM_DATA = [switches("dom-data-switch", DOM_DATA_SWITCHES)];
+// `[derived]` lines: the browser entries of a `rivet({ resume: { model: "derived" } })` build (M2 lane R: the derived switch
+// + the lazy rows switches its adopt run needs).
+const DERIVED = [switches("derived-switch", [...LAZY_SWITCHES, ...DERIVED_SWITCHES])];
 const hash = async (input, plugins) => {
   const bundle = await rolldown({
     input, platform: "node", logLevel: "silent", plugins,
@@ -39,6 +42,7 @@ for (const pkg of ["libs/reactivity", "libs/runtime"]) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
     out.push(`${json.name}${key.slice(1)} ${await hash(`${root}/${pkg}/${file}`, [])}`);
     if (key === "./dom" || key === "./dom-resume") out.push(`${json.name}${key.slice(1)} [lazyRows] ${await hash(`${root}/${pkg}/${file}`, LAZY)}`);
+    if (key === "./dom" || key === "./dom-derived") out.push(`${json.name}${key.slice(1)} [derived] ${await hash(`${root}/${pkg}/${file}`, DERIVED)}`);
     if (key === "./dom-resume" || key === "./server-resume") out.push(`${json.name}${key.slice(1)} [domData] ${await hash(`${root}/${pkg}/${file}`, DOM_DATA)}`);
   }
 }

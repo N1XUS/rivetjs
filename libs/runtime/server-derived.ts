@@ -18,6 +18,11 @@
 // values, plus wake lists (which boundaries read which keys). The current boundary is the innermost body being
 // evaluated (a per-render stack: component bodies run eagerly, in tree order) or, while the renderer walks a boundary's
 // subtree (lazy slots, For rows, Show branches), the one `_rBOut` provided as a context frame around that subtree.
+//
+// Derived client (M2 lane R, R2): `derivedToString` / `renderDerived` render with the manifest and nonce in hand, so the
+// tail also names each boundary's chunk (`m`), the keys its cold keydowns hold (`k`), the delegated event types
+// (`data-events`), the runtime (`data-rt`) and `data-boot` (a load / idle / visible trigger), and the derived inline loader
+// (`resume-loader-derived.ts`) follows it. Plain `resumableToString(…, { model: "derived" })` writes the tail only.
 import { createContext, provide, useContext, getOwner, signal, _dispose } from "@rivetjs/reactivity";
 import type { EqualsOptions, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
@@ -25,8 +30,10 @@ import type { Store } from "@rivetjs/reactivity/store";
 import { compiledTemplate, template, _attributeRecord } from "./template.ts";
 import { _scopedRecord } from "./server-structural.ts";
 import { escapeJSON } from "./resume-format.ts";
-import { _setDerived } from "./server-resume.ts";
+import { _setDerived, renderResumable, resumableToString } from "./server-resume.ts";
+import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
 import type { BoundaryRecord, BoundaryTail } from "./resume-format.ts";
+import { DERIVED_LOADER } from "./resume-loader-derived.min.ts";
 import type { ServerValue } from "./server.ts";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
@@ -37,7 +44,14 @@ export const INDEPENDENT = 1,
   /** `INDEPENDENT` demoted at render: its props object holds a non-data value (a function, a class instance, a signal). */
   DEMOTED = 8,
   /** Its body returned nothing through `_rBOut` (early `return;` / a throw): no markers on the page. */
-  SILENT = 16;
+  SILENT = 16,
+  /** Client trigger (derived client): materialise at load (`clientEffect` / `clientOnly` / a `load` island). */
+  LOAD = 32,
+  /** Client trigger: materialise at idle (`idle` island / effect). */
+  IDLE = 64,
+  /** Client trigger: materialise when its first element enters the viewport (`visible` island / effect). */
+  VISIBLE = 128;
+const TRIGGERS = LOAD | IDLE | VISIBLE;
 
 /** One boundary of a render (the token the compiled body holds). */
 export interface Boundary {
@@ -69,7 +83,23 @@ export interface DerivedRender {
   /** Boundaries written by the shell / earlier patches. */
   flushed: number;
   next: number;
+  /** `derivedToString` / `renderDerived`: the render's manifest + nonce (the tail names chunks, the loader follows). */
+  options: DerivedOptions | null;
+  /** Delegated event types of every boundary (`_rB` `events`). */
+  events: Set<string>;
+  /** Boundary id → its cold-held keydown keys (`_rB` `keys`). */
+  keys: Record<string, string>;
+  /** A boundary has a client trigger: the loader starts the runtime at once (`data-boot`). */
+  boot: boolean;
 }
+
+/** What the derived client needs from the render options. */
+export interface DerivedOptions {
+  manifest?: Partial<ResumeManifest>;
+  nonce?: string;
+}
+// The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously).
+let pending: DerivedOptions | null = null;
 
 const DERIVED = createContext<DerivedRender | null>(null);
 /** The boundary whose subtree the renderer is walking (`_rBOut` provides it around the rendered value). */
@@ -77,7 +107,37 @@ const CURRENT = createContext<Boundary | null>(null);
 
 /** A fresh derived recorder for one render. */
 export function createDerived(): DerivedRender {
-  return { boundaries: [], stack: [], wake: new Map(), dirty: new Set(), flushed: 0, next: 1 };
+  const options = pending;
+  pending = null;
+  return { boundaries: [], stack: [], wake: new Map(), dirty: new Set(), flushed: 0, next: 1, options, events: new Set(), keys: {}, boot: false };
+}
+
+/**
+ * A derived-model page as a string (`resumableToString` with `model: "derived"`), plus the derived client: tail `m` / `k`,
+ * the script attributes and the inline loader. `manifest.runtime` = the URL whose default export is the
+ * `@rivetjs/runtime/dom-derived` instance; `manifest.symbols[<boundary name>]` = the chunk exporting that component.
+ */
+export function derivedToString(factory: () => ServerValue, options: Partial<ResumableOptions> = {}): string | Promise<string> {
+  pending = options as DerivedOptions;
+  try {
+    return resumableToString(factory, { ...options, model: "derived" } as ResumableOptions);
+  } finally {
+    pending = null;
+  }
+}
+
+/** `renderResumable` twin of `derivedToString`. */
+export function renderDerived(
+  factory: () => ServerValue,
+  writer: { write(chunk: string): unknown },
+  options: Partial<StreamingResumableOptions> = {},
+): void | Promise<void> {
+  pending = options as DerivedOptions;
+  try {
+    return renderResumable(factory, writer, { ...options, model: "derived" } as StreamingResumableOptions);
+  } finally {
+    pending = null;
+  }
 }
 
 /** Run a render with `ctx` as its derived recorder (`_rB` / `_rSig` find it through the owner context). */
@@ -105,10 +165,12 @@ export function isData(value: unknown, depth = 0): boolean {
 
 /**
  * Open a boundary (compiled at the top of an interactive component's body). `flags`: `INDEPENDENT` / `ATTR` from the
- * compiler; an independent boundary whose `props` object is not data is demoted (`DEMOTED`, the flag cleared). Outside a
- * derived render: `null` (every other call takes a null token and does nothing).
+ * compiler; an independent boundary whose `props` object is not data is demoted (`DEMOTED`, the flag cleared); `LOAD` /
+ * `IDLE` / `VISIBLE` client triggers pass through. `events`: the delegated event types its handlers use (space separated,
+ * loader `data-events`); `keys`: the keydown keys its handlers handle (held while cold, tail `k`). Outside a derived
+ * render: `null` (every other call takes a null token and does nothing).
  */
-export function _rB(name: string, flags: number, props?: object | null): Boundary | null {
+export function _rB(name: string, flags: number, props?: object | null, events?: string, keys?: string): Boundary | null {
   const ctx = useContext(DERIVED);
   if (!ctx) return null;
   const parent = current(ctx);
@@ -118,6 +180,9 @@ export function _rB(name: string, flags: number, props?: object | null): Boundar
     else flags = (flags & ~INDEPENDENT) | DEMOTED;
   }
   const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false };
+  if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
+  if (keys) ctx.keys[boundary.id] = keys;
+  if (flags & TRIGGERS) ctx.boot = true;
   ctx.boundaries.push(boundary);
   ctx.stack.push(boundary);
   return boundary;
@@ -226,6 +291,20 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
   }
   ctx.flushed = ctx.boundaries.length;
   const tail: BoundaryTail = { v: 1, b };
+  const manifest = ctx.options?.manifest;
+  if (manifest) {
+    const m: Record<string, string> = {},
+      k: Record<string, string> = {};
+    let named = false,
+      keyed = false;
+    for (const [id, , , name] of b) {
+      const url = manifest.symbols?.[name];
+      if (url !== undefined) ((m[name] = url), (named = true));
+      if (ctx.keys[id] !== undefined) ((k[id] = ctx.keys[id]!), (keyed = true));
+    }
+    if (named) tail.m = m;
+    if (keyed) tail.k = k;
+  }
   if (ctx.dirty.size) {
     const w: Record<string, number[]> = {};
     for (const id of ctx.dirty) w[id] = [...ctx.wake.get(id)!];
@@ -238,8 +317,24 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
 /** The shell's tail script (null when the render opened no boundary). A trusted one-fragment template, as the state script. */
 export function derivedTail(ctx: DerivedRender): ServerValue {
   const tail = flush(ctx);
-  return tail ? template(['<script type="rivet/boundaries">' + escapeJSON(JSON.stringify(tail)) + "</script>"]) : null;
+  if (!tail) return null;
+  const options = ctx.options,
+    json = escapeJSON(JSON.stringify(tail));
+  if (!options?.manifest?.runtime) return template(['<script type="rivet/boundaries">' + json + "</script>"]);
+  // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
+  const nonce = options.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
+    events = [...ctx.events].join(" "),
+    attrs =
+      ' data-rt="' +
+      attr(options.manifest.runtime) +
+      '"' +
+      (events && events !== DEFAULT_EVENTS ? ' data-events="' + attr(events) + '"' : "") +
+      (ctx.boot ? " data-boot" : "");
+  return template(['<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
 }
+/** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`). */
+const DEFAULT_EVENTS = "click input change submit keydown";
+const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */
 export function derivedPatch(ctx: DerivedRender, marker: number): string {

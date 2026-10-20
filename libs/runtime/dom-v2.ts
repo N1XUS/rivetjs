@@ -27,6 +27,7 @@ import { INVALID_URL, MEDIA_URLS, unsafeUrl } from "./url.ts";
 
 import { _booleans, _constructionDoc, _parseHTML, _writeDefault, bindRef } from "./dom.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
+import { DERIVED } from "./derived.ts";
 
 type Parent = Node & ParentNode;
 const HTML = "http://www.w3.org/1999/xhtml",
@@ -766,6 +767,12 @@ export const _adoption: {
   live?: boolean;
   /** Resume runtime (`dom-resume.ts`): materialise the lazy row holding `node` (`_materialise`). */
   materialise?: ((node: Node) => boolean) | null;
+  /**
+   * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only): called first by every `_for` with its props; a
+   * returned accessor replaces the list (probe run: a hole the alignment pairs with the server rows; adopt run: the list
+   * taking those rows lazily), `undefined` lets `_for` run as usual.
+   */
+  list?: ((props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown }) => (() => Node[]) | undefined) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place
@@ -865,6 +872,10 @@ export function _for<T, K>(props: {
   by: (item: T, index: number) => K;
   children: (item: () => T, index: () => number) => unknown;
 }): () => Node[] {
+  if (DERIVED && _adoption.list) {
+    const held = _adoption.list(props as never);
+    if (held !== undefined) return held;
+  }
   const owner = getOwner(),
     // The insertion parent the list is created under: rows built later (effect re-runs) see it too, so
     // namespace-picking templates (`_tplNs`) parse like the first rows.

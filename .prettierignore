@@ -1,6 +1,7 @@
 # Generated (regenerate, never hand-format): gen-events outputs, docs routes/manifests, router .rivet/
 libs/runtime/jsx-events.ts
 libs/runtime/resume-loader.min.ts
+libs/runtime/resume-loader-derived.min.ts
 libs/router/shared/prefetch-fallback.min.ts
 apps/*/src/generated/
 apps/*/src/routes/(docs)/

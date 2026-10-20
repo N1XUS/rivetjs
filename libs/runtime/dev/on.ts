@@ -22,6 +22,8 @@ const HINTS = {
   moduleRef:
     "two installed copies of one package are loaded (their versions share the id), so the browser resumes both as the one its chunk imports; dedupe the package",
   lazy: "the row renders differently in the browser than on the server (Date.now / Math.random / browser globals in the row body, data that changed between render and resume, or a row function whose output depends on more than its item, index and the shipped state); the row was created afresh and swapped in (dev only: production adopts the server markup)",
+  adopt:
+    'the boundary renders differently in the browser than on the server (browser globals, Date.now / Math.random, data that changed between render and resume, or a component whose output depends on more than its props and keyed state); it was rendered afresh in the browser in place of the server markup (resume: { model: "derived" })',
   skew: "its chunk failed to load or belongs to another build: serve the client assets of the build that rendered the page (keep old assets for a while after a deploy)",
 } as const;
 const HOOK = Symbol.for("rivet.devtools");
@@ -199,6 +201,17 @@ export const DEV = {
         cause +
         " — its server HTML was replaced by a client render and the locals it creates start fresh. Expected for Show / Switch / ternary content; for a whole component, give the structural root an element of its own or keep its state with _regionState() (docs/guides/resumability.md)",
     );
+  },
+  /**
+   * Derived model adopt verifier (`dom-derived.ts`): a boundary's server markup differs from its browser render (`first`
+   * = the first difference). Warns once per boundary name; the unit is rendered in the browser instead.
+   */
+  adopt(boundary: string, first: string): void {
+    DEV.emit("resume.adopt", { boundary, first });
+    const name = boundary.replace(/ \(b\d+\)$/, "");
+    if (warned.has("adopt " + name)) return;
+    warned.add("adopt " + name);
+    console.warn("Rivet resume: boundary " + boundary + " did not adopt its server markup: " + first + " — " + HINTS.adopt);
   },
   /** Resume: warn once per id that two elements carry one `data-r` (injected markup; the first keeps it). */
   resumeDuplicate(id: string): void {

@@ -1,5 +1,5 @@
 // The runtime's build-time switch modules and their opted-in content, one table for every place that swaps them: the
-// compiler plugin (`vite.ts`, `rivet({ resume: { lazyRows, domData } })`), the runtime's resume test harness
+// compiler plugin (`vite.ts`, `rivet({ resume: { lazyRows, domData, model } })`), the runtime's resume test harness
 // (`libs/runtime/tests/resume/harness.ts`) and the zero-cost hashes (`scripts/zero-cost/runtime-hashes.mjs`). Default
 // content (the option off) is the switch file itself. No imports: plain Node loads it from the `.mjs` scripts.
 
@@ -7,9 +7,12 @@
 export const LAZY_SWITCHES = ["lazy-rows", "lazy-rows-resume"] as const;
 /** `resume.domData` (DOM-DATA): `dom-data.ts` / `dom-data-resume.ts` (browser), `dom-data-server.ts` (server). */
 export const DOM_DATA_SWITCHES = ["dom-data", "dom-data-resume", "dom-data-server"] as const;
+/** `resume.model: "derived"` (M2 lane R): `derived.ts` (the adopt runtime's `_for` hook). A derived build serves it with the
+ * `LAZY_SWITCHES` (their `_adoption.node` / `slot` hooks carry the adopt run). */
+export const DERIVED_SWITCHES = ["derived"] as const;
 
 /**
- * Opted-in content of switch module `name` (a name of `LAZY_SWITCHES` / `DOM_DATA_SWITCHES`, else null); `from(module)`
+ * Opted-in content of switch module `name` (a name of `LAZY_SWITCHES` / `DOM_DATA_SWITCHES` / `DERIVED_SWITCHES`, else null); `from(module)`
  * spells the import of a sibling runtime module (`dom-resume-lazy` → `"./dom-resume-lazy.js"` in a published build).
  */
 export function switchContent(name: string, from: (module: string) => string): string | null {
@@ -22,6 +25,8 @@ export function switchContent(name: string, from: (module: string) => string): s
       return "export const DOM_DATA = true;\n";
     case "dom-data-resume":
       return `export { _domData } from "${from("dom-resume-data")}";\n`;
+    case "derived":
+      return "export const DERIVED = true;\n";
     case "dom-data-server":
       return `import { _domRegistry } from "${from("server-dom-data")}";\nexport const domServer = { create: _domRegistry };\n`;
   }

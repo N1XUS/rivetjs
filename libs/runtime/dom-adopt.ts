@@ -156,7 +156,8 @@ function serverBranch(): number | null | undefined {
 // Data equality of a server row item and a fresh item of the same key (resume-encodable data: primitives, arrays,
 // plain objects, Date, URL; anything else compares by identity). A refetched list (live page, revalidation) has new
 // objects for unchanged rows: equal ones keep the adopted server row instead of re-creating it.
-function same(a: unknown, b: unknown): boolean {
+/** @internal Derived adopt runs (`dom-derived.ts`): installed as `_adoption.same` for their adopted lists. */
+export function same(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true;
   if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
   const proto = Object.getPrototypeOf(a);
@@ -282,7 +283,7 @@ export function _region(
 // wake names the first differing node and swaps the probe in for that row only (create + swap, the fallback).
 
 /** A probe run's records: created nodes (creation order), their shapes (template clones: [node, firstChild, nextSibling]…), slots. */
-interface Probe {
+export interface Probe {
   /** Per kind (`_adoption.node`), creation order. */
   made: [Node[], Node[], Node[]];
   /** Template clones (kind 0): their shapes and (dev) pristine attributes, same order. */
@@ -293,15 +294,15 @@ interface Probe {
   frag: DocumentFragment;
   owner: Owner | null;
 }
-type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined];
-const save = (): Hooks => [_adoption.node, _adoption.slot, _adoption.live];
+export type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined];
+export const save = (): Hooks => [_adoption.node, _adoption.slot, _adoption.live];
 const restore = (h: Hooks): void => void ((_adoption.node = h[0]), (_adoption.slot = h[1]), (_adoption.live = h[2]));
-const between = (start: Node, end: Node): Node[] => {
+export const between = (start: Node, end: Node): Node[] => {
   const out: Node[] = [];
   for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling) out.push(n);
   return out;
 };
-const kids = (node: Node): Node[] => {
+export const kids = (node: Node): Node[] => {
   const out: Node[] = [];
   for (let n = node.firstChild; n !== null; n = n.nextSibling) out.push(n);
   return out;
@@ -325,7 +326,7 @@ const attrsOf = (root: Node): [Element, string, string][] => {
   walk(root);
   return out;
 };
-const describe = (node: Node | null | undefined): string =>
+export const describe = (node: Node | null | undefined): string =>
   node == null
     ? "nothing"
     : node.nodeType === 1
@@ -335,7 +336,7 @@ const describe = (node: Node | null | undefined): string =>
         : "#" + node.nodeName;
 // Form controls the user changed (value / checked / selection differ from the markup's defaults): restored after the adopt
 // run when one of its bindings wrote the server value back (a live page never had that write: the user's state wins).
-type Dirty = [el: HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, value: string, checked: boolean, index: number];
+export type Dirty = [el: HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, value: string, checked: boolean, index: number];
 
 /**
  * A row plan (LAZY-T6): the probe's answers of one row, as pre-order indexes into the row's server nodes (`flatRow`), reused
@@ -362,10 +363,10 @@ export interface RowPlanCache {
   p?: RowPlan | false;
   tries?: number;
 }
-type Current = InsertSlot["current"];
+export type Current = InsertSlot["current"];
 // The row's server nodes in pre-order (top-level nodes between the markers, each with its descendants), their structure
 // signature and the form controls among them (dirty ones restored after the adopt run).
-function flatRow(start: Node, end: Node): { list: Node[]; sig: string; controls: Element[] } {
+export function flatRow(start: Node, end: Node): { list: Node[]; sig: string; controls: Element[] } {
   const list: Node[] = [],
     controls: Element[] = [];
   let sig = "";
@@ -383,7 +384,7 @@ function flatRow(start: Node, end: Node): { list: Node[]; sig: string; controls:
   return { list, sig, controls };
 }
 // The dirty ones among a row's form controls.
-function dirtyOf(controls: readonly Element[]): Dirty[] {
+export function dirtyOf(controls: readonly Element[]): Dirty[] {
   const out: Dirty[] = [];
   for (const node of controls) {
     const el = node as Dirty[0],
@@ -400,7 +401,7 @@ function dirtyOf(controls: readonly Element[]): Dirty[] {
   return out;
 }
 /** The adopt run's answers: per kind and creation, the live node (undefined: the created node) and the expected name. */
-interface Answers {
+export interface Answers {
   made: [(Node | undefined)[], (Node | undefined)[], (Node | undefined)[]];
   names: [string[], string[], string[]];
   shapes: (Node | null | undefined)[][];
@@ -409,7 +410,7 @@ interface Answers {
 
 // Step 1 of `_adoptRow`: run the row in create mode, detached (under `frag`), recording what it creates (`_adoption`
 // hooks); `attrs` (dev verifier) also records each template clone's pristine attributes.
-function probeRow(parent: Owner | null, enter: <T>(fn: () => T) => T, rowFn: () => unknown, doc: Document, attrs: boolean, outer: Hooks): Probe {
+export function probeRow(parent: Owner | null, enter: <T>(fn: () => T) => T, rowFn: () => unknown, doc: Document, attrs: boolean, outer: Hooks): Probe {
   const probe: Probe = { made: [[], [], []], shapes: [], attrs: attrs ? [] : null, slots: [], frag: doc.createDocumentFragment(), owner: null },
     anchor = doc.createTextNode("");
   probe.frag.append(anchor);
@@ -428,7 +429,7 @@ function probeRow(parent: Owner | null, enter: <T>(fn: () => T) => T, rowFn: () 
   return probe;
 }
 /** Step 2 of `_adoptRow`: probe node → server twin, the first difference (dev verifier), whether probe nodes were copied in. */
-interface Align {
+export interface Align {
   map: Map<Node, Node>;
   first: string | null;
   copied: boolean;
@@ -436,9 +437,9 @@ interface Align {
   verify: boolean;
 }
 /** The text of a run of text / comment nodes (comments count as ""). */
-const textOf = (run: readonly Node[]): string => run.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join("");
+export const textOf = (run: readonly Node[]): string => run.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join("");
 // A copy of a probe node put into the server markup (a run / level that differs): mapped node for node.
-function copyIn(a: Align, node: Node): Node {
+export function copyIn(a: Align, node: Node): Node {
   a.copied = true;
   const twin = node.cloneNode(true);
   const pair = (x: Node, y: Node): void => {
@@ -632,7 +633,7 @@ function fromPlan(plan: RowPlan, list: Node[]): Answers {
 }
 const MISS = {} as Owner;
 // 3. Adopt: the row function again; each creation returns its live node, each new slot starts from what it held.
-function adopt(
+export function adopt(
   parent: Owner | null,
   enter: <T>(fn: () => T) => T,
   rowFn: () => unknown,

@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } from "../../../compiler/switches.ts";
+import { DERIVED_SWITCHES, DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } from "../../../compiler/switches.ts";
 import { compileSymbolModule } from "./compile.ts";
 import type { ResumeSymbol } from "./compile.ts";
 
@@ -45,6 +45,9 @@ const sources: Record<string, string> = {
   "/dom-data.ts": "dom-data.ts",
   "/dom-data-resume.ts": "dom-data-resume.ts",
   "/dom-resume-data.ts": "dom-resume-data.ts",
+  // Derived model (M2 lane R): the `DERIVED` switch (`false`: every other build) and the derived client runtime.
+  "/derived.ts": "derived.ts",
+  "/dom-derived.ts": "dom-derived.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
   // Imported by `dev/on.ts` (suites serving it at `/dev/off.ts` for development diagnostics).
@@ -65,10 +68,13 @@ export const DEV_BUILD: Record<string, string> = {
 export const LAZY_ROWS_BUILD: Record<string, string> = switchBuild(LAZY_SWITCHES);
 /** Served in place of the switches: a page of a build with `rivet({ resume: { domData: true } })` (DOM-DATA). */
 export const DOM_DATA_BUILD: Record<string, string> = switchBuild(DOM_DATA_SWITCHES.filter((name) => name !== "dom-data-server"));
+/** Served in place of the switches: a page of a `rivet({ resume: { model: "derived" } })` build (lazy rows + `DERIVED`). */
+export const DERIVED_BUILD: Record<string, string> = switchBuild([...LAZY_SWITCHES, ...DERIVED_SWITCHES]);
 /** Rewrite package specifiers to served paths. */
 export const rewrite = (code: string): string =>
   code
     .replaceAll("@rivetjs/runtime/dom-resume", "/dom-resume.ts")
+    .replaceAll("@rivetjs/runtime/dom-derived", "/dom-derived.ts")
     .replaceAll("@rivetjs/runtime/resume-format", "/resume-format.ts")
     .replaceAll("@rivetjs/runtime/resume-symbols", "/resume-symbols.ts")
     .replaceAll("@rivetjs/runtime/dom", "/dom.ts")

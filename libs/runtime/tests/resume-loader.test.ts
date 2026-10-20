@@ -4,7 +4,8 @@ import { brotliCompressSync } from "node:zlib";
 import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, ROWS, STREAM } from "../resume-loader.min.ts";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { compileResume, importServer } from "./resume/compile.ts";
-import { minifiedExpand, minifiedLazy, minifiedLoader, minifiedRows, minifiedStream, minifiedStrided } from "../build-loader.ts";
+import { minifiedDerived, minifiedExpand, minifiedLazy, minifiedLoader, minifiedRows, minifiedStream, minifiedStrided } from "../build-loader.ts";
+import { DERIVED_LOADER } from "../resume-loader-derived.min.ts";
 import { loader } from "../resume-loader.ts";
 
 // Budget 2,329 B brotli: round 2 (lane SEC) added the state-script binding (U2), digit-only ids (SEC1) and the
@@ -74,6 +75,16 @@ test("loader module and expand add-on are pay-per-use: data-ld from manifest `lo
   assert.ok(!click.includes(EXPAND), "no row templates: no expand add-on");
   assert.doesNotMatch(rows, /data-ld=/);
   assert.ok(rows.includes("<script>" + EXPAND + '</script><script type="rivet/state"'), "row templates: expand add-on right before the state script");
+});
+
+// Derived model loader (M2 lane R, R2; spec §3.2 budget ≤ 1 KB br): 1,023 B (2026-10-20) — the serialized loader's
+// navigation-type reload fallback and the `mousewheel` passive type were left out to fit (see resume-loader-derived.ts).
+test("shipped derived loader is current, inline-safe and fits 1 KB brotli", async () => {
+  assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+  assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
+  const size = brotliCompressSync(DERIVED_LOADER).length;
+  assert.ok(size <= 1024, `minified ${size} B`);
+  console.log(`derived loader brotli: ${size} B`);
 });
 
 test("shipped stream add-on is current, inline-safe and fits 1 KB brotli", async () => {

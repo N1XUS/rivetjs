@@ -82,6 +82,10 @@
       "types": "./dom-resume.ts",
       "default": "./dom-resume.ts"
     },
+    "./dom-derived": {
+      "types": "./dom-derived.ts",
+      "default": "./dom-derived.ts"
+    },
     "./node": {
       "types": "./node.ts",
       "default": "./node.ts"
