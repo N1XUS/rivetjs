@@ -217,13 +217,15 @@ test("resume: cold presses A, B, A (canceled) then C: the focus-back walk ends, 
     await counted(page, "__cycC");
     await idle(page);
     assert.equal(await active(page), "cyc-c");
-    // Only the native mouse focus of each press (A twice, B once): no replay focuses a canceled stepper again.
+    // No replay focuses a canceled stepper: only the first press's native mouse focus is seen (it landed before the runtime
+    // started, from the loader's queue); the later presses' native focus moves and the focus-backs are hidden (`hide`),
+    // as on a loaded page, where a canceled press never moves focus.
     assert.deepEqual(
       await page.evaluate(() => {
         const g = globalThis as unknown as Record<string, number>;
         return [g.__cycA, g.__cycB];
       }),
-      [2, 1],
+      [1, 0],
     );
   });
 });
@@ -291,5 +293,49 @@ test("resume: the focus-back of a cold press fires no focusout into the resumed 
     await idle(page);
     assert.equal(await active(page), "leave-cell");
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__leaveOut), undefined);
+  });
+});
+
+test("resume: a cold press's native focus move reaches no native listener (cdk group focus-within shape)", async () => {
+  await cold(async (page) => {
+    // Live group: the field's focus sets `data-focus-within` and arms the group's native `focusin` listener.
+    await page.click("#within-input");
+    await counted(page, "__withinIn");
+    await idle(page);
+    // Cold stepper (own chunk): the native mouse focus moves to it; seen by the group's native listener, it would clear
+    // focus-within for good (the focus-back reaches no handler). Hidden, then re-created by the replay: the stepper's
+    // mousedown swallows the default's move as on a loaded page, where the group never loses focus-within.
+    await page.click("#stepper");
+    await counted(page, "__stepper");
+    await idle(page);
+    assert.equal(await active(page), "within-input");
+    assert.equal(await page.evaluate(() => document.getElementById("within")!.getAttribute("data-focus-within")), "true");
+  });
+});
+
+test("resume: a cold press's pointerup / click replay where the pointer is once the press start covered the target (Select trigger shape)", async () => {
+  await cold(async (page) => {
+    await page.click("#cover-trigger");
+    await counted(page, "__coverDown");
+    await idle(page);
+    const g = (key: string) => page.evaluate((k) => (globalThis as unknown as Record<string, unknown>)[k], key);
+    // As on a loaded page: the pointerup hits the sheet (no trigger `onPointerUp`), the click the common ancestor.
+    assert.equal(await g("__coverUp"), undefined);
+    assert.equal(await g("__coverClick"), undefined);
+    assert.equal(await g("__coverAt"), "cover");
+  });
+});
+
+test("resume: a cold focusin queued before a cold press replays with focus where it was dispatched (ComboBox trigger shape)", async () => {
+  await cold(async (page) => {
+    // A live press start (native listener) focuses the input; the group's `focusin` handler is cold (queued), so is the
+    // trigger's mousedown, whose native mouse focus then moves to the trigger. Undone as it lands, the queued `focusin`
+    // replays with the input focused (the group's guard passes), then the default's focus follows.
+    await page.evaluate(() => document.getElementById("combo-trigger")!.addEventListener("pointerdown", () => document.getElementById("combo-input")!.focus()));
+    await page.click("#combo-trigger");
+    await counted(page, "__comboDown");
+    await idle(page);
+    assert.equal(await active(page), "combo-trigger");
+    assert.equal(await page.evaluate(() => document.getElementById("combo")!.getAttribute("data-focus-within")), "true");
   });
 });

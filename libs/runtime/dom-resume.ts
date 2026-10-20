@@ -361,9 +361,9 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     down: Event | undefined,
     // Whether the last cold event was a press that moved focus natively at dispatch (`cold`: its focus events follow).
     pressed: unknown,
-    // The focus-back of a cold press is running (`cold`): its focus / blur events reach no resumed handler — on a loaded
-    // page there was no move to undo (a range calendar's root `focusout` committed the selection the press started).
-    undoing = false;
+    // The last replayed cold mouse press start: its coordinates, the element hit before its handlers ran and at its first
+    // replayed up event (`cold`).
+    start: [x: number, y: number, before: Element | null, after?: Element | null] | undefined;
   // Cold presses: a pointerdown and its mousedown, both queued (the pointerdown puts focus back, the mousedown follows).
   const linked = new WeakSet<Event>(),
     // Cold focus / blur events of a cold press's native mouse focus: the replay re-creates that move (focus back, then the
@@ -375,6 +375,27 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     // dispatched before the undo puts focus back past it, walking strictly back in dispatch time (A B A canceled: the
     // second A's entry never leads back to B's, no cycle).
     undone = new WeakMap<Element, [was: Element | null, at: number, dispatched: number][]>();
+  // A cold press's native mouse focus move and its focus-back are hidden from every listener (window capture, added after
+  // the ones already there: `stopImmediatePropagation`), and the move is undone as it lands (`back`: the element focused
+  // at the press's dispatch, refocused inside the hidden `focusin`, as RA `preventFocus` does): until the replay
+  // re-creates it (the default's focus, unless a handler canceled or swallowed it), focus and every listener's view of
+  // it stay where a loaded page has them. Seen (UNDO-FOCUS / CI-RED): a native listener (RA useFocusWithin's document
+  // `focusin`) saw the move leave a SearchField group and cleared its `data-focus-within` (a loaded page's
+  // `preventFocus` swallowed it); the focus-back's `focusout` reached a range calendar root's commit; a cold `focusin`
+  // queued before the press (a live press start focusing a ComboBox input whose group handler is cold) replayed with the
+  // native focus already on the trigger, so RA's `activeElement === target` guards skipped it. `on` = hide, else stop.
+  let back: [Element | null] | undefined;
+  const hidden = (event: Event): void => {
+      event.stopImmediatePropagation();
+      moved.add(event);
+      const was = back?.[0];
+      if (event.type == "focusin" && back)
+        ((back = undefined), was && was !== doc.body ? (was as HTMLElement).focus({ preventScroll: true }) : (event.target as HTMLElement).blur?.());
+    },
+    hide = (on?: unknown): void => {
+      for (const type of ["focus", "blur", "focusin", "focusout"]) (on ? nativeAdd : nativeRemove).call(window, type, hidden, true);
+      on || (back = undefined);
+    };
   const pendingSignals: [ref: number, source: Signal<unknown>][] = [];
   const refRegions = new Map<Element, number>(); // ref() element → its region (reset the ref when the region dies)
   // `load` / `idle` clientEvent listeners wait for idle, unless an interaction comes first: its handlers
@@ -1211,8 +1232,6 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     q: (x: number | Element): Element | string | undefined =>
       typeof x == "number" ? build().get("" + x) : LAZY_ROWS ? ((build(), pathIds.get(x)) ?? lazy!.id(x)) : (build(), pathIds.get(x)),
     on(event: Event, hit: Hit): boolean {
-      // A focus-back's focus events (`undoing`): consumed, never delivered or queued.
-      if (undoing) return true;
       if (held || !ready(hit[1])) return false;
       deliver(this, event, hit[0]);
       return true;
@@ -1223,10 +1242,18 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // the finger lifts); its mousedown has the same target.
       if (event.type === "pointerdown") down = (event as PointerEvent).pointerType !== "touch" ? event : undefined;
       else if (event.type === "mousedown" && down?.target === event.target) (linked.add(down).add(event), (down = undefined));
-      if (/^(focus|blur)/.test(event.type)) pressed && moved.add(event);
-      else pressed = (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event);
       // The path at dispatch (empty once dispatched: queued before the runtime started → the target's ancestors now).
-      const path = event.composedPath();
+      let path = event.composedPath();
+      // Queued before the runtime started (loader queue): a press's native mouse focus events follow it (`moved`). A press
+      // queued while it dispatches hides its mouse focus instead, landing later in this task (`hide`, until the next task
+      // or replay): a cold focus event dispatched now is never that move (a live press start's `focus()` whose group
+      // handler is cold — `/morph-icons` ComboBox trigger: dropped as a stale press's move, the group lost focus-within).
+      if (/^(focus|blur)/.test(event.type)) pressed && !path.length && moved.add(event);
+      else if (
+        (pressed = (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event)) &&
+        path.length
+      )
+        (hide(1), (back = [live[3] as Element | null]), setTimeout(hide));
       if (!path.length)
         for (let n = event.target as (Node & { host?: Node; defaultView?: Window }) | null; n; n = (n.parentNode ?? n.host ?? n.defaultView) as typeof n)
           path.push(n);
@@ -1242,6 +1269,10 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             // next event, CDK-LEFT calendar), so the count returns in a microtask. The held default's replay follows it
             // (its `change` queues behind the cold events dispatched after it), after the microtask restoring the live
             // form state (a replayed toggle starts from it).
+            // A replay ends the native-move hide (`hide`): a press replayed within its own dispatch task (chunk already
+            // evaluated, held behind an earlier cold event) runs its handlers before the native mouse focus — their focus
+            // moves (a ComboBox trigger's press start focusing its input) must be seen, as on a loaded page.
+            hide();
             const queued = --held;
             held = 0;
             replayed = event;
@@ -1265,15 +1296,47 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
                 ts = event.timeStamp,
                 u: [Element | null, number, number] | undefined;
               while (was && (u = undone.get(was)?.findLast((e) => e[2] < ts && event.timeStamp < e[1]))) ((was = u[0] as HTMLElement | null), (ts = u[2]));
-              undoing = true;
+              hide(1);
               try {
                 was && was !== doc.body ? was.focus({ preventScroll: true }) : press[0]?.blur();
               } finally {
-                undoing = false;
+                hide(0);
               }
             }
+            // A cold mouse press's pointerup / mouseup / click hit what the pointer is over once its press-start handlers ran
+            // (a Select's popover opened at pointerdown covers its trigger: a loaded page's pointerup lands on what covers
+            // it, the click on the common ancestor, so the trigger's `onClick` never runs, cdk fuzz `/dom-events-overlays`).
+            // Only a change the press start made counts (the hit before its replayed pointerdown / unlinked mousedown vs
+            // the hit at its first replayed up event, same coordinates within 1 px — a pointer event's are fractional): the
+            // coordinates are where the user saw the element, earlier replayed defaults (an opened `<details>`) moved the
+            // page since. Then only the handlers on elements holding the new hit run, with `target` = it (click: the
+            // common ancestor with the press target).
+            let targets = hit[0],
+              to: Node | null | undefined;
+            const { clientX: x, clientY: y } = event as MouseEvent;
+            if (press && !(pair && type === "mousedown")) start = [x, y, doc.elementFromPoint(x, y)];
+            else if (
+              /^(pointerup|mouseup|click)$/.test(type) &&
+              start &&
+              (start[0] - x) ** 2 + (start[1] - y) ** 2 < 2 &&
+              (type != "click" || (event as MouseEvent).detail)
+            ) {
+              const at = (to = type == "pointerup" || start.length < 4 ? (start[3] = doc.elementFromPoint(x, y)) : start[3]),
+                from = event.target as Node;
+              if (at && at !== start[2] && from.isConnected && !from.contains(at)) {
+                if (type == "click") while (to && !to.contains(from)) to = to.parentNode;
+                targets = targets.filter((t) => t[0].contains(at));
+                path = path.filter((n) => !(n as Node).contains || (n as Node).contains(at));
+                Object.defineProperty(event, "target", { configurable: true, value: to });
+              } else to = null;
+              if (type == "click") start = undefined;
+            }
             let kept = false;
-            if (!moved.has(event)) ((kept = deliver(this, event, hit[0], !!replay || !!press, live)), late(event, path), (kept ||= canceled.has(event)));
+            try {
+              if (!moved.has(event)) ((kept = deliver(this, event, targets, !!replay || !!press, live)), late(event, path), (kept ||= canceled.has(event)));
+            } finally {
+              to && delete (event as { target?: unknown }).target;
+            }
             queueMicrotask(() => {
               replayed = undefined;
               // An unpaired pointerdown's default focus follows even when canceled (only a canceled mousedown keeps

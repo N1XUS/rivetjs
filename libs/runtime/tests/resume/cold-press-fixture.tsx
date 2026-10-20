@@ -291,6 +291,112 @@ function Leave() {
   );
 }
 
+/** A cdk group's focus-within shape (RA useFocusWithin): `focusin` / `focusout` write `data-focus-within`; while within, a
+ * native document `focusin` listener clears it when focus lands outside (a cold press's native focus move must not reach it). */
+function Within() {
+  return (
+    <div
+      id="within"
+      onFocusIn={(event: FocusEvent) => {
+        const group = event.currentTarget as HTMLElement;
+        if (group.hasAttribute("data-focus-within") || document.activeElement !== event.target) return;
+        group.setAttribute("data-focus-within", "true");
+        count("__withinIn");
+        const away = (e: FocusEvent) => {
+          if (group.contains(e.target as Node)) return;
+          document.removeEventListener("focusin", away, true);
+          group.removeAttribute("data-focus-within");
+        };
+        document.addEventListener("focusin", away, true);
+      }}
+      onFocusOut={(event: FocusEvent) => {
+        const group = event.currentTarget as HTMLElement;
+        if (!group.contains(event.relatedTarget as Node | null)) group.removeAttribute("data-focus-within");
+      }}
+    >
+      <input id="within-input" aria-label="within" />
+    </div>
+  );
+}
+
+/** A NumberField stepper outside that group with RA `preventFocus` (`preventFocusOnPress`): the focused field keeps focus,
+ * its `focusout` / the stepper's `focusin` never reach other listeners (window capture, `stopImmediatePropagation`). */
+function Stepper() {
+  return (
+    <button
+      id="stepper"
+      type="button"
+      tabIndex={-1}
+      onMouseDown={(event: MouseEvent) => {
+        const active = document.activeElement as HTMLElement | null,
+          self = event.currentTarget;
+        let refocusing = false;
+        const out = (e: FocusEvent) => (e.target === active || refocusing) && e.stopImmediatePropagation();
+        const into = (e: FocusEvent) => {
+          if (e.target !== self && !refocusing) return;
+          e.stopImmediatePropagation();
+          if (refocusing) return;
+          refocusing = true;
+          active?.focus();
+          window.removeEventListener("focusout", out, true);
+          window.removeEventListener("focusin", into, true);
+        };
+        window.addEventListener("focusout", out, true);
+        window.addEventListener("focusin", into, true);
+        count("__stepper");
+      }}
+    >
+      step
+    </button>
+  );
+}
+
+/** A ComboBox's shape: a group (RA useFocusWithin: `activeElement === target` guard) around its input and trigger; the
+ * test focuses the input from a native pointerdown listener (a live press start) while the group's chunk is cold. */
+function Combo() {
+  return (
+    <div
+      id="combo"
+      onFocusIn={(event: FocusEvent) => {
+        if (document.activeElement === event.target) (event.currentTarget as HTMLElement).setAttribute("data-focus-within", "true");
+      }}
+    >
+      <input id="combo-input" aria-label="combo" />
+      <button id="combo-trigger" type="button" onMouseDown={() => count("__comboDown")}>
+        open
+      </button>
+    </div>
+  );
+}
+
+/** A Select trigger's shape: the press start opens what covers the trigger, so a loaded page's pointerup lands on the
+ * cover and the click on the common ancestor (`#cover`): the trigger's `onClick` never runs. */
+function Cover() {
+  return (
+    <div
+      id="cover"
+      style={{ position: "relative" }}
+      onClick={(event: MouseEvent) => ((globalThis as unknown as Record<string, unknown>).__coverAt = (event.target as Element).id)}
+    >
+      <button
+        id="cover-trigger"
+        type="button"
+        onPointerDown={(event: PointerEvent) => {
+          const sheet = document.createElement("div");
+          sheet.id = "cover-sheet";
+          sheet.style.cssText = "position:absolute;inset:0;z-index:1";
+          (event.currentTarget as Element).parentElement!.append(sheet);
+          count("__coverDown");
+        }}
+        onPointerUp={() => count("__coverUp")}
+        onClick={() => count("__coverClick")}
+      >
+        cover
+      </button>
+    </div>
+  );
+}
+
 export function Page() {
   return (
     <main>
@@ -314,6 +420,10 @@ export function Page() {
       <Late />
       <Drop />
       <Leave />
+      <Within />
+      <Stepper />
+      <Cover />
+      <Combo />
     </main>
   );
 }

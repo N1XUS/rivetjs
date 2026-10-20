@@ -128,14 +128,7 @@ export const pins: FuzzPin[] = [
     note: "timing-dependent (seen in 1 of 2 runs): replayed hover not cleared by the next key: " + COLD_HOVER,
     design: true,
   },
-  {
-    route: "/dom-events-overlays",
-    kind: "mismatch",
-    match: /st-down st-click"\ncsr: "[^"\n]*st-down"$/,
-    step: 15,
-    owner: "runtime",
-    note: "cold first click on the Select trigger (1-step repro, every local + CI run since 2026-10-18; COLDFIX report: pre-existing on the host): the replayed click reaches the trigger's `onClick` (log `st-click`), a loaded page's press opens the popover at pointerdown and its `onClick` does not run",
-  },
+
   {
     route: "/scheduler-zone",
     kind: "load",
