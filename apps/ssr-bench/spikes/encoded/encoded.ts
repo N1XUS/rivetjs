@@ -27,6 +27,7 @@ import { compile } from "@rivetjs/compiler";
 import { importServer } from "../../../../libs/runtime/tests/resume/compile.ts";
 import { PAGE_STYLE } from "../../fixture/emitter.ts";
 import { makePage } from "../splice/splice.ts";
+import { median } from "../../../../scripts/bench/shared.ts";
 
 type Encoding = "identity" | "gzip" | "br" | "zstd";
 const ENCODINGS: Encoding[] = ["identity", "gzip", "br", "zstd"];
@@ -170,10 +171,6 @@ function arg(name: string, def: string): string {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1]! : def;
 }
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s[Math.floor(s.length / 2)]!;
-};
 const kb = (n: number) => (n / 1024).toFixed(1);
 
 async function compileComponent<T>(source: string, name: string): Promise<T> {

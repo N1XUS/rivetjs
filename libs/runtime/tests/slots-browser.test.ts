@@ -6,9 +6,8 @@ import { readFile } from "node:fs/promises";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compile } from "@rivetjs/compiler";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -22,12 +21,11 @@ const csr = compile(source, { target: "dom", filename: "slots-fixture.tsx" });
 assert.deepEqual(csr.diagnostics, []);
 const dom = compileResume(source, "dom", "src/slots.tsx");
 const server = await importServer<{ Page(): ServerValue }>(compileResume(source, "server", "src/slots.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const manifest: ResumeManifest = {
   hash: "slots",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
@@ -39,7 +37,7 @@ const files: Record<string, Served> = {
   </script></body></html>`,
   "/": "<!doctype html><html><head></head><body>" + (await resumableToString(() => server.Page(), { manifest })) + "</body></html>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 
 const text = (selector: string) => `document.querySelector(${JSON.stringify(selector)})?.textContent`;
 

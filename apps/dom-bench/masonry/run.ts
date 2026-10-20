@@ -13,6 +13,7 @@ import { chromium, type Page } from "playwright";
 import { startServer } from "../server.ts";
 import { withBenchLock } from "../bench-lock.ts";
 import type { MasonryBench, Mode } from "./shape.ts";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const arg = (name: string, fallback: string) => (process.argv.includes(`--${name}`) ? process.argv[process.argv.indexOf(`--${name}`) + 1]! : fallback);
@@ -30,10 +31,6 @@ const scenarios: { lane: string; mode: Mode; count: number; name: string }[] = [
   { lane: "vanilla", mode: "measure-absolute", count: 1000, name: "measure-abs 1k" },
   { lane: "rivet", mode: "virtual", count: 10_000, name: "rivet virtual 10k" },
 ];
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2) : NaN;
-};
 const pct = (xs: number[], p: number) => {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(p * s.length))] ?? NaN;

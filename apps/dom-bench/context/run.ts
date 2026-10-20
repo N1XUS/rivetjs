@@ -9,6 +9,7 @@ import { chromium } from "playwright";
 import { startServer } from "../server.ts";
 import { withBenchLock } from "../bench-lock.ts";
 import { scenarios as all } from "./shape.js";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url)),
   dist = resolve(here, "../dist/context");
@@ -18,10 +19,6 @@ const targets = arg("targets", "server,dom").split(","),
   rounds = Number(arg("rounds", "3")),
   scenarios = arg("scenarios", all.join(",")).split(","),
   lanes = arg("lanes", "rivet,solid-stable").split(",");
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2;
-};
 type Row = Record<string, number[]>;
 const results: Record<string, Record<string, Record<string, Row>>> = {};
 const push = (target: string, scenario: string, lane: string, metric: string, value: number) =>

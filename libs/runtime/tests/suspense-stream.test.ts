@@ -3,7 +3,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 
 type ServerValue = ReturnType<Parameters<typeof renderResumable>[0]>;
 type Boundary = [number, unknown, number, number];
@@ -31,7 +31,7 @@ export function Page({ a, b, fail, sync }) {
 }
 `;
 const symbols = compileResume(source, "dom").symbols;
-const manifest = { hash: "h", runtime: "/rt.js", symbols: Object.fromEntries(symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+const manifest = { hash: "h", runtime: "/rt.js", symbols: symbolUrls(symbols) };
 const mod = await importServer<{ Page(props: Props): ServerValue }>(compileResume(source, "server").code);
 const render = async (props: Props): Promise<string> => {
   const chunks: string[] = [];

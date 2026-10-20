@@ -9,6 +9,7 @@
 //     [--repeats 3] [--fast] [--label component]
 //   … --paths /orders,/orders/new --click '/orders=th >> text=Customer'   (page paths instead of example frames)
 import { chromium } from "playwright";
+import { median, chromeTarget } from "../../../scripts/bench/shared.ts";
 
 const argv = process.argv.slice(2);
 const opt = (name: string, def: string) => (argv.includes(name) ? argv[argv.indexOf(name) + 1]! : def);
@@ -31,13 +32,9 @@ const clicks = Object.fromEntries(
 ) as Record<string, string>;
 
 const browser = await chromium.launch({
-  ...(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" }),
+  ...chromeTarget(),
   args: ["--use-mock-keychain", "--password-store=basic"],
 });
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? s[Math.floor(s.length / 2)]! : NaN;
-};
 
 interface Sample {
   requestsBefore: number;

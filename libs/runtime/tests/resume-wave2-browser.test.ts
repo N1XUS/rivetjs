@@ -7,8 +7,7 @@ import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page } from "playwright";
@@ -24,8 +23,7 @@ interface Fixture {
 const source = await readFile(new URL("./resume/wave2-fixture.tsx", import.meta.url), "utf8");
 const dom = compileResume(source, "dom", "src/wave2.tsx");
 const server = await importServer<Fixture>(compileResume(source, "server", "src/wave2.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const serve = (code: string): string => rewrite(code).replaceAll("@rivetjs/cdk/dom-props", "/dom-props.ts");
 const files: Record<string, Served> = {
   "/fixture.mjs": serve(dom.code),
@@ -37,7 +35,7 @@ for (const [path, symbols] of Object.entries(byComponent)) files[path] = serve(c
 const manifest: ResumeManifest = {
   hash: "wave2",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const pages: Record<string, { html: string; state: { t: unknown[]; e: Record<string, Record<string, unknown>> } }> = {};
 for (const component of ["Members", "Presence", "CaptureRec", "Adopt"] as const) {

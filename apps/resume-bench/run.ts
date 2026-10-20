@@ -9,6 +9,7 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { serve } from "./serve.ts";
 import { isLane, laneNames, readBuildManifest, type BuildManifest } from "./provenance.ts";
+import { median, chromeTarget } from "../../scripts/bench/shared.ts";
 
 type Scenario = (page: Page, context: { beforeInput: () => Promise<void> }) => Promise<Record<string, number> | void>;
 /** One script's coverage: module top level ran / any other function ran. */
@@ -645,12 +646,6 @@ const cell = (stat: Stat | undefined) =>
       ? `${Math.round(stat.share * 100)}% (${stat.values.map((v) => (v ? "y" : "n")).join("")})`
       : `${+stat.median.toFixed(1)} (${+stat.min.toFixed(1)}–${+stat.max.toFixed(1)})`;
 
-const median = (values: number[]) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = sorted.length >> 1;
-  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
-};
-
 async function main() {
   const builds: Record<string, BuildManifest> = {};
   for (const lane of LANES) {
@@ -666,7 +661,7 @@ async function main() {
   );
   // RESUME_BENCH_CHROME=<executable> runs a pinned Chromium instead of the installed Chrome channel (cloud containers).
   const browser = await chromium.launch({
-    ...(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" }),
+    ...chromeTarget(),
     headless: !flag("headed"),
     args: ["--use-mock-keychain", "--password-store=basic"],
   });

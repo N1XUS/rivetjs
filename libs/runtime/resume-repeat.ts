@@ -54,6 +54,8 @@ export function repeat(): void {
         s.e[id] = p.e[id] = h;
       }
     }
+    // `map` for its side effects only (result dropped): minified it is 4 B shorter than `forEach` and 19 B shorter than a
+    // `for` loop, and this string ships inline on every page with repeats (SMELL-FIX 2026-10-20 measured both).
     list.map((v, j) => {
       if (v[0] < -1) {
         const a = list[j + v[0] + 1]!,

@@ -25,6 +25,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { gzipSync } from "node:zlib";
+import { median as middle } from "../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "../..");
@@ -205,10 +206,7 @@ const save = () => {
 
 // ---------------------------------------------------------------- helpers
 const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
-const median = (xs: number[]) => {
-  const s = xs.filter((x) => !Number.isNaN(x)).sort((a, b) => a - b);
-  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2) : NaN;
-};
+const median = (xs: number[]) => middle(xs.filter((x) => !Number.isNaN(x)));
 const load1 = () => Number(loadavg()[0]!.toFixed(2));
 function tree(pid: number): number[] {
   const out = execFileSync("ps", ["-A", "-o", "pid=,ppid="], { encoding: "utf8" });

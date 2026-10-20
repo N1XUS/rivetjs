@@ -1,5 +1,6 @@
 // Development build (`development` condition). `DEV` is the diagnostics toolkit; in production it is
 // `false`, so `DEV ? DEV.x(…) : …` folds away with no helper code left in the bundle.
+import { kb } from "./kb.ts";
 
 const paths = new WeakMap<object, { message: string; path: string }>();
 /** Why an error happens and what to change, appended to production messages in development. */
@@ -62,7 +63,6 @@ const stateLimit = (name: string, fallback: number): number => {
   const n = value === "off" ? 0 : Number(value);
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 };
-const kb = (bytes: number): string => (bytes < 1024 ? bytes + " B" : (bytes / 1024).toFixed(1) + " KB");
 export const DEV = {
   /** Report to the devtools hook, if a devtools host installed one (`@rivetjs/devtools`). */
   emit(type: string, data: object): void {

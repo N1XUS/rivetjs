@@ -6,6 +6,8 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { compileSymbolModule } from "./compile.ts";
+import type { ResumeSymbol } from "./compile.ts";
 
 const runtime = new URL("../../", import.meta.url);
 const sources: Record<string, string> = {
@@ -40,6 +42,8 @@ const sources: Record<string, string> = {
   "/dom-resume-lazy.ts": "dom-resume-lazy.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
+  // Imported by `dev/on.ts` (suites serving it at `/dev/off.ts` for development diagnostics).
+  "/dev/kb.ts": "dev/kb.ts",
 };
 /** Served in place of the switches: a page of a build with `rivet({ resume: { lazyRows: true } })` (LAZY-T5B). */
 export const LAZY_ROWS_BUILD: Record<string, string> = {
@@ -61,6 +65,13 @@ export const rewrite = (code: string): string =>
     .replaceAll("@rivetjs/reactivity/store", "/store.mjs")
     .replaceAll("@rivetjs/reactivity", "/reactivity.mjs")
     .replaceAll('"#dev"', '"/dev/off.ts"');
+
+/** Served chunk modules (path → source): each chunk's symbols compiled against the served fixture module, specifiers rewritten. */
+export function symbolModules(chunks: Record<string, ResumeSymbol[]>, fixture = "/fixture.mjs"): Record<string, string> {
+  const files: Record<string, string> = {};
+  for (const [path, symbols] of Object.entries(chunks)) files[path] = rewrite(compileSymbolModule(symbols, fixture));
+  return files;
+}
 
 /** Launch Chromium, route files (path → body or { body, type }), run fn(page, browser).
  * `streams` (path → (request, response) => void): served over real HTTP so responses stream. */

@@ -271,7 +271,6 @@ async function persist(path: string, bytes: Buffer): Promise<boolean> {
   }
 }
 
-/** The one dot-named directory served (RFC 8615: `security.txt`, `assetlinks.json`, ACME challenges), at the root only. */
 /** Bytes a streamed direct body may queue in the response before the renderer waits for `drain`. */
 const MAX_BUFFERED = 256 * 1024;
 
@@ -441,6 +440,7 @@ function sendDirect(
   return result;
 }
 
+/** The one dot-named directory served (RFC 8615: `security.txt`, `assetlinks.json`, ACME challenges), at the root only. */
 const WELL_KNOWN = ".well-known";
 /** Dot-named path segments are refused, except a leading `.well-known`. */
 const hidden = (decoded: string): boolean => {

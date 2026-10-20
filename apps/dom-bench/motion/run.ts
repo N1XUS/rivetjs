@@ -14,6 +14,7 @@ import { chromium, type Page } from "playwright";
 import { startServer } from "../server.ts";
 import { withBenchLock } from "../bench-lock.ts";
 import type { MotionBench, Scenario } from "./shape.ts";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const arg = (name: string, fallback: string) => (process.argv.includes(`--${name}`) ? process.argv[process.argv.indexOf(`--${name}`) + 1]! : fallback);
@@ -36,10 +37,6 @@ type Win = { motionBench: MotionBench; reads: number };
 const results: Record<string, Record<string, number[]>> = {};
 const push = (k: string, m: string, v: number) => ((results[k] ??= {})[m] ??= []).push(v);
 const sorted = (xs: number[]) => [...xs].sort((a, b) => a - b);
-const median = (xs: number[]) => {
-  const s = sorted(xs);
-  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2) : NaN;
-};
 
 async function sample(page: Page, s: (typeof scenarios)[number]) {
   const cdp = await page.context().newCDPSession(page);

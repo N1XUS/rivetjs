@@ -10,9 +10,8 @@ import { readFile } from "node:fs/promises";
 import type { Page } from "playwright";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -23,23 +22,32 @@ const server = await importServer<{ Page(): ServerValue }>(compileResume(source,
 const manifest: ResumeManifest = {
   hash: "cold-press",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const html = await resumableToString(() => server.Page(), { manifest });
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
   "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 // Every handler chunk lands late: each press below is cold for its own chunk.
 const delays = Object.fromEntries(Object.keys(byComponent).map((path) => [path, path.startsWith("/c/Cyc") ? 1500 : 400]));
 
 const active = (page: Page): Promise<string> => page.evaluate(() => document.activeElement?.id || document.activeElement?.localName || "");
 const counted = (page: Page, key: string): Promise<unknown> =>
   page.waitForFunction((k) => (globalThis as unknown as Record<string, number>)[k] === 1, key, { timeout: 5000 });
+
+/**
+ * The cold replay chain is done: every held event replayed, the press's default focus followed (or was undone) and the
+ * listener recording stopped — `record(0)` puts the native `EventTarget.prototype.addEventListener` back in the same
+ * microtask (`dom-resume.ts`). Asserting a focus that must stay put needs this, not a fixed sleep.
+ */
+const idle = (page: Page): Promise<unknown> =>
+  page.waitForFunction(() => /\[native code\]/.test(Function.prototype.toString.call(EventTarget.prototype.addEventListener)), undefined, {
+    timeout: 5000,
+  });
 
 async function cold(run: (page: Page) => Promise<void>): Promise<void> {
   await withPage(
@@ -73,7 +81,7 @@ test("resume: a cold mousedown's default focus is the native mouse focus (no foc
     await page.click("#plain");
     assert.equal(await active(page), "plain");
     await counted(page, "__plain");
-    await page.waitForTimeout(50);
+    await idle(page);
     assert.equal(await active(page), "plain");
     assert.equal(await ring(page), false, "mouse focus");
     // A later script focus keeps the mouse heuristic (a held default + script focus turned it on for the page).
@@ -88,7 +96,7 @@ test("resume: a cold press handler moving focus elsewhere keeps it there (preven
   await cold(async (page) => {
     await page.click("#moves");
     await counted(page, "__moves");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "field");
   });
 });
@@ -97,7 +105,7 @@ test("resume: a cold press whose handler swallows the coming focus move keeps fo
   await cold(async (page) => {
     await page.click("#guard");
     await counted(page, "__guard");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "before");
   });
 });
@@ -115,7 +123,7 @@ test("resume: a cold mousedown a handler cancels on a non-focusable element keep
     await page.click("#keep");
     await counted(page, "__keep");
     await page.waitForFunction(() => document.activeElement?.id === "before", undefined, { timeout: 2000 });
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "before");
   });
 });
@@ -136,7 +144,7 @@ test("resume: a cold press on an href-less link a handler cancels keeps focus wh
     await page.click("#anchor-keep");
     await counted(page, "__inertKeep");
     await page.waitForFunction(() => document.activeElement?.id === "before", undefined, { timeout: 2000 });
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "before");
   });
 });
@@ -167,7 +175,7 @@ test("resume: a cold press whose pointerdown handler focuses the target keeps it
     // As on a loaded page: the pointerdown handler runs with focus still on `#before`, the mousedown one after it focused
     // the trigger (focus is not put back to `#before` once the press's pointerdown replayed).
     assert.deepEqual(seen, ["before", "grab"]);
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "grab");
   });
 });
@@ -183,7 +191,7 @@ test("resume: two cold presses queued: a canceled one never takes focus, the nex
     await page.click("#two-a");
     await page.click("#two-b");
     await counted(page, "__twoBm");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "two-b");
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__twoAFocus), 1);
   });
@@ -207,7 +215,7 @@ test("resume: cold presses A, B, A (canceled) then C: the focus-back walk ends, 
     // Its chunks land 1.5 s late: all four presses are queued cold.
     for (const id of ["#cyc-a", "#cyc-b", "#cyc-a", "#cyc-c"]) await page.click(id);
     await counted(page, "__cycC");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "cyc-c");
     // Only the native mouse focus of each press (A twice, B once): no replay focuses a canceled stepper again.
     assert.deepEqual(
@@ -258,7 +266,7 @@ test("resume: a listener a replayed handler attached sees the cold events replay
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__late), 1);
     // `once`: the replay removed it, so a live second click reaches only the listener its own mousedown added (3 if kept).
     await page.click("#late");
-    await page.waitForTimeout(50);
+    await page.waitForFunction(() => (globalThis as unknown as Record<string, number>).__late >= 2, undefined, { timeout: 2000 });
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__late), 2, "the second press installs a new one");
   });
 });
@@ -267,7 +275,7 @@ test("resume: a canceled cold press replays none of the focus events its native 
   await cold(async (page) => {
     await page.click("#drop");
     await counted(page, "__drop");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "before");
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__dropFocus), undefined);
   });
@@ -280,7 +288,7 @@ test("resume: the focus-back of a cold press fires no focusout into the resumed 
     // focuses the cell as the default would. On a loaded page `#leave` never sees a `focusout` for this press.
     await page.click("#leave-cell");
     await counted(page, "__leavePress");
-    await page.waitForTimeout(100);
+    await idle(page);
     assert.equal(await active(page), "leave-cell");
     assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__leaveOut), undefined);
   });

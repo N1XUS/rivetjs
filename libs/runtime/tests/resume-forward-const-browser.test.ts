@@ -7,9 +7,8 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolUrls, symbolChunks } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -42,18 +41,17 @@ export function Live() {
 const setup = async () => {
   const dom = compileResume(source, "dom", "src/fwd.tsx");
   const server = await importServer<{ Static(): ServerValue; Live(): ServerValue }>(compileResume(source, "server", "src/fwd.tsx").code);
-  const groups: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of dom.symbols) (groups["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+  const groups = symbolChunks(dom.symbols);
   const manifest: ResumeManifest = {
     hash: "fwd",
     runtime: "/rt.js",
-    symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+    symbols: symbolUrls(dom.symbols),
   };
   const files: Record<string, Served> = {
     "/fixture.mjs": rewrite(dom.code),
     "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
   };
-  for (const [path, symbols] of Object.entries(groups)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+  Object.assign(files, symbolModules(groups));
   const page = async (render: () => ServerValue) =>
     "<!doctype html><html><head></head><body>" + (await resumableToString(render, { manifest })) + "</body></html>";
   return { server, files, page };

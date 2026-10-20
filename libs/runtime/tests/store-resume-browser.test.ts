@@ -5,10 +5,9 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import { readable } from "./resume/wire.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -18,14 +17,13 @@ const dom = compileResume(source, "dom", "src/store.tsx");
 const serverCode = compileResume(source, "server", "src/store.tsx").code;
 const server = await importServer<{ Todos(): ServerValue }>(serverCode);
 const DEV_RUN = process.execArgv.includes("--conditions=development");
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
-const manifest: ResumeManifest = { hash: "test", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+Object.assign(files, symbolModules(byComponent));
+const manifest: ResumeManifest = { hash: "test", runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
 const body = (await resumableToString(() => server.Todos(), { manifest })) as string;
 files["/todos"] = "<!doctype html><html><head></head><body>" + body + "</body></html>";
 

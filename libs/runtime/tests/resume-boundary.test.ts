@@ -4,9 +4,8 @@ import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 /** What a resumable factory returns (as declared by server-resume). */
@@ -80,14 +79,13 @@ export function Streamed() {
 `;
 const dom = compileResume(source, "dom");
 const server = await importServer<{ Page(): ServerValue; Mixed(): ServerValue; Streamed(): ServerValue }>(compileResume(source, "server").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
-const manifest: ResumeManifest = { hash: "t", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+Object.assign(files, symbolModules(byComponent));
+const manifest: ResumeManifest = { hash: "t", runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
 const stateOf = (html: string): State => readable(JSON.parse(/<script type="rivet\/state" data-region="0"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
 const patches = (html: string): Patch[] =>
   [...html.matchAll(/<script type="rivet\/state" data-patch="(\d+)">(.*?)<\/script>/gs)].map(([, id, json]) => ({ id: Number(id), ...(JSON.parse(json!) as Omit<Patch, "id">) }));

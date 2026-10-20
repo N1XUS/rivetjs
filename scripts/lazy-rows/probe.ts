@@ -31,6 +31,7 @@ import { framePath, framePreload } from "../../libs/docs-kit/frame-theme.ts";
 import { loadBuild } from "../../libs/router/adapters/build.ts";
 import { loadApp } from "../../libs/docs-kit/tools/app.ts";
 import { PROBE_VERSION, type ProbePage, type ProbeReport } from "./schema.ts";
+import { median } from "../bench/shared.ts";
 
 const repo = resolve(import.meta.dirname, "../..");
 /**
@@ -96,11 +97,6 @@ function parse(args: readonly string[]): Options {
   return options;
 }
 
-const median = (values: readonly number[]): number => {
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = sorted.length >> 1;
-  return sorted.length & 1 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
-};
 const round = (n: number, digits = 3) => Math.round(n * 10 ** digits) / 10 ** digits;
 
 /** Server CPU / wall per render of one frame page (the build's handler, this process). */

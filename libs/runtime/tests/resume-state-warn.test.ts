@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { DEV } from "#dev";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 type Row = { id: number; label: string; text: string };
@@ -59,7 +59,7 @@ const server = compileResume(source, "server", "src/state.tsx");
 const mod = await importServer<Record<string, (p: object) => ServerValue>>(server.code);
 const manifest: ResumeManifest = {
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
   captures: Object.fromEntries(server.symbols.map((s) => [s.id, s.labels ?? s.captures])),
 };
 (globalThis as { __rows?: (n: number) => Promise<Row[]> }).__rows = (n) => new Promise((resolve) => setTimeout(() => resolve(rows(n)), 5));

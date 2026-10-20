@@ -4,7 +4,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 import { readable } from "./resume/wire.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -37,7 +37,7 @@ const server = await importServer<{ Page(): ServerValue }>(compileResume(source,
 const manifest: ResumeManifest = {
   hash: "reach",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const html = await resumableToString(() => server.Page(), { manifest });
 const state = readable(JSON.parse(html.match(/<script type="rivet\/state"[^>]*>(.*?)<\/script>/)![1]!));

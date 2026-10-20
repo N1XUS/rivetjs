@@ -7,6 +7,7 @@
 //
 //   RESUME_BENCH_CHROME=/opt/pw-browsers/chromium node apps/resume-bench/spikes/s3-dashboard.ts [--url http://127.0.0.1:4327] [--repeats 5] [--fast]
 import { chromium } from "playwright";
+import { median, chromeTarget } from "../../../scripts/bench/shared.ts";
 
 const argv = process.argv.slice(2);
 const opt = (name: string, def: string) => (argv.includes(name) ? argv[argv.indexOf(name) + 1]! : def);
@@ -16,13 +17,9 @@ const slow = !argv.includes("--fast");
 const frame = `${base}/examples/showcase-dashboard/frame/`;
 
 const browser = await chromium.launch({
-  ...(process.env.RESUME_BENCH_CHROME ? { executablePath: process.env.RESUME_BENCH_CHROME } : { channel: "chrome" }),
+  ...chromeTarget(),
   args: ["--use-mock-keychain", "--password-store=basic"],
 });
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? s[Math.floor(s.length / 2)]! : NaN;
-};
 const fmt = (xs: number[]) => (xs.length ? `${median(xs).toFixed(1)} (${Math.min(...xs).toFixed(1)}–${Math.max(...xs).toFixed(1)})` : "–");
 
 interface Sample {

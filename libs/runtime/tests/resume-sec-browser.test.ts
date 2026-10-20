@@ -9,9 +9,9 @@ import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resu
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Page } from "playwright";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -23,19 +23,18 @@ interface Fixture {
 const source = await readFile(new URL("./resume/sec-fixture.tsx", import.meta.url), "utf8");
 const dom = compileResume(source, "dom", "src/sec.tsx");
 const server = await importServer<Fixture>(compileResume(source, "server", "src/sec.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
   "/evil.js": "window.__evil = 1; export default { start() {}, dispatch() { return {}; } };",
   "/submitted": "<!doctype html><p id=done>submitted</p>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 const manifest: ResumeManifest = {
   hash: "sec",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const page = (body: string, head = ""): string => "<!doctype html><html><head>" + head + "</head><body>" + body + "</body></html>";
 const counter = String(await resumableToString(() => server.Counter(), { manifest }));

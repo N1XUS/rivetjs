@@ -11,7 +11,7 @@ import type { ServerValue } from "@rivetjs/runtime/server";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore } from "@rivetjs/runtime/server-derived";
 import { isData } from "../server-derived.ts";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
 
 type Row = { id: number; values: number[] };
@@ -112,7 +112,7 @@ test("values-only tail is a fraction of today's state script for the same page",
   const { script } = tailOf(derivedHtml);
   const serverCode = compileResume(page(false), "server", "src/page.tsx");
   const dom = compileResume(page(false), "dom", "src/page.tsx");
-  const symbols = Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"]));
+  const symbols = symbolUrls(dom.symbols);
   const serialized = await importServer<AppModule>(serverCode.code);
   const todayHtml = (await resumableToString(() => serialized.App({ data }), { manifest: { ...manifest, symbols } })) as string;
   const state = todayHtml.match(/<script type="rivet\/state"[^>]*>.*?<\/script>/s)![0];

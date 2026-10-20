@@ -4,10 +4,9 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -17,17 +16,16 @@ const scope = globalThis as { __fail?: boolean };
 const source = await readFile(new URL("./resume/compiler-fixes-fixture.tsx", import.meta.url), "utf8");
 const dom = compileResume(source, "dom", "src/g19.tsx");
 const server = await importServer<Record<Name, () => ServerValue>>(compileResume(source, "server", "src/g19.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 const manifest: ResumeManifest = {
   hash: "test",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const page = async (name: Name): Promise<string> =>
   "<!doctype html><html><head></head><body>" + (await resumableToString(() => server[name](), { manifest })) + "</body></html>";

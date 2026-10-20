@@ -8,8 +8,7 @@ import { readFile } from "node:fs/promises";
 import { compile } from "@rivetjs/compiler";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolUrls, symbolChunks } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -24,9 +23,8 @@ async function fixture(file: string, extra: Record<string, Served> = {}): Promis
   assert.deepEqual(csr.diagnostics, []);
   const dom = compileResume(source, "dom", module);
   const server = await importServer<{ Page(): ServerValue }>(compileResume(source, "server", module).code);
-  const byComponent: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
-  const manifest: ResumeManifest = { hash: file, runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+  const byComponent = symbolChunks(dom.symbols);
+  const manifest: ResumeManifest = { hash: file, runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
   const base: Record<string, Served> = {
     ...extra,
     "/fixture.mjs": rewrite(dom.code),

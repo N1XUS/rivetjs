@@ -61,3 +61,14 @@ export async function importServer<T = Record<string, unknown>>(code: string): P
       .replaceAll(`'${specifier}'`, JSON.stringify(import.meta.resolve(specifier)));
   return (await import("data:text/javascript;base64," + Buffer.from(code).toString("base64"))) as T;
 }
+
+/** Symbol chunk URL of each component: `/c/<Component>.js` (the manifest's `symbols` values, the served chunk paths). */
+const chunkUrl = (symbol: ResumeSymbol): string => "/c/" + symbol.component + ".js";
+/** A compiled fixture's symbols per chunk URL (one chunk per component). */
+export function symbolChunks(symbols: readonly ResumeSymbol[]): Record<string, ResumeSymbol[]> {
+  const chunks: Record<string, ResumeSymbol[]> = {};
+  for (const symbol of symbols) (chunks[chunkUrl(symbol)] ??= []).push(symbol);
+  return chunks;
+}
+/** Manifest `symbols`: symbol id → its chunk URL. */
+export const symbolUrls = (symbols: readonly ResumeSymbol[]): Record<string, string> => Object.fromEntries(symbols.map((s) => [s.id, chunkUrl(s)]));

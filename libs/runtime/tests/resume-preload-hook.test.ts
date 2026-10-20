@@ -4,7 +4,7 @@ import { test, vi } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString, _rPreload, _renderNonce } from "@rivetjs/runtime/server-resume";
 import { renderToString } from "@rivetjs/runtime/server";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 
 const DEV_RUN = process.execArgv.includes("--conditions=development");
@@ -46,7 +46,7 @@ const mod = await importServer<{ Island: (props: Props) => ServerValue }>(compil
 const manifestOf = (extra: ManifestExtra = {}): ResumeManifest =>
   ({
     runtime: "/rt.js",
-    symbols: Object.fromEntries(symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+    symbols: symbolUrls(symbols),
     lazy: { "/c/Island.js": ["/c/react-island.js"] },
     ...extra,
   }) as ResumeManifest;

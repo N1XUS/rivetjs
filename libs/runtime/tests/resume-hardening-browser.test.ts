@@ -8,8 +8,7 @@ import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page as BrowserPage } from "playwright";
@@ -24,11 +23,10 @@ const manifest: ResumeManifest = {
   runtime: "/rt.js",
   // The loader module: scheduled prefetch and the idle evaluation of prefetched chunks (the warm-up below).
   loader: "/resume-loader-module.ts",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const html = await resumableToString(() => server.Page({ items: Array.from({ length: 100 }, (_, id) => ({ id })) }), { manifest });
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const base: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',

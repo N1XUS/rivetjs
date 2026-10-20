@@ -7,8 +7,7 @@ import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -17,10 +16,9 @@ type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 const source = await readFile(new URL("./resume/hardening-fixture.tsx", import.meta.url), "utf8");
 const dom = compileResume(source, "dom", "src/hardening.tsx");
 const server = await importServer<{ Page(props: { items: { id: number }[] }): ServerValue }>(compileResume(source, "server", "src/hardening.tsx").code);
-const manifest: ResumeManifest = { hash: "split", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+const manifest: ResumeManifest = { hash: "split", runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
 const html = await resumableToString(() => server.Page({ items: [{ id: 0 }, { id: 1 }] }), { manifest });
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const base: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',

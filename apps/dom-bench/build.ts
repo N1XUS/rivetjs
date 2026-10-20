@@ -89,7 +89,10 @@ const lanes = [
 ].filter((lane, i, all) => all.indexOf(lane) === i);
 for (const framework of lanes) {
   // A Rivet variant lane (A/B): the rivet adapter, another runtime (`rivet-base`) or prebuilt compiled output (`--lane`).
-  const variant = framework === "rivet-base" || prebuilt.has(framework);
+  const isPrebuilt = prebuilt.has(framework),
+    variant = framework === "rivet-base" || isPrebuilt,
+    // Lanes the Rivet compiler builds (the rivet adapter through this or another runtime); `rivet-v2` / prebuilt are hand-lowered.
+    rivetCompiled = framework === "rivet" || variant;
   const plugins: Plugin[] =
     framework === "react"
       ? []
@@ -114,7 +117,7 @@ for (const framework of lanes) {
                   return { path: resolve(dir, typeof entry === "string" ? entry : entry.default) };
                 });
               builder.onLoad({ filter: /\.jsx$/ }, async (args) => {
-                if (prebuilt.has(framework)) return { contents: await readFile(prebuilt.get(framework)!, "utf8"), loader: "js", resolveDir: dirname(args.path) };
+                if (isPrebuilt) return { contents: await readFile(prebuilt.get(framework)!, "utf8"), loader: "js", resolveDir: dirname(args.path) };
                 const source = await readFile(args.path, "utf8");
                 const result =
                   framework === "rivet" || framework === "rivet-base"
@@ -174,7 +177,7 @@ for (const framework of lanes) {
   artifacts.push({
     framework,
     version:
-      framework === "rivet" || framework === "rivet-v2" || variant
+      rivetCompiled || framework === "rivet-v2"
         ? versions["@rivetjs/runtime"]
         : framework === "react"
           ? versions.react
@@ -187,8 +190,8 @@ for (const framework of lanes) {
       ? { name: "babel-preset-solid", version: versions["solid-stable/babel-preset-solid"]!, options: { generate: "dom", hydratable: false, dev: false } }
       : framework === "solid"
         ? { name: "@solidjs/compiler", version: versions["@solidjs/compiler"]!, options: { generate: "dom", hydratable: false, dev: false, sourceNames: false } }
-        : framework === "rivet-v2" || prebuilt.has(framework) ? { name: "hand-lowered", version: versions["@rivetjs/runtime"]!, options: { target: "dom-v2" } }
-        : { name: framework === "rivet" || variant ? "@rivetjs/compiler" : "esbuild", version: versions[framework === "rivet" || variant ? "@rivetjs/compiler" : "esbuild"]!, options: { target: "dom", production: true, ...compileOptions } },
+        : framework === "rivet-v2" || isPrebuilt ? { name: "hand-lowered", version: versions["@rivetjs/runtime"]!, options: { target: "dom-v2" } }
+        : { name: rivetCompiled ? "@rivetjs/compiler" : "esbuild", version: versions[rivetCompiled ? "@rivetjs/compiler" : "esbuild"]!, options: { target: "dom", production: true, ...compileOptions } },
     raw: bytes.length,
     gzip: gzipSync(bytes).length,
     brotli: brotliCompressSync(bytes).length,

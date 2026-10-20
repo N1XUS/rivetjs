@@ -12,9 +12,8 @@ import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { ResumeState } from "@rivetjs/runtime/resume-format";
 import { withIdScope } from "@rivetjs/runtime/id";
 import type { Page } from "playwright";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { LAZY_ROWS_BUILD, withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { LAZY_ROWS_BUILD, withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -67,11 +66,10 @@ const mod = await importServer<{ Page(p: { rows: R[] }): ServerValue }>(compileR
 const manifest: ResumeManifest = {
   hash: "t5",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
   lazyRows: true,
 };
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const rows: R[] = [
   { id: 1, label: "a", tags: ["x", "y"] },
   { id: 2, label: "b", tags: [] },
@@ -94,7 +92,7 @@ const files: Record<string, Served> = {
   // The server markup alone (no state, no loader): `_adoptRow` driven directly.
   "/bare": "<!doctype html><html><head></head><body>" + body.replace(/<script[\s\S]*?<\/script>/g, "") + "</body></html>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 
 // Tag every element (identity: a moved / replaced node loses its tag) and read back what changed.
 const mark = (page: Page): Promise<void> =>
@@ -282,10 +280,14 @@ test("_adoptRow (row symbol + the components it calls): handler, binding, ref, n
         trs[2]!.querySelector("td.c")!.setAttribute("class", "x");
         adopt(2, true);
         const live = [...document.querySelectorAll("#t tr")];
+        // Until the row's class binding answered (or 50 tasks passed: the assertions below then show what it holds).
+        const until = async (ok: () => boolean) => {
+          for (let i = 0; i < 50 && !ok(); i++) await new Promise((r) => setTimeout(r));
+        };
         sel.set(2);
-        await new Promise((r) => setTimeout(r));
+        await until(() => live[1]!.className === "on");
         (live[0]!.querySelector("td.c") as HTMLElement).click();
-        await new Promise((r) => setTimeout(r));
+        await until(() => live[0]!.className === "on");
         return {
           warnings,
           same: live.map((tr, k) => tr === trs[k]),

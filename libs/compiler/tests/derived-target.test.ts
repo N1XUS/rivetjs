@@ -6,7 +6,9 @@ import assert from "node:assert/strict";
 import { check, compile, hasDerivedModel, moduleFacts } from "../index.ts";
 
 const derived = hasDerivedModel();
-const skip = derived ? "" : "rivet_compiler.wasm predates the derived model (apply the M2 lane A Rust patches and run rust/build.sh)";
+// The Rust half (M2 C1 / C2, plan docs/design/plans/2026-10-18-derived-client.md) is not in libs/compiler/rust yet: no
+// `has_derived_model` export, so the checked-in wasm skips. Once it lands, the build exports it and these cases run.
+const skip = derived ? "" : "rivet_compiler.wasm has no derived model: its Rust half (M2 C1 / C2) has not landed in libs/compiler/rust";
 const it = (name: string, fn: () => void) => (derived ? test(name, fn) : test.skip(name + " — " + skip, fn));
 
 const COUNTER = `

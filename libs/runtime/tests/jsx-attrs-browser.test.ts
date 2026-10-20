@@ -6,8 +6,7 @@ import { compile } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -90,8 +89,7 @@ test("DOM: select value applies after the options exist, follows the signal and 
 
 const resumeDom = compileResume(source, "dom", "src/jsx-attrs.tsx");
 const resumeServer = await importServer<Record<Name, Component>>(compileResume(source, "server", "src/jsx-attrs.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of resumeDom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(resumeDom.symbols);
 const resumeFiles: Record<string, Served> = {
   "/fixture.mjs": rewrite(resumeDom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
@@ -100,7 +98,7 @@ for (const [path, symbols] of Object.entries(byComponent)) resumeFiles[path] = r
 const manifest: ResumeManifest = {
   hash: "test",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(resumeDom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(resumeDom.symbols),
 };
 for (const name of names)
   resumeFiles["/" + name] =

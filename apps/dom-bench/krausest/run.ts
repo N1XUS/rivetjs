@@ -19,6 +19,7 @@ import { computeCPU, JS_EVENTS, PAINT_EVENTS, unionWithin, type TraceEvent } fro
 import { withBenchLock } from "../bench-lock.ts";
 import { compareToPublished, formatComparison, type SuiteResults } from "./compare.ts";
 import { cpuBenchmarks, exists, memBenchmarks, type CPUBench, type MemBench } from "./benchmarks.ts";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -56,10 +57,6 @@ const newPage = async (browser: Browser) => {
   return { page, errors };
 };
 const forceGC = (page: Page) => page.evaluate("window.gc({type:'major',execution:'sync',flavor:'last-resort'})");
-const median = (values: number[]) => {
-  const s = [...values].sort((a, b) => a - b), n = s.length;
-  return n ? (s[Math.floor((n - 1) / 2)]! + s[Math.floor(n / 2)]!) / 2 : NaN;
-};
 const stats = (values: number[]) => ({ n: values.length, median: median(values), mean: values.reduce((a, b) => a + b, 0) / values.length, min: Math.min(...values), max: Math.max(...values), values });
 const traceEvents = (buffer: Buffer): TraceEvent[] => {
   const json = JSON.parse(buffer.toString("utf8")) as { traceEvents?: TraceEvent[] } | TraceEvent[];

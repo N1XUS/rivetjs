@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { startServer } from "../server.ts";
 import { withBenchLock } from "../bench-lock.ts";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url)),
   dist = resolve(here, "../dist/props");
@@ -14,10 +15,6 @@ const arg = (name: string, fallback: string) => (process.argv.includes(`--${name
 const samples = Number(arg("samples", "20")),
   lanes = arg("lanes", "rivet,solid-stable").split(","),
   flags = arg("flags", "");
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2;
-};
 const results: Record<string, Record<string, number[]>> = {};
 const push = (lane: string, metric: string, value: number) => ((results[lane] ??= {})[metric] ??= []).push(value);
 type Bench = { propsBench: { run(check: boolean): Record<string, number>; hold(): void; release(): void } };

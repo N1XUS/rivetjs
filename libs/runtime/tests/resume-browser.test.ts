@@ -2,13 +2,12 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import { compile } from "@rivetjs/compiler";
 import { createRouter } from "@rivetjs/runtime/router/server";
 import type { ServerRouter } from "@rivetjs/runtime/router/server";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import loaderModule from "../resume-loader-module.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -40,8 +39,7 @@ const source = await readFile(new URL("./resume/fixture.tsx", import.meta.url), 
 const dom = compileResume(source, "dom");
 const server = await importServer<Fixture>(compileResume(source, "server").code);
 // Component strategy: one chunk per component, importing module scope from the DOM module.
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js":
@@ -51,11 +49,11 @@ const files: Record<string, Served> = {
   "/next": "<!doctype html><p id=next>next</p>",
   "/submitted": "<!doctype html><p id=submitted>submitted</p>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 const manifest: ResumeManifest = {
   hash: "test",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const page = async (component: "App" | "Counter" | "Equality" | "Intercept" | "Shared" | "Bubbling"): Promise<string> =>
   "<!doctype html><html><head></head><body>" + (await resumableToString(() => server[component](), { manifest })) + "</body></html>";

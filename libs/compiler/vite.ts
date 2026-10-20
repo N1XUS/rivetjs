@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { coLoadGroups, isBarrel, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
+import { coLoadGroups, isBarrel, MERGE_BUDGET, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import {
   compile,
@@ -79,7 +79,7 @@ export interface RivetResumeOptions {
    * together merge into one chunk while the source bytes entries (symbol chunks, lazily imported modules, app entry,
    * runtime) load without needing them stay under this budget per request saved — summed over entries and checked per
    * merge, so the budget is amortised: one entry can pay more (`chunk-groups.ts`). Chunks every page loads never take
-   * page code; a merged chunk never closes an import cycle. Default 65536 (2048 until 2026-10-18: 64 K cut the
+   * page code; a merged chunk never closes an import cycle. Default 65536 (`MERGE_BUDGET`; 2048 until 2026-10-18: 64 K cut the
    * files of a page by a third to a half at flat bytes on the ui-docs frames); `false` = the bundler's automatic split.
    * Skipped when the build sets `codeSplitting: false`, `manualChunks` or `advancedChunks`.
    */
@@ -1471,7 +1471,7 @@ function rivetPlugin(
     // Shared chunk merging (`resume.merge`): the module graph is complete at buildEnd; outputOptions hands the
     // groups to Rolldown's codeSplitting (deps not pulled in: every module is placed by its own group or left alone).
     buildEnd(error) {
-      const budget = resume?.merge ?? 65536;
+      const budget = resume?.merge ?? MERGE_BUDGET;
       // Server builds (another environment of this plugin instance) leave the client's groups alone.
       if (budget === false || !resume || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
       merged = new Map();

@@ -1,3 +1,11 @@
+/**
+ * Elements one adapter row renders (`adapters/*` `Row`): section, header, h2, p, the fields div, footer, small, plus 10
+ * fields × (label, span, strong, button, span).
+ */
+export const ROW_ELEMENTS = 57;
+/** Elements under `#host` with `rows` rows mounted: the rows inside the adapter's one `<main>`. */
+export const hostElements = (rows: number): number => rows * ROW_ELEMENTS + 1;
+
 /** Select evenly distributed, unique field indexes for a percentage update. */
 export function selectFields(total: number, percent: number): number[] {
   if (!Number.isSafeInteger(total) || total < 1 || !Number.isFinite(percent) || percent <= 0 || percent > 100)

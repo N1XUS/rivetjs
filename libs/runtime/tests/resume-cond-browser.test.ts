@@ -9,9 +9,8 @@ import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { renderToString } from "@rivetjs/runtime/server";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compile } from "@rivetjs/compiler";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page } from "playwright";
 
@@ -58,12 +57,11 @@ const plainServer = await importServer<Record<string, Component>>(plain.code);
 // Resume: server + DOM symbols.
 const dom = compileResume(source, "dom", "src/cond.tsx");
 const server = await importServer<Record<string, Component>>(compileResume(source, "server", "src/cond.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const manifest: ResumeManifest = {
   hash: "cond",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 
 // Client only.
@@ -75,7 +73,7 @@ const files: Record<string, Served> = {
   "/csr.mjs": rewrite(csr.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 for (const init of [true, false]) {
   const ssr = await resumableToString(() => NAMES.map((name) => server[name]!({ id: name, init })) as unknown as ServerValue, { manifest });
   files["/resume-" + init] = "<!doctype html><html><head></head><body>" + ssr + "</body></html>";

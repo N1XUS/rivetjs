@@ -8,9 +8,8 @@ import { readFile } from "node:fs/promises";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compile } from "@rivetjs/compiler";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page } from "playwright";
 
@@ -21,12 +20,11 @@ const csr = compile(source, { target: "dom", filename: "cond-memo-fixture.tsx" }
 assert.deepEqual(csr.diagnostics, []);
 const dom = compileResume(source, "dom", "src/cond-memo.tsx");
 const server = await importServer<{ Page(): ServerValue }>(compileResume(source, "server", "src/cond-memo.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const manifest: ResumeManifest = {
   hash: "cond-memo",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const ssr = await resumableToString(() => server.Page(), { manifest });
 const files: Record<string, Served> = {
@@ -39,7 +37,7 @@ const files: Record<string, Served> = {
   </script></body></html>`,
   "/": "<!doctype html><html><head></head><body>" + ssr + "</body></html>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 
 const KEPT = [".pos", ".and", ".frag", ".lazy"];
 const mark = (page: Page) => page.evaluate((sels) => sels.forEach((s) => ((document.querySelector(s) as unknown as Record<string, boolean>).__m = true)), KEPT);

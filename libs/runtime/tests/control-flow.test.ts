@@ -4,9 +4,8 @@ import { readFile } from "node:fs/promises";
 import { compile } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolUrls, symbolChunks } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 
 /** Server build of ./control-flow/fixture.tsx. */
 type View = (props: never) => unknown;
@@ -237,14 +236,13 @@ test("resume: Show / Switch adopt the server branch; state inside survives condi
   const resumeSource = await readFile(new URL("./control-flow/resume.tsx", import.meta.url), "utf8");
   const resumeDom = compileResume(resumeSource, "dom");
   const resumeServer = await importServer<{ Page(): never }>(compileResume(resumeSource, "server").code);
-  const chunks: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of resumeDom.symbols) (chunks["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+  const chunks = symbolChunks(resumeDom.symbols);
   const files: Record<string, string> = {
     "/fixture.mjs": rewrite(resumeDom.code),
     "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
   };
-  for (const [path, symbols] of Object.entries(chunks)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
-  const manifest = { hash: "test", runtime: "/rt.js", symbols: Object.fromEntries(resumeDom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+  Object.assign(files, symbolModules(chunks));
+  const manifest = { hash: "test", runtime: "/rt.js", symbols: symbolUrls(resumeDom.symbols) };
   files["/"] = "<!doctype html><html><head></head><body>" + (await resumableToString(() => resumeServer.Page(), { manifest })) + "</body></html>";
   await withPage(files, async (page) => {
     const errors: string[] = [];

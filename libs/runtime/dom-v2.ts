@@ -768,6 +768,11 @@ export const _adoption: {
   materialise?: ((node: Node) => boolean) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
+ * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place
+ * (`_adoption.node` kind 2). Builds without lazy rows fold it to `doc.createTextNode("")`.
+ */
+export const _anchor = (doc: Document): Text => (LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""));
+/**
  * Resume ABI (LAZY-ROWS T5; cdk collections, contract for lane T3): materialise the lazy `<For>` row (spec
  * `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`) holding `node` before code outside the row hands it
  * focus or points `aria-activedescendant` at it, so its handlers, bindings and effects exist when the next event
@@ -895,8 +900,8 @@ export function _for<T, K>(props: {
     // anchors owned by the row.
     // Adopt run (LAZY-ROWS T5 builds): the anchors are the server nodes already in place (not moved into a fragment).
     const doc = host.doc(),
-      start = (row.start = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode("")),
-      end = (row.end = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode("")),
+      start = (row.start = _anchor(doc)),
+      end = (row.end = _anchor(doc)),
       frag = doc.createDocumentFragment();
     if (!LAZY_ROWS || start.parentNode === null) frag.append(start, end);
     _insert(null, out, end);

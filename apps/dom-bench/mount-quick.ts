@@ -8,7 +8,9 @@ import { chromium } from "playwright";
 import { writeFile } from "node:fs/promises";
 import { loadavg } from "node:os";
 import { startServer } from "./server.ts";
+import { hostElements } from "./metrics.ts";
 import { withBenchLock } from "./bench-lock.ts";
+import { median } from "../../scripts/bench/shared.ts";
 const arg = (k: string, d: string) => (process.argv.includes(k) ? process.argv[process.argv.indexOf(k) + 1]! : d);
 const lanes = arg("--lanes", "rivet,solid-stable").split(","),
   rows = arg("--rows", "1000").split(",").map(Number),
@@ -22,11 +24,6 @@ const server = await startServer(),
   browser = await chromium.launch({ args: arg("--flags", "") ? [`--js-flags=${arg("--flags", "")}`] : [] });
 const res: Record<string, Record<number, number[]>> = {};
 const loads: number[] = [];
-const med = (a: number[]) => {
-  const s = [...a].sort((x, y) => x - y);
-  const n = s.length;
-  return n % 2 ? s[(n - 1) / 2]! : (s[n / 2 - 1]! + s[n / 2]!) / 2;
-};
 try {
   await withBenchLock("dom-mount quick", async () => {
     for (const r of rows)
@@ -55,14 +52,17 @@ try {
           // As run.ts: forced GC (baseline heap) between the warm-up cycle and the timed mount.
           if (gc) await cdp.send("HeapProfiler.collectGarbage");
           if (idle) await page.evaluate((ms) => new Promise((y) => setTimeout(y, ms)), idle);
-          const ms = await page.evaluate((r) => {
-            const b = performance.now();
-            window.bench.mount(r);
-            const t = performance.now() - b;
-            if (document.querySelectorAll("#host *").length !== r * 57 + 1) throw Error("size");
-            window.bench.dispose();
-            return t;
-          }, r);
+          const ms = await page.evaluate(
+            ({ r, elements }) => {
+              const b = performance.now();
+              window.bench.mount(r);
+              const t = performance.now() - b;
+              if (document.querySelectorAll("#host *").length !== elements) throw Error("size");
+              window.bench.dispose();
+              return t;
+            },
+            { r, elements: hostElements(r) },
+          );
           ((res[lane] ??= {})[r] ??= []).push(ms);
           await context.close();
         }
@@ -73,11 +73,11 @@ try {
   await server.close();
 }
 for (const r of rows) {
-  const base = med(res[lanes[0]!]![r]!);
+  const base = median(res[lanes[0]!]![r]!);
   for (const l of lanes) {
     const a = res[l]![r]!;
     console.log(
-      `${r} ${l.padEnd(16)} median ${med(a).toFixed(2)} ms  (${Math.min(...a).toFixed(2)}–${Math.max(...a).toFixed(2)})  q1–q3 ${[...a].sort((x, y) => x - y)[Math.floor(a.length / 4)]!.toFixed(2)}–${[...a].sort((x, y) => x - y)[Math.floor((3 * a.length) / 4)]!.toFixed(2)}  vs ${lanes[0]} ${((med(a) / base - 1) * 100).toFixed(1)}%`,
+      `${r} ${l.padEnd(16)} median ${median(a).toFixed(2)} ms  (${Math.min(...a).toFixed(2)}–${Math.max(...a).toFixed(2)})  q1–q3 ${[...a].sort((x, y) => x - y)[Math.floor(a.length / 4)]!.toFixed(2)}–${[...a].sort((x, y) => x - y)[Math.floor((3 * a.length) / 4)]!.toFixed(2)}  vs ${lanes[0]} ${((median(a) / base - 1) * 100).toFixed(1)}%`,
     );
   }
 }

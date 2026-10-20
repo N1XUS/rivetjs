@@ -7,9 +7,8 @@ import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { ResumeState } from "@rivetjs/runtime/resume-format";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { LAZY_ROWS_BUILD, withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { LAZY_ROWS_BUILD, withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -35,11 +34,10 @@ const mod = await importServer<{ Page(): ServerValue }>(compileResume(source, "s
 const manifest: ResumeManifest = {
   hash: "lazy",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
   lazyRows: true,
 };
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 
 test("lazy row records (RIVET_LAZY_ROWS=on): the page boots, regions re-create their lazy rows, streamed records merge", async () => {
   process.env.RIVET_LAZY_ROWS = "on";
@@ -62,7 +60,7 @@ test("lazy row records (RIVET_LAZY_ROWS=on): the page boots, regions re-create t
     "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
     "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
   };
-  for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+  Object.assign(files, symbolModules(byComponent));
   await withPage(files, async (page) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));

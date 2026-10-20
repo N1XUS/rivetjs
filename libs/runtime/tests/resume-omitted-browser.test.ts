@@ -5,10 +5,9 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
+import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page } from "playwright";
 
@@ -21,17 +20,16 @@ const source = await readFile(new URL("./resume/omitted-fixture.tsx", import.met
 const serverCode = compileResume(source, "server", "src/omitted.tsx").code;
 const dom = compileResume(source, "dom", "src/omitted.tsx");
 const server = await importServer<Fixture>(serverCode);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 const manifest: ResumeManifest = {
   hash: "omitted",
   runtime: "/rt.js",
-  symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  symbols: symbolUrls(dom.symbols),
 };
 const html = await resumableToString(() => server.Omitted({ armed: true }), { manifest });
 files["/omitted"] = "<!doctype html><html><head></head><body>" + html + "</body></html>";

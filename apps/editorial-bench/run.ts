@@ -14,6 +14,7 @@ import { parseArgs } from "node:util";
 import { brotliCompressSync, constants as zlib, gzipSync } from "node:zlib";
 import { generate } from "./fixture/gen.ts";
 import { Connection, type Response } from "../ssr-bench/loadgen/client.ts";
+import { median as middle } from "../../scripts/bench/shared.ts";
 
 const HERE = import.meta.dirname;
 const LANES = ["rivet", "astro", "eleventy", "hugo", "next", "sveltekit"] as const;
@@ -59,12 +60,7 @@ const OUT = resolve(args.out!);
 mkdirSync(OUT, { recursive: true });
 const contentDir = (n: number) => join(HERE, "fixture", "content", `n${n}`);
 const load1 = () => loadavg()[0]!;
-const median = (xs: number[]) => {
-  const s = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
-  if (!s.length) return NaN;
-  const m = s.length >> 1;
-  return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
-};
+const median = (xs: number[]) => middle(xs.filter((x) => Number.isFinite(x)));
 const stat = (xs: number[]) => ({ median: median(xs), min: Math.min(...xs), max: Math.max(...xs), samples: xs });
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const log = (...a: unknown[]) => console.log(`[editorial ${new Date().toISOString().slice(11, 19)} load ${load1().toFixed(1)}]`, ...a);

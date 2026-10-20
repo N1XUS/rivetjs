@@ -6,9 +6,8 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
-import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -30,14 +29,13 @@ export function Page() {
 `;
 const dom = compileResume(source, "dom", "src/rows.tsx");
 const server = await importServer<{ Page(): ServerValue }>(compileResume(source, "server", "src/rows.tsx").code);
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
-const manifest: ResumeManifest = { hash: "rows", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+const byComponent = symbolChunks(dom.symbols);
+const manifest: ResumeManifest = { hash: "rows", runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+Object.assign(files, symbolModules(byComponent));
 
 async function run(button: string): Promise<{ kept: string[]; text: string; errors: string[] }> {
   const page = "<!doctype html><html><head></head><body>" + (await resumableToString(() => server.Page(), { manifest })) + "</body></html>";
@@ -102,12 +100,11 @@ export function Page() {
 test("a row whose own render read a signal is re-created with its region (equal data or not)", async () => {
   const pdom = compileResume(panels, "dom", "src/panels.tsx");
   const pserver = await importServer<{ Page(): ServerValue }>(compileResume(panels, "server", "src/panels.tsx").code);
-  const groups: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of pdom.symbols) (groups["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+  const groups = symbolChunks(pdom.symbols);
   const pmanifest: ResumeManifest = {
     hash: "panels",
     runtime: "/rt.js",
-    symbols: Object.fromEntries(pdom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+    symbols: symbolUrls(pdom.symbols),
   };
   const served: Record<string, Served> = { "/fixture.mjs": rewrite(pdom.code), "/rt.js": files["/rt.js"]! };
   for (const [path, symbols] of Object.entries(groups)) served[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
@@ -146,12 +143,11 @@ export function Page() {
 test("compact rows whose own render read a signal: re-created, not read as a branch", async () => {
   const cdom = compileResume(compact, "dom", "src/compact.tsx");
   const cserver = await importServer<{ Page(): ServerValue }>(compileResume(compact, "server", "src/compact.tsx").code);
-  const groups: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of cdom.symbols) (groups["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+  const groups = symbolChunks(cdom.symbols);
   const cmanifest: ResumeManifest = {
     hash: "compact",
     runtime: "/rt.js",
-    symbols: Object.fromEntries(cdom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+    symbols: symbolUrls(cdom.symbols),
   };
   const served: Record<string, Served> = { "/fixture.mjs": rewrite(cdom.code), "/rt.js": files["/rt.js"]! };
   for (const [path, symbols] of Object.entries(groups)) served[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));

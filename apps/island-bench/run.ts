@@ -24,6 +24,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { createGunzip, gzipSync } from "node:zlib";
+import { median } from "../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "../..");
@@ -202,10 +203,6 @@ const save = () => {
 
 // ---------------------------------------------------------------- helpers
 const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2) : NaN;
-};
 const pct = (xs: number[], p: number) => {
   const s = [...xs].sort((a, b) => a - b);
   return s.length ? s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]! : NaN;

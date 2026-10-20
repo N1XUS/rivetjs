@@ -78,14 +78,22 @@ export interface CoLoadModule {
 
 export interface CoLoadOptions {
   /**
-   * Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Unset = 2048, the unit
-   * tests' scale; the Vite plugin always passes `resume.merge` (default 65536 since 2026-10-18, `vite.ts`).
+   * Extra bytes accepted per request saved (summed over entries, per merge step: amortised). Unset = `UNIT_BUDGET`
+   * (2048), the unit tests' scale; the Vite plugin always passes `resume.merge`, whose default is `MERGE_BUDGET`.
    */
   budget?: number;
   /** Most groups one entry (not a pinned one) loads after merging; unset = the budget alone decides. */
   cap?: number;
 }
 
+/**
+ * Default `resume.merge` of the Vite plugin (`vite.ts`; 2048 until 2026-10-18: 64 K cut the files of a page by a third
+ * to a half at flat bytes on the ui-docs frames). Not this module's unset default: `coLoadGroups` without a budget uses
+ * `UNIT_BUDGET`.
+ */
+export const MERGE_BUDGET = 65536;
+/** Budget when `options.budget` is unset: the scale of the unit-test graphs (tens of bytes to tens of KB per module). */
+const UNIT_BUDGET = 2048;
 /** Prefix of every group name (Rolldown merges groups of one name: never collide with the user's own groups). */
 export const MERGE_PREFIX = "rivet-merge-";
 /** A barrel with at most this many imports is a module split in files (a component's `index.ts`): the owner walk goes through it. */
@@ -113,7 +121,7 @@ export function coLoadInspect(input: readonly CoLoadModule[], options: CoLoadOpt
 }
 
 function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadInspection {
-  const budget = options.budget ?? 2048;
+  const budget = options.budget ?? UNIT_BUDGET;
   // Sorted by id: group order, tie-breaks and name suffixes never depend on the bundler's module order.
   const modules = [...input].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const index = new Map<string, number>();

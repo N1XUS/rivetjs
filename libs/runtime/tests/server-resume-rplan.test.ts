@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import * as compiler from "@rivetjs/compiler";
 import { _setRowPaths, resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 
 type Rows = (props: { items: unknown[] }) => unknown;
 interface Compiled {
@@ -78,7 +78,7 @@ const NAMES = ["Basic", "Indexed", "Plain", "Uneven", "Nested", "Deep", "Records
 /** Fixtures whose rows compile to a row plan. */
 const PLANNED = NAMES.filter((name) => name !== "Nested" && name !== "Deep");
 const symbols = compileResume(source, "dom").symbols;
-const manifest: ResumeManifest = { runtime: "/rt.js", symbols: Object.fromEntries(symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+const manifest: ResumeManifest = { runtime: "/rt.js", symbols: symbolUrls(symbols) };
 const build = (lists: boolean): Compiled => {
   const result = compile(source, { target: "server", filename: "fixture.tsx", resume: { module: "src/fixture.tsx" }, serverListMounts: lists });
   if (result.diagnostics.length) throw new Error(result.diagnostics.map((d) => d.message).join("\n"));

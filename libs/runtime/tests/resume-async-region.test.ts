@@ -6,7 +6,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 interface State {
@@ -31,7 +31,7 @@ export function Plain() {
 `;
 const dom = compileResume(source, "dom");
 const server = await importServer<{ Page(): ServerValue; Plain(): ServerValue }>(compileResume(source, "server").code);
-const manifest: ResumeManifest = { hash: "t", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+const manifest: ResumeManifest = { hash: "t", runtime: "/rt.js", symbols: symbolUrls(dom.symbols) };
 const stateOf = (html: string): State => JSON.parse(/<script type="rivet\/state" data-region="0"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
 
 test("resume: awaited Async content belongs to the region that constructed the boundary", async () => {

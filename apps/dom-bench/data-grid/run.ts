@@ -11,6 +11,7 @@ import { chromium, type Page } from "playwright";
 import { startServer } from "../server.ts";
 import { withBenchLock } from "../bench-lock.ts";
 import type { GridBench } from "./shape.ts";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url)),
   dist = resolve(here, "../dist/data-grid");
@@ -24,10 +25,6 @@ const scenarios = [
   { lane: "data-grid", rows: 10_000, virtual: false, name: "data-grid 10k plain" },
   { lane: "cdk-table", rows: 10_000, virtual: false, name: "cdk-table 10k" },
 ];
-const median = (xs: number[]) => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2) : NaN;
-};
 const pct = (xs: number[], p: number) => {
   const s = [...xs].sort((a, b) => a - b);
   return s[Math.min(s.length - 1, Math.floor(p * s.length))] ?? NaN;

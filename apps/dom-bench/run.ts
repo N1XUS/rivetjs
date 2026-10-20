@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { cpus, platform, arch, totalmem } from "node:os";
 import { createHash } from "node:crypto";
 import { startServer } from "./server.ts";
-import { selectFields, summarize, type Summary } from "./metrics.ts";
+import { hostElements, selectFields, summarize, type Summary } from "./metrics.ts";
 
 interface Sample {
   wallMs: number;
@@ -90,13 +90,13 @@ await mkdir(destination, { recursive: true });
 
 async function validate(page: Page, rows: number, expected: number[]) {
   await page.evaluate(
-    ({ rows, expected }) => {
+    ({ rows, elements, expected }) => {
       const host = document.querySelector("#host")!,
         fields = [...host.querySelectorAll("[data-field]")];
       if (
         host.querySelectorAll("[data-row]").length !== rows ||
         fields.length !== rows * 10 ||
-        host.querySelectorAll("*").length !== rows * 57 + 1
+        host.querySelectorAll("*").length !== elements
       )
         throw Error("Incorrect page size");
       fields.forEach((field, index) => {
@@ -107,7 +107,7 @@ async function validate(page: Page, rows: number, expected: number[]) {
           throw Error(`Incorrect field ${index}`);
       });
     },
-    { rows, expected },
+    { rows, elements: hostElements(rows), expected },
   );
 }
 

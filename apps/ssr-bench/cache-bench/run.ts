@@ -13,6 +13,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { median } from "../../../scripts/bench/shared.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const MODES = ["off", "components", "shell"] as const;
@@ -71,11 +72,6 @@ async function build(mode: Mode, out: string): Promise<string> {
   });
   return file;
 }
-
-const median = (xs: number[]): number => {
-  const s = [...xs].sort((a, b) => a - b);
-  return s.length % 2 ? s[(s.length - 1) / 2]! : (s[s.length / 2 - 1]! + s[s.length / 2]!) / 2;
-};
 
 {
   const out = mkdtempSync(join(tmpdir(), "rivet-cache-bench-"));
