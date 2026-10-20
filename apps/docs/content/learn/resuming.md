@@ -205,6 +205,25 @@ export default defineConfig({
 - **Keep a list recorded** with `lazy={false}` on its `<For>` (or a function that returns `false` on the server), for example an outer list whose rows hold another list, so the inner list is the lazy one. The cdk collections do this for sections, tree children and table headers.
 - **Why it is off by default.** A signal every row reads plainly still wakes every row when it first changes. In a virtualized list the rendered rows read the virtualizer's layout, so the first click or scroll rebuilds the whole visible window: at 4× CPU slowdown that first click is still 5–18 ms slower than with recorded rows.
 
+### Data from the page (experimental)
+
+Off by default. With `resume: { domData: true }` on `rivetRouter(…)` (or `rivet(…)`), loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 8 KB.
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+
+export default defineConfig({
+  plugins: [rivetRouter({ resume: { domData: true } })],
+});
+```
+
+- **What qualifies.** Only text that is alone in its element: `<i>Note: {row().note}</i>` stays in the state. Strings with a carriage return, URLs in `href` / `src`, boolean attributes and attributes that change later stay in the state too.
+- **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data.
+- **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
+- **Why it is off by default.** It costs the server some time per render (up to about 0.7 ms per 1,000 rows without lazy rows, 1.3 to 2.3 ms with them), still being reduced.
+
 ## What it means for your code
 
 - **The component body runs once, on the server.** A `console.log` there prints in the terminal, never in the browser console. See [component did not run again](../gotchas/component-did-not-run-again.md).

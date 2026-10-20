@@ -40,6 +40,10 @@ const sources: Record<string, string> = {
   "/lazy-rows.ts": "lazy-rows.ts",
   "/lazy-rows-resume.ts": "lazy-rows-resume.ts",
   "/dom-resume-lazy.ts": "dom-resume-lazy.ts",
+  // DOM-DATA build-time switches (`false` / null: builds without `resume.domData`) and the DOM data reader.
+  "/dom-data.ts": "dom-data.ts",
+  "/dom-data-resume.ts": "dom-data-resume.ts",
+  "/dom-resume-data.ts": "dom-resume-data.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
   // Imported by `dev/on.ts` (suites serving it at `/dev/off.ts` for development diagnostics).
@@ -49,6 +53,11 @@ const sources: Record<string, string> = {
 export const LAZY_ROWS_BUILD: Record<string, string> = {
   "/lazy-rows.ts": "export const LAZY_ROWS = true;\n",
   "/lazy-rows-resume.ts": 'export { _lazyRows } from "/dom-resume-lazy.ts";\n',
+};
+/** Served in place of the switches: a page of a build with `rivet({ resume: { domData: true } })` (DOM-DATA). */
+export const DOM_DATA_BUILD: Record<string, string> = {
+  "/dom-data.ts": "export const DOM_DATA = true;\n",
+  "/dom-data-resume.ts": 'export { _domData } from "/dom-resume-data.ts";\n',
 };
 /** Rewrite package specifiers to served paths. */
 export const rewrite = (code: string): string =>

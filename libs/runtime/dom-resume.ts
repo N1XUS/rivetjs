@@ -26,6 +26,8 @@ import { _takeover } from "./dom-v2-spread.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _lazyRows } from "./lazy-rows-resume.ts";
+import { DOM_DATA } from "./dom-data.ts";
+import { _domData } from "./dom-data-resume.ts";
 import { createRouter } from "./dom-router.ts";
 import { createDecoder, RESUME_VERSION, _placeholderContext } from "./resume-format.ts";
 import { _rSyms } from "./resume-symbols.ts";
@@ -783,6 +785,13 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       return false;
     };
   };
+  // DOM-backed loader data (state `D`, DOM-DATA): only builds with `resume: { domData: true }` read it (`DOM_DATA`).
+  const data = DOM_DATA
+    ? _domData!({
+        element: (id) => element(id),
+        row: (marker) => markers().get(marker)?.end?.previousElementSibling,
+      })
+    : null;
   // Lazy row records (state `L`, LAZY-ROWS T5): only builds with `resume: { lazyRows: true }` create them (`LAZY_ROWS`).
   const lazy = LAZY_ROWS
     ? _lazyRows!({
@@ -1098,6 +1107,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       if (DEV) stopRoot = made.dispose;
       // `testing-resume.ts` (`serializeAndRevive`) keeps a document-free copy of these hooks, `named`, `symbol` and
       // `liveProps`: change both (tests/serialize-and-revive.test.ts guards entry kinds + messages).
+      if (DOM_DATA && state.D) data!.expand(state.t);
       decoder = createDecoder(state.t, {
         settle,
         signal: (ref, options) => {
@@ -1148,7 +1158,10 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           if (region !== undefined) refRegions.set(el, region);
           return el;
         },
+        ...(DOM_DATA ? { dom: data!.dom } : {}),
       });
+      // DOM-DATA: every tree not decoded yet is read at the first idle (snapshot before server nodes can be replaced).
+      if (DOM_DATA && state.D) idle(() => data!.sweep(state.t, decoder.get, decoder.decoded));
       // Lazy row records (LAZY-ROWS T5 builds): rows, wakes, the region a re-created For keys them in.
       if (LAZY_ROWS) lazy!.register();
       // Lazy components (routes, deferred views) load at idle; navigation then renders synchronously.
@@ -1187,6 +1200,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       if (comments) for (const [id, pair] of comments) if (pair.start.data.length < 3) (chained ??= new WeakMap()).set(pair.start, id);
       comments = elements = null;
       if (LAZY_ROWS) lazy!.register();
+      // DOM-DATA: a segment's trees (the stream add-on merged its table into state.t).
+      if (DOM_DATA) (data!.expand(state.t), idle(() => data!.sweep(state.t, decoder.get, decoder.decoded)));
       if (DEV && api?.p) DEV.resumeChunks(api.p, state.c);
       register({ b: unpack(delta.b ?? [], state.t), fx: delta.fx ?? [], ce: delta.ce ?? [], a: delta.a }, true);
     },

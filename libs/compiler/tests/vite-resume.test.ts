@@ -976,3 +976,49 @@ export function App() { return <Frame><R1 /><R2 /></Frame>; }
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("resume.domData (DOM-DATA): the build's resume runtime gets the DOM data reader + manifest domData; without it neither", async () => {
+  await mkdir(".artifacts", { recursive: true });
+  const root = await mkdtemp(resolve(".artifacts/vite-dom-data-"));
+  try {
+    await mkdir(resolve(root, "src"));
+    await writeFile(
+      resolve(root, "src/page.tsx"),
+      `import { signal } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+export function List(props: { rows: { id: number; label: string }[] }) {
+  const sel = signal(0);
+  return <ul><For each={props.rows} by={(r) => r.id}>{(row) => <li class={sel() === row().id ? "on" : ""} onClick={() => sel.set(row().id)}>{row().label}</li>}</For></ul>;
+}
+`,
+    );
+    await writeFile(resolve(root, "index.html"), "<!doctype html><p>static</p>");
+    const built = async (domData: boolean | undefined) => {
+      const outDir = "dist-" + String(domData);
+      await build({
+        configFile: false,
+        root,
+        logLevel: "silent",
+        plugins: [rivet({ resume: { modules: ["src/page.tsx"], ...(domData === undefined ? {} : { domData }) } })],
+        build: { outDir, manifest: true },
+      });
+      const manifest = JSON.parse(await readFile(resolve(root, outDir, ".vite/rivet-resume.json"), "utf8")) as BuiltManifest & { domData?: boolean };
+      const files = await readdir(resolve(root, outDir, "assets"));
+      const code = (await Promise.all(files.filter((f) => f.endsWith(".js")).map((f) => readFile(resolve(root, outDir, "assets", f), "utf8")))).join("\n");
+      return { manifest, code };
+    };
+    const off = await built(undefined),
+      no = await built(false),
+      on = await built(true);
+    assert.equal(off.manifest.domData, undefined);
+    assert.equal(no.manifest.domData, undefined);
+    assert.equal(on.manifest.domData, true);
+    // The reader (`dom-resume-data.ts`: its production error label) only when asked; otherwise the same bytes.
+    assert.doesNotMatch(off.code, /Missing resume DOM data/);
+    assert.match(on.code, /Missing resume DOM data/);
+    assert.equal(off.code.length, no.code.length);
+    assert.ok(on.code.length > off.code.length + 500, `${on.code.length} vs ${off.code.length}`);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

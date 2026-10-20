@@ -39,9 +39,9 @@ export function lazy(): void {
     const m = ends!.get(end)!,
       s: ResumeState = d.$r!.p();
     for (const e of s.L || []) {
-      // The items: a JSON value entry (`{j}`) or an array of refs.
+      // The row count: entry [13], else the items' length (a JSON value entry `{j}` or an array of refs).
       const items = s.t[e[3]] as { j?: unknown[] } & unknown[];
-      if (m > e[0] && m <= e[0] + (items.j || items).length) {
+      if (m > e[0] && m <= e[0] + (e[13] || (items.j || items).length)) {
         const h = (s.e[m] ||= {});
         for (const type of (e[9] || "").split(" ")) if (type) h[type + "!"] ||= ["L", [], e[6]];
         return "" + m;

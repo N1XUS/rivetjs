@@ -128,6 +128,16 @@ export interface RivetResumeOptions {
    * `RIVET_LAZY_ROWS=on` (read per render): build once with this option, toggle the variable to A/B. Default false.
    */
   lazyRows?: boolean;
+  /**
+   * DOM-backed loader data (DOM-DATA, experimental; spec `docs/design/specs/2026-10-20-dom-backed-loader-data-design.md`):
+   * plain JSON data the page renders as an element's whole text (`<dd>{row().name}</dd>`: loader rows, `<For>` items) is
+   * not written into `rivet/state` again — the browser reads those strings back from the DOM on first access (at the latest
+   * at the first idle after resume). Adds the reader (`@rivetjs/runtime` `dom-resume-data.ts`, about 1.8 KB min / 0.6 KB br)
+   * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 5.8 KB min) to its server and
+   * `domData: true` to the resume manifest; servers write `D` entries only then. Builds without it carry neither. Default
+   * false.
+   */
+  domData?: boolean;
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -360,6 +370,8 @@ export interface DevResume {
     islands?: Record<string, string>;
     /** `resume.lazyRows`: the dev resume runtime materialises lazy rows. */
     lazyRows?: boolean;
+    /** `resume.domData`: the dev resume runtime reads DOM-backed loader data. */
+    domData?: boolean;
   };
   /** Component, source location and capture names of a symbol id compiled for dev SSR. */
   describe(id: string): DevSymbolInfo | undefined;
@@ -396,6 +408,16 @@ function lazySwitch(id: string): string | null {
   const hit = LAZY_SWITCH.exec(id);
   if (!hit) return null;
   return hit[1] === "lazy-rows" ? "export const LAZY_ROWS = true;\n" : `export { _lazyRows } from "./dom-resume-lazy.${hit[2]}";\n`;
+}
+/** `resume.domData` (DOM-DATA): the runtime's switch modules (`dom-data.ts` / `dom-data-resume.ts` for the browser,
+ * `dom-data-server.ts` for the server) → their opted-in content. */
+const DOM_DATA_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](dom-data(?:-resume|-server)?)\.([cm]?[jt]s)$/;
+function domDataSwitch(id: string): string | null {
+  const hit = DOM_DATA_SWITCH.exec(id);
+  if (!hit) return null;
+  if (hit[1] === "dom-data") return "export const DOM_DATA = true;\n";
+  if (hit[1] === "dom-data-server") return `import { _domRegistry } from "./server-dom-data.${hit[2]}";\nexport const domServer = { create: _domRegistry };\n`;
+  return `export { _domData } from "./dom-resume-data.${hit[2]}";\n`;
 }
 // V8 explicit compile hint: compile every function when the script is compiled (module scripts: on the
 // streaming compile thread while they download). Client entry chunks: their functions run at startup (mount),
@@ -605,6 +627,8 @@ function rivetPlugin(
   let ssrBuild = false,
     // `resume.lazyRows`: this client build's resume runtime has the lazy rows factory (`lazySwitch`).
     lazyRowsIn = false,
+    // `resume.domData`: this client build's resume runtime has the DOM data reader (`domDataSwitch`).
+    domDataIn = false,
     abiChecked = false,
     serve = false,
     sourceMap = false,
@@ -698,6 +722,7 @@ function rivetPlugin(
       ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
       ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
       ...(resume?.lazyRows ? { lazyRows: true } : {}),
+      ...(resume?.domData ? { domData: true } : {}),
       symbols: new Proxy({} as Record<string, string>, {
         get: (_, id) => {
           const known = typeof id === "string" ? devSymbols.get(id) : undefined;
@@ -1405,6 +1430,14 @@ function rivetPlugin(
           return code;
         }
       }
+      // `resume.domData`: the DOM data reader is in (`DOM_DATA`); the resume manifest says so when the switch loaded.
+      if (resume?.domData) {
+        const code = domDataSwitch(clean);
+        if (code !== null) {
+          if (code.includes("_domData") && this.environment?.config?.consumer !== "server") domDataIn = true;
+          return code;
+        }
+      }
       // Dev symbol chunk of one component (`?rivet-chunk=<Component>`), like a production chunk.
       const component = serve && resume?.dev && id.includes("rivet-chunk=") ? new URLSearchParams(id.slice(clean.length + 1)).get("rivet-chunk") : null;
       if (component !== null && this.environment?.config?.consumer !== "server") {
@@ -1526,6 +1559,10 @@ function rivetPlugin(
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
         hintEagerCompile(bundle, (output) => output.isEntry);
         if (!resume) return;
+        if (resume.domData && !domDataIn)
+          this.warn(
+            "resume.domData: the build's resume runtime does not include the DOM data reader (@rivetjs/runtime dom-data-resume module not found): the manifest leaves domData out, servers write no DOM-backed entries",
+          );
         if (resume.lazyRows && !lazyRowsIn)
           this.warn(
             "resume.lazyRows: the build's resume runtime does not include the lazy rows runtime (@rivetjs/runtime lazy-rows-resume module not found): the manifest leaves lazyRows out, servers write no lazy row records",
@@ -1718,6 +1755,8 @@ function rivetPlugin(
           ...(chunkStrategy() === "route" ? { fetchAhead: true } : {}),
           // `resume.lazyRows`: the resume runtime of this build materialises lazy rows (servers write `L` records then).
           ...(lazyRowsIn ? { lazyRows: true } : {}),
+          // `resume.domData`: the resume runtime of this build reads `D` entries (servers write them then).
+          ...(domDataIn ? { domData: true } : {}),
         };
         const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
         this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });

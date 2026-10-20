@@ -6,6 +6,7 @@
 import type { Context, Signal } from "@rivetjs/reactivity";
 import { DEV } from "#dev";
 import { BINARY, ERRORS, builtin } from "./resume-kinds.ts";
+import { DOM_DATA } from "./dom-data.ts";
 
 // Identified context tokens a resumed page may re-provide around a re-created region (opt in per
 // token: only modules that call `resumableContext` pay for the registry).
@@ -102,6 +103,14 @@ export interface EntryRecord {
   j?: object;
   /** An object inside a `j` tree: [parent ref (a `j` or `i` entry), own key]; resolved when its `j` root decodes. */
   i?: [parent: number, key: string | number];
+  /**
+   * DOM-backed plain JSON tree (DOM-DATA, `DomTree`; builds with `resume.domData`): a `j` tree whose strings the page
+   * renders as the whole text of an element are read back from the DOM on first decode. Its parsed `i` children resolve
+   * as a `j` tree's. Only `dom-resume`'s `dom` hook decodes it (`DOM_DATA`).
+   */
+  D?: DomTree;
+  /** Wire form only (DOM-DATA): a run of `D` entries (server-resume `domRuns`), expanded by the runtime before decoding. */
+  Dr?: DomTree;
   /** Computed / function symbol: its id in the server's table, its page symbol index (`ResumeRecords.s`) on the wire. */
   c?: SymbolRef | number[];
   f?: SymbolRef | number[];
@@ -148,6 +157,30 @@ export interface EntryRecord {
   R?: number[];
 }
 export type TableEntry = Literal | number[] | EntryRecord;
+/**
+ * DOM-backed tree (`EntryRecord.D`, DOM-DATA): `[shape, anchor | null, ...stream]`. `shape` refs a `j` entry
+ * `[skeleton, paths, subs]`: the tree with every leaf replaced by 0 (the next stream literal, depth-first in key / index
+ * order), k ≥ 1 (the `textContent` of the element at `paths[k - 1]` = `tag:i.j` below the anchor element, by element child
+ * index, its tag checked; `tag:i.j@name`: its attribute `name`; a leading `#`: the number it spells) or k < 0 (a rows node:
+ * an array of trees of skeleton `subs[-1 - k]`, stream `first anchor, stride, count, n, n × (row, leaf k, value)`, then
+ * each row's literals; row r sits below anchor `first + r * stride`; an exception: leaf k of row r is the value, not the
+ * DOM's). Anchor: ≥ 0 the element of a `data-r` / path id (`w`), < 0 the root of row region `-1 - anchor` (the element
+ * before its end marker); null: the tree's own leaves are all literals (only its rows nodes read the DOM).
+ */
+export type DomTree = (number | Literal)[];
+/** DOM-DATA: what the encoder needs of a render's DOM registry (server-dom-data.ts `DomRegistry`): `items` (row items
+ * with registered values) and `tree`, the `D` form of a plain JSON tree (undefined: stays `j`). `shapeRef(key, shape)`
+ * interns a shape entry; `last` is the encoder's memo of the previous single tree's shape. */
+export interface DomTexts {
+  items: Map<object, number>;
+  tree(value: object, shapeRef: (key: string, shape: unknown[]) => number, last: DomLast): DomTree | undefined;
+}
+/** The last single tree's shape (`DomTexts.tree`): list rows encoded one entry each share it, so the next one only compares. */
+export interface DomLast {
+  skeleton: unknown;
+  paths: string[];
+  ref: number;
+}
 /** Equality options a decoded signal/computed receives; `arm` enables a signal's comparator. */
 export interface DecodedEquals {
   equals: false | ((a: unknown, b: unknown) => boolean);
@@ -162,6 +195,8 @@ export interface DecoderHooks {
   fn?: (symbol: SymbolRef, captures: unknown[], options: DecodedEquals | undefined) => unknown;
   context?: (id: string) => unknown;
   ref?: (id: number, region?: number) => unknown;
+  /** DOM-backed tree (`D`, DOM-DATA builds): the decoded value; `get` decodes its shape. */
+  dom?: (tree: DomTree, get: (index: number) => unknown) => unknown;
   /** After a failed cell's accessor decoded its value outside any decode (dom-resume arms the signals that decode made). */
   settle?: () => void;
 }
@@ -239,6 +274,8 @@ const literalValues = (value: Record<string, unknown>, keys: readonly string[]):
  * entries (switch per call with the returned `json(on)`: a streamed render allows them only in its last segment). */
 export interface EncoderOptions {
   special?: Special | undefined;
+  /** DOM-DATA: the render's DOM registry — `j` trees holding its values encode as `D` entries (`DomTexts.tree`). */
+  dom?: DomTexts | undefined;
   opaque?: ((value: object) => boolean) | undefined;
   json?: boolean;
   /** Same-origin `URL` values serialize relative to this origin (path, search, hash); the decoder resolves them
@@ -311,7 +348,7 @@ function binaryKind(value: object, proto: unknown): string | undefined {
 }
 
 /** Create an encoder. `special(value, ref)` may return a finished entry for functions/objects. */
-export function createEncoder({ special, opaque, json: jsonOn = true, origin }: EncoderOptions = {}): {
+export function createEncoder({ special, opaque, json: jsonOn = true, origin, dom }: EncoderOptions = {}): {
   ref: (value: unknown) => number;
   table: TableEntry[];
   json: (on: boolean) => void;
@@ -368,6 +405,9 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
   function intern(key: string, entry: EntryRecord): number {
     return specials.get(key) ?? keep(specials, key, add(entry));
   }
+  // DOM-DATA: one `j` shape entry per distinct shape (`DomTexts.tree`).
+  const shapeRef = (key: string, shape: unknown[]): number => intern("D" + key, { j: shape }),
+    domLast: DomLast = { skeleton: undefined, paths: [], ref: -1 };
   function object(value: object): number {
     const known = objects.get(value);
     if (known !== undefined) return known >= 0 ? known : place(-2 - known);
@@ -452,6 +492,10 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
     const array = Array.isArray(value);
     // A non-empty plain tree: one `j` entry, serialized natively with the table (no entry per nested object).
     if (jsonOn && (array ? proto === arrayProto && value.length : proto === objectProto || proto === null) && jsonTree(value, index)) {
+      if (dom !== undefined && dom.items.size !== 0) {
+        const tree = dom.tree(value, shapeRef, domLast);
+        if (tree !== undefined) return ((table[index] = { D: tree }), index);
+      }
       if (array || !empty(value)) return ((table[index] = { j: value }), index);
     }
     if (array && proto === arrayProto) {
@@ -745,6 +789,8 @@ export function createDecoder(table: readonly unknown[], hooks: DecoderHooks = {
     let entry = table[index] as TableEntry;
     if (entry === null || typeof entry !== "object") return (memo[index] = entry);
     if ("j" in entry) return ((memo[index] = entry.j), within(index), entry.j);
+    // DOM-backed tree (DOM-DATA builds only: other builds fold this away and never meet one).
+    if (DOM_DATA && "D" in entry) return ((memo[index] = need("dom")(entry.D!, get)), within(index), memo[index]);
     if ("i" in entry) {
       const [at, key] = entry.i!,
         parent = get(at) as Record<string | number, unknown>;
@@ -1088,6 +1134,8 @@ export type RegionProviders = (string | number)[];
  *   flipped: kind 0 the previous and next value (default `fn`), kind 1 `memberKeys` (Sets: their symmetric difference,
  *   else every listed row); `1` instead of the list: every row reads its own key (`_keyAt(items[k], by)`, key path `by`).
  *   A signal some row also reads plainly is in `reads` instead.
+=======
+ * - `count`: the row count, when the `items` entry does not show it (an `i` child of a tree, a DOM-backed `D` tree).
  * No per-row id, key, handler, binding, capture or provider entry: keys are `by(items[k])`, everything else is recomputed by
  * re-running `rowFn` for row k in adopt mode (browser materialisation, T5: `dom-resume.ts`, `dom-adopt.ts` `_adoptRow`).
  * Trailing slots are left out when empty.
@@ -1105,7 +1153,8 @@ export type LazyRowsEntry = [
   types?: string,
   providers?: RegionProviders | 0,
   effects?: number[] | 0,
-  keyed?: (number | unknown[])[],
+  keyed?: (number | unknown[])[] | 0,
+  count?: number,
 ];
 /** Model entry: [kind, signal ref, extra chunks?]. */
 export type ModelEntry = [kind: "value" | "checked", ref: number, extra?: number[]];
@@ -1170,6 +1219,8 @@ export interface ResumeRecords {
   a?: AsyncEntry[];
   /** Lazy row region records (`LazyRowsEntry`), in render order; patches append (a segment's own Fors). */
   L?: LazyRowsEntry[];
+  /** DOM-DATA: 1 when the table holds `D` entries (the runtime reads them back from the DOM at idle). */
+  D?: 1;
 }
 /** A lazy row's key from its item and the For's key path (`LazyRowsEntry` `by` string: `""` the item, else dot-separated
  * properties), as `by` computed it on the server. */

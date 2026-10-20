@@ -53,6 +53,8 @@ import {
 import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
 import { EXPAND, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
+import { domServer } from "./dom-data-server.ts";
+import type { DomRegistry, DomSlot } from "./server-dom-data.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
 import { _inIdScope, _rowIdPrefix } from "./id.ts";
@@ -136,6 +138,12 @@ export interface ResumeManifest {
    * with `RIVET_LAZY_ROWS=on` in the server env, `$lazy` Fors write lazy row records (state `L`). Absent: never.
    */
   lazyRows?: boolean;
+  /**
+   * The build's browser runtime reads DOM-backed loader data (`rivet({ resume: { domData: true } })`, DOM-DATA): plain
+   * JSON trees whose strings the page rendered as an element's whole text encode as `D` entries (read back from the DOM).
+   * Absent: never.
+   */
+  domData?: boolean;
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
@@ -1052,10 +1060,13 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   get[CONSTANT] = item;
   at[CONSTANT] = index;
   lazy.row = index;
-  const { signal, variant } = lazy.recorder.options;
-  const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () =>
-    renderToString(_scopedRecord(getOwner(), render(get, at), noop), { signal, variant }),
-  );
+  const { signal, variant } = lazy.recorder.options,
+    dom = lazy.recorder.dom;
+  const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () => {
+    const value = render(get, at);
+    if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, item);
+    return renderToString(_scopedRecord(getOwner(), value, noop), { signal, variant });
+  });
   if (typeof html !== "string") {
     html.then(noop, noop);
     lazy.reason ??= "async content";
@@ -1193,6 +1204,9 @@ class RowPlan {
   declare anchor: boolean;
   /** The list plan writing only the root's `_rId` slot (`anchor` rows outside row regions), made on first use. */
   declare rootList: ListPlan | undefined;
+  /** DOM-DATA: the template (fragments, entries) and its sole-child text slots (`rowTexts`), made on first use. */
+  declare source: readonly [fragments: readonly string[], entries: readonly unknown[], sites: readonly number[]];
+  declare texts: DomSlot[] | null | undefined;
   constructor(
     list: ListPlan,
     sites: RowSite[],
@@ -1202,6 +1216,7 @@ class RowPlan {
     ok: boolean,
     paths: RowPaths | null,
     ids: number[],
+    source: readonly [fragments: readonly string[], entries: readonly unknown[], sites: readonly number[]],
   ) {
     this.list = list;
     this.sites = sites;
@@ -1215,6 +1230,8 @@ class RowPlan {
     this.ids = ids;
     this.anchor = paths !== null && paths.paths[0]!.endsWith(":");
     this.rootList = undefined;
+    this.source = source;
+    this.texts = undefined;
   }
 }
 type RowSiteSpec =
@@ -1303,7 +1320,11 @@ export function _rRowPlan(fragments: readonly string[], entries: Parameters<type
     sites.push(site);
   }
   if (open.length) ok = false;
-  return new RowPlan(list, sites, elements.length + 1, elements, events, ok, ok && ids.length ? rowPaths(fragments, entries, ids) : null, ids);
+  return new RowPlan(list, sites, elements.length + 1, elements, events, ok, ok && ids.length ? rowPaths(fragments, entries, ids) : null, ids, [
+    fragments,
+    entries,
+    specs.map((spec) => spec[0]),
+  ]);
 }
 const EMPTY_SHAPE: readonly number[] = Object.freeze([]);
 /** A list written from a row plan: its holder record (content: the tape rows' list, then rows rendered one by one). */
@@ -1565,6 +1586,8 @@ function planRows(
   }
   const count = k,
     rest: ServerValue[] = [];
+  // DOM-DATA: the tape rows' sole-child texts, addressed from the row root (id row + 1: `data-r` or path-addressed).
+  if (r.dom !== null && count && !c.unsafe && c.structural && c.anchor) r.dom.rows(plan, tape, rows, count, width);
   // Root-anchored rows: only the roots keep their ids (row regions, `markPlans`, drop those too and the entry's flag).
   const entry: RowPathsEntry | null =
     !c.unsafe && plan.anchor && count && count * (plan.ids.length - 1) >= pathMin ? [rows[0]!.id, stride, count, plan.paths!.paths, 1] : null;
@@ -2213,9 +2236,12 @@ class Recorder {
   declare lazyRows: boolean;
   /** Lazy Fors rendered while this recorder evaluated (state `L`). */
   declare lazy: LazyFor[];
+  /** DOM-DATA (manifest `domData`): strings written as an element's whole text, shared by the render's segments. */
+  declare dom: DomRegistry | null;
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
+    this.dom = options.manifest?.domData ? (domServer.create?.() ?? null) : null;
     this.derived = options.model === "derived" && derivedHooks ? derivedHooks.create() : null;
     this.lazyRows = lazyRowsOn(options.manifest);
     this.lazy = [];
@@ -3596,7 +3622,7 @@ function encoding(root: Recorder): Encoding {
   };
   return (root.enc = {
     manifest,
-    encoder: createEncoder({ special, opaque, json: false, origin: root.options.origin }),
+    encoder: createEncoder({ special, opaque, json: false, origin: root.options.origin, dom: root.dom ?? undefined }),
     chunks: [],
     chunkOf: new Map(),
     symbols: new Map(),
@@ -3961,7 +3987,11 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         }
       const types = [...lazy.types].join(" ");
       // Trailing slots only as far as needed (0 / "" = none).
-      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0, keyed.length ? keyed : 0];
+      // The row count at [13] when the items entry does not show it (an `i` child of a tree, a DOM-backed `D` tree): the
+      // lazy add-on's row range.
+      const shown = encoder.table[items] as TableEntry;
+      const count = Array.isArray(shown) || (shown !== null && typeof shown === "object" && "j" in shown) ? 0 : lazy.items.length;
+      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0, keyed.length ? keyed : 0, count];
       while (tail.length && (tail[tail.length - 1] === 0 || tail[tail.length - 1] === "")) tail.pop();
       (entry as unknown[]).push(...tail);
       entry[6] = needs(lazy.symbol, refs);
@@ -4027,6 +4057,8 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   if (repeated) ((out.e = repeated[0] as typeof e), (out.b = repeated[1] as typeof b), (out.rr = true));
   else if (relocations && tableSaved > cost) out.rr = true;
   else if (relocations) out.t = compactTable(encoder.table, t0, enc.symbols, false);
+  // DOM-DATA: runs of DOM-backed rows (one shape, evenly spaced anchors) as one `Dr` entry + placeholders.
+  if (root.dom !== null) root.dom.runs(out.t!, encoder.table);
   if (DEV) assertAcyclic(encoder.table, t0);
   // Dev: per capture site, the bytes it adds to the state (warned once the state bytes are known, `DEV.stateBytes`).
   if (DEV) DEV.stateCaptures(root, devStateSites(enc, t0, out.t!, e, m, b, fx, ce));
@@ -5113,6 +5145,8 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   if (n) state.n = n;
   if (w) state.w = w;
   if (L) state.L = L;
+  // DOM-DATA: the runtime reads the `D` entries back from the DOM at idle (before anything replaces server nodes).
+  if (recorder.dom !== null && t?.some((entry) => entry !== null && typeof entry === "object" && "D" in entry)) state.D = 1;
   // ` nonce="…"` (sanitized to base64 characters, so the attribute encoder never escapes it).
   const attrs = nonce ? _attributeRecord("nonce", String(nonce).replace(/[^\w+/=-]/g, ""), "html") : null;
   // Pending streamed boundaries: [marker, fallback region, region] triples, for the stream add-on.

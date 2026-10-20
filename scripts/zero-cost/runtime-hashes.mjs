@@ -17,6 +17,20 @@ const LAZY = [
     },
   },
 ];
+// `[domData]` lines: the resume entry and the resumable server of a `rivet({ resume: { domData: true } })` build (DOM-DATA,
+// `domDataSwitch`).
+const DOM_DATA = [
+  {
+    name: "dom-data-switch",
+    load(id) {
+      const hit = /[\\/]libs[\\/]runtime[\\/](dom-data(?:-resume|-server)?)\.ts$/.exec(id);
+      if (!hit) return;
+      if (hit[1] === "dom-data") return "export const DOM_DATA = true;\n";
+      if (hit[1] === "dom-data-server") return 'import { _domRegistry } from "./server-dom-data.ts";\nexport const domServer = { create: _domRegistry };\n';
+      return 'export { _domData } from "./dom-resume-data.ts";\n';
+    },
+  },
+];
 const hash = async (input, plugins) => {
   const bundle = await rolldown({
     input, platform: "node", logLevel: "silent", plugins,
@@ -33,6 +47,7 @@ for (const pkg of ["libs/reactivity", "libs/runtime"]) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
     out.push(`${json.name}${key.slice(1)} ${await hash(`${root}/${pkg}/${file}`, [])}`);
     if (key === "./dom" || key === "./dom-resume") out.push(`${json.name}${key.slice(1)} [lazyRows] ${await hash(`${root}/${pkg}/${file}`, LAZY)}`);
+    if (key === "./dom-resume" || key === "./server-resume") out.push(`${json.name}${key.slice(1)} [domData] ${await hash(`${root}/${pkg}/${file}`, DOM_DATA)}`);
   }
 }
 console.log(out.join("\n"));

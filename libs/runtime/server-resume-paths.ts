@@ -34,12 +34,34 @@ const NAME = /[a-z][a-z0-9-]*/y;
  * `_rId` slots, element order), or null when the parser could restructure it or a slot sits where the walk cannot follow.
  */
 export function rowPaths(fragments: readonly string[], entries: readonly unknown[], ids: readonly number[]): RowPaths | null {
+  return walk(fragments, entries, ids, null);
+}
+
+/**
+ * DOM-backed loader data (DOM-DATA, spec `docs/design/specs/2026-10-20-dom-backed-loader-data-design.md` §3.1): the
+ * content slots of a template that are the sole child of their element (`<dd>{x}</dd>`: the fragment before ends with
+ * the element's start tag, the one after starts with its end tag), each with its element's path `tag:i.j` below the
+ * template root (root `tag:`), and its attribute slots (not `_rId`), each `tag:i.j@` (the caller appends the name and
+ * drops the attributes whose value the writer changes or a binding owns). A string written there is that element's whole
+ * `textContent` / the attribute's value in the browser (entities decoded by the parser; the caller refuses strings the
+ * parser would change: CR, NUL, lone surrogates). `entries` null: slots inside a start tag are attributes, every other
+ * slot content (compiled templates of lazy rows).
+ * Null when the parser could restructure the template (`rowPaths` rules); `<pre>` / `<listing>` drop a leading newline:
+ * never listed.
+ */
+export function rowTexts(fragments: readonly string[], entries: readonly unknown[] | null): [slot: number, path: string][] | null {
+  const texts: [number, string][] = [];
+  return walk(fragments, entries, [], texts) && texts.length ? texts : null;
+}
+
+function walk(fragments: readonly string[], entries: readonly unknown[] | null, ids: readonly number[], texts: [number, string][] | null): RowPaths | null {
   const stack: { tag: string; path: string; count: number }[] = [];
   const paths: string[] = [],
     content: number[] = [];
   let roots = 0,
     tag: string | null = null, // the start tag being read (TAG state), its path
-    path = "";
+    path = "",
+    opened = false; // the last thing read is a (non-void) start tag: its element has no child yet
   for (let f = 0; f < fragments.length; f++) {
     const text = fragments[f]!;
     for (let i = 0; i < text.length;) {
@@ -53,12 +75,13 @@ export function rowPaths(fragments: readonly string[], entries: readonly unknown
         } else if (c === 62 || (c === 47 && text.charCodeAt(i + 1) === 62)) {
           // `/>` closes only void and SVG elements: the HTML parser ignores it on any other.
           if (c === 47 && !VOID.has(tag) && !SVG.has(tag)) return null;
-          if (c === 62 && !VOID.has(tag)) stack.push({ tag, path, count: 0 });
+          if (c === 62 && !VOID.has(tag)) ((opened = true), stack.push({ tag, path, count: 0 }));
           i += c === 62 ? 1 : 2;
           tag = null;
         } else i++;
         continue;
       }
+      opened = false;
       if (c !== 60) {
         i++;
         continue;
@@ -92,9 +115,17 @@ export function rowPaths(fragments: readonly string[], entries: readonly unknown
     if (ids.includes(f)) {
       if (tag === null) return null;
       paths[ids.indexOf(f)] = tag + ":" + path;
-    } else if (entries[f] === null) {
-      if (tag === null) content.push(f);
+    } else if (entries === null ? tag === null : entries[f] === null) {
+      if (tag === null) {
+        content.push(f);
+        const top = stack[stack.length - 1];
+        if (texts !== null && opened && top && top.tag !== "pre" && top.tag !== "listing" && fragments[f + 1]!.startsWith("</" + top.tag + ">"))
+          texts.push([f, top.tag + ":" + top.path]);
+        opened = false;
+      }
     } else if (tag === null) return null;
+    // An attribute slot of the open start tag (DOM-DATA): `tag:i.j@` (the caller appends the output name).
+    else if (texts !== null) texts.push([f, tag + ":" + path + "@"]);
   }
   if (tag !== null || stack.length || paths.length !== ids.length) return null;
   return { paths, content };
