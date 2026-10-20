@@ -149,12 +149,16 @@ interface ForProps<T, K> {
   /** Compiler-private lazy row verdict (`[flags]` / `[flags, "key.path"]`, LAZY-ROWS T2): `children` is a resumable row
    * function (`_rFn`); the resume lazy hook may render the rows without per-row records. */
   $lazy?: readonly unknown[];
+  /** Lazy rows opt-out (LAZY-T6): `false` (or an accessor returning false, read only by a lazy-rows render) — the rows are
+   * never lazy rows even when the compiler marked the For (`$lazy`): a container loop whose rows hold the collection's own
+   * row `For` (cdk virtualizer sections / table header + body), so the inner For's rows are the lazy ones. */
+  lazy?: boolean | (() => boolean);
 }
 /** Snapshot a keyed list; constant row/index getters match the compiled DOM authoring ABI. */
 export function For<T, K>(props: ForProps<T, K>): ServerScope {
   const each = eachHook === null ? props.each : (eachHook(props) as readonly T[]),
-    { by, children, $list, $rows, $lazy } = props;
-  return scoped((capture) => capture(() => forRows(each, by, children, $list, $rows, $lazy))) as unknown as ServerScope;
+    { by, children, $list, $rows, $lazy, lazy } = props;
+  return scoped((capture) => capture(() => forRows(each, by, children, $list, $rows, $lazy, lazy))) as unknown as ServerScope;
 }
 
 // The row loop lives in a module-level function, not in the per-For closure: V8 keeps a function's optimized
@@ -167,6 +171,7 @@ function forRows<T, K>(
   $list: readonly [ListPlan, (tape: unknown[], base: number, item: T, index: number) => void] | undefined,
   $rows?: readonly unknown[],
   $lazy?: readonly unknown[],
+  lazy?: boolean | (() => boolean),
 ): unknown {
   // A value (live-props getter, `each={xs()}`) or an accessor (`each={xs}`).
   const items = typeof each === "function" ? each() : each;
@@ -208,7 +213,7 @@ function forRows<T, K>(
   const instance = {},
     list = [...keys],
     render = (get: () => unknown, at: () => number) => children(get as () => T, at);
-  if ($lazy !== undefined && lazyHook !== null) {
+  if ($lazy !== undefined && lazyHook !== null && (typeof lazy === "function" ? lazy() : lazy) !== false) {
     const value = lazyHook(instance, items, $lazy, children as never, by as never, render);
     if (value !== undefined) {
       if (Array.isArray(value)) ROWS.add(value);

@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { queryObjects } from "node:v8";
-import { selector, signal, computed, effect, batch, createRoot, untrack, getOwner, _trackReads } from "../index.ts";
+import { selector, signal, computed, effect, batch, createRoot, untrack, getOwner, memberKeys, _trackReads } from "../index.ts";
 import { _debug } from "../debug.ts";
 
 // Keyed selector: per-key readers re-run only when their key's result changes.
@@ -304,4 +304,65 @@ test("a key read by several readers is dropped once the last one leaves", async 
   createRoot(() => effect(() => void (seen = is(2))));
   selected.set(2);
   assert.equal(seen, true);
+});
+
+// LAZY-T6 keyed wake: `_trackReads(fn, arg, keyed)` reports selector reads whose wake can be the key's own.
+test("memberKeys: the keys in exactly one of two Sets; null unless both are Sets", () => {
+  assert.deepEqual(memberKeys(new Set([1, 2]), new Set([2, 3])), [1, 3]);
+  assert.deepEqual(memberKeys(new Set(), new Set()), []);
+  assert.equal(memberKeys("all", new Set([1])), null);
+  assert.equal(memberKeys(new Set([1]), null), null);
+});
+
+test("a _trackReads keyed hook takes selector(signal) reads of known hints (default pair, memberKeys) instead of the signal", () => {
+  const focused = signal<number | null>(1);
+  const selection = signal<Set<number> | "all">(new Set([2]));
+  const isFocused = selector(focused);
+  const isSelected = selector(selection, (key: number, value) => value === "all" || value.has(key), { keys: memberKeys });
+  const custom = selector(selection, (key: number, value) => value === "all" || value.has(key), { keys: () => null });
+  const derived = selector(() => focused());
+  const plain = signal(0);
+  const seen: [unknown, number, unknown][] = [];
+  const hook = (source: unknown, kind: 0 | 1, key: unknown) => (seen.push([source, kind, key]), true);
+  const { value, signals } = _trackReads(() => [isFocused(1), isSelected(2), isSelected(3), plain()], undefined, hook);
+  assert.deepEqual(value, [true, true, false, 0]);
+  assert.deepEqual(seen, [
+    [focused, 0, 1],
+    [selection, 1, 2],
+    [selection, 1, 3],
+  ]);
+  assert.deepEqual(signals, [plain]);
+  // Unknown hint / non-signal source: the signal is the read (the hook is not asked).
+  seen.length = 0;
+  const other = _trackReads(() => [custom(2), derived(1)], undefined, hook);
+  assert.deepEqual(other.value, [true, true]);
+  assert.deepEqual(seen, []);
+  assert.deepEqual(other.signals, [selection, focused]);
+  // The hook declines (false): the read is the signal's, as without a hook.
+  const declined = _trackReads(
+    () => isSelected(2),
+    undefined,
+    () => false,
+  );
+  assert.deepEqual(declined.signals, [selection]);
+  // Without a hook: unchanged (the source signal).
+  assert.deepEqual(_trackReads(() => isSelected(2)).signals, [selection]);
+});
+
+test("a _trackReads keyed hook sees a keyed read through a computed (its key source)", () => {
+  const selection = signal<Set<number> | "all">(new Set([1]));
+  const isSelected = selector(selection, (key: number, value) => value === "all" || value.has(key), { keys: memberKeys });
+  createRoot((dispose) => {
+    const one = computed(() => isSelected(1));
+    const seen: unknown[] = [];
+    const { value, signals } = _trackReads(
+      () => one(),
+      undefined,
+      (source, kind, key) => (seen.push(source, kind, key), true),
+    );
+    assert.equal(value, true);
+    assert.deepEqual(seen, [selection, 1, 1]);
+    assert.deepEqual(signals, []);
+    dispose();
+  });
 });

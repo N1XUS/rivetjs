@@ -11,15 +11,15 @@
 // `_materialise(node)` (cdk focus / `aria-activedescendant` targets). A re-created For region keys the rows like adopted
 // server rows: kept rows stay as they are (inert or materialised), rows it keeps materialise later through its row
 // function. State: 0 inert, 1 materialised, 2 dead (dropped, or its region died).
-import { _dispose, _setRegionStateHook, effect, provide, runWithOwner, untrack } from "@rivetjs/reactivity";
+import { _dispose, _setRegionStateHook, effect, memberKeys, provide, runWithOwner, untrack } from "@rivetjs/reactivity";
 import { _adoption, _delegateBelow } from "./dom-v2.ts";
 import { _adoptRow, _region, _regionHost, _ABSENT_STATE } from "./dom-adopt.ts";
 import { _inIdScope, _rowIdPrefix } from "./id.ts";
-import { _placeholderContext } from "./resume-format.ts";
+import { _keyAt, _placeholderContext } from "./resume-format.ts";
 import { DEV } from "#dev";
 import type { Owner, Signal } from "@rivetjs/reactivity";
 import type { ForRow } from "./dom-v2.ts";
-import type { AdoptedBranch, AdoptedRow, AdoptedState, LazyHost } from "./dom-adopt.ts";
+import type { AdoptedBranch, AdoptedRow, AdoptedState, LazyHost, RowPlanCache } from "./dom-adopt.ts";
 import type { LazyRowsEntry, LoaderApi, RegionLocals, RegionProviders, ResumeState, SymbolRef } from "./resume-format.ts";
 
 interface Markers {
@@ -81,6 +81,13 @@ interface LazyRow {
   row: ForRow | null;
   loading: boolean;
 }
+/** Keyed reads of one selector source (entry [12]): the rows by the key they read. */
+interface KeyedWake {
+  f: LazyFor;
+  kind: number;
+  byKey: Map<unknown, LazyRow[]>;
+  rows: LazyRow[];
+}
 interface LazyFor {
   e: LazyRowsEntry;
   rows: LazyRow[];
@@ -88,6 +95,8 @@ interface LazyFor {
   host: Parameters<LazyHost> | null;
   woken: boolean;
   state: Map<number, RegionLocals> | null;
+  /** Row plan (T6): rows of the same structure adopt without a probe run. */
+  plan: RowPlanCache;
 }
 
 /** @internal The lazy rows of one resume runtime (`createResume`, `LAZY_ROWS` builds only). */
@@ -95,7 +104,8 @@ export function _lazyRows(c: LazyContext): LazyRows {
   const { get, markers, parents } = c;
   const lazyRows = new Map<number, LazyRow>(),
     lazyOf = new Map<number, LazyFor[]>(), // region id → its lazy Fors (server order), until the region re-creates
-    wakes = new Map<number, LazyFor[]>(); // signal ref → lazy Fors whose rows read it
+    wakes = new Map<number, LazyFor[]>(), // signal ref → lazy Fors whose rows read it
+    keyedWakes = new Map<number, KeyedWake[]>(); // signal ref → keyed reads of it (T6)
   let lazySeen = 0,
     lazyEnds: WeakMap<Node, number> | null = null;
   const provideList = <T>(providers: RegionProviders, fn: () => T, i = 0): T =>
@@ -114,7 +124,7 @@ export function _lazyRows(c: LazyContext): LazyRows {
       const e = list[lazySeen]!,
         held = state.t[e[3]] as { j?: unknown[] } | unknown[] | null,
         count = (Array.isArray(held) ? held : (held?.j ?? (get(e[3]) as unknown[]))).length,
-        f: LazyFor = { e, rows: [], host: null, woken: false, state: null };
+        f: LazyFor = { e, rows: [], host: null, woken: false, state: null, plan: {} };
       for (let k = 0; k < count; k++) {
         const row: LazyRow = { f, k, m: e[0] + 1 + k, state: 0, owner: null, row: null, loading: false };
         lazyRows.set(row.m, row);
@@ -129,9 +139,29 @@ export function _lazyRows(c: LazyContext): LazyRows {
         for (const ref of e[7])
           if (c.decoded(ref)) armWake(get(ref) as Signal<unknown>, [f]);
           else (wakes.get(ref) ?? wakes.set(ref, []).get(ref)!).push(f);
+      const keyed = e[12];
+      if (keyed)
+        for (let i = 0; i < keyed.length; i += 3) {
+          const ref = keyed[i] as number,
+            list = keyed[i + 2] as unknown[] | 1,
+            w: KeyedWake = { f, kind: keyed[i + 1] as number, byKey: new Map(), rows: [] },
+            add = (row: LazyRow | undefined, key: unknown) => {
+              if (!row) return;
+              w.rows.push(row);
+              (w.byKey.get(key) ?? w.byKey.set(key, []).get(key)!).push(row);
+            };
+          if (list === 1) {
+            // Every row reads its own key (key path `by`).
+            const items = get(e[3]) as unknown[];
+            for (const row of f.rows) add(row, _keyAt(items[row.k], e[4] as string));
+          } else for (let j = 0; j < list.length; j += 2) add(f.rows[list[j] as number], list[j + 1]);
+          if (c.decoded(ref)) armKeyed(get(ref) as Signal<unknown>, [w]);
+          else (keyedWakes.get(ref) ?? keyedWakes.set(ref, []).get(ref)!).push(w);
+        }
       if (e[5] & 8) c.idle(() => wake(f));
       // Rows with client effects / listeners: materialised at idle, as a recorded effect runs (`effects` [11]).
-      if (e[11]) c.idle(() => e[11]!.forEach((k) => materialise(f.rows[k]!)));
+      const effects = e[11];
+      if (effects) c.idle(() => effects.forEach((k) => materialise(f.rows[k]!)));
     }
     lazyEnds = null;
     _adoption.materialise = (node) => {
@@ -147,6 +177,28 @@ export function _lazyRows(c: LazyContext): LazyRows {
         source();
         if (first) return void (first = false);
         untrack(() => fors.forEach(wake));
+      });
+    });
+  }
+  // Keyed reads (T6): a change materialises only the rows whose key may have flipped — the previous and next value
+  // (kind 0) or `memberKeys` of the two (kind 1; null: every row of the read).
+  function armKeyed(source: Signal<unknown>, list: KeyedWake[]): void {
+    runWithOwner(c.root, () => {
+      let first = true,
+        previous: unknown;
+      effect(() => {
+        const next = source();
+        if (first) return void ((first = false), (previous = next));
+        const before = previous;
+        previous = next;
+        untrack(() => {
+          for (const w of list) {
+            if (w.f.woken) continue;
+            const keys = w.kind === 0 ? [next, before] : memberKeys(next, before);
+            if (keys === null) for (const row of w.rows) materialise(row, true);
+            else for (const key of keys) w.byKey.get(key)?.forEach((row) => materialise(row, true));
+          }
+        });
       });
     });
   }
@@ -269,7 +321,7 @@ export function _lazyRows(c: LazyContext): LazyRows {
                 );
             }
           : null;
-      row.owner = _adoptRow(parent, enterRow(row, kept === null), rowFn, marks.start, marks.end, verify);
+      row.owner = _adoptRow(parent, enterRow(row, kept === null), rowFn, marks.start, marks.end, verify, f.plan);
     } catch (error) {
       c.report("lazy row " + row.m, error);
     }
@@ -287,8 +339,10 @@ export function _lazyRows(c: LazyContext): LazyRows {
     paths,
     arm(ref, source) {
       // Lazy rows reading it (entry [7]): its first change materialises every row of those Fors (a wake).
-      const fors = wakes.get(ref);
+      const fors = wakes.get(ref),
+        keyed = keyedWakes.get(ref);
       if (fors) (wakes.delete(ref), armWake(source, fors));
+      if (keyed) (keyedWakes.delete(ref), armKeyed(source, keyed));
     },
     region(node, range, read, kept, state, provided, log) {
       // A lazy For's region: the re-created For keys its server rows (inert ones stay inert, materialised ones keep their

@@ -10,6 +10,7 @@ import { _dispose, _rootIn, _setRegionStateHook, getOwner, onCleanup, signal, un
 import type { Owner } from "@rivetjs/reactivity";
 import { _adoption, _insert } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
+import { DEV } from "#dev";
 import type { AdoptedList, ForRow, InsertSlot } from "./dom-v2.ts";
 
 /** A server row of a keyed list: its item, server index (and whether the row read it), markers (inclusive) and disposer. */
@@ -332,33 +333,84 @@ const describe = (node: Node | null | undefined): string =>
 // Form controls the user changed (value / checked / selection differ from the markup's defaults): restored after the adopt
 // run when one of its bindings wrote the server value back (a live page never had that write: the user's state wins).
 type Dirty = [el: HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, value: string, checked: boolean, index: number];
-function dirtyControls(nodes: readonly Node[]): Dirty[] {
+
+/**
+ * A row plan (LAZY-T6): the probe's answers of one row, as pre-order indexes into the row's server nodes (`flatRow`), reused
+ * for the For's later rows whose server markup has the same structure (`sig`: element names, text / comment positions;
+ * data and attributes left out) — they skip the probe and the alignment (cost ≈ 1 row creation + one walk). Built from a
+ * row whose alignment paired every node (no copies). Same creations in the same order is what the structure match stands
+ * for: a creation whose node name differs from the plan's (or a count that differs) is a miss — the row is disposed and
+ * adopted again with the probe, and the For stops using plans.
+ */
+export interface RowPlan {
+  sig: string;
+  /** Per kind, creation order: index of the live node (-1: none, the created node itself) and the expected node name. */
+  made: [number[], number[], number[]];
+  names: [string[], string[], string[]];
+  /** Per template clone (kind 0): its shape as indexes ([at, firstChild, nextSibling]…; -1 unknown, -2 null). */
+  shapes: number[][];
+  /** Per slot: what its probe held (-2 nothing, an index, or a list). */
+  slots: (number | number[])[];
+  /** `_t` / `_tx` state: [index, 0 `$$t` text | 1 `$$t` slot | 2 `$$s` slot, current (slots)]. */
+  exp: [number, number, number | number[]][];
+}
+/** Per For (`dom-resume-lazy.ts`): its plan once built; false after a miss or when no row aligned exactly within 3 tries. */
+export interface RowPlanCache {
+  p?: RowPlan | false;
+  tries?: number;
+}
+type Current = InsertSlot["current"];
+// The row's server nodes in pre-order (top-level nodes between the markers, each with its descendants), their structure
+// signature and the form controls among them (dirty ones restored after the adopt run).
+function flatRow(start: Node, end: Node): { list: Node[]; sig: string; controls: Element[] } {
+  const list: Node[] = [],
+    controls: Element[] = [];
+  let sig = "";
+  const walk = (n: Node): void => {
+    list.push(n);
+    if (n.nodeType === 1) {
+      const name = (n as Element).localName;
+      sig += "<" + name;
+      if (name === "input" || name === "textarea" || name === "select") controls.push(n as Element);
+      for (let c = n.firstChild; c !== null; c = c.nextSibling) walk(c);
+      sig += ">";
+    } else sig += n.nodeType === 3 ? "t" : "c";
+  };
+  for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling) walk(n);
+  return { list, sig, controls };
+}
+// The dirty ones among a row's form controls.
+function dirtyOf(controls: readonly Element[]): Dirty[] {
   const out: Dirty[] = [];
-  for (const node of nodes) {
-    if (node.nodeType !== 1) continue;
-    const list = [node as Element, ...Array.from((node as Element).querySelectorAll("input,textarea,select"))];
-    for (const el of list as Dirty[0][]) {
-      const tag = el.localName;
-      if (
-        tag === "input"
-          ? el.value !== el.defaultValue || el.checked !== el.defaultChecked
-          : tag === "textarea"
-            ? el.value !== el.defaultValue
-            : tag === "select"
-              ? Array.from(el.options).some((o) => o.selected !== o.hasAttribute("selected"))
-              : false
-      )
-        out.push([el, el.value, el.checked, tag === "select" ? el.selectedIndex : -1]);
-    }
+  for (const node of controls) {
+    const el = node as Dirty[0],
+      tag = el.localName;
+    if (
+      tag === "input"
+        ? el.value !== el.defaultValue || el.checked !== el.defaultChecked
+        : tag === "textarea"
+          ? el.value !== el.defaultValue
+          : Array.from(el.options).some((o) => o.selected !== o.hasAttribute("selected"))
+    )
+      out.push([el, el.value, el.checked, tag === "select" ? el.selectedIndex : -1]);
   }
   return out;
+}
+/** The adopt run's answers: per kind and creation, the live node (undefined: the created node) and the expected name. */
+interface Answers {
+  made: [(Node | undefined)[], (Node | undefined)[], (Node | undefined)[]];
+  names: [string[], string[], string[]];
+  shapes: (Node | null | undefined)[][];
+  slots: Current[];
 }
 
 /**
  * Materialise one lazy row (LAZY-ROWS T5): run `rowFn` over the server nodes strictly between `start` and `end` (its
  * markers) in adopt mode, under a new root of `parent`; `enter` wraps each run (probe and adopt) in the row's
  * providers, id scope and `_regionState` values (a fresh scope / counter per call). `verify` (dev, not a wake): warn with
- * the first differing node and swap the probe in for the row. Returns the row root (dispose it with the row).
+ * the first differing node and swap the probe in for the row. `cache` (LAZY-T6, one per For): a row whose structure matches
+ * the For's plan skips the probe (`RowPlan`); dev runs the probe anyway and warns when the plan disagrees with it. Returns
+ * the row root (dispose it with the row).
  */
 export function _adoptRow(
   parent: Owner | null,
@@ -367,9 +419,19 @@ export function _adoptRow(
   start: Node,
   end: Node,
   verify: ((first: string) => void) | null = null,
+  cache: RowPlanCache | null = null,
 ): Owner | null {
+  const outer = save(),
+    row = flatRow(start, end),
+    plan = cache?.p;
+  if (plan && plan.sig === row.sig && !DEV) {
+    const owner = adopt(parent, enter, rowFn, end, fromPlan(plan, row.list), row.controls, outer, true);
+    if (owner !== MISS) return owner;
+    // A creation the plan did not foresee: this For adopts with the probe from now on.
+    cache!.p = false;
+    return _adoptRow(parent, enter, rowFn, start, end, verify, null);
+  }
   const doc = start.ownerDocument!,
-    outer = save(),
     probe: Probe = { made: [[], [], []], shapes: [], attrs: verify && [], slots: [] },
     frag = doc.createDocumentFragment(),
     anchor = doc.createTextNode(""),
@@ -391,12 +453,14 @@ export function _adoptRow(
   const fresh = kids(frag);
   fresh.pop(); // the anchor
   const server = between(start, end),
-    dirty = dirtyControls(server);
+    dirty = dirtyOf(row.controls);
   // 2. Align.
   const map = new Map<Node, Node>();
-  let first: string | null = null;
+  let first: string | null = null,
+    copied = false;
   // Copies of probe nodes put into the server markup (a run / level that differs): mapped node for node.
   const copy = (node: Node): Node => {
+    copied = true;
     const twin = node.cloneNode(true);
     const pair = (a: Node, b: Node): void => {
       map.set(a, b);
@@ -472,38 +536,119 @@ export function _adoptRow(
     end.parentNode!.insertBefore(frag, end);
     return held.owner;
   }
-  const mapped = (current: InsertSlot["current"]): InsertSlot["current"] =>
+  const mapped = (current: Current): Current =>
     current === null || current === undefined ? null : Array.isArray(current) ? current.map((n) => map.get(n) ?? n) : (map.get(current) ?? null);
   // `_t` / `_tx` state on the probe's nodes → their server twins (a slot: seeded with the twins of its nodes).
+  const exp: [Node, number, Current][] = [];
   for (const [f, l] of map) {
     if (f === l) continue;
     const from = f as unknown as { $$t?: string | InsertSlot; $$s?: InsertSlot },
       to = l as unknown as typeof from;
-    if (from.$$t !== undefined) to.$$t = typeof from.$$t === "string" ? from.$$t : { current: mapped(from.$$t.current) };
-    if (from.$$s !== undefined) to.$$s = { current: mapped(from.$$s.current) };
+    if (from.$$t !== undefined)
+      if (typeof from.$$t === "string") ((to.$$t = from.$$t), exp.push([l, 0, null]));
+      else exp.push([l, 1, (to.$$t = { current: mapped(from.$$t.current) }).current]);
+    if (from.$$s !== undefined) exp.push([l, 2, (to.$$s = { current: mapped(from.$$s.current) }).current]);
   }
   _dispose(held.owner);
-  // 3. Adopt.
+  const answers: Answers = {
+    made: probe.made.map((list) => list.map((n) => map.get(n))) as Answers["made"],
+    names: probe.made.map((list) => list.map((n) => n.nodeName)) as Answers["names"],
+    shapes: probe.shapes.map((shape) => {
+      const out: (Node | null | undefined)[] = [];
+      for (let k = 0; k < shape.length; k += 3)
+        out.push(map.get(shape[k]!), shape[k + 1] ? map.get(shape[k + 1]!) : null, k && shape[k + 2] ? map.get(shape[k + 2]!) : null);
+      return out;
+    }),
+    slots: probe.slots.map((slot) => mapped(slot.current)),
+  };
+  if (cache && !copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
+    const built = toPlan(answers, exp, row.list, row.sig);
+    if (cache.p === undefined) {
+      if (built) cache.p = built;
+      else if ((cache.tries = (cache.tries ?? 0) + 1) >= 3) cache.p = false;
+    } else if (DEV && JSON.stringify(built) !== JSON.stringify(cache.p)) {
+      // Dev (which always probes): the plan must answer as the probe of a row with the same structure did.
+      console.warn("Rivet resume: " + DEV.hint("a lazy row's plan differs from its probe (same structure): its For adopts with the probe", "lazy"));
+      cache.p = false;
+    }
+  } else if (cache && cache.p === undefined && (cache.tries = (cache.tries ?? 0) + 1) >= 3) cache.p = false;
+  return adopt(parent, enter, rowFn, end, answers, null, outer, false, dirty);
+}
+// The probe's answers as indexes into the row's pre-order node list (null: a live node outside it — no plan).
+function toPlan(a: Answers, exp: [Node, number, Current][], list: Node[], sig: string): RowPlan | null {
+  const index = new Map<Node, number>();
+  list.forEach((n, i) => index.set(n, i));
+  let ok = true;
+  const at = (n: Node | null | undefined, missing: number): number => {
+    if (n === undefined) return missing;
+    if (n === null) return -2;
+    const i = index.get(n);
+    if (i === undefined) ok = false;
+    return i ?? -1;
+  };
+  const cur = (c: Current): number | number[] => (Array.isArray(c) ? c.map((n) => at(n, -1)) : at(c ?? null, -2));
+  const plan: RowPlan = {
+    sig,
+    made: a.made.map((l) => l.map((n) => at(n, -1))) as RowPlan["made"],
+    names: a.names,
+    shapes: a.shapes.map((shape) => shape.map((n) => at(n, -1))),
+    slots: a.slots.map(cur),
+    exp: exp.map(([n, kind, c]) => [at(n, -1), kind, kind ? cur(c) : -2]),
+  };
+  return ok ? plan : null;
+}
+function fromPlan(plan: RowPlan, list: Node[]): Answers {
+  const node = (i: number): Node | null | undefined => (i === -2 ? null : i < 0 ? undefined : list[i]);
+  const cur = (c: number | number[]): Current => (Array.isArray(c) ? (c.map(node) as Node[]) : (node(c) ?? null));
+  for (const [i, kind, c] of plan.exp) {
+    const to = list[i] as unknown as { $$t?: string | InsertSlot; $$s?: InsertSlot };
+    // The server's text is what the binding writes for this row (a different value updates it in place).
+    if (kind === 0) to.$$t = (to as unknown as Node).textContent!;
+    else if (kind === 1) to.$$t = { current: cur(c) };
+    else to.$$s = { current: cur(c) };
+  }
+  return {
+    made: plan.made.map((l) => l.map((i) => (i < 0 ? undefined : list[i]))) as Answers["made"],
+    names: plan.names,
+    shapes: plan.shapes.map((shape) => shape.map(node)),
+    slots: plan.slots.map(cur),
+  };
+}
+const MISS = {} as Owner;
+// 3. Adopt: the row function again; each creation returns its live node, each new slot starts from what it held.
+function adopt(
+  parent: Owner | null,
+  enter: <T>(fn: () => T) => T,
+  rowFn: () => unknown,
+  end: Node,
+  a: Answers,
+  controls: Element[] | null,
+  outer: Hooks,
+  planned: boolean,
+  dirty: Dirty[] = dirtyOf(controls!),
+): Owner | null {
   const overridden: Node[] = [];
   const clear = (): void => {
     for (const n of overridden) (delete (n as { firstChild?: unknown; nextSibling?: unknown }).firstChild, delete (n as { nextSibling?: unknown }).nextSibling);
     overridden.length = 0;
   };
   const made = [0, 0, 0];
-  let slots = 0;
+  let slots = 0,
+    miss = false;
   _adoption.node = <N extends Node>(node: N, kind: number): N => {
     clear();
     const i = made[kind]!++,
-      twin = probe.made[kind as 0 | 1 | 2][i],
-      live = twin && twin.nodeName === node.nodeName ? (map.get(twin) as N | undefined) : undefined;
+      list = a.made[kind as 0 | 1 | 2];
+    if (i >= list.length || a.names[kind as 0 | 1 | 2][i] !== node.nodeName) return ((miss = true), node);
+    const live = list[i] as N | undefined;
     if (live === undefined) return node;
-    const shape = kind === 0 ? probe.shapes[i] : null;
+    const shape = kind === 0 ? a.shapes[i] : null;
     if (shape)
       for (let k = 0; k < shape.length; k += 3) {
-        const at = map.get(shape[k]!);
-        if (at === undefined) continue;
-        const firstChild = shape[k + 1] ? map.get(shape[k + 1]!) : null,
-          nextSibling = k && shape[k + 2] ? map.get(shape[k + 2]!) : null;
+        const at = shape[k];
+        if (at == null) continue;
+        const firstChild = shape[k + 1],
+          nextSibling = k ? shape[k + 2] : undefined;
         let own = false;
         if (firstChild !== undefined && at.firstChild !== firstChild)
           (Object.defineProperty(at, "firstChild", { value: firstChild, configurable: true }), (own = true));
@@ -515,8 +660,9 @@ export function _adoptRow(
   };
   _adoption.slot = (slot) => {
     clear();
-    const twin = probe.slots[slots++];
-    if (twin !== undefined) slot.current = mapped(twin.current);
+    const i = slots++;
+    if (i < a.slots.length) slot.current = a.slots[i]!;
+    else miss = true;
   };
   _adoption.live = true;
   const row = { owner: null as Owner | null };
@@ -525,6 +671,10 @@ export function _adoptRow(
   } finally {
     clear();
     restore(outer);
+  }
+  if (planned && (miss || made[0] !== a.made[0].length || made[1] !== a.made[1].length || made[2] !== a.made[2].length || slots !== a.slots.length)) {
+    _dispose(row.owner);
+    return MISS;
   }
   for (const [el, value, checked, index] of dirty) {
     if (!el.isConnected) continue;

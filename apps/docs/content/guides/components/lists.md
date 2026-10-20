@@ -59,13 +59,14 @@ export default function Todos() {
 }
 ```
 
-`For` takes three things:
+`For` takes three things, plus one option:
 
 | Prop | What it is |
 | --- | --- |
 | `each` | The array, or a function that returns it. `each={todos()}` and `each={todos}` both follow the signal: props are live, and a signal is a function. |
 | `by` | A function that returns a unique key for an item, like its `id`. Required. |
 | children | A function that renders one row. It gets `item` and `index` as **functions**: call `todo()` and `index()`. |
+| `lazy` | Optional. Only matters with [lazy rows](../../learn/resuming.md) on: `false`, or a function that returns `false` on the server, keeps this list's rows fully resumable instead of lazy. Use it on an outer list whose rows hold another list, so the inner list is the lazy one. |
 
 ::api{symbol="@rivetjs/runtime/dom#For"}
 

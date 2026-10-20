@@ -1082,7 +1082,12 @@ export type RegionProviders = (string | number)[];
  *   (the lazy add-on `resume-lazy.ts` / `ResumeInstance.q` answer the loader's walk with the row's marker id);
  * - `providers` (T5): identified providers around the For, `[token id, value ref, …]` (re-provided around a materialised row);
  * - `effects` (T5): indexes of the rows holding a client effect / `clientEvent` listener — materialised at idle, so their
- *   effects run as a recorded effect would (and the page boots its runtime at load).
+ *   effects run as a recorded effect would (and the page boots its runtime at load);
+ * - `keyed` (T6): keyed selector reads, `[signal ref, kind, [k, key, …] | 1, …]` — rows k read `key` of a `selector(signal)`
+ *   (`@rivetjs/reactivity` `_trackReads` keyed hook), so a change of the signal wakes only the rows whose key may have
+ *   flipped: kind 0 the previous and next value (default `fn`), kind 1 `memberKeys` (Sets: their symmetric difference,
+ *   else every listed row); `1` instead of the list: every row reads its own key (`_keyAt(items[k], by)`, key path `by`).
+ *   A signal some row also reads plainly is in `reads` instead.
  * No per-row id, key, handler, binding, capture or provider entry: keys are `by(items[k])`, everything else is recomputed by
  * re-running `rowFn` for row k in adopt mode (browser materialisation, T5: `dom-resume.ts`, `dom-adopt.ts` `_adoptRow`).
  * Trailing slots are left out when empty.
@@ -1099,7 +1104,8 @@ export type LazyRowsEntry = [
   state?: (number | RegionLocals)[] | 0,
   types?: string,
   providers?: RegionProviders | 0,
-  effects?: number[],
+  effects?: number[] | 0,
+  keyed?: (number | unknown[])[],
 ];
 /** Model entry: [kind, signal ref, extra chunks?]. */
 export type ModelEntry = [kind: "value" | "checked", ref: number, extra?: number[]];
@@ -1164,6 +1170,14 @@ export interface ResumeRecords {
   a?: AsyncEntry[];
   /** Lazy row region records (`LazyRowsEntry`), in render order; patches append (a segment's own Fors). */
   L?: LazyRowsEntry[];
+}
+/** A lazy row's key from its item and the For's key path (`LazyRowsEntry` `by` string: `""` the item, else dot-separated
+ * properties), as `by` computed it on the server. */
+export function _keyAt(item: unknown, path: string): unknown {
+  if (path === "") return item;
+  let value = item;
+  for (const name of path.split(".")) value = value == null ? undefined : (value as Record<string, unknown>)[name];
+  return value;
 }
 /** The `rivet/state` format version (`ResumeState.v`): 2 since lazy row region records (`L`, LAZY-ROWS T4 2026-10-19).
  * Breaking format changes bump it; the server writes it, the dev runtime warns on a mismatch (no compatibility decoding). */

@@ -151,6 +151,14 @@ function VirtualizerView(props: {
   );
 }
 
+/**
+ * Lazy collection rows (`resume.lazyRows`, LAZY-T6): a loop over container views — a section, a table's header / body
+ * (views whose children have children) — is not the lazy `For`; the collection's rows below it are (a lazy row is one
+ * option / table row, not the whole table). Read by the server's lazy rows only.
+ */
+const leafViews = (views: readonly VirtualView<unknown>[]): boolean =>
+  !views.some((view) => view.type === "section" || view.children.some((child) => child.children.length > 0));
+
 /** `CollectionRoot` of the virtualizer renderer: the sized content element and the root views. */
 export function VirtualizerRoot(props: { link: VirtualizerLink<any>; root: CollectionRootProps }) {
   const { link, root } = props;
@@ -187,7 +195,7 @@ export function VirtualizerRoot(props: { link: VirtualizerLink<any>; root: Colle
   const rootViews = () => visibleViews(model);
   return (
     <div role="presentation" class="rv-Virtualizer-content" style={contentStyle(model)}>
-      <For each={() => rowOrder(model, ROOT_VIEW, rootViews())} by={(key: Key) => key}>
+      <For each={() => rowOrder(model, ROOT_VIEW, rootViews())} by={(key: Key) => key} lazy={() => leafViews(rootViews())}>
         {(key: () => Key) => <VirtualizerView model={model} renderer={renderer} viewKey={untrack(key)} views={rootViews} />}
       </For>
     </div>
@@ -204,7 +212,7 @@ export function VirtualizerBranch(props: { link: VirtualizerLink<any>; branch: C
   const parentKey = props.branch.parent.key;
   const views = () => childViews(model, parentKey);
   return (
-    <For each={() => rowOrder(model, parentKey, views())} by={(key: Key) => key}>
+    <For each={() => rowOrder(model, parentKey, views())} by={(key: Key) => key} lazy={() => leafViews(views())}>
       {(key: () => Key) => <VirtualizerView model={model} renderer={renderer} viewKey={untrack(key)} views={views} />}
     </For>
   );

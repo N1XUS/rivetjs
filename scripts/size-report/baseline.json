@@ -7,8 +7,8 @@
         "br": 42240
       },
       "serverJS": {
-        "min": 220329,
-        "br": 76868
+        "min": 221778,
+        "br": 77384
       },
       "routes": {
         "/": {
@@ -32,8 +32,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "browser-widget.js",
-            "analytics.js"
+            "analytics.js",
+            "browser-widget.js"
           ],
           "runtimeJS": {
             "min": 66272,
@@ -109,8 +109,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66272,
@@ -175,8 +175,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66272,
@@ -208,8 +208,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66272,
@@ -258,17 +258,17 @@
     "kit-fixture": {
       "totalJS": {
         "files": 14,
-        "min": 80773,
-        "br": 29687
+        "min": 80738,
+        "br": 29642
       },
       "serverJS": {
-        "min": 176137,
-        "br": 60209
+        "min": 177125,
+        "br": 60565
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2992,
+          "htmlBr": 2981,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -278,29 +278,29 @@
           "inlineBytes": 4458,
           "eagerRequests": 6,
           "eagerJS": {
-            "min": 76896,
-            "br": 27597
+            "min": 76881,
+            "br": 27580
           },
           "eagerFiles": [
             "late.js",
             "resume-loader.js",
             "resume-entry.js",
-            "rivet-merge-dom-resume.js",
+            "rivet-merge-index.js",
             "resume-route_main.js",
             "rivet-merge-head.js"
           ],
           "runtimeJS": {
-            "min": 54776,
-            "br": 18952
+            "min": 54771,
+            "br": 18946
           },
           "pageJS": {
-            "min": 75548,
-            "br": 26877
+            "min": 75533,
+            "br": 26860
           }
         },
         "/about": {
           "status": 200,
-          "htmlBr": 2830,
+          "htmlBr": 2817,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -310,23 +310,23 @@
           "inlineBytes": 4104,
           "eagerRequests": 5,
           "eagerJS": {
-            "min": 76846,
-            "br": 27548
+            "min": 76831,
+            "br": 27531
           },
           "eagerFiles": [
             "resume-loader.js",
             "resume-entry.js",
-            "rivet-merge-dom-resume.js",
+            "rivet-merge-index.js",
             "resume-route_main.js",
             "rivet-merge-head.js"
           ],
           "runtimeJS": {
-            "min": 54776,
-            "br": 18952
+            "min": 54771,
+            "br": 18946
           },
           "pageJS": {
-            "min": 75548,
-            "br": 26877
+            "min": 75533,
+            "br": 26860
           }
         }
       }
@@ -338,8 +338,8 @@
         "br": 31458
       },
       "serverJS": {
-        "min": 178815,
-        "br": 62240
+        "min": 179802,
+        "br": 62592
       },
       "routes": {
         "/": {
@@ -382,8 +382,8 @@
         "br": 31233
       },
       "serverJS": {
-        "min": 184576,
-        "br": 61793
+        "min": 185550,
+        "br": 62070
       },
       "routes": {
         "/": {
@@ -426,8 +426,8 @@
         "br": 26113
       },
       "serverJS": {
-        "min": 174362,
-        "br": 59766
+        "min": 175355,
+        "br": 60082
       },
       "routes": {
         "/": {
@@ -464,8 +464,8 @@
         "br": 27797
       },
       "serverJS": {
-        "min": 173669,
-        "br": 59246
+        "min": 174655,
+        "br": 59641
       },
       "routes": {
         "/": {
@@ -516,8 +516,8 @@
         "br": 26093
       },
       "serverJS": {
-        "min": 167765,
-        "br": 57317
+        "min": 168759,
+        "br": 57497
       },
       "routes": {
         "/": {
@@ -554,8 +554,8 @@
         "br": 67015
       },
       "serverJS": {
-        "min": 245383,
-        "br": 79149
+        "min": 246368,
+        "br": 79393
       },
       "routes": {
         "/": {
@@ -606,8 +606,8 @@
         "br": 26168
       },
       "serverJS": {
-        "min": 167882,
-        "br": 57276
+        "min": 168876,
+        "br": 57612
       },
       "routes": {
         "/": {
@@ -656,8 +656,8 @@
         "br": 27968
       },
       "serverJS": {
-        "min": 189395,
-        "br": 64665
+        "min": 190845,
+        "br": 65120
       },
       "routes": {
         "/": {
@@ -705,8 +705,8 @@
         "br": 26405
       },
       "serverJS": {
-        "min": 174854,
-        "br": 60018
+        "min": 175847,
+        "br": 60279
       },
       "routes": {
         "/": {
@@ -754,8 +754,8 @@
         "br": 27454
       },
       "serverJS": {
-        "min": 190461,
-        "br": 65092
+        "min": 191911,
+        "br": 65434
       },
       "routes": {
         "/": {
@@ -804,8 +804,8 @@
         "br": 26538
       },
       "serverJS": {
-        "min": 168566,
-        "br": 57533
+        "min": 169560,
+        "br": 57681
       },
       "routes": {
         "/": {
@@ -854,8 +854,8 @@
         "br": 28254
       },
       "serverJS": {
-        "min": 175186,
-        "br": 58939
+        "min": 176160,
+        "br": 59159
       },
       "routes": {
         "/": {
@@ -903,8 +903,8 @@
         "br": 26409
       },
       "serverJS": {
-        "min": 169445,
-        "br": 57760
+        "min": 170439,
+        "br": 58019
       },
       "routes": {
         "/": {
@@ -953,8 +953,8 @@
         "br": 29983
       },
       "serverJS": {
-        "min": 185075,
-        "br": 64620
+        "min": 186071,
+        "br": 64973
       },
       "routes": {
         "/": {
@@ -997,8 +997,8 @@
         "br": 26841
       },
       "serverJS": {
-        "min": 176066,
-        "br": 60375
+        "min": 177059,
+        "br": 60583
       },
       "routes": {
         "/": {
@@ -1035,8 +1035,8 @@
         "br": 44289
       },
       "serverJS": {
-        "min": 200820,
-        "br": 68485
+        "min": 201814,
+        "br": 68852
       },
       "routes": {
         "/": {
@@ -1086,8 +1086,8 @@
         "br": 45299
       },
       "serverJS": {
-        "min": 202711,
-        "br": 68999
+        "min": 203705,
+        "br": 69305
       },
       "routes": {
         "/": {
@@ -1138,8 +1138,8 @@
         "br": 49273
       },
       "serverJS": {
-        "min": 222257,
-        "br": 74803
+        "min": 223706,
+        "br": 75273
       },
       "routes": {
         "/": {
@@ -1191,8 +1191,8 @@
         "br": 48957
       },
       "serverJS": {
-        "min": 218691,
-        "br": 74080
+        "min": 220140,
+        "br": 74605
       },
       "routes": {
         "/": {
@@ -1243,8 +1243,8 @@
         "br": 37227
       },
       "serverJS": {
-        "min": 178031,
-        "br": 60575
+        "min": 179027,
+        "br": 60882
       },
       "routes": {
         "/": {
@@ -1288,8 +1288,8 @@
         "br": 65132
       },
       "serverJS": {
-        "min": 269697,
-        "br": 88035
+        "min": 271149,
+        "br": 88458
       },
       "routes": {
         "/": {
@@ -1325,8 +1325,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "routes.js",
             "rivet-merge-index.js",
+            "routes.js",
             "maximize-2.js",
             "minimize-2.js",
             "resume-builtins.js"
@@ -1341,8 +1341,8 @@
         "br": 64474
       },
       "serverJS": {
-        "min": 268927,
-        "br": 87741
+        "min": 270379,
+        "br": 88220
       },
       "routes": {
         "/": {
@@ -1423,8 +1423,8 @@
       "br": 12300
     },
     "rivet-for": {
-      "min": 37729,
-      "br": 12738
+      "min": 37775,
+      "br": 12757
     },
     "rivet-router": {
       "min": 23161,

@@ -773,7 +773,9 @@ export const TableHeader = /* @__PURE__ */ createBranchComponent(
             onPointerLeave?.(e as never);
           }}
         >
-          <For each={rowKeys} by={(k: Key) => k}>
+          {/* Not lazy (LAZY-T6): a header row holds the virtualizer's column views (a nested collection); a lazy
+              header row materialised mid-layout lost them. Header rows are few: nothing to save. */}
+          <For each={rowKeys} by={(k: Key) => k} lazy={false}>
             {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
           </For>
         </div>
@@ -795,7 +797,8 @@ export const TableHeader = /* @__PURE__ */ createBranchComponent(
           onPointerLeave?.(e as never);
         }}
       >
-        <For each={rowKeys} by={(k: Key) => k}>
+        {/* Not lazy (LAZY-T6): header rows hold the column cells (a nested collection) and are few. */}
+        <For each={rowKeys} by={(k: Key) => k} lazy={false}>
           {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
         </For>
       </thead>

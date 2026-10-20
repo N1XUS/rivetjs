@@ -201,7 +201,9 @@ export default defineConfig({
 ```
 
 - **Not every list qualifies.** The compiler decides per `<For>`: for example the row must be an inline function, `by` a key path such as `(row) => row.id` or an inline function, and the list must not spread props onto the `<For>`, read render props in a row or use values that change between renders (`Date.now()`, `Math.random()`). A row that renders a `Portal`, `clientOnly`, `Async` or `Suspense` content turns the whole list back to recorded rows; development prints a warning naming the reason.
-- **Why it is off by default.** A signal every row reads, such as a selection, wakes every row when it first changes, so the first select-all or row click rebuilds all rows of the list at once.
+- **Selection wakes only the rows it changes.** A row that reads state through a keyed selector (`selector(signal, fn, { keys: memberKeys })` from `@rivetjs/reactivity`, which the cdk collections use for selection and focus) is rebuilt only when its own key flips: selecting one row rebuilds that row and the one that lost the selection. Select-all still rebuilds every row.
+- **Keep a list recorded** with `lazy={false}` on its `<For>` (or a function that returns `false` on the server), for example an outer list whose rows hold another list, so the inner list is the lazy one. The cdk collections do this for sections, tree children and table headers.
+- **Why it is off by default.** A signal every row reads plainly still wakes every row when it first changes. In a virtualized list the rendered rows read the virtualizer's layout, so the first click or scroll rebuilds the whole visible window: at 4× CPU slowdown that first click is still 5–18 ms slower than with recorded rows.
 
 ## What it means for your code
 

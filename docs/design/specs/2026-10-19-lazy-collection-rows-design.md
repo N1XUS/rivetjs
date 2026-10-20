@@ -150,6 +150,33 @@ Synthetic 1000-row table (runtime harness, unminified sources; each row reads a 
 - What unblocks the flip: (1) the keyed selector wake (§3.2 item 5: per-key wake lists, so a selection change wakes the two rows whose key flipped); (2) the lazy For one level down on virtualized collections (rows of the cdk collection, not the virtualizer window); (3) adopt cost per row (two runs: probe + adopt) — a compiled adopt walk (structural C3) halves it.
 - Bytes: loader add-on `LAZY` 717 chars / 439 B br, on pages with `L` only (loader stub unchanged). Resume runtime, every resumed page, per file minified (`DEV` false, unbundled): `dom-resume` +3,769 B min / +1,386 B br, `dom-adopt` +4,710 / +1,658 (`_adoptRow`), `dom-v2` +317 / +96, `dom` +157 / +47, `dom-v2-spread` +27 / +16 — as handed back by T5, paid with lazy rows off too. LAZY-T5B (2026-10-19) made it opt-in per build instead of a per-page chunk (a dynamic `import()` would race the first event and the wakes): build-time constant `LAZY_ROWS` (`libs/runtime/lazy-rows.ts`) around every hook + factory slot `lazy-rows-resume.ts`, both served opted-in by the compiler plugin for `resume: { lazyRows: true }`; other builds are byte-identical to pre-T5 (zero-cost runtime hashes: dom-resume unchanged; `/dom` entry +43 B for the `_materialise` export, `return !1`, not in apps). Opted-in builds: dom-resume 54,283 B min (+8,720) / 18,531 br (+2,773), dom 49,162 (+377) / 16,452 (+93); the server writes `L` only with the manifest flag (`RIVET_LAZY_ROWS=on` alone: dev warning, recorded rows).
 
+### T6 measured (2026-10-20, LAZY-T6; default stays `off`)
+
+Changes: (1) keyed selector wake — `_trackReads` keyed hook; a lazy row's read of a `selector` with a known hint (`pairKeys`, reactivity `memberKeys`) over a plain signal ships per key in entry `keyed` [12] and wakes only the rows whose key flipped (cdk `selectionOf` / `isFocusedKey` use those hints); (2) lazy one level down — `For` prop `lazy={false | () => boolean}` (authored opt-out; a compile-time rule cannot see across components: `renderNodeAt` / virtualizer views): cdk `renderNodes` / virtualizer Fors are not lazy when a row holds a nested collection (section, tree children, Table root parts), Table header Fors never (a lazy virtualized header row lost its column views when it materialised mid-layout); (3) row plans — after one probe + align, rows of the same flat structure adopt from a cached plan without the probe run (`dom-adopt.ts` `RowPlanCache`; any mismatch drops the plan; DEV always probes and cross-checks).
+
+Probe `--cpu 1,4 --loads 3`, two interleaved rounds (6 cold loads per cell, median), host load 7.6–7.9 at each start (`uptime`, quiet gate < 8; ±10 ms per sample at ×4); snapshot = main a3777735 + LAZY-T6; Node v26.5.1, Chromium 153, Apple M4 Pro ×14.
+
+| page | state raw / br off → on | HTML br off → on | server CPU off → on | first click ×1 off → on (Δ) | first click ×4 off → on (Δ) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ui-docs:table-virtualization | 42.2 / 6.4 → 23.5 / 3.5 KB | 11.8 → 8.6 KB | 28.3 → 21.9 ms | 24.0 → 22.0 (-2.0) | 37.9 → 55.4 (+17.5) |
+| ui-docs:list-box-virtualization | 85.0 / 6.4 → 74.7 / 4.9 KB | 11.2 → 9.6 KB | 15.6 → 9.0 ms | 42.9 → 48.8 (+5.9) | 66.5 → 81.2 (+14.8) |
+| ui-docs:table-selection | 40.2 / 8.3 → 7.3 / 2.3 KB | 13.5 → 7.3 KB | 8.4 → 3.8 ms | 50.3 → 44.5 (-5.8) | 86.2 → 67.1 (-19.1) |
+| cdk-docs:virtualizer-items | 7.3 / 1.3 → 5.1 / 0.9 KB | 5.0 → 5.0 KB | 3.9 → 3.4 ms | 47.8 → 48.8 (+1.0) | 68.8 → 73.7 (+4.9) |
+
+Synthetic 1000-row table (runtime harness; median of 5 loads; paint = pointerdown → painted frame, DOM = unquantized MutationObserver time):
+
+| | off | on | delta |
+| --- | ---: | ---: | ---: |
+| shared read (`plain`), first row click ×4: paint / DOM | 54.8 / 53.1 ms | 70.7 / 66.1 ms (1000 rows materialised) | +16 / +13 |
+| keyed selector, first row click ×1 / ×4: paint | 46.4–47.5 / 58.3 ms | 47.6 / 70.1 ms | 0 / +12 (frame quantum; DOM 56.2 → 49.0, 1 row materialised) |
+| keyed selector, select-all ×4: paint / DOM | 46.3 / 30.6 ms | 55.8 / 49.4 ms (1000 rows) | +9.5 / +19 |
+| `rivet/state` raw | 39.1 KB | 29.1 KB | −26% |
+
+- Wake counts: keyed row click materialises 1 row (+ the deselected one), was 1000; select-all materialises all 1000 (every key flips; R5 budget: paint +9.5 ms ≤ 16, DOM +19 ms).
+- Gate (§8, first click ≤ off + 2 ms): passes on table-selection (−6 / −19 ms) and table-virtualization ×1 (−2; ×4 was +65 in T5, now +17.5); fails at ×4 on table-virtualization (+17.5), list-box-virtualization (+14.8), virtualizer-items (+4.9, inside the noise). Remaining cause: virtualized rows read the virtualizer `views` signal (plain shared read) — the first engine update (focus / scroll) wakes the whole rendered window; per-row adopt cost × window size at ×4. Bytes and server CPU pass everywhere. Default stays `off`.
+- Bytes: opted-in dom-resume [lazyRows] 54,283 → 57,124 B min (+2,841: keyed wake + row plans); every other runtime entry used by browsers unchanged (zero-cost); server: reactivity +551 B min (collector `key` hook, `memberKeys`), server-resume +947, server +11 (`For` `lazy`); app server bundles +1.0–1.5 KB min, client JS unchanged.
+- What remains for the flip: per-key / per-view wake for the virtualizer window (`views` read keyed by view key, or the window rows recorded while the engine's first layout is pending), and a cheaper materialise for the woken window (compiled adopt walk, structural C3).
+
 ## 5. cdk collections
 
 cdk rows are not a user `<For>`: `CollectionRoot` / `CollectionBranch` render built nodes through `renderNodeAt(collection, key)` (per-row `computed` keyed by `sameRender`, `node.render(node)` untracked; `libs/cdk/collections/CLAUDE.md`), and `Collection items` rows go through a `For` keyed by `itemId`. For this spec the row function of a cdk collection is **`(key) => renderNodeAt(collection, key)`**, a resumable function of the collection accessor — which is already what the server records as the row's item ref. Required cdk changes:
@@ -200,7 +227,7 @@ Harness: `resume-bench` lanes (`click`, `keyClick`, `filter`, `scrollClick`, `ho
 | T3 | cdk: collection rows through the structural `For` with `(key) => renderNodeAt(collection, key)`; client lazy build pass for JSX-children collections; seeded ids per row; byte-equal id test per row kind | cdk | T2 |
 | T4 (done 2026-10-19, behind `RIVET_LAZY_ROWS=on`) | Server: lazy row region recording (`L` record, suppressed row scopes, per-row keyed state when present, seeded id scope per row), fallback to today's records on non-eligible Fors, `rivet/state` format bump for `R` | runtime (`server-resume`, `server-structural`, `resume-format`) | T2 |
 | T5 (done 2026-10-19, behind `resume.lazyRows` + `RIVET_LAZY_ROWS=on` (LAZY-T5B: 0 bytes without the build option); gate fails, default `off`) | Browser: adopt-mode DOM lowering for row functions and the components they call (structural §3.5 restricted to rows = M2 C3's first consumer); loader marker walk → `materialise(forId, index)`; `_for` adopt-mode reconcile without materialising kept rows; row wake lists; dev verifier per row | compiler (C3, root agent) + runtime (`dom-adopt`, `dom-resume`, loader) | T2, T4 |
-| T6 | Gate run (§8) on the bench host under the bench lock; loss budget for select-all; Fast 3G cold click on a `lean` page | runtime | T5 |
+| T6 | Gate run (§8) on the bench host under the bench lock; loss budget for select-all; Fast 3G cold click on a `lean` page. Done 2026-10-20 (LAZY-T6): keyed selector wake, `For` `lazy` opt-out one level down, row plans; gate still fails at ×4 on the virtualized pages (§4 "T6 measured"), default `off` | runtime | T5 |
 | T7 | Docs follow code: `docs/guides/resumability.md` rows rows, `apps/docs/content/learn/resuming.md`, cdk / runtime CLAUDE.md, llms / MCP / skills regenerated; `check-examples` column documented | docs | T6 |
 
 Order: T1 ‖ T2 → T3 ‖ T4 → T5 → T6 → T7. T2 and T5's compiler parts are Rust: patch files to the orchestrator's queue, one Docker build per batch (repo rule).
@@ -215,6 +242,6 @@ R6 (T4 intake, 2026-10-19): a client effect or `clientEvent` inside a row is a f
 - **R2 — no shipping interim.** `create + swap` only as T1's measurement flag. Reason: it is the `recreated` failure class the fuzz pins today.
 - **R3 — one rule per `For`.** A `For` is lazy or recorded, never mixed; non-eligible rows make the whole `For` recorded and visible in `check-examples`.
 - **R4 — cdk JSX-children collections build on the client lazily** (option (b) in §5); `items`-driven collections ship nothing per node.
-- **R5 — loss budget.** Select-all on 1000 rows ≤ one frame at 4× CPU is accepted as the cost of not shipping 1000 rows of closures; measured at T6, mitigated by the keyed selector wake.
+- **R5 — loss budget.** Select-all on 1000 rows ≤ one frame at 4× CPU is accepted as the cost of not shipping 1000 rows of closures; measured at T6, mitigated by the keyed selector wake. T6 (2026-10-20): paint +9.5 ms (within), DOM change +19 ms; the keyed wake helps single-row changes, not select-all (every key flips).
 
 If R1 is declined, the fallback is to keep the two diet lanes' serialized wire and accept ~1.5–2.7 KB per component row as the floor (the lazy-state note's bound tables show no other lever below −40 %).

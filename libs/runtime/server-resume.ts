@@ -46,6 +46,7 @@ import {
   _CLASSES,
   _contextById,
   _isContextToken,
+  _keyAt,
   _registeredId,
   _setUnrecorded,
 } from "./resume-format.ts";
@@ -78,7 +79,7 @@ import { _onSlot } from "./slot.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import type { DerivedRender } from "./server-derived.ts";
 import type { BoundaryFallback } from "./server-boundary.ts";
-import type { Context, Disposer, EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
+import type { Context, Disposer, EqualsOptions, KeyedRead, Owner, Signal } from "@rivetjs/reactivity";
 import { _storePaths } from "@rivetjs/reactivity/store";
 import type { ListPlan, ServerValue, ServerWriter } from "./server.ts";
 import type { AsyncStream } from "./server-async.ts";
@@ -909,6 +910,11 @@ interface LazyFor {
   flags: number;
   /** Signals the rows' renders read (deduplicated). */
   reads: Signal<unknown>[];
+  /** Keyed selector reads (T6, `_trackReads` keyed hook): per (signal, kind) the rows and the key each read, flat
+   * `[k, key, …]` — those rows wake when their key's result may change, not on every change of the signal (entry [12]). */
+  keyed: { signal: Signal<unknown>; kind: 0 | 1; rows: unknown[] }[] | null;
+  /** The `_trackReads` keyed hook of this For (records into `keyed` for the rendering row). */
+  hook: KeyedRead;
   /** Per row: its `_regionState` values and nested counts (`RegionLocals` shape), creation order. */
   locals: ({ l: unknown[]; n: number[] } | undefined)[] | null;
   recorder: Recorder;
@@ -977,13 +983,32 @@ function lazyEffect(): void {
   const lazy = inLazyRow();
   if (lazy !== null && !(lazy.effects ??= []).includes(lazy.row)) lazy.effects.push(lazy.row);
 }
+// A keyed selector read in the rendering row (`_trackReads` keyed hook): the row wakes on its key only. Keys travel inline
+// in the entry: only JSON scalars (else the signal is a plain read of the row).
+function lazyKeyed(lazy: LazyFor, signal: Signal<unknown>, kind: 0 | 1, key: unknown): boolean {
+  if (!(typeof key === "string" || (typeof key === "number" && Number.isFinite(key)) || typeof key === "boolean" || key === null)) return false;
+  const list = (lazy.keyed ??= []);
+  let record = list.find((r) => r.signal === signal && r.kind === kind);
+  if (record === undefined) list.push((record = { signal, kind, rows: [] }));
+  const rows = record.rows;
+  for (let i = rows.length - 2; i >= 0 && rows[i] === lazy.row; i -= 2) if (rows[i + 1] === key) return true;
+  rows.push(lazy.row, key);
+  return true;
+}
+// Whether keyed rows `[k, key, …]` are every row once, reading its own key (`_keyAt` of its item, a key path `by`).
+function ownKeys(lazy: LazyFor, rows: unknown[]): boolean {
+  const items = lazy.items;
+  if (typeof lazy.by !== "string" || rows.length !== 2 * items.length) return false;
+  for (let k = 0; k < items.length; k++) if (rows[2 * k] !== k || rows[2 * k + 1] !== _keyAt(items[k], lazy.by)) return false;
+  return true;
+}
 const addReads = (lazy: LazyFor, signals: readonly Signal<unknown>[]): void => {
   for (let i = 0; i < signals.length; i++) if (!lazy.reads.includes(signals[i]!)) lazy.reads.push(signals[i]!);
 };
 // A site's read inside a lazy row: its signals are the row's reads (entry `reads`). Component bodies run untracked, so the
 // For's own collector sees only reads outside components (cdk rows: none) — every site tracks its own, as a recorded one does.
 function lazyRead<T>(lazy: LazyFor, read: () => T): T {
-  const tracked = _trackReads(read);
+  const tracked = _trackReads(read, undefined, lazy.hook);
   if (tracked.signals.length) addReads(lazy, tracked.signals);
   return tracked.value;
 }
@@ -996,7 +1021,7 @@ function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
   unrecordedRender = lazy.recorder;
   lazy.row = row;
   try {
-    const tracked = _trackReads(() => store.exit(fn));
+    const tracked = _trackReads(() => store.exit(fn), undefined, lazy.hook);
     if (tracked.signals.length) addReads(lazy, tracked.signals);
     return tracked.value;
   } finally {
@@ -1065,6 +1090,8 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     by: flags & 2 ? by : key,
     flags: flags & 3,
     reads: [],
+    keyed: null,
+    hook: null as unknown as KeyedRead,
     locals: null,
     recorder,
     row: 0,
@@ -1077,6 +1104,7 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     providers: null,
     effects: null,
   };
+  lazy.hook = (signal, kind, key) => lazyKeyed(lazy, signal, kind, key);
   // Providers enclosing the For (as a region site records them): a materialised row reads the server's values.
   for (const token of recorder.tokens.values()) {
     const provided = useContext(token);
@@ -1090,10 +1118,13 @@ _onForLazy((_list, items, verdict, children, by, render) => {
   try {
     // One read collector for the whole For (a nested `_trackReads` does not forward): the rows' reads are not the enclosing
     // site's (it is not re-created on them); they ship with the entry.
-    const tracked = _trackReads(() =>
-      store.exit(() => {
-        for (let k = 0; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
-      }),
+    const tracked = _trackReads(
+      () =>
+        store.exit(() => {
+          for (let k = 0; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
+        }),
+      undefined,
+      lazy.hook,
     );
     addReads(lazy, tracked.signals);
   } finally {
@@ -1108,7 +1139,7 @@ _onForLazy((_list, items, verdict, children, by, render) => {
   }
   lazy.done = true;
   for (const type of lazy.events) recorder.events.add(type);
-  if (lazy.sites || lazy.reads.length) recorder.used = true;
+  if (lazy.sites || lazy.reads.length || lazy.keyed) recorder.used = true;
   recorder.lazy.push(lazy);
   return rows as unknown as ServerValue;
 });
@@ -3851,6 +3882,16 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         } catch {
           flags |= 8;
         }
+      // Keyed reads (T6) of signals no row reads plainly: `[signal ref, kind, [k, key, …] | 1], …` flat; 1 = every row reads
+      // its own key, the key path of `by` (the browser derives it: no per-row bytes).
+      const keyed: unknown[] = [];
+      for (const record of lazy.keyed ?? [])
+        if (!own.has(record.signal) && !shared.includes(record.signal))
+          try {
+            keyed.push(encoder.ref(record.signal), record.kind, ownKeys(lazy, record.rows) ? 1 : record.rows);
+          } catch {
+            flags |= 8;
+          }
       const entry: LazyRowsEntry = [lazy.forId, regionOf(lazy.scope), rowFn, items, by, flags, []];
       let state: (number | RegionLocals)[] | 0 = 0;
       if (lazy.locals) {
@@ -3883,7 +3924,7 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         }
       const types = [...lazy.types].join(" ");
       // Trailing slots only as far as needed (0 / "" = none).
-      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0];
+      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0, keyed.length ? keyed : 0];
       while (tail.length && (tail[tail.length - 1] === 0 || tail[tail.length - 1] === "")) tail.pop();
       (entry as unknown[]).push(...tail);
       entry[6] = needs(lazy.symbol, refs);

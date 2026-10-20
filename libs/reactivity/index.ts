@@ -46,7 +46,10 @@ const count = (links: Links<unknown>): number => (links === null ? 0 : isArray(l
 type Getter = (() => unknown) & { [SIGNAL]?: Source; [COMPUTED]?: Node };
 // `_trackReads` collector: reads in first-read order (signal getters, computed nodes), deduped by scan while
 // short, by `index` once longer; `computed` marks whether a source walk is needed.
-interface Collector { kind: typeof COLLECTOR; disposed: boolean; add: (this: Collector, source: Tracked) => void; reads: (Getter | Node)[] | null; index: Set<unknown> | null; computed: boolean }
+interface Collector { kind: typeof COLLECTOR; disposed: boolean; add: (this: Collector, source: Tracked) => void; key: (this: Collector, selector: Selector, key: unknown) => unknown; keyed: KeyedRead | null; reads: (Getter | Node)[] | null; index: Set<unknown> | null; computed: boolean }
+/** `_trackReads`'s keyed hook: a `selector(signal)` read of `key` whose wake is the key's own (`kind`: 0 the previous / next
+ * value's keys — default `fn`; 1 `memberKeys`). True: recorded keyed (the collector does not list `signal` for it). */
+export type KeyedRead = (signal: Signal<unknown>, kind: 0 | 1, key: unknown) => boolean;
 
 const SIGNAL = Symbol('rivet.signal');
 const COMPUTED = Symbol('rivet.computed');
@@ -810,7 +813,9 @@ function scanPending(pending: KeySource[], fn: Selector['fn'], next: unknown, pr
 }
 function selectorRead(this: Selector, key: unknown): unknown {
   const observer = currentObserver;
-  if (observer === null || observer.kind === COLLECTOR || observer.disposed) return this.fn(key, this.source());
+  if (observer === null || observer.disposed) return this.fn(key, this.source());
+  // A `_trackReads` collector (server regions): the source's signals, or the keyed read (`collectKey`).
+  if (observer.kind === COLLECTOR) return observer.key(this, key);
   let node = this.node;
   if (node === null) run((node = this.node = adopt(null, new Node(EFFECT, null, selectorRun.bind(this)))));
   else if (node.state !== CLEAN) update(node); // written inside a batch: catch up before this read
@@ -836,6 +841,17 @@ function selectorRead(this: Selector, key: unknown): unknown {
   }
   track(source);
   return this.fn(key, this.value);
+}
+
+/** `selector` `keys` hint for Set-valued sources (a selection): the keys in exactly one of `next` / `previous`; null
+ * (every key) unless both are Sets. Known to resume (`_trackReads` keyed reads): lazy collection rows reading
+ * `selector(signal, fn, { keys: memberKeys })` wake per key. */
+export function memberKeys<K>(next: unknown, previous: unknown): K[] | null {
+  if (!(next instanceof Set) || !(previous instanceof Set)) return null;
+  const keys: K[] = [];
+  for (const key of next) if (!previous.has(key)) keys.push(key);
+  for (const key of previous) if (!next.has(key)) keys.push(key);
+  return keys;
 }
 
 /** Create a keyed selector (Solid `createSelector`): `select(key)` returns `fn(key, source())` (default
@@ -1261,6 +1277,19 @@ function unique(list: unknown[], index: Set<unknown> | null, item: unknown): Set
 function collectThis(this: Collector, source: Tracked): void {
   collect(this, source);
 }
+// A selector read inside the collector (`selectorRead`): reported to the keyed hook when the wake can be the key's own —
+// the source is a signal and the selector's change hint one resume knows (`KeyedRead` kinds) — and then read without
+// listing the signal; otherwise the source's reads are the collector's, as any read.
+function collectKey(this: Collector, selector: Selector, key: unknown): unknown {
+  if (this.keyed === null || !keyedRead(this.keyed, selector, key)) return selector.fn(key, selector.source());
+  currentObserver = null;
+  try { return selector.fn(key, selector.source()); }
+  finally { currentObserver = this; }
+}
+function keyedRead(keyed: KeyedRead, selector: Selector, key: unknown): boolean {
+  const source = selector.source as Getter, kind = selector.keys === pairKeys ? 0 : selector.keys === memberKeys ? 1 : -1;
+  return kind >= 0 && source[SIGNAL] !== undefined && source[SIGNAL].getter === source && keyed(source as Signal<unknown>, kind as 0 | 1, key);
+}
 function collect(collector: Collector, source: Tracked): void {
   let item: Getter | Node;
   if (source.kind === SOURCE) item = (source as Source).getter!;
@@ -1269,14 +1298,19 @@ function collect(collector: Collector, source: Tracked): void {
   else collector.index = unique(collector.reads, collector.index, item);
 }
 // Leaf signals below the collected reads, depth-first in first-read order (computeds visited once).
-interface Walk { signals: Signal<unknown>[]; index: Set<unknown> | null; visited: Node[]; vindex: Set<unknown> | null }
+interface Walk { signals: Signal<unknown>[]; index: Set<unknown> | null; visited: Node[]; vindex: Set<unknown> | null; keyed: KeyedRead | null }
 function walk(state: Walk, item: Getter | Tracked): void {
   if (typeof item === "function") state.index = unique(state.signals, state.index, item);
   else if (item.kind === SOURCE) {
     const getter = (item as Source).getter;
     if (getter !== null) state.index = unique(state.signals, state.index, getter);
-    // A `selector` key source (no getter, `value` = its Selector): the signals behind it are its watcher's.
-    else { const watcher = ((item as Source).value as Selector).node; if (watcher !== null) walk(state, watcher); }
+    // A `selector` key source (no getter, `value` = its Selector): keyed (the collector's hook took it), else the signals
+    // behind it are its watcher's.
+    else {
+      const selector = (item as Source).value as Selector;
+      if (state.keyed !== null && keyedRead(state.keyed, selector, (item as KeySource).key)) return;
+      const watcher = selector.node; if (watcher !== null) walk(state, watcher);
+    }
   }
   else {
     const visited = state.visited, length = visited.length;
@@ -1292,8 +1326,8 @@ function walk(state: Walk, item: Getter | Tracked): void {
 /** Resume ABI: run fn untracked by the caller and report the signals it read, through computeds.
  * `signals` is read-only (a shared frozen empty array when nothing was read). `arg` is passed to fn
  * (compiled server attribute reads are module-level functions over their captures array). */
-export function _trackReads<T, A = undefined>(fn: (arg: A) => T, arg?: A): { value: T; signals: Signal<unknown>[] } {
-  const collector: Collector = { kind: COLLECTOR, disposed: false, add: collectThis, reads: null, index: null, computed: false };
+export function _trackReads<T, A = undefined>(fn: (arg: A) => T, arg?: A, keyed?: KeyedRead | null): { value: T; signals: Signal<unknown>[] } {
+  const collector: Collector = { kind: COLLECTOR, disposed: false, add: collectThis, key: collectKey, keyed: keyed ?? null, reads: null, index: null, computed: false };
   const previousObserver = currentObserver;
   currentObserver = collector;
   let value: T;
@@ -1302,7 +1336,7 @@ export function _trackReads<T, A = undefined>(fn: (arg: A) => T, arg?: A): { val
   const reads = collector.reads;
   if (reads === null) return { value, signals: EMPTY };
   if (!collector.computed) return { value, signals: reads as Signal<unknown>[] };
-  const state: Walk = { signals: [], index: null, visited: [], vindex: null };
+  const state: Walk = { signals: [], index: null, visited: [], vindex: null, keyed: collector.keyed };
   for (let i = 0; i < reads.length; i++) walk(state, reads[i]);
   return { value, signals: state.signals.length ? state.signals : EMPTY };
 }

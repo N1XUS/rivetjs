@@ -788,6 +788,25 @@ export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null
   });
 }
 
+/**
+ * Lazy collection rows (`resume.lazyRows`, LAZY-T6): a loop over container nodes — a section, a table's header / body (nodes
+ * whose children have children) — is not the lazy `For`; the rows below it are (a lazy row is one option / table row, not a
+ * whole table body). Read by the server's lazy rows only.
+ */
+function leafNodes(collection: CollectionInput, parent: Node<unknown> | null): boolean {
+  const c = resolveCollection(collection);
+  if (!c?.getChildren) return true;
+  for (const n of parent ? c.getChildren(parent.key) : c) {
+    if (n.type === "content") continue;
+    if (n.type === "section") return false;
+    for (const child of c.getChildren(n.key)) {
+      for (const _ of c.getChildren(child.key)) return false;
+      break;
+    }
+  }
+  return true;
+}
+
 function renderNodes(collection: CollectionInput, parent: Node<unknown> | null): unknown {
   // Rows are keyed by primitive keys (stable across rebuilds) so an adopted (resumed) row survives a
   // collection rebuild; a row re-renders only when its node's render inputs changed (`renderNodeAt`) and parts
@@ -799,7 +818,7 @@ function renderNodes(collection: CollectionInput, parent: Node<unknown> | null):
     return keys;
   };
   return (
-    <For each={each} by={(key: Key) => key}>
+    <For each={each} by={(key: Key) => key} lazy={() => leafNodes(collection, parent)}>
       {(key: () => Key) => renderNodeAt(() => resolveCollection(collection), key) as never}
     </For>
   );

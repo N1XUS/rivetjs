@@ -7,7 +7,7 @@
 // The selectors live in module WeakMaps keyed by the state's signals (shared by spread copies of a state, e.g.
 // `state/list.ts` ListState, and never serialized). `selector` is owner-free: its watcher lives while
 // bindings read keys.
-import { selector, type Signal } from "@rivetjs/reactivity";
+import { memberKeys, selector, type Signal } from "@rivetjs/reactivity";
 import type { Key, Selection } from "../collections/types.ts";
 
 /** The state shape the helpers read (both `selection/state.ts` and `_adapters/collections.ts` states). */
@@ -33,15 +33,10 @@ const selectionIn = (key: Key, selection: Selection): KeySelection => (selection
 const isEmpty = (_key: 0, selection: Selection): boolean => selection !== "all" && selection.size === 0;
 const onlyKey = (): [0] => [0];
 
-/** Keys whose membership may differ between two selections (null: "all" involved, compare every key). */
-function changedKeys(next: Selection, previous: Selection): Key[] | null {
-  if (next === "all" || previous === "all") return null;
-  const keys: Key[] = [];
-  for (const key of next) if (!previous.has(key)) keys.push(key);
-  for (const key of previous) if (!next.has(key)) keys.push(key);
-  return keys;
-}
-const changedFocus = (next: Key | null, previous: Key | null): Key[] => [next, previous] as Key[];
+// Change hints are reactivity's own (`memberKeys`: keys in one of two Sets, null when "all" is involved; the default
+// pair hint for focus): resume knows them, so a lazy collection row reading `selectionOf` / `isFocusedKey` of a
+// signal-backed state wakes only when its key flips (LAZY-T6 keyed wake, `_trackReads` keyed hook).
+const changedKeys: (next: Selection, previous: Selection) => Key[] | null = memberKeys;
 
 /** The selection read of `state` (react-stately `useMultipleSelectionState`, or the single-key backing). */
 function readerOf(state: KeyedSelectionSource): () => Selection {
@@ -73,7 +68,7 @@ export function isSelectionEmpty(state: KeyedSelectionSource): boolean {
 export function isFocusedKey(state: KeyedSelectionSource, key: Key): boolean {
   const id = state.focusedKey;
   let select = focused.get(id);
-  if (select === undefined) focused.set(id, (select = selector<Key | null, Key>(id, undefined, { keys: changedFocus })));
+  if (select === undefined) focused.set(id, (select = selector<Key | null, Key>(id)));
   return select(key);
 }
 

@@ -529,6 +529,9 @@ export const For: <T, K>(props: {
   each: readonly T[] | (() => readonly T[]);
   by: (item: T, index: number) => K;
   children: (item: () => T, index: () => number) => DOMValue;
+  /** Resumable server renders with lazy rows (`resume.lazyRows`): `false` / an accessor returning false keeps this For's
+   * rows out of lazy rows (a container loop whose rows hold the collection's own row `For`). No effect in the browser. */
+  lazy?: boolean | (() => boolean);
 }) => DOMValue = _for as never;
 /** Branch content: a function (lazy; gets the value accessor) or eager content (created once, kept). */
 type BranchContent<T> = Exclude<DOMValue, () => DOMValue> | ((value: () => NonNullable<T>) => DOMValue);
