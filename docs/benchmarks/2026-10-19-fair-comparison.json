@@ -1,9 +1,11 @@
 {
- "generated": "2026-10-19T19:23:43.587Z",
+ "generated": "2026-10-20T07:32:44.737Z",
  "inputs": [
   ".artifacts/ssr-bench/docs-2026-10-19/c1/runs/20261019T175924.212234Z-b4251f60/results.json",
   ".artifacts/ssr-bench/docs-2026-10-19/c10/runs/20261019T182353.708486Z-211f062b/results.json",
-  ".artifacts/ssr-bench/docs-2026-10-19/grid/runs/20261019T184024.191114Z-326870a0/results.json"
+  ".artifacts/ssr-bench/docs-2026-10-19/grid/runs/20261019T184024.191114Z-326870a0/results.json",
+  "apps/resume-bench/results/2026-10-20T06-18-17-863Z.json",
+  ".artifacts/perf-night/scoreboard/2026-10-20T07-18-53-920Z.json"
  ],
  "profiles": {
   "tuned": {
@@ -14030,5 +14032,3714 @@
   }
  ],
  "runtimes": [],
- "failures": []
+ "failures": [],
+ "resume": {
+  "slow/load/solid": {
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0.5,
+    "min": 0,
+    "max": 8
+   },
+   "longestTask": {
+    "median": 50.5,
+    "min": 0,
+    "max": 58
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 62.75,
+    "min": 56,
+    "max": 96.5
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/load/rivet": {
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 73.10000002384186,
+    "min": 0,
+    "max": 81.39999997615814
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/load/qwik": {
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 55,
+    "min": 44,
+    "max": 62
+   },
+   "longestTask": {
+    "median": 105,
+    "min": 94,
+    "max": 112
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 105.4,
+    "min": 94.3,
+    "max": 112.7
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/load/solid-stable": {
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 65.30000001192093,
+    "min": 58.60000002384186,
+    "max": 77.79999995231628
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/load/qwik-stable": {
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 68.89999997615814
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/click/qwik": {
+   "paintLatency": {
+    "median": 32.64999997615814,
+    "min": 31.699999928474426,
+    "max": 46.60000002384186
+   },
+   "latency": {
+    "median": 19.80000001192093,
+    "min": 18.90000009536743,
+    "max": 37
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 53,
+    "min": 42,
+    "max": 59
+   },
+   "longestTask": {
+    "median": 103,
+    "min": 92,
+    "max": 109
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 103.75,
+    "min": 92.6,
+    "max": 109.2
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 32
+   }
+  },
+  "slow/click/rivet": {
+   "paintLatency": {
+    "median": 32.19999998807907,
+    "min": 31.5,
+    "max": 33.700000047683716
+   },
+   "latency": {
+    "median": 14.300000011920929,
+    "min": 13.5,
+    "max": 17.100000023841858
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 70.25,
+    "min": 0,
+    "max": 75.60000002384186
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 0,
+    "n": 10,
+    "values": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "slow/click/solid-stable": {
+   "paintLatency": {
+    "median": 51,
+    "min": 39.39999997615814,
+    "max": 66.79999995231628
+   },
+   "latency": {
+    "median": 5.449999988079071,
+    "min": 4.899999976158142,
+    "max": 6.199999928474426
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 54
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 66.70000004768372,
+    "min": 50.200000047683716,
+    "max": 81.89999997615814
+   },
+   "inp": {
+    "median": 52,
+    "min": 40,
+    "max": 72
+   }
+  },
+  "slow/click/qwik-stable": {
+   "paintLatency": {
+    "median": 32.89999997615814,
+    "min": 31.299999952316284,
+    "max": 33.800000071525574
+   },
+   "latency": {
+    "median": 19.349999964237213,
+    "min": 17.799999952316284,
+    "max": 20.100000023841858
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 61.5
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   }
+  },
+  "slow/click/solid": {
+   "paintLatency": {
+    "median": 53.40000003576279,
+    "min": 35.200000047683716,
+    "max": 70.70000004768372
+   },
+   "latency": {
+    "median": 5.700000047683716,
+    "min": 4.400000095367432,
+    "max": 6.5
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 2
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 58
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 61.10000002384186,
+    "min": 56.200000047683716,
+    "max": 74.60000002384186
+   },
+   "inp": {
+    "median": 56,
+    "min": 40,
+    "max": 72
+   }
+  },
+  "slow/keyClick/solid-stable": {
+   "paintLatency": {
+    "median": 10.100000023841858,
+    "min": 8.5,
+    "max": 17.59999990463257
+   },
+   "latency": {
+    "median": 3.450000047683716,
+    "min": 2.700000047683716,
+    "max": 5
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 62.09999996423721,
+    "min": 60.60000002384186,
+    "max": 82.80000007152557
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 16
+   }
+  },
+  "slow/keyClick/qwik": {
+   "paintLatency": {
+    "median": 21.19999998807907,
+    "min": 15.899999976158142,
+    "max": 26.5
+   },
+   "latency": {
+    "median": 11,
+    "min": 9.800000071525574,
+    "max": 12.899999976158142
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 51.5,
+    "min": 46,
+    "max": 59
+   },
+   "longestTask": {
+    "median": 101.5,
+    "min": 96,
+    "max": 109
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 101.95,
+    "min": 96.6,
+    "max": 109.2
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/keyClick/solid": {
+   "paintLatency": {
+    "median": 10.550000011920929,
+    "min": 8.899999976158142,
+    "max": 14.5
+   },
+   "latency": {
+    "median": 3.349999964237213,
+    "min": 2.799999952316284,
+    "max": 4.199999928474426
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 1,
+    "min": 0,
+    "max": 6
+   },
+   "longestTask": {
+    "median": 51,
+    "min": 0,
+    "max": 56
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 61.40000003576279,
+    "min": 58.39999997615814,
+    "max": 85
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 16
+   }
+  },
+  "slow/keyClick/rivet": {
+   "paintLatency": {
+    "median": 11.050000011920929,
+    "min": 8.799999952316284,
+    "max": 13.100000023841858
+   },
+   "latency": {
+    "median": 4.099999964237213,
+    "min": 3.1999999284744263,
+    "max": 5.5
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 72.59999996423721,
+    "min": 68.79999995231628,
+    "max": 74.60000002384186
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 16
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/keyClick/qwik-stable": {
+   "paintLatency": {
+    "median": 20.19999998807907,
+    "min": 16.399999976158142,
+    "max": 31.59999990463257
+   },
+   "latency": {
+    "median": 11.550000011920929,
+    "min": 10,
+    "max": 17.799999952316284
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 67.70000004768372
+   },
+   "inp": {
+    "median": 0,
+    "min": 0,
+    "max": 16
+   }
+  },
+  "slow/tapClick/solid-stable": {
+   "paintLatency": {
+    "median": 31.700000047683716,
+    "min": 29.799999952316284,
+    "max": 35.89999997615814
+   },
+   "latency": {
+    "median": 20.999999940395355,
+    "min": 19.899999976158142,
+    "max": 29
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 63.85000002384186,
+    "min": 57.89999997615814,
+    "max": 76.39999997615814
+   },
+   "inp": {
+    "median": 32,
+    "min": 32,
+    "max": 40
+   }
+  },
+  "slow/tapClick/qwik-stable": {
+   "paintLatency": {
+    "median": 49.950000047683716,
+    "min": 47.60000002384186,
+    "max": 51.300000071525574
+   },
+   "latency": {
+    "median": 35.60000002384186,
+    "min": 34,
+    "max": 36.5
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 61.299999952316284
+   },
+   "inp": {
+    "median": 32,
+    "min": 32,
+    "max": 32
+   }
+  },
+  "slow/tapClick/qwik": {
+   "paintLatency": {
+    "median": 48.84999996423721,
+    "min": 35.10000002384186,
+    "max": 50.60000002384186
+   },
+   "latency": {
+    "median": 36,
+    "min": 22.200000047683716,
+    "max": 38.700000047683716
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 48,
+    "min": 45,
+    "max": 56
+   },
+   "longestTask": {
+    "median": 98,
+    "min": 95,
+    "max": 106
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 98.35,
+    "min": 95.8,
+    "max": 107
+   },
+   "inp": {
+    "median": 32,
+    "min": 16,
+    "max": 32
+   }
+  },
+  "slow/tapClick/solid": {
+   "paintLatency": {
+    "median": 31.75,
+    "min": 29.600000023841858,
+    "max": 33.299999952316284
+   },
+   "latency": {
+    "median": 20.549999952316284,
+    "min": 19.799999952316284,
+    "max": 22.200000047683716
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 3
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 53
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 59.05000001192093,
+    "min": 55.200000047683716,
+    "max": 76.89999997615814
+   },
+   "inp": {
+    "median": 32,
+    "min": 32,
+    "max": 32
+   }
+  },
+  "slow/tapClick/rivet": {
+   "paintLatency": {
+    "median": 31.700000047683716,
+    "min": 31.299999952316284,
+    "max": 32.89999997615814
+   },
+   "latency": {
+    "median": 23.25,
+    "min": 21.699999928474426,
+    "max": 24.199999928474426
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 69.14999997615814,
+    "min": 67.39999997615814,
+    "max": 78.70000004768372
+   },
+   "inp": {
+    "median": 32,
+    "min": 32,
+    "max": 32
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   }
+  },
+  "slow/hoverClick/solid": {
+   "paintLatency": {
+    "median": 61.34999996423721,
+    "min": 38,
+    "max": 69.30000007152557
+   },
+   "latency": {
+    "median": 5.649999976158142,
+    "min": 4.799999952316284,
+    "max": 6.799999952316284
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0.5,
+    "min": 0,
+    "max": 2
+   },
+   "longestTask": {
+    "median": 50.5,
+    "min": 0,
+    "max": 52
+   },
+   "loafCount": {
+    "median": 2.5,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 62.09999996423721,
+    "min": 55.800000071525574,
+    "max": 87.30000007152557
+   },
+   "inp": {
+    "median": 60,
+    "min": 40,
+    "max": 72
+   }
+  },
+  "slow/hoverClick/qwik": {
+   "paintLatency": {
+    "median": 35.59999996423721,
+    "min": 20.799999952316284,
+    "max": 37.199999928474426
+   },
+   "latency": {
+    "median": 22.949999928474426,
+    "min": 9.099999904632568,
+    "max": 25
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 48.5,
+    "min": 41,
+    "max": 58
+   },
+   "longestTask": {
+    "median": 98.5,
+    "min": 91,
+    "max": 108
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 99.15,
+    "min": 91.1,
+    "max": 108.3
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   }
+  },
+  "slow/hoverClick/qwik-stable": {
+   "paintLatency": {
+    "median": 37.69999998807907,
+    "min": 22.200000047683716,
+    "max": 39.800000071525574
+   },
+   "latency": {
+    "median": 23.05000001192093,
+    "min": 11.299999952316284,
+    "max": 26.600000023841858
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 54.5
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 32
+   }
+  },
+  "slow/hoverClick/rivet": {
+   "paintLatency": {
+    "median": 35.700000047683716,
+    "min": 19.899999976158142,
+    "max": 38.300000071525574
+   },
+   "latency": {
+    "median": 19.30000001192093,
+    "min": 6.300000071525574,
+    "max": 21.399999976158142
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 1
+   },
+   "loafMax": {
+    "median": 70.94999998807907,
+    "min": 0,
+    "max": 74.5
+   },
+   "inp": {
+    "median": 16,
+    "min": 0,
+    "max": 32
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 0,
+    "n": 10,
+    "values": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "slow/hoverClick/solid-stable": {
+   "paintLatency": {
+    "median": 55.299999952316284,
+    "min": 32.800000071525574,
+    "max": 67.19999992847443
+   },
+   "latency": {
+    "median": 5.399999976158142,
+    "min": 4.600000023841858,
+    "max": 6.599999904632568
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 65.69999992847443,
+    "min": 61.59999990463257,
+    "max": 80.80000007152557
+   },
+   "inp": {
+    "median": 56,
+    "min": 32,
+    "max": 64
+   }
+  },
+  "slow/filter/qwik-stable": {
+   "paintLatency": {
+    "median": 144.10000002384186,
+    "min": 114,
+    "max": 165.70000004768372
+   },
+   "latency": {
+    "median": 128.1500000357628,
+    "min": 99.60000002384186,
+    "max": 148.89999997615814
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 52.549999952316284,
+    "min": 0,
+    "max": 62.39999997615814
+   },
+   "inp": {
+    "median": 64,
+    "min": 48,
+    "max": 80
+   }
+  },
+  "slow/filter/solid": {
+   "paintLatency": {
+    "median": 86.99999994039536,
+    "min": 61.799999952316284,
+    "max": 90.20000004768372
+   },
+   "latency": {
+    "median": 14.950000047683716,
+    "min": 12.899999976158142,
+    "max": 15.400000095367432
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 2,
+    "min": 0,
+    "max": 7
+   },
+   "longestTask": {
+    "median": 53,
+    "min": 50,
+    "max": 62
+   },
+   "loafCount": {
+    "median": 3,
+    "min": 2,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 65.80000007152557,
+    "min": 59.699999928474426,
+    "max": 82.60000002384186
+   },
+   "inp": {
+    "median": 72,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filter/solid-stable": {
+   "paintLatency": {
+    "median": 89.35000002384186,
+    "min": 73.20000004768372,
+    "max": 111.5
+   },
+   "latency": {
+    "median": 14.199999988079071,
+    "min": 11.200000047683716,
+    "max": 15.900000095367432
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 53.5,
+    "min": 0,
+    "max": 67
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 66.19999998807907,
+    "min": 59.800000071525574,
+    "max": 75.40000009536743
+   },
+   "inp": {
+    "median": 72,
+    "min": 56,
+    "max": 88
+   }
+  },
+  "slow/filter/rivet": {
+   "paintLatency": {
+    "median": 89.59999996423721,
+    "min": 69.39999997615814,
+    "max": 122.69999992847443
+   },
+   "latency": {
+    "median": 19.149999976158142,
+    "min": 18,
+    "max": 20.300000071525574
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 51,
+    "min": 0,
+    "max": 79
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 74.39999997615814,
+    "min": 70,
+    "max": 93.60000002384186
+   },
+   "inp": {
+    "median": 72,
+    "min": 56,
+    "max": 104
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 1,
+    "n": 10,
+    "values": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "slow/filter/qwik": {
+   "paintLatency": {
+    "median": 159.80000001192093,
+    "min": 129.19999992847443,
+    "max": 179
+   },
+   "latency": {
+    "median": 146.5999999642372,
+    "min": 116.10000002384186,
+    "max": 159.89999997615814
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 56,
+    "min": 45,
+    "max": 63
+   },
+   "longestTask": {
+    "median": 106,
+    "min": 95,
+    "max": 113
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 106.55000000000001,
+    "min": 95.8,
+    "max": 113.1
+   },
+   "inp": {
+    "median": 68,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filterKey/solid-stable": {
+   "paintLatency": {
+    "median": 66.99999994039536,
+    "min": 47.39999997615814,
+    "max": 83.80000007152557
+   },
+   "latency": {
+    "median": 13.800000011920929,
+    "min": 12,
+    "max": 17.5
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 25.5,
+    "min": 0,
+    "max": 63
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 68.44999998807907,
+    "min": 59.89999997615814,
+    "max": 87.79999995231628
+   },
+   "inp": {
+    "median": 64,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filterKey/qwik-stable": {
+   "paintLatency": {
+    "median": 130.05000001192093,
+    "min": 113.79999995231628,
+    "max": 148.10000002384186
+   },
+   "latency": {
+    "median": 111.44999998807907,
+    "min": 97.30000007152557,
+    "max": 131.30000007152557
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 58
+   },
+   "loafCount": {
+    "median": 1.5,
+    "min": 0,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 53.39999997615814,
+    "min": 0,
+    "max": 56.799999952316284
+   },
+   "inp": {
+    "median": 64,
+    "min": 48,
+    "max": 80
+   }
+  },
+  "slow/filterKey/rivet": {
+   "paintLatency": {
+    "median": 76.15000003576279,
+    "min": 69.80000007152557,
+    "max": 85.89999997615814
+   },
+   "latency": {
+    "median": 20.05000001192093,
+    "min": 18.5,
+    "max": 23.299999952316284
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 52,
+    "min": 0,
+    "max": 58
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 76.44999998807907,
+    "min": 72.10000002384186,
+    "max": 87.29999995231628
+   },
+   "inp": {
+    "median": 76,
+    "min": 72,
+    "max": 88
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 1,
+    "n": 10,
+    "values": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "slow/filterKey/solid": {
+   "paintLatency": {
+    "median": 69.35000002384186,
+    "min": 48.300000071525574,
+    "max": 77.79999995231628
+   },
+   "latency": {
+    "median": 15.100000083446503,
+    "min": 14.200000047683716,
+    "max": 16.899999976158142
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 2,
+    "min": 0,
+    "max": 9
+   },
+   "longestTask": {
+    "median": 54,
+    "min": 0,
+    "max": 59
+   },
+   "loafCount": {
+    "median": 3,
+    "min": 2,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 65.05000001192093,
+    "min": 59.89999997615814,
+    "max": 80.79999995231628
+   },
+   "inp": {
+    "median": 68,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filterKey/qwik": {
+   "paintLatency": {
+    "median": 126.10000002384186,
+    "min": 110.70000004768372,
+    "max": 131.10000002384186
+   },
+   "latency": {
+    "median": 110.40000003576279,
+    "min": 96.60000002384186,
+    "max": 118.89999997615814
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 50,
+    "min": 47,
+    "max": 62
+   },
+   "longestTask": {
+    "median": 100,
+    "min": 97,
+    "max": 112
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 100.75,
+    "min": 97.2,
+    "max": 112.5
+   },
+   "inp": {
+    "median": 64,
+    "min": 48,
+    "max": 72
+   }
+  },
+  "slow/filterSettled/solid-stable": {
+   "paintLatency": {
+    "median": 74.09999996423721,
+    "min": 56.5,
+    "max": 92.39999997615814
+   },
+   "latency": {
+    "median": 66.35000002384186,
+    "min": 47.10000002384186,
+    "max": 81.60000002384186
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 54
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 0,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 64.59999996423721,
+    "min": 0,
+    "max": 74.10000002384186
+   },
+   "inp": {
+    "median": 72,
+    "min": 48,
+    "max": 80
+   }
+  },
+  "slow/filterSettled/qwik-stable": {
+   "paintLatency": {
+    "median": 133.14999997615814,
+    "min": 112.90000009536743,
+    "max": 161.10000002384186
+   },
+   "latency": {
+    "median": 120.15000003576279,
+    "min": 100.20000004768372,
+    "max": 144.90000009536743
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 51
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 53.69999998807907,
+    "min": 0,
+    "max": 62.200000047683716
+   },
+   "inp": {
+    "median": 64,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filterSettled/solid": {
+   "paintLatency": {
+    "median": 89.35000002384186,
+    "min": 71,
+    "max": 91.80000007152557
+   },
+   "latency": {
+    "median": 76.95000004768372,
+    "min": 59.299999952316284,
+    "max": 79.89999997615814
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 2
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 52
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 2,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 65.90000003576279,
+    "min": 60.60000002384186,
+    "max": 75.79999995231628
+   },
+   "inp": {
+    "median": 72,
+    "min": 64,
+    "max": 80
+   }
+  },
+  "slow/filterSettled/qwik": {
+   "paintLatency": {
+    "median": 139.79999995231628,
+    "min": 115.5,
+    "max": 168.39999997615814
+   },
+   "latency": {
+    "median": 128.39999997615814,
+    "min": 105.89999997615814,
+    "max": 157.59999990463257
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 47,
+    "min": 38,
+    "max": 58
+   },
+   "longestTask": {
+    "median": 97,
+    "min": 88,
+    "max": 108
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 97.15,
+    "min": 88.1,
+    "max": 108.3
+   },
+   "inp": {
+    "median": 68,
+    "min": 56,
+    "max": 80
+   }
+  },
+  "slow/filterSettled/rivet": {
+   "paintLatency": {
+    "median": 91.64999997615814,
+    "min": 72,
+    "max": 125.89999997615814
+   },
+   "latency": {
+    "median": 78.14999997615814,
+    "min": 59.39999997615814,
+    "max": 111.59999990463257
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 51
+   },
+   "loafCount": {
+    "median": 1.5,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 68.40000003576279,
+    "min": 60.800000071525574,
+    "max": 91.09999990463257
+   },
+   "inp": {
+    "median": 72,
+    "min": 56,
+    "max": 104
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 1,
+    "n": 10,
+    "values": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   }
+  },
+  "slow/navigate/solid": {
+   "paintLatency": {
+    "median": 188.25000005960464,
+    "min": 185.60000002384186,
+    "max": 193.09999990463257
+   },
+   "latency": {
+    "median": 182.35000002384186,
+    "min": 179.89999997615814,
+    "max": 186
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23524,
+    "min": 23524,
+    "max": 23524
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 4
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 54
+   },
+   "loafCount": {
+    "median": 1.5,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 60,
+    "min": 56.39999997615814,
+    "max": 75.89999997615814
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 24
+   }
+  },
+  "slow/navigate/qwik": {
+   "paintLatency": {
+    "median": 57.60000002384186,
+    "min": 54.800000071525574,
+    "max": 106.70000004768372
+   },
+   "latency": {
+    "median": 52.15000003576279,
+    "min": 48.60000002384186,
+    "max": 53.700000047683716
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 44,
+    "min": 41,
+    "max": 53
+   },
+   "longestTask": {
+    "median": 94,
+    "min": 91,
+    "max": 103
+   },
+   "loafCount": {
+    "median": 1.5,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 94.55,
+    "min": 91.3,
+    "max": 103.6
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   }
+  },
+  "slow/navigate/qwik-stable": {
+   "paintLatency": {
+    "median": 42.30000001192093,
+    "min": 38.89999997615814,
+    "max": 45.60000002384186
+   },
+   "latency": {
+    "median": 36.10000002384186,
+    "min": 33.10000002384186,
+    "max": 39
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 0,
+    "min": 0,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 0,
+    "min": 0,
+    "max": 62.59999990463257
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 16
+   }
+  },
+  "slow/navigate/solid-stable": {
+   "paintLatency": {
+    "median": 182.55000001192093,
+    "min": 176.79999995231628,
+    "max": 187.29999995231628
+   },
+   "latency": {
+    "median": 177.25,
+    "min": 172.19999992847443,
+    "max": 182
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8736,
+    "min": 8736,
+    "max": 8736
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 61.94999998807907,
+    "min": 52.10000002384186,
+    "max": 67
+   },
+   "inp": {
+    "median": 56,
+    "min": 40,
+    "max": 72
+   }
+  },
+  "slow/navigate/rivet": {
+   "paintLatency": {
+    "median": 39.05000001192093,
+    "min": 37.5,
+    "max": 55.5
+   },
+   "latency": {
+    "median": 21.399999976158142,
+    "min": 19.700000047683716,
+    "max": 36.89999997615814
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "loafCount": {
+    "median": 1,
+    "min": 0,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 51.35000002384186,
+    "min": 0,
+    "max": 79.70000004768372
+   },
+   "inp": {
+    "median": 16,
+    "min": 16,
+    "max": 32
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1399,
+    "min": 1399,
+    "max": 1399
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 0,
+    "n": 10,
+    "values": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "slow/scrollClick/qwik": {
+   "paintLatency": {
+    "median": 71.94999998807907,
+    "min": 57,
+    "max": 88.90000009536743
+   },
+   "latency": {
+    "median": 60.55000001192093,
+    "min": 46.700000047683716,
+    "max": 73.39999997615814
+   },
+   "maxFrameGap": {
+    "median": 33.399999999999864,
+    "min": 33.200000000000045,
+    "max": 50
+   },
+   "droppedFrames": {
+    "median": 1,
+    "min": 1,
+    "max": 2
+   },
+   "blockedDuringScroll": {
+    "median": 0,
+    "min": 0,
+    "max": 57
+   },
+   "documentBytes": {
+    "median": 19287,
+    "min": 19287,
+    "max": 19287
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 14,
+    "min": 14,
+    "max": 14
+   },
+   "jsBytesTotal": {
+    "median": 39561,
+    "min": 39561,
+    "max": 39561
+   },
+   "inlineScriptChars": {
+    "median": 204929,
+    "min": 204929,
+    "max": 204929
+   },
+   "tbtBeforeInteraction": {
+    "median": 55,
+    "min": 46,
+    "max": 61
+   },
+   "longestTask": {
+    "median": 105,
+    "min": 96,
+    "max": 111
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 105.25,
+    "min": 96.3,
+    "max": 111.2
+   },
+   "inp": {
+    "median": 56,
+    "min": 48,
+    "max": 72
+   }
+  },
+  "slow/scrollClick/qwik-stable": {
+   "paintLatency": {
+    "median": 77.89999997615814,
+    "min": 57.60000002384186,
+    "max": 89.5
+   },
+   "latency": {
+    "median": 56.85000002384186,
+    "min": 47.300000071525574,
+    "max": 75.10000002384186
+   },
+   "maxFrameGap": {
+    "median": 33.34999999999991,
+    "min": 33.200000000000045,
+    "max": 50.09999999999991
+   },
+   "droppedFrames": {
+    "median": 1.5,
+    "min": 1,
+    "max": 2
+   },
+   "blockedDuringScroll": {
+    "median": 0,
+    "min": 0,
+    "max": 58
+   },
+   "documentBytes": {
+    "median": 20219,
+    "min": 20219,
+    "max": 20219
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 10,
+    "min": 10,
+    "max": 10
+   },
+   "jsBytesTotal": {
+    "median": 27476,
+    "min": 27476,
+    "max": 27476
+   },
+   "inlineScriptChars": {
+    "median": 3731,
+    "min": 3731,
+    "max": 3731
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 58
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 0,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 52.60000002384186,
+    "min": 0,
+    "max": 68.70000004768372
+   },
+   "inp": {
+    "median": 56,
+    "min": 48,
+    "max": 72
+   }
+  },
+  "slow/scrollClick/rivet": {
+   "paintLatency": {
+    "median": 59.64999997615814,
+    "min": 46.5,
+    "max": 699.8999999761581
+   },
+   "latency": {
+    "median": 52.950000047683716,
+    "min": 41.300000071525574,
+    "max": 689.8999999761581
+   },
+   "maxFrameGap": {
+    "median": 50,
+    "min": 33.200000000000045,
+    "max": 683.2
+   },
+   "droppedFrames": {
+    "median": 2,
+    "min": 1,
+    "max": 40
+   },
+   "blockedDuringScroll": {
+    "median": 50,
+    "min": 0,
+    "max": 690
+   },
+   "documentBytes": {
+    "median": 9750,
+    "min": 9750,
+    "max": 9750
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 7,
+    "min": 7,
+    "max": 7
+   },
+   "jsBytesTotal": {
+    "median": 25459,
+    "min": 25459,
+    "max": 25459
+   },
+   "inlineScriptChars": {
+    "median": 5812,
+    "min": 5812,
+    "max": 5812
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 50,
+    "min": 0,
+    "max": 690
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 2
+   },
+   "loafMax": {
+    "median": 72.99999994039536,
+    "min": 68.5,
+    "max": 696.6000000238419
+   },
+   "inp": {
+    "median": 56,
+    "min": 48,
+    "max": 696
+   },
+   "prefetchBytes.runtime": {
+    "median": 21411,
+    "min": 21411,
+    "max": 21411
+   },
+   "prefetchBytes.idle": {
+    "median": 3156,
+    "min": 3156,
+    "max": 3156
+   },
+   "prefetchBytes.intent": {
+    "median": 892,
+    "min": 892,
+    "max": 892
+   },
+   "wastedBytes.runtime": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedBytes.idle": {
+    "median": 444,
+    "min": 444,
+    "max": 444
+   },
+   "wastedBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "wastedForInteractionBytes.runtime": {
+    "median": 1903,
+    "min": 1903,
+    "max": 1903
+   },
+   "wastedForInteractionBytes.idle": {
+    "median": 1843,
+    "min": 1843,
+    "max": 1843
+   },
+   "wastedForInteractionBytes.intent": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "jsRequestsDuringFirstInput": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "firstInputSync": {
+    "share": 0,
+    "n": 10,
+    "values": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   }
+  },
+  "slow/scrollClick/solid": {
+   "paintLatency": {
+    "median": 58.200000047683716,
+    "min": 41.200000047683716,
+    "max": 73.10000002384186
+   },
+   "latency": {
+    "median": 6.5,
+    "min": 4.900000095367432,
+    "max": 7.699999928474426
+   },
+   "maxFrameGap": {
+    "median": 41.65000000000009,
+    "min": 16.800000000000182,
+    "max": 50.09999999999991
+   },
+   "droppedFrames": {
+    "median": 2,
+    "min": 0,
+    "max": 2
+   },
+   "blockedDuringScroll": {
+    "median": 0,
+    "min": 0,
+    "max": 59
+   },
+   "documentBytes": {
+    "median": 7149,
+    "min": 7149,
+    "max": 7149
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 2,
+    "min": 2,
+    "max": 2
+   },
+   "jsBytesTotal": {
+    "median": 23091,
+    "min": 23091,
+    "max": 23091
+   },
+   "inlineScriptChars": {
+    "median": 39723,
+    "min": 39723,
+    "max": 39723
+   },
+   "tbtBeforeInteraction": {
+    "median": 1.5,
+    "min": 0,
+    "max": 8
+   },
+   "longestTask": {
+    "median": 51.5,
+    "min": 0,
+    "max": 59
+   },
+   "loafCount": {
+    "median": 3,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 63.55000001192093,
+    "min": 55.700000047683716,
+    "max": 83.70000004768372
+   },
+   "inp": {
+    "median": 56,
+    "min": 40,
+    "max": 72
+   }
+  },
+  "slow/scrollClick/solid-stable": {
+   "paintLatency": {
+    "median": 61.39999997615814,
+    "min": 46.299999952316284,
+    "max": 71.60000002384186
+   },
+   "latency": {
+    "median": 6.749999940395355,
+    "min": 4.899999976158142,
+    "max": 8.199999928474426
+   },
+   "maxFrameGap": {
+    "median": 41.65000000000009,
+    "min": 33.299999999999955,
+    "max": 50.09999999999991
+   },
+   "droppedFrames": {
+    "median": 1.5,
+    "min": 1,
+    "max": 2
+   },
+   "blockedDuringScroll": {
+    "median": 0,
+    "min": 0,
+    "max": 59
+   },
+   "documentBytes": {
+    "median": 7123,
+    "min": 7123,
+    "max": 7123
+   },
+   "jsBytesBeforeInteraction": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "jsRequestsBeforeInteraction": {
+    "median": 1,
+    "min": 1,
+    "max": 1
+   },
+   "jsBytesTotal": {
+    "median": 8308,
+    "min": 8308,
+    "max": 8308
+   },
+   "inlineScriptChars": {
+    "median": 39614,
+    "min": 39614,
+    "max": 39614
+   },
+   "tbtBeforeInteraction": {
+    "median": 0,
+    "min": 0,
+    "max": 0
+   },
+   "longestTask": {
+    "median": 0,
+    "min": 0,
+    "max": 59
+   },
+   "loafCount": {
+    "median": 2,
+    "min": 1,
+    "max": 3
+   },
+   "loafMax": {
+    "median": 67.59999996423721,
+    "min": 61.39999997615814,
+    "max": 82.19999992847443
+   },
+   "inp": {
+    "median": 56,
+    "min": 48,
+    "max": 72
+   }
+  }
+ }
 }
