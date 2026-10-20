@@ -34,6 +34,8 @@ mod classes;
 pub use classes::ClassReg;
 // LAZY-ROWS T2 (2026-10-19): per keyed `<For>` lazy-rows eligibility; eligible row functions become symbols.
 mod rows;
+// RESOURCE-COMPILER (2026-10-20): every captured `const r = resource(…)` is a recipe; RV2016 for the forms that are not.
+mod resources;
 pub use rows::{ForRow, ForRowFact, for_row_facts, for_row_warnings};
 pub(crate) use groups::{early_exit, split_group_message};
 
@@ -802,6 +804,8 @@ impl<'t, 'a> Analysis<'t, 'a> {
             }
             if let AstKind::CallExpression(call) = kind {
                 self.scan_call(id, call);
+                // RESOURCE-COMPILER: RV2016 for a `resource()` form that cannot resume (`resources.rs`).
+                self.scan_resource(id, call, diags);
             }
             // R2: values that leave the function (object literal values, returned values) may reach
             // resumed captures; functions among them become symbols.
@@ -1869,7 +1873,9 @@ impl<'t, 'a> Analysis<'t, 'a> {
             && !self.candidates.iter().any(|&c| self.sites[c].call == Some(init_id))
             && (matches!(init, Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_))
                 || self.contains_function(init_id)
-                || self.module_alias(decl)))
+                || self.module_alias(decl)
+                // RESOURCE-COMPILER: a resource always resumes from its recipe (`resources.rs`).
+                || self.resource_call(init)))
         .then_some(init_id)
     }
 

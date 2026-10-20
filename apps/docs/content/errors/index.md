@@ -54,6 +54,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV2013](RV2013.md) | warning | `.bind` of a value Rivet cannot resume (resume; an error when it is provably a function) |
 | [RV2014](RV2014.md) | warning | `.bind(…)` inside an object literal a resumable closure reaches (resume) |
 | [RV2015](RV2015.md) | warning | Component returns a function that cannot resume: anonymous default export or wrapper call (resume) |
+| [RV2016](RV2016.md) | warning | `resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume) |
 | [RV2101](RV2101.md) | warning | Captured value not serializable (type-aware, language service) |
 | [RV2102](RV2102.md) | error | Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive] |
 | [RV2103](RV2103.md) | error | Render is not deterministic under the derived resume model (Date.now / Math.random / performance.now / crypto.randomUUID / new `Date()` while rendering a boundary) |

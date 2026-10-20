@@ -176,3 +176,90 @@ test("resume: values come from the server; source changes and refetch load in th
     assert.deepEqual(errors, []);
   });
 });
+
+// RESOURCE-COMPILER: forms without an inline arrow (module / local / aliased fetchers, `initialValue` from props,
+// `ssr: false` read in a handler only, resources inside `For` rows and a `Show` branch) are recipes too.
+const formsSource = await readFile(new URL("./resume/resource-forms-fixture.tsx", import.meta.url), "utf8");
+const formsDom = compileResume(formsSource, "dom", "src/resource-forms.tsx");
+const formsServer = await importServer<{ Page(): ServerValue }>(compileResume(formsSource, "server", "src/resource-forms.tsx").code);
+const formsCalls: unknown[] = [];
+const formsHtml = await (async () => {
+  const before = (globalThis as { __load?: unknown }).__load;
+  (globalThis as { __load?: unknown }).__load = async (key: unknown) => (formsCalls.push(key), "server " + String(key));
+  try {
+    return await resumableToString(() => formsServer.Page(), {
+      manifest: { hash: "forms", runtime: "/rt.js", symbols: Object.fromEntries(formsDom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) },
+    });
+  } finally {
+    (globalThis as { __load?: unknown }).__load = before;
+  }
+})();
+
+test("forms: the server loads every recipe-wrapped resource once and renders the values", () => {
+  for (const [id, text] of [
+    ["all", "server all"],
+    ["user", "server user1"],
+    ["local", "server local1"],
+    ["row-a", "server row-a"],
+    ["row-b", "server row-b"],
+    ["shown", "server all"],
+  ])
+    assert.match(formsHtml, new RegExp(`id="${id}"[^>]*>(<!--[^>]*-->)*${text}(<!--[^>]*-->)*<`), id);
+  assert.deepEqual(formsCalls.sort(), ["all", "all", "local1", "row-a", "row-b", "user1"]);
+});
+
+test("forms: each resource resumes from its recipe (no load at boot); refetch, source changes, mutate and a handler-only read work", async () => {
+  const chunks: Record<string, ResumeSymbol[]> = {};
+  for (const symbol of formsDom.symbols) (chunks["/c/" + symbol.component + ".js"] ??= []).push(symbol);
+  const served: Record<string, Served> = {
+    "/fixture.mjs": rewrite(formsDom.code),
+    "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+    "/": "<!doctype html><html><head></head><body>" + formsHtml + "</body></html>",
+  };
+  for (const [path, symbols] of Object.entries(chunks)) served[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
+  await withPage(served, async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      const w = window as unknown as { __calls: unknown[]; __load: (key: unknown) => Promise<string> };
+      w.__calls = [];
+      w.__load = (key) => (w.__calls.push(key), new Promise((resolve) => setTimeout(() => resolve("browser " + String(key)), 20)));
+    });
+    await page.goto("http://rivet.test/");
+    const text = (selector: string, value: string) =>
+      page
+        .waitForFunction(([s, v]) => document.querySelector(s!)?.textContent === v, [selector, value], { timeout: 5000 })
+        .catch(async () => {
+          const main = await page.evaluate(() => document.querySelector("main")!.outerHTML);
+          const calls = await page.evaluate(() => (window as unknown as { __calls: unknown[] }).__calls.slice());
+          throw new Error(`${selector} text ${value}; errors: ${errors.join(" | ")}; calls: ${JSON.stringify(calls)}; main: ${main}`);
+        });
+    const browserCalls = () => page.evaluate(() => (window as unknown as { __calls: unknown[] }).__calls.slice());
+    // Module fetcher alone: refetch as the first use loads in the browser.
+    await page.click("#all-refetch");
+    await text("#all", "browser all");
+    // Inline source + module fetcher: a source change loads the new key.
+    await page.click("#next");
+    await text("#user", "browser user2");
+    // Signal source + local const fetcher + initialValue from props: resumed with the server value.
+    await text("#local", "server local1");
+    await page.click("#local-next");
+    await text("#local", "browser local2");
+    // For row: the row's resource resumes with its own key.
+    await page.click("#row-b");
+    await text("#row-b", "browser row-b");
+    await text("#row-a", "server row-a");
+    // Show branch: mutate is local.
+    await page.click("#shown");
+    await text("#shown", "mutated");
+    assert.deepEqual(await browserCalls(), ["all", "user2", "local2", "row-b"], "nothing loads at boot; one load per action");
+    // Aliased import, `ssr: false`, read in a handler only: the first read starts the browser load.
+    await page.click("#later");
+    await text("#msg", "pending");
+    await page.waitForFunction(() => (window as unknown as { __calls: unknown[] }).__calls.includes("later"));
+    await page.waitForTimeout(60);
+    await page.click("#later");
+    await text("#msg", "browser later");
+    assert.deepEqual(errors, []);
+  });
+});

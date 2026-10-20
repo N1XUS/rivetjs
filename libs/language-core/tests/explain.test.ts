@@ -20,6 +20,7 @@ const RESUME = new Set([
   "RV2013",
   "RV2014",
   "RV2015",
+  "RV2016",
   "RV2102",
   "RV2105",
   "RV2106",

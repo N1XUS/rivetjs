@@ -150,7 +150,7 @@ A resource created inside a [`Suspense`](./suspense.md) (in a component rendered
 On the server, the fetcher runs once, when the resource is created. A `Suspense` around the parts that read it waits for the load and sends the finished HTML (with streaming: the fallback first, the content later). The browser gets the value with the page and does not load it again; it loads when the source changes or on `refetch`. Read a resource inside a `Suspense`: outside one, the server cannot wait, sends the loading state, and the part reading it loads in the browser after the page starts. With `ssr: false` the server never runs the fetcher, and the browser loads it when the page starts.
 
 :::note
-Keep the resource in one `const`, created with arrow functions, and call its methods on it: `user.refetch()`. `const [data] = resource(…)` or `resource(fetchUser)` (a function passed by name) works in the browser, but the server cannot hand such a resource to the browser.
+Create the resource in the component as the whole value of one `const`, and call its methods on it: `user.refetch()`. The arguments can be anything: arrow functions, functions passed by name (`resource(loadUser)`), `initialValue`, `ssr: false`. A resource inside a `For` row or a `Show` branch works too. These forms work in the browser, but the server cannot hand them to the browser: a destructured resource (`const { refetch } = resource(…)`), a `let`, a resource put straight into JSX or an object, and one created in a helper such as `useUser()`. The compiler warns about them ([RV2016](../../errors/RV2016.md)).
 :::
 
 ## Load a component on demand

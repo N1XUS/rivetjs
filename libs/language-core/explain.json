@@ -297,6 +297,16 @@
       "note": "Resume mode (RESUME-ACCESSOR-ROW fixes 1–2). A warning: the module compiles, but the server traversal calls the accessor outside every resume site, so a resumed page never updates it. Resumable without a warning, in a PascalCase module-level function: `return () => …`, `return c ? () => a : () => b` (also `&&` / `||` / `??`), `const view = () => …; return view`, a hoisted parameterless `function view() {…}` returned by name, concise `(props) => () => …`. Reported for an anonymous default export, a function passed to a call whose result is a PascalCase `const` or the default export (`const Card = memo((props) => () => …)`), and a returned `let` bound to an accessor (declare it with `const`)."
     },
     {
+      "code": "RV2016",
+      "messages": [
+        "`resource()` cannot resume {form}: create it in the component as `const name = resource(…)` and call its methods on the handle (`name.loading()`)"
+      ],
+      "fix": "Create the resource in the component body as the whole initializer of one `const` (`const user = resource(() => id(), loadUser)`) and call its methods on that handle (`user.refetch()`, `user.loading()`); pass the handle, not a destructured method, to children and handlers. For a reusable helper, export the fetcher and call `resource(…)` in each component.",
+      "avoid": "import { resource } from \"@rivetjs/runtime/dom\";\nasync function loadUser(_: true) {\n  return \"Ada\";\n}\nexport function User() {\n  const { refetch } = resource(loadUser);\n  return <button onClick={() => refetch()}>reload</button>;\n}",
+      "prefer": "import { resource } from \"@rivetjs/runtime/dom\";\nasync function loadUser(_: true) {\n  return \"Ada\";\n}\nexport function User() {\n  const user = resource(loadUser);\n  return <button onClick={() => user.refetch()}>{user()}</button>;\n}",
+      "note": "Resume mode (RESOURCE-COMPILER). A warning: the module compiles, but the server encodes a resource only through the recipe of the `const` it is created in, so rendering one of these forms resumably throws `resource is not resumable here` once a resumable site captures it. Resumable without a warning: any `const r = resource(…)` in a component (also in `For` rows and `Show` branches), whatever its arguments — inline arrows, module functions or imports by name (`resource(fetchUser)`, resumed by reference), local `const` fetchers, `initialValue` from props, `ssr: false`; aliased imports (`import { resource as res }`) too. Reported forms: destructuring (`const { loading } = resource(…)` drops the handle its methods need; `const [data] = resource(…)` — the handle is not iterable), a `let` / `var`, a call that is not a `const` initializer (JSX attribute, object value, argument, returned value, concise arrow body), and a `const` inside a named non-component function (`useUser`: its caller's `const` holds the result, not a recipe). Not reported: module scope, a discarded call, code that runs in the browser only (handlers, effects)."
+    },
+    {
       "code": "RV2101",
       "messages": [
         "`{name}` is captured by {sites} and serialized into resume state, but its type is not serializable: {problem}. Create it inside the closure or keep it out of browser code."

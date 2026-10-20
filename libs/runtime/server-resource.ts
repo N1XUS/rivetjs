@@ -89,8 +89,8 @@ function build(content: () => unknown, builds: Builds): unknown {
 // Marks the reading region for re-creation once the page resumed (`clientOnly`'s hook; nothing outside resumable renders).
 const browserLoads = clientOnly(null as never, undefined, { when: "load" }) as (props: object) => unknown;
 const NOT_RESUMABLE =
-  "resource is not resumable here: keep it in one const with an inline source or fetcher arrow, e.g. " +
-  "`const user = resource(() => id(), (id, info) => loadUser(id, info))`, so the browser can rebuild it";
+  "resource is not resumable here (compiler warning RV2016): create it in the component as one const, e.g. " +
+  "`const user = resource(() => id(), loadUser)`, so the browser can rebuild it from its recipe";
 
 let encoding = false;
 // A resource function → `{k:"bind", a:[recipe stand-in, undefined, seed]}` (dom-resume binds the seed as first argument).

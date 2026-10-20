@@ -131,17 +131,22 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
       );
     });
   };
-  const start = (): void => {
+  // `refetch`: the first use is `refetch(info)` — a refetch load (no read follows: it writes the counter), never skipped
+  // for a resumed value (RESOURCE-COMPILER: a resumed resource's first use may be a handler's refetch).
+  const start = (refetch?: unknown): void => {
     if (started || disposed) return;
     started = true;
-    let quiet = true;
+    if (refetch !== undefined) skip = null;
+    let quiet = refetch === undefined;
     runWithOwner(owner, () => {
-      if (typeof source !== "function") return untrack(() => load(source, false, true));
+      if (typeof source !== "function") return untrack(() => load(source, refetch ?? false, quiet));
       effect(() => {
         const key = read();
-        const first = quiet;
+        const first = quiet,
+          again = refetch;
         quiet = false;
-        untrack(() => load(key, false, first));
+        refetch = undefined;
+        untrack(() => load(key, again ?? false, first));
       });
     });
   };
@@ -169,7 +174,7 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
       arg = extra;
     }
     if (op === REFETCH) {
-      if (!started) return start();
+      if (!started) return start(arg === undefined ? true : arg);
       if (!disposed) runWithOwner(owner, () => untrack(() => load(read(), arg === undefined ? true : arg, false)));
       return;
     }

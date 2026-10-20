@@ -241,6 +241,12 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV2015"
     },
     {
+      "code": "RV2016",
+      "severity": "warning",
+      "title": "`resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2016"
+    },
+    {
       "code": "RV2101",
       "severity": "warning",
       "title": "Captured value not serializable (type-aware, language service)",

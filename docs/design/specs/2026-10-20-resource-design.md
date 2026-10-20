@@ -1,6 +1,6 @@
 # `resource()` — async data as a signal (2026-10-20)
 
-- Status: **implemented** (lane RESOURCE). Code: `libs/runtime/resource.ts`, `dom-resource.ts`, `server-resource.ts`, `server-resource-slot.ts`; slots in `server-suspense.ts` (`_onBuild`) and `server-resume.ts` (`_onResource`). User docs: `apps/docs/content/guides/components/async.md` "Data as a signal: resource". Resume rule: `docs/guides/resumability.md` (table row `resource`).
+- Status: **implemented** (lane RESOURCE; compiler recipes for every `const` form: lane RESOURCE-COMPILER, `libs/compiler/rust/src/resume/resources.rs`). Code: `libs/runtime/resource.ts`, `dom-resource.ts`, `server-resource.ts`, `server-resource-slot.ts`; slots in `server-suspense.ts` (`_onBuild`) and `server-resume.ts` (`_onResource`). User docs: `apps/docs/content/guides/components/async.md` "Data as a signal: resource". Resume rule: `docs/guides/resumability.md` (table row `resource`).
 - Analogues: Solid `createResource`, Qwik `useResource$`.
 
 ## 1. Problem
@@ -61,7 +61,8 @@ interface Resource<T> {
 - Pending read outside Suspense / `ssr: false`: renders the loading state; marks the reading region `clientOnly(…, { when: "load" })` (re-created at load); DEV warns once.
 - Encoding: a server-resume `fnSpecial` hook encodes a resource function as `{k:"bind", a:[alias, undefined, seed]}`. `alias` = stand-in function holding the resource `const`'s recipe meta (`_rFn`). Seed `{n: version signal, s: state code, v? / e?, k?: source key, x?: 1}`; a non-data value / error ships `x: 1` (browser loads on first use; DEV warns).
 - Browser: the existing `bind` custom kind does `R.bind(undefined, seed)`; the first call with an object adopts the seed (takes over the version signal, so server bindings re-run on change; skips the first load for the same key). Methods survive `bind` (shared prototype). No decoder change.
-- Resumable form: `const r = resource(() => src(), (key, info) => …)` (inline arrow → recipe). Not resumable: destructuring, `resource(fetchUser)` (no recipe): rendering resumably throws a TypeError naming the form. Compiler follow-up: `knuth/resource-patches/rust-followup.md` (scratchpad, not committed).
+- Resumable form (RESOURCE-COMPILER): any captured `const r = resource(…)` in a component, whatever its arguments — the compiler makes it an Fn recipe (`resume.rs` `fn_closure` → `resume/resources.rs` `resource_call`; `resource` imported from `@rivetjs/runtime/dom` / `/server`, aliases included): inline arrows, module functions / imports by name (`_rMod` references), local `const` fetchers (own Fn sites), `initialValue` from captured data, `ssr: false`, resources in `For` rows / `Show` branches, handler-only reads. Not resumable, compiler warning RV2016 (resume mode, render code): destructuring (`const { m } =`: methods lose their handle; `const [d] =`: not iterable), `let` / `var`, a call that is not a `const` initializer (JSX attribute, object value, argument, returned value), a `const` inside a hook (named lowercase outermost function). Rendering one resumably throws `resource is not resumable here (compiler warning RV2016)` once a site captures it. No hoisting of those forms into a synthetic `const` (rejected: changes evaluation order and creates once per render where the source wrote per use).
+- DOM: `refetch` as a resumed resource's first use is a refetch load (clears the adopted skip, writes the counter); before RESOURCE-COMPILER it loaded nothing.
 - Lazy rows (`RIVET_LAZY_ROWS=on`): a `For` over a resource's value inside the Suspense writes one `L` entry; items share the seed's table entry (server-tested; browser materialisation untested).
 
 ## 5. DOM
@@ -83,10 +84,12 @@ interface Resource<T> {
 3. Server `server-resource.ts`, `_onBuild` slot, `server-resource-slot.ts` hooks, encode.
 4. Tests: happy-dom + server suites, Chromium resume + streaming + clientOnly-in-rebuild + lazy rows, tree-shake.
 5. Docs: async / suspense / coming-from / resumability / api.json / AGENTS starter line.
+6. Compiler (RESOURCE-COMPILER): recipe for every captured resource `const`, RV2016 for the rest; tests `libs/compiler/tests/resume-resource.test.ts`, runtime `tests/resource-resume.test.ts` "forms".
 
 ## 8. Open
 
-- Compiler: recipe-wrap every `resource()` call (destructured / named fetcher forms).
+- Language-core quick fix for RV2016 (`const { refetch } = resource(…)` → `const r = resource(…)` + `r.refetch()`): not done; the explain entry gives the mechanical fix.
+- Resources returned from hooks (`const user = useUser(id)`) resume only if the hook's call becomes a recipe (cross-function analysis): not done, RV2016 warns at the hook.
 - DOM read-site Suspense (Solid parity) would need a second registration path; rejected for now.
 - Derived model (`model: "derived"`) untested with `resource`.
 - Lazy rows browser materialisation over resource data untested.
