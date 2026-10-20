@@ -106,7 +106,9 @@ test("home: numbers strip = content/_charts.ts homeStrip, each chart linked to i
     assert.ok(home.includes(`>vs ${chart.peer}</span>`), `${chart.id}: the big number names its peer`);
   }
   assert.equal(home.match(/class="lp-chart-source"/g)?.length, homeStrip.length);
-  assert.equal(home.match(/Fair comparison, 2026-10-09/g)?.length, 1, "one source line under the charts");
+  assert.equal(home.match(/Fair comparison, 2026-10-19/g)?.length, 1, "one source line under the charts");
+  const sources = /<p class="lp-charts-source">([^]*?)<\/p>/.exec(home)?.[1] ?? "";
+  for (const chart of homeStrip) assert.ok(sources.includes(chart.source.href) && sources.includes(chart.source.text), `${chart.id}: its report is linked in the source line`);
 });
 
 test("home: every tab group has exactly one checked radio in the server HTML", () => {

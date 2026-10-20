@@ -180,8 +180,28 @@ What to change, in this order:
    }
    ```
 
-3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. Today each row still ships its item and its own handler and binding records. Lazy rows (server env `RIVET_LAZY_ROWS=on`) cut a row to its key and ship the items once; they are experimental and the rows stay inert in the browser until that work lands.
+3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. By default each row still ships its item and its own handler and binding records; [lazy rows](#lazy-rows-experimental), an experimental opt-in, cut a row to its key.
 4. **A library object** (a chart, an editor, an SDK client): build it with [`reconstruct`](#library-objects-reconstruct). The browser builds it on first use; nothing about it ships.
+
+### Lazy rows (experimental)
+
+Lazy rows are off by default. With them on, a keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. Turning them on takes two switches:
+
+1. **The build option** `resume: { lazyRows: true }` on `rivetRouter(…)` (or `rivet(…)`) in `vite.config.ts`. It adds the code that rebuilds rows to that build's browser runtime (about 2.8 KB brotli). Builds without it contain none of that code.
+2. **The server environment variable** `RIVET_LAZY_ROWS=on`, read on every render. Without the build option the variable does nothing (development prints a warning); with the option but without the variable, rows are recorded as usual. Build once with the option and switch the variable to compare.
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+
+export default defineConfig({
+  plugins: [rivetRouter({ resume: { lazyRows: true } })],
+});
+```
+
+- **Not every list qualifies.** The compiler decides per `<For>`: for example the row must be an inline function, `by` a key path such as `(row) => row.id` or an inline function, and the list must not spread props onto the `<For>`, read render props in a row or use values that change between renders (`Date.now()`, `Math.random()`). A row that renders a `Portal`, `clientOnly`, `Async` or `Suspense` content turns the whole list back to recorded rows; development prints a warning naming the reason.
+- **Why it is off by default.** A signal every row reads, such as a selection, wakes every row when it first changes, so the first select-all or row click rebuilds all rows of the list at once.
 
 ## What it means for your code
 

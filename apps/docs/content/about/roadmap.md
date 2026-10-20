@@ -53,10 +53,11 @@ These have a written design. They are not available yet; names in the design may
 
 | Feature | What it adds | Design |
 | --- | --- | --- |
+| Lazy list rows | A resumable keyed `<For>` sends each row as its key and the items once; the browser rebuilds a row when it is first used. Available today as an experimental opt-in, off by default: see [large data in resume state](../learn/resuming.md#lazy-rows-experimental). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-19-lazy-collection-rows-design.md) |
 | Solid, Vue and Svelte components | Bridges for three more frameworks, and keeping an island alive across client navigation (`persist`). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-11-framework-bridges-design.md) |
 
 ## Goals that are not met yet
 
-- **Server speed.** The goal is to beat ASP.NET Razor on CPU per page, response time, time to first byte and memory. Static pages meet it in the latest measurements except one case: on a page of short text fields at concurrency 10, CPU per page is level and Razor's median response is faster. Interactive (resumable) pages still use more CPU than plain hydratable Solid 1.9 at 1,000 rows and more memory than Solid. See [benchmarks](benchmarks.md).
-- **Large pages in the browser.** Mounting very large pages and their memory use are known costs.
+- **Server speed.** The goal is to beat ASP.NET Razor on CPU per page, response time, time to first byte and memory. Static pages meet it in the latest measurements at 1,000 and 5,000 rows, the page of short text fields included (measured one request at a time); the smallest page is level. Interactive (resumable) pages still use more CPU than plain hydratable Solid 1.9 on a 100-row page under ten concurrent requests, more server memory than Solid on small pages, and download more JavaScript before the first input than Solid. See [benchmarks](benchmarks.md).
+- **Large pages in the browser.** Mounting 5,000 rows is slower than Solid 1.9 in the browser benchmark. The gap was traced to when V8 finishes garbage collection after the benchmark's forced collection, not to the per-row work; a protocol change is proposed. See [benchmarks](benchmarks.md#building-the-page-in-the-browser).
 - **Stable APIs.** Packages are on npm as an alpha. Names and behaviour still change between releases.

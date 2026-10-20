@@ -90,6 +90,7 @@ Also import `@rivetjs/router/transitions.css` in your stylesheet. See [transitio
 | `cap` | `number` | none | Most shared chunks one chunk (with `chunks: "route"`, one route) may load: past the cap, its cheapest shared chunks keep merging beyond the `merge` budget. Applies to the shared code chunks and, in route mode, to the shared handler chunks. See [Fewer shared chunks](../guides/performance/chunks.md#fewer-shared-chunks). |
 | `lazy` | `"idle"` \| `"intent"` | `"idle"` | When code a chunk may load later (lazy pages and components) is prefetched. |
 | `dev` | `boolean` | `false` | Dev server: client modules compile in resume mode and `<module>?rivet-chunk=<Component>` serves symbol chunks, for a server that renders with `api.devResume.manifest()`. `rivetRouter` sets it. |
+| `lazyRows` | `boolean` | `false` | Experimental. The browser runtime of this build can rebuild lazy `<For>` rows (about 2.8 KB brotli more; builds without it carry none of that code). The server writes lazy rows only when this is on AND its environment has `RIVET_LAZY_ROWS=on`. See [lazy rows](../learn/resuming.md#lazy-rows-experimental). |
 | `preload.rules` | `{ match: string \| RegExp; strategy }[]` | none | Override when chunks load. `match` is a symbol id prefix such as `src/page.tsx#Component`. First match wins. |
 
 `strategy` is one of `"eager"`, `"idle"`, `"visible"`, `"intent"`, `"interaction"`. Precedence: element `preload="…"` > component `export const preload` or `<ChunkGroup preload>` > `rules` > automatic. See [preloading](../guides/performance/preloading.md).

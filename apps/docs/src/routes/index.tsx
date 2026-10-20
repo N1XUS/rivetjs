@@ -33,6 +33,8 @@ const CREATE = "npm create rivet@latest";
 
 /** Hero sub-line: the static-SSR ratio vs Razor, computed in content/_charts.ts (fair-comparison report), never typed. */
 const SSR = homeStrip.find((chart) => chart.id === "ssr")!;
+/** Reports behind the numbers strip (one link each, in strip order): the fair comparison + the browser run the DOM chart reads. */
+const SOURCES = homeStrip.map((chart) => chart.source).filter((source, i, all) => all.findIndex((other) => other.href === source.href) === i);
 const LEAD = `Compiled JSX. ${SSR.big} less server CPU than ASP.NET Razor. Resumed in the browser, never hydrated.`;
 
 /** Published alpha version beside every `npm create` command. Plain home CSS (`.lp-chip`, the ui soft
@@ -126,10 +128,15 @@ export default function Home() {
           {/* Below the charts (≥ 1.9k px down at every width): styled by the full sheets, not the inline critical CSS. */}
           <div data-css-defer="">
           <p class="lp-charts-source">
-            <a href={SSR.source.href} rel="noopener">
-              {SSR.source.text}
-            </a>
-            {" · 1 CPU / 512 MiB per lane · "}
+            {SOURCES.map((source, i) => (
+              <>
+                {i > 0 ? " · " : null}
+                <a href={source.href} rel="noopener">
+                  {source.text}
+                </a>
+              </>
+            ))}
+            {" · 1 CPU / 512 MiB per server lane · "}
             <a href="/about/benchmarks/" data-rivet-reload="">
               Method
             </a>

@@ -1,17 +1,24 @@
-// Benchmark charts of the docs site (`::chart{id=…}` in content) and the homepage benchmark section
-// (`proof` → BenchProof tabs, `proofGrid` → BenchGrid, from @rivetjs/docs-kit/components/BenchProof.tsx).
-// Every number comes from a committed report — never type a value that is not in one:
-// every value is read at build time from docs/benchmarks/2026-10-09-fair-comparison.json
-// (written by apps/ssr-bench/fair-report.ts; path in each comment). apps/dom-bench/competitors.json
-// stores the same SSR and resume competitor numbers (`fair-report.ts --store-competitors`);
-// tests/charts.test.ts checks both. The homepage loss row reads docs/benchmarks/2026-10-11-editorial.json.
+// Benchmark charts of the docs site (`::chart{id=…}` in content) and the homepage numbers (`homeStrip`, `homeFacts`,
+// `editorialLoss`, rendered by src/routes/index.tsx).
+// Every number comes from a committed report — never type a value that is not in one. Every value is read at build time:
+// - SSR + resume: docs/benchmarks/2026-10-19-fair-comparison.json (written by apps/ssr-bench/fair-report.ts; path in each
+//   comment). apps/dom-bench/competitors.json stores the same SSR and resume competitor numbers
+//   (`fair-report.ts --store-competitors`).
+// - DOM (browser mount / update): docs/benchmarks/2026-10-20-dom-mount.json `runTs.baseline` — every lane re-measured
+//   interleaved in one run (the 2026-10-19 fair report has no DOM block; the scoreboard compares Rivet with competitor
+//   numbers stored on 2026-10-06, which the mount report shows is not like-for-like).
+// - Homepage loss row: docs/benchmarks/2026-10-11-editorial.json.
+// tests/charts.test.ts re-checks every value against those files and the verdicts (≥ 3% and non-overlapping trial
+// ranges, apps/dom-bench/verdict.ts) behind every win / tie / loss the page and the homepage state.
 // Lanes are like-for-like within a group; where Rivet loses or ties, the chart shows it.
-import { advantage, formatValue, type BenchChartSpec, type ChartPoint, type ProofGrid, type ProofMetric } from "@rivetjs/docs-kit/components/chart-model.ts";
-import fair from "../../../docs/benchmarks/2026-10-09-fair-comparison.json" with { type: "json" };
+import { advantage, formatValue, type BenchChartSpec, type ChartPoint } from "@rivetjs/docs-kit/components/chart-model.ts";
+import fair from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
+import domRun from "../../../docs/benchmarks/2026-10-20-dom-mount.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
 
 const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
-const FAIR = { label: "Fair comparison 2026-10-09 (full report)", href: REPO + "docs/benchmarks/2026-10-09-fair-comparison.md" };
+const FAIR = { label: "Fair comparison 2026-10-19 (full report)", href: REPO + "docs/benchmarks/2026-10-19-fair-comparison.md" };
+const DOM = { label: "DOM mount report 2026-10-20 (full report)", href: REPO + "docs/benchmarks/2026-10-20-dom-mount.md" };
 
 interface Stat {
   median: number;
@@ -27,23 +34,72 @@ const point = (label: string, stat: Stat, extra: Partial<ChartPoint> = {}): Char
 });
 
 // fair.ssr.tuned[rows][concurrency][lane].<metric> — "SSR — profile `tuned`" tables.
+const ssr100c10 = fair.ssr.tuned["100"]["10"];
+const ssr100 = fair.ssr.tuned["100"]["1"];
 const ssr1000 = fair.ssr.tuned["1000"]["1"];
 const ssr5000 = fair.ssr.tuned["5000"]["1"];
-// fair.ssr["tuned+grid"]["1000"][concurrency][lane].cpu_ms — "SSR — profile `tuned+grid`" › "CPU per page".
-const grid1000 = fair.ssr["tuned+grid"]["1000"];
-// fair.dom["1000"][metric].stats[lane] — "DOM (apps/dom-bench…)" › "1000 rows".
-const dom1000 = fair.dom["1000"];
-// fair.resume["slow/<scenario>/<lane>"].paintLatency — "Resume (apps/resume-bench, Slow 4G + 4x CPU)".
-const paint = (scenario: string, lane: string): Stat => (fair.resume as unknown as Record<string, { paintLatency: Stat }>)[`slow/${scenario}/${lane}`]!.paintLatency;
+// fair.ssr["tuned+grid"]["1000"]["1"][lane].cpu_ms — "SSR — profile `tuned+grid`" › "CPU per page" (concurrency 1 only in this run).
+const grid1000 = fair.ssr["tuned+grid"]["1000"]["1"];
+// fair.resume["slow/<scenario>/<lane>"].<metric> — "Resume (apps/resume-bench, Slow 4G + 4x CPU)".
+const resume = fair.resume as unknown as Record<string, Record<string, Stat>>;
+const paint = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.paintLatency!;
+const firstChange = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.latency!;
+// domRun.runTs.baseline[rows][lane].<metric> — 2026-10-20-dom-mount.md "Step 1 — interleaved re-measure".
+const dom = domRun.runTs.baseline;
 
 const SSR_CAPTION = {
-  // 2026-10-09-fair-comparison.md "Methodology" + notes "Run conditions".
+  // 2026-10-19-fair-comparison.md "Methodology" + notes "How this run was made".
   machine: "Apple M4 Pro (14 cores), Docker Desktop; every lane 1 CPU / 512 MiB",
-  date: "2026-10-09",
+  date: "2026-10-19",
   method:
-    "ssr-bench, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); median, whiskers = min–max of repeats. Other jobs ran on the host (1-minute load 5–27).",
+    "ssr-bench, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); median, whiskers = min–max of repeats. The host was not quiet (an IDE, a VM and indexing ran alongside, 1-minute load 7–12).",
   source: FAIR,
 };
+const RESUME_CAPTION = {
+  // Notes "How this run was made" › Resume; report "Resume" header (Chrome version).
+  machine: "Apple M4 Pro, Chrome 155",
+  date: "2026-10-20",
+  method:
+    "resume-bench, Slow 4G + 4× CPU throttling, 10 repeats; median, whiskers = min–max. Two test suites ran on the host at the same time (1-minute load 25–40).",
+  source: FAIR,
+};
+const DOM_CAPTION = {
+  // 2026-10-20-dom-mount.md header + "Step 1 — interleaved re-measure".
+  machine: "Apple M4 Pro, Playwright Chromium, cross-origin isolated",
+  date: "2026-10-20",
+  method:
+    "dom-bench run.ts, every lane interleaved, 3 trials × 5 samples; median of trial medians, whiskers = min–max. A Docker benchmark shared the host (1-minute load 16–70).",
+  source: DOM,
+};
+const C1 = "Concurrency 1. ";
+
+// Labels: apps/dom-bench/competitors.json labels (solid-stable, solid, react, dotnet).
+const DOM_LANES = [
+  ["solid-stable", "Solid 1.9.15"],
+  ["solid", "Solid 2.0.0-rc.13"],
+  ["react", "React 19.3"],
+] as const;
+// Labels: resume-bench lane versions (solid-stable = Solid 1.9.15, solid = 2.0.0-rc.13, qwik-stable = 1.20.1, qwik = 2.0.0-rc.0).
+const RESUME_LANES = [
+  ["rivet", "Rivet"],
+  ["solid-stable", "Solid 1"],
+  ["solid", "Solid 2"],
+  ["qwik-stable", "Qwik 1"],
+  ["qwik", "Qwik 2"],
+] as const;
+const resumeChart = (id: string, title: string, scenarios: readonly (readonly [string, string])[], stat: (scenario: string, lane: string) => Stat): BenchChartSpec => ({
+  id,
+  kind: "range",
+  title,
+  unit: "ms",
+  better: "lower",
+  digits: 1,
+  groups: scenarios.map(([label, scenario]) => ({
+    label,
+    points: RESUME_LANES.map(([lane, name]) => point(name, stat(scenario, lane), lane === "rivet" ? { rivet: true } : {})),
+  })),
+  caption: RESUME_CAPTION,
+});
 
 export const charts: Record<string, BenchChartSpec> = {
   "ssr-static-headline": {
@@ -58,14 +114,10 @@ export const charts: Record<string, BenchChartSpec> = {
     groups: [
       {
         label: "Static",
-        points: [
-          point("Rivet static", ssr1000["rivet-compiled"].cpu_ms, { rivet: true }),
-          // Label: apps/dom-bench/competitors.json labels.dotnet.
-          point("Razor (.NET 10)", ssr1000["dotnet"].cpu_ms),
-        ],
+        points: [point("Rivet static", ssr1000["rivet-compiled"].cpu_ms, { rivet: true }), point("Razor (.NET 10)", ssr1000["dotnet"].cpu_ms)],
       },
     ],
-    caption: { ...SSR_CAPTION, method: "ssr-bench, concurrency 1, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); medians. Other jobs ran on the host (1-minute load 5–27)." },
+    caption: { ...SSR_CAPTION, method: "ssr-bench, concurrency 1, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); medians. The host was not quiet (1-minute load 7–12)." },
   },
   "ssr-static-cpu": {
     id: "ssr-static-cpu",
@@ -84,7 +136,7 @@ export const charts: Record<string, BenchChartSpec> = {
         ],
       },
     ],
-    caption: { ...SSR_CAPTION, method: "Concurrency 1. " + SSR_CAPTION.method },
+    caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
   },
   "ssr-grid-cpu": {
     id: "ssr-grid-cpu",
@@ -93,17 +145,21 @@ export const charts: Record<string, BenchChartSpec> = {
     unit: "ms",
     better: "lower",
     digits: 2,
-    groups: (["1", "10"] as const).map((c) => ({
-      label: `Concurrency ${c}`,
-      points: [
-        point("Rivet static", grid1000[c]["rivet-compiled"].cpu_ms, { rivet: true }),
-        point("Razor (.NET 10)", grid1000[c]["dotnet"].cpu_ms),
-        point("Solid 1.9 static", grid1000[c]["solid-stable-static"].cpu_ms),
-      ],
-    })),
+    groups: [
+      {
+        label: "Concurrency 1",
+        points: [
+          point("Rivet static", grid1000["rivet-compiled"].cpu_ms, { rivet: true }),
+          point("Razor (.NET 10)", grid1000["dotnet"].cpu_ms),
+          point("Solid 1.9 static", grid1000["solid-stable-static"].cpu_ms),
+        ],
+      },
+    ],
     caption: {
       ...SSR_CAPTION,
-      method: "ssr-bench --grid (every field a 24–64 character string, 20% with characters to escape). " + SSR_CAPTION.method,
+      method:
+        "ssr-bench --grid (every field a 24–64 character string, 20% with characters to escape), concurrency 1 (this run did not repeat the grid at concurrency 10). " +
+        SSR_CAPTION.method,
     },
   },
   "ssr-resumable-cpu-1000": {
@@ -129,7 +185,7 @@ export const charts: Record<string, BenchChartSpec> = {
         ],
       },
     ],
-    caption: { ...SSR_CAPTION, method: "Concurrency 1. " + SSR_CAPTION.method },
+    caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
   },
   "ssr-resumable-cpu-5000": {
     id: "ssr-resumable-cpu-5000",
@@ -154,42 +210,103 @@ export const charts: Record<string, BenchChartSpec> = {
         ],
       },
     ],
-    caption: { ...SSR_CAPTION, method: "Concurrency 1. " + SSR_CAPTION.method },
+    caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
   },
-  "resume-input-paint": {
-    id: "resume-input-paint",
-    kind: "range",
-    title: "Resume: input to paint per scenario",
+  // The remaining CPU loss of the resumable class: 100 rows, concurrency 10 (report "Rivet's remaining losses" 4–5;
+  // notes "Reading the SSR result"). rivet-router = the same page without handlers, for attribution.
+  "ssr-resumable-cpu-100-c10": {
+    id: "ssr-resumable-cpu-100-c10",
+    kind: "bar",
+    title: "Interactive SSR, 100 rows, 10 concurrent requests: CPU per page",
     unit: "ms",
     better: "lower",
+    digits: 2,
+    groups: [
+      {
+        label: "Resumable / interactive (like-for-like)",
+        points: [
+          point("Rivet resumable", ssr100c10["rivet-resume"].cpu_ms, { rivet: true, note: "handlers, links, nested layout state, resume data" }),
+          point("Solid 1.9 interactive", ssr100c10["solid-stable-interactive"].cpu_ms, { note: "hydratable, same handlers, links and page data" }),
+        ],
+      },
+      {
+        label: "Without handlers, links or page data",
+        points: [
+          point("Rivet router", ssr100c10["rivet-router"].cpu_ms, { rivet: true, note: "router + resume render, no handlers" }),
+          point("Solid 1 hydratable", ssr100c10["solid-stable"].cpu_ms, { note: "no handlers, links or page data" }),
+          point("Solid 2 hydratable", ssr100c10["solid"].cpu_ms, { note: "no handlers, links or page data" }),
+        ],
+      },
+    ],
+    caption: { ...SSR_CAPTION, method: "Concurrency 10. " + SSR_CAPTION.method },
+  },
+  // Peak working set of the resumable class (report "Peak working set" table; loss 1 of "Rivet's remaining losses").
+  "ssr-resumable-memory": {
+    id: "ssr-resumable-memory",
+    kind: "bar",
+    title: "Interactive SSR: peak memory of the server container",
+    unit: "MiB",
+    better: "lower",
     digits: 1,
-    // Scenario ids of resume-bench: click (mouse), keyClick, tapClick, filter, navigate.
     groups: (
       [
-        ["Click (mouse)", "click"],
-        ["Click (keyboard)", "keyClick"],
-        ["Tap", "tapClick"],
-        ["Filter", "filter"],
-        ["Navigate", "navigate"],
+        ["100 rows", ssr100],
+        ["1,000 rows", ssr1000],
       ] as const
-    ).map(([label, scenario]) => ({
+    ).map(([label, lanes]) => ({
       label,
       points: [
-        point("Rivet", paint(scenario, "rivet"), { rivet: true }),
-        // Labels: resume-bench lane versions (solid-stable = Solid 1.9.15, solid = 2.0.0-rc.13, qwik-stable = 1.20.1, qwik = 2.0.0-rc.0).
-        point("Solid 1", paint(scenario, "solid-stable")),
-        point("Solid 2", paint(scenario, "solid")),
-        point("Qwik 1", paint(scenario, "qwik-stable")),
-        point("Qwik 2", paint(scenario, "qwik")),
+        point("Rivet resumable", lanes["rivet-resume"].peak_mib, { rivet: true }),
+        point("Solid 1.9 interactive", lanes["solid-stable-interactive"].peak_mib),
+        point("Solid 1 hydratable", lanes["solid-stable"].peak_mib, { note: "no handlers, links or page data" }),
+        point("Solid 2 hydratable", lanes["solid"].peak_mib, { note: "no handlers, links or page data" }),
+        point("Qwik 1.20", lanes["qwik-stable"].peak_mib),
+        point("Qwik 2 rc", lanes["qwik"].peak_mib),
       ],
     })),
-    caption: {
-      machine: "Apple M4 Pro, Chrome 154",
-      date: "2026-10-09",
-      method:
-        "resume-bench, Slow 4G + 4× CPU throttling, 7 repeats; input → paint of the update, median, whiskers = min–max. Other jobs ran on the host (1-minute load 6–14).",
-      source: FAIR,
-    },
+    caption: { ...SSR_CAPTION, method: C1 + "Highest container memory seen during the run (not a leak test). " + SSR_CAPTION.method },
+  },
+  "resume-input-paint": resumeChart(
+    "resume-input-paint",
+    "Resume: input to paint per scenario",
+    [
+      ["Click (mouse)", "click"],
+      ["Click (keyboard)", "keyClick"],
+      ["Tap", "tapClick"],
+      ["Filter", "filter"],
+      ["Navigate", "navigate"],
+    ],
+    paint,
+  ),
+  // `latency` = first DOM mutation; the scenarios whose verdict is LOSE (scroll-then-click also loses, but one Rivet
+  // trial took 690 ms and would flatten the axis; it is in the report).
+  "resume-first-change": resumeChart(
+    "resume-first-change",
+    "Resume: input to the first DOM change",
+    [
+      ["Click (mouse)", "click"],
+      ["Filter", "filter"],
+    ],
+    firstChange,
+  ),
+  // fair.resume["slow/load/<lane>"].jsBytesBeforeInteraction (bytes; shown in KB = 1,000 B).
+  "resume-js-before-input": {
+    id: "resume-js-before-input",
+    kind: "bar",
+    title: "Resume: JavaScript downloaded before the first input",
+    unit: "KB",
+    better: "lower",
+    digits: 1,
+    groups: [
+      {
+        label: "Page load, before any input",
+        points: RESUME_LANES.map(([lane, name]) => {
+          const bytes = resume[`slow/load/${lane}`]!.jsBytesBeforeInteraction!;
+          return { label: name, value: bytes.median / 1000, ...(lane === "rivet" ? { rivet: true } : {}) };
+        }),
+      },
+    ],
+    caption: { ...RESUME_CAPTION, method: "resume-bench, Slow 4G + 4× CPU throttling, 10 repeats; script bytes the page downloaded before the first input (the same in every repeat)." },
   },
   "dom-mount-1000": {
     id: "dom-mount-1000",
@@ -201,168 +318,44 @@ export const charts: Record<string, BenchChartSpec> = {
     groups: [
       {
         label: "Client-rendered",
-        points: [
-          point("Rivet", dom1000.mount.stats["rivet"], { rivet: true }),
-          // Labels: apps/dom-bench/competitors.json labels (solid-stable, solid, react).
-          point("Solid 1.9.15", dom1000.mount.stats["solid-stable"]),
-          point("Solid 2.0.0-rc.13", dom1000.mount.stats["solid"]),
-          point("React 19.3", dom1000.mount.stats["react"]),
-        ],
+        points: [point("Rivet", dom["1000"].rivet.mount, { rivet: true }), ...DOM_LANES.map(([lane, label]) => point(label, dom["1000"][lane].mount))],
       },
     ],
-    caption: {
-      // 2026-10-09-fair-comparison.md "DOM (apps/dom-bench, local re-measure of every lane)".
-      machine: "Apple M4 Pro, Playwright Chromium 153, cross-origin isolated",
-      date: "2026-10-09",
-      method: "dom-bench, 5 interleaved repeats; committed-DOM time, median, whiskers = min–max. Other jobs ran on the host (1-minute load 10–11).",
-      source: FAIR,
-    },
+    caption: DOM_CAPTION,
+  },
+  "dom-mount-5000": {
+    id: "dom-mount-5000",
+    kind: "bar",
+    title: "Browser: mount 5,000 rows",
+    unit: "ms",
+    better: "lower",
+    digits: 1,
+    groups: [
+      {
+        label: "Client-rendered",
+        points: [point("Rivet", dom["5000"].rivet.mount, { rivet: true }), ...DOM_LANES.map(([lane, label]) => point(label, dom["5000"][lane].mount))],
+      },
+    ],
+    caption: { ...DOM_CAPTION, method: DOM_CAPTION.method + " The protocol forces a garbage collection right before the timed mount." },
   },
   "dom-update-1000": {
     id: "dom-update-1000",
     kind: "bar",
-    title: "Browser: update 1,000 rows (100%, 10%, 1% of the fields)",
+    title: "Browser: update 1,000 rows (100% and 1% of the fields)",
     unit: "ms",
     better: "lower",
     digits: 2,
     groups: (
       [
         ["Update 100%", "update100"],
-        ["Update 10%", "update10"],
         ["Update 1%", "update1"],
       ] as const
     ).map(([label, metric]) => ({
       label,
-      points: [
-        point("Rivet", dom1000[metric].stats["rivet"], { rivet: true }),
-        point("Solid 1.9.15", dom1000[metric].stats["solid-stable"]),
-        point("Solid 2.0.0-rc.13", dom1000[metric].stats["solid"]),
-        point("React 19.3", dom1000[metric].stats["react"]),
-      ],
+      points: [point("Rivet", dom["1000"].rivet[metric], { rivet: true }), ...DOM_LANES.map(([lane, name]) => point(name, dom["1000"][lane][metric]))],
     })),
-    caption: {
-      machine: "Apple M4 Pro, Playwright Chromium 153, cross-origin isolated",
-      date: "2026-10-09",
-      method: "dom-bench, 5 interleaved repeats; committed-DOM time, median, whiskers = min–max. Other jobs ran on the host (1-minute load 10–11).",
-      source: FAIR,
-    },
+    caption: DOM_CAPTION,
   },
-};
-
-// Homepage proof: the same points as the charts above (no new numbers), relabelled for short rows.
-// Headline ratios are computed from those points, never typed.
-const pointsOf = (id: string, group: string | number = 0): ChartPoint[] => {
-  const spec = charts[id]!;
-  const found = typeof group === "number" ? spec.groups[group] : spec.groups.find((g) => g.label === group);
-  if (!found) throw new Error(`proof: chart ${id} has no group ${group}`);
-  return found.points;
-};
-const relabel = (points: ChartPoint[], labels: Record<string, string>): ChartPoint[] =>
-  points.map(({ label, value, rivet }) => ({ label: labels[label] ?? label, value, ...(rivet ? { rivet } : {}) }));
-const valueOf = (points: ChartPoint[], label: string): number => {
-  const found = points.find((p) => p.label === label);
-  if (!found) throw new Error(`proof: no lane ${label}`);
-  return found.value;
-};
-const times = (rivet: number, other: number, digits = 1) => formatValue(advantage(rivet, other, "lower"), digits) + "×";
-
-const ssrStatic = relabel(pointsOf("ssr-static-cpu"), { "Rivet static": "Rivet", "Solid 1.9 static": "Solid 1.9", "Razor (.NET 10)": "Razor" });
-const ssrInteractive = relabel(pointsOf("ssr-resumable-cpu-1000"), { "Rivet resumable": "Rivet", "Solid 1.9 interactive": "Solid 1.9" });
-const ssrInteractiveAll = relabel([...pointsOf("ssr-resumable-cpu-1000", 0), ...pointsOf("ssr-resumable-cpu-1000", 1)], {
-  "Rivet resumable": "Rivet",
-  "Solid 1 hydratable": "Solid 1.9 plain",
-  "Solid 2 hydratable": "Solid 2 rc plain",
-});
-const mount = relabel(pointsOf("dom-mount-1000"), { "Solid 1.9.15": "Solid 1.9", "Solid 2.0.0-rc.13": "Solid 2 rc", "React 19.3": "React 19" });
-// resume-bench "Solid 1" = the solid-stable lane (Solid 1.9), "Qwik 2" = Qwik 2.0.0-rc.0.
-const RESUME_LABELS = { "Solid 1": "Solid 1.9", "Solid 2": "Solid 2 rc", "Qwik 1": "Qwik 1.20" };
-const click = relabel(pointsOf("resume-input-paint", "Click (mouse)"), RESUME_LABELS);
-const navigate = relabel(pointsOf("resume-input-paint", "Navigate"), RESUME_LABELS);
-// Fastest competitor in a resume scenario (the headline compares against it).
-const fastest = (points: ChartPoint[]) => points.filter((p) => !p.rivet).reduce((a, b) => (b.value < a.value ? b : a));
-const navigateBest = fastest(navigate);
-
-const FAIR_LINE = { text: "Fair comparison, 2026-10-09 · Apple M4 Pro", href: FAIR.href };
-
-export const proof: ProofMetric[] = [
-  {
-    id: "ssr",
-    tab: "Server render",
-    headline: `${times(valueOf(ssrStatic, "Rivet"), valueOf(ssrStatic, "Razor"), 2)} less CPU than Razor`,
-    subline: "CPU time to render a 1,000-row page on the server, against ASP.NET Razor (.NET 10) and Solid. Every framework gets one CPU core.",
-    verdict: "win",
-    unit: "ms",
-    better: "lower",
-    digits: 2,
-    points: ssrStatic,
-    source: FAIR_LINE,
-  },
-  {
-    id: "interactive",
-    tab: "Interactive SSR",
-    headline: `Plain hydratable Solid uses ${times(valueOf(ssrInteractiveAll, "Solid 1.9 plain"), valueOf(ssrInteractiveAll, "Rivet"))} less CPU`,
-    subline: `CPU time for a 1,000-row page the browser can resume. Solid 1.9 rendering the same rows without handlers, links or page data still needs less CPU than Rivet. Against Solid 1.9 doing the same work, Rivet uses ${times(valueOf(ssrInteractiveAll, "Rivet"), valueOf(ssrInteractiveAll, "Solid 1.9 interactive"))} less.`,
-    // Report verdict: LOSE vs solid-stable (plain hydratable) at 1000 rows c1, WIN vs solid-stable-interactive.
-    verdict: "loss",
-    unit: "ms",
-    better: "lower",
-    digits: 2,
-    points: ssrInteractiveAll,
-    source: FAIR_LINE,
-  },
-  {
-    id: "mount",
-    tab: "DOM mount",
-    headline: `${times(valueOf(mount, "Rivet"), valueOf(mount, "Solid 1.9"), 2)} faster than Solid, ${times(valueOf(mount, "Rivet"), valueOf(mount, "React 19"))} faster than React`,
-    subline: "Time to create and insert 1,000 table rows in the browser (Chromium).",
-    // Report verdict: WIN against every lane (≥3% gap, ranges do not overlap); the gap to Solid 1.9 is small.
-    verdict: "win",
-    unit: "ms",
-    better: "lower",
-    digits: 1,
-    points: mount,
-    source: FAIR_LINE,
-  },
-  {
-    id: "click",
-    tab: "First click",
-    headline: "Level with Qwik on the first click",
-    subline: `From the first click on a server-rendered page to the painted update, on slow 4G with a 4× slower CPU. Solid hydrates first and takes ${times(valueOf(click, "Rivet"), valueOf(click, "Solid 1.9"))} as long.`,
-    verdict: "tie",
-    unit: "ms",
-    better: "lower",
-    digits: 1,
-    points: click,
-    source: FAIR_LINE,
-  },
-  {
-    id: "navigate",
-    tab: "Navigation",
-    headline: `Navigates ${times(valueOf(navigate, "Rivet"), navigateBest.value)} faster than ${navigateBest.label}`,
-    subline: `Following a link after the page has resumed, on slow 4G with a 4× slower CPU. Solid 1.9 takes ${times(valueOf(navigate, "Rivet"), valueOf(navigate, "Solid 1.9"))} as long; Qwik's runs vary widely.`,
-    verdict: "win",
-    unit: "ms",
-    better: "lower",
-    digits: 1,
-    points: navigate,
-    source: FAIR_LINE,
-  },
-];
-
-// Grid: frameworks as columns; a cell only where the lane ran the same work as Rivet in that report.
-const GRID_COLUMNS = ["Rivet", "Solid 1.9", "Solid 2 rc", "React 19", "Qwik 2", "Razor"];
-const cellsOf = (points: ChartPoint[]) => GRID_COLUMNS.map((column) => points.find((p) => p.label === column)?.value ?? null);
-export const proofGrid: ProofGrid = {
-  columns: GRID_COLUMNS.map((label) => (label === "Rivet" ? { label, rivet: true } : { label })),
-  rows: [
-    { label: "Static SSR, CPU per page", unit: "ms", better: "lower", digits: 2, cells: cellsOf(ssrStatic) },
-    { label: "Interactive SSR, CPU per page", unit: "ms", better: "lower", digits: 2, cells: cellsOf(ssrInteractive.slice(0, 2)) },
-    { label: "DOM mount, 1,000 rows", unit: "ms", better: "lower", digits: 1, cells: cellsOf(mount) },
-    { label: "Resume, first click to paint", unit: "ms", better: "lower", digits: 1, cells: cellsOf(click) },
-    { label: "Resume, client navigation", unit: "ms", better: "lower", digits: 1, cells: cellsOf(navigate) },
-  ],
-  notes: { "Interactive SSR, CPU per page": "same handlers, links and page data" },
-  source: [{ text: "Fair comparison, 2026-10-09", href: FAIR.href }],
 };
 
 // Dynamic rendering (per-request SSR of a page the browser resumes): the like-for-like interactive lanes plus the
@@ -390,17 +383,34 @@ charts["ssr-dynamic-cpu-1000"] = {
       points: [point("Solid 1.9 plain", ssr1000["solid-stable"].cpu_ms, { note: "no handlers, links or page data" })],
     },
   ],
-  caption: { ...SSR_CAPTION, method: "Concurrency 1. " + SSR_CAPTION.method },
+  caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// Homepage numbers strip (apps/docs/src/routes/index.tsx): four charts (order: no two equal big numbers side by side), each the points of a chart above (no new
-// numbers), a big ratio computed from them, a one-line claim and a footnote. `word` = the hero's rotating word it proves.
+// Homepage numbers strip (apps/docs/src/routes/index.tsx): four charts (order: no two equal big numbers side by side), each
+// the points of a chart above (no new numbers), a big ratio computed from them, a one-line claim and a footnote.
+// `word` = the hero's rotating word it proves.
+const pointsOf = (id: string, group: string | number = 0): ChartPoint[] => {
+  const spec = charts[id]!;
+  const found = typeof group === "number" ? spec.groups[group] : spec.groups.find((g) => g.label === group);
+  if (!found) throw new Error(`home: chart ${id} has no group ${group}`);
+  return found.points;
+};
+const relabel = (points: ChartPoint[], labels: Record<string, string>): ChartPoint[] =>
+  points.map(({ label, value, rivet }) => ({ label: labels[label] ?? label, value, ...(rivet ? { rivet } : {}) }));
+const valueOf = (points: ChartPoint[], label: string): number => {
+  const found = points.find((p) => p.label === label);
+  if (!found) throw new Error(`home: no lane ${label}`);
+  return found.value;
+};
+const times = (rivet: number, other: number, digits = 1) => formatValue(advantage(rivet, other, "lower"), digits) + "×";
+const ms = (value: number, digits: number) => formatValue(value, digits) + " ms";
+
 export interface HomeChart {
   id: string;
   /** Rotating hero word this chart proves. */
   word: "fast" | "dynamic" | "resumable" | "updates";
-  /** Big number, computed (e.g. "3.6×"). */
+  /** Big number, computed (e.g. "3.1×"). */
   big: string;
   /** The competitor the big number is measured against, shown beside it ("vs Razor"). */
   peer: string;
@@ -421,14 +431,28 @@ export interface HomeChart {
 }
 
 const rivetFirst = (points: ChartPoint[]) => [...points.filter((p) => p.rivet), ...points.filter((p) => !p.rivet).sort((a, b) => a.value - b.value)];
-const ssrStatic5000 = relabel(
-  [point("Rivet static", ssr5000["rivet-compiled"].cpu_ms, { rivet: true }), point("Razor (.NET 10)", ssr5000["dotnet"].cpu_ms)],
-  { "Rivet static": "Rivet", "Razor (.NET 10)": "Razor" },
-);
+const DOM_LABELS = { "Solid 1.9.15": "Solid 1.9", "Solid 2.0.0-rc.13": "Solid 2 rc", "React 19.3": "React 19" };
+// resume-bench "Solid 1" = the solid-stable lane (Solid 1.9), "Qwik 1" = Qwik 1.20, "Qwik 2" = Qwik 2.0.0-rc.0.
+const RESUME_LABELS = { "Solid 1": "Solid 1.9", "Solid 2": "Solid 2 rc", "Qwik 1": "Qwik 1.20", "Qwik 2": "Qwik 2 rc" };
+
+const ssrStatic = relabel(pointsOf("ssr-static-cpu"), { "Rivet static": "Rivet", "Solid 1.9 static": "Solid 1.9", "Razor (.NET 10)": "Razor" });
+const ssrStatic5000 = relabel([point("Rivet static", ssr5000["rivet-compiled"].cpu_ms, { rivet: true }), point("Razor (.NET 10)", ssr5000["dotnet"].cpu_ms)], {
+  "Rivet static": "Rivet",
+  "Razor (.NET 10)": "Razor",
+});
+const click = relabel(pointsOf("resume-input-paint", "Click (mouse)"), RESUME_LABELS);
+const navigate = relabel(pointsOf("resume-input-paint", "Navigate"), RESUME_LABELS);
+// Fastest competitor in a resume scenario.
+const fastest = (points: ChartPoint[]) => points.filter((p) => !p.rivet).reduce((a, b) => (b.value < a.value ? b : a));
+const mount1000 = relabel(pointsOf("dom-mount-1000"), DOM_LABELS);
+const mount5000 = relabel(pointsOf("dom-mount-5000"), DOM_LABELS);
+const update100 = relabel(pointsOf("dom-update-1000", "Update 100%"), DOM_LABELS);
 const dynamic = relabel(pointsOf("ssr-dynamic-cpu-1000", 0), { "Rivet resumable": "Rivet", "Solid 1.9 interactive": "Solid 1.9" });
-const dynamicPlain = relabel(pointsOf("ssr-dynamic-cpu-1000", 1), {});
-const update100 = relabel(pointsOf("dom-update-1000", "Update 100%"), { "Solid 1.9.15": "Solid 1.9", "Solid 2.0.0-rc.13": "Solid 2 rc", "React 19.3": "React 19" });
-const ms = (value: number, digits: number) => formatValue(value, digits) + " ms";
+const small = relabel(pointsOf("ssr-resumable-cpu-100-c10", 1), { "Solid 1 hydratable": "Solid 1.9 plain" });
+const smallRivet = valueOf(pointsOf("ssr-resumable-cpu-100-c10", 0), "Rivet resumable");
+
+const FAIR_LINE = { text: "Fair comparison, 2026-10-19 · Apple M4 Pro", href: FAIR.href };
+const DOM_LINE = { text: "DOM mount report, 2026-10-20 · Apple M4 Pro", href: DOM.href };
 
 export const homeStrip: HomeChart[] = [
   {
@@ -447,17 +471,18 @@ export const homeStrip: HomeChart[] = [
     source: FAIR_LINE,
   },
   {
+    // Against hydrated Solid (verdict WIN); Qwik, which also resumes, is level (TIE) and the footnote says so.
     id: "navigate",
     word: "resumable",
-    big: times(valueOf(navigate, "Rivet"), navigateBest.value),
-    peer: navigateBest.label.replace(/ [\d.]+$/, ""),
-    strip: `faster navigation after resume than ${navigateBest.label}`,
-    claim: `faster navigation after resume than ${navigateBest.label}, on slow 4G`,
+    big: times(valueOf(navigate, "Rivet"), valueOf(navigate, "Solid 1.9")),
+    peer: "Solid",
+    strip: "faster navigation after resume than hydrated Solid 1.9",
+    claim: "faster navigation after resume than hydrated Solid 1.9, on slow 4G",
     unit: "ms",
     better: "lower",
     digits: 1,
     points: rivetFirst(navigate),
-    footnote: `First click: level with Qwik (${ms(valueOf(click, "Rivet"), 1)} vs ${ms(fastest(click).value, 1)}). Slow 4G, 4× slower CPU.`,
+    footnote: `Qwik also resumes and is level: ${ms(valueOf(navigate, "Qwik 1.20"), 1)} (Qwik 1.20) vs ${ms(valueOf(navigate, "Rivet"), 1)}. First click: level with Qwik (${ms(valueOf(click, "Rivet"), 1)} vs ${ms(fastest(click).value, 1)}). Slow 4G, 4× slower CPU.`,
     chart: "resume-input-paint",
     source: FAIR_LINE,
   },
@@ -472,9 +497,10 @@ export const homeStrip: HomeChart[] = [
     better: "lower",
     digits: 2,
     points: rivetFirst(update100),
-    footnote: "Update every field of 1,000 rows in Chromium.",
+    footnote: `Update every field of 1,000 rows in Chromium, every framework measured in the same run. Mounting 1,000 rows is level with Solid 1.9 (${ms(valueOf(mount1000, "Rivet"), 1)} vs ${ms(valueOf(mount1000, "Solid 1.9"), 1)}).`,
+    loss: `Mounting 5,000 rows, Solid 1.9 is faster (${ms(valueOf(mount5000, "Solid 1.9"), 1)} vs ${ms(valueOf(mount5000, "Rivet"), 1)}). The gap comes from when V8 finishes garbage collection after the forced collection before the timed mount; without that collection Rivet mounts 5,000 rows faster. A protocol fix, which means measuring every framework again, is proposed in the report.`,
     chart: "dom-update-1000",
-    source: FAIR_LINE,
+    source: DOM_LINE,
   },
   {
     id: "dynamic",
@@ -487,8 +513,8 @@ export const homeStrip: HomeChart[] = [
     better: "lower",
     digits: 2,
     points: rivetFirst(dynamic),
-    footnote: "Dynamic rendering: every request renders the page with its handlers, links and resume data.",
-    loss: `Plain hydratable Solid 1.9, without handlers, links or page data, needs ${times(valueOf(dynamicPlain, "Solid 1.9 plain"), valueOf(dynamic, "Rivet"))} less (${ms(valueOf(dynamicPlain, "Solid 1.9 plain"), 2)} vs ${ms(valueOf(dynamic, "Rivet"), 2)}). Function Bridge and the row ABI are cutting what Rivet writes per row.`,
+    footnote: "Dynamic rendering: every request renders the page with its handlers, links and resume data. 1,000 rows, one request at a time.",
+    loss: `On a 100-row page under 10 concurrent requests, plain hydratable Solid 1.9, without handlers, links or page data, needs ${times(valueOf(small, "Solid 1.9 plain"), smallRivet)} less CPU (${ms(valueOf(small, "Solid 1.9 plain"), 2)} vs ${ms(smallRivet, 2)}), and at 100 rows Rivet's interactive page uses more memory than every Solid lane. A cheaper state encoder landed after this run; its re-measure is open.`,
     chart: "ssr-dynamic-cpu-1000",
     source: FAIR_LINE,
   },
@@ -508,9 +534,9 @@ export const editorialLoss = {
   source: EDITORIAL,
 };
 
-/** Numbers quoted by the home feature grid (index.tsx FEATURES), from the same JSON. */
+/** Numbers quoted by the home feature grid (index.tsx FEATURES), from the same JSON files. */
 export const homeFacts = {
-  /** Browser: update every field of 1,000 rows, Rivet median (chart dom-update-1000). */
+  /** Browser: update every field of 1,000 rows, Rivet median (chart dom-update-1000, domRun.runTs.baseline["1000"].rivet.update100). */
   domUpdate1000: ms(valueOf(update100, "Rivet"), 2),
   /** Streaming SSR, 5,000 rows, 1 connection: p99 page latency, Rivet compiled vs Razor (fair.ssr.tuned["5000"]["1"][lane].p99_ms). */
   streamP99: ms(ssr5000["rivet-compiled"].p99_ms.median, 1),
