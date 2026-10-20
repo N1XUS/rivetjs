@@ -144,6 +144,14 @@ services:
     command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-router.mjs
     ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}15:8080"]
     profiles: [variants]
+  rivet-derived:
+    <<: *node-build
+    environment: { <<: *node-env }
+    # rivet-resume's app built with `resume: { model: "derived" }` (router-app/vite.derived.config.ts): boundary
+    # records + keyed signals, no state table; measured on `/resume` like rivet-resume (benchmark.py PATHS).
+    command: node ${SSR_BENCH_NODE_FLAGS---single-threaded-gc --max-semi-space-size=8} apps/ssr-bench/dist/rivet-derived.mjs
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}32:8080"]
+    profiles: [variants]
   rivet-compiled-baseline:
     <<: *node
     image: rivet-ssr-bench-node:b01eba3-baseline

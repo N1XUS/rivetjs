@@ -31,6 +31,7 @@ const RIVET: Record<string, string[]> = {
   "rivet-compiled": STATIC_PEERS,
   "rivet-for": STATIC_PEERS,
   "rivet-resume": RESUMABLE_PEERS,
+  "rivet-derived": RESUMABLE_PEERS,
   "rivet-router": RESUMABLE_PEERS,
   "rivet-compiled-bun": STATIC_PEERS,
   "rivet-compiled-deno": STATIC_PEERS,
@@ -58,6 +59,7 @@ const LABEL: Record<string, string> = {
   "rivet-for": "Rivet static (<For>)",
   "rivet-router": "Rivet router (resumable, no handlers)",
   "rivet-resume": "Rivet resumable app",
+  "rivet-derived": "Rivet resumable app (derived model)",
   "rivet-compiled-bun": "Rivet static on Bun 1.4.2",
   "rivet-compiled-deno": "Rivet static on Deno 2.9.7",
   "rivet-router-bun": "Rivet router on Bun 1.4.2",
@@ -314,7 +316,7 @@ function markdown(
       out.push("");
     }
     out.push(`### Verdicts — profile \`${profile}\``, "", "Counts over all rows × concurrency cases: W/T/L for the Rivet lane against each peer.", "");
-    for (const rivet of PRIMARY.concat(["rivet-router", "rivet-for"])) {
+    for (const rivet of PRIMARY.concat(["rivet-router", "rivet-for", "rivet-derived"])) {
       const peers = RIVET[rivet]!;
       const mine = data.comparisons.filter((c) => c.profile === profile && c.rivet === rivet);
       if (!mine.length) continue;
@@ -402,6 +404,7 @@ const order = (lane: string) =>
     "rivet-for",
     "rivet-router",
     "rivet-resume",
+    "rivet-derived",
     "rivet-compiled-bun",
     "rivet-compiled-deno",
     "rivet-router-bun",

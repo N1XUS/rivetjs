@@ -48,8 +48,16 @@ for (const ssr of [false, true])
     configFile: resolve(routerApp, "vite.config.ts"),
     build: { ssr, outDir: resolve(root, `dist/rivet-router/${ssr ? "server" : "client"}`), emptyOutDir: true },
   });
+// rivet-derived lane: the same app resumed with the derived model (`vite.derived.config.ts`,
+// `resume.model: "derived"`) into `dist/rivet-derived/`; `rivet-derived.mjs` serves it.
+for (const ssr of [false, true])
+  await viteBuild({
+    root: routerApp,
+    configFile: resolve(routerApp, "vite.derived.config.ts"),
+    build: { ssr, outDir: resolve(root, `dist/rivet-derived/${ssr ? "server" : "client"}`), emptyOutDir: true },
+  });
 const compiledJSX = new Set(["rivet-compiled", "rivet-for"]);
-for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "rivet-compiled", "rivet-for", "rivet-router"]) {
+for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "rivet-compiled", "rivet-for", "rivet-router", "rivet-derived"]) {
   const plugins: Plugin[] =
     name === "solid-stable-static" ? [stableResolver, stableSolidStaticCompiler]
       : name.startsWith("solid-stable") ? [stableResolver, stableSolidCompiler]
@@ -89,6 +97,8 @@ for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "so
       ? resolve(root, `dist/${name}-server/${name}.js`)
       : name === "rivet-router"
         ? resolve(routerApp, "server.ts")
+        : name === "rivet-derived"
+          ? resolve(routerApp, "server-derived.ts")
         : resolve(root, `adapters/${name}.${name === "rivet" ? "ts" : "jsx"}`);
   const result = await build({
     entryPoints: [entry],
@@ -127,8 +137,8 @@ for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "so
   }
   artifacts.push({
     framework: name,
-    implementation: name === "rivet-compiled" ? "JSX -> reviewed Rivet server compiler/runtime" : name === "rivet-for" ? "JSX + keyed <For> -> Rivet server compiler/runtime" : name === "rivet-router" ? "@rivetjs/router file routes (layout + loaders + head) on the node adapter" : name === "solid-stable-string" ? "Solid stable production SSR (babel-preset-solid, renderToString)" : name === "solid-stable-static" ? "Solid stable static SSR (babel-preset-solid hydratable:false, renderToString)" : name === "solid-stable" ? "Solid stable production SSR (babel-preset-solid)" : name === "solid-stable-interactive" ? "Solid stable production SSR (babel-preset-solid), interactive rows + serialized page data" : name === "qwik-stable" ? "Qwik stable production SSR (Qwik optimizer + Vite 7)" : name,
-    outputMode: name === "solid-stable-string" ? "buffered-renderToString" : name === "solid-stable-static" ? "buffered-static-renderToString" : name === "rivet-router" ? "streaming-router" : "streaming-adapter",
+    implementation: name === "rivet-compiled" ? "JSX -> reviewed Rivet server compiler/runtime" : name === "rivet-for" ? "JSX + keyed <For> -> Rivet server compiler/runtime" : name === "rivet-router" ? "@rivetjs/router file routes (layout + loaders + head) on the node adapter" : name === "rivet-derived" ? "@rivetjs/router file routes, resume.model derived (boundary records + keyed signals), node adapter" : name === "solid-stable-string" ? "Solid stable production SSR (babel-preset-solid, renderToString)" : name === "solid-stable-static" ? "Solid stable static SSR (babel-preset-solid hydratable:false, renderToString)" : name === "solid-stable" ? "Solid stable production SSR (babel-preset-solid)" : name === "solid-stable-interactive" ? "Solid stable production SSR (babel-preset-solid), interactive rows + serialized page data" : name === "qwik-stable" ? "Qwik stable production SSR (Qwik optimizer + Vite 7)" : name,
+    outputMode: name === "solid-stable-string" ? "buffered-renderToString" : name === "solid-stable-static" ? "buffered-static-renderToString" : name === "rivet-router" || name === "rivet-derived" ? "streaming-router" : "streaming-adapter",
     version: version!,
     sha256: createHash("sha256").update(bytes).digest("hex"),
     raw: bytes.length,

@@ -283,12 +283,12 @@ class BenchmarkTests(unittest.TestCase):
             self.assertEqual(gc,benchmark.GC_PROFILES[profile]['SSR_BENCH_DOTNET_GC_ENV'])
 
     def test_resume_lane_path_and_strings_variant(self):
-        self.assertEqual(benchmark.path('rivet-resume'),'/resume');self.assertEqual(benchmark.path('rivet-router'),'/page')
+        self.assertEqual(benchmark.path('rivet-resume'),'/resume');self.assertEqual(benchmark.path('rivet-derived'),'/resume');self.assertEqual(benchmark.path('rivet-router'),'/page')
         self.assertTrue(parse_args(['--strings']).strings)
         with self.assertRaises(SystemExit):parse_args(['--strings','--generator','python'])
         self.assertEqual(parse_args(['--grid']).strings,2)
         with self.assertRaises(SystemExit):parse_args(['--grid','--strings'])
         with self.assertRaises(SystemExit):parse_args(['--grid','--generator','python'])
-        for name in ['solid-stable-static','rivet-resume']:self.assertIn(name,benchmark.PORTS)
+        for name in ['solid-stable-static','rivet-resume','rivet-derived']:self.assertIn(name,benchmark.PORTS)
 
 if __name__=='__main__': unittest.main()
