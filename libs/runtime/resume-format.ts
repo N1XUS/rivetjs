@@ -297,6 +297,11 @@ function childTree(t: JsonTrees, value: object, parent: number, key: string | nu
   return array ? arrayTree(t, value as unknown[], code) : objectTree(t, value as Record<string, unknown>, code);
 }
 
+// A flat (sequential) copy of a string. V8's fast `JSON.stringify` path (Node 26) bails out on a sliced or cons string and
+// re-serializes the whole call on the slow path: one sliced URL path in a 100-row page's table made its stringify
+// 3.2x slower (7.8 -> 26 us). An own-key round trip internalizes it (~0.1 us); used for strings the encoder slices itself.
+const flat = (s: string): string => Object.keys({ [s]: 0 })[0]!;
+
 // The `b` kind of an ArrayBuffer / DataView / typed array whose prototype is the global constructor's own (no subclass,
 // no SharedArrayBuffer); undefined otherwise.
 function binaryKind(value: object, proto: unknown): string | undefined {
@@ -477,7 +482,7 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin }: 
       }
     } else if (value instanceof Date && proto === Date.prototype) table[index] = { d: value.getTime() };
     else if (typeof URL === "function" && value instanceof URL && proto === URL.prototype)
-      table[index] = { h: origin && value.origin === origin ? value.href.slice(origin.length) : value.href };
+      table[index] = { h: origin && value.origin === origin ? flat(value.href.slice(origin.length)) : value.href };
     else if (value instanceof Map && proto === Map.prototype) {
       const pairs: number[] = [];
       if (DEV) {
@@ -882,8 +887,13 @@ export function symbolOf(entry: EntryRecord): SymbolRef {
 export type SymbolList = (string | number)[];
 
 /** Make JSON safe inside a script element. */
+// `indexOf` / `replaceAll` with a one-character string pattern are memchr scans: a 10 KB state with no `<` 2.5 -> 0.2 us,
+// with one 2.8 -> 0.7 us (the regex replace is only for the rare U+2028 / U+2029; a one-byte string has neither).
 export function escapeJSON(json: string): string {
-  return json.replace(/[<\u2028\u2029]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
+  if (json.indexOf("<") >= 0) json = json.replaceAll("<", "\\u003c");
+  return json.indexOf("\u2028") < 0 && json.indexOf("\u2029") < 0
+    ? json
+    : json.replace(/[\u2028\u2029]/g, (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"));
 }
 
 /** Symbol ids referenced by function/computed entries reachable from the given references; `signals` (optional Set) collects reachable signal entries. */

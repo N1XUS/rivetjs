@@ -4977,6 +4977,28 @@ function sliced(table: readonly unknown[]): string {
   }
   return out + "]";
 }
+// `b`, byte for byte `JSON.stringify(b)`: a region entry with a row template (`[9]`, `RowTemplate`) carries the template's
+// element-id handler map (`e`, integer keys), which sends the whole call to V8's slow serializer (a 100-row list's
+// entries 4.0 -> 1.6 us). The template is written like `idMap`; runs of other entries natively, in one call each.
+function bindingsJSON(b: readonly unknown[][]): string {
+  let out = "[",
+    from = 0;
+  for (let i = 0; i < b.length; i++) {
+    const entry = b[i]!,
+      tpl = entry.length > 9 ? (entry[9] as RowTemplate | null) : null;
+    // A template is the only object at [9] (else 0: padding before locals / branches); its own keys are `e`, `b`.
+    if (tpl === null || typeof tpl !== "object" || Array.isArray(tpl) || Object.keys(tpl).length !== 2 || !tpl.e || !Array.isArray(tpl.b)) continue;
+    if (i > from) out += (out.length > 1 ? "," : "") + JSON.stringify(b.slice(from, i)).slice(1, -1);
+    let json = "[";
+    for (let k = 0; k < entry.length; k++)
+      json += (k ? "," : "") + (k === 9 ? '{"e":' + idMap(tpl.e) + ',"b":' + JSON.stringify(tpl.b) + "}" : (JSON.stringify(entry[k]) ?? "null"));
+    out += (out.length > 1 ? "," : "") + json + "]";
+    from = i + 1;
+  }
+  if (from === 0) return JSON.stringify(b);
+  if (from < b.length) out += "," + JSON.stringify(b.slice(from)).slice(1, -1);
+  return out + "]";
+}
 function stateJSON(state: object): string {
   let out = "{";
   const keys = Object.keys(state);
@@ -4988,7 +5010,9 @@ function stateJSON(state: object): string {
         ? idMap(value)
         : key === "t" && (value as unknown[]).length > TABLE_SLICE
           ? sliced(value as unknown[])
-          : JSON.stringify(value);
+          : key === "b"
+            ? bindingsJSON(value as unknown[][])
+            : JSON.stringify(value);
     if (json !== undefined) out += (out.length > 1 ? ',"' : '"') + key + '":' + json;
   }
   return out + "}";
@@ -5114,10 +5138,20 @@ type PlannedHandler = [id: number | number[], type: string, symbol: string, refs
 const addAll = (set: Set<number>, ids: readonly number[]): void => {
   for (let i = 0; i < ids.length; i++) set.add(ids[i]!);
 };
+/** A chunk plan's id Set, made on first need (from its lone list, if any). */
+const idSet = (info: ChunkPlan): Set<number> => {
+  if (info.ids === null) {
+    info.ids = new Set(info.list ?? undefined);
+    info.list = null;
+  }
+  return info.ids;
+};
 interface ChunkPlan {
   strategy: Strategy;
   score: number;
-  ids: Set<number>;
+  /** Element ids: `list` while one list handler (distinct row element ids) is all there is, a Set once more join. */
+  ids: Set<number> | null;
+  list: readonly number[] | null;
   rule: Strategy | null;
   element: Strategy | null;
 }
@@ -5344,16 +5378,19 @@ function planPreload({
   };
   const chunk = new Map<number, ChunkPlan>(); // index → { strategy, score, ids, rule, element }
   const stronger = (a: Strategy | null, b: Strategy): Strategy => (a === null || STRENGTH[b] > STRENGTH[a] ? b : a);
-  const use = (index: number, strategy: Strategy, score: number, id?: number | number[], override?: Strategy): void => {
-    const info = chunk.get(index) ?? chunk.set(index, { strategy: "interaction", score: 0, ids: new Set(), rule: null, element: null }).get(index)!;
+  // `distinct`: `id` is a list handler's row element ids (no repeats): kept as the list itself until a second source of
+  // ids joins (no Set of every row id for a lone list; the visible sample is the same, in the same order).
+  const use = (index: number, strategy: Strategy, score: number, id?: number | number[], override?: Strategy, distinct = false): void => {
+    const info = chunk.get(index) ?? chunk.set(index, { strategy: "interaction", score: 0, ids: null, list: null, rule: null, element: null }).get(index)!;
     if (STRENGTH[strategy] > STRENGTH[info.strategy]) info.strategy = strategy;
     if (override) info.element = stronger(info.element, override);
     if (typeof id === "object") {
       info.score += score * id.length;
-      addAll(info.ids, id);
+      if (distinct && info.ids === null && info.list === null) info.list = id;
+      else addAll(idSet(info), id);
     } else {
       info.score += score;
-      if (id !== undefined) info.ids.add(id);
+      if (id !== undefined) idSet(info).add(id);
     }
   };
   const sizes = manifest.sizes ?? {};
@@ -5389,8 +5426,9 @@ function planPreload({
     const visible = !INTENT.has(event) || repeated.get(keys[h])! >= LIST;
     // Handlers on a navigation path (links, forms with an action) weigh +2.
     const score = (WEIGHT[event] ?? 1) + ((element as ElementRecord)?.nav ? NAV : 0);
-    for (const i of entry[2]) use(i, visible && (sizes[chunks[i]!] ?? 0) <= VISIBLE_MAX ? "visible" : "intent", score, id, (element as ElementRecord)?.preload);
-    for (const i of extra) use(i, "intent", 0, id, (element as ElementRecord)?.preload);
+    for (const i of entry[2])
+      use(i, visible && (sizes[chunks[i]!] ?? 0) <= VISIBLE_MAX ? "visible" : "intent", score, id, (element as ElementRecord)?.preload, true);
+    for (const i of extra) use(i, "intent", 0, id, (element as ElementRecord)?.preload, true);
   }
   for (const id in models) {
     const extra = follow([models[id]![1]], []);
@@ -5442,7 +5480,15 @@ function planPreload({
     if (strategy === "interaction") {
       if (index < shipped.length) interaction.push(index);
     } else if (CODE[strategy]) {
-      const ids = strategy === "visible" ? sample([...info.ids]) : null;
+      // A lone list is the handler entry's own id array: the schedule gets its own (`sample` returns a short input as is).
+      const ids =
+        strategy === "visible"
+          ? info.list
+            ? info.list.length <= OBSERVED
+              ? info.list.slice()
+              : sample(info.list as number[])
+            : sample([...(info.ids ?? [])])
+          : null;
       if (!listed.has(chunks[index]!)) (listed.add(chunks[index]!), schedule.push(ids ? [chunks[index]!, "v", ids] : [chunks[index]!, CODE[strategy]!]));
       // The chunk's lazy imports (routes, components, idle-loaded modules it may import on use) follow
       // at idle at the earliest: an eager or visible chunk never pulls them before idle.

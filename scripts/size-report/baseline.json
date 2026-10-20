@@ -7,8 +7,8 @@
         "br": 42228
       },
       "serverJS": {
-        "min": 218218,
-        "br": 76249
+        "min": 219089,
+        "br": 76493
       },
       "routes": {
         "/": {
@@ -32,8 +32,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66265,
@@ -105,8 +105,8 @@
           "eagerFiles": [
             "resume-loader.js",
             "resume-entry.js",
-            "rivet-merge-index-1.js",
             "resume-resume_tsx.js",
+            "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
             "analytics.js",
@@ -123,7 +123,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7331,
+          "htmlBr": 7360,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -142,8 +142,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66265,
@@ -262,8 +262,8 @@
         "br": 29689
       },
       "serverJS": {
-        "min": 175825,
-        "br": 60102
+        "min": 176696,
+        "br": 60464
       },
       "routes": {
         "/": {
@@ -338,8 +338,8 @@
         "br": 31464
       },
       "serverJS": {
-        "min": 176723,
-        "br": 61654
+        "min": 177594,
+        "br": 61854
       },
       "routes": {
         "/": {
@@ -382,8 +382,8 @@
         "br": 31235
       },
       "serverJS": {
-        "min": 181783,
-        "br": 61228
+        "min": 182659,
+        "br": 61416
       },
       "routes": {
         "/": {
@@ -426,8 +426,8 @@
         "br": 26112
       },
       "serverJS": {
-        "min": 172464,
-        "br": 59226
+        "min": 173335,
+        "br": 59561
       },
       "routes": {
         "/": {
@@ -464,8 +464,8 @@
         "br": 27796
       },
       "serverJS": {
-        "min": 173356,
-        "br": 59195
+        "min": 174228,
+        "br": 59494
       },
       "routes": {
         "/": {
@@ -516,8 +516,8 @@
         "br": 26092
       },
       "serverJS": {
-        "min": 167454,
-        "br": 57129
+        "min": 168324,
+        "br": 57473
       },
       "routes": {
         "/": {
@@ -554,8 +554,8 @@
         "br": 67008
       },
       "serverJS": {
-        "min": 245071,
-        "br": 79012
+        "min": 245943,
+        "br": 79316
       },
       "routes": {
         "/": {
@@ -606,8 +606,8 @@
         "br": 26167
       },
       "serverJS": {
-        "min": 167571,
-        "br": 57180
+        "min": 168441,
+        "br": 57466
       },
       "routes": {
         "/": {
@@ -656,8 +656,8 @@
         "br": 27955
       },
       "serverJS": {
-        "min": 189083,
-        "br": 64586
+        "min": 189954,
+        "br": 64812
       },
       "routes": {
         "/": {
@@ -705,8 +705,8 @@
         "br": 26401
       },
       "serverJS": {
-        "min": 173215,
-        "br": 59561
+        "min": 174086,
+        "br": 59777
       },
       "routes": {
         "/": {
@@ -754,8 +754,8 @@
         "br": 27462
       },
       "serverJS": {
-        "min": 188822,
-        "br": 64608
+        "min": 189693,
+        "br": 64805
       },
       "routes": {
         "/": {
@@ -804,8 +804,8 @@
         "br": 26537
       },
       "serverJS": {
-        "min": 168255,
-        "br": 57420
+        "min": 169125,
+        "br": 57648
       },
       "routes": {
         "/": {
@@ -854,8 +854,8 @@
         "br": 28257
       },
       "serverJS": {
-        "min": 174866,
-        "br": 58974
+        "min": 175739,
+        "br": 59108
       },
       "routes": {
         "/": {
@@ -903,8 +903,8 @@
         "br": 26408
       },
       "serverJS": {
-        "min": 169133,
-        "br": 57727
+        "min": 170004,
+        "br": 57949
       },
       "routes": {
         "/": {
@@ -953,8 +953,8 @@
         "br": 29984
       },
       "serverJS": {
-        "min": 183442,
-        "br": 63986
+        "min": 184313,
+        "br": 64324
       },
       "routes": {
         "/": {
@@ -997,8 +997,8 @@
         "br": 26852
       },
       "serverJS": {
-        "min": 174168,
-        "br": 59818
+        "min": 175039,
+        "br": 60129
       },
       "routes": {
         "/": {
@@ -1035,8 +1035,8 @@
         "br": 44285
       },
       "serverJS": {
-        "min": 200508,
-        "br": 68346
+        "min": 201379,
+        "br": 68613
       },
       "routes": {
         "/": {
@@ -1086,8 +1086,8 @@
         "br": 45297
       },
       "serverJS": {
-        "min": 202399,
-        "br": 68801
+        "min": 203270,
+        "br": 69172
       },
       "routes": {
         "/": {
@@ -1138,8 +1138,8 @@
         "br": 49277
       },
       "serverJS": {
-        "min": 221945,
-        "br": 74730
+        "min": 222816,
+        "br": 74983
       },
       "routes": {
         "/": {
@@ -1191,8 +1191,8 @@
         "br": 48946
       },
       "serverJS": {
-        "min": 218379,
-        "br": 74049
+        "min": 219250,
+        "br": 74371
       },
       "routes": {
         "/": {
@@ -1243,8 +1243,8 @@
         "br": 37228
       },
       "serverJS": {
-        "min": 177719,
-        "br": 60486
+        "min": 178592,
+        "br": 60768
       },
       "routes": {
         "/": {
@@ -1288,8 +1288,8 @@
         "br": 65130
       },
       "serverJS": {
-        "min": 269385,
-        "br": 87939
+        "min": 270256,
+        "br": 88193
       },
       "routes": {
         "/": {
@@ -1341,8 +1341,8 @@
         "br": 64472
       },
       "serverJS": {
-        "min": 268615,
-        "br": 87674
+        "min": 269486,
+        "br": 87867
       },
       "routes": {
         "/": {
