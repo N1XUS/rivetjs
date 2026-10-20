@@ -69,7 +69,7 @@ When the app is served under a base path (`rivetRouter({ base: "/shop" })`), a p
 The router takes over a click only when all of these hold:
 
 - the link points to the same origin, over `http:` or `https:`;
-- its path matches one of the app's page routes (after the base path);
+- its path matches one of the app's page routes (after the base path) that is not a document route;
 - it has no `download` attribute, no `data-rivet-reload`, no `target` other than `_self`, and no `rel="external"`;
 - it is a plain left click, without :kbd[Ctrl], :kbd[Shift], :kbd[Alt] or :kbd[Cmd] (so "open in new tab" keeps working);
 - no other handler called `event.preventDefault()`.
@@ -84,7 +84,9 @@ Use `data-rivet-reload` (or `<Link reload>`) when a page of this app must load a
 <a href="/account" data-rivet-reload="">Account</a>
 ```
 
-`navigate()` and the back and forward buttons do not check this: they always render through the router, so a URL with no page shows your 404 page.
+**Document routes** load as whole documents without the attribute: pages that use a server-only module themselves (see [server-only code](../security/server-only-code.md#what-the-build-checks)) or `import "@rivetjs/router/server-only"`. The browser has no code for them, so the router leaves every link to them to the browser.
+
+`navigate()` and the back and forward buttons do not check `data-rivet-reload`: they always render through the router, so a URL with no page shows your 404 page. For a document route they load its document.
 
 ## What happens on a click
 
@@ -95,6 +97,8 @@ Use `data-rivet-reload` (or `<Link reload>`) when a page of this app must load a
 5. It scrolls to the top, or to the element named in `#hash`, and moves keyboard focus to the page's first `<h1>` (inside `<main>` if there is one), so screen readers announce the new page.
 
 Back and forward buttons restore the scroll position you had on that page.
+
+If rendering the new page throws after the URL changed (a bug in the page, a module the browser cannot use), the router loads that URL's document instead, so the URL and the page never disagree. It does this at most once per URL within 10 seconds, so a page whose document fails too does not reload forever. In development the error overlay shows the error first.
 
 ## Prefetching on hover
 

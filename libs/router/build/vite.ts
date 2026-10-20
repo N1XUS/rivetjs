@@ -3,11 +3,15 @@
 import { lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { Plugin, Rollup, ViteDevServer } from "vite";
+import type { Plugin, ResolvedConfig, Rollup, ViteDevServer } from "vite";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   rivet,
   _factsResolve,
+  declaredServerOnly,
+  isServerOnly,
+  serverOnlyStub,
+  type ServerOnlyPattern,
   type DevResume,
   type ImagesConfig,
   type RivetCSSOptions,
@@ -28,6 +32,8 @@ export { mergeRouteCSS } from "./route-css.ts";
 import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
 import { lazyRowsBuild, lazyRowsHarness } from "./lazy-rows.ts";
+import { analyzeReach, serverOnlyOption, RV_REACH, type Reach, type ReachProblem, type ServerOnlyOption } from "./reach.ts";
+import { compileRoutes } from "@rivetjs/runtime/router/server";
 import type { createApp as CreateApp, GeneratedEntry } from "../server/app.ts";
 import type { DocumentShell } from "../server/render.ts";
 import { adapterOptions, targetBuildConfig, targetEntryPlugin, type AdapterName, type AdapterOptions } from "../adapters/target-build.ts";
@@ -180,10 +186,26 @@ export interface RivetRouterOptions {
    * recorder still runs, so serialization errors still reach the overlay).
    */
   dev?: { resume?: boolean };
+  /**
+   * Server-only modules besides `*.server.*` files and modules importing `@rivetjs/router/server-only`: module ids /
+   * specifiers or RegExps (virtual modules serving server data, e.g. `"virtual:docs/api"`; plugins declare theirs as
+   * `api.rivetServerOnly`, `rivet({ serverOnly })` too). Before each build / dev start the router walks every route's
+   * browser graph: a page route reaching one through its own module and plain helper modules is a document route (links
+   * load its document, its module leaves the client build); a component module, layout or error page reaching one fails
+   * the build (RV3011, with the import chain and the routes). `{ modules, reach: "warn" }`: components reaching one only
+   * warn, and the pages rendering them become document routes. Server / static modes (csr keeps the import error).
+   */
+  serverOnly?: ServerOnlyOption;
 }
 
 const posix = (path: string) => path.split(sep).join("/");
 const EMPTY = "\0rivet-router-empty";
+/** Client build: a document route's page module as `.rivet/app.tsx` imports it (no browser code for the page). */
+const DOCUMENT_PAGE = "\0rivet-document-page:";
+/** Browser stand-in of a server-only module imported only from document routes' graphs (`serverOnlyStub`). */
+const STAND_IN = "\0rivet-server-only:";
+/** The file behind a module id (virtual compiler parts `\0rivet-resume-part:/abs/file.tsx?…` included), no query. */
+const fileOf = (id: string): string => (id.startsWith("\0") ? id.slice(id.indexOf(":") + 1) : id).split("?")[0]!;
 
 /** Write generated files whose contents changed; returns whether anything changed. */
 async function sync(dir: string, files: Readonly<Record<string, string>>): Promise<boolean> {
@@ -300,7 +322,7 @@ export async function generateRoutes(
     | "preload"
     | "routeRules"
     | "clientRouter"
-  > & { head?: "components" | undefined } = {},
+  > & { head?: "components" | undefined; documents?: readonly string[] } = {},
 ) {
   const routesDir = posix(options.routes ?? "src/routes");
   const outDir = posix(options.outDir ?? ".rivet");
@@ -326,6 +348,7 @@ export async function generateRoutes(
     ...(options.preload?.background !== undefined ? { preloadBackground: options.preload.background } : {}),
     ...(options.routeRules && Object.keys(options.routeRules).length ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
+    ...(options.documents?.length ? { documents: options.documents } : {}),
   });
   const changed = await sync(resolve(root, outDir), generated.files);
   // No router contexts: the compiler's default resume entry (drop a stale generated one).
@@ -391,7 +414,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   const styles = options.styles ?? [];
   const mode = options.mode ?? "server";
   const documentPath = options.document ?? "src/document.ts";
-  const codegen: Parameters<typeof generateRoutes>[1] & {} = {
+  const codegen: NonNullable<Parameters<typeof generateRoutes>[1]> & { documents?: readonly string[] } = {
     routes: routesDir,
     outDir,
     document: documentPath,
@@ -438,6 +461,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         (inlineOption.maxTotalBrotli === undefined || (Number.isSafeInteger(inlineOption.maxTotalBrotli) && inlineOption.maxTotalBrotli >= 0)))
   )
     throw new Error(`rivetRouter: inlineStylesheets must be "auto", "always", "never" or { maxTotalBrotli: <bytes> } (got ${JSON.stringify(inlineOption)})`);
+  const serverOnly = serverOnlyOption(options.serverOnly);
   const slash = options.trailingSlash ?? "ignore";
   if (slash !== "ignore" && slash !== "never" && slash !== "always")
     throw new Error(`rivetRouter: trailingSlash must be "ignore", "never" or "always" (got ${JSON.stringify(slash)})`);
@@ -466,6 +490,37 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   };
   let root = process.cwd();
   let table: RouteTable = { routes: [] };
+  // Server reach (`build/reach.ts`): computed in `configResolved` (before any module compiles), re-run in dev after edits.
+  let reach: Reach | null = null,
+    reachDirty = false,
+    reachRun: Promise<unknown> = Promise.resolve(),
+    resolvedConfig: ResolvedConfig | null = null,
+    resolver: ReturnType<ResolvedConfig["createResolver"]> | null = null,
+    patterns: ServerOnlyPattern[] = [...serverOnly.modules],
+    building = false;
+  // Document routes' page files (absolute → routes-relative), client builds.
+  let documentPages = new Map<string, string>();
+  /** Walk the routes' browser graphs; true when the document routes changed (codegen input). */
+  const analyze = async (): Promise<boolean> => {
+    if (!resolvedConfig || mode === "csr") return false;
+    resolver ??= resolvedConfig.createResolver();
+    const resolveFor = resolver;
+    reach = await analyzeReach({
+      root,
+      routesDir: resolve(root, routesDir),
+      table,
+      resolve: (spec, importer) => resolveFor(spec, importer, false, false),
+      serverOnly: patterns,
+      reach: serverOnly.reach,
+      routeModules: new Set(routeModules(table, routesDir).map((file) => resolve(root, file))),
+      config: resolvedConfig,
+    });
+    documentPages = new Map([...reach.documents.keys()].map((page) => [resolve(root, routesDir, page), page]));
+    const documents = [...reach.documents.keys()].sort();
+    if (documents.join("\0") === (codegen.documents ?? []).join("\0")) return false;
+    codegen.documents = documents;
+    return true;
+  };
   const devtools = options.devtools ?? true;
   const css = options.css ? { css: options.css } : {};
   // Filled in `config` and on route changes: in-file server exports leave the browser build.
@@ -600,13 +655,39 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         },
       };
     },
+    // Server reach: every route's browser graph, before the first module compiles (codegen marks document routes).
+    async configResolved(config) {
+      resolvedConfig = config;
+      resolver = null;
+      building = config.command === "build";
+      patterns = [...serverOnly.modules, ...declaredServerOnly(config.plugins)];
+      if (mode === "csr") return;
+      if (await analyze()) await generateRoutes(root, codegen);
+    },
+    buildStart() {
+      if (!building || !reach) return;
+      const client = this.environment?.config?.consumer !== "server";
+      // Warnings once (client build); errors fail either build.
+      if (client) for (const problem of reach.problems) if (problem.severity === "warning") this.warn(problem.message);
+      const errors = reach.problems.filter((problem) => problem.severity === "error");
+      if (errors.length)
+        this.error({ message: errors.map((problem) => problem.message).join("\n\n"), plugin: "vite-plugin-rivet-router", pluginCode: RV_REACH });
+    },
     resolveId(id, importer, resolveOptions) {
-      if (id === EMPTY) return id;
+      if (id === EMPTY || id.startsWith(DOCUMENT_PAGE) || id.startsWith(STAND_IN)) return id;
       // `x.server.ts` modules hold secrets and server code: never part of a browser graph.
       if (!importer || resolveOptions?.ssr || this.environment?.config?.consumer === "server") return null;
       // The compiler's resume grouping resolves every specifier its facts list (type-only imports too): not an import.
       if (_factsResolve(id, importer)) return null;
-      if (/\.server(?:\.[cm]?[jt]sx?)?$/.test(id.split("?")[0]!) || id === "@rivetjs/router/server-only")
+      const from = fileOf(importer);
+      // Client build: the App's import of a document route's page — the browser never renders it (links load its document).
+      if (building && documentPages.size && /^\.\.?\//.test(id) && from === resolve(root, outDir, "app.tsx")) {
+        const page = documentPages.get(resolve(dirname(from), id.split("?")[0]!));
+        if (page) return DOCUMENT_PAGE + page;
+      }
+      if (isServerOnly(patterns, id)) {
+        // Reached only from document routes' graphs (their resumed parts): a stand-in that throws on use, never the module.
+        if (reach?.documentOnly.has(from)) return STAND_IN + (reach.targets.get(from + "\0" + id) ?? id);
         this.error({
           message:
             `[rivet:router] ${id} is server-only and cannot be imported by browser code (imported from ${posix(importer)})` +
@@ -615,9 +696,23 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           id: importer,
           plugin: "vite-plugin-rivet-router",
         });
+      }
       return null;
     },
-    load: (id) => (id === EMPTY ? "export {};\n" : null),
+    load(id) {
+      if (id === EMPTY) return "export {};\n";
+      if (id.startsWith(DOCUMENT_PAGE)) {
+        const page = id.slice(DOCUMENT_PAGE.length);
+        const message = `[rivet:router] ${posix(join(routesDir, page))} is a document route (its browser graph reaches a server-only module): its links load the document, the browser never renders it`;
+        return `export default function DocumentRoute() {\n  throw new Error(${JSON.stringify(message)});\n}\n`;
+      }
+      if (id.startsWith(STAND_IN)) {
+        const key = id.slice(STAND_IN.length);
+        const shown = key.startsWith("/") ? posix(relative(root, key)) : key;
+        return serverOnlyStub(shown, reach?.chains.get(key) ?? [], reach?.names.get(key) ?? []);
+      }
+      return null;
+    },
     // i18n client build: `BASE` is the app base, not the locale's asset base (`BASE_URL`). Only this
     // build's copy of shared/base.ts changes, so other apps' bundles stay byte-identical.
     // `trailingSlash`: the policy constant (client and server bundles); unset, the module stays as is.
@@ -706,6 +801,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           table = next;
           serverExports.modules.splice(0, serverExports.modules.length, ...routeModules(table, routesDir));
           inFile = serverFiles(table);
+          // A new route table (or new document routes): the browser graphs are walked again on the next page request.
+          if (changed) reachDirty = true;
           if (changed && !closed) server.ws.send({ type: "full-reload" });
           return changed;
         });
@@ -719,6 +816,45 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         );
       server.watcher.on("add", logged(regenerate));
       server.watcher.on("unlink", logged(regenerate));
+      // Any source edit can change what a route's browser graph reaches (re-walked lazily, changed files only).
+      const stale = (file: string) => {
+        if (SOURCE.test(file)) reachDirty = true;
+      };
+      server.watcher.on("add", stale);
+      server.watcher.on("unlink", stale);
+      server.watcher.on("change", stale);
+      // Dev server reach: a page's RV3011 reports on its load (terminal once per report, overlay on every load of an
+      // error); new document routes regenerate the App (full reload).
+      const reported = new Set<string>();
+      let routeMatch: { table: RouteTable; match: (url: URL) => RouteTable["routes"][number] | undefined } | undefined;
+      const devReach = async (url: URL): Promise<readonly ReachProblem[]> => {
+        if (mode === "csr") return [];
+        if (reachDirty) {
+          reachDirty = false;
+          const run = reachRun.then(async () => {
+            if (!closed && (await analyze())) await refresh();
+          });
+          reachRun = run.catch(() => {});
+          await run;
+        }
+        if (!reach?.problems.length) return [];
+        if (routeMatch?.table !== table) {
+          const at = (pattern: string) => (codegen.base ? (pattern === "/" ? codegen.base : codegen.base + pattern) : pattern);
+          const match = compileRoutes(table.routes.filter((route) => route.page).map((route) => ({ path: at(route.pattern), render: () => route })));
+          routeMatch = { table, match: (target) => match(target)?.route.render(undefined, null as never) as RouteTable["routes"][number] | undefined };
+        }
+        const route = routeMatch.match(url);
+        if (!route) return [];
+        const files = new Set([route.page, route.notFound, route.error, ...route.layouts.map((layout) => layout.page)].filter(Boolean));
+        const found = reach.problems.filter((problem) => problem.files.some((file) => files.has(file)));
+        for (const problem of found)
+          if (!reported.has(problem.message)) {
+            reported.add(problem.message);
+            if (problem.severity === "error") server.config.logger.error(problem.message);
+            else server.config.logger.warn(problem.message);
+          }
+        return found;
+      };
       // A source starts using a router feature (search params, navigate(), useParams()): generate it
       // from now on (regenerate + full reload). A dev server never turns one off again.
       const features = async (file: string) => {
@@ -819,7 +955,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
                 ...(i18n ? { i18n: { locales: i18n.locales } } : {}),
                 onError,
               });
-              listener = createListener({ handler: devHandler(handler, server, () => table), compress: false }).listener;
+              listener = createListener({ handler: devHandler(handler, server, () => table, devReach), compress: false }).listener;
               listeners.set(entry, listener);
             }
             // Vite's base middleware strips the base from `req.url`: route patterns carry it.

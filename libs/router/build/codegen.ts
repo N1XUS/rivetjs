@@ -71,6 +71,12 @@ export interface CodegenOptions {
    * they do not make a page resumable: inert pages ship zero JS). Default: `false` in `static` mode.
    */
   clientRouter?: boolean;
+  /**
+   * Document routes (routes-relative page files; `build/reach.ts`): their browser graph reaches a server-only module, so
+   * links to them load documents — rows of the client's match table are `_endpoint` (no interception, data request or
+   * chunk prefetch) and document prefetch takes them. Absent / empty: output unchanged.
+   */
+  documents?: readonly string[];
 }
 export interface Generated {
   /** File name (relative to outDir) → contents. */
@@ -400,6 +406,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   // Endpoint routes (no page) before a dynamic page pattern, as [index in the client's match order, pattern]:
   // the page pattern alone would claim their URLs for client navigation (the server answers the endpoint).
   const shadowed: [number, string][] = [];
+  // Document routes (server reach): their rows in the client's match table (top-level `PATHS` index, before the splices).
+  const documentFiles = new Set(options.documents ?? []);
+  const documentRows = pageRoutes.flatMap((route, n) => (documentFiles.has(route.page!) ? [n] : []));
   table.routes.forEach((route, i) => {
     if (!route.page && table.routes.slice(i + 1).some((later) => later.page && /[:*]/.test(later.pattern) && overlaps(later.pattern, route.pattern)))
       shadowed.push([table.routes.slice(0, i).filter((before) => before.page).length + shadowed.length, at(route.pattern)]);
@@ -426,7 +435,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     `import { Router, defineRoute, lazyComponent${single && !go ? "" : ", clientEvent"}${kit || (pageRoutes.length && params) ? ", Provider" : ""} } from "@rivetjs/runtime/dom";`,
     ...(kit ? [`import { HeadLevel, applyRouteHead } from "@rivetjs/kit";`] : []),
     `import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`,
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest ? ", ServerData, _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest ? ", ServerData, _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""} } from "@rivetjs/router/client";`,
     `import { isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
@@ -458,11 +467,21 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       `const PATHS${table.name}: readonly string[] = ${str(table.routes.map((route) => at(route.pattern)))};`,
       `const ROUTES${table.name}: readonly Row[] = ${tableRows(table)};`,
     ]),
-    ...(shadowed.length
+    ...(shadowed.length || documentRows.length
       ? [
           "const modules: (readonly [string, () => unknown])[] = PATHS.map((path, n) => [path, () => preloadPage(page(ROUTES[n]![2]), PAGES[ROUTES[n]![2]]!)]);",
-          "// Endpoints the server matches before a dynamic page pattern that also fits them: the browser loads them.",
-          `for (const [at, path] of ${str(shadowed)} as const) modules.splice(at, 0, [path, _endpoint]);`,
+          ...(documentRows.length
+            ? [
+                "// Document routes (their browser graph reaches a server-only module): the browser loads their documents.",
+                `for (const n of ${str(documentRows)} as const) modules[n] = [PATHS[n]!, _endpoint];`,
+              ]
+            : []),
+          ...(shadowed.length
+            ? [
+                "// Endpoints the server matches before a dynamic page pattern that also fits them: the browser loads them.",
+                `for (const [at, path] of ${str(shadowed)} as const) modules.splice(at, 0, [path, _endpoint]);`,
+              ]
+            : []),
         ]
       : [
           "const modules: readonly (readonly [string, () => unknown])[] = PATHS.map((path, n) => [path, () => preloadPage(page(ROUTES[n]![2]), PAGES[ROUTES[n]![2]]!)]);",
@@ -700,7 +719,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `import shell from ${str(fromOut(options.document))};`,
           `import { documentPrefetch } from "@rivetjs/router/prefetch";`,
           "/** Document prefetch (`rivetRouter({ prefetch })`): Speculation Rules + intent fallback in every page's head. */",
-          `export const document = documentPrefetch(shell, ${str({ ...(typeof options.prefetch === "string" ? { default: options.prefetch } : {}), ...(single ? {} : { routed: true, ...(options.prefetchPaths === false ? {} : { routes: routePathRegExp(table.routes.map((route) => at(route.pattern))) }) }), ...(options.prefetchEagerness && options.prefetchEagerness !== "moderate" ? { eagerness: options.prefetchEagerness } : {}) })});`,
+          `export const document = documentPrefetch(shell, ${str({ ...(typeof options.prefetch === "string" ? { default: options.prefetch } : {}), ...(single ? {} : { routed: true, ...(options.prefetchPaths === false ? {} : { routes: routePathRegExp(table.routes.filter((route) => !route.page || !documentFiles.has(route.page)).map((route) => at(route.pattern))) }) }), ...(options.prefetchEagerness && options.prefetchEagerness !== "moderate" ? { eagerness: options.prefetchEagerness } : {}) })});`,
         ]
       : options.document
         ? [`export { default as document } from ${str(fromOut(options.document))};`]

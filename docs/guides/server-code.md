@@ -63,6 +63,15 @@ File routes (`@rivetjs/router`) keep server code next to the page. The compiler 
   - Resume mode: server-only code renders JSX.
 - Secrets live in `*.server.ts` modules (or modules with `import "@rivetjs/router/server-only"`). Browser imports of those fail the build — the guarantee does not depend on removal alone. Type-only imports (`import type { X }`, `import { type X }`) are allowed (erased before bundling).
 
+## Server reach (SERVER-REACH, spec `docs/design/specs/2026-10-20-server-reach-design.md`)
+- Server-only = marker `@rivetjs/router/server-only`, `*.server.*` files, `rivetRouter({ serverOnly })` / `rivet({ serverOnly })` patterns (string id/specifier or RegExp), plugin-declared ids (`api.rivetServerOnly`, e.g. docs-kit `virtual:docs/api`).
+- Pre-build graph scan (`build/reach.ts`, router `configResolved`): browser import graph of every page / layout / error page (Vite resolver, client conditions; node_modules, `?query`, `\0` ids not followed; other plugins' virtual modules matched by specifier only).
+- Page reaching server-only through its own module / non-component helpers (or importing the marker) → **document route**: codegen `modules[n] = [PATHS[n], _endpoint]` (links load the document, no prefetch), client build page import → throwing stub `\0rivet-document-page:<page>`; server unchanged.
+- Through a component (`.tsx` / `.jsx` other than the page) on a client-navigated page → **RV3011** error (chain + routes); `serverOnly: { modules, reach: "warn" }` → warning + document route. Layouts / error pages → always RV3011.
+- Imports reached only from document-only graphs → stand-in Proxy (`serverOnlyStub`, compiler `server-only.ts`): throws `<id> is server-only; reached from <chain>` on any use. Other browser imports: the existing hard error.
+- Dev: re-analysis on route / source change; RV3011 on page load → terminal (once) + error overlay.
+- Router fallback (`client/index.ts` `recover`): uncaught `error` / `unhandledrejection` during a client navigation (after the history push, until a frame after the swap) → `location.replace(href)`; sessionStorage `rivet:recover` guard (same URL within 10 s skipped); dev waits for the Vite overlay (`_recover.defer`).
+
 ## Sibling `*.server.ts`
 - Same wrappers; merged with in-file exports (`mergeServer`). Same kind in both → error at first request.
 - Re-exports from server-only modules (`export { access } from "./auth.server.ts"`) are server exports of kind `?` (resolved at runtime by tag).

@@ -373,6 +373,12 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV3010"
     },
     {
+      "code": "RV3011",
+      "severity": "error",
+      "title": "Server-only module reached from client-rendered code (router build)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV3011"
+    },
+    {
       "code": "RV3101",
       "severity": "warning",
       "title": "Link matches no route (language service)",

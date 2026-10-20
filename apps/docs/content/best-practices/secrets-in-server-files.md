@@ -11,12 +11,12 @@ related: [guides/security/server-only-code, best-practices/pass-data-not-service
 
 Route components (`.tsx`) are built twice: for the server and for the browser. Anything a component imports can end up in browser code, which anyone can read.
 
-Files named `*.server.ts` are different. The build refuses to put them in browser code. If a component (or anything else that stays in the browser build) uses one, the build stops:
+Files named `*.server.ts` are different. The build never puts them in browser code. A page that uses one in its component loads as a whole document (a document route: no page code in the browser). A shared component that uses one stops the build, because the browser would render it on the next client navigation:
 
 ```txt
-[rivet:router] ../db.server.ts is server-only and cannot be imported by browser code (imported from /app/src/routes/products.tsx)
-  fix: read it in a server export (`load(…)`, `actions(…)`, `onGet(…)`, …) and pass the data to the page; type-only imports (`import type`) are fine
-  docs: https://rivetjs.severyn.pro/guides/security/server-only-code
+[rivet:router] RV3011 src/components/ProductCard.tsx → src/db.server.ts (server-only), rendered by /products (client-navigated page route)
+  fix: pass the data to the component as props (inlined at build time, or read in the page's `load(…)`), keep server-only modules out of components, or make the page a document route (`import "@rivetjs/router/server-only"` in the page module); `rivetRouter({ serverOnly: { reach: "warn" } })` turns this into a warning (those pages render as document routes)
+  docs: https://rivetjs.severyn.pro/errors/RV3011
 ```
 
 Type-only imports are fine: `import type { User } from "../db.server.ts"` (or `import { type User }`) is removed before bundling and passes the check.
@@ -54,7 +54,7 @@ export default function Billing({ data }: PageProps<typeof loader>) {
 }
 ```
 
-The page's `load(…)` may import the `.server.ts` module: the compiler removes `load(…)`, and the imports only it uses, from the browser build. The component itself must not use anything from that module.
+The page's `load(…)` may import the `.server.ts` module: the compiler removes `load(…)`, and the imports only it uses, from the browser build. Keep the component off that module too: a component that uses it makes the page a document route (every link to it loads a whole document).
 
 ## Don't
 

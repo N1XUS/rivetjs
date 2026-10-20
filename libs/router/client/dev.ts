@@ -31,6 +31,21 @@ export interface RouterNavigation {
   at: number;
 }
 
+// A failed client navigation (`_recover`, index.ts) loads its document after Vite's error overlay showed the error: once
+// the overlay closes, or at once when none opens within 1.5 s (overlay off, error not reported).
+client._recover.defer = (load) => {
+  const open = () => document.querySelector("vite-error-overlay");
+  const until = Date.now() + 1500;
+  const wait = (): void => {
+    if (open()) {
+      const watch = new MutationObserver(() => open() || (watch.disconnect(), load()));
+      watch.observe(document.documentElement, { childList: true, subtree: true });
+    } else if (Date.now() > until) load();
+    else setTimeout(wait, 100);
+  };
+  wait();
+};
+
 const hook = devtoolsHook();
 let table: LayoutTable | null = null;
 let shown: { pattern: string; url: string; params: Readonly<Record<string, string>>; data: readonly unknown[]; ms: number; error: string | null } | null = null;

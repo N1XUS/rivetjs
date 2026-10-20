@@ -29,6 +29,15 @@ export default function Layout({ children }: LayoutProps) {
         <a href="/nope" id="nope">
           Unknown
         </a>
+        <a href="/report" id="report">
+          Report (document route: *.server.ts)
+        </a>
+        <a href="/secret" id="secret">
+          Secret (document route: declared server-only module)
+        </a>
+        <a href="/broken" id="broken">
+          Broken (throws when the browser renders it)
+        </a>
       </nav>
       <main>{children}</main>
     </div>

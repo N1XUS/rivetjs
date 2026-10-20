@@ -13,7 +13,7 @@ A component runs once, on the server. Its handlers run later, in the browser. Ev
 
 - Plain objects, arrays, strings, numbers, dates, `Map` and `Set` travel fine.
 - A database client or an API client is a class instance with methods and open connections. It cannot travel. Rivet stops with "class instances are not serializable" or "function is not serializable". A client that belongs in the browser (an analytics or socket client) can be built there with [`reconstruct(() => …)`](../learn/resuming.md#library-objects-reconstruct); a server-side service stays behind a loader.
-- Even when nothing captures it, a service imported by a page module drags its code (and maybe its secrets) toward the browser. The build refuses `.server.ts` imports in browser code, but an ordinary module has no such guard.
+- Even when nothing captures it, a service imported by a page module drags its code (and maybe its secrets) toward the browser. The build keeps `.server.ts` modules out of browser code (a component that uses one fails the build, RV3011), but an ordinary module has no such guard.
 
 Loaders also make the data flow visible: what the page receives is exactly what `load(…)` returns.
 

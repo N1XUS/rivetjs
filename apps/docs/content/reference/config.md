@@ -48,6 +48,7 @@ export default defineConfig({
 | `clientRouter` | `boolean` | `false` in `static`, `true` in `server` | `true`: every resumed page ships the client router, so links, back and forward update the page in place. `false`: the router alone does not make a page ship JavaScript. A page with nothing else to resume ships none, and its links load documents. Interactive pages still navigate in place. Ignored in `csr`. See [static hosts](../guides/deploy/static-hosts.md#pages-without-javascript). |
 | `announce` | `boolean` | `true` | Announce the new page to screen readers after client navigation. |
 | `searchParams`, `navigate`, `forms`, `params`, `activeLinks` | `boolean` | detected from your sources | Include the router code for `useSearchParams()`, `navigate()` / `invalidate()` / `setSearchParams()`, enhanced `@rivetjs/forms` submits (also `@rivetjs/ui` `Form`; implies `navigate`), `useParams()` and `<Link active>`. Set `true` when only a dependency uses them. |
+| `serverOnly` | `(string \| RegExp)[]` \| `{ modules?: (string \| RegExp)[]; reach?: "error" \| "warn" }` | `[]`, `reach: "error"` | Extra server-only modules (ids or specifiers, such as `"virtual:content"`), on top of `*.server.*` files and the `@rivetjs/router/server-only` marker. A page that uses one itself becomes a document route; a component or layout that does fails the build ([RV3011](../errors/RV3011.md)). `reach: "warn"`: a warning instead, and those pages become document routes. See [server-only code](../guides/security/server-only-code.md#what-the-build-checks). |
 | `dev.resume` | `boolean` | `true` | Dev server: pages resume like production; the first edit switches a page to rendering in the browser. `false`: dev pages render in the browser from the first load. |
 
 Builds: `vite build` writes `dist/client`, `vite build --ssr` writes `dist/server`. In `csr` mode the client build also writes `index.html`, and `--ssr` is an error.
@@ -76,6 +77,7 @@ Also import `@rivetjs/router/transitions.css` in your stylesheet. See [transitio
 | `css` | `RivetCSSOptions` | see below | `css` blocks and `*.module.*` naming. |
 | `include` | Vite `FilterPattern` | every `.tsx` / `.jsx` outside `node_modules` | Modules the compiler transforms (globs relative to the root, or RegExps). |
 | `exclude` | Vite `FilterPattern` | none | Modules never transformed, for example another framework's files. Wins over `include`. |
+| `serverOnly` | `(string \| RegExp)[]` | `[]` | Server-only modules (ids or specifiers). With `rivetRouter` its build check decides; without it, a browser import of one stops the build. |
 | `staticIcons` | `boolean` | `true` | Compile `<Icon icon={X} />` (`@rivetjs/kit/icon`, a `lucide` icon, constant props) to its inline `<svg>`. `false` keeps every call. |
 
 ### RivetResumeOptions

@@ -254,6 +254,7 @@ export function onNavigate(fn: (nav: NavigationInfo) => void | (() => void)): ()
   return () => void listeners.delete(fn);
 }
 function started(nav: NavigationInfo): void {
+  if (recovering === undefined) ((recovering = false), addEventListener("error", recover), addEventListener("unhandledrejection", recover));
   // Warmed data for other URLs is no longer wanted: abort it (the target's own stays for its load).
   dropPrefetch(key(nav.to));
   keep = 0;
@@ -265,6 +266,32 @@ function started(nav: NavigationInfo): void {
     if (typeof after === "function") afters.push(after);
   }
   _transitions.start?.(nav);
+}
+/** @internal Dev (`dev.ts`): the error overlay shows a failed navigation's error before its document loads. */
+export const _recover: { defer?: (load: () => void) => void } = {};
+// Listening (`false`, from the first navigation) / loading the document (`true`); `undefined`: not listening yet.
+let recovering: boolean | undefined;
+// The URL a navigation just committed (`swapRoute`; until the next frame): its page renders after the commit.
+let rendering: string | undefined;
+/**
+ * A client navigation whose render or commit throws (an uncaught error after the history push: before the routes
+ * region committed the URL, or inside its swap) loads the URL's document instead: URL and page never diverge. `location.replace`: the
+ * history entry is already there. A failing document load does not re-enter: once per URL within 10 s (session storage).
+ */
+function recover(): void {
+  const href = location.href,
+    at = Date.now();
+  if (recovering || (href !== rendering && (!current || href === committed))) return;
+  try {
+    // `<13-digit ms><href>` of the last recovery.
+    const last = sessionStorage["rivet:recover"] as string | undefined;
+    if (last?.slice(13) === href && at - +last.slice(0, 13) < 1e4) return;
+    sessionStorage["rivet:recover"] = at + href;
+  } catch {
+    // No session storage: recover without the cross-document loop guard.
+  }
+  recovering = true;
+  (_recover.defer ?? ((load) => load()))(() => location.replace(href));
 }
 /** @internal The navigation in flight (read by the transitions module when it installs). */
 export const _current = (): NavigationInfo | null => current;
@@ -373,6 +400,9 @@ export function swapRoute(apply: () => void, next: ParentNode): void {
     enter((index = (history.state as { i?: number } | null)?.i ?? index + 1));
   }
   committed = href;
+  // Until the next frame's first task (the routes region renders the new page after the swap, up to a frame later), an
+  // uncaught error is this navigation's (`recover`).
+  if (nav) ((rendering = href), requestAnimationFrame(() => setTimeout(() => rendering === href && (rendering = undefined))));
   if (nav && _transitions.swap) return _transitions.swap(apply, next, nav);
   apply();
   settle(new URL(href));

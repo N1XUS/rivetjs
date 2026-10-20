@@ -1,6 +1,6 @@
 // `virtual:docs/*` modules: on the server `examples` (examples.json) and `api` (api.json) are tiny modules that read +
-// parse the file at runtime (never bundled); a client build gets an empty `examples` and an empty `api` model (API
-// pages have no browser code), the dev client the files.
+// parse the file at runtime (never bundled); a client build gets an empty `examples` and a throwing `api` stand-in
+// (server-only, SERVER-REACH: API pages are document routes with no browser code), the dev client the files.
 import { strict as assert } from "node:assert";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,11 +19,12 @@ writeFileSync(manifest, JSON.stringify({ hello: { id: "hello", title: "Hello" } 
 
 const plugin = docsSite().find((p) => p.name === "rivet-docs-modules") as Plugin & {
   configResolved(config: unknown): void;
-  resolveId(this: unknown, source: string): string | null;
+  resolveId(this: unknown, source: string, importer?: string): string | null;
+  api: { rivetServerOnly: unknown[] };
   load(this: unknown, id: string): string | null;
 };
-const resolveIn = (consumer: "server" | "client", name = "examples") =>
-  plugin.resolveId.call({ environment: { config: { consumer } } }, "virtual:docs/" + name);
+const resolveIn = (consumer: "server" | "client", name = "examples", importer?: string) =>
+  plugin.resolveId.call({ environment: { config: { consumer } } }, "virtual:docs/" + name, importer);
 /** Load a virtual module's code and import it from a temp file. */
 async function importModule<T>(id: string, file: string): Promise<{ module: T; watched: string[]; code: string }> {
   const watched: string[] = [];
@@ -55,12 +56,17 @@ test("client: empty in a build, the parsed file on the dev server", () => {
   );
 });
 
-test("api: the server parses api.json from disk (watched), a client build gets an empty model, the dev client the file", async () => {
+test("api: the server parses api.json from disk (watched), a client build gets a throwing stand-in, the dev client the file", async () => {
+  assert.deepEqual(plugin.api.rivetServerOnly, ["virtual:docs/api"]);
   plugin.configResolved({ root: temp, command: "build" });
   const file = join(temp, "src/generated/api.json");
   writeFileSync(file, JSON.stringify({ entries: [], symbols: [{ key: "k" }] }));
-  const client = await importModule<{ default: { entries: unknown[]; symbols: unknown[] } }>(resolveIn("client", "api")!, "api-client.mjs");
-  assert.deepEqual(client.module.default, { entries: [], symbols: [] });
+  const client = await importModule<{ default: { symbols: unknown[] } }>(resolveIn("client", "api", join(temp, "src/api.ts"))!, "api-client.mjs");
+  assert.throws(() => client.module.default.symbols, {
+    message:
+      "[rivet] virtual:docs/api is server-only; reached from src/api.ts. The browser gets this stand-in, never the module: read it on the server (a load(…) export) and pass the data as props.",
+  });
+  assert.ok(!client.code.includes("symbols"), "no data in the stand-in");
   assert.deepEqual(client.watched, []);
   const server = await importModule<{ default: { symbols: { key: string }[] } }>(resolveIn("server", "api")!, "api.mjs");
   assert.ok(!server.code.includes('"symbols"'), "the data is not in the module");

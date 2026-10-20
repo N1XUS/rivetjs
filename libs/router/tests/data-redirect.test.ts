@@ -10,6 +10,8 @@ let answer: unknown;
 const g = globalThis as Record<string, unknown>;
 g.location = { href: "http://x.test/from", origin: "http://x.test", pathname: "/from", search: "", assign: (href: string) => assigned.push(href) };
 g.history = { state: null, replaceState: () => {} };
+// The router's failed-navigation fallback listens on the window from the first navigation.
+g.addEventListener = () => {};
 g.fetch = async () => new Response(encodeData(answer), { headers: { "content-type": "application/json" } });
 // `<Link>` is JSX (compiled by the build); routeData does not need it.
 registerHooks({

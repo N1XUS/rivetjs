@@ -514,6 +514,17 @@
       "note": "serverExports option (route modules) and the language service (files under the manifest routesDir). Sibling *.server.ts names (load, GET …) without wrappers fail at the first request instead (server/module.ts)."
     },
     {
+      "code": "RV3011",
+      "messages": [
+        "{chain} (server-only), rendered by {routes} (client-navigated page route[s])",
+        "{chain} (server-only), rendered by the layout of every page under {path} (client-rendered on navigation and resume)"
+      ],
+      "fix": "Pass the data to the component as props (inlined at build time, or read in the page's `load(…)`), keep server-only modules out of components, or make the page a document route with `import \"@rivetjs/router/server-only\"` in the page module. Layouts and error pages cannot be document routes: read the data in their `load(…)`. `rivetRouter({ serverOnly: { reach: \"warn\" } })` turns the page case into a warning (those pages render as document routes).",
+      "avoid": "// src/components/Card.tsx\nimport { rows } from \"../lib/rows.server.ts\";\nexport const Card = () => <p>{rows.length}</p>;",
+      "prefer": "// src/components/Card.tsx\nexport const Card = (props: { count: number }) => <p>{props.count}</p>;\n// src/routes/index.tsx: read rows.server.ts in load(…), render <Card count={…} />",
+      "note": "Router build (`@rivetjs/router/vite`, configResolved graph scan); TS-side text (not Rust). Server-only = `@rivetjs/router/server-only` marker, `*.server.*` files, `rivetRouter({ serverOnly })` / `rivet({ serverOnly })` patterns, plugin-declared ids (`api.rivetServerOnly`). Dev: overlay + terminal on page load. Pages that reach one only through their own module / non-component helpers become document routes instead (no diagnostic)."
+    },
+    {
       "code": "RV3101",
       "messages": ["No route matches \"{path}\" (routes from {routesDir ?? \"the router\"})."],
       "fix": "Point the Link at an existing route path (check src/routes), or add the missing route file.",

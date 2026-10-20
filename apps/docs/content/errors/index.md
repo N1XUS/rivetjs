@@ -81,6 +81,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV3008](RV3008.md) | error | Server-only code referenced by browser code |
 | [RV3009](RV3009.md) | error | Server-only code renders JSX in a resumed route module |
 | [RV3010](RV3010.md) | error | Untagged server export: a former magic export name without its wrapper call |
+| [RV3011](RV3011.md) | error | Server-only module reached from client-rendered code (router build) |
 | [RV3101](RV3101.md) | warning | Link matches no route (language service) |
 
 ## RV4xxx: Static calls (i18n)

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import type { Plugin, Rollup, ViteDevServer } from "vite";
+import { serverOnlyStub } from "@rivetjs/compiler/vite";
 import { docsContent } from "./tools/content/plugin.ts";
 import { docsDevSearch } from "./tools/dev-search.ts";
 import { CSS_DIR, EXAMPLES_JSON, FRAMES_DIR, FRAMES_INDEX, SHARED_ASSETS } from "./tools/examples.ts";
@@ -63,18 +64,24 @@ const DEV_FRAME_STYLES = Symbol.for("rivet.docs.frameStyles");
  * code is server-rendered; pages navigate with full loads) and `api` an empty model (API pages have no browser code:
  * bundled, api.json was a 4.9 / 7.2 MB client chunk (cdk-docs / ui-docs) the App chunk imported, and 0.1–0.3 GB of
  * the client build's memory, 2026-10-09); the dev client gets the files (a page renders in the browser after a hot update).
+ * `api` is declared server-only (`api.rivetServerOnly`, SERVER-REACH): the router renders the API routes (their pages
+ * read it) as document routes, a component reaching it fails the build (RV3011), and the client build's stand-in throws
+ * on use (`serverOnlyStub`) instead of an empty model.
  */
 function docsModules(): Plugin {
   let root = process.cwd();
   let dev = false;
+  // Client build: the first importer of `virtual:docs/api` (named by the stand-in's error).
+  let apiImporter: string | undefined;
   return {
     name: "rivet-docs-modules",
     enforce: "pre",
+    api: { rivetServerOnly: ["virtual:docs/api"] },
     configResolved(config) {
       root = config.root;
       dev = config.command === "serve";
     },
-    resolveId(source) {
+    resolveId(source, importer) {
       if (!source.startsWith("virtual:docs/")) return null;
       const name = source.slice("virtual:docs/".length);
       const server = this.environment?.config.consumer === "server";
@@ -83,13 +90,13 @@ function docsModules(): Plugin {
       if (!file) throw new Error(`docs-kit: unknown module ${source}`);
       if ((name === "examples" || name === "api") && server) return FROM_DISK + name;
       if (name === "examples") return EXAMPLES_CLIENT;
-      if (name === "api" && !dev) return API_CLIENT;
+      if (name === "api" && !dev) return ((apiImporter ??= importer), API_CLIENT);
       return resolve(root, file);
     },
     load(id) {
       if (id === EXAMPLES_CLIENT)
         return dev ? `import examples from ${JSON.stringify(resolve(root, EXAMPLES_JSON))};\nexport { examples };` : "export const examples = {};";
-      if (id === API_CLIENT) return "export default { entries: [], symbols: [] };";
+      if (id === API_CLIENT) return serverOnlyStub("virtual:docs/api", apiImporter ? [relative(root, apiImporter.split("?")[0]!).split(sep).join("/")] : []);
       if (!id.startsWith(FROM_DISK)) return null;
       const name = id.slice(FROM_DISK.length);
       const file = resolve(root, FILES[name]!);

@@ -151,9 +151,10 @@ const inject = (page: string, markup: string): string => {
   return at < 0 ? page + markup : page.slice(0, at) + markup + page.slice(at);
 };
 /** Inline module script opening Vite's overlay on this page (the request's ws message reached only pages already open). */
-const overlayScript = (server: ViteDevServer, failure: Failure, nonce: string | undefined): string =>
+const overlayScript = (server: ViteDevServer, failure: Failure, nonce: string | undefined): string => overlayOf(server, overlayError(failure), nonce);
+const overlayOf = (server: ViteDevServer, error: { message: string; stack: string; plugin: string }, nonce: string | undefined): string =>
   `<script type="module"${nonceAttr(nonce)}>import { ErrorOverlay } from ${scriptJSON(server.config.base + "@vite/client")};` +
-  `document.body.appendChild(new ErrorOverlay(${scriptJSON(overlayError(failure))}));</script>`;
+  `document.body.appendChild(new ErrorOverlay(${scriptJSON(error)}));</script>`;
 
 const STYLE =
   "body{margin:0;font:15px/1.5 system-ui,sans-serif;background:#fff;color:#1b1b1f}main{max-width:72rem;margin:0 auto;padding:2rem 1rem}" +
@@ -183,10 +184,22 @@ const comment = (text: string): string => `<!-- ${text.replace(/--/g, "- -")} --
 
 /**
  * Wrap the dev app handler: a reported 5xx page gets the dev error page (no `_error` view) or the
- * overlay over the app's `_error` view; an unmatched URL without a `_404` lists the routes.
+ * overlay over the app's `_error` view; an unmatched URL without a `_404` lists the routes. `reach`: the page's server
+ * reach reports (RV3011, `build/reach.ts`): an error opens the overlay over the rendered page.
  */
-export function devHandler(handler: AppHandler, server: ViteDevServer, table: () => RouteTable): AppHandler {
+export function devHandler(
+  handler: AppHandler,
+  server: ViteDevServer,
+  table: () => RouteTable,
+  reach?: (url: URL) => Promise<readonly { readonly severity: "error" | "warning"; readonly message: string }[]>,
+): AppHandler {
   return async (request, context) => {
+    // A page document (not a data request): its route's server reach errors first (the walk may regenerate the App).
+    const url = new URL(request.url);
+    const reachErrors =
+      reach && request.method === "GET" && !url.searchParams.has("_rivet") && (request.headers.get("accept") ?? "text/html").includes("text/html")
+        ? (await reach(url)).filter((problem) => problem.severity === "error")
+        : [];
     const seen: Failure[] = [];
     const response = await failures.run(seen, () => handler(request, context));
     if (!(response.headers.get("content-type") ?? "").startsWith("text/html")) return response;
@@ -215,6 +228,10 @@ export function devHandler(handler: AppHandler, server: ViteDevServer, table: ()
         `<h1>No route matches <code>${escapeText(path)}</code></h1><p>Routes:</p>${routeList(server, routes)}` +
         "<p><small>Development only: add a <code>_404</code> page to render your own.</small></p>";
       return html(response, devPage("404 · " + path, body, devClient(server, nonce)));
+    }
+    if (reachErrors.length && response.status < 400 && overlayOn(server)) {
+      const error = { message: reachErrors.map((problem) => problem.message).join("\n\n"), stack: "", plugin: "vite-plugin-rivet-router" };
+      return html(response, inject(await response.text(), comment(error.message) + overlayOf(server, error, nonce)));
     }
     return response.body ? lateFailures(response, seen, server, nonce) : response;
   };

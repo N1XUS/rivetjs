@@ -26,6 +26,7 @@ import { hotModule, sourceStamps } from "./hot.ts";
 import { updateEditorManifest } from "./editor.ts";
 import { imagesPlugin } from "./images/plugin.ts";
 import { staticIcons } from "./static-icons.ts";
+import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
 
@@ -42,6 +43,8 @@ const RIVET_PACKAGES = [
 ];
 
 export type { ImagesConfig } from "./images/options.ts";
+/** Server-only modules (SERVER-REACH): patterns, the browser stand-in, plugin declarations (`api.rivetServerOnly`). */
+export { declaredServerOnly, isServerOnly, matchesServerOnly, serverOnlyStub, SERVER_FILE, SERVER_ONLY_MARKER, type ServerOnlyPattern } from "./server-only.ts";
 
 /** When a resume chunk loads: at start, when idle, when visible, on intent (hover/focus) or on the first interaction. */
 export type PreloadStrategy = "eager" | "idle" | "visible" | "intent" | "interaction";
@@ -271,6 +274,13 @@ export interface RivetOptions {
    * nothing changes.
    */
   bridges?: BridgeEntry[];
+  /**
+   * Modules browser code must never import (module ids / specifiers, or RegExps tested against both): virtual modules a
+   * plugin serves with server data, e.g. `"virtual:docs/api"`. With `rivetRouter()` they join its `serverOnly` list
+   * (page routes reaching one render as documents, components reaching one fail the build — RV3011); without the router a
+   * browser import of one fails the build. Declared to other plugins as `api.rivetServerOnly`.
+   */
+  serverOnly?: ServerOnlyPattern[];
 }
 
 /** A file that asks for another JSX runtime in its leading comments (`@jsxImportSource react`, or a
@@ -471,9 +481,19 @@ function hintEagerCompile(bundle: Rollup.OutputBundle, root: (output: Rollup.Out
  * include it. `images` adds the image plugin (`?image` / `?jsx` imports) and returns both plugins. */
 export function rivet(options: RivetOptions & ({ images: ImagesConfig | true } | { bridges: BridgeEntry[] })): Plugin[];
 export function rivet(options?: RivetOptions): Plugin;
-export function rivet({ resume, images, devtools = true, css = {}, serverExports, include, exclude, staticIcons: icons = true, bridges }: RivetOptions = {}):
-  Plugin | Plugin[] {
-  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons);
+export function rivet({
+  resume,
+  images,
+  devtools = true,
+  css = {},
+  serverExports,
+  include,
+  exclude,
+  staticIcons: icons = true,
+  bridges,
+  serverOnly,
+}: RivetOptions = {}): Plugin | Plugin[] {
+  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? []);
   // Bridges: framework plugins first (they own their modules), then the facade host, then the Rivet compiler.
   const framed = bridges?.length ? [...bridges.flatMap((entry) => entry.plugins()), bridgeHost(bridges), plugin] : [plugin];
   if (images) framed.push(imagesPlugin(images));
@@ -635,6 +655,7 @@ function rivetPlugin(
   serverExports: { modules: string[] } | undefined,
   patterns: { include?: FilterPattern; exclude?: FilterPattern },
   icons: boolean,
+  serverOnly: readonly ServerOnlyPattern[],
 ): Plugin {
   // `include` / `exclude` (resolved against the Vite root once it is known).
   let selected: (id: string) => boolean = () => true;
@@ -647,7 +668,9 @@ function rivetPlugin(
     serve = false,
     sourceMap = false,
     root = process.cwd(),
-    base = "/";
+    base = "/",
+    // `rivetRouter()` in the config: it owns the server-only guard (document routes, RV3011); else `serverOnly` is guarded here.
+    routed = false;
   const resumable = new Set<string>();
   // Framework bridges (`rivet({ bridges })`): the facade host's api once Vite resolved the config, else null.
   let bridges: RivetBridgesApi | null = null;
@@ -1063,6 +1086,8 @@ function rivetPlugin(
       devtoolsScripts: (): string[] => (tools ? [tools.agentScript(base)] : []),
       /** Dev server: resume manifest and symbol descriptions for dev SSR (see `DevResume`). */
       devResume,
+      /** `rivet({ serverOnly })`: modules browser code must never import (read by `rivetRouter()`). */
+      rivetServerOnly: serverOnly,
     },
     async configureServer(server: ViteDevServer) {
       // Server-side dev warnings (cdk, runtime `DEV.locate()`) name the app code that triggered them: the first app frames
@@ -1131,6 +1156,7 @@ function rivetPlugin(
       sourceMap = serve || Boolean(config.build?.sourcemap);
       root = config.root ?? root;
       base = config.base ?? "/";
+      routed = !!config.plugins?.some((plugin) => plugin.name === "vite-plugin-rivet-router");
       if (patterns.include != null || patterns.exclude != null) selected = createFilter(patterns.include, patterns.exclude, { resolve: root });
       resumable.clear();
       for (const path of resume?.modules ?? []) resumable.add(resolve(root, path));
@@ -1447,6 +1473,21 @@ function rivetPlugin(
       if (id === "@rivetjs/reactivity" && serve && importer && this.environment?.config?.consumer !== "server" && appModule(importer.split("?")[0]!))
         return this.resolve("@rivetjs/runtime/hot-reactivity", importer, { skipSelf: true });
       if (id === ENTRY || id.startsWith(CHUNK) || id.startsWith(PART)) return id;
+      // `rivet({ serverOnly })` without the router: a browser import of one fails the build (the compiler's own fact
+      // resolutions excepted: type-only imports are listed too).
+      if (
+        serverOnly.length &&
+        !routed &&
+        importer &&
+        this.environment?.config?.consumer !== "server" &&
+        !_factsResolve(id, importer) &&
+        matchesServerOnly(serverOnly, id)
+      )
+        this.error({
+          message: `${id} is server-only (rivet({ serverOnly })) and cannot be imported by browser code (imported from ${displayPath(importer.split("?")[0]!, root)})`,
+          id: importer,
+          plugin: "vite-plugin-rivet",
+        });
       // Symbol bodies keep their source specifiers (e.g. `import("./analytics.js")` in an effect):
       // resolve relative ones against the module they came from.
       if (importer && /^\.\.?\//.test(id)) {
