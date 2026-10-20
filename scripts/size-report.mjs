@@ -214,6 +214,11 @@ async function measure(browser, url, client, route, sizes, saveAs) {
   try {
     const response = await page.goto(url + route.path, { waitUntil: "load" });
     await idle();
+    // The loader's idle prefetch (`data-fo`, `requestIdleCallback`) decides what counts as eager: wait for an idle
+    // callback to have run, then for the network again, so a slow runner and a fast laptop see the same request set
+    // (CI measured one more eager request than the baseline before this settle, 2026-10-20).
+    await page.evaluate(() => new Promise((done) => (window.requestIdleCallback || setTimeout)(() => setTimeout(done, 50))));
+    await idle();
     await page.waitForTimeout(300);
     const before = [...new Set(scripts)];
     const doc = await page.evaluate(() => ({
@@ -360,6 +365,13 @@ if (args.check) {
   const grew = growth(base, report, Number(args.tolerance ?? 0));
   if (grew.length) {
     console.error("size-report: grew vs scripts/size-report/baseline.json:\n  " + grew.join("\n  "));
+    // A different eager request set names the files (a slow runner can prefetch one more chunk before the measurement).
+    for (const [name, app] of Object.entries(report.apps))
+      for (const [path, route] of Object.entries(app.routes ?? {})) {
+        const was = base.apps?.[name]?.routes?.[path]?.eagerFiles;
+        if (was && route.eagerFiles && JSON.stringify(was) !== JSON.stringify(route.eagerFiles))
+          console.error(`  ${name} ${path} eager files: ${was.join(" ")} -> ${route.eagerFiles.join(" ")}`);
+      }
     process.exit(1);
   }
   console.error("size-report: no growth vs baseline");
