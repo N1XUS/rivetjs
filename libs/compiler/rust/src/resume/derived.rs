@@ -3,7 +3,7 @@
 //! (`moduleFacts` `boundaries`, closed over the module graph by `libs/compiler/facts-fixpoint.ts`) and the server
 //! target's plan under `resume: { model: "derived" }` — which functions are boundaries (flags, props), which returns
 //! go through `_rBOut`, which root elements carry `_rBAttr`, which `signal()` / `createStore()` calls are keyed — plus
-//! RV2103 (non-deterministic render, error) and RV2104 (conditional keyed state, warning). Reads the serialized
+//! RV2103 (non-deterministic render, error) and RV2104 (keyed state in a loop, warning). Reads the serialized
 //! analysis' sites (`Resumed`) only to tell interactive components and browser-only closures apart.
 
 use oxc_ast::{AstKind, ast::*};
@@ -275,9 +275,29 @@ fn context_call(e: &CallExpression<'_>) -> bool {
     }
 }
 
+/// A returned value that cannot be a render value: an object literal or a class (leaves of `?:` / `&&` / `||` / `??` /
+/// sequences; parentheses and TS wrappers peeled). A PascalCase factory returning one (`VirtualizerRenderer(link)` →
+/// `{ CollectionRoot, … }`) is not a component. A returned function stays a render value (an accessor component).
+fn non_render<'a>(e: &Expression<'a>) -> bool {
+    match unwrap(e) {
+        Expression::ObjectExpression(_) | Expression::ClassExpression(_) => true,
+        Expression::ConditionalExpression(c) => non_render(&c.consequent) && non_render(&c.alternate),
+        Expression::LogicalExpression(l) => non_render(&l.left) && non_render(&l.right),
+        Expression::SequenceExpression(s) => s.expressions.last().is_some_and(non_render),
+        _ => false,
+    }
+}
+
+/// Boundary eligibility: a module-level function is a component unless every value it returns is a non-render value
+/// (`non_render`). JSX, `null`, arrays, children, accessors and calls (another component, a render helper) stay eligible.
+fn renders(tree: &Tree<'_>, function: NodeId) -> bool {
+    let (values, _) = returned(tree, function, &mut Vec::new());
+    values.is_empty() || !values.iter().all(|v| non_render(v))
+}
+
 /// Per module-level component facts (source order).
 pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
-    let list = module_components(tree);
+    let list: Vec<(String, NodeId)> = module_components(tree).into_iter().filter(|&(_, function)| renders(tree, function)).collect();
     let index: FxHashMap<NodeId, usize> = list.iter().enumerate().map(|(i, (_, id))| (*id, i)).collect();
     let mut own = vec![false; list.len()];
     for (node, site) in resumed.map.iter() {
@@ -358,34 +378,31 @@ fn nondeterministic<'a>(tree: &Tree<'a>, kind: AstKind<'a>) -> Option<String> {
     }
 }
 
-/// RV2104: the conditional context between a keyed call and its function, innermost first.
-fn conditional_context(tree: &Tree<'_>, call: NodeId) -> Option<&'static str> {
+/// RV2104: a loop between a keyed call and its function. Keys are per site, so a call under an `if` / `?:` / logical /
+/// `switch` / `try` adopts its own value or none (a render that skips it skips the key, never shifts another); only a
+/// site's repeated creations pair by order (`#2`, `#3`, … per boundary), which a loop makes data-dependent.
+fn loop_context(tree: &Tree<'_>, call: NodeId) -> bool {
     let within = |inner: Span, outer: Span| outer.start <= inner.start && inner.end <= outer.end;
     let mut child = tree.span(call);
     let mut n = tree.raw_parent(call);
     while let Some(id) = n {
         if tree.is_function(id) {
-            return None;
+            return false;
         }
         let found = match tree.kind(id) {
-            AstKind::IfStatement(s) if !within(child, s.test.span()) => Some("an `if`"),
-            AstKind::ConditionalExpression(c) if !within(child, c.test.span()) => Some("a conditional expression"),
-            AstKind::LogicalExpression(l) if within(child, l.right.span()) => Some("a logical expression"),
-            AstKind::ForStatement(f) if !f.init.as_ref().is_some_and(|init| within(child, init.span())) => Some("a loop"),
-            AstKind::ForInStatement(f) if !within(child, f.right.span()) => Some("a loop"),
-            AstKind::ForOfStatement(f) if !within(child, f.right.span()) => Some("a loop"),
-            AstKind::WhileStatement(_) | AstKind::DoWhileStatement(_) => Some("a loop"),
-            AstKind::SwitchStatement(s) if !within(child, s.discriminant.span()) => Some("a `switch`"),
-            AstKind::TryStatement(_) => Some("a `try`"),
-            _ => None,
+            AstKind::ForStatement(f) => !f.init.as_ref().is_some_and(|init| within(child, init.span())),
+            AstKind::ForInStatement(f) => !within(child, f.right.span()),
+            AstKind::ForOfStatement(f) => !within(child, f.right.span()),
+            AstKind::WhileStatement(_) | AstKind::DoWhileStatement(_) => true,
+            _ => false,
         };
-        if found.is_some() {
-            return found;
+        if found {
+            return true;
         }
         child = tree.span(id);
         n = tree.raw_parent(id);
     }
-    None
+    false
 }
 
 /// The values a boundary returns (return arguments of its own body — nested functions own theirs — or a concise
@@ -523,11 +540,11 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
                 let key = format!("{prefix}-{}", plan.keyed.len());
                 plan.keyed.insert(n, (key, store));
                 keyed_here = true;
-                if let Some(context) = conditional_context(tree, n) {
+                if loop_context(tree, n) {
                     let callee = if store { "createStore()" } else { "signal()" };
                     warnings.push((
                         format!(
-                            "Keyed state `{callee}` is created inside {context}: the browser adopts keyed state by creation order, so a render that skips or repeats it adopts the wrong values; create it unconditionally at the top of the body"
+                            "Keyed state `{callee}` is created inside a loop: the browser pairs a site's repeated creations with the server's by order, so a loop that runs a different number of times in the adopt run adopts the wrong values; give each iteration its own component (a `<For>` row) or create the state once outside the loop"
                         ),
                         n,
                     ));

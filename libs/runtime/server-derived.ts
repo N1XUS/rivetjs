@@ -91,6 +91,10 @@ export interface DerivedRender {
   keys: Record<string, string>;
   /** A boundary has a client trigger: the loader starts the runtime at once (`data-boot`). */
   boot: boolean;
+  /** `_rListen` selectors not yet attached to a top-level boundary. */
+  listen: string[];
+  /** Selectors of the shell's document click listeners (`data-g`). */
+  clicks: string;
 }
 
 /** What the derived client needs from the render options. */
@@ -109,7 +113,20 @@ const CURRENT = createContext<Boundary | null>(null);
 export function createDerived(): DerivedRender {
   const options = pending;
   pending = null;
-  return { boundaries: [], stack: [], wake: new Map(), dirty: new Set(), flushed: 0, next: 1, options, events: new Set(), keys: {}, boot: false };
+  return {
+    boundaries: [],
+    stack: [],
+    wake: new Map(),
+    dirty: new Set(),
+    flushed: 0,
+    next: 1,
+    options,
+    events: new Set(),
+    keys: {},
+    boot: false,
+    listen: [],
+    clicks: "",
+  };
 }
 
 /**
@@ -138,6 +155,17 @@ export function renderDerived(
   } finally {
     pending = null;
   }
+}
+
+/**
+ * The next top-level boundary listens on the whole document for clicks inside a `match` element (the router's generated
+ * server entry, `a[href]`: link clicks anywhere — a document shell's links, content outside the app's markup — are the
+ * root `App`'s). Tail `g` + loader `data-g`: such a click is held for that boundary even outside every boundary, and the
+ * runtime adopts it before the replay, so its document listener (a `clientEvent`) sees the click. Outside a derived
+ * render: nothing.
+ */
+export function _rListen(match: string): void {
+  useContext(DERIVED)?.listen.push(match);
 }
 
 /** Run a render with `ctx` as its derived recorder (`_rB` / `_rSig` find it through the owner context). */
@@ -291,6 +319,15 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
   }
   ctx.flushed = ctx.boundaries.length;
   const tail: BoundaryTail = { v: 1, b };
+  // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
+  if (ctx.listen.length) {
+    const root = b.find((record) => record[1] === 0);
+    if (root) {
+      tail.g = ctx.listen.map((match) => [root[0], match]);
+      ctx.clicks ||= ctx.listen.join(",");
+      ctx.listen = [];
+    }
+  }
   const manifest = ctx.options?.manifest;
   if (manifest) {
     const m: Record<string, string> = {},
@@ -329,7 +366,8 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
       attr(options.manifest.runtime) +
       '"' +
       (events && events !== DEFAULT_EVENTS ? ' data-events="' + attr(events) + '"' : "") +
-      (ctx.boot ? " data-boot" : "");
+      (ctx.boot ? " data-boot" : "") +
+      (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "");
   return template(['<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`). */

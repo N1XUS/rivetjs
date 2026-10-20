@@ -172,6 +172,12 @@ export interface RivetResumeOptions {
    * `lazyRows` / `domData` do not apply. Dev: an edit of a resume module reloads the page.
    */
   model?: "serialized" | "derived";
+  /**
+   * `model: "derived"` only: root-relative modules whose default export is an independent root boundary (its props are
+   * data, whatever its call sites pass or which contexts it reads), like a route module's default export. `rivetRouter()`
+   * adds its generated `app.tsx` (`Root`: the route payload as props, M2 R5).
+   */
+  roots?: string[];
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -708,6 +714,8 @@ function rivetPlugin(
   // keys); dev compiles without them (module-local closure, identical on both targets).
   const derivedModel = resume?.model === "derived";
   const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
+  // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
+  const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
   // Dev: boundary name (`<module>#<export>`, compile results) → defining file, for the dev manifest's `symbols`.
   const derivedDev = new Map<string, string>();
   // Client build: module → its boundary names as the DOM compile emitted them (`CompileResult.boundaries`: the export
@@ -994,7 +1002,7 @@ function rivetPlugin(
       const route = isRoute(filename);
       const f = moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
       facts.set(filename, f);
-      if (route) roots.add(filename);
+      if (route || isDerivedRoot(filename)) roots.add(filename);
       const map = new Map<string, string>();
       for (const spec of new Set([...f.statics, ...f.dynamics])) {
         const hit = await resolveFact(ctx, spec, filename);
@@ -1079,7 +1087,9 @@ function rivetPlugin(
     const sourcePackages = sourcePackagesOf(filename, source);
     const resolved = resolvedImports.get(filename);
     // Derived model: the build's verdicts for this module (absent in dev: the compiler's module-local closure).
-    const verdict = derivedModel ? derivedVerdicts.get(filename) : undefined;
+    let verdict: { boundaries?: string[]; independent: string[] } | undefined = derivedModel ? derivedVerdicts.get(filename) : undefined;
+    // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
+    if (derivedModel && !verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {
       resume: derivedModel ? { module: moduleId(filename), model: "derived", ...verdict } : { module: moduleId(filename) },
       ...(sourcePackages.length ? { sourcePackages } : {}),

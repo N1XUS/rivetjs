@@ -267,7 +267,7 @@
     {
       "code": "RV2104",
       "severity": "warning",
-      "title": "Keyed state (signal / createStore) created conditionally or in a loop under the derived resume model",
+      "title": "Keyed state (signal / createStore) created in a loop under the derived resume model",
       "docs": "https://rivetjs.severyn.pro/errors/RV2104"
     },
     {

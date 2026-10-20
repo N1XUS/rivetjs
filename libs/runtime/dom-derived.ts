@@ -32,8 +32,8 @@ import { createStore } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { _adoption, _delegateBelow, _for, _insert } from "./dom-v2.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
-import { adopt, between, copyIn, describe, dirtyOf, flatRow, kids, probeRow, same, save, textOf } from "./dom-adopt.ts";
-import type { Align, Answers, Current, Probe } from "./dom-adopt.ts";
+import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, same, save, textOf } from "./dom-adopt.ts";
+import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt.ts";
 import type { BoundaryTail } from "./resume-format.ts";
 import { DEV } from "#dev";
 
@@ -62,6 +62,8 @@ interface Rec {
   /** Claimed by a materialised parent's adopt run: its body, owner and server range (adopted from there). */
   hole: BHole | null;
   loading: Promise<void> | null;
+  /** Its component's `ready(props)` (standalone runs): settled → true, pending → the promise, none run yet → null. */
+  ready: Promise<void> | true | null;
   /** Boundaries whose keyed signals this one read on the server (wake lists): materialised before it runs alone. */
   sources: Rec[] | null;
 }
@@ -76,6 +78,8 @@ interface BHole {
   end: Node | null;
   body: (() => unknown) | null;
   owner: Owner | null;
+  /** Its `_b` call's index in the unit run (`Unit.n`). */
+  k: number;
 }
 /** A `<For>` in an adopt run: its row count, probe nodes, then the server row groups (`<!--rN[-->` … `<!--]-->`). */
 interface FHole {
@@ -95,6 +99,16 @@ interface Unit {
   /** The unit is the boundary itself (a standalone run of its component): its own `_b` runs the body. */
   self: boolean;
   fors: Lazy[];
+  /** `_b` calls so far (outside inline bodies). */
+  n: number;
+  /**
+   * The `_b` calls (by index) whose output the probe discarded (a hole that never reached the probe's nodes: a cdk
+   * collection build pass renders its items for their registration only): their bodies run inline in both runs, they
+   * have no server range to adopt.
+   */
+  inline: Set<number> | null;
+  /** Inside an inline body: every `_b` runs its body. */
+  depth: number;
 }
 /** A list adopted lazily. */
 interface Lazy {
@@ -104,6 +118,11 @@ interface Lazy {
   owner: Owner | null;
   rec: Rec | null;
   woken: boolean;
+  /**
+   * Rows adopt as plain lazy rows (`_adoptRow` + the For's row plan, LAZY-T6: no probe / alignment per row once a plan
+   * holds) after a row's adopt run met no hole (child boundary, list) and no keyed state; null until a row ran.
+   */
+  plain: RowPlanCache | null | false;
 }
 interface LRow extends ForRow {
   lz: Lazy;
@@ -139,6 +158,8 @@ export interface DerivedRuntime {
 }
 
 let cur: Unit | null = null,
+  // The last adopt run's holes + keyed state sites (0: a plain unit, its list's rows can adopt as plain lazy rows).
+  shape = -1,
   // Inside the derived For hook's own `_for` call.
   inner = false,
   // A row sample run (`sample`): keyed signals read.
@@ -155,7 +176,18 @@ const recs = new Map<number, Rec>(),
 const DIVERGED = "Rivet resume: an adopt run diverged from its probe";
 
 const pair = (): Node[] => [document.createComment("b?"), document.createComment("/b?")];
-const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []): Unit => ({ mode, rec, holes, at: 0, counts: new Map(), self, fors: [] });
+const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []): Unit => ({
+  mode,
+  rec,
+  holes,
+  at: 0,
+  counts: new Map(),
+  self,
+  fors: [],
+  n: 0,
+  inline: null,
+  depth: 0,
+});
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
 /**
@@ -177,8 +209,18 @@ export function _b<T>(name: string, body: () => T): T {
       cur = u;
     }
   }
+  if (u.depth) return body();
+  const k = u.n++;
+  if (u.inline?.has(k)) {
+    u.depth++;
+    try {
+      return body();
+    } finally {
+      u.depth--;
+    }
+  }
   if (u.mode === PROBE) {
-    const hole: BHole = { kind: 0, name, nodes: pair(), rec: null, range: [], start: null, end: null, body: null, owner: null };
+    const hole: BHole = { kind: 0, name, nodes: pair(), rec: null, range: [], start: null, end: null, body: null, owner: null, k };
     u.holes.push(hole);
     return hole.nodes as T;
   }
@@ -257,7 +299,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
   if (!hole || hole.kind !== 1) throw Error(DIVERGED);
   const by = props.by as ((item: unknown, index: number) => unknown) | undefined,
     indexed = props.children.length > 1,
-    lazy: Lazy = { rows: [], children: null, read: null, owner: getOwner(), rec: u.rec, woken: false };
+    lazy: Lazy = { rows: [], children: null, read: null, owner: getOwner(), rec: u.rec, woken: false, plain: null };
   lazy.rows = hole.groups!.map(([start, end], k) => {
     const item = items[k];
     const row: LRow = {
@@ -422,24 +464,50 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
   }
 }
 
+const CONTROLS = "input,textarea,select";
+// The form controls among the live nodes strictly between `start` and `end` (dirty ones are restored after the adopt run):
+// native `querySelectorAll` per top-level element, not a JS walk of the unit's whole subtree (a page root spans every row).
+function controlsIn(start: Node, end: Node): Element[] {
+  const out: Element[] = [];
+  for (let n = start.nextSibling; n !== null && n !== end; n = n.nextSibling)
+    if (n.nodeType === 1) {
+      if ((n as Element).matches(CONTROLS)) out.push(n as Element);
+      const list = (n as Element).querySelectorAll(CONTROLS);
+      for (let i = 0; i < list.length; i++) out.push(list[i]!);
+    }
+  return out;
+}
+
 /**
  * Adopt one unit (a boundary's body, a standalone component run, a lazy row): `run` over the live nodes strictly between
  * `start` and `end`, under a new root of `parent`; `rec` keys its `_sig` calls. Returns the unit's root.
  */
 function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean, label: string): Owner | null {
+  shape = -1;
   if (rec && rec.flags & UNKEYED) return client(parent, run, start, end, rec, self);
   const outer = save(),
     previous = cur,
-    dirty = dirtyOf(flatRow(start, end).controls),
+    dirty = dirtyOf(controlsIn(start, end)),
     verify = !!DEV;
-  // 1. Probe (create mode, detached; holes for child boundaries and lists).
-  const pu = unit(PROBE, rec, self);
-  let probe: Probe;
-  cur = pu;
-  try {
-    probe = probeRow(parent, (fn) => fn(), run, start.ownerDocument!, verify, outer);
-  } finally {
-    cur = previous;
+  // 1. Probe (create mode, detached; holes for child boundaries and lists). A child boundary whose output the run
+  // discarded (its hole reached no node of the probe: a build pass that renders for side effects) runs inline instead,
+  // probed again.
+  let pu: Unit,
+    probe: Probe,
+    inline: Set<number> | null = null;
+  for (;;) {
+    pu = unit(PROBE, rec, self);
+    pu.inline = inline;
+    cur = pu;
+    try {
+      probe = probeRow(parent, (fn) => fn(), run, start.ownerDocument!, verify, outer);
+    } finally {
+      cur = previous;
+    }
+    let again = false;
+    for (const hole of pu.holes) if (hole.kind === 0 && hole.nodes[0]!.parentNode === null) ((inline ??= new Set()).add(hole.k), (again = true));
+    if (!again) break;
+    _dispose(probe.owner);
   }
   const fresh = kids(probe.frag);
   fresh.pop(); // the anchor
@@ -493,6 +561,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   _dispose(probe.owner);
   // 4. Adopt: the run again, every creation returns its live node; holes take their server nodes.
   const au = unit(ADOPT, rec, self, pu.holes);
+  au.inline = inline;
   let owner: Owner | null;
   cur = au;
   try {
@@ -501,9 +570,11 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
     cur = previous;
   }
   if (au.at !== au.holes.length) throw Error(DIVERGED);
+  const own = pu.holes.length + pu.counts.size;
   // 5. Child boundaries: dependent ones now, independent ones deferred; lists: which keyed signals their rows read.
   for (const hole of au.holes) if (hole.kind === 0 && hole.rec && !hole.rec.done) child(hole.rec, hole);
   for (const lazy of au.fors) sample(lazy);
+  shape = own;
   return owner;
 }
 
@@ -591,16 +662,13 @@ function materialiseRow(row: LRow): void {
   const lazy = row.lz;
   if (row.done || !lazy.children) return;
   row.done = true;
+  const run = () => lazy.children!(lazy.read!.bind(row) as () => unknown, row.index as unknown as () => number);
   try {
-    row.owner = adoptUnit(
-      lazy.owner,
-      () => lazy.children!(lazy.read!.bind(row) as () => unknown, row.index as unknown as () => number),
-      row.start!,
-      row.end!,
-      lazy.rec,
-      false,
-      "row",
-    );
+    if (lazy.plain) row.owner = _adoptRow(lazy.owner, (fn) => fn(), run, row.start!, row.end!, null, lazy.plain);
+    else {
+      row.owner = adoptUnit(lazy.owner, run, row.start!, row.end!, lazy.rec, false, "row");
+      if (lazy.plain === null) lazy.plain = shape === 0 ? {} : false;
+    }
   } catch (error) {
     report(error);
   }
@@ -626,11 +694,26 @@ function rangeOf(r: Rec): Node[] | null {
     e = closeAt(list, at, B_OPEN, "/b");
   return e < 0 ? null : [start, list[e]!];
 }
+/** A standalone boundary's component in its chunk (the export named after the last `#`). */
+type Exported = ((props: object) => unknown) & { ready?: (props: object) => unknown };
+const exported = (r: Rec, module: Record<string, unknown>): Exported | undefined => module[r.name.slice(r.name.lastIndexOf("#") + 1)] as Exported | undefined;
+/**
+ * A component's `ready(props)` (optional, e.g. the router's generated `Root`: the shown URL's page modules) runs before its
+ * standalone adopt run, which must render synchronously over the server nodes: true when settled, else the promise.
+ */
+function prepare(r: Rec, module: Record<string, unknown>): true | Promise<void> {
+  if (r.ready === null) {
+    const hook = exported(r, module)?.ready;
+    const p = hook ? hook(r.props ?? {}) : undefined;
+    r.ready = p && typeof (p as Promise<unknown>).then === "function" ? Promise.resolve(p).then(() => void (r.ready = true)) : true;
+  }
+  return r.ready;
+}
 function standalone(r: Rec, module: Record<string, unknown>): void {
   if (r.done) return;
   r.done = true;
   const range = rangeOf(r),
-    fn = module[r.name.slice(r.name.lastIndexOf("#") + 1)] as ((props: object) => unknown) | undefined;
+    fn = exported(r, module);
   if (!range || !fn) {
     if (DEV) console.warn("Rivet resume: boundary " + r.name + " (b" + r.id + ") has no " + (fn ? "markup" : "export in its chunk") + " to adopt");
     return;
@@ -664,6 +747,8 @@ function need(r: Rec): true | Promise<void> {
   }
   const module = modules.get(r.name);
   if (!module) return (r.loading ??= load(r.name).then(() => void need(r)));
+  const ready = prepare(r, module);
+  if (ready !== true) return ready.then(() => void need(r));
   standalone(r, module);
   return true;
 }
@@ -732,6 +817,21 @@ function around(target: EventTarget | null): true | Promise<void> {
   return true;
 }
 
+// Document click listeners (tail `g`, server `_rListen`: the router's link clicks): materialise the boundaries listening
+// for a click wherever its target is, before the units around the target. True when done now, a promise while a chunk loads.
+function listeners(event: Event): true | Promise<void> {
+  const target = event.target as Element | null;
+  if (event.type !== "click") return true;
+  for (const [id, match] of tail?.g ?? []) {
+    const r = recs.get(id);
+    if (r && !r.done && target?.closest?.(match)) {
+      const p = need(r);
+      if (p !== true) return p;
+    }
+  }
+  return true;
+}
+
 // Run a held event's delegated handlers over its path, with the form state its target had at dispatch; replay its
 // default unless a handler canceled it.
 function replay([event, path, again, state]: HeldEvent): void {
@@ -759,6 +859,7 @@ async function drain(): Promise<void> {
   while (pending.length) {
     const item = pending[0]!;
     try {
+      for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
       for (let step = around(item[0].target); step !== true; step = around(item[0].target)) await step;
       replay(item);
     } catch (error) {
@@ -789,6 +890,7 @@ const runtime: DerivedRuntime = {
         owner: null,
         hole: null,
         loading: null,
+        ready: null,
         sources: null,
       });
     }
@@ -801,6 +903,8 @@ const runtime: DerivedRuntime = {
   },
   on(event) {
     if (pending.length) return false;
+    const listening = listeners(event);
+    if (listening !== true) return (listening.catch(() => {}), false);
     const step = around(event.target);
     if (step === true) return true;
     step.catch(() => {});
@@ -814,7 +918,8 @@ const runtime: DerivedRuntime = {
       if (kind) continue;
       let r = recs.get(id);
       while (r && !r.done && !r.hole && r.parent && !(r.flags & INDEPENDENT) && !r.parent.done) r = r.parent;
-      if (r && !r.done && !r.hole) load(r.name).catch(report);
+      // Intent: the chunk, then what its component needs before adopting (`ready`), nothing runs.
+      if (r && !r.done && !r.hole) load(r.name).then(() => void prepare(r!, modules.get(r!.name)!), report);
       return;
     }
   },

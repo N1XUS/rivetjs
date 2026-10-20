@@ -411,3 +411,37 @@ test("codegen forms: router handlers install the router brand first; apps withou
     assert.doesNotMatch(app, /_brand|_go\b/);
   }
 });
+
+test("derived resume model: app.tsx default-exports Root (payload as data), levels answer their first load from it", () => {
+  const plain = generate(table, { routesDir: "src/routes" });
+  const { files } = generate(table, { routesDir: "src/routes", derived: true });
+  const app = files["app.tsx"]!,
+    entry = files["entry.server.tsx"]!;
+  assert.doesNotMatch(plain.files["app.tsx"]!, /export default function Root|revived\(/);
+  assert.match(plain.files["entry.server.tsx"]!, /<App router=\{createRouter\(input\.url\)\} \/>/);
+  // Root: the server renders the request's router; the browser rebuilds the router and provides the payload as `Revived`.
+  assert.match(
+    app,
+    /export default function Root\(props: \{ s: RootData \}\) \{\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
+  );
+  assert.match(app, /<Provider token=\{Revived\} value=\{server\}>/);
+  assert.match(app, /Root\.ready = \(\): Promise<unknown> \| undefined => loadPage\(new URL\(globalThis\.location\.href\)\);/);
+  assert.match(app, /_ssrLevel\(work, [^\n]*\) \?\? revived\(work, [^\n]*\) \?\? /);
+  assert.match(app, /const server = useContext\(ServerData\) \?\? useContext\(Revived\);/);
+  // The routes view is built where it renders (inside the root layout's adopt run).
+  assert.match(app, /const view = \(\) => <div data-rivet-routes=""/);
+  // The adopt task's route renders swap without scroll / focus / announce (the page load, not a navigation).
+  assert.match(app, /const adoptSwap = \(apply: \(\) => void, next: ParentNode\): void => \(adopting \? apply\(\) : swapRoute\(apply, next\)\);/);
+  assert.match(app, /swap=\{adoptSwap\}/);
+  assert.doesNotMatch(app, /swap=\{swapRoute\}/);
+  assert.match(app, /\{view\(\)\}/);
+  assert.match(entry, /import Root from "\.\/app\.tsx";/);
+  assert.match(entry, /<Root s=\{rootData\(input\)\} \/>/);
+  // Link clicks outside every boundary (document shell, content outside the app's markup) are Root's: tail `g`.
+  assert.match(entry, /import \{ _rListen \} from "@rivetjs\/runtime\/server-derived";/);
+  assert.match(entry, /<Links \/>\n\s*<Root s=/);
+  assert.doesNotMatch(entry, /createRouter/);
+  // CSR mode has no server payload: the option is ignored.
+  const csr = generate(routeTable(["_layout.tsx", "index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr", derived: true }).files["app.tsx"]!;
+  assert.doesNotMatch(csr, /export default function Root|revived\(/);
+});

@@ -210,6 +210,45 @@ test("adopt cost: materialising the page root is O(spine), not O(rows)", async (
   assert.ok(large < small * 3 + 6, `1000 rows ${large} ms vs 10 rows ${small} ms`);
 });
 
+test("document click listeners (`_rListen`, M2-R5) + `ready`: a link outside every boundary adopts the root first", async () => {
+  // Server: the router's generated entry registers its link clicks (`a[href]`) before the root boundary opens.
+  const out = compile(await fixture("page.server.tsx"), { target: "server", filename: "page.server.tsx" });
+  const { App } = await importServer<{ App: (props: { data: Data }) => ServerValue }>(out.code);
+  const { _rListen } = await import("@rivetjs/runtime/server-derived");
+  const html = (await derivedToString(() => (_rListen("a.nav"), App({ data: data(4) })), { manifest })) as string;
+  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  assert.deepEqual(tail.g, [[1, "a.nav"]]);
+  assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-events="click keydown" data-g="a\.nav">/);
+  // Browser: App's chunk exports `ready` (the router's `Root.ready`: page modules), awaited once before its adopt run.
+  const page = await domModule();
+  const ready = page + "\nApp.ready = () => new Promise((done) => setTimeout(() => ((window.__ready = (window.__ready || 0) + 1), done()), 30));\n";
+  const body = html + '<p id="shell"><a class="nav" id="out" href="#moved"><span id="label">elsewhere</span></a></p>';
+  await withPage(
+    {
+      ...DERIVED_BUILD,
+      "/": "<!doctype html><html><body>" + body + "</body></html>",
+      "/rt.js": 'export { default } from "/dom-derived.ts";',
+      "/page.js": ready,
+    },
+    async (page, requests) => {
+      await page.goto("http://rivet.test/");
+      await tag(page, ["main", "#toggle"]);
+      // A click on the link's child, outside every boundary: held (default prevented), App adopted after `ready`, replayed.
+      await page.click("#label");
+      await page.waitForFunction(() => location.hash === "#moved");
+      assert.ok(requests.includes("/rt.js") && requests.includes("/page.js"));
+      assert.equal(await page.evaluate(() => (window as unknown as { __ready?: number }).__ready), 1);
+      assert.equal(await handled(page, "#toggle"), true, "App adopted by the outside click");
+      assert.deepEqual(await tagged(page, ["main", "#toggle"]), [true, true], "server nodes kept");
+      // Outside every boundary and no `data-g` match: nothing (no hold).
+      await page.evaluate(() => document.body.insertAdjacentHTML("beforeend", '<button id="plain">plain</button>'));
+      await page.click("#plain");
+      await page.click("#toggle");
+      await page.waitForFunction(() => document.querySelector("#open") !== null);
+    },
+  );
+});
+
 const compiled = hasDerivedModel() ? test : test.skip;
 const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
 const qualified = { "src/page.tsx#App": "/page.js", "src/page.tsx#Header": "/page.js", "src/page.tsx#Counter": "/page.js" };
@@ -252,4 +291,59 @@ compiled("compiled derived server + DOM targets (C3: `_b` / `_sig` with the serv
     assert.deepEqual(await tagged(page, ["header", "#inc", "#count", "#title", "ul li:nth-child(4)"]), [true, true, true, true, true]);
     assert.equal(await text(page, "#title"), "Records (5 rows)");
   });
+});
+
+// M2-R5: a child boundary called for its side effects only (a cdk collection build pass: items register into a
+// context and their output is discarded) runs inline in the probe and adopt runs — as a hole the registration was
+// skipped, the browser rendered an empty list and the whole unit fell back to a browser render.
+const BUILD_PASS = `import { createContext, provide, signal, useContext } from "@rivetjs/reactivity";
+const Registry = createContext<string[] | null>(null);
+export function Item(props: { label: string }) {
+  const registry = useContext(Registry);
+  if (registry) {
+    registry.push(props.label);
+    return null;
+  }
+  return <b>{props.label}</b>;
+}
+export function App() {
+  const n = signal(0);
+  const labels: string[] = [];
+  provide(Registry, labels, () => [<Item label="a" />, <Item label="b" />]);
+  return (
+    <div>
+      <button id="inc" onClick={() => n.set(n() + 1)}>{n()}</button>
+      <ul>{labels.map((label) => <li>{label}</li>)}</ul>
+    </div>
+  );
+}
+`;
+compiled("discarded child boundary (build pass): runs inline, the unit adopts instead of rendering in the browser", async () => {
+  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Item"], independent: ["App"] };
+  const server = compile(BUILD_PASS, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(BUILD_PASS, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  const { App } = await importServer<{ App: () => ServerValue }>(server.code);
+  const symbols = { "src/page.tsx#App": "/page.js", "src/page.tsx#Item": "/page.js" };
+  const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols } })) as string;
+  assert.match(html, /<li>a<\/li><li>b<\/li>/);
+  for (const build of [DERIVED_BUILD, { ...DERIVED_BUILD, ...DEV_BUILD }]) {
+    const served = {
+      ...build,
+      "/": "<!doctype html><html><body>" + html + "</body></html>",
+      "/rt.js": 'export { default } from "/dom-derived.ts";',
+      "/page.js": rewrite(dom.code),
+    };
+    await withPage(served, async (page) => {
+      const warnings: string[] = [];
+      page.on("console", (m) => m.type() === "warning" && warnings.push(m.text()));
+      await page.goto("http://rivet.test/");
+      await tag(page, ["#inc", "ul li:nth-child(2)"]);
+      await page.click("#inc");
+      await page.waitForFunction(() => document.querySelector("#inc")!.textContent === "1");
+      assert.deepEqual(await tagged(page, ["#inc", "ul li:nth-child(2)"]), [true, true]);
+      assert.deepEqual(warnings, []);
+    });
+  }
 });

@@ -38,7 +38,7 @@ User decision 2026-10-08: keep the shadcn API + names, add features. Defaults of
 - On mobile the desktop root (`data-slot="sidebar"` with data-state) stays in the DOM (empty); the sheet is portaled to the overlay layer, so `--sidebar-width-mobile` must be set on `Sidebar`'s `style` (or `:root`), not only on the provider.
 - `SidebarTrigger` children: rendered (headless: the icon), then the visually hidden "Toggle Sidebar" label always (shadcn ignores children, renders icon + `sr-only`); an icon child never leaves the trigger unnamed.
 - Mobile sheet focus: the dialog itself on open (React Aria `Dialog`; Radix focuses the first tabbable), back to the trigger on close (Radix: body when the trigger is gone).
-- `SidebarMenuSkeleton` width: `Math.random()` per render (upstream `useState`), differs SSR vs client re-creation.
+- `SidebarMenuSkeleton` width: `signal(random 50–90%)` (upstream `useState`; M2-R5 2026-10-20, was a plain `Math.random()` per render = RV2103 under the derived model and a new width on client re-creation): the server's pick ships (keyed state under derived, the style binding's captured signal under serialized).
 
 ## Tests
 - `tests/sidebar-extensions.browser.test.tsx` (cdk-browser, 19): provider defaults, reduceMotion attr, shortcut parse / match / custom / disabled, tree items (Disclosure li, trigger, panel, Enter / Space, nested, plain sub), guide lines, isCurrent / forceReload / external, provider `navigate`, closeMobileOnAction levels, backdrop, MenuActions, pages (default first, inert / hidden, reduceMotion instant + focus, animated slide settle).

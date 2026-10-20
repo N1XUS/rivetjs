@@ -1362,4 +1362,9 @@ export interface BoundaryTail {
   m?: Record<string, string>;
   /** Derived client: boundary id → the `keydown` keys its handlers hold while cold (space separated). */
   k?: Record<string, string>;
+  /**
+   * Derived client: document click listeners (`_rListen`, the router's link clicks): `[boundary id, selector]` — a click
+   * outside every boundary whose target is inside a `selector` match is held for that boundary (loader: `data-g`).
+   */
+  g?: [id: number, match: string][];
 }

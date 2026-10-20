@@ -36,7 +36,7 @@
 // Deviations: `data-active` / `data-show-on-hover` are `"true"` or absent (React writes `"false"` too);
 // `SidebarMenuAction` writes `data-show-on-hover` and `SidebarMenuButton` `data-variant` (upstream: Tailwind
 // classes) so CSS can key on them; the desktop root stays in the DOM on mobile (empty, CSS-hidden) so `SidebarInset`'s sibling selectors keep working.
-import { createContext, provide, useContext, type Signal } from "@rivetjs/reactivity";
+import { createContext, provide, signal, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, clientEvent, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { resumableContext } from "@rivetjs/runtime/resume-format";
@@ -1158,13 +1158,14 @@ export interface SidebarMenuSkeletonProps extends SidebarPartProps<HTMLDivElemen
 /** A loading placeholder for a menu item. */
 export function SidebarMenuSkeleton(props: SidebarMenuSkeletonProps) {
   const { showIcon = false, iconClass, textClass, class: cls, style, render, ref, children: _children, ...rest } = props;
-  // Random width between 50 to 90%.
-  const width = `${Math.floor(Math.random() * 40) + 50}%`;
+  // Random width between 50 to 90%. Rivet: state (upstream `useState`), so the server's pick is the page's: a resumed or
+  // adopted skeleton keeps the width the markup shows.
+  const width = signal(`${Math.floor(Math.random() * 40) + 50}%`);
   const rp = renderProps({ class: cls, values: NONE, defaultClassName: "rv-SidebarMenuSkeleton" });
   const parts = () => (
     <>
       {showIcon ? <div class={iconClass ?? "rv-SidebarMenuSkeleton-icon"} data-sidebar="menu-skeleton-icon" /> : null}
-      <div class={textClass ?? "rv-SidebarMenuSkeleton-text"} data-sidebar="menu-skeleton-text" style={{ "--skeleton-width": width }} />
+      <div class={textClass ?? "rv-SidebarMenuSkeleton-text"} data-sidebar="menu-skeleton-text" style={{ "--skeleton-width": width() }} />
     </>
   );
   if (render)

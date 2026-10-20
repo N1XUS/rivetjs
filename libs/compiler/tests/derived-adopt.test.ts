@@ -173,7 +173,7 @@ it("serialized model and plain DOM compiles stay byte-identical (parity, zero-co
   // RV2103 / RV2104 come from the server target only (`check` merges both; DOM adds none, and no serialized-resume code).
   const source = `
 import { signal } from "@rivetjs/reactivity";
-export function C(props) { const n = props.a ? signal(1) : null; const t = Date.now(); return <b onClick={() => n?.set(1)}>{t}</b>; }
+export function C(props) { const n = props.a ? signal(1) : null; for (const v of props.list) signal(v); const t = Date.now(); return <b onClick={() => n?.set(1)}>{t}</b>; }
 `;
   assert.deepEqual(derived(source, "dom", { module: "src/c.tsx", model: "derived" }).diagnostics, []);
   const checked = check(source, { filename: "c.tsx", resume: { module: "src/c.tsx", model: "derived" } } as never);

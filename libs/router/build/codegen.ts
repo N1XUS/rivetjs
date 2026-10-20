@@ -77,6 +77,13 @@ export interface CodegenOptions {
    * chunk prefetch) and document prefetch takes them. Absent / empty: output unchanged.
    */
   documents?: readonly string[];
+  /**
+   * `rivetRouter({ resume: { model: "derived" } })` (M2 R5, server / static modes): `app.tsx` default-exports `Root`, the
+   * page's independent root boundary — props = the route payload as data (`s`), from which the browser's adopt run
+   * rebuilds the router (browser history) and the first load of each level (`revived`, no data request); the server entry
+   * renders `<Root s={…} />`. Absent: output unchanged.
+   */
+  derived?: boolean;
 }
 export interface Generated {
   /** File name (relative to outDir) → contents. */
@@ -203,6 +210,41 @@ function wrap(providers: readonly (readonly [string, string])[], inner: string, 
   ];
 }
 
+/**
+ * Derived resume model (`CodegenOptions.derived`): `app.tsx`'s default export, the page's independent root boundary. Server:
+ * the App with the request's router (`ServerData` comes from the server entry). Browser (its adopt run): the browser
+ * router, the payload as `Revived`, and the contexts the server entry provides (navigation state, search params) as the
+ * browser's; `ready` loads the page modules of the URL first, so the adopt run renders the route synchronously.
+ */
+function rootComponent(transitions: boolean, search: boolean): string[] {
+  const providers: [string, string][] = [
+    ...(transitions
+      ? [["{/* useNavigation(): the browser's navigation signal. */}", "<Provider token={Navigation} value={navigation}>"] as [string, string]]
+      : []),
+    ...(search ? [["{/* useSearchParams(): the browser's. */}", "<Provider token={SearchParams} value={searchParams}>"] as [string, string]] : []),
+  ];
+  return [
+    "",
+    "/** Derived resume model: the page root (independent boundary: its props are the route payload as data). */",
+    "export default function Root(props: { s: RootData }) {",
+    "  if (import.meta.env.SSR) return <App router={serverRouter(useContext(ServerData)!.url)} />;",
+    "  if (!adopting) ((adopting = true), queueMicrotask(() => (adopting = false)));",
+    "  const s = props.s,",
+    "    router = browserRouter(),",
+    "    data = s.d.slice();",
+    "  for (const i of s.n ?? []) data[i] = undefined;",
+    "  const server = { data, url: untrack(router.location), ...(s.e ? { error: s.e } : {}), ...(s.a ? { action: s.a } : {}), ...(s.x ? { byURL: s.x } : {}), ...(s.k ? { deps: s.k } : {}) } as ServerRoutePayload;",
+    "  return (",
+    "    <Provider token={Revived} value={server}>",
+    ...wrap(providers, "<App router={router} />", "      "),
+    "    </Provider>",
+    "  );",
+    "}",
+    "/** Before the adopt run: the page modules of the shown URL (a lazy page renders synchronously once loaded). */",
+    "Root.ready = (): Promise<unknown> | undefined => loadPage(new URL(globalThis.location.href));",
+  ];
+}
+
 /** Generate the app, server entry, route table and route types for a scanned table. */
 export function generate(table: RouteTable, options: CodegenOptions): Generated {
   const outDir = options.outDir ?? ".rivet";
@@ -234,6 +276,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const active = options.activeLinks === true;
   const slash = options.trailingSlash === "never" || options.trailingSlash === "always" ? options.trailingSlash : null;
   const swap = options.announce === false ? "swapRouteQuiet" : "swapRoute";
+  const derived = options.derived === true && mode !== "csr";
+  // Derived model: the Routers swap through `adoptSwap` (the adopt task's route renders are the page load, not a navigation).
+  const swapProp = derived ? "adoptSwap" : swap;
   const routesDir = options.routesDir.replace(/\/$/, "");
   const fromOut = (path: string) => {
     const relative = posix.relative(outDir, path);
@@ -321,7 +366,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const enterView = (key: string): string => {
     const [k, i, at] = key.split(":").map(Number) as [number, number, number];
     const name = layouts.get(layoutModulesList[i]!.page!)!;
-    const inner = `<div data-rivet-outlet="${k + 1}"><Router router={_level(router, nest, ${k + 1}, t)} routes={routes${i}} swap={${swap}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
+    const inner = `<div data-rivet-outlet="${k + 1}"><Router router={_level(router, nest, ${k + 1}, t)} routes={routes${i}} swap={${swapProp}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
     const view = level(at, `<${name} data={${slot(i)}.d} params={${slot(i)}.p} url={${slot(i)}.u}>${inner}</${name}>`);
     return `_enter(${k}, result, url, (t) => ${params ? `<Provider token={RouteParamsContext} value={${slot(i)}.p}>${view}</Provider>` : view})`;
   };
@@ -385,8 +430,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     const usesRow = pageRows || fails.length > 1 || enters.length > 1;
     // Server: the same chain on the handler's data, synchronously (`_ssrLevel`; undefined in the browser).
     const land = useNest ? `(result) => _landed(nest, NEST, ${k}, ROUTES${name}[n]![0], result, match)` : "(result) => result";
-    const served =
-      mode === "csr" ? "" : `_ssrLevel(work, (data) => loaded(${kit ? `applyRouteHead(data, ROUTES${name}[n]![1])` : "data"}), failed, ${land}) ?? `;
+    const ok = `(data) => loaded(${kit ? `applyRouteHead(data, ROUTES${name}[n]![1])` : "data"})`;
+    // Derived model: the browser's adopt run answers each level's first load from the revived payload (`Root`).
+    const served = mode === "csr" ? "" : `_ssrLevel(work, ${ok}, failed, ${land}) ?? ${derived ? `revived(work, ${ok}, failed, ${land}) ?? ` : ""}`;
     return [
       `  const routes${name} = {`,
       `    paths: PATHS${name},`,
@@ -427,16 +473,25 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const app = [
     HEADER,
     `/// <reference types="vite/client" />`,
-    ...(useNest
-      ? [`import { signal, useContext } from "@rivetjs/reactivity";`]
-      : pageRoutes.length && params
-        ? [`import { signal } from "@rivetjs/reactivity";`]
-        : []),
-    `import { Router, defineRoute, lazyComponent${single && !go ? "" : ", clientEvent"}${kit || (pageRoutes.length && params) ? ", Provider" : ""} } from "@rivetjs/runtime/dom";`,
+    ...(derived
+      ? [`import { ${useNest || (pageRoutes.length && params) ? "signal, " : ""}createContext, untrack, useContext, type Context } from "@rivetjs/reactivity";`]
+      : useNest
+        ? [`import { signal, useContext } from "@rivetjs/reactivity";`]
+        : pageRoutes.length && params
+          ? [`import { signal } from "@rivetjs/reactivity";`]
+          : []),
+    `import { Router, defineRoute, lazyComponent${single && !go ? "" : ", clientEvent"}${kit || (pageRoutes.length && params) || derived ? ", Provider" : ""} } from "@rivetjs/runtime/dom";`,
     ...(kit ? [`import { HeadLevel, applyRouteHead } from "@rivetjs/kit";`] : []),
-    `import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`,
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest ? ", ServerData, _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""} } from "@rivetjs/router/client";`,
-    `import { isHttpError } from "@rivetjs/router";`,
+    ...(derived
+      ? [
+          `import { createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
+          `import { createRouter as serverRouter } from "@rivetjs/runtime/router/server";`,
+          ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
+          ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
+        ]
+      : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""} } from "@rivetjs/router/client";`,
+    `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
     "// from loaders (untyped here), layout props are accessors.",
@@ -512,6 +567,34 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     '  if (import.meta.hot && typeof document !== "undefined" && !isHttpError(cause) && (cause as Error | undefined)?.name !== "AbortError") _devError(cause);',
     '  return { data: [], failure: cause ?? new Error("Route failed") };',
     "};",
+    ...(derived
+      ? [
+          "",
+          "// Derived resume model: `Root`'s props carry the route payload as data (the page's independent root boundary). In the",
+          "// browser its adopt run provides it as `Revived`; the Router levels' loads of that adopt (one synchronous task: the",
+          "// probe and adopt runs of every unit) answer from it (the server's chain on the same data, as `_ssrLevel`); once the",
+          "// task is over it is spent and every load (navigation, revalidation) fetches.",
+          "type RootData = { d: unknown[]; n?: readonly number[]; e?: { readonly status: number; readonly message: string }; a?: unknown; x?: readonly number[]; k?: unknown };",
+          "const Revived = createContext<ServerRoutePayload | null>(null);",
+          "const spent = new WeakMap<object, boolean>();",
+          "const revived = <R, T>(work: { get<V>(token: Context<V>): V }, ok: (data: ServerRoutePayload) => R, fail: (cause: unknown) => R, land: (result: R) => T): T | undefined => {",
+          "  if (import.meta.env.SSR) return undefined;",
+          "  const server = work.get(Revived);",
+          "  if (!server || spent.get(server)) return undefined;",
+          "  if (!spent.has(server)) (spent.set(server, false), queueMicrotask(() => spent.set(server, true)));",
+          "  let result: R;",
+          "  try {",
+          "    result = server.error ? fail(new HttpError(server.error.status, server.error.message)) : ok(server);",
+          "  } catch (cause) {",
+          "    result = fail(cause);",
+          "  }",
+          "  return land(result);",
+          "};",
+          "// The adopt task's Router renders (probe + adopt runs of `Root`) are the page load: no scroll / focus / announce.",
+          "let adopting = false;",
+          `const adoptSwap = (apply: () => void, next: ParentNode): void => (adopting ? apply() : ${swap}(apply, next));`,
+        ]
+      : []),
     "",
     "/** File-routed application: layouts wrap pages; client navigation fetches route data from the server. */",
     "export function App({ router }: { router: AppRouter }) {",
@@ -519,7 +602,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       ? [
           "  // Layout props are App-level signals (resume state carries them): the request's data on the",
           "  // server, then each navigation's; kept layouts keep theirs. Level keys drive the nested Routers.",
-          "  const server = useContext(ServerData);",
+          `  const server = useContext(ServerData)${derived ? " ?? useContext(Revived)" : ""};`,
           `  const nest = _layouts(server, router, NEST, ${nested ? levels + 1 : 0});`,
         ]
       : []),
@@ -612,14 +695,16 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       ]),
     // The Router sits directly inside an element so the compiler makes it (and `routes`) a resumable
     // region; the root layout wraps it outside that region and stays mounted.
-    `  const view = <div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}><Router router={${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}} routes={routes} swap={${swap}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
+    ...(derived ? ["  // Derived model: built where it renders (inside the root layout's adopt run), not passed in ready-made."] : []),
+    `  const view = ${derived ? "() => " : ""}<div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}><Router router={${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}} routes={routes} swap={${swapProp}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
     !rootLayout
-      ? "  return view;"
+      ? `  return view${derived ? "()" : ""};`
       : rootLayoutServer
         ? "  // Server error renders carry the root layout's data when its loader succeeded; else no root layout.\n" +
-          `  return server?.error && !server.data.length ? view : ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view}</${layouts.get(rootLayout)}>`)};`
-        : `  return ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view}</${layouts.get(rootLayout)}>`)};`,
+          `  return server?.error && !server.data.length ? view${derived ? "()" : ""} : ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view${derived ? "()" : ""}}</${layouts.get(rootLayout)}>`)};`
+        : `  return ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view${derived ? "()" : ""}}</${layouts.get(rootLayout)}>`)};`,
     "}",
+    ...(derived ? rootComponent(transitions !== null, search) : []),
     "",
   ].join("\n");
 
@@ -703,12 +788,12 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     HEADER,
     ...(search ? [`import { signal } from "@rivetjs/reactivity";`] : []),
     `import { Provider } from "@rivetjs/runtime/server";`,
-    `import { createRouter } from "@rivetjs/runtime/router/server";`,
+    ...(derived ? [`import { _rListen } from "@rivetjs/runtime/server-derived";`] : [`import { createRouter } from "@rivetjs/runtime/router/server";`]),
     `import { ServerData } from "@rivetjs/router/client";`,
     ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
     ...(search ? [`import { SearchParams } from "@rivetjs/router/search";`] : []),
     `import type { PageInput } from "@rivetjs/router/server";`,
-    `import { App } from "./app.tsx";`,
+    derived ? `import Root from "./app.tsx";` : `import { App } from "./app.tsx";`,
     `export { routes, universal } from "./routes.ts";`,
     '/** URL base path the route patterns carry (`""`: root); adapters serve files and prerender under it. */',
     `export const base = ${str(base)};`,
@@ -750,6 +835,23 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
         ]
       : []),
     "",
+    ...(derived
+      ? [
+          "/** Derived resume model: link clicks anywhere in the document are `Root`'s (its App's document click listener). */",
+          "function Links() {",
+          '  _rListen("a[href]");',
+          "  return null;",
+          "}",
+          "/** Derived resume model: the route payload `Root` carries as data (`undefined` loader results listed in `n`). */",
+          "const rootData = (input: PageInput) => {",
+          "  const d: unknown[] = [],",
+          "    n: number[] = [];",
+          "  input.data.forEach((value, i) => (value === undefined ? ((d[i] = null), n.push(i)) : (d[i] = value)));",
+          "  return { d, ...(n.length ? { n } : {}), ...(input.error ? { e: input.error } : {}), ...(input.action ? { a: input.action } : {}), ...(input.byURL ? { x: input.byURL } : {}), ...(input.deps ? { k: input.deps } : {}) };",
+          "};",
+          "",
+        ]
+      : []),
     "/** Page factory for one request; the app reads the handler's loader results through ServerData. */",
     "export function page(input: PageInput) {",
     "  return () => (",
@@ -773,7 +875,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             ]
           : []),
       ],
-      "<App router={createRouter(input.url)} />",
+      derived ? "<>\n        <Links />\n        <Root s={rootData(input)} />\n      </>" : "<App router={createRouter(input.url)} />",
       "      ",
     ),
     "    </Provider>",

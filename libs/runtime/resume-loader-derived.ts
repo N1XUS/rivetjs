@@ -8,8 +8,10 @@
 // `<!--b<id>-->` openers before an ancestor) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
 // invalid, the keys the boundary record lists (`k`) — and queued with its path and the target's form state, and the
-// runtime replays it once the boundary chunks loaded (`rt.cold`). Intent (pointerdown, focusin, touchstart) starts the
-// runtime and loads the target boundary's chunk (`rt.w`). One chunk per boundary: tail `m`.
+// runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every boundary whose target is inside
+// a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
+// (pointerdown, focusin, touchstart) starts the runtime and loads the target boundary's chunk (`rt.w`). One chunk per
+// boundary: tail `m`.
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
 import type { BoundaryTail } from "./resume-format.ts";
 
@@ -62,6 +64,8 @@ export function derivedLoader(): void {
     // A replay's own click / submit (resume-loader.ts `on`).
     if (target == skip) return (type != "click" || skip!.localName == "a" || event.stopImmediatePropagation(), (skip = null));
     const at = ids(target);
+    // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
+    at.length || !target.closest?.(script.dataset.g!) || at.push("");
     if (!at.length || rt?.on(event)) return;
     let replay: (() => void) | undefined;
     if (

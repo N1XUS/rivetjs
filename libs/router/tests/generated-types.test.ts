@@ -51,6 +51,9 @@ const cases: [string, string, Omit<CodegenOptions, "routesDir" | "outDir">][] = 
   ["in-file server code", "fixture-inline", {}],
   ["nested layouts (levels, kept loaders)", "fixture-nested", {}],
   ["nested layouts with component head and transitions", "fixture-nested", { head: "components", transitions: true }],
+  ["derived resume model (Root + revived loads)", "fixture", { derived: true }],
+  ["derived resume model, nested layouts with transitions", "fixture-nested", { derived: true, transitions: true }],
+  ["derived resume model, static mode", "fixture-static", { mode: "static", derived: true }],
 ];
 for (const [name, fixture, options] of cases)
   test(`generated code type-checks under strict: ${name}`, async () => {

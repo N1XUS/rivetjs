@@ -239,8 +239,10 @@ export default defineConfig({
 ```
 
 - **Smaller pages.** On a 50-row test page with a counter and row clicks the HTML is about 1.7 KB brotli instead of 3.1 KB, and the code loaded on first input about 34 KB instead of 53 KB. Nothing loads before input on either model.
-- **Render the same thing twice.** The browser repeats the component's render, so a value that differs between server and browser (`Date.now()`, `Math.random()`, `new Date()`) is an error ([RV2103](../errors/RV2103.md)), and a signal created under a condition is a warning ([RV2104](../errors/RV2104.md)). If the markup still differs, that component renders in the browser instead (development prints a warning naming it).
-- **What it does not do yet.** Streamed `Async` content that arrives after the first chunk is not resumed; framework bridges and forms are not covered; `resume.entry`, `chunks`, `merge`, `budget` and `preload` are ignored; an edit in development reloads the page.
+- **Render the same thing twice.** The browser repeats the component's render, so a value that differs between server and browser (`Date.now()`, `Math.random()`, `new Date()`) is an error ([RV2103](../errors/RV2103.md)), and a signal created inside a loop is a warning ([RV2104](../errors/RV2104.md)); a signal created under a condition is fine. If the markup still differs, that component renders in the browser instead (development prints a warning naming it).
+- **Routing.** With `rivetRouter` the page's root is one more such component: its props are the route's loader data, so the browser rebuilds the router and the current route from them without a data request, and links then navigate in the client as on the default model. Loader data that is not plain JSON (a `Date`, a `Map`) makes the root render in the browser instead.
+- **Components are functions that return JSX.** A capitalised function returning a plain object (a renderer or factory) is not treated as a component.
+- **What it does not do yet.** Streamed `Async` content that arrives after the first chunk is not resumed; framework bridges and forms are not covered; `resume.entry`, `chunks`, `merge`, `budget` and `preload` are ignored; an edit in development reloads the page. A press before the code arrives is not replayed yet: the first press on a button, toggle or menu trigger built on `@rivetjs/cdk` press handling can be lost, and some collection components (list box, select, tag group) render again in the browser on their first interaction.
 
 ## What it means for your code
 

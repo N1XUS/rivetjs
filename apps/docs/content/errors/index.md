@@ -58,7 +58,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV2101](RV2101.md) | warning | Captured value not serializable (type-aware, language service) |
 | [RV2102](RV2102.md) | error | Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive] |
 | [RV2103](RV2103.md) | error | Render is not deterministic under the derived resume model (Date.now / Math.random / performance.now / crypto.randomUUID / new `Date()` while rendering a boundary) |
-| [RV2104](RV2104.md) | warning | Keyed state (signal / createStore) created conditionally or in a loop under the derived resume model |
+| [RV2104](RV2104.md) | warning | Keyed state (signal / createStore) created in a loop under the derived resume model |
 | [RV2105](RV2105.md) | warning | Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / `Date()` / new `Date()`): its rows stay recorded instead of lazy (resume) |
 | [RV2106](RV2106.md) | warning | Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) |
 | [RV2145](RV2145.md) | error | A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build) |

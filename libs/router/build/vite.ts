@@ -322,7 +322,7 @@ export async function generateRoutes(
     | "preload"
     | "routeRules"
     | "clientRouter"
-  > & { head?: "components" | undefined; documents?: readonly string[] } = {},
+  > & { head?: "components" | undefined; documents?: readonly string[]; derived?: boolean } = {},
 ) {
   const routesDir = posix(options.routes ?? "src/routes");
   const outDir = posix(options.outDir ?? ".rivet");
@@ -349,6 +349,7 @@ export async function generateRoutes(
     ...(options.routeRules && Object.keys(options.routeRules).length ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
     ...(options.documents?.length ? { documents: options.documents } : {}),
+    ...(options.derived ? { derived: true } : {}),
   });
   const changed = await sync(resolve(root, outDir), generated.files);
   // No router contexts: the compiler's default resume entry (drop a stale generated one).
@@ -427,6 +428,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     ...(options.preload ? { preload: options.preload } : {}),
     ...(options.routeRules ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
+    // Derived resume model (M2 R5): the generated `Root` boundary carries the route payload as data.
+    ...(options.resume?.model === "derived" && mode !== "csr" ? { derived: true } : {}),
   };
   if (options.routeRules !== undefined) {
     // Checked at config time (same checks as at server start, except the origin `isr` needs: a server option), and
@@ -478,6 +481,9 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     appModules: options.resume?.appModules ?? true,
     // Lazy rows measurement builds (`RIVET_LAZY_ROWS=on` + the harness flag of the lazy-rows tools): the option on.
     ...(lazyRowsBuild() ? { lazyRows: true } : {}),
+    // Derived model (M2 R5): `.rivet/app.tsx`'s default export (`Root`) is an independent root boundary (its props =
+    // the route payload as data), like a route module's default export.
+    ...(options.resume?.model === "derived" && mode !== "csr" ? { roots: [...(options.resume.roots ?? []), posix(join(outDir, "app.tsx"))] } : {}),
   };
   // The generated resume entry (when there is one) provides the router's contexts (navigation state,
   // search params) to resumed regions.

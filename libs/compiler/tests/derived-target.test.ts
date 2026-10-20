@@ -123,11 +123,13 @@ export default function () { return <Page data={null} />; }
   assert.equal(moduleFacts(COUNTER, "m.tsx").boundaries.size, 0);
 });
 
-it("RV2103 (non-deterministic render, error) and RV2104 (conditional keyed state, warning); `check` reports them too", () => {
+it("RV2103 (non-deterministic render, error) and RV2104 (keyed state in a loop, warning); `check` reports them too", () => {
   const source = `
 import { signal } from "@rivetjs/reactivity";
 export function C(props) {
   const n = props.late ? signal(1) : null;
+  const all = [];
+  for (const v of props.list) all.push(signal(v));
   const t = Date.now();
   const ok = signal(Math.random());
   return <b onClick={() => n?.set(Date.now())}>{t}{ok()}</b>;
@@ -136,14 +138,16 @@ export function C(props) {
   const out = server(source, { model: "derived" });
   assert.deepEqual(
     out.diagnostics.map((d) => [d.code, d.line]),
-    [["RV2103", 5]],
+    [["RV2103", 7]],
   );
   assert.equal(out.code, "");
   assert.deepEqual(
     out.warnings?.map((d) => d.code),
     ["RV2104"],
   );
-  assert.match(out.warnings![0]!.message, /^Keyed state `signal\(\)` is created inside a conditional expression/);
+  // Keys are per site: the conditional `signal(1)` is fine (a render that skips it skips its key); the loop's repeats pair by order.
+  assert.match(out.warnings![0]!.message, /^Keyed state `signal\(\)` is created inside a loop/);
+  assert.equal(out.warnings![0]!.line, 6);
   const checked = check(source, { filename: "m.tsx", resume: { ...resume, model: "derived" } });
   assert.deepEqual(
     checked.diagnostics.map((d) => [d.code, d.severity, d.targets]),
@@ -165,4 +169,41 @@ it("option validation: RV7001 for an unknown model / non-string verdict lists", 
     server(COUNTER, { model: "derived", boundaries: [1] }).diagnostics.map((d) => d.code),
     ["RV7001"],
   );
+});
+
+it("boundary eligibility: a PascalCase factory returning an object literal is not a component", () => {
+  const source = `
+import { signal } from "@rivetjs/reactivity";
+function Root(props) { return <div onClick={() => props.go()}>{props.n}</div>; }
+export function Renderer(link) {
+  return {
+    isVirtualized: true,
+    CollectionRoot: (root) => <Root go={() => link.go(root)} n={1} />,
+    onScroll: (event) => link.scroll(event),
+  };
+}
+export function Picker(props) {
+  const open = signal(false);
+  return props.lazy ? { open, lazy: true } : { open, view: () => <b onClick={() => open.set(true)}>{open() ? "on" : "off"}</b> };
+}
+export function Accessor(props) {
+  const on = signal(false);
+  return () => <s onClick={() => on.set(true)}>{on() ? 1 : 0}</s>;
+}
+export function Mixed(props) {
+  const on = signal(false);
+  if (props.headless) return { on };
+  return <i onClick={() => on.set(true)}>{on() ? 1 : 0}</i>;
+}
+`;
+  const out = server(source, { model: "derived" });
+  assert.deepEqual(out.diagnostics, []);
+  // The factories render nothing themselves: no boundary, their objects / functions returned as they are.
+  assert.deepEqual(out.boundaries, ["src/m.tsx#Root", "src/m.tsx#Accessor", "src/m.tsx#Mixed"]);
+  assert.match(out.code, /export function Renderer\(link\) \{\n\s*return \{/);
+  assert.doesNotMatch(out.code, /__rivetR_b\("src\/m\.tsx#(Renderer|Picker)"/);
+  // An accessor component stays one; one render value among the returns is enough (`Mixed`).
+  assert.match(out.code, /return __rivetR_bOut\(__rivetB, \{ on \}\);/);
+  const facts = moduleFacts(source, "m.tsx", { boundaries: true });
+  assert.deepEqual([...facts.boundaries.keys()], ["Root", "Accessor", "Mixed"]);
 });
