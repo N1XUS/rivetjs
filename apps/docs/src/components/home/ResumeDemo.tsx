@@ -1,7 +1,9 @@
 // Home "Resumability" demo: a real resumable component. The server renders it once ("rendered on: server" is computed
 // in the component body: if the browser ever ran the component, the text would say "browser"). The
-// resumed code for this example is reported from Resource Timing intersected with its compiled dependencies.
-// Other widgets and page prefetches are excluded. Tests: tests/home.test.ts "resume demo".
+// resumed code for this example is reported from Resource Timing intersected with its compiled dependencies, split into
+// what the click fetched and what was already prefetched before it (hover / focus intent, an earlier interaction).
+// Other widgets and page prefetches are excluded. The component has its own intent chunk (vite.config.ts `HOME_RULES`).
+// Tests: tests/home.test.ts "resume demo".
 import { signal } from "@rivetjs/reactivity";
 import { Heart } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
@@ -20,6 +22,8 @@ export function ResumeDemo(props: ResumeDemoProps) {
   const likes = signal(0);
   const files = signal("");
   const cost = signal("");
+  const earlyFiles = signal("");
+  const earlyCost = signal("");
   const where = typeof document === "undefined" ? "server" : "browser";
   // Read once while rendering (server): constants in the HTML, so no binding here reaches the page's props recipe.
   const loader = `loader only (${kb(props.loaderBytes)} inline, ${kb(props.loaderBrotli)} compressed)`;
@@ -33,9 +37,11 @@ export function ResumeDemo(props: ResumeDemoProps) {
         onClick={async (event) => {
           likes.update((n) => n + 1);
           if (likes() > 1) return;
-          const [names, line] = await loadedFor(event);
-          files.set(names);
-          cost.set(line);
+          const loaded = await loadedFor(event);
+          files.set(loaded.files);
+          cost.set(loaded.cost);
+          earlyFiles.set(loaded.earlyFiles);
+          earlyCost.set(loaded.earlyCost);
         }}
       >
         <Icon icon={Heart} size={16} />
@@ -58,8 +64,14 @@ export function ResumeDemo(props: ResumeDemoProps) {
         <div class="rd-after">
           <dt>Loaded for your first click</dt>
           <dd>
-            <code class="rd-files">{files()}</code>
-            <span class="rd-cost">{cost()}</span>
+            <p class="rd-now">
+              <span class="rd-cost">{cost()}</span>
+              <code class="rd-files">{files()}</code>
+            </p>
+            <p class="rd-early" hidden={earlyCost() ? undefined : true}>
+              <span class="rd-cost">{earlyCost()}</span>
+              <code class="rd-files">{earlyFiles()}</code>
+            </p>
           </dd>
         </div>
       </dl>

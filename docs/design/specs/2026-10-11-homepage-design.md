@@ -142,7 +142,7 @@ Global:
   - Step 3 "First click" — "The one handler you touched loads and updates one text node."
   - Widget button: "Like" with count (`{likes} likes`), lucide `Heart`.
   - Readout before click (server-rendered, real): "Component rendered on: server" · "JavaScript executed so far: loader only (X B inline)" (X = inline loader bytes, measured at build time by the prerender and written into `_home-perf.json`; §3.9).
-  - Readout after click (computed by the handler itself from Resource Timing): "Loaded for this click: `<chunk file name>` — N B over the network (M B uncompressed) in T ms" + "Component re-ran: no — still rendered on: server". If the chunk was already in the HTTP cache / fetched earlier on intent (hover), it says so: "fetched on hover, T ms before your click".
+  - Readout after click (computed by the handler itself from Resource Timing): "Fetched for this click: N files, X KB over the network (Y KB uncompressed), in T ms" + file names, and apart from it "Already prefetched before the click: M files, …" + file names (requests started before the click's `timeStamp`: hover / focus intent, runtime an earlier interaction loaded; hidden when none) + "Component re-ran: no — still rendered on: server". The demo has its own intent chunk (HOME-CLICK 2026-10-20), so both groups cover only its handler closure.
   - Link: "How resuming works" → `/learn/resuming/`.
 - Mechanism (real, not simulated):
   - Demo = a normal resumable component `apps/docs/src/components/home/ResumeDemo.tsx` with `signal` likes + inline arrow handler (resumable rules: inline arrow, `_rFn`).

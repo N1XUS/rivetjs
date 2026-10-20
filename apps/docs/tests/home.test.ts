@@ -248,6 +248,19 @@ test("home hero: the proof strip is inside the first 900 px and links each chart
   }
 });
 
+/** The demo readout after the first click: files + line fetched for the click, and those prefetched before it. */
+async function readout(page: Page) {
+  await page.waitForFunction(() => document.querySelector(".rd-now .rd-cost")?.textContent);
+  const files = async (group: string) => ((await page.locator(`.rd-${group} .rd-files`).textContent()) ?? "").split(" · ").filter(Boolean);
+  return {
+    now: await files("now"),
+    cost: (await page.locator(".rd-now .rd-cost").textContent())!,
+    early: await files("early"),
+    earlyCost: (await page.locator(".rd-early .rd-cost").textContent())!,
+    earlyHidden: await page.locator(".rd-early").evaluate((node) => (node as HTMLElement).hidden),
+  };
+}
+
 test("resume demo: no script before the click, the readout names exactly the chunks the click fetched, the component never re-runs", async () => {
   const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
   const scripts = new Map<string, number>();
@@ -266,21 +279,28 @@ test("resume demo: no script before the click, the readout names exactly the chu
     assert.match(await demo.locator(".rd-before dd").textContent() ?? "", new RegExp(`loader only \\(${(perf.loader.bytes / 1000).toFixed(1)} KB inline`));
 
     await demo.locator("button").click();
-    await page.waitForFunction(() => document.querySelector(".rd-files")?.textContent);
+    const { now, cost, early, earlyCost } = await readout(page);
     await page.waitForLoadState("networkidle");
-    const names = (await demo.locator(".rd-files").textContent())!.split(" · ");
     const demoChunks = [...chunksOf(DEMO)].map(basename);
     assert.ok(
-      demoChunks.length > 0 && names.some((name) => demoChunks.includes(name)),
-      `the demo's chunk (${demoChunks.join(", ")}) is listed: ${names.join(", ")}`,
+      demoChunks.length > 0 && [...now, ...early].some((name) => demoChunks.includes(name)),
+      `the demo's chunk (${demoChunks.join(", ")}) is listed: ${[...now, ...early].join(", ")}`,
     );
-    // Every listed file was fetched; the bytes in the readout equal the bodies the network delivered.
-    const firstClick = names.map((name) => scripts.get(name));
-    assert.ok(firstClick.every((size) => size !== undefined), `listed but not fetched: ${names.filter((name) => !scripts.has(name)).join(", ")}`);
-    const decoded = firstClick.reduce((sum, size) => sum! + size!, 0)!;
-    const cost = (await demo.locator(".rd-cost").textContent())!;
-    assert.match(cost, new RegExp(`— ${names.length} files, `));
-    assert.match(cost, new RegExp(`\\(${(decoded / 1000).toFixed(1)} KB uncompressed\\)`));
+    // Every listed file was fetched; the bytes of each group equal the bodies the network delivered.
+    const bodies = (names: string[]) => {
+      const sizes = names.map((name) => scripts.get(name));
+      assert.ok(sizes.every((size) => size !== undefined), `listed but not fetched: ${names.filter((name) => !scripts.has(name)).join(", ")}`);
+      return sizes.reduce((sum, size) => sum! + size!, 0)!;
+    };
+    const decoded = bodies(now);
+    assert.match(cost, new RegExp(`^Fetched for this click: ${now.length} files, `));
+    assert.match(cost, new RegExp(`\\(${(decoded / 1000).toFixed(1)} KB uncompressed\\), in \\d+ ms$`));
+    if (early.length) assert.match(earlyCost, new RegExp(`^Already prefetched before the click: ${early.length} files?, .*\\(${(bodies(early) / 1000).toFixed(1)} KB uncompressed\\)$`));
+    else assert.equal(earlyCost, "");
+    // The demo has its own intent chunk (vite.config.ts HOME_RULES): its closure is the resume runtime + the demo, not
+    // the home route (navigation, routes table, cdk collections, charts: 20 files / 860 KB before, HOME-CLICK).
+    const total = decoded + (early.length ? bodies(early) : 0);
+    assert.ok(now.length + early.length <= 10 && total <= 110_000, `demo closure: ${now.length + early.length} files, ${total} B`);
 
     await demo.locator("button").click();
     await demo.locator("button").click();
@@ -308,13 +328,17 @@ test("resume demo: an earlier theme interaction does not appear in this example'
       "the theme was really loaded before the demo",
     );
     await page.locator(".rd button").click();
-    await page.waitForFunction(() => document.querySelector(".rd-files")?.textContent);
-    const names = (await page.locator(".rd-files").textContent())!.split(" · ");
+    const { now, early, earlyCost, earlyHidden } = await readout(page);
+    const names = [...now, ...early];
     const demo = chunksOf(DEMO);
+    // The demo's own chunk is fetched for the click (the theme's interaction never prefetches it); the runtime the theme
+    // already loaded is reported apart, as prefetched before the click.
     assert.ok(
-      names.some((name) => [...demo].some((file) => basename(file) === name)),
-      names.join(", "),
+      now.some((name) => [...demo].some((file) => basename(file) === name)),
+      now.join(", "),
     );
+    assert.ok(early.some((name) => /^resume-entry-/.test(name)) && !earlyHidden, `runtime already loaded: ${early.join(", ")}`);
+    assert.match(earlyCost, /^Already prefetched before the click: \d+ files?, /);
     // Independent Vite output graph: every listed JS file must belong to this handler or its shared runtime/loader.
     const manifest = JSON.parse(readFileSync(resolve(client, ".vite/manifest.json"), "utf8")) as Record<string, { file: string; imports?: string[] }>;
     const allowed = new Set<string>();
@@ -331,7 +355,6 @@ test("resume demo: an earlier theme interaction does not appear in this example'
     const downloaded = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => new URL(entry.name).pathname.slice(1)));
     const expected = downloaded.filter((path) => allowed.has(path)).map((path) => path.slice(path.lastIndexOf("/") + 1));
     assert.deepEqual(names.filter((name) => !name.endsWith(".deps.js")).sort(), expected.sort(), "all actually downloaded dependencies are included");
-    assert.match((await page.locator(".rd-cost").textContent()) ?? "", /already fetched before your click/);
   } finally {
     await page.close();
   }
@@ -364,6 +387,11 @@ test("resume demo: after a hover, the first click paints within 100 ms on slow 4
     });
     const elapsed = (await ms.jsonValue()) as number;
     assert.ok(elapsed <= 100, `pointerdown → paint ${elapsed.toFixed(1)} ms`);
+    // The hover prefetched the demo's closure: the readout says so instead of counting it as fetched for the click.
+    const { now, early, earlyCost } = await readout(page);
+    const demo = [...chunksOf(DEMO)].map(basename);
+    assert.ok(early.some((name) => demo.includes(name)) && !now.some((name) => demo.includes(name)), `prefetched: ${early.join(", ")}; fetched: ${now.join(", ")}`);
+    assert.match(earlyCost, new RegExp(`^Already prefetched before the click: ${early.length} files?, `));
   } finally {
     await page.close();
   }

@@ -1084,6 +1084,20 @@
     font-weight: 600;
     color: var(--accent);
   }
+  .rd-now,
+  .rd-early {
+    margin: 0;
+  }
+  .rd-early {
+    margin-top: 0.5rem;
+  }
+  .rd-early[hidden],
+  .rd-files:empty {
+    display: none;
+  }
+  .rd-cost {
+    display: block;
+  }
   .rd-files {
     font-family: var(--font-mono);
     font-size: 0.8125rem;
