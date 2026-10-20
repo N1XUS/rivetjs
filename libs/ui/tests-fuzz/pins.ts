@@ -54,17 +54,6 @@ export const pins: FuzzPin[] = [
   pin("/scroll-area", "load", "overflow-x:scroll", "cdk", "ScrollArea viewport overflow: " + MOUNT_EFFECT, true),
 
   // Open findings.
-  // Client chunk cycle (COLD-FOCUS 2026-10-20): the merge group `rivet-merge-accordion` holds the copied ui-docs demo
-  // modules (`src/visual/accordion-*.tsx`, module-level `items` with lucide icon data) while the icons, reached only through
-  // the `lucide` barrel (unowned), land in the route chunk, which imports the group back. A client render evaluates the
-  // group first: `items[i].icon` is still undefined (`var`), so every trigger renders without its icon span.
-  pin(
-    "/visual/accordion",
-    "load",
-    'resumed: <span class="me-3 size-4 shrink-0 text-muted">\ncsr: "How do I place an order?"',
-    "compiler",
-    "client chunk cycle: merge group imports barrel-reached icons placed in the route chunk that imports it (chunk-groups.ts cycle guard misses unowned modules)",
-  ),
   { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },
   pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
   { ...pin("/visual/card", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER), step: 11 },

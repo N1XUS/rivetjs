@@ -1,7 +1,8 @@
 // Search palette on the BUILT site (nx `docs:test` depends on `docs:build`), in Chromium: a cold keyboard shortcut
 // fetches only the palette and the light cdk overlay primitives (DOCS-COLD 2026-10-20: 187 KB before, the cdk Modal /
 // Dialog closure with collections), and the palette is a modal: focus inside, Escape / outside press close it, the
-// page around it is inert while open, focus returns, the query is kept for the next open.
+// page around it is inert while open, focus returns, the query is kept for the next open. A lone Ctrl keydown and trigger
+// hover / focus fetch the palette ahead, so the press fetches none of it (CHUNK-CYCLE 2026-10-20).
 import { strict as assert } from "node:assert";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
@@ -67,6 +68,40 @@ test("search: a cold Ctrl+K fetches only the palette + light overlay primitives;
   }
 });
 
+test("search: the palette is fetched ahead on a lone Ctrl keydown and on trigger hover / focus — the press fetches none of it", async () => {
+  // The palette files: what a lone Ctrl keydown fetches (the palette chunk + light overlay primitives).
+  let palette: string[] = [];
+  for (const ahead of ["control", "hover", "focus"] as const) {
+    const { page, js } = await docsPage("/start/tutorial/");
+    try {
+      const before = js.length;
+      if (ahead === "hover") await page.hover(".search-button-bar");
+      else if (ahead === "focus") await page.focus(".search-button-bar");
+      else await page.keyboard.down("Control");
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(300);
+      await page.waitForLoadState("networkidle");
+      const fetched = js.slice(before).map(([path]) => path);
+      if (ahead === "control") palette = fetched;
+      assert.ok(palette.some((path) => /\/dialog-[\w-]+\.js$/.test(path)), `${ahead}: no palette chunk fetched ahead: ${fetched.join(", ")}`);
+      for (const path of palette) assert.ok(fetched.includes(path), `${ahead}: ${path} not fetched ahead`);
+      const mark = js.length;
+      if (ahead === "hover") await page.mouse.down().then(() => page.mouse.up());
+      else if (ahead === "focus") await page.keyboard.press("Enter");
+      else await page.keyboard.press("k").then(() => page.keyboard.up("Control"));
+      await page.getByRole("combobox", { name: "Search the docs" }).waitFor({ state: "visible" });
+      await page.waitForLoadState("networkidle");
+      const after = js.slice(mark).map(([path]) => path);
+      // A press through the link's own click handler still prefetches the shell's intent sibling at low priority (frame
+      // menus, loader chunk-group policy); never palette code.
+      if (ahead === "control") assert.deepEqual(after, [], "Ctrl+K fetched JS");
+      for (const path of after) assert.ok(!palette.includes(path) && !/\/dialog-/.test(path), `${ahead}: the press fetched ${path}`);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
 test("search: modal palette — Tab stays inside, outside is inert, Escape / outside press close, focus returns, query kept", async () => {
   const { page } = await docsPage("/start/tutorial/");
   try {
@@ -88,7 +123,8 @@ test("search: modal palette — Tab stays inside, outside is inert, Escape / out
     await page.keyboard.press("Escape");
     await dialog.waitFor({ state: "detached" });
     assert.equal(await page.evaluate(() => document.querySelector("[inert]")), null, "inert released");
-    assert.ok(await page.evaluate(() => document.activeElement?.matches(".search-button-bar")), "focus back on the trigger");
+    // Focus restore runs after the dialog detached (FocusScope cleanup): wait for it instead of reading the active element at once.
+    await page.waitForFunction(() => document.activeElement?.matches(".search-button-bar"), null, { timeout: 5_000 });
     // Reopen: the query is kept; an outside press closes.
     await trigger.click();
     await dialog.waitFor({ state: "visible" });

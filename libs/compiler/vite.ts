@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { coLoadGroups, isBarrel, MERGE_BUDGET, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
+import { barrelUses, type LinkModule } from "./barrel-links.ts";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
@@ -1727,7 +1728,7 @@ function rivetPlugin(
     },
     // Shared chunk merging (`resume.merge`): the module graph is complete at buildEnd; outputOptions hands the
     // groups to Rolldown's codeSplitting (deps not pulled in: every module is placed by its own group or left alone).
-    buildEnd(error) {
+    async buildEnd(error) {
       const budget = resume?.merge ?? MERGE_BUDGET;
       // Server builds (another environment of this plugin instance) leave the client's groups alone.
       // Derived builds keep the bundler's split (one chunk per boundary module; route-closure chunks are later work).
@@ -1735,6 +1736,29 @@ function rivetPlugin(
       merged = new Map();
       if (error) return;
       const nodes: CoLoadModule[] = [];
+      // Barrel links: what each importer uses behind the barrels it imports (the bundler links it there; the planner's
+      // owner walk stops at large barrels — without them a leaf used only through a barrel is unowned and can land in an
+      // entry chunk that imports the importer's merge chunk back: a chunk cycle, CHUNK-CYCLE 2026-10-20).
+      const linkModules = new Map<string, LinkModule>();
+      for (const id of this.getModuleIds()) {
+        const info = this.getModuleInfo(id);
+        if (info)
+          linkModules.set(id, {
+            id,
+            code: info.code,
+            importedIds: info.importedIds,
+            exports: info.exports ?? [],
+            barrel: info.code != null && isBarrel(info.code),
+          });
+      }
+      const uses = await barrelUses(
+        linkModules,
+        (code) => parseAst(code) as unknown as { body: readonly unknown[] },
+        async (spec, importer) => {
+          const hit = await this.resolve(spec, importer);
+          return hit && !hit.external ? hit.id : null;
+        },
+      );
       // coLoadGroups sorts by id: the bundler's module order does not change the groups or their names.
       for (const id of this.getModuleIds()) {
         const info = this.getModuleInfo(id);
@@ -1744,6 +1768,7 @@ function rivetPlugin(
           id,
           size: info.code?.length ?? 0,
           imports: info.importedIds,
+          ...(uses.has(id) ? { uses: uses.get(id)! } : {}),
           // Dynamic-import targets (lazy routes, islands, library `import()`) load on their own: owners too.
           entry: own,
           // Virtual modules, assets and worker / url / raw imports keep the bundler's placement.
@@ -1757,7 +1782,7 @@ function rivetPlugin(
             // request of its own once the importer merges away (ui `*.styles.ts` + `.css` pairs).
             /\.(?:[cm]?[jt]sx?|css)(\?|$)/.test(id) &&
             !/[?&](worker|sharedworker|url|raw)\b/.test(id),
-          barrel: info.code != null && isBarrel(info.code),
+          barrel: linkModules.get(id)!.barrel,
           // The app entry and the resume runtime load on every page: nothing merges into them.
           pinned: info.isEntry && !id.startsWith(CHUNK),
           // The main route chunk (the app shell every page loads: root layout, router, frame) with an intent sibling:

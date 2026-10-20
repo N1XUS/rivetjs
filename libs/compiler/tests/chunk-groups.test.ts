@@ -388,3 +388,73 @@ test("hub pass: groups most entries load merge with each other without an import
   for (const e of wide) if (e.entry && ["a", "b", "c", "d"].includes(e.id)) e.imports = [...e.imports, "/s/w.ts"];
   assert.equal(coLoadGroups(wide).get("/s/x.ts"), undefined);
 });
+
+// CHUNK-CYCLE 2026-10-20 (ui story `/visual/accordion`): route R imports demo D and component C; Q imports C. D imports
+// the icon I only through a large barrel L. D {R} merges into C {R, Q}. The bundler links D straight to I and places I
+// by its real importers ({R}: R's chunk), so the merged chunk imports R's chunk and R's chunk imports the merged chunk.
+const accordionShape = (extra: Partial<CoLoadModule> = {}, icon: Partial<CoLoadModule> = {}) => {
+  const icons = ["/i/a.mjs", "/i/b.mjs", "/i/c.mjs", "/i/d.mjs", "/i/e.mjs"];
+  return [
+    entry("R", ["/s/D.tsx", "/s/C.tsx"]),
+    entry("Q", ["/s/C.tsx"]),
+    mod("/s/D.tsx", 300, ["/i/lucide.mjs", "/s/C.tsx"], extra),
+    mod("/s/C.tsx", 3000),
+    mod("/i/lucide.mjs", 50, icons, { barrel: true }),
+    ...icons.map((id) => mod(id, 200, [], id === "/i/a.mjs" ? icon : {})),
+  ];
+};
+// The chunk of every module as the bundler places it: its group, else its real owner set (entries whose closure reaches
+// it, barrels linked through `uses` only — the bundler drops the barrel); an entry's chunk holds its single-owner modules.
+const chunkGraph = (graph: CoLoadModule[], names: Map<string, string>) => {
+  const byId = new Map(graph.map((m) => [m.id, m]));
+  const edges = (m: CoLoadModule) => [...(m.barrel ? [] : m.imports.filter((id) => !byId.get(id)?.barrel)), ...(m.uses ?? [])];
+  const owners = new Map<string, Set<string>>();
+  for (const e of graph.filter((m) => m.entry)) {
+    const stack = [e.id];
+    for (let id; (id = stack.pop());) {
+      const set = owners.get(id) ?? owners.set(id, new Set()).get(id)!;
+      if (set.has(e.id)) continue;
+      set.add(e.id);
+      stack.push(...edges(byId.get(id)!));
+    }
+  }
+  const chunk = (id: string) => names.get(id) ?? [...(owners.get(id) ?? [])].sort().join("+");
+  const out = new Map<string, Set<string>>();
+  for (const m of graph)
+    for (const next of edges(m)) if (chunk(next) !== chunk(m.id)) (out.get(chunk(m.id)) ?? out.set(chunk(m.id), new Set()).get(chunk(m.id))!).add(chunk(next));
+  return { chunk, out };
+};
+const cycles = (out: Map<string, Set<string>>) =>
+  [...out].flatMap(([a, list]) => [...list].filter((b) => a < b && out.get(b)?.has(a)).map((b) => a + " <-> " + b));
+
+test("a module used only through a barrel: without its link the merge closes a chunk cycle; `uses` groups it with its importer", () => {
+  const blind = accordionShape();
+  const names = coLoadGroups(blind, { budget: 1e9 });
+  assert.ok(names.get("/s/D.tsx") && names.get("/s/D.tsx") === names.get("/s/C.tsx"));
+  assert.equal(coLoadInspect(blind, { budget: 1e9 }).reason.get("/i/a.mjs"), "unowned");
+  // The hazard the planner could not see: D (merged chunk) → I (R's chunk) → … R's chunk imports the merged chunk.
+  const linkedBlind = blind.map((m) => (m.id === "/s/D.tsx" ? { ...m, uses: ["/i/a.mjs"] } : m));
+  assert.deepEqual(cycles(chunkGraph(linkedBlind, names).out), ["R <-> " + names.get("/s/D.tsx")]);
+  // With the link the icon has D's owners and joins D's group: no back-edge to R's chunk.
+  const linked = accordionShape({ uses: ["/i/a.mjs"] });
+  const fixed = coLoadGroups(linked, { budget: 1e9 });
+  assert.equal(fixed.get("/i/a.mjs"), fixed.get("/s/D.tsx"));
+  assert.deepEqual(cycles(chunkGraph(linked, fixed).out), []);
+  // Unused icons stay unowned (the barrel stop still holds for what nobody names).
+  assert.equal(coLoadInspect(linked, { budget: 1e9 }).reason.get("/i/b.mjs"), "unowned");
+});
+
+test("the cycle check sees entry chunks: an ungroupable module of one entry is part of that entry's chunk", () => {
+  // Same shape, D imports V directly (a virtual / `?url` module: never grouped) used by R only. V sits in R's chunk:
+  // merging D into C would make the merged chunk import R's chunk back.
+  const graph = accordionShape().map((m) => (m.id === "/s/D.tsx" ? { ...m, imports: [...m.imports, "/s/V.ts"] } : m));
+  graph.push(mod("/s/V.ts", 50, [], { groupable: false }));
+  const names = coLoadGroups(graph, { budget: 1e9 });
+  assert.deepEqual(cycles(chunkGraph(graph, names).out), []);
+  assert.notEqual(names.get("/s/D.tsx") ?? "D", names.get("/s/C.tsx") ?? "C");
+  // V used by Q too (shared chunk {R, Q}): no back-edge, the merge happens.
+  const shared = graph.map((m) => (m.id === "Q" ? { ...m, imports: [...m.imports, "/s/V.ts"] } : m));
+  const merged = coLoadGroups(shared, { budget: 1e9 });
+  assert.ok(merged.get("/s/D.tsx") && merged.get("/s/D.tsx") === merged.get("/s/C.tsx"));
+  assert.deepEqual(cycles(chunkGraph(shared, merged).out), []);
+});

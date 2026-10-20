@@ -408,6 +408,57 @@ export function ${name}() { const n = signal(1); return <b onClick={() => n.set(
   }
 });
 
+test("resume.merge: a module used only through a barrel joins its importer's merge group — no chunk cycle, the binding is defined on evaluation (CHUNK-CYCLE)", async () => {
+  await mkdir(".artifacts", { recursive: true });
+  const root = await mkdtemp(resolve(".artifacts/vite-merge-cycle-"));
+  try {
+    await mkdir(resolve(root, "src/icons"), { recursive: true });
+    // ui story `/visual/accordion` shape: lazy route r imports demo d (module-level data holding an icon) and component c;
+    // lazy route q imports c. d names the icon only through the barrel `icons/index.ts` (the planner's owner walk stops
+    // there). d merges into c's group; the icon, placed by its real importer, landed in r's chunk, which imports the
+    // merge chunk: the merge chunk evaluated first and read the icon before r's chunk defined it.
+    const names = ["a", "b", "c", "d", "e"];
+    for (const n of names) await writeFile(resolve(root, `src/icons/${n}.ts`), `export default [["path", { d: "M${n}" }]];\n`);
+    await writeFile(resolve(root, "src/icons/index.ts"), names.map((n) => `export { default as Icon${n.toUpperCase()} } from "./${n}.ts";\n`).join(""));
+    await writeFile(resolve(root, "src/c.ts"), `export const c = (s: string) => ${JSON.stringify("x".repeat(3000))} + s;\n`);
+    await writeFile(
+      resolve(root, "src/d.ts"),
+      `import { IconA } from "./icons/index.ts";\nimport { c } from "./c.ts";\nexport const items = [{ icon: IconA, title: c("t") }];\n`,
+    );
+    await writeFile(resolve(root, "src/r.ts"), `export { items } from "./d.ts";\nexport { c } from "./c.ts";\n`);
+    await writeFile(resolve(root, "src/q.ts"), `export { c } from "./c.ts";\n`);
+    await writeFile(resolve(root, "src/main.ts"), `(globalThis as { routes?: unknown[] }).routes = [import("./r.ts"), import("./q.ts")];\n`);
+    await build({
+      configFile: false,
+      root,
+      logLevel: "silent",
+      plugins: [rivet({ resume: { modules: [] } })],
+      build: { outDir: "dist", manifest: true, minify: false, modulePreload: false, rollupOptions: { input: resolve(root, "src/main.ts") } },
+    });
+    const viteManifest: Record<string, { file: string; imports?: string[] }> = JSON.parse(await readFile(resolve(root, "dist/.vite/manifest.json"), "utf8"));
+    const files = (await readdir(resolve(root, "dist/assets"))).filter((f) => f.endsWith(".js"));
+    assert.ok(
+      files.some((f) => f.startsWith("rivet-merge-")),
+      files.join(" "),
+    );
+    // Static chunk graph: no chunk imports a chunk that imports it back.
+    const edges = new Map<string, string[]>();
+    for (const f of files) {
+      const code = await readFile(resolve(root, "dist/assets", f), "utf8");
+      edges.set(
+        f,
+        [...code.matchAll(/(?:\bfrom|\bimport)\s*["']\.\/([^"']+\.js)["']/g)].map((m) => m[1]!),
+      );
+    }
+    for (const [f, list] of edges) for (const g of list) assert.ok(!(edges.get(g) ?? []).includes(f), `chunk cycle ${f} <-> ${g}`);
+    // The client evaluates the route chunk and its merge chunk: the icon binding is set.
+    const r = await import(resolve(root, "dist", viteManifest["src/r.ts"]!.file));
+    assert.deepEqual(r.items[0].icon, [["path", { d: "Ma" }]]);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("resume.merge: the dev server and SSR builds add no chunk group; a client build appends one", async () => {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-merge-hooks-"));

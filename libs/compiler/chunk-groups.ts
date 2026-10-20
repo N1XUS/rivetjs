@@ -57,6 +57,14 @@ export interface CoLoadModule {
    */
   barrel?: boolean;
   /**
+   * Modules this module's imports bind to through barrels (`barrel-links.ts`, CHUNK-CYCLE 2026-10-20): the bundler links
+   * the importer straight to them. Import edges here for the ones the barrel-stopped owner walk leaves unowned (a lucide
+   * icon named only through the `lucide` index): they get their importers' owners and group with them instead of
+   * landing, ungrouped, in an entry chunk that imports the importer's merge chunk back (a chunk cycle). Modules some
+   * entry owns already keep their owner sets.
+   */
+  uses?: readonly string[];
+  /**
    * An entry every page loads (the resume runtime, the app entry): groups merge only when they agree on every pinned
    * owner, so nothing joins the always-loaded chunks and they never pull page code in.
    */
@@ -126,8 +134,28 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
   const modules = [...input].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const index = new Map<string, number>();
   modules.forEach((m, i) => index.set(m.id, i));
-  const imports = modules.map((m) => m.imports.map((id) => index.get(id)).filter((i): i is number => i !== undefined));
+  const ids = (list: readonly string[] | undefined) => (list ?? []).map((id) => index.get(id)).filter((i): i is number => i !== undefined);
+  let imports = modules.map((m) => ids(m.imports));
   const entries = modules.flatMap((m, i) => (m.entry ? [i] : []));
+  // Barrel links (`uses`): an edge only into a module the barrel-stopped walk leaves unowned (what it owns keeps its
+  // owner set — widening those moved hub merges: the ui-docs router chunk pulled in the 296 KB example-frames table).
+  const linked = modules.map((m) => ids(m.uses));
+  if (linked.some((list) => list.length)) {
+    const owned = new Uint8Array(modules.length);
+    for (const strict of [false, true]) {
+      const stack = entries.filter((e) => !!modules[e]!.strict === strict);
+      const seen = new Uint8Array(modules.length);
+      const roots = new Set(stack);
+      while (stack.length) {
+        const m = stack.pop()!;
+        if (seen[m]) continue;
+        seen[m] = owned[m] = 1;
+        if (modules[m]!.barrel && !roots.has(m) && imports[m]!.length > SMALL_BARREL) continue;
+        for (const next of imports[m]!) if (!seen[next] && !(strict && modules[next]!.late)) stack.push(next);
+      }
+    }
+    imports = imports.map((list, m) => (linked[m]!.some((t) => !owned[t]) ? [...new Set([...list, ...linked[m]!.filter((t) => !owned[t])])] : list));
+  }
   const words = (entries.length + 31) >>> 5;
   // Owners of every reached module: entries whose static import closure (through other entries too: importing an
   // entry loads its imports) reaches it, the walk stopping at barrels. Known over-count: the bundler drops unused
@@ -266,9 +294,29 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
     if (both === 0) return Infinity;
     return (extra(A, b, a) + extra(B, a, b)) / both;
   };
-  // Whether a member of `x` reaches a member of `y` through anything outside both (other groups as one node each —
-  // one chunk — ungrouped modules on their own). Direct x → y edges are fine: they end up inside the merged chunk.
-  const stamp = new Int32Array(groups.length + modules.length);
+  // Whether a member of `x` reaches a member of `y` through anything outside both. Direct x → y edges are fine: they end
+  // up inside the merged chunk. Nodes are the chunks the bundler will emit (CHUNK-CYCLE 2026-10-20): a named group (of
+  // several owner sets) is one chunk; every other module — an entry, an ungroupable or frozen module, a group still of one
+  // owner set — sits in the bundler's chunk of its owner set (an entry's chunk holds what only that entry owns), so all
+  // modules of one owner set are one node; an unowned module is a node of its own. Before, ungrouped modules were nodes
+  // on their own: a member importing a module that only one entry owns (a `?url` / virtual module) missed that the
+  // module is part of the entry chunk that imports the merged chunk back.
+  const setKey = new Int32Array(modules.length).fill(-1);
+  const setMembers: number[][] = [];
+  {
+    const ids = new Map<string, number>();
+    modules.forEach((_, m) => {
+      const set = ownersOf[m];
+      if (!set) return;
+      const key = Array.prototype.join.call(set, ",");
+      let k = ids.get(key);
+      if (k === undefined) (ids.set(key, (k = setMembers.length)), setMembers.push([]));
+      setKey[m] = k;
+      setMembers[k]!.push(m);
+    });
+  }
+  const named = (g: number) => groups[g]!.sets >= 2 && groups[g]!.count >= 2;
+  const stamp = new Int32Array(groups.length + modules.length + setMembers.length);
   let generation = 0;
   const reaches = (x: number, y: number): boolean => {
     generation++;
@@ -277,7 +325,7 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
       const h = groupOf[next]!;
       if (h === y) return true;
       if (h === x) return false;
-      const node = h >= 0 ? h : groups.length + next;
+      const node = h >= 0 && named(h) ? h : setKey[next]! >= 0 ? groups.length + modules.length + setKey[next]! : groups.length + next;
       if (stamp[node] !== generation) {
         stamp[node] = generation;
         stack.push(node);
@@ -289,7 +337,15 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
       const node = stack.pop()!;
       if (node < groups.length) {
         for (const m of groups[node]!.members) for (const next of imports[m]!) if (step(next)) return true;
-      } else for (const next of imports[node - groups.length]!) if (step(next)) return true;
+      } else if (node < groups.length + modules.length) {
+        for (const next of imports[node - groups.length]!) if (step(next)) return true;
+      } else
+        for (const m of setMembers[node - groups.length - modules.length]!) {
+          const h = groupOf[m]!;
+          // Members that left the owner set's chunk: x / y (the merge under test) and named groups (nodes of their own).
+          if (h === x || h === y || (h >= 0 && named(h))) continue;
+          for (const next of imports[m]!) if (step(next)) return true;
+        }
     }
     return false;
   };
