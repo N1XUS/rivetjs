@@ -145,7 +145,7 @@ export function WithImages() {
         {/* Row 3 */}
         <div class="col-span-12 grid grid-cols-12 gap-4">
           {/* Left Column: Card */}
-          <Card class="relative col-span-12 h-[250px] sm:h-[300px] md:col-span-8 md:h-[350px]">
+          <Card class="relative col-span-12 h-[250px] overflow-hidden sm:h-[300px] md:col-span-8 md:h-[350px]">
             <img alt="NEO Home Robot" aria-hidden="true" class="absolute inset-0 h-full w-full object-cover" src={robotFaceImage.src} />
 
             <Card.Footer class="z-10 mt-auto flex items-end justify-between">
