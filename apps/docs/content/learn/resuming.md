@@ -224,6 +224,24 @@ export default defineConfig({
 - **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
 - **Why it is off by default.** Without lazy rows the server renders as fast as without it; with lazy rows it still costs about 2 to 11 % more server time per render, being reduced.
 
+### Derived model (experimental)
+
+Off by default. With `resume: { model: "derived" }` on `rivetRouter(…)` (or `rivet(…)`), the page carries no resume state table: the server lists only the components that can react to input (and their signal values), and the browser runs a component's ordinary compiled code over the server markup the first time it is used (an event inside it, or a change of a signal it read on the server). The nodes stay the same, so focus and typed values stay. A component whose props are plain data waits for its own first use; one that gets functions or other non-data props starts with its parent.
+
+```ts
+// vite.config.ts
+import { defineConfig } from "vite";
+import { rivetRouter } from "@rivetjs/router/vite";
+
+export default defineConfig({
+  plugins: [rivetRouter({ resume: { model: "derived" } })],
+});
+```
+
+- **Smaller pages.** On a 50-row test page with a counter and row clicks the HTML is about 1.7 KB brotli instead of 3.1 KB, and the code loaded on first input about 34 KB instead of 53 KB. Nothing loads before input on either model.
+- **Render the same thing twice.** The browser repeats the component's render, so a value that differs between server and browser (`Date.now()`, `Math.random()`, `new Date()`) is an error ([RV2103](../errors/RV2103.md)), and a signal created under a condition is a warning ([RV2104](../errors/RV2104.md)). If the markup still differs, that component renders in the browser instead (development prints a warning naming it).
+- **What it does not do yet.** Streamed `Async` content that arrives after the first chunk is not resumed; framework bridges and forms are not covered; `resume.entry`, `chunks`, `merge`, `budget` and `preload` are ignored; an edit in development reloads the page.
+
 ## What it means for your code
 
 - **The component body runs once, on the server.** A `console.log` there prints in the terminal, never in the browser console. See [component did not run again](../gotchas/component-did-not-run-again.md).

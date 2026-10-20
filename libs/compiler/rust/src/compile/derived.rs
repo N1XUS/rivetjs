@@ -1,10 +1,15 @@
-//! Derived resume model, server target (M2 C2, plan `docs/design/plans/2026-10-18-derived-client.md`, spec
-//! `docs/design/specs/2026-10-18-structural-resume-design.md` §3.3): plain server output plus, per boundary
-//! (`resume::derived::plan`), `const __rivetB = _rB("Name", flags[, props]); try { … return _rBOut(__rivetB, v); … }
-//! finally { _rBEnd(__rivetB); }`, `_rBAttr(__rivetB)` last in an ATTR root's start tag, keyed state
-//! `signal(x)` → `_rSig("<h5>-<n>", x)` / `createStore(x)` → `_rSigStore(…)`, and `<!--[-->…<!--]-->` around the
-//! dynamic slots of a native element the adopt walk needs delimited (a structural slot, or any dynamic slot among
-//! other children). ABI from `@rivetjs/runtime/server-derived`. Hooks in `compile.rs` (`// exception: derived model`).
+//! Derived resume model (M2 C2 server / C3 DOM, plan `docs/design/plans/2026-10-18-derived-client.md`, spec
+//! `docs/design/specs/2026-10-18-structural-resume-design.md` §3.3 / §3.5), one plan (`resume::derived::plan`) for both
+//! targets: same boundaries, same `"<module>#<Name>"` names, same keys.
+//! - Server: plain server output plus, per boundary, `const __rivetB = _rB("<module>#Name", flags[, props]); try { …
+//!   return _rBOut(__rivetB, v); … } finally { _rBEnd(__rivetB); }`, `_rBAttr(__rivetB)` last in an ATTR root's start
+//!   tag, keyed state `signal(x)` → `_rSig("<h5>-<n>", x)` / `createStore(x)` → `_rSigStore(…)`, and `<!--[-->…<!--]-->`
+//!   around the dynamic slots of a native element the adopt walk needs delimited (a structural slot, or any dynamic slot
+//!   among other children). ABI from `@rivetjs/runtime/server-derived`.
+//! - DOM: plain DOM output plus, per boundary, the body wrapped `return _b("<module>#Name", () => { … })` (a concise
+//!   arrow: `() => _b("…", () => value)`) and keyed state `_sig("<h5>-<n>", x)` / `_sigStore(…)`. ABI from
+//!   `@rivetjs/runtime/dom-derived` (the runtime adopts: no `_tpl` / `_insert` / `_for` change, §3.5 "As built").
+//! Hooks in `compile.rs` (`// exception: derived model`).
 
 use oxc_ast::{AstKind, ast::*};
 use oxc_semantic::NodeId;
@@ -14,15 +19,21 @@ use super::{Compiler, Diags, OPAQUE_CONTENT, Options, ServerTemplate, jsx_text};
 use crate::ir::{Expr, quote};
 use crate::resume::{self, derived::Plan, derived::Verdicts};
 
-/// Derived ABI: local suffix → export of `@rivetjs/runtime/server-derived`.
+/// Server derived ABI: local suffix → export of `@rivetjs/runtime/server-derived`.
 const DERIVED_ABI: &[(&str, &str)] =
     &[("b", "_rB"), ("bOut", "_rBOut"), ("bEnd", "_rBEnd"), ("bAttr", "_rBAttr"), ("sig", "_rSig"), ("sigStore", "_rSigStore")];
+/// DOM derived ABI: local suffix → export of `@rivetjs/runtime/dom-derived`.
+const DOM_DERIVED_ABI: &[(&str, &str)] = &[("b", "_b"), ("sig", "_sig"), ("sigStore", "_sigStore")];
 
 pub struct Derived {
     pub plan: Plan,
+    /// The resume module id: boundary names are `<module>#<Name>`.
+    module: String,
+    /// The ABI table of this target.
+    abi: &'static [(&'static str, &'static str)],
     /// The boundary token local (`__rivetB`).
     token: String,
-    /// (ABI suffix, local) in `DERIVED_ABI` order.
+    /// (ABI suffix, local) in ABI table order.
     names: Vec<(&'static str, String)>,
     used: Vec<&'static str>,
 }
@@ -35,15 +46,28 @@ pub(super) fn is_function_child(e: &Expression<'_>) -> bool {
 impl<'t, 'a> Compiler<'t, 'a> {
     /// Run the resume analysis for its sites only (its capture / serializability diagnostics are dropped: nothing
     /// serializes), keep RV2001, plan boundaries / keyed state (RV2103 / RV2104), allocate the ABI locals.
+    /// DOM target: the same analysis and plan (identical boundaries / keys); every diagnostic of it is the server
+    /// target's (RV2001 / RV2103 / RV2104 are reported once, by the server compile and `check`'s server pass).
     pub(super) fn derived_setup(&mut self, module: &str, verdicts: &Verdicts, options: &Options) {
         let tree = self.tree;
         let mut scratch = Diags { tree: Some(tree), filename: self.diags.filename.clone(), list: Vec::new() };
         let resumed = resume::analyze(tree, module, &mut scratch, &self.static_decls, &options.source_packages, &options.resolved_imports);
-        resume::browser_global_reads(tree, &resumed, &mut self.diags);
-        let plan = resume::derived::plan(tree, &resumed, module, verdicts, &mut self.diags);
+        let plan = if self.server {
+            resume::browser_global_reads(tree, &resumed, &mut self.diags);
+            resume::derived::plan(tree, &resumed, module, verdicts, &mut self.diags)
+        } else {
+            resume::derived::plan(tree, &resumed, module, verdicts, &mut scratch)
+        };
         let token = self.unique("__rivetB");
-        let names = DERIVED_ABI.iter().map(|(name, _)| (*name, self.unique(&format!("__rivetR_{name}")))).collect();
-        self.derived = Some(Derived { plan, token, names, used: Vec::new() });
+        let abi = if self.server { DERIVED_ABI } else { DOM_DERIVED_ABI };
+        let names = abi.iter().map(|(name, _)| (*name, self.unique(&format!("__rivetR_{name}")))).collect();
+        self.derived = Some(Derived { plan, module: module.to_string(), abi, token, names, used: Vec::new() });
+    }
+
+    /// Module-qualified boundary names in source order (`compile` result `boundaries`).
+    pub(super) fn derived_boundaries(&self) -> Vec<String> {
+        let Some(d) = &self.derived else { return Vec::new() };
+        d.plan.names.iter().map(|name| format!("{}#{name}", d.module)).collect()
     }
 
     fn derived_name(&mut self, name: &'static str) -> String {
@@ -62,9 +86,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
     pub(super) fn derived_node(&mut self, id: NodeId) -> Option<Expr> {
         let d = self.derived.as_ref()?;
         if let Some((name, flags, props)) = d.plan.boundaries.get(&id).cloned() {
+            let name = format!("{}#{name}", d.module);
+            if !self.server {
+                return self.dom_boundary_body(id, &name);
+            }
             return self.boundary_body(id, &name, flags, props.as_deref());
         }
-        if d.plan.returns.contains(&id) {
+        if self.server && d.plan.returns.contains(&id) {
             return self.boundary_return(id);
         }
         if let Some((key, store)) = d.plan.keyed.get(&id).cloned() {
@@ -104,6 +132,33 @@ impl<'t, 'a> Compiler<'t, 'a> {
             reps.push((Span::new(start, start), Expr::Raw(format!(" {open} try {{"))));
             let at = body.span.end.saturating_sub(1);
             reps.push((Span::new(at, at), Expr::Raw(format!("}}{close} "))));
+        }
+        let text = self.render_sorted(tree.span(id), reps);
+        Some(Expr::Func(text))
+    }
+
+    /// DOM target: `return _b("<module>#Name", () => { …body… });` after the directives (an async function's arrow is
+    /// async; a generator keeps its body: no boundary), a concise arrow `() => _b("…", () => value)`.
+    fn dom_boundary_body(&mut self, id: NodeId, name: &str) -> Option<Expr> {
+        let tree = self.tree;
+        let (body, concise, is_async) = match tree.kind(id) {
+            AstKind::Function(f) if !f.generator => (f.body.as_deref()?, false, f.r#async),
+            AstKind::ArrowFunctionExpression(a) => (&*a.body, a.expression, a.r#async),
+            _ => return None,
+        };
+        let b = self.derived_name("b");
+        let arrow = if is_async { "async () =>" } else { "() =>" };
+        let mut reps = self.visit_children(id);
+        if concise {
+            let Some(Statement::ExpressionStatement(s)) = body.statements.first() else { return None };
+            let span = s.expression.span();
+            reps.push((Span::new(span.start, span.start), Expr::Raw(format!("{b}({}, {arrow} ", quote(name)))));
+            reps.push((Span::new(span.end, span.end), Expr::Raw(")".into())));
+        } else {
+            let start = body.directives.last().map_or(body.span.start + 1, |d| d.span.end);
+            reps.push((Span::new(start, start), Expr::Raw(format!(" return {b}({}, {arrow} {{", quote(name)))));
+            let at = body.span.end.saturating_sub(1);
+            reps.push((Span::new(at, at), Expr::Raw("}); ".into())));
         }
         let text = self.render_sorted(tree.span(id), reps);
         Some(Expr::Func(text))
@@ -182,10 +237,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
     }
 
-    /// `import { _rB as __rivetR_b, … } from "@rivetjs/runtime/server-derived";` (used names, ABI order).
+    /// `import { _rB as __rivetR_b, … } from "@rivetjs/runtime/server-derived";` (used names, ABI order); DOM:
+    /// `import { _b as __rivetR_b, … } from "@rivetjs/runtime/dom-derived";`.
     pub(super) fn derived_imports(&self) -> String {
         let Some(d) = &self.derived else { return String::new() };
-        let list: Vec<String> = DERIVED_ABI
+        let list: Vec<String> = d
+            .abi
             .iter()
             .zip(&d.names)
             .filter(|((name, _), _)| d.used.contains(name))
@@ -194,6 +251,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if list.is_empty() {
             return String::new();
         }
-        format!("import {{ {} }} from \"@rivetjs/runtime/server-derived\";\n", list.join(", "))
+        let from = if self.server { "server-derived" } else { "dom-derived" };
+        format!("import {{ {} }} from \"@rivetjs/runtime/{from}\";\n", list.join(", "))
     }
 }

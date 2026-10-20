@@ -1,10 +1,11 @@
-// Derived model, browser side (M2 lane R: R2 loader + R3 adopt): a page rendered by `derivedToString` (boundaries tail +
-// derived loader) boots from the tail on the first interaction, adopts boundary units over the live server nodes and
-// updates them in place. Fixture: `tests/derived/page.{server,dom}.tsx`, hand-lowered to the derived ABI (the server as
-// the M2-C target emits it, the DOM as C3 is to emit it) and compiled with today's server / DOM targets; the last case
-// compiles `tests/derived/page.tsx` with the real derived server target (ATTR roots, `<!--[-->` content markers,
-// `<h5>-<n>` keys; skips on a wasm without the model). Served as a derived build (`DERIVED_BUILD`:
-// lazy rows + `DERIVED` switches); `/rt.js` = the manifest runtime (default export of `@rivetjs/runtime/dom-derived`).
+// Derived model, browser side (M2 lane R: R2 loader + R3 adopt; lane C3: the compiled DOM target): a page rendered by
+// `derivedToString` (boundaries tail + derived loader) boots from the tail on the first interaction, adopts boundary units
+// over the live server nodes and updates them in place. Fixture: `tests/derived/page.{server,dom}.tsx`, hand-lowered to
+// the derived ABI (bare boundary names) and compiled with today's server / DOM targets; the last case compiles
+// `tests/derived/page.tsx` with the real derived server target (ATTR roots, `<!--[-->` content markers, `<h5>-<n>` keys)
+// and the real derived DOM target (C3: `_b` / `_sig`, module-qualified names `src/page.tsx#App`; skips on a wasm without
+// the model). Served as a derived build (`DERIVED_BUILD`: lazy rows + `DERIVED` switches); `/rt.js` = the manifest
+// runtime (default export of `@rivetjs/runtime/dom-derived`).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -210,19 +211,23 @@ test("adopt cost: materialising the page root is O(spine), not O(rows)", async (
 });
 
 const compiled = hasDerivedModel() ? test : test.skip;
-compiled("compiled derived server output (ATTR roots, content markers, module keys) adopts with the hand-lowered DOM module", async () => {
-  const out = compile(await fixture("page.tsx"), {
-    target: "server",
-    filename: "page.tsx",
-    resume: { module: "src/page.tsx", model: "derived", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] },
-  } as never);
-  assert.deepEqual(out.diagnostics, []);
-  // The DOM module takes the server's keys (C3 emits one key plan for both targets), in source order.
-  const keys = [...out.code.matchAll(/__rivetR_sig\("([^"]+)"/g)].map((m) => m[1]!);
-  assert.equal(keys.length, 4);
-  let k = 0;
-  const { App } = await importServer<{ App: (props: { data: Data }) => ServerValue }>(out.code);
-  const html = (await derivedToString(() => App({ data: data(5) }), { manifest })) as string;
+const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
+const qualified = { "src/page.tsx#App": "/page.js", "src/page.tsx#Header": "/page.js", "src/page.tsx#Counter": "/page.js" };
+compiled("compiled derived server + DOM targets (C3: `_b` / `_sig` with the server's names and keys) adopt end to end", async () => {
+  const source = await fixture("page.tsx");
+  const server = compile(source, { target: "server", filename: "page.tsx", resume: RESUME } as never);
+  const dom = compile(source, { target: "dom", filename: "page.tsx", resume: RESUME } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  // One plan for both targets: the same module-qualified boundary names and `<h5>-<n>` keys, in source order.
+  const names = (code: string, callee: string) => [...code.matchAll(new RegExp(callee + '\\("([^"]+)"', "g"))].map((m) => m[1]!);
+  assert.deepEqual(names(server.code, "__rivetR_b"), ["src/page.tsx#Header", "src/page.tsx#Counter", "src/page.tsx#App"]);
+  assert.deepEqual(names(dom.code, "__rivetR_b"), names(server.code, "__rivetR_b"));
+  assert.equal(names(server.code, "__rivetR_sig").length, 4);
+  assert.deepEqual(names(dom.code, "__rivetR_sig"), names(server.code, "__rivetR_sig"));
+  assert.deepEqual((dom as { boundaries?: string[] }).boundaries, names(dom.code, "__rivetR_b"));
+  const { App } = await importServer<{ App: (props: { data: Data }) => ServerValue }>(server.code);
+  const html = (await derivedToString(() => App({ data: data(5) }), { manifest: { ...manifest, symbols: qualified } })) as string;
   assert.match(html, /<header data-b="2">/);
   assert.match(html, /<div class="counter" data-b="3">/);
   assert.match(html, /<h1 id="title"><!--\[-->Records<!--\]--> \(<!--\[-->5<!--\]--> rows\)<\/h1>/);
@@ -230,10 +235,11 @@ compiled("compiled derived server output (ATTR roots, content markers, module ke
     ...DERIVED_BUILD,
     "/": "<!doctype html><html><body>" + html + "</body></html>",
     "/rt.js": 'export { default } from "/dom-derived.ts";',
-    "/page.js": await domModule((source) => source.replace(/_sig\("[^"]+"/g, () => '_sig("' + keys[k++] + '"')),
+    "/page.js": rewrite(dom.code),
   };
-  await withPage(served, async (page) => {
+  await withPage(served, async (page, requests) => {
     await page.goto("http://rivet.test/");
+    assert.deepEqual(requests, ["/"], "no module before an interaction");
     await tag(page, ["header", "#inc", "#count", "#title", "ul li:nth-child(4)"]);
     await page.click("#inc");
     await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");

@@ -93,10 +93,11 @@ export interface ResumeOptions {
   module?: string;
   /**
    * Resume model (derived client, plan `docs/design/plans/2026-10-18-derived-client.md` M2). `serialized` (default): today's
-   * records (`_rOn` / `_rBind` / `_rFn` … + the state table). `derived`: the server target is plain server output plus
-   * boundary / keyed-state calls (`_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore` from
-   * `@rivetjs/runtime/server-resume`) and nothing else — values only on the wire. The DOM target is unchanged by it
-   * (C3 adopt mode is a later task). Needs a wasm build with `hasDerivedModel()`.
+   * records (`_rOn` / `_rBind` / `_rFn` … + the state table). `derived` (experimental): the server target is plain
+   * server output plus boundary / keyed-state calls (`_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore`
+   * from `@rivetjs/runtime/server-derived`) and nothing else — values only on the wire; the DOM target is plain DOM output
+   * with each boundary body wrapped `return _b("<module>#Name", () => …)` and keyed state `_sig` / `_sigStore` (same
+   * names and keys as the server, `@rivetjs/runtime/dom-derived`). Needs a wasm build with `hasDerivedModel()`.
    */
   model?: "serialized" | "derived";
   /**
@@ -194,6 +195,11 @@ export interface CompileResult {
   forRows?: ForRowFact[];
   /** Resume mode only: module-scope value names referenced by symbols, sorted. */
   scope?: string[];
+  /**
+   * `resume.model: "derived"` only (absent when the module has none): the module's boundary names, module-qualified
+   * (`<resume module>#<Name>`, source order) — the names `_rB` / `_b` carry and the build manifest's `symbols` keys.
+   */
+  boundaries?: string[];
   /** Source map v3 JSON (with `sourceMap: true`). */
   map?: string;
   /** Scoped CSS of the module's css`` blocks (`styles` option). */

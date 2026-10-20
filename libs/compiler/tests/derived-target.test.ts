@@ -25,7 +25,7 @@ const server = (source: string, options: object = {}) => compile(source, { targe
 it("server derived target: boundary + keyed state calls, no site records; serialized model byte-identical", () => {
   const out = server(COUNTER, { model: "derived" });
   assert.deepEqual(out.diagnostics, []);
-  assert.match(out.code, /const __rivetB = __rivetR_b\("Counter", 2\);\n\s*try \{/);
+  assert.match(out.code, /const __rivetB = __rivetR_b\("src\/m\.tsx#Counter", 2\);\n\s*try \{/);
   assert.match(out.code, /__rivetR_sig\("[0-9a-z]{5}-0", 0\)/);
   assert.match(out.code, /return __rivetR_bOut\(__rivetB, __rivetTemplate\(__rivetFragments0, \[__rivetR_bAttr\(__rivetB\), n\(\)\]\)\);/);
   assert.match(out.code, /finally \{\n\s*__rivetR_bEnd\(__rivetB\);/);
@@ -38,9 +38,11 @@ it("server derived target: boundary + keyed state calls, no site records; serial
   // Serialized (default) model: the option spelled out changes nothing.
   assert.deepEqual(server(COUNTER, { model: "serialized" }), server(COUNTER));
   assert.ok(server(COUNTER).code.includes("__rivetR_on("));
-  // DOM target: unchanged by the model (C3 adopt mode is a later task).
+  // The DOM target's derived lowering (C3) is pinned by derived-adopt.test.ts; its serialized output ignores the spelled-out model.
   const dom = (options: object) => compile(COUNTER, { target: "dom", filename: "m.tsx", resume: { ...resume, ...options } });
-  assert.deepEqual(dom({ model: "derived" }), dom({}));
+  assert.deepEqual(dom({ model: "serialized" }), dom({}));
+  // Boundary names, module-qualified (`<resume module>#<Name>`): the manifest `symbols` keys.
+  assert.deepEqual(out.boundaries, ["src/m.tsx#Counter"]);
 });
 
 it("every return of a boundary is wrapped; non-element roots get comment markers; concise arrows become blocks", () => {
@@ -59,13 +61,13 @@ export const Arrow = (props) => <i onClick={() => props.go()}>go</i>;
   );
   assert.deepEqual(out.diagnostics, []);
   // Two returns, both through `_rBOut`; the nested function's `return 1` is untouched; fragment root → flags 0.
-  assert.match(out.code, /__rivetR_b\("Switcher", 0\)/);
+  assert.match(out.code, /__rivetR_b\("src\/m\.tsx#Switcher", 0\)/);
   assert.equal(out.code.match(/__rivetR_bOut\(__rivetB, /g)?.length, 3);
   assert.ok(out.code.includes("return __rivetR_bOut(__rivetB, null);"));
   assert.match(out.code, /const inner = \(\) => \{\s*return 1;\s*\};/);
   assert.match(
     out.code,
-    /export const Arrow = \(props\) => \{\n\s*const __rivetB = __rivetR_b\("Arrow", 2\);\n\s*try \{\n\s*return __rivetR_bOut\(__rivetB, __rivetTemplate/,
+    /export const Arrow = \(props\) => \{\n\s*const __rivetB = __rivetR_b\("src\/m\.tsx#Arrow", 2\);\n\s*try \{\n\s*return __rivetR_bOut\(__rivetB, __rivetTemplate/,
   );
 });
 
@@ -78,14 +80,14 @@ export function Shell({ title }) { const n = signal(0); return <b onClick={() =>
 `;
   const local = server(source, { model: "derived" });
   assert.deepEqual(local.diagnostics, []);
-  assert.ok(local.code.includes('__rivetR_b("Counter", 3, props)'), local.code);
-  assert.ok(local.code.includes('__rivetR_b("Shell", 2)'), local.code);
-  assert.ok(local.code.includes('__rivetR_b("Page", 2)'), local.code);
+  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Counter", 3, props)'), local.code);
+  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Shell", 2)'), local.code);
+  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Page", 2)'), local.code);
   // The build's verdicts win over the module-local closure.
   const build = server(source, { model: "derived", boundaries: ["Counter"], independent: [] });
-  assert.ok(build.code.includes('__rivetR_b("Counter", 2)'), build.code);
-  assert.ok(!build.code.includes('__rivetR_b("Page"'), build.code);
-  assert.ok(!build.code.includes('__rivetR_b("Shell"'), build.code);
+  assert.ok(build.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), build.code);
+  assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Page"'), build.code);
+  assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Shell"'), build.code);
 });
 
 it("moduleFacts boundaries: own interactivity, context, params, renders, data-only calls", () => {

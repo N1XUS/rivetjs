@@ -6,6 +6,7 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { coLoadGroups, isBarrel, MERGE_BUDGET, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
 import { switchContent } from "./switches.ts";
+import { boundaryFacts } from "./facts-fixpoint.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import {
   compile,
@@ -159,6 +160,18 @@ export interface RivetResumeOptions {
    * false.
    */
   domData?: boolean;
+  /**
+   * Resume model (experimental; derived client, spec `docs/design/specs/2026-10-18-structural-resume-design.md` §3.3–3.5,
+   * plan `docs/design/plans/2026-10-18-derived-client.md` M2). `"serialized"` (default): today's records + state table +
+   * symbol chunks. `"derived"`: resume modules compile with `resume: { model: "derived" }` on both targets (boundary
+   * verdicts from the build's facts fixpoint, `facts-fixpoint.ts`), the page ships values only (a boundaries tail) and the
+   * browser adopts boundaries over the server nodes. The build serves the lazy rows + `DERIVED` runtime switches, emits one
+   * chunk per module holding boundaries plus the runtime entry (default export of `@rivetjs/runtime/dom-derived`), and
+   * writes the manifest with `model: "derived"`, `runtime` and `symbols` keyed by boundary name (`<module>#<Name>`); the
+   * router renders such builds with `renderDerived`. `chunks` / `merge` / `cap` / `preload` / `lazy` / `entry` /
+   * `lazyRows` / `domData` do not apply. Dev: an edit of a resume module reloads the page.
+   */
+  model?: "serialized" | "derived";
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -400,6 +413,8 @@ export interface DevResume {
     lazyRows?: boolean;
     /** `resume.domData`: the dev resume runtime reads DOM-backed loader data. */
     domData?: boolean;
+    /** `resume.model: "derived"`: `runtime` is the dev derived entry, `symbols` maps boundary names to dev module URLs. */
+    model?: "derived";
   };
   /** Component, source location and capture names of a symbol id compiled for dev SSR. */
   describe(id: string): DevSymbolInfo | undefined;
@@ -425,6 +440,15 @@ function registration(mod: string, symbols: ResumeSymbol[]): string {
   return `import { _rSym } from "@rivetjs/runtime/resume-symbols";\n_rSym(${JSON.stringify(mod)}, { ${table} });\n`;
 }
 const ENTRY = "\0rivet-resume-entry";
+/** `resume.model: "derived"`: the runtime entry (manifest `runtime`, default export = the `dom-derived` instance). */
+const DERIVED_ENTRY = "\0rivet-derived-entry";
+/**
+ * `resume.model: "derived"`, server: the router's `@rivetjs/runtime/server-resume` import resolves here, so its
+ * `renderResumable` / `resumableToString` are `renderDerived` / `derivedToString` (`@rivetjs/runtime/server-derived`). Build
+ * time selection: the router source is untouched (serialized-model servers carry 0 B of it).
+ */
+const DERIVED_SERVER = "\0rivet-derived-server-resume";
+const ROUTER_MODULE = /[\\/](?:libs[\\/]router|@rivetjs[\\/]router)[\\/]/;
 const MANIFEST = ".vite/rivet-resume.json";
 /**
  * `resume.lazyRows` (LAZY-T5B): the runtime's build-time switch modules (`@rivetjs/runtime` `lazy-rows.ts` /
@@ -434,6 +458,13 @@ const MANIFEST = ".vite/rivet-resume.json";
 const LAZY_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](lazy-rows(?:-resume)?)\.([cm]?[jt]s)$/;
 function lazySwitch(id: string): string | null {
   const hit = LAZY_SWITCH.exec(id);
+  return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
+}
+/** `resume.model: "derived"` (M2 C3): the runtime's `derived.ts` switch (`DERIVED`, the adopt run's `_for` hook) → its
+ * opted-in content (`switches.ts`); the derived build serves the lazy rows switches with it (browser only). */
+const DERIVED_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](derived)\.([cm]?[jt]s)$/;
+function derivedSwitch(id: string): string | null {
+  const hit = DERIVED_SWITCH.exec(id) ?? LAZY_SWITCH.exec(id);
   return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
 }
 /** `resume.domData` (DOM-DATA): the runtime's switch modules (`dom-data.ts` / `dom-data-resume.ts` for the browser,
@@ -672,6 +703,16 @@ function rivetPlugin(
     // `rivetRouter()` in the config: it owns the server-only guard (document routes, RV3011); else `serverOnly` is guarded here.
     routed = false;
   const resumable = new Set<string>();
+  // `resume.model: "derived"` (M2 C3): per resume module, the build's boundary verdicts (`facts-fixpoint.ts`, buildStart
+  // of every build environment: client and server walk the same graph, so both targets get the same boundaries / names /
+  // keys); dev compiles without them (module-local closure, identical on both targets).
+  const derivedModel = resume?.model === "derived";
+  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
+  // Dev: boundary name (`<module>#<export>`, compile results) → defining file, for the dev manifest's `symbols`.
+  const derivedDev = new Map<string, string>();
+  // Client build: module → its boundary names as the DOM compile emitted them (`CompileResult.boundaries`: the export
+  // names the runtime reads from the chunk), for the manifest's `symbols`.
+  const derivedNames = new Map<string, string[]>();
   // Framework bridges (`rivet({ bridges })`): the facade host's api once Vite resolved the config, else null.
   let bridges: RivetBridgesApi | null = null;
   /** An island facade (`\0rivet-island:…`): a virtual Rivet module (its text from the bridge plugin). */
@@ -754,41 +795,56 @@ function rivetPlugin(
   // `@rivetjs/runtime/resume-loader-module` (the resume loader's scheduled prefetch / idle warm-up, imported by the inline
   // stub after the first frame or with the first intent): an emitted chunk, manifest `loader` (hashed, cached across pages).
   let loaderId: string | null = null;
+  // Serialized model dev manifest (`api.devResume.manifest()`).
+  const devManifest = (): ReturnType<DevResume["manifest"]> => ({
+    runtime: base + (resume?.entry ? posix(resume.entry).replace(/^\.?\//, "") : "@id/__x00__rivet-resume-entry"),
+    ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
+    ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
+    ...(resume?.lazyRows ? { lazyRows: true } : {}),
+    ...(resume?.domData ? { domData: true } : {}),
+    symbols: new Proxy({} as Record<string, string>, {
+      get: (_, id) => {
+        const known = typeof id === "string" ? devSymbols.get(id) : undefined;
+        return (
+          known && base + devUrl(known.file) + "?rivet-chunk=" + encodeURIComponent(known.symbol.kind === "ref" ? known.symbol.id : known.symbol.component)
+        );
+      },
+    }),
+    // Framework islands (`rivet({ bridges })`): island key → its dev island module URL.
+    ...(bridges
+      ? {
+          islands: new Proxy({} as Record<string, string>, {
+            get: (_, key) => {
+              const id = typeof key === "string" ? bridges?.islandModule(key) : undefined;
+              return id && base + devUrl(id);
+            },
+          }),
+        }
+      : {}),
+    // Capture names per symbol id (Function Bridge Q6 / T19): render errors name the capture as written (`o.a`, not the
+    // member-narrowed parameter `o$a`: `labels`). Dev only — the production manifest (`.vite/rivet-resume.json`) never has them.
+    captures: new Proxy({} as Record<string, readonly string[]>, {
+      get: (_, id) => {
+        const symbol = typeof id === "string" ? devSymbols.get(id)?.symbol : undefined;
+        return symbol && (symbol.labels ?? symbol.captures);
+      },
+    }),
+  });
   const devResume: DevResume = {
-    manifest: () => ({
-      runtime: base + (resume?.entry ? posix(resume.entry).replace(/^\.?\//, "") : "@id/__x00__rivet-resume-entry"),
-      ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
-      ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
-      ...(resume?.lazyRows ? { lazyRows: true } : {}),
-      ...(resume?.domData ? { domData: true } : {}),
-      symbols: new Proxy({} as Record<string, string>, {
-        get: (_, id) => {
-          const known = typeof id === "string" ? devSymbols.get(id) : undefined;
-          return (
-            known && base + devUrl(known.file) + "?rivet-chunk=" + encodeURIComponent(known.symbol.kind === "ref" ? known.symbol.id : known.symbol.component)
-          );
-        },
-      }),
-      // Framework islands (`rivet({ bridges })`): island key → its dev island module URL.
-      ...(bridges
+    manifest: () =>
+      derivedModel
         ? {
-            islands: new Proxy({} as Record<string, string>, {
-              get: (_, key) => {
-                const id = typeof key === "string" ? bridges?.islandModule(key) : undefined;
-                return id && base + devUrl(id);
+            model: "derived",
+            runtime: base + devUrl(DERIVED_ENTRY),
+            symbols: new Proxy({} as Record<string, string>, {
+              get: (_, name) => {
+                const file = typeof name === "string" ? derivedDev.get(name) : undefined;
+                return file && base + devUrl(file);
               },
             }),
+            captures: {},
           }
-        : {}),
-      // Capture names per symbol id (Function Bridge Q6 / T19): render errors name the capture as written (`o.a`, not the
-      // member-narrowed parameter `o$a`: `labels`). Dev only — the production manifest (`.vite/rivet-resume.json`) never has them.
-      captures: new Proxy({} as Record<string, readonly string[]>, {
-        get: (_, id) => {
-          const symbol = typeof id === "string" ? devSymbols.get(id)?.symbol : undefined;
-          return symbol && (symbol.labels ?? symbol.captures);
-        },
-      }),
-    }),
+        : devManifest(),
     describe(id) {
       const known = devSymbols.get(id);
       if (!known) return undefined;
@@ -925,6 +981,52 @@ function rivetPlugin(
     resolvedImports.set(filename, map);
     resolvedFiles.set(filename, files);
   };
+  /** Derived model: walk the resume module graph from `resume.modules` (facts with `boundaries`), close the boundary facts
+   * over it (`boundaryFacts`; route modules' default exports are independent roots) and keep each module's verdicts. */
+  const derivedWalk = async (ctx: Rollup.PluginContext): Promise<void> => {
+    const facts = new Map<string, ModuleFacts>(),
+      graph = new Map<string, Map<string, string>>(),
+      roots = new Set<string>();
+    const pending = [...resumable];
+    for (let filename; (filename = pending.shift());) {
+      if (facts.has(filename)) continue;
+      const source = prepared(filename, await sourceOf(ctx, filename));
+      const route = isRoute(filename);
+      const f = moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
+      facts.set(filename, f);
+      if (route) roots.add(filename);
+      const map = new Map<string, string>();
+      for (const spec of new Set([...f.statics, ...f.dynamics])) {
+        const hit = await resolveFact(ctx, spec, filename);
+        const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
+        if (!file || !isResumable(file)) continue;
+        map.set(spec, file);
+        if (!resumable.has(file)) (resumable.add(file), pending.push(file));
+      }
+      graph.set(filename, map);
+    }
+    const verdicts = boundaryFacts(facts, graph, roots);
+    derivedVerdicts.clear();
+    for (const file of facts.keys()) derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file) });
+  };
+  /** Derived model manifest (`.vite/rivet-resume.json`): `model`, `runtime` (the derived entry chunk), `symbols` (boundary
+   * name → the chunk of its module), `sizes` (those chunks' bytes). */
+  function derivedManifest(this: Rollup.PluginContext, bundle: Rollup.OutputBundle): void {
+    const symbols: Record<string, string> = {},
+      sizes: Record<string, number> = {};
+    let runtime: string | null = null;
+    for (const output of Object.values(bundle)) {
+      if (output.type !== "chunk" || !output.facadeModuleId) continue;
+      if (output.facadeModuleId === DERIVED_ENTRY) runtime = base + output.fileName;
+      const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
+      if (!names?.length) continue;
+      sizes[base + output.fileName] = Buffer.byteLength(output.code);
+      for (const name of names) symbols[name] = base + output.fileName;
+    }
+    const body = { model: "derived", runtime, symbols, sizes };
+    const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
+    this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
+  }
   const warned = new Set<string>();
   // Compile + dev bookkeeping of one transformed `.tsx` / `.jsx` module (after `resolveImports` for resume modules).
   const finish = (ctx: Rollup.TransformPluginContext, filename: string, source: string, server: boolean, id: string) => {
@@ -950,6 +1052,9 @@ function rivetPlugin(
         symbols.map((symbol) => symbol.id),
       );
     }
+    // Derived model dev server: boundary names → their module (dev manifest `symbols`).
+    if (serve && derivedModel) for (const name of result.boundaries ?? []) derivedDev.set(name, filename);
+    if (derivedModel && !server) derivedNames.set(filename, result.boundaries ?? []);
     // DevTools (dev client only): signals / computeds named after their bindings.
     const named = tools && serve && !server ? tools.nameSignals(result.code, result.map) : null;
     let code = named?.code ?? result.code;
@@ -973,8 +1078,10 @@ function rivetPlugin(
   const resumeOptions = (filename: string, source: string): Partial<CompileOptions> => {
     const sourcePackages = sourcePackagesOf(filename, source);
     const resolved = resolvedImports.get(filename);
+    // Derived model: the build's verdicts for this module (absent in dev: the compiler's module-local closure).
+    const verdict = derivedModel ? derivedVerdicts.get(filename) : undefined;
     return {
-      resume: { module: moduleId(filename) },
+      resume: derivedModel ? { module: moduleId(filename), model: "derived", ...verdict } : { module: moduleId(filename) },
       ...(sourcePackages.length ? { sourcePackages } : {}),
       ...(resolved && Object.keys(resolved).length ? { resolvedImports: resolved } : {}),
     };
@@ -1158,6 +1265,8 @@ function rivetPlugin(
       base = config.base ?? "/";
       routed = !!config.plugins?.some((plugin) => plugin.name === "vite-plugin-rivet-router");
       if (patterns.include != null || patterns.exclude != null) selected = createFilter(patterns.include, patterns.exclude, { resolve: root });
+      if (resume?.model !== undefined && resume.model !== "serialized" && resume.model !== "derived")
+        throw new Error(`rivet({ resume }): resume.model must be "serialized" or "derived" (got ${JSON.stringify(resume.model)})`);
       resumable.clear();
       for (const path of resume?.modules ?? []) resumable.add(resolve(root, path));
       // Apps with a Vite config file always get a manifest (its presence = config evaluated, T1);
@@ -1184,6 +1293,17 @@ function rivetPlugin(
         builtinsId = hit && !hit.external ? hit.id.split("?")[0]! : "";
         const module = await this.resolve("@rivetjs/runtime/resume-loader-module", join(root, "index.html"), { skipSelf: true });
         loaderId = module && !module.external ? module.id.split("?")[0]! : "";
+      }
+      // Derived model (M2 C3): verdicts in every build environment (server + client compile with the same boundaries), then
+      // the client build emits one chunk per module holding boundaries (its exports = the boundaries' components) and the
+      // runtime entry; no symbol chunks, builtins or loader module (the derived loader is inline).
+      if (resume && derivedModel) {
+        if (serve) return;
+        await derivedWalk(this);
+        if (ssrBuild || this.environment?.config?.consumer === "server") return;
+        for (const [file, verdict] of derivedVerdicts) if (verdict.boundaries.length) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
+        this.emitFile({ type: "chunk", id: DERIVED_ENTRY, name: "derived-runtime", preserveSignature: "strict" });
+        return;
       }
       // Dev renders without resumability: symbol chunks and the manifest exist only in client builds.
       if (!resume || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
@@ -1472,7 +1592,16 @@ function rivetPlugin(
       // Dev client: app modules get the state-restoring `signal` (hot replacement keeps state).
       if (id === "@rivetjs/reactivity" && serve && importer && this.environment?.config?.consumer !== "server" && appModule(importer.split("?")[0]!))
         return this.resolve("@rivetjs/runtime/hot-reactivity", importer, { skipSelf: true });
-      if (id === ENTRY || id.startsWith(CHUNK) || id.startsWith(PART)) return id;
+      if (id === ENTRY || id === DERIVED_ENTRY || id === DERIVED_SERVER || id.startsWith(CHUNK) || id.startsWith(PART)) return id;
+      // Derived build, server: the router renders through the derived renderer (`DERIVED_SERVER`).
+      if (
+        derivedModel &&
+        id === "@rivetjs/runtime/server-resume" &&
+        importer &&
+        ROUTER_MODULE.test(importer) &&
+        (ssrBuild || this.environment?.config?.consumer === "server")
+      )
+        return DERIVED_SERVER;
       // `rivet({ serverOnly })` without the router: a browser import of one fails the build (the compiler's own fact
       // resolutions excepted: type-only imports are listed too).
       if (
@@ -1499,6 +1628,14 @@ function rivetPlugin(
     },
     async load(id) {
       const clean = id.split("?", 1)[0]!;
+      // `resume.model: "derived"`: the browser runtime ships lazy rows + the `DERIVED` `_for` hook (server untouched).
+      if (derivedModel && !ssrBuild && this.environment?.config?.consumer !== "server") {
+        const code = derivedSwitch(clean);
+        if (code !== null) return code;
+      }
+      if (id === DERIVED_ENTRY) return 'export { default } from "@rivetjs/runtime/dom-derived";\n';
+      if (id === DERIVED_SERVER)
+        return 'export * from "@rivetjs/runtime/server-resume";\nexport { renderDerived as renderResumable, derivedToString as resumableToString } from "@rivetjs/runtime/server-derived";\n';
       // `resume.lazyRows`: the lazy rows runtime is in (`LAZY_ROWS`); the resume manifest says so when the switch loaded.
       if (resume?.lazyRows) {
         const code = lazySwitch(clean);
@@ -1583,7 +1720,8 @@ function rivetPlugin(
     buildEnd(error) {
       const budget = resume?.merge ?? MERGE_BUDGET;
       // Server builds (another environment of this plugin instance) leave the client's groups alone.
-      if (budget === false || !resume || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
+      // Derived builds keep the bundler's split (one chunk per boundary module; route-closure chunks are later work).
+      if (budget === false || !resume || derivedModel || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
       merged = new Map();
       if (error) return;
       const nodes: CoLoadModule[] = [];
@@ -1626,7 +1764,7 @@ function rivetPlugin(
     },
     // Rolldown reads output options before the build: the group's name function reads `merged` at chunking time.
     outputOptions(options) {
-      if (!resume || resume.merge === false || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
+      if (!resume || resume.merge === false || derivedModel || serve || ssrBuild || this.environment?.config?.consumer === "server") return;
       return withMergeGroup(options, (id) => merged.get(id) ?? null);
     },
     // Post: chunk code is final (Vite's preload helpers rewritten), so sizes match the emitted files.
@@ -1636,6 +1774,7 @@ function rivetPlugin(
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
         hintEagerCompile(bundle, (output) => output.isEntry);
         if (!resume) return;
+        if (derivedModel) return derivedManifest.call(this, bundle);
         if (resume.domData && !domDataIn)
           this.warn(
             "resume.domData: the build's resume runtime does not include the DOM data reader (@rivetjs/runtime dom-data-resume module not found): the manifest leaves domData out, servers write no DOM-backed entries",
@@ -1903,6 +2042,12 @@ function rivetPlugin(
     async hotUpdate({ file, modules, read }) {
       // A framework source edit (E16): importers re-importing it under `?t=` would run a second copy
       // beside the page's; reload the page instead.
+      // Derived model: a resume module edit reloads the page (adopted boundaries are not hot-replaced; the server
+      // environment still invalidates its modules, so the reload renders the new code).
+      if (derivedModel && this.environment.config.consumer !== "server" && modules.length && isResumable(file)) {
+        this.environment.hot.send({ type: "full-reload" });
+        return [];
+      }
       if (this.environment.config.consumer !== "server" && modules.length && frameworkSource(file)) {
         this.environment.hot.send({ type: "full-reload" });
         return [];

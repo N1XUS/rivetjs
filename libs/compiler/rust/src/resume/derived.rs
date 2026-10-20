@@ -48,7 +48,7 @@ pub struct Verdicts {
 /// The derived server target's plan for one module.
 #[derive(Default)]
 pub struct Plan {
-    /// Boundary function → (name, flags, props parameter).
+    /// Boundary function → (emitted name: its export name, `export_name`; flags; props parameter).
     pub boundaries: FxHashMap<NodeId, (String, u32, Option<String>)>,
     /// Return statements (with an argument) of boundary bodies: `return _rBOut(B, value)`.
     pub returns: FxHashSet<NodeId>,
@@ -58,6 +58,8 @@ pub struct Plan {
     pub attr_roots: FxHashSet<NodeId>,
     /// Keyed state calls → (key, createStore).
     pub keyed: FxHashMap<NodeId, (String, bool)>,
+    /// Boundary names (export names) in source order.
+    pub names: Vec<String>,
 }
 
 fn pascal(name: &str) -> bool {
@@ -418,6 +420,24 @@ fn returned<'a>(tree: &Tree<'a>, function: NodeId, returns: &mut Vec<NodeId>) ->
     (values, every)
 }
 
+/// A boundary's emitted name (after `<module>#`): the name its module exports it under — the runtime reads the component
+/// from its chunk by it (`export function X` / `export { X }` → `X`, `export default function X` / `export default X` →
+/// `default`, `export { X as Y }` → `Y`); a component the module does not export keeps its local name (it can only be
+/// adopted as part of its parent's run).
+fn export_name(tree: &Tree<'_>, local: &str) -> String {
+    if local == "default" {
+        return local.to_string();
+    }
+    let names = super::refs::own_exports(tree, local);
+    if names.is_empty() || names.iter().any(|n| n == local) {
+        local.to_string()
+    } else if names.iter().any(|n| n == "default") {
+        "default".to_string()
+    } else {
+        names[0].clone()
+    }
+}
+
 /// The derived server target's plan, RV2103 / RV2104 into `diags` (errors first, then warnings).
 pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdicts, diags: &mut Diags) -> Plan {
     let components = components(tree, resumed);
@@ -480,7 +500,9 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
             plan.concise.insert(c.function);
         }
         let props = if independent[i] { c.props.clone() } else { None };
-        plan.boundaries.insert(c.function, (c.name.clone(), flags, props));
+        let name = export_name(tree, &c.name);
+        plan.boundaries.insert(c.function, (name.clone(), flags, props));
+        plan.names.push(name);
         boundary_of.insert(c.function, i);
     }
     // Keyed state (source order, inside functions, outside browser-only closures) and RV2103 in boundary bodies.

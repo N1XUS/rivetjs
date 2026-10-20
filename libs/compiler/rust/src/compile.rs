@@ -54,7 +54,7 @@ mod resume_cells;
 // exception: lane LAZY-T2 (2026-10-19) — server resume: compiler-private `$lazy` on lazy-eligible keyed `<For>`s (verdict:
 // `resume/rows.rs`).
 mod lazy_rows;
-// exception: derived model (M2 C2, 2026-10-20) — server target boundary / keyed-state lowering.
+// exception: derived model (M2 C2 / C3, 2026-10-20) — server + DOM target boundary / keyed-state lowering.
 mod derived;
 use derived::{Derived, is_function_child};
 
@@ -116,8 +116,8 @@ pub struct Options {
     /// conditional has a JSX operand lower to the `_cond` accessor itself (TERNARY-MEMO, `dom_v2.rs` `symbol_cond_v2`).
     pub symbols: bool,
     /// Derived resume model (`resume.model: "derived"`, M2 C2): the build's verdicts (`resume.boundaries` /
-    /// `resume.independent`). The server target lowers plain plus boundary / keyed-state calls (`compile/derived.rs`);
-    /// the DOM target ignores it.
+    /// `resume.independent`). Both targets lower plain plus boundary / keyed-state calls from one plan
+    /// (`compile/derived.rs`: server `_rB` / `_rSig`, M2 C2; DOM `_b` / `_sig`, M2 C3).
     pub derived: Option<resume::derived::Verdicts>,
 }
 
@@ -198,6 +198,9 @@ pub struct Output {
     pub classes: Vec<(String, bool)>,
     /// LAZY-ROWS T2, resume mode: every structural `<For>` with its lazy-rows verdict (`compile` / `check` JSON `forRows`).
     pub for_rows: Vec<resume::ForRowFact>,
+    /// Derived model (`resume.model: "derived"`): the module's boundary names (`<module>#<Name>`, source order), the
+    /// keys of the build manifest's `symbols` (`compile` JSON `boundaries`).
+    pub boundaries: Vec<String>,
 }
 
 pub struct Diags<'t, 'a> {
@@ -674,7 +677,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         "dom" => "dom",
         _ => {
             early.add("Unknown compilation target", None);
-            return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
+            return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
         }
     };
     let allocator = Allocator::default();
@@ -688,7 +691,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         early.add_parse_error(error.message.to_string(), span, source);
     }
     if parsed.panicked {
-        return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
+        return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
@@ -700,7 +703,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         derived: None,
         target,
         list_mounts,
-        resume_mode: options.resume.is_some() && !(target == "server" && options.derived.is_some()),
+        resume_mode: options.resume.is_some() && options.derived.is_none(),
         has_checker: false,
         diags: Diags { tree: Some(&tree), filename: filename.clone(), list: std::mem::take(&mut diags.list) },
         names: FxHashSet::default(),
@@ -877,9 +880,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if self.styles.is_some() {
             self.styles_setup();
         }
-        // Derived model, server target: lowered as plain server output (no resume names, symbols or sites).
-        let derived_server = self.server && options.resume.is_some() && options.derived.is_some();
-        self.has_checker = (options.resume.is_some() && !derived_server)
+        // Derived model (both targets): lowered as plain server / DOM output (no resume names, symbols or sites) plus the
+        // boundary / keyed-state calls (`compile/derived.rs`).
+        let derived_model = options.resume.is_some() && options.derived.is_some();
+        self.has_checker = (options.resume.is_some() && !derived_model)
             || !self.structural.is_empty()
             || !self.structural_namespaces.is_empty()
             || self.thunked.values().any(|name| *name != "Switch")
@@ -897,7 +901,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let local = self.unique(&local);
             self.abi.push((name, local));
         }
-        if options.resume.is_some() && !derived_server {
+        if options.resume.is_some() && !derived_model {
             for name in RESUME_ABI {
                 let local = self.unique(&format!("__rivetR_{name}"));
                 self.resume_names.push((name, local));
@@ -905,7 +909,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         self.list_name = self.unique("__rivetList");
         self.list_plan_name = self.unique("__rivetListPlan");
-        if let (true, Some(module), Some(verdicts)) = (derived_server, &options.resume, &options.derived) {
+        if let (true, Some(module), Some(verdicts)) = (derived_model, &options.resume, &options.derived) {
             self.derived_setup(module, verdicts, options);
         } else if let Some(module) = &options.resume {
             let resumed = resume::analyze(tree, module, &mut self.diags, &self.static_decls, &options.source_packages, &options.resolved_imports);
@@ -934,7 +938,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let sites = self.resumed.as_ref().map(|r| resume::site_infos(tree, r)).unwrap_or_default();
             let classes = self.resumed.as_ref().map(|r| r.classes.iter().map(|c| (c.name.clone(), c.revive)).collect()).unwrap_or_default();
             let for_rows = std::mem::take(&mut self.for_rows);
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites, classes, css: None, for_rows };
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites, classes, css: None, for_rows, boundaries: Vec::new() };
         }
         let top = self.reps.pop().unwrap_or_default();
         let mut body = self.render(program.span, &top);
@@ -1055,7 +1059,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
         let text = format!("{hashbang}{imports}{resume_imports}{hoists}{body}");
         if self.diags.has_errors() {
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
         }
         let (clean, segments) = if self.mapping { map::extract(&text) } else { (text, Vec::new()) };
         let mapped = self.mapping.then_some((source, segments.as_slice()));
@@ -1063,12 +1067,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
             Ok(output) => output,
             Err(message) => {
                 self.diag(format!("Internal error: emitted code failed to parse: {message}"), None);
-                return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
+                return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
             }
         };
         let Some(resumed) = self.resumed.take() else {
             let css = self.styles_output();
-            return Output { code, diagnostics: self.diags.list, resumed: None, map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows: Vec::new() };
+            let boundaries = self.derived_boundaries();
+            return Output { code, diagnostics: self.diags.list, resumed: None, map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows: Vec::new(), boundaries };
         };
         // DOM resume output: the module stays a CSR module and also exposes the module-scope values its
         // symbols reference, so per-component symbol modules can import them.
@@ -1081,7 +1086,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 format!("Cannot resume {component}: the module exports a different binding as `{name}` than the `{name}` its symbols reference; rename the local or the export"),
                 None,
             );
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new() };
+            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
         }
         // Static-call bindings are compiled away (their import is elided); symbols re-import them.
         let statics: Vec<&str> = self
@@ -1105,7 +1110,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         let css = self.styles_output();
         let for_rows = std::mem::take(&mut self.for_rows);
-        Output { code, diagnostics: self.diags.list, resumed: Some((resumed.symbols, scope)), map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows }
+        Output { code, diagnostics: self.diags.list, resumed: Some((resumed.symbols, scope)), map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows, boundaries: Vec::new() }
     }
 
     fn emit_plan(&mut self, plans: &[Plan], n: usize, emitted: &mut FxHashSet<String>) {

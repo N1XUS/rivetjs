@@ -226,6 +226,9 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
         let rows: Vec<Value> = output.for_rows.iter().map(|f| for_row_json(f, None)).collect();
         result.insert("forRows".into(), Value::Array(rows));
     }
+    if !output.boundaries.is_empty() {
+        result.insert("boundaries".into(), json!(output.boundaries));
+    }
     if let Some((symbols, scope)) = output.resumed {
         result.insert("symbols".into(), json!(symbols));
         result.insert("scope".into(), json!(scope));

@@ -22,8 +22,8 @@
 @rivetjs/runtime/dom-resume 73115ea57cb8 45570
 @rivetjs/runtime/dom-resume [lazyRows] a2d6f1c5c534 56388
 @rivetjs/runtime/dom-resume [domData] 72dce77a2dbe 47323
-@rivetjs/runtime/dom-derived 7b66cd41912b 28967
-@rivetjs/runtime/dom-derived [derived] 41a171c0878c 29165
+@rivetjs/runtime/dom-derived 6de54cbae7e9 29000
+@rivetjs/runtime/dom-derived [derived] a55a68efce79 29198
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ad5a7200976 8151
 @rivetjs/runtime/hot-reactivity 4c829a6bd4c1 17007

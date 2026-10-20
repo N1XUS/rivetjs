@@ -327,7 +327,7 @@ fn reference(
 /// `export { plus as inc }` → `inc` for `plus`, `export default inc` / `export default function inc` → `default`),
 /// sorted in code-unit order, without duplicates. Empty: not exported (re-exports `export { x } from "…"` name another
 /// module's binding, never `local`).
-fn own_exports(tree: &Tree, local: &str) -> Vec<String> {
+pub(super) fn own_exports(tree: &Tree, local: &str) -> Vec<String> {
     let mut names: Vec<String> = Vec::new();
     for statement in &tree.program.body {
         match statement {

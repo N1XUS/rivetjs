@@ -145,6 +145,13 @@ export interface ResumeManifest {
    * Absent: never.
    */
   domData?: boolean;
+  /**
+   * Resume model of the build (`rivet({ resume: { model: "derived" } })`, M2 C3): `"derived"` — `runtime` default-exports
+   * the `@rivetjs/runtime/dom-derived` instance, `symbols` maps boundary names (`<module>#<Name>`) to the chunk exporting
+   * the component, and servers render with `renderDerived` / `derivedToString` (`@rivetjs/runtime/server-derived`; the
+   * router picks it from this field). Absent: serialized.
+   */
+  model?: "derived";
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {

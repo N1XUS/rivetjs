@@ -201,12 +201,13 @@ const derived = hasDerivedModel();
   const { App } = await importServer<AppModule>(out.code);
   const html = (await resumableToString(() => App({ data }), { manifest, model: "derived" })) as string;
   const { tail } = tailOf(html);
+  // Boundary names are module-qualified (`<resume module>#<Name>`, the same in the DOM target's `_b`).
   assert.deepEqual(
     tail.b.map(([id, parent, flags, name, signals]) => [id, parent, flags, name, signals.length / 2]),
     [
-      [1, 0, 0, "App", 1],
-      [2, 1, 2, "Layout", 1],
-      [3, 2, 2, "Page", 2],
+      [1, 0, 0, "src/page.tsx#App", 1],
+      [2, 1, 2, "src/page.tsx#Layout", 1],
+      [3, 2, 2, "src/page.tsx#Page", 2],
     ],
   );
   assert.ok(html.includes('<div data-layout="resume" data-b="2">'));

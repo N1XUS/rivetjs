@@ -5,7 +5,11 @@
 //
 // Component ABI (the DOM twin of `server-derived.ts`'s `_rB` / `_rSig` / `_rSigStore`):
 //
-//   export function Page(props) { return _b("Page", () => { const n = _sig("k-0", 0); …compiled body… }); }
+//   export function Page(props) { return _b("src/page.tsx#Page", () => { const n = _sig("k3x9a-0", 0); …compiled body… }); }
+//
+// Boundary names are module-qualified (`<resume module id>#<export name>`, the compiler's derived DOM / server targets,
+// M2 C3): the tail's `m` maps a name to its chunk, whose export is the part after the last `#` (a bare name is its own
+// export, as in hand-lowered fixtures).
 //
 // `_b(name, body)`: outside an adopt run the body runs (client render, 1 call). In an adopt run of the enclosing unit
 // it is a hole: the alignment pairs it with the server's boundary range (`<!--b<id>-->…<!--/b-->` or the `data-b`
@@ -626,7 +630,7 @@ function standalone(r: Rec, module: Record<string, unknown>): void {
   if (r.done) return;
   r.done = true;
   const range = rangeOf(r),
-    fn = module[r.name] as ((props: object) => unknown) | undefined;
+    fn = module[r.name.slice(r.name.lastIndexOf("#") + 1)] as ((props: object) => unknown) | undefined;
   if (!range || !fn) {
     if (DEV) console.warn("Rivet resume: boundary " + r.name + " (b" + r.id + ") has no " + (fn ? "markup" : "export in its chunk") + " to adopt");
     return;
