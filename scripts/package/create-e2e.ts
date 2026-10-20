@@ -122,10 +122,12 @@ export function packPackages(work: string, { build = true } = {}): Map<string, s
   for (const name of E2E_PACKAGES) {
     const at = join(dist, name);
     if (build) {
-      // Libs that ship their own bundle (`publishConfig.prebuilt`, typescript-plugin) need it built first (fresh CI checkout).
+      // Libs with their own build step (`libs/<name>/build.ts`: typescript-plugin's `publishConfig.prebuilt` bundle, devtools'
+      // panel UI in `dist/ui`) need it run first on a fresh checkout (CI); the output dir is `prebuilt` or `dist`.
       const source = JSON.parse(readFileSync(join(ROOT, "libs", name, "package.json"), "utf8")) as { publishConfig?: { prebuilt?: string } };
-      const prebuilt = source.publishConfig?.prebuilt;
-      if (prebuilt && !existsSync(join(ROOT, "libs", name, prebuilt))) run(process.execPath, [join(ROOT, "libs", name, "build.ts")], ROOT);
+      const buildScript = join(ROOT, "libs", name, "build.ts");
+      if (existsSync(buildScript) && !existsSync(join(ROOT, "libs", name, source.publishConfig?.prebuilt ?? "dist")))
+        run(process.execPath, [buildScript], ROOT);
       const result = buildPackage(join("libs", name), at, { typecheck: false });
       if (result.warnings.length) throw new Error(`build ${name}:\n${result.warnings.join("\n")}`);
     }

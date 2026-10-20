@@ -197,13 +197,23 @@ async function measure(browser, url, client, route, sizes, saveAs) {
   const scripts = [];
   const errors = [];
   page.on("pageerror", (error) => errors.push(String(error)));
+  const pending = new Set();
   page.on("request", (request) => {
+    pending.add(request);
     const u = new URL(request.url());
     if (u.origin === new URL(url).origin && (request.resourceType() === "script" || u.pathname.endsWith(".js"))) scripts.push(u.pathname);
   });
+  page.on("requestfinished", (request) => pending.delete(request));
+  page.on("requestfailed", (request) => pending.delete(request));
+  // `networkidle` never arrives when a request hangs (seen on CI: 30 s timeout on router:nav-api, 2026-10-20); a bounded
+  // wait names what is still in flight and measures what has loaded, so one stuck request does not fail the report.
+  const idle = () =>
+    page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {
+      console.warn(`size-report: ${route.path}: not network-idle after 15 s; still pending: ${[...pending].map((r) => r.url()).join(", ") || "(none)"}`);
+    });
   try {
     const response = await page.goto(url + route.path, { waitUntil: "load" });
-    await page.waitForLoadState("networkidle");
+    await idle();
     await page.waitForTimeout(300);
     const before = [...new Set(scripts)];
     const doc = await page.evaluate(() => ({
@@ -236,7 +246,7 @@ async function measure(browser, url, client, route, sizes, saveAs) {
       const start = scripts.length;
       try {
         for (const step of route.steps) await run(page, step);
-        await page.waitForLoadState("networkidle");
+        await idle();
         await page.waitForTimeout(200);
         const after = [...new Set(scripts.slice(start))].filter((p) => !before.includes(p));
         row.interactionRequests = after.length;
