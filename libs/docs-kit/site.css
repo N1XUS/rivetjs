@@ -1017,6 +1017,8 @@
   }
   .prose a.heading-anchor {
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
   .prose a.term {
     text-decoration: underline dotted;
