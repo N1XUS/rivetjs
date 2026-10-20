@@ -391,8 +391,8 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
   const scrolled = virtualScroll ? virtualScrolled : onScroll;
   const sharedElements: SharedElementScope = {};
   if (props.render) {
-    // The body is a compiled `<Provider>` binding (resumable, as Menu), not the eager `provide()` chain of the default
-    // path: a render closure capturing that chain's result cannot be serialized.
+    // The body is a compiled `<Provider>` binding (resumable, as Menu; the default path below uses the same one): a render
+    // closure capturing an eager `provide()` chain's result cannot be serialized.
     const renderBody = (
       <Provider
         values={[
@@ -500,16 +500,6 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
     };
     return props.render(attrs as never, values);
   }
-  const body = provide(ListStateContext, state, () =>
-    provide(ListBoxDataContext, data, () =>
-      provide(SeparatorContext, { elementType: "div" } as never, () =>
-        provide(SectionContext, { name: "ListBoxSection", render: ListBoxSectionInner as never }, () =>
-          // RAC: the options share one SharedElementTransition scope (a SelectionIndicator animates between them).
-          provide(SharedElementContext, sharedElements, () => renderer.CollectionRoot({ collection, content, scrollRef: root, focusedKey })),
-        ),
-      ),
-    ),
-  );
   return (
     <div
       {...dom}
@@ -591,7 +581,22 @@ function ListBoxInner<T>(input: ListBoxInnerInput<T>) {
       on:react-aria-focus={(e: Event) => listBoxVirtualFocusEvent(e, behaviour, state)}
       on:react-aria-clear-focus={(e: Event) => listBoxClearFocusEvent(e, behaviour, state)}
     >
-      {body as never}
+      {/* A compiled `<Provider>` (as the `render` path, GridList, Table): the renderer's keyed `For` is created inside its
+          child region, so the reads of its `each` (the collection: items, Autocomplete filter) re-run only that region on a
+          resumed page. An eager provide() chain in the body created the For in the ListBox's enclosing region: its first
+          change re-created the whole ListBox (a fresh state whose focus the adopted options' resumed bindings never see). */}
+      <Provider
+        values={[
+          [ListStateContext, state],
+          [ListBoxDataContext, data],
+          [SeparatorContext, { elementType: "div" }],
+          [SectionContext, { name: "ListBoxSection", render: ListBoxSectionInner }],
+          // RAC: the options share one SharedElementTransition scope (a SelectionIndicator animates between them).
+          [SharedElementContext, sharedElements],
+        ]}
+      >
+        {(customRenderer ?? DefaultCollectionRenderer).CollectionRoot({ collection, content, scrollRef: root, focusedKey }) as never}
+      </Provider>
       {renderEmptyState ? (
         <Show when={isEmpty}>
           {() => (

@@ -46,3 +46,32 @@ test("autocomplete: resumed typing filters the ListBox", async () => {
   assert.deepEqual(await options(page), ["Open file", "Close window"]);
   await page.close();
 });
+
+test("autocomplete: virtual focus after a resumed filter marks the option focused (ListBox not re-created)", async () => {
+  // Docs example autocomplete-basic (cdk-docs build check). The ListBox renders its rows inside a compiled `<Provider>` child
+  // region: the filter re-runs that region only. Before (eager provide() chain in the body), the filter's first change
+  // re-created the whole ListBox with a fresh list state, so the adopted options' resumed `data-focused` bindings never saw
+  // the virtual focus (aria-activedescendant moved, `data-focused` stayed unset).
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/autocomplete");
+  await page.evaluate(() => ((window as unknown as { listBox: Element | null }).listBox = document.getElementById("ac-list")));
+  await page.click("#ac-input");
+  await page.waitForLoadState("networkidle");
+  await page.keyboard.type("file");
+  await optionCount(page, 2, 3000);
+  assert.deepEqual(await options(page), ["New file", "Open file"]);
+  assert.equal(
+    await page.evaluate(() => (window as unknown as { listBox: Element | null }).listBox === document.getElementById("ac-list")),
+    true,
+    "listbox kept",
+  );
+  await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.querySelector("#ac-input")?.getAttribute("aria-activedescendant") === "ac-list-option-new");
+  await page.waitForFunction(() => document.querySelector("#ac-list-option-new")?.getAttribute("data-focused") === "true", undefined, { timeout: 3000 });
+  await page.keyboard.press("ArrowDown");
+  await page.waitForFunction(() => document.querySelector("#ac-list-option-open")?.getAttribute("data-focused") === "true", undefined, { timeout: 3000 });
+  assert.equal(await page.getAttribute("#ac-list-option-new", "data-focused"), null);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});

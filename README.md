@@ -34,7 +34,7 @@ The build uses bundled Chromium and libraries on Linux for the existing example 
 
 Framework and CDK publish their `dist/client`. UI exceeds the Free plan's 20,000-file limit, so its checked output is partitioned into `dist/cloudflare/site` (pages) and `dist/cloudflare/assets` (JavaScript, CSS, media, fonts, and search). `rivetjs-ui-assets` serves `/assets/*` and `/pagefind/*` in front of the `rivetjs-ui` custom domain. File contents and URLs stay unchanged. The UI deploy script publishes the assets first, then pages; only the assets command clears the CI hint that normally restricts a build to one Worker name. Cloudflare account authentication and token permissions still apply to both deployments.
 
-CDK's `examples/_quarantine.json` records three existing cold-interaction check failures approved for this deployment. Builds continue to report them; those examples have no successful size measurement until their checks are fixed.
+CDK's `examples/_quarantine.json` holds one entry (`data-list`: resumed ListBox rows do not re-render after `createListData.update`). A quarantined check (user approved) is still reported by the build and has no size measurement until it is fixed.
 
 ## Workspace projects
 

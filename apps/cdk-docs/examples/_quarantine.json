@@ -1,14 +1,6 @@
 {
-  "merge-props": {
-    "step": "expect #log to contain hover:start focus press",
-    "reason": "Cold click replay adds blur/focus entries between hover and press; the contiguous event-log check fails. Recorded during 2026-10-16 deployment."
-  },
-  "radio-group-events": {
-    "step": "expect #rg-log to contain dog:keydown:ArrowDown",
-    "reason": "After cold radio selection focus is on body, so the following global ArrowDown is not delivered to the radio. Recorded during 2026-10-16 deployment."
-  },
-  "toggle-button-group-options": {
-    "step": "focused #size button:nth-child(2)",
-    "reason": "The first ArrowDown on the cold vertical group keeps focus on Small instead of Medium. Recorded during 2026-10-16 deployment."
+  "data-list": {
+    "step": "expect #animals-option-2 to be KANGAROO",
+    "reason": "Resumed built-collection rows never re-render on a node value change (createListData.update): renderNodes' For items are keys, the sameRender cut-off exists only for browser-created rows. Open since LAZY-ROWS T3 (ListBox live mode before); recorded 2026-10-20 (CDK-EX)."
   }
 }
