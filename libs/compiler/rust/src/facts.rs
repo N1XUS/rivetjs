@@ -242,3 +242,21 @@ pub fn module_facts(source: &str, filename: &str) -> Value {
         "defaultName": facts.default_name,
     })
 }
+
+/// Derived model (M2 C1): per module-level component boundary facts (`moduleFacts(…, { boundaries: true })`); runs the
+/// resume analysis (its diagnostics are not facts and are dropped).
+pub fn boundary_facts(source: &str, filename: &str) -> Value {
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, source, crate::source_type::of(filename))
+        .with_options(ParseOptions { preserve_parens: true, ..ParseOptions::default() })
+        .parse();
+    if parsed.panicked {
+        return Value::Array(Vec::new());
+    }
+    let program = allocator.alloc(parsed.program);
+    let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
+    let tree = Tree::new(source, program, semantic);
+    let mut scratch = crate::compile::Diags { tree: Some(&tree), filename: filename.to_string(), list: Vec::new() };
+    let resumed = crate::resume::analyze(&tree, filename, &mut scratch, &Default::default(), &[], &Default::default());
+    crate::resume::derived::facts_json(&tree, &resumed)
+}

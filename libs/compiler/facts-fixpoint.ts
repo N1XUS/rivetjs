@@ -57,7 +57,8 @@ export function boundaryFacts(
     if (!imported || !to) return null;
     const theirs = facts.get(to);
     if (!theirs) return null;
-    const name = imported.imported === "default" ? theirs.defaultName : imported.imported;
+    // An anonymous default export (`export default function () {}`) reports its facts as "default" (no `defaultName`).
+    const name = imported.imported === "default" ? (theirs.defaultName ?? "default") : imported.imported;
     return name && theirs.boundaries.has(name) ? key(to, name) : null;
   };
   // Interactive: own sites, closed over rendered components (monotone: iterate to a fixpoint).
@@ -101,7 +102,7 @@ export function boundaryFacts(
       const isInteractive = interactive.get(id) ?? false;
       const verdict: BoundaryVerdict = { interactive: isInteractive, independent: false };
       if (!isInteractive) verdict.dependentBecause = "not-interactive";
-      else if (roots.has(file) && f.defaultName === name) verdict.independent = true;
+      else if (roots.has(file) && (f.defaultName ?? "default") === name) verdict.independent = true;
       else if (c.params === "destructured") verdict.dependentBecause = "destructured-props";
       else if (c.context) verdict.dependentBecause = "context";
       else {

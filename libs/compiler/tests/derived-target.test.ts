@@ -6,9 +6,9 @@ import assert from "node:assert/strict";
 import { check, compile, hasDerivedModel, moduleFacts } from "../index.ts";
 
 const derived = hasDerivedModel();
-// The Rust half (M2 C1 / C2, plan docs/design/plans/2026-10-18-derived-client.md) is not in libs/compiler/rust yet: no
-// `has_derived_model` export, so the checked-in wasm skips. Once it lands, the build exports it and these cases run.
-const skip = derived ? "" : "rivet_compiler.wasm has no derived model: its Rust half (M2 C1 / C2) has not landed in libs/compiler/rust";
+// The Rust half (M2 C1 / C2, plan docs/design/plans/2026-10-18-derived-client.md): `rust/src/resume/derived.rs` +
+// `rust/src/compile/derived.rs`; the wasm exports `has_derived_model`. An older build skips every case.
+const skip = derived ? "" : "rivet_compiler.wasm has no derived model (build without M2 C1 / C2)";
 const it = (name: string, fn: () => void) => (derived ? test(name, fn) : test.skip(name + " — " + skip, fn));
 
 const COUNTER = `
@@ -29,7 +29,7 @@ it("server derived target: boundary + keyed state calls, no site records; serial
   assert.match(out.code, /__rivetR_sig\("[0-9a-z]{5}-0", 0\)/);
   assert.match(out.code, /return __rivetR_bOut\(__rivetB, __rivetTemplate\(__rivetFragments0, \[__rivetR_bAttr\(__rivetB\), n\(\)\]\)\);/);
   assert.match(out.code, /finally \{\n\s*__rivetR_bEnd\(__rivetB\);/);
-  assert.match(out.code, /import \{ [^}]*_rB as __rivetR_b[^}]* \} from "@rivetjs\/runtime\/server-resume";/);
+  assert.match(out.code, /import \{ [^}]*_rB as __rivetR_b[^}]* \} from "@rivetjs\/runtime\/server-derived";/);
   for (const name of ["__rivetR_on(", "__rivetR_bind(", "__rivetR_attr(", "__rivetR_id(", "__rivetR_fn(", "__rivetR_props("])
     assert.ok(!out.code.includes(name), name);
   assert.match(out.code, /export function Static\(\) \{\n\s*return __rivetTemplate\(__rivetFragments1, \[\]\);\n\}/);
@@ -62,7 +62,7 @@ export const Arrow = (props) => <i onClick={() => props.go()}>go</i>;
   assert.match(out.code, /__rivetR_b\("Switcher", 0\)/);
   assert.equal(out.code.match(/__rivetR_bOut\(__rivetB, /g)?.length, 3);
   assert.ok(out.code.includes("return __rivetR_bOut(__rivetB, null);"));
-  assert.ok(out.code.includes("{ return 1; }") || out.code.includes("{\n\t\treturn 1;\n\t}"), out.code);
+  assert.match(out.code, /const inner = \(\) => \{\s*return 1;\s*\};/);
   assert.match(
     out.code,
     /export const Arrow = \(props\) => \{\n\s*const __rivetB = __rivetR_b\("Arrow", 2\);\n\s*try \{\n\s*return __rivetR_bOut\(__rivetB, __rivetTemplate/,

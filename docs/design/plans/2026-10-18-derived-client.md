@@ -50,6 +50,8 @@ Runtime:
 - R5 router / forms / live pages on keyed `data`.
 Gates as in the table; the resume fuzz oracle (CSR vs resumed) is the correctness gate for both M2 and M3.
 
+Status (2026-10-20, lane M2-C): **C1 done** — `moduleFacts(…, { boundaries: true })` (`rust/src/resume/derived.rs` `components`), `has_derived_model` export, `facts-fixpoint.ts` resolves anonymous default exports as `"default"`. **C2 done** — server target under `resume: { model: "derived" }` (`rust/src/compile/derived.rs`): `_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` / `_rSigStore`, content markers `<!--[-->…<!--]-->`, RV2103 / RV2104, RV7001 option errors; serialized model byte-identical (parity, zero-cost, `vite-resume`); ABI as emitted in the spec §3.3. Vite wiring (`resume.model` → `boundaryFacts` → per-module verdicts) not done. **C3 not started** (needs R3's adopt runtime names; contract skeleton `libs/compiler/tests/derived-adopt.test.ts`, `test.todo`).
+
 ## M3 — derived slices
 
 - C4 static dependency analysis per site (reads of the body's keyed signals / computeds; props getters, helper calls, member chains → unknown → adopted); C5 site paths from structural anchors (boundary root, row start, branch marker); C6 per-signal edit lists + parameterised row writers; C7 slice chunk per route (handlers, edit lists, recipes for pure derivations, paths); C8 interaction map data (tier per site + the deciding construct).

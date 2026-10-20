@@ -401,7 +401,7 @@ fn browser_attribute(name: &str) -> bool {
 
 /// `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `crypto.getRandomValues()` / `Date()` on
 /// the unshadowed globals: the call's text.
-fn nondeterministic_call<'a>(tree: &Tree<'a>, callee: &Expression<'a>) -> Option<String> {
+pub(super) fn nondeterministic_call<'a>(tree: &Tree<'a>, callee: &Expression<'a>) -> Option<String> {
     match unwrap(callee) {
         Expression::Identifier(i) if i.name == "Date" && tree.symbol_of_ref(i).is_none() => Some("Date()".into()),
         Expression::StaticMemberExpression(m) => {

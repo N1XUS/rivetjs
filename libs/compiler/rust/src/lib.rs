@@ -61,6 +61,8 @@ struct CompileOptions {
 struct FactsOptions {
     server_exports: Option<bool>,
     resume: Option<bool>,
+    /// Derived model (M2 C1): also report `boundaries` (`facts::boundary_facts`).
+    boundaries: Option<bool>,
 }
 
 #[derive(Deserialize, Default)]
@@ -142,6 +144,10 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
         Ok(resume) => resume,
         Err(message) => return invalid(message, &filename),
     };
+    let derived = match resume_model(&options.resume) {
+        Ok(derived) => derived,
+        Err(message) => return invalid(message, &filename),
+    };
     let styles = match styles_option(&options.styles) {
         Ok(styles) => styles,
         Err(message) => return invalid(message, &filename),
@@ -167,6 +173,7 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
             source_packages: options.source_packages.unwrap_or_default(),
             symbols: options.symbols.unwrap_or(false),
             resolved_imports: options.resolved_imports.unwrap_or_default().into_iter().collect(),
+            derived,
         },
     );
     if let Some(server) = &server {
@@ -234,12 +241,21 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
 /// Module facts; route modules (`serverExports`) report facts of their browser source plus the
 /// server export names and kinds, dropped imports and server-split errors.
 fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> Value {
+    let boundaries = options.as_ref().is_some_and(|o| o.boundaries.unwrap_or(false));
     let Some(options) = options.filter(|o| o.server_exports.unwrap_or(false)) else {
-        return facts::module_facts(source, filename);
+        let mut facts = facts::module_facts(source, filename);
+        if let (true, Value::Object(map)) = (boundaries, &mut facts) {
+            map.insert("boundaries".into(), facts::boundary_facts(source, filename));
+        }
+        return facts;
     };
     let server = server_split::run(source, filename, options.resume.unwrap_or(false));
-    let mut facts = facts::module_facts(server.browser.as_deref().unwrap_or(source), filename);
+    let browser = server.browser.as_deref().unwrap_or(source);
+    let mut facts = facts::module_facts(browser, filename);
     if let Value::Object(map) = &mut facts {
+        if boundaries {
+            map.insert("boundaries".into(), facts::boundary_facts(browser, filename));
+        }
         map.insert("serverExports".into(), json!(server.exports));
         map.insert("serverKinds".into(), json!(server.kinds));
         map.insert("serverImports".into(), json!(server.imports));
@@ -271,6 +287,30 @@ fn resume_module(resume: &Option<Value>, filename: &str) -> Result<Option<String
     }
 }
 
+/// Derived model options of a `resume` object: `model: "serialized" | "derived"` (absent = serialized), `boundaries` /
+/// `independent` string lists (the build's verdicts, `facts-fixpoint.ts`). `Some` only for `model: "derived"`.
+fn resume_model(resume: &Option<Value>) -> Result<Option<resume::derived::Verdicts>, String> {
+    let Some(Value::Object(map)) = resume else { return Ok(None) };
+    match map.get("model") {
+        None | Some(Value::Null) => return Ok(None),
+        Some(Value::String(m)) if m == "serialized" => return Ok(None),
+        Some(Value::String(m)) if m == "derived" => {}
+        Some(_) => return Err("Invalid compiler option `resume.model`: expected \"serialized\" or \"derived\"".into()),
+    }
+    let list = |key: &str| -> Result<Option<Vec<String>>, String> {
+        match map.get(key) {
+            None | Some(Value::Null) => Ok(None),
+            Some(Value::Array(items)) => items
+                .iter()
+                .map(|v| v.as_str().map(str::to_string).ok_or_else(|| format!("Invalid compiler option `resume.{key}`: expected an array of component names")))
+                .collect::<Result<Vec<_>, _>>()
+                .map(Some),
+            Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
+        }
+    };
+    Ok(Some(resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")? }))
+}
+
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)
 /// plus resume sites. No code is generated.
 fn check_json(source: &str, raw: Option<Value>) -> Value {
@@ -287,6 +327,10 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
     let filename = options.filename.unwrap_or_else(|| "module.tsx".into());
     let resume = match resume_module(&options.resume, &filename) {
         Ok(resume) => resume,
+        Err(message) => return invalid(message, &filename),
+    };
+    let derived = match resume_model(&options.resume) {
+        Ok(derived) => derived,
         Err(message) => return invalid(message, &filename),
     };
     let targets = options.targets.unwrap_or_else(|| vec!["server".into(), "dom".into()]);
@@ -322,6 +366,7 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
                 source_packages: options.source_packages.clone().unwrap_or_default(),
                 symbols: false,
                 resolved_imports: Default::default(),
+                derived: derived.clone(),
             },
         );
         if sites.is_empty() || target == "dom" {
@@ -514,6 +559,12 @@ pub extern "C" fn source_hash_ptr() -> *const u8 {
 #[unsafe(no_mangle)]
 pub extern "C" fn source_hash_len() -> usize {
     SOURCE_HASH.len()
+}
+
+/// 1: this build carries the derived resume model (M2 C1 / C2: `moduleFacts` `boundaries`, `resume.model`; `hasDerivedModel()`).
+#[unsafe(no_mangle)]
+pub extern "C" fn has_derived_model() -> u32 {
+    1
 }
 
 #[unsafe(no_mangle)]

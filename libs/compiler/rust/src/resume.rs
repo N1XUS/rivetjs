@@ -36,6 +36,8 @@ pub use classes::ClassReg;
 mod rows;
 // RESOURCE-COMPILER (2026-10-20): every captured `const r = resource(…)` is a recipe; RV2016 for the forms that are not.
 mod resources;
+// Derived model (M2 C1 / C2): boundary facts, the derived server target's plan, RV2103 / RV2104.
+pub mod derived;
 pub use rows::{ForRow, ForRowFact, for_row_facts, for_row_warnings};
 pub(crate) use groups::{early_exit, split_group_message};
 

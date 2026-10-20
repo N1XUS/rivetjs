@@ -54,6 +54,9 @@ mod resume_cells;
 // exception: lane LAZY-T2 (2026-10-19) — server resume: compiler-private `$lazy` on lazy-eligible keyed `<For>`s (verdict:
 // `resume/rows.rs`).
 mod lazy_rows;
+// exception: derived model (M2 C2, 2026-10-20) — server target boundary / keyed-state lowering.
+mod derived;
+use derived::{Derived, is_function_child};
 
 pub const TARGET_HELPERS: &[&str] = &["Provider", "For", "Async", "lazyComponent", "clientOnly"];
 const SVG_TAGS: &[&str] = &[
@@ -112,6 +115,10 @@ pub struct Options {
     /// A resume symbol module (`_compileSymbolModule`, DOM): binding closures `(captures) => () => (cond)` whose
     /// conditional has a JSX operand lower to the `_cond` accessor itself (TERNARY-MEMO, `dom_v2.rs` `symbol_cond_v2`).
     pub symbols: bool,
+    /// Derived resume model (`resume.model: "derived"`, M2 C2): the build's verdicts (`resume.boundaries` /
+    /// `resume.independent`). The server target lowers plain plus boundary / keyed-state calls (`compile/derived.rs`);
+    /// the DOM target ignores it.
+    pub derived: Option<resume::derived::Verdicts>,
 }
 
 /// Scoped styles options: class names hash `scope` (root-relative module id) with the local name.
@@ -562,6 +569,8 @@ impl ServerTemplate {
 pub struct Compiler<'t, 'a> {
     tree: &'t Tree<'a>,
     server: bool,
+    /// Derived model, server target (M2 C2): the plan + ABI locals (`compile/derived.rs`).
+    derived: Option<Derived>,
     target: &'static str,
     list_mounts: bool,
     // exception: user ruling 2026-10-06 (FLATTEN-CMP-3) — `<For>` list mounts only without resume.
@@ -688,9 +697,10 @@ pub fn compile(source: &str, options: Options) -> Output {
     let compiler = Compiler {
         tree: &tree,
         server: target == "server",
+        derived: None,
         target,
         list_mounts,
-        resume_mode: options.resume.is_some(),
+        resume_mode: options.resume.is_some() && !(target == "server" && options.derived.is_some()),
         has_checker: false,
         diags: Diags { tree: Some(&tree), filename: filename.clone(), list: std::mem::take(&mut diags.list) },
         names: FxHashSet::default(),
@@ -867,7 +877,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if self.styles.is_some() {
             self.styles_setup();
         }
-        self.has_checker = options.resume.is_some()
+        // Derived model, server target: lowered as plain server output (no resume names, symbols or sites).
+        let derived_server = self.server && options.resume.is_some() && options.derived.is_some();
+        self.has_checker = (options.resume.is_some() && !derived_server)
             || !self.structural.is_empty()
             || !self.structural_namespaces.is_empty()
             || self.thunked.values().any(|name| *name != "Switch")
@@ -885,7 +897,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let local = self.unique(&local);
             self.abi.push((name, local));
         }
-        if options.resume.is_some() {
+        if options.resume.is_some() && !derived_server {
             for name in RESUME_ABI {
                 let local = self.unique(&format!("__rivetR_{name}"));
                 self.resume_names.push((name, local));
@@ -893,7 +905,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         self.list_name = self.unique("__rivetList");
         self.list_plan_name = self.unique("__rivetListPlan");
-        if let Some(module) = &options.resume {
+        if let (true, Some(module), Some(verdicts)) = (derived_server, &options.resume, &options.derived) {
+            self.derived_setup(module, verdicts, options);
+        } else if let Some(module) = &options.resume {
             let resumed = resume::analyze(tree, module, &mut self.diags, &self.static_decls, &options.source_packages, &options.resolved_imports);
             if self.server {
                 resume::browser_global_reads(tree, &resumed, &mut self.diags);
@@ -1037,6 +1051,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 .collect();
             format!("import {{ {} }} from \"@rivetjs/runtime/server-resume\";\n", named(&list))
         };
+        let resume_imports = resume_imports + &self.derived_imports();
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
         let text = format!("{hashbang}{imports}{resume_imports}{hoists}{body}");
         if self.diags.has_errors() {
@@ -1245,6 +1260,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if !self.css_blocks.is_empty() || !self.css_tagged.is_empty() {
             if let Some(out) = self.styles_node(id) {
                 return Some(out);
+            }
+        }
+        if self.derived.is_some() {
+            if let Some(replaced) = self.derived_node(id) {
+                return Some(replaced);
             }
         }
         if self.server && self.resumed.is_some() {
@@ -2797,6 +2817,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let call = self.r("id", Vec::new());
             t.slot(call);
         }
+        // exception: derived model (M2 C2) — `_rBAttr(B)` last in a boundary root's start tag.
+        if let Some(call) = self.derived_attr(el_id) {
+            t.slot(call);
+        }
         t.append(">");
         // No JSX children: the merged object's `children` is the content (stored by spreadAttributes).
         if spread && spread_content(self.tree, el, tag) {
@@ -2845,6 +2869,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if tag == "select" {
             self.select_stack.push(select_temp.clone());
         }
+        // exception: derived model (M2 C2) — slot marker pairs for the adopt walk (`compile/derived.rs` `slot_marks`).
+        let marks = self.slot_marks(tag, &el.children);
         for child in &el.children {
             match child {
                 JSXChild::Text(text) => t.append(&escaped(&jsx_text(self.tree.text_of(text.span)))),
@@ -2885,7 +2911,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                             None => self.expr(e),
                         }
                     };
-                    t.slot(value);
+                    Self::marked_slot(t, value, marks.is_some_and(|sole| (!sole || may_render_jsx(e)) && !is_function_child(e)));
                 }
                 JSXChild::Element(child) if self.native(child) => {
                     self.server_ancestors.push(tag);
@@ -2912,7 +2938,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     } else {
                         lowered_child(self)
                     };
-                    t.slot(value);
+                    Self::marked_slot(t, value, marks.is_some());
                 }
             }
         }
@@ -3835,6 +3861,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
     /// Components whose whole body can run in a twin that pushes captures instead of returning.
     fn inlinable(&self, decl: NodeId) -> bool {
         let tree = self.tree;
+        // exception: derived model (M2 C2) — a boundary keeps its own body (its `_rB` / `_rBOut` wrapping).
+        if self.derived.as_ref().is_some_and(|d| d.plan.boundaries.contains_key(&decl)) {
+            return false;
+        }
         let AstKind::Function(f) = tree.kind(decl) else { return false };
         if f.r#type != FunctionType::FunctionDeclaration
             || f.id.is_none()

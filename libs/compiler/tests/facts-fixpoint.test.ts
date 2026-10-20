@@ -101,3 +101,15 @@ test("default imports resolve through the target module's defaultName; unresolve
   assert.deepEqual(out.independent("src/w.tsx"), ["W"]);
   assert.deepEqual(out.boundaries("src/none.tsx"), []);
 });
+
+test('an anonymous default export (facts name "default", no defaultName) resolves for default imports and route roots', () => {
+  const facts = new Map<string, ModuleFacts>([
+    ["src/routes/index.tsx", module({ default: { renders: ["Widget"] } }, { Widget: ["../widget", "default"] })],
+    ["src/widget.tsx", module({ default: { interactive: true } })],
+  ]);
+  const resolved = new Map([["src/routes/index.tsx", new Map([["../widget", "src/widget.tsx"]])]]);
+  const result = boundaryFacts(facts, resolved, new Set(["src/routes/index.tsx"]));
+  assert.deepEqual(result.boundaries("src/routes/index.tsx"), ["default"]);
+  assert.deepEqual(result.independent("src/routes/index.tsx"), ["default"]);
+  assert.deepEqual(result.independent("src/widget.tsx"), ["default"]);
+});
