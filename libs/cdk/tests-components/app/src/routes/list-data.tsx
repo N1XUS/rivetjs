@@ -14,6 +14,9 @@ interface Animal {
 }
 
 // ROW-RERENDER: built-collection rows of a resumed page follow a node value change (cdk-docs `data-list`).
+// The virtualized list's `initialSize` = its scroller's client box (240 × 192 + the cdk theme's 4px padding): a resumed
+// page keeps the server window until its first interaction, a client render measures at mount (resume fuzz `/list-data`:
+// an unsized scroller took the viewport width in the client render).
 export default function ListDataStory() {
   const list = createListData<Animal>({
     initialItems: [
@@ -72,7 +75,7 @@ export default function ListDataStory() {
         Rename kale
       </button>
       <CollectionVirtualizer layout={ListLayout} layoutOptions={{ rowHeight: 32 }} initialSize={{ width: 248, height: 200 }}>
-        <ListBox id="ld-virtual" aria-label="Virtualized" items={many.items} style={{ height: "200px", overflow: "auto" }}>
+        <ListBox id="ld-virtual" aria-label="Virtualized" items={many.items} style={{ display: "block", width: "240px", height: "192px", overflow: "auto" }}>
           {(item: Animal) => (
             <ListBoxItem id={item.id} textValue={item.name}>
               {item.name}

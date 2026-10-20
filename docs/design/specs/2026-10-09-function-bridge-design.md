@@ -441,9 +441,9 @@ Setup:
 - Fix round 2 (re-review of 1c5c6b87, 2026-10-13): ui `/colors` design pin restored (a3e58f97 had dropped it), `/ai-chat` streaming + cdk `/dom-events-collections` hover / enter-log pins narrowed to the observed lines + `step`, 3-run rule written into the guide "Fuzz" + `libs/testing/CLAUDE.md`, node unit test `libs/testing/tests/fuzz-helpers.test.ts`.
 
 
-- Pin tables below: state after the CDK-PINS / RESUME-PINS fix rounds and T31 fix round 1 (2026-10-13); the root-cause groups above describe the first run.
+- Pin tables below: state after the CDK-PINS / RESUME-PINS fix rounds and T31 fix round 1 (2026-10-13), rows updated by later lanes (latest CI-RED 2026-10-20); the root-cause groups above describe the first run.
 
-#### cdk: 30 pins (16 open `test.fails`, 14 design) — open by owner: cdk 12, runtime 4
+#### cdk: 35 pins (16 open `test.fails`, 19 design) — open by owner: cdk 11, runtime 5
 
 | Route | Kind | Owner | Status | Finding |
 |---|---|---|---|---|
@@ -460,11 +460,17 @@ Setup:
 | `/selection-indicator-groups` | load | cdk | design | SelectionIndicator entrance: a mount-time browser effect runs on a client render only (a resumed page runs no component code until a change) |
 | `/dom-events-collections` | mismatch | cdk | design | non-deterministic (3 of 5 T31 runs, always after PageUp): the enter log differs by one `scrollable-enter` / `vp-enter` entry, on either page; may be a real double-fire of the ScrollView / viewport enter event (cdk follow-up), filtered meanwhile (ends the DOM comparison that run) |
 | `/live-props` | mismatch | runtime | design | timing-dependent (first seen 2026-10-13, fix round 1): a listbox moves under the parked pointer, which option `pointerover` hits depends on frame timing (same class as ui /colors) |
-| `/autocomplete` | recreated | cdk | open | Autocomplete ListBox re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
+| `/autocomplete` | recreated | cdk | fixed (pin dropped CI-RED 2026-10-20; first failing CI pin run 9db8dd7f, range incl. CDK-EX ListBox rows in a compiled Provider region) | Autocomplete ListBox re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/grid-list` | recreated | cdk | fixed (LAZY-ROWS T3 2026-10-19: built collection, the rows are a keyed `For` the browser adopts) | GridList rows re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/virtualized-collections` | load | cdk | fixed (2026-10-19, LAZY-T3) | story `initialSize` 240 × 320 under the cdk theme's 4px list padding (client box 248 × 328): resumed rows kept the server's 240px until the first interaction, a client render measured 248px; the story passes the client box now |
 | `/virtualized-collections` | load | cdk | design | GridList rows without a description keep the server `aria-labelledby` (same as `/grid-list`) |
-| `/virtualized-collections` | recreated + mismatch | runtime | open | virtualized ListBox sections: the section part's nested `For` (`VirtualizerBranch` child views) reads the engine's `views` signal on the server inside the root `For`'s row; the first engine start writes it and the row region re-creates the section (focus lost under the click; the mismatches follow) |
+| `/virtualized-collections` | recreated + mismatch | runtime | fixed (CI-RED 2026-10-20) | virtualized ListBox sections re-created on the first click, focus lost: not the section `For`'s reads (the earlier diagnosis) but the engine's first pass on a resumed page — the click's scroll-into-view moved the scroller past its clamped offset, `relayout` queued a new rect and laid out no views, `createVirtualizerState` published that empty window and the rows' `For` dropped every adopted row; the state renders again at the new rect before publishing |
+| `/virtualized-collections` | mismatch | runtime | open | first click on a sectioned option (step 8, 3 of 3 runs): cold hover — the pointer entered before the hover handler's chunk loaded; no hover start is replayed |
+| `/virtualized-collections` | mismatch | runtime | design | 1–2 of 3 runs: which option the parked pointer hovers after keys scroll the list depends on frame timing (same class as `/live-props`) |
+| `/list-data`, `/virtualized-collections` | mismatch | cdk | design | DOM order of virtualized rows after PageUp / PageDown while focus is inside (`rowOrder`), 1 of 3 runs per route; positions are absolute (not visible) |
+| `/list-data` | load | cdk | fixed (CI-RED 2026-10-20) | story: the virtualized ListBox scroller had no width, a client render measured the viewport (638px on CI) against the server's `initialSize` 248px; the scroller is sized to its `initialSize` now |
+| `/tooltip` | mismatch | cdk | design | step 37 (CI-RED 2026-10-20; reached since 78691bab added story elements): the click's scroll-into-view `scroll` closes the standalone tooltip a loaded page just opened (close on scroll, RA useOverlayPosition); the resumed page replays the cold click after that `scroll` |
+| `/dom-events-overlays` | mismatch | runtime | open | step 15, cold first click on the Select trigger: the replayed click reaches the trigger's `onClick` (`st-click`), a loaded page opens the popover at pointerdown and runs no `onClick` (every run since 2026-10-18) |
 | `/lightbox` | recreated | cdk | open | Lightbox slides re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/dom-events-collections` | mismatch | runtime | design | timing-dependent (seen in 1 of 2 runs): replayed hover not cleared by the next key: cold hover: the pointer entered before the hover handler's chunk loaded; no hover start is replayed |
 | `/scheduler-zone` | load | cdk | design | scheduler: documented deviation (libs/cdk/scheduler/CLAUDE.md "Pass `timeZone` on SSR pages"): without `timeZone` the server lays out in UTC and the resumed page keeps UTC; the story omits `timeZone` on purpose, the client render uses the browser zone |
@@ -481,7 +487,7 @@ Setup:
 | `/tag-group` | recreated | cdk | open | Tags re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/tag-group` | missing | cdk | open | follows the Tag re-creation (the bound element left the resumed page) |
 
-#### ui: 27 pins (17 open `test.fails`, 10 design) — open by owner: cdk 7, runtime 2, ui 8
+#### ui: 31 pins (21 open `test.fails`, 10 design) — open by owner: cdk 7, runtime 6, ui 8
 
 | Route | Kind | Owner | Status | Finding |
 |---|---|---|---|---|
@@ -500,6 +506,10 @@ Setup:
 | `/action-bar-clear-grid` | recreated | cdk | open | grid rows re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/avatar-group` | recreated | ui | open | Avatar re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/visual/card` | mismatch | runtime | open | cold hover: hover state depends on whether the pointer entered before the hover handler's chunk loaded |
+| `/forms` | mismatch | runtime | open | step 11: cold first click on a stepper / trigger inside a group leaves the group without `data-focus-within`; regressed at ffc60cb8a (UNDO-FOCUS: the cold-press `undoing` window in dom-resume `on()` also swallows the replayed focus into the group; 3 of 3 runs, passes at 7ce1445d5; CI-RED 2026-10-20) |
+| `/forms` | mismatch | runtime | open | step 14: cold first click on a stepper / trigger inside a group leaves the group without `data-focus-visible`; regressed at ffc60cb8a (UNDO-FOCUS: the cold-press `undoing` window in dom-resume `on()` also swallows the replayed focus into the group; 3 of 3 runs, passes at 7ce1445d5; CI-RED 2026-10-20) |
+| `/morph-icons` | mismatch | runtime | open | step 37: cold first click on a stepper / trigger inside a group leaves the group without `data-focus-within`; regressed at ffc60cb8a (UNDO-FOCUS: the cold-press `undoing` window in dom-resume `on()` also swallows the replayed focus into the group; 3 of 3 runs, passes at 7ce1445d5; CI-RED 2026-10-20) |
+| `/morph-icons` | mismatch | runtime | open | step 40: cold first click on a stepper / trigger inside a group leaves the group without `data-focus-visible`; regressed at ffc60cb8a (UNDO-FOCUS: the cold-press `undoing` window in dom-resume `on()` also swallows the replayed focus into the group; 3 of 3 runs, passes at 7ce1445d5; CI-RED 2026-10-20) |
 | `/data-grid` | recreated | ui | open | DataGrid rows re-created on the first change on a resumed page (component without its own region, root CLAUDE.md gotcha) |
 | `/data-grid` | missing | ui | open | follows the DataGrid row re-creation (the bound element left the resumed page) |
 | `/disclosure-group` | load | ui | open | DisclosureGroup Next button: server render misses the disabled state of the initial key |

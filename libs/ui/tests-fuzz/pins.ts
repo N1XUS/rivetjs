@@ -53,6 +53,20 @@ export const pins: FuzzPin[] = [
   pin("/scroll-area", "load", "overflow-x:scroll", "cdk", "ScrollArea viewport overflow: " + MOUNT_EFFECT, true),
 
   // Open findings.
+  // Cold first click on a NumberField stepper / ComboBox trigger inside a group: the group never gets focus-within (and
+  // focus-visible after Escape) on a resumed page. Regressed at ffc60cb8a (UNDO-FOCUS): the cold-press `undoing` window in
+  // dom-resume `on()` also swallows the replayed focus that moves into the group (3 of 3 runs; passes at 7ce1445d5).
+  ...(
+    [
+      ["/forms", 11, "focus-within"],
+      ["/forms", 14, "focus-visible"],
+      ["/morph-icons", 37, "focus-within"],
+      ["/morph-icons", 40, "focus-visible"],
+    ] as const
+  ).map(([route, step, state]): FuzzPin => ({
+    ...pin(route, "mismatch", `<div>: resumed only [] / csr only [data-${state}="true"]`, "runtime", "cold focus-back (UNDO-FOCUS) drops the group's " + state),
+    step,
+  })),
   { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },
   pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
   { ...pin("/visual/card", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER), step: 11 },

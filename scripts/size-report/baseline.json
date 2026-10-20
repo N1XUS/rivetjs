@@ -32,8 +32,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66239,
@@ -101,8 +101,8 @@
           "eagerFiles": [
             "resume-loader.js",
             "resume-entry.js",
-            "rivet-merge-index-1.js",
             "resume-resume_tsx.js",
+            "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
             "analytics.js",
@@ -119,7 +119,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7295,
+          "htmlBr": 7292,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -138,8 +138,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 66239,
@@ -936,8 +936,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "resume-symbols.js",
-            "rivet-merge-index.js"
+            "rivet-merge-index.js",
+            "resume-symbols.js"
           ]
         }
       }
@@ -1280,17 +1280,17 @@
     "cdk-example:masonry-expand": {
       "totalJS": {
         "files": 16,
-        "min": 191949,
-        "br": 65363
+        "min": 192012,
+        "br": 65372
       },
       "serverJS": {
-        "min": 272404,
-        "br": 89062
+        "min": 272467,
+        "br": 89026
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 9004,
+          "htmlBr": 8985,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1309,20 +1309,20 @@
             "br": 24500
           },
           "pageJS": {
-            "min": 190042,
-            "br": 64133
+            "min": 190105,
+            "br": 64144
           },
           "interactionRequests": 8,
           "interactionJS": {
-            "min": 180752,
-            "br": 60588
+            "min": 180815,
+            "br": 60599
           },
           "interactionFiles": [
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "routes.js",
             "rivet-merge-index.js",
+            "routes.js",
             "maximize-2.js",
             "minimize-2.js",
             "resume-builtins.js"
@@ -1333,17 +1333,17 @@
     "cdk-example:masonry-feed": {
       "totalJS": {
         "files": 13,
-        "min": 190807,
-        "br": 64668
+        "min": 190870,
+        "br": 64685
       },
       "serverJS": {
-        "min": 271634,
-        "br": 88749
+        "min": 271697,
+        "br": 88826
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 7153,
+          "htmlBr": 7144,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1353,8 +1353,8 @@
           "inlineBytes": 4264,
           "eagerRequests": 5,
           "eagerJS": {
-            "min": 176390,
-            "br": 58485
+            "min": 176453,
+            "br": 58488
           },
           "eagerFiles": [
             "resume-entry.js",
@@ -1368,8 +1368,8 @@
             "br": 24500
           },
           "pageJS": {
-            "min": 186947,
-            "br": 62680
+            "min": 187010,
+            "br": 62682
           },
           "interactionRequests": 0,
           "interactionJS": {

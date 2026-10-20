@@ -22,9 +22,10 @@ import {
   type Layout,
   type Node,
   type ReusableView,
+  type VirtualizerState,
 } from "../virtualizer/engine.ts";
 import { initialWindow, projectViews, type VirtualView, type VirtualizerModel } from "../virtualizer/behaviour.ts";
-import { signal } from "@rivetjs/reactivity";
+import { effect, signal, untrack } from "@rivetjs/reactivity";
 
 type AnyLayout = Layout<Node<any>, any>;
 
@@ -433,6 +434,28 @@ describe("createVirtualizerState (useVirtualizerState)", () => {
     state.startScrolling();
     assert.equal(state.isScrolling(), true);
     state.endScrolling();
+    state.dispose();
+  });
+
+  // Resume fuzz `/list-data` (CI-RED 2026-10-20): a resumed page starts the engine at the scroller's current offset; a
+  // first click had scrolled it 4px sideways past the content width, the layout clamped the offset and that pass laid out
+  // no views — published, it emptied the rows' For once and the resumed page re-created every server row.
+  test("a render that clamps the offset publishes the re-rendered views, never the empty pass", () => {
+    const rects: Rect[] = [];
+    let state!: VirtualizerState<Node<any>, unknown>;
+    // Inside a running effect, as on a resumed page (the rows' For starts the engine): the re-run is queued.
+    const stop = effect(() => {
+      state = createVirtualizerState<Node<any>, unknown>({
+        layout: new ListLayout({ rowHeight: 25 }),
+        collection: () => createCollection(items50),
+        renderView: (_type, content) => content,
+        onVisibleRectChange: (rect) => rects.push(rect),
+        initialVisibleRect: new Rect(4, 0, 100, 100),
+      });
+      assert.equal(untrack(state.visibleViews).length, 7, "the first published window has its rows");
+    });
+    assert.equal(rects.at(-1)!.x, 0, "offset clamped through onVisibleRectChange");
+    stop();
     state.dispose();
   });
 });

@@ -84,6 +84,22 @@ test("virtualized ListBox: a resumed view's option follows an update", async () 
   await page.close();
 });
 
+// Resume fuzz `/list-data` (2026-10-20): the first click scrolls the scroller 4px sideways (content 248px in a 240px
+// padded box); the engine's first pass clamps that offset and laid out no views, which emptied the rows' For once.
+test("virtualized ListBox: the first click on a resumed option keeps every row and focuses the option", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  await page.goto(s.origin + "/list-data");
+  await mark(page, "#ld-virtual");
+  // Handler chunks loaded (idle preload): the engine starts inside the click's own update.
+  await page.waitForLoadState("networkidle");
+  await page.click("#ld-virtual-option-4");
+  await page.waitForFunction(() => document.activeElement?.id === "ld-virtual-option-4", undefined, { timeout: 5000 });
+  assert.deepEqual((await marks(page, "#ld-virtual")).slice(0, 5), [1, 2, 3, 4, 5]);
+  assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
 test("Table: a resumed body row follows an item change; the other row keeps its element", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);

@@ -80,17 +80,28 @@ export function createVirtualizerState<T extends object, V, O = any>(opts: Virtu
         lastOptions = layoutOptions;
         merged = layoutOptions != null ? { ...context, layoutOptions } : context;
       }
-      const rect = visibleRect();
-      const views = virtualizer.render({
-        layout: read(opts.layout),
-        collection: read(opts.collection),
-        persistedKeys: read(opts.persistedKeys) ?? null,
-        layoutOptions,
-        visibleRect: rect,
-        size: opts.allowsWindowScrolling ? size() : rect,
-        invalidationContext: merged,
-        isScrolling: isScrolling(),
-      });
+      let rect = visibleRect();
+      const render = () =>
+        virtualizer.render({
+          layout: read(opts.layout),
+          collection: read(opts.collection),
+          persistedKeys: read(opts.persistedKeys) ?? null,
+          layoutOptions,
+          visibleRect: rect,
+          size: opts.allowsWindowScrolling ? size() : rect,
+          invalidationContext: merged,
+          isScrolling: isScrolling(),
+        });
+      let views = render();
+      // A render that moved the visible rect (the layout clamped the scroll offset, or a scroll anchor) laid out no
+      // subviews: render again at the new rect before publishing, as the original's `setVisibleRect` (a state update
+      // during render) re-renders before commit. Publishing the empty pass emptied the rows' `For` once — on a resumed
+      // page that dropped every adopted server row (a first click that scrolled the scroller 4px past its clamped
+      // offset re-created all rows and lost focus; resume fuzz `/list-data`, 2026-10-20).
+      for (let pass = 0; pass < 3 && visibleRectChanged && !untrack(visibleRect).equals(rect); pass++) {
+        rect = untrack(visibleRect);
+        views = render();
+      }
       visibleViews.set(views);
       contentSize.set(virtualizer.contentSize);
       // onVisibleRectChange runs after the render (a layout effect in the original).

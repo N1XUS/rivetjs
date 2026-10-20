@@ -76,22 +76,48 @@ export const pins: FuzzPin[] = [
     design: true,
   },
 
-  // Open findings.
-  { route: "/autocomplete", kind: "recreated", match: "div#ac-list", owner: "cdk", note: "Autocomplete ListBox " + NO_REGION },
-  { route: "/lightbox", kind: "recreated", match: "rv-LightboxSlide", owner: "cdk", note: "Lightbox slides " + NO_REGION },
   {
-    route: "/virtualized-collections",
-    kind: "recreated",
-    match: "section.rv-ListBoxSection",
-    owner: "runtime",
-    note: "virtualized ListBox sections (2026-10-19, LAZY-T3 triage; on base too): a section view's part renders a nested `For` (the virtualizer's child views, `VirtualizerBranch`) whose `each` reads the engine's `views` signal on the server inside the root `For`'s row; the first engine start (first click / focus) writes `views`, and the row region re-creates the section with its rows (the clicked option is replaced under the click: focus lands on the body)",
+    route: "/tooltip",
+    kind: "mismatch",
+    match: 'resumed: <span aria-describedby="standalone" id="anchor"',
+    step: 37,
+    owner: "cdk",
+    note: "driver timing (CI-RED 2026-10-20; reached since 78691bab added story elements, on 4d23c2fe too): the click's scroll-into-view `scroll` arrives after a loaded page opened the standalone tooltip, which closes on scroll of the trigger's scroll parent (RA useOverlayPosition); the resumed page replays the cold click after that `scroll`, so its tooltip stays open (pre-scrolled, both pages open it)",
+    design: true,
   },
+
+  // Open findings.
+  // `/autocomplete` recreated (Autocomplete ListBox, `div#ac-list`) is gone: its pin first failed on CI at 9db8dd7f (passed
+  // at acc3f108; in range: CDK-EX's ListBox rows inside a compiled Provider region), 0 findings in 3 of 3 local runs
+  // (CI-RED 2026-10-20) — pin dropped.
+  { route: "/lightbox", kind: "recreated", match: "rv-LightboxSlide", owner: "cdk", note: "Lightbox slides " + NO_REGION },
+  // CI-RED 2026-10-20: the section re-creation pinned here since LAZY-T3 was the engine's first pass on a resumed page
+  // publishing an empty window (a click scrolled the scroller past its clamped offset; `virtualizer/state.ts`), fixed.
+  // The comparison now runs past the first click.
   {
     route: "/virtualized-collections",
     kind: "mismatch",
-    match: /vsections/,
+    match: '<div#vsections-option-g1-2>: resumed only [] / csr only [data-hovered="true"]',
+    step: 8,
     owner: "runtime",
-    note: "follows the section re-creation above: the clicked option lost focus on the resumed page, so the next keys select / move differently",
+    note: "the first click on a sectioned option: " + COLD_HOVER + " (3 of 3 runs)",
+  },
+  ...["/list-data", "/virtualized-collections"].map((route): FuzzPin => ({
+    route,
+    kind: "mismatch",
+    match:
+      /^resumed: <div class="rv-Virtualizer-item" data-rv-type="item" data-rv-view="[^"]+"[^\n]*\ncsr: <div class="rv-Virtualizer-item" data-rv-type="item" data-rv-view="/,
+    owner: "cdk",
+    note: "DOM order of virtualized rows after PageUp / PageDown while focus is inside (`rowOrder` keeps the kept rows' DOM order, new rows go last; positions are absolute, so not visible): depends on the window history of each page (1 of 3 runs per route, CI-RED 2026-10-20); ends the DOM comparison that run",
+    design: true,
+  })),
+  {
+    route: "/virtualized-collections",
+    kind: "mismatch",
+    match: /<div#v(sections|menu)-option-[\w-]+>: resumed only \[(data-hovered="true")?\] \/ csr only \[(data-hovered="true")?\]/,
+    owner: "runtime",
+    note: "timing-dependent (1–2 of 3 runs, CI-RED 2026-10-20): which option the parked pointer hovers after keys scroll the list depends on frame timing (same class as /live-props)",
+    design: true,
   },
   {
     route: "/dom-events-collections",
@@ -101,6 +127,14 @@ export const pins: FuzzPin[] = [
     owner: "runtime",
     note: "timing-dependent (seen in 1 of 2 runs): replayed hover not cleared by the next key: " + COLD_HOVER,
     design: true,
+  },
+  {
+    route: "/dom-events-overlays",
+    kind: "mismatch",
+    match: /st-down st-click"\ncsr: "[^"\n]*st-down"$/,
+    step: 15,
+    owner: "runtime",
+    note: "cold first click on the Select trigger (1-step repro, every local + CI run since 2026-10-18; COLDFIX report: pre-existing on the host): the replayed click reaches the trigger's `onClick` (log `st-click`), a loaded page's press opens the popover at pointerdown and its `onClick` does not run",
   },
   {
     route: "/scheduler-zone",

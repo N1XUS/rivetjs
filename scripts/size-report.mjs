@@ -211,6 +211,17 @@ async function measure(browser, url, client, route, sizes, saveAs) {
     page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {
       console.warn(`size-report: ${route.path}: not network-idle after 15 s; still pending: ${[...pending].map((r) => r.url()).join(", ") || "(none)"}`);
     });
+  // Eager = requested before any interaction. Headless Chromium on Linux (CI) dispatches trusted pointer / mouse
+  // events at the virtual cursor (0, 0) after layout; a page whose first link sits there (router fixtures: `body {
+  // margin: 0 }`, "Home" at the origin) got a link intent — router table chunk + a `?_rivet=data` prefetch whose
+  // unread body kept the network busy — counted as eager on CI only (CI-RED 2026-10-20). Pointer events are
+  // swallowed at the window (capture, before every page listener) until the measurement is taken.
+  await page.addInitScript(() => {
+    const w = /** @type {any} */ (window);
+    w.__sizeReportHold = true;
+    for (const type of ["pointerover", "pointerenter", "pointermove", "pointerout", "pointerleave", "mouseover", "mouseenter", "mousemove", "mouseout", "mouseleave"])
+      addEventListener(type, (event) => w.__sizeReportHold && event.stopImmediatePropagation(), { capture: true });
+  });
   try {
     const response = await page.goto(url + route.path, { waitUntil: "load" });
     await idle();
@@ -247,6 +258,8 @@ async function measure(browser, url, client, route, sizes, saveAs) {
       runtimeJS: jsSize(client, closure(client, rt), sizes),
       pageJS: jsSize(client, closure(client, [...rt, ...chunks]), sizes),
     };
+    // Scripted interactions below are real ones: pointer events reach the page again.
+    await page.evaluate(() => void (/** @type {any} */ (window).__sizeReportHold = false));
     if (route.steps?.length) {
       const start = scripts.length;
       try {
