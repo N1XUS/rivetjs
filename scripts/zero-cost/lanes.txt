@@ -1,4 +1,4 @@
-.DS_Store 6efe8b5d9f7c
+.DS_Store 98eace395944
 builds.json 0b5f94bb94d5
 client-stable/assets/CHQowWH8-bundle-graph.json 2001e8bc2908
 client-stable/build/q-0U1Cmwdf.js 604017aac87c
@@ -28,13 +28,13 @@ rivet-for.mjs 5047a906a2bd
 rivet-router-bunserve.mjs 400b5e5dfd8c
 rivet-router-uws.mjs 2e0a32c8d399
 rivet-router.mjs 34417ee36c65
-rivet-router/client/.vite/manifest.json dc529e75ae13
-rivet-router/client/.vite/rivet-resume.json 08f2fb75f8e7
+rivet-router/client/.vite/manifest.json 5566e89031a1
+rivet-router/client/.vite/rivet-resume.json 62c7381443dc
 rivet-router/client/assets/page-DiUoE9PX.js 3b31076c348d
 rivet-router/client/assets/resume-1qyUNVIt.js 3956620fe36a
 rivet-router/client/assets/resume-builtins-Bml1wg2k.js 32e247d7ec71
-rivet-router/client/assets/resume-entry-C_nmvmR-.deps.js 768ab6db3b1b
-rivet-router/client/assets/resume-entry-C_nmvmR-.js 526c2fd4d935
+rivet-router/client/assets/resume-entry-D2D1W4hI.deps.js 768ab6db3b1b
+rivet-router/client/assets/resume-entry-D2D1W4hI.js 21b1caa0d9f3
 rivet-router/client/assets/resume-index_tsx-CEHEbsQo.deps.js a8ce9c355ffb
 rivet-router/client/assets/resume-index_tsx-CEHEbsQo.js a2547e8a6661
 rivet-router/client/assets/resume-loader-DEOXaVdQ.js afe6e8bb8a46

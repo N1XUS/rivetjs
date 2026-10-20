@@ -1277,7 +1277,9 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
               kept || (replay && replay());
             });
           },
-          (error: unknown) => (held--, api.f!(error)),
+          // A failed chunk load: the count returns and the listener recording stops with it (the success path does both in
+          // its microtask; a rejected `ensure` left `addEventListener` patched until the next cold event, SMELL 2026-10-20).
+          (error: unknown) => (--held || record(0), api.f!(error)),
         );
     },
     /** Run the element's handler (or model sync) for a delegated event; requires loaded chunks. `entry`: the
