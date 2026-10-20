@@ -35,6 +35,19 @@ export const FRAME_STYLES_FILE = ".vite/docs-frame-styles.json";
  * prefetch every example (ROUTE-CHUNKS placed parts, 2026-10-18).
  */
 export const DOCS_LAZY_OWNED: readonly string[] = [FRAMES_INDEX];
+/**
+ * `rivetRouter({ resume: { preload: { rules } } })` for a docs app: the frame controls (theme menu, mobile drawer) and the
+ * cdk components they (and the search dialog) are built on load on intent (pointer / focus). Hover handlers of cdk
+ * components would otherwise make the planner prefetch ~39 cdk modules once visible. With `chunks: "route"` these modules
+ * also leave the eager main chunk (its intent sibling, `route:main:intent`) and the page fetch-ahead (`data-fo`): a docs
+ * page boots and fetches ~150 KB instead of ~500 KB with cdk collections (DOCS-JS, 2026-10-20).
+ */
+export const DOCS_PRELOAD_RULES: readonly { match: string; strategy: "intent" }[] = [
+  { match: "@rivetjs/cdk/", strategy: "intent" },
+  { match: "@rivetjs/docs-kit/components/ThemeMenu.tsx#", strategy: "intent" },
+  { match: "@rivetjs/docs-kit/components/MobileMenu.tsx#", strategy: "intent" },
+  { match: "@rivetjs/docs-kit/components/SiteFrame.tsx#", strategy: "intent" },
+];
 /** Dev server: the frame stylesheet lookup the SSR module calls (`docsFrames` installs it). */
 const DEV_FRAME_STYLES = Symbol.for("rivet.docs.frameStyles");
 

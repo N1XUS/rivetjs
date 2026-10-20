@@ -1,13 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite, DOCS_LAZY_OWNED } from "@rivetjs/docs-kit/vite.ts";
-
-/**
- * Frame controls (theme menu, drawer, search) are cdk components whose hover handlers would make the
- * planner prefetch ~39 cdk modules once visible; load them on intent (pointer / focus) instead.
- */
-const CDK_ON_INTENT = [{ match: "@rivetjs/cdk/", strategy: "intent" as const }];
+import { docsSite, DOCS_LAZY_OWNED, DOCS_PRELOAD_RULES } from "@rivetjs/docs-kit/vite.ts";
 
 /** @rivetjs/cdk docs: a static site on @rivetjs/docs-kit (same engine as apps/docs). */
 export default defineConfig({
@@ -18,7 +12,7 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
-      resume: { preload: { rules: CDK_ON_INTENT }, lazyOwned: [...DOCS_LAZY_OWNED] },
+      resume: { preload: { rules: [...DOCS_PRELOAD_RULES] }, lazyOwned: [...DOCS_LAZY_OWNED] },
     }),
     tailwindcss(),
   ],

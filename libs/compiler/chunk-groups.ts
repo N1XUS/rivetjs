@@ -33,6 +33,9 @@
  * cycles still do), until it loads `cap` or no pair of its groups can merge. Pinned entries (every page loads them) are
  * skipped: their owner sets over-count through barrels, and a cap there would fold page code into one chunk every page
  * downloads. A merge never raises another entry's count, so one pass over the entries settles every one.
+ *
+ * Strict entries (`strict`, DOCS-JS 2026-10-20): like pinned ones for the owner agreement only — two groups merge only
+ * when every strict entry owns both or neither; their owner walk does not enter `late` modules.
  */
 
 /** One module of the graph: size in bytes, static imports (ids), whether it may be grouped. */
@@ -58,6 +61,19 @@ export interface CoLoadModule {
    * owner, so nothing joins the always-loaded chunks and they never pull page code in.
    */
   pinned?: boolean;
+  /**
+   * An entry that never loads bytes of a group it does not own (DOCS-JS 2026-10-20: a route chunk with an intent sibling,
+   * `route:<key>:intent`): groups merge only when they agree on it, so merging never pulls the intent chunk's modules
+   * back into the eager chunk's closure. Unlike `pinned`, its groups still merge with each other and the cap still applies.
+   */
+  strict?: boolean;
+  /**
+   * A module of an intent-class file (its source module or part, DOCS-JS): strict entries do not walk into it. A strict
+   * entry reaches such modules only through static imports the bundler tree-shakes (a frame renders its menus on the
+   * server; the browser shell never calls them), so counting it as their owner would let their whole library merge
+   * into the shell's closure (cdk-docs: a 112 KB cdk group through the preload helper).
+   */
+  late?: boolean;
 }
 
 export interface CoLoadOptions {
@@ -113,14 +129,15 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
   const ownersOf: (Uint32Array | undefined)[] = new Array(modules.length);
   const seen = new Int32Array(modules.length).fill(-1);
   const walk = (entry: number, e: number, through: boolean, visit: (m: number) => void) => {
-    const stack = [entry];
+    const stack = [entry],
+      strict = !!modules[entry]!.strict;
     while (stack.length) {
       const m = stack.pop()!;
       if (seen[m] === e) continue;
       seen[m] = e;
       visit(m);
       if (modules[m]!.barrel && m !== entry && !through && imports[m]!.length > SMALL_BARREL) continue;
-      for (const next of imports[m]!) if (seen[next] !== e) stack.push(next);
+      for (const next of imports[m]!) if (seen[next] !== e && !(strict && modules[next]!.late)) stack.push(next);
     }
   };
   // Modules a pinned entry may load through a barrel (the barrel stop cannot tell which it uses): never grouped, so
@@ -190,9 +207,11 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
       }
     return out;
   };
-  const pinned = new Uint32Array(words);
+  const pinned = new Uint32Array(words),
+    agree = new Uint32Array(words);
   entries.forEach((entry, e) => {
     if (modules[entry]!.pinned) pinned[e >>> 5]! |= 1 << (e & 31);
+    if (modules[entry]!.pinned || modules[entry]!.strict) agree[e >>> 5]! |= 1 << (e & 31);
   });
   const version = new Int32Array(groups.length);
   // Imports of a group (cached per group version): an entry that newly loads a merged group also loads them.
@@ -233,7 +252,7 @@ function coLoad(input: readonly CoLoadModule[], options: CoLoadOptions): CoLoadI
   const cost = (a: number, b: number): number => {
     const A = groups[a]!,
       B = groups[b]!;
-    for (let w = 0; w < words; w++) if ((A.owners[w]! ^ B.owners[w]!) & pinned[w]!) return Infinity;
+    for (let w = 0; w < words; w++) if ((A.owners[w]! ^ B.owners[w]!) & agree[w]!) return Infinity;
     let both = 0;
     for (let w = 0; w < words; w++) both += popcount1(A.owners[w]! & B.owners[w]!);
     if (both === 0) return Infinity;

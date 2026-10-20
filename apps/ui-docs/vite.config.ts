@@ -1,13 +1,8 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite, DOCS_LAZY_OWNED } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite, DOCS_LAZY_OWNED, DOCS_PRELOAD_RULES } from "@rivetjs/docs-kit/vite.ts";
 
-/**
- * Frame controls (theme menu, drawer, search) are cdk components whose hover handlers would make the
- * planner prefetch ~39 cdk modules once visible; load them on intent (pointer / focus) instead.
- */
-const CDK_ON_INTENT = [{ match: "@rivetjs/cdk/", strategy: "intent" as const }];
 /**
  * Chunk-policy experiments (derived-client plan M1, `docs/design/plans/2026-10-18-derived-client.md`): the measurement
  * builds set `RIVET_RESUME_CHUNKS` (`component` | `group` | `route`) and `RIVET_RESUME_MERGE` (bytes, or `off`) + `RIVET_RESUME_CAP`; unset =
@@ -31,7 +26,7 @@ export default defineConfig({
       prefetch: "document",
       prefetchPaths: false,
       resume: {
-        preload: { rules: CDK_ON_INTENT },
+        preload: { rules: [...DOCS_PRELOAD_RULES] },
         lazyOwned: [...DOCS_LAZY_OWNED],
         ...(CHUNKS ? { chunks: CHUNKS } : {}),
         ...(MERGE !== undefined ? { merge: MERGE } : {}),

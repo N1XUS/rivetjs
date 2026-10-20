@@ -56,7 +56,10 @@ export interface RivetResumeOptions {
    * "group" one chunk per `<ChunkGroup>` subtree (components rendered in several groups, or none, keep their own
    * chunk). Chunks of the same group / route prefetch each other once one is used. Measured (ui-docs frames, Slow 4G):
    * route needs a quarter of the files of component through the first click for about a fifth more bytes, and
-   * the first click downloads nothing.
+   * the first click downloads nothing. Route mode splits each route chunk by load class: a module whose every symbol
+   * loads on intent / interaction (component-level `preload`, else a `preload.rules` rule) goes to the route's intent
+   * chunk (`resume-<route>-intent`, same sibling group), so a page booting its route chunk (an idle effect, a boot-time
+   * listener) does not evaluate it, and the page fetch-ahead leaves it to its intent prefetch.
    */
   chunks?: "component" | "group" | "route";
   /**
@@ -93,7 +96,10 @@ export interface RivetResumeOptions {
    * 3+ elements (list rows) and hover-like events when visible; window/document client events at idle;
    * `passive: false` listeners eagerly. First matching rule wins; a string matches a symbol id prefix
    * (`src/page.tsx#Component`). Precedence: element `preload="…"` directive > component level (module
-   * `export const preload = "…"`, or a `<ChunkGroup preload>`) > these rules > automatic.
+   * `export const preload = "…"`, or a `<ChunkGroup preload>`) > these rules > automatic. With `chunks: "route"`, a
+   * module whose symbols all resolve to `intent` / `interaction` here (or at the component level) moves to its route's
+   * intent chunk and out of the page's fetch-ahead (`data-fo`); rule the renderers of such components too (a frame whose
+   * child slots render a menu imports the menu's module).
    */
   preload?: { rules?: { match: string | RegExp; strategy: PreloadStrategy }[] };
   /**
@@ -656,7 +662,12 @@ function rivetPlugin(
   // The manifest then points their symbols at whichever chunk holds the part. One emitted chunk per exact set of routes
   // was both the request count and a Rolldown stack overflow (ui-docs: 193 nested sets over 1,036 frames), and
   // clustering those sets up front could not see the closures and lazy imports a merge drags along.
-  const placed = new Map<string, { symbols: ResumeSymbol[]; preload: string | null }>(); // shared file → its symbols
+  const placed = new Map<string, { symbols: ResumeSymbol[]; preload: string | null; late: boolean }>(); // shared file → its symbols
+  // Route mode: component-level preload (module `export const preload`, else its ChunkGroup's) per symbol id — a route
+  // chunk holds many modules, so a chunk-wide preload would be the first module's.
+  const routePreload = new Map<string, string>();
+  // Route mode: modules whose every symbol loads on intent / interaction (their route's `:intent` chunk, buildStart).
+  const lateFiles = new Set<string>();
   const posix = (path: string) => path.split(sep).join("/");
   // Dev server: symbols of the resume modules compiled for SSR (symbol id → its module's source and symbol).
   // id → defining file → its symbol (fix round 2, L2: a shared canonical module reference id has several definers; it
@@ -1113,6 +1124,8 @@ function rivetPlugin(
       chunks.clear();
       placed.clear();
       parts.clear();
+      routePreload.clear();
+      lateFiles.clear();
       const strategy = chunkStrategy();
       if (!["component", "group", "route"].includes(strategy)) this.error('resume.chunks must be "component", "group" or "route"');
       if (resume.merge !== undefined && resume.merge !== false && !(typeof resume.merge === "number" && resume.merge >= 0))
@@ -1178,9 +1191,31 @@ function rivetPlugin(
       // reference is that module's symbol.
       // Every chunk of routes reached by several routes is one sibling group (a page's shared chunks prefetch together).
       const routeSibling = (key: string) => (key.startsWith("route:shared:") ? "route:shared" : key);
+      // Route chunks split by load class (DOCS-JS): a module whose every symbol loads on intent / interaction (its
+      // component-level preload, else the first matching `preload.rules` rule) goes to the route's intent chunk
+      // (`route:<key>:intent`, same sibling group), the others stay in the route chunk. A route chunk is evaluated with
+      // its whole static closure as soon as one symbol is needed (a page's idle effect, a boot-time listener): without
+      // the split, a docs page booted the cdk menu + collections (~400 KB) of its frame controls for a keyboard shortcut.
+      // File level: one part per module (parts are keyed by file).
+      const ruleOf = (id: string): PreloadStrategy | undefined =>
+        resume.preload?.rules?.find(({ match }) => (typeof match === "string" ? id.startsWith(match) : match.test(id)))?.strategy;
+      const componentPreload = (filename: string, symbol: ResumeSymbol): string | null => {
+        const group = groups.group(filename, symbol.component);
+        return groups.modulePreload(filename) ?? (group && groups.groupPreload(group));
+      };
+      if (strategy === "route")
+        for (const [filename, result] of compiled) {
+          const own = (result.symbols ?? []).filter((symbol) => symbol.kind !== "ref" || symbol.id.startsWith(moduleId(filename) + "#"));
+          if (own.length && own.every((symbol) => /^(intent|interaction)$/.test(componentPreload(filename, symbol) ?? ruleOf(symbol.id) ?? "")))
+            lateFiles.add(filename);
+        }
+      const routeChunkKey = (filename: string) => {
+        const key = routeKey(filename);
+        return lateFiles.has(filename) && !key.startsWith("route:placed:") ? key + ":intent" : key;
+      };
       const chunkKey = (filename: string, component: string) => {
         const group = groups.group(filename, component);
-        return strategy === "group" && group ? group : strategy === "route" ? routeKey(filename) : filename + "?" + component;
+        return strategy === "group" && group ? group : strategy === "route" ? routeChunkKey(filename) : filename + "?" + component;
       };
       // Fix round 3, G2: one import reference id must name one file. Two importers whose specifier resolves to different
       // files (two installed copies of a package: an eager route and a lazy one, nested node_modules) would share the id,
@@ -1283,17 +1318,27 @@ function rivetPlugin(
             }
           }
           const group = groups.group(filename, symbol.component);
-          const key = strategy === "group" && group ? group : strategy === "route" ? routeKey(filename) : filename + "?" + symbol.component;
+          const key = chunkKey(filename, symbol.component);
+          if (strategy === "route") {
+            const preload = componentPreload(filename, symbol);
+            if (preload) routePreload.set(symbol.id, preload);
+          }
           if (key.startsWith("route:placed:")) {
             let entry = placed.get(filename);
-            if (!entry) placed.set(filename, (entry = { symbols: [], preload: groups.modulePreload(filename) }));
+            if (!entry) placed.set(filename, (entry = { symbols: [], preload: groups.modulePreload(filename), late: lateFiles.has(filename) }));
             entry.symbols.push(symbol);
             continue;
           }
           const id = CHUNK + key;
           let chunk = chunks.get(id);
           if (!chunk) {
-            const label = strategy === "component" || (strategy === "group" && !group) ? symbol.component : key.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_");
+            const label =
+              strategy === "component" || (strategy === "group" && !group)
+                ? symbol.component
+                : key
+                    .replace(/:intent$/, "")
+                    .replace(/^.*[#/]/, "")
+                    .replace(/[^\w-]/g, "_") + (key.endsWith(":intent") ? "-intent" : "");
             chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: group ?? routeSibling(routeKey(filename)) }));
             this.emitFile({ type: "chunk", id, name: "resume-" + label, preserveSignature: "strict" });
           }
@@ -1301,19 +1346,26 @@ function rivetPlugin(
           if (!list) chunk.parts.set(filename, (list = []));
           list.push(symbol);
           chunk.symbols.push(symbol);
-          // Component-level preload: the module's `export const preload`, else its ChunkGroup's `preload` prop.
-          chunk.preload ??= groups.modulePreload(filename) ?? (group && groups.groupPreload(group));
+          // Component-level preload: the module's `export const preload`, else its ChunkGroup's `preload` prop (route
+          // chunks: per symbol, `routePreload`).
+          if (strategy !== "route") chunk.preload ??= groups.modulePreload(filename) ?? (group && groups.groupPreload(group));
         }
       // Every route reaching a placed module imports its part (a route without symbols of its own gets an empty chunk
       // of imports): the part is placed by the routes using it, and never dropped as unreferenced.
+      // A late (intent-class) placed module is imported by the routes' intent chunks.
       for (const [filename, entry] of placed) {
         parts.set(PART + filename, { file: filename, symbols: entry.symbols });
         for (const route of groups.roots(filename) ?? []) {
-          const id = CHUNK + "route:" + route;
+          const id = CHUNK + "route:" + route + (entry.late ? ":intent" : "");
           let chunk = chunks.get(id);
           if (!chunk) {
             chunks.set(id, (chunk = { parts: new Map(), symbols: [], preload: null, sibling: "route:" + route }));
-            this.emitFile({ type: "chunk", id, name: "resume-" + route.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_"), preserveSignature: "strict" });
+            this.emitFile({
+              type: "chunk",
+              id,
+              name: "resume-" + route.replace(/^.*[#/]/, "").replace(/[^\w-]/g, "_") + (entry.late ? "-intent" : ""),
+              preserveSignature: "strict",
+            });
           }
           (chunk.shared ??= []).push(filename);
         }
@@ -1450,6 +1502,11 @@ function rivetPlugin(
           barrel: info.code != null && isBarrel(info.code),
           // The app entry and the resume runtime load on every page: nothing merges into them.
           pinned: info.isEntry && !id.startsWith(CHUNK),
+          // The main route chunk (the app shell every page loads: root layout, router, frame) with an intent sibling:
+          // merging never moves intent-only modules into its closure. Lazy route chunks keep the budget's trade (strict
+          // there took a cdk-docs example frame from 12 to 57 requests).
+          ...(id === CHUNK + "route:main" && chunks.has(id + ":intent") ? { strict: true } : {}),
+          ...(lateFiles.has(id.startsWith(PART) ? id.slice(PART.length).split("?")[0]! : id.split("?")[0]!) ? { late: true } : {}),
         });
       }
       // `RIVET_MERGE_DUMP=<file>`: the merge input (modules, options) as JSON, to replay `coLoadGroups` offline
@@ -1498,7 +1555,7 @@ function rivetPlugin(
               symbols[symbol.id] = base + output.fileName;
               // Component-level preload wins; else the first matching app rule (string: symbol id prefix).
               const rule = rules.find(({ match }) => (typeof match === "string" ? symbol.id.startsWith(match) : match.test(symbol.id)));
-              const strategy = chunk.preload ?? rule?.strategy;
+              const strategy = chunk.preload ?? routePreload.get(symbol.id) ?? rule?.strategy;
               if (strategy) preload[symbol.id] = strategy;
             }
           }

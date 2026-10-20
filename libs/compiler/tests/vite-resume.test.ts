@@ -879,3 +879,100 @@ export function List(props: { rows: { id: number; label: string }[] }) {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("route chunks split by load class: intent-rule modules leave the eager route chunk and its static closure", async () => {
+  await mkdir(".artifacts", { recursive: true });
+  const root = await mkdtemp(resolve(".artifacts/vite-route-intent-"));
+  try {
+    await mkdir(resolve(root, "src"), { recursive: true });
+    // A heavy library module only the menu and the tip use (cdk collections behind the docs frame's theme menu).
+    await writeFile(resolve(root, "src/heavy.ts"), 'export const heavy = (s: string) => "HEAVY_MARKER:" + s.repeat(2);\n');
+    const user = (name: string, tag: string) => `import { signal } from "@rivetjs/reactivity";
+import { heavy } from "./heavy.ts";
+export function ${name}() { const open = signal(false); return <${tag} onClick={() => open.set(!open())}>{open() ? heavy("x") : "${name}"}</${tag}>; }
+`;
+    await writeFile(resolve(root, "src/menu.tsx"), user("Menu", "button"));
+    // Reached by two lazy routes: a placed module, imported by the routes' intent chunks.
+    await writeFile(resolve(root, "src/tip.tsx"), user("Tip", "i"));
+    // An eager keyboard shortcut (the docs search shortcut).
+    await writeFile(
+      resolve(root, "src/shortcut.tsx"),
+      `import { signal } from "@rivetjs/reactivity";
+export function Shortcut() { const k = signal(0); return <kbd onKeyDown={() => k.set(1)}>{k()}</kbd>; }
+`,
+    );
+    // The frame renders both from its own symbols (child slots import what they render): an intent module too, like
+    // docs-kit's SiteFrame in the docs rules.
+    await writeFile(
+      resolve(root, "src/frame.tsx"),
+      `import { Shortcut } from "./shortcut.tsx";
+import { Menu } from "./menu.tsx";
+export function Frame(props: { children?: unknown }) { return <header><Shortcut /><Menu />{props.children}</header>; }
+`,
+    );
+    for (const name of ["R1", "R2"])
+      await writeFile(
+        resolve(root, `src/${name.toLowerCase()}.tsx`),
+        `import { Tip } from "./tip.tsx";
+export default function ${name}() { return <Tip />; }
+`,
+      );
+    await writeFile(
+      resolve(root, "src/app.tsx"),
+      `import { lazyComponent } from "@rivetjs/runtime/server";
+import { Frame } from "./frame.tsx";
+const R1 = lazyComponent(() => import("./r1.tsx"));
+const R2 = lazyComponent(() => import("./r2.tsx"));
+export function App() { return <Frame><R1 /><R2 /></Frame>; }
+`,
+    );
+    await writeFile(resolve(root, "index.html"), "<!doctype html><p>static</p>");
+    const modules = ["src/app.tsx", "src/frame.tsx", "src/shortcut.tsx", "src/menu.tsx", "src/tip.tsx", "src/r1.tsx", "src/r2.tsx"];
+    const run = async (rules: { match: string; strategy: "intent" }[], out: string) => {
+      await build({
+        configFile: false,
+        root,
+        logLevel: "silent",
+        plugins: [rivet({ resume: { modules, preload: { rules } } })],
+        build: { outDir: out, manifest: true, minify: false },
+      });
+      return JSON.parse(await readFile(resolve(root, out + "/.vite/rivet-resume.json"), "utf8")) as BuiltManifest & { fetchAhead?: boolean };
+    };
+    const url = (m: BuiltManifest, id: string) => m.symbols[Object.keys(m.symbols).find((s) => s.startsWith(id))!]!;
+    const closureText = async (m: BuiltManifest, out: string, chunk: string) =>
+      (await Promise.all([chunk, ...(m.deps[chunk] ?? [])].map((file) => readFile(resolve(root, out + file), "utf8")))).join("\n");
+    // No rule: shortcut and menu share the main route chunk, whose closure carries the heavy module.
+    const plain = await run([], "dist-plain");
+    assert.equal(url(plain, "src/menu.tsx#Menu"), url(plain, "src/shortcut.tsx#Shortcut"));
+    assert.match(await closureText(plain, "dist-plain", url(plain, "src/shortcut.tsx#Shortcut")), /HEAVY_MARKER/);
+    // Intent rules: frame / menu / tip modules go to intent chunks (`resume-route_main-intent`, `resume-r1_tsx-intent`);
+    // the eager main chunk keeps the shortcut and its static closure no longer reaches the heavy module.
+    const out = "dist-intent";
+    const m = await run(
+      ["src/frame.tsx#", "src/menu.tsx#", "src/tip.tsx#"].map((match) => ({ match, strategy: "intent" as const })),
+      out,
+    );
+    const shortcut = url(m, "src/shortcut.tsx#Shortcut"),
+      menu = url(m, "src/menu.tsx#Menu");
+    assert.notEqual(menu, shortcut);
+    assert.match(menu, /\/resume-route_main-intent-[\w-]+\.js$/);
+    assert.equal(url(m, "src/frame.tsx#Frame"), menu);
+    assert.equal(m.preload[Object.keys(m.symbols).find((s) => s.startsWith("src/menu.tsx#Menu"))!], "intent");
+    assert.equal(m.preload[Object.keys(m.symbols).find((s) => s.startsWith("src/shortcut.tsx#Shortcut"))!], undefined);
+    // Same sibling group: an interaction loading one prefetches the other.
+    assert.ok(m.groups.some((group) => group.includes(shortcut) && group.includes(menu)));
+    assert.doesNotMatch(await closureText(m, out, shortcut), /HEAVY_MARKER/);
+    assert.match(await closureText(m, out, menu), /HEAVY_MARKER/);
+    // The placed intent module: imported by the routes' intent chunks, never by an eager chunk.
+    const files = await readdir(resolve(root, out, "assets"));
+    for (const name of ["r1", "r2"])
+      assert.ok(
+        files.some((file) => new RegExp(`^resume-${name}_tsx-intent-[\\w-]+\\.js$`).test(file)),
+        name,
+      );
+    for (const chunk of [shortcut]) assert.ok(!(m.deps[chunk] ?? []).includes(url(m, "src/tip.tsx#Tip")));
+    assert.equal(m.fetchAhead, true);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

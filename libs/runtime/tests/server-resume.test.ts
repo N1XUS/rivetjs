@@ -821,6 +821,44 @@ test("route chunks (manifest fetchAhead) + preload.ahead: the page's own chunks 
   assert.doesNotMatch(await tag({ preload: { ahead: true }, manifest: { ...manifest, fetchAhead: undefined } }), /data-fo=/);
 });
 
+const declaredLateSource = `
+import { signal } from "@rivetjs/reactivity";
+export function Counter() {
+  const n = signal(0);
+  return <button onClick={() => n.set(n() + 1)}>{n()}</button>;
+}
+export function Menu() {
+  const open = signal(false);
+  return <button onClick={() => open.set(!open())}>{open() ? "open" : "menu"}</button>;
+}
+export function Page() {
+  return <main><Counter /><Menu /></main>;
+}
+`;
+const declaredLateMod = await importServer<{ Page: Component }>(compileResume(declaredLateSource, "server").code);
+test("route chunks fetch-ahead: chunks declared intent / interaction (manifest preload) stay out; automatic intent handlers stay in", async () => {
+  const symbols = compileResume(declaredLateSource, "dom").symbols;
+  const chunkOf = (component: string) => (component === "Menu" ? "/c/route-intent.js" : "/c/route.js");
+  const manifest = {
+    runtime: "/rt.js",
+    loader: "/ld.js",
+    fetchAhead: true,
+    symbols: Object.fromEntries(symbols.map((s) => [s.id, chunkOf(s.component)])),
+    deps: { "/rt.js": ["/dom.js"], "/c/route.js": ["/dom.js"], "/c/route-intent.js": ["/dom.js", "/collections.js"] },
+  } as ResumeManifest;
+  const tag = async (m: object) =>
+    /<script type="rivet\/state"[^>]*>/.exec(
+      String(await resumableToString(() => declaredLateMod.Page(), { manifest: m, preload: { ahead: true } } as never)),
+    )![0];
+  // No rule: both click handlers are automatic intent and both chunks are fetched ahead (the first click downloads nothing).
+  assert.match(await tag(manifest), / data-fo="\/rt\.js \/dom\.js \/c\/route\.js \/c\/route-intent\.js \/collections\.js"/);
+  // The menu declared intent (an app rule / component-level preload): its chunk and closure are left to its intent prefetch.
+  for (const strategy of ["intent", "interaction"]) {
+    const preload = Object.fromEntries(symbols.filter((s) => s.component === "Menu").map((s) => [s.id, strategy]));
+    assert.match(await tag({ ...manifest, preload }), / data-fo="\/rt\.js \/dom\.js \/c\/route\.js"/, strategy);
+  }
+});
+
 const standaloneSource = `
 import { signal } from "@rivetjs/reactivity";
 import { clientEvent } from "@rivetjs/runtime/server";

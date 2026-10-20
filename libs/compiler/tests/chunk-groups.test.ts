@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { coLoadGroups, isBarrel, MERGE_PREFIX, withMergeGroup, type CoLoadModule } from "../chunk-groups.ts";
+import { coLoadGroups, coLoadInspect, isBarrel, MERGE_PREFIX, withMergeGroup, type CoLoadModule } from "../chunk-groups.ts";
 
 const mod = (id: string, size: number, imports: string[] = [], extra: Partial<CoLoadModule> = {}): CoLoadModule => ({
   id,
@@ -61,6 +61,39 @@ test("groups merge only along import edges (below the hub share)", () => {
     mod("/s/z.ts", 10),
   ];
   assert.equal(coLoadGroups(graph, { budget: 1e9 }).size, 0);
+});
+
+test("strict entries (an eager shell chunk with an intent sibling) never take intent-only code; late modules stop their walk", () => {
+  // shell → helper ← intent → lib; helper {shell, intent}, lib {intent}: adjacent and tiny, merged under any budget.
+  const graph = [
+    entry("shell", ["/s/helper.ts"]),
+    entry("intent", ["/s/helper.ts", "/s/lib.ts"]),
+    mod("/s/helper.ts", 10),
+    mod("/s/lib.ts", 10, ["/s/helper.ts"]),
+  ];
+  const loose = coLoadGroups(graph, { budget: 1e9 });
+  assert.ok(loose.get("/s/lib.ts"));
+  assert.equal(loose.get("/s/lib.ts"), loose.get("/s/helper.ts"));
+  const strict = graph.map((m) => (m.id === "shell" ? { ...m, strict: true } : m));
+  assert.equal(coLoadGroups(strict, { budget: 1e9 }).get("/s/lib.ts"), undefined);
+  // The shell reaching lib only through a late module (a frame source module whose menu the bundler tree-shakes out of
+  // the shell): not its owner, so lib still stays out of the helper's group; without `late` the walk owns lib too.
+  const through = [
+    entry("shell", ["/s/helper.ts", "/s/frame.tsx"], { strict: true }),
+    entry("intent", ["/s/frame.tsx", "/s/lib.ts"]),
+    mod("/s/frame.tsx", 10, ["/s/lib.ts", "/s/helper.ts"], { late: true }),
+    mod("/s/helper.ts", 10),
+    mod("/s/lib.ts", 10, ["/s/helper.ts"]),
+  ];
+  assert.equal(coLoadInspect(through, { budget: 1e9 }).owners.get("/s/lib.ts")!.count, 1);
+  assert.equal(coLoadGroups(through, { budget: 1e9 }).get("/s/lib.ts"), undefined);
+  assert.equal(
+    coLoadInspect(
+      through.map((m) => ({ ...m, late: false })),
+      { budget: 1e9 },
+    ).owners.get("/s/lib.ts")!.count,
+    2,
+  );
 });
 
 test("pinned entries (loaded on every page) never take page code", () => {

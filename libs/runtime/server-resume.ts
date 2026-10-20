@@ -383,6 +383,8 @@ interface Encoded extends Omit<StatePatch, "boot"> {
   rx?: boolean;
   /** Relocated table entries / repeated handler / binding entries (`compactTable` `{R}`, `repeatEntries`): the page needs the repeat add-on (`REPEAT`). */
   rr?: boolean;
+  /** Route chunk builds (manifest `fetchAhead`): page chunk indexes declared intent / interaction (left out of `data-fo`). */
+  late?: number[];
 }
 type Equals = ((a: unknown, b: unknown) => boolean) | null;
 
@@ -2028,7 +2030,7 @@ class Stream {
             if (!(await this.caught(next, write, patch, swap))) await continued(next);
           } else {
             next.out = "content";
-            const { events, schedule, boot, rx, rr, ...delta } = encodeRecords(this.root, next.view!, [[next.A, next.F, next.M.id!, 1]]);
+            const { events, schedule, boot, rx, rr, late, ...delta } = encodeRecords(this.root, next.view!, [[next.A, next.F, next.M.id!, 1]]);
             if (events.length) delta.ev = events;
             if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
             if (boot) (delta as StatePatch).boot = 1;
@@ -2096,7 +2098,7 @@ class Stream {
       const dropped = this.segments.filter((segment) => !segment.out && inside(segment.M, content));
       for (const segment of dropped) entries.push([segment.A, segment.F, segment.M.id!, 1]);
       for (const segment of dropped) drop(this, segment);
-      const { events, schedule, boot, rx, rr, ...delta } = encodeRecords(this.root, view, entries);
+      const { events, schedule, boot, rx, rr, late, ...delta } = encodeRecords(this.root, view, entries);
       if (events.length) delta.ev = events;
       if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
       if (boot) (delta as StatePatch).boot = 1;
@@ -3966,6 +3968,7 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   for (const type of out.events) enc.events.add(type);
   // Lean pages (`preload.lean`): no schedule, so the loader prefetches on intent only (its Save-Data mode).
   out.schedule = root.options.preload?.lean ? [] : preload.schedule;
+  if (preload.late) out.late = preload.late;
   out.boot = bootsAtLoad(recorder, fx.length);
   return out;
 }
@@ -5021,7 +5024,7 @@ function stateJSON(state: object): string {
 /** `ahead`: fetch-ahead (`data-fo`) even though the options say `lean` (the D-lean deferred state, `deferredState`). */
 function encodeState(recorder: Recorder, ahead = false): ServerValue {
   const { manifest = {} as BuildManifest, nonce } = recorder.options;
-  const { t0, events, schedule, boot, rx, rr, ...part } = encodeRecords(recorder, recorder);
+  const { t0, events, schedule, boot, rx, rr, late, ...part } = encodeRecords(recorder, recorder);
   const { c, s, l, x, g, t, e, m, b, fx, ce, a, n, w, L } = part;
   const state = { v: RESUME_VERSION, h: manifest.hash ?? null, rt: manifest.runtime ?? null, c, s } as ResumeState;
   if (l) state.l = l;
@@ -5045,13 +5048,19 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   // their static imports (manifest `deps`) are listed too. Lean pages / no loader module: none (the first link
   // intent / click loads them; the loader holds and replays the click).
   // Route chunk builds (`manifest.fetchAhead`) on apps with document prefetch (`preload.ahead`): the page's own handler
-  // chunks too (ROUTE-CHUNKS), on non-lean pages.
+  // chunks too (ROUTE-CHUNKS), on non-lean pages — except chunks declared to load on intent / interaction (`late`: an
+  // element `preload` directive, component-level `preload` or app `preload.rules` rule; automatic intent handlers stay):
+  // their intent prefetch loads them (DOCS-JS: a docs page fetched its frame menus' cdk closure, ~330 KB, on every load).
   const own = !!manifest.fetchAhead && !!recorder.options.preload?.ahead && !recorder.options.preload.lean && c.length > 0;
   const fetchOnly =
     manifest.loader && ((n && (ahead || !recorder.options.preload?.lean)) || own)
-      ? [...new Set([state.rt, ...(n ?? []).map((i) => c[i]), ...(own ? c : [])].flatMap((url) => (url ? [url, ...(manifest.deps?.[url] ?? [])] : [])))].join(
-          " ",
-        )
+      ? [
+          ...new Set(
+            [state.rt, ...(n ?? []).map((i) => c[i]), ...(own ? (late?.length ? c.filter((_, i) => !late.includes(i)) : c) : [])].flatMap((url) =>
+              url ? [url, ...(manifest.deps?.[url] ?? [])] : [],
+            ),
+          ),
+        ].join(" ")
       : "";
   // Dev: large captures / page state budget (`DEV.stateCaptures` above).
   if (DEV) DEV.stateBytes(recorder, stateJSON(state).length);
@@ -5349,7 +5358,7 @@ function planPreload({
   reach: ReachMemo;
   background: number;
   preloads: readonly PreloadRecord[];
-}): { schedule: PreloadEntry[]; interaction: number[] } {
+}): { schedule: PreloadEntry[]; interaction: number[]; late?: number[] } {
   // `_rPreload` chunks may be outside the page's shipped list (an island chunk no symbol of this page is in): planned on a
   // local copy, so the shared list (state `c`, later patches) is untouched; `interaction` keeps shipped indexes only.
   const chunks = preloads.length ? shipped.slice() : shipped;
@@ -5473,10 +5482,16 @@ function planPreload({
     interaction: number[] = [],
     listed = new Set<string>(),
     lazyQueue: string[] = [];
+  // Route chunk builds: chunks declared to wait for intent / interaction stay out of the page's fetch-ahead (`encodeState`).
+  const late: number[] | undefined = manifest.fetchAhead ? [] : undefined;
   const ranked = [...chunk].sort(([a, x], [b, y]) => y.score - x.score || (sizes[chunks[a]!] ?? 0) - (sizes[chunks[b]!] ?? 0));
   for (const [index, info] of ranked) {
     // Precedence: element directive > component / app rule (manifest) > automatic.
     const strategy = info.element ?? info.rule ?? info.strategy;
+    // Declared late only (element directive / component level / app rule): automatic intent (a click handler) keeps
+    // its fetch-ahead, so the first click on it downloads nothing.
+    const declared = info.element ?? info.rule;
+    if (late && (declared === "intent" || declared === "interaction") && index < shipped.length) late.push(index);
     if (strategy === "interaction") {
       if (index < shipped.length) interaction.push(index);
     } else if (CODE[strategy]) {
@@ -5511,7 +5526,7 @@ function planPreload({
     for (const url of add) counted.add(url);
     entry[1] = "P";
   }
-  return { schedule, interaction };
+  return late ? { schedule, interaction, late } : { schedule, interaction };
 }
 
 const tailOf = (recorder: Recorder) => (): ServerValue => {
