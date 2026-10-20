@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="NxAngularConfigService" workspaceLocation="file://$PROJECT_DIR$/nx.json">
+    <projects>
+      <project name="bridge" file="file://$PROJECT_DIR$/libs/bridge/project.json" />
+      <project name="bridge-demo" file="file://$PROJECT_DIR$/apps/bridge-demo/project.json" />
+      <project name="bridge-preact" file="file://$PROJECT_DIR$/libs/bridge-preact/project.json" />
+      <project name="bridge-react" file="file://$PROJECT_DIR$/libs/bridge-react/project.json" />
+      <project name="cdk" file="file://$PROJECT_DIR$/libs/cdk/project.json" />
+      <project name="cdk-docs" file="file://$PROJECT_DIR$/apps/cdk-docs/project.json" />
+      <project name="compiler" file="file://$PROJECT_DIR$/libs/compiler/project.json" />
+      <project name="create-rivet" file="file://$PROJECT_DIR$/libs/create-rivet/project.json" />
+      <project name="devtools" file="file://$PROJECT_DIR$/libs/devtools/project.json" />
+      <project name="docs" file="file://$PROJECT_DIR$/apps/docs/project.json" />
+      <project name="docs-kit" file="file://$PROJECT_DIR$/libs/docs-kit/project.json" />
+      <project name="dom-bench" file="file://$PROJECT_DIR$/apps/dom-bench/project.json" />
+      <project name="forms" file="file://$PROJECT_DIR$/libs/forms/project.json" />
+      <project name="i18n" file="file://$PROJECT_DIR$/libs/i18n/project.json" />
+      <project name="island-bench" file="file://$PROJECT_DIR$/apps/island-bench/project.json" />
+      <project name="kit" file="file://$PROJECT_DIR$/libs/kit/project.json" />
+      <project name="language-core" file="file://$PROJECT_DIR$/libs/language-core/project.json" />
+      <project name="mcp" file="file://$PROJECT_DIR$/libs/mcp/project.json" />
+      <project name="motion" file="file://$PROJECT_DIR$/libs/motion/project.json" />
+      <project name="nx" file="file://$PROJECT_DIR$/libs/nx/project.json" />
+      <project name="playground" file="file://$PROJECT_DIR$/apps/playground/project.json" />
+      <project name="reactivity" file="file://$PROJECT_DIR$/libs/reactivity/project.json" />
+      <project name="resume-bench" file="file://$PROJECT_DIR$/apps/resume-bench/project.json" />
+      <project name="router" file="file://$PROJECT_DIR$/libs/router/project.json" />
+      <project name="runtime" file="file://$PROJECT_DIR$/libs/runtime/project.json" />
+      <project name="ssr-bench" file="file://$PROJECT_DIR$/apps/ssr-bench/project.json" />
+      <project name="testing" file="file://$PROJECT_DIR$/libs/testing/project.json" />
+      <project name="typescript-plugin" file="file://$PROJECT_DIR$/libs/typescript-plugin/project.json" />
+      <project name="ui" file="file://$PROJECT_DIR$/libs/ui/project.json" />
+      <project name="ui-docs" file="file://$PROJECT_DIR$/apps/ui-docs/project.json" />
+      <project name="vscode" file="file://$PROJECT_DIR$/apps/vscode/project.json" />
+    </projects>
+  </component>
+</project>
