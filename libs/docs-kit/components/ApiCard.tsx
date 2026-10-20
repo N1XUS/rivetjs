@@ -1,30 +1,39 @@
-import { RUNS_ON, symbolByKey } from "../api.ts";
 import { Inline } from "./Inline.tsx";
 
+/** What `::api{symbol}` inlines at content generation (`tools/content/markdown.ts`): the card renders in the browser too (client navigation), where `virtual:docs/api` is empty. */
+export interface ApiCardData {
+  name: string;
+  kind: string;
+  entry: string;
+  href: string;
+  summary: string;
+  signature?: string;
+  /** Resolved `RUNS_ON` label. */
+  runs: string;
+}
+
 /** `::api{symbol="@rivetjs/pkg/entry#name"}` in Markdown: summary, signature and a link to the full entry. */
-export function ApiCard({ symbol }: { symbol: string }) {
-  const found = symbolByKey(symbol);
-  if (!found) throw new Error(`ApiCard: unknown symbol ${symbol}`);
+export function ApiCard({ card }: { card: ApiCardData }) {
   return (
-    <section class="api-card not-prose" aria-label={"API: " + found.name}>
+    <section class="api-card not-prose" aria-label={"API: " + card.name}>
       <p class="api-card-head">
-        <a href={found.href} data-rivet-reload="">
-          <code>{found.name}</code>
+        <a href={card.href} data-rivet-reload="">
+          <code>{card.name}</code>
         </a>
-        <span class="api-kind">{found.kind}</span>
+        <span class="api-kind">{card.kind}</span>
         <span class="api-entry">
-          from <code>{found.entry}</code>
+          from <code>{card.entry}</code>
         </span>
       </p>
-      {found.summary ? (
+      {card.summary ? (
         <p class="api-card-summary">
-          <Inline text={found.summary} />
+          <Inline text={card.summary} />
         </p>
       ) : null}
-      {found.signatures.length ? <pre class="api-signature">{found.signatures[0]}</pre> : null}
+      {card.signature ? <pre class="api-signature">{card.signature}</pre> : null}
       <p class="api-card-foot">
-        <span class="runs-on">{RUNS_ON[found.runsOn]}</span>
-        <a href={found.href} data-rivet-reload="">
+        <span class="runs-on">{card.runs}</span>
+        <a href={card.href} data-rivet-reload="">
           Full reference
         </a>
       </p>

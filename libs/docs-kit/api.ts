@@ -2,6 +2,7 @@
 // Used only while rendering (server/prerender); API pages have no browser code.
 import model from "virtual:docs/api";
 import type { ApiModel, ApiSymbol } from "./tools/api.ts";
+export { RUNS_ON } from "./api-labels.ts";
 
 export const api = model as unknown as ApiModel;
 export type ApiEntry = ApiModel["entries"][number];
@@ -25,10 +26,4 @@ export const symbolsOf = (entry: ApiEntry): ApiSymbol[] =>
   [...new Set(entry.symbols)].map((name) => symbolsByKey.get(`${entry.entry}#${name}`)!).filter(Boolean);
 export const entryOf = (symbol: ApiSymbol): ApiEntry => api.entries.find((e) => e.entry === symbol.entry)!;
 
-export const RUNS_ON: Record<ApiSymbol["runsOn"], string> = {
-  server: "Runs on the server",
-  browser: "Runs in the browser",
-  both: "Runs on the server and in the browser",
-  build: "Used at build time",
-};
 export const packageOf = (entry: string) => entry.split("/").slice(0, 2).join("/");

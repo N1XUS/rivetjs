@@ -13,6 +13,20 @@ import { navChildren, navPath, navPaths, navTag, type NavArea, type NavSection }
 import { generateErrorPages } from "../errors.ts";
 import { loadApp } from "../app.ts";
 import type { BenchChartSpec } from "../../components/chart-model.ts";
+import type { ApiCardData } from "../../components/ApiCard.tsx";
+import { RUNS_ON } from "../../api-labels.ts";
+import type { ApiModel, ApiSymbol } from "../api.ts";
+
+/** The `::api` card's data (first declaration of a merged symbol wins, like `symbolByKey`). */
+const apiCard = (s: ApiSymbol): ApiCardData => ({
+  name: s.name,
+  kind: s.kind,
+  entry: s.entry,
+  href: s.href,
+  summary: s.summary,
+  ...(s.signatures[0] ? { signature: s.signatures[0] } : {}),
+  runs: RUNS_ON[s.runsOn],
+});
 
 /** Generated route directory (path-less group), relative to the app root. */
 export const ROUTES_DIR = "src/routes/(docs)";
@@ -94,7 +108,7 @@ let shared: Promise<Highlight> | undefined;
 export async function generateContent(
   root: string,
   options: {
-    symbols?: ReadonlySet<string>;
+    symbols?: ReadonlyMap<string, ApiCardData>;
     dryRun?: boolean;
     /**
      * Dev server: content problems that only concern one page (nav entry without its file, page missing
@@ -130,8 +144,8 @@ export async function generateContent(
   const starters = new Set(await listDirs(templates));
   let symbols = options.symbols;
   if (!symbols && existsSync(resolve(root, GENERATED_DIR, "api.json"))) {
-    const api = JSON.parse(await readFile(resolve(root, GENERATED_DIR, "api.json"), "utf8")) as { symbols: { key: string }[] };
-    symbols = new Set(api.symbols.map((s) => s.key));
+    const api = JSON.parse(await readFile(resolve(root, GENERATED_DIR, "api.json"), "utf8")) as ApiModel;
+    symbols = new Map(api.symbols.map((s) => [s.key, apiCard(s)]));
   }
 
   // Nav ↔ files.

@@ -99,3 +99,27 @@ test("search: modal palette — Tab stays inside, outside is inert, Escape / out
     await page.close();
   }
 });
+
+// 2026-10-20: a result click pushed the URL but the page stayed — the `::api` card threw `ApiCard: unknown symbol`
+// in the browser (`virtual:docs/api` is empty there); the card data is now inlined by content generation.
+test("search: a result click navigates on the client; a page with an `::api` card renders", async () => {
+  const { page } = await docsPage("/start/tutorial/");
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  try {
+    await page.locator(".search-button-bar").click();
+    const input = page.getByRole("combobox", { name: "Search the docs" });
+    await page.waitForFunction(() => document.activeElement?.matches(".search-box input"));
+    await input.fill("signals");
+    const hit = page.getByRole("option").filter({ hasText: /^Signals\s*Learn/ }).first();
+    await hit.waitFor({ state: "visible" });
+    await hit.click();
+    await page.waitForURL(origin + "/learn/signals/");
+    await page.getByRole("heading", { level: 1, name: "Signals" }).waitFor({ state: "visible" });
+    await page.locator(".api-card .api-card-head code", { hasText: "signal" }).first().waitFor({ state: "visible" });
+    assert.equal(await page.evaluate(() => performance.getEntriesByType("navigation").length), 1, "no document reload");
+    assert.deepEqual(errors, []);
+  } finally {
+    await page.close();
+  }
+});

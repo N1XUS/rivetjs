@@ -9,6 +9,7 @@ import { compile } from "@rivetjs/compiler";
 import { formatDiagnostic } from "@rivetjs/compiler/format";
 import type { Highlight, Line } from "./highlight.ts";
 import type { BenchChartSpec } from "../../components/chart-model.ts";
+import type { ApiCardData } from "../../components/ApiCard.tsx";
 import { COMPILER_NAME } from "../../components/highlight-classes.ts";
 import type { Token } from "../../components/highlighter.ts";
 
@@ -21,8 +22,8 @@ export interface RenderContext {
   terms: ReadonlyMap<string, { title: string; definition: string }>;
   /** Example ids (`apps/docs/examples/<id>`). */
   examples: ReadonlySet<string>;
-  /** API symbols (`@rivetjs/reactivity#signal`); undefined skips the check. */
-  symbols?: ReadonlySet<string>;
+  /** API symbols (`@rivetjs/reactivity#signal`) → card data inlined into `<ApiCard>`; undefined skips the check and inlines nothing. */
+  symbols?: ReadonlyMap<string, ApiCardData>;
   /** Starter template names. */
   starters: ReadonlySet<string>;
   /** Benchmark charts by id (`content/_charts.ts` `charts`); `::chart{id}` inlines the spec. */
@@ -463,9 +464,11 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
         }
         if (node.name === "api") {
           const symbol = attrs.symbol ?? "";
-          if (context.symbols && !context.symbols.has(symbol)) fail(node, `unknown API symbol "${symbol}"`);
+          const card = context.symbols?.get(symbol);
+          if (context.symbols && !card) fail(node, `unknown API symbol "${symbol}"`);
           uses.add("ApiCard");
-          return `<ApiCard symbol="${attr(symbol)}" />`;
+          // The card data is a literal in the page module: `virtual:docs/api` is empty in the browser, and the page renders there on client navigation.
+          return `<ApiCard card={${JSON.stringify(card ?? { name: symbol, kind: "", entry: "", href: "", summary: "", runs: "" })}} />`;
         }
         if (node.name === "starter") {
           const template = attrs.template ?? "starter-static";

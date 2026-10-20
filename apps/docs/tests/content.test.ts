@@ -140,7 +140,10 @@ test("markdown: directives — callouts, examples, terms, starters; unknown refe
   assert.throws(() => renderMarkdown("::example{id=nope}\n", context()), /unknown example "nope"/);
   assert.throws(() => renderMarkdown("A :term[thing].\n", context()), /unknown glossary term "thing"/);
   assert.throws(() => renderMarkdown(":::aside\nx\n:::\n", context()), /unknown container directive/);
-  assert.throws(() => renderMarkdown("::api{symbol=x#y}\n", context({ symbols: new Set() })), /unknown API symbol/);
+  assert.throws(() => renderMarkdown("::api{symbol=x#y}\n", context({ symbols: new Map() })), /unknown API symbol/);
+  // The card data is a literal in the page: the browser has no API model (client navigation renders the page there).
+  const card = { name: "y", kind: "function", entry: "x", href: "/api/x/y/", summary: "Does y.", signature: "y(): void", runs: "Runs on the server" };
+  assert.match(renderMarkdown("::api{symbol=x#y}\n", context({ symbols: new Map([["x#y", card]]) })).jsx, /<ApiCard card=\{\{"name":"y","kind":"function"[^}]*"runs":"Runs on the server"\}\} \/>/);
 });
 
 test("markdown: tables and task lists", () => {
