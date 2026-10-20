@@ -1,6 +1,6 @@
 # Shell cache — partial prerendering for Rivet (lane PPR-SHELL, 2026-10-20)
 
-- Status: **design only** (no code). Answers the user's 2026-10-20 question "was Partial Prerendering checked?": yes, as the `shell` candidate in `2026-10-07-render-cache-design.md` (layout-only, resume-inert, prototype) and the PPR row of `2026-10-04-core-gap-analysis.md` (❌ vs Next ✅). This spec is the page-level, resume-aware version.
+- Status: **approved 2026-10-20** (user: "Ok" to the defaults below; build after M2 of the derived-client plan lands). Rulings: Q1 `shell: true` + `load(fn, { defer: true })`; Q2 opt-in per rule; Q3 server-composed holes, CDN-composed = follow-up F1; Q4 always shell + live holes; Q5 H-replay first, T6 only if replay misses 2×. Design only (no code). Answers the user's 2026-10-20 question "was Partial Prerendering checked?": yes, as the `shell` candidate in `2026-10-07-render-cache-design.md` (layout-only, resume-inert, prototype) and the PPR row of `2026-10-04-core-gap-analysis.md` (❌ vs Next ✅). This spec is the page-level, resume-aware version.
 - Depends on: N-6 deferred loader data (gap analysis, not built) — T1 here. Builds on `server/route-cache.ts` (store, keys, `revalidate`), `server-resume.ts` `Stream` / `Segment` (segments + `rivet/state` patches), render-cache fragments (`server-cache.ts`).
 - Not for fair-comparison lanes (`apps/ssr-bench` rule: no page / data caching). Measured on editorial-bench + an own fixture only.
 
@@ -136,11 +136,11 @@
 
 ## 6. Decision asks
 
-- Q1 API name: `shell: true` (proposed) vs `ppr: true` vs `partial: true`; deferred loader option `load(fn, { defer: true })` vs `load.defer(fn)` vs a `defer()` value wrapper.
-- Q2 Default: opt-in per rule (proposed) vs inferred / on for every route whose fills pass §3.3 (Next's default model).
-- Q3 CDN-composed holes (F1, Astro server islands style) now or follow-up (proposed: follow-up).
-- Q4 Anonymous traffic on a shell route: whole-page route-cache entry first (`anonymous: "page"`, cheaper, holes stale) or always shell + live holes (fresh, proposed default).
-- Q5 Go / no-go on T6 (H-holes, compiler fact) after T5 numbers, or H-replay only.
+- Q1 **ruled**: `shell: true` + `load(fn, { defer: true })`. Was: API name: `shell: true` (proposed) vs `ppr: true` vs `partial: true`; deferred loader option `load(fn, { defer: true })` vs `load.defer(fn)` vs a `defer()` value wrapper.
+- Q2 **ruled**: opt-in per rule. Was: Default: opt-in per rule (proposed) vs inferred / on for every route whose fills pass §3.3 (Next's default model).
+- Q3 **ruled**: follow-up F1. Was: CDN-composed holes (F1, Astro server islands style) now or follow-up (proposed: follow-up).
+- Q4 **ruled**: always shell + live holes. Was: Anonymous traffic on a shell route: whole-page route-cache entry first (`anonymous: "page"`, cheaper, holes stale) or always shell + live holes (fresh, proposed default).
+- Q5 **ruled**: H-replay first; T6 only if T5 misses 2×. Was: Go / no-go on T6 (H-holes, compiler fact) after T5 numbers, or H-replay only.
 
 ## Follow-ups
 
