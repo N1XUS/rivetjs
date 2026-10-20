@@ -218,8 +218,8 @@ export interface RivetOptions {
   /** DevTools on the dev server when `@rivetjs/devtools` is installed (default true). */
   devtools?: boolean;
   /**
-   * Route modules (root-relative; the router fills this): their server exports (`serverLoad`, `onGet`,
-   * …) and code only those use are removed from browser builds (`CompileOptions.serverExports`).
+   * Route modules (root-relative; the router fills this): their server exports (`load(…)`, `onGet(…)`,
+   * … wrapper calls) and code only those use are removed from browser builds (`CompileOptions.serverExports`).
    */
   serverExports?: { modules: string[] };
   /**

@@ -1,4 +1,4 @@
-import { notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, load, entries } from "@rivetjs/router";
 
 type Post = { slug: string; title: string; summary: string };
 
@@ -8,13 +8,13 @@ const posts: Post[] = [
 ];
 
 // Server only: removed from the browser build.
-export const serverLoad = ({ params }: RequestEvent<{ slug: string }>): Post => {
+export const loader = load(({ params }: RequestEvent<{ slug: string }>): Post => {
   const post = posts.find((p) => p.slug === params.slug);
   if (!post) throw notFound();
   return post;
-};
+});
 // Static build: the pages to render.
-export const serverEntries = () => posts.map((post) => ({ slug: post.slug }));
+export const paths = entries(() => posts.map((post) => ({ slug: post.slug })));
 
 // #region demo
 // Browser code too: runs on every navigation, with this file's loader data.
@@ -28,7 +28,7 @@ export const head = ({ data }: { data: Post }) => ({
 });
 // #endregion
 
-export default function PostPage({ data }: PageProps<typeof serverLoad, { slug: string }>) {
+export default function PostPage({ data }: PageProps<typeof loader, { slug: string }>) {
   return (
     <article>
       <h1 id="heading" class="text-xl font-semibold">

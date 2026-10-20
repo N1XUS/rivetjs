@@ -42,7 +42,7 @@ test("framePlan: what is shown as code only, and why", () => {
   assert.match(
     why(
       plan(["src/routes/index.tsx", "src/routes/_layout.tsx"], {
-        "src/routes/_layout.tsx": "export async function serverLoad() {}\nexport default () => null;",
+        "src/routes/_layout.tsx": 'import { load } from "@rivetjs/router";\nexport const loader = load(async () => {});\nexport default () => null;',
       }),
     ),
     /layout runs server code/,
@@ -69,12 +69,12 @@ test("groupCSS: Tailwind scans only the members' sources; their @source lines re
 test("exportNames: route module exports", () => {
   const source = [
     "export const head = { title: 'x' };",
-    "export async function serverLoad() {}",
+    "export const loader = load(async () => {});",
     "export default function Page() {}",
     "export { a, b as prerender, type T };",
     "const hidden = 1;",
   ].join("\n");
-  assert.deepEqual(exportNames(source).sort(), ["a", "default", "head", "prerender", "serverLoad"]);
+  assert.deepEqual(exportNames(source).sort(), ["a", "default", "head", "loader", "prerender"]);
 });
 
 test("focusRegion + shownFile: region markers and line notations stripped, focus and marks kept", () => {

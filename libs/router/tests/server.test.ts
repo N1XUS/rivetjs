@@ -176,7 +176,7 @@ test("actions: same-origin only, re-run loaders, JSON result on request, cookies
 });
 
 test("endpoint routes dispatch by method", async () => {
-  const handler = app([{ id: "api/health", pattern: "/api/health", page: false, layouts: [], server: mod({ GET: () => Response.json({ ok: true }) }) }]);
+  const handler = app([{ id: "api/health", pattern: "/api/health", page: false, layouts: [], server: mod({ onGet: () => Response.json({ ok: true }) }) }]);
   assert.deepEqual(await (await handler(new Request("http://x/api/health"))).json(), { ok: true });
   const head = await handler(new Request("http://x/api/health", { method: "HEAD" }));
   assert.equal(head.status, 200);

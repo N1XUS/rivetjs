@@ -1,8 +1,11 @@
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import type { HttpError as HttpErrorType } from "./shared/errors.ts";
 import type { ActionFailure } from "./shared/actions.ts";
+import type { SERVER_EXPORT } from "./shared/server-exports.ts";
 
-// Route-module API: control-flow helpers and types for guards, loaders and actions.
+// Route-module API: server export wrappers, control-flow helpers and types for guards, loaders and actions.
+export { load, guard, actions, entries, headers, onRequest, onGet, onPost, onPut, onPatch, onDelete, onOptions } from "./shared/server-exports.ts";
+export type { ServerExport, ServerKind } from "./shared/server-exports.ts";
 export { HttpError, redirect, deny, notFound, error, isHttpError, type RedirectOptions } from "./shared/errors.ts";
 export { safeRedirect } from "./shared/redirect.ts";
 export { parseCookies } from "./shared/cookie.ts";
@@ -17,7 +20,7 @@ export type { ActionAnswer, AnswerError, DataAnswer } from "./shared/data.ts";
 export interface RouteParams {}
 /** Route id → loader data (routes with a loader). Augmented by the generated `.rivet/routes.d.ts`. */
 export interface RouteData {}
-/** Route id → its `serverActions` object type (routes with server code). Augmented by `.rivet/routes.d.ts`. */
+/** Route id → its `actions(…)` object type (routes with server code). Augmented by `.rivet/routes.d.ts`. */
 export interface RouteActions {}
 /** Layout id (`_layout`, `items/_layout`) → the params it receives. Augmented by `.rivet/routes.d.ts`. */
 export interface LayoutParams {}
@@ -38,13 +41,13 @@ export type RoutePath = RouteRegistry extends { path: infer P extends string } ?
 export type LinkHref = RoutePath | `${RoutePath}?${string}` | `${RoutePath}#${string}`;
 
 declare const unchecked: unique symbol;
-/** `PageProps<Unchecked<typeof serverLoad>>`: loader data without the serializability check. */
+/** `PageProps<Unchecked<typeof loader>>`: loader data without the serializability check. */
 export interface Unchecked<T> {
   readonly [unchecked]: T;
 }
 /** Loader data the page receives must survive the resume encoder: no functions, symbols or class instances. */
 export interface NotSerializable<T> {
-  "rivet: loader data must be serializable (plain objects, arrays, primitives, Date, URL, URLSearchParams, RegExp, Map, Set, typed arrays, ArrayBuffer, DataView, Error — no functions, symbols or class instances); opt out with PageProps<Unchecked<typeof serverLoad>>": T;
+  "rivet: loader data must be serializable (plain objects, arrays, primitives, Date, URL, URLSearchParams, RegExp, Map, Set, typed arrays, ArrayBuffer, DataView, Error — no functions, symbols or class instances); opt out with PageProps<Unchecked<typeof loader>>": T;
 }
 // Mirrors the resume encoder (runtime/resume-format.ts `createEncoder`): leaves it writes directly. Kept in
 // sync by tests/data-of.test.ts (each sample's type verdict = the encoder's verdict).
@@ -77,7 +80,7 @@ type Serializable<T, D extends number = 8> = [D] extends [never]
                 : true;
 type Returned<L> = L extends (...args: never[]) => infer R ? Awaited<R> : L;
 /**
- * Data type of a loader (`DataOf<typeof serverLoad>`), checked to be serializable; plain data types
+ * Data type of a loader (`DataOf<typeof loader>`, `loader = load(…)`), checked to be serializable; plain data types
  * pass through unchanged (`DataOf<Item[]>` is `Item[]`).
  */
 export type DataOf<T> =
@@ -88,12 +91,12 @@ export type DataOf<T> =
         ? Returned<T>
         : NotSerializable<Returned<T>>
       : T;
-/** Loader data of an in-file route module (`serverLoad`). */
-export type InlineData<M> = M extends { serverLoad: infer L } ? DataOf<L> : unknown;
-/** Loader data of a sibling `*.server.ts` module (`serverLoad`, or the old `load`). */
-export type ModuleData<M> = M extends { serverLoad: infer L } ? DataOf<L> : M extends { load: infer L } ? DataOf<L> : unknown;
-/** Form actions of a route module (`serverActions`, or a sibling's old `actions`); `{}` without. */
-export type ModuleActions<M> = M extends { serverActions: infer A } ? A : M extends { actions: infer A } ? A : {};
+/** The export of module type `M` tagged as server export kind `K` (by tag, any name); `never` without. */
+type Tagged<M, K> = { [N in keyof M]: M[N] extends { readonly [SERVER_EXPORT]: K } ? M[N] : never }[keyof M];
+/** Loader data of a route module (`typeof import("./page")`): its `load(…)` export, any name; `unknown` without. */
+export type ModuleData<M> = [Tagged<M, "load">] extends [never] ? unknown : DataOf<Tagged<M, "load">>;
+/** Form actions of a route module: its `actions(…)` export, any name; `{}` without. */
+export type ModuleActions<M> = [Tagged<M, "actions">] extends [never] ? {} : Tagged<M, "actions">;
 
 /** A string that is not an id of `RouteParams` / `LayoutParams`: `data` and `params` are unusable. */
 export interface UnknownRoute<Id> {
@@ -108,7 +111,7 @@ type LayoutParamsOf<D, P> = D extends LayoutId ? LayoutParams[D] : IsLiteral<D> 
 
 /**
  * Props every page component receives (layouts: `LayoutProps`). `D` is a route id (generated
- * types: `PageProps<"items/[id]">` types data, params), the loader (`PageProps<typeof serverLoad>`
+ * types: `PageProps<"items/[id]">` types data, params), the loader (`PageProps<typeof loader>`
  * infers the data) or the data type.
  */
 export interface PageProps<D = unknown, P extends Record<string, string> = Record<string, string>> {
@@ -143,11 +146,11 @@ type Outcome<R> = R extends HttpErrorType | Response
     ? { readonly result: F; readonly status: number }
     : { readonly result: R; readonly status?: undefined };
 type ActionsOf<A> = A extends RouteId ? (A extends keyof RouteActions ? RouteActions[A] : {}) : A;
-/** Action names of a route id (`RouteActions`) or an actions object type (`typeof serverActions`). */
+/** Action names of a route id (`RouteActions`) or an actions object type (`typeof forms`, `forms = actions(…)`). */
 export type ActionName<A> = keyof ActionsOf<A> & string;
 /**
  * Typed `actionResult()`: per action name its return value (`redirect()`/`Response` excluded), or
- * the data and status of `fail()`. `A` is a route id or `typeof serverActions`.
+ * the data and status of `fail()`. `A` is a route id or `typeof forms` (`forms = actions(…)`).
  */
 export type ActionResultOf<A, N extends ActionName<A> = ActionName<A>> = {
   [K in N]: { readonly name: K } & Outcome<Awaited<ActionsOf<A>[K] extends (...args: never[]) => infer R ? R : never>>;

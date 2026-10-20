@@ -1,11 +1,11 @@
-import type { RequestEvent } from "@rivetjs/router";
+import { <%- methods.map((method) => "on" + method[0].toUpperCase() + method.slice(1)).join(", ") %>, type RequestEvent } from "@rivetjs/router";
 <% for (const method of methods) { %>
 /** `<%= method.toUpperCase() %> <%= url %>`. Runs only on the server; must return a `Response`. */
-export const on<%= method[0].toUpperCase() + method.slice(1) %> = async (<% if (method === "get" || method === "delete") { %>{ params }<% } else { %>{ request, params }<% } %>: RequestEvent) => {<% if (method === "get") { %>
+export const <%= method.toUpperCase() %> = on<%= method[0].toUpperCase() + method.slice(1) %>(async (<% if (method === "get" || method === "delete") { %>{ params }<% } else { %>{ request, params }<% } %>: RequestEvent) => {<% if (method === "get") { %>
   return Response.json({ ok: true, params }, { headers: { "cache-control": "no-store" } });<% } else if (method === "delete") { %>
   console.log("delete", params);
   return new Response(null, { status: 204 });<% } else { %>
   const body: unknown = await request.json().catch(() => null);
   return Response.json({ ok: true, params, body }<% if (method === "post") { %>, { status: 201 }<% } %>);<% } %>
-};
+});
 <% } %>

@@ -1,4 +1,4 @@
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { createForm } from "@rivetjs/forms";
 import { action } from "@rivetjs/forms/server";
@@ -9,9 +9,9 @@ import { signupForm } from "../forms/definitions.js";
 
 export const head = { title: "Sign up (ui)" };
 
-export const serverActions = {
+export const forms = actions({
   signup: action(signupForm, () => redirect("/welcome")),
-};
+});
 
 /**
  * `@rivetjs/ui` Form joined to the forms store (`form` + `definition`): named TextFields show their issues and echo

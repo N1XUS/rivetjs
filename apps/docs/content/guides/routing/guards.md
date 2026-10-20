@@ -1,6 +1,6 @@
 ---
 title: Guards
-description: Protect pages with a serverGuard function that runs on the server before any loader, and redirect or refuse visitors who may not see the page.
+description: Protect pages with a guard(…) export that runs on the server before any loader, and redirect or refuse visitors who may not see the page.
 template: guide
 related: [guides/routing/layouts, guides/routing/actions-and-forms, recipes/protected-pages, recipes/login-form]
 ---
@@ -11,31 +11,31 @@ A **guard** decides if a request may continue. It runs on the server before any 
 
 ## Write a guard
 
-Export `serverGuard` from the page file. Return nothing to let the request through. Return (or throw) a redirect or a denial to stop it:
+Export `guard(…)` from the page file. Return nothing to let the request through. Return (or throw) a redirect or a denial to stop it:
 
 ```tsx title="src/routes/settings.tsx"
-import { redirect, type RequestEvent } from "@rivetjs/router";
+import { redirect, type RequestEvent, guard } from "@rivetjs/router";
 
-export const serverGuard = ({ cookies }: RequestEvent) => {
+export const access = guard(({ cookies }: RequestEvent) => {
   if (!cookies.get("session")) return redirect("/login");
-};
+});
 
 export default function Settings() {
   return <h1>Settings</h1>;
 }
 ```
 
-Without a `session` cookie, the visitor gets a `302` redirect to `/login`, and the page's loader never runs. `serverGuard` runs only on the server; the compiler removes it from the browser build.
+Without a `session` cookie, the visitor gets a `302` redirect to `/login`, and the page's loader never runs. `guard(…)` runs only on the server; the compiler removes it from the browser build.
 
 ## Protect a whole folder
 
-A `serverGuard` in `_layout.tsx` runs for every page **and** [endpoint](./endpoints.md) inside that folder. A group folder lets you protect pages without changing their URLs:
+A `guard(…)` in `_layout.tsx` runs for every page **and** [endpoint](./endpoints.md) inside that folder. A group folder lets you protect pages without changing their URLs:
 
 ```txt
 src/routes/
   login.tsx
   (private)/
-    _layout.tsx         ← serverGuard here protects everything below
+    _layout.tsx         ← guard(…) export here protects everything below
     account.tsx         → /account
     orders.tsx          → /orders
 ```
@@ -49,14 +49,14 @@ For one request, guards run one after another, from the outermost layout to the 
 Use `locals` to hand information down the chain, so you check the session once:
 
 ```tsx title="src/routes/(private)/_layout.tsx"
-import { redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type LayoutProps, type RequestEvent, guard } from "@rivetjs/router";
 import { userForSession } from "../../sessions.server.ts";
 
-export const serverGuard = async ({ cookies, url, locals }: RequestEvent) => {
+export const access = guard(async ({ cookies, url, locals }: RequestEvent) => {
   const user = await userForSession(cookies.get("session"));
   if (!user) return redirect("/login?next=" + encodeURIComponent(url.pathname));
   locals.user = user;
-};
+});
 
 export default function Private({ children }: LayoutProps) {
   return <>{children}</>;
@@ -65,13 +65,14 @@ export default function Private({ children }: LayoutProps) {
 
 ```tsx title="src/routes/(private)/account.tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = ({ locals }: RequestEvent) => {
+export const loader = load(({ locals }: RequestEvent) => {
   const user = locals.user as { name: string };
   return { name: user.name };
-};
+});
 
-export default function Account({ data }: PageProps<typeof serverLoad>) {
+export default function Account({ data }: PageProps<typeof loader>) {
   return <h1>Hello, {data.name}</h1>;
 }
 ```
@@ -119,12 +120,12 @@ Set `maxAge` (seconds) or `expires` for a cookie that outlives the browser sessi
 
 ```ts title="src/routes/login.tsx"
 import type { RequestEvent } from "@rivetjs/router";
-import { error } from "@rivetjs/router";
+import { error, guard } from "@rivetjs/router";
 import { tooManyAttempts } from "../rate-limit.server.ts";
 
-export const serverGuard = ({ platform }: RequestEvent) => {
+export const access = guard(({ platform }: RequestEvent) => {
   if (platform.clientAddress && tooManyAttempts(platform.clientAddress)) return error(429, "Too many attempts");
-};
+});
 ```
 
 ## Guards in static sites
@@ -136,7 +137,7 @@ In `mode: "static"`, guards run once during the build, with no visitor and no co
 - **Checking access only in the page component.** The component's output can be hidden, but the loader already ran and its data is in the page. Check in a guard.
 - **Redirecting to the `next` URL without checking it.** `?next=https://evil.example` would send people to another site. Accept only paths that start with a single `/`.
 - **Redirecting to a page that the same guard protects.** `/login` inside `(private)/` loops forever. Keep the login page outside the protected folder.
-- **Expecting a `serverGuard` in `_404.tsx` to run.** Only pages, layouts and endpoints run server code.
+- **Expecting a `guard(…)` in `_404.tsx` to run.** Only pages, layouts and endpoints run server code.
 
 ## See also
 

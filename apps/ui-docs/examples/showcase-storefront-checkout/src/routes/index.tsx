@@ -13,6 +13,7 @@ import { Separator } from "@rivetjs/ui/separator";
 import { CircleCheck, ShoppingBag } from "lucide";
 import { checkoutForm } from "../forms/checkout.ts";
 import { shop, UNSERVED } from "../bag.server.ts";
+import { load, actions } from "@rivetjs/router";
 
 export const head = { title: "Showcase: Checkout on the server" };
 
@@ -22,20 +23,20 @@ export const head = { title: "Showcase: Checkout on the server" };
 export const live = true;
 
 // `?checkout` opens the drawer on the server: the entry point without JavaScript.
-export const serverLoad = ({ url }: { url: URL }) => ({
+export const loader = load(({ url }: { url: URL }) => ({
   lines: shop.lines.map((line) => ({ ...line })),
   lastOrder: shop.lastOrder,
   checkingOut: url.searchParams.has("checkout"),
-});
+}));
 
-export const serverActions = {
+export const forms = actions({
   checkout: action(checkoutForm, (value) => {
     if (UNSERVED.includes(value.postcode)) return invalid({ postcode: "We do not deliver there yet" });
     if (shop.lines.length === 0) return invalid({ email: "Your bag is empty" });
     shop.lastOrder = `FN-${shop.nextOrder++}`;
     shop.lines = [];
   }),
-};
+});
 
 // One module-level formatter: `toLocaleString(locale)` builds a new Intl.NumberFormat on every call.
 const amount = new Intl.NumberFormat("en-US");
@@ -43,7 +44,7 @@ const money = (n: number) => `$${amount.format(n)}`;
 const field =
   "w-full rounded-xl border border-border bg-field px-3 py-2 text-sm text-field-foreground outline-none focus-visible:ring-2 focus-visible:ring-focus";
 
-export default function Checkout({ data }: LivePageProps<typeof serverLoad>) {
+export default function Checkout({ data }: LivePageProps<typeof loader>) {
   // Without JavaScript, a failed POST renders the page again with the drawer open and the problems in it.
   const result = actionResult("checkout");
   const open = signal(data().checkingOut || (result?.status ?? 0) >= 400);

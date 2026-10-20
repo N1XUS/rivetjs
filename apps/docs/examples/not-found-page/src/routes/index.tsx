@@ -12,7 +12,7 @@ export default function Home() {
           </a>
         </li>
         <li>
-          {/* Matches items/[id], but serverLoad() throws notFound(). */}
+          {/* Matches items/[id], but its loader throws notFound(). */}
           <a class="text-teal-700 underline" href="/items/99">
             Item 99 (missing)
           </a>

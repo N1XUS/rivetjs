@@ -1,4 +1,4 @@
-import { notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, entries, guard } from "@rivetjs/router";
 import type { ApiSymbol } from "@rivetjs/docs-kit/tools/api.ts";
 import { apiPaths, entryOf, findApiPage, RUNS_ON, symbolsOf, type ApiEntry } from "@rivetjs/docs-kit/api.ts";
 import { site } from "virtual:docs/site";
@@ -9,11 +9,11 @@ import { Icon } from "@rivetjs/kit/icon";
 type Params = { symbol: string };
 
 /** Prerender one page per entry point and per export. */
-export const serverEntries = () => apiPaths().map((symbol) => ({ symbol }));
+export const paths = entries(() => apiPaths().map((symbol) => ({ symbol })));
 
-export function serverGuard({ params }: RequestEvent<Params>) {
+export const access = guard(({ params }: RequestEvent<Params>) => {
   if (!findApiPage(params.symbol)) throw notFound();
-}
+});
 
 export const head = ({ params }: { params: Params }) => {
   const page = findApiPage(params.symbol);

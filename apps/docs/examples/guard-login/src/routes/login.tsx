@@ -1,4 +1,4 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { createSession } from "../sessions.server.ts";
 
 export const head = { title: "Sign in" };
@@ -6,10 +6,10 @@ export const head = { title: "Sign in" };
 // Only follow local paths, so a link cannot send people to another site after login.
 const safeNext = (value: unknown) => (typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "/account");
 
-export const serverLoad = ({ url }: RequestEvent) => ({ next: safeNext(url.searchParams.get("next")) });
+export const loader = load(({ url }: RequestEvent) => ({ next: safeNext(url.searchParams.get("next")) }));
 
 // #region demo
-export const serverActions = {
+export const forms = actions({
   login: async ({ request, cookies }: RequestEvent) => {
     const form = await request.formData();
     const name = String(form.get("name") ?? "").trim();
@@ -21,10 +21,10 @@ export const serverActions = {
     cookies.set("session", createSession(name.slice(0, 50)), { maxAge: 60 * 60 });
     return redirect(next, 303);
   },
-};
+});
 // #endregion
 
-export default function Login({ data }: PageProps<typeof serverLoad>) {
+export default function Login({ data }: PageProps<typeof loader>) {
   return (
     <main class="p-4">
       <h1 class="text-xl font-semibold">Sign in</h1>

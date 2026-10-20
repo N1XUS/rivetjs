@@ -10,6 +10,7 @@ import { FieldError } from "@rivetjs/forms/components";
 import { action, invalid } from "@rivetjs/forms/server";
 import { customerForm } from "../forms/customer.ts";
 import { customers } from "../customers.server.ts";
+import { load, actions } from "@rivetjs/router";
 
 export const head = { title: "Customers" };
 
@@ -20,16 +21,16 @@ export const head = { title: "Customers" };
 export const live = true;
 
 // `?new` opens the drawer on the server: the entry point without JavaScript.
-export const serverLoad = ({ url }: { url: URL }) => ({ customers: [...customers], creating: url.searchParams.has("new") });
+export const loader = load(({ url }: { url: URL }) => ({ customers: [...customers], creating: url.searchParams.has("new") }));
 
-export const serverActions = {
+export const forms = actions({
   customer: action(customerForm, (value) => {
     if (customers.some((c) => c.email === value.email)) return invalid({ email: "That email is already a customer" });
     customers.push({ id: customers.length + 1, ...value });
   }),
-};
+});
 
-export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
+export default function Customers({ data }: LivePageProps<typeof loader>) {
   // Without JavaScript, a failed POST renders the page again with the drawer open and the problems in it.
   const result = actionResult("customer");
   const open = signal(data().creating || (result?.status ?? 0) >= 400);

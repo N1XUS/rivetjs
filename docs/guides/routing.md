@@ -59,7 +59,7 @@ Design: [route transitions spec](../design/specs/2026-10-03-route-transitions-de
 - `<Link>` (`@rivetjs/router/client` or `@rivetjs/router/link`) renders a plain `<a href>` (no JS until interaction); `to` is typed by the generated `.rivet/routes.d.ts` (`RoutePath`, `LinkHref` from `@rivetjs/router`).
   - Other `<a>` attributes and handlers pass through (`style`, `data-*`, `download`, `onClick`, `ref`…); router attributes (`href`, `data-rivet-*`, `data-transition`) win.
   - `active` (`true` / `"exact"`): `aria-current="page"` + `data-current` while the page is the link's path (one trailing slash ignored). `"prefix"`: also below it (`aria-current="true"`). Server render uses the request URL; after each client navigation the App re-marks `a[data-rivet-active]` (generated only when a `<Link … active>` is detected, `activeLinks`). An explicit `aria-current` wins (no auto marking).
-- Per-route props from the same file: `PageProps<"items/[id]">` (params from the path, data from `serverLoad`), `LayoutProps<"items/_layout">`, `actionResult<"items/[id]">()`; details in [server-code.md](server-code.md#types).
+- Per-route props from the same file: `PageProps<"items/[id]">` (params from the path, data from `load(…)`), `LayoutProps<"items/_layout">`, `actionResult<"items/[id]">()`; details in [server-code.md](server-code.md#types).
 
 ```tsx
 import { Link } from "@rivetjs/router/client";
@@ -146,7 +146,7 @@ Every layout stays mounted while client navigation stays below it (Next/SvelteKi
 - One commit per navigation still: each nesting level is its own `Router` region tracking one level key (the layout at that depth, or the page path + query at the deepest). The level whose key changed fetches the data of the whole chain and renders; the Router inside a new layout takes that result synchronously.
 - Layout children are wrapped: `<div data-rivet-outlet="N">` (N = nesting level) holds the inner Router region (a resumable region needs an element); style it (`display: contents`) when layout CSS needs the page as a direct child.
 - Data requests skip unchanged layout loaders: `?_rivet=data&_rivet_keep=/,/shop` names the layouts (`/` + folder) whose data the client already has — in the shown chain with the same own params (folder params, e.g. `id` of `u/[id]`), not invalidated.
-  - The server skips those loaders only; `onRequest` / `on<Method>`, guards and `headers()` still run for every layout (security). Response: kept slots `undefined`, `keep: [indices]`; the client keeps its data.
+  - The server skips those loaders only; `onRequest(…)` / `on<Method>`, guards and `headers()` still run for every layout (security). Response: kept slots `undefined`, `keep: [indices]`; the client keeps its data.
   - Never kept: layouts whose loader read `event.url` / `event.request` (server reports them, `byURL`), layouts with a `head` function (the merged head needs their data), everything after a form submit or `invalidate()` (the next request reloads every layout), layouts whose `depends()` keys an `invalidate(key)` matches.
   - Kept loaders don't run: don't rely on loader side effects (`locals`) for child loaders — use guards.
   - Intent prefetch sends the same list. Static (`_data.json`) and CSR apps load everything as before.
@@ -181,10 +181,11 @@ Spec: [2026-10-08-partial-render-design.md](../design/specs/2026-10-08-partial-r
 
 ```ts
 // routes/_layout.server.ts
-export const load = (event: RequestEvent) => {
+import { load } from "@rivetjs/router";
+export const loader = load((event: RequestEvent) => {
   event.depends("cart"); // or a URL-like key: event.depends("/api/cart")
   return getCart(event.cookies);
-};
+});
 // anywhere in the browser, after the cart changed:
 await invalidate("cart");                    // one key (a URL counts as its href)
 await invalidate(["cart", "session"]);       // any of them
@@ -256,7 +257,7 @@ File routes (`@rivetjs/router`): server code next to the page, request handlers 
 
 - `rivetRouter({ trailingSlash: "ignore" | "never" | "always" })`, default `"ignore"`: `/a` and `/a/` serve the same page, URLs stay as written (nothing generated or shipped for the option).
 - `"never"` / `"always"`: one canonical form (`/a` / `/a/`); `/` never changes. `"always"` never slashes a file path (last segment with an extension: `/sitemap.xml`, `/feed.rss`); dot-file segments (`/.well-known`) are directories.
-  - Server: page GET/HEAD in the other form → `308` to the canonical path, query kept, before `onRequest`/guards. Data requests (`?_rivet=data`) get `{ redirect }` (the client router follows). Endpoints, POST/PUT/…, OPTIONS and unmatched URLs are never redirected.
+  - Server: page GET/HEAD in the other form → `308` to the canonical path, query kept, before `onRequest(…)`/guards. Data requests (`?_rivet=data`) get `{ redirect }` (the client router follows). Endpoints, POST/PUT/…, OPTIONS and unmatched URLs are never redirected.
   - Client: `<Link to>` hrefs (server render included) and `navigate()` targets are written canonical (query/hash kept); plain `<a href>` in the other form still navigates client-side via the data redirect.
   - Static: pages prerendered at the canonical URL; `"never"` writes `about.html` (hosts with clean URLs serve it at `/about`), `"always"` / `"ignore"` `about/index.html`; `_data.json` stays at `about/_data.json`. `prerender({ trailingSlash })` for custom setups (`prerenderBuild` reads it from the build).
   - Build-time: the plugin rewrites the router's policy constant (`shared/slash.ts`) in this app's client and server bundles (and bundles `@rivetjs/router` into the server build); a plain `createHandler` outside Vite always ignores.

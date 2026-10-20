@@ -20,14 +20,15 @@ The example needs a server, so it is shown as code. Copy it into the server star
 ### 1. The first value comes with the HTML
 
 ```tsx title="src/routes/index.tsx"
-export const serverLoad = () => ({ visitors: currentVisitors() });
+import { load } from "@rivetjs/router";
+export const loader = load(() => ({ visitors: currentVisitors() }));
 ```
 
 The page starts with `signal(data.visitors)`. The server renders the number, so the page is never empty, even before the connection opens.
 
 ### 2. An endpoint streams the events
 
-`src/routes/events.ts` is a plain `.ts` file (not `.tsx`) that exports a request handler, so it is an **endpoint**: a URL (`/events`) that answers with any `Response` you build. Its `onGet` function returns a stream:
+`src/routes/events.ts` is a plain `.ts` file (not `.tsx`) that exports a request handler, so it is an **endpoint**: a URL (`/events`) that answers with any `Response` you build. Its `onGet(…)` function returns a stream:
 
 ```ts
 return new Response(body, {

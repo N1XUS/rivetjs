@@ -36,14 +36,14 @@ The group's `_layout.tsx` holds the server part (the guard). Its component only 
 ### 2. The guard runs before every page in the group
 
 ```tsx title="src/routes/(app)/_layout.tsx"
-import { redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
-import { userFrom } from "../../session.server.ts"; // used only by serverGuard
+import { redirect, type LayoutProps, type RequestEvent, guard } from "@rivetjs/router";
+import { userFrom } from "../../session.server.ts"; // used only by the guard
 
-export const serverGuard = ({ cookies, url, locals }: RequestEvent) => {
+export const access = guard(({ cookies, url, locals }: RequestEvent) => {
   const user = userFrom(cookies);
   if (!user) return redirect("/login?next=" + encodeURIComponent(url.pathname + url.search));
   locals.user = user;
-};
+});
 
 export default function AppLayout({ children }: LayoutProps) {
   return <>{children}</>;
@@ -61,9 +61,10 @@ The guard also runs when the Rivet router navigates in the page, not only on ful
 `locals` is an object shared by everything that handles one request. The guard puts the user there, and the page's loader reads it:
 
 ```tsx title="src/routes/(app)/dashboard.tsx"
-export const serverLoad = ({ locals }: RequestEvent) => ({ name: (locals.user as User).name });
+import { load } from "@rivetjs/router";
+export const loader = load(({ locals }: RequestEvent) => ({ name: (locals.user as User).name }));
 
-export default function Dashboard({ data }: PageProps<typeof serverLoad>) {
+export default function Dashboard({ data }: PageProps<typeof loader>) {
   return <h1>Hello, {data.name}</h1>;
 }
 ```
@@ -73,10 +74,11 @@ Return only what the page shows. Everything a loader returns is sent to the brow
 ### 4. Keep private pages out of shared caches
 
 ```tsx
-export const serverHeaders = () => ({ "cache-control": "private, no-store" });
+import { headers } from "@rivetjs/router";
+export const responseHeaders = headers(() => ({ "cache-control": "private, no-store" }));
 ```
 
-`serverHeaders` in the same layout file adds this header to every page in the group. A CDN or proxy will not store one user's dashboard and show it to someone else.
+`headers(…)` in the same layout file adds this header to every page in the group. A CDN or proxy will not store one user's dashboard and show it to someone else.
 
 ### 5. Send the user back after sign-in
 
@@ -84,8 +86,8 @@ The guard puts the current path in `next`. The login page keeps it in a hidden f
 
 ## Variations
 
-- **Roles.** Store a role on the user and check it in a nested group: the `serverGuard` in `(app)/(admin)/_layout.tsx` returns `deny()` (403) for non-admins.
-- **API endpoints.** Endpoint files (plain `.ts` files with `onGet`, `onPost` exports) inside the group are protected by the same guard.
+- **Roles.** Store a role on the user and check it in a nested group: the `guard(…)` in `(app)/(admin)/_layout.tsx` returns `deny()` (403) for non-admins.
+- **API endpoints.** Endpoint files (plain `.ts` files with `onGet(…)`, `onPost(…)` exports) inside the group are protected by the same guard.
 - **Different sign-in page per area.** Each group can redirect to its own page.
 
 ## Watch out

@@ -1,1 +1,2 @@
-export const onGet = () => new Response("pong");
+import { onGet } from "@rivetjs/router";
+export const GET = onGet(() => new Response("pong"));

@@ -64,14 +64,14 @@ The router decodes each segment once, so `%20` becomes a space. An encoded slash
 Guards, loaders, actions and endpoints get the same params on their event object:
 
 ```tsx title="src/routes/items/[id].tsx"
-import { notFound, type RequestEvent } from "@rivetjs/router";
+import { notFound, type RequestEvent, load } from "@rivetjs/router";
 import { findItem } from "../../db.server.ts";
 
-export async function serverLoad({ params, signal }: RequestEvent<"items/[id]">) {
+export const loader = load(async ({ params, signal }: RequestEvent<"items/[id]">) => {
   const item = await findItem(params.id, { signal });
   if (!item) throw notFound();
   return item;
-}
+});
 ```
 
 The type argument `RequestEvent<"items/[id]">` takes the params from the route id. You can also write them by hand: `RequestEvent<{ id: string }>`. [Typed routes](./typed-routes.md) explains the generated route list.
@@ -93,7 +93,7 @@ export default function Item({ data, params, url }: PageProps<"items/[id]">) {
 }
 ```
 
-`PageProps<"items/[id]">` gives both: `params` from the file path and `data` from the route's `serverLoad`. `params` and `url` are fixed for one render of the page. When the user goes to another URL, the router renders the page again with new values.
+`PageProps<"items/[id]">` gives both: `params` from the file path and `data` from the route's `load(…)`. `params` and `url` are fixed for one render of the page. When the user goes to another URL, the router renders the page again with new values.
 
 Nested layouts get `params` as a function: call `params()` to read them. The root layout (`src/routes/_layout.tsx`) wraps every route, so it gets no params. Read `url()` there if you need the path.
 
@@ -103,18 +103,19 @@ Nested layouts get `params` as a function: call `params()` to read them. The roo
 
 ## Prerendering pages with params
 
-In a static site (`mode: "static"`), the build must know which param values exist. Export `serverEntries` from the page file:
+In a static site (`mode: "static"`), the build must know which param values exist. Export `entries(…)` from the page file:
 
 ```tsx title="src/routes/blog/[slug].tsx"
 import type { RequestEvent } from "@rivetjs/router";
 import { readPosts } from "../../posts.server.ts";
+import { entries, load } from "@rivetjs/router";
 
-export const serverEntries = async () => (await readPosts()).map((post) => ({ slug: post.slug }));
-export const serverLoad = async ({ params }: RequestEvent<"blog/[slug]">) =>
-  (await readPosts()).find((post) => post.slug === params.slug);
+export const paths = entries(async () => (await readPosts()).map((post) => ({ slug: post.slug })));
+export const loader = load(async ({ params }: RequestEvent<"blog/[slug]">) =>
+  (await readPosts()).find((post) => post.slug === params.slug));
 ```
 
-The build renders one HTML file for each entry. Without `serverEntries`, a param route that has a `serverLoad` or `serverGuard` is a build error in static mode. See [loading data](./loading-data.md#static-sites-load-at-build-time).
+The build renders one HTML file for each entry. Without `entries(…)`, a param route that has a `load(…)` or `guard(…)` is a build error in static mode. See [loading data](./loading-data.md#static-sites-load-at-build-time).
 
 ## Common mistakes
 

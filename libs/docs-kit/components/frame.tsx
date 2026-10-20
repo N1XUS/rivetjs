@@ -1,7 +1,7 @@
 // Example frames: every live example is a page of the docs app at `/examples/<id>/frame/` (plus its other pages
 // below it), rendered by the kit's two frame routes (`routes/examples/[id]/frame/index.tsx` and `[...path].tsx`)
 // without the docs chrome (SiteFrame and the document shell skip frame paths, `frame-theme.ts`). The frame module of
-// an example (`src/generated/example-frames/<id>.tsx`, tools/examples.ts) is loaded by the route's `serverLoad`, so
+// an example (`src/generated/example-frames/<id>.tsx`, tools/examples.ts) is loaded by the route's `load(…)` export, so
 // the page renders it synchronously; its stylesheets (the example's own CSS only) come from `virtual:docs/frame-styles`
 // and go into the head.
 import { lazyComponent } from "@rivetjs/runtime/dom";
@@ -10,15 +10,18 @@ import { notFound, type Head } from "@rivetjs/router";
 import { frames } from "virtual:docs/example-frames";
 import { frameStyles } from "virtual:docs/frame-styles";
 
+// Tag key of `@rivetjs/router` server exports (`shared/server-exports.ts` SERVER_EXPORT).
+const TAG = Symbol.for("rivet.server");
+
 /** Props of a frame page: the route's page props, passed through to the example's page and layouts unchanged. */
-// The example's own pages type their props (`PageProps<typeof serverLoad>`); the frame does not know them.
+// The example's own pages type their props (`PageProps<typeof loader>`); the frame does not know them.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type FrameProps = any;
 /** An example's page or layout component, as the frame calls it. */
 export type FrameComponent = (props: FrameProps) => JSX.Element;
-/** One page of an example: its route module (head, serverLoad) and the page inside its layouts. */
+/** One page of an example: its route module (head, its `load(…)` export) and the page inside its layouts. */
 export interface FramePage {
-  module: { head?: Head | ((input: never) => Head); serverLoad?: (event: never) => unknown };
+  module: { head?: Head | ((input: never) => Head) } & Record<string, unknown>;
   Page: (props: FrameProps) => unknown;
 }
 /** A generated frame module. */
@@ -31,7 +34,7 @@ interface FrameParams {
   path?: string;
 }
 
-// Frame modules loaded on this server (the route's serverLoad fills it before the page and head render).
+// Frame modules loaded on this server (the route's loader fills it before the page and head render).
 const loaded = new Map<string, { module: FrameModule; styles: readonly string[] }>();
 
 /** Prerender entries: the `/` page of every live example (`sub` false) or their other pages (`sub` true). */
@@ -39,15 +42,16 @@ export function frameEntries(sub: boolean): FrameParams[] {
   return Object.entries(frames).flatMap(([id, frame]) => frame.paths.filter((path) => (path === "") !== sub).map((path) => (sub ? { id, path } : { id })));
 }
 
-/** `serverLoad` of the frame routes: load the example's frame module and run the page's own loader (if any). */
+/** Loader of the frame routes (`load(loadFrame)`): load the example's frame module and run the page's own loader (if any). */
 export async function loadFrame(event: { params: FrameParams }): Promise<unknown> {
   const { id, path = "" } = event.params;
   const frame = frames[id];
   if (!frame || !frame.paths.includes(path)) throw notFound();
   const module = await frame.load();
   loaded.set(id, { module, styles: await frameStyles(id) });
-  const load = module.pages[path]!.module.serverLoad as ((event: unknown) => unknown) | undefined;
-  return load ? await load(event) : null;
+  // The page's own loader: its export tagged `load` (`@rivetjs/router` wrapper tag, any export name).
+  const own = Object.values(module.pages[path]!.module).find((value) => typeof value === "function" && (value as { [TAG]?: unknown })[TAG] === "load");
+  return own ? await (own as (event: unknown) => unknown)(event) : null;
 }
 
 /** `head` of the frame routes: the example page's own head, plus the example's stylesheets. */

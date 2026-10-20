@@ -4,15 +4,16 @@ import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { Link } from "@rivetjs/router/client";
 import type { Row } from "../../../../services/page-decoder.ts";
 import { loadBenchPage } from "../../content.server.ts";
+import { load } from "@rivetjs/router";
 
 // rivet-resume lane (`/resume`): the bench page as an interactive resumable app — keyed `<For>` rows, a
 // reactive attribute + click handler per row, a per-row `<Link>`, nested layout. The row data reaches the
 // browser through Rivet's own resume state (like Solid's hydration keys / Qwik's container state).
-export const serverLoad = (event: RequestEvent) => loadBenchPage(event);
+export const loader = load((event: RequestEvent) => loadBenchPage(event));
 
 export const head = ({ data }: { data: { title: string } }) => ({ title: data.title });
 
-export default function ResumePage({ data }: PageProps<typeof serverLoad>) {
+export default function ResumePage({ data }: PageProps<typeof loader>) {
   const selected = signal(-1);
   return (
     <main data-token={data.token}>

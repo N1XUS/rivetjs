@@ -3,11 +3,11 @@ export interface RouteGeneratorSchema {
   path: string;
   /** The Rivet app. */
   project: string;
-  /** `serverLoad` + typed `data` prop. */
+  /** A `load(…)` export (`loader`) + typed `data` prop. */
   loader?: boolean;
-  /** `serverActions` + a progressive-enhancement form (node adapter only). */
+  /** An `actions(…)` export (`forms`) + a progressive-enhancement form (node adapter only). */
   action?: boolean;
-  /** `serverGuard`. */
+  /** A `guard(…)` export (`access`). */
   guard?: boolean;
   /** Also create a `_layout.tsx` in the route's folder (when it has none). */
   layout?: boolean;

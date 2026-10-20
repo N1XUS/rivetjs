@@ -1,4 +1,4 @@
-import { notFound } from "@rivetjs/router";
-export const load = () => {
+import { notFound, load } from "@rivetjs/router";
+export const loader = load(() => {
   throw notFound("No such product");
-};
+});

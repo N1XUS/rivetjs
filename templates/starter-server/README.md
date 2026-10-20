@@ -1,6 +1,6 @@
 # Rivet server starter
 
-Pages render on the server for each request. `src/routes/index.tsx` loads data (`serverLoad`) and handles the form (`serverActions`) next to the page; the build removes that server code from the browser bundle.
+Pages render on the server for each request. `src/routes/index.tsx` loads data (`load(…)`) and handles the form (`actions(…)`) next to the page; the build removes that server code from the browser bundle.
 
 ```sh
 npm install
@@ -15,7 +15,7 @@ npm run check   # Rivet compiler diagnostics (CI)
 
 ## Next steps
 
-- Edit `src/routes/index.tsx`: `serverLoad` reads data, `serverActions` handles the form, the component renders both. Swap the in-memory notes for your database there.
+- Edit `src/routes/index.tsx`: the `load(…)` export reads data, the `actions(…)` export handles the form, the component renders both. Swap the in-memory notes for your database there.
 - Add a page or an API route: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`), "Actions and forms" (`guides/routing/actions-and-forms`).
 - Deploy: `npm run build && npm start` on any Node 24 host, or the `Dockerfile` (docs `guides/deploy/node`, `guides/deploy/docker`). Vercel / Netlify / Cloudflare / Bun / Deno: docs `guides/deploy/<target>` (one `adapter` option in `vite.config.ts`; new projects: `npm create rivet@latest -- --deploy <target>`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).

@@ -1,10 +1,11 @@
 import { signal } from "@rivetjs/reactivity";
 import type { DataOf, PageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 // #region demo
-// Server code in the page file: the compiler removes `serverLoad` from the browser build.
+// Server code in the page file: the compiler removes the `load(…)` export from the browser build.
 // In this static example, it runs once, when the site is built.
-export const serverLoad = async () => {
+export const loader = load(async () => {
   // A real app would read a database or call an API here.
   const books = [
     { id: "1", title: "The Left Hand of Darkness", read: true },
@@ -12,13 +13,13 @@ export const serverLoad = async () => {
     { id: "3", title: "Piranesi", read: false },
   ];
   return { books, updated: new Date("2026-10-01T12:00:00Z") };
-};
+});
 
 // The page title can use the loader's data too.
-export const head = ({ data }: { data: DataOf<typeof serverLoad> }) => ({ title: `${data.books.length} books` });
+export const head = ({ data }: { data: DataOf<typeof loader> }) => ({ title: `${data.books.length} books` });
 
-// `data` is whatever `serverLoad` returned; `typeof serverLoad` gives its type.
-export default function Books({ data }: PageProps<typeof serverLoad>) {
+// `data` is whatever the loader returned; `typeof loader` gives its type.
+export default function Books({ data }: PageProps<typeof loader>) {
   const onlyUnread = signal(false);
   return (
     <section class="p-4">

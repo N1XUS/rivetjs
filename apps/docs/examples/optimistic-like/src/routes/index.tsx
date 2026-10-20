@@ -1,5 +1,5 @@
 import { signal } from "@rivetjs/reactivity";
-import { error, redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { error, redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 
 export const head = { title: "Optimistic like" };
 
@@ -9,9 +9,9 @@ const post = { likes: 41, liked: false };
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 // #region demo
-export const serverLoad = () => ({ likes: post.likes, liked: post.liked });
+export const loader = load(() => ({ likes: post.likes, liked: post.liked }));
 
-export const serverActions = {
+export const forms = actions({
   /** `liked` is the state the user wants, not "toggle": sending it twice gives the same result. */
   like: async ({ request }: RequestEvent) => {
     const form = await request.formData();
@@ -26,9 +26,9 @@ export const serverActions = {
     if (request.headers.get("accept")?.includes("application/json")) return { likes: post.likes, liked };
     return redirect("/", 303);
   },
-};
+});
 
-export default function Post({ data }: PageProps<typeof serverLoad>) {
+export default function Post({ data }: PageProps<typeof loader>) {
   const liked = signal(data.liked);
   const likes = signal(data.likes);
   const pending = signal(false);

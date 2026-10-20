@@ -17,12 +17,13 @@ By default, a successful submit reloads the page's data and renders the page aga
 
 ```tsx title="src/routes/index.tsx"
 import type { LivePageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 export const live = true;
 
-export const serverLoad = () => ({ customers: listCustomers() });
+export const loader = load(() => ({ customers: listCustomers() }));
 
-export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
+export default function Customers({ data }: LivePageProps<typeof loader>) {
   return <For each={data().customers} by={(customer) => customer.id}>{(customer) => <li>{customer().name}</li>}</For>;
 }
 ```
@@ -70,7 +71,8 @@ The same page works as plain HTML:
 - after a successful post, the page renders with the new data and the drawer closed.
 
 ```tsx
-export const serverLoad = ({ url }: RequestEvent) => ({ customers: listCustomers(), creating: url.searchParams.has("new") });
+import { load } from "@rivetjs/router";
+export const loader = load(({ url }: RequestEvent) => ({ customers: listCustomers(), creating: url.searchParams.has("new") }));
 
 // In the component:
 const result = actionResult("customer");

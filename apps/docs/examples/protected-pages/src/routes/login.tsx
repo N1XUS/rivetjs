@@ -1,18 +1,18 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, actions } from "@rivetjs/router";
 import { signIn } from "../session.server.ts";
 
 export const head = { title: "Sign in" };
 
 const safeNext = (value: unknown) => (typeof value === "string" && /^\/(?![/\\])/.test(value) ? value : "/dashboard");
 
-export const serverActions = {
+export const forms = actions({
   /** Demo only: signs in without a password. See the login form recipe for a real check. */
   login: async ({ request, cookies }: RequestEvent) => {
     const form = await request.formData();
     signIn(cookies, { name: "Demo user" });
     return redirect(safeNext(form.get("next")), 303);
   },
-};
+});
 
 export default function Login({ url }: PageProps) {
   return (

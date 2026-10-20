@@ -3,13 +3,14 @@ import { For } from "@rivetjs/runtime/dom";
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { Link } from "@rivetjs/router/client";
 import { createServerServices } from "../services/server.js";
+import { load } from "@rivetjs/router";
 
 export const head = { title: "Rivet playground" };
 
 /** Example list; the filter runs in the browser once the page resumes. */
-export const serverLoad = ({ signal }: RequestEvent) => createServerServices().list(signal);
+export const loader = load(({ signal }: RequestEvent) => createServerServices().list(signal));
 
-export default function Home({ data }: PageProps<typeof serverLoad>) {
+export default function Home({ data }: PageProps<typeof loader>) {
   const items = data;
   const query = signal("");
   return (

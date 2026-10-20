@@ -2,14 +2,15 @@ import { signal } from "@rivetjs/reactivity";
 import { clientEffect } from "@rivetjs/runtime/dom";
 import type { PageProps } from "@rivetjs/router";
 import { currentVisitors } from "../visitors.server.ts";
+import { load } from "@rivetjs/router";
 
 export const head = { title: "Live updates" };
 
 // #region demo
 // The first value comes with the HTML, so the page is never empty. Server only.
-export const serverLoad = () => ({ visitors: currentVisitors() });
+export const loader = load(() => ({ visitors: currentVisitors() }));
 
-export default function Live({ data }: PageProps<typeof serverLoad>) {
+export default function Live({ data }: PageProps<typeof loader>) {
   const visitors = signal(data.visitors);
   const status = signal<"connecting" | "live" | "reconnecting">("connecting");
 

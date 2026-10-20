@@ -25,7 +25,7 @@ import { Link } from "@rivetjs/router/link";
 // A link: plain <a href>. <Link> adds typed paths and router options, and still renders <a href>.
 <Link to="/orders">Your orders</Link>
 
-// A change: a form posting to a server action (`serverActions.cancel` in src/routes/orders.tsx).
+// A change: a form posting to a server action (the `cancel` action of `actions({ … })` in src/routes/orders.tsx).
 <form method="post" action="?/cancel">
   <input type="hidden" name="id" value={order.id} />
   <button>Cancel order</button>

@@ -1,11 +1,12 @@
 import type { PageProps, RequestEvent } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 const books = ["Dune", "Emma", "Ulysses", "Dracula", "Beloved"];
 
-export const serverLoad = ({ url }: RequestEvent<"index">) => {
+export const loader = load(({ url }: RequestEvent<"index">) => {
   const q = (url.searchParams.get("q") ?? "").trim();
   return { q, books: books.filter((book) => book.toLowerCase().includes(q.toLowerCase())) };
-};
+});
 
 export const head = { title: "Books" };
 

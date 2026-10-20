@@ -69,9 +69,9 @@ export interface Platform {
 type Result = unknown;
 type Handler = (event: RequestEvent) => Response | undefined | void | Promise<Response | undefined | void>;
 /**
- * A route's or layout's server exports, normalized: in-file `serverLoad`… arrive here as `load`…
- * (sibling `*.server.ts` modules may still use the old names). `onRequest` and `on<Method>` request
- * handlers run outermost first before guards; a returned `Response` ends the request.
+ * A route's or layout's server exports, normalized by tag (`server/module.ts`): each key is the kind of
+ * the wrapper that made the export (`export const loader = load(…)` arrives as `load`). `onRequest` and
+ * `on<Method>` request handlers run outermost first before guards; a returned `Response` ends the request.
  */
 export interface ServerModule {
   onRequest?: Handler;
@@ -90,11 +90,6 @@ export interface ServerModule {
   csrf?: boolean;
   actions?: Record<string, (event: RequestEvent) => Result | Promise<Result>>;
   headers?(event: RequestEvent): HeadersInit | undefined;
-  GET?(event: RequestEvent): Response | Promise<Response>;
-  POST?(event: RequestEvent): Response | Promise<Response>;
-  PUT?(event: RequestEvent): Response | Promise<Response>;
-  PATCH?(event: RequestEvent): Response | Promise<Response>;
-  DELETE?(event: RequestEvent): Response | Promise<Response>;
 }
 type Load<T> = () => Promise<T>;
 /** One generated route-table entry. */
@@ -286,7 +281,7 @@ function accessHint(route: AppRoute, index: number, failure: unknown): never {
     hinted.add(layout);
     console.warn(
       `[rivet] The loader of layout "${layout}" ${isRedirect(failure) ? "redirected" : "answered " + failure.status}: loaders are not access control. ` +
-        "Client navigations that keep this layout's data skip its loader, so pages below it would load anyway. Check access in `serverGuard` (guards always run).",
+        "Client navigations that keep this layout's data skip its loader, so pages below it would load anyway. Check access in a `guard(…)` export (guards always run).",
     );
   }
   throw failure;
@@ -582,7 +577,7 @@ export function createHandler(options: AppOptions): AppHandler {
         [
           ...(route.page
             ? ["GET, HEAD, POST", ...(["PUT", "PATCH", "DELETE"] as const).filter((m) => own?.[ON[m]])]
-            : (Object.keys(ON) as Method[]).filter((m) => own?.[ON[m]] || own?.[m]).map((m) => (m === "GET" ? "GET, HEAD" : m))),
+            : (Object.keys(ON) as Method[]).filter((m) => own?.[ON[m]]).map((m) => (m === "GET" ? "GET, HEAD" : m))),
           ...(options ? ["OPTIONS"] : []),
         ].join(", ");
       if (route.page && method !== "GET" && method !== "OPTIONS" && action === undefined && !own?.[on!]) {
@@ -630,14 +625,14 @@ export function createHandler(options: AppOptions): AppHandler {
         if (extra) new Headers(extra).forEach((value, name) => headers.set(name, value));
       }
       if (!route.page) {
-        const endpoint = own?.[on!] ?? own?.[method as Method];
+        const endpoint = own?.[on!];
         if (!endpoint) {
           headers.set("allow", allow(false));
           return fail(405, "Method not allowed");
         }
         const response: unknown = await endpoint(event);
         if (body.exceeded) return fail(413, "Payload too large");
-        if (!(response instanceof Response)) throw new Error(`${route.id}: ${own?.[on!] ? on : method} must return a Response`);
+        if (!(response instanceof Response)) throw new Error(`${route.id}: ${on} must return a Response`);
         return merge(response);
       }
       let performed: ActionResult | undefined;

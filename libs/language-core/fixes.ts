@@ -2,6 +2,7 @@
 // `ts` is the host's TypeScript module (tsserver passes its own); parser APIs, plus a one-file checker (no lib, no imports)
 // where a fix needs binding resolution (`rivetReconstruct`).
 import type TS from "typescript";
+import { MAGIC_SERVER_EXPORTS, ROUTER } from "./server-exports.ts";
 
 export interface TextEdit {
   start: number;
@@ -16,7 +17,7 @@ export interface CodeFix {
 }
 
 /** Codes with fixes below. */
-export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1102", "RV2001", "RV2002", "RV2003", "RV2102", "RV3002"] as const;
+export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1102", "RV2001", "RV2002", "RV2003", "RV2102", "RV3002", "RV3010"] as const;
 
 const PRELOAD = ["eager", "idle", "visible", "intent", "interaction"] as const;
 
@@ -227,11 +228,107 @@ function importedAs(ts: typeof TS, file: TS.SourceFile, modules: readonly string
   return undefined;
 }
 
+/** `body` reads `this` / `arguments` / `super` of its own function (an arrow would change them). */
+function usesFunctionScope(ts: typeof TS, body: TS.Node): boolean {
+  let found = false;
+  const visit = (n: TS.Node): void => {
+    if (found) return;
+    if (n.kind === ts.SyntaxKind.ThisKeyword || n.kind === ts.SyntaxKind.SuperKeyword || (ts.isIdentifier(n) && n.text === "arguments")) found = true;
+    else if (!(ts.isFunctionLike(n) && !ts.isArrowFunction(n)) && !ts.isClassLike(n)) ts.forEachChild(n, visit);
+  };
+  ts.forEachChild(body, visit);
+  return found;
+}
+
+/** Module-scope binding names (declarations, destructured names, imports). */
+function moduleNames(ts: typeof TS, file: TS.SourceFile): Set<string> {
+  const names = new Set<string>();
+  const bind = (name: TS.BindingName): void => {
+    if (ts.isIdentifier(name)) names.add(name.text);
+    else for (const element of name.elements) if (!ts.isOmittedExpression(element)) bind(element.name);
+  };
+  for (const statement of file.statements) {
+    if (ts.isVariableStatement(statement)) for (const d of statement.declarationList.declarations) bind(d.name);
+    else if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement) || ts.isEnumDeclaration(statement)) && statement.name) names.add(statement.name.text);
+    else if (ts.isImportDeclaration(statement) && statement.importClause) {
+      const clause = statement.importClause;
+      if (clause.name) names.add(clause.name.text);
+      if (clause.namedBindings && ts.isNamespaceImport(clause.namedBindings)) names.add(clause.namedBindings.name.text);
+      else if (clause.namedBindings) for (const element of clause.namedBindings.elements) names.add(element.name.text);
+    }
+  }
+  return names;
+}
+
+/** RV3010 `rivetWrapServerExport`: `export const onGet = (e) => …` → `export const GET = onGet((e) => …)`; an exported
+ * function declaration becomes an arrow (a function expression when it uses `this` / `arguments` / `super`, is a generator
+ * or has type parameters); `let` → `const`; a `: T` annotation → `satisfies T`. In-file references follow the new name
+ * (symbol identity through the one-file checker); the wrapper is imported from `@rivetjs/router` unless already imported. */
+function wrapServerExport(ts: typeof TS, file: TS.SourceFile, node: TS.Node): CodeFix[] {
+  if (!ts.isIdentifier(node)) return [];
+  const old = node.text;
+  const magic = MAGIC_SERVER_EXPORTS[old];
+  if (!magic) return [];
+  const statement = ts.findAncestor(node, (n) => n.parent === file) as TS.Statement | undefined;
+  if (!statement) return [];
+  const local = importedAs(ts, file, [ROUTER], magic.wrapper);
+  const names = moduleNames(ts, file);
+  // The export itself goes (renamed): `onGet` may then be the wrapper import.
+  const declared = (name: string) => name !== old && names.has(name);
+  // A local named like the wrapper (not the router's import): no fix (the rename would be a guess).
+  if (!local && declared(magic.wrapper)) return [];
+  const call = local ?? magic.wrapper;
+  const next = !declared(magic.name) ? magic.name : !declared(magic.name + "Export") ? magic.name + "Export" : undefined;
+  if (!next) return [];
+  const edits: TextEdit[] = [];
+  const text = file.text;
+  if (ts.isVariableStatement(statement)) {
+    const [d, ...rest] = statement.declarationList.declarations;
+    if (!d || rest.length || d.name !== node || !d.initializer) return [];
+    const init = d.initializer;
+    const type = d.type ? text.slice(d.type.getStart(file), d.type.end) : undefined;
+    edits.push({ start: statement.getStart(file), end: init.getStart(file), newText: `export const ${next} = ${call}(${type ? "(" : ""}` });
+    edits.push({ start: init.end, end: init.end, newText: type ? `) satisfies ${type})` : ")" });
+  } else if (ts.isFunctionDeclaration(statement) && statement.name === node && statement.body) {
+    const async = (ts.getModifiers(statement) ?? []).some((m) => m.kind === ts.SyntaxKind.AsyncKeyword);
+    const open = statement.parameters.pos - 1;
+    if (statement.asteriskToken || statement.typeParameters || usesFunctionScope(ts, statement.body)) {
+      const from = statement.typeParameters ? statement.typeParameters.pos - 1 : open;
+      edits.push({ start: statement.getStart(file), end: from, newText: `export const ${next} = ${call}(${async ? "async " : ""}function${statement.asteriskToken ? "*" : ""} ${next}` });
+    } else {
+      edits.push({ start: statement.getStart(file), end: open, newText: `export const ${next} = ${call}(${async ? "async " : ""}` });
+      const head = statement.type ? statement.type.end : statement.parameters.end + 1;
+      edits.push({ start: head, end: statement.body.getStart(file), newText: " => " });
+    }
+    edits.push({ start: statement.body.end, end: statement.body.end, newText: ");" });
+  } else return [];
+  // References: by symbol, not by name (shadowing locals keep theirs).
+  const { copy, checker } = fileChecker(ts, file);
+  const own = nodeAt(ts, copy, node.getStart(file), node.end);
+  const target = own && checker.getSymbolAtLocation(own);
+  if (target) {
+    const visit = (n: TS.Node): void => {
+      if (ts.isIdentifier(n) && n.text === old && n !== own) {
+        if (ts.isShorthandPropertyAssignment(n.parent) && n.parent.name === n) {
+          if (checker.getShorthandAssignmentValueSymbol(n.parent) === target) edits.push({ start: n.getStart(copy), end: n.end, newText: `${old}: ${next}` });
+        } else if (checker.getSymbolAtLocation(n) === target) edits.push({ start: n.getStart(copy), end: n.end, newText: next });
+        return;
+      }
+      ts.forEachChild(n, visit);
+    };
+    visit(copy);
+  }
+  if (!local) edits.push(...addNamedImport(ts, file, ROUTER, magic.wrapper));
+  return [{ fixName: "rivetWrapServerExport", description: `Wrap in \`${magic.wrapper}(…)\`: export const ${next} = ${magic.wrapper}(…)`, edits }];
+}
+
 /** Fixes for one compiler diagnostic. */
 export function codeFixes(ts: typeof TS, file: TS.SourceFile, diagnostic: { code: string; start: number; end: number; message?: string }): CodeFix[] {
   const node = nodeAt(ts, file, diagnostic.start, diagnostic.end);
   if (!node) return [];
   switch (diagnostic.code) {
+    case "RV3010":
+      return wrapServerExport(ts, file, node);
     case "RV1102": {
       const attribute = ts.findAncestor(node, ts.isJsxAttribute);
       const value = attribute?.initializer;

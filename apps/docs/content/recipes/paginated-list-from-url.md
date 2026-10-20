@@ -25,14 +25,15 @@ There is no signal for the page number. The page number lives in the query strin
 
 ### 2. The loader reads `?page=`
 
-`serverLoad` in `index.tsx` runs on the server for every request. It receives the request URL as `url`:
+`load(…)` in `index.tsx` runs on the server for every request. It receives the request URL as `url`:
 
 ```tsx title="src/routes/index.tsx"
-export const serverLoad = ({ url }: RequestEvent) => {
+import { load } from "@rivetjs/router";
+export const loader = load(({ url }: RequestEvent) => {
   const page = Number(url.searchParams.get("page") ?? "1");
   // …check the number, then:
   return { items: books.slice(start, start + PER_PAGE), page, pages, total: books.length };
-};
+});
 ```
 
 It returns **only the rows of this page**. The browser never receives the other 37 books. With a real database you would use `LIMIT` and `OFFSET` (or a cursor) here.
@@ -65,12 +66,12 @@ Each page then has its own title in the browser history.
 
 ## Variations
 
-- **Pages in the path.** Use a file `src/routes/books/[page].tsx` for `/books/2` instead of a query string. Read `params.page` in the loader. In a static build, export `serverEntries()` to list the pages to render ahead of time.
+- **Pages in the path.** Use a file `src/routes/books/[page].tsx` for `/books/2` instead of a query string. Read `params.page` in the loader. In a static build, export `entries(…)` to list the pages to render ahead of time.
 - **Filters and sorting.** Add more query parameters (`?page=2&sort=title`). Keep them when you build links: start from the current `url.searchParams`, change `page`, and use `"?" + params.toString()`.
 - **"Load more".** Keep the links for no-JavaScript visitors, and add a button whose handler fetches the next page and appends it to a signal.
 
 ## Watch out
 
-- **Static builds cannot read the query string.** A prerendered page is one HTML file, whatever the query. For a static site, put the page number in the path and use `serverEntries()`.
+- **Static builds cannot read the query string.** A prerendered page is one HTML file, whatever the query. For a static site, put the page number in the path and use `entries(…)`.
 - **Validate every parameter.** The URL is user input. Check that numbers are whole numbers and in range before you use them in a database query.
 - **Keep page size on the server.** Do not let `?per_page=100000` decide how much data you load.

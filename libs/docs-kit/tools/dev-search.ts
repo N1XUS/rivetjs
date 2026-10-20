@@ -185,7 +185,7 @@ export function changedRoutes(changed: ReadonlySet<string> | "all", root: string
 }
 
 /**
- * The pages the static build prerenders (static routes + `serverEntries()`, as `@rivetjs/router/static`
+ * The pages the static build prerenders (static routes + `entries(…)` exports, as `@rivetjs/router/static`
  * `prerender` enumerates them), rendered by the running dev server over HTTP. Rendered HTML is kept per
  * page: a rebuild re-renders only the pages of changed route modules (`changedRoutes`) and new pages,
  * the rest come from the previous run (apps/docs ≈ 35 MB, cdk-docs ≈ 150 MB of HTML held).

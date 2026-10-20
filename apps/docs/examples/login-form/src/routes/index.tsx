@@ -1,19 +1,19 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { currentUser, endSession } from "../auth.server.ts";
 
 export const head = { title: "Home" };
 
-export const serverLoad = ({ cookies }: RequestEvent) => ({ user: currentUser(cookies) });
+export const loader = load(({ cookies }: RequestEvent) => ({ user: currentUser(cookies) }));
 
-export const serverActions = {
+export const forms = actions({
   /** Handles `<form method="post" action="?/logout">`. */
   logout: ({ cookies }: RequestEvent) => {
     endSession(cookies);
     return redirect("/", 303);
   },
-};
+});
 
-export default function Home({ data }: PageProps<typeof serverLoad>) {
+export default function Home({ data }: PageProps<typeof loader>) {
   return (
     <main class="mx-auto max-w-sm p-6">
       <h1 class="text-2xl font-bold">Home</h1>

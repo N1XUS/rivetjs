@@ -1,19 +1,19 @@
 <% if (routerImports.length) { %>import { <%- routerImports.join(", ") %> } from "@rivetjs/router";
 <% } %><% if (guard) { %>
 /** Runs on the server before the loader. Return `redirect()`, `deny()` or `notFound()` to stop the request. */
-export const serverGuard = ({ url }: RequestEvent) => {
+export const access = guard(({ url }: RequestEvent) => {
   if (url.searchParams.has("deny")) return deny();
-};
+});
 <% } %><% if (entries) { %>
 /** Parameter values to prerender (static mode): one page per entry. */
-export const serverEntries = () => [<%- entries %>];
+export const paths = entries(() => [<%- entries %>]);
 <% } %><% if (loader) { %>
 /** Data for the page, loaded on the server; removed from the browser build with everything only it uses. */
-export const serverLoad = (<% if (params.length) { %>{ params }<% } else { %>_event<% } %>: RequestEvent) => ({
+export const loader = load((<% if (params.length) { %>{ params }<% } else { %>_event<% } %>: RequestEvent) => ({
   title: <%- loaderTitle %>,
-});
+}));
 <% } %><% if (action) { %>
-export const serverActions = {
+export const forms = actions({
   /** Handles `<form method="post" action="?/save">`. Works without JavaScript. */
   save: async ({ request, url }: RequestEvent) => {
     const text = String((await request.formData()).get("text") ?? "").trim();
@@ -21,7 +21,7 @@ export const serverActions = {
     // Post/redirect/get: reloading the page does not submit the form again.
     return redirect(url.pathname, 303);
   },
-};
+});
 <% } %>
 export const head = { title: "<%= title %>" };
 

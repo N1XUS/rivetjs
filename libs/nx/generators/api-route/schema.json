@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/schema",
   "$id": "RivetApiRoute",
   "title": "Rivet API route",
-  "description": "Adds an endpoint route (a plain .ts file in src/routes with onGet / onPost / … request handlers) to a server-rendered Rivet app.",
+  "description": "Adds an endpoint route (a plain .ts file in src/routes with onGet(…) / onPost(…) / … request handler exports) to a server-rendered Rivet app.",
   "type": "object",
   "properties": {
     "path": {

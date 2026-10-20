@@ -1,16 +1,17 @@
 import { computed, signal } from "@rivetjs/reactivity";
 import { clientEffect, For } from "@rivetjs/runtime/dom";
 import type { PageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 export const head = { title: "Search with debounce" };
 
 // Server code in the page file, removed from the browser build. In a static build it runs once, at build time.
 const allFruits = ["Apple", "Apricot", "Banana", "Blueberry", "Cherry", "Grape", "Lemon", "Mango", "Orange", "Papaya", "Pear", "Plum"];
 
-export const serverLoad = () => ({ fruits: allFruits });
+export const loader = load(() => ({ fruits: allFruits }));
 
 // #region demo
-export default function Search({ data }: PageProps<typeof serverLoad>) {
+export default function Search({ data }: PageProps<typeof loader>) {
   const fruits = data.fruits;
   // What is in the box right now (updates on every key press).
   const text = signal("");

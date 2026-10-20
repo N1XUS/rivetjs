@@ -1,9 +1,9 @@
-<% if (guard) { %>import { redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
+<% if (guard) { %>import { guard, redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
 
 /** Runs for every page and endpoint in this folder, before their loaders. */
-export const serverGuard = ({ cookies, url }: RequestEvent) => {
+export const access = guard(({ cookies, url }: RequestEvent) => {
   if (!cookies.get("session")) return redirect("/login?next=" + encodeURIComponent(url.pathname));
-};
+});
 <% } else { %>import type { LayoutProps } from "@rivetjs/router";
 <% } %>
 /** Wraps every page in <%= where %>. Stays mounted across client navigation between them. */

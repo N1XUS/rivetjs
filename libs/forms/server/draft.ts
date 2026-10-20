@@ -19,7 +19,7 @@ export interface DraftActionOptions {
 }
 const SECRET = /password|secret/i;
 
-/** `export const serverActions = { draft: draftAction(drafts) }`. Versions travel as strings (`_version`). */
+/** `export const forms = actions({ draft: draftAction(drafts) })`. Versions travel as strings (`_version`). */
 export function draftAction(drafts: DraftStore<RawDraft>, options: DraftActionOptions = {}): (event: RequestEvent) => Promise<unknown> {
   return async (event) => {
     const data = await readForm(event.request, options.limits, !event.dev && options.csrf !== "lax");

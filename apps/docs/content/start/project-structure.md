@@ -53,7 +53,7 @@ export default function About() {
 
 Files that start with `_` are special. `_layout.tsx` wraps every page in its folder and in the folders below. `_404.tsx` and `_error.tsx` show "not found" and error pages. [File routes](../guides/routing/file-routes.md) lists all the rules.
 
-A page file can also hold code that runs only on the server: exports whose names start with `server`, such as `serverLoad` (loading data), `serverGuard` (checking access) and `serverActions` (handling forms). The compiler removes them from the browser build. The static starter has none; the server starter (`templates/starter-server`) has a `serverLoad` and `serverActions` in `src/routes/index.tsx`. See [loading data](../guides/routing/loading-data.md) and [server code in route files](../guides/routing/server-code-in-routes.md).
+A page file can also hold code that runs only on the server: exports wrapped in a call from `@rivetjs/router`, such as `load(…)` (loading data), `guard(…)` (checking access) and `actions(…)` (handling forms). The compiler removes them from the browser build. The static starter has none; the server starter (`templates/starter-server`) has a `load(…)` and `actions(…)` in `src/routes/index.tsx`. See [loading data](../guides/routing/loading-data.md) and [server code in route files](../guides/routing/server-code-in-routes.md).
 
 ## Components: `src/components`
 

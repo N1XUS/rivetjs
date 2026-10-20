@@ -76,9 +76,10 @@ Codes are never reused. A retired code keeps its page.
 | [RV3004](RV3004.md) | error | Structural helper aliases |
 | [RV3005](RV3005.md) | error | Server clientOnly must be called directly |
 | [RV3006](RV3006.md) | error | Server clientOnly erasure shape |
-| [RV3007](RV3007.md) | error | Route module server export shape |
+| [RV3007](RV3007.md) | error | Route module server export shape (own statement, wrapper position, duplicate kind, export \*) |
 | [RV3008](RV3008.md) | error | Server-only code referenced by browser code |
 | [RV3009](RV3009.md) | error | Server-only code renders JSX in a resumed route module |
+| [RV3010](RV3010.md) | error | Untagged server export: a former magic export name without its wrapper call |
 | [RV3101](RV3101.md) | warning | Link matches no route (language service) |
 
 ## RV4xxx: Static calls (i18n)

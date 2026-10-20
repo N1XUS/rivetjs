@@ -3,13 +3,14 @@ import "@rivetjs/bridge-react/types";
 import type { PageProps } from "@rivetjs/router";
 import { kpis, recent, revenue } from "../../../data.ts";
 import { RevenueChart } from "../../../components/RevenueChart.react.tsx";
+import { load } from "@rivetjs/router";
 
 export const head = { title: "Overview" };
 
 // Server-only (stands in for database queries): the chart island's `data` prop is serialized into the page, as in Next.
-export const serverLoad = () => ({ kpis, recent, revenue });
+export const loader = load(() => ({ kpis, recent, revenue }));
 
-export default function Overview({ data }: PageProps<typeof serverLoad>) {
+export default function Overview({ data }: PageProps<typeof loader>) {
   return (
     <main>
       <h1>Overview</h1>

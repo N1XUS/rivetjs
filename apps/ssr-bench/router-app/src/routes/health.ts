@@ -1,5 +1,6 @@
 // Bench control endpoints (same shape as `server.ts`), served through the router's endpoint routes.
-export function onGet() {
+import { onGet } from "@rivetjs/router";
+export const GET = onGet(() => {
   return Response.json({
     status: "ready",
     framework: "rivet-router",
@@ -13,4 +14,4 @@ export function onGet() {
         ? `deno ${(globalThis as unknown as { Deno: { version: { deno: string } } }).Deno.version.deno}`
         : `node ${process.version}`,
   });
-}
+});

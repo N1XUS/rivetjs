@@ -330,7 +330,7 @@ describe("api-route", () => {
     await apiRouteGenerator(tree, { project: "web", path: "api/items/[id]", methods: ["get", "post", "delete"] });
     expect(read(tree, "apps/web/src/routes/api/items/[id].ts")).toMatchSnapshot();
     await apiRouteGenerator(tree, { project: "web", path: "api/health" });
-    expect(read(tree, "apps/web/src/routes/api/health.ts")).toContain("export const onGet");
+    expect(read(tree, "apps/web/src/routes/api/health.ts")).toContain("export const GET = onGet(");
     await expect(apiRouteGenerator(tree, { project: "web", path: "api/x", methods: ["trace" as "get"] })).rejects.toThrow(/unknown method/);
     const site = await app("static");
     await expect(apiRouteGenerator(site, { project: "web", path: "api/health" })).rejects.toThrow(/need a server/);

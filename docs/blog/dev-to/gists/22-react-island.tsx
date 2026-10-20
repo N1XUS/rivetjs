@@ -1,16 +1,16 @@
 // src/routes/index.tsx: a Rivet file route. RevenueChart is an unmodified React component;
 // the KPI cards around it are Rivet and ship no JavaScript.
 import "@rivetjs/bridge-react/types";
-import type { PageProps } from "@rivetjs/router";
+import { load, type PageProps } from "@rivetjs/router";
 import { kpis, revenue } from "../data.ts";
 import { RevenueChart } from "../components/RevenueChart.react.tsx";
 
 export const head = { title: "Overview" };
 
 // Server-only (stands in for database queries): the chart island's `data` prop is serialized into the page.
-export const serverLoad = () => ({ kpis, revenue });
+export const loader = load(() => ({ kpis, revenue }));
 
-export default function Overview({ data }: PageProps<typeof serverLoad>) {
+export default function Overview({ data }: PageProps<typeof loader>) {
   return (
     <main>
       <h1>Overview</h1>

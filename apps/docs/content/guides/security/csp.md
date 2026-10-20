@@ -125,7 +125,7 @@ Third-party scripts from another origin (analytics, chat widgets) are blocked un
 
 ## Change or turn off the policy
 
-- A route can set its own `Content-Security-Policy` header with a `serverHeaders` export in its page file. That header replaces the default for that route. It does not receive the nonce, so it must allow Rivet's inline loader another way.
+- A route can set its own `Content-Security-Policy` header with a `headers(…)` export in its page file. That header replaces the default for that route. It does not receive the nonce, so it must allow Rivet's inline loader another way.
 - `createApp({ csp })` from `@rivetjs/router/server` accepts a function `(nonce) => policy`, or `false` for no header.
 - `start()` from `@rivetjs/router/node` takes the same `csp` option: `{ trustedTypes, directives }`, a function or `false`.
 

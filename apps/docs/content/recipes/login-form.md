@@ -26,7 +26,7 @@ The form is plain HTML. It works before any JavaScript loads, and with JavaScrip
 </form>
 ```
 
-`action="?/login"` runs the `login` function in the `serverActions` of `login.tsx`. The `autoComplete` values let password managers fill the fields.
+`action="?/login"` runs the `login` function in the `actions(…)` of `login.tsx`. The `autoComplete` values let password managers fill the fields.
 
 ### 2. The action checks the password on the server
 
@@ -72,7 +72,7 @@ After sign-in the user goes back to the page they wanted (`/login?next=/account`
 
 ### 6. Signing out is an action too
 
-`index.tsx` has a `logout` action in its `serverActions` that deletes the session and the cookie. Use a form with a button for it, not a link: a GET request should never change state.
+`index.tsx` has a `logout` action in its `actions(…)` that deletes the session and the cookie. Use a form with a button for it, not a link: a GET request should never change state.
 
 ## Variations
 

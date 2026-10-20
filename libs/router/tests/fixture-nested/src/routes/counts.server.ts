@@ -1,2 +1,3 @@
 import { counts } from "../counts.server.ts";
-export const onGet = () => new Response(JSON.stringify(counts), { headers: { "content-type": "application/json", "cache-control": "no-store" } });
+import { onGet } from "@rivetjs/router";
+export const GET = onGet(() => new Response(JSON.stringify(counts), { headers: { "content-type": "application/json", "cache-control": "no-store" } }));

@@ -28,7 +28,7 @@ export const signupForm = defineForm({
 
 ```tsx
 // src/routes/signup.tsx
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { createForm } from "@rivetjs/forms";
 import { action } from "@rivetjs/forms/server";
@@ -37,9 +37,9 @@ import { Form } from "@rivetjs/ui/form";
 import { TextField } from "@rivetjs/ui/textfield";
 import { signupForm } from "../forms/definitions.ts";
 
-export const serverActions = {
+export const forms = actions({
   signup: action(signupForm, () => redirect("/welcome")),
-};
+});
 
 export default function SignupPage() {
   const form = createForm(signupForm, { result: actionResult() });

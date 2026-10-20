@@ -4,11 +4,12 @@ import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { i18nGuard, localizeHref } from "@rivetjs/i18n/router";
 import { signal } from "@rivetjs/reactivity";
 import { config } from "../../../i18n.config.ts";
+import { guard, entries } from "@rivetjs/router";
 
 // Checks the `lang` segment and sets the page's language.
-export const serverGuard = i18nGuard(config);
+export const access = guard(i18nGuard(config));
 // Static build: `/` is English; prerender `/uk` too.
-export const serverEntries = () => [{ lang: "uk" }];
+export const paths = entries(() => [{ lang: "uk" }]);
 
 export const head = { title: "Messages" };
 

@@ -9,6 +9,7 @@ import { createForm, defaultValue, describedBy, fieldId, formId, isInvalid, onSu
 import { FieldError } from "@rivetjs/forms/components";
 import { action, invalid } from "@rivetjs/forms/server";
 import { contactForm } from "../forms/contact.ts";
+import { load, actions } from "@rivetjs/router";
 
 const contacts = [{ id: 1, name: "Ada Lovelace", email: "ada@example.com" }];
 
@@ -17,16 +18,16 @@ export const head = { title: "Contacts" };
 // Live page: after a successful submit `data` is refreshed in place; signals (drawer, likes) survive.
 export const live = true;
 
-export const serverLoad = ({ url }: { url: URL }) => ({ contacts: [...contacts], creating: url.searchParams.has("new") });
+export const loader = load(({ url }: { url: URL }) => ({ contacts: [...contacts], creating: url.searchParams.has("new") }));
 
-export const serverActions = {
+export const forms = actions({
   contact: action(contactForm, (value) => {
     if (contacts.some((c) => c.email === value.email)) return invalid({ email: "Already a contact" });
     contacts.push({ id: contacts.length + 1, ...value });
   }),
-};
+});
 
-export default function Contacts({ data }: LivePageProps<typeof serverLoad>) {
+export default function Contacts({ data }: LivePageProps<typeof loader>) {
   const result = actionResult("contact");
   const open = signal(data().creating || (result?.status ?? 0) >= 400);
   const likes = signal(0);

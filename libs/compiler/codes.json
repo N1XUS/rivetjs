@@ -345,7 +345,7 @@
     {
       "code": "RV3007",
       "severity": "error",
-      "title": "Route module server export shape",
+      "title": "Route module server export shape (own statement, wrapper position, duplicate kind, export *)",
       "docs": "https://rivetjs.severyn.pro/errors/RV3007"
     },
     {
@@ -359,6 +359,12 @@
       "severity": "error",
       "title": "Server-only code renders JSX in a resumed route module",
       "docs": "https://rivetjs.severyn.pro/errors/RV3009"
+    },
+    {
+      "code": "RV3010",
+      "severity": "error",
+      "title": "Untagged server export: a former magic export name without its wrapper call",
+      "docs": "https://rivetjs.severyn.pro/errors/RV3010"
     },
     {
       "code": "RV3101",

@@ -1,6 +1,7 @@
 import type { PageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = ({ url }: { url: URL }) => ({ path: url.pathname });
+export const loader = load(({ url }: { url: URL }) => ({ path: url.pathname }));
 
 export default function About({ data }: PageProps<{ path: string }, {}>) {
   return (

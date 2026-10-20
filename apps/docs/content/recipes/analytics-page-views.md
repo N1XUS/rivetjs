@@ -65,7 +65,7 @@ export function pageView(path: string) {
 }
 ```
 
-`sendBeacon` delivers the request even if the user leaves the page right away. The `/api/views` URL can be a Rivet [endpoint](/guides/routing/endpoints.md): a plain `.ts` file with an `onPost` export.
+`sendBeacon` delivers the request even if the user leaves the page right away. The `/api/views` URL can be a Rivet [endpoint](/guides/routing/endpoints.md): a plain `.ts` file with an `onPost(…)` export.
 
 ## Variations
 

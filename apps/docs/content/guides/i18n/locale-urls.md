@@ -47,14 +47,15 @@ src/routes/
     about.tsx
 ```
 
-Export `i18nGuard` as the [guard](../routing/guards.md) (`serverGuard`) of the folder's layout. A layout guard runs for every page in the folder:
+Export `i18nGuard` as the [guard](../routing/guards.md) (`guard(…)`) of the folder's layout. A layout guard runs for every page in the folder:
 
 ```tsx title="src/routes/[[lang]]/_layout.tsx"
 import type { LayoutProps } from "@rivetjs/router";
 import { i18nGuard } from "@rivetjs/i18n/router";
 import { config } from "../../../i18n.config.ts";
+import { guard } from "@rivetjs/router";
 
-export const serverGuard = i18nGuard(config);
+export const access = guard(i18nGuard(config));
 
 export default function LangLayout({ children }: LayoutProps) {
   return <>{children}</>;
@@ -182,7 +183,7 @@ closeOnSignals(serving);
 - **404 for a valid page.** The first segment looked like a language but is not in `locales`, or a page outside `[[lang]]` has the same path. Keep translated pages inside `[[lang]]`.
 - **`alternates() needs baseUrl`.** Add `baseUrl` (your public origin) to the config.
 - **Wrong language from a CDN cache.** Keep the `Vary` header the guard sets, or cache only prefixed URLs.
-- **`/de` missing from a static build.** Prerendering only follows `serverEntries`. Export `serverEntries = () => [{ lang: "de" }]` from the `[[lang]]` page and pass `locales` to `prerenderBuild`.
+- **`/de` missing from a static build.** Prerendering only follows `entries(…)`. Export `paths = entries(() => [{ lang: "de" }])` from the `[[lang]]` page and pass `locales` to `prerenderBuild`.
 
 ## See also
 

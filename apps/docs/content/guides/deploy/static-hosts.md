@@ -89,21 +89,22 @@ Without it, pages are rendered for `http://localhost`. Resume state and `_data.j
 ## Which pages are built
 
 - Every route without parameters, like `about.tsx`.
-- Routes with parameters, like `blog/[slug].tsx`, when the page exports `serverEntries()`, the list of parameter values to build.
+- Routes with parameters, like `blog/[slug].tsx`, when the page exports `entries(…)`, the list of parameter values to build.
 - A page can set `export const prerender = false` to skip a route, or `true` to force it.
 
 ```tsx title="src/routes/blog/[slug].tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { posts } from "../../content/posts.ts";
+import { entries, load } from "@rivetjs/router";
 
-export const serverEntries = () => posts.map((post) => ({ slug: post.slug }));
+export const paths = entries(() => posts.map((post) => ({ slug: post.slug })));
 
-export const serverLoad = ({ params }: RequestEvent<"blog/[slug]">) => {
+export const loader = load(({ params }: RequestEvent<"blog/[slug]">) => {
   const post = posts.find((p) => p.slug === params.slug);
   return { title: post!.title, body: post!.body };
-};
+});
 
-export default function Post({ data }: PageProps<typeof serverLoad>) {
+export default function Post({ data }: PageProps<typeof loader>) {
   return (
     <article>
       <h1>{data.title}</h1>
@@ -113,14 +114,14 @@ export default function Post({ data }: PageProps<typeof serverLoad>) {
 }
 ```
 
-`serverLoad` and `serverGuard` run at build time, once per page. There is no request from a visitor, so there are no cookies and no per-user data. Actions do not exist on a static site.
+`load(…)` and `guard(…)` run at build time, once per page. There is no request from a visitor, so there are no cookies and no per-user data. Actions do not exist on a static site.
 
 The build fails when:
 
-- a route with `serverLoad` or `serverGuard` cannot be prerendered (dynamic, no `serverEntries()`). The message says to use the [Node adapter](node.md) or add `serverEntries()`;
+- a route with `load(…)` or `guard(…)` cannot be prerendered (dynamic, no `entries(…)`). The message says to use the [Node adapter](node.md) or add `entries(…)`;
 - a page does not answer with status 200.
 
-Dynamic routes without server code and without `serverEntries()` need a browser-rendered fallback page. Pass `shell` to `prerenderBuild`; the result is written to `200.html`. Most apps avoid this by adding `serverEntries()`.
+Dynamic routes without server code and without `entries(…)` need a browser-rendered fallback page. Pass `shell` to `prerenderBuild`; the result is written to `200.html`. Most apps avoid this by adding `entries(…)`.
 
 ## Security policy
 
@@ -156,7 +157,7 @@ The site works from the root of a domain. Folders map to URLs with a trailing sl
 
 ## Common mistakes
 
-- **Pages missing after the build.** A dynamic route has no `serverEntries()`, or `serverEntries()` returns fewer values than you think. The report lists every built page.
+- **Pages missing after the build.** A dynamic route has no `entries(…)`, or `entries(…)` returns fewer values than you think. The report lists every built page.
 - **Testing with the dev server only.** Dev pages render in the browser and do not show resuming. Run `npm run build && npm run preview`.
 - **Expecting cookies or per-user content.** A static page is the same for every visitor. Use the [Node adapter](node.md) for that.
 

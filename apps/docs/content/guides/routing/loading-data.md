@@ -1,28 +1,29 @@
 ---
 title: Loading data
-description: Fetch data for a page on the server with a serverLoad function, use it in the page, and know when it runs in server and static apps.
+description: Fetch data for a page on the server with a load(…) export, use it in the page, and know when it runs in server and static apps.
 template: guide
 related: [guides/routing/params, guides/routing/layouts, guides/routing/errors-and-404, best-practices/pass-data-not-services]
 ---
 
-A page often needs data from a database or an API. In Rivet you fetch it in a `serverLoad` function that runs **on the server**, and the page receives the result as its `data` prop. After reading this page you can write loaders, use their data, and know when they run.
+A page often needs data from a database or an API. In Rivet you fetch it in a `load(…)` function that runs **on the server**, and the page receives the result as its `data` prop. After reading this page you can write loaders, use their data, and know when they run.
 
 ::example{id=loader-data}
 
 ## Write a loader
 
-Export `serverLoad` from the page file. The page gets its return value as the `data` prop:
+Export `load(…)` from the page file. The page gets its return value as the `data` prop:
 
 ```tsx title="src/routes/index.tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
-import { db } from "../db.server.ts"; // used only by serverLoad: removed from the browser build
+import { db } from "../db.server.ts"; // used only by the loader: removed from the browser build
+import { load } from "@rivetjs/router";
 
-export async function serverLoad({ signal }: RequestEvent) {
+export const loader = load(async ({ signal }: RequestEvent) => {
   const books = await db.books.list({ signal });
   return { books };
-}
+});
 
-export default function Books({ data }: PageProps<typeof serverLoad>) {
+export default function Books({ data }: PageProps<typeof loader>) {
   return (
     <ul>
       {data.books.map((book) => (
@@ -33,21 +34,21 @@ export default function Books({ data }: PageProps<typeof serverLoad>) {
 }
 ```
 
-`serverLoad` runs only on the server. The compiler removes it, and the imports only it uses, from the browser build, so you can import database clients and read secrets through it. Keep those in `*.server.ts` modules like `db.server.ts`: the build refuses to put such a module into browser code. See [server code in route files](./server-code-in-routes.md).
+`load(…)` runs only on the server. The compiler removes it, and the imports only it uses, from the browser build, so you can import database clients and read secrets through it. Keep those in `*.server.ts` modules like `db.server.ts`: the build refuses to put such a module into browser code. See [server code in route files](./server-code-in-routes.md).
 
 ## Use the data in the page
 
-`PageProps<typeof serverLoad>` types the props: `data` (taken from the loader's return type, you do not write it by hand), `params` and `url`. A page that also reads [params](./params.md) can use the generated form `PageProps<"items/[id]">` instead; see [typed routes](./typed-routes.md).
+`PageProps<typeof loader>` types the props: `data` (taken from the loader's return type, you do not write it by hand), `params` and `url`. A page that also reads [params](./params.md) can use the generated form `PageProps<"items/[id]">` instead; see [typed routes](./typed-routes.md).
 
 :::note
-A separate `index.server.ts` next to the page that exports `load` still works (old names accepted; `rivet migrate server-exports` renames them). See [sibling files](./server-code-in-routes.md#sibling-server-ts-files-still-work).
+A separate `index.server.ts` next to the page works too, with the same `load(…)` export. See [sibling files](./server-code-in-routes.md#sibling-server-ts-files).
 :::
 
 ::api{symbol="@rivetjs/router#PageProps"}
 
 ## What a loader receives
 
-`serverLoad` gets one event object (`RequestEvent`):
+`load(…)` gets one event object (`RequestEvent`):
 
 | Field | What it is |
 | --- | --- |
@@ -95,11 +96,12 @@ Most changes affect only some data. Let a loader name what its data depends on w
 ```tsx title="src/routes/_layout.tsx"
 import type { RequestEvent } from "@rivetjs/router";
 import { cart } from "../cart.server.ts";
+import { load } from "@rivetjs/router";
 
-export async function serverLoad(event: RequestEvent) {
+export const loader = load(async (event: RequestEvent) => {
   event.depends("cart");
   return { items: await cart.count(event.cookies) };
-}
+});
 ```
 
 ```tsx
@@ -119,15 +121,15 @@ await invalidate((key) => key.startsWith("/api/")); // keys your function accept
 Throw one of the router's helpers to stop and answer with an HTTP status:
 
 ```tsx title="src/routes/items/[id].tsx"
-import { notFound, redirect, type RequestEvent } from "@rivetjs/router";
+import { notFound, redirect, type RequestEvent, load } from "@rivetjs/router";
 import { db } from "../../db.server.ts";
 
-export async function serverLoad({ params, signal }: RequestEvent<"items/[id]">) {
+export const loader = load(async ({ params, signal }: RequestEvent<"items/[id]">) => {
   const item = await db.items.find(params.id, { signal });
   if (!item) throw notFound(); // renders the nearest _404.tsx with status 404
   if (item.movedTo) throw redirect("/items/" + item.movedTo, 301);
   return item;
-}
+});
 ```
 
 Always `throw` these in a loader. A returned `notFound()` would be treated as data. Any other error becomes a 500 response that renders the nearest `_error.tsx`. See [errors and 404 pages](./errors-and-404.md).
@@ -137,14 +139,14 @@ Always `throw` these in a loader. A returned `notFound()` would be treated as da
 With `rivetRouter({ mode: "static" })`, there is no server at request time. Loaders run once, **when you build**, and their data is saved next to each HTML file (`_data.json`) for client navigation. A site whose pages resume nothing gets no `_data.json` files: its links load documents.
 
 - A route without params is built automatically.
-- A route with params needs a `serverEntries` export that lists the param values to build. See [prerendering pages with params](./params.md#prerendering-pages-with-params).
+- A route with params needs a `entries(…)` export that lists the param values to build. See [prerendering pages with params](./params.md#prerendering-pages-with-params).
 - `cookies`, `request` headers and guards have no visitor to look at during the build. Use a server app for per-visitor data.
 
-The live example on this page is a static app: its `serverLoad` ran when the docs were built.
+The live example on this page is a static app: its `load(…)` ran when the docs were built.
 
 ## Common mistakes
 
-- **Fetching in the page component.** The component runs once, on the server, during rendering. Fetch in `serverLoad` and pass the result through `data`. For data that changes while the page is open, see [async data](/guides/components/async.md).
+- **Fetching in the page component.** The component runs once, on the server, during rendering. Fetch in `load(…)` and pass the result through `data`. For data that changes while the page is open, see [async data](/guides/components/async.md).
 - **Returning a class instance or a function.** The page fails to render with a "not serializable" error. Return plain objects. See [function is not serializable](/gotchas/function-is-not-serializable.md).
 - **Ignoring `signal`.** Without it, a cancelled navigation keeps the database busy. Pass `signal` on.
 - **Importing a service into the page to call it from a handler.** Services hold functions and connections that cannot travel to the browser. Load data on the server; send changes through an [action](./actions-and-forms.md) or an [endpoint](./endpoints.md). See [pass data, not services](/best-practices/pass-data-not-services.md).

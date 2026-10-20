@@ -1,5 +1,5 @@
 import { For } from "@rivetjs/runtime/dom";
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { createForm, defaultValue, formId, isInvalid, issueText, onBlur, onInput, onSubmit } from "@rivetjs/forms";
 import { keys, insertIntent, removeIntent } from "@rivetjs/forms/array";
@@ -9,9 +9,9 @@ import { orderForm } from "../forms/definitions.js";
 
 export const head = { title: "Order" };
 
-export const serverActions = {
+export const forms = actions({
   order: action(orderForm, () => redirect("/welcome")),
-};
+});
 
 /** Field array: rows keyed for `For`; add/remove are intent buttons (browser-applied, server-applied without JS). */
 export default function OrderPage() {

@@ -59,30 +59,31 @@ Rivet renders the component on the server. In the browser the component does not
 
 ## Put server code in the page file
 
-Code that must stay on the server goes in the page file itself, as exports whose names start with `server` or `on`:
+Code that must stay on the server goes in the page file itself, as exports made by a wrapper call from `@rivetjs/router` (`load(…)`, `onGet(…)`, …):
 
 ```tsx title="src/routes/blog/[slug].tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
-import { readPost } from "../../posts.server.ts"; // used only by serverLoad: removed from the browser build
+import { readPost } from "../../posts.server.ts"; // used only by the loader: removed from the browser build
+import { load } from "@rivetjs/router";
 
-export async function serverLoad({ params }: RequestEvent<"blog/[slug]">) {
+export const loader = load(async ({ params }: RequestEvent<"blog/[slug]">) => {
   return readPost(params.slug);
-}
+});
 
 export default function Post({ data }: PageProps<"blog/[slug]">) {
   return <h1>{data.title}</h1>;
 }
 ```
 
-A page or layout file can export `serverLoad`, `serverGuard`, `serverActions`, `serverHeaders`, `serverEntries`, `prerender`, and request handlers such as `onGet`. The compiler removes the server exports, and the code only they use, from the browser build. Keep database clients and secrets in `*.server.ts` modules and import them from the server exports: the build refuses to put such a module into browser code. Read [loading data](./loading-data.md), [guards](./guards.md) and [actions and forms](./actions-and-forms.md) for each export, [server code in route files](./server-code-in-routes.md) for the rules, and [server-only code](/guides/security/server-only-code.md) for the safety rules.
+A page or layout file can export `load(…)`, `guard(…)`, `actions(…)`, `headers(…)`, `entries(…)`, `prerender`, and request handlers such as `onGet(…)`. The compiler removes the server exports, and the code only they use, from the browser build. Keep database clients and secrets in `*.server.ts` modules and import them from the server exports: the build refuses to put such a module into browser code. Read [loading data](./loading-data.md), [guards](./guards.md) and [actions and forms](./actions-and-forms.md) for each export, [server code in route files](./server-code-in-routes.md) for the rules, and [server-only code](/guides/security/server-only-code.md) for the safety rules.
 
-A plain `.ts` file (not `.tsx`) that exports request handlers (`onGet`, `onPost`, …) is an [endpoint](./endpoints.md): it answers requests with its own `Response`, for example JSON.
+A plain `.ts` file (not `.tsx`) that exports request handlers (`onGet(…)`, `onPost(…)`, …) is an [endpoint](./endpoints.md): it answers requests with its own `Response`, for example JSON.
 
 ## Special file names
 
 | Name | What it does |
 | --- | --- |
-| `_layout.tsx` | Wraps every page in its folder and in subfolders. Can have server code (`serverLoad`, `serverGuard`, …). See [layouts](./layouts.md). |
+| `_layout.tsx` | Wraps every page in its folder and in subfolders. Can have server code (`load(…)`, `guard(…)`, …). See [layouts](./layouts.md). |
 | `_404.tsx` | Page for URLs that match no route, and for loaders that throw `notFound()`. |
 | `_error.tsx` | Page for other failures. See [errors and 404 pages](./errors-and-404.md). |
 
@@ -110,7 +111,7 @@ Two files that describe the same URL shape are an error, for example `blog/[slug
 
 - **Putting a page in `src/pages`.** Only `src/routes` is scanned, unless you set the `routes` option.
 - **Expecting `(group)` in the URL.** `(admin)/users.tsx` answers `/users`, not `/admin/users`. Use a plain `admin/` folder for a URL segment.
-- **Importing a `.server.ts` file from a component.** The build stops with "is server-only and cannot be imported by browser code". Load the data in `serverLoad` and read it from the page's `data` prop instead.
+- **Importing a `.server.ts` file from a component.** The build stops with "is server-only and cannot be imported by browser code". Load the data in `load(…)` and read it from the page's `data` prop instead.
 - **Reading `window` at the top of a page component.** The component runs on the server. Move browser code into an event handler or `clientEffect`. See [window is not defined](/gotchas/window-is-not-defined.md).
 
 ## See also

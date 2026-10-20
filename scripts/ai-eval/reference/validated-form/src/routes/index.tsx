@@ -5,15 +5,16 @@ import { createForm, defaultValue, describedBy, fieldId, formId, isInvalid, onBl
 import { FieldError } from "@rivetjs/forms/components";
 import { action, invalid } from "@rivetjs/forms/server";
 import { signupForm } from "../forms/signup.ts";
+import { actions } from "@rivetjs/router";
 
 const subscribers = new Set<string>(["taken@example.com"]);
 
-export const serverActions = {
+export const forms = actions({
   signup: action(signupForm, (value) => {
     if (subscribers.has(value.email)) return invalid({ email: "Already subscribed" });
     subscribers.add(value.email);
   }),
-};
+});
 
 export const head = { title: "Newsletter" };
 

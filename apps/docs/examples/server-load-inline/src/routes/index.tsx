@@ -1,22 +1,23 @@
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { listBooks } from "../books.server.ts"; // used only by server code: removed from the browser build
+import { load, onGet } from "@rivetjs/router";
 
 export const head = { title: "Books" };
 
 // #region demo
 // Server code in the page file: the compiler removes it from the browser build.
-export async function serverLoad({ url }: RequestEvent) {
+export const loader = load(async ({ url }: RequestEvent) => {
   const books = await listBooks();
   const query = (url.searchParams.get("q") ?? "").toLowerCase();
   return { books: books.filter((book) => book.title.toLowerCase().includes(query)), query };
-}
+});
 
 // `/?format=json` answers with JSON before the page renders; otherwise the page renders.
-export const onGet = async (event: RequestEvent) =>
-  event.url.searchParams.get("format") === "json" ? Response.json(await serverLoad(event)) : undefined;
+export const GET = onGet(async (event: RequestEvent) =>
+  event.url.searchParams.get("format") === "json" ? Response.json(await loader(event)) : undefined);
 
-// `typeof serverLoad`: the data type comes from the loader, no hand-written type.
-export default function Books({ data }: PageProps<typeof serverLoad>) {
+// `typeof loader`: the data type comes from the loader, no hand-written type.
+export default function Books({ data }: PageProps<typeof loader>) {
   return (
     <main class="p-4">
       <h1 class="text-xl font-semibold">Books</h1>

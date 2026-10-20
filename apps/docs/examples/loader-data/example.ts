@@ -2,7 +2,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "Loader data",
-  summary: "A server-only serverLoad function in the page file returns data; the page renders it and filters it in the browser.",
+  summary: "A server-only load(…) export in the page file returns data; the page renders it and filters it in the browser.",
   tags: ["routing", "loaders"],
   frame: { height: 220, auto: true },
   show: ["src/routes/index.tsx"],

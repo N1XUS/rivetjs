@@ -252,8 +252,9 @@ Every change writes `sidebar_state=<open>; path=/; max-age=604800`. To render th
 // src/routes/index.server.ts
 import type { RequestEvent } from "@rivetjs/router";
 import { sidebarCookieOpen } from "@rivetjs/cdk/sidebar/state";
+import { load } from "@rivetjs/router";
 
-export const load = ({ cookies }: RequestEvent) => ({ open: sidebarCookieOpen(cookies) ?? true });
+export const loader = load(({ cookies }: RequestEvent) => ({ open: sidebarCookieOpen(cookies) ?? true }));
 ```
 
 ```tsx

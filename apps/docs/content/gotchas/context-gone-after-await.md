@@ -73,5 +73,5 @@ export function Profile() {
 For async code outside `Async`, `captureAsyncContext()` from `@rivetjs/runtime/async` gives you the same `get` and `run` methods. Call it before the first `await`.
 
 :::tip
-In file routes, load page data in the page's `serverLoad` function. It receives the request directly and needs no context. See [loading data](../guides/routing/loading-data.md).
+In file routes, load page data in the page's `load(…)` function. It receives the request directly and needs no context. See [loading data](../guides/routing/loading-data.md).
 :::

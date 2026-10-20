@@ -55,8 +55,8 @@ export {};
 
 - `RouteParams` maps each **route id** (the file path without extension) to its params. Optional segments give optional params.
 - `RouteRegistry["path"]` lists the URL shapes of all pages (not endpoints). Each param becomes `${string}`.
-- When routes have loaders, the file also fills `RouteData`: route id → the type its `serverLoad` returns.
-- Routes with server code also get `RouteActions` (route id → their `serverActions`), and layouts get `LayoutParams` and `LayoutData`, keyed by **layout id**: the layout's file path without extension, such as `"_layout"` or `"items/_layout"`.
+- When routes have loaders, the file also fills `RouteData`: route id → the type its `load(…)` returns.
+- Routes with server code also get `RouteActions` (route id → their `actions(…)`), and layouts get `LayoutParams` and `LayoutData`, keyed by **layout id**: the layout's file path without extension, such as `"_layout"` or `"items/_layout"`.
 
 From `@rivetjs/router` you import the types built on them:
 
@@ -74,14 +74,14 @@ From `@rivetjs/router` you import the types built on them:
 Give `PageProps` the route id, and the page gets its params and its loader's data without a hand-written type:
 
 ```tsx title="src/routes/items/[id].tsx"
-import { notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, load } from "@rivetjs/router";
 import { db } from "../../db.server.ts";
 
-export async function serverLoad({ params }: RequestEvent<"items/[id]">) {
+export const loader = load(async ({ params }: RequestEvent<"items/[id]">) => {
   const item = await db.items.find(params.id);
   if (!item) throw notFound();
   return item;
-}
+});
 
 export default function ItemPage({ data, params }: PageProps<"items/[id]">) {
   return <h1>{data.title} ({params.id})</h1>;
@@ -89,9 +89,9 @@ export default function ItemPage({ data, params }: PageProps<"items/[id]">) {
 ```
 
 - `params` comes from the file path: `[id]` gives `id: string`, `[[lang]]` gives `lang?: string`, `[...path]` gives `path: string`.
-- `data` is what `serverLoad` returns. A route without a loader has `data: undefined`.
+- `data` is what `load(…)` returns. A route without a loader has `data: undefined`.
 - `RequestEvent<"items/[id]">` types the loader's `params` the same way.
-- `PageProps<typeof serverLoad>` and `PageProps<Item, { id: string }>` keep working.
+- `PageProps<typeof loader>` and `PageProps<Item, { id: string }>` keep working.
 
 Rename `[id]` to `[itemId]`, and every `params.id` and every `PageProps<"items/[id]">` becomes an error: TypeScript shows every place to update. A route id that does not exist makes `data` and `params` unusable instead of silently `any`.
 
@@ -99,8 +99,9 @@ Rename `[id]` to `[itemId]`, and every `params.id` and every `PageProps<"items/[
 
 ```tsx title="src/routes/items/_layout.tsx"
 import type { LayoutProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = () => ({ categories: ["books", "music"] });
+export const loader = load(() => ({ categories: ["books", "music"] }));
 
 export default function ItemsLayout({ data, params, children }: LayoutProps<"items/_layout">) {
   return <section data-item={params().id}>{data().categories.join(", ")}{children}</section>;

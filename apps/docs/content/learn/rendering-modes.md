@@ -27,7 +27,7 @@ export default defineConfig({
 
 ## Server mode
 
-Each request runs the page on the server. `serverLoad` and `serverGuard` run per request, so pages can show fresh or per-user data. Forms post to `serverActions`. Responses can set headers and cookies.
+Each request runs the page on the server. `load(…)` and `guard(…)` run per request, so pages can show fresh or per-user data. Forms post to `actions(…)`. Responses can set headers and cookies.
 
 The build makes `dist/client` (browser files) and `dist/server` (server code). You run it with the Node adapter:
 
@@ -56,24 +56,25 @@ A page with nothing to resume (no handlers, signals, client effects or forms) sh
 
 Server code still works, but it runs at build time:
 
-- `serverLoad` runs once per page during the build. Its result is saved into the page.
-- A page with a parameter, such as `src/routes/books/[id].tsx`, needs a `serverEntries()` export. It returns the list of parameter values to build:
+- `load(…)` runs once per page during the build. Its result is saved into the page.
+- A page with a parameter, such as `src/routes/books/[id].tsx`, needs a `entries(…)` export. It returns the list of parameter values to build:
 
 ```tsx title="src/routes/books/[id].tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { books } from "../../books.ts";
+import { entries, load } from "@rivetjs/router";
 
 // Build one page per book: /books/1, /books/2, …
-export const serverEntries = () => books.map((book) => ({ id: String(book.id) }));
+export const paths = entries(() => books.map((book) => ({ id: String(book.id) })));
 
-export const serverLoad = ({ params }: RequestEvent<"books/[id]">) => books.find((book) => book.id === Number(params.id))!;
+export const loader = load(({ params }: RequestEvent<"books/[id]">) => books.find((book) => book.id === Number(params.id))!);
 
-export default function Book({ data }: PageProps<typeof serverLoad>) {
+export default function Book({ data }: PageProps<typeof loader>) {
   return <h1>{data.title}</h1>;
 }
 ```
 
-There is no server after the build, so nothing runs per request: no actions, no cookies, no per-user data. The build stops with an error if a page has `serverLoad` or `serverGuard` but cannot be prerendered.
+There is no server after the build, so nothing runs per request: no actions, no cookies, no per-user data. The build stops with an error if a page has `load(…)` or `guard(…)` but cannot be prerendered.
 
 Pages still resume in the browser exactly as in server mode. Use it for: documentation, blogs, marketing pages, anything that is the same for every visitor.
 
@@ -96,7 +97,7 @@ You can start with `static` and switch to `server` later. Your pages and compone
 
 ## What it means for your code
 
-- In `static` mode, `serverLoad` runs on your build machine. Do not read request-only things like cookies there.
+- In `static` mode, `load(…)` runs on your build machine. Do not read request-only things like cookies there.
 - In `server` mode, a module-level variable in server code (a route file or a `.server.ts` module) is shared by all requests. Keep per-user data out of it.
 - The dev server (`npm run dev`) resumes pages like production until your first edit, then renders them in the browser. Judge speed with a production build. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 

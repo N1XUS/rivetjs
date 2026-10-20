@@ -70,4 +70,4 @@ Passing `window` or `document` as the target of `clientEvent` is allowed. The li
 Write handlers inline in JSX. A helper function at module level that reads `document` is still server code when a component calls it during render.
 :::
 
-The server renders the first value (`0`, `"light"`). The browser updates it later. If the first value must match the visitor, read it on the server instead, for example from a cookie in the page's `serverLoad` function.
+The server renders the first value (`0`, `"light"`). The browser updates it later. If the first value must match the visitor, read it on the server instead, for example from a cookie in the page's `load(…)` function.

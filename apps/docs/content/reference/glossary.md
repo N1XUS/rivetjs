@@ -8,7 +8,7 @@ Each word below has its own link target, so other pages can point straight at a 
 
 ## Action
 
-A server function that handles a form submit (a `POST` request) for a page. Actions are the `serverActions` export of the page file.
+A server function that handles a form submit (a `POST` request) for a page. Actions are the `actions(…)` export of the page file.
 
 ## Adapter
 
@@ -40,11 +40,11 @@ Code that runs again whenever the signals it reads change, used to sync with the
 
 ## Endpoint
 
-A route file that answers a request with data (JSON, text, a file) instead of a page: a plain `.ts` file exporting request handlers like `onGet` or `onPost`.
+A route file that answers a request with data (JSON, text, a file) instead of a page: a plain `.ts` file exporting request handlers like `onGet(…)` or `onPost(…)`.
 
 ## Guard
 
-A server function that runs before a page loads and can send the visitor elsewhere (for example to a login page) or refuse the request. It is the `serverGuard` export of a page or layout file.
+A server function that runs before a page loads and can send the visitor elsewhere (for example to a login page) or refuse the request. It is the `guard(…)` export of a page or layout file.
 
 ## Hot reload
 
@@ -64,7 +64,7 @@ A component that wraps every page in its folder, for shared parts like a header,
 
 ## Loader
 
-A server function that fetches the data a page needs before it renders. It is the `serverLoad` export of the page or layout file.
+A server function that fetches the data a page needs before it renders. It is the `load(…)` export of the page or layout file.
 
 ## Locale
 

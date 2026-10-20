@@ -1,24 +1,24 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`api-route > handlers per method; static apps refused 1`] = `
-"import type { RequestEvent } from "@rivetjs/router";
+"import { onGet, onPost, onDelete, type RequestEvent } from "@rivetjs/router";
 
 /** \`GET /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
-export const onGet = async ({ params }: RequestEvent) => {
+export const GET = onGet(async ({ params }: RequestEvent) => {
   return Response.json({ ok: true, params }, { headers: { "cache-control": "no-store" } });
-};
+});
 
 /** \`POST /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
-export const onPost = async ({ request, params }: RequestEvent) => {
+export const POST = onPost(async ({ request, params }: RequestEvent) => {
   const body: unknown = await request.json().catch(() => null);
   return Response.json({ ok: true, params, body }, { status: 201 });
-};
+});
 
 /** \`DELETE /api/items/:id\`. Runs only on the server; must return a \`Response\`. */
-export const onDelete = async ({ params }: RequestEvent) => {
+export const DELETE = onDelete(async ({ params }: RequestEvent) => {
   console.log("delete", params);
   return new Response(null, { status: 204 });
-};
+});
 "
 `;
 
@@ -374,7 +374,7 @@ import { rivetRouter } from "@rivetjs/router/vite";
 import { i18n } from "@rivetjs/i18n/vite";
 import { config as i18nConfig } from "./i18n.config.ts";
 
-// Pages render on the server for each request; \`serverLoad\`, \`serverActions\` and \`serverGuard\` exports in route files run there.
+// Pages render on the server for each request; \`load(…)\`, \`actions(…)\` and \`guard(…)\` exports in route files run there.
 export default defineConfig({
   plugins: [i18n(i18nConfig), rivetRouter({ styles: ["src/styles.css"] }), tailwindcss()],
 });
@@ -405,12 +405,12 @@ exports[`init > registers the plugin once, adds tooling, ignores .rivet 1`] = `
 `;
 
 exports[`layout > guarded group layout; root layout exists already 1`] = `
-"import { redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
+"import { guard, redirect, type LayoutProps, type RequestEvent } from "@rivetjs/router";
 
 /** Runs for every page and endpoint in this folder, before their loaders. */
-export const serverGuard = ({ cookies, url }: RequestEvent) => {
+export const access = guard(({ cookies, url }: RequestEvent) => {
   if (!cookies.get("session")) return redirect("/login?next=" + encodeURIComponent(url.pathname));
-};
+});
 
 /** Wraps every page in src/routes/(private). Stays mounted across client navigation between them. */
 export default function PrivateLayout({ children }: LayoutProps) {
@@ -507,9 +507,9 @@ export function DatePicker(props: DatePickerProps) {
 `;
 
 exports[`route > server app: action form, plain page, index of a group 1`] = `
-"import { redirect, type RequestEvent } from "@rivetjs/router";
+"import { actions, redirect, type RequestEvent } from "@rivetjs/router";
 
-export const serverActions = {
+export const forms = actions({
   /** Handles \`<form method="post" action="?/save">\`. Works without JavaScript. */
   save: async ({ request, url }: RequestEvent) => {
     const text = String((await request.formData()).get("text") ?? "").trim();
@@ -517,7 +517,7 @@ export const serverActions = {
     // Post/redirect/get: reloading the page does not submit the form again.
     return redirect(url.pathname, 303);
   },
-};
+});
 
 export const head = { title: "Contact" };
 
@@ -552,25 +552,25 @@ export default function PricingPage() {
 `;
 
 exports[`route > static app: loader + guard + entries + folder layout 1`] = `
-"import { deny, type PageProps, type RequestEvent } from "@rivetjs/router";
+"import { guard, entries, load, deny, type PageProps, type RequestEvent } from "@rivetjs/router";
 
 /** Runs on the server before the loader. Return \`redirect()\`, \`deny()\` or \`notFound()\` to stop the request. */
-export const serverGuard = ({ url }: RequestEvent) => {
+export const access = guard(({ url }: RequestEvent) => {
   if (url.searchParams.has("deny")) return deny();
-};
+});
 
 /** Parameter values to prerender (static mode): one page per entry. */
-export const serverEntries = () => [{ slug: "example" }];
+export const paths = entries(() => [{ slug: "example" }]);
 
 /** Data for the page, loaded on the server; removed from the browser build with everything only it uses. */
-export const serverLoad = ({ params }: RequestEvent) => ({
+export const loader = load(({ params }: RequestEvent) => ({
   title: \`Blog Slug: \${params.slug ?? ""}\`,
-});
+}));
 
 export const head = { title: "Blog Slug" };
 
 /** Blog Slug (/blog/:slug). */
-export default function BlogSlugPage({ data, params }: PageProps<typeof serverLoad>) {
+export default function BlogSlugPage({ data, params }: PageProps<typeof loader>) {
   return (
     <main>
       <h1>{data.title}</h1>

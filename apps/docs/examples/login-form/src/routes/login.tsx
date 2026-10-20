@@ -1,4 +1,4 @@
-import { fail, redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { fail, redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { checkPassword, currentUser, startSession } from "../auth.server.ts";
 
@@ -10,12 +10,12 @@ const safeNext = (value: string | null) => (value && /^\/(?![/\\])/.test(value) 
 // #region demo
 // Server code in the page file: the compiler removes it (and the auth.server.ts import) from the browser build.
 // Signed in already: no need to show the form.
-export const serverLoad = ({ cookies, url }: RequestEvent) => {
+export const loader = load(({ cookies, url }: RequestEvent) => {
   if (currentUser(cookies)) throw redirect(safeNext(url.searchParams.get("next")));
   return {};
-};
+});
 
-export const serverActions = {
+export const forms = actions({
   /** Handles `<form method="post" action="?/login">`. */
   login: async ({ request, cookies }: RequestEvent) => {
     const form = await request.formData();
@@ -29,12 +29,12 @@ export const serverActions = {
     // Post/Redirect/Get: reloading the next page does not send the form again.
     return redirect(next, 303);
   },
-};
+});
 
 /** A plain HTML form: it works before any JavaScript loads, and with JavaScript turned off. */
-export default function Login({ url }: PageProps<typeof serverLoad>) {
+export default function Login({ url }: PageProps<typeof loader>) {
   // Set when this page is the answer to a `?/login` post; `status` is set when the action returned `fail(...)`.
-  const login = actionResult<typeof serverActions, "login">("login");
+  const login = actionResult<typeof forms, "login">("login");
   const failed = login?.status !== undefined ? login.result : undefined;
   const next = failed?.next ?? url.searchParams.get("next") ?? "/";
   return (

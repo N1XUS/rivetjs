@@ -1,6 +1,6 @@
 // Server-only content access (named content.ts, not content.server.ts, for historical reasons: a rolldown 1.2.12
 // resolve-option race fired the router's server-only guard at random until 2d198ad1; see apps/editorial-bench/CLAUDE.md).
-// Imported only by serverLoad / serverEntries, which the compiler strips from the browser build.
+// Imported only by the load(…) / entries(…) exports, which the compiler strips from the browser build.
 // the fixture directory comes from EDITORIAL_CONTENT (absolute path to fixture/content/n<N>).
 // Markdown is parsed with marked's lexer (same library as the other JS lanes); the token tree is rendered as JSX
 // by components/Markdown.tsx (Rivet has no raw-HTML sink).

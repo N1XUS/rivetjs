@@ -1,9 +1,10 @@
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import type { Row } from "../../../services/page-decoder.ts";
 import { loadBenchPage } from "../content.server.ts";
+import { load } from "@rivetjs/router";
 
 // Same request contract as `server.ts` `/page`: rows / delay_ms / token bounds → 400.
-export const serverLoad = (event: RequestEvent) => loadBenchPage(event);
+export const loader = load((event: RequestEvent) => loadBenchPage(event));
 
 export const head = ({ data }: { data: { title: string } }) => ({ title: data.title });
 
@@ -72,7 +73,7 @@ function Record({ row }: { row: Row }) {
   );
 }
 
-export default function BenchPage({ data }: PageProps<typeof serverLoad>) {
+export default function BenchPage({ data }: PageProps<typeof loader>) {
   return (
     <main data-token={data.token}>
       <h1>{data.title}</h1>

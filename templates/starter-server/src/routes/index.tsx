@@ -1,13 +1,13 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 
-// Server code in the page file: `serverLoad` and `serverActions` (and everything only they use, like
+// Server code in the page file: the `load(…)` and `actions(…)` exports (and everything only they use, like
 // `notes`) run on the server and are removed from the browser build. A real app would use a database.
 const notes: string[] = ["Rendered on the server"];
 
 /** Data for the page, loaded on the server for every request. */
-export const serverLoad = () => ({ notes });
+export const loader = load(() => ({ notes }));
 
-export const serverActions = {
+export const forms = actions({
   /** Handles `<form method="post" action="?/add">`. */
   add: async ({ request }: RequestEvent<"index">) => {
     const text = String((await request.formData()).get("text") ?? "").trim();
@@ -15,7 +15,7 @@ export const serverActions = {
     // Post/redirect/get: reloading the page does not submit the form again.
     return redirect("/", 303);
   },
-};
+});
 
 export const head = { title: "Notes" };
 

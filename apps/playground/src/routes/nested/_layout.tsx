@@ -3,11 +3,12 @@
 // `url()` follows. Leaving /nested disposes it.
 import { signal } from "@rivetjs/reactivity";
 import type { LayoutProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 let loads = 0;
-export const serverLoad = () => ({ loads: ++loads });
+export const loader = load(() => ({ loads: ++loads }));
 
-export default function NestedLayout({ data, url, children }: LayoutProps<typeof serverLoad>) {
+export default function NestedLayout({ data, url, children }: LayoutProps<typeof loader>) {
   const count = signal(0);
   return (
     <section class="rounded-xl border border-slate-200 bg-white p-5">

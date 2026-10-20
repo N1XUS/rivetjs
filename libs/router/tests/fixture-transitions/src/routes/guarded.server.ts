@@ -1,3 +1,3 @@
-import { redirect } from "@rivetjs/router";
+import { redirect, guard } from "@rivetjs/router";
 
-export const guard = () => redirect("/plain");
+export const access = guard(() => redirect("/plain"));

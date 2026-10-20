@@ -9,6 +9,7 @@ import { redirect } from "../shared/errors.ts";
 import { safeRedirect } from "../shared/redirect.ts";
 import { serve, type Handler } from "../adapters/node.ts";
 import { serverExports } from "../server/module.ts";
+import { onPost as wrapOnPost } from "../shared/server-exports.ts";
 
 const mod = (module: ServerModule) => () => Promise.resolve(module);
 const decode = async (response: Response): Promise<unknown> => {
@@ -78,7 +79,7 @@ test("CSRF: endpoints are checked by default; `export const csrf = false` opts o
   const onPost = () => (hits++, new Response("ok"));
   const handler = app([
     { id: "api/hook", pattern: "/api/hook", page: false, layouts: [], server: mod({ onPost, csrf: false }) },
-    { id: "api/thing", pattern: "/api/thing", page: false, layouts: [], server: mod({ onPost, PUT: onPost }) },
+    { id: "api/thing", pattern: "/api/thing", page: false, layouts: [], server: mod({ onPost, onPut: onPost }) },
   ]);
   const evil = { origin: "http://evil", "content-type": "application/x-www-form-urlencoded" };
   assert.equal((await handler(new Request("http://x/api/thing", { method: "POST", body: "a=1", headers: evil }))).status, 403);
@@ -88,8 +89,8 @@ test("CSRF: endpoints are checked by default; `export const csrf = false` opts o
   assert.equal((await handler(new Request("http://x/api/thing", { method: "POST", body: "{}", headers: { "content-type": "application/json" } }))).status, 200);
   assert.equal(hits, 2);
   // The flag survives export normalization (in-file and sibling modules).
-  assert.equal(serverExports({ csrf: false, onPost }, false).csrf, false);
-  assert.equal(serverExports({ csrf: false, POST: onPost }, true).csrf, false);
+  assert.equal(serverExports({ csrf: false, POST: wrapOnPost(onPost) }, "page.tsx").csrf, false);
+  assert.equal(serverExports({ csrf: false, POST: wrapOnPost(onPost) }, "x.server.ts", true).csrf, false);
 });
 
 test("redirect(): same-origin by default, `external: true` for other origins", async () => {

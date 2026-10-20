@@ -2,8 +2,8 @@
 
 A deliberately simple file-routed app on `@rivetjs/router`: compiled JSX, Tailwind, signal state, two-way input models, keyed lists, server loaders, lazy route chunks, a client-only module and a gtag-style page-view effect. Pages are server-rendered and resumed in the browser; client navigation fetches route data from the server's data endpoint, so loaders (and guards) always run on the server.
 
-- `src/routes/` — `_layout.tsx` (header, counter, footer; stays mounted across navigation), `index.tsx`, `items/[id].tsx`, `resume.tsx` (each with an in-file `serverLoad`), `_404.tsx`.
-- Endpoints: `api/items.ts`, `api/items/[id].ts` (REST, `onGet`), `csr/…` (308 to the resumed pages).
+- `src/routes/` — `_layout.tsx` (header, counter, footer; stays mounted across navigation), `index.tsx`, `items/[id].tsx`, `resume.tsx` (each with an in-file `load(…)`), `_404.tsx`.
+- Endpoints: `api/items.ts`, `api/items/[id].ts` (REST, `onGet(…)`), `csr/…` (308 to the resumed pages).
 - `src/document.ts` — document shell (site title/description defaults, icon, stylesheets).
 - Hero image via `?image` + `<Picture priority>` + `<ImagePreload>` in the layout header (`src/assets/hero.jpg`, regenerate with `node apps/playground/scripts/hero.ts`); `build.ts` uses Vite's app builder (server, then client) so the server-only image variants land in `dist/client/assets`.
 

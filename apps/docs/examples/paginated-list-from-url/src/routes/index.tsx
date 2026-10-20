@@ -1,4 +1,4 @@
-import { redirect, type DataOf, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type DataOf, type PageProps, type RequestEvent, load } from "@rivetjs/router";
 
 // Stand-in for a database table.
 const books = Array.from({ length: 47 }, (_, i) => ({ id: i + 1, title: `Book ${i + 1}` }));
@@ -6,7 +6,7 @@ const PER_PAGE = 10;
 
 // #region demo
 /** Runs on the server for every request, also for client navigation between pages. */
-export const serverLoad = ({ url }: RequestEvent) => {
+export const loader = load(({ url }: RequestEvent) => {
   const pages = Math.max(1, Math.ceil(books.length / PER_PAGE));
   const raw = url.searchParams.get("page") ?? "1";
   const page = Number(raw);
@@ -15,12 +15,12 @@ export const serverLoad = ({ url }: RequestEvent) => {
   const start = (page - 1) * PER_PAGE;
   // Return only this page's rows: that is all the browser receives.
   return { items: books.slice(start, start + PER_PAGE), page, pages, total: books.length };
-};
+});
 
 // The page number is part of the title, so each page has its own history entry name.
-export const head = ({ data }: { data: DataOf<typeof serverLoad> }) => ({ title: `Books, page ${data.page} of ${data.pages}` });
+export const head = ({ data }: { data: DataOf<typeof loader> }) => ({ title: `Books, page ${data.page} of ${data.pages}` });
 
-export default function Books({ data }: PageProps<typeof serverLoad>) {
+export default function Books({ data }: PageProps<typeof loader>) {
   const { items, page, pages, total } = data;
   return (
     <main class="mx-auto max-w-xl p-6">

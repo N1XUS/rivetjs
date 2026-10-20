@@ -1,6 +1,6 @@
 // Generated per-route props: `PageProps<"items/[id]">`, `LayoutProps<"items/_layout">` and typed
 // `actionResult<"items/[id]">()` read params, loader data and action results from `.rivet/routes.d.ts`.
-// Route modules are virtual files that use the types on themselves (in-file `serverLoad`).
+// Route modules are virtual files that use the types on themselves (`load(…)` / `actions(…)` exports, any name).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { generate } from "../build/codegen.ts";
@@ -8,8 +8,8 @@ import { routeTable } from "../build/routes.ts";
 
 const modules: Record<string, string> = {
   "src/routes/_layout.tsx": `
-import type { LayoutProps } from "@rivetjs/router";
-export const serverLoad = () => ({ site: "Shop" });
+import { load, type LayoutProps } from "@rivetjs/router";
+export const siteData = load(() => ({ site: "Shop" }));
 export default function Root({ data, params, children }: LayoutProps<"_layout">) {
   const site: string = data().site;
   const none: {} = params();
@@ -28,15 +28,15 @@ export default function List({ params }: PageProps<"items/index">) {
   return <p>{String(params)}</p>;
 }`,
   "src/routes/items/[id].tsx": `
-import { fail, redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { actions, fail, load, redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
-export async function serverLoad({ params }: RequestEvent<"items/[id]">) {
+export const loader = load(async ({ params }: RequestEvent<"items/[id]">) => {
   return { id: params.id, title: "Item", at: new Date() };
-}
-export const serverActions = {
+});
+export const forms = actions({
   save: async () => (Math.random() > 0.5 ? { saved: true as const } : fail(400, { error: "Title required" })),
   remove: () => redirect("/items"),
-};
+});
 export default function Item({ data, params }: PageProps<"items/[id]">) {
   const id: string = params.id;
   const at: Date = data.at;
@@ -61,22 +61,23 @@ export default function Post({ data, params }: PageProps<"blog/[slug]">) {
   return <p>{slug}{words}</p>;
 }`,
   "src/routes/blog/[slug].server.ts": `
-// Sibling server module with the old names: still typed.
-export const load = () => ({ words: 120 });
-export const actions = { like: () => ({ likes: 1 }) };`,
+// Sibling server module: same wrappers, found by tag.
+import { actions, load } from "@rivetjs/router";
+export const post = load(() => ({ words: 120 }));
+export const likes = actions({ like: () => ({ likes: 1 }) });`,
 };
 
 const usage = `
 import type { ActionResultOf, LayoutProps, PageProps } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
-import type { serverActions } from "./src/routes/items/[id].tsx";
+import type { forms } from "./src/routes/items/[id].tsx";
 
 // Positive: the action union narrows by name; the old forms keep working.
 export function A() {
   const any = actionResult<"items/[id]">();
   const name: "save" | "remove" | undefined = any?.name;
   const likes: number | undefined = actionResult<"blog/[slug]", "like">("like")?.result.likes;
-  const byObject: ActionResultOf<typeof serverActions, "save"> | undefined = actionResult<typeof serverActions, "save">("save");
+  const byObject: ActionResultOf<typeof forms, "save"> | undefined = actionResult<typeof forms, "save">("save");
   const plain = actionResult("save")?.result;
   return <p>{name}{likes}{String(byObject)}{String(plain)}</p>;
 }
@@ -160,18 +161,18 @@ async function diagnostics(files: Record<string, string>): Promise<string[]> {
 function routesTypes(): string {
   const files = Object.keys(modules).map((file) => file.slice("src/routes/".length));
   const exports = new Map([
-    ["_layout.tsx", ["serverLoad"]],
-    ["items/[id].tsx", ["serverLoad", "serverActions"]],
+    ["_layout.tsx", ["load"]],
+    ["items/[id].tsx", ["load", "actions"]],
   ]);
   return generate(routeTable(files, exports), { routesDir: "src/routes" }).files["routes.d.ts"]!;
 }
 
 test("routes.d.ts: per-route RouteData, RouteActions, LayoutParams, LayoutData", () => {
   const types = routesTypes();
-  assert.match(types, /"items\/\[id\]": InlineData<typeof import\("\.\.\/src\/routes\/items\/\[id\]\.tsx"\)>;/);
+  assert.match(types, /"items\/\[id\]": ModuleData<typeof import\("\.\.\/src\/routes\/items\/\[id\]\.tsx"\)>;/);
   assert.match(types, /interface RouteActions \{[^}]*"blog\/\[slug\]": ModuleActions<typeof import\("\.\.\/src\/routes\/blog\/\[slug\]\.server\.ts"\)>;/);
   assert.match(types, /interface LayoutParams \{\s*"_layout": \{\};\s*"items\/_layout": \{ id\?: string \};\s*\}/);
-  assert.match(types, /interface LayoutData \{\s*"_layout": InlineData<typeof import\("\.\.\/src\/routes\/_layout\.tsx"\)>;\s*\}/);
+  assert.match(types, /interface LayoutData \{\s*"_layout": ModuleData<typeof import\("\.\.\/src\/routes\/_layout\.tsx"\)>;\s*\}/);
 });
 
 test("PageProps/LayoutProps by id and typed actionResult: positives check, negatives fail", async () => {

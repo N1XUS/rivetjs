@@ -1,4 +1,4 @@
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { autofocus, createForm, defaultValue, describedBy, fieldId, formId, isInvalid, onBlur, onInput, onSubmit, submitting, validating } from "@rivetjs/forms";
 import { ErrorSummary, FieldError } from "@rivetjs/forms/components";
@@ -7,9 +7,9 @@ import { signupForm } from "../forms/definitions.js";
 
 export const head = { title: "Sign up" };
 
-export const serverActions = {
+export const forms = actions({
   signup: action(signupForm, () => redirect("/welcome")),
-};
+});
 
 /**
  * Resumed form: server-rendered, works without JavaScript (POST → 400 page with issues and echoed

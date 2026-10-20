@@ -59,5 +59,5 @@ export function UserName({ id }: { id: string }) {
 - `work.signal` cancels the request when the boundary is removed, for example when the visitor leaves the page.
 
 :::tip
-For page data in file routes, prefer a `serverLoad` function in the page file. The page component then gets plain data as `data` and needs no Promise at all. See [loading data](../guides/routing/loading-data.md).
+For page data in file routes, prefer a `load(…)` function in the page file. The page component then gets plain data as `data` and needs no Promise at all. See [loading data](../guides/routing/loading-data.md).
 :::

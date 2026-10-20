@@ -9,7 +9,7 @@ export type { RouteGeneratorSchema } from "./schema.js";
 
 const FILES = fileURLToPath(new URL("./files", import.meta.url));
 
-/** Sample `serverEntries` value of a route's params (`{ slug: "example" }`), or undefined without required params. */
+/** Sample `entries(…)` value of a route's params (`{ slug: "example" }`), or undefined without required params. */
 export function sampleEntry(params: ReturnType<typeof routeParams>): string | undefined {
   const required = params.filter((param) => param.kind !== "optional");
   if (!required.length) return undefined;
@@ -33,7 +33,7 @@ export async function routeGenerator(tree: Tree, options: RouteGeneratorSchema):
   const project = routedApp(tree, options.project, "route");
   const segments = routeSegments(options.path);
   const params = routeParams(segments);
-  if (options.action && project.facts?.static) throw new Error('route: serverActions need a server; this app is prerendered (rivetRouter({ mode: "static" }))');
+  if (options.action && project.facts?.static) throw new Error('route: actions(…) need a server; this app is prerendered (rivetRouter({ mode: "static" }))');
   const index = !segments.length || /^\(.*\)$/.test(segments.at(-1)!) || /(^|\/)index(\.\w+)?\/?$/.test(options.path) || options.path.endsWith("/");
   const folder = joinPathFragments(project.routes, ...(index ? segments : segments.slice(0, -1)));
   const fileName = index ? "index" : segments.at(-1)!;
@@ -43,7 +43,12 @@ export async function routeGenerator(tree: Tree, options: RouteGeneratorSchema):
   const name = routeComponentName(segments.filter((segment) => !/^\(.*\)$/.test(segment)));
   const title = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
   const first = params[0];
+  const entries = project.facts?.static ? (sampleEntry(params) ?? "") : "";
   const routerImports = [
+    ...(options.guard ? ["guard"] : []),
+    ...(entries ? ["entries"] : []),
+    ...(options.loader ? ["load"] : []),
+    ...(options.action ? ["actions"] : []),
     ...(options.guard ? ["deny"] : []),
     ...(options.action ? ["redirect"] : []),
     ...(options.loader || params.length ? ["type PageProps"] : []),
@@ -60,9 +65,9 @@ export async function routeGenerator(tree: Tree, options: RouteGeneratorSchema):
     loader: Boolean(options.loader),
     action: Boolean(options.action),
     params,
-    entries: project.facts?.static ? (sampleEntry(params) ?? "") : "",
+    entries,
     loaderTitle: first ? `\`${title}: \${params.${first.name} ?? ""}\`` : JSON.stringify(title),
-    props: props.length ? `{ ${props.join(", ")} }: PageProps${options.loader ? "<typeof serverLoad>" : ""}` : "",
+    props: props.length ? `{ ${props.join(", ")} }: PageProps${options.loader ? "<typeof loader>" : ""}` : "",
   });
   if (options.layout && !tree.exists(joinPathFragments(folder, "_layout.tsx"))) {
     await layoutGenerator(tree, { project: options.project, directory: folder.slice(project.routes.length + 1), skipFormat: true });

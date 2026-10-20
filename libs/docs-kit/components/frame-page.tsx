@@ -2,7 +2,7 @@
 // generated `.rivet/entry.server.tsx` so a frame URL renders this instead of `<App>`: no router listeners, layouts or
 // route table in the resume state, so the browser loads only the example's own code (as the example's own app would,
 // minus its router: links between an example's pages load documents). The route still runs through the router on the
-// server (matching, `serverLoad`, `head`, errors); a failed render falls back to the router's page (error views).
+// server (matching, loaders, `head`, errors); a failed render falls back to the router's page (error views).
 import type { PageInput } from "@rivetjs/router/server";
 import { frameIdOf } from "../frame-theme.ts";
 import { FrameRoot } from "./frame.tsx";

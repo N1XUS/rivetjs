@@ -32,8 +32,8 @@ Three rules follow from it, whatever framework you come from:
 | `className`, `onChange` on inputs | `class` (`className` also works), `onInput`, or `model:value={signal}` |
 | `React.lazy`, `<Suspense>` | `lazyComponent`, `Async` and `Suspense` from `@rivetjs/runtime/dom` |
 | Next.js `app/` folders, Remix routes | `src/routes` files; `_layout.tsx` for layouts; see [file routes](../guides/routing/file-routes.md) |
-| `getServerSideProps`, Remix `loader` | `export const serverLoad` in the page file |
-| Server actions, Remix `action` | `export const serverActions` in the page file |
+| `getServerSideProps`, Remix `loader` | `export const loader = load(…)` in the page file |
+| Server actions, Remix `action` | `export const forms = actions({ … })` in the page file |
 | `useRouter().push`, `useSearchParams` | `navigate()`, `useSearchParams()` / `setSearchParams()` from `@rivetjs/router/client` |
 
 What to unlearn:
@@ -57,8 +57,8 @@ Solid's model is the closest: signals, components that run once, fine-grained up
 | `onCleanup`, `batch`, `untrack`, `createRoot` | same names, from `@rivetjs/reactivity`. One difference: a Rivet `createRoot` belongs to the scope it is created in and is disposed with it (Solid's roots are detached); create it outside any scope for an independent lifetime |
 | `<For each={items()}>` | `<For each={items()} by={(i) => i.id}>`: same, plus a key |
 | `<Show when={…}>` | `cond() && <p />`, a ternary, or `<Show when={cond()}>` |
-| `createResource` | `serverLoad` for page data, `Async` for parts that load later |
-| SolidStart `"use server"` | `server…` exports next to the page, or `*.server.ts` files |
+| `createResource` | `load(…)` for page data, `Async` for parts that load later |
+| SolidStart `"use server"` | `load(…)` / `actions(…)` / `onGet(…)` exports next to the page, or `*.server.ts` files |
 
 What differs: Solid hydrates, so in the browser your components run once more. In Rivet they do not, which is why captured values must be serializable and why browser code must be in handlers and `clientEffect`. As in Solid, destructuring props reads them once: use `props.x`, `mergeProps` and `splitProps` from `@rivetjs/runtime/props`.
 
@@ -74,9 +74,9 @@ What differs: Solid hydrates, so in the browser your components run once more. I
 | `bind:value={name}` | `model:value={name}` |
 | `<slot />`, snippets | `children`, [slots](../guides/components/slots.md) |
 | `+page.svelte` | `src/routes/<path>.tsx` |
-| `+page.server.ts` `load` / `actions` | `serverLoad` / `serverActions` in the same `.tsx` file (or a sibling `*.server.ts`) |
+| `+page.server.ts` `load` / `actions` | `load(…)` / `actions(…)` in the same `.tsx` file (or a sibling `*.server.ts`) |
 | `+layout.svelte` | `_layout.tsx` |
-| `hooks.server.ts` `handle` | `onRequest` in a layout, `serverGuard` for access checks; see [guards](../guides/routing/guards.md) |
+| `hooks.server.ts` `handle` | `onRequest(…)` in a layout, `guard(…)` for access checks; see [guards](../guides/routing/guards.md) |
 | `<style>` in the component | `css` blocks ([scoped styles](../guides/styling/scoped-styles.md)) or Tailwind |
 
 What differs: components are TypeScript JSX, not a template language, and state is explicit (`signal`, not compiler-tracked `let`). SvelteKit hydrates every page; Rivet resumes it.
@@ -93,9 +93,9 @@ Qwik also resumes. The main change is that Rivet needs no `$` markers: the compi
 | `useComputed$` | `computed` |
 | `useVisibleTask$`, `useTask$` | `clientEffect(fn, { when: … })`; see [effects](../guides/state/effects.md) |
 | `onClick$={…}` | `onClick={…}` |
-| `routeLoader$` | `serverLoad` |
-| `routeAction$`, `<Form>` | `serverActions` and a plain `<form method="post">`, or [`@rivetjs/forms`](../guides/forms/forms.md) |
-| `server$` | an endpoint (`routes/api/x.ts` with `onPost`) or an action |
+| `routeLoader$` | `load(…)` |
+| `routeAction$`, `<Form>` | `actions(…)` and a plain `<form method="post">`, or [`@rivetjs/forms`](../guides/forms/forms.md) |
+| `server$` | an endpoint (`routes/api/x.ts` with `onPost(…)`) or an action |
 
 The serialization rules feel familiar: what a handler captures is written into the page. Rivet keeps them in one place: inline arrows and local `const` functions in the component are fine, also when they reach a child as props; so are module-level functions passed directly as props; class instances and functions Rivet did not compile (libraries, functions stored in objects or arrays) are not; a `.bind(…)` of a compiled function is fine inline in a prop or in a local constant, not written inside an object literal.
 
@@ -114,7 +114,7 @@ Every signal library has a way to read a value without making the current comput
 
 1. **Start from a starter.** `npm create rivet@latest` with the `server` template (pages per request) or `static` (prerendered). See [quick start](quick-start.md).
 2. **Move the routes.** One file per URL in `src/routes`, layouts as `_layout.tsx`, params as `[name]`. See [file routes](../guides/routing/file-routes.md).
-3. **Move data loading to the server.** Put fetches that ran in effects or loaders into `serverLoad` next to the page, and mutations into `serverActions`. Pages get the result as `data`.
+3. **Move data loading to the server.** Put fetches that ran in effects or loaders into `load(…)` next to the page, and mutations into `actions(…)`. Pages get the result as `data`.
 4. **Convert components.** State to `signal` / `computed`, effects that touch the browser to `clientEffect`, lists to `<For>`. Keep handlers as inline arrows or local `const` functions. React or Preact components you are not converting yet can stay as [islands](../guides/components/framework-components.md): rename them to `*.react.tsx` and add `react()` to `bridges`.
 5. **Keep shared components in the project.** Components outside `src/routes` resume without being listed: `rivetRouter` resumes every app component file a route imports.
 6. **Run the checks.** `npm run check` (`rivet-check`) reports what cannot resume, such as a class instance captured by a handler, or a browser global read during server rendering. The [language service](../guides/tooling/language-service.md) shows the same errors in your editor.

@@ -8,6 +8,7 @@ import type { CheckDiagnostic, CheckResult, CheckSite, Compiler } from "./compil
 import { linkDiagnostics } from "./links.ts";
 import { ManifestCache, moduleId, type EditorRoute, type ProjectManifest } from "./manifest.ts";
 import { serializabilityDiagnostics, type ClassVerdict } from "./serializable.ts";
+import { isRouteModule, untaggedServerExports } from "./server-exports.ts";
 import { sourcePackagesOf } from "./sources.ts";
 
 export * from "./compiler.ts";
@@ -18,6 +19,7 @@ export * from "./serializable.ts";
 export * from "./doctor.ts";
 export * from "./links.ts";
 export * from "./explain.ts";
+export * from "./server-exports.ts";
 
 export interface FileCheck {
   diagnostics: CheckDiagnostic[];
@@ -92,7 +94,7 @@ export interface AnalyzeOptions {
   linkModules?: readonly string[];
 }
 
-/** Every Rivet diagnostic of a program file (compiler + RV2101 + RV3101), as the editor shows them. */
+/** Every Rivet diagnostic of a program file (compiler + RV2101 + RV3010 + RV3101), as the editor shows them. */
 export function analyzeFile(
   ts: typeof TS,
   core: LanguageCore,
@@ -118,6 +120,8 @@ export function analyzeFile(
     diagnostics = [...diagnostics, ...serializabilityDiagnostics(ts, checker, file, result.sites, verdict)];
   }
   const manifest = result.project?.manifest;
+  // RV3010: route modules only (the build's `serverExports` compile pass; the editor compiles without it).
+  if (manifest && isRouteModule(result.project!.root, manifest.routesDir, file.fileName)) diagnostics = [...diagnostics, ...untaggedServerExports(ts, file)];
   if (manifest?.routes)
     diagnostics = [
       ...diagnostics,

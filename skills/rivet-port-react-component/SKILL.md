@@ -23,7 +23,7 @@ Map each construct (full table: `get_doc("docs:/start/coming-from-other-framewor
 | `style="…"` strings                                     | `style={{ color: c() }}` or `style:color={c()}`                                                                                     |
 | `function Badge({ count })`                             | `function Badge(props: { count: number })` + `props.count` (props are live; destructuring reads once)                               |
 | `React.lazy`, `<Suspense>`                              | `lazyComponent`, `Async`, `Suspense` (`@rivetjs/runtime/dom`)                                                                       |
-| Next.js `getServerSideProps`, Remix `loader` / `action` | `export const serverLoad` / `serverActions` in the route file                                                                       |
+| Next.js `getServerSideProps`, Remix `loader` / `action` | `export const loader = load(…)` / `actions(…)` in the route file                                                                    |
 | `useRouter().push`, `useSearchParams`                   | `navigate()`, `useSearchParams()` from `@rivetjs/router/client`                                                                     |
 | icon components / inline SVG                            | `<Icon icon={Check} />` from `@rivetjs/kit/icon` + `import { Check } from "lucide"`                                                 |
 

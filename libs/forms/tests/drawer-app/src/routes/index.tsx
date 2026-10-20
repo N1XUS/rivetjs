@@ -10,6 +10,7 @@ import { FieldError } from "@rivetjs/forms/components";
 import { action, invalid } from "@rivetjs/forms/server";
 import { customerForm } from "../forms.js";
 import { add, list, taken } from "../customers.server.js";
+import { load, actions } from "@rivetjs/router";
 
 export const head = { title: "Customers" };
 // Live page: `data` is an accessor; a successful enhanced submit updates it (and the layout) in place,
@@ -17,16 +18,16 @@ export const head = { title: "Customers" };
 export const live = true;
 
 // `?new` opens the drawer on the server (no-JS entry point); the action re-renders the page.
-export const serverLoad = ({ url }: { url: URL }) => ({ customers: list(), creating: url.searchParams.has("new") });
-export const serverActions = {
+export const loader = load(({ url }: { url: URL }) => ({ customers: list(), creating: url.searchParams.has("new") }));
+export const forms = actions({
   customer: action(customerForm, (value) => {
     if (taken(value.email)) return invalid({ email: "That email is already a customer" });
     add(value.name, value.email);
   }),
-};
+});
 
 /** Customer list + "New customer" drawer (cdk Modal) with an enhanced form. */
-export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
+export default function Customers({ data }: LivePageProps<typeof loader>) {
   const result = actionResult("customer");
   // No JS: the drawer renders open for `?new` and after a failed POST (its issues show inside).
   const open = signal(data().creating || (result?.status ?? 0) >= 400);

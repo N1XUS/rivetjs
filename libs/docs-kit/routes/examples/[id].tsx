@@ -1,4 +1,4 @@
-import { notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, entries, guard } from "@rivetjs/router";
 import { examples } from "virtual:docs/examples";
 import { Example } from "@rivetjs/docs-kit/components/Example.tsx";
 import { site } from "virtual:docs/site";
@@ -6,11 +6,11 @@ import { site } from "virtual:docs/site";
 type Params = { id: string };
 
 /** Prerender one page per example. */
-export const serverEntries = () => Object.keys(examples).map((id) => ({ id }));
+export const paths = entries(() => Object.keys(examples).map((id) => ({ id })));
 
-export function serverGuard({ params }: RequestEvent<Params>) {
+export const access = guard(({ params }: RequestEvent<Params>) => {
   if (!examples[params.id]) throw notFound();
-}
+});
 
 export const head = ({ params }: { params: Params }) => {
   const example = examples[params.id];

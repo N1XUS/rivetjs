@@ -225,13 +225,14 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
     }
     if let Some(server) = server {
         result.insert("serverExports".into(), json!(server.exports));
+        result.insert("serverKinds".into(), json!(server.kinds));
         result.insert("serverImports".into(), json!(server.imports));
     }
     Value::Object(result)
 }
 
 /// Module facts; route modules (`serverExports`) report facts of their browser source plus the
-/// server export names, dropped imports and server-split errors.
+/// server export names and kinds, dropped imports and server-split errors.
 fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> Value {
     let Some(options) = options.filter(|o| o.server_exports.unwrap_or(false)) else {
         return facts::module_facts(source, filename);
@@ -240,6 +241,7 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
     let mut facts = facts::module_facts(server.browser.as_deref().unwrap_or(source), filename);
     if let Value::Object(map) = &mut facts {
         map.insert("serverExports".into(), json!(server.exports));
+        map.insert("serverKinds".into(), json!(server.kinds));
         map.insert("serverImports".into(), json!(server.imports));
         let errors: Vec<Value> = server
             .diagnostics

@@ -160,7 +160,7 @@ What to change, in this order:
    }
    ```
 
-2. **Load it in the browser.** Serve the data from an [endpoint](../guides/routing/endpoints.md) (`onGet`) and fetch it in the handler that needs it, or in a [`clientEffect`](../guides/state/effects.md#choose-when-it-starts) that fills a signal once the part is visible:
+2. **Load it in the browser.** Serve the data from an [endpoint](../guides/routing/endpoints.md) (`onGet(…)`) and fetch it in the handler that needs it, or in a [`clientEffect`](../guides/state/effects.md#choose-when-it-starts) that fills a signal once the part is visible:
 
    ```tsx
    import { signal } from "@rivetjs/reactivity";

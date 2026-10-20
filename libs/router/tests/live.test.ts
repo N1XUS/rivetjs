@@ -25,7 +25,10 @@ test("scan: `export const live = true` marks the page live (not a server export)
   try {
     await mkdir(join(dir, "a"));
     await writeFile(join(dir, "index.tsx"), "export const live = true;\nexport default () => null;\n");
-    await writeFile(join(dir, "load.tsx"), "export const live = true;\nexport const serverLoad = () => ({});\nexport default () => null;\n");
+    await writeFile(
+      join(dir, "load.tsx"),
+      'import { load } from "@rivetjs/router";\nexport const live = true;\nexport const loader = load(() => ({}));\nexport default () => null;\n',
+    );
     await writeFile(join(dir, "off.tsx"), "export const live = false;\nexport default () => null;\n");
     await writeFile(join(dir, "a", "_layout.tsx"), "export const live = true;\nexport default () => null;\n");
     await writeFile(join(dir, "a", "b.tsx"), "export default () => null;\n");
@@ -45,11 +48,11 @@ test("scan: `export const live = true` marks the page live (not a server export)
 
 test("codegen: live wiring only with a live page and navigate()/forms in use; other apps byte-identical", () => {
   const files = ["_layout.tsx", "index.tsx", "other.tsx"];
-  const plain = routeTable(files, new Map([["_layout.tsx", ["serverLoad"]]]));
+  const plain = routeTable(files, new Map([["_layout.tsx", ["load"]]]));
   const live = routeTable(
     files,
     new Map([
-      ["_layout.tsx", ["serverLoad"]],
+      ["_layout.tsx", ["load"]],
       ["index.tsx", ["live"]],
     ]),
   );
@@ -87,7 +90,7 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
     routeTable(
       ["_layout.tsx", "shop/_layout.tsx", "shop/index.tsx"],
       new Map([
-        ["shop/_layout.tsx", ["serverLoad"]],
+        ["shop/_layout.tsx", ["load"]],
         ["shop/index.tsx", ["live"]],
       ]),
     ),

@@ -32,7 +32,7 @@ This post is a **Markdown file** in `src/posts`.
 
 `src/posts.server.ts` loads every file with Vite's `import.meta.glob`. With `query: "?raw"` each file arrives as a string, bundled into the server build. Then `fromMarkdown` from the `mdast-util-from-markdown` package turns the text into a **syntax tree**: plain objects such as `{ type: "heading", depth: 2, children: [...] }`.
 
-The file name ends in `.server.ts`, so the parser and the posts can never end up in browser code. Only the pages' `serverLoad` functions import it. The build fails if a component uses it.
+The file name ends in `.server.ts`, so the parser and the posts can never end up in browser code. Only the pages' `load(…)` functions import it. The build fails if a component uses it.
 
 The types (`Post`, `PostSummary`) live in a separate `src/posts.ts`. Components import their types from there, not from the `.server.ts` file.
 
@@ -40,14 +40,15 @@ The types (`Post`, `PostSummary`) live in a separate `src/posts.ts`. Components 
 
 ```tsx title="src/routes/blog/[slug].tsx"
 import { getPost, listPosts } from "../../posts.server.ts"; // used only by server exports
+import { load } from "@rivetjs/router";
 
-export const serverLoad = ({ params }: RequestEvent<"blog/[slug]">) => {
+export const loader = load(({ params }: RequestEvent<"blog/[slug]">) => {
   const post = getPost(params.slug);
   if (!post) throw notFound(`No post called "${params.slug}"`);
   return post;
-};
+});
 
-export default function BlogPost({ data }: PageProps<typeof serverLoad>) {
+export default function BlogPost({ data }: PageProps<typeof loader>) {
   return (
     <article>
       <h1>{data.title}</h1>
@@ -76,13 +77,14 @@ Text is escaped like all JSX text. Node types the component does not handle, inc
 
 The component has no state and no handlers, so after a full page load nothing in it runs in the browser. When the router navigates from the list to a post in the page, the post page renders in the browser from the loaded data; the parser still stays on the server.
 
-### 5. Static build: list the posts in `serverEntries`
+### 5. Static build: list the posts in `entries(…)`
 
 ```ts
-export const serverEntries = () => listPosts().map((post) => ({ slug: post.slug }));
+import { entries } from "@rivetjs/router";
+export const paths = entries(() => listPosts().map((post) => ({ slug: post.slug })));
 ```
 
-With `rivetRouter({ mode: "static" })`, the build renders one HTML file for each object `serverEntries()` returns. A server app ignores `serverEntries`. See [static hosts](/guides/deploy/static-hosts.md).
+With `rivetRouter({ mode: "static" })`, the build renders one HTML file for each object `entries(…)` returns. A server app ignores `entries(…)`. See [static hosts](/guides/deploy/static-hosts.md).
 
 ## Variations
 

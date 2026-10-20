@@ -1,16 +1,16 @@
-import { fail, redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { fail, redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 
 // Kept in memory for the demo. A real app would use a database.
 // Only the server exports use it, so it is removed from the browser build.
 const messages: { name: string; text: string }[] = [];
 
-export const serverLoad = () => ({ messages });
+export const loader = load(() => ({ messages }));
 
 export const head = { title: "Guestbook" };
 
 // #region demo
-export const serverActions = {
+export const forms = actions({
   // Runs for <form method="post" action="?/sign">.
   sign: async ({ request }: RequestEvent) => {
     const form = await request.formData();
@@ -22,12 +22,12 @@ export const serverActions = {
     // Post/Redirect/Get: reloading the page will not send the form again.
     return redirect("/");
   },
-};
+});
 
 // A plain HTML form. It works before any JavaScript loads, and with JavaScript off.
-export default function Guestbook({ data }: PageProps<typeof serverLoad>) {
+export default function Guestbook({ data }: PageProps<typeof loader>) {
   // Set when this page renders as the answer to a "sign" post; `status` is set when it failed.
-  const sign = actionResult<typeof serverActions, "sign">("sign");
+  const sign = actionResult<typeof forms, "sign">("sign");
   const failed = sign?.status !== undefined ? sign.result : undefined;
   return (
     <main class="mx-auto max-w-xl p-4">

@@ -34,7 +34,7 @@ test("prerenders static routes and entries with data files, 404 page and CSR she
         server: mod({ entries: () => [{ slug: "one" }, { slug: "two" }], load: (e) => e.params.slug }),
       },
       { id: "app/[id]", pattern: "/app/:id", page: true, layouts: [] },
-      { id: "api/x", pattern: "/api/x", page: false, layouts: [], server: mod({ GET: () => new Response("x") }) },
+      { id: "api/x", pattern: "/api/x", page: false, layouts: [], server: mod({ onGet: () => new Response("x") }) },
     ];
     const report = await prerender({ handler: handler(routes), routes, outDir: dir, shell: () => "<div id=app></div>" });
     assert.deepEqual(report, { pages: ["/", "/blog/one", "/blog/two"], fallback: ["app/[id]"], resumes: false });

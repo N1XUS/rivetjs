@@ -9,43 +9,45 @@ Every response carries HTTP headers: how long it may be cached, which scripts ma
 
 ## Set headers for a route
 
-Export `serverHeaders` from a page or layout file. Return an object (or any `HeadersInit`). Like other `server…` exports, it runs only on the server:
+Export a `headers(…)` call from a page or layout file. Return an object (or any `HeadersInit`). Like other server exports, it runs only on the server:
 
 ```tsx title="src/routes/pricing.tsx"
-export const serverHeaders = () => ({
+import { headers } from "@rivetjs/router";
+export const responseHeaders = headers(() => ({
   "cache-control": "public, max-age=300",
-});
+}));
 
 export default function Pricing() {
   return <h1>Pricing</h1>;
 }
 ```
 
-`serverHeaders` gets the request event, so it can depend on the URL or on `locals`:
+`headers(…)` gets the request event, so it can depend on the URL or on `locals`:
 
 ```tsx title="src/routes/_layout.tsx"
 import type { RequestEvent } from "@rivetjs/router";
+import { headers } from "@rivetjs/router";
 
-export const serverHeaders = ({ locals }: RequestEvent) =>
-  locals.user ? { "cache-control": "private, no-store" } : undefined;
+export const responseHeaders = headers(({ locals }: RequestEvent) =>
+  locals.user ? { "cache-control": "private, no-store" } : undefined);
 ```
 
-The `serverHeaders` exports of all layouts and the page run after the guards, outermost first. If two set the same header, the inner one wins. They apply to the HTML page, to the data the browser fetches on client navigation, to action responses and to [endpoints](./endpoints.md).
+The `headers(…)` exports of all layouts and the page run after the guards, outermost first. If two set the same header, the inner one wins. They apply to the HTML page, to the data the browser fetches on client navigation, to action responses and to [endpoints](./endpoints.md).
 
 ## Set a header from a loader or action
 
 `setHeader(name, value)` on the event sets one header. Use it when the value comes from the data you load:
 
 ```tsx title="src/routes/posts/[slug].tsx"
-import { notFound, type RequestEvent } from "@rivetjs/router";
+import { notFound, type RequestEvent, load } from "@rivetjs/router";
 import { db } from "../../db.server.ts";
 
-export async function serverLoad({ params, setHeader }: RequestEvent<"posts/[slug]">) {
+export const loader = load(async ({ params, setHeader }: RequestEvent<"posts/[slug]">) => {
   const post = await db.posts.find(params.slug);
   if (!post) throw notFound();
   setHeader("last-modified", post.updatedAt.toUTCString());
   return post;
-}
+});
 ```
 
 ## Defaults for pages and data
@@ -56,7 +58,7 @@ export async function serverLoad({ params, setHeader }: RequestEvent<"posts/[slu
 | Route data for client navigation | `private, no-store` |
 | Endpoint | Whatever your `Response` sets |
 
-Your own `cache-control`, from `serverHeaders` or `setHeader`, replaces the default.
+Your own `cache-control`, from `headers(…)` or `setHeader`, replaces the default.
 
 A response that sets or deletes a cookie with `event.cookies` is always `private`: Rivet adds `private` and removes `public` and `s-maxage`, and keeps the rest (for example `max-age=60`). A shared cache would otherwise send that cookie to every visitor.
 
@@ -66,7 +68,7 @@ Do not mark a page `public` if it shows anything per visitor (a name, a cart, a 
 
 ## Security headers
 
-**Content Security Policy.** HTML pages get a strict policy by default: only scripts that carry the response's random nonce may run. A `content-security-policy` header from your `serverHeaders` export replaces it. See [Content Security Policy](/guides/security/csp.md) before you change it.
+**Content Security Policy.** HTML pages get a strict policy by default: only scripts that carry the response's random nonce may run. A `content-security-policy` header from your `headers(…)` export replaces it. See [Content Security Policy](/guides/security/csp.md) before you change it.
 
 **Node server headers.** The Node adapter (`start` / `serve` from `@rivetjs/router/node`) adds `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` to every response. Add your own with the `headers` option:
 
@@ -124,7 +126,7 @@ What the cache stores and serves:
 
 - **Pages only.** `GET` and `HEAD` requests for HTML pages that answer `200`. Route data for client navigation, actions, endpoints and other methods are never stored.
 - **Not personal pages.** Requests with a `Cookie` or `Authorization` header skip the cache (unless `cookies: true`). Responses that set a cookie, or whose `cache-control` says `private` or `no-store`, are not stored.
-- **No server code on a hit.** A stored page is sent without running guards, loaders or `serverHeaders`. Cache only pages that are the same for everyone.
+- **No server code on a hit.** A stored page is sent without running guards, loaders or `headers(…)`. Cache only pages that are the same for everyone.
 - **Error pages are not stored.** A page that answers anything but `200`, or that rendered an error fallback (a part of it failed and `onError` was called), is sent to that visitor only.
 - **Headers.** Responses get `ETag`, `Last-Modified`, `Age` and `x-rivet-cache: HIT`, `MISS` or `STALE`. `Cache-Control` becomes `public, max-age=0, s-maxage=<maxAge>, stale-while-revalidate=<swr>`: browsers check back and get a `304` when the page did not change, and CDNs (Vercel, Netlify, Cloudflare) cache it as the rule says. `isr` rules tell CDNs `s-maxage=0, must-revalidate` unless the rule has `cdn`.
 - **Vary.** A response whose `Vary` names other request headers (the i18n guard sends `Vary: cookie, accept-language`) is stored once per value of those headers, and the stored page answers with the same `Vary`. A page that varies by `cookie` or `authorization` is stored only when the rule lists `varies` (for example `["accept-language"]`); without it every visitor gets a fresh render.
@@ -144,14 +146,15 @@ Call `revalidate` after the data changed, for example in the action that publish
 ```ts title="src/routes/admin/posts/[id].tsx"
 import { revalidate } from "@rivetjs/router/route-cache";
 import { db } from "../../../db.server.ts";
+import { actions } from "@rivetjs/router";
 
-export const serverActions = {
+export const forms = actions({
   async publish({ params }) {
     const post = await db.posts.publish(params.id);
     revalidate({ path: `/blog/${post.slug}` });
     revalidate({ tag: "blog-index" });
   },
-};
+});
 ```
 
 `path` takes a path with or without the base path; `/blog/**` drops everything below `/blog`. A render that started before the call does not store its page. The store lives in the server's memory. With the Node adapter's [`workers`](../deploy/node.md#use-every-core), each worker has its own store and `revalidate()` reaches all of them. Other servers and CDNs keep their copy until it expires. `revalidate()` cannot purge a CDN, which is why `isr` pages tell CDNs to check back every time.
@@ -235,8 +238,8 @@ A static site has no server to set headers per request. The build writes HTML fi
 
 ## Common mistakes
 
-- **Setting headers in the page component.** The component renders HTML; it has no access to the response. Use `serverHeaders` or `setHeader` in the server code.
-- **Expecting `serverHeaders` on a guard redirect.** A guard that stops the request answers before the `serverHeaders` exports run.
+- **Setting headers in the page component.** The component renders HTML; it has no access to the response. Use `headers(…)` or `setHeader` in the server code.
+- **Expecting `headers(…)` on a guard redirect.** A guard that stops the request answers before the `headers(…)` exports run.
 - **Long caching for HTML.** Pages link to hashed asset files. A cached old page can point to files that a new deploy removed. Keep HTML on `no-cache` or short `max-age`. Route rules keep browsers on `max-age=0` for this reason; a server restart (a deploy) starts with an empty store.
 - **Caching a personal page with a route rule.** A stored page skips guards and loaders. Put pages that differ per visitor under `cache: false`, or keep them out of the pattern.
 

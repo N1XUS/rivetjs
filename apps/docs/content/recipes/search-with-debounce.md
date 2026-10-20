@@ -15,10 +15,11 @@ A search box over a list of fruits. The list does not update on every key press.
 
 ### 1. The data comes from a loader
 
-`serverLoad` in `index.tsx` returns the list. In a static build the loader runs once, at build time. In a server app it runs for each request.
+`load(…)` in `index.tsx` returns the list. In a static build the loader runs once, at build time. In a server app it runs for each request.
 
 ```tsx title="src/routes/index.tsx"
-export const serverLoad = () => ({ fruits });
+import { load } from "@rivetjs/router";
+export const loader = load(() => ({ fruits }));
 ```
 
 The page gets it as `data.fruits`. The server renders the full list into the HTML, so the page is useful before any JavaScript runs.

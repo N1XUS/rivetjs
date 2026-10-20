@@ -84,11 +84,11 @@ export default function Layout({ children }: LayoutProps) {
     resolve(routes, "index.tsx"),
     `import { signal } from "@rivetjs/reactivity";
 import { For } from "@rivetjs/runtime/dom";
-import type { PageProps } from "@rivetjs/router";
+import { load, type PageProps } from "@rivetjs/router";
 import { Link } from "@rivetjs/router/client";
 export const head = { title: "Home" };
-export const serverLoad = () => Array.from({ length: 6 }, (_, i) => ({ id: String(i + 1), title: "Item " + (i + 1), description: "Description of item " + (i + 1) }));
-export default function Home({ data }: PageProps<typeof serverLoad>) {
+export const loader = load(() => Array.from({ length: 6 }, (_, i) => ({ id: String(i + 1), title: "Item " + (i + 1), description: "Description of item " + (i + 1) })));
+export default function Home({ data }: PageProps<typeof loader>) {
   const query = signal("");
   return (
     <section>
@@ -111,10 +111,10 @@ export default function Home({ data }: PageProps<typeof serverLoad>) {
   );
   await writeFile(
     resolve(routes, "items/[id].tsx"),
-    `import type { PageProps, RequestEvent } from "@rivetjs/router";
+    `import { load, type PageProps, type RequestEvent } from "@rivetjs/router";
 import { Link } from "@rivetjs/router/client";
-export const serverLoad = ({ params }: RequestEvent<{ id: string }>) => ({ id: params.id, title: "Item " + params.id });
-export default function Item({ data }: PageProps<typeof serverLoad, { id: string }>) {
+export const loader = load(({ params }: RequestEvent<{ id: string }>) => ({ id: params.id, title: "Item " + params.id }));
+export default function Item({ data }: PageProps<typeof loader, { id: string }>) {
   return <article><Link to="/">Back</Link><h1>{data.title}</h1></article>;
 }
 `,
@@ -123,10 +123,10 @@ export default function Item({ data }: PageProps<typeof serverLoad, { id: string
     await writeFile(
       resolve(routes, "p/r" + i + ".tsx"),
       `import { signal } from "@rivetjs/reactivity";
-import type { PageProps } from "@rivetjs/router";
+import { load, type PageProps } from "@rivetjs/router";
 import { Link } from "@rivetjs/router/client";
-export const serverLoad = () => ({ n: ${i} });
-export default function R${i}({ data }: PageProps<typeof serverLoad>) {
+export const loader = load(() => ({ n: ${i} }));
+export default function R${i}({ data }: PageProps<typeof loader>) {
   const hits = signal(0);
   return (
     <section>

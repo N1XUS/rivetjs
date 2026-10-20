@@ -1,5 +1,5 @@
 // Canary for in-file route server code: a production build whose pages and layout declare
-// `serverLoad`/`serverGuard`/`onGet` next to the component, a plain `.ts` endpoint route, and a sibling
+// `load(…)` / `guard(…)` / `onGet(…)` exports next to the component, a plain `.ts` endpoint route, and a sibling
 // `.server.ts` merged with in-file exports. The client output must hold no server code; the server
 // answers; the resumed page stays interactive. Then the same app on the dev server.
 import { test } from "vitest";
@@ -27,7 +27,7 @@ test("production build: no server code in the client output; server exports answ
   assert.ok(client.some((f) => f.endsWith(".js")));
   for (const file of client) {
     const text = await readFile(file, "utf8");
-    for (const banned of ["inline-fixture-secret-token", "serverLoad", "serverGuard", "db.server", "pong", "put ok", "options ok"])
+    for (const banned of ["inline-fixture-secret-token", "rivet.server", "db.server", "pong", "put ok", "options ok"])
       assert.ok(!text.includes(banned), `${banned} in ${file}`);
   }
   const server = (await Promise.all((await files(root + "dist/server")).map((f) => readFile(f, "utf8")))).join("\n");
@@ -106,7 +106,7 @@ test("dev server: in-file exports run on the server; browser modules are strippe
     // The browser's copy of the page module: no loader, no server import.
     const module = await (await fetch(origin + "/src/routes/index.tsx")).text();
     assert.match(module, /Likes/);
-    assert.doesNotMatch(module, /serverLoad|db\.server|pong/);
+    assert.doesNotMatch(module, /\bload\(|db\.server|pong/);
   } finally {
     await server.close();
     restoreEnv();

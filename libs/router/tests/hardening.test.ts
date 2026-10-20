@@ -156,7 +156,7 @@ test("SEC5: dev hints once when a layout loader acts as access control", async (
     assert.equal((await handler(new Request("http://x/secret?_rivet=data"))).status, 401);
     await handler(new Request("http://x/secret?_rivet=data"));
     assert.equal(warned.length, 1);
-    assert.match(warned[0]!, /layout "\/admin".*serverGuard/);
+    assert.match(warned[0]!, /layout "\/admin".*`guard\(…\)` export/);
   } finally {
     console.warn = warn;
   }

@@ -27,7 +27,7 @@ let actionsRead: WeakMap<ServerRoutePayload, Set<string>> | undefined;
 export function actionResult(name?: string): ActionResult | undefined;
 /**
  * Typed: `actionResult<"items/[id]">("save")` (route id, generated `RouteActions`) or
- * `actionResult<typeof serverActions>()`. Pass the name as the second type argument to narrow the
+ * `actionResult<typeof forms>()` (`forms = actions(…)`). Pass the name as the second type argument to narrow the
  * result to that action (`actionResult<"items/[id]", "save">("save")`).
  */
 export function actionResult<A extends (keyof RouteActions & string) | Record<string, unknown>, N extends ActionName<A> = ActionName<A>>(name?: N): ActionResultOf<A, N> | undefined;

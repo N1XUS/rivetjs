@@ -22,7 +22,7 @@ Rivet is experimental. The first npm release, `0.1.0-alpha.0`, is available on t
 - **File router.** Routes from `src/routes`, layouts, guards, loaders, actions, endpoints, headers, typed routes, errors and 404 pages. Node, static and single-page adapters. See [file routes](../guides/routing/file-routes.md).
 - **Links and transitions.** `<Link>`, view transitions between pages and pending UI. Experimental. See [transitions](../guides/routing/transitions.md).
 - **Slots.** Default, named and scoped slots with `<slot>` and `r:slot`. Slot content renders only when used, and resumes. Experimental. See [slots](../guides/components/slots.md).
-- **Server code in route files.** `serverLoad`, `serverGuard`, `serverActions` and request handlers (`onGet`, `onPost`, …) next to the page in the same file; the compiler removes them from browser builds. Experimental. See [server code in routes](../guides/routing/server-code-in-routes.md).
+- **Server code in route files.** `load(…)`, `guard(…)`, `actions(…)` and request handlers (`onGet(…)`, `onPost(…)`, …) next to the page in the same file; the compiler removes them from browser builds. Experimental. See [server code in routes](../guides/routing/server-code-in-routes.md).
 - **Forms.** `@rivetjs/forms`: validation, server pipeline, nested fields, arrays, wizards, autosave and CSRF protection. Experimental. See [forms](../guides/forms/forms.md).
 - **Vite integration** with hot reload that keeps component state in dev. See [Vite](../guides/tooling/vite.md).
 - **Images.** Build-time optimisation with `?image` imports and `Picture`. See [images](../guides/assets/images.md).

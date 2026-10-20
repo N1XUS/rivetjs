@@ -64,7 +64,7 @@ test("app.tsx: lazy pages, static layouts, nearest 404 by static folder (groups 
   assert.doesNotMatch(app, /defineRoute\("\/api\/health"/);
   assert.match(
     files["routes.ts"]!,
-    /\{ id: "api\/health", pattern: "\/api\/health", page: false, layouts: \[once\(\(\) => import\("\.\.\/src\/routes\/_layout\.server\.ts"\)\)\], server: /,
+    /\{ id: "api\/health", pattern: "\/api\/health", page: false, layouts: \[once\(async \(\) => serverExports\(await import\("\.\.\/src\/routes\/_layout\.server\.ts"\), "src\/routes\/_layout\.server\.ts", true\)\)\], server: /,
   );
   // Server modules and universal head modules load once per process in builds; dev re-imports each request.
   assert.match(files["routes.ts"]!, /const once = <T>\(load: \(\) => Promise<T>\): \(\(\) => Promise<T>\) => \{\n  if \(import\.meta\.env\.DEV\) return load;/);

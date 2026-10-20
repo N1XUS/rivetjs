@@ -27,7 +27,7 @@ const RESUME = new Set([
 ]);
 /** Codes of the derived resume model (M2): the pair compiles with `resume: { module, model: "derived" }`; skipped on a wasm build without it. */
 const DERIVED = new Set(["RV2103", "RV2104"]);
-const SERVER_EXPORTS = new Set(["RV3007", "RV3008", "RV3009"]);
+const SERVER_EXPORTS = new Set(["RV3007", "RV3008", "RV3009", "RV3010"]);
 const STYLES = new Set(["RV5001", "RV5002"]);
 /** Not reproducible by a single-file compile: i18n catalogs (RV4xxx), options / panics, type-aware and project checks, RV2009 (hash collision), RV2010 (Vite build: two installed copies), RV2145 / RV2146 / RV2148 (Vite build: bridge ownership, framework exports in browser code, Rivet runtime in a framework module), RV2149 (browser: framework island hydration recovery), RV2150 (server: Preact useId mask probe). */
 const SKIP = /^RV4|^RV(7001|7101|7102|9001|2101|2009|2010|2145|2146|2148|2149|2150|3101)$/;

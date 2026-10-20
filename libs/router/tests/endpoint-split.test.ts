@@ -18,7 +18,7 @@ test("browser build: `.ts` endpoint handlers imported through a page are split o
     "vite.config.ts": `import { rivetRouter } from "@rivetjs/router/vite";\nexport default { plugins: [rivetRouter()], logLevel: "silent" };\n`,
     "src/document.ts": `export default () => ({ start: "<!doctype html><div id=app>", end: "</div>" });\n`,
     "src/secret.server.ts": `export const secret = () => "endpoint-split-secret-token";\n`,
-    "src/routes/api/items.ts": `import { secret } from "../../secret.server.ts";\nexport const PAGE_SIZE = 4242;\nexport function onGet() {\n  return new Response(secret() + "endpoint-handler-marker");\n}\n`,
+    "src/routes/api/items.ts": `import { secret } from "../../secret.server.ts";\nimport { onGet } from "@rivetjs/router";\nexport const PAGE_SIZE = 4242;\nexport const GET = onGet(() => {\n  return new Response(secret() + "endpoint-handler-marker");\n});\n`,
     "src/routes/index.tsx": `import { PAGE_SIZE } from "./api/items.ts";\nexport default function Home() {\n  return <p>{PAGE_SIZE}</p>;\n}\n`,
   };
   for (const [path, text] of Object.entries(files)) {

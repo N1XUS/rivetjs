@@ -1,8 +1,11 @@
-//! Server code in route modules: `serverLoad`, `serverGuard`, `serverActions`, `serverEntries`,
-//! `serverHeaders` (any `server[A-Z]…` export) and request handlers `onRequest`, `onGet`, `onPost`,
-//! `onPut`, `onPatch`, `onDelete`, `onOptions` run on the server only. Browser builds remove them and every
-//! module-scope binding (function, class, variable, import specifier) whose value references all lie
-//! in removed code (fixpoint over oxc semantic references; type references do not count).
+//! Server code in route modules. A server export is a module-scope `const` initialized by a call of
+//! a wrapper imported from `@rivetjs/router` — `load`, `guard`, `actions`, `entries`, `headers` and
+//! the request handlers `onRequest`, `onGet`, `onPost`, `onPut`, `onPatch`, `onDelete`, `onOptions`
+//! (aliases and namespace members followed; export names are free) — or a re-export from a
+//! server-only module. Browser builds remove them and every module-scope binding (function, class,
+//! variable, import specifier) whose value references all lie in removed code (fixpoint over oxc
+//! semantic references; type references do not count). Spec:
+//! `docs/design/specs/2026-10-20-server-exports-design.md`.
 //!
 //! Removal rewrites statements in place at the same byte length (newlines kept), so positions are
 //! unchanged: diagnostics, source maps and resume symbol ids agree with the unstripped server
@@ -13,6 +16,7 @@ use oxc_ast::{AstKind, ast::*};
 use oxc_parser::{ParseOptions, Parser};
 use oxc_semantic::{NodeId, SemanticBuilder, SymbolId};
 use oxc_span::{GetSpan, Span};
+use rustc_hash::FxHashMap;
 
 use crate::compile::{Diagnostic, Diags};
 use crate::tree::Tree;
@@ -22,6 +26,8 @@ pub struct Server {
     /// The browser source (server code rewritten away; same length and lines as the input).
     pub browser: Option<String>,
     pub exports: Vec<String>,
+    /// Kind of each export (parallel to `exports`): the wrapper name, `?` for a re-export from a server-only module.
+    pub kinds: Vec<String>,
     pub imports: Vec<String>,
     pub diagnostics: Vec<Diagnostic>,
 }
@@ -33,7 +39,7 @@ pub fn run(source: &str, filename: &str, resume: bool) -> Server {
         .with_options(ParseOptions { preserve_parens: true, ..ParseOptions::default() })
         .parse();
     if parsed.panicked || !parsed.errors.is_empty() {
-        return Server { browser: None, exports: Vec::new(), imports: Vec::new(), diagnostics: Vec::new() };
+        return Server { browser: None, exports: Vec::new(), kinds: Vec::new(), imports: Vec::new(), diagnostics: Vec::new() };
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
@@ -46,16 +52,47 @@ pub fn run(source: &str, filename: &str, resume: bool) -> Server {
     Server {
         browser: result.changes().then(|| result.apply(source)),
         exports: result.exports,
+        kinds: result.kinds,
         imports: result.imports,
         diagnostics: diags.list,
     }
 }
 
-pub const HANDLERS: &[&str] = &["onRequest", "onGet", "onPost", "onPut", "onPatch", "onDelete", "onOptions"];
+/// The package whose wrapper calls mark server exports.
+pub const ROUTER: &str = "@rivetjs/router";
 
-/// A server-only export name.
-pub fn is_server_export(name: &str) -> bool {
-    HANDLERS.contains(&name) || name.strip_prefix("server").is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_uppercase()))
+/// Server export wrappers of `@rivetjs/router` (the kind of a server export is the wrapper's name).
+pub const WRAPPERS: &[&str] =
+    &["load", "guard", "actions", "entries", "headers", "onRequest", "onGet", "onPost", "onPut", "onPatch", "onDelete", "onOptions"];
+
+/// Former magic export names (before 2026-10-20) → (wrapper, conventional export name, argument shape).
+/// An export with one of these names that is not a server export is RV3010.
+const MAGIC: &[(&str, &str, &str, &str)] = &[
+    ("serverLoad", "load", "loader", "(event) => …"),
+    ("serverGuard", "guard", "access", "(event) => …"),
+    ("serverActions", "actions", "forms", "{ name: (event) => … }"),
+    ("serverEntries", "entries", "paths", "() => […]"),
+    ("serverHeaders", "headers", "responseHeaders", "(event) => ({ … })"),
+    ("onRequest", "onRequest", "middleware", "(event) => …"),
+    ("onGet", "onGet", "GET", "(event) => …"),
+    ("onPost", "onPost", "POST", "(event) => …"),
+    ("onPut", "onPut", "PUT", "(event) => …"),
+    ("onPatch", "onPatch", "PATCH", "(event) => …"),
+    ("onDelete", "onDelete", "DELETE", "(event) => …"),
+    ("onOptions", "onOptions", "OPTIONS", "(event) => …"),
+];
+
+/// RV3010 message for an untagged export named like a former magic export, if it is one.
+fn untagged(name: &str) -> Option<String> {
+    let (_, wrapper, export, argument) = MAGIC.iter().find(|(old, ..)| *old == name)?;
+    Some(format!(
+        "Untagged server export `{name}`: route server code is a wrapper call — `export const {export} = {wrapper}({argument})` with `import {{ {wrapper} }} from \"{ROUTER}\"`"
+    ))
+}
+
+/// How a kind reads in messages (`load(…)`, `actions({ … })`).
+fn kind_label(kind: &str) -> String {
+    if kind == "actions" { "actions({ … })".into() } else { format!("{kind}(…)") }
 }
 
 /// Import sources that must never reach a browser bundle.
@@ -68,6 +105,8 @@ pub fn server_only_source(source: &str) -> bool {
 pub struct Split {
     /// Server export names, in source order.
     pub exports: Vec<String>,
+    /// Kind per export (parallel to `exports`).
+    pub kinds: Vec<String>,
     /// Import sources no longer imported by the browser module.
     pub imports: Vec<String>,
     /// Statement rewrites: (span, replacement no longer than the span).
@@ -171,52 +210,196 @@ fn declared_names(declaration: &Declaration) -> Vec<(String, SymbolId)> {
     names
 }
 
+/// Wrapper bindings of a module: named imports of `@rivetjs/router` wrappers (local symbol → kind) and
+/// namespace imports of the package (`r.load(…)`).
+struct Wrappers {
+    named: FxHashMap<SymbolId, &'static str>,
+    namespaces: Vec<SymbolId>,
+}
+
+fn wrapper_kind(name: &str) -> Option<&'static str> {
+    WRAPPERS.iter().find(|w| **w == name).copied()
+}
+
+impl Wrappers {
+    fn of(program: &Program) -> Wrappers {
+        let mut out = Wrappers { named: FxHashMap::default(), namespaces: Vec::new() };
+        for statement in &program.body {
+            let Statement::ImportDeclaration(import) = statement else { continue };
+            if import.import_kind.is_type() || import.source.value.as_str() != ROUTER {
+                continue;
+            }
+            for specifier in import.specifiers.iter().flatten() {
+                match specifier {
+                    ImportDeclarationSpecifier::ImportSpecifier(s) if !s.import_kind.is_type() => {
+                        if let (Some(kind), Some(symbol)) = (wrapper_kind(&s.imported.name()), s.local.symbol_id.get()) {
+                            out.named.insert(symbol, kind);
+                        }
+                    }
+                    ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => out.namespaces.extend(s.local.symbol_id.get()),
+                    _ => {}
+                }
+            }
+        }
+        out
+    }
+
+    /// The kind of a wrapper call (`load(…)`, `l(…)` for an alias, `r.load(…)`) and the callee identifier's span.
+    fn call<'a>(&self, tree: &Tree<'a>, init: &Expression<'a>) -> Option<(&'static str, Span)> {
+        let Expression::CallExpression(call) = crate::resume::unwrap(init) else { return None };
+        if call.optional {
+            return None;
+        }
+        match crate::resume::unwrap(&call.callee) {
+            Expression::Identifier(ident) => self.named.get(&tree.symbol_of_ref(ident)?).map(|kind| (*kind, ident.span)),
+            Expression::StaticMemberExpression(m) if !m.optional => {
+                let Expression::Identifier(object) = crate::resume::unwrap(&m.object) else { return None };
+                let symbol = tree.symbol_of_ref(object)?;
+                if !self.namespaces.contains(&symbol) {
+                    return None;
+                }
+                wrapper_kind(&m.property.name).map(|kind| (kind, m.span))
+            }
+            _ => None,
+        }
+    }
+}
+
+/// Server bindings of a `const` declaration: (name, symbol, kind, callee span) per declarator; `None` kind for a
+/// declarator that is not a wrapper call (destructuring patterns: every name `None`).
+fn declarator_kinds<'a>(tree: &Tree<'a>, wrappers: &Wrappers, v: &VariableDeclaration<'a>) -> Vec<(String, SymbolId, Option<(&'static str, Span)>)> {
+    let mut out = Vec::new();
+    for d in &v.declarations {
+        let call = match (&d.id.kind, &d.init) {
+            (BindingPatternKind::BindingIdentifier(_), Some(init)) if v.kind == VariableDeclarationKind::Const => wrappers.call(tree, init),
+            _ => None,
+        };
+        let mut names = Vec::new();
+        binding_symbols(&d.id, &mut names);
+        for (name, symbol) in names {
+            out.push((name, symbol, call));
+        }
+    }
+    out
+}
+
 /// Analyze a module. `resume`: removed code may not hold JSX (server exports are not resumable).
 pub fn split(tree: &Tree, resume: bool) -> Split {
     let program = tree.program;
     let scoping = tree.sem.scoping();
-    let mut out = Split { exports: Vec::new(), imports: Vec::new(), edits: Vec::new(), errors: Vec::new() };
+    let mut out = Split { exports: Vec::new(), kinds: Vec::new(), imports: Vec::new(), edits: Vec::new(), errors: Vec::new() };
     let mut removed: Vec<Span> = Vec::new();
     let mut roots: Vec<(String, SymbolId)> = Vec::new();
     let mut candidates: Vec<Candidate> = Vec::new();
     let mut imports: Vec<ImportDecl> = Vec::new();
+    let wrappers = Wrappers::of(program);
+    // Value references of a symbol (type queries such as `typeof loader` do not count).
+    let references = |symbol: SymbolId| -> Vec<(Span, NodeId)> {
+        scoping
+            .get_resolved_references(symbol)
+            .filter(|r| r.flags().is_value() && !r.flags().is_value_as_type())
+            .map(|r| (tree.span(r.node_id()), r.node_id()))
+            .collect()
+    };
+    // Server bindings anywhere at module scope (an `export { x as y }` may precede the declaration).
+    let mut bindings: FxHashMap<SymbolId, &'static str> = FxHashMap::default();
+    let mut callees: Vec<Span> = Vec::new();
+    for statement in &program.body {
+        let declaration = match statement {
+            Statement::VariableDeclaration(v) => Some(&**v),
+            Statement::ExportNamedDeclaration(e) => match &e.declaration {
+                Some(Declaration::VariableDeclaration(v)) => Some(&**v),
+                _ => None,
+            },
+            _ => None,
+        };
+        for (_, symbol, call) in declaration.map(|v| declarator_kinds(tree, &wrappers, v)).unwrap_or_default() {
+            if let Some((kind, callee)) = call {
+                bindings.insert(symbol, kind);
+                callees.push(callee);
+            }
+        }
+    }
+    // Exported server bindings by kind (duplicates are errors; request handlers repeat across methods only).
+    let mut by_kind: Vec<(&'static str, String, SymbolId)> = Vec::new();
+    let mut export = |out: &mut Split, name: String, kind: &str, symbol: Option<SymbolId>, node: Option<NodeId>| {
+        if let Some(symbol) = symbol {
+            let kind = wrapper_kind(kind).unwrap_or("?");
+            if let Some((_, first, _)) = by_kind.iter().find(|(k, _, s)| *k == kind && *s != symbol) {
+                out.errors.push((format!("Duplicate server export: `{first}` and `{name}` are both `{}`; keep one", kind_label(kind)), node));
+            } else {
+                by_kind.push((kind, name.clone(), symbol));
+            }
+        }
+        out.exports.push(name);
+        out.kinds.push(kind.to_string());
+    };
     for statement in &program.body {
         match statement {
             Statement::ExportNamedDeclaration(e) => {
                 let span = e.span;
                 if let Some(declaration) = &e.declaration {
-                    let names = declared_names(declaration);
-                    let server = names.iter().filter(|(n, _)| is_server_export(n)).count();
+                    let names: Vec<(String, SymbolId, Option<&'static str>)> = match declaration {
+                        Declaration::VariableDeclaration(v) => {
+                            declarator_kinds(tree, &wrappers, v).into_iter().map(|(n, s, c)| (n, s, c.map(|(k, _)| k))).collect()
+                        }
+                        other => declared_names(other).into_iter().map(|(n, s)| (n, s, None)).collect(),
+                    };
+                    let server = names.iter().filter(|(_, _, kind)| kind.is_some()).count();
                     if server == 0 {
+                        for (name, ..) in &names {
+                            if let Some(message) = untagged(name) {
+                                out.errors.push((message, tree.id_of(&**e)));
+                            }
+                        }
                         continue;
                     }
                     if server != names.len() {
                         out.errors.push((
-                            "Declare server exports (serverLoad, onGet, …) in their own export statement".into(),
+                            "Declare server exports (`load(…)`, `onGet(…)`, …) in their own export statement".into(),
                             tree.id_of(&**e),
                         ));
                         continue;
                     }
-                    for (name, symbol) in names {
-                        out.exports.push(name.clone());
+                    for (name, symbol, kind) in names {
+                        export(&mut out, name.clone(), kind.unwrap_or("?"), Some(symbol), tree.id_of(&**e));
                         roots.push((name, symbol));
                     }
                     removed.push(span);
                     out.edits.push((span, ";".into()));
                 } else {
-                    // `export { a as serverLoad }` / `export { serverLoad } from "…"`.
-                    let server: Vec<bool> = e.specifiers.iter().map(|s| is_server_export(&s.exported.name())).collect();
-                    if !server.contains(&true) {
+                    // `export { loader as data }` (a server binding) / `export { access } from "./auth.server.ts"`.
+                    let from_server = e.source.as_ref().is_some_and(|s| server_only_source(&s.value));
+                    let server: Vec<Option<(&str, Option<SymbolId>)>> = e
+                        .specifiers
+                        .iter()
+                        .map(|s| {
+                            if e.source.is_some() {
+                                return from_server.then_some(("?", None));
+                            }
+                            let ModuleExportName::IdentifierReference(local) = &s.local else { return None };
+                            let symbol = tree.symbol_of_ref(local)?;
+                            bindings.get(&symbol).map(|kind| (*kind, Some(symbol)))
+                        })
+                        .collect();
+                    for (s, is) in e.specifiers.iter().zip(&server) {
+                        if is.is_none() {
+                            if let Some(message) = untagged(&s.exported.name()) {
+                                out.errors.push((message, tree.id_of(&**e)));
+                            }
+                        }
+                    }
+                    if server.iter().all(Option::is_none) {
                         continue;
                     }
-                    for (s, &is) in e.specifiers.iter().zip(&server) {
-                        if is {
-                            out.exports.push(s.exported.name().to_string());
+                    for (s, is) in e.specifiers.iter().zip(&server) {
+                        if let Some((kind, symbol)) = is {
+                            export(&mut out, s.exported.name().to_string(), *kind, *symbol, tree.id_of(&**e));
                             removed.push(s.span);
                         }
                     }
                     let kept: Vec<&str> =
-                        e.specifiers.iter().zip(&server).filter(|(_, is)| !**is).map(|(s, _)| tree.text_of(s.span)).collect();
+                        e.specifiers.iter().zip(&server).filter(|(_, is)| is.is_none()).map(|(s, _)| tree.text_of(s.span)).collect();
                     let text = if kept.is_empty() {
                         if let Some(source) = &e.source {
                             out.imports.push(source.value.to_string());
@@ -250,16 +433,30 @@ pub fn split(tree: &Tree, resume: bool) -> Split {
                 }
             }
             Statement::VariableDeclaration(v) => {
-                let mut names = Vec::new();
-                for d in &v.declarations {
-                    binding_symbols(&d.id, &mut names);
+                let declared = declarator_kinds(tree, &wrappers, v);
+                let server = declared.iter().filter(|(_, _, call)| call.is_some()).count();
+                if server > 0 {
+                    // A server binding exported by name later (`export { loader as data }`), or unused: server code either way.
+                    if server != declared.len() {
+                        out.errors.push((
+                            "Declare server exports (`load(…)`, `onGet(…)`, …) in their own export statement".into(),
+                            tree.id_of(&**v),
+                        ));
+                        continue;
+                    }
+                    for (name, symbol, _) in declared {
+                        roots.push((name, symbol));
+                    }
+                    removed.push(v.span);
+                    out.edits.push((v.span, ";".into()));
+                    continue;
                 }
-                if !names.is_empty() {
+                if !declared.is_empty() {
                     candidates.push(Candidate {
-                        symbols: names.iter().map(|(_, s)| *s).collect(),
+                        symbols: declared.iter().map(|(_, s, _)| *s).collect(),
                         own: v.span,
                         import: None,
-                        name: names.iter().map(|(n, _)| n.as_str()).collect::<Vec<_>>().join(", "),
+                        name: declared.iter().map(|(n, _, _)| n.as_str()).collect::<Vec<_>>().join(", "),
                         removed: false,
                     });
                 }
@@ -302,17 +499,23 @@ pub fn split(tree: &Tree, resume: bool) -> Split {
             _ => {}
         }
     }
-    if out.exports.is_empty() {
-        return Split { exports: Vec::new(), imports: Vec::new(), edits: Vec::new(), errors: out.errors };
+    // A wrapper is only ever the initializer call of a module-scope `const` (anything else would stay in the
+    // browser build untagged-by-the-compiler).
+    for (&symbol, kind) in &wrappers.named {
+        if let Some((_, node)) = references(symbol).into_iter().find(|(span, _)| !callees.contains(span)) {
+            let name = scoping.symbol_name(symbol);
+            out.errors.push((
+                format!(
+                    "Server export wrapper `{name}` must initialize a module-scope `const` (`export const {} = {name}(…)`)",
+                    MAGIC.iter().find(|(_, w, ..)| w == kind).map_or("x", |(_, _, export, _)| *export)
+                ),
+                Some(node),
+            ));
+        }
     }
-    // Value references of a symbol (type queries such as `typeof serverLoad` do not count).
-    let references = |symbol: SymbolId| -> Vec<(Span, NodeId)> {
-        scoping
-            .get_resolved_references(symbol)
-            .filter(|r| r.flags().is_value() && !r.flags().is_value_as_type())
-            .map(|r| (tree.span(r.node_id()), r.node_id()))
-            .collect()
-    };
+    if roots.is_empty() && out.exports.is_empty() {
+        return Split { exports: Vec::new(), kinds: Vec::new(), imports: Vec::new(), edits: Vec::new(), errors: out.errors };
+    }
     // Fixpoint: remove declarations used only by removed code.
     loop {
         let mut changed = false;

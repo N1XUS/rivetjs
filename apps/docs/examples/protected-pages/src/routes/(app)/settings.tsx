@@ -1,6 +1,6 @@
 export const head = { title: "Settings" };
 
-/** Protected by the same `serverGuard` in `(app)/_layout.tsx`; this page needs no server code of its own. */
+/** Protected by the same `guard(…)` export in `(app)/_layout.tsx`; this page needs no server code of its own. */
 export default function Settings() {
   return (
     <main class="mx-auto max-w-xl p-6">

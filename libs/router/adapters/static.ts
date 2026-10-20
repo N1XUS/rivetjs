@@ -197,7 +197,7 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
       const layouts = await Promise.all(route.layouts.map(loadServer));
       if ([module, ...layouts].some((m) => m?.load || m?.guard))
         throw new Error(
-          `Route ${route.id} needs a server (serverLoad/serverGuard on it or a layout, without prerender); use the node adapter or add serverEntries()`,
+          `Route ${route.id} needs a server (a load(…) / guard(…) export on it or a layout, without prerender); use the node adapter or add an entries(…) export`,
         );
       if (!report.fallback.includes(route.id)) report.fallback.push(route.id);
       continue;

@@ -48,11 +48,12 @@ On Vercel, Netlify and Cloudflare, a route that exports `prerender = true` is re
 
 ```tsx title="src/routes/about.tsx"
 import type { PageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
 export const prerender = true;
-export const serverLoad = () => ({ updated: "2026-10-08" });
+export const loader = load(() => ({ updated: "2026-10-08" }));
 
-export default function About({ data }: PageProps<typeof serverLoad>) {
+export default function About({ data }: PageProps<typeof loader>) {
   return <p>Updated {data.updated}</p>;
 }
 ```
@@ -66,7 +67,7 @@ Read secrets the way your platform provides them: `process.env` on Node.js, Verc
 ## Common mistakes
 
 - **Testing only with the dev server.** Resuming, chunks and the security policy behave differently there. Run the production build locally (`npm run build`, then `npm start` or `npm run preview`) before you deploy. See [dev and production differ](../../gotchas/dev-and-production-differ.md).
-- **Secrets in browser code.** Read them in `serverLoad`, actions, guards or `*.server.ts` modules only. See [server-only code](../security/server-only-code.md).
+- **Secrets in browser code.** Read them in `load(…)`, actions, guards or `*.server.ts` modules only. See [server-only code](../security/server-only-code.md).
 - **A server build that resolves the `browser` export condition.** Packages ship server-only code behind export conditions (the cdk / ui slot probe that keeps `aria-describedby` and `aria-labelledby` pointing at parts that render). The Rivet adapters build the server bundle without `browser`; a custom edge or worker bundler config that adds it gets the browser modules, and those attributes can name elements that never render. In development the server warns once (`cdk slot probe is disabled: …`).
 - **Form posts rejected with `403` behind a proxy.** The server must know its public origin: `origin` (or `trustProxy` on Node). See [Node](node.md).
 

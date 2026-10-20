@@ -173,7 +173,7 @@ src/
     docs/[[lang]]/x.tsx  optional param
     files/[...path].tsx  rest param
     (marketing)/p.tsx    /p (group: no segment, shares a layout)
-    api/time.ts          endpoint (exports onGet/onPost…, returns Response)
+    api/time.ts          endpoint (exports onGet(…)/onPost(…)…, returns Response)
     _404.tsx  _error.tsx
 ```
 
@@ -183,22 +183,22 @@ src/
 ### Page module exports
 
 ```tsx
-import { redirect, notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, notFound, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 
-export const serverLoad = async ({ params }: RequestEvent<"blog/[slug]">) => {
+export const loader = load(async ({ params }: RequestEvent<"blog/[slug]">) => {
   const post = await findPost(params.slug);
   if (!post) throw notFound();
   return { post };
-};
+});
 
-export const serverActions = {
+export const forms = actions({
   // <form method="post" action="?/comment">
   comment: async ({ request }: RequestEvent<"blog/[slug]">) => {
     const text = String((await request.formData()).get("text") ?? "");
     await saveComment(text);
     return redirect("/blog", 303);
   },
-};
+});
 
 export const head = { title: "Post" }; // or ({ data, params, url }) => Head
 
@@ -207,7 +207,7 @@ export default function Post({ data, params }: PageProps<"blog/[slug]">) {
 }
 ```
 
-- Server exports: `serverLoad`, `serverActions`, `serverGuard` (throw/return `redirect()`, `deny()`, `notFound()`, `error()`), `serverHeaders`, `serverEntries` (prerender params), `prerender`, `onRequest` / `onGet` / `onPost` …. The compiler strips them (and code only they use) from the browser build.
+- Server exports: `load(…)`, `actions(…)`, `guard(…)` (throw/return `redirect()`, `deny()`, `notFound()`, `error()`), `headers(…)`, `entries(…)` (prerender params), `prerender`, `onRequest(…)` / `onGet(…)` / `onPost(…)` …. The compiler strips them (and code only they use) from the browser build.
 - `event`: `request`, `url`, `params`, `locals`, `signal`, `cookies`, `setHeader`.
 - Page props: `{ data, params, url }` — plain values. Layout props (`LayoutProps`): `data()`, `params()`, `url()` are **accessors**, plus `children`.
 
@@ -215,7 +215,7 @@ export default function Post({ data, params }: PageProps<"blog/[slug]">) {
 // Avoid in a layout
 <header>{data.user}</header>;
 // Prefer
-export default function Layout({ data, children }: LayoutProps<typeof serverLoad>) {
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
   return (
     <>
       <header>{data().user}</header>
@@ -227,7 +227,7 @@ export default function Layout({ data, children }: LayoutProps<typeof serverLoad
 
 ### Live pages
 
-- `export const live = true` + `LivePageProps<typeof serverLoad>`: `data` becomes an accessor (`data().customers`). Same-URL revalidation (a `@rivetjs/forms` submit, `invalidate()`, search-param change) updates `data` in place: the page is not re-rendered, signals (an open drawer, typed input, focus) survive. Use it for forms in drawers / dialogs.
+- `export const live = true` + `LivePageProps<typeof loader>`: `data` becomes an accessor (`data().customers`). Same-URL revalidation (a `@rivetjs/forms` submit, `invalidate()`, search-param change) updates `data` in place: the page is not re-rendered, signals (an open drawer, typed input, focus) survive. Use it for forms in drawers / dialogs.
 - Don't copy `data()` into a signal (it never updates). Render lists with `<For each={data().items} by={…}>`.
 
 ### Links and navigation
@@ -240,7 +240,7 @@ export default function Layout({ data, children }: LayoutProps<typeof serverLoad
 ### Modes (`vite.config.ts`)
 
 - `rivetRouter()` = `mode: "server"` (render per request; `npm run build` → `dist/server`, `npm start`).
-- `rivetRouter({ mode: "static" })` = prerender to HTML files (`prerender.js` / `prerenderBuild`). `serverLoad` runs at build time. A page with nothing to resume (no handlers, signals in markup, client effects, forms) ships zero JS and its links load documents; `clientRouter: true` keeps in-place navigation on every page.
+- `rivetRouter({ mode: "static" })` = prerender to HTML files (`prerender.js` / `prerenderBuild`). `load(…)` runs at build time. A page with nothing to resume (no handlers, signals in markup, client effects, forms) ships zero JS and its links load documents; `clientRouter: true` keeps in-place navigation on every page.
 - `mode: "csr"` = SPA, no server code.
 
 ### Forms (`@rivetjs/forms`)
@@ -258,12 +258,13 @@ import { action, invalid } from "@rivetjs/forms/server";
 import { actionResult } from "@rivetjs/router/client";
 import { createForm, fieldId, formId, onInput, onBlur, onSubmit, defaultValue, isInvalid, describedBy } from "@rivetjs/forms";
 import { FieldError, ErrorSummary } from "@rivetjs/forms/components";
+import { actions } from "@rivetjs/router";
 
-export const serverActions = {
+export const forms = actions({
   contact: action(contactForm, async (value) => {
     /* typed, valid */
   }),
-};
+});
 
 export default function Contact() {
   const form = createForm(contactForm, { result: actionResult() });
@@ -424,7 +425,7 @@ import { Select } from "@rivetjs/ui/select";
 | RV3003 / RV3004 | Structural helper namespace import / alias                                                  | `import { For } from "@rivetjs/runtime/dom"`            |
 | RV3006          | `clientOnly` erasure shape                                                                  | inline `() => import("…")`                              |
 | RV3007          | Route module server export shape (`export *` in a route)                                    | declare server exports directly                         |
-| RV3008          | Server-only code reached from browser code                                                  | keep in `serverLoad` / `*.server.ts`                    |
+| RV3008          | Server-only code reached from browser code                                                  | keep in `load(…)` / `*.server.ts`                    |
 | RV3101          | (warning) Link matches no route                                                             | fix the path                                            |
 | RV4001–4004     | i18n key / param / argument / tag errors                                                    | see section 5                                           |
 | RV5001–5003     | ``css`…` `` syntax / usage; invalid or unsafe class / style (style string, two class attrs) | style object, one `class`                               |

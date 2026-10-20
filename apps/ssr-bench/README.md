@@ -116,7 +116,7 @@ npx vitest run --project ssr-bench-all apps/ssr-bench/tests/compiled-adapter.tes
 Coverage lanes for list and router overhead (all `variants` profile, the shared GC profile and quotas):
 
 - `rivet-for` (18107): `adapters/rivet-for.jsx` = `rivet-compiled.jsx` with the row loop as keyed `<For each by>` instead of `.map` (Solid lanes use `<For>`). Delta vs `rivet-compiled` = server `<For>` cost.
-- `rivet-router` (18109): `router-app/` file-routed app (root `_layout.tsx` with a loader, `page.tsx` with `serverLoad` doing the gRPC call + `head` title, `health.ts`/`metrics.ts` endpoint routes) built by Vite + `rivetRouter()` and served by the production `@rivetjs/router/node` `start()` (static lookup, Request bridge, CSRF/handler, loaders, head merge, nonce CSP, streamed resumable render). No `server.ts`. Delta vs `rivet-compiled` = router + resume overhead. `article=1` → 400 (no raw-HTML JSX sink); `/metrics` has memory only.
+- `rivet-router` (18109): `router-app/` file-routed app (root `_layout.tsx` with a loader, `page.tsx` with `load(…)` doing the gRPC call + `head` title, `health.ts`/`metrics.ts` endpoint routes) built by Vite + `rivetRouter()` and served by the production `@rivetjs/router/node` `start()` (static lookup, Request bridge, CSRF/handler, loaders, head merge, nonce CSP, streamed resumable render). No `server.ts`. Delta vs `rivet-compiled` = router + resume overhead. `article=1` → 400 (no raw-HTML JSX sink); `/metrics` has memory only.
 - `rivet-resume` (18115): same build and container command as `rivet-router`, measured on `/resume` (`router-app/src/routes/resume/{_layout,index}.tsx`): the interactive resumable page (see Fair comparison rules).
 
 ```sh

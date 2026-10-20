@@ -1,18 +1,18 @@
-import { notFound, type DataOf, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type DataOf, type PageProps, type RequestEvent, load } from "@rivetjs/router";
 import { photos } from "../../photos.ts";
 
-export const serverLoad = async ({ params }: RequestEvent<{ id: string }>) => {
+export const loader = load(async ({ params }: RequestEvent<{ id: string }>) => {
   const photo = photos.find((item) => item.id === params.id);
   if (!photo) throw notFound();
   // A slow answer, so you can see the pending state.
   await new Promise((done) => setTimeout(done, 400));
   return photo;
-};
+});
 
-export const head = ({ data }: { data: DataOf<typeof serverLoad> }) => ({ title: data.title });
+export const head = ({ data }: { data: DataOf<typeof loader> }) => ({ title: data.title });
 
 // #region demo
-export default function PhotoPage({ data }: PageProps<typeof serverLoad, { id: string }>) {
+export default function PhotoPage({ data }: PageProps<typeof loader, { id: string }>) {
   return (
     <article>
       <span class={"block h-64 rounded " + data.color} data-vt-name={"photo-" + data.id} data-vt-class="photo" />

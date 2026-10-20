@@ -7,12 +7,13 @@ import { Modal } from "@rivetjs/cdk/modal";
 import { Popover } from "@rivetjs/cdk/popover";
 import { Drawer } from "@rivetjs/ui/drawer";
 import { Sheet } from "@rivetjs/ui/sheet";
+import { load } from "@rivetjs/router";
 
 export const head = { title: "Overlays" };
 
 let loads = 0;
 // Not a live page: a revalidation re-renders it (open overlays must be disposed with it).
-export const serverLoad = () => ({ loads: ++loads });
+export const loader = load(() => ({ loads: ++loads }));
 
 /** One overlay of each kind, each holding a revalidation button and a link away (overlay leak regression). */
 export default function Overlays({ data }: { data: { loads: number } }) {

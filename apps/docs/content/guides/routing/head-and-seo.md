@@ -11,7 +11,7 @@ Search engines and link previews read the `<head>` of your HTML: the title, the 
 
 ## Set a title
 
-Export `head` from a page. Unlike `serverLoad`, `head` is not server-only: it stays in the browser build.
+Export `head` from a page. Unlike `load(…)`, `head` is not server-only: it stays in the browser build.
 
 ```tsx title="src/routes/about.tsx"
 export const head = { title: "About us" };
@@ -77,7 +77,7 @@ export default function PostPage({ data }: PageProps<Post>) {
 }
 ```
 
-`data` is the result of this file's own `serverLoad`. A layout's `head` function gets the layout's data.
+`data` is the result of this file's own `load(…)`. A layout's `head` function gets the layout's data.
 
 ## Layouts and pages combine
 
@@ -156,7 +156,7 @@ With the [kit](../../ui/kit.md) installed, client navigation also updates meta t
 
 ## Common mistakes
 
-- **Using server code in `head`.** `head` is browser code: it cannot call `serverLoad` or use values imported from `*.server.ts` modules; the build stops with an error. Read the loader's result from `data`. See [server code in route files](./server-code-in-routes.md).
+- **Using server code in `head`.** `head` is browser code: it cannot call `load(…)` or use values imported from `*.server.ts` modules; the build stops with an error. Read the loader's result from `data`. See [server code in route files](./server-code-in-routes.md).
 - **Setting `document.title` in a component.** The component runs on the server, where there is no `document`. Use `head`, or `<Title>` from the [kit](../../ui/kit.md).
 - **Expecting meta tags to change after client navigation.** Without the kit, only the title updates in the browser.
 

@@ -80,10 +80,11 @@ Import it in a Rivet route and render it like any component:
 import "@rivetjs/bridge-react/types";
 import type { PageProps } from "@rivetjs/router";
 import { RevenueChart } from "../components/RevenueChart.react.tsx";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = () => ({ revenue: [{ month: "Jan", paid: 120 }, { month: "Feb", paid: 180 }] });
+export const loader = load(() => ({ revenue: [{ month: "Jan", paid: 120 }, { month: "Feb", paid: 180 }] }));
 
-export default function Overview({ data }: PageProps<typeof serverLoad>) {
+export default function Overview({ data }: PageProps<typeof loader>) {
   return (
     <main>
       <h1>Overview</h1>

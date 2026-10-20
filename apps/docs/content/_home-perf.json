@@ -12,8 +12,8 @@
     "scripts": 3
   },
   "html": {
-    "bytes": 126373,
-    "brotli": 23663
+    "bytes": 127158,
+    "brotli": 23725
   },
   "lighthouse": {
     "date": "2026-10-12",

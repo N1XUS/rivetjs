@@ -3,7 +3,7 @@ export interface LayoutGeneratorSchema {
   directory?: string;
   /** The Rivet app. */
   project: string;
-  /** `serverGuard` for the whole folder (redirects to /login without a `session` cookie). */
+  /** A `guard(…)` export for the whole folder (redirects to /login without a `session` cookie). */
   guard?: boolean;
   skipFormat?: boolean;
 }

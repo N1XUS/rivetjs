@@ -1,21 +1,21 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { endSession } from "../../sessions.server.ts";
 
 export const head = { title: "Account" };
 
 // The layout guard already ran and set locals.user.
-export const serverLoad = ({ locals }: RequestEvent) => ({ user: String(locals.user) });
+export const loader = load(({ locals }: RequestEvent) => ({ user: String(locals.user) }));
 
-export const serverActions = {
+export const forms = actions({
   logout: ({ cookies }: RequestEvent) => {
     endSession(cookies.get("session"));
     cookies.delete("session");
     return redirect("/", 303);
   },
-};
+});
 
 // URL: /account (the (private) folder adds nothing to the URL).
-export default function Account({ data }: PageProps<typeof serverLoad>) {
+export default function Account({ data }: PageProps<typeof loader>) {
   return (
     <main class="p-4">
       <h1 class="text-xl font-semibold">Hello, {data.user}</h1>

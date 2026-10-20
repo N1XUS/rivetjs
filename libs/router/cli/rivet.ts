@@ -4,8 +4,9 @@
 //     Write the app's generated `.rivet/` files (route types, generated app, editor manifest) from its
 //     Vite config without starting Vite. Run before `tsc` / `rivet-check` on a fresh clone.
 //   rivet migrate server-exports [--routes src/routes] [--dry-run]
-//     Rename old `*.server.ts` export names (load, guard, actions, entries, headers, GET…) to
-//     serverLoad, serverGuard, serverActions, serverEntries, serverHeaders, onGet… (scope-aware).
+//     Rewrite magic route server export names (in-file serverLoad, onGet…; sibling load, GET…) to
+//     wrapper calls (`export const loader = load(…)`, `export const GET = onGet(…)`), references renamed
+//     scope-aware, the `@rivetjs/router` import added.
 //   rivet mcp
 //     Start the Rivet MCP server (`@rivetjs/mcp`, stdio) installed in the app; same as `npx @rivetjs/mcp`.
 import { relative } from "node:path";

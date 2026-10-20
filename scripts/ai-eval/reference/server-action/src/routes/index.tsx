@@ -1,16 +1,16 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 
 const entries: string[] = ["Hello from the server"];
 
-export const serverLoad = () => ({ entries: [...entries] });
+export const loader = load(() => ({ entries: [...entries] }));
 
-export const serverActions = {
+export const forms = actions({
   sign: async ({ request }: RequestEvent<"index">) => {
     const message = String((await request.formData()).get("message") ?? "").trim();
     if (message) entries.push(message.slice(0, 140));
     return redirect("/", 303);
   },
-};
+});
 
 export const head = { title: "Guestbook" };
 

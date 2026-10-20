@@ -16,7 +16,7 @@ After reading this page you know how the dev server renders pages, what hot relo
 npm run dev
 ```
 
-This runs `vite`. With `rivetRouter()`, the dev server renders each page through the same request handler as production, including guards, loaders and actions (`serverGuard`, `serverLoad`, `serverActions`).
+This runs `vite`. With `rivetRouter()`, the dev server renders each page through the same request handler as production, including guards, loaders and actions (`guard(…)`, `load(…)`, `actions(…)`).
 
 ## Dev pages resume
 
@@ -80,7 +80,7 @@ Keeping helpers in their own files, and components in theirs, makes hot replacem
 
 ## Server code
 
-Edits to server-only code (`*.server.ts` files, or an in-file `serverLoad`) take effect on the next request: the open page fetches its data again and re-renders, and component state resets. Adding or removing a server export updates the route table and reloads the page. Edits to the document shell take effect on the next request; reload the page to see them.
+Edits to server-only code (`*.server.ts` files, or an in-file `load(…)`) take effect on the next request: the open page fetches its data again and re-renders, and component state resets. Adding or removing a server export updates the route table and reloads the page. Edits to the document shell take effect on the next request; reload the page to see them.
 
 ## Warnings and errors
 

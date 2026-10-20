@@ -463,13 +463,15 @@
     {
       "code": "RV3007",
       "messages": [
-        "Declare server exports (serverLoad, onGet, …) in their own export statement",
-        "`export *` is not allowed in a route module: server exports must be named"
+        "Declare server exports (`load(…)`, `onGet(…)`, …) in their own export statement",
+        "`export *` is not allowed in a route module: server exports must be named",
+        "Server export wrapper `{name}` must initialize a module-scope `const` (`export const {export} = {name}(…)`)",
+        "Duplicate server export: `{first}` and `{name}` are both `{kind}(…)`; keep one"
       ],
-      "fix": "Give each server export (serverLoad, onGet, …) its own export statement and replace `export *` with named exports.",
-      "avoid": "export const serverLoad = () => 1, other = 2;\nexport default () => <p />;",
-      "prefer": "export const serverLoad = () => 1;\nexport const other = 2;\nexport default () => <p />;",
-      "note": "serverExports option (route modules)."
+      "fix": "Give each server export its own `export const x = wrapper(…)` statement at module scope (one per kind; request handlers one per method) and replace `export *` with named exports.",
+      "avoid": "import { load } from \"@rivetjs/router\";\nexport const loader = load(() => 1), other = 2;\nexport default () => <p />;",
+      "prefer": "import { load } from \"@rivetjs/router\";\nexport const loader = load(() => 1);\nexport const other = 2;\nexport default () => <p />;",
+      "note": "serverExports option (route modules). Wrappers: load, guard, actions, entries, headers, onRequest, onGet … onOptions from @rivetjs/router (aliases and namespace imports tracked)."
     },
     {
       "code": "RV3008",
@@ -477,18 +479,29 @@
         "`{name}` is server-only (removed from browser builds) but browser code references it at line {line}",
         "`{name}` (from \"{source}\") is used by browser code at line {line}; server-only modules cannot reach the browser — use it only inside server exports"
       ],
-      "fix": "Use server exports and server-only imports only inside server exports; pass their results to the page as serverLoad data instead.",
-      "avoid": "import { readFileSync } from \"node:fs\";\nexport const serverLoad = () => 1;\nexport default () => <p>{String(readFileSync)}</p>;",
-      "prefer": "import { readFileSync } from \"node:fs\";\nexport const serverLoad = () => readFileSync(\"a.txt\", \"utf8\");\nexport default () => <p />;",
+      "fix": "Use server exports and server-only imports only inside server exports; pass their results to the page as loader data instead.",
+      "avoid": "import { readFileSync } from \"node:fs\";\nimport { load } from \"@rivetjs/router\";\nexport const loader = load(() => 1);\nexport default () => <p>{String(readFileSync)}</p>;",
+      "prefer": "import { readFileSync } from \"node:fs\";\nimport { load } from \"@rivetjs/router\";\nexport const loader = load(() => readFileSync(\"a.txt\", \"utf8\"));\nexport default () => <p />;",
       "note": "First variant lacks a fix hint."
     },
     {
       "code": "RV3009",
       "messages": ["Server-only code cannot render JSX in a resumed route module: return data and render it in the page"],
-      "fix": "Return plain data from serverLoad/onGet and render the JSX in the page component.",
-      "avoid": "export const serverLoad = () => ({ x: <p /> });\nexport default () => <p />;",
-      "prefer": "export const serverLoad = () => ({ x: \"text\" });\nexport default () => <p />;",
+      "fix": "Return plain data from load(…) / onGet(…) exports and render the JSX in the page component.",
+      "avoid": "import { load } from \"@rivetjs/router\";\nexport const loader = load(() => ({ x: <p /> }));\nexport default () => <p />;",
+      "prefer": "import { load } from \"@rivetjs/router\";\nexport const loader = load(() => ({ x: \"text\" }));\nexport default () => <p />;",
       "note": "serverExports + resume."
+    },
+    {
+      "code": "RV3010",
+      "messages": [
+        "Untagged server export `{name}`: route server code is a wrapper call — `export const {export} = {wrapper}({argument})` with `import { {wrapper} } from \"@rivetjs/router\"`"
+      ],
+      "fix": "Wrap the export in its @rivetjs/router wrapper call: serverLoad → export const loader = load(…), serverGuard → access = guard(…), serverActions → forms = actions({ … }), serverEntries → paths = entries(…), serverHeaders → responseHeaders = headers(…), onRequest → middleware = onRequest(…), onGet → GET = onGet(…) (same for onPost … onOptions). The export name is free; `rivet migrate server-exports` rewrites a whole app.",
+      "avoid": "export const serverLoad = () => ({ n: 1 });\nexport default () => <p />;",
+      "prefer": "import { load } from \"@rivetjs/router\";\nexport const loader = load(() => ({ n: 1 }));\nexport default () => <p />;",
+      "quickFix": "rivetWrapServerExport: Wrap in `load(…)` (renames the export and its in-file references, adds the import).",
+      "note": "serverExports option (route modules) and the language service (files under the manifest routesDir). Sibling *.server.ts names (load, GET …) without wrappers fail at the first request instead (server/module.ts)."
     },
     {
       "code": "RV3101",

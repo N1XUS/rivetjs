@@ -1,2 +1,3 @@
 import { count } from "../../counts.server.ts";
-export const load = () => ({ loads: count("shop") });
+import { load } from "@rivetjs/router";
+export const loader = load(() => ({ loads: count("shop") }));

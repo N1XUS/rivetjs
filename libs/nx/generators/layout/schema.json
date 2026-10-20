@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/schema",
   "$id": "RivetLayout",
   "title": "Rivet layout",
-  "description": "Adds a _layout.tsx to a folder of a Rivet app's routes (the root layout without a directory), optionally with a serverGuard for everything below it.",
+  "description": "Adds a _layout.tsx to a folder of a Rivet app's routes (the root layout without a directory), optionally with a guard(…) export for everything below it.",
   "type": "object",
   "properties": {
     "directory": {
@@ -18,7 +18,7 @@
       "x-dropdown": "projects",
       "x-prompt": "Which project?"
     },
-    "guard": { "type": "boolean", "default": false, "description": "Add a serverGuard for the whole folder." },
+    "guard": { "type": "boolean", "default": false, "description": "Add a guard(…) export for the whole folder." },
     "skipFormat": { "type": "boolean", "default": false, "x-priority": "internal", "description": "Skip formatting files." }
   },
   "required": ["project"],

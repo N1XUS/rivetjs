@@ -66,15 +66,15 @@ Throw these from a guard or a loader. In guards and actions you may also return 
 | `redirect(url, status?)` | 302 by default (303 from an action) | none, the browser goes to `url` |
 
 ```tsx title="src/routes/posts/[slug].tsx"
-import { error, notFound, type RequestEvent } from "@rivetjs/router";
+import { error, notFound, type RequestEvent, load } from "@rivetjs/router";
 import { db } from "../../db.server.ts";
 
-export async function serverLoad({ params }: RequestEvent<"posts/[slug]">) {
+export const loader = load(async ({ params }: RequestEvent<"posts/[slug]">) => {
   const post = await db.posts.find(params.slug);
   if (!post) throw notFound("No such post");
   if (post.removed) throw error(410, "This post was removed");
   return post;
-}
+});
 ```
 
 ::api{symbol="@rivetjs/router#error"}
@@ -125,7 +125,7 @@ Error pages run no server code of their own: put loaders and guards in pages and
 Errors also happen after a link click. The router then renders the same `_404.tsx` or `_error.tsx` in place of the page, inside your layouts. The status code does not matter here, as no new HTML document loads.
 
 :::note
-When your root layout has server code (a `serverLoad`, `serverGuard` or other server export in `_layout.tsx`), error pages from a full page load render **without** the root layout, because there is no layout data. Include a link home in both pages.
+When your root layout has server code (a `load(…)`, `guard(…)` or other server export in `_layout.tsx`), error pages from a full page load render **without** the root layout, because there is no layout data. Include a link home in both pages.
 :::
 
 ## Static sites

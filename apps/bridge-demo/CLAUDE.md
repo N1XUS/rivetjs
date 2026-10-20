@@ -27,7 +27,7 @@ Bridges demo (lane BRIDGES, spec `docs/design/specs/2026-10-12-bridges-demo.md`)
 ## Rules / invariants
 
 - Same component sources, data, CSS and library versions in both lanes; `run.ts` validates each route's markup (`MARKERS`) and that `/orders` carries all 500 orders (`ORD-10500`) before timing.
-- Data reaches the islands as serialized props in both lanes: Rivet pages read it in `serverLoad` (fairness fix 2: a module-level import resumed by reference — `_rMod` — and the client rebuilt the seed instead of receiving 500 orders).
+- Data reaches the islands as serialized props in both lanes: Rivet pages read it in `load(…)` (fairness fix 2: a module-level import resumed by reference — `_rMod` — and the client rebuilt the seed instead of receiving 500 orders).
 - `NODE_ENV=production` for every build and server; no compression anywhere (gzip -6 estimates from response bodies).
 - Timed phases under the host bench lock (`BD_BENCH_LOCK=<bench-lock.sh>`, lane BRIDGES, maxLoad 4; `--loaded` waives it and labels the run). One phase per invocation when a run would exceed the lock's 90-min stale limit.
 - Browser "before input" window: after `load`, until nothing is in flight and no network event for 1 s (+ 500 ms). Each lane's warm-up visit (discarded from the timed medians) runs with V8 precise coverage: JS fetched vs executed + the chunk category breakdown (`CATEGORIES`, first match per chunk) come from it.

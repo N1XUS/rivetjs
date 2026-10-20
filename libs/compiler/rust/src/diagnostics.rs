@@ -56,9 +56,16 @@ pub fn classify(message: &str) -> &'static str {
         _ if starts("Structural helper aliases") => "RV3004",
         _ if starts("Server clientOnly must be called directly") => "RV3005",
         _ if starts("Server clientOnly erasure") => "RV3006",
-        _ if starts("Declare server exports") || starts("`export *` is not allowed in a route module") => "RV3007",
+        _ if starts("Declare server exports")
+            || starts("`export *` is not allowed in a route module")
+            || starts("Server export wrapper `")
+            || starts("Duplicate server export:") =>
+        {
+            "RV3007"
+        }
         _ if contains("is server-only (removed from browser builds)") || contains("server-only modules cannot reach the browser") => "RV3008",
         _ if starts("Server-only code cannot render JSX") => "RV3009",
+        _ if starts("Untagged server export `") => "RV3010",
         _ if starts("Unknown message key") || starts("No message keys match prefix") => "RV4001",
         _ if starts("Unknown param") || starts("Missing param") || message.contains("needs a param") => "RV4002",
         _ if message.contains("params must be")

@@ -5,7 +5,7 @@ template: best-practice
 related: [guides/routing/loading-data, best-practices/serializable-captures, best-practices/secrets-in-server-files, guides/security/server-only-code]
 ---
 
-**Fetch data in a `serverLoad` loader and give components plain values. Do not pass database clients, API clients or other objects with methods to components.**
+**Fetch data in a `load(…)` loader and give components plain values. Do not pass database clients, API clients or other objects with methods to components.**
 
 ## Why
 
@@ -15,21 +15,22 @@ A component runs once, on the server. Its handlers run later, in the browser. Ev
 - A database client or an API client is a class instance with methods and open connections. It cannot travel. Rivet stops with "class instances are not serializable" or "function is not serializable". A client that belongs in the browser (an analytics or socket client) can be built there with [`reconstruct(() => …)`](../learn/resuming.md#library-objects-reconstruct); a server-side service stays behind a loader.
 - Even when nothing captures it, a service imported by a page module drags its code (and maybe its secrets) toward the browser. The build refuses `.server.ts` imports in browser code, but an ordinary module has no such guard.
 
-Loaders also make the data flow visible: what the page receives is exactly what `serverLoad` returns.
+Loaders also make the data flow visible: what the page receives is exactly what `load(…)` returns.
 
 ## Do
 
 ```tsx title="src/routes/products.tsx" prefer
 import type { PageProps } from "@rivetjs/router";
-import { db } from "../db.server.ts"; // used only by serverLoad: removed from the browser build
+import { db } from "../db.server.ts"; // used only by the loader: removed from the browser build
+import { load } from "@rivetjs/router";
 
 type Product = { id: string; name: string; price: number };
 
-export const serverLoad = async () => ({
+export const loader = load(async () => ({
   products: (await db.query("select id, name, price from products order by name")) as Product[],
-});
+}));
 
-export default function Products({ data }: PageProps<typeof serverLoad>) {
+export default function Products({ data }: PageProps<typeof loader>) {
   return (
     <ul>
       {data.products.map((product) => (

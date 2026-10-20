@@ -37,8 +37,9 @@ function Item() { return <s>item</s>; }`;
 test("resume: a const derived through an arrow may hold a primitive (find(arrow) ?? fallback)", () => {
   const source = `
 import { signal } from "@rivetjs/reactivity";
+import { load } from "@rivetjs/router";
 const items = [{ id: 1, name: "a" }];
-export const serverLoad = () => ({ ok: true });
+export const loader = load(() => ({ ok: true }));
 export default function Page() {
   const id = signal(1);
   const label = items.find((i) => i.id === 2)?.name ?? "fallback";
@@ -60,7 +61,8 @@ test("serverExports: type-only imports from server-only modules are erased, neve
     `import type { Row } from "./db.server.ts";
 export default function Page({ data }: { data: Row[] }) { return <p>{data.length}</p>; }`,
     `import { type Row, query } from "./db.server.ts";
-export const serverLoad = () => query();
+import { load } from "@rivetjs/router";
+export const loader = load(() => query());
 export default function Page({ data }: { data: Row[] }) { let row: Row | undefined; return <p onClick={() => { row = data[0] as Row; }}>{data.length}</p>; }`,
     `import { type Row } from "./db.server.ts";
 export default function Page({ data }: { data: Row[] }) { const pick = (r: Row): Row => r; return <p>{data.map(pick).length}</p>; }`,

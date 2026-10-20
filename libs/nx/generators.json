@@ -39,18 +39,18 @@
       "factory": "./generators/route/generator",
       "schema": "./generators/route/schema.json",
       "aliases": ["r", "page"],
-      "description": "Add a file route: dynamic segments, serverLoad, serverActions, serverGuard, folder layout."
+      "description": "Add a file route: dynamic segments, load(…) / actions(…) / guard(…) exports, folder layout."
     },
     "layout": {
       "factory": "./generators/layout/generator",
       "schema": "./generators/layout/schema.json",
-      "description": "Add a _layout.tsx to a routes folder (optional serverGuard)."
+      "description": "Add a _layout.tsx to a routes folder (optional guard(…) export)."
     },
     "api-route": {
       "factory": "./generators/api-route/generator",
       "schema": "./generators/api-route/schema.json",
       "aliases": ["endpoint"],
-      "description": "Add an endpoint route (onGet / onPost / … request handlers)."
+      "description": "Add an endpoint route (onGet(…) / onPost(…) / … request handler exports)."
     },
     "ui-setup": {
       "factory": "./generators/ui-setup/generator",

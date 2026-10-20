@@ -1,6 +1,6 @@
 # Slots and in-file server code (design)
 
-Date: 2026-10-03. Status: proposal, not implemented. Builds on [router design](2026-10-03-router-design.md), [resumability design](2026-10-03-resumability-design.md), [async streaming](2026-10-03-async-streaming-design.md), [docs/guides/resumability.md](../../guides/resumability.md).
+Date: 2026-10-03. Status: proposal, not implemented. **Part B superseded 2026-10-20**: the fixed export names (`serverLoad` …, `onGet` …; decision 5 "no wrapper") were replaced by typed wrapper calls (`export const loader = load(…)`), see [server exports](2026-10-20-server-exports-design.md). Builds on [router design](2026-10-03-router-design.md), [resumability design](2026-10-03-resumability-design.md), [async streaming](2026-10-03-async-streaming-design.md), [docs/guides/resumability.md](../../guides/resumability.md).
 
 Two features, separate:
 - **A. Slots**: default + named + scoped slots, lazy rendering, resumable.

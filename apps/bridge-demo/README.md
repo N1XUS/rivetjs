@@ -49,7 +49,7 @@ Full tables, including every loss: [`docs/benchmarks/2026-10-12-bridges-demo.md`
 ## What we did to be fair to Next
 
 1. **One `"use client"` boundary per component** (`next/app/_client/*.jsx`). With a single barrel file, Next put every client component into one chunk, so every route loaded all of them.
-2. **Data passed as serialized props in both lanes.** The Rivet pages read their data in `serverLoad`. Before this change, a module-level import resumed by reference, and the client rebuilt the seed data instead of receiving it, which is not what Next does.
+2. **Data passed as serialized props in both lanes.** The Rivet pages read their data in `load(…)`. Before this change, a module-level import resumed by reference, and the client rebuilt the seed data instead of receiving it, which is not what Next does.
 3. **Idiomatic defaults on both sides.** Next uses `<Link>` with its default prefetch. Rivet uses `prefetch: "document"` with per-island `client` policies. Each lane also has a no-prefetch row, and Rivet has an all-`load` control row.
 4. **Same pinned library versions in both lanes.** The run checks the versions and validates the rendered markup before timing anything.
 5. **Production builds on both sides, with compression off on both servers.**

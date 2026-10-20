@@ -1,12 +1,13 @@
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import { frameEntries, frameHead, FramePageView, loadFrame } from "@rivetjs/docs-kit/components/frame.tsx";
+import { entries, load } from "@rivetjs/router";
 
 // An example's other pages (`/examples/<id>/frame/<path>/`), linked relatively from its `/` page (`components/frame.tsx`).
-export const serverEntries = () => frameEntries(true);
+export const paths = entries(() => frameEntries(true));
 
-export async function serverLoad(event: RequestEvent<{ id: string; path: string }>) {
+export const loader = load(async (event: RequestEvent<{ id: string; path: string }>) => {
   return loadFrame(event);
-}
+});
 
 export const head = (input: { params: { id: string; path: string }; data: unknown }) => frameHead(input);
 

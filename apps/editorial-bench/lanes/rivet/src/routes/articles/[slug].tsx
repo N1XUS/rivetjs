@@ -1,19 +1,19 @@
-import { notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, load, entries } from "@rivetjs/router";
 import { Markdown } from "../../components/Markdown.tsx";
 import { article, slugs } from "../../content.ts";
 
-export const serverLoad = ({ params }: RequestEvent<{ slug: string }>) => {
+export const loader = load(({ params }: RequestEvent<{ slug: string }>) => {
   const a = article(params.slug);
   if (!a) throw notFound();
   return a;
-};
-export const serverEntries = () => slugs().map((slug) => ({ slug }));
+});
+export const paths = entries(() => slugs().map((slug) => ({ slug })));
 export const head = ({ data }: { data: { title: string; description: string } }) => ({
   title: data.title,
   meta: [{ name: "description", content: data.description }],
 });
 
-export default function ArticlePage({ data }: PageProps<typeof serverLoad, { slug: string }>) {
+export default function ArticlePage({ data }: PageProps<typeof loader, { slug: string }>) {
   return (
     <main class="layout">
       <article>

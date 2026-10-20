@@ -320,8 +320,9 @@ Toggling writes the `sidebar_state` cookie (7 days, as shadcn). Read it on the s
 // src/routes/_layout.server.ts
 import type { RequestEvent } from "@rivetjs/router";
 import { sidebarCookieOpen } from "@rivetjs/ui/sidebar";
+import { load } from "@rivetjs/router";
 
-export const load = ({ cookies }: RequestEvent) => ({ open: sidebarCookieOpen(cookies) ?? true });
+export const loader = load(({ cookies }: RequestEvent) => ({ open: sidebarCookieOpen(cookies) ?? true }));
 ```
 
 ```tsx

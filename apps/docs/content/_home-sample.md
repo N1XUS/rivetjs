@@ -1,8 +1,9 @@
 ```tsx compiled title="src/routes/index.tsx"
 import { signal } from "@rivetjs/reactivity";
 import type { PageProps } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = () => ({ stars: 128 });
+export const loader = load(() => ({ stars: 128 }));
 
 export default function Home({ data }: PageProps<"index">) {
   const stars = signal(data.stars);

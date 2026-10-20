@@ -1,20 +1,20 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { signOut } from "../../session.server.ts";
 
 export const head = { title: "Dashboard" };
 
 // The layout guard already ran and put the user in `locals`.
 // (A page file cannot import types from a `.server.ts` module, so the type is written out here.)
-export const serverLoad = ({ locals }: RequestEvent) => ({ name: (locals.user as { name: string }).name });
+export const loader = load(({ locals }: RequestEvent) => ({ name: (locals.user as { name: string }).name }));
 
-export const serverActions = {
+export const forms = actions({
   logout: ({ cookies }: RequestEvent) => {
     signOut(cookies);
     return redirect("/", 303);
   },
-};
+});
 
-export default function Dashboard({ data }: PageProps<typeof serverLoad>) {
+export default function Dashboard({ data }: PageProps<typeof loader>) {
   return (
     <main class="mx-auto max-w-xl p-6">
       <h1 class="text-2xl font-bold">Dashboard</h1>

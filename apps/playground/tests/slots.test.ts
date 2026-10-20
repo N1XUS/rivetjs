@@ -7,7 +7,7 @@ test("slots page: in-file loader and handler on the server, resumable slots in t
   // The browser build carries no server code of the route.
   const dir = new URL("../dist/client/assets/", import.meta.url).pathname;
   for (const file of await readdir(dir))
-    if (file.endsWith(".js")) assert.doesNotMatch(await readFile(dir + file, "utf8"), /serverLoad|renderedAt:new Date|format=json/, file);
+    if (file.endsWith(".js")) assert.doesNotMatch(await readFile(dir + file, "utf8"), /rivet\.server|renderedAt:new Date|format=json/, file);
 
   const { createPlaygroundServer } = await import("../server.ts");
   const { url: origin, close } = await createPlaygroundServer({ port: 0 });

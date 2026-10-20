@@ -605,20 +605,27 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   ].join("\n");
 
   // --- routes.ts: server route table (server modules load lazily, once per process in builds).
-  const serverModule = (file: string | undefined) => (file ? `once(() => import(${str(spec(file))}))` : "undefined");
+  // Every server loader returns a normalized `ServerModule` (exports found by tag, `server/module.ts`).
+  let serverUsed = false;
+  const serverModule = (file: string | undefined) => {
+    if (!file) return "undefined";
+    serverUsed = true;
+    return `once(async () => serverExports(await import(${str(spec(file))}), ${str(posix.join(routesDir, file))}, true))`;
+  };
   // Layouts are static imports of the app already; pages stay lazy.
   const layoutModules = new Map([...layouts.keys()].map((file, i) => [file, "L" + i]));
-  // In-file server exports (`serverLoad`…): normalized from the page/layout module, merged with a
-  // sibling `*.server.ts` when there is one. Sibling-only routes load the sibling as before.
-  let inlineUsed = false;
+  // In-file server exports (`load(…)`, `onGet(…)`… calls): normalized from the page/layout module by tag,
+  // merged with a sibling `*.server.ts` when there is one. Sibling-only routes load the sibling raw.
+  let mergeUsed = false;
   const serverOf = (module: RouteModule, layout: boolean): string => {
     if (!module.inline || !module.page) return serverModule(module.server);
-    inlineUsed = true;
+    serverUsed = true;
+    if (module.server) mergeUsed = true;
     const own = layout ? layoutModules.get(module.page)! : `await import(${str(spec(module.page))})`;
     const files = str([posix.join(routesDir, module.page), module.server ? posix.join(routesDir, module.server) : ""]);
     return module.server
       ? `once(async () => mergeServer(${own}, await import(${str(spec(module.server))}), ${files}))`
-      : `once(async () => serverExports(${own}, false, ${str(posix.join(routesDir, module.page))}))`;
+      : `once(async () => serverExports(${own}, ${str(posix.join(routesDir, module.page))}))`;
   };
   const routes = [
     HEADER,
@@ -665,10 +672,10 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "};",
     "",
   ].join("\n");
-  const routesFile = inlineUsed
+  const routesFile = serverUsed
     ? routes.replace(
         `import type { AppRoute } from "@rivetjs/router/server";`,
-        `import { mergeServer, serverExports, type AppRoute } from "@rivetjs/router/server";`,
+        `import { ${mergeUsed ? "mergeServer, " : ""}serverExports, type AppRoute } from "@rivetjs/router/server";`,
       )
     : routes;
 
@@ -939,7 +946,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       .join("/") +
     "`";
   const paths = [...new Set(pageRoutes.map((r) => pathOf(r.pattern)))];
-  // Loader data per route id: the route module's `serverLoad` (in-file) or sibling loader.
+  // Loader data per route id: the route module's `load(…)` export (in-file or sibling), found by tag.
   const typeOf = (module: RouteModule, wrap: (inline: string) => string, sibling: (server: string) => string): string | undefined => {
     const parts = [
       ...(module.inline && module.page ? [wrap(`typeof import(${str(spec(module.page))})`)] : []),
@@ -951,7 +958,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const data = ids.flatMap((id) => {
     const type = typeOf(
       firstOf(id),
-      (m) => `InlineData<${m}>`,
+      (m) => `ModuleData<${m}>`,
       (m) => `ModuleData<${m}>`,
     );
     return type ? [`    ${str(id)}: ${type};`] : [];
@@ -979,13 +986,13 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const layoutData = [...layoutIds].flatMap(([id, module]) => {
     const type = typeOf(
       module,
-      (m) => `InlineData<${m}>`,
+      (m) => `ModuleData<${m}>`,
       (m) => `ModuleData<${m}>`,
     );
     return type ? [`    ${str(id)}: ${type};`] : [];
   });
   const lines = [...data, ...actions, ...layoutData].join("\n");
-  const helpers = ["InlineData", "ModuleData", "ModuleActions"].filter((name) => lines.includes(name + "<"));
+  const helpers = ["ModuleData", "ModuleActions"].filter((name) => lines.includes(name + "<"));
   const types = [
     HEADER,
     ...(helpers.length ? [`import type { ${helpers.join(", ")} } from "@rivetjs/router";`] : []),

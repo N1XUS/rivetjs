@@ -109,6 +109,9 @@ const LAYOUT = /(^|\/)_layout\.(tsx|jsx)$/;
 /** Links that leave the frame: absolute app paths (`href="/x"`, `withBase(…)`, `navigate("/x")`). */
 const ABSOLUTE_LINK = /\bhref=(?:"\/(?!\/)|\{\s*["'`]\/(?!\/))|\bwithBase\(|\bnavigate\(\s*["'`]\//;
 
+// A layout's server export: `export const x = load(…)` (any `@rivetjs/router` server-export wrapper).
+const SERVER_CODE = /^\s*export\s+const\s+[\w$]+\s*=\s*(?:load|guard|actions|entries|headers|on(?:Request|Get|Post|Put|Patch|Delete|Options))\s*\(/m;
+
 /** A live example's page routes: frame sub-path ("" = the example's `/`) → route file, plus the layout chain of each. */
 export interface FramePages {
   pages: { path: string; file: string; layouts: string[] }[];
@@ -116,7 +119,7 @@ export interface FramePages {
 
 /**
  * Why `id` cannot run as a page of the static docs app (shown as code only), or its pages. Static examples whose pages
- * are static paths (no params), linked relatively, with layouts and route groups, run live; in-file `serverLoad` /
+ * are static paths (no params), linked relatively, with layouts and route groups, run live; in-file `load(…)` /
  * `prerender` of a static example runs when the docs are prerendered, as in the example's own static build.
  */
 export function framePlan(config: ExampleConfig, files: readonly string[], sources: ReadonlyMap<string, string>): FramePages | { codeOnly: string } {
@@ -150,8 +153,7 @@ export function framePlan(config: ExampleConfig, files: readonly string[], sourc
   }
   if (!pages.some((page) => page.path === "")) return { codeOnly: "it has no page at /" };
   for (const file of routes)
-    if (LAYOUT.test(file) && /^\s*export\s+(?:async\s+)?(?:const|function)\s+server[A-Z]/m.test(sources.get("src/routes/" + file) ?? ""))
-      return { codeOnly: `its layout runs server code (${file})` };
+    if (LAYOUT.test(file) && SERVER_CODE.test(sources.get("src/routes/" + file) ?? "")) return { codeOnly: `its layout runs server code (${file})` };
   if (pages.length > 1)
     for (const [file, source] of sources)
       if (file.startsWith("src/") && ABSOLUTE_LINK.test(source)) return { codeOnly: `its pages link with absolute paths (${file})` };
@@ -184,7 +186,7 @@ export function groupCSS(text: string, members: readonly string[], fromGenerated
 
 // ---- Generation ----
 
-/** Named exports of a module's source (route modules: `default`, `head`, `serverLoad`, …). */
+/** Named exports of a module's source (route modules: `default`, `head`, `loader`, …). */
 export function exportNames(source: string): string[] {
   const names = new Set<string>();
   for (const match of source.matchAll(/^\s*export\s+(?:declare\s+)?(?:const|let|var|async\s+function\*?|function\*?|class)\s+([A-Za-z_$][\w$]*)/gm))
@@ -302,7 +304,7 @@ export async function generateExamples(root: string, options: { lenient?: (messa
   const framesDir = resolve(root, FRAMES_DIR);
   for (const { id, pages } of frames) {
     const spec = (file: string) => posix(relative(framesDir, resolve(root, "examples", id, "src/routes", file)));
-    // Per route file: its default export (the component) and the module (head, serverLoad).
+    // Per route file: its default export (the component) and the module (head, loader).
     const imports = new Map<string, number>();
     const local = (file: string) => {
       let index = imports.get(file);

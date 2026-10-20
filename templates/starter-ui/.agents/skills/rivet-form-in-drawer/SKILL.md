@@ -24,16 +24,17 @@ export const customerForm = defineForm({ name: "customer", schema: z.object({ na
 import type { LivePageProps } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { action, invalid } from "@rivetjs/forms/server";
+import { load, actions } from "@rivetjs/router";
 
 export const live = true; // data is an accessor, refreshed in place after a submit: signals (open drawer, input, focus) survive
-export const serverLoad = ({ url }: { url: URL }) => ({ customers: [...customers], creating: url.searchParams.has("new") });
-export const serverActions = {
+export const loader = load(({ url }: { url: URL }) => ({ customers: [...customers], creating: url.searchParams.has("new") }));
+export const forms = actions({
   customer: action(customerForm, (value) => {
     if (customers.some((c) => c.email === value.email)) return invalid({ email: "Already a customer" });
     customers.push({ id: customers.length + 1, ...value });
   }),
-};
-export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
+});
+export default function Customers({ data }: LivePageProps<typeof loader>) {
   /* … */
 }
 ```
@@ -58,5 +59,5 @@ export default function Customers({ data }: LivePageProps<typeof serverLoad>) {
 
 `onSubmit` resolves true once the server accepted the form and the page data is fresh: close the drawer then. Errors stay in the open drawer. Imports: `createForm, defaultValue, describedBy, fieldId, formId, isInvalid, onSubmit, submitting` from `@rivetjs/forms`, `FieldError` from `@rivetjs/forms/components`.
 
-5. A layout `serverLoad` re-runs too (counts in headers update).
+5. A layout `load(…)` re-runs too (counts in headers update).
 6. Check: `check_code` on the page, `npm run check`, then try it with JavaScript disabled (plain POST, 400 re-render with the drawer open).

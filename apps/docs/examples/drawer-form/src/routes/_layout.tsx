@@ -1,10 +1,11 @@
 import type { LayoutProps } from "@rivetjs/router";
 import { customers } from "../customers.server.ts";
+import { load } from "@rivetjs/router";
 
 // The layout's loader reruns after the submit too: its count updates in place.
-export const serverLoad = () => ({ total: customers.length });
+export const loader = load(() => ({ total: customers.length }));
 
-export default function Layout({ data, children }: LayoutProps<typeof serverLoad>) {
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
   return (
     <div class="mx-auto max-w-lg p-4">
       <header class="mb-4 text-sm text-slate-600">

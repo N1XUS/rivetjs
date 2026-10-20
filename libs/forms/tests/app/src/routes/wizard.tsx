@@ -1,4 +1,4 @@
-import { redirect, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { autofocus, createForm, defaultChecked, defaultValue, describedBy, fieldId, formId, isInvalid, onBlur, onInput, onSubmit } from "@rivetjs/forms";
 import { ErrorSummary, FieldError } from "@rivetjs/forms/components";
@@ -9,11 +9,11 @@ import { memoryDrafts } from "../forms/drafts.server.js";
 
 export const head = { title: "Wizard" };
 
-export const serverLoad = (event: RequestEvent) => loadWizard(onboarding, memoryDrafts, event);
-export const serverActions = wizardAction(onboarding, memoryDrafts, { onComplete: () => redirect("/welcome") });
+export const loader = load((event: RequestEvent) => loadWizard(onboarding, memoryDrafts, event));
+export const forms = actions(wizardAction(onboarding, memoryDrafts, { onComplete: () => redirect("/welcome") }));
 
 /** Three steps, a schema each; `?step=` in the URL, outputs kept in a server-side draft. */
-export default function WizardPage({ data }: PageProps<typeof serverLoad>) {
+export default function WizardPage({ data }: PageProps<typeof loader>) {
   const result = actionResult();
   const values = data.values as { account?: { name?: string; email?: string }; address?: { city?: string; zip?: string } };
   const account = createForm(accountStep, { result, initial: values.account });

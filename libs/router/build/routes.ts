@@ -11,7 +11,7 @@ export interface RouteModule {
    * handlers), or an endpoint-only plain `x.ts` exporting request handlers.
    */
   readonly server?: string;
-  /** The page module itself declares server exports (`serverLoad`, `onGet`, `prerender`…). */
+  /** The page module itself declares server exports (`load(…)`, `onGet(…)` calls, `prerender`…). */
   readonly inline?: boolean;
   /** Page module with `export const live = true`: its `data` prop is an accessor revalidated in place. */
   readonly live?: boolean;
@@ -44,7 +44,8 @@ const PAGE = /\.(tsx|jsx)$/;
 const SERVER = /\.server\.(ts|js)$/;
 /** Plain `.ts`/`.js` route files: endpoint-only routes when they export request handlers. */
 const PLAIN = /\.(ts|js)$/;
-const HANDLER = /^on(Request|Get|Post|Put|Patch|Delete|Options)$/;
+// Request handler kinds; `?` = a re-export from a server-only module (kind known at runtime only).
+const HANDLER = /^(on(Request|Get|Post|Put|Patch|Delete|Options)|\?)$/;
 const IGNORED = /(^|\/)[.]|\.(test|spec)\.[^/]+$|\.d\.ts$/;
 const SPECIAL = new Set(["_layout", "_404", "_error"]);
 
@@ -82,8 +83,9 @@ const pattern = (segments: readonly Segment[]): string =>
 
 /**
  * Build the route table from file paths relative to the routes directory (posix separators).
- * `exports`: server export names per module file (`scanRoutes` reads them; pages/layouts with any are
- * `inline`, plain `.ts` files with request handlers are endpoint routes).
+ * `exports`: server export kinds per module file (`load`, `onGet`, … the wrapper names, `?` for a re-export
+ * from a server-only module, plus the flags `prerender` / `live`; `scanRoutes` reads them): pages/layouts
+ * with any are `inline`, plain `.ts` files with a request handler are endpoint routes.
  */
 export function routeTable(files: readonly string[], exports: ReadonlyMap<string, readonly string[]> = new Map()): RouteTable {
   const set = new Set(files.filter((file) => !IGNORED.test(file)));
@@ -207,8 +209,16 @@ export async function scanRoutes(dir: string): Promise<RouteTable> {
 const PRERENDER = /^\s*export\s+(?:const|let|var)\s+prerender\b/m;
 // `export const live = true`: a live page (reported as `live`, not a server export; universal, kept in the browser).
 const LIVE = /^\s*export\s+const\s+live\s*=\s*true\b/m;
+// Cheap prefilter (no candidate, no parse): a wrapper import, a server-only re-export, or a former magic name (RV3010).
+const CANDIDATE = /@rivetjs\/router["']|\.server\b|\b(server(Load|Guard|Actions|Entries|Headers)|on(Request|Get|Post|Put|Patch|Delete|Options))\b/;
+// Server-split errors that change what the route table would be: untagged magic names, duplicate kinds.
+const TABLE_ERRORS = /^(Untagged server export|Duplicate server export)/;
 
-/** Server export names of route modules (pages, layouts, plain `.ts` files), by file; live pages also list `live`. */
+/**
+ * Server export kinds of route modules (pages, layouts, plain `.ts` files), by file (see `routeTable`);
+ * `prerender` and `live` pages are listed with their flag. Throws on a module whose exports misdeclare the
+ * route (RV3010 untagged magic name, duplicate kind): the file and the compiler's message.
+ */
 export async function _serverExportsOf(dir: string, files: readonly string[]): Promise<Map<string, string[]>> {
   const { moduleFacts } = await import("@rivetjs/compiler");
   const out = new Map<string, string[]>();
@@ -216,13 +226,19 @@ export async function _serverExportsOf(dir: string, files: readonly string[]): P
     if (IGNORED.test(file) || SERVER.test(file) || !(PAGE.test(file) || PLAIN.test(file))) continue;
     const source = await readFile(join(dir, file), "utf8");
     const live = PAGE.test(file) && LIVE.test(source);
-    // Cheap prefilter: no candidate export name, no parse.
-    const candidates = /\b(server[A-Z]\w*|on(Request|Get|Post|Put|Patch|Delete|Options)|prerender)\b/.test(source);
-    if (!candidates && !live) continue;
-    const names = candidates ? [...(moduleFacts(source, file, { serverExports: true }).serverExports ?? [])] : [];
-    if (PAGE.test(file) && PRERENDER.test(source)) names.push("prerender");
-    if (live) names.push("live");
-    if (names.length) out.set(file, names);
+    const prerender = PAGE.test(file) && PRERENDER.test(source);
+    const candidates = CANDIDATE.test(source);
+    if (!candidates && !live && !prerender) continue;
+    const kinds: string[] = [];
+    if (candidates) {
+      const facts = moduleFacts(source, file, { serverExports: true });
+      const error = facts.serverErrors?.find((e) => TABLE_ERRORS.test(e.message));
+      if (error) throw new Error(`${join(dir, file)}${error.line === null ? "" : `:${error.line}:${error.column ?? 1}`}: ${error.message}`);
+      kinds.push(...(facts.serverKinds ?? []));
+    }
+    if (prerender) kinds.push("prerender");
+    if (live) kinds.push("live");
+    if (kinds.length) out.set(file, kinds);
   }
   return out;
 }

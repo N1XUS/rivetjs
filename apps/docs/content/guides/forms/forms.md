@@ -38,23 +38,23 @@ The schema can come from any library that supports [Standard Schema](https://sta
 
 ## Handle it on the server
 
-Wrap your action with `action()` from `@rivetjs/forms/server`, and export it from the page file as `serverActions`:
+Wrap your action with `action()` from `@rivetjs/forms/server`, and export it from the page file as `actions(…)`:
 
 ```tsx title="src/routes/contact.tsx"
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { action } from "@rivetjs/forms/server";
 import { contactForm } from "../forms/contact.ts";
 import { saveMessage } from "../messages.server.ts";
 
-export const serverActions = {
+export const forms = actions({
   contact: action(contactForm, async (value) => {
     await saveMessage(value.email, value.message); // value is typed and valid
     return redirect("/thanks");
   }),
-};
+});
 ```
 
-The compiler removes `serverActions` from the browser build, and `@rivetjs/forms/server` and `saveMessage` with it. Your function only runs when the input passes the schema. Before that, `action()`:
+The compiler removes `actions(…)` from the browser build, and `@rivetjs/forms/server` and `saveMessage` with it. Your function only runs when the input passes the schema. Before that, `action()`:
 
 1. rejects posts from other sites, also when the browser sends neither `Origin` nor `Sec-Fetch-Site` (in production);
 2. refuses wrong content types (`415`) and too-large bodies (`413`; 1 MiB for normal forms, 10 MiB for file uploads);
@@ -171,7 +171,7 @@ Others: `touched`, `dirty`, `issues`, `issueText`, `validating` (an async check 
 
 ## More building blocks
 
-Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const serverActions = wizardAction(...)`); call `loadWizard(...)` inside `serverLoad`.
+Each lives in its own entry, so you only pay for what you import. Server helpers such as `wizardAction(...)` return the whole actions object (`export const forms = actions(wizardAction(...))`); call `loadWizard(...)` inside `load(…)`.
 
 | Entry | For |
 | --- | --- |
@@ -186,7 +186,7 @@ A field can also have its own async check, for example "is this user name free?"
 
 ## Common mistakes
 
-- **Different `name` and action key.** `defineForm({ name: "contact" })` needs `serverActions.contact` and `action="?/contact"`.
+- **Different `name` and action key.** `defineForm({ name: "contact" })` needs a `contact` action in `actions({ … })` and `action="?/contact"`.
 - **Leaving out `result: actionResult()`.** Without it, the page after a failed post without JavaScript shows no messages.
 - **Putting the form definition in a `.server.ts` file.** The browser needs it for its checks. Keep it in a normal module, and keep secrets out of it.
 - **Rendering one definition twice on a page.** Pass a different `id` to each `createForm` call and add `<FormMeta of={form} />` inside each form.

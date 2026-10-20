@@ -5,11 +5,12 @@ import { signal } from "@rivetjs/reactivity";
 import { config } from "../../../i18n.config.ts";
 import { Minus, Plus } from "lucide";
 import { Icon } from "../../components/Icon.tsx";
+import { guard, entries } from "@rivetjs/router";
 
 // Checks the `lang` segment and sets the page's language.
-export const serverGuard = i18nGuard(config);
+export const access = guard(i18nGuard(config));
 // Static build: `/` is English; prerender `/uk` too.
-export const serverEntries = () => [{ lang: "uk" }];
+export const paths = entries(() => [{ lang: "uk" }]);
 
 export const head = { title: "Plurals" };
 

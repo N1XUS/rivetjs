@@ -38,7 +38,8 @@ test("dev: a loader throw sends the overlay error and renders the dev error page
     assert.match(html, /<p id="rivet-dev-where">Route <code>crash<\/code>, phase <code>loader<\/code><\/p>/);
     // Escaped message; the stack is source-mapped to the route's server module.
     assert.match(html, /<pre class="message">loader &lt;exploded&gt;<\/pre>/);
-    assert.match(html, /<pre class="stack">Error: loader &lt;exploded&gt;\n\s+at (?:Object\.)?load \([^)]*crash\.server\.ts:2:\d+\)/);
+    // The loader is an arrow inside `load(…)`: its frame is anonymous, at the throw line.
+    assert.match(html, /<pre class="stack">Error: loader &lt;exploded&gt;\n\s+at [^\n]*crash\.server\.ts:3:\d+/);
     // The page opens Vite's overlay itself (the ws message only reaches pages already open), nonce'd for the CSP.
     const nonce = /'nonce-([^']+)'/.exec(response.headers.get("content-security-policy")!)![1]!;
     assert.match(html, new RegExp(`<script type="module" nonce="${nonce.replace(/[+/]/g, "\\$&")}">import \\{ ErrorOverlay \\} from "/@vite/client";`));
@@ -48,7 +49,7 @@ test("dev: a loader throw sends the overlay error and renders the dev error page
     assert.equal(errors.length, 1);
     assert.equal(errors[0]!.err!.plugin, "rivet");
     assert.equal(errors[0]!.err!.message, 'loader failed in route "crash": loader <exploded>');
-    assert.match(errors[0]!.err!.stack, /crash\.server\.ts:2:\d+/);
+    assert.match(errors[0]!.err!.stack, /crash\.server\.ts:3:\d+/);
     assert.equal(errors[0]!.err!.id, join(root, "src/routes/crash.tsx"));
 
     // Client navigation (data request): JSON as before, the overlay message goes out again.

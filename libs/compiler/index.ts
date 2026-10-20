@@ -64,9 +64,11 @@ export interface CompileOptions {
    */
   styles?: StylesOptions;
   /**
-   * Route module: server exports (`serverLoad`, `serverGuard`, … any `server[A-Z]…` export, and
-   * `onRequest`/`onGet`/`onPost`/`onPut`/`onPatch`/`onDelete`/`onOptions`) are checked, and removed from the DOM
-   * target together with the code and imports only they use.
+   * Route module: server exports (module-scope `const`s initialized by a `@rivetjs/router` wrapper call —
+   * `load`, `guard`, `actions`, `entries`, `headers`, `onRequest`, `onGet`, `onPost`, `onPut`, `onPatch`, `onDelete`,
+   * `onOptions`; names are free — and re-exports from server-only modules) are checked, and removed from the DOM
+   * target together with the code and imports only they use. Untagged exports named like the former magic
+   * exports (`serverLoad`, `onGet`, …) are RV3010.
    */
   serverExports?: boolean;
   /**
@@ -200,6 +202,8 @@ export interface CompileResult {
   cssClasses?: Record<string, Record<string, string>>;
   /** `serverExports` only: server export names in source order. */
   serverExports?: string[];
+  /** `serverExports` only: kind of each export (parallel to `serverExports`): the wrapper name (`load`, `onGet`, …), `?` for a re-export from a server-only module. */
+  serverKinds?: string[];
   /** `serverExports` only: import sources the browser module no longer imports. */
   serverImports?: string[];
 }
@@ -341,6 +345,8 @@ export interface ModuleFacts {
   boundaries: Map<string, ComponentBoundaryFacts>;
   /** `serverExports` only: facts are of the browser source; these list what was removed. */
   serverExports?: string[];
+  /** Kind per server export (parallel to `serverExports`, see `CompileResult.serverKinds`). */
+  serverKinds?: string[];
   serverImports?: string[];
   serverErrors?: { message: string; line: number | null; column: number | null }[];
 }
@@ -383,6 +389,7 @@ interface RawFacts {
     { interactive: boolean; context: boolean; params: "none" | "object" | "destructured"; renders: string[]; calls: [string, boolean][] },
   ][];
   serverExports?: string[];
+  serverKinds?: string[];
   serverImports?: string[];
   serverErrors?: { message: string; line: number | null; column: number | null }[];
 }
@@ -394,7 +401,9 @@ interface RawFacts {
  */
 export function moduleFacts(source: string, filename: string, options?: ModuleFactsOptions): ModuleFacts {
   const raw = call<RawFacts>(options ? { op: "moduleFacts", source, filename, options } : { op: "moduleFacts", source, filename });
-  const server = raw.serverExports ? { serverExports: raw.serverExports, serverImports: raw.serverImports, serverErrors: raw.serverErrors } : {};
+  const server = raw.serverExports
+    ? { serverExports: raw.serverExports, serverKinds: raw.serverKinds ?? [], serverImports: raw.serverImports, serverErrors: raw.serverErrors }
+    : {};
   return {
     ...server,
     imports: new Map(raw.imports),

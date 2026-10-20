@@ -161,28 +161,29 @@ npx nx g @rivetjs/nx:route "blog/[slug]" --project=web --loader --layout
 | --- | --- | --- |
 | `path` (first argument) |  | Path under `src/routes`: `about`, `blog/[slug]`, `docs/[[lang]]/[...path]`, `(marketing)/pricing`, `blog/index`. See [file routes](../routing/file-routes.md). |
 | `--project` |  | The app. |
-| `--loader` | off | A `serverLoad` and a typed `data` prop. |
-| `--action` | off | `serverActions` and a form that posts to it. Needs `--adapter=node`. |
-| `--guard` | off | A `serverGuard`. |
+| `--loader` | off | A `load(…)` and a typed `data` prop. |
+| `--action` | off | `actions(…)` and a form that posts to it. Needs `--adapter=node`. |
+| `--guard` | off | A `guard(…)`. |
 | `--layout` | off | Also a `_layout.tsx` in the route's folder, if it has none. |
 
-In a static app, a route with parameters also gets `serverEntries`, the parameter values to prerender. Put quotes around paths with brackets, so the shell leaves them alone. The command above writes:
+In a static app, a route with parameters also gets `entries(…)`, the parameter values to prerender. Put quotes around paths with brackets, so the shell leaves them alone. The command above writes:
 
 ```tsx title="src/routes/blog/[slug].tsx"
 import type { PageProps, RequestEvent } from "@rivetjs/router";
+import { entries, load } from "@rivetjs/router";
 
 /** Parameter values to prerender (static mode): one page per entry. */
-export const serverEntries = () => [{ slug: "example" }];
+export const paths = entries(() => [{ slug: "example" }]);
 
 /** Data for the page, loaded on the server; removed from the browser build with everything only it uses. */
-export const serverLoad = ({ params }: RequestEvent) => ({
+export const loader = load(({ params }: RequestEvent) => ({
   title: `Blog Slug: ${params.slug ?? ""}`,
-});
+}));
 
 export const head = { title: "Blog Slug" };
 
 /** Blog Slug (/blog/:slug). */
-export default function BlogSlugPage({ data, params }: PageProps<typeof serverLoad>) {
+export default function BlogSlugPage({ data, params }: PageProps<typeof loader>) {
   return (
     <main>
       <h1>{data.title}</h1>
@@ -198,7 +199,7 @@ export default function BlogSlugPage({ data, params }: PageProps<typeof serverLo
 npx nx g @rivetjs/nx:layout "(private)" --project=web --guard
 ```
 
-Writes `src/routes/<directory>/_layout.tsx`; without a directory, the root layout. `--guard` adds a `serverGuard` that redirects to `/login` when there is no `session` cookie; it runs for every page and endpoint in the folder. See [layouts](../routing/layouts.md) and [guards](../routing/guards.md).
+Writes `src/routes/<directory>/_layout.tsx`; without a directory, the root layout. `--guard` adds a `guard(…)` that redirects to `/login` when there is no `session` cookie; it runs for every page and endpoint in the folder. See [layouts](../routing/layouts.md) and [guards](../routing/guards.md).
 
 ### api-route
 

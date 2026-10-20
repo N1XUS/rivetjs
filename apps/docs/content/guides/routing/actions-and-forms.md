@@ -11,20 +11,20 @@ An **action** is a server function that handles a form submit. You write a norma
 
 ## Write an action
 
-Export `serverActions` from the page file. Each key is an action name. The form posts to the page's own URL with `?/` and the action name:
+Export `actions(…)` from the page file. Each key is an action name. The form posts to the page's own URL with `?/` and the action name:
 
 ```tsx title="src/routes/index.tsx"
-import { redirect, type RequestEvent } from "@rivetjs/router";
-import { db } from "../db.server.ts"; // used only by serverActions: removed from the browser build
+import { redirect, type RequestEvent, actions } from "@rivetjs/router";
+import { db } from "../db.server.ts"; // used only by the actions: removed from the browser build
 
-export const serverActions = {
+export const forms = actions({
   add: async ({ request }: RequestEvent) => {
     const form = await request.formData();
     const text = String(form.get("text") ?? "").trim();
     if (text) await db.notes.add(text.slice(0, 200));
     return redirect("/");
   },
-};
+});
 
 export default function Notes() {
   return (
@@ -37,7 +37,7 @@ export default function Notes() {
 }
 ```
 
-`serverActions` runs only on the server; the compiler removes it from the browser build. See [server code in route files](./server-code-in-routes.md).
+`actions(…)` runs only on the server; the compiler removes it from the browser build. See [server code in route files](./server-code-in-routes.md).
 
 A page can have several actions, for example `?/add` and `?/delete`, each in its own form. A button can pick a different action with `formaction="?/delete"`.
 
@@ -52,10 +52,10 @@ Return `redirect(url)` when the action is done. From an action, a redirect witho
 When the input is wrong, return `fail(status, data)`. The router then runs the loaders again, renders the page with that status (for example `400`), and hands `data` to the page. The page reads it with `actionResult(name)` from `@rivetjs/router/client`:
 
 ```tsx title="src/routes/index.tsx"
-import { fail, redirect, type RequestEvent } from "@rivetjs/router";
+import { fail, redirect, type RequestEvent, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 
-export const serverActions = {
+export const forms = actions({
   sign: async ({ request }: RequestEvent) => {
     const form = await request.formData();
     const name = String(form.get("name") ?? "").trim();
@@ -64,7 +64,7 @@ export const serverActions = {
     // … save …
     return redirect("/");
   },
-};
+});
 
 export default function Guestbook() {
   const sign = actionResult<"index", "sign">("sign");
@@ -105,10 +105,10 @@ Prefer a redirect after success: a page rendered as the answer to a `POST` sends
 Before an action runs, all guards of the page and its layouts run, just like for a page load. A guard that protects the page also protects its actions. The action gets the same event as a loader, so it can read `locals.user`, set cookies and set headers:
 
 ```tsx title="src/routes/login.tsx"
-import { fail, redirect, type RequestEvent } from "@rivetjs/router";
+import { fail, redirect, type RequestEvent, actions } from "@rivetjs/router";
 import { checkPassword, createSession } from "../sessions.server.ts";
 
-export const serverActions = {
+export const forms = actions({
   login: async ({ request, cookies }: RequestEvent) => {
     const form = await request.formData();
     const email = String(form.get("email") ?? "");
@@ -117,7 +117,7 @@ export const serverActions = {
     cookies.set("session", await createSession(user), { maxAge: 60 * 60 * 24 });
     return redirect("/account");
   },
-};
+});
 ```
 
 ## Cross-site protection

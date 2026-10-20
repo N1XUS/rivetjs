@@ -1,3 +1,4 @@
+import { load, actions } from "@rivetjs/router";
 let count = 0;
-export const load = () => ({ count });
-export const actions = { inc: () => ({ count: ++count }) };
+export const loader = load(() => ({ count }));
+export const forms = actions({ inc: () => ({ count: ++count }) });

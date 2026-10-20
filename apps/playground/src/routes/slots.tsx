@@ -1,15 +1,16 @@
-// Demo: web-component slots (`<slot r:name>` / `r:slot`) and in-file server code (`serverLoad`,
-// `onGet`) in one route module. Server code is removed from the browser build.
+// Demo: web-component slots (`<slot r:name>` / `r:slot`) and in-file server code (`load(…)`,
+// `onGet(…)`) in one route module. Server code is removed from the browser build.
 import { signal } from "@rivetjs/reactivity";
 import type { PageProps, RequestEvent } from "@rivetjs/router";
 import type { Content, Slot, Slots } from "@rivetjs/runtime/jsx-runtime";
+import { load, onGet } from "@rivetjs/router";
 
-export async function serverLoad({ url }: RequestEvent) {
+export const loader = load(async ({ url }: RequestEvent) => {
   return { rows: ["Lazy slot content", "Scoped slot arguments", "Fallbacks"], renderedAt: new Date().toISOString(), path: url.pathname };
-}
+});
 // `/slots?format=json`: answered by the route's request handler before the page renders.
-export const onGet = async (event: RequestEvent) =>
-  event.url.searchParams.get("format") === "json" ? Response.json(await serverLoad(event)) : undefined;
+export const GET = onGet(async (event: RequestEvent) =>
+  event.url.searchParams.get("format") === "json" ? Response.json(await loader(event)) : undefined);
 
 /** Slots demo: named slots with fallbacks, a default slot, and a scoped slot called per row. */
 export interface SlotCardProps extends Slots<"header" | "footer"> {
@@ -52,7 +53,7 @@ export function SlotCard({ header, footer, row, rows, children }: SlotCardProps)
 }
 
 export const head = { title: "Slots · Rivet playground" };
-export default function SlotsPage({ data }: PageProps<typeof serverLoad>) {
+export default function SlotsPage({ data }: PageProps<typeof loader>) {
   const likes = signal(0);
   return (
     <section class="space-y-4">

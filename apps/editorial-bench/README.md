@@ -37,7 +37,7 @@ Each lane: `lanes/<lane>/{package.json, package-lock.json, build.sh, README.md}`
 - Astro: brief named Astro 5; latest stable on 2026-10-11 is 7.3.8 (used). Bodies via marked, not Astro's remark `render()` (same library as the other JS lanes; Astro's default would add its remark pipeline to build time).
 - Hugo: Goldmark, not marked. Writes an extra `/page/1/` alias redirect file. Taxonomy key `authorslug` (front matter key, case-insensitive) for author pages.
 - Eleventy: articles are copied into its input dir by `build.sh` (counted in build time).
-- Rivet: `.server.ts` naming not used for the content module (a rolldown 1.2.12 race fired the router's server-only guard at random; fixed in 2d198ad1, see CLAUDE.md); the module is only imported by stripped `serverLoad` / `serverEntries`.
+- Rivet: `.server.ts` naming not used for the content module (a rolldown 1.2.12 race fired the router's server-only guard at random; fixed in 2d198ad1, see CLAUDE.md); the module is only imported by stripped `load(…)` / `entries(…)`.
 - Rivet has no raw-HTML sink: Markdown is rendered from marked's token tree as JSX (`components/Markdown.tsx`); element structure matches marked's HTML renderer.
 - SvelteKit 3: config in `sveltekit({...})`, `$lib` → relative imports (Kit 3 removed both).
 - Next writes `out/`; `build.sh` moves it to `dist/`. Default build workers exceed the 2.8 GB cap at N ≥ 1000 (reported `over-cap`); `NEXT_CPUS=<n>` sets `experimental.cpus` for a reduced-worker variant (`run.ts --as <key>`), probed only (see the write-up).

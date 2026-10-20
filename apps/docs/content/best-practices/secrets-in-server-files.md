@@ -15,7 +15,7 @@ Files named `*.server.ts` are different. The build refuses to put them in browse
 
 ```txt
 [rivet:router] ../db.server.ts is server-only and cannot be imported by browser code (imported from /app/src/routes/products.tsx)
-  fix: read it in a server export (`serverLoad`, `serverActions`, `onGet`, …) and pass the data to the page; type-only imports (`import type`) are fine
+  fix: read it in a server export (`load(…)`, `actions(…)`, `onGet(…)`, …) and pass the data to the page; type-only imports (`import type`) are fine
   docs: https://rivetjs.severyn.pro/guides/security/server-only-code
 ```
 
@@ -40,20 +40,21 @@ export async function invoices(customer: string) {
 
 ```tsx title="src/routes/billing.tsx" prefer
 import type { PageProps, RequestEvent } from "@rivetjs/router";
-import { invoices } from "../payments.server.ts"; // used only by serverLoad: removed from the browser build
+import { invoices } from "../payments.server.ts"; // used only by the loader: removed from the browser build
+import { load } from "@rivetjs/router";
 
-export const serverLoad = async ({ locals }: RequestEvent) => {
+export const loader = load(async ({ locals }: RequestEvent) => {
   const list = await invoices(locals.customerId as string);
   // Only the fields the page shows.
   return { invoices: list.map(({ id, total, status }) => ({ id, total, status })) };
-};
+});
 
-export default function Billing({ data }: PageProps<typeof serverLoad>) {
+export default function Billing({ data }: PageProps<typeof loader>) {
   return <ul>{data.invoices.map((invoice) => <li>{invoice.id}: {invoice.total} ({invoice.status})</li>)}</ul>;
 }
 ```
 
-The page's `serverLoad` may import the `.server.ts` module: the compiler removes `serverLoad`, and the imports only it uses, from the browser build. The component itself must not use anything from that module.
+The page's `load(…)` may import the `.server.ts` module: the compiler removes `load(…)`, and the imports only it uses, from the browser build. The component itself must not use anything from that module.
 
 ## Don't
 

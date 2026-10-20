@@ -1,4 +1,4 @@
-import { redirect } from "@rivetjs/router";
+import { redirect, actions } from "@rivetjs/router";
 import { actionResult } from "@rivetjs/router/client";
 import { action } from "@rivetjs/forms/server";
 import { autofocus, createForm, defaultValue, describedBy, fieldId, formId, isInvalid, onBlur, onInput, onSubmit } from "@rivetjs/forms";
@@ -9,14 +9,14 @@ export const head = { title: "Contact" };
 
 // #region demo
 // Server code in the page file: removed from the browser build, with `action` and its import.
-export const serverActions = {
+export const forms = actions({
   // `action` reads the body, checks it against the schema, and only then calls your function.
   // Invalid input answers 400 with the problems; the page shows them next to the fields.
   contact: action(contactForm, (value) => {
     console.log("New message from", value.email);
     return redirect("/thanks");
   }),
-};
+});
 
 export default function Contact() {
   // After a POST without JavaScript, actionResult() holds the server's answer (problems, typed values).

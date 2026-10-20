@@ -49,16 +49,17 @@ To share a layout between pages without adding a URL segment, use a group folder
 
 ## Give a layout data
 
-A layout can export `serverLoad`, like a page. Its result reaches the layout as `data`:
+A layout can export `load(…)`, like a page. Its result reaches the layout as `data`:
 
 ```tsx title="src/routes/_layout.tsx"
 import type { LayoutProps, RequestEvent } from "@rivetjs/router";
+import { load } from "@rivetjs/router";
 
-export const serverLoad = ({ locals }: RequestEvent) => ({
+export const loader = load(({ locals }: RequestEvent) => ({
   user: typeof locals.user === "string" ? locals.user : null,
-});
+}));
 
-export default function Layout({ data, children }: LayoutProps<typeof serverLoad>) {
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
   return (
     <div>
       <header>{data().user ? `Signed in as ${data().user}` : <a href="/login">Sign in</a>}</header>
@@ -68,7 +69,7 @@ export default function Layout({ data, children }: LayoutProps<typeof serverLoad
 }
 ```
 
-`serverLoad` runs only on the server; the compiler removes it from the browser build. `LayoutProps<typeof serverLoad>` takes the data type from it. The generated form `LayoutProps<"settings/_layout">` (the layout's file path without extension) also types `params()`; see [typed routes](./typed-routes.md).
+`load(…)` runs only on the server; the compiler removes it from the browser build. `LayoutProps<typeof loader>` takes the data type from it. The generated form `LayoutProps<"settings/_layout">` (the layout's file path without extension) also types `params()`; see [typed routes](./typed-routes.md).
 
 Note the call: layout props are **functions**. Read them as `data()`, `params()` and `url()`. When the user moves to another page, the router updates these values, and only the parts of the layout that read them change.
 
@@ -109,14 +110,14 @@ The `aria-current` attributes update after each navigation, because they read `u
 
 ## Protect a group of pages
 
-A `serverGuard` in `_layout.tsx` runs before every page and [endpoint](./endpoints.md) below that folder. This is the usual way to protect a whole area, such as `(private)/` or `admin/`. See [guards](./guards.md).
+A `guard(…)` in `_layout.tsx` runs before every page and [endpoint](./endpoints.md) below that folder. This is the usual way to protect a whole area, such as `(private)/` or `admin/`. See [guards](./guards.md).
 
 ## Common mistakes
 
 - **Reading `data.user` instead of `data().user`.** In a layout, `data` is a function. In a page, `data` is a plain value.
 - **Expecting `params()` in the root layout.** The root layout wraps every route, so its `params()` is always empty. Read `url()` instead.
 - **Putting state that must survive navigation in a nested layout.** Nested layouts render again on every navigation. Move the state up to the root layout.
-- **Expecting the root layout around server error pages.** When the root layout has server code (`serverLoad`, `serverGuard`, …), a 404 or error page that the server renders (a full page load) shows without the root layout, because the error response carries no layout data. During client navigation the error renders inside the layout. Give `_404.tsx` and `_error.tsx` their own link back home.
+- **Expecting the root layout around server error pages.** When the root layout has server code (`load(…)`, `guard(…)`, …), a 404 or error page that the server renders (a full page load) shows without the root layout, because the error response carries no layout data. During client navigation the error renders inside the layout. Give `_404.tsx` and `_error.tsx` their own link back home.
 
 ## See also
 

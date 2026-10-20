@@ -3,18 +3,19 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import type { RequestEvent } from "../server/handler.ts";
+import { load } from "../shared/server-exports.ts";
 // Type-only: navigate.ts reaches the router client (index.ts, `.tsx` imports) that plain Node cannot load.
 import type * as nav from "../client/navigate.ts";
 import type { FreshData, InvalidateTarget } from "../client/navigate.ts";
 declare const invalidate: typeof nav.invalidate, revalidate: typeof nav.revalidate;
 
-export const load = (event: RequestEvent<{ id: string }>) => {
+export const loader = load((event: RequestEvent<{ id: string }>) => {
   event.depends("cart");
   event.depends("/api/items/" + event.params.id, new URL("https://api.test/user"));
   // @ts-expect-error keys are strings or URLs
   event.depends(1);
   return { id: event.params.id };
-};
+});
 
 export const calls = (): Promise<void>[] => [
   invalidate(),

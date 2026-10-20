@@ -84,7 +84,7 @@ If the visitor leaves the page, the server stops writing.
 
 ## Loader data versus streaming
 
-Route loaders (`serverLoad`) finish before the page renders. They never stream. Use them for data the page cannot show without. Use a streamed `Async` for parts that can appear a moment later. See [Loading data](../routing/loading-data.md).
+Route loaders (`load(…)`) finish before the page renders. They never stream. Use them for data the page cannot show without. Use a streamed `Async` for parts that can appear a moment later. See [Loading data](../routing/loading-data.md).
 
 ## Make sure the response is really streamed
 

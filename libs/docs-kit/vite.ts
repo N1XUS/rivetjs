@@ -31,7 +31,7 @@ export const FRAME_STYLES_FILE = ".vite/docs-frame-styles.json";
 /**
  * `rivetRouter({ resume: { lazyOwned } })` for a docs app: the example-frame registry (`virtual:docs/example-frames` →
  * `src/generated/example-frames.tsx`, one `import()` per example) is imported by the frame route; its targets load
- * through the route's own `serverLoad`, never by prefetch — listed as chunk lazies they made a route-mode frame page
+ * through the route's own loader, never by prefetch — listed as chunk lazies they made a route-mode frame page
  * prefetch every example (ROUTE-CHUNKS placed parts, 2026-10-18).
  */
 export const DOCS_LAZY_OWNED: readonly string[] = [FRAMES_INDEX];

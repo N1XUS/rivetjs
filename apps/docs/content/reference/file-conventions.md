@@ -31,7 +31,7 @@ All paths are relative to the project root. The defaults below can be changed in
 | `docs/[[lang]]/intro.tsx` | `/docs/intro` and `/docs/:lang/intro` | Optional parameter. Each optional segment makes two routes. |
 | `files/[...path].tsx` | `/files/*path` | Rest parameter. Must be the last segment. Matches the rest of the path. |
 | `(marketing)/pricing.tsx` | `/pricing` | `(group)` folders add no URL segment. Use them to share a layout. |
-| `api/time.ts` (plain `.ts`, no `.tsx`) | `/api/time` | Endpoint only: no page, answers with request handlers (`onGet`, …). |
+| `api/time.ts` (plain `.ts`, no `.tsx`) | `/api/time` | Endpoint only: no page, answers with request handlers (`onGet(…)`, …). |
 
 Rules:
 
@@ -46,7 +46,7 @@ Rules:
 
 | File | Applies to | What it does |
 | --- | --- | --- |
-| `_layout.tsx` | its folder and all folders below | Wraps the pages. Gets `children` plus `data`, `params`, `url` as accessors (`LayoutProps`). The root layout stays mounted across client navigation. Can export `serverGuard`, `serverLoad` and other server exports for everything under it; the only special file that runs server code. |
+| `_layout.tsx` | its folder and all folders below | Wraps the pages. Gets `children` plus `data`, `params`, `url` as accessors (`LayoutProps`). The root layout stays mounted across client navigation. Can export `guard(…)`, `load(…)` and other server exports for everything under it; the only special file that runs server code. |
 | `_404.tsx` | its folder and below | Shown for URLs that match no route, and when a loader throws `notFound()`. Gets `url`. |
 | `_error.tsx` | its folder and below | Shown when a loader or guard fails. Gets `error`. |
 
@@ -56,28 +56,28 @@ The nearest `_404` / `_error` up the folder chain wins. For unmatched URLs, a `_
 
 | Export | Type | Purpose |
 | --- | --- | --- |
-| `default` | component | The page. Props: `PageProps` = `{ data, params, url }`; `PageProps<typeof serverLoad>` or `PageProps<"route/id">` types them. See [typed routes](../guides/routing/typed-routes.md). |
+| `default` | component | The page. Props: `PageProps` = `{ data, params, url }`; `PageProps<typeof loader>` or `PageProps<"route/id">` types them. See [typed routes](../guides/routing/typed-routes.md). |
 | `head` | `Head` or `({ data, params, url }) => Head` | Title, meta tags and links. Merged from layouts to page; the inner value wins. |
 | `preload` | `"eager"` \| `"idle"` \| `"visible"` \| `"intent"` \| `"interaction"` | When the page's handler code loads (component level). See [preloading](../guides/performance/preloading.md). |
 | `transition` | `false` or `{ types: string[] }` | View transition for navigations to this page (with `rivetRouter({ transitions })`). |
 
 ## Server exports
 
-Server code lives in the page or layout file itself. The compiler removes server exports (and code only they use) from the browser build.
+Server code lives in the page or layout file itself, as exports made by a wrapper call from `@rivetjs/router` (`export const loader = load(…)`; the export name is free, each wrapper once per file). The compiler removes them (and code only they use) from the browser build.
 
 | Export | Purpose |
 | --- | --- |
-| `serverGuard(event)` | Runs outer to inner before loaders. Throw or return `redirect()`, `deny()`, `notFound()`, `error()` to stop. |
-| `serverLoad(event)` | Data for the page or layout. Arrives as the `data` prop; `PageProps<typeof serverLoad>` infers its type. |
-| `serverActions` | `{ [name]: (event) => result }`. Form posts to `?/name`, for example `<form method="post" action="?/add">`. |
-| `serverHeaders(event)` | Extra response headers. |
-| `serverEntries()` | Parameter values to prerender for dynamic routes. |
+| `guard((event) => …)` | Runs outer to inner before loaders. Throw or return `redirect()`, `deny()`, `notFound()`, `error()` to stop. |
+| `load((event) => …)` | Data for the page or layout. Arrives as the `data` prop; `PageProps<typeof loader>` infers its type. |
+| `actions({ … })` | `{ [name]: (event) => result }`. Form posts to `?/name`, for example `<form method="post" action="?/add">`. |
+| `headers((event) => …)` | Extra response headers. |
+| `entries(() => […])` | Parameter values to prerender for dynamic routes. |
 | `prerender` | Plain `boolean`. Force prerendering on or off (static mode). Default: on for static routes and routes with entries. |
-| `onRequest`, `onGet`, `onPost`, `onPut`, `onPatch`, `onDelete` | Request handlers. They run before guards, outermost module first, `onRequest` before `on<Method>`. A returned `Response` ends the request; `undefined` continues. |
+| `onRequest(…)`, `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` | Request handlers. They run before guards, outermost module first, `onRequest(…)` before the method's handler. A returned `Response` ends the request; `undefined` continues. |
 
-Endpoint routes: a plain `.ts` file in `src/routes` that exports request handlers (for example `api/time.ts` with `onGet`). Its own `on<Method>` must return a `Response`. Plain `.ts` files without handlers are helpers, not routes.
+Endpoint routes: a plain `.ts` file in `src/routes` that exports request handlers (for example `api/time.ts` with `export const GET = onGet(…)`). Its handler for the method must return a `Response`. Plain `.ts` files without handlers are helpers, not routes.
 
-A separate `name.server.ts` next to a page or layout still works; its exports are merged with the route file's (the same export in both is an error), and old names (`load`, `guard`, `actions`, `headers`, `entries`, `GET`, `POST`, …) are accepted there. `rivet migrate server-exports [--routes src/routes] [--dry-run]` (a bin of `@rivetjs/router`) renames them. See [server code in routes](../guides/routing/server-code-in-routes.md).
+A separate `name.server.ts` next to a page or layout works too, with the same wrappers; its exports are merged with the route file's (the same wrapper in both is an error). Old export names (`serverLoad`, `onGet`, …, and `load`, `GET`, … in `.server.ts` files) are errors; `rivet migrate server-exports [--routes src/routes] [--dry-run]` (a bin of `@rivetjs/router`) rewrites them. See [server code in routes](../guides/routing/server-code-in-routes.md).
 
 `event` is a `RequestEvent`: `request`, `url`, `params`, `locals`, `signal`, `cookies`, `setHeader(name, value)`.
 

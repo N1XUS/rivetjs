@@ -1,49 +1,80 @@
-// Route server exports: the in-file names (`serverLoad`, `serverGuard`, `serverActions`,
-// `serverEntries`, `serverHeaders`, `prerender`, `csrf`, `onRequest`, `onGet`…) and the sibling `*.server.ts`
-// names (`load`, `guard`, `actions`, `entries`, `headers`, `GET`…) normalize to one `ServerModule`.
+// Route server exports: values tagged by the `@rivetjs/router` wrappers (`load(…)`, `guard(…)`,
+// `actions(…)`, `entries(…)`, `headers(…)`, `onRequest(…)`, `onGet(…)`…; any export name) plus the plain
+// data exports `prerender` / `csrf` normalize to one `ServerModule`. Same rule for page / layout modules,
+// sibling `*.server.ts` and plain `.ts` endpoints. Spec: docs/design/specs/2026-10-20-server-exports-design.md.
 import type { ServerModule } from "./handler.ts";
+import { SERVER_EXPORT } from "../shared/server-exports.ts";
 
-/** In-file name → `ServerModule` key. */
-const RENAMED = {
+/** Former magic export names → the wrapper that replaces them (an untagged export with one is an error). */
+const MAGIC: Readonly<Record<string, string>> = {
   serverLoad: "load",
   serverGuard: "guard",
   serverActions: "actions",
   serverEntries: "entries",
   serverHeaders: "headers",
-} as const;
-const KEPT = ["prerender", "csrf", "onRequest", "onGet", "onPost", "onPut", "onPatch", "onDelete", "onOptions"] as const;
-/** Sibling-only names (migration; `rivet migrate server-exports` renames them). */
-const LEGACY = ["load", "guard", "actions", "entries", "headers", "GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+  onRequest: "onRequest",
+  onGet: "onGet",
+  onPost: "onPost",
+  onPut: "onPut",
+  onPatch: "onPatch",
+  onDelete: "onDelete",
+  onOptions: "onOptions",
+};
+/** Former sibling `*.server.ts` names (raw-loaded server modules only). */
+const LEGACY: Readonly<Record<string, string>> = {
+  load: "load",
+  guard: "guard",
+  actions: "actions",
+  entries: "entries",
+  headers: "headers",
+  GET: "onGet",
+  POST: "onPost",
+  PUT: "onPut",
+  PATCH: "onPatch",
+  DELETE: "onDelete",
+};
 
 const cache = new WeakMap<object, ServerModule>();
-const normalized = new WeakSet<object>();
+
+const kindOf = (value: unknown): string | undefined =>
+  typeof value === "function" || (typeof value === "object" && value !== null) ? (value as { [SERVER_EXPORT]?: string })[SERVER_EXPORT] : undefined;
 
 /**
- * Normalize one module's exports. `legacy`: a sibling `*.server.ts` (old names accepted; a module
- * exporting both `load` and `serverLoad` is an error). In-file (page/layout) modules use the new names
- * only: their `load`/`guard`… are ordinary exports.
+ * Normalize one module's exports by tag. `server`: a raw-loaded server module (sibling `*.server.ts`,
+ * plain `.ts` endpoint) — its former sibling names (`load`, `GET`…) are checked too. Errors (thrown at the
+ * first request that loads the module): two exports of one kind; an untagged export with a former magic name.
  */
-export function serverExports(module: Record<string, unknown> | undefined, legacy: boolean, file = "route module"): ServerModule {
+export function serverExports(module: Record<string, unknown> | undefined, file = "route module", server = false): ServerModule {
   if (!module) return {};
   const cached = cache.get(module);
   if (cached) return cached;
   const out: Record<string, unknown> = {};
-  for (const [name, key] of Object.entries(RENAMED)) {
-    if (module[name] === undefined) continue;
-    if (legacy && module[key] !== undefined) throw new Error(`${file}: exports both \`${key}\` and \`${name}\`; keep \`${name}\``);
-    out[key] = module[name];
+  const names: Record<string, string> = {};
+  for (const name of Object.keys(module)) {
+    const value = module[name];
+    const kind = kindOf(value);
+    if (kind === undefined) {
+      const wrapper = MAGIC[name] ?? (server ? LEGACY[name] : undefined);
+      if (wrapper !== undefined && value !== undefined)
+        throw new Error(
+          `${file}: \`${name}\` is not a server export: wrap it — \`export const x = ${wrapper}(…)\` (\`${wrapper}\` is exported by @rivetjs/router)`,
+        );
+      continue;
+    }
+    if (out[kind] !== undefined && out[kind] !== value) throw new Error(`${file}: \`${names[kind]}\` and \`${name}\` are both \`${kind}(…)\`; keep one`);
+    out[kind] = value;
+    names[kind] = name;
   }
-  for (const name of KEPT) if (module[name] !== undefined) out[name] = module[name];
-  if (legacy) for (const name of LEGACY) if (module[name] !== undefined && out[name] === undefined) out[name] = module[name];
+  if (module.prerender !== undefined) out.prerender = module.prerender;
+  if (module.csrf !== undefined) out.csrf = module.csrf;
   const result = out as ServerModule;
   cache.set(module, result);
-  normalized.add(result);
   return result;
 }
 
 /**
  * Merge a page/layout module's in-file server exports with its sibling `*.server.ts` (generated
- * loaders call this for routes that have both). One export defined in both is an error.
+ * loaders call this for routes that have both). One kind defined in both is an error.
  */
 const merges = new WeakMap<object, WeakMap<object, ServerModule>>();
 /** Merge a route module's in-file server exports with its sibling `*.server.ts`. */
@@ -51,11 +82,10 @@ export function mergeServer(inline: Record<string, unknown>, sibling: Record<str
   // Per (inline, sibling) module pair: a hot edit brings new module objects, hence a new merge.
   const cached = merges.get(inline)?.get(sibling);
   if (cached) return cached;
-  const a = serverExports(inline, false, files[0]);
-  const b = serverExports(sibling, true, files[1]);
+  const a = serverExports(inline, files[0]);
+  const b = serverExports(sibling, files[1], true);
   for (const key of Object.keys(b)) if (key in a) throw new Error(`${files[0]} and ${files[1]} both define the route's \`${key}\`; keep one`);
   const merged: ServerModule = { ...b, ...a };
-  normalized.add(merged);
   let bySibling = merges.get(inline);
   if (!bySibling) merges.set(inline, (bySibling = new WeakMap()));
   bySibling.set(sibling, merged);
@@ -63,11 +93,9 @@ export function mergeServer(inline: Record<string, unknown>, sibling: Record<str
 }
 
 /**
- * Load and normalize a route table entry's server module. Generated loaders return in-file and merged
- * modules normalized, and sibling `*.server.ts` modules raw (old names accepted).
+ * Load a route table entry's server module. Generated loaders (`build/codegen.ts`) return it normalized
+ * (`serverExports` / `mergeServer`): `AppRoute.server` / `layouts` return `ServerModule`s.
  */
-export async function loadServer(load: (() => Promise<unknown>) | undefined): Promise<ServerModule | undefined> {
-  const module = (await load?.()) as Record<string, unknown> | undefined;
-  if (!module) return undefined;
-  return normalized.has(module) ? (module as ServerModule) : serverExports(module, true, "server module");
+export function loadServer(load: (() => Promise<ServerModule>) | undefined): Promise<ServerModule> | undefined {
+  return load?.();
 }

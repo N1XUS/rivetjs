@@ -44,11 +44,11 @@ test("a foreign @jsxImportSource / classic @jsx pragma leaves the file to its fr
 
 test("`.ts` route modules lose their server exports in browser builds (pages importing from an endpoint)", () => {
   const transform = plugin({ serverExports: { modules: ["src/routes/api/items.ts"] } });
-  const source = `import { db } from "./db.server.ts";\nexport const LIMIT = 10;\nexport function onGet() {\n  return Response.json(db.all(LIMIT));\n}\n`;
+  const source = `import { db } from "./db.server.ts";\nimport { onGet } from "@rivetjs/router";\nexport const LIMIT = 10;\nexport const GET = onGet(() => {\n  return Response.json(db.all(LIMIT));\n});\n`;
   const browser = transform(source, "/app/src/routes/api/items.ts")!;
   assert.ok(browser, "transformed");
   assert.match(browser, /LIMIT = 10/);
-  assert.doesNotMatch(browser, /onGet|db\.server|db\.all/);
+  assert.doesNotMatch(browser, /onGet|GET|db\.server|db\.all/);
   // Server builds keep everything (no transform); other `.ts` modules are untouched.
   assert.equal(transform(source, "/app/src/routes/api/items.ts", true), null);
   assert.equal(transform(source, "/app/src/lib/items.ts"), null);
@@ -67,11 +67,14 @@ test("the parser source type follows the filename: `.ts` casts, `.jsx` without t
   assert.match(ts.code, /const id = \(x\) => x/);
   assert.ok(compile(generic, { filename: "/app/src/util.tsx", target: "dom" }).diagnostics.length > 0);
   // Route-module split of a `.ts` file with a cast.
-  const split = compile("const id = <T>(x: T) => x;\nexport const n = id(1);\nexport const onGet = () => new Response(String(n));\n", {
-    filename: "/app/src/routes/api.ts",
-    target: "dom",
-    serverExports: true,
-  });
+  const split = compile(
+    'import { onGet } from "@rivetjs/router";\nconst id = <T>(x: T) => x;\nexport const n = id(1);\nexport const GET = onGet(() => new Response(String(n)));\n',
+    {
+      filename: "/app/src/routes/api.ts",
+      target: "dom",
+      serverExports: true,
+    },
+  );
   assert.deepEqual(split.diagnostics, []);
   assert.doesNotMatch(split.code, /onGet/);
   // `.jsx`: type syntax is an error, JSX compiles.

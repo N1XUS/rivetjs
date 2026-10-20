@@ -17,17 +17,17 @@ related: [guides/routing/errors-and-404, guides/components/async, recipes/optimi
 ## Do
 
 ```tsx title="src/routes/products/[id].tsx" prefer group="routes"
-import { error, notFound, type PageProps, type RequestEvent } from "@rivetjs/router";
+import { error, notFound, type PageProps, type RequestEvent, load } from "@rivetjs/router";
 import { findProduct } from "../../db.server.ts";
 
-export const serverLoad = async ({ params }: RequestEvent<"products/[id]">) => {
+export const loader = load(async ({ params }: RequestEvent<"products/[id]">) => {
   const product = await findProduct(params.id);
   if (!product) throw notFound(`No product ${params.id}`);
   if (product.hidden) throw error(410, "This product was removed");
   return product;
-};
+});
 
-export default function Product({ data }: PageProps<typeof serverLoad>) {
+export default function Product({ data }: PageProps<typeof loader>) {
   return <h1>{data.name}</h1>;
 }
 ```
@@ -68,14 +68,15 @@ onClick={async () => {
 ## Don't
 
 ```ts avoid
-export const serverLoad = async ({ params }: RequestEvent<"products/[id]">) => {
+import { load } from "@rivetjs/router";
+export const loader = load(async ({ params }: RequestEvent<"products/[id]">) => {
   try {
     return { product: await findProduct(params.id), error: null };
   } catch (cause) {
     // Status 200, and the database message goes to the browser.
     return { product: null, error: String(cause) };
   }
-};
+});
 ```
 
 ## When to break it

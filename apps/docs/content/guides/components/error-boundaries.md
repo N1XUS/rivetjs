@@ -66,7 +66,7 @@ With [streaming](../performance/streaming.md), a part inside the boundary that f
 
 - **Expecting a boundary to catch handler errors.** It catches rendering, effects and bindings. Use `try`/`catch` in the handler.
 - **Calling `reset()` without fixing the cause.** The children render again with the same state and fail again.
-- **Using a boundary for missing data.** A missing record is a 404: throw `notFound()` in the route's `serverLoad`. See [errors and 404 pages](../routing/errors-and-404.md).
+- **Using a boundary for missing data.** A missing record is a 404: throw `notFound()` in the route's `load(…)`. See [errors and 404 pages](../routing/errors-and-404.md).
 
 
 ## See also

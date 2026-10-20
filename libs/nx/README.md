@@ -26,7 +26,7 @@ Node.js 24 or newer, Nx 23.
 | `component` | `c` | A resumable component + test: `--kind=basic\|overlay` (render-function children), `--story` (a `/stories/<name>` page), `--directory`, `--export`. |
 | `route` | `r`, `page` | A file route: `blog/[slug]`, `docs/[[lang]]/[...path]`, `(group)/page`; `--loader`, `--action`, `--guard`, `--layout`. |
 | `layout` | | `src/routes/<dir>/_layout.tsx`, `--guard`. |
-| `api-route` | `endpoint` | An endpoint route with `onGet` / `onPost` / … (`--methods=get,post`). |
+| `api-route` | `endpoint` | An endpoint route with `onGet(…)` / `onPost(…)` / … exports (`--methods=get,post`). |
 | `ui-setup` | | `@rivetjs/ui` + Tailwind v4 + its styles (Rivet theme; other looks = `@rivetjs/ui/theme` presets). |
 | `i18n-setup` | | `@rivetjs/i18n`: `i18n.config.ts`, catalogs, the Vite plugin (`--locales=en,de`, `--prefix`). |
 | `init` | | Plugin in `nx.json`, shared tooling dependencies, `.rivet` in `.gitignore`. |

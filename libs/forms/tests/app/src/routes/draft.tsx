@@ -1,6 +1,7 @@
 import { clientEffect } from "@rivetjs/runtime/dom";
 import { createAutosave, defineAutosave, guardLeave, onAutosave, postDraft, unsaved } from "@rivetjs/forms/autosave";
 import { draftAction, type Draft, type DraftStore, type RawDraft } from "@rivetjs/forms/server";
+import { actions } from "@rivetjs/router";
 
 export const head = { title: "Draft" };
 
@@ -17,7 +18,7 @@ const store: DraftStore<RawDraft> = {
   },
   delete: (id) => void map.delete(id),
 };
-export const serverActions = { draft: draftAction(store) };
+export const forms = actions({ draft: draftAction(store) });
 
 // Long quiet period: typing leaves changes unsaved, so leaving the page asks first.
 const drafts = defineAutosave({ save: postDraft("?/draft"), debounce: 60_000 });

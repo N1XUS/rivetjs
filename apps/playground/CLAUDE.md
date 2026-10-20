@@ -16,7 +16,7 @@ Example file-routed app on `@rivetjs/router`: compiled JSX, Tailwind 4, signals,
 
 ## Layout
 
-- `src/routes/` — `_layout.tsx` (header/counter/footer, hero), `index.tsx`, `items/[id].tsx`, `resume.tsx`, `slots.tsx` (slots + in-file `serverLoad`/`onGet`), `styles.tsx` + `styles.module.css`, `nested/{_layout,one,two}.tsx`, `_404.tsx`; endpoints `api/items.ts`, `api/items/[id].ts`, `api/time.ts`, `csr/…` (308 → resumed pages).
+- `src/routes/` — `_layout.tsx` (header/counter/footer, hero), `index.tsx`, `items/[id].tsx`, `resume.tsx`, `slots.tsx` (slots + in-file `load(…)`/`onGet(…)`), `styles.tsx` + `styles.module.css`, `nested/{_layout,one,two}.tsx`, `_404.tsx`; endpoints `api/items.ts`, `api/items/[id].ts`, `api/time.ts`, `csr/…` (308 → resumed pages).
 - `src/document.ts` — document shell (title/description defaults, icon, stylesheets via `headTags(undefined, { styles, inlineStyles, nonce })`: every page's sheets (Tailwind ~3.5 KB br + the `/styles` route sheet) total ≤ 6 KB br, so all are inline and no page requests a stylesheet: `rivetRouter({ inlineStylesheets })` default; `tests/server.test.ts`).
 - `src/services/server.ts` — seeded server services; `src/context.ts` — `Item` type.
 - `src/resume-demo.tsx`, `src/page-views.tsx` (+ `src/analytics.ts` idle chunk), `src/browser-widget.tsx` (client-only), `src/styles.css`, `src/assets/`.

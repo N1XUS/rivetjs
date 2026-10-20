@@ -2,8 +2,9 @@ import { t } from "@rivetjs/i18n";
 import { alternates, i18nGuard } from "@rivetjs/i18n/router";
 import { signal } from "@rivetjs/reactivity";
 import { config } from "../../../i18n.config.ts";
+import { guard } from "@rivetjs/router";
 
-export const serverGuard = i18nGuard(config);
+export const access = guard(i18nGuard(config));
 
 export const head = ({ url }: { url: URL }) => ({ title: "Shop", links: alternates(url, config) });
 

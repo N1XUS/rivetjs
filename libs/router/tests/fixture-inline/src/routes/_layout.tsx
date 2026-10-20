@@ -1,13 +1,14 @@
 import { signal } from "@rivetjs/reactivity";
 import type { LayoutProps, RequestEvent } from "@rivetjs/router";
 import { SECRET } from "../db.server.ts";
+import { guard, load } from "@rivetjs/router";
 
-export const serverGuard = ({ locals }: RequestEvent) => {
+export const access = guard(({ locals }: RequestEvent) => {
   locals.checked = SECRET.length > 0;
-};
-export const serverLoad = ({ locals }: RequestEvent) => ({ site: "Inline", checked: locals.checked === true });
+});
+export const loader = load(({ locals }: RequestEvent) => ({ site: "Inline", checked: locals.checked === true }));
 
-export default function Layout({ data, children }: LayoutProps<typeof serverLoad>) {
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
   const clicks = signal(0);
   return (
     <div>

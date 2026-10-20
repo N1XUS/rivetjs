@@ -2,12 +2,13 @@ import { signal } from "@rivetjs/reactivity";
 import type { LivePageProps } from "@rivetjs/router";
 import { invalidate } from "@rivetjs/router/client";
 import { count } from "../../counts.server.ts";
+import { load } from "@rivetjs/router";
 
 // Live page under a nested layout level: a search-only navigation (`?q=`) refreshes `data` in place.
 export const live = true;
-export const serverLoad = ({ url }: { url: URL }) => ({ q: url.searchParams.get("q") ?? "", loads: count("page") });
+export const loader = load(({ url }: { url: URL }) => ({ q: url.searchParams.get("q") ?? "", loads: count("page") }));
 
-export default function Shop({ data }: LivePageProps<typeof serverLoad>) {
+export default function Shop({ data }: LivePageProps<typeof loader>) {
   const clicks = signal(0);
   return (
     <article id="page">
