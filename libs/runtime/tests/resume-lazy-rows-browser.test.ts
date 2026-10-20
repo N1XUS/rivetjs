@@ -1,6 +1,7 @@
-// LAZY-ROWS T4: a page whose state carries lazy row records (`L`, `RIVET_LAZY_ROWS=on`) boots before the browser side (T5)
-// exists: the runtime ignores the records, rows outside a region stay inert markup, a region holding lazy rows re-creates
-// them on its first change, and nothing throws. A streamed segment's records are merged into the parsed state.
+// LAZY-ROWS T4 + T5: a page whose state carries lazy row records (`L`, `RIVET_LAZY_ROWS=on`) boots; a click in a lazy
+// row materialises it (its handler runs: T5), streamed segments' rows too; a region holding lazy rows re-creates its For on
+// the first change (the For keys the server rows); nothing throws. A streamed segment's records are merged into the parsed
+// state. The adopt-mode details: `resume-lazy-materialise-browser.test.ts`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
@@ -8,7 +9,7 @@ import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { ResumeState } from "@rivetjs/runtime/resume-format";
 import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
 import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { LAZY_ROWS_BUILD, withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -35,6 +36,7 @@ const manifest: ResumeManifest = {
   hash: "lazy",
   runtime: "/rt.js",
   symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
+  lazyRows: true,
 };
 const byComponent: Record<string, ResumeSymbol[]> = {};
 for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
@@ -56,6 +58,7 @@ test("lazy row records (RIVET_LAZY_ROWS=on): the page boots, regions re-create t
   assert.match(html, /data-patch="\d+">[^<]*"L":\[/);
   const files: Record<string, Served> = {
     "/fixture.mjs": rewrite(dom.code),
+    ...LAZY_ROWS_BUILD,
     "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
     "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
   };
@@ -71,11 +74,13 @@ test("lazy row records (RIVET_LAZY_ROWS=on): the page boots, regions re-create t
     assert.equal(await page.evaluate(() => (document as unknown as { $r: { p(): { L: unknown[] } } }).$r.p().L.length), 3);
     await page.click("#top");
     await text("#top", "1");
-    // Inert lazy rows (T5 materialises them): a click runs nothing and breaks nothing.
+    // Lazy rows materialise on their first event: the row's own handler runs (T5).
     await page.click("#static li");
+    await text("#top", "10");
     await page.click("#late li");
+    await text("#top", "7000");
     await page.click("#top");
-    await text("#top", "2");
+    await text("#top", "7001");
     // A region holding lazy rows: its first change re-creates them in the browser (client rows, working handlers).
     await page.click("#add");
     await page.waitForFunction(() => document.querySelectorAll("#live li").length === 3, undefined, { timeout: 5000 });

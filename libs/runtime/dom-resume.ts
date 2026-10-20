@@ -24,6 +24,8 @@ import { _attrWrite, _delegateBelow } from "./dom-v2.ts";
 import { _model } from "./dom-v2-controls.ts";
 import { _takeover } from "./dom-v2-spread.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
+import { _lazyRows } from "./lazy-rows-resume.ts";
 import { createRouter } from "./dom-router.ts";
 import { createDecoder, RESUME_VERSION, _placeholderContext } from "./resume-format.ts";
 import { _rSyms } from "./resume-symbols.ts";
@@ -315,12 +317,22 @@ function liveProps(args: unknown[]): Record<string, unknown> {
 
 // A delegated hit's handlers, each element's in order (capture-phase entries outermost first, then bubbling ones),
 // until one stops propagation; whether one canceled the event.
+// A lazy row's synthetic entry (`["L", [], chunks]`, LAZY-ROWS T5 builds: the lazy add-on / `q`) materialises the row; the
+// next target's element bounds a cold replay's delegation inside it.
 const deliver = (rt: ResumeInstance, event: Event, targets: Hit[0], replaying?: boolean, live?: unknown[]): boolean => {
   let prevented = false;
-  for (const [element, id, entry] of targets) {
-    prevented = rt.dispatch(event, element, id, event.type, replaying, entry, live).prevented || prevented;
-    if (event.cancelBubble) break;
-  }
+  if (LAZY_ROWS)
+    for (let i = 0; i < targets.length; i++) {
+      const [element, id, entry] = targets[i]!;
+      if (entry?.[0] === "L") rt.L!(event, +id, targets[i + 1]?.[0] ?? null);
+      else prevented = rt.dispatch(event, element, id, event.type, replaying, entry, live).prevented || prevented;
+      if (event.cancelBubble) break;
+    }
+  else
+    for (const [element, id, entry] of targets) {
+      prevented = rt.dispatch(event, element, id, event.type, replaying, entry, live).prevented || prevented;
+      if (event.cancelBubble) break;
+    }
   return prevented;
 };
 /** Create the runtime. Context values used by captures are provided here by token id. */
@@ -583,6 +595,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     if (region !== undefined)
       if (isDead(region)) source.set(undefined);
       else runWithOwner(ownerOf(region), () => onCleanup(() => untrack(source) === held && source.set(undefined)));
+    // Lazy rows reading it (LAZY-ROWS T5 builds): its first change materialises every row of those Fors (a wake).
+    if (LAZY_ROWS) lazy!.arm(ref, source);
     const bindings = stubs.get(ref);
     if (!bindings) return;
     readers.set(source, bindings);
@@ -659,6 +673,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           // replacement with the same id, unless the new content moved focus itself.
           const focused = doc.activeElement;
           const keep = focused && focused !== doc.body && focused.id && inside(range, focused) ? focused.id : null;
+          let lazied = false;
           if (rows) {
             // A keyed list: its For adopts the server rows; only rows it drops or re-creates die.
             const adopted = rowList(rows).map(([row, item, flags], index): AdoptedRow => {
@@ -670,9 +685,23 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             const took = provided(() => _region(range.start, range.end!, read, adopted, kept, adoptState, reads ? unchanged(reads) : null));
             if (!took) for (const row of adopted) row.dispose();
             if (DEV) DEV.resumeRegion(node, named(id), took ? "adopted" : "recreated", binding.cause!);
-          } else provided(() => _region(range.start, range.end!, read, null, kept, adoptState));
+          } else if (
+            // A lazy For's region (LAZY-ROWS T5 builds): the re-created For keys its server rows (`dom-resume-lazy.ts`).
+            LAZY_ROWS &&
+            lazy!.region(
+              node,
+              range,
+              read,
+              kept,
+              adoptState,
+              provided,
+              DEV ? (took) => DEV && DEV.resumeRegion(node, named(id), took ? "adopted" : "recreated", binding.cause!) : null,
+            )
+          )
+            lazied = true;
+          else provided(() => _region(range.start, range.end!, read, null, kept, adoptState));
           if (kept) for (const b of kept) if (b && !b.taken) b.dispose();
-          if (DEV && !rows) DEV.resumeRegion(node, named(id), kept?.some((b) => b?.taken) ? "adopted" : "recreated", binding.cause!);
+          if (DEV && !rows && !lazied) DEV.resumeRegion(node, named(id), kept?.some((b) => b?.taken) ? "adopted" : "recreated", binding.cause!);
           if (keep && !focused!.isConnected && (doc.activeElement === doc.body || !doc.activeElement))
             (doc.getElementById(keep) as HTMLElement | null)?.focus({ preventScroll: true });
         } else {
@@ -754,6 +783,42 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       return false;
     };
   };
+  // Lazy row records (state `L`, LAZY-ROWS T5): only builds with `resume: { lazyRows: true }` create them (`LAZY_ROWS`).
+  const lazy = LAZY_ROWS
+    ? _lazyRows!({
+        get state() {
+          return state;
+        },
+        get doc() {
+          return doc;
+        },
+        get api() {
+          return api;
+        },
+        get root() {
+          return root;
+        },
+        decoded: (ref) => decoder.decoded(ref),
+        get,
+        markers,
+        ready,
+        report,
+        isDead,
+        ownerOf,
+        parents,
+        named,
+        idle,
+        unrecorded(fn) {
+          const during = replayed;
+          replayed &&= null;
+          try {
+            fn();
+          } finally {
+            replayed = during;
+          }
+        },
+      })
+    : null;
   // Whether a node sits in a region's server content (strictly between its markers).
   const inside = (range: Markers | undefined, node: Node): boolean =>
     !!(range?.end && range.start.compareDocumentPosition(node) & 4 && range.end.compareDocumentPosition(node) & 2);
@@ -1084,6 +1149,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           return el;
         },
       });
+      // Lazy row records (LAZY-ROWS T5 builds): rows, wakes, the region a re-created For keys them in.
+      if (LAZY_ROWS) lazy!.register();
       // Lazy components (routes, deferred views) load at idle; navigation then renders synchronously.
       _warmLazy(idle);
       // Dev: chunk loads the loader's idle warm-up would swallow are logged.
@@ -1119,13 +1186,15 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // The rescan may no longer see the starts an id-less one continued (a re-created region): keep what this scan read.
       if (comments) for (const [id, pair] of comments) if (pair.start.data.length < 3) (chained ??= new WeakMap()).set(pair.start, id);
       comments = elements = null;
+      if (LAZY_ROWS) lazy!.register();
       if (DEV && api?.p) DEV.resumeChunks(api.p, state.c);
       register({ b: unpack(delta.b ?? [], state.t), fx: delta.fx ?? [], ce: delta.ce ?? [], a: delta.a }, true);
     },
     /** Whether a region's server content was replaced (a streamed segment for it is dropped). */
     dead: (region: number) => isDead(region),
     /** Path-addressed row elements (state `w`): the element of an id, or the id of an element (the loader's `$rw`). */
-    q: (x: number | Element): Element | string | undefined => (typeof x == "number" ? build().get("" + x) : (build(), pathIds.get(x))),
+    q: (x: number | Element): Element | string | undefined =>
+      typeof x == "number" ? build().get("" + x) : LAZY_ROWS ? ((build(), pathIds.get(x)) ?? lazy!.id(x)) : (build(), pathIds.get(x)),
     on(event: Event, hit: Hit): boolean {
       // A focus-back's focus events (`undoing`): consumed, never delivered or queued.
       if (undoing) return true;
@@ -1146,6 +1215,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       if (!path.length)
         for (let n = event.target as (Node & { host?: Node; defaultView?: Window }) | null; n; n = (n.parentNode ?? n.host ?? n.defaultView) as typeof n)
           path.push(n);
+      if (LAZY_ROWS) lazy!.paths.set(event, path);
       record(1);
       chain = chain
         .then(() => api.ensure(hit[1]))
@@ -1317,6 +1387,8 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       }
       return { prevented: prevented || (!replaying && event.defaultPrevented) };
     },
+    // A lazy row's synthetic entry on a delegated event's path (`deliver`, LAZY-ROWS T5 builds): materialise the row.
+    ...(LAZY_ROWS ? { L: lazy!.L } : {}),
     // Dev server (a resumed page switching to client rendering on a hot update): dispose what resumed,
     // and never start (or activate anything) afterwards. Production builds have no `dispose`.
     ...(DEV

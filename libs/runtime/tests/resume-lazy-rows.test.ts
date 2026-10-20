@@ -10,7 +10,7 @@ import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { _rClientEvent, _rEffect } from "@rivetjs/runtime/server-resume";
 import { Async, Portal, clientOnly, renderToString } from "@rivetjs/runtime/server";
 import { RESUME_VERSION } from "@rivetjs/runtime/resume-format";
-import type { LazyRowsEntry, ResumeState } from "@rivetjs/runtime/resume-format";
+import type { LazyRowsEntry, RegionLocals, ResumeState } from "@rivetjs/runtime/resume-format";
 import { _inIdScope, _rowIdPrefix, withIdScope } from "@rivetjs/runtime/id";
 import { DEV } from "#dev";
 import { compileResume, importServer } from "./resume/compile.ts";
@@ -20,9 +20,10 @@ type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 type Row = { id: number; label: string };
 type Inner = (props: { n: number }) => unknown;
 
-const source = `import { For } from "@rivetjs/runtime/dom";
-import { signal, _regionState } from "@rivetjs/reactivity";
+const source = `import { For, Provider } from "@rivetjs/runtime/dom";
+import { createContext, signal, untrack, _regionState, useContext } from "@rivetjs/reactivity";
 import { createId } from "@rivetjs/runtime/id";
+import { resumableContext } from "@rivetjs/runtime/resume-format";
 let Inner = () => null;
 let Slotted = () => null;
 export const setInner = (c) => void (Inner = c);
@@ -55,6 +56,14 @@ function Counter(p) {
   const v = _regionState(() => signal(p.n * 10));
   return <b>{v()}</b>;
 }
+const Theme = resumableContext(createContext("light", { id: "lazy-theme" }));
+export function Provided(p) {
+  return <Provider token={Theme} value="dark"><ul><For each={() => p.rows} by={(n) => n}>{(n) => <li onClick={() => sel.set(n())}>{useContext(Theme)}:{n()}</li>}</For></ul></Provider>;
+}
+// A read inside an untracked body (cdk components: component bodies run untracked): the site's own read still counts.
+export function Quiet(p) {
+  return <ul><For each={() => p.rows} by={(n) => n}>{(n) => <li onClick={() => sel.set(n())}>{untrack(() => <i class={sel() === n() ? "a" : "b"} />)}</li>}</For></ul>;
+}
 export function Stateful(p) {
   return <ul><For each={() => p.rows} by={(n) => n}>{(n) => <li>{n() % 2 ? <Counter n={n()} /> : "even"}</li>}</For></ul>;
 }
@@ -69,15 +78,19 @@ const mod = await importServer<{
   Indexed(p: { rows: string[]; prefix: string }): ServerValue;
   Live(): ServerValue;
   Stateful(p: { rows: number[] }): ServerValue;
+  Provided(p: { rows: number[] }): ServerValue;
+  Quiet(p: { rows: number[] }): ServerValue;
   Row(p: { row: () => Row }): ServerValue;
   setInner(c: Inner): void;
   setSlotted(c: Inner): void;
 }>(server.code);
 const EFFECT = "src/rows.tsx#Fx$e",
   LISTENER = "src/rows.tsx#Ce$e";
+// A build with `resume: { lazyRows: true }` (its browser runtime materialises lazy rows: the server may write them).
 const manifest: ResumeManifest = {
   runtime: "/rt.js",
   symbols: { ...Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])), [EFFECT]: "/c/fx.js", [LISTENER]: "/c/ce.js" },
+  lazyRows: true,
 };
 const rows: Row[] = [
   { id: 1, label: "a" },
@@ -112,20 +125,42 @@ test("default (unset) and RIVET_LAZY_ROWS=off: no lazy records, recorded rows, t
   assert.match(unset, /<li id="rv\d+" class="off" data-r="\d+">/);
 });
 
+test("RIVET_LAZY_ROWS=on with a build that did not opt in (manifest without lazyRows): no lazy records, the off page (dev: one warning)", async () => {
+  const off = await render(() => mod.List({ rows }), "off");
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    process.env.RIVET_LAZY_ROWS = "on";
+    const { lazyRows: _, ...plain } = manifest;
+    const page = (await resumableToString(() => withIdScope("rv", () => mod.List({ rows })), { manifest: plain })) as string;
+    await resumableToString(() => withIdScope("rv", () => mod.List({ rows })), { manifest: plain });
+    assert.equal(page, off);
+    assert.equal(stateOf(page).L, undefined);
+    const hints = warn.mock.calls.filter(([m]) => String(m).includes("RIVET_LAZY_ROWS=on is ignored"));
+    // Dev: once per process (two renders, one warning); production: none.
+    assert.equal(hints.length, DEV ? 1 : 0);
+    if (DEV) assert.match(String(hints[0]![0]), /rivet\(\{ resume: \{ lazyRows: true \} \}\)/);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
 test("format: rivet/state carries v = RESUME_VERSION = 2", async () => {
   assert.equal(RESUME_VERSION, 2);
   assert.equal(stateOf(await render(() => mod.List({ rows }), "on")).v, 2);
 });
 
-test("lazy For: one L record (id, page-root region, row function, items, key path, chunks, reads), no row entries", async () => {
+test("lazy For: one L record (id, page-root region, row function, items, key path, chunks, reads, event types), no row entries", async () => {
   const html = await render(() => mod.List({ rows }), "on");
   const state = stateOf(html);
   assert.equal(state.L!.length, 1);
-  const [forId, region, rowFn, items, by, flags, chunks, reads, rowState] = entry(state);
+  const [forId, region, rowFn, items, by, flags, chunks, reads, rowState, types, providers] = entry(state);
   assert.equal(region, -1);
   assert.equal(by, "id");
   assert.equal(flags, 0);
-  assert.equal(rowState, undefined);
+  // No state (0: the slot only pads), the rows' event types (T5: an event of one materialises the row), no providers.
+  assert.equal(rowState, 0);
+  assert.equal(types, "click");
+  assert.equal(providers, undefined);
   // The row function: its symbol (the row arrow), the dom target's `slot` symbol of the same id.
   const fn = table(state, rowFn) as { f: string; a: number[] };
   const rowSymbol = dom.symbols.find((s) => s.id === fn.f);
@@ -189,7 +224,8 @@ test("inside a region: the record names the region, which carries no rows ([8]) 
 test("per-row keyed state: only rows whose render created _regionState values ship them (flag 4)", async () => {
   const html = await render(() => mod.Stateful({ rows: [1, 2, 3] }), "on");
   const state = stateOf(html);
-  const [, , , , by, flags, , , rowState] = entry(state);
+  const [, , , , by, flags, , , held] = entry(state);
+  const rowState = held as (number | RegionLocals)[];
   assert.equal(by, "");
   assert.equal(flags & 4, 4);
   assert.equal(rowState!.length, 4);
@@ -201,18 +237,47 @@ test("per-row keyed state: only rows whose render created _regionState values sh
   assert.match(html, /<li>even<\/li>/);
 });
 
-test("rows without state ship none (no flag 4, no state slot)", async () => {
+test("rows without state ship none (no flag 4, state slot 0)", async () => {
   const [, , , , , flags, , , rowState] = entry(stateOf(await render(() => mod.List({ rows }), "on")));
   assert.equal(flags & 4, 0);
-  assert.equal(rowState, undefined);
+  assert.equal(rowState, 0);
+});
+
+// R6 (LAZY-ROWS T5): a client effect / clientEvent listener inside a row runs when the row materialises — no fallback.
+for (const [name, inner] of [
+  ["clientEffect", () => (_rEffect(EFFECT, []), null)],
+  ["clientEvent", () => (_rClientEvent(LISTENER, [], "w", "resize"), null)],
+] as [string, Inner][])
+  test(`no fallback (${name}, R6): the rows stay lazy, nothing of the row's ${name} is recorded; every row is listed at [11] (materialised at idle), the page boots`, async () => {
+    mod.setInner(inner);
+    const html = await render(() => mod.List({ rows }), "on");
+    const state = stateOf(html);
+    assert.equal(state.L!.length, 1);
+    assert.deepEqual(state.fx, []);
+    assert.deepEqual(state.ce, []);
+    assert.deepEqual(entry(state)[11], [...rows.keys()]);
+    assert.match(html, /data-boot/);
+  });
+
+test("providers around the For: identified ones ship at [10] (re-provided around a materialised row)", async () => {
+  const html = await render(() => mod.Provided({ rows: [1, 2] }), "on");
+  const state = stateOf(html);
+  const [, , , , , , , , , , providers] = entry(state);
+  assert.ok(Array.isArray(providers), String(providers));
+  assert.equal((providers as unknown[])[0], "lazy-theme");
+  assert.equal(table(state, (providers as number[])[1]!), "dark");
+});
+
+test("reads of sites inside untracked bodies (component bodies) are the rows' reads", async () => {
+  const state = stateOf(await render(() => mod.Quiet({ rows: [1, 2] }), "on"));
+  const reads = entry(state)[7];
+  assert.ok(Array.isArray(reads) && reads.length === 1, String(reads));
 });
 
 const reasons: [string, Inner, RegExp][] = [
   ["Portal", () => Portal({ children: null }), /a Portal/],
   ["clientOnly", clientOnly<{ n: number }>(() => ({ default: () => null })) as Inner, /a clientOnly component/],
   ["Async", () => Async({ load: () => 1, children: (v: number) => String(v) }), /an Async boundary/],
-  ["clientEffect", () => (_rEffect(EFFECT, []), null), /a client effect/],
-  ["clientEvent", () => (_rClientEvent(LISTENER, [], "w", "resize"), null), /a clientEvent listener/],
 ];
 for (const [name, inner, why] of reasons)
   test(`fallback (${name}): the whole For records its rows as today (R3), dev warns naming the For`, async () => {
@@ -245,8 +310,8 @@ test("slot content placed through {children} renders within its row: a reason th
 });
 
 test("a site only the writing of the row reaches (an accessor child, a slot inside it) is found before the decision", async () => {
-  mod.setInner(() => () => (_rEffect(EFFECT, []), null));
-  mod.setSlotted(() => () => () => (_rEffect(EFFECT, []), "x"));
+  mod.setInner(() => () => (Portal({ children: null }), null));
+  mod.setSlotted(() => () => () => (Portal({ children: null }), "x"));
   const on = await render(() => mod.List({ rows }), "on");
   assert.equal(stateOf(on).L, undefined);
   assert.equal(on, await render(() => mod.List({ rows }), "off"));
@@ -279,7 +344,7 @@ export function Page(p) {
   const d = compileResume(src, "dom", "src/stream.tsx");
   const m = await importServer<{ Page(p: object): ServerValue }>(compileResume(src, "server", "src/stream.tsx").code);
   (globalThis as { __rows?: () => Promise<Row[]> }).__rows = () => new Promise((resolve) => setTimeout(() => resolve(rows), 5));
-  const man: ResumeManifest = { runtime: "/rt.js", symbols: Object.fromEntries(d.symbols.map((s) => [s.id, "/c/s.js"])) };
+  const man: ResumeManifest = { runtime: "/rt.js", symbols: Object.fromEntries(d.symbols.map((s) => [s.id, "/c/s.js"])), lazyRows: true };
   process.env.RIVET_LAZY_ROWS = "on";
   const chunks: string[] = [];
   await renderResumable(

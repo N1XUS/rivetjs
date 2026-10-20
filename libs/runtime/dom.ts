@@ -22,7 +22,8 @@ import { lazyFunction } from "./lazy.ts";
 import { coordinator } from "./async-coordinator.ts";
 import type { Coordinator } from "./async-coordinator.ts";
 import { INVALID_URL, MEDIA_URLS, URLS, unsafeUrl } from "./url.ts";
-import { _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
+import { _adoption, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _restProps } from "./props.ts";
 import type { Slot } from "./slot.ts";
 // Pinned branded function: see slot.ts.
@@ -186,10 +187,11 @@ export interface Output {
 }
 function output(doc: Document, fn: () => unknown): Output {
   return createRoot((dispose) => {
-    const start = doc.createTextNode(""),
-      end = doc.createTextNode(""),
+    // Adopt run (LAZY-ROWS T5 builds): the anchors are the server's nodes, already in place.
+    const start = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""),
+      end = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""),
       out = { start, end, dispose };
-    doc.createDocumentFragment().append(start, end);
+    if (!LAZY_ROWS || start.parentNode === null) doc.createDocumentFragment().append(start, end);
     onCleanup(() => park(out, null));
     _insert(null, fn(), end);
     return out;
@@ -588,6 +590,7 @@ function dynamicContent(type: unknown, rest: Record<string, unknown>): DOMValue 
   // A tag HTML does not know: an SVG child, else MathML.
   if (String(element) === "[object HTMLUnknownElement]") element = doc.createElementNS(SVG, type);
   if (String(element) === "[object SVGElement]" && ns === HTML) element = doc.createElementNS(MATH, type);
+  if (LAZY_ROWS && _adoption.node) element = _adoption.node(element, 0);
   // The forwarding object itself (flag 2: getters read inside the spread effect), `children` as content (flag 1), `ref` bound once.
   _spread(element, rest, 3);
   return element;
@@ -610,8 +613,9 @@ export function Portal(props: { mount?: Element | null; children?: DOMValue }): 
 }
 
 export { Router, defineRoute } from "./dom-router.ts";
-// Resume (v2 adoption through the `_adoption.key` hook): the server branch key of a re-created region's first direct Show/Switch.
-export { _serverBranch } from "./dom-v2.ts";
+// Resume (v2 adoption through the `_adoption.key` hook): the server branch key of a re-created region's first direct Show/Switch;
+// `_materialise` (LAZY-ROWS T5): materialise the lazy row holding a node before focusing it (cdk collections).
+export { _serverBranch, _materialise } from "./dom-v2.ts";
 /** @internal Static SVG shapes (`[tag, attrs][]`, kit `Icon`) cloned from a per-data template; twin of `/server` `_svgShapes`. */
 export { _svgShapes } from "./dom-svg.ts";
 export {

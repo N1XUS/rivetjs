@@ -27,7 +27,7 @@ File-based routing for Rivet apps: route scan + codegen (`.rivet/`), Vite plugin
 
 Convention (decided): folder per subsystem, flat files inside; subpaths point at files (not `<name>/index.ts`). Keep it — many paths are referenced from outside (see Gotchas).
 
-- `build/` — build-time Node code: route scan, codegen, Vite plugin, dev errors, route CSS, migrate codemod, `lazy-rows.ts` (env-only `RIVET_LAZY_ROWS=swap` measurement harness, never shipped) → [build/CLAUDE.md](build/CLAUDE.md)
+- `build/` — build-time Node code: route scan, codegen, Vite plugin, dev errors, route CSS, migrate codemod, `lazy-rows.ts` (env-only `RIVET_LAZY_ROWS=swap` measurement harness, never shipped; `lazyRowsBuild`: `resume.lazyRows` for the lazy-rows tools' `on` builds) → [build/CLAUDE.md](build/CLAUDE.md)
 - `server/` — request handler, CSRF/body limit, server-export normalization, page render, app assembly → [server/CLAUDE.md](server/CLAUDE.md)
 - `client/` — browser router, layouts, navigation API, params/search, leave guards, transitions → [client/CLAUDE.md](client/CLAUDE.md)
 - `adapters/` — node / fetch / static / csr, platform targets (vercel / netlify / cloudflare / bun / deno: runtimes + `target-build.ts` + `pack.ts`), build loading → [adapters/CLAUDE.md](adapters/CLAUDE.md)

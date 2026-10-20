@@ -4,7 +4,7 @@
 import { test, vi } from "vitest";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { LAZY_ROWS_ENV, LAZY_ROWS_HARNESS_ENV, lazyRowsHarness, lazyRowsMode, lazyRowsModule } from "../build/lazy-rows.ts";
+import { LAZY_ROWS_ENV, LAZY_ROWS_HARNESS_ENV, lazyRowsBuild, lazyRowsHarness, lazyRowsMode, lazyRowsModule } from "../build/lazy-rows.ts";
 
 test("lazyRowsMode: off without the env var; swap in dev or a harness build; a plain production build ignores it", () => {
   const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -21,6 +21,14 @@ test("lazyRowsMode: off without the env var; swap in dev or a harness build; a p
   } finally {
     warn.mockRestore();
   }
+});
+
+test("lazyRowsBuild (LAZY-T5B): resume.lazyRows forced on only for a lazy-rows tool build with RIVET_LAZY_ROWS=on", () => {
+  assert.equal(lazyRowsBuild({}), false);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "on" }), false);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_HARNESS_ENV]: "1" }), false);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "swap", [LAZY_ROWS_HARNESS_ENV]: "1" }), false);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "on", [LAZY_ROWS_HARNESS_ENV]: "1" }), true);
 });
 
 test("lazyRowsHarness: inert by default; in swap mode only the SSR server entry installs the row hook", () => {

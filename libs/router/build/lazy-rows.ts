@@ -26,6 +26,16 @@ export function lazyRowsMode(command: "serve" | "build", env: Readonly<Record<st
   return null;
 }
 
+/**
+ * Lazy rows proper (LAZY-ROWS T5, `on`): a build whose resume runtime materialises them needs
+ * `rivetRouter({ resume: { lazyRows: true } })`. The measurement tools (docs-kit `check-examples`,
+ * `scripts/lazy-rows/probe.ts`) build app configs they do not own: with `RIVET_LAZY_ROWS=on` AND `LAZY_ROWS_HARNESS_ENV`
+ * (which only they set for their build children) `rivetRouter` turns the option on for that build (LAZY-T5B).
+ */
+export function lazyRowsBuild(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
+  return env[LAZY_ROWS_ENV] === "on" && env[LAZY_ROWS_HARNESS_ENV] === "1";
+}
+
 /** The runtime module the server entry imports in swap mode (no package export: not public API). */
 export function lazyRowsModule(): string {
   return join(dirname(createRequire(import.meta.url).resolve("@rivetjs/runtime/server-resume")), "server-lazy-rows.ts");

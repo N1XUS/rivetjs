@@ -30,8 +30,19 @@ const sources: Record<string, string> = {
   "/resume-builtins.ts": "resume-builtins.ts",
   "/resume-loader-module.ts": "resume-loader-module.ts",
   "/resume-symbols.ts": "resume-symbols.ts",
+  "/id.ts": "id.ts",
+  "/id-dom.ts": "id-dom.ts",
+  // LAZY-ROWS build-time switches (`false` / null: what builds without `resume.lazyRows` get) and the lazy rows runtime.
+  "/lazy-rows.ts": "lazy-rows.ts",
+  "/lazy-rows-resume.ts": "lazy-rows-resume.ts",
+  "/dom-resume-lazy.ts": "dom-resume-lazy.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
+};
+/** Served in place of the switches: a page of a build with `rivet({ resume: { lazyRows: true } })` (LAZY-T5B). */
+export const LAZY_ROWS_BUILD: Record<string, string> = {
+  "/lazy-rows.ts": "export const LAZY_ROWS = true;\n",
+  "/lazy-rows-resume.ts": 'export { _lazyRows } from "/dom-resume-lazy.ts";\n',
 };
 /** Rewrite package specifiers to served paths. */
 export const rewrite = (code: string): string =>
@@ -43,6 +54,8 @@ export const rewrite = (code: string): string =>
     .replaceAll("@rivetjs/runtime/style", "/style.ts")
     .replaceAll("@rivetjs/runtime/slot", "/slot.ts")
     .replaceAll("@rivetjs/runtime/props", "/props.ts")
+    // The browser build of `@rivetjs/runtime/id` (`browser` export condition).
+    .replaceAll('"@rivetjs/runtime/id"', '"/id-dom.ts"')
     .replaceAll("@rivetjs/reactivity/store", "/store.mjs")
     .replaceAll("@rivetjs/reactivity", "/reactivity.mjs")
     .replaceAll('"#dev"', '"/dev/off.ts"');

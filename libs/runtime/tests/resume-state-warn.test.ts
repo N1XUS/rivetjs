@@ -93,7 +93,7 @@ dev("a handler capturing a large array warns: component, site, capture name, sha
   assert.equal(total, Number((stateBytes(html) / 1024).toFixed(1)));
   assert.match(message!, /fix: 1\. do not capture it/);
   assert.match(message!, /2\. load it in the browser instead: serve it from an endpoint \(onGet\)/);
-  assert.match(message!, /3\. a list: keyed <For each=\{…\} by=\{…\}> rows; today each row still ships its item .*RIVET_LAZY_ROWS=on.*LAZY-ROWS T5/);
+  assert.match(message!, /3\. a list: keyed <For each=\{…\} by=\{…\}> rows; today each row still ships its item .*lazyRows: true.*RIVET_LAZY_ROWS=on/);
   assert.match(message!, /4\. a library object .*reconstruct\(\(\) => …\)/);
   assert.match(message!, /docs: https:\/\/rivetjs\.severyn\.pro\/learn\/resuming#large-data-in-resume-state$/);
 });
@@ -168,7 +168,7 @@ dev(
     process.env.RIVET_STATE_BUDGET_BYTES = "4000";
     try {
       process.env.RIVET_LAZY_ROWS = "on";
-      const lazy = await render(() => mod.Keyed!({ rows: rows(300) }));
+      const lazy = await render(() => mod.Keyed!({ rows: rows(300) }), { lazyRows: true });
       assert.match(lazy, /"L":/);
       assert.ok(stateBytes(lazy) > 4000);
       assert.deepEqual(warnings(), []);

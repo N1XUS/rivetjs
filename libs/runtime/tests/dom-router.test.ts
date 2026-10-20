@@ -26,6 +26,7 @@ test("owned browser router navigates history and cancels route work", async () =
     "router",
     "lazy",
     "url",
+    "lazy-rows",
     "slot",
     "props",
     "style",

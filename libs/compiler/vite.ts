@@ -112,6 +112,16 @@ export interface RivetResumeOptions {
    * `rivetRouter` sets it (default true there); plain `rivet({ resume })` keeps the explicit list.
    */
   appModules?: boolean;
+  /**
+   * Lazy collection rows (LAZY-ROWS, experimental; spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`):
+   * the browser runtime of this build can materialise lazy `<For>` rows (state `L`: rows rendered without resume
+   * records, materialised on their first event / a read signal's first change). Adds the lazy rows runtime (about
+   * 8.6 KB min / 2.8 KB br: `@rivetjs/runtime` `dom-resume-lazy.ts`, `dom-adopt.ts` `_adoptRow` and the adopt-run hooks
+   * of the DOM runtime) to the build and `lazyRows: true` to the resume manifest; builds without it carry none of it
+   * (0 bytes). The server writes lazy row records only when the manifest says so AND its environment has
+   * `RIVET_LAZY_ROWS=on` (read per render): build once with this option, toggle the variable to A/B. Default false.
+   */
+  lazyRows?: boolean;
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -342,6 +352,8 @@ export interface DevResume {
     captures: Record<string, readonly string[]>;
     /** Framework island key (`<module>#<export>`) → dev island module URL (`rivet({ bridges })`). */
     islands?: Record<string, string>;
+    /** `resume.lazyRows`: the dev resume runtime materialises lazy rows. */
+    lazyRows?: boolean;
   };
   /** Component, source location and capture names of a symbol id compiled for dev SSR. */
   describe(id: string): DevSymbolInfo | undefined;
@@ -368,6 +380,17 @@ function registration(mod: string, symbols: ResumeSymbol[]): string {
 }
 const ENTRY = "\0rivet-resume-entry";
 const MANIFEST = ".vite/rivet-resume.json";
+/**
+ * `resume.lazyRows` (LAZY-T5B): the runtime's build-time switch modules (`@rivetjs/runtime` `lazy-rows.ts` /
+ * `lazy-rows-resume.ts`, sources or published `.js`) → their opted-in content. Matched by path: the workspace source
+ * (`libs/runtime/`) or an installed package (`@rivetjs/runtime/`, any package manager layout).
+ */
+const LAZY_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](lazy-rows(?:-resume)?)\.([cm]?[jt]s)$/;
+function lazySwitch(id: string): string | null {
+  const hit = LAZY_SWITCH.exec(id);
+  if (!hit) return null;
+  return hit[1] === "lazy-rows" ? "export const LAZY_ROWS = true;\n" : `export { _lazyRows } from "./dom-resume-lazy.${hit[2]}";\n`;
+}
 // V8 explicit compile hint: compile every function when the script is compiled (module scripts: on the
 // streaming compile thread while they download). Client entry chunks: their functions run at startup (mount),
 // which otherwise re-parses + lazily compiles each one on the main thread (krausest startup scriptBootup
@@ -574,6 +597,8 @@ function rivetPlugin(
   // `include` / `exclude` (resolved against the Vite root once it is known).
   let selected: (id: string) => boolean = () => true;
   let ssrBuild = false,
+    // `resume.lazyRows`: this client build's resume runtime has the lazy rows factory (`lazySwitch`).
+    lazyRowsIn = false,
     abiChecked = false,
     serve = false,
     sourceMap = false,
@@ -661,6 +686,7 @@ function rivetPlugin(
       runtime: base + (resume?.entry ? posix(resume.entry).replace(/^\.?\//, "") : "@id/__x00__rivet-resume-entry"),
       ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
       ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
+      ...(resume?.lazyRows ? { lazyRows: true } : {}),
       symbols: new Proxy({} as Record<string, string>, {
         get: (_, id) => {
           const known = typeof id === "string" ? devSymbols.get(id) : undefined;
@@ -1319,6 +1345,14 @@ function rivetPlugin(
     },
     async load(id) {
       const clean = id.split("?", 1)[0]!;
+      // `resume.lazyRows`: the lazy rows runtime is in (`LAZY_ROWS`); the resume manifest says so when the switch loaded.
+      if (resume?.lazyRows) {
+        const code = lazySwitch(clean);
+        if (code !== null) {
+          if (code.includes("_lazyRows") && this.environment?.config?.consumer !== "server") lazyRowsIn = true;
+          return code;
+        }
+      }
       // Dev symbol chunk of one component (`?rivet-chunk=<Component>`), like a production chunk.
       const component = serve && resume?.dev && id.includes("rivet-chunk=") ? new URLSearchParams(id.slice(clean.length + 1)).get("rivet-chunk") : null;
       if (component !== null && this.environment?.config?.consumer !== "server") {
@@ -1435,6 +1469,10 @@ function rivetPlugin(
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
         hintEagerCompile(bundle, (output) => output.isEntry);
         if (!resume) return;
+        if (resume.lazyRows && !lazyRowsIn)
+          this.warn(
+            "resume.lazyRows: the build's resume runtime does not include the lazy rows runtime (@rivetjs/runtime lazy-rows-resume module not found): the manifest leaves lazyRows out, servers write no lazy row records",
+          );
         hintEagerCompile(
           bundle,
           (output) =>
@@ -1621,6 +1659,8 @@ function rivetPlugin(
           ...(groups.length ? { groups } : {}),
           // Route chunks: few, page-sized handler chunks — servers fetch a page's ahead (`data-fo`) when the app prefetches.
           ...(chunkStrategy() === "route" ? { fetchAhead: true } : {}),
+          // `resume.lazyRows`: the resume runtime of this build materialises lazy rows (servers write `L` records then).
+          ...(lazyRowsIn ? { lazyRows: true } : {}),
         };
         const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
         this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });

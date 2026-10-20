@@ -832,3 +832,50 @@ export function Page(props: { stmt: { bind(x: number): { id: number } } }) {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("resume.lazyRows (LAZY-T5B): the build's resume runtime gets the lazy rows runtime + manifest lazyRows; without it neither", async () => {
+  await mkdir(".artifacts", { recursive: true });
+  const root = await mkdtemp(resolve(".artifacts/vite-lazy-rows-"));
+  try {
+    await mkdir(resolve(root, "src"));
+    await writeFile(
+      resolve(root, "src/page.tsx"),
+      `import { signal } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+export function List(props: { rows: { id: number; label: string }[] }) {
+  const sel = signal(0);
+  return <ul><For each={props.rows} by={(r) => r.id}>{(row) => <li class={sel() === row().id ? "on" : ""} onClick={() => sel.set(row().id)}>{row().label}</li>}</For></ul>;
+}
+`,
+    );
+    await writeFile(resolve(root, "index.html"), "<!doctype html><p>static</p>");
+    const built = async (lazyRows: boolean | undefined) => {
+      const outDir = "dist-" + String(lazyRows);
+      await build({
+        configFile: false,
+        root,
+        logLevel: "silent",
+        plugins: [rivet({ resume: { modules: ["src/page.tsx"], ...(lazyRows === undefined ? {} : { lazyRows }) } })],
+        build: { outDir, manifest: true },
+      });
+      const manifest = JSON.parse(await readFile(resolve(root, outDir, ".vite/rivet-resume.json"), "utf8")) as BuiltManifest & { lazyRows?: boolean };
+      const files = await readdir(resolve(root, outDir, "assets"));
+      const code = (await Promise.all(files.filter((f) => f.endsWith(".js")).map((f) => readFile(resolve(root, outDir, "assets", f), "utf8")))).join("\n");
+      return { manifest, code };
+    };
+    const off = await built(undefined),
+      no = await built(false),
+      on = await built(true);
+    assert.equal(off.manifest.lazyRows, undefined);
+    assert.equal(no.manifest.lazyRows, undefined);
+    assert.equal(on.manifest.lazyRows, true);
+    // The lazy rows runtime (`dom-resume-lazy.ts`: its error label; `dom-adopt.ts` `_adoptRow`'s probe fragment walk) only when asked.
+    assert.doesNotMatch(off.code, /lazy row /);
+    assert.match(on.code, /lazy row /);
+    // Without the option the client output is the same bytes as with `lazyRows: false`.
+    assert.equal(off.code.length, no.code.length);
+    assert.ok(on.code.length > off.code.length + 4000, `${on.code.length} vs ${off.code.length}`);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

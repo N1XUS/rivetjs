@@ -27,7 +27,7 @@ export type { InlineStylesheets } from "./route-css.ts";
 export { mergeRouteCSS } from "./route-css.ts";
 import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
-import { lazyRowsHarness } from "./lazy-rows.ts";
+import { lazyRowsBuild, lazyRowsHarness } from "./lazy-rows.ts";
 import type { createApp as CreateApp, GeneratedEntry } from "../server/app.ts";
 import type { DocumentShell } from "../server/render.ts";
 import { adapterOptions, targetBuildConfig, targetEntryPlugin, type AdapterName, type AdapterOptions } from "../adapters/target-build.ts";
@@ -452,6 +452,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     dev: options.dev?.resume !== false,
     // Every app component module a route imports resumes without being listed in `resume.modules`.
     appModules: options.resume?.appModules ?? true,
+    // Lazy rows measurement builds (`RIVET_LAZY_ROWS=on` + the harness flag of the lazy-rows tools): the option on.
+    ...(lazyRowsBuild() ? { lazyRows: true } : {}),
   };
   // The generated resume entry (when there is one) provides the router's contexts (navigation state,
   // search params) to resumed regions.

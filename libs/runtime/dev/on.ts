@@ -19,6 +19,7 @@ const HINTS = {
     "the HTML parser restructured the server markup (rows directly in a <table> get an implied <tbody>, a block element closes an open <p>, table content is foster-parented); wrap rows in <tbody> and keep the nesting valid (the compiler reports the statically visible cases, RV1005)",
   moduleRef:
     "two installed copies of one package are loaded (their versions share the id), so the browser resumes both as the one its chunk imports; dedupe the package",
+  lazy: "the row renders differently in the browser than on the server (Date.now / Math.random / browser globals in the row body, data that changed between render and resume, or a row function whose output depends on more than its item, index and the shipped state); the row was created afresh and swapped in (dev only: production adopts the server markup)",
   skew: "its chunk failed to load or belongs to another build: serve the client assets of the build that rendered the page (keep old assets for a while after a deploy)",
 } as const;
 const HOOK = Symbol.for("rivet.devtools");
@@ -50,7 +51,7 @@ const STATE_DOCS = "https://rivetjs.severyn.pro/learn/resuming#large-data-in-res
 const STATE_FIX =
   "\n  fix: 1. do not capture it: read it on the server (route loader, component body) and capture only what the browser code needs (an id, a key, a count)" +
   '\n       2. load it in the browser instead: serve it from an endpoint (onGet) and fetch it in the handler that needs it, or in clientEffect(() => …, { when: "visible" }) into a signal' +
-  "\n       3. a list: keyed <For each={…} by={…}> rows; today each row still ships its item and its own handler / binding records (lazy rows, RIVET_LAZY_ROWS=on, cut a row to its key and ship the items once; experimental: rows stay inert in the browser until LAZY-ROWS T5)" +
+  "\n       3. a list: keyed <For each={…} by={…}> rows; today each row still ships its item and its own handler / binding records (experimental lazy rows — a build with resume: { lazyRows: true } and RIVET_LAZY_ROWS=on on the server — cut a row to its key and ship the items once)" +
   "\n       4. a library object (a chart, an editor, an SDK client): reconstruct(() => …) builds it in the browser, nothing ships" +
   "\n  docs: " +
   STATE_DOCS;

@@ -6,18 +6,33 @@ import { readFileSync } from "node:fs";
 const root = process.argv[2];
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const out = [];
+// `[lazyRows]` lines: the entries a `rivet({ resume: { lazyRows: true } })` build gets (the compiler plugin's switch
+// modules, `libs/compiler/vite.ts` `lazySwitch`); every other line is a build without it (LAZY-T5B: identical to before).
+const LAZY = [
+  {
+    name: "lazy-rows-switch",
+    load(id) {
+      const hit = /[\\/]libs[\\/]runtime[\\/](lazy-rows(?:-resume)?)\.ts$/.exec(id);
+      if (hit) return hit[1] === "lazy-rows" ? "export const LAZY_ROWS = true;\n" : 'export { _lazyRows } from "./dom-resume-lazy.ts";\n';
+    },
+  },
+];
+const hash = async (input, plugins) => {
+  const bundle = await rolldown({
+    input, platform: "node", logLevel: "silent", plugins,
+    external: [/^node:/, /^@rivetjs\/compiler/], resolve: { conditionNames: ["import", "production", "default"] },
+    transform: { define: { "process.env.NODE_ENV": '"production"' } },
+  });
+  const { output } = await bundle.generate({ format: "esm", minify: true });
+  const code = output[0].code;
+  return `${createHash("sha256").update(code).digest("hex").slice(0, 12)} ${code.length}`;
+};
 for (const pkg of ["libs/reactivity", "libs/runtime"]) {
   const json = JSON.parse(readFileSync(`${root}/${pkg}/package.json`, "utf8"));
   for (const [key, value] of Object.entries(json.exports)) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
-    const bundle = await rolldown({
-      input: `${root}/${pkg}/${file}`, platform: "node", logLevel: "silent",
-      external: [/^node:/, /^@rivetjs\/compiler/], resolve: { conditionNames: ["import", "production", "default"] },
-      transform: { define: { "process.env.NODE_ENV": '"production"' } },
-    });
-    const { output } = await bundle.generate({ format: "esm", minify: true });
-    const code = output[0].code;
-    out.push(`${json.name}${key.slice(1)} ${createHash("sha256").update(code).digest("hex").slice(0, 12)} ${code.length}`);
+    out.push(`${json.name}${key.slice(1)} ${await hash(`${root}/${pkg}/${file}`, [])}`);
+    if (key === "./dom" || key === "./dom-resume") out.push(`${json.name}${key.slice(1)} [lazyRows] ${await hash(`${root}/${pkg}/${file}`, LAZY)}`);
   }
 }
 console.log(out.join("\n"));

@@ -39,6 +39,7 @@ test("compiled Async and lazy DOM regions cancel stale generations and restore o
     "/reactivity.mjs": stripTypeScriptTypes(await readFile(new URL("../../reactivity/index.ts", import.meta.url), "utf8")),
     "/lazy.ts": stripTypeScriptTypes(await readFile(new URL("../lazy.ts", import.meta.url), "utf8")),
     "/url.ts": stripTypeScriptTypes(await readFile(new URL("../url.ts", import.meta.url), "utf8")),
+    "/lazy-rows.ts": stripTypeScriptTypes(await readFile(new URL("../lazy-rows.ts", import.meta.url), "utf8")),
     "/dom-v2.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2.ts", import.meta.url), "utf8")),
     "/dom-v2-spread.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2-spread.ts", import.meta.url), "utf8")),
     "/dom-v2-controls.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2-controls.ts", import.meta.url), "utf8")),

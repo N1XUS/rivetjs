@@ -64,8 +64,10 @@ export function installFuzz(): void {
   // Attributes that only one of the two renders carries by design: resume markers (`data-r` handler ids,
   // `data-rivet-*` loader / outlet bookkeeping on the server side) and the fuzz's own marks.
   const DROP = /^(data-r|data-rivet-[\w-]+|data-fuzz[\w-]*)$/;
-  const IDS = /\brv-[a-z0-9]+-\d+|\brv[cs]?\d+/g;
-  const GENERATED = /\brv-[a-z0-9]+-\d+|\brv[cs]?\d+/;
+  // Generated ids: `createId` scopes (`rv-<scope>-<n>`, `rv<n>`, `rvc` / `rvs`) and lazy row seeds (`rvr<forId>_<k>_<n>`,
+  // LAZY-ROWS: a server row's id scope, which a client-rendered row does not use).
+  const IDS = /\brvr\d+_\d+_\d+|\brv-[a-z0-9]+-\d+|\brv[cs]?\d+/g;
+  const GENERATED = /\brvr\d+_\d+_\d+|\brv-[a-z0-9]+-\d+|\brv[cs]?\d+/;
   const ignored = new WeakSet<Node>();
   const content = (el: Element): Element[] => Array.from(el.children).filter((child) => !SKIP.has(child.tagName) && !ignored.has(child));
   const walk = (el: Element, visit: (el: Element, path: number[]) => void, path: number[] = []): void =>

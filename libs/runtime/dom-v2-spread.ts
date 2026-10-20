@@ -3,8 +3,9 @@
 // templates spread: an eager chunk that uses other v2 helpers does not carry it.
 import { _bindingEffect, _dispatch, getOwner, onCleanup, runWithOwner, signal } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
-import { _attrWrite, _cls, _insert, _on } from "./dom-v2.ts";
+import { _adoption, _attrWrite, _cls, _insert, _on } from "./dom-v2.ts";
 import { bindRef } from "./dom.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _applyStyle } from "./style.ts";
 
 const HTML = "http://www.w3.org/1999/xhtml";
@@ -168,7 +169,8 @@ export function _spread(
   let kids: Signal<unknown> | null = null,
     held: unknown = SERVER;
   if (flags & 1 && !keep) {
-    el.textContent = "";
+    // An adopt run (LAZY-ROWS T5 builds) keeps the server's content: the slot below adopts it.
+    if (!LAZY_ROWS || !_adoption.live) el.textContent = "";
     kids = signal<unknown>(undefined);
   }
   const check = (name: string): void => {

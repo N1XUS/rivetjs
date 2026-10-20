@@ -15,7 +15,9 @@
 //
 // Usage: node scripts/lazy-rows/probe.ts [<app>:<id> | <id> …] [--app apps/ui-docs] [--json] [--runs 20] [--warmup 5]
 //          [--loads 5] [--cpu 1,4] [--no-build] [--dist <dir>] [--click <selector>]
-// Default pages: `DEFAULT_PAGES`. `RIVET_LAZY_ROWS=swap` probes the swap interim (`@rivetjs/router` `build/lazy-rows.ts`);
+// Default pages: `DEFAULT_PAGES`. `RIVET_LAZY_ROWS=on` probes lazy rows (the build children get `resume.lazyRows`:
+// `@rivetjs/router` `lazyRowsBuild`, LAZY-T5B; pass `--dist` to keep it apart from the `off` build).
+// `RIVET_LAZY_ROWS=swap` probes the swap interim (`@rivetjs/router` `build/lazy-rows.ts`);
 // its default dist is `<app>/.artifacts/lazy-rows-probe-swap` (else `…/lazy-rows-probe`).
 import { readFile } from "node:fs/promises";
 import { cpus, loadavg, platform, release } from "node:os";

@@ -26,6 +26,7 @@ import type { Owner, Signal } from "@rivetjs/reactivity";
 import { INVALID_URL, MEDIA_URLS, unsafeUrl } from "./url.ts";
 
 import { _booleans, _constructionDoc, _parseHTML, _writeDefault, bindRef } from "./dom.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
 
 type Parent = Node & ParentNode;
 const HTML = "http://www.w3.org/1999/xhtml",
@@ -71,7 +72,8 @@ export function _tpl(html: string, flags = 0): () => Node {
       doc = d;
       node = parse(d);
     }
-    return node!.cloneNode(true);
+    // Adopt run (LAZY-ROWS T5 builds, `dom-adopt.ts` `_adoptRow`): the probe records the clone, the adopt run gets the server node.
+    return LAZY_ROWS && _adoption.node ? _adoption.node(node!.cloneNode(true), 0) : node!.cloneNode(true);
   };
 }
 /**
@@ -296,11 +298,12 @@ function watchShadow(root: ShadowRoot, type: string): void {
 /**
  * Resume (dom-resume `dispatch`): run the delegated handlers of the nodes below `stop` on the event's path first, so a
  * client-rendered row's handler runs before its resumed (server-rendered) ancestor's, as native bubbling orders them;
- * the resumed handlers run from the loader's document capture listener, ahead of this module's bubble listener. True
+ * the resumed handlers run from the loader's document capture listener, ahead of this module's bubble listener. `stop`
+ * = the document: every delegated handler on the path (a lazy row's cold replay, which has no resumed ancestor). True
  * when a handler stopped propagation (the ancestor's handler must not run).
  */
-export function _delegateBelow(event: Event, stop: Element): boolean {
-  if (!event.bubbles || !delegated.get(stop.ownerDocument)?.has(event.type)) return false;
+export function _delegateBelow(event: Event, stop: Element | Document): boolean {
+  if (!event.bubbles || !delegated.get(LAZY_ROWS ? (stop.ownerDocument ?? (stop as Document)) : stop.ownerDocument!)?.has(event.type)) return false;
   return delegate(event, stop);
 }
 function delegate(event: Event, stop: Node | null): boolean {
@@ -408,9 +411,11 @@ export function _listen(el: Element, type: string, handler: ((event: Event) => u
 export { _scoped };
 
 type Current = Node | Node[] | null;
-interface Slot {
+/** @internal An insertion's slot: the nodes it shows now (`dom-adopt.ts` adopt runs seed new slots). */
+export interface InsertSlot {
   current: Current;
 }
+type Slot = InsertSlot;
 /**
  * Compiler ABI: insert a child value before `marker` (null: append). A function is an accessor:
  * the insertion re-runs when it changes. Arrays reconcile by node identity.
@@ -418,6 +423,7 @@ interface Slot {
 export function _insert(parent: Parent | null, value: unknown, marker: Node | null = null, seed: Node[] | null = null): void {
   // `seed` (resume, `dom-adopt.ts` `_region`): the server nodes already in place; the first write reconciles them.
   const slot: Slot = { current: seed };
+  if (LAZY_ROWS && _adoption.slot) _adoption.slot(slot);
   // Arrays holding accessors (fragments with dynamic children) track like an accessor.
   if (typeof value !== "function" && !(Array.isArray(value) && hasAccessor(value))) {
     assign(parent ?? (marker!.parentNode as Parent), value, slot, marker);
@@ -541,6 +547,7 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
       if ((current as Text).data !== text) (current as Text).data = text;
       return;
     }
+    // (An adopt run's slot starts at the server's text node: it updates in place above, no creation.)
     const node = host.doc().createTextNode(text);
     replace(parent, current, node, marker);
     slot.current = node;
@@ -576,7 +583,8 @@ function flatten(value: readonly unknown[], nodes: Node[]): void {
       else if ((item as Node).nodeType !== undefined) nodes.push(item as Node);
       else if (typeof (item as PromiseLike<unknown>).then === "function") throw TypeError("Promise DOM children require an Async boundary");
       else unsupported();
-    } else nodes.push(host.doc().createTextNode(coerce(item)));
+    } else
+      nodes.push(LAZY_ROWS && _adoption.node ? _adoption.node(host.doc().createTextNode(coerce(item)), 1) : host.doc().createTextNode(coerce(item)));
   }
 }
 
@@ -744,7 +752,32 @@ export const _adoption: {
   same: ((server: unknown, fresh: unknown) => boolean) | null;
   /** Dev runtime only (`dev/dom.ts`): its per-component owners (production components own nothing), transparent to adoption. */
   dev: { has(owner: object): boolean } | null;
+  /**
+   * LAZY-ROWS T5 adopt runs (`dom-adopt.ts` `_adoptRow`), set only while one runs: every node the runtime creates the
+   * same way in both runs passes through it (`kind` 0 a template clone or created element, 1 a text node of an array
+   * child, 2 an anchor; a scalar insertion's text is not one: the adopt run's slot already holds the server's). The probe
+   * run records them per kind in creation order; the adopt run gets the live server node each one maps to (the node itself
+   * when none does).
+   */
+  node?: (<N extends Node>(node: N, kind: number) => N) | null;
+  /** Each new insertion slot, in creation order (probe: recorded; adopt run: seeded with the live nodes the probe's slot held). */
+  slot?: ((slot: InsertSlot) => void) | null;
+  /** True during an adopt run: element content is never wiped (`_spread` children, `_rcdata`), it is the server's. */
+  live?: boolean;
+  /** Resume runtime (`dom-resume.ts`): materialise the lazy row holding `node` (`_materialise`). */
+  materialise?: ((node: Node) => boolean) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
+/**
+ * Resume ABI (LAZY-ROWS T5; cdk collections, contract for lane T3): materialise the lazy `<For>` row (spec
+ * `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`) holding `node` before code outside the row hands it
+ * focus or points `aria-activedescendant` at it, so its handlers, bindings and effects exist when the next event
+ * arrives. Synchronous when the row's chunk is loaded (true); false when `node` is in no lazy row, the page did not
+ * resume, or the row is already materialised / its chunk still loads (it materialises when the chunk lands). Never
+ * moves or replaces `node`. Always false in builds without `resume: { lazyRows: true }` (`LAZY_ROWS`).
+ */
+export function _materialise(node: Node): boolean {
+  return LAZY_ROWS && _adoption.materialise ? _adoption.materialise(node) : false;
+}
 /**
  * Resume ABI: while a resumed page re-creates a region (its read re-runs on the first change of a signal the
  * server render read), the server branch key (match index, -1 fallback; null: never adopted) of the next
@@ -763,6 +796,8 @@ export interface AdoptedList {
   adopted: Map<ForRow, number>;
   /** Rows at -3 (their own render read signals, unchanged so far): turns true once one changed — they are re-created then. */
   changed: (() => boolean) | null;
+  /** Lazy rows (LAZY-ROWS T5): called once with the For's row function and item reader (kept rows materialise through them). */
+  host?: ((children: (item: () => unknown, index: () => number) => unknown, read: (this: ForRow) => unknown) => void) | null;
 }
 /** @internal An adopted server branch as a `branches` pick: match index (-1 fallback), its value (`valued`: the server read it), owner and nodes. */
 export interface AdoptedBranch {
@@ -847,6 +882,7 @@ export function _for<T, K>(props: {
   if (_adoption.rows !== null) {
     const taken = _adoption.rows(owner, by as (item: never, index: number) => unknown, indexed);
     if (taken !== null) ({ items: items as unknown[], rows: list, adopted, changed } = taken as AdoptedList);
+    if (LAZY_ROWS) taken?.host?.(children as (item: () => unknown, index: () => number) => unknown, itemRead);
   }
   const build = (row: ForRow): void => {
     const out = children(itemRead.bind(row) as () => T, row.index as unknown as () => number);
@@ -857,11 +893,12 @@ export function _for<T, K>(props: {
     }
     // Any other row value (accessor, array, fragment, text): an insertion between two
     // anchors owned by the row.
+    // Adopt run (LAZY-ROWS T5 builds): the anchors are the server nodes already in place (not moved into a fragment).
     const doc = host.doc(),
-      start = (row.start = doc.createTextNode("")),
-      end = (row.end = doc.createTextNode("")),
+      start = (row.start = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode("")),
+      end = (row.end = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode("")),
       frag = doc.createDocumentFragment();
-    frag.append(start, end);
+    if (!LAZY_ROWS || start.parentNode === null) frag.append(start, end);
     _insert(null, out, end);
   };
   const create = (value: T, i: number, key: unknown): ForRow => {

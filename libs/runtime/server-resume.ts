@@ -50,7 +50,7 @@ import {
   _setUnrecorded,
 } from "./resume-format.ts";
 import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
-import { EXPAND, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
+import { EXPAND, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
@@ -129,6 +129,11 @@ export interface ResumeManifest {
   loader?: string;
   /** Dev only: capture names per symbol id (compiler dev server, Function Bridge Q6), for capture errors. */
   captures?: Record<string, readonly string[]>;
+  /**
+   * The build's browser runtime materialises lazy collection rows (`rivet({ resume: { lazyRows: true } })`, LAZY-T5B):
+   * with `RIVET_LAZY_ROWS=on` in the server env, `$lazy` Fors write lazy row records (state `L`). Absent: never.
+   */
+  lazyRows?: boolean;
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
@@ -884,9 +889,12 @@ _onForRows((list, items, keys, rows, render) => {
 // items, `by`, the rows' signal reads and per-row `_regionState` values. Each row keeps its marker pair (ids consecutive
 // after the For's) and renders under the id seed `_rowIdPrefix(forId, index)` (`@rivetjs/runtime/id`), so a re-run of the
 // row function for that row (browser materialisation, T5) creates the same markup and ids. Sites a re-run cannot replay
-// (client-only code, Async / Suspense, Portal, client effects / listeners) turn
-// the whole For back to recorded rows (R3): its rows render again through the row hooks (dev: a warning naming the For).
-// Off unless `RIVET_LAZY_ROWS=on` (server env, read per render) until the browser side (T5) ships.
+// (client-only code, Async / Suspense, Portal) turn the whole For back to recorded rows (R3): its rows render again
+// through the row hooks (dev: a warning naming the For). Client effects / clientEvent listeners inside a row are no reason
+// (R6, T5): they run when the row materialises. The entry also lists the event types the rows handle ([9]: the browser
+// materialises a row on one) and the identified providers around the For ([10]: re-provided around a materialised row).
+// Off unless the build opted in (`rivet({ resume: { lazyRows: true } })`: manifest `lazyRows`, its browser runtime
+// materialises the rows) AND the server env has `RIVET_LAZY_ROWS=on` (read per render; LAZY-T5B).
 interface LazyFor {
   forId: number;
   /** The scope the For rendered in (its region: `regionOf` at encode time). */
@@ -914,10 +922,28 @@ interface LazyFor {
   sites: number;
   /** Their event types, added to the page (`data-events`) only when the For stays lazy (a fallback page = the `off` page). */
   events: Set<string>;
+  /** Every event type a row handles (entry [9]: a row materialises on one), the page's types included. */
+  types: Set<string>;
+  /** Identified providers around the For (`[token id, value, …]`, non-default values; entry [10]). */
+  providers: unknown[] | null;
+  /** Rows holding a client effect / `clientEvent` listener (entry [11]: materialised at idle, so they run as on any page). */
+  effects: number[] | null;
 }
 let lazyRow: LazyFor | null = null;
-/** `RIVET_LAZY_ROWS=on` (server env): lazy row records for `$lazy` Fors. Read once per render. */
-const lazyRowsOn = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS === "on";
+/** `RIVET_LAZY_ROWS=on` (server env) and a build whose manifest has `lazyRows`: lazy row records for `$lazy` Fors. Read
+ * once per render. Dev: the variable on with a build that did not opt in warns once (the rows stay recorded). */
+let lazyHinted = false;
+function lazyRowsOn(manifest: BuildManifest | undefined): boolean {
+  if ((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS !== "on") return false;
+  if (manifest?.lazyRows) return true;
+  if (DEV && !lazyHinted) {
+    lazyHinted = true;
+    console.warn(
+      "Rivet resume: RIVET_LAZY_ROWS=on is ignored: this build's browser runtime cannot materialise lazy rows (the resume manifest has no lazyRows). Build with rivet({ resume: { lazyRows: true } }) / rivetRouter({ resume: { lazyRows: true } }); rows stay recorded. docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.1",
+    );
+  }
+  return false;
+}
 // A lazy row is rendering (recorder exited): what a row would record goes to `lazyRow`.
 const inLazyRow = (): LazyFor | null => (lazyRow !== null && store.getStore() === undefined ? lazyRow : null);
 // A site a row re-run cannot replay: the For falls back (or, found in the traversal, its entry is dropped).
@@ -944,9 +970,21 @@ function lazyWarn(symbol: string, forId: number, reason: string, inert?: boolean
       ". docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.3",
   );
 }
+// A client effect / listener in the rendering lazy row: the row materialises at idle (entry [11]).
+function lazyEffect(): void {
+  const lazy = inLazyRow();
+  if (lazy !== null && !(lazy.effects ??= []).includes(lazy.row)) lazy.effects.push(lazy.row);
+}
 const addReads = (lazy: LazyFor, signals: readonly Signal<unknown>[]): void => {
   for (let i = 0; i < signals.length; i++) if (!lazy.reads.includes(signals[i]!)) lazy.reads.push(signals[i]!);
 };
+// A site's read inside a lazy row: its signals are the row's reads (entry `reads`). Component bodies run untracked, so the
+// For's own collector sees only reads outside components (cdk rows: none) — every site tracks its own, as a recorded one does.
+function lazyRead<T>(lazy: LazyFor, read: () => T): T {
+  const tracked = _trackReads(read);
+  if (tracked.signals.length) addReads(lazy, tracked.signals);
+  return tracked.value;
+}
 // Run `fn` as part of lazy row `row` (slot content the traversal renders after the rows): still unrecorded, same row.
 function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
   const outer = lazyRow,
@@ -1033,7 +1071,15 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     late: null,
     sites: 0,
     events: new Set(),
+    types: new Set(),
+    providers: null,
+    effects: null,
   };
+  // Providers enclosing the For (as a region site records them): a materialised row reads the server's values.
+  for (const token of recorder.tokens.values()) {
+    const provided = useContext(token);
+    if (provided !== token.defaultValue) (lazy.providers ??= []).push(token.id, provided);
+  }
   const rows: ServerValue[] = new Array(items.length);
   const outer = lazyRow,
     unrecorded = unrecordedRender;
@@ -1944,7 +1990,10 @@ class Stream {
       nonce = root.options.nonce,
       open = "<script" + (nonce ? ' nonce="' + String(nonce).replace(/[^\w+/=-]/g, "") + '"' : "") + ">";
     let out = "";
-    if (delta.w && !root.rowsAddon) ((root.rowsAddon = true), (out += open + ROWS + "</script>"));
+    // The lazy add-on wraps the rows add-on's `$rw`: shipped after it (again, when the rows add-on comes later).
+    let relazy = false;
+    if (delta.w && !root.rowsAddon) ((root.rowsAddon = true), (out += open + ROWS + "</script>"), (relazy = root.lazyAddon), (root.lazyAddon = false));
+    if ((delta.L || relazy) && !root.lazyAddon) ((root.lazyAddon = true), (out += open + LAZY + "</script>"));
     // The expand add-on replaces `$rx` (it chains to nothing): a repeat add-on shipped before it ships again after it.
     if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + EXPAND + "</script>"), (root.repeatAddon = false));
     if (rr && !root.repeatAddon) ((root.repeatAddon = true), (out += open + REPEAT + "</script>"));
@@ -2108,6 +2157,8 @@ class Recorder {
   declare paths: RowPathsEntry[];
   /** The page shipped the rows add-on (`ROWS`, before the state or a patch whose `w` needs it). */
   declare rowsAddon: boolean;
+  /** The page shipped the lazy rows add-on (`LAZY`: lazy row records `L`, before the state or a patch with them). */
+  declare lazyAddon: boolean;
   /** The page shipped the expand add-on (`EXPAND`: compact row templates, before the state or a patch with them). */
   declare expandAddon: boolean;
   /** The page shipped the repeat add-on (`REPEAT`: repeated handler / binding entries, before the state or a patch). */
@@ -2124,7 +2175,7 @@ class Recorder {
   declare stream: Stream | null;
   /** Derived model (`options.model === "derived"` + `server-derived.ts` loaded): the boundary recorder of this render. */
   declare derived: DerivedRender | null;
-  /** `RIVET_LAZY_ROWS=on` at the render's start: `$lazy` Fors write lazy row records (LAZY-ROWS T4). */
+  /** `RIVET_LAZY_ROWS=on` at the render's start + manifest `lazyRows`: `$lazy` Fors write lazy row records (LAZY-ROWS T4). */
   declare lazyRows: boolean;
   /** Lazy Fors rendered while this recorder evaluated (state `L`). */
   declare lazy: LazyFor[];
@@ -2132,7 +2183,7 @@ class Recorder {
     drainRefs();
     this.options = options;
     this.derived = options.model === "derived" && derivedHooks ? derivedHooks.create() : null;
-    this.lazyRows = lazyRowsOn();
+    this.lazyRows = lazyRowsOn(options.manifest);
     this.lazy = [];
     this.next = 0;
     this.pending = null;
@@ -2149,6 +2200,7 @@ class Recorder {
     this.lists = [];
     this.paths = [];
     this.rowsAddon = false;
+    this.lazyAddon = false;
     this.expandAddon = false;
     this.repeatAddon = false;
     this.region = null; // innermost region scope being evaluated (synchronously)
@@ -2207,6 +2259,7 @@ function listen(recorder: Recorder, type: string): void {
 }
 function lazyListen(lazy: LazyFor, type: string): void {
   lazy.sites++;
+  lazy.types.add(type);
   if (lazy.recorder.events.has(type) || lazy.events.has(type)) return;
   if (lazy.done) listen(lazy.recorder, type);
   else if (EVENT_TYPE.test(type)) lazy.events.add(type);
@@ -2243,7 +2296,7 @@ export function _rId(): ServerValue {
 export function _rBind(id: string, read: () => ServerValue, captures: Captures, region?: 1): ServerValue {
   const recorder = store.getStore();
   // A lazy row calls function children here, as a recorded render does (the traversal would call them recorded).
-  if (!recorder) return lazyRow !== null ? children(read()) : read();
+  if (!recorder) return lazyRow !== null ? lazyRead(lazyRow, () => children(read())) : read();
   const scope: Scope = { parent: recorder.region, id: null, mount: null, site: true };
   recorder.region = scope;
   let tracked;
@@ -2339,7 +2392,7 @@ const children = (value: unknown): ServerValue => {
  * render / row; SRV-ROWFN), other callers pass a thunk that ignores it. */
 export function _rAttr(name: string, id: string, read: (captures: Captures) => unknown, captures: Captures, namespace?: AttributeNamespace): ServerValue {
   const recorder = store.getStore();
-  if (!recorder) return attribute(name, read(captures), namespace);
+  if (!recorder) return attribute(name, lazyRow === null ? read(captures) : lazyRead(lazyRow, () => read(captures)), namespace);
   const { value, signals } = _trackReads(read, captures);
   const record = attribute(name, value, namespace);
   if (signals.length) (recorder.element().bindings ??= []).push([record?.name ?? _attributeName(name, namespace), id, captures, signals]);
@@ -2375,7 +2428,7 @@ export function _rChild(value: unknown): ServerValue {
   if (typeof value !== "function") return value as ServerValue;
   const meta = fns.get(value);
   let recorder: Recorder | undefined;
-  if (meta && !(recorder = store.getStore()) && lazyRow !== null) return children(value);
+  if (meta && !(recorder = store.getStore()) && lazyRow !== null) return lazyRead(lazyRow, () => children(value));
   return meta && recorder ? _rBind(meta.id, value as () => ServerValue, siteCaptures(meta, recorder)) : (value as ServerValue);
 }
 
@@ -2392,7 +2445,7 @@ export function _rChild(value: unknown): ServerValue {
  */
 export function _rSpread(id: string, read: () => object | null | undefined, captures: Captures, tag: string, namespace?: "svg" | "mathml"): ServerValue {
   const recorder = store.getStore();
-  if (!recorder) return lazyRow === null ? spreadAttributes(read(), tag, namespace) : lazySpread(lazyRow, read(), tag, namespace);
+  if (!recorder) return lazyRow === null ? spreadAttributes(read(), tag, namespace) : lazyRead(lazyRow, () => lazySpread(lazyRow!, read(), tag, namespace));
   let handlers: [type: string, symbol: string, captures: Captures][] | null = null,
     names: string[] | null = null,
     own: Signal<unknown>[] = EMPTY_READS,
@@ -2858,7 +2911,8 @@ function onlyLocations(signals: readonly object[]): boolean {
 /** Browser-only effect: recorded, never run. */
 export function _rEffect(id: string, captures: Captures, options?: { when?: string }): void {
   const recorder = store.getStore();
-  if (!recorder) return lazyReason("a client effect");
+  // A lazy row's effect: runs when the row materialises (R6, LAZY-ROWS T5), at idle at the latest.
+  if (!recorder) return lazyEffect();
   recorder.used = true;
   recorder.effects.push([id, captures, options?.when ?? null, recorder.region]);
 }
@@ -2932,7 +2986,8 @@ export function _renderNonce(): string | undefined {
 /** Browser-only listener: recorded, never attached. */
 export function _rClientEvent(id: string, captures: Captures, target: unknown, type: string, options?: ClientEventOptions): void {
   const recorder = store.getStore();
-  if (!recorder) return lazyReason("a clientEvent listener");
+  // A lazy row's listener: attached when the row materialises (R6, LAZY-ROWS T5), at idle at the latest.
+  if (!recorder) return lazyEffect();
   // `standalone: false` (the router's listeners in static builds): recorded, but alone they do not make the page
   // resumable — a page with nothing else to resume ships no state, loader or preloads (zero JS).
   if (options?.standalone !== false) recorder.used = true;
@@ -3783,15 +3838,21 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         refs = typeof by === "number" ? [rowFn, items, by] : [rowFn, items];
       let flags = lazy.flags,
         reads: number[] | 0 = 0;
-      if (lazy.reads.length)
+      // A row's own `_regionState` values (its local signals) wake nothing: only the row's own code (materialised by then)
+      // can write them (T5).
+      const own = new Set<unknown>();
+      for (const locals of lazy.locals ?? []) for (const value of locals?.l ?? []) own.add(value);
+      const shared = own.size ? lazy.reads.filter((read) => !own.has(read)) : lazy.reads;
+      if (shared.length)
         try {
-          reads = lazy.reads.map(encoder.ref);
+          reads = shared.map(encoder.ref);
         } catch {
           flags |= 8;
         }
       const entry: LazyRowsEntry = [lazy.forId, regionOf(lazy.scope), rowFn, items, by, flags, []];
+      let state: (number | RegionLocals)[] | 0 = 0;
       if (lazy.locals) {
-        const state: (number | RegionLocals)[] = [];
+        state = [];
         lazy.locals.forEach((locals, k) => {
           if (locals === undefined) return;
           const l = locals.l.map((value) => {
@@ -3803,14 +3864,26 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
               return null; // not serializable: the row's re-run creates it afresh
             }
           });
-          state.push(k, locals.n.some((n) => n > 0) ? { l, n: locals.n } : { l });
+          (state as (number | RegionLocals)[]).push(k, locals.n.some((n) => n > 0) ? { l, n: locals.n } : { l });
         });
-        entry.push(reads, state);
-        entry[5] = flags | 4;
-      } else {
-        entry[5] = flags;
-        if (reads !== 0) entry.push(reads);
+        flags |= 4;
       }
+      entry[5] = flags;
+      // Identified providers around the For at [10] (unserializable values omitted: the row sees the default).
+      const providers: (string | number)[] = [];
+      for (let i = 0; i < (lazy.providers?.length ?? 0); i += 2)
+        try {
+          const ref = encoder.ref(lazy.providers![i + 1]);
+          providers.push(lazy.providers![i] as string, ref);
+          refs.push(ref);
+        } catch {
+          /* not serializable */
+        }
+      const types = [...lazy.types].join(" ");
+      // Trailing slots only as far as needed (0 / "" = none).
+      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0];
+      while (tail.length && (tail[tail.length - 1] === 0 || tail[tail.length - 1] === "")) tail.pop();
+      (entry as unknown[]).push(...tail);
       entry[6] = needs(lazy.symbol, refs);
       L.push(entry);
     } catch (error) {
@@ -4135,7 +4208,10 @@ const devKB = (bytes: number): string => (bytes < 1024 ? bytes + " B" : (bytes /
 const lateEvent = (entry: ClientEventRecord): boolean => /^int/.test(entry[4]?.preload ?? "");
 /** The state boots the runtime at load (`data-boot`): client effects, eager client events or regions that mount. */
 const bootsAtLoad = (recorder: Recorder, effects: number): boolean =>
-  effects > 0 || recorder.clientEvents.some((entry) => !lateEvent(entry)) || recorder.regions.some(([, , , , scope]) => scope.mount !== null);
+  effects > 0 ||
+  recorder.lazy.some((lazy) => lazy.effects !== null) ||
+  recorder.clientEvents.some((entry) => !lateEvent(entry)) ||
+  recorder.regions.some(([, , , , scope]) => scope.mount !== null);
 
 // A text / attribute binding before encoding: [node, name, symbol, captures, signals, enclosing region].
 type RawBinding = [node: number, name: string | null, symbol: string, values: Captures, signals: Signal<unknown>[], region: number];
@@ -4363,6 +4439,7 @@ const tail = (loader: string, stream: boolean): readonly string[] =>
   );
 const TAILS = [tail(LOADER, false), tail(LOADER_KEYS, false), tail(LOADER, true), tail(LOADER_KEYS, true)] as const;
 const ROWS_SCRIPT = Object.freeze(["<script", ">" + ROWS + "</script>"]);
+const LAZY_SCRIPT = Object.freeze(["<script", ">" + LAZY + "</script>"]);
 const EXPAND_SCRIPT = Object.freeze(["<script", ">" + EXPAND + "</script>"]);
 const REPEAT_SCRIPT = Object.freeze(["<script", ">" + REPEAT + "</script>"]);
 
@@ -4978,11 +5055,14 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   // with them when parsing).
   const before = [
     ...(w ? [compiledTemplate(ROWS_SCRIPT, [attrs])] : []),
+    // Lazy rows (`L`): the lazy add-on, after the rows add-on (it wraps its `$rw`).
+    ...(L ? [compiledTemplate(LAZY_SCRIPT, [attrs])] : []),
     ...(rx ? [compiledTemplate(EXPAND_SCRIPT, [attrs])] : []),
     ...(rr ? [compiledTemplate(REPEAT_SCRIPT, [attrs])] : []),
   ];
   const out = before.length ? [...before, tail] : tail;
   if (w) recorder.rowsAddon = true;
+  if (L) recorder.lazyAddon = true;
   if (rx) recorder.expandAddon = true;
   if (rr) recorder.repeatAddon = true;
   return out;

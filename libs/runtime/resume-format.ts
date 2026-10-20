@@ -1066,10 +1066,16 @@ export type RegionProviders = (string | number)[];
  *   (the browser treats every row as reading something that changed);
  * - `chunks`: chunk indexes of the row function's symbol + everything its captures, the items and `by` reach;
  * - `reads`: signal refs the rows' renders read (deduplicated; 0 when none) — no row has bindings of its own on the wire;
- * - `state` (flag 4): `[k, RegionLocals, …]` for the rows whose render created `_regionState` values (refs; null: not
- *   serializable), in creation order — the row function's re-run adopts them instead of calling `create()`.
+ * - `state` (flag 4; 0 when none): `[k, RegionLocals, …]` for the rows whose render created `_regionState` values (refs;
+ *   null: not serializable), in creation order — the row function's re-run adopts them instead of calling `create()`;
+ * - `types` (T5): the event types the rows handle, space separated ("" none) — an event of one inside a row materialises it
+ *   (the lazy add-on `resume-lazy.ts` / `ResumeInstance.q` answer the loader's walk with the row's marker id);
+ * - `providers` (T5): identified providers around the For, `[token id, value ref, …]` (re-provided around a materialised row);
+ * - `effects` (T5): indexes of the rows holding a client effect / `clientEvent` listener — materialised at idle, so their
+ *   effects run as a recorded effect would (and the page boots its runtime at load).
  * No per-row id, key, handler, binding, capture or provider entry: keys are `by(items[k])`, everything else is recomputed by
- * re-running `rowFn` for row k (browser materialisation, T5).
+ * re-running `rowFn` for row k in adopt mode (browser materialisation, T5: `dom-resume.ts`, `dom-adopt.ts` `_adoptRow`).
+ * Trailing slots are left out when empty.
  */
 export type LazyRowsEntry = [
   forId: number,
@@ -1080,7 +1086,10 @@ export type LazyRowsEntry = [
   flags: number,
   chunks: number[],
   reads?: number[] | 0,
-  state?: (number | RegionLocals)[],
+  state?: (number | RegionLocals)[] | 0,
+  types?: string,
+  providers?: RegionProviders | 0,
+  effects?: number[],
 ];
 /** Model entry: [kind, signal ref, extra chunks?]. */
 export type ModelEntry = [kind: "value" | "checked", ref: number, extra?: number[]];
@@ -1218,6 +1227,9 @@ export interface ResumeInstance {
   q?(x: number | Element): Element | string | undefined;
   /** `live`: a cold event's target `[value, checked]` at dispatch (shown to its handlers during the replay). */
   dispatch(event: Event, target: Element, id: string, type: string, replaying?: boolean, entry?: HandlerEntry, live?: unknown[]): { prevented: boolean };
+  /** A lazy row's synthetic entry `["L", [], chunks]` on a delegated event's path (LAZY-ROWS T5): materialise row `id`
+   * (`next`: the next target's element, bounding a cold replay's delegation). */
+  L?(event: Event, id: number, next: Element | null): void;
   /** A delegated event: run its handlers now when nothing cold is queued and its chunks are evaluated (true), else false. */
   on(event: Event, hit: Hit): boolean;
   /** Queue a held cold event: replayed after every earlier one, once its chunks loaded. */
