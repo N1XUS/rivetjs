@@ -57,7 +57,7 @@ Solid's model is the closest: signals, components that run once, fine-grained up
 | `onCleanup`, `batch`, `untrack`, `createRoot` | same names, from `@rivetjs/reactivity`. One difference: a Rivet `createRoot` belongs to the scope it is created in and is disposed with it (Solid's roots are detached); create it outside any scope for an independent lifetime |
 | `<For each={items()}>` | `<For each={items()} by={(i) => i.id}>`: same, plus a key |
 | `<Show when={…}>` | `cond() && <p />`, a ternary, or `<Show when={cond()}>` |
-| `createResource` | `load(…)` for page data, `Async` for parts that load later |
+| `createResource` | `resource` from `@rivetjs/runtime/dom` (one handle: `user()`, `user.loading()`, `user.refetch()`, `user.mutate()`); `load(…)` for page data. See [resource](../guides/components/async.md#data-as-a-signal-resource) |
 | SolidStart `"use server"` | `load(…)` / `actions(…)` / `onGet(…)` exports next to the page, or `*.server.ts` files |
 
 What differs: Solid hydrates, so in the browser your components run once more. In Rivet they do not, which is why captured values must be serializable and why browser code must be in handlers and `clientEffect`. As in Solid, destructuring props reads them once: use `props.x`, `mergeProps` and `splitProps` from `@rivetjs/runtime/props`.

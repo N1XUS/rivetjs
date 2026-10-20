@@ -14,6 +14,15 @@ const SUSPENSE = _onPending(() => {
   if (inside) inside.p = true;
 }, _SUSPENSE);
 
+// How Suspense builds a thunk's content: `resource()` (server-resource.ts, only when imported) installs a builder that
+// waits for the resources the content read while they loaded and builds it again (`_onBuild`).
+let build: ((content: () => unknown) => unknown) | null = null;
+/** @internal `resource()`: build Suspense thunk content through `fn`. Returns `state` (kept exactly when it is used). */
+export function _onBuild<S>(fn: (content: () => unknown) => unknown, state: S): S {
+  build = fn;
+  return state;
+}
+
 /**
  * Coordinated loading. Ordered renders: `children` render in place, every `Async` below awaited (the
  * fallback is never rendered). Streaming resumable renders: Asyncs below never stream on their own; when
@@ -29,7 +38,7 @@ export function Suspense({ fallback, children }: { fallback?: () => ServerValue;
     top = getOwner();
     return provide(SUSPENSE, inside, () => {
       owner = getOwner();
-      return typeof children === "function" ? (children as () => unknown)() : children;
+      return typeof children === "function" ? (build === null ? (children as () => unknown)() : build(children as () => unknown)) : children;
     });
   });
   if (claim && inside.p) {

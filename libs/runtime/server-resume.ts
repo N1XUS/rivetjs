@@ -75,6 +75,7 @@ export function _setDerived(hooks: DerivedHooks): void {
 import { ROUTER, _hrefs } from "./server-router.ts";
 import { _onClientOnly, _onAsync, _onAsyncContent } from "./server-async.ts";
 import { _onSuspense, _SUSPENSE } from "./server-suspense-slot.ts";
+import { _onResource } from "./server-resource-slot.ts";
 import { _onSlot } from "./slot.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import type { DerivedRender } from "./server-derived.ts";
@@ -2622,6 +2623,42 @@ const chain = (own: (value: object, ref: (value: unknown) => number) => EntryRec
   const next = fnSpecial;
   fnSpecial = next ? (value, ref) => own(value, ref) ?? next(value, ref) : own;
 };
+
+// `resource()` (server-resource.ts, lane RESOURCE) through its slot: its resource functions encode as
+// `{k:"bind", a:[recipe, undefined, seed]}`, the recipe being the one the compiler gave the resource's `const` (`_rFn`),
+// carried by a stand-in function (`alias`).
+type Mark = [Recorder, number[], Scope | null, (number | undefined)[]];
+_onResource({
+  alias(from, to) {
+    const meta = fns.get(from);
+    if (meta === undefined) return false;
+    fns.set(to, meta);
+    return true;
+  },
+  encode: chain,
+  mark(): Mark | null {
+    const recorder = store.getStore();
+    if (!recorder) return null;
+    const site = recorder.region;
+    return [
+      recorder,
+      lengths(recorder),
+      site,
+      site ? [site.shows, site.adopts?.length, site.locals?.length, site.nested?.length, site.rows?.length, site.plans?.length] : [],
+    ];
+  },
+  cut(mark) {
+    const [recorder, from, site, at] = mark as Mark;
+    cut(recorder, from);
+    if (!site) return;
+    site.shows = at[0];
+    if (site.adopts) site.adopts.length = at[1] ?? 0;
+    if (site.locals) site.locals.length = at[2] ?? 0;
+    if (site.nested) site.nested.length = at[3] ?? 0;
+    if (site.rows) site.rows.length = at[4] ?? 0;
+    if (site.plans) site.plans.length = at[5] ?? 0;
+  },
+});
 
 // `.bind` of a resumable function (compiler C9 rewrites `f.bind(t, ...args)`, T10): `{k:"bind", a:[f, t, ...args]}`, the
 // browser binds again (dom-resume custom `bind`). A function with its own `bind` (or one returning a primitive) is left to

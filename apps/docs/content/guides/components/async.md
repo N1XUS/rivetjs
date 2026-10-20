@@ -1,11 +1,11 @@
 ---
 title: Async
-description: Load data inside a component with the Async boundary, show a fallback and an error, cancel stale work, and load components on demand with lazyComponent.
+description: Load data in a component with Async or resource, show a fallback and an error, cancel stale work, and load components on demand with lazyComponent.
 template: guide
 related: [guides/routing/loading-data, guides/performance/streaming, gotchas/promise-child-needs-async]
 ---
 
-Some parts of a page need data that takes time to arrive. The `Async` component wraps such a part: it starts the work, shows a fallback while it waits, shows an error if it fails, and renders the result. After reading this page you can use `Async`, reload it when a signal changes, and load components only when they are needed.
+Some parts of a page need data that takes time to arrive. The `Async` component wraps such a part: it starts the work, shows a fallback while it waits, shows an error if it fails, and renders the result. After reading this page you can use `Async`, reload it when a signal changes, keep loaded data in a `resource`, and load components only when they are needed.
 
 :::tip
 For the main data of a page, use a route [loader](/guides/routing/loading-data.md). It runs on the server before the page renders. Use `Async` for parts of a page that load on their own.
@@ -88,6 +88,71 @@ export default function Person() {
 Reading the signal inside `load` works too, on client-rendered and server-rendered pages: `load={(work) => fetchPerson(id(), work.signal)}`. Read it before the first `await`; reads after an `await` are not tracked.
 :::
 
+## Data as a signal: resource
+
+`Async` renders its result in one place. When several parts of a component need the same data, or code needs it (a handler, a computed value), use `resource`. It loads data and gives it back as a signal:
+
+```tsx
+import { signal } from "@rivetjs/reactivity";
+import { resource, Suspense } from "@rivetjs/runtime/dom";
+
+function User(props: { id: number }) {
+  const user = resource(
+    () => props.id,
+    (id, info) => fetch(`/api/users/${id}`, { signal: info.signal }).then((res) => res.json()),
+  );
+  return (
+    <div>
+      <h2>{user()?.name}</h2>
+      <p>{user.loading() ? "Refreshing…" : ""}</p>
+      <button type="button" onClick={() => user.refetch()}>
+        Reload
+      </button>
+    </div>
+  );
+}
+
+export function Profile() {
+  const id = signal(1);
+  return (
+    <section>
+      <button type="button" onClick={() => id.set(id() + 1)}>
+        Next user
+      </button>
+      <Suspense fallback={() => <p>Loading…</p>}>
+        <User id={id()} />
+      </Suspense>
+    </section>
+  );
+}
+```
+
+- The first argument is the source: a signal read or a value. Each time it changes, the fetcher runs again. The previous load is aborted and a late answer from it is dropped. A source that is `false`, `null` or `undefined` loads nothing. Without a source (`resource((_, info) => …)`), the fetcher gets `true`.
+- The fetcher gets the source value and `info`: the `work` object of `Async` (`signal`, `get`, `run`) plus `info.value` (the previous value) and `info.refetching` (`false` for a source change, the `refetch` argument otherwise).
+- `user()` is the value: `undefined` until the first load is done. It throws the error when the last load failed, so an [error boundary](./error-boundaries.md) catches it.
+- Nothing loads until the resource is first read. It stops with the component that created it.
+
+| Method | What it does |
+| --- | --- |
+| `loading()` | `true` while a load is running. |
+| `error()` | The error of the last load, or `undefined`. Never throws. |
+| `latest()` | The last loaded value, also while a new one loads or after an error. Never throws. |
+| `state()` | `"unresolved"`, `"pending"`, `"ready"`, `"refreshing"` or `"errored"`. |
+| `refetch(info?)` | Loads again with the current source. `info` reaches the fetcher as `info.refetching`. |
+| `mutate(value)` | Sets the value now, without a load (for optimistic updates). Takes a value or `(previous) => next`. |
+
+Options, as the last argument: `initialValue` (the value before the first load) and `ssr: false` (see below).
+
+::api{symbol="@rivetjs/runtime/dom#resource"}
+
+A resource created inside a [`Suspense`](./suspense.md) (in a component rendered there, as `User` above) shows its fallback while it loads, as an `Async` there would. A change made inside `startTransition` keeps the old value on screen until the new one is ready. A resource created outside the `Suspense` does not show its fallback in the browser: check `loading()` instead.
+
+On the server, the fetcher runs once, when the resource is created. A `Suspense` around the parts that read it waits for the load and sends the finished HTML (with streaming: the fallback first, the content later). The browser gets the value with the page and does not load it again; it loads when the source changes or on `refetch`. Read a resource inside a `Suspense`: outside one, the server cannot wait, sends the loading state, and the part reading it loads in the browser after the page starts. With `ssr: false` the server never runs the fetcher, and the browser loads it when the page starts.
+
+:::note
+Keep the resource in one `const`, created with arrow functions, and call its methods on it: `user.refetch()`. `const [data] = resource(…)` or `resource(fetchUser)` (a function passed by name) works in the browser, but the server cannot hand such a resource to the browser.
+:::
+
 ## Load a component on demand
 
 `lazyComponent` loads a component's code only when it is first rendered. Use it for big parts that many visitors never see:
@@ -119,7 +184,8 @@ To show one fallback for several `Async` parts and reveal them together, or to k
 
 - **Ignoring `work.signal`.** Old requests keep running and waste bandwidth.
 - **Using `useContext` after `await`.** It returns the default. Use `work.get(token)`. See [context gone after await](/gotchas/context-gone-after-await.md).
-- **Loading the page's main data with `Async`.** A loader is simpler and runs before rendering.
+- **Loading the page's main data with `Async` or `resource`.** A loader is simpler and runs before rendering.
+- **Reading a resource outside `Suspense` on the server.** The server sends the loading state; wrap the reading part in `Suspense` so the server waits.
 
 ## See also
 

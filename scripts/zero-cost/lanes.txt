@@ -1,5 +1,5 @@
-.DS_Store 7d218c1a577e
-builds.json 4658d2785b07
+.DS_Store dac7b112bfc2
+builds.json 23f4eacf1e72
 client-stable/assets/CHQowWH8-bundle-graph.json 2001e8bc2908
 client-stable/build/q-0U1Cmwdf.js 604017aac87c
 client-stable/build/q-3j5WJmUx.js bb047e08bb1e
@@ -23,7 +23,7 @@ qwik-server/qwik.js 5588999ce371
 qwik-stable-server/qwik-stable.js 4c1201940f5c
 qwik-stable.mjs 3b1399687b9b
 qwik.mjs 044b6e77a931
-rivet-compiled.mjs f7ef291b336c
+rivet-compiled.mjs ecd94b8712e3
 rivet-for.mjs ead5072f9f82
 rivet-router-bunserve.mjs 400b5e5dfd8c
 rivet-router-uws.mjs 2e0a32c8d399

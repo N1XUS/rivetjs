@@ -23,6 +23,8 @@ const sources: Record<string, string> = {
   "/dom-router.ts": "dom-router.ts",
   "/dom-suspense.ts": "dom-suspense.ts",
   "/async-coordinator.ts": "async-coordinator.ts",
+  "/dom-resource.ts": "dom-resource.ts",
+  "/resource.ts": "resource.ts",
   "/router.ts": "router.ts",
   "/dom-resume.ts": "dom-resume.ts",
   "/resume-format.ts": "resume-format.ts",

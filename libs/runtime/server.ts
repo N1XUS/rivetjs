@@ -34,6 +34,8 @@ export { Async, lazyComponent, clientOnly } from "./server-async.ts";
 export { Provider, For, Show, Switch, Match, Dynamic, Portal } from "./server-structural.ts";
 export { ErrorBoundary } from "./server-boundary.ts";
 export { Suspense, startTransition, useTransition } from "./server-suspense.ts";
+export { resource } from "./server-resource.ts";
+export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource, ResourceState } from "./server-resource.ts";
 
 declare const scopeBrand: unique symbol;
 /** Opaque single-response structural scope; finalized by the server renderer. */

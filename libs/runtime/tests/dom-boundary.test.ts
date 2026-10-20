@@ -16,6 +16,8 @@ test("compiled ErrorBoundary catches render, effect and Async failures in the br
     "/dom-router.ts": stripTypeScriptTypes(await readFile(new URL("../dom-router.ts", import.meta.url), "utf8")),
     "/dom-suspense.ts": stripTypeScriptTypes(await readFile(new URL("../dom-suspense.ts", import.meta.url), "utf8")),
     "/async-coordinator.ts": stripTypeScriptTypes(await readFile(new URL("../async-coordinator.ts", import.meta.url), "utf8")),
+    "/dom-resource.ts": stripTypeScriptTypes(await readFile(new URL("../dom-resource.ts", import.meta.url), "utf8")),
+    "/resource.ts": stripTypeScriptTypes(await readFile(new URL("../resource.ts", import.meta.url), "utf8")),
     "/router.ts": stripTypeScriptTypes(await readFile(new URL("../router.ts", import.meta.url), "utf8")),
     "/dom.ts": stripTypeScriptTypes(await readFile(new URL("../dom.ts", import.meta.url), "utf8")),
     "/reactivity.mjs": stripTypeScriptTypes(await readFile(new URL("../../reactivity/index.ts", import.meta.url), "utf8")),

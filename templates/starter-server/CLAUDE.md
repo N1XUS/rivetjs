@@ -106,7 +106,7 @@ import { For, Show, Switch, Match } from "@rivetjs/runtime/dom";
 
 - `For`: `by` key is required; `item` and `index` are **accessors** (`todo()`, `index()`). Use for lists that change. `.map()` is fine for fixed data (loader data, constants).
 - Conditionals: `cond() && <p />`, ternary, or `Show`. Always read the signal (`cond()`, not `cond`).
-- Other helpers: `Async`, `Suspense`, `ErrorBoundary`, `Dynamic`, `Portal`, `Provider`, `lazyComponent`, `clientOnly`.
+- Other helpers: `Async`, `resource` (async data as a signal: `const user = resource(() => id(), (id, info) => load(id, info.signal))`; keep it in one const, read inside `Suspense` so the server waits), `Suspense`, `ErrorBoundary`, `Dynamic`, `Portal`, `Provider`, `lazyComponent`, `clientOnly`.
 - A function child `{() => …}` re-runs when the signals its body reads change.
 
 ### Refs

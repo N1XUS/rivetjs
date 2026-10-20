@@ -23,6 +23,8 @@ test("owned browser router navigates history and cancels route work", async () =
     "dom-router",
     "dom-suspense",
     "async-coordinator",
+    "dom-resource",
+    "resource",
     "router",
     "lazy",
     "url",

@@ -240,6 +240,8 @@ export interface AsyncProps<T> {
   swap?: (apply: () => void, next: ParentNode) => void;
 }
 export { Suspense, startTransition, useTransition } from "./dom-suspense.ts";
+export { resource } from "./dom-resource.ts";
+export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource, ResourceState } from "./dom-resource.ts";
 
 /** Owned asynchronous boundary. load tracks synchronous reads only; replacement / unmount aborts work and
  * disposes old output. Explicit work.get / run restore ownership after await. Current asynchronous failures

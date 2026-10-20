@@ -35,6 +35,7 @@ While any `Async` inside is loading, `Suspense` shows its fallback. When the las
 - The parts inside are already built while the fallback shows. Their state stays when they are hidden again.
 - When a part inside loads again later (its `load` reads a signal that changed), the fallback shows again. Use a transition to avoid that.
 - A `Suspense` inside another one handles its own parts.
+- A [`resource`](./async.md#data-as-a-signal-resource) created inside counts as a part: while it loads, the fallback shows. On the server, the `Suspense` also waits for a resource created outside it when a part inside reads it.
 - When a part fails, the nearest [error boundary](/guides/routing/errors-and-404.md) handles it as usual. Inside the `Suspense`, the error shows in place once the other parts are ready.
 
 :::warning
