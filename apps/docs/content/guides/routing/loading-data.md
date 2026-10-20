@@ -56,7 +56,7 @@ A separate `index.server.ts` next to the page works too, with the same `load(…
 | `url` | The request URL. Read the query with `url.searchParams`. |
 | `request` | The standard `Request` (headers, method). |
 | `cookies` | `get`, `set` and `delete` cookies. |
-| `locals` | An object shared by guards, loaders and actions of one request. A guard can put the user here. |
+| `locals` | An object seeded by the handler's caller, then shared by guards, loaders and actions of one request. A guard can put the user here. See [render with data from another server](../../recipes/render-with-data-from-another-server.md). |
 | `signal` | An `AbortSignal` that fires when the request is cancelled. Pass it to `fetch` and database calls. |
 | `setHeader(name, value)` | Set a response header. See [headers and caching](./headers-and-caching.md). |
 | `setHeaders(headers)` | Set several headers at once (`set-cookie` is refused: use `cookies`). |

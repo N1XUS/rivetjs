@@ -134,7 +134,7 @@ export interface ErrorInput {
   readonly message: string;
   readonly headers: Headers;
   readonly nonce: string | undefined;
-  /** The request's `locals` as guards/loaders left them (empty when no guard ran, e.g. unmatched URLs). */
+  /** The request's `locals` as guards/loaders left them (only the handler's seed, `context.locals`, when no guard ran, e.g. unmatched URLs). */
   readonly locals: Record<string, unknown>;
   /**
    * Data of the outermost layouts the error page renders inside (route data order): those whose guards
@@ -184,8 +184,25 @@ export const _digest = (): string => {
   const bytes = crypto.getRandomValues(new Uint8Array(5));
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 };
+/** What the caller of the app handler passes with a request (adapters: `nonce`, `address`, `platform`). */
+export interface AppHandlerContext {
+  /** CSP nonce of this response (node adapter: fresh per request). */
+  nonce?: string;
+  /** Client address (`event.platform.clientAddress`). */
+  address?: string;
+  /** Adapter-provided request facts (`event.platform`). */
+  platform?: Platform;
+  /**
+   * Seeds `event.locals`: each request starts with a shallow copy, before any request handler, guard, loader or action
+   * runs (the caller's object is never changed). Only from the code that calls the handler (no adapter fills it from the
+   * request), e.g. a view model another server computed. Never sent to the browser unless a loader returns it. Requests
+   * that pass it bypass the route rules' page cache (their page depends on more than the URL). Client-navigation data
+   * requests (`?_rivet=data`) need the same seed.
+   */
+  locals?: Readonly<Record<string, unknown>>;
+}
 /** The app's web-standard request handler. */
-export type AppHandler = (request: Request, context?: { nonce?: string; address?: string; platform?: Platform }) => Promise<Response>;
+export type AppHandler = (request: Request, context?: AppHandlerContext) => Promise<Response>;
 
 const METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]);
 const ON = { GET: "onGet", POST: "onPost", PUT: "onPut", PATCH: "onPatch", DELETE: "onDelete" } as const;
@@ -374,7 +391,9 @@ export function createHandler(options: AppOptions): AppHandler {
     if (data) url.search = withoutRivet(url.search);
     const headers = new Headers();
     const nonce = context.nonce;
-    const locals: Record<string, unknown> = {};
+    // Seeded by the caller (`context.locals`): a copy, so guards writing `locals` never reach the caller's object.
+    const seed = context.locals;
+    const locals: Record<string, unknown> = seed ? { ...seed } : {};
     const found = match(url);
     const route = found ? (found.route.render(undefined, found) as AppRoute) : undefined;
     const method = request.method === "HEAD" ? "GET" : request.method;

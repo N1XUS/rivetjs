@@ -77,7 +77,7 @@ export default function Account({ data }: PageProps<typeof loader>) {
 }
 ```
 
-`locals` is a plain object, new for every request. Its type is `Record<string, unknown>`, so cast when you read it.
+`locals` is a plain object, new for every request. It starts empty, or with a copy of what the code that calls the app handler passed as `context.locals` (see [render with data from another server](../../recipes/render-with-data-from-another-server.md)). Its type is `Record<string, unknown>`, so cast when you read it.
 
 ## Ways to stop a request
 

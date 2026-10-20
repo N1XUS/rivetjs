@@ -170,6 +170,7 @@ export const nav: NavSection[] = [
           "recipes/analytics-page-views",
           "recipes/instant-page-transitions",
           "recipes/markdown-blog",
+          "recipes/render-with-data-from-another-server",
         ],
       },
       {

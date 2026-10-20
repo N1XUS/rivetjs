@@ -153,6 +153,8 @@ closeOnSignals(serving);
 
 `createListener(options)` returns the raw Node request listener, if you want to mount it in your own `http.createServer`.
 
+The handler gets `context` with the response's CSP `nonce` and the client `address`. To render a page with data your own code already has (for example a view model another server sent), pass it to the app as `locals`: `app(request, { ...context, locals: { viewModel } })`. Loaders, guards and actions read it as `event.locals`. The adapter never fills `locals` from the request. See [render with data from another server](../../recipes/render-with-data-from-another-server.md).
+
 ## Behind a proxy
 
 Most hosts put a proxy or load balancer in front of Node:

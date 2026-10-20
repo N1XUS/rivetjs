@@ -50,6 +50,7 @@ Deploy targets over the app handler (`createApp`). Build: `vite build` (→ `dis
 
 ## Rules / invariants
 
+- Seeded locals: node `RequestContext` is `{ nonce, address? }` only — no adapter fills `locals` from headers / query / body; a custom `serve({ handler })` seeds by forwarding `app(request, { ...context, locals })` (`tests/seeded-locals.test.ts`); `start()` passes none.
 - `fetch.ts` / `assemble.ts` stay web-standard (no `fs`/`path`, no runtime `import()` of file paths). Only node import reachable at runtime: `node:async_hooks` (resume state) → Workers need `nodejs_compat`.
 - Same pages on node and fetch: identical HTML, strict nonce CSP (16-byte base64), `nosniff` + `Referrer-Policy: strict-origin-when-cross-origin` defaults (header names case-insensitive: a `headers` option replaces the default of that name, a handler response's own header wins; node skips base entries the response has, fetch adds only missing ones), CSRF, `maxBody`, data endpoint, 404/500.
 - Origin for CSRF/redirect checks: node `origin` (fixed) or `trustProxy`; fetch: request URL or `origin`. Never default `trustProxy` on.

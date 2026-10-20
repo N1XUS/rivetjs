@@ -36,7 +36,10 @@ const ROUTE_CACHE = Symbol.for("rivet.routeCache");
 // `server/early-hints.ts` `EARLY_HINTS`: the app calls it (`createApp({ earlyHints })`) before guards and loaders.
 const EARLY_HINTS = Symbol.for("rivet.earlyHints");
 
-/** Per-request context passed to the handler. */
+/**
+ * Per-request context passed to the handler. It never carries `locals`: the adapter fills nothing from request
+ * headers, query or body. A handler that renders with its own data forwards `{ ...context, locals }` to the app.
+ */
 export interface RequestContext {
   /** Fresh CSP nonce (base64) for inline scripts the handler emits. */
   readonly nonce: string;

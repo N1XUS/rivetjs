@@ -819,6 +819,9 @@ export function withRouteRules(handler: AppHandler, rules: RouteRules, csp: Cach
     const { match: path, canonical } = raw === null ? { match: "", canonical: false } : normalPath(raw);
     const resolved = raw === null ? undefined : resolve(path);
     if (!resolved) return handler(request, context);
+    // Seeded `locals` (`context.locals`): the page depends on input that is not in the URL, so it is neither read
+    // from nor written to the store (rule headers still apply).
+    if (context?.locals) return withHeaders(await handler(request, context), resolved.headers);
     const header: HeaderOf = (name) => request.headers.get(name);
     const cache = cacheFor(resolved, request.method, origin, canonical, search, header);
     if (!cache) return withHeaders(await handler(request, context), resolved.headers);
