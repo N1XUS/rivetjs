@@ -28,8 +28,7 @@ export default function Layout({ url, children }: LayoutProps) {
           <a href="/">Rivet playground</a>
         </p>
         <p class="mt-4 max-w-xl text-base leading-7 text-slate-600">
-          One small application, rendered on the server and resumed in the browser. Data, ownership, and cancellation
-          stay explicit.
+          One small application, rendered on the server and resumed in the browser. Data, ownership, and cancellation stay explicit.
         </p>
       </header>
       <section class="mb-8 rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="counter-title">
@@ -38,11 +37,7 @@ export default function Layout({ url, children }: LayoutProps) {
         </h2>
         <p class="mt-2 text-sm text-slate-600">The browser counter updates without replacing the surrounding page.</p>
         <div class="mt-4 flex items-center gap-4">
-          <button
-            class="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white"
-            type="button"
-            onClick={() => count.update((value) => value + 1)}
-          >
+          <button class="rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white" type="button" onClick={() => count.update((value) => value + 1)}>
             Increase count
           </button>
           <output id="count" aria-live="polite" class="font-mono text-lg">
