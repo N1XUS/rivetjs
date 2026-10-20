@@ -6,7 +6,8 @@ Client DOM benchmarks (real Chromium/Chrome via Playwright): large-DOM suite, kr
 
 ## Entry points (all run as `node apps/dom-bench/<file>`)
 
-- `build.ts` — esbuild large-DOM lanes → `dist/<lane>.js` (+ external `.js.map`) + `dist/builds.json`. Lanes `rivet` (compiled; extra compile options via `--compile-options '<json>'`), `rivet-v2` (hand-lowered), `react`, `solid`, `solid-stable`; `--lanes a,b`.
+- `build.ts` — esbuild large-DOM lanes → `dist/<lane>.js` (+ external `.js.map`) + `dist/builds.json`. Lanes `rivet` (compiled; extra compile options via `--compile-options '<json>'`), `rivet-v2` (hand-lowered), `react`, `solid`, `solid-stable`; `--lanes a,b`. A/B: `--base <dir>` → lane `rivet-base` (adapter against `<dir>/libs/{reactivity,runtime}`, compiled with `<dir>/libs/compiler/index.ts` when present; `git archive HEAD libs/runtime libs/reactivity | tar -x -C <dir>`), `--lane name=file.js` → lane from hand-edited compiled `adapters/rivet.jsx` (lowercase name; the server serves `[a-z]` lane names only), `--emit` → `dist/rivet.compiled.js`.
+- `mount-quick.ts` — mount-only interleaved A/B of built lanes (fresh context per lane per sample, warm-up mount + dispose, then as run.ts Performance.enable + forced GC): `--lanes a,b --rows 1000,5000 --samples 15 [--gc 1|0] [--perf 1|0] [--idle ms] [--flags "<v8 flags>"] [--out f.json]`; median / min–max / IQR + load. Holds the bench lock.
 - `run.ts` — large-DOM runner. Options `--rows 100,1000,5000 --repeats 3 --samples 5 --frameworks rivet --out .artifacts/dom-bench/latest` → `<out>/results.json`.
 - `report.ts <results.json>` — `report.html` beside it.
 - `scoreboard.ts` — Rivet-only run of dom + krausest + resume (+ `--ssr` Docker) vs `competitors.json` / `krausest/published.json`; WIN/TIE/LOSE per scenario (`verdict.ts`), median (min–max), browser builds recorded + compared (`browsers`), refused comparisons = n/a with a note (browser major drift, SSR provenance mismatch, stored resume numbers without `paintLatency`). `--ssr` = rivet-compiled vs static peers + rivet-resume vs resumable peers, rows 100/1000/5000 c1, run with the stored `ssr.provenance` window/GC profile.
@@ -66,6 +67,7 @@ Client DOM benchmarks (real Chromium/Chrome via Playwright): large-DOM suite, kr
 - `browser.test.ts` fails on a stale/missing `dist/` — rebuild after compiler/runtime changes.
 - Open LOSEs: see `docs/benchmarks/2026-10-09-fair-comparison.md` (ranked loss list; SSR + resume re-measured for every lane at HEAD 2026-10-09, which also feeds `competitors.json` `ssr` / `resume`; `dom` keeps its 2026-10-06 provenance because the 5000-row DOM case exceeds the 3 GB agent RSS cap, the 1000-row DOM re-measure is in the report only).
 - Context suite depth: both lanes overflow the stack around 600–1300 nested reactive levels on a cold page (frame size shrinks once optimized), so timed `deep-*` stays at 500; compare depth with `--max-depth` only.
+- 5000-row mount vs Solid under run.ts = V8 incremental-marking finalization delay (forced GC before the timed mount → marking starts ≈ 11 ms in; V8 may postpone finalization up to 50 ms on its task-time average, inside one long task): Rivet wins without the GC / with `--no-incremental-marking`, loses with it. Not per-field cost; see `docs/benchmarks/2026-10-20-dom-mount.md`. Changing the protocol re-measures every stored competitor lane.
 - `crossOriginIsolated` needs every subresource same-origin (or CORP); the fixture pages load only `/<lane>.js`.
 
 ## See also

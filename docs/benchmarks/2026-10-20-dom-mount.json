@@ -1,0 +1,1224 @@
+{
+  "lane": "DOM-MOUNT",
+  "date": "2026-10-20",
+  "base": "3a0d09da",
+  "host": "macOS arm64, Chromium (Playwright) cross-origin isolated; RESUME-SMALL Docker lane sharing the host",
+  "runTs": {
+    "note": "apps/dom-bench/run.ts --repeats 3 --samples 5; per-trial median, then median (min–max) over trials",
+    "baseline": {
+      "1000": {
+        "rivet": {
+          "mount": {
+            "median": 21.33,
+            "min": 20.795,
+            "max": 23.595,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.24,
+            "min": 0.215,
+            "max": 0.255,
+            "n": 3
+          },
+          "update100": {
+            "median": 3,
+            "min": 2.875,
+            "max": 3.09,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.036,
+            "min": 4.033,
+            "max": 4.036,
+            "n": 3
+          }
+        },
+        "react": {
+          "mount": {
+            "median": 63.075,
+            "min": 58.705,
+            "max": 63.625,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.08,
+            "min": 1.07,
+            "max": 1.095,
+            "n": 3
+          },
+          "update100": {
+            "median": 20.355,
+            "min": 20.275,
+            "max": 20.395,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 16.804,
+            "min": 16.787,
+            "max": 16.804,
+            "n": 3
+          }
+        },
+        "solid": {
+          "mount": {
+            "median": 22.56,
+            "min": 22.45,
+            "max": 25.14,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.45,
+            "min": 0.44,
+            "max": 0.465,
+            "n": 3
+          },
+          "update100": {
+            "median": 5.49,
+            "min": 4.875,
+            "max": 5.49,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 7.372,
+            "min": 7.372,
+            "max": 7.373,
+            "n": 3
+          }
+        },
+        "solid-stable": {
+          "mount": {
+            "median": 21.885,
+            "min": 21.58,
+            "max": 23.04,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.355,
+            "min": 0.33,
+            "max": 0.355,
+            "n": 3
+          },
+          "update100": {
+            "median": 5.82,
+            "min": 5.7,
+            "max": 6.305,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 6.122,
+            "min": 6.122,
+            "max": 6.122,
+            "n": 3
+          }
+        }
+      },
+      "5000": {
+        "rivet": {
+          "mount": {
+            "median": 105.805,
+            "min": 103.3,
+            "max": 171.045,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.825,
+            "min": 0.815,
+            "max": 0.835,
+            "n": 3
+          },
+          "update100": {
+            "median": 14.31,
+            "min": 13.735,
+            "max": 18.895,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 19.879,
+            "min": 19.879,
+            "max": 19.88,
+            "n": 3
+          }
+        },
+        "react": {
+          "mount": {
+            "median": 210.975,
+            "min": 193.925,
+            "max": 226.795,
+            "n": 3
+          },
+          "update1": {
+            "median": 4.965,
+            "min": 4.115,
+            "max": 4.99,
+            "n": 3
+          },
+          "update100": {
+            "median": 120.545,
+            "min": 114.495,
+            "max": 150.38,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 84.184,
+            "min": 84.182,
+            "max": 84.184,
+            "n": 3
+          }
+        },
+        "solid": {
+          "mount": {
+            "median": 100.855,
+            "min": 98.27,
+            "max": 103.875,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.71,
+            "min": 1.415,
+            "max": 1.72,
+            "n": 3
+          },
+          "update100": {
+            "median": 29.47,
+            "min": 27.67,
+            "max": 34.11,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 37.443,
+            "min": 37.443,
+            "max": 37.443,
+            "n": 3
+          }
+        },
+        "solid-stable": {
+          "mount": {
+            "median": 98.95,
+            "min": 93.83,
+            "max": 101.5,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.505,
+            "min": 1.475,
+            "max": 1.585,
+            "n": 3
+          },
+          "update100": {
+            "median": 29.85,
+            "min": 29.245,
+            "max": 32,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 31.148,
+            "min": 31.147,
+            "max": 31.148,
+            "n": 3
+          }
+        }
+      }
+    },
+    "variantsTextBinding": {
+      "1000": {
+        "solid-stable": {
+          "mount": {
+            "median": 20.58,
+            "min": 20.05,
+            "max": 20.6,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.31,
+            "min": 0.295,
+            "max": 0.335,
+            "n": 3
+          },
+          "update100": {
+            "median": 5.425,
+            "min": 5.2,
+            "max": 5.61,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 6.122,
+            "min": 6.116,
+            "max": 6.122,
+            "n": 3
+          }
+        },
+        "rivet-base": {
+          "mount": {
+            "median": 19.8,
+            "min": 19.385,
+            "max": 19.9,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.205,
+            "min": 0.205,
+            "max": 0.215,
+            "n": 3
+          },
+          "update100": {
+            "median": 2.745,
+            "min": 2.64,
+            "max": 2.855,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.036,
+            "min": 4.036,
+            "max": 4.036,
+            "n": 3
+          }
+        },
+        "va": {
+          "mount": {
+            "median": 19.285,
+            "min": 19.205,
+            "max": 19.925,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.275,
+            "min": 0.275,
+            "max": 0.28,
+            "n": 3
+          },
+          "update100": {
+            "median": 3.7,
+            "min": 3.555,
+            "max": 3.855,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.459,
+            "min": 4.459,
+            "max": 4.459,
+            "n": 3
+          }
+        },
+        "ve": {
+          "mount": {
+            "median": 19.265,
+            "min": 18.94,
+            "max": 19.35,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.25,
+            "min": 0.25,
+            "max": 0.265,
+            "n": 3
+          },
+          "update100": {
+            "median": 2.92,
+            "min": 2.835,
+            "max": 2.995,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.042,
+            "min": 4.042,
+            "max": 4.042,
+            "n": 3
+          }
+        }
+      },
+      "5000": {
+        "solid-stable": {
+          "mount": {
+            "median": 92.465,
+            "min": 88.83,
+            "max": 99.77,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.55,
+            "min": 1.34,
+            "max": 1.615,
+            "n": 3
+          },
+          "update100": {
+            "median": 27.375,
+            "min": 27.12,
+            "max": 28.315,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 31.147,
+            "min": 31.147,
+            "max": 31.148,
+            "n": 3
+          }
+        },
+        "rivet-base": {
+          "mount": {
+            "median": 101.205,
+            "min": 98.815,
+            "max": 105.105,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.82,
+            "min": 0.805,
+            "max": 0.875,
+            "n": 3
+          },
+          "update100": {
+            "median": 13.725,
+            "min": 13.585,
+            "max": 14.38,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 19.879,
+            "min": 19.879,
+            "max": 19.88,
+            "n": 3
+          }
+        },
+        "va": {
+          "mount": {
+            "median": 96.805,
+            "min": 88.86,
+            "max": 101.11,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.135,
+            "min": 1.065,
+            "max": 1.225,
+            "n": 3
+          },
+          "update100": {
+            "median": 21.005,
+            "min": 20.27,
+            "max": 24.72,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 22.746,
+            "min": 22.746,
+            "max": 22.746,
+            "n": 3
+          }
+        },
+        "ve": {
+          "mount": {
+            "median": 97.175,
+            "min": 95.24,
+            "max": 102.78,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.07,
+            "min": 0.89,
+            "max": 1.095,
+            "n": 3
+          },
+          "update100": {
+            "median": 16.415,
+            "min": 15.5,
+            "max": 17.7,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 19.883,
+            "min": 19.781,
+            "max": 19.883,
+            "n": 3
+          }
+        }
+      }
+    },
+    "pins": {
+      "1000": {
+        "rivet": {
+          "mount": {
+            "median": 18.235,
+            "min": 17.84,
+            "max": 18.88,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.18,
+            "min": 0.165,
+            "max": 0.2,
+            "n": 3
+          },
+          "update100": {
+            "median": 2.425,
+            "min": 2.365,
+            "max": 2.45,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.001,
+            "min": 4.001,
+            "max": 4.001,
+            "n": 3
+          }
+        },
+        "solid-stable": {
+          "mount": {
+            "median": 18.095,
+            "min": 17.98,
+            "max": 19.58,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.25,
+            "min": 0.245,
+            "max": 0.25,
+            "n": 3
+          },
+          "update100": {
+            "median": 4.78,
+            "min": 4.675,
+            "max": 4.85,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 6.122,
+            "min": 6.122,
+            "max": 6.122,
+            "n": 3
+          }
+        },
+        "solid": {
+          "mount": {
+            "median": 19.325,
+            "min": 18.645,
+            "max": 20.165,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.35,
+            "min": 0.325,
+            "max": 0.35,
+            "n": 3
+          },
+          "update100": {
+            "median": 4.265,
+            "min": 3.985,
+            "max": 4.335,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 7.372,
+            "min": 7.372,
+            "max": 7.372,
+            "n": 3
+          }
+        },
+        "react": {
+          "mount": {
+            "median": 53.555,
+            "min": 53.13,
+            "max": 54.275,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.92,
+            "min": 0.885,
+            "max": 0.93,
+            "n": 3
+          },
+          "update100": {
+            "median": 17.35,
+            "min": 17.105,
+            "max": 18.9,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 16.788,
+            "min": 16.787,
+            "max": 16.803,
+            "n": 3
+          }
+        },
+        "rivet-base": {
+          "mount": {
+            "median": 17.495,
+            "min": 17.095,
+            "max": 19.07,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.175,
+            "min": 0.17,
+            "max": 0.19,
+            "n": 3
+          },
+          "update100": {
+            "median": 2.415,
+            "min": 2.405,
+            "max": 2.425,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 4.036,
+            "min": 4.036,
+            "max": 4.036,
+            "n": 3
+          }
+        }
+      },
+      "5000": {
+        "rivet": {
+          "mount": {
+            "median": 95.045,
+            "min": 95.015,
+            "max": 96.365,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.715,
+            "min": 0.71,
+            "max": 0.715,
+            "n": 3
+          },
+          "update100": {
+            "median": 12.8,
+            "min": 12.645,
+            "max": 12.9,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 19.841,
+            "min": 19.841,
+            "max": 19.841,
+            "n": 3
+          }
+        },
+        "solid-stable": {
+          "mount": {
+            "median": 85.275,
+            "min": 84,
+            "max": 85.815,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.335,
+            "min": 1.305,
+            "max": 1.38,
+            "n": 3
+          },
+          "update100": {
+            "median": 25.645,
+            "min": 24.695,
+            "max": 27.425,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 31.148,
+            "min": 31.147,
+            "max": 31.148,
+            "n": 3
+          }
+        },
+        "solid": {
+          "mount": {
+            "median": 87.985,
+            "min": 86.885,
+            "max": 99.36,
+            "n": 3
+          },
+          "update1": {
+            "median": 1.28,
+            "min": 1.27,
+            "max": 1.305,
+            "n": 3
+          },
+          "update100": {
+            "median": 22.835,
+            "min": 22.22,
+            "max": 23.8,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 37.443,
+            "min": 37.441,
+            "max": 37.443,
+            "n": 3
+          }
+        },
+        "react": {
+          "mount": {
+            "median": 185.135,
+            "min": 182.165,
+            "max": 189.955,
+            "n": 3
+          },
+          "update1": {
+            "median": 3.685,
+            "min": 3.525,
+            "max": 4.055,
+            "n": 3
+          },
+          "update100": {
+            "median": 116.34,
+            "min": 112.58,
+            "max": 117.2,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 84.195,
+            "min": 84.185,
+            "max": 84.195,
+            "n": 3
+          }
+        },
+        "rivet-base": {
+          "mount": {
+            "median": 96.585,
+            "min": 96.4,
+            "max": 98.17,
+            "n": 3
+          },
+          "update1": {
+            "median": 0.735,
+            "min": 0.73,
+            "max": 0.75,
+            "n": 3
+          },
+          "update100": {
+            "median": 12.735,
+            "min": 12.66,
+            "max": 12.93,
+            "n": 3
+          },
+          "heapMiB": {
+            "median": 19.879,
+            "min": 19.879,
+            "max": 19.879,
+            "n": 3
+          }
+        }
+      }
+    }
+  },
+  "mountQuick": {
+    "pinsGc": {
+      "note": "run.ts protocol (Performance.enable + forced GC before timed mount); rivet = pins, rivet-base = HEAD",
+      "samples": 15,
+      "load1": {
+        "median": 4.919,
+        "min": 4.391,
+        "max": 5.006,
+        "n": 30
+      },
+      "mountMs": {
+        "1000": {
+          "rivet-base": {
+            "median": 19.435,
+            "min": 16.595,
+            "max": 22.92,
+            "n": 15
+          },
+          "rivet": {
+            "median": 19.49,
+            "min": 17.19,
+            "max": 23.58,
+            "n": 15
+          },
+          "solid-stable": {
+            "median": 20.055,
+            "min": 17.965,
+            "max": 43.43,
+            "n": 15
+          }
+        },
+        "5000": {
+          "rivet-base": {
+            "median": 100.845,
+            "min": 96.84,
+            "max": 104.45,
+            "n": 15
+          },
+          "rivet": {
+            "median": 100.25,
+            "min": 96.685,
+            "max": 101.77,
+            "n": 15
+          },
+          "solid-stable": {
+            "median": 90.895,
+            "min": 85.18,
+            "max": 94.865,
+            "n": 15
+          }
+        }
+      }
+    },
+    "pinsNoGc": {
+      "note": "no forced GC; rivet = pins",
+      "samples": 11,
+      "load1": {
+        "median": 6.707,
+        "min": 6.49,
+        "max": 7.029,
+        "n": 22
+      },
+      "mountMs": {
+        "1000": {
+          "rivet-base": {
+            "median": 16.635,
+            "min": 16.355,
+            "max": 17.875,
+            "n": 11
+          },
+          "rivet": {
+            "median": 16.29,
+            "min": 15.985,
+            "max": 17.145,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 16.315,
+            "min": 15.765,
+            "max": 18.03,
+            "n": 11
+          }
+        },
+        "5000": {
+          "rivet-base": {
+            "median": 79.045,
+            "min": 76.6,
+            "max": 154.995,
+            "n": 11
+          },
+          "rivet": {
+            "median": 77.48,
+            "min": 75.825,
+            "max": 83.635,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 82.03,
+            "min": 80.885,
+            "max": 89.325,
+            "n": 11
+          }
+        }
+      }
+    },
+    "modeNoGc": {
+      "note": "rivet = HEAD; --gc 0",
+      "samples": 11,
+      "load1": {
+        "median": 5.151,
+        "min": 4.974,
+        "max": 5.151,
+        "n": 22
+      },
+      "mountMs": {
+        "1000": {
+          "rivet": {
+            "median": 19.66,
+            "min": 18.785,
+            "max": 25.11,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 18.925,
+            "min": 18.235,
+            "max": 21.065,
+            "n": 11
+          }
+        },
+        "5000": {
+          "rivet": {
+            "median": 87.975,
+            "min": 84.51,
+            "max": 92.245,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 92.46,
+            "min": 88.555,
+            "max": 95.185,
+            "n": 11
+          }
+        }
+      }
+    },
+    "modeNoIncrementalMarking": {
+      "note": "rivet = HEAD; forced GC + --js-flags=--no-incremental-marking",
+      "samples": 11,
+      "load1": {
+        "median": 4.974,
+        "min": 4.974,
+        "max": 13.485,
+        "n": 22
+      },
+      "mountMs": {
+        "1000": {
+          "rivet": {
+            "median": 18.835,
+            "min": 17.705,
+            "max": 20.18,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 20.535,
+            "min": 19.31,
+            "max": 21.52,
+            "n": 11
+          }
+        },
+        "5000": {
+          "rivet": {
+            "median": 96.415,
+            "min": 93.515,
+            "max": 102.355,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 109.49,
+            "min": 103.165,
+            "max": 114.3,
+            "n": 11
+          }
+        }
+      }
+    },
+    "modeGc": {
+      "note": "rivet = HEAD; run.ts protocol; load 13–29 (other lane)",
+      "samples": 11,
+      "load1": {
+        "median": 21.054,
+        "min": 13.485,
+        "max": 28.977,
+        "n": 22
+      },
+      "mountMs": {
+        "1000": {
+          "rivet": {
+            "median": 21.425,
+            "min": 20.935,
+            "max": 23.56,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 22.32,
+            "min": 20.895,
+            "max": 31.78,
+            "n": 11
+          }
+        },
+        "5000": {
+          "rivet": {
+            "median": 110.105,
+            "min": 100.165,
+            "max": 140.93,
+            "n": 11
+          },
+          "solid-stable": {
+            "median": 100.145,
+            "min": 96.515,
+            "max": 111.81,
+            "n": 11
+          }
+        }
+      }
+    },
+    "ablationsNoGc": {
+      "note": "no forced GC; v0 = compiled, va = no placeholder text node (_t), vb = no _on, vc = static text (no binding), vd = $$click only",
+      "samples": 9,
+      "load1": {
+        "median": 13.828,
+        "min": 12.333,
+        "max": 14.082,
+        "n": 18
+      },
+      "mountMs": {
+        "1000": {
+          "v0": {
+            "median": 18.93,
+            "min": 18.26,
+            "max": 21.22,
+            "n": 9
+          },
+          "va": {
+            "median": 18.22,
+            "min": 17.73,
+            "max": 19.485,
+            "n": 9
+          },
+          "vb": {
+            "median": 18.975,
+            "min": 17.515,
+            "max": 20.7,
+            "n": 9
+          },
+          "vc": {
+            "median": 16.895,
+            "min": 16.39,
+            "max": 20.17,
+            "n": 9
+          },
+          "vd": {
+            "median": 19.83,
+            "min": 18.375,
+            "max": 22.095,
+            "n": 9
+          },
+          "solid-stable": {
+            "median": 20.235,
+            "min": 18.49,
+            "max": 21.235,
+            "n": 9
+          }
+        },
+        "5000": {
+          "v0": {
+            "median": 90.185,
+            "min": 88.43,
+            "max": 99.16,
+            "n": 9
+          },
+          "va": {
+            "median": 87.425,
+            "min": 82.39,
+            "max": 95.885,
+            "n": 9
+          },
+          "vb": {
+            "median": 88.59,
+            "min": 85.79,
+            "max": 91.185,
+            "n": 9
+          },
+          "vc": {
+            "median": 87.34,
+            "min": 80.77,
+            "max": 90.995,
+            "n": 9
+          },
+          "vd": {
+            "median": 92.465,
+            "min": 87.67,
+            "max": 99.41,
+            "n": 9
+          },
+          "solid-stable": {
+            "median": 91.91,
+            "min": 86.105,
+            "max": 99.29,
+            "n": 9
+          }
+        }
+      }
+    },
+    "ablationsGc": {
+      "note": "forced GC; same variants",
+      "samples": 9,
+      "load1": {
+        "median": 10.807,
+        "min": 10.683,
+        "max": 11.4,
+        "n": 18
+      },
+      "mountMs": {
+        "1000": {
+          "v0": {
+            "median": 19.435,
+            "min": 18.465,
+            "max": 20.97,
+            "n": 9
+          },
+          "va": {
+            "median": 20.015,
+            "min": 18.45,
+            "max": 21.505,
+            "n": 9
+          },
+          "vb": {
+            "median": 18.715,
+            "min": 18.045,
+            "max": 21.09,
+            "n": 9
+          },
+          "vc": {
+            "median": 18.49,
+            "min": 17.76,
+            "max": 20.285,
+            "n": 9
+          },
+          "vd": {
+            "median": 19.72,
+            "min": 18.99,
+            "max": 20.295,
+            "n": 9
+          },
+          "solid-stable": {
+            "median": 19.455,
+            "min": 19.165,
+            "max": 20.98,
+            "n": 9
+          }
+        },
+        "5000": {
+          "v0": {
+            "median": 103.8,
+            "min": 102.13,
+            "max": 106.89,
+            "n": 9
+          },
+          "va": {
+            "median": 100.905,
+            "min": 84.565,
+            "max": 122.92,
+            "n": 9
+          },
+          "vb": {
+            "median": 100.99,
+            "min": 99.365,
+            "max": 104.2,
+            "n": 9
+          },
+          "vc": {
+            "median": 99.545,
+            "min": 96.6,
+            "max": 104.07,
+            "n": 9
+          },
+          "vd": {
+            "median": 104.8,
+            "min": 92.41,
+            "max": 118.98,
+            "n": 9
+          },
+          "solid-stable": {
+            "median": 94.595,
+            "min": 90.525,
+            "max": 102.855,
+            "n": 9
+          }
+        }
+      }
+    }
+  },
+  "krausestPins": {
+    "note": "krausest/run.ts --iterations 15, rivetbase = HEAD, rivet = pins, lanes interleaved",
+    "cpu": {
+      "01_run1k": {
+        "rivetbase": {
+          "scriptMs": {
+            "median": 2.348,
+            "min": 2.114,
+            "max": 3.139
+          },
+          "totalMs": {
+            "median": 21.573,
+            "min": 20.108,
+            "max": 24.714
+          }
+        },
+        "rivet": {
+          "scriptMs": {
+            "median": 2.384,
+            "min": 2.116,
+            "max": 2.815
+          },
+          "totalMs": {
+            "median": 22.145,
+            "min": 20.448,
+            "max": 24.682
+          }
+        },
+        "vanilla": {
+          "scriptMs": {
+            "median": 1.488,
+            "min": 1.376,
+            "max": 1.571
+          },
+          "totalMs": {
+            "median": 20.567,
+            "min": 18.825,
+            "max": 22.146
+          }
+        }
+      },
+      "07_create10k": {
+        "rivetbase": {
+          "scriptMs": {
+            "median": 22.483,
+            "min": 21.388,
+            "max": 23.883
+          },
+          "totalMs": {
+            "median": 243.979,
+            "min": 233.177,
+            "max": 259.71
+          }
+        },
+        "rivet": {
+          "scriptMs": {
+            "median": 22.475,
+            "min": 21.733,
+            "max": 23.559
+          },
+          "totalMs": {
+            "median": 243.38,
+            "min": 231.813,
+            "max": 252.74
+          }
+        },
+        "vanilla": {
+          "scriptMs": {
+            "median": 15.288,
+            "min": 14.541,
+            "max": 16.419
+          },
+          "totalMs": {
+            "median": 235.258,
+            "min": 223.302,
+            "max": 243.725
+          }
+        }
+      },
+      "08_create1k-after1k_x2": {
+        "rivetbase": {
+          "scriptMs": {
+            "median": 2.763,
+            "min": 2.516,
+            "max": 2.965
+          },
+          "totalMs": {
+            "median": 27.008,
+            "min": 24.651,
+            "max": 29.145
+          }
+        },
+        "rivet": {
+          "scriptMs": {
+            "median": 2.775,
+            "min": 2.648,
+            "max": 3.061
+          },
+          "totalMs": {
+            "median": 28.029,
+            "min": 24.934,
+            "max": 29.303
+          }
+        },
+        "vanilla": {
+          "scriptMs": {
+            "median": 1.446,
+            "min": 1.405,
+            "max": 1.556
+          },
+          "totalMs": {
+            "median": 25.616,
+            "min": 23.966,
+            "max": 27.311
+          }
+        }
+      }
+    }
+  }
+}

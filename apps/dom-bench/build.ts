@@ -1,6 +1,15 @@
+// Large-DOM lanes → dist/<lane>.js + builds.json. node apps/dom-bench/build.ts [--lanes a,b] [--compile-options '<json>']
+//   [--base <dir>] [--lane name=compiled.js] [--emit]
+//   --base <dir>         lane `rivet-base`: adapters/rivet.jsx against another checkout's libs/{reactivity,runtime} (interleaved
+//                        A/B of runtime changes; `git archive HEAD libs/runtime libs/reactivity | tar -x -C <dir>`), compiled with
+//                        <dir>/libs/compiler/index.ts when present (A/B compiler emission too).
+//   --lane name=file.js  lane `name`: hand-edited compiled output of adapters/rivet.jsx (prototype a compiler emission shape
+//                        before a compiler patch; start from --emit).
+//   --emit               write the compiler's output for adapters/rivet.jsx to dist/rivet.compiled.js.
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
 import { gzipSync, brotliCompressSync } from "node:zlib";
 import { build, type Plugin } from "esbuild";
@@ -57,8 +66,30 @@ for (const name of ["solid-js", "babel-preset-solid", "@babel/core"])
 const compileOptions: Record<string, unknown> = {
   ...(process.argv.includes("--compile-options") ? (JSON.parse(process.argv[process.argv.indexOf("--compile-options") + 1]!) as Record<string, unknown>) : {}),
 };
-const lanes = process.argv.includes("--lanes") ? process.argv[process.argv.indexOf("--lanes") + 1]!.split(",") : ["rivet", "rivet-v2", "react", "solid", "solid-stable"];
+const args = process.argv.slice(2);
+const base = args.includes("--base") ? resolve(args[args.indexOf("--base") + 1]!) : null;
+const baseCompiler = base ? resolve(base, "libs/compiler/index.ts") : null;
+const compileBase: typeof compile =
+  baseCompiler && existsSync(baseCompiler) ? ((await import(pathToFileURL(baseCompiler).href)) as { compile: typeof compile }).compile : compile;
+const prebuilt = new Map<string, string>();
+args.forEach((a, i) => {
+  if (a !== "--lane") return;
+  const [name, file] = args[i + 1]!.split("=");
+  if (!/^[a-z][a-z0-9-]*$/.test(name!) || !file) throw Error(`--lane name=file.js (lowercase name): ${args[i + 1]}`);
+  prebuilt.set(name!, resolve(file));
+});
+if (args.includes("--emit")) {
+  const path = resolve(root, "adapters/rivet.jsx");
+  await writeFile(resolve(root, "dist/rivet.compiled.js"), compile(await readFile(path, "utf8"), { target: "dom", filename: path, ...compileOptions }).code);
+}
+const lanes = [
+  ...(args.includes("--lanes") ? args[args.indexOf("--lanes") + 1]!.split(",") : ["rivet", "rivet-v2", "react", "solid", "solid-stable"]),
+  ...(base ? ["rivet-base"] : []),
+  ...prebuilt.keys(),
+].filter((lane, i, all) => all.indexOf(lane) === i);
 for (const framework of lanes) {
+  // A Rivet variant lane (A/B): the rivet adapter, another runtime (`rivet-base`) or prebuilt compiled output (`--lane`).
+  const variant = framework === "rivet-base" || prebuilt.has(framework);
   const plugins: Plugin[] =
     framework === "react"
       ? []
@@ -74,11 +105,20 @@ for (const framework of lanes) {
                   return { path: alias.replacement };
                 });
               }
+              if (framework === "rivet-base")
+                builder.onResolve({ filter: /^@rivetjs\/(reactivity|runtime)(\/.*)?$/ }, async (a) => {
+                  const [, pkg, sub = ""] = /^@rivetjs\/(reactivity|runtime)(\/.*)?$/.exec(a.path)!;
+                  const dir = resolve(base!, "libs", pkg!),
+                    exports = JSON.parse(await readFile(resolve(dir, "package.json"), "utf8")).exports as Record<string, string | { default: string }>;
+                  const entry = exports["." + sub]!;
+                  return { path: resolve(dir, typeof entry === "string" ? entry : entry.default) };
+                });
               builder.onLoad({ filter: /\.jsx$/ }, async (args) => {
+                if (prebuilt.has(framework)) return { contents: await readFile(prebuilt.get(framework)!, "utf8"), loader: "js", resolveDir: dirname(args.path) };
                 const source = await readFile(args.path, "utf8");
                 const result =
-                  framework === "rivet"
-                    ? compile(source, { target: "dom", filename: args.path, ...compileOptions })
+                  framework === "rivet" || framework === "rivet-base"
+                    ? (framework === "rivet" ? compile : compileBase)(source, { target: "dom", filename: args.path, ...compileOptions })
                     : framework === "solid-stable"
                       ? stableRequire("@babel/core").transformSync(source, {
                           filename: args.path,
@@ -100,7 +140,7 @@ for (const framework of lanes) {
             },
           },
         ];
-  const entry = resolve(root, `adapters/${framework}.${framework === "rivet-v2" ? "js" : "jsx"}`),
+  const entry = resolve(root, variant ? "adapters/rivet.jsx" : `adapters/${framework}.${framework === "rivet-v2" ? "js" : "jsx"}`),
     outfile = resolve(root, `dist/${framework}.js`);
   const result = await build({
     entryPoints: [entry],
@@ -118,6 +158,7 @@ for (const framework of lanes) {
     // The app tsconfig.json types these Node scripts only; fixtures use esbuild defaults, not its JSX settings.
     tsconfigRaw: {},
     plugins,
+    nodePaths: base ? [resolve(root, "../../node_modules")] : [],
     define: { "process.env.NODE_ENV": '"production"' },
   });
   if (framework === "solid-stable") assertStableSolidModules(Object.keys(result.metafile.inputs));
@@ -133,19 +174,21 @@ for (const framework of lanes) {
   artifacts.push({
     framework,
     version:
-      framework === "rivet" || framework === "rivet-v2"
+      framework === "rivet" || framework === "rivet-v2" || variant
         ? versions["@rivetjs/runtime"]
         : framework === "react"
           ? versions.react
           : versions[framework === "solid-stable" ? "solid-stable/solid-js" : "solid-js"],
-    label: { rivet: "Rivet", "rivet-v2": "Rivet (DOM v2, hand-lowered)", react: "React", solid: "Solid (preview)", "solid-stable": "Solid (stable)" }[framework]!,
-    releaseChannel: framework === "solid" ? "preview" : framework.startsWith("rivet") ? "experimental" : "stable",
+    label: variant
+      ? `Rivet (${framework === "rivet-base" ? `base ${base}` : `prebuilt ${prebuilt.get(framework)}`})`
+      : { rivet: "Rivet", "rivet-v2": "Rivet (DOM v2, hand-lowered)", react: "React", solid: "Solid (preview)", "solid-stable": "Solid (stable)" }[framework]!,
+    releaseChannel: framework === "solid" ? "preview" : framework.startsWith("rivet") || variant ? "experimental" : "stable",
     compiler: framework === "solid-stable"
       ? { name: "babel-preset-solid", version: versions["solid-stable/babel-preset-solid"]!, options: { generate: "dom", hydratable: false, dev: false } }
       : framework === "solid"
         ? { name: "@solidjs/compiler", version: versions["@solidjs/compiler"]!, options: { generate: "dom", hydratable: false, dev: false, sourceNames: false } }
-        : framework === "rivet-v2" ? { name: "hand-lowered", version: versions["@rivetjs/runtime"]!, options: { target: "dom-v2" } }
-        : { name: framework === "rivet" ? "@rivetjs/compiler" : "esbuild", version: versions[framework === "rivet" ? "@rivetjs/compiler" : "esbuild"]!, options: { target: "dom", production: true, ...compileOptions } },
+        : framework === "rivet-v2" || prebuilt.has(framework) ? { name: "hand-lowered", version: versions["@rivetjs/runtime"]!, options: { target: "dom-v2" } }
+        : { name: framework === "rivet" || variant ? "@rivetjs/compiler" : "esbuild", version: versions[framework === "rivet" || variant ? "@rivetjs/compiler" : "esbuild"]!, options: { target: "dom", production: true, ...compileOptions } },
     raw: bytes.length,
     gzip: gzipSync(bytes).length,
     brotli: brotliCompressSync(bytes).length,
