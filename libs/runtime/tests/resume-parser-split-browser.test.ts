@@ -4,11 +4,10 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { DEV_BUILD, withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -44,7 +43,7 @@ async function warnings(served: Record<string, Served>): Promise<string[]> {
 }
 
 test("development: a resume marker pair split across parents warns with the parser hint", async () => {
-  const out = await warnings({ ...base, "/dev/off.ts": stripTypeScriptTypes(await readFile(new URL("../dev/on.ts", import.meta.url), "utf8")) });
+  const out = await warnings({ ...base, ...DEV_BUILD });
   const hint = out.find((text) => text.includes("start and end under different parents"));
   assert.ok(hint, JSON.stringify(out));
   assert.match(hint, /\(<ul> \/ <main>\) — the HTML parser restructured the server markup/);

@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { coLoadGroups, isBarrel, MERGE_BUDGET, withMergeGroup, type CoLoadModule } from "./chunk-groups.ts";
+import { switchContent } from "./switches.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import {
   compile,
@@ -417,24 +418,20 @@ const ENTRY = "\0rivet-resume-entry";
 const MANIFEST = ".vite/rivet-resume.json";
 /**
  * `resume.lazyRows` (LAZY-T5B): the runtime's build-time switch modules (`@rivetjs/runtime` `lazy-rows.ts` /
- * `lazy-rows-resume.ts`, sources or published `.js`) → their opted-in content. Matched by path: the workspace source
+ * `lazy-rows-resume.ts`, sources or published `.js`) → their opted-in content (`switches.ts`). Matched by path: the workspace source
  * (`libs/runtime/`) or an installed package (`@rivetjs/runtime/`, any package manager layout).
  */
 const LAZY_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](lazy-rows(?:-resume)?)\.([cm]?[jt]s)$/;
 function lazySwitch(id: string): string | null {
   const hit = LAZY_SWITCH.exec(id);
-  if (!hit) return null;
-  return hit[1] === "lazy-rows" ? "export const LAZY_ROWS = true;\n" : `export { _lazyRows } from "./dom-resume-lazy.${hit[2]}";\n`;
+  return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
 }
 /** `resume.domData` (DOM-DATA): the runtime's switch modules (`dom-data.ts` / `dom-data-resume.ts` for the browser,
- * `dom-data-server.ts` for the server) → their opted-in content. */
+ * `dom-data-server.ts` for the server) → their opted-in content (`switches.ts`). */
 const DOM_DATA_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](dom-data(?:-resume|-server)?)\.([cm]?[jt]s)$/;
 function domDataSwitch(id: string): string | null {
   const hit = DOM_DATA_SWITCH.exec(id);
-  if (!hit) return null;
-  if (hit[1] === "dom-data") return "export const DOM_DATA = true;\n";
-  if (hit[1] === "dom-data-server") return `import { _domRegistry } from "./server-dom-data.${hit[2]}";\nexport const domServer = { create: _domRegistry };\n`;
-  return `export { _domData } from "./dom-resume-data.${hit[2]}";\n`;
+  return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
 }
 // V8 explicit compile hint: compile every function when the script is compiled (module scripts: on the
 // streaming compile thread while they download). Client entry chunks: their functions run at startup (mount),

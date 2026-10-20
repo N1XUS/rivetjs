@@ -158,7 +158,7 @@ export function _rBAttr(token: Boundary | null): ServerValue {
   return _attributeRecord("data-b", token.id, "html") as unknown as ServerValue;
 }
 
-function register(ctx: DerivedRender, owner: Boundary, key: string, value: () => unknown): string {
+function register(owner: Boundary, key: string, value: () => unknown): string {
   const keys = (owner.keys ??= new Map());
   const n = (keys.get(key) ?? 0) + 1;
   keys.set(key, n);
@@ -186,7 +186,7 @@ export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sig
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
   if (!ctx || !owner) return s;
-  const id = register(ctx, owner, key, s);
+  const id = register(owner, key, s);
   const get = function () {
     const at = current(ctx);
     if (at && at !== owner) wake(ctx, id, at.id);
@@ -203,7 +203,7 @@ export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
   const store = createStore(init);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
-  if (ctx && owner) register(ctx, owner, key, () => read(store));
+  if (ctx && owner) register(owner, key, () => read(store));
   return store;
 }
 

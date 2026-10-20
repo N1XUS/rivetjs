@@ -289,6 +289,9 @@ interface Probe {
   shapes: Node[][];
   attrs: [Element, string, string][][] | null;
   slots: InsertSlot[];
+  /** The detached probe run (its markup, before an anchor) and its root (`_rootIn` holder). */
+  frag: DocumentFragment;
+  owner: Owner | null;
 }
 type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined];
 const save = (): Hooks => [_adoption.node, _adoption.slot, _adoption.live];
@@ -404,6 +407,95 @@ interface Answers {
   slots: Current[];
 }
 
+// Step 1 of `_adoptRow`: run the row in create mode, detached (under `frag`), recording what it creates (`_adoption`
+// hooks); `attrs` (dev verifier) also records each template clone's pristine attributes.
+function probeRow(parent: Owner | null, enter: <T>(fn: () => T) => T, rowFn: () => unknown, doc: Document, attrs: boolean, outer: Hooks): Probe {
+  const probe: Probe = { made: [[], [], []], shapes: [], attrs: attrs ? [] : null, slots: [], frag: doc.createDocumentFragment(), owner: null },
+    anchor = doc.createTextNode("");
+  probe.frag.append(anchor);
+  _adoption.node = <N extends Node>(node: N, kind: number): N => {
+    probe.made[kind as 0 | 1 | 2].push(node);
+    if (kind === 0) (probe.shapes.push(shapeOf(node)), probe.attrs?.push(attrsOf(node)));
+    return node;
+  };
+  _adoption.slot = (slot) => void probe.slots.push(slot);
+  _adoption.live = false;
+  try {
+    untrack(() => _rootIn(parent, () => enter(() => _insert(null, rowFn(), anchor)), probe));
+  } finally {
+    restore(outer);
+  }
+  return probe;
+}
+/** Step 2 of `_adoptRow`: probe node → server twin, the first difference (dev verifier), whether probe nodes were copied in. */
+interface Align {
+  map: Map<Node, Node>;
+  first: string | null;
+  copied: boolean;
+  /** Dev: name the first difference (`first`). */
+  verify: boolean;
+}
+/** The text of a run of text / comment nodes (comments count as ""). */
+const textOf = (run: readonly Node[]): string => run.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join("");
+// A copy of a probe node put into the server markup (a run / level that differs): mapped node for node.
+function copyIn(a: Align, node: Node): Node {
+  a.copied = true;
+  const twin = node.cloneNode(true);
+  const pair = (x: Node, y: Node): void => {
+    a.map.set(x, y);
+    for (let c = x.firstChild, d = y.firstChild; c !== null && d !== null; c = c.nextSibling, d = d.nextSibling) pair(c, d);
+  };
+  pair(node, twin);
+  return twin;
+}
+// Align the probe's children `fl` with the server's `ll` (children of `at`, before `ref`): same elements pair up level by
+// level; a level whose elements differ, or a text run between elements that differs, is replaced by copies of the probe's.
+function align(a: Align, fl: Node[], ll: Node[], at: Node, ref: Node | null): void {
+  const fe = fl.filter((n) => n.nodeType === 1),
+    le = ll.filter((n) => n.nodeType === 1);
+  let same = fe.length === le.length;
+  for (let i = 0; same && i < fe.length; i++)
+    same = (fe[i] as Element).localName === (le[i] as Element).localName && (fe[i] as Element).namespaceURI === (le[i] as Element).namespaceURI;
+  if (!same) {
+    if (DEV && a.verify)
+      a.first ??=
+        "<" +
+        (at.nodeType === 1 ? (at as Element).localName : "row") +
+        "> children: " +
+        describe(le.find((n, i) => describe(n) !== describe(fe[i]))) +
+        " where the browser renders " +
+        describe(fe.find((n, i) => describe(n) !== describe(le[i])));
+    for (const n of ll) at.removeChild(n);
+    for (const n of fl) at.insertBefore(copyIn(a, n), ref);
+    return;
+  }
+  // Runs of text / comments between elements (run i ends before element i; the last run before `ref`).
+  let fi = 0,
+    li = 0;
+  for (let e = 0; e <= fe.length; e++) {
+    const fr: Node[] = [],
+      lr: Node[] = [];
+    while (fi < fl.length && fl[fi]!.nodeType !== 1) fr.push(fl[fi++]!);
+    while (li < ll.length && ll[li]!.nodeType !== 1) lr.push(ll[li++]!);
+    let equal = fr.length === lr.length;
+    for (let i = 0; equal && i < fr.length; i++) equal = fr[i]!.nodeType === lr[i]!.nodeType && (fr[i] as CharacterData).data === (lr[i] as CharacterData).data;
+    if (equal) for (let i = 0; i < fr.length; i++) a.map.set(fr[i]!, lr[i]!);
+    else {
+      if (DEV && a.verify && textOf(fr) !== textOf(lr))
+        a.first ??= "text " + JSON.stringify(lr.map((n) => (n as CharacterData).data).join("")) + " where the browser renders " + JSON.stringify(textOf(fr));
+      const before = e < fe.length ? le[e]! : ref;
+      for (const n of lr) at.removeChild(n);
+      for (const n of fr) at.insertBefore(copyIn(a, n), before);
+    }
+    if (e < fe.length) {
+      const f = fl[fi++]!,
+        l = ll[li++]!;
+      a.map.set(f, l);
+      align(a, kids(f), kids(l), l, null);
+    }
+  }
+}
+
 /**
  * Materialise one lazy row (LAZY-ROWS T5): run `rowFn` over the server nodes strictly between `start` and `end` (its
  * markers) in adopt mode, under a new root of `parent`; `enter` wraps each run (probe and adopt) in the row's
@@ -431,110 +523,34 @@ export function _adoptRow(
     cache!.p = false;
     return _adoptRow(parent, enter, rowFn, start, end, verify, null);
   }
-  const doc = start.ownerDocument!,
-    probe: Probe = { made: [[], [], []], shapes: [], attrs: verify && [], slots: [] },
-    frag = doc.createDocumentFragment(),
-    anchor = doc.createTextNode(""),
-    held = { owner: null as Owner | null };
-  frag.append(anchor);
   // 1. Probe (create mode, detached).
-  _adoption.node = <N extends Node>(node: N, kind: number): N => {
-    probe.made[kind as 0 | 1 | 2].push(node);
-    if (kind === 0) (probe.shapes.push(shapeOf(node)), probe.attrs?.push(attrsOf(node)));
-    return node;
-  };
-  _adoption.slot = (slot) => void probe.slots.push(slot);
-  _adoption.live = false;
-  try {
-    untrack(() => _rootIn(parent, () => enter(() => _insert(null, rowFn(), anchor)), held));
-  } finally {
-    restore(outer);
-  }
-  const fresh = kids(frag);
+  const probe = probeRow(parent, enter, rowFn, start.ownerDocument!, DEV && verify !== null, outer);
+  const fresh = kids(probe.frag);
   fresh.pop(); // the anchor
   const server = between(start, end),
     dirty = dirtyOf(row.controls);
   // 2. Align.
-  const map = new Map<Node, Node>();
-  let first: string | null = null,
-    copied = false;
-  // Copies of probe nodes put into the server markup (a run / level that differs): mapped node for node.
-  const copy = (node: Node): Node => {
-    copied = true;
-    const twin = node.cloneNode(true);
-    const pair = (a: Node, b: Node): void => {
-      map.set(a, b);
-      for (let x = a.firstChild, y = b.firstChild; x !== null && y !== null; x = x.nextSibling, y = y.nextSibling) pair(x, y);
-    };
-    pair(node, twin);
-    return twin;
-  };
-  const align = (fl: Node[], ll: Node[], at: Node, ref: Node | null): void => {
-    const fe = fl.filter((n) => n.nodeType === 1),
-      le = ll.filter((n) => n.nodeType === 1);
-    let same = fe.length === le.length;
-    for (let i = 0; same && i < fe.length; i++)
-      same = (fe[i] as Element).localName === (le[i] as Element).localName && (fe[i] as Element).namespaceURI === (le[i] as Element).namespaceURI;
-    if (!same) {
-      first ??=
-        "<" +
-        (at.nodeType === 1 ? (at as Element).localName : "row") +
-        "> children: " +
-        describe(le.find((n, i) => describe(n) !== describe(fe[i]))) +
-        " where the browser renders " +
-        describe(fe.find((n, i) => describe(n) !== describe(le[i])));
-      for (const n of ll) at.removeChild(n);
-      for (const n of fl) at.insertBefore(copy(n), ref);
-      return;
-    }
-    // Runs of text / comments between elements (run i ends before element i; the last run before `ref`).
-    let fi = 0,
-      li = 0;
-    for (let e = 0; e <= fe.length; e++) {
-      const fr: Node[] = [],
-        lr: Node[] = [];
-      while (fi < fl.length && fl[fi]!.nodeType !== 1) fr.push(fl[fi++]!);
-      while (li < ll.length && ll[li]!.nodeType !== 1) lr.push(ll[li++]!);
-      let equal = fr.length === lr.length;
-      for (let i = 0; equal && i < fr.length; i++)
-        equal = fr[i]!.nodeType === lr[i]!.nodeType && (fr[i] as CharacterData).data === (lr[i] as CharacterData).data;
-      if (equal) for (let i = 0; i < fr.length; i++) map.set(fr[i]!, lr[i]!);
-      else {
-        if (verify && fr.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join("") !== lr.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join(""))
-          first ??=
-            "text " +
-            JSON.stringify(lr.map((n) => (n as CharacterData).data).join("")) +
-            " where the browser renders " +
-            JSON.stringify(fr.map((n) => (n.nodeType === 3 ? (n as Text).data : "")).join(""));
-        const before = e < fe.length ? le[e]! : ref;
-        for (const n of lr) at.removeChild(n);
-        for (const n of fr) at.insertBefore(copy(n), before);
-      }
-      if (e < fe.length) {
-        const f = fl[fi++]!,
-          l = ll[li++]!;
-        map.set(f, l);
-        align(kids(f), kids(l), l, null);
-      }
-    }
-  };
-  align(fresh, server, end.parentNode!, end);
-  // Dev: static template attributes the bindings left alone must match the server's.
-  if (verify && first === null && probe.attrs)
-    for (const list of probe.attrs)
-      for (const [el, name, value] of list) {
-        const live = map.get(el) as Element | undefined;
-        if (live && live !== el && el.getAttribute(name) === value && live.getAttribute(name) !== value) {
-          first = "<" + el.localName + " " + name + "=" + JSON.stringify(live.getAttribute(name)) + "> where the template has " + JSON.stringify(value);
-          break;
+  const a: Align = { map: new Map<Node, Node>(), first: null, copied: false, verify: DEV && verify !== null };
+  align(a, fresh, server, end.parentNode!, end);
+  const map = a.map;
+  if (DEV && verify) {
+    // Static template attributes the bindings left alone must match the server's.
+    if (a.first === null && probe.attrs)
+      for (const list of probe.attrs)
+        for (const [el, name, value] of list) {
+          const live = map.get(el) as Element | undefined;
+          if (live && live !== el && el.getAttribute(name) === value && live.getAttribute(name) !== value) {
+            a.first = "<" + el.localName + " " + name + "=" + JSON.stringify(live.getAttribute(name)) + "> where the template has " + JSON.stringify(value);
+            break;
+          }
         }
-      }
-  if (verify && first !== null) {
-    // Dev verifier: create + swap this row only.
-    verify(first);
-    for (const n of between(start, end)) n.parentNode!.removeChild(n);
-    end.parentNode!.insertBefore(frag, end);
-    return held.owner;
+    if (a.first !== null) {
+      // Dev verifier: create + swap this row only.
+      verify(a.first);
+      for (const n of between(start, end)) n.parentNode!.removeChild(n);
+      end.parentNode!.insertBefore(probe.frag, end);
+      return probe.owner;
+    }
   }
   const mapped = (current: Current): Current =>
     current === null || current === undefined ? null : Array.isArray(current) ? current.map((n) => map.get(n) ?? n) : (map.get(current) ?? null);
@@ -549,7 +565,7 @@ export function _adoptRow(
       else exp.push([l, 1, (to.$$t = { current: mapped(from.$$t.current) }).current]);
     if (from.$$s !== undefined) exp.push([l, 2, (to.$$s = { current: mapped(from.$$s.current) }).current]);
   }
-  _dispose(held.owner);
+  _dispose(probe.owner);
   const answers: Answers = {
     made: probe.made.map((list) => list.map((n) => map.get(n))) as Answers["made"],
     names: probe.made.map((list) => list.map((n) => n.nodeName)) as Answers["names"],
@@ -561,7 +577,7 @@ export function _adoptRow(
     }),
     slots: probe.slots.map((slot) => mapped(slot.current)),
   };
-  if (cache && !copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
+  if (cache && !a.copied && (cache.p === undefined || (DEV && cache.p && cache.p.sig === row.sig))) {
     const built = toPlan(answers, exp, row.list, row.sig);
     if (cache.p === undefined) {
       if (built) cache.p = built;

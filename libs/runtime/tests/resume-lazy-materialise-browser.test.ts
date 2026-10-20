@@ -13,7 +13,7 @@ import type { ResumeState } from "@rivetjs/runtime/resume-format";
 import { withIdScope } from "@rivetjs/runtime/id";
 import type { Page } from "playwright";
 import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
-import { LAZY_ROWS_BUILD, withPage, rewrite, symbolModules } from "./resume/harness.ts";
+import { DEV_BUILD, LAZY_ROWS_BUILD, withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
@@ -237,7 +237,8 @@ test("_adoptRow (row symbol + the components it calls): handler, binding, ref, n
   const row = dom.symbols.find((s) => s.kind === "slot" && s.locals.includes("Cell"))!;
   // Records in render order: the table's For first.
   const forId = state.L![0]![0];
-  await withPage(files, async (page) => {
+  // The verifier is development code (`DEV && verify`): the page runs the development `#dev`.
+  await withPage({ ...files, ...DEV_BUILD }, async (page) => {
     const errors: string[] = [];
     await open(page, errors, "/bare");
     await mark(page);

@@ -4,20 +4,17 @@
 // handler may ever run on the v1 document. After the reload the server serves v2's HTML (the deploy switched).
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
 import { importResume, serializeAndRevive } from "@rivetjs/runtime/testing/resume";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compileResume, compileSymbolModule, importServer } from "./resume/compile.ts";
 import type { ResumeSymbol } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { DEV_BUILD, withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import { cases } from "./resume/bridge-corpus.ts";
 
 // The browser runs the same `#dev` build as this process (runtime-dev project: the development decoder's messages).
 const DEV = process.execArgv.includes("--conditions=development");
-const devModule = DEV ? stripTypeScriptTypes(await readFile(new URL("../dev/on.ts", import.meta.url), "utf8")) : undefined;
 
 // Every handler records the document version it ran on (`<html data-v>`).
 const instrument = (source: string): string => source.replace(/onClick=\{\(\) => (out\.set\("[^"]*"\))\}/g, "onClick={() => (globalThis.__mark(), $1)}");
@@ -52,7 +49,7 @@ interface Run {
 async function run(id: string, clicks: number): Promise<Run & { v1: ResumeSymbol[] }> {
   const c = cases.find((x) => x.id === id)!;
   const base = "/" + id + "/";
-  const files: Record<string, Served> = devModule ? { "/dev/off.ts": devModule } : {};
+  const files: Record<string, Served> = DEV ? { ...DEV_BUILD } : {};
   const v1 = await deploy(c.source, base, "1", {});
   const v2 = await deploy(c.domSource!, base, "2", files);
   let documents = 0;

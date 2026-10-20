@@ -374,6 +374,7 @@ export function _lazyRows(c: LazyContext): LazyRows {
       log?.(took);
       return true;
     },
+    // Twin: the inline add-on's `$rw` (`resume-lazy.ts`) answers the same before the runtime started.
     id(x) {
       if (!lazyRows.size) return;
       const id = endId(x),

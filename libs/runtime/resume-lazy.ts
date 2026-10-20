@@ -8,6 +8,11 @@
 // whose id falls in an `L` entry's row range) answers the row's marker id, and the row gets a synthetic capture handler
 // `["L", [], chunks]` per event type its rows handle (entry [9]) — the runtime materialises the row on it (`dom-resume.ts`).
 // Once the runtime started it answers (`ResumeInstance.q`): a materialised row has handlers of its own.
+//
+// Twin of `dom-resume-lazy.ts` `endId` + `id()` (the runtime's answer once it started): both must answer the same marker id
+// and synthetic entry for one element. This one scans the markers itself (an inline script cannot import `markers()`) and
+// fills entries with `||=` (the runtime: `??=`; equal here, an entry is never falsy). A change to the row id / end marker
+// rule changes both (`tests/resume-lazy-materialise-browser.test.ts`: cold clicks answered by the add-on, later ones by the runtime).
 import type { LoaderDocument, ResumeState } from "./resume-format.ts";
 
 export function lazy(): void {

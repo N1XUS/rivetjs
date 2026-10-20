@@ -17,6 +17,7 @@ const DEV_FILES = [
   "libs/runtime/dev/dom.ts",
   "libs/runtime/dev/on.ts",
   "libs/runtime/dev/kb.ts",
+  "libs/runtime/dev/state-sites.ts",
   "libs/runtime/dev/where.ts",
   "libs/router/client/dev.ts",
   "libs/forms/dev.ts",

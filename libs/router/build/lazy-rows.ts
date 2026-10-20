@@ -4,7 +4,7 @@
 // target is replaced under the pointer, inputs lose their value, focus moves), so it is no option of `rivet.config` /
 // `rivetRouter()`: only this environment variable turns it on, and only in the dev server or in a build whose environment
 // also carries `LAZY_ROWS_HARNESS_ENV` (docs-kit `check-examples` / `scripts/lazy-rows/probe.ts` set it for their
-// build children). Everything it adds is server code (`@rivetjs/runtime` `server-lazy-rows.ts`, installed first by the
+// build children). Everything it adds is server code (`@rivetjs/runtime` `server-lazy-swap.ts`, installed first by the
 // generated server entry): browser bundles are unchanged.
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -38,7 +38,7 @@ export function lazyRowsBuild(env: Readonly<Record<string, string | undefined>> 
 
 /** The runtime module the server entry imports in swap mode (no package export: not public API). */
 export function lazyRowsModule(): string {
-  return join(dirname(createRequire(import.meta.url).resolve("@rivetjs/runtime/server-resume")), "server-lazy-rows.ts");
+  return join(dirname(createRequire(import.meta.url).resolve("@rivetjs/runtime/server-resume")), "server-lazy-swap.ts");
 }
 
 /** Vite plugin: in swap mode the generated server entry (`entry`) installs the swap row hook before anything else. */

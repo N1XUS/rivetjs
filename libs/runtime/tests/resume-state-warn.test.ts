@@ -1,5 +1,5 @@
 // STATE-WARN (dev, server render): a captured value that takes ≥ RIVET_STATE_WARN_BYTES (default 8 KiB) of `rivet/state`
-// warns once per capture site and process (`dev/on.ts` `stateBytes`, sites from `server-resume.ts` `devStateSites`); a
+// warns once per capture site and process (`dev/on.ts` `stateBytes`, sites from `dev/state-sites.ts` `stateSites`); a
 // page whose state passes RIVET_STATE_BUDGET_BYTES (default 64 KiB) gets one summary with its 3 largest sites. Production
 // (default resolution): nothing (`DEV` is false; bytes covered by the zero-cost dev-leak scan).
 import { afterEach, beforeEach, test, vi } from "vitest";

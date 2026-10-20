@@ -46,13 +46,14 @@ import {
   _CLASSES,
   _contextById,
   _isContextToken,
-  _keyAt,
   _registeredId,
   _setUnrecorded,
 } from "./resume-format.ts";
 import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
 import { EXPAND, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
+import { addReads, encodeLazy, lazyKeyed, lazyLocal, lazyRowsOn, lazyWarn } from "./server-resume-lazy.ts";
+import type { LazyFor as LazyRecord } from "./server-resume-lazy.ts";
 import { domServer } from "./dom-data-server.ts";
 import type { DomRegistry, DomSlot } from "./server-dom-data.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
@@ -100,7 +101,6 @@ import type {
   Special,
   HandlerEntry,
   Literal,
-  LazyRowsEntry,
   ModelEntry,
   PreloadEntry,
   RegionLocals,
@@ -906,61 +906,11 @@ _onForRows((list, items, keys, rows, render) => {
 // (R6, T5): they run when the row materialises. The entry also lists the event types the rows handle ([9]: the browser
 // materialises a row on one) and the identified providers around the For ([10]: re-provided around a materialised row).
 // Off unless the build opted in (`rivet({ resume: { lazyRows: true } })`: manifest `lazyRows`, its browser runtime
-// materialises the rows) AND the server env has `RIVET_LAZY_ROWS=on` (read per render; LAZY-T5B).
-interface LazyFor {
-  forId: number;
-  /** The scope the For rendered in (its region: `regionOf` at encode time). */
-  scope: Scope | null;
-  symbol: string;
-  rowFn: object;
-  items: readonly unknown[];
-  /** Key path (`$lazy[1]`) or the `by` function (flag 2). */
-  by: unknown;
-  flags: number;
-  /** Signals the rows' renders read (deduplicated). */
-  reads: Signal<unknown>[];
-  /** Keyed selector reads (T6, `_trackReads` keyed hook): per (signal, kind) the rows and the key each read, flat
-   * `[k, key, …]` — those rows wake when their key's result may change, not on every change of the signal (entry [12]). */
-  keyed: { signal: Signal<unknown>; kind: 0 | 1; rows: unknown[] }[] | null;
-  /** The `_trackReads` keyed hook of this For (records into `keyed` for the rendering row). */
-  hook: KeyedRead;
-  /** Per row: its `_regionState` values and nested counts (`RegionLocals` shape), creation order. */
-  locals: ({ l: unknown[]; n: number[] } | undefined)[] | null;
-  recorder: Recorder;
-  /** The row rendering now (`_regionState` slots; slot content the traversal renders later). */
-  row: number;
-  /** The rows were written (recorded as an entry): a reason found now is `late`. */
-  done: boolean;
-  /** Why the For cannot be lazy (first reason found while its rows render). */
-  reason: string | null;
-  /** A reason found in the traversal, after the rows were written: the entry is dropped (rows stay inert). */
-  late: string | null;
-  /** Handler / model sites the rows hold: the page resumes (`recorder.used`). */
-  sites: number;
-  /** Their event types, added to the page (`data-events`) only when the For stays lazy (a fallback page = the `off` page). */
-  events: Set<string>;
-  /** Every event type a row handles (entry [9]: a row materialises on one), the page's types included. */
-  types: Set<string>;
-  /** Identified providers around the For (`[token id, value, …]`, non-default values; entry [10]). */
-  providers: unknown[] | null;
-  /** Rows holding a client effect / `clientEvent` listener (entry [11]: materialised at idle, so they run as on any page). */
-  effects: number[] | null;
-}
+// materialises the rows) AND the server env has `RIVET_LAZY_ROWS=on` (read per render; LAZY-T5B). The record type, the switch,
+// the read / `_regionState` helpers and the `L` encoder (`encodeLazy`) live in `server-resume-lazy.ts`.
+/** A lazy For's record in this module (`server-resume-lazy.ts` `LazyFor`, its scope / recorder types bound). */
+type LazyFor = LazyRecord<Scope, Recorder>;
 let lazyRow: LazyFor | null = null;
-/** `RIVET_LAZY_ROWS=on` (server env) and a build whose manifest has `lazyRows`: lazy row records for `$lazy` Fors. Read
- * once per render. Dev: the variable on with a build that did not opt in warns once (the rows stay recorded). */
-let lazyHinted = false;
-function lazyRowsOn(manifest: BuildManifest | undefined): boolean {
-  if ((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS !== "on") return false;
-  if (manifest?.lazyRows) return true;
-  if (DEV && !lazyHinted) {
-    lazyHinted = true;
-    console.warn(
-      "Rivet resume: RIVET_LAZY_ROWS=on is ignored: this build's browser runtime cannot materialise lazy rows (the resume manifest has no lazyRows). Build with rivet({ resume: { lazyRows: true } }) / rivetRouter({ resume: { lazyRows: true } }); rows stay recorded. docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.1",
-    );
-  }
-  return false;
-}
 // A lazy row is rendering (recorder exited): what a row would record goes to `lazyRow`.
 const inLazyRow = (): LazyFor | null => (lazyRow !== null && store.getStore() === undefined ? lazyRow : null);
 // A site a row re-run cannot replay: the For falls back (or, found in the traversal, its entry is dropped).
@@ -970,50 +920,11 @@ function lazyReason(reason: string): void {
   if (lazy.done) lazy.late ??= reason;
   else lazy.reason ??= reason;
 }
-// Dev: one warning per row symbol and reason (`DEV` folds the body away in production).
-const lazyWarned = new Set<string>();
-function lazyWarn(symbol: string, forId: number, reason: string, inert?: boolean): void {
-  if (!DEV || lazyWarned.has(symbol + "\n" + reason)) return;
-  lazyWarned.add(symbol + "\n" + reason);
-  console.warn(
-    "Rivet resume: <For>" +
-      (forId >= 0 ? " r" + forId : "") +
-      " (row " +
-      symbol +
-      ") " +
-      (inert
-        ? "wrote lazy rows the browser cannot materialise (" + reason + ", found after the rows were written): they stay inert"
-        : "records its rows instead of lazy rows: " + reason) +
-      ". docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.3",
-  );
-}
 // A client effect / listener in the rendering lazy row: the row materialises at idle (entry [11]).
 function lazyEffect(): void {
   const lazy = inLazyRow();
   if (lazy !== null && !(lazy.effects ??= []).includes(lazy.row)) lazy.effects.push(lazy.row);
 }
-// A keyed selector read in the rendering row (`_trackReads` keyed hook): the row wakes on its key only. Keys travel inline
-// in the entry: only JSON scalars (else the signal is a plain read of the row).
-function lazyKeyed(lazy: LazyFor, signal: Signal<unknown>, kind: 0 | 1, key: unknown): boolean {
-  if (!(typeof key === "string" || (typeof key === "number" && Number.isFinite(key)) || typeof key === "boolean" || key === null)) return false;
-  const list = (lazy.keyed ??= []);
-  let record = list.find((r) => r.signal === signal && r.kind === kind);
-  if (record === undefined) list.push((record = { signal, kind, rows: [] }));
-  const rows = record.rows;
-  for (let i = rows.length - 2; i >= 0 && rows[i] === lazy.row; i -= 2) if (rows[i + 1] === key) return true;
-  rows.push(lazy.row, key);
-  return true;
-}
-// Whether keyed rows `[k, key, …]` are every row once, reading its own key (`_keyAt` of its item, a key path `by`).
-function ownKeys(lazy: LazyFor, rows: unknown[]): boolean {
-  const items = lazy.items;
-  if (typeof lazy.by !== "string" || rows.length !== 2 * items.length) return false;
-  for (let k = 0; k < items.length; k++) if (rows[2 * k] !== k || rows[2 * k + 1] !== _keyAt(items[k], lazy.by)) return false;
-  return true;
-}
-const addReads = (lazy: LazyFor, signals: readonly Signal<unknown>[]): void => {
-  for (let i = 0; i < signals.length; i++) if (!lazy.reads.includes(signals[i]!)) lazy.reads.push(signals[i]!);
-};
 // A site's read inside a lazy row: its signals are the row's reads (entry `reads`). Component bodies run untracked, so the
 // For's own collector sees only reads outside components (cdk rows: none) — every site tracks its own, as a recorded one does.
 function lazyRead<T>(lazy: LazyFor, read: () => T): T {
@@ -1038,17 +949,6 @@ function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
     unrecordedRender = unrecorded;
     lazy.row = at;
   }
-}
-// `_regionState` in a lazy row: its value is kept per row (state `[k, RegionLocals]`), the slot before the ones its
-// `create()` records (`n`), as a site's locals.
-function lazyLocal<T>(lazy: LazyFor, create: () => T): T {
-  const locals = ((lazy.locals ??= [])[lazy.row] ??= { l: [], n: [] });
-  const i = locals.l.push(undefined) - 1;
-  locals.n.push(0);
-  const value = create();
-  locals.l[i] = value;
-  locals.n[i] = locals.l.length - i - 1;
-  return value;
 }
 // One lazy row: its marker pair (id forId + 1 + index) around the row rendered under its id seed. The row renders to HTML
 // here, inside the row's context (recorder exited, `lazyRow` set, id seed provided): every site of its content — slot
@@ -1101,7 +1001,7 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     items,
     by: flags & 2 ? by : key,
     flags: flags & 3,
-    reads: [],
+    reads: new Set(),
     keyed: null,
     hook: null as unknown as KeyedRead,
     locals: null,
@@ -1151,7 +1051,7 @@ _onForLazy((_list, items, verdict, children, by, render) => {
   }
   lazy.done = true;
   for (const type of lazy.events) recorder.events.add(type);
-  if (lazy.sites || lazy.reads.length || lazy.keyed) recorder.used = true;
+  if (lazy.sites || lazy.reads.size || lazy.keyed) recorder.used = true;
   recorder.lazy.push(lazy);
   return rows as unknown as ServerValue;
 });
@@ -1662,7 +1562,10 @@ const regionPlan = (list: ListPlan): ListPlan => {
 // scope behaves like the page root for rows, branches, client-only mounts and streaming (no output change).
 _onAsyncContent(() => {
   const recorder = store.getStore();
-  if (!recorder) return (lazyReason("an Async boundary"), null);
+  if (!recorder) {
+    lazyReason("an Async boundary");
+    return null;
+  }
   const region = recorder?.region;
   if (!region) return null;
   const scope: Scope = { parent: region, id: null, mount: null, async: true, held: true };
@@ -1718,7 +1621,10 @@ _observeProvide((token, value) => {
 // writes `<!--rA[-->fallback<!--]-->` now and streams its content after the shell.
 _onAsync(() => {
   const recorder = store.getStore();
-  if (!recorder) return (lazyReason("an Async boundary"), null);
+  if (!recorder) {
+    lazyReason("an Async boundary");
+    return null;
+  }
   const scope = recorder?.region;
   // Inside a Suspense, the Suspense streams (or not) for all of its Asyncs.
   if (!recorder?.stream || useContext(_SUSPENSE) || !scope || scope.row || scope.branch || scope.async || scope.id !== null) return null;
@@ -1731,7 +1637,10 @@ _onAsync(() => {
 // the content as one segment. What the content recorded moves into the segment's recorder view.
 _onSuspense(() => {
   const recorder = store.getStore();
-  if (!recorder) return (lazyReason("a Suspense boundary"), null);
+  if (!recorder) {
+    lazyReason("a Suspense boundary");
+    return null;
+  }
   const scope = recorder?.region;
   if (!recorder?.stream || !scope || scope.row || scope.branch || scope.async || scope.id !== null) return null;
   const from = lengths(recorder),
@@ -2056,13 +1965,31 @@ class Stream {
     if (rr && !root.repeatAddon) ((root.repeatAddon = true), (out += open + REPEAT + "</script>"));
     return out;
   }
+  /**
+   * A finished segment's chunk: the add-ons its patch needs, its HTML (`<template data-a>`), the state patch, the derived
+   * patch and the swap call. The patch JSON is built once (dev: its length is the segment's state bytes).
+   */
+  segmentChunk(marker: number, html: string, delta: StatePatch, rx: boolean | undefined, rr: boolean | undefined, swap: (marker: number) => string): string {
+    const json = stateJSON(delta);
+    if (DEV) DEV.stateBytes(this.root, json.length);
+    return (
+      this.addon(delta, rx, rr) +
+      '<template data-a="' +
+      marker +
+      '">' +
+      html +
+      "</template>" +
+      patchScript(marker, json) +
+      (this.root.derived ? derivedHooks!.patch(this.root.derived, marker) : "") +
+      swap(marker)
+    );
+  }
   /** After the shell: write segments in completion order (each after its parent), then stop. */
   async run(writer: { write(chunk: string): unknown }): Promise<void> {
     const { signal, nonce } = this.root.options;
     const attrs = nonce ? ' nonce="' + String(nonce).replace(/[^\w+/=-]/g, "") + '"' : "";
     const swap = (marker: number): string => "<script" + attrs + ">$rA(" + marker + ")</script>";
-    const patch = (marker: number, delta: StatePatch): string =>
-      '<script type="rivet/state" data-patch="' + marker + '">' + escapeJSON(stateJSON(delta)) + "</script>";
+    const patch = (marker: number, delta: StatePatch): string => patchScript(marker, stateJSON(delta));
     const write = async (chunk: string): Promise<void> => {
       if (signal?.aborted) throw signal.reason;
       await writer.write(chunk);
@@ -2082,25 +2009,14 @@ class Stream {
         const next = this.segments.find((segment) => !segment.out && segment.state !== "pending" && OPEN(segment));
         if (next) {
           if (next.state === "failed") {
-            if (!(await this.caught(next, write, patch, swap))) await continued(next);
+            if (!(await this.caught(next, write, swap))) await continued(next);
           } else {
             next.out = "content";
             const { events, schedule, boot, rx, rr, late, ...delta } = encodeRecords(this.root, next.view!, [[next.A, next.F, next.M.id!, 1]]);
             if (events.length) delta.ev = events;
             if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
             if (boot) (delta as StatePatch).boot = 1;
-            if (DEV) DEV.stateBytes(this.root, stateJSON(delta).length);
-            await write(
-              this.addon(delta, rx, rr) +
-                '<template data-a="' +
-                next.A +
-                '">' +
-                next.html +
-                "</template>" +
-                patch(next.A, delta) +
-                (this.root.derived ? derivedHooks!.patch(this.root.derived, next.A) : "") +
-                swap(next.A),
-            );
+            await write(this.segmentChunk(next.A, next.html!, delta, rx, rr, swap));
           }
           this.settle(next);
           continue;
@@ -2124,12 +2040,7 @@ class Stream {
   }
   /** A failed segment inside an ErrorBoundary: write the boundary's fallback in place of its content
    * (a segment for the boundary's region), dropping every unwritten segment under it. */
-  async caught(
-    failed: Segment,
-    write: (chunk: string) => Promise<void>,
-    patch: (marker: number, delta: StatePatch) => string,
-    swap: (marker: number) => string,
-  ): Promise<boolean> {
+  async caught(failed: Segment, write: (chunk: string) => Promise<void>, swap: (marker: number) => string): Promise<boolean> {
     const { signal, variant } = this.root.options;
     for (let scope: Scope | null = failed.M; scope; scope = scope.parent) {
       const info = scope.boundary;
@@ -2157,18 +2068,7 @@ class Stream {
       if (events.length) delta.ev = events;
       if (schedule.length) delta.p = [this.root.options.manifest?.runtime ?? null, ...schedule];
       if (boot) (delta as StatePatch).boot = 1;
-      if (DEV) DEV.stateBytes(this.root, stateJSON(delta).length);
-      await write(
-        this.addon(delta, rx, rr) +
-          '<template data-a="' +
-          region +
-          '">' +
-          html +
-          "</template>" +
-          patch(region, delta) +
-          (this.root.derived ? derivedHooks!.patch(this.root.derived, region) : "") +
-          swap(region),
-      );
+      await write(this.segmentChunk(region, html, delta, rx, rr, swap));
       return true;
     }
     return false;
@@ -3650,6 +3550,103 @@ function refsOf(ref: (value: unknown) => number, manifest: Pick<ResumeManifest, 
   return out;
 }
 /**
+ * One region site's binding entry (`#`, `encodeRecords`): captures, signals, its rows (compact `templated` rows or
+ * adoptable triples), branches, `_regionState` locals, providers and row reads in their slots ([8]–[13]); the chunk list
+ * [5] covers the symbols reached by everything the activation decodes.
+ */
+function regionEntry(
+  encoder: Encoding["encoder"],
+  [node, symbol, values, signals, scope]: RegionRecord,
+  templated: { tpl: RowTemplate; rows: RowRecord[]; items: number[] } | undefined,
+  captures: (id: string, values: Captures) => number[],
+  needs: (symbol: string, refs: number[]) => number[],
+  regionOf: (scope: Scope | null | undefined) => number,
+): BindingEntry {
+  const refs = captures(symbol, values);
+  // Everything the activation decodes besides the captures (row items, branch value, `_regionState`
+  // locals, providers): their symbols' chunks join the entry's chunk list too.
+  const extra: number[] = [];
+  const entry: BindingEntry = [node, "#", symbol, refs, signals.map(encoder.ref), [], regionOf(scope.parent), scope.mount];
+  // After the region's captures: its item array is in the table by now, and rows can point at it.
+  const rows = templated ? compactRows(encoder, templated.rows, templated.items) : adoptable(encoder, scope.rows);
+  if (rows) {
+    (entry as unknown[]).push(rows);
+    if (Array.isArray(rows)) for (let i = 1; i < rows.length; i += 3) extra.push(rows[i]!);
+    else extra.push(...(rows.a !== undefined ? [rows.a] : rows.r!));
+  }
+  if (templated) (entry as unknown[]).push(templated.tpl);
+  const adopts = scope.adopts;
+  if (adopts) {
+    // Branches at [8], or [10] after rows (and template, else 0): one spec, or an array of them (≥ 2 adoptable);
+    // `s`: slots skipped before it (Shows rendered plainly).
+    const specs: BranchSpec[] = [];
+    let next = 0;
+    for (const adopt of adopts) {
+      const branch: BranchSpec = { w: adopt.id, k: adopt.key };
+      if (adopt.slot > next) branch.s = adopt.slot - next;
+      next = adopt.slot + 1;
+      if (adopt.valued)
+        try {
+          extra.push((branch.v = encoder.ref(adopt.value)));
+        } catch {
+          branch.k = null; // unserializable value: never adopted, still disposed with its region
+        }
+      specs.push(branch);
+    }
+    if (rows && !templated) (entry as unknown[]).push(0);
+    (entry as unknown[]).push(specs.length === 1 ? specs[0]! : specs);
+  }
+  if (scope.locals) {
+    // `_regionState` values at [11] (missing rows / template / branch slots padded with 0); null: not
+    // serializable, created afresh by the browser; `n`: nested slot counts.
+    const refs = scope.locals.map((value) => {
+      try {
+        const ref = encoder.ref(value);
+        extra.push(ref);
+        return ref;
+      } catch {
+        return null;
+      }
+    });
+    while (entry.length < 11) (entry as unknown[]).push(0);
+    const locals: RegionLocals = { l: refs };
+    if (scope.nested!.some((n) => n > 0)) locals.n = scope.nested;
+    (entry as unknown[]).push(locals);
+  }
+  if (scope.providers) {
+    // Identified providers enclosing the site at [12]: [token id, value ref, …] (unserializable values omitted).
+    const providers: (string | number)[] = [];
+    for (let i = 0; i < scope.providers.length; i += 2)
+      try {
+        const ref = encoder.ref(scope.providers[i + 1]);
+        providers.push(scope.providers[i] as string, ref);
+        extra.push(ref);
+      } catch {
+        /* not serializable: the re-created content sees the default */
+      }
+    if (providers.length) {
+      while (entry.length < 12) (entry as unknown[]).push(0);
+      (entry as unknown[]).push(providers);
+    }
+  }
+  if (rows && scope.rowReads) {
+    // Signals the rows' own renders read at [13] (RESUME-KEEP-ROWS): the browser keeps those rows while each still
+    // holds its server value. Not encodable: omitted, the rows are re-created with the region.
+    try {
+      const reads = scope.rowReads.map(encoder.ref);
+      extra.push(...reads);
+      // Missing slots padded with 0, providers [12] with null (a number there is a shared table list).
+      while (entry.length < 12) (entry as unknown[]).push(0);
+      if (entry.length === 12) (entry as unknown[]).push(null);
+      (entry as unknown[]).push(reads);
+    } catch {
+      /* re-created */
+    }
+  }
+  entry[5] = needs(symbol, refs.concat(extra));
+  return entry;
+}
+/**
  * Encode what `recorder` recorded (the shell, or one streamed segment) against the render's
  * persistent table: new table entries from `t0`, new chunks, and this recorder's entries.
  * `a`: streamed boundary entries [marker, fallback region, region, status 0 pending | 1 content | 2 continue].
@@ -3813,92 +3810,11 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
     raw.push([node, null, symbol, values, signals, regionOf(scope)]);
   }
   flush();
-  for (const [node, symbol, values, signals, scope] of recorder.regions) {
-    const refs = captures(symbol, values);
-    // Everything the activation decodes besides the captures (row items, branch value, `_regionState`
-    // locals, providers): their symbols' chunks join the entry's chunk list too.
-    const extra: number[] = [];
-    const entry: BindingEntry = [node, "#", symbol, refs, signals.map(encoder.ref), [], regionOf(scope.parent), scope.mount];
-    const templated = scope.rows && templateOf.get(scope.rows[0]!.list);
-    // After the region's captures: its item array is in the table by now, and rows can point at it.
+  for (const region of recorder.regions) {
+    const scope = region[4],
+      templated = scope.rows && templateOf.get(scope.rows[0]!.list);
     if (templated) templatedRows = true;
-    const rows = templated ? compactRows(encoder, templated.rows, templated.items) : adoptable(encoder, scope.rows);
-    if (rows) {
-      (entry as unknown[]).push(rows);
-      if (Array.isArray(rows)) for (let i = 1; i < rows.length; i += 3) extra.push(rows[i]!);
-      else extra.push(...(rows.a !== undefined ? [rows.a] : rows.r!));
-    }
-    if (templated) (entry as unknown[]).push(templated.tpl);
-    const adopts = scope.adopts;
-    if (adopts) {
-      // Branches at [8], or [10] after rows (and template, else 0): one spec, or an array of them (≥ 2 adoptable);
-      // `s`: slots skipped before it (Shows rendered plainly).
-      const specs: BranchSpec[] = [];
-      let next = 0;
-      for (const adopt of adopts) {
-        const branch: BranchSpec = { w: adopt.id, k: adopt.key };
-        if (adopt.slot > next) branch.s = adopt.slot - next;
-        next = adopt.slot + 1;
-        if (adopt.valued)
-          try {
-            extra.push((branch.v = encoder.ref(adopt.value)));
-          } catch {
-            branch.k = null; // unserializable value: never adopted, still disposed with its region
-          }
-        specs.push(branch);
-      }
-      if (rows && !templated) (entry as unknown[]).push(0);
-      (entry as unknown[]).push(specs.length === 1 ? specs[0]! : specs);
-    }
-    if (scope.locals) {
-      // `_regionState` values at [11] (missing rows / template / branch slots padded with 0); null: not
-      // serializable, created afresh by the browser; `n`: nested slot counts.
-      const refs = scope.locals.map((value) => {
-        try {
-          const ref = encoder.ref(value);
-          extra.push(ref);
-          return ref;
-        } catch {
-          return null;
-        }
-      });
-      while (entry.length < 11) (entry as unknown[]).push(0);
-      const locals: RegionLocals = { l: refs };
-      if (scope.nested!.some((n) => n > 0)) locals.n = scope.nested;
-      (entry as unknown[]).push(locals);
-    }
-    if (scope.providers) {
-      // Identified providers enclosing the site at [12]: [token id, value ref, …] (unserializable values omitted).
-      const providers: (string | number)[] = [];
-      for (let i = 0; i < scope.providers.length; i += 2)
-        try {
-          const ref = encoder.ref(scope.providers[i + 1]);
-          providers.push(scope.providers[i] as string, ref);
-          extra.push(ref);
-        } catch {
-          /* not serializable: the re-created content sees the default */
-        }
-      if (providers.length) {
-        while (entry.length < 12) (entry as unknown[]).push(0);
-        (entry as unknown[]).push(providers);
-      }
-    }
-    if (rows && scope.rowReads) {
-      // Signals the rows' own renders read at [13] (RESUME-KEEP-ROWS): the browser keeps those rows while each still
-      // holds its server value. Not encodable: omitted, the rows are re-created with the region.
-      try {
-        const reads = scope.rowReads.map(encoder.ref);
-        extra.push(...reads);
-        // Missing slots padded with 0, providers [12] with null (a number there is a shared table list).
-        while (entry.length < 12) (entry as unknown[]).push(0);
-        if (entry.length === 12) (entry as unknown[]).push(null);
-        (entry as unknown[]).push(reads);
-      } catch {
-        /* re-created */
-      }
-    }
-    entry[5] = needs(symbol, refs.concat(extra));
-    b.push(entry);
+    b.push(regionEntry(encoder, region, templated || undefined, captures, needs, regionOf));
   }
   // Uniform rows of a site that is no region: one inert `*` entry carries their compact rows and
   // template (the loader expands it like a region's; the runtime registers the rows' parent region).
@@ -3919,87 +3835,7 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
         templated.tpl,
       ] as unknown as BindingEntry);
   }
-  // Lazy row region records (LAZY-ROWS T4, `LazyRowsEntry`): one per lazy For. One that does not encode (or found a
-  // fallback reason in the traversal) is left out: its rows stay inert markup (re-created with their region).
-  const L: LazyRowsEntry[] = [];
-  for (const lazy of recorder.lazy) {
-    if (lazy.late !== null) {
-      lazyWarn(lazy.symbol, lazy.forId, lazy.late, true);
-      continue;
-    }
-    try {
-      const rowFn = encoder.ref(lazy.rowFn),
-        items = encoder.ref(lazy.items),
-        by = typeof lazy.by === "string" ? lazy.by : encoder.ref(lazy.by),
-        refs = typeof by === "number" ? [rowFn, items, by] : [rowFn, items];
-      let flags = lazy.flags,
-        reads: number[] | 0 = 0;
-      // A row's own `_regionState` values (its local signals) wake nothing: only the row's own code (materialised by then)
-      // can write them (T5).
-      const own = new Set<unknown>();
-      for (const locals of lazy.locals ?? []) for (const value of locals?.l ?? []) own.add(value);
-      const shared = own.size ? lazy.reads.filter((read) => !own.has(read)) : lazy.reads;
-      if (shared.length)
-        try {
-          reads = shared.map(encoder.ref);
-        } catch {
-          flags |= 8;
-        }
-      // Keyed reads (T6) of signals no row reads plainly: `[signal ref, kind, [k, key, …] | 1], …` flat; 1 = every row reads
-      // its own key, the key path of `by` (the browser derives it: no per-row bytes).
-      const keyed: unknown[] = [];
-      for (const record of lazy.keyed ?? [])
-        if (!own.has(record.signal) && !shared.includes(record.signal))
-          try {
-            keyed.push(encoder.ref(record.signal), record.kind, ownKeys(lazy, record.rows) ? 1 : record.rows);
-          } catch {
-            flags |= 8;
-          }
-      const entry: LazyRowsEntry = [lazy.forId, regionOf(lazy.scope), rowFn, items, by, flags, []];
-      let state: (number | RegionLocals)[] | 0 = 0;
-      if (lazy.locals) {
-        state = [];
-        lazy.locals.forEach((locals, k) => {
-          if (locals === undefined) return;
-          const l = locals.l.map((value) => {
-            try {
-              const ref = encoder.ref(value);
-              refs.push(ref);
-              return ref;
-            } catch {
-              return null; // not serializable: the row's re-run creates it afresh
-            }
-          });
-          (state as (number | RegionLocals)[]).push(k, locals.n.some((n) => n > 0) ? { l, n: locals.n } : { l });
-        });
-        flags |= 4;
-      }
-      entry[5] = flags;
-      // Identified providers around the For at [10] (unserializable values omitted: the row sees the default).
-      const providers: (string | number)[] = [];
-      for (let i = 0; i < (lazy.providers?.length ?? 0); i += 2)
-        try {
-          const ref = encoder.ref(lazy.providers![i + 1]);
-          providers.push(lazy.providers![i] as string, ref);
-          refs.push(ref);
-        } catch {
-          /* not serializable */
-        }
-      const types = [...lazy.types].join(" ");
-      // Trailing slots only as far as needed (0 / "" = none).
-      // The row count at [13] when the items entry does not show it (an `i` child of a tree, a DOM-backed `D` tree): the
-      // lazy add-on's row range.
-      const shown = encoder.table[items] as TableEntry;
-      const count = Array.isArray(shown) || (shown !== null && typeof shown === "object" && "j" in shown) ? 0 : lazy.items.length;
-      const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0, keyed.length ? keyed : 0, count];
-      while (tail.length && (tail[tail.length - 1] === 0 || tail[tail.length - 1] === "")) tail.pop();
-      (entry as unknown[]).push(...tail);
-      entry[6] = needs(lazy.symbol, refs);
-      L.push(entry);
-    } catch (error) {
-      lazyWarn(lazy.symbol, lazy.forId, "its row function, items or `by` did not encode (" + String((error as Error)?.message ?? error) + ")", true);
-    }
-  }
+  const L = encodeLazy(encoder, recorder.lazy, regionOf, needs);
   const fx = recorder.effects.map(([symbol, values, when, scope]): EffectEntry => {
     const refs = captures(symbol, values);
     return [symbol, refs, when, needs(symbol, refs), regionOf(scope)];
@@ -4048,20 +3884,18 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   // wire repeats (table `{R}`, `RepeatedHandlers` / `RepeatedBinding`), when together they save more than the repeat
   // add-on costs (nothing once the page shipped it); else the table again without `{R}`.
   const cost = root.repeatAddon ? 0 : REPEAT.length;
-  const t = compactTable(encoder.table, t0, enc.symbols, true);
-  const relocations = tableRelocations,
-    tableSaved = tableSavedBytes;
+  const { t, relocations, saved: tableSaved } = compactTable(encoder.table, t0, enc.symbols, true);
   Object.assign(out, { t, e, m, b, fx, ce });
   const repeated = repeatEntries(e, b, cost - tableSaved);
   // (Wire forms typed as the decoded entries the browser reads.)
   if (repeated) ((out.e = repeated[0] as typeof e), (out.b = repeated[1] as typeof b), (out.rr = true));
   else if (relocations && tableSaved > cost) out.rr = true;
-  else if (relocations) out.t = compactTable(encoder.table, t0, enc.symbols, false);
+  else if (relocations) out.t = compactTable(encoder.table, t0, enc.symbols, false).t;
   // DOM-DATA: runs of DOM-backed rows (one shape, evenly spaced anchors) as one `Dr` entry + placeholders.
   if (root.dom !== null) root.dom.runs(out.t!, encoder.table);
   if (DEV) assertAcyclic(encoder.table, t0);
   // Dev: per capture site, the bytes it adds to the state (warned once the state bytes are known, `DEV.stateBytes`).
-  if (DEV) DEV.stateCaptures(root, devStateSites(enc, t0, out.t!, e, m, b, fx, ce));
+  if (DEV) DEV.stateCaptures(root, DEV.stateSites(encoder.table, symbols, manifest.captures, t0, out.t!, e, m, b, fx, ce));
   for (const segment of recorder.asyncs) a.push([segment.A, segment.F, segment.M.id!, 0]);
   for (const [content, site] of recorder.links) if (site.id !== null) a.push([site.id, content.id!, site.id, 3]);
   if (a.length) out.a = a;
@@ -4082,240 +3916,6 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
   out.boot = bootsAtLoad(recorder, fx.length);
   return out;
 }
-
-/**
- * Dev only (STATE-WARN, `DEV.stateCaptures`): what each capture site of this segment adds to `rivet/state`. Sites in the
- * order `encodeRecords` encoded them (handlers, models, bindings, regions, effects, client events); a site's capture `i`
- * owns the wire bytes (`wire[index - t0]`, JSON + comma) of every new table entry it reaches first, so the sites add up to
- * the segment's table and a value shared by many sites is counted once, at the first. A function / computed recipe
- * reached through a capture is a site of its own (its captures named by the recipe's symbol). Lazy row records (`L`) are
- * no capture sites: their rows record nothing. Never called in production (`if (DEV)` folds the call and this function away).
- */
-function devStateSites(
-  enc: Encoding,
-  t0: number,
-  wire: readonly TableEntry[],
-  e: Record<string, Record<string, HandlerEntry>>,
-  m: Record<string, ModelEntry>,
-  b: BindingEntry[],
-  fx: EffectEntry[],
-  ce: ClientEventEntry[],
-): { key: string; site: string; shape: string; bytes: number }[] {
-  const table = enc.encoder.table,
-    names = enc.manifest.captures,
-    ids: string[] = [];
-  for (const [id, index] of enc.symbols) ids[index] = id;
-  const symbolId = (symbol: SymbolRef): string => (typeof symbol === "number" ? (ids[symbol] ?? "#" + symbol) : symbol);
-  const owned = new Uint8Array(table.length - t0);
-  const out: { key: string; site: string; shape: string; bytes: number }[] = [];
-  const size = (index: number): number => {
-    const json = JSON.stringify(wire[index - t0]);
-    return json === undefined ? 1 : json.length + 1;
-  };
-  // Bytes of the new entries `ref` reaches first; recipe entries (other than `ref`'s own) end the walk, their captures queued.
-  const walk = (ref: number, nested: [symbol: string, refs: number[], kind: string][]): number => {
-    let bytes = 0;
-    const stack = [ref];
-    while (stack.length) {
-      const index = stack.pop()!;
-      if (index < t0 || index >= table.length || owned[index - t0]) continue;
-      owned[index - t0] = 1;
-      bytes += size(index);
-      const entry = table[index];
-      if (entry === null || typeof entry !== "object") continue;
-      if (Array.isArray(entry)) {
-        for (let i = 0; i < entry.length; i++) stack.push(entry[i]!);
-        continue;
-      }
-      const recipe = typeof entry.f === "string" || typeof entry.c === "string" ? ((entry.f ?? entry.c) as string) : null;
-      if (recipe !== null && entry.a) {
-        nested.push([recipe, entry.a, entry.c !== undefined ? "computed" : "function"]);
-        if (typeof entry.q === "number") stack.push(entry.q);
-        continue;
-      }
-      if (entry.o) for (let i = 1; i < entry.o.length; i += 2) stack.push(entry.o[i] as number);
-      else if (entry.p) for (let i = 1; i < entry.p.length; i += 2) if (Array.isArray(entry.p[i])) stack.push((entry.p[i] as [number])[0]);
-      if (entry.m) for (let i = 0; i < entry.m.length; i++) stack.push(entry.m[i]!);
-      if (entry.e) for (let i = 0; i < entry.e.length; i++) stack.push(entry.e[i]!);
-      if (entry.a) for (let i = 0; i < entry.a.length; i++) stack.push(entry.a[i]!);
-      if (entry.i) stack.push(entry.i[0]);
-      if (typeof entry.s === "number") stack.push(entry.s);
-      if (typeof entry.q === "number") stack.push(entry.q);
-      if (entry.E && typeof entry.E[2] === "number") stack.push(entry.E[2]);
-    }
-    return bytes;
-  };
-  // `src/a.tsx#Card$onClick` → `<Card> `; a site without a symbol (a model binding) → "".
-  const component = (symbol: string): string => {
-    const at = symbol.indexOf("#");
-    if (at < 0) return "";
-    const local = symbol.slice(at + 1),
-      end = local.indexOf("$");
-    return "<" + (end > 0 ? local.slice(0, end) : local) + "> ";
-  };
-  // One site: its captures `refs` (negative: row item / index / packed slot, not table entries).
-  const site = (symbolRef: SymbolRef, kind: string, refs: readonly number[], what = "captures"): void => {
-    const symbol = symbolId(symbolRef);
-    const nested: [string, number[], string][] = [];
-    for (let i = 0; i < refs.length; i++) {
-      const ref = refs[i]!;
-      if (ref < t0 || ref >= table.length || owned[ref - t0]) continue;
-      const bytes = walk(ref, nested);
-      if (bytes === 0) continue;
-      const name = what === "captures" ? names?.[symbol]?.[i] : undefined;
-      out.push({
-        // Captures by position; row items / signals / values of one site as one (summed in the page summary).
-        key: symbol + "\n" + kind + "\n" + (what === "captures" ? i : what),
-        site:
-          component(symbol) +
-          kind +
-          " " +
-          what +
-          (what === "captures" ? " " + (name ? "`" + name + "`" : "#" + i) : "") +
-          (symbol.includes("#") ? " (" + symbol + ")" : ""),
-        shape: devShape(table, ref, 0),
-        bytes,
-      });
-    }
-    for (const [recipe, captures, recipeKind] of nested) site(recipe, recipeKind, captures);
-  };
-  const handlerKind = (type: string): string => {
-    const capture = type.endsWith("!"),
-      name = capture ? type.slice(0, -1) : type;
-    return "on" + name.charAt(0).toUpperCase() + name.slice(1) + (capture ? "Capture" : "") + " handler";
-  };
-  const handlers = (map: Record<string, Record<string, HandlerEntry>>): void => {
-    for (const id in map) for (const type in map[id]) site(map[id]![type]![0], handlerKind(type), map[id]![type]![1]);
-  };
-  const bindingKind = (name: BindingName): string =>
-    name === null
-      ? "text binding"
-      : typeof name === "number" || name.charCodeAt(0) === 46
-        ? "spread binding"
-        : name === "#"
-          ? "region"
-          : 'binding of attribute "' + name + '"';
-  const templated = (bindings: readonly TemplateBinding[]): void => {
-    for (const [, name, symbol, refs, signals] of bindings) {
-      site(symbol, bindingKind(name), refs);
-      site(symbol, bindingKind(name), signals, "reads a signal");
-    }
-  };
-  handlers(e);
-  for (const id in m) site("", "model:" + m[id]![0] + " binding", [m[id]![1]], "holds");
-  for (const entry of b) {
-    const [, name, , refs, signals] = entry;
-    if (name === "+") {
-      const packed = entry[8] as PackedBindings;
-      templated(packed.b);
-      // Per-row slot values: the binding whose template ref reads the slot.
-      for (let slot = 0; slot < packed.n; slot++) {
-        const owner = packed.b.find((item) => item[3].includes(-1 - slot));
-        if (!owner) continue;
-        // At the capture's own position (its name), the other positions skipped (-1).
-        const refs: number[] = new Array(owner[3].indexOf(-1 - slot) + 1).fill(-1);
-        for (let k = 0; k < packed.k; k++) {
-          refs[refs.length - 1] = packed.r[k * packed.n + slot]!;
-          site(owner[2], bindingKind(owner[1]), refs);
-        }
-      }
-      continue;
-    }
-    if (name !== "*") {
-      site(entry[2], bindingKind(name), refs);
-      site(entry[2], bindingKind(name), signals, "reads a signal");
-    }
-    const rows = entry[8];
-    if (name === "#" || name === "*") {
-      const tpl = entry[9];
-      // A list that is no region (`*`) has no symbol: name it by its row template's.
-      const rowSymbol = name === "*" && tpl ? (tpl.b[0]?.[2] ?? Object.values(Object.values(tpl.e)[0] ?? {})[0]?.[0]) : undefined;
-      const symbol = rowSymbol ?? entry[2];
-      if (tpl) {
-        handlers(tpl.e);
-        templated(tpl.b);
-      }
-      // [8]: rows (flat triples / compact) or, without rows, the branches; branches after rows at [10].
-      const isBranches = (value: unknown): boolean =>
-        Array.isArray(value) ? typeof value[0] === "object" : !!value && typeof value === "object" && (value as BranchSpec).w !== undefined;
-      if (Array.isArray(rows) && !isBranches(rows)) {
-        const items: number[] = [];
-        for (let i = 1; i < rows.length; i += 3) items.push((rows as number[])[i]!);
-        site(symbol, "For", items, "row items");
-      } else if (rows && !isBranches(rows) && typeof rows === "object") {
-        const spec = rows as CompactRows;
-        if (spec.a !== undefined || spec.r !== undefined) site(symbol, "For", spec.a !== undefined ? [spec.a] : spec.r!, "row items");
-      }
-      const branches = (isBranches(rows) ? rows : entry[10]) as BranchSpec | BranchSpec[] | 0 | undefined;
-      if (branches)
-        for (const spec of Array.isArray(branches) ? branches : [branches]) if (spec.v !== undefined) site(symbol, "Show branch", [spec.v], "value");
-      const locals = entry[11] as RegionLocals | 0 | undefined;
-      if (locals)
-        site(
-          symbol,
-          "region state (_regionState)",
-          locals.l.filter((ref): ref is number => ref !== null),
-          "holds",
-        );
-      const providers = entry[12] as (string | number)[] | number | null | undefined;
-      if (typeof providers === "number") site(symbol, "region", [providers], "provider values");
-      else if (Array.isArray(providers))
-        for (let k = 0; k < providers.length; k += 2) {
-          const token = table[providers[k] as number];
-          site(symbol, 'provider of context "' + (typeof token === "string" ? token : providers[k]) + '"', [providers[k + 1] as number], "value");
-        }
-      const reads = entry[13] as number[] | undefined;
-      if (Array.isArray(reads)) site(symbol, "For", reads, "row reads");
-    }
-  }
-  for (const [symbol, refs] of fx) site(symbol, "clientEffect", refs);
-  for (const [symbol, refs, , type] of ce) site(symbol, 'clientEvent "' + type + '"', refs);
-  return out;
-}
-/** Dev: what a table entry holds, short: `array of 1,000 objects`, `object with 48 keys`, `string of 32.0 KB`. */
-function devShape(table: readonly TableEntry[], ref: number, depth: number): string {
-  const entry = table[ref];
-  const count = (n: number, one: string, many = one + "s"): string => n.toLocaleString("en-US") + " " + (n === 1 ? one : many);
-  const item = (value: unknown, n: number): string => {
-    if (Array.isArray(value)) return count(n, "array");
-    if (value !== null && typeof value === "object") return count(n, "object");
-    if (typeof value === "string") return count(n, "string");
-    if (typeof value === "number") return count(n, "number");
-    if (typeof value === "boolean") return count(n, "boolean");
-    return count(n, "value");
-  };
-  const entryItem = (index: number, n: number): string => {
-    const first = table[index];
-    if (first === null || typeof first !== "object" || Array.isArray(first)) return item(first, n);
-    if (first.j !== undefined) return item(first.j, n);
-    if (first.l) return count(n, "array");
-    if (first.o || first.p || first.cls !== undefined) return count(n, "object");
-    if (first.s !== undefined) return count(n, "signal");
-    return count(n, "value");
-  };
-  if (typeof entry === "string") return "string of " + devKB(JSON.stringify(entry).length);
-  if (entry === null || typeof entry !== "object") return typeof entry;
-  if (Array.isArray(entry)) return "array of " + (entry.length ? entryItem(entry[0]!, entry.length) : "0 values");
-  if (entry.j !== undefined) {
-    const value = entry.j;
-    return Array.isArray(value) ? "array of " + item(value[0], value.length) : "object with " + count(Object.keys(value).length, "key");
-  }
-  if (entry.l) return "array of " + item(entry.l[0], entry.l.length);
-  if (entry.o) return "object with " + count(entry.o.length / 2, "key");
-  if (entry.p) return "object with " + count(entry.p.length / 2, "key");
-  if (entry.m) return "Map of " + count(entry.m.length / 2, "entry", "entries");
-  if (entry.e) return "Set of " + count(entry.e.length, "value");
-  if (typeof entry.s === "number") return depth < 2 ? "signal holding " + devShape(table, entry.s, depth + 1) : "signal";
-  if (entry.b) return "binary data (" + entry.b[0] + ")";
-  if (entry.cls !== undefined) return "class instance";
-  if (entry.f !== undefined) return "function";
-  if (entry.c !== undefined) return "computed";
-  if (entry.i) return "value inside " + (depth < 2 ? devShape(table, entry.i[0], depth + 1) : "another value");
-  if (entry.k === "cell" && entry.a && depth < 2) return "let variable holding " + devShape(table, entry.a[0]!, depth + 1);
-  if (typeof entry.k === "string") return entry.k + " value";
-  return "value";
-}
-const devKB = (bytes: number): string => (bytes < 1024 ? bytes + " B" : (bytes / 1024).toFixed(1) + " KB");
 
 /** A client event that loads on intent / interaction (`preload: "intent" | "interaction"`): it does not boot the page. */
 const lateEvent = (entry: ClientEventRecord): boolean => /^int/.test(entry[4]?.preload ?? "");
@@ -4584,11 +4184,15 @@ const plain = (entry: EntryRecord): boolean => {
   }
   return true;
 };
-// `compactTable`'s `{R}` entries and the bytes they saved (estimated), read right after a call.
-let tableRelocations = 0,
-  tableSavedBytes = 0;
-function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<string, number>, relocate: boolean): TableEntry[] {
-  tableRelocations = tableSavedBytes = 0;
+/** `compactTable`'s result: the wire table, its `{R}` entries and the bytes they saved (estimated). */
+interface CompactTable {
+  t: TableEntry[];
+  relocations: number;
+  saved: number;
+}
+function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<string, number>, relocate: boolean): CompactTable {
+  let relocations = 0,
+    saved = 0;
   const out = table.slice(t0),
     // Symbol (page index; computeds -1 - index) / kind → [first, latest] full entry index.
     bases = new Map<string | number, number[]>(),
@@ -4615,17 +4219,15 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
       if (from === undefined || !relocate) continue;
       const source = (table[from] as EntryRecord).o!;
       let ok = true;
+      relocationStart();
       for (let k = 1; k < pairs.length && ok; k += 2) ok = relocate1(source[k] as number, (pairs[k] as number) - (source[k] as number));
-      if (!ok) {
-        relocationReset();
-        continue;
-      }
+      if (!ok) continue;
       const R = relocationOf(from, i),
         wire = out[i - t0] as EntryRecord;
       let size = 0;
       if (wire.w !== undefined) size = 12 + digits(wire.w) + listLength(wire.o as number[]);
       else for (let k = 0; k < pairs.length; k += 2) size += (pairs[k] as string).length + 4 + digits(pairs[k + 1] as number);
-      if (8 + listLength(R) <= size) ((out[i - t0] = { R }), tableRelocations++, (tableSavedBytes += size - 8 - listLength(R)));
+      if (8 + listLength(R) <= size) ((out[i - t0] = { R }), relocations++, (saved += size - 8 - listLength(R)));
       continue;
     }
     // A class instance (T23): its class by page symbol index (a registered id, T25, stays a string); never compact / repeated (one field object each).
@@ -4666,6 +4268,7 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
       if (from !== undefined) {
         const source = args[from - t0]!,
           q = equals[from - t0];
+        relocationStart();
         let ok = source.length === entry.a.length && (typeof q === "number" ? typeof entry.q === "number" : q === entry.q) && relocation(source, entry.a);
         if (ok && typeof q === "number") ok = relocate1(q, (entry.q as number) - q);
         if (ok) {
@@ -4678,12 +4281,12 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
               (entry.v !== undefined ? 6 : 0);
           if (listLength(R) - 1 <= size) {
             out[i - t0] = { R };
-            tableRelocations++;
-            tableSavedBytes += size + 1 - listLength(R);
+            relocations++;
+            saved += size + 1 - listLength(R);
             latest.set(key, i);
             continue;
           }
-        } else relocationReset();
+        }
       }
       if (simple) candidates[1] = i;
     }
@@ -4705,7 +4308,7 @@ function compactTable(table: readonly TableEntry[], t0: number, symbols: Map<str
       out[i - t0] = copy;
     }
   }
-  return out;
+  return { t: out, relocations, saved };
 }
 
 /**
@@ -4946,7 +4549,8 @@ function repeats(args: readonly (number[] | undefined)[], equals: readonly unkno
 const RELOC_FROM: number[] = [],
   RELOC_DELTA: number[] = [];
 let relocSize = 0;
-/** Add `from → from + delta`; false when `from` already maps to another delta (the caller then `relocationReset`s). */
+/** Add `from → from + delta`; false when `from` already maps to another delta (the attempt is dropped: the next one
+ * starts with `relocationStart`). */
 function relocate1(from: number, delta: number): boolean {
   let k = relocSize;
   while (k > 0 && RELOC_FROM[k - 1]! > from) k--;
@@ -4962,7 +4566,8 @@ function relocation(from: readonly number[], to: readonly number[]): boolean {
   for (let i = 0; i < from.length; i++) if (!relocate1(from[i]!, to[i]! - from[i]!)) return false;
   return true;
 }
-const relocationReset = (): void => void (relocSize = 0);
+/** Start building a relocation: every attempt starts here, so a failed one (a conflicting delta) leaves nothing behind. */
+const relocationStart = (): void => void (relocSize = 0);
 /** Append the relocation being built to `out` (floors ascending, a run of equal deltas one floor, the leading run of delta
  * 0 none) and reset it. */
 function relocationMap(out: number[]): void {
@@ -5022,15 +4627,13 @@ function repeatEntries(e: Record<string, Record<string, HandlerEntry>>, b: Bindi
       if (!sameHandlers(source, types[at]!, handlers, own)) continue;
       let ok = true,
         full = 0;
+      relocationStart();
       for (let k = 0; k < own.length && ok; k++) {
         const s = source[own[k]!]!;
         ok = relocation(s[1], handlers[own[k]!]![1]);
         full += own[k]!.length + 8 + 6 * s[1].length + 2 * (s[2].length + (s.length > 3 ? s[3]!.length + 3 : 0));
       }
-      if (!ok) {
-        relocationReset();
-        continue;
-      }
+      if (!ok) continue;
       const form = [id - +ids[at]!];
       relocationMap(form);
       if (6 * form.length < full) {
@@ -5054,10 +4657,8 @@ function repeatEntries(e: Record<string, Record<string, HandlerEntry>>, b: Bindi
       const from = list[c]!,
         source = b[from]!;
       if (source[1] !== entry[1] || source[3].length !== entry[3].length || source[4].length !== entry[4].length || !sameList(source[5], entry[5])) continue;
-      if (!relocation(source[3], entry[3]) || !relocation(source[4], entry[4])) {
-        relocationReset();
-        continue;
-      }
+      relocationStart();
+      if (!relocation(source[3], entry[3]) || !relocation(source[4], entry[4])) continue;
       const node = entry[0] - source[0],
         region = entry[6] - source[6],
         form = node === region ? [-1 - (j - from), node] : [-1 - (j - from), node, region];
@@ -5112,6 +4713,8 @@ function bindingsJSON(b: readonly unknown[][]): string {
   if (from < b.length) out += "," + JSON.stringify(b.slice(from)).slice(1, -1);
   return out + "]";
 }
+/** A streamed segment's state patch script (`json`: `stateJSON` of the patch). */
+const patchScript = (marker: number, json: string): string => '<script type="rivet/state" data-patch="' + marker + '">' + escapeJSON(json) + "</script>";
 function stateJSON(state: object): string {
   let out = "{";
   const keys = Object.keys(state);
@@ -5179,8 +4782,9 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
           ),
         ].join(" ")
       : "";
-  // Dev: large captures / page state budget (`DEV.stateCaptures` above).
-  if (DEV) DEV.stateBytes(recorder, stateJSON(state).length);
+  // Dev: large captures / page state budget (`DEV.stateCaptures` above); the JSON is built once.
+  const json = stateJSON(state);
+  if (DEV) DEV.stateBytes(recorder, json.length);
   const head = template([
     '<script type="rivet/state" data-region="0" data-events="' +
       events.join(" ") +
@@ -5195,7 +4799,7 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
       (fetchOnly ? ' data-fo="' + escapeAttribute(fetchOnly) + '"' : "") +
       (schedule.length ? ' data-preload="' + escapeAttribute(JSON.stringify([state.rt, ...schedule])) + '"' : "") +
       ">" +
-      escapeJSON(stateJSON(state)),
+      escapeJSON(json),
   ]);
   const fragments = TAILS[(recorder.events.has("keydown") ? 1 : 0) + (a ? 2 : 0)]!;
   const tail = compiledTemplate(fragments, a ? [head, attrs, attrs] : [head, attrs]);

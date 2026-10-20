@@ -369,7 +369,8 @@ if (args.check) {
     for (const [name, app] of Object.entries(report.apps))
       for (const [path, route] of Object.entries(app.routes ?? {})) {
         const was = base.apps?.[name]?.routes?.[path]?.eagerFiles;
-        if (was && route.eagerFiles && JSON.stringify(was) !== JSON.stringify(route.eagerFiles))
+        // Compared as sets: request order varies run to run (prefetch timing) without changing the measurement.
+        if (was && route.eagerFiles && JSON.stringify([...was].sort()) !== JSON.stringify([...route.eagerFiles].sort()))
           console.error(`  ${name} ${path} eager files: ${was.join(" ")} -> ${route.eagerFiles.join(" ")}`);
       }
     process.exit(1);

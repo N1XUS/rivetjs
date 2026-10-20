@@ -1,6 +1,7 @@
 // Development build (`development` condition). `DEV` is the diagnostics toolkit; in production it is
 // `false`, so `DEV ? DEV.x(…) : …` folds away with no helper code left in the bundle.
 import { kb } from "./kb.ts";
+import { stateSites } from "./state-sites.ts";
 
 const paths = new WeakMap<object, { message: string; path: string }>();
 /** Why an error happens and what to change, appended to production messages in development. */
@@ -282,8 +283,10 @@ export const DEV = {
       });
     }
   },
+  /** Resume state size: the capture sites of one encoded segment (`state-sites.ts`), for `stateCaptures`. */
+  stateSites,
   /**
-   * Resume state size: the capture sites one encoded segment wrote (`server-resume.ts` `devStateSites`: site label,
+   * Resume state size: the capture sites one encoded segment wrote (`state-sites.ts` `stateSites`: site label,
    * value shape, wire bytes the site added first), reported by the next `stateBytes` call of the same render.
    */
   stateCaptures(root: object, captures: StateCapture[]): void {

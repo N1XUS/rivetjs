@@ -22,7 +22,7 @@ import { lazyFunction } from "./lazy.ts";
 import { coordinator } from "./async-coordinator.ts";
 import type { Coordinator } from "./async-coordinator.ts";
 import { INVALID_URL, MEDIA_URLS, URLS, unsafeUrl } from "./url.ts";
-import { _adoption, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
+import { _adoption, _anchor, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _restProps } from "./props.ts";
 import type { Slot } from "./slot.ts";
@@ -188,8 +188,8 @@ export interface Output {
 function output(doc: Document, fn: () => unknown): Output {
   return createRoot((dispose) => {
     // Adopt run (LAZY-ROWS T5 builds): the anchors are the server's nodes, already in place.
-    const start = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""),
-      end = LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""),
+    const start = _anchor(doc),
+      end = _anchor(doc),
       out = { start, end, dispose };
     if (!LAZY_ROWS || start.parentNode === null) doc.createDocumentFragment().append(start, end);
     onCleanup(() => park(out, null));

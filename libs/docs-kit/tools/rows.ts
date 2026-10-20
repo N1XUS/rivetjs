@@ -18,7 +18,7 @@
 // Share bytes = the wire JSON of the group's `e` / `b` / `m` / `fx` / `ce` entries, its Fors' row lists ([8] / [9] / [13]
 // of their region entries) and its `t` entries, raw and brotli (the share's JSON alone, default quality); `saved` (probe
 // only, `{ saved: true }`) = brotli of the whole state minus brotli of the state without the share.
-// Lazy rows (`RIVET_LAZY_ROWS=swap` measurement builds, `libs/runtime/server-lazy-rows.ts`): a For whose rows render
+// Lazy rows (`RIVET_LAZY_ROWS=swap` measurement builds, `libs/runtime/server-lazy-swap.ts`): a For whose rows render
 // unrecorded writes `<!--L-->` before its first row and `<!--l-->` before every row; it reports `lazy` with that count.
 // Lazy rows proper (LAZY-ROWS T4, server env `RIVET_LAZY_ROWS=on`): every state `L` entry (`LazyRowsEntry`
 // `[forId, region, rowFn, items, by, flags, chunks, reads?, state?]`) reports `lazy`: symbol = its region's symbol, rows =

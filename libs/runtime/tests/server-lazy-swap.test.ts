@@ -1,4 +1,4 @@
-// Lazy collection rows T1, the `swap` measurement harness (`server-lazy-rows.ts`, never shipped): For rows in a
+// Lazy collection rows T1, the `swap` measurement harness (`server-lazy-swap.ts`, never shipped): For rows in a
 // resumable region render unrecorded (no `data-r`, handlers, bindings or row records), marked `<!--L-->` / `<!--l-->`,
 // and their region gets the `interaction` mount trigger (create + swap on the first input). Same markup otherwise.
 import { test } from "vitest";
@@ -45,7 +45,7 @@ test("swap harness: rows render unrecorded with lazy markers; the region re-crea
     recorded.b.some((entry) => entry[1] === "#" && entry[8]),
     "today: row lists in region entries",
   );
-  const { _lazyRowsSwap } = await import("../server-lazy-rows.ts");
+  const { _lazyRowsSwap } = await import("../server-lazy-swap.ts");
   _lazyRowsSwap();
   _lazyRowsSwap();
   const after = await render();

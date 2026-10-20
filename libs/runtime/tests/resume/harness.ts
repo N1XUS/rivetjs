@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 import type { Browser, Page } from "playwright";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } from "../../../compiler/switches.ts";
 import { compileSymbolModule } from "./compile.ts";
 import type { ResumeSymbol } from "./compile.ts";
 
@@ -48,17 +49,22 @@ const sources: Record<string, string> = {
   "/dev/off.ts": "dev/off.ts",
   // Imported by `dev/on.ts` (suites serving it at `/dev/off.ts` for development diagnostics).
   "/dev/kb.ts": "dev/kb.ts",
+  "/dev/state-sites.ts": "dev/state-sites.ts",
+};
+// The switch modules' opted-in content, served at their paths (the compiler plugin's table: `libs/compiler/switches.ts`).
+function switchBuild(names: readonly string[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const name of names) out["/" + name + ".ts"] = switchContent(name, (module) => "/" + module + ".ts")!;
+  return out;
+}
+/** Served in place of the production `#dev` (`/dev/off.ts`): the development toolkit (`dev/on.ts`; its imports are in `sources`). */
+export const DEV_BUILD: Record<string, string> = {
+  "/dev/off.ts": stripTypeScriptTypes(await readFile(new URL("../../dev/on.ts", import.meta.url), "utf8")),
 };
 /** Served in place of the switches: a page of a build with `rivet({ resume: { lazyRows: true } })` (LAZY-T5B). */
-export const LAZY_ROWS_BUILD: Record<string, string> = {
-  "/lazy-rows.ts": "export const LAZY_ROWS = true;\n",
-  "/lazy-rows-resume.ts": 'export { _lazyRows } from "/dom-resume-lazy.ts";\n',
-};
+export const LAZY_ROWS_BUILD: Record<string, string> = switchBuild(LAZY_SWITCHES);
 /** Served in place of the switches: a page of a build with `rivet({ resume: { domData: true } })` (DOM-DATA). */
-export const DOM_DATA_BUILD: Record<string, string> = {
-  "/dom-data.ts": "export const DOM_DATA = true;\n",
-  "/dom-data-resume.ts": 'export { _domData } from "/dom-resume-data.ts";\n',
-};
+export const DOM_DATA_BUILD: Record<string, string> = switchBuild(DOM_DATA_SWITCHES.filter((name) => name !== "dom-data-server"));
 /** Rewrite package specifiers to served paths. */
 export const rewrite = (code: string): string =>
   code

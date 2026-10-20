@@ -43,7 +43,7 @@ export interface FramesBuild {
 /**
  * Build the frame pages of `ids` (one Vite build restricted to them, child processes) and prerender them. Env
  * `RIVET_LAZY_ROWS=swap` (measurement only, lazy collection rows T1) reaches the build children with
- * `LAZY_ROWS_HARNESS_ENV`: the router then renders eligible For rows unrecorded (`@rivetjs/runtime` `server-lazy-rows.ts`);
+ * `LAZY_ROWS_HARNESS_ENV`: the router then renders eligible For rows unrecorded (`@rivetjs/runtime` `server-lazy-swap.ts`);
  * `RIVET_LAZY_ROWS=on` likewise gives the build `resume.lazyRows` (`@rivetjs/router` `lazyRowsBuild`, LAZY-T5B: its browser
  * runtime materialises lazy rows, its manifest lets the server write them).
  */

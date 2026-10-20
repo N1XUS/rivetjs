@@ -5,11 +5,10 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
-import { withPage, rewrite } from "./resume/harness.ts";
+import { DEV_BUILD, withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 import type { Page as BrowserPage } from "playwright";
 
@@ -36,7 +35,7 @@ for (const [path, symbols] of Object.entries(byComponent)) base[path] = rewrite(
 // Development build of `#dev` (the harness serves the production `off.ts` at this path).
 const development: Record<string, Served> = {
   ...base,
-  "/dev/off.ts": stripTypeScriptTypes(await readFile(new URL("../dev/on.ts", import.meta.url), "utf8")),
+  ...DEV_BUILD,
 };
 
 const collect = (page: BrowserPage) => {

@@ -7,7 +7,7 @@ import { stripTypeScriptTypes } from "node:module";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { compileResume, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
+import { DEV_BUILD, withPage, rewrite, symbolModules } from "./resume/harness.ts";
 import { readable } from "./resume/wire.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -94,7 +94,7 @@ test.runIf(DEV_RUN)("dev: a resumed read of an unshipped store path warns once, 
   const development: Record<string, Served> = {
     ...files,
     "/todos": "<!doctype html><html><head></head><body>" + page$ + "</body></html>",
-    "/dev/off.ts": await source("../dev/on.ts"),
+    ...DEV_BUILD,
     "/store.mjs": (await source("../../reactivity/store-dev.ts"))
       .replaceAll('"./store.ts"', '"/store-base.mjs"')
       .replaceAll('"./index.ts"', '"/reactivity.mjs"')

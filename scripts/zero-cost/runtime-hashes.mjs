@@ -3,34 +3,26 @@
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 const root = process.argv[2];
+// The switch modules' opted-in content: the compiler plugin's own table (`libs/compiler/switches.ts`).
+const { DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } = await import(pathToFileURL(`${root}/libs/compiler/switches.ts`).href);
+/** A plugin loading the opted-in content of the runtime switch modules `names`. */
+const switches = (name, names) => ({
+  name,
+  load(id) {
+    const hit = /[\\/]libs[\\/]runtime[\\/]([\w-]+)\.ts$/.exec(id);
+    if (hit && names.includes(hit[1])) return switchContent(hit[1], (module) => `./${module}.ts`);
+  },
+});
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const out = [];
 // `[lazyRows]` lines: the entries a `rivet({ resume: { lazyRows: true } })` build gets (the compiler plugin's switch
 // modules, `libs/compiler/vite.ts` `lazySwitch`); every other line is a build without it (LAZY-T5B: identical to before).
-const LAZY = [
-  {
-    name: "lazy-rows-switch",
-    load(id) {
-      const hit = /[\\/]libs[\\/]runtime[\\/](lazy-rows(?:-resume)?)\.ts$/.exec(id);
-      if (hit) return hit[1] === "lazy-rows" ? "export const LAZY_ROWS = true;\n" : 'export { _lazyRows } from "./dom-resume-lazy.ts";\n';
-    },
-  },
-];
+const LAZY = [switches("lazy-rows-switch", LAZY_SWITCHES)];
 // `[domData]` lines: the resume entry and the resumable server of a `rivet({ resume: { domData: true } })` build (DOM-DATA,
 // `domDataSwitch`).
-const DOM_DATA = [
-  {
-    name: "dom-data-switch",
-    load(id) {
-      const hit = /[\\/]libs[\\/]runtime[\\/](dom-data(?:-resume|-server)?)\.ts$/.exec(id);
-      if (!hit) return;
-      if (hit[1] === "dom-data") return "export const DOM_DATA = true;\n";
-      if (hit[1] === "dom-data-server") return 'import { _domRegistry } from "./server-dom-data.ts";\nexport const domServer = { create: _domRegistry };\n';
-      return 'export { _domData } from "./dom-resume-data.ts";\n';
-    },
-  },
-];
+const DOM_DATA = [switches("dom-data-switch", DOM_DATA_SWITCHES)];
 const hash = async (input, plugins) => {
   const bundle = await rolldown({
     input, platform: "node", logLevel: "silent", plugins,
