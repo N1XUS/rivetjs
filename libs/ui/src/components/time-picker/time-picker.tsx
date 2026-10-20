@@ -41,6 +41,7 @@ import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { SurfaceContext } from "../surface/index.ts";
 import { TimeFieldRoot } from "../time-field/time-field.tsx";
 import type { TimeFieldRootProps } from "../time-field/time-field.tsx";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * TimePicker Context
@@ -178,6 +179,7 @@ interface TimePickerPopoverProps extends Omit<PopoverPrimitiveProps, "children">
 }
 
 const TimePickerPopover = (props: TimePickerPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(TimePickerContext);
   const popover = slotsOf(context)?.popover();

@@ -48,6 +48,7 @@ import type { MenuItemIndicatorSpanProps, MenuItemRootProps, MenuItemSubmenuIndi
 import { MenuSectionRoot } from "../menu-section/index.ts";
 import type { MenuSectionRootProps } from "../menu-section/index.ts";
 import { SurfaceContext } from "../surface/index.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Dropdown Context
@@ -111,6 +112,7 @@ interface DropdownPopoverProps extends Omit<PopoverPrimitiveProps, "children">, 
 }
 
 const DropdownPopover = (props: DropdownPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(DropdownContext);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.popover()) as string | ((v: PopoverRenderProps) => string);

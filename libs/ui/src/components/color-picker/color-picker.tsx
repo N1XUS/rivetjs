@@ -26,6 +26,7 @@ import { colorProps } from "../../utils/color-value.ts";
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { SurfaceContext } from "../surface/index.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * ColorPicker Context
@@ -102,6 +103,7 @@ interface ColorPickerPopoverProps extends Omit<PopoverPrimitiveProps, "children"
 }
 
 const ColorPickerPopover = (props: ColorPickerPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(ColorPickerContext);
   const popover = slotsOf(context)?.popover();

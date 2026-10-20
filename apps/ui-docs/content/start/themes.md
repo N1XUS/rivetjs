@@ -91,6 +91,8 @@ export function Compare() {
 }
 ```
 
+Overlays keep the scope: Popover, Select, Menu, Tooltip, Modal, Drawer, Toast and the other portaled surfaces render in the overlay layer at the end of `<body>`, outside the marked subtree, so on open their layer element gets the trigger's `data-ui-theme`, `data-ui-preset` and `data-theme` (and `.dark`) copied over. Nested overlays inherit it; an overlay opened outside any scope gets nothing and follows the page theme. An inline `style={themeVariables(…)}` is not copied: for a subtree with overlays, use an attribute (`data-ui-theme`, or `data-ui-preset` from `themes/presets.css`).
+
 ## Brand tokens
 
 The Rivet theme also declares the logo gradient stops as `--rivet-cyan`, `--rivet-blue`, `--rivet-indigo`, `--rivet-violet`, `--rivet-purple`, `--rivet-magenta`, `--rivet-pink` (Tailwind colours `rivet-*`, e.g. `text-rivet-indigo`) and the full gradient as `--rivet-gradient`. Use them for special surfaces (a hero, a highlight border), not for text or controls: the components only use the semantic tokens.

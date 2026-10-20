@@ -22,6 +22,7 @@ import type { HeadingProps as HeadingPrimitiveProps } from "@rivetjs/cdk/heading
 import { Pressable as PressablePrimitive } from "@rivetjs/cdk/interactions/pressable";
 import { ModalOverlay as ModalOverlayPrimitive, Modal as ModalPrimitive } from "@rivetjs/cdk/modal";
 import { overlayMotion } from "../../utils/overlay-motion.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 import type { ModalOverlayProps, ModalRenderProps } from "@rivetjs/cdk/modal";
 import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
@@ -143,6 +144,7 @@ interface AlertDialogBackdropProps extends ModalOverlayProps {
 
 const AlertDialogBackdrop = (props: AlertDialogBackdropProps): JSX.Element => {
   overlayMotion();
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "isDismissable", "isKeyboardDismissDisabled", "onClick", "variant"]);
   const classOf = () =>
     composeTwRenderProps(local.class as never, variantSlots({ variant: local.variant }).backdrop()) as string | ((v: ModalRenderProps) => string);

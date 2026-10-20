@@ -65,6 +65,7 @@ import { Spinner } from "../spinner/index.ts";
 import { DEFAULT_GAP, DEFAULT_HOTKEY, DEFAULT_MAX_VISIBLE_TOAST, DEFAULT_SCALE_FACTOR, DEFAULT_TOAST_WIDTH } from "./constants.ts";
 import { exitAwareQueueOf, toastQueue as defaultToastQueue } from "./toast-queue.ts";
 import type { StatelyToastQueue, ToastContentValue, ToastQueue } from "./toast-queue.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 type ToastPlacement = NonNullable<ToastVariants["placement"]>;
 type CSSVars = Record<string, string | number | undefined>;
@@ -913,6 +914,7 @@ const ToastRegionHost = <T extends object>(props: {
 };
 
 const ToastProvider = <T extends object = ToastContentValue>(props: ToastProviderProps<T>): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, [
     "children",
     "class",

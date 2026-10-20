@@ -43,6 +43,7 @@ import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { SurfaceContext } from "../surface/index.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Popover Context
@@ -98,6 +99,7 @@ interface PopoverContentProps extends Omit<PopoverPrimitiveProps, "children">, P
 }
 
 const PopoverContent = (props: PopoverContentProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "dialog", "title"]);
   const context = useContext(PopoverContext);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.base()) as string | ((v: PopoverRenderProps) => string);

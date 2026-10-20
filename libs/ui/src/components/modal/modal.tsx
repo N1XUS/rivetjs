@@ -28,6 +28,7 @@ import type { HeadingProps as HeadingPrimitiveProps } from "@rivetjs/cdk/heading
 import { Pressable as PressablePrimitive } from "@rivetjs/cdk/interactions/pressable";
 import { ModalOverlay as ModalOverlayPrimitive, Modal as ModalPrimitive } from "@rivetjs/cdk/modal";
 import { overlayMotion } from "../../utils/overlay-motion.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 import type { ModalOverlayProps, ModalRenderProps } from "@rivetjs/cdk/modal";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
@@ -152,6 +153,7 @@ interface ModalBackdropProps extends ModalOverlayProps {
 
 const ModalBackdrop = (props: ModalBackdropProps): JSX.Element => {
   overlayMotion();
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "isDismissable", "onClick", "variant"]);
   const classOf = () =>
     composeTwRenderProps(local.class as never, variantSlots({ variant: local.variant }).backdrop()) as string | ((v: ModalRenderProps) => string);

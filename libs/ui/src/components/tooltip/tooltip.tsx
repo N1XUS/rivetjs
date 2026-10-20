@@ -34,6 +34,7 @@ import { parseCSSTime } from "../../utils/css.ts";
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Tooltip Context
@@ -124,6 +125,7 @@ interface TooltipContentProps extends Omit<TooltipPrimitiveProps, "children">, T
 }
 
 const TooltipContent = (props: TooltipContentProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "offset", "showArrow"]);
   const context = useContext(TooltipContext);
   const offset = local.offset ? local.offset : (local.showArrow ?? false) ? 7 : 3;

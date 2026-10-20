@@ -314,6 +314,8 @@ Each component page lists its classes (block, elements, modifiers, states), for 
 @import "@rivetjs/ui/styles/out/theme.css" layer(theme.ui);
 ```
 
+Portaled overlays (Popover, Select, Tooltip, Modal, Toast, …) render at the end of `<body>`; when one opens, its overlay layer element takes the trigger's `data-ui-theme` (plus `data-ui-preset` / `data-theme` / `.dark`), so it keeps the scoped tokens. Nothing is added outside a scope.
+
 **Without Tailwind or a bundler:** `@rivetjs/ui/styles/*` maps directly to the package files. Link `@rivetjs/ui/styles/out/base.css` (everything except components) and `@rivetjs/ui/styles/out/all.css` (all components).
 
 **Headless:** components always ship with their styles. For unstyled parts with the same behaviour, use [@rivetjs/cdk](site:cdk/), which has no CSS.

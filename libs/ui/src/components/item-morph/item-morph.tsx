@@ -20,6 +20,7 @@ import { ButtonRoot } from "../button/index.ts";
 import type { ButtonRootProps } from "../button/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * ItemMorph Context (inside the panel)
@@ -62,6 +63,7 @@ interface ItemMorphRootProps extends ItemMorphVariants {
 }
 
 const ItemMorphRoot = (props: ItemMorphRootProps): JSX.Element => {
+  portalTheme();
   const morph = props.morph;
   const backdrop = props.backdrop ?? "blur";
   const slots = slotsFor(backdrop);

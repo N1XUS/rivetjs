@@ -36,6 +36,7 @@ import { ChevronLeft, ChevronRight, FileText, ImageOff, LoaderCircle, X } from "
 import { buttonVariants } from "../../../styles/src/components/button/index.ts";
 import type { LightboxVariants } from "../../../styles/src/components/lightbox/index.ts";
 import { lightboxVariants } from "../../../styles/src/components/lightbox/index.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 type LightboxSlots = ReturnType<typeof lightboxVariants>;
 const SLOTS: Record<string, LightboxSlots> = {};
@@ -75,6 +76,7 @@ function LightboxDefaultParts() {
 }
 
 const LightboxRoot = (props: LightboxRootProps): JSX.Element => {
+  portalTheme();
   const slots = lightboxSlots(props.backdrop);
   const children = props.children;
   return (

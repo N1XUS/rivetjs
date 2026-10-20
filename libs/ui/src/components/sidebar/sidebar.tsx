@@ -90,6 +90,7 @@ import { sidebarVariants } from "../../../styles/src/components/sidebar/index.ts
 import { skeletonVariants } from "../../../styles/src/components/skeleton/index.ts";
 import { tooltipVariants } from "../../../styles/src/components/tooltip/index.ts";
 import { hasLiveProp, splitLive } from "../../utils/live.tsx";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /** The default slots (no variant): one tv call per module. */
 const SLOTS = sidebarVariants();
@@ -141,6 +142,7 @@ interface SidebarRootProps extends Omit<
 }
 
 const SidebarRoot = (props: SidebarRootProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["class", "collapsible"]);
   // `collapsible="none"` picks the element once (as the cdk part): the static panel carries the root class.
   const isStatic = (typeof local.collapsible === "function" ? local.collapsible() : local.collapsible) === "none";

@@ -19,6 +19,7 @@ import type { HeadingProps as HeadingPrimitiveProps } from "@rivetjs/cdk/heading
 import { createId } from "@rivetjs/cdk/id";
 import { ModalOverlay as ModalOverlayPrimitive, Modal as ModalPrimitive } from "@rivetjs/cdk/modal";
 import { overlayMotion } from "../../utils/overlay-motion.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 import type { ModalOverlayProps, ModalRenderProps } from "@rivetjs/cdk/modal";
 import { overlay } from "@rivetjs/cdk/overlay";
 import { Overlay } from "@rivetjs/cdk/portal";
@@ -187,6 +188,7 @@ interface SheetBackdropProps extends Omit<ModalOverlayProps, "isDismissable" | "
 
 const SheetBackdrop = (props: SheetBackdropProps): JSX.Element => {
   overlayMotion();
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "variant", "style", "onExit"]);
   const context = useContext(SheetContext);
   const state = context.state;

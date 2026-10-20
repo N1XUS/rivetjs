@@ -37,6 +37,13 @@ export function PortalProvider(props: { container?: PortalMount; children?: Cont
   );
 }
 
+/**
+ * Rivet: optional hooks of the overlay layer, unset by default (cdk alone pays one property read per move).
+ * `place(host, from)` runs right after a `<Portal>` host moved from its in-place parent `from` (the trigger's subtree,
+ * still connected) to its mount; a styled layer copies scope attributes there (`@rivetjs/ui` stamps its theme scope).
+ */
+export const portalHooks: { place?(host: HTMLElement, from: Element | null): void } = {};
+
 export interface PortalProps {
   /** Where to render. @default the nearest PortalProvider's container, else document.body */
   mount?: PortalMount;
@@ -66,8 +73,10 @@ export function Portal(props: PortalProps) {
       if (element.parentNode !== target) {
         // Moving a node blurs focus inside it (content that focused itself on mount, e.g. a menu item).
         const focused = element.ownerDocument.activeElement as HTMLElement | null;
-        const inside = !!focused && element.contains(focused);
+        const inside = !!focused && element.contains(focused),
+          from = element.parentElement;
         target.append(element);
+        portalHooks.place?.(element, from);
         if (inside && element.ownerDocument.activeElement !== focused) focused!.focus({ preventScroll: true });
       }
       onPlaced?.();

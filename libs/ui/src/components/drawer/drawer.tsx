@@ -26,6 +26,7 @@ import { Heading as HeadingPrimitive } from "@rivetjs/cdk/heading";
 import type { HeadingProps as HeadingPrimitiveProps } from "@rivetjs/cdk/heading";
 import { ModalOverlay as ModalOverlayPrimitive, Modal as ModalPrimitive } from "@rivetjs/cdk/modal";
 import { overlayMotion } from "../../utils/overlay-motion.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 import type { ModalOverlayProps, ModalRenderProps } from "@rivetjs/cdk/modal";
 import { closeOverlay } from "@rivetjs/cdk/state/overlays";
 import type { OverlayTriggerState } from "@rivetjs/cdk/state/overlays";
@@ -143,6 +144,7 @@ interface DrawerBackdropProps extends ModalOverlayProps {
 
 const DrawerBackdrop = (props: DrawerBackdropProps): JSX.Element => {
   overlayMotion();
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "isDismissable", "variant"]);
   const context = useContext(DrawerContext);
   const isDismissable = local.isDismissable ?? true;

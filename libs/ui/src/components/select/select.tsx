@@ -55,6 +55,7 @@ import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
 import { warnItemsIgnored } from "../../utils/shorthand.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Select Context
@@ -318,6 +319,7 @@ interface SelectPopoverProps extends Omit<PopoverPrimitiveProps, "children"> {
 }
 
 const SelectPopover = (props: SelectPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(SelectContext);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.popover()) as string | ((v: PopoverRenderProps) => string);

@@ -51,6 +51,7 @@ import { SurfaceContext } from "../surface/index.ts";
 import { ComboBoxContext } from "./combo-box-context.ts";
 import type { ComboBoxContextValue } from "./combo-box-context.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 type ComboBoxSlots = ReturnType<typeof comboBoxVariants>;
 const SLOTS = new Map<string, ComboBoxSlots>();
@@ -227,6 +228,7 @@ interface ComboBoxPopoverProps extends Omit<PopoverPrimitiveProps, "children"> {
 }
 
 const ComboBoxPopover = (props: ComboBoxPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(ComboBoxContext);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.popover()) as string | ((v: PopoverRenderProps) => string);

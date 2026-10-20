@@ -41,6 +41,7 @@ import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
 import { warnItemsIgnored } from "../../utils/shorthand.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * InlineSelect Context
@@ -192,6 +193,7 @@ interface InlineSelectPopoverProps extends Omit<PopoverPrimitiveProps, "children
 }
 
 const InlineSelectPopover = (props: InlineSelectPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(InlineSelectContext);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.popover()) as string | ((v: PopoverRenderProps) => string);

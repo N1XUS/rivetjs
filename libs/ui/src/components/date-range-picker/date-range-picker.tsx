@@ -41,6 +41,7 @@ import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { onGlobalKeyDown, restore } from "../date-picker/date-picker.tsx";
 import { SurfaceContext } from "../surface/index.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 const DATE_KEYS = ["value", "defaultValue", "minValue", "maxValue", "placeholderValue"] as const;
 
@@ -195,6 +196,7 @@ interface DateRangePickerPopoverProps extends Omit<PopoverPrimitiveProps, "child
 }
 
 const DateRangePickerPopover = (props: DateRangePickerPopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(DateRangePickerContext);
   const popover = slotsOf(context)?.popover();

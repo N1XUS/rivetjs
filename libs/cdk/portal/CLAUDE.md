@@ -4,7 +4,7 @@
 Server-rendered portals (`<Portal>`, `<Overlay>`, `PortalProvider`) = the div overlay layer of cdk components; plus Angular CDK imperative portals / outlets.
 
 ## Entry points
-- `@rivetjs/cdk/portal` → `index.tsx`: `Portal` (`mount`, `class`, `onPlaced`), `Overlay` (`portalContainer`, `disableFocusManagement`, `shouldContainFocus`, `isExiting`, `onPlaced`), `PortalProvider` (`container`), `PortalContext`, re-exports `resolveMount`, `PortalMount`
+- `@rivetjs/cdk/portal` → `index.tsx`: `Portal` (`mount`, `class`, `onPlaced`), `portalHooks` (`place?(host, from)`: Rivet, unset by default; runs right after a host moved out of its in-place parent `from`; `@rivetjs/ui` stamps its theme scope attributes, `libs/ui/src/utils/portal-theme.ts`), `Overlay` (`portalContainer`, `disableFocusManagement`, `shouldContainFocus`, `isExiting`, `onPlaced`), `PortalProvider` (`container`), `PortalContext`, re-exports `resolveMount`, `PortalMount`
 - `@rivetjs/cdk/portal-mount` → `portal-mount.ts`: `PortalMount` (selector string | Element | ref | fn), `resolveMount(mount)` (fallback `document.body`)
 - `@rivetjs/cdk/portal-outlet` → `portal-outlet.ts`: `Portal<T>`, `ComponentPortal`, `TemplatePortal`, `DomPortal`, `BasePortalOutlet`, `DomPortalOutlet`, `PortalOutlet`, `PortalViewRef`, `throw*Error` helpers
 
@@ -22,6 +22,7 @@ Server-rendered portals (`<Portal>`, `<Overlay>`, `PortalProvider`) = the div ov
 
 ## Rules / invariants
 - `PortalContext` = `resumableContext(…, { id: "rv-portal" })`: a region re-created under a `PortalProvider` keeps its container when it serializes — selector string or `ref()` element ref (both covered by `tests-components/resume-context.test.ts`); a raw Element / plain function container is dropped from the region record (re-created portals fall back to `document.body`)
+- `portalHooks.place` (UI-THEME-PORTAL 2026-10-20): called only on an actual move (never on an effect re-run), with the still-connected in-place parent (server HTML position on resumed pages, the trigger's subtree for browser-created overlays); headless: cdk names no attribute, a styled layer decides what to copy (cdk `modalHooks.open` pattern; cdk alone pays one property read per move)
 - The overlay layer is plain divs (`data-rivet-portal` hosts at end of mount) — never native `<dialog>` / `popover` top layer (user decision)
 - Content is in the server HTML (visible without JS, indexable); server markers inside the host stay balanced, so the move does not affect resumption
 - Portal behind `<Show when>` works both ways: starts true (moved at load) or false (created in browser)

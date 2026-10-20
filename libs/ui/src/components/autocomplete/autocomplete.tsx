@@ -67,6 +67,7 @@ import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
 import { warnItemsIgnored } from "../../utils/shorthand.ts";
+import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Autocomplete Context
@@ -302,6 +303,7 @@ interface AutocompletePopoverProps extends Omit<PopoverPrimitiveProps, "children
 }
 
 const AutocompletePopover = (props: AutocompletePopoverProps): JSX.Element => {
+  portalTheme();
   const [local, rest] = splitLive(props, ["children", "class", "placement"]);
   const context = useContext(AutocompleteContext);
   const triggerRef = context.triggerRef;
