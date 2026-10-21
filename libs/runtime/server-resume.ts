@@ -778,7 +778,13 @@ _onBranch((pick, keyed, render) => {
 });
 // A For directly in a site: its `each` reads only pick rows (adopted by item), never which Shows the read creates directly.
 _onForEach((props) => {
-  const site = store.getStore()?.region;
+  const recorder = store.getStore();
+  // LAZY-COST: a lazy-rows render hands a `$lazy` For's row plan (`$rows`) to `_onForLazy` (keyed by its row function).
+  if (recorder?.lazyRows && lazyPlanned) {
+    const { $lazy, $rows, children } = props as { $lazy?: unknown; $rows?: RowsProp; children?: object };
+    if ($lazy !== undefined && $rows !== undefined && children) lazyPlans.set(children, $rows);
+  }
+  const site = recorder?.region;
   if (!site?.site || site.nest) return props.each;
   const { value, signals } = _trackReads(readEach, props);
   for (const read of signals) read();
@@ -1001,6 +1007,95 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   }
   return compiledTemplate(REGION, [lazy.forId + 1 + index, template([html])]);
 }
+// ---- LAZY-COST: lazy rows from a compiled row plan (R-PLAN `$rows`) ----
+// A lazy For whose row is a row plan (one native template, only plain attributes / values, `_rId` / `_rOn` / `_rAttr` sites)
+// writes its rows the way a row region plan does (`markPlans`): one list over `regionPlan(withoutIds(plan))` — marker id
+// (forId + 1 + k) + the row's slots on one tape, no ids (a lazy row records none), on byte writers through the WebAssembly
+// row emitter — instead of rendering every row to a string (`lazyRowValue`: a renderer, owner record and id scope per row,
+// then the row's HTML copied again). What a lazy row records is recorded as there: `_rAttr` reads (`lazyRead`, keyed hook,
+// per row), `_rOn` types (`lazyListen`, once per site), `_rId` nothing. Same bytes as the row-by-row lazy path (differential
+// test `tests/resume-lazy-plan.test.ts`). A row the plan cannot write as that path would — a content slot holding an object /
+// function (a template, an accessor: may hold components, Async, Portal) or a `createId()` in a slot (its row id seed) — and
+// every row after it render one by one (`lazyRowValue`).
+const lazyPlans = new WeakMap<object, RowsProp>();
+// Test hook: false renders every lazy row one by one (`lazyRowValue`), the pre-LAZY-COST path.
+let lazyPlanned = true;
+/** Test hook (internal): lazy rows from row plans on / off for the rest of the process (differential `tests/resume-lazy-plan.test.ts`). */
+export function _setLazyPlans(enabled: boolean): void {
+  lazyPlanned = enabled;
+}
+interface LazyPlanContext {
+  lazy: LazyFor;
+  plan: RowPlan;
+  captures: Captures[];
+  item: unknown;
+  index: number;
+}
+let lazyContext: LazyPlanContext | null = null;
+const lazyGet = (): unknown => lazyContext!.item;
+const lazyAt = (): number => lazyContext!.index;
+/** `site(k)` of a lazy row writer: an `_rAttr` site's value (its reads are the row's), nothing for `_rId` / `_rOn`. */
+function lazySite(k: number): unknown {
+  const c = lazyContext!,
+    site = c.plan.sites[k]!;
+  if (site.kind !== 2) return null;
+  const tracked = _trackReads(site.read!, c.captures[k]!, c.lazy.hook);
+  if (tracked.signals.length) addReads(c.lazy, tracked.signals);
+  return tracked.value;
+}
+// Content slot indexes of a plan (null entries: children, `_rOn` slots included — those write null).
+const lazyContent = new WeakMap<RowPlan, number[]>();
+/** Writes rows 0… of a lazy For from its row plan into `rows[0]` (one list value); returns how many (0: none). */
+function lazyPlanRows(lazy: LazyFor, [plan, write, env]: RowsProp, items: readonly unknown[], rows: ServerValue[]): number {
+  if (!(plan instanceof RowPlan) || !plan.ok || !items.length) return 0;
+  const width = plan.list.attributes.length,
+    stride = width + 1,
+    n = items.length,
+    sites = plan.sites;
+  let content = lazyContent.get(plan);
+  if (content === undefined) {
+    content = [];
+    plan.source[1].forEach((entry, i) => entry === null && content!.push(i));
+    lazyContent.set(plan, content);
+  }
+  const captures: Captures[] = new Array(sites.length);
+  for (let i = 0; i < sites.length; i++) if (sites[i]!.kind === 2) captures[i] = shaped(sites[i]!.shape, env, lazyGet, lazyAt);
+  const c: LazyPlanContext = (lazyContext = { lazy, plan, captures, item: undefined, index: 0 });
+  const tape: unknown[] = new Array(n * stride);
+  // One id counter for every planned row: a slot that creates an id would need its row's seed (`_rowIdPrefix`).
+  const ids = { prefix: "", n: 0 };
+  let k = 0;
+  _inIdScope(ids, () => {
+    for (; k < n; k++) {
+      const base = k * stride;
+      c.item = items[k];
+      c.index = k;
+      lazy.row = k;
+      tape[base] = lazy.forId + 1 + k;
+      write(tape, base + 1, lazyGet, lazyAt, env, lazySite);
+      if (ids.n !== 0) break;
+      let plain = true;
+      for (let i = 0; i < content.length; i++) {
+        const value = tape[base + 1 + content[i]!];
+        if (value !== null && (typeof value === "object" || typeof value === "function")) plain = false;
+      }
+      if (!plain) break;
+    }
+  });
+  if (k === 0) return 0;
+  // `_rOn` sites: the rows handle their types (a row materialises on one), as `lazyListen` per row records them.
+  for (const site of sites)
+    if (site.kind === 1) {
+      lazyListen(lazy, site.name.endsWith("!") ? site.name.slice(0, -1) : site.name);
+      lazy.sites += k - 1;
+    }
+  if (k < n) tape.length = k * stride;
+  const list = _list(NO_ROWS, noRow, (plan.pathRegion ??= regionPlan(withoutIds(plan))), noRow) as { tape: unknown[]; rows: number };
+  list.tape = tape;
+  list.rows = k;
+  rows[0] = list as unknown as ServerValue;
+  return k;
+}
 _onForLazy((_list, items, verdict, children, by, render) => {
   const recorder = store.getStore();
   if (!recorder?.lazyRows || recorder.derived) return undefined;
@@ -1050,6 +1145,8 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     if (provided !== token.defaultValue) (lazy.providers ??= []).push(token.id, provided);
   }
   const rows: ServerValue[] = new Array(items.length);
+  const planned = lazyPlans.get(children);
+  if (planned !== undefined) lazyPlans.delete(children);
   const outer = lazyRow,
     unrecorded = unrecordedRender;
   lazyRow = lazy;
@@ -1060,7 +1157,10 @@ _onForLazy((_list, items, verdict, children, by, render) => {
     const tracked = _trackReads(
       () =>
         store.exit(() => {
-          for (let k = 0; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
+          // LAZY-COST: rows of a row plan go onto one list tape (byte writers: the WebAssembly row emitter), the rest one by one.
+          const from = planned === undefined || recorder.dom !== null ? 0 : lazyPlanRows(lazy, planned, items, rows);
+          for (let k = from; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
+          if (from) rows.splice(1, from - 1);
         }),
       undefined,
       lazy.hook,
@@ -1069,6 +1169,7 @@ _onForLazy((_list, items, verdict, children, by, render) => {
   } finally {
     lazyRow = outer;
     unrecordedRender = unrecorded;
+    lazyContext = null;
   }
   if (lazy.reason !== null) {
     // R3: the whole For records its rows (rendered again through the row hooks); its ids were never written.

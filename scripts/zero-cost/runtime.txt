@@ -13,8 +13,8 @@
 @rivetjs/runtime/router bd3c70cbcceb 2796
 @rivetjs/runtime/router/dom ef803acbaed1 17527
 @rivetjs/runtime/router/server 60e67c0521b1 12115
-@rivetjs/runtime/server-resume 6156905151e7 117550
-@rivetjs/runtime/server-resume [domData] 7e87f5511667 126201
+@rivetjs/runtime/server-resume 7ee45fc1ff22 117586
+@rivetjs/runtime/server-resume [domData] 732267b7996f 126237
 @rivetjs/runtime/server-derived 3d9e5d0252fc 102384
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache 36d571bcca51 32251

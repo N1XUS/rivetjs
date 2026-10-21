@@ -177,6 +177,23 @@ Synthetic 1000-row table (runtime harness; median of 5 loads; paint = pointerdow
 - Bytes: opted-in dom-resume [lazyRows] 54,283 → 57,124 B min (+2,841: keyed wake + row plans); every other runtime entry used by browsers unchanged (zero-cost); server: reactivity +551 B min (collector `key` hook, `memberKeys`), server-resume +947, server +11 (`For` `lazy`); app server bundles +1.0–1.5 KB min, client JS unchanged.
 - What remains for the flip: per-key / per-view wake for the virtualizer window (`views` read keyed by view key, or the window rows recorded while the engine's first layout is pending), and a cheaper materialise for the woken window (compiled adopt walk, structural C3).
 
+### LAZY-COST measured (2026-10-21, server CPU on row-plan rows)
+
+Finding (M2-R5 control, `docs/benchmarks/2026-10-20-derived-r5.notes.md`): ssr-bench `/resume` with lazy rows cost 5.7 ms CPU/page at 1000 rows c1 vs 1.5 recorded. Cause (in-process profile, 1000 rows, byte writer): `lazyRowValue` rendered every row with its own `renderToString` (renderer, owner record, id scope per row: 1.04 of 2.57 ms/render), then the outer writer copied the 1000 row strings again (~0.8 ms incl. GC ×4.4); the row plan + WebAssembly emitter of recorded rows was never used. State encoding was the same (~0.4 ms both).
+
+Fix: a lazy For whose row is a row plan (`$rows`) writes its rows as a row region plan does — one list over `regionPlan(withoutIds(plan))` (marker id + slots per row on one tape, no ids), recording what a lazy row records (`_rAttr` reads, `_rOn` types). Rows with a non-primitive content slot or an id created in a slot, and every row after them, keep the row-by-row path; rows with components (no row plan; the cdk collections) and DOM-DATA renders too. Same state; HTML equal except chained row marker ids left out (`<!--r[-->`). Runtime details: `libs/runtime/CLAUDE.md` "Lazy rows from row plans"; differential test `libs/runtime/tests/resume-lazy-plan.test.ts`.
+
+Docker ssr-bench `rivet-resume`, c1, median of 5 (host load 6–8; base lazy 10–11). Full table + rerun: `docs/benchmarks/2026-10-21-lazy-cost.md`.
+
+| rows | recorded rows | lazy rows before | lazy rows after |
+| ---: | ---: | ---: | ---: |
+| 100 | 0.571 ms | 1.090 ms | 0.345 ms |
+| 1000 | 2.341 ms | 7.589 ms | 1.350 ms |
+| 5000 | 11.606 ms | 44.739 ms | 8.749 ms |
+
+- Lazy rows on row-plan rows now cost less server CPU than recorded rows (0.58–0.75×), TTFB 0.83 vs 1.31 ms at 1000 rows.
+- Not covered: rows with components (cdk) still render row by row (T6 measured them below recorded rows already); DOM-DATA + lazy rows (follow-up: a `dom.lazyRows` registration over the tape).
+
 ## 5. cdk collections
 
 cdk rows are not a user `<For>`: `CollectionRoot` / `CollectionBranch` render built nodes through `renderNodeAt(collection, key)` (per-row `computed` keyed by `sameRender`, `node.render(node)` untracked; `libs/cdk/collections/CLAUDE.md`), and `Collection items` rows go through a `For` keyed by `itemId`. For this spec the row function of a cdk collection is **`(key) => renderNodeAt(collection, key)`**, a resumable function of the collection accessor — which is already what the server records as the row's item ref. Required cdk changes:
