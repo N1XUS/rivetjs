@@ -142,13 +142,16 @@ test("dom-events forms: RadioGroup (focus-within) and Radio item events", async 
   await page.click(L("ri"), { button: "right" });
   await logHas(page, "ri-menu");
   await page.waitForLoadState("networkidle");
+  // Start warm with focus outside the group: whether the cold dblclick left focus inside it (and logged its
+  // `rg-focus:true`) is timing (CI: it did not, and no later focus move inside the group logs it).
+  await page.focus("#fx-tb");
   const warm = (await page.textContent("#fx-log"))!.length;
   // Warm: a label mousedown keeps focus in the group (RA useRadio label onMouseDown preventDefault).
   await page.focus("#fx-ri2");
   await page.dblclick(L("rg"));
   assert.equal(await page.evaluate(() => document.activeElement?.id), "fx-ri2");
   await page.focus("#fx-ri");
-  await logHas(page, "rg-focus:true");
+  await page.waitForFunction((warm) => document.querySelector("#fx-log")!.textContent!.slice(warm).includes("rg-focus:true"), warm);
   await logHas(page, "ri-focus:true");
   await page.keyboard.press("ArrowDown");
   await logHas(page, "ri-key:ArrowDown");

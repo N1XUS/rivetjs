@@ -8,10 +8,15 @@ Unit-test Rivet components with Vitest. Test entries (`@rivetjs/runtime/testing*
 - Project helpers in `vitest.config.ts`:
   - `node(name, include)`: Node workers (`pool: "forks"`), `environment: "node"`, `nodeConditions()`, setup file `libs/testing/node-env.ts`. Most suites (`libs/<pkg>/tests/*.test.ts`).
   - `dev(name, include)`: same suite under `--conditions=development` + the recording devtools hook (`reactivity-dev`, `runtime-dev`).
-  - `browser(name, include)`: Vitest browser mode in real Chromium (Playwright provider) with `rivetTest()`; files `*.browser.test.{ts,tsx}` (`kit-browser`, `testing-browser`).
+  - `browser(name, include)`: Vitest browser mode in real Chromium (Playwright provider) with `rivetTest()`; files `*.browser.test.{ts,tsx}` (`kit-browser`, `testing-browser`); setup file `libs/testing/browser-env.ts` (headless cursor guard); `provide.rivetPerfBudgets`.
+- CI parity (CI-RED-2 2026-10-21):
+  - Headless cursor guard (`libs/testing/headless-cursor.ts`): Linux headless Chromium (CI) dispatches trusted pointer / mouse over / enter / move at its virtual cursor, screen (0, 0), after layout (hover intents, chunk prefetches "before interaction", extra `pointerenter`); macOS does not. The guard swallows those arrivals (+ the matching out / leave) at window capture: `node-env.ts` installs it in every Playwright browser context (client instrumentation, loaded with Playwright only), `browser-env.ts` in the Vitest tester frame. `RIVET_HEADLESS_CURSOR=origin` approximates CI's cursor on macOS (mouse to (0, 0) on each `domcontentloaded`). `page.mouse.move(0, 0)` still "moves away" (the element left gets its out / leave).
+  - Node: CI runs Node 24 (`.nvmrc` 24.14.1, `actions/setup-node` 24). Reproduce Node-specific CI failures with a Node 24 binary (no global `ErrorEvent`; ICU / CLDR NNBSP before AM / PM in `Intl` date formats; slower wasm).
+  - Perf budgets (absolute ms bounds in functional suites): enforced off CI only (`CI` unset, or `RIVET_PERF_BUDGETS=1`): node suites check `process.env`, browser suites `inject("rivetPerfBudgets")` (root `vitest.config.ts` `PERF_BUDGETS`). CI's shared 2-vCPU runners measured 2–20× the local numbers; the benchmark lanes are the perf gates.
+  - Slow host: wait for the state (a request, a flag, a log line, `networkidle`, a promise-held chunk — `withPage` `delays` takes a promise) instead of a fixed sleep margin.
 - Node projects run on Node's own loader (`experimental.viteModuleRunner: false`): type stripping, package `exports`, `.tsx` through the register hook in `execArgv` (`--import @rivetjs/runtime/testing/register`).
 - Vite resolve conditions cleared (`nodeConditions()` from `@rivetjs/testing/vite`), else Vitest forwards `--conditions development` to workers and suites silently run against the development façades. Deliberate dev run: `--conditions=development` in `execArgv`.
-- `@rivetjs/testing/node-env` (setup file): plain-`node` defaults (no `NODE_ENV=test`, source maps off).
+- `@rivetjs/testing/node-env` (setup file): plain-`node` defaults (no `NODE_ENV=test`, source maps off) + the headless cursor guard in every Playwright browser context.
 - No per-test timeout (`testTimeout: 0`, `hookTimeout: 0`).
 
 ```ts

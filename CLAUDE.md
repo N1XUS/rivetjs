@@ -91,6 +91,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 
 ## Gotchas
 
+- CI ≠ this host (CI-RED-2 2026-10-21, `docs/guides/testing.md` "CI parity"): CI runs Node 24 (local default here is 26: no global `ErrorEvent`, NNBSP in `Intl` times, slower wasm — reproduce with `/Users/denisseverin/.nvm/versions/node/v24.18.1/bin`), Linux headless Chromium with a virtual cursor at (0, 0) (`@rivetjs/testing` headless cursor guard, installed by `node-env.ts` / `browser-env.ts`), Linux fonts, 2-vCPU runners (absolute perf budgets enforced off CI only: `vitest.config.ts` `PERF_BUDGETS`, `RIVET_PERF_BUDGETS=1`), and `nx run … --skip-nx-cache` hands tasks `NX_SKIP_NX_CACHE` / `NX_WORKSPACE_ROOT` / `NX_TASK_*` (strip them for nested Nx).
 - `npm run typecheck` ≈ 80 s sequential with tsgo (peak tree RSS ~2.7 GB: `apps/ui-docs`); scope with `NX_DAEMON=false npx nx run <project>:typecheck --output-style=static --skip-nx-cache`. nx `--parallel` > 1 exceeds 3 GB (tsgo already uses 4 checker threads per project).
 - Zero-cost check builds `apps/ssr-bench` (rolldown); a bundler "debugName" warning is expected noise.
 - Resumed pages re-create a component on the first signal change when the component has no own region (`_regionState`, `_serverBranch` ABI; a component-root `<Show>` / `<Switch>` included — a root region was tried and reverted 2026-10-09) — see `docs/guides/resumability.md` and `libs/reactivity/CLAUDE.md`.

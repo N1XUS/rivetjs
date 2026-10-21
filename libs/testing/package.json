@@ -27,6 +27,14 @@
       "types": "./node-env.ts",
       "default": "./node-env.ts"
     },
+    "./browser-env": {
+      "types": "./browser-env.ts",
+      "default": "./browser-env.ts"
+    },
+    "./headless-cursor": {
+      "types": "./headless-cursor.ts",
+      "default": "./headless-cursor.ts"
+    },
     "./jasmine": {
       "types": "./jasmine.ts",
       "default": "./jasmine.ts"

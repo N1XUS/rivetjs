@@ -52,6 +52,9 @@ async function fixture(file: string, extra: Record<string, Served> = {}): Promis
         const before = seen[seen.length - 1];
         await page.click(button);
         await page.waitForFunction(([r, b]) => String(eval(r!)) !== b, [read, before], { timeout: 1500 }).catch(() => {});
+        // Read the settled DOM: a first click's deferred removal of the hovered element hides it until the next frame
+        // (`_dispatch`, CI's Linux Chromium: `<p class="err" style="display: none;">` seen mid-update).
+        await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
         seen.push(String(await page.evaluate(read)));
       }
       return { seen, errors };

@@ -398,8 +398,10 @@ test("an unwritable client directory keeps the compressed copy in memory and sti
       const first = await get(url + "/assets/app-1a2b.js", { "accept-encoding": CHROME });
       assert.equal(first.headers["content-encoding"], "zstd");
       assert.equal(decode(first), "console.log('x');".repeat(200));
-      await new Promise((done) => setTimeout(done, 50));
-      assert.deepEqual((await readdir(join(dir, "assets"))).sort(), ["app-1a2b.js", "app-1a2b.js.zst"]);
+      // The write is fire-and-forget: wait until its temp is gone (write + failed rename + rm; > 50 ms on a slow CI host).
+      const listing = () => readdir(join(dir, "assets")).then((names) => names.sort());
+      for (let i = 0; i < 100 && (await listing()).some((name) => name.endsWith(".tmp")); i++) await new Promise((done) => setTimeout(done, 50));
+      assert.deepEqual(await listing(), ["app-1a2b.js", "app-1a2b.js.zst"]);
       const again = await get(url + "/assets/app-1a2b.js", { "accept-encoding": CHROME });
       assert.equal(decode(again), "console.log('x');".repeat(200));
     },

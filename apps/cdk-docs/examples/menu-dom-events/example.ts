@@ -10,14 +10,15 @@ export default defineExample({
   test: [
     { attr: ["#d-trigger", "lang", "en"] },
     { click: "#d-trigger" },
-    // The trigger's own press handler opened the menu; yours ran too.
+    // The trigger's own press handler opened the menu at pointerdown; your pointerenter ran too. The release lands on
+    // the open popover, not the trigger, so the trigger gets no click (as upstream; a cold press replays the same).
     { matches: "#d[role=menu]" },
-    { expect: ["#d-log", "trigger-enter trigger-click"] },
+    { expect: ["#d-log", "trigger-enter"] },
     { attr: ["#d", "lang", "pt"] },
     { attr: ["#d", "dir", "ltr"] },
     { attr: ['#d [data-key="paste"]', "lang", "nl"] },
     { click: '#d [data-key="copy"]' },
-    { expect: ["#d-log", "trigger-enter trigger-click menu-enter copy-down menu-click"] },
+    { expect: ["#d-log", "trigger-enter menu-enter copy-down menu-click"] },
     { expect: ["#d-action", "copy"] },
     { absent: "#d" },
   ],

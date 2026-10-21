@@ -270,7 +270,8 @@ test("resume: static, entrance and gesture elements boot nothing and load no chu
     await page.waitForFunction(() => getComputedStyle(document.querySelector(".g")!).scale === "1.2");
     const latency = await page.evaluate(() => (window as never as { latency: number }).latency);
     console.log(`first hover (preloaded): animation after ${latency.toFixed(1)} ms; requests ${chunks(requests).join(" ")}`);
-    assert.ok(latency <= 17, `${latency} ms`);
+    // A frame budget: enforced off CI (CI's runners: 175–360 ms; root vitest.config.ts PERF_BUDGETS).
+    if (!process.env.CI || process.env.RIVET_PERF_BUDGETS === "1") assert.ok(latency <= 17, `${latency} ms`);
     assert.ok(!requests.some((r) => r.includes("animate")), "no hybrid / animate chunk");
     assert.deepEqual(errors, []);
   });

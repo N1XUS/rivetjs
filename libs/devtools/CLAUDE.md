@@ -47,7 +47,7 @@ npx vitest run --project devtools                                               
 
 ## Gotchas
 
-- e2e suites need `dist/ui` built and Playwright Chromium; stale `dist/ui` = panel tests against old UI → rebuild after `protocol.ts` / `ui/` edits (`tests/server.test.ts` fails on a stale build; the panel shows a rebuild banner). Router/playground/cdk-docs tests opening the panel depend on it too.
+- e2e suites need `dist/ui` built and Playwright Chromium; the docked panel can cover page controls (CI fonts: the forms fixture's submit button) — submit / act through the keyboard where the target may sit under it (`e2e-framework` Forms pane: Enter in a field); stale `dist/ui` = panel tests against old UI → rebuild after `protocol.ts` / `ui/` edits (`tests/server.test.ts` fails on a stale build; the panel shows a rebuild banner). Router/playground/cdk-docs tests opening the panel depend on it too.
 - Resumed router dev pages have no component instances: tabs needing them trigger `rivet:devtools-inspect` → client render switch (see docs/guides/devtools.md "Use").
 - Panel icons go through `ui/icon.tsx` (lucide `createElement`, real SVG namespace). A JSX `<svg>{icon.map(([tag, attrs]) => <path {...attrs} />)}</svg>` (docs-kit `Icon`) renders `<path>` in the HTML namespace on client renders (runtime bug, `libs/runtime/dom.ts` `parsed()` `"inherit"` context) → invisible icons; SSR output is fine.
 - `libs/docs-kit/tools/tsconfig.api.json` excludes `libs/devtools/ui/**` by path — moving `ui/` breaks API docs extraction.

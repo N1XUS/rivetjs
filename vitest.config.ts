@@ -26,6 +26,13 @@ const CDK_DEV = [
   "libs/cdk/tests/scheduler-dev.test.ts",
 ];
 
+/**
+ * Absolute perf budgets (a latency / frame-time bound in ms) hold on the hardware they were set on, not on CI's shared
+ * 2-vCPU runners (`CI` set: GitHub Actions), where they only log; `RIVET_PERF_BUDGETS=1` enforces them anyway. Node
+ * suites read `process.env`; browser suites `inject("rivetPerfBudgets")`. The benchmark lanes are the perf gates.
+ */
+const PERF_BUDGETS = !process.env.CI || process.env.RIVET_PERF_BUDGETS === "1";
+
 /** Real Chromium (Vitest browser mode): suites that need a full DOM (layout, shadow DOM event paths). */
 const browser = (name: string, include: string[], test: Record<string, unknown> = {}): TestProjectConfiguration =>
   defineProject({
@@ -35,6 +42,9 @@ const browser = (name: string, include: string[], test: Record<string, unknown> 
       include,
       testTimeout: 0,
       hookTimeout: 0,
+      // Headless cursor guard (CI's virtual cursor at (0, 0) dispatches no unscripted hover): libs/testing/headless-cursor.ts.
+      setupFiles: ["libs/testing/browser-env.ts"],
+      provide: { rivetPerfBudgets: PERF_BUDGETS },
       browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }] },
       ...test,
     },

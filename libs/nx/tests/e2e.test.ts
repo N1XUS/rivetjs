@@ -18,10 +18,14 @@ const NX = join(ROOT, "node_modules/nx/dist/bin/nx.js");
 const KEEP = process.env["RIVET_NX_E2E_KEEP"] === "1";
 const timings: Record<string, number> = {};
 
-/** The child environment: Nx without daemon / cloud / TUI; no Vitest variables leaking into the nested `nx test`. */
+/**
+ * The child environment: Nx without daemon / cloud / TUI; no Vitest variables leaking into the nested `nx test`, and no
+ * outer Nx task variables (run as `nx run nx:test --skip-nx-cache`, as CI does, the outer Nx hands its task
+ * `NX_SKIP_NX_CACHE=true`, `NX_WORKSPACE_ROOT`, `NX_TASK_*`: the nested workspace then never hit its cache).
+ */
 function env(): NodeJS.ProcessEnv {
   const out: NodeJS.ProcessEnv = {};
-  for (const [key, value] of Object.entries(process.env)) if (!/^(VITEST|TEST|NODE_ENV$)/.test(key)) out[key] = value;
+  for (const [key, value] of Object.entries(process.env)) if (!/^(VITEST|TEST|NODE_ENV$|NX_|LERNA_PACKAGE_NAME$)/.test(key)) out[key] = value;
   return {
     ...out,
     NX_DAEMON: "false",

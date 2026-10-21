@@ -379,7 +379,24 @@ test("dev error forwarder: overlay text for an ErrorEvent without error and for 
   assert.equal(nil.message, "Non-Error value thrown (null): null");
   assert.match(nil.stack!, /reported here/);
   assert.equal(describe({ code: 7 }).message, 'Non-Error value thrown (object): {"code":7}');
-  // A ResizeObserver loop: the window error event carries no Error (`error` null).
+  // A ResizeObserver loop: the window error event carries no Error (`error` null). Node 24 (CI, `engines` minimum) has
+  // no global `ErrorEvent` (Node 25+ does): a stand-in with the browser's fields for the rest of this test.
+  const globals = globalThis as { ErrorEvent?: unknown };
+  globals.ErrorEvent ??= class ErrorEvent extends Event {
+    readonly message: string;
+    readonly filename: string;
+    readonly lineno: number;
+    readonly colno: number;
+    readonly error: unknown;
+    constructor(type: string, init: { message?: string; filename?: string; lineno?: number; colno?: number; error?: unknown } = {}) {
+      super(type);
+      this.message = init.message ?? "";
+      this.filename = init.filename ?? "";
+      this.lineno = init.lineno ?? 0;
+      this.colno = init.colno ?? 0;
+      this.error = init.error ?? null;
+    }
+  };
   const event = new ErrorEvent("error", { message: "ResizeObserver loop completed with undelivered notifications.", filename: "http://x/a.js", error: null });
   assert.equal(event.error, null);
   assert.match(describe(event).message, /^ResizeObserver loop completed .* \(http:\/\/x\/a\.js:0:0; the error event carries no Error\)$/);

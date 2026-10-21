@@ -28,7 +28,10 @@ const html = await resumableToString(() => server.Page(), { manifest });
 const byComponent = symbolChunks(dom.symbols);
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+  // `__rtStarted`: the runtime's `start` ran (the loader no longer queues presses on its own).
+  "/rt.js":
+    'import { createResume } from "/dom-resume.ts"; const rt = createResume({}), start = rt.start;' +
+    " rt.start = function (...args) { const out = start.apply(this, args); globalThis.__rtStarted = 1; return out; }; export default rt;",
   "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
 };
 Object.assign(files, symbolModules(byComponent));
@@ -212,8 +215,11 @@ test("resume: cold presses A, B, A (canceled) then C: the focus-back walk ends, 
         true,
       );
     });
-    // Its chunks land 1.5 s late: all four presses are queued cold.
-    for (const id of ["#cyc-a", "#cyc-b", "#cyc-a", "#cyc-c"]) await page.click(id);
+    // Its chunks land 1.5 s late: all four presses are queued cold. The runtime has started before B: on a slow host
+    // (CI) B was pressed while the loader still queued it, and its native focus move was seen too ([1, 1]).
+    await page.click("#cyc-a");
+    await counted(page, "__rtStarted");
+    for (const id of ["#cyc-b", "#cyc-a", "#cyc-c"]) await page.click(id);
     await counted(page, "__cycC");
     await idle(page);
     assert.equal(await active(page), "cyc-c");

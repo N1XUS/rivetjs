@@ -44,13 +44,16 @@ const heap = (): number => {
   return process.memoryUsage().heapUsed;
 };
 
-test("a render with keyed selector reads is released before the timer phase (bounded heap over 20 renders)", async () => {
+test("a render with keyed selector reads is released before the timer phase (bounded heap over 80 renders)", async () => {
   const html = await render();
   assert.match(html, /class="off"/);
   for (let i = 0; i < 3; i++) await render();
   // No timer task runs between these renders or before the measurement (renders settle in microtasks).
   const before = heap();
-  const n = 20;
+  // 80, not 20: the heap after a full GC rises ~0.22–0.27 MB / render for 40–60 renders, then drops back (something
+  // bounded is retained and released in steps; Node 24 and 26 alike, CI-RED-2 2026-10-21). A 20-render window could sit on
+  // the rise: Node 24 (CI) measured 0.27 MB / render, over the bound, Node 26 0.24. Over 80 renders: 0.17 on both.
+  const n = 80;
   for (let i = 0; i < n; i++) await render();
   const perRender = (heap() - before) / n;
   // Retained before the fix: ~1.5 MB / render (the rows, their records and the recorder). Loose bound after warm-up.

@@ -31,8 +31,13 @@ test("tag group: resumed selection, remove button, Delete key", async () => {
   await page.goto(s.origin + "/tag-group");
   assert.deepEqual(await keys(page, "#tg-remove [role=row]"), ["news", "travel", "gaming"]);
   assert.equal(await page.getAttribute("#tg-remove [data-key=news]", "data-allows-removing"), "true");
-  // Click the tag itself, not its remove button (the theme may center the button under the row center).
-  await page.click("#tg-remove [data-key=travel]", { position: { x: 4, y: 4 } });
+  // Click the tag itself, not its remove button (the theme may center the button under the row center): 4 px into its
+  // first line box (CI's Linux fonts wrap the unstyled tag, and its bounding box's corner is the grid's).
+  const at = await page.$eval("#tg-remove [data-key=travel]", (el) => {
+    const box = el.getClientRects()[0]!;
+    return { x: box.x + 4, y: box.y + box.height / 2 };
+  });
+  await page.mouse.click(at.x, at.y);
   await page.waitForFunction(() => document.querySelector("#tg-remove [data-key=travel]")?.getAttribute("aria-selected") === "true");
   await page.focus("#tg-remove [data-key=gaming]");
   await page.keyboard.press("Delete");

@@ -65,6 +65,9 @@ const source = `
     setTimeout(() => document.body.append(Object.assign(document.createElement("p"), { id: "soon" })), 20);
     queueMicrotask(() => queueMicrotask(() => document.querySelector("#dropped-owner").removeAttribute("aria-describedby")));
     await new Promise((r) => setTimeout(r, 150));
+    // The IDREF verdict lands SETTLE (100 ms) after the last audited mutation (the append at 20 ms): wait for it, not a
+    // fixed margin (a slow CI host missed the 150 ms one).
+    for (let i = 0; i < 60 && !warnings.some((w) => w.includes("[aria-idref]")); i++) await new Promise((r) => setTimeout(r, 50));
     const first = warnings.length;
     late.set(true);
     await new Promise((r) => setTimeout(r, 150));

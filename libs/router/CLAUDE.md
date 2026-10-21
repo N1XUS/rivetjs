@@ -76,6 +76,7 @@ npm run zero-cost                                       # repo gate: runtime + s
 
 ## Gotchas
 
+- CI parity (CI-RED-2 2026-10-21): the `[browser]` suites' unscripted hover prefetches on CI (`base` "/app/", `navigation` "/", `nested` "/?_rivet_keep=/", `depends`) came from Linux headless Chromium's virtual cursor over the fixtures' first link at (0, 0) — guarded for every suite by `@rivetjs/testing` `node-env.ts` (headless cursor guard); `codegen` defines an `ErrorEvent` stand-in on Node 24 (no global there; CI's Node); `document-links` waits for the `pageerror`s of the document route and of the broken render (they can arrive after the document load); `encoding` unwritable-dir waits until the fire-and-forget temp is gone.
 - Files imported by path from outside — moving them breaks others:
   - `server/handler.ts`: `libs/forms/tests/{server,autosave,wizard,csrf}.test.ts`.
   - `tests/fixture/`: `libs/devtools/tests/{e2e,e2e-perf,e2e-resume,names}.test.ts`.

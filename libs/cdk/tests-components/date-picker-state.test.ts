@@ -39,11 +39,13 @@ import {
 } from "../state/date-picker.ts";
 import { commitValidation } from "../state/form-validation.ts";
 
+// U+202F (narrow no-break space before AM / PM: CLDR 42+ data in some ICU builds, e.g. CI's Node 24.21) as a plain space.
 const text = (state: Parameters<typeof segments>[0]) =>
   segments(state)
     .map((s) => s.text)
     .join("")
-    .replace(/[⁦-⁩]/g, "");
+    .replace(/[⁦-⁩]/g, "")
+    .replace(/\u202f/g, " ");
 
 describe("useDatePicker", () => {
   it("should commit programmatically setValue when field is empty", () => {

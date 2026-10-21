@@ -106,12 +106,15 @@ test("C7: a cold dispatch that fails reports and the next cold event still runs 
 });
 
 test("C8: cold clicks on checkbox / label / summary / submit button keep their default until the handler ran", async () => {
+  // The chunk is held until the six clicks are done (a fixed 300 ms delay let a slow CI host's later clicks run warm).
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
   await withPage(
     files,
     async (p, requests) => {
       const errors = errorsOf(p);
       await p.goto("http://rivet.test/defaults");
-      // All cold (the chunk is slow): each default is held, then replayed unless the handler canceled it.
+      // All cold (the chunk is held): each default is held, then replayed unless the handler canceled it.
       await p.click("#keep");
       await p.click("#s1");
       await p.click("#s2");
@@ -119,6 +122,7 @@ test("C8: cold clicks on checkbox / label / summary / submit button keep their d
       // G-PAR/K-rt-1: a cold label click is held too (its native activation would toggle the box before the handler cancels).
       await p.click("#lbl-text");
       await p.click("#send");
+      release();
       // The replayed toggle's `change` dispatches after the replay, so it queues behind the cold #send click.
       await text(p, "#log", "kdotlsc");
       await p.waitForTimeout(50);
@@ -135,7 +139,7 @@ test("C8: cold clicks on checkbox / label / summary / submit button keep their d
       // A submit-button click the handler does not cancel still submits (with its name / value).
       await Promise.all([p.waitForURL(/\/submitted\?q=x&via=go$/), p.click("#go")]);
     },
-    { delays: { "/c/Defaults.js": 300 } },
+    { delays: { "/c/Defaults.js": held } },
   );
 });
 

@@ -145,6 +145,8 @@ test(
         assert.deepEqual(documents, ["/broken"]);
         // The data request ran (a page route); the render failed after the history push.
         assert.deepEqual(data, ["/broken"]);
+        // Its `pageerror` can arrive after the document load (slow host): wait for it.
+        for (let i = 0; i < 100 && !errors.includes("broken in the browser"); i++) await new Promise((done) => setTimeout(done, 50));
         assert.deepEqual(errors.splice(errors.indexOf("broken in the browser"), 1), ["broken in the browser"]);
         // Back: the previous document (no loop, one history entry for /broken).
         await page.goBack();
@@ -164,8 +166,11 @@ test(
         await page.waitForLoadState("load");
         assert.equal(await marked(), false);
         assert.deepEqual(documents, ["/report"]);
-        // The stand-in page throws on render (uncaught: the router's fallback loads the document).
-        const thrown = errors.filter((message) => message.includes("src/routes/report.tsx is a document route"));
+        // The stand-in page throws on render (uncaught: the router's fallback loads the document). Its `pageerror` can
+        // arrive after the document load (CI: after this step; locally: not yet at this point) — wait for it.
+        const isThrown = (message: string) => message.includes("src/routes/report.tsx is a document route");
+        for (let i = 0; i < 100 && !errors.some(isThrown); i++) await new Promise((done) => setTimeout(done, 50));
+        const thrown = errors.filter(isThrown);
         assert.ok(thrown.length > 0, errors.join());
         errors.splice(0, errors.length, ...errors.filter((message) => !thrown.includes(message)));
       });

@@ -20,10 +20,28 @@ const waitAttr = (page: Page, selector: string, name: string, value: string | nu
     value,
   ] as const);
 const waitFocus = (page: Page, selector: string) => page.waitForFunction((selector) => !!document.activeElement?.matches(selector), selector);
-/** Text of a DateInput without the bidi isolates. */
-const inputText = (page: Page, id: string) => page.evaluate((id) => document.getElementById(id)!.textContent!.replace(/[⁦-⁩]/g, ""), id);
+/**
+ * Text of a DateInput without the bidi isolates; U+202F (narrow no-break space before AM / PM: CLDR 42+ data in some
+ * ICU builds, e.g. CI's Node 24.21 server render) as a plain space.
+ */
+const inputText = (page: Page, id: string) =>
+  page.evaluate(
+    (id) =>
+      document
+        .getElementById(id)!
+        .textContent!.replace(/[⁦-⁩]/g, "")
+        .replace(/\u202f/g, " "),
+    id,
+  );
 const waitInputText = (page: Page, id: string, value: string) =>
-  page.waitForFunction(([id, value]) => document.getElementById(id!)?.textContent?.replace(/[⁦-⁩]/g, "") === value, [id, value] as const);
+  page.waitForFunction(
+    ([id, value]) =>
+      document
+        .getElementById(id!)
+        ?.textContent?.replace(/[⁦-⁩]/g, "")
+        .replace(/\u202f/g, " ") === value,
+    [id, value] as const,
+  );
 /** Text of the elements `aria-describedby` of `selector` references. */
 const description = (page: Page, selector: string) =>
   page.evaluate(

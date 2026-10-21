@@ -91,7 +91,9 @@ test("Forms pane: live values (passwords masked), dirty and touched fields, issu
     assert.equal(await form.locator('.values li.vnode[data-key="password"] .value').textContent(), '"••••••"');
     // Issues after a submit.
     await page.fill('input[name="email"]', "not-an-email");
-    await page.locator('form button[type="submit"]').first().click();
+    // Implicit submission (Enter in a field): the submit button can sit under the docked panel (CI: Linux font metrics
+    // push it there and the click never lands).
+    await page.press('input[name="email"]', "Enter");
     await form.locator('.issues li[data-path="email"] .error').waitFor();
     // (A submit the client rejects never posts: the submit count stays 0.)
     assert.match((await form.locator(".state .value").textContent()) ?? "", /submits \d+/);

@@ -97,9 +97,9 @@ test("cdk Modal (no Presence): a Motion exit in its content plays on close and h
   const started = performance.now();
   open.set(false);
   await until(() => byId("p")?.hasAttribute("data-exiting") === true);
-  await frame();
-  await frame();
-  expect(opacity("p")).toBeLessThan(1);
+  // The exit plays: opacity leaves 1 (frames until the animation starts vary: CI's headless Linux Chromium needs more
+  // than two).
+  await until(() => opacity("p") < 1);
   await until(() => byId("p") === null);
   expect(performance.now() - started).toBeGreaterThanOrEqual(180);
 });
@@ -126,7 +126,9 @@ test("cdk Modal re-created closed after a server-open render: Motion content exi
   expect(byId("p")).not.toBeNull();
   expect(byId("p")!.hasAttribute("data-mve")).toBe(false);
   await until(() => byId("p")?.hasAttribute("data-exiting") === true);
-  await frame();
+  // From the final state (1), not `initial` (0): the first value below 1 is still high (frames until the animation
+  // starts vary: CI's headless Linux Chromium needs more than one).
+  await until(() => opacity("p") < 1);
   const mid = opacity("p");
   expect(mid).toBeGreaterThan(0.2);
   expect(mid).toBeLessThan(1);

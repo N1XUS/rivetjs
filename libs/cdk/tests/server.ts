@@ -3,6 +3,11 @@
 // Compiled modules are written to a per-process temp dir and imported by file URL. Never inline a dependency as a
 // data URL inside its importer: every level re-embeds its whole subtree (base64), so a deep graph (date-picker)
 // grew past 12 MB per URL and the module runner's copies of it past 4 GB.
+// Import cycles between `.tsx` modules are allowed (`collections/components.tsx` → `#server` = `collections/server-on.tsx`
+// → `./components.tsx`, SMALL-FIXES 2026-10-21): a module's file URL is allocated before it is built, so an importer
+// never waits for its dependency's build; `serverModule` resolves once the module and everything it reaches are written.
+// (Awaiting each dependency's build deadlocked on the cycle: a pending promise and an idle event loop, the cdk node
+// suite stuck at `live-flags-ssr` with 0 % CPU and no test timeout, CI-RED-2.)
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -25,27 +30,67 @@ const runtime = [
   "@rivetjs/reactivity",
 ];
 const symbols: Record<string, string> = {};
-const cache = new Map<string, Promise<string>>();
+/** A server-built module: its file (allocated up front), its build, and the modules its code imports. */
+interface Built {
+  file: string;
+  url: string;
+  written: Promise<void>;
+  deps: Built[];
+}
+const cache = new Map<string, Built>();
 let out: string | undefined;
 let seq = 0;
 
-/** Write compiled module `code` to the temp dir; returns its file URL. */
-function emit(name: string, code: string): string {
+/** Temp file (and its URL) for compiled module `name`. */
+function allocate(name: string): { file: string; url: string } {
   if (!out) {
     const dir = (out = mkdtempSync(join(tmpdir(), "rivet-cdk-server-")));
     process.once("exit", () => rmSync(dir, { recursive: true, force: true }));
   }
   const file = join(out, `${seq++}-${name.replace(/[^\w.-]+/g, "_")}.mjs`);
-  writeFileSync(file, code);
-  return pathToFileURL(file).href;
+  return { file, url: pathToFileURL(file).href };
 }
 
-/** File URL of the server build of cdk module `name` (e.g. "modal.tsx"), or of `source` when given. */
-export function serverModule(name: string, source?: string): Promise<string> {
-  const key = source ? `${name}\0${source}` : name;
-  let url = cache.get(key);
-  if (!url) cache.set(key, (url = build(name, source)));
+/** Write compiled module `code` to the temp dir; returns its file URL. */
+function emit(name: string, code: string): string {
+  const { file, url } = allocate(name);
+  writeFileSync(file, code);
   return url;
+}
+
+/** The (started) server build of cdk module `name`, or of `source` when given. */
+function serverBuild(name: string, source?: string): Built {
+  const key = source ? `${name}\0${source}` : name;
+  let built = cache.get(key);
+  if (!built) {
+    built = { ...allocate(name), written: undefined as unknown as Promise<void>, deps: [] };
+    cache.set(key, built);
+    built.written = build(built, name, source);
+    built.written.catch(() => {}); // surfaced by `serverModule` (awaits every reachable build)
+  }
+  return built;
+}
+
+/** File URL of the server build of cdk module `name` (e.g. "modal.tsx"), or of `source` when given; resolves once it and
+ *  every module it reaches are written (cycles included). */
+export async function serverModule(name: string, source?: string): Promise<string> {
+  const root = serverBuild(name, source);
+  const seen = new Set<Built>();
+  const queue = [root];
+  for (let next; (next = queue.pop());)
+    if (!seen.has(next)) {
+      seen.add(next);
+      await next.written;
+      queue.push(...next.deps);
+    }
+  return root.url;
+}
+
+/** URL of dependency `name` of `importer` (its build may still run). */
+function dependency(importer: Built, name: string): string {
+  const dep = serverBuild(name);
+  importer.deps.push(dep);
+  return dep.url;
 }
 
 // `@rivetjs/kit/transition` (`.tsx`: the node loader would build it for the DOM): compiled for the server like a cdk
@@ -66,7 +111,7 @@ const kitModule = (): Promise<string> =>
     return emit("kit-transition", code);
   })());
 
-async function build(name: string, source?: string): Promise<string> {
+async function build(self: Built, name: string, source?: string): Promise<void> {
   const text = source ?? (await readFile(new URL(name, cdk), "utf8"));
   // `sourcePackages`: `@rivetjs/cdk/*` components get symbol callback / slot props, as in an app build (`rivet()`).
   const result = compiler.compile(text, {
@@ -82,7 +127,7 @@ async function build(name: string, source?: string): Promise<string> {
   // `#dev` (package `imports`): resolved here, under this run's conditions (dev-off, or dev-on in `cdk-dev`) — the temp dir has no package scope.
   code = code.replaceAll('"#dev"', JSON.stringify(import.meta.resolve("#dev")));
   // `#server` (package `imports`, server condition): the server build of the slot probe module, one instance for the graph.
-  if (code.includes('"#server"')) code = code.replaceAll('"#server"', JSON.stringify(await serverModule("collections/server-on.tsx")));
+  if (code.includes('"#server"')) code = code.replaceAll('"#server"', JSON.stringify(dependency(self, "collections/server-on.tsx")));
   if (code.includes('"@rivetjs/kit/transition"')) code = code.replaceAll('"@rivetjs/kit/transition"', JSON.stringify(await kitModule()));
   // cdk imports: relative ("./x.ts[x]", "../x") or by package subpath ("@rivetjs/cdk/x", resolved
   // through package.json `exports`); a directory resolves to its index, like the `./*` → `./*/index.tsx` export.
@@ -93,10 +138,10 @@ async function build(name: string, source?: string): Promise<string> {
       ? (resolveCdkSubpath(specifier.slice("@rivetjs/cdk/".length)) ?? specifier.slice("@rivetjs/cdk/".length))
       : new URL(specifier, new URL(dir, "file:///")).pathname.slice(1);
     const file = await resolveFile(base);
-    const target = file.endsWith(".tsx") ? await serverModule(file) : pathToFileURL(new URL(file, cdk).pathname).href;
+    const target = file.endsWith(".tsx") ? dependency(self, file) : pathToFileURL(new URL(file, cdk).pathname).href;
     code = code.replaceAll(`"${specifier}"`, JSON.stringify(target));
   }
-  return emit(name, code);
+  writeFileSync(self.file, code);
 }
 
 const exists = (file: string) =>

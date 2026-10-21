@@ -101,8 +101,9 @@ export type StreamHandler = (request: IncomingMessage, response: ServerResponse)
 export interface PageOptions {
   offline?: Set<string>;
   streams?: Record<string, StreamHandler>;
-  /** Path → ms to hold its response (chunk load order tests). */
-  delays?: Record<string, number>;
+  /** Path → ms to hold its response, or a promise it waits for (chunk load order tests; a promise = cold for as long
+   * as the test needs, whatever the host's speed). */
+  delays?: Record<string, number | Promise<unknown>>;
 }
 export async function withPage<T>(
   files: Record<string, Served>,
@@ -142,7 +143,9 @@ export async function withPage<T>(
       if (entry === undefined) return route.fulfill({ status: 404, body: "missing " + path });
       const body = typeof entry === "string" ? entry : entry.body;
       const type = typeof entry === "object" && entry.type ? entry.type : /\.(m?js|ts)$/.test(path) ? "text/javascript" : "text/html";
-      if (delays[path]) await new Promise((resolve) => setTimeout(resolve, delays[path]));
+      const delay = delays[path];
+      if (typeof delay === "number" && delay) await new Promise((resolve) => setTimeout(resolve, delay));
+      else if (delay) await delay;
       await route.fulfill({ body, contentType: type });
     });
     return await fn(page, requests, browser);
