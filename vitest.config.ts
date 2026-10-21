@@ -81,10 +81,16 @@ export default defineConfig({
       dev("cdk-dev", CDK_DEV),
       // + the react-resizable-panels engine suite (upstream test tree mirrored under tests/resizable/)
       browser("cdk-browser", ["libs/cdk/tests/*.browser.test.tsx", "libs/cdk/tests/resizable/**/*.test.ts"]),
-      // Story-app suites share one production build and Chromium: one file at a time.
-      node("cdk-components", ["libs/cdk/tests-components/*.test.ts"], { fileParallelism: false }),
+      // Story-app suites share one production build (built once per run by `global-setup.ts`) and Chromium: one file at a time.
+      node("cdk-components", ["libs/cdk/tests-components/*.test.ts"], {
+        fileParallelism: false,
+        globalSetup: ["libs/cdk/tests-components/global-setup.ts"],
+      }),
       node("ui", ["libs/ui/tests/*.test.{ts,tsx}"]),
-      node("ui-components", ["libs/ui/tests-components/*.test.ts"], { fileParallelism: false }),
+      node("ui-components", ["libs/ui/tests-components/*.test.ts"], {
+        fileParallelism: false,
+        globalSetup: ["libs/ui/tests-components/global-setup.ts"],
+      }),
       // Resume fuzz (`@rivetjs/testing/fuzz`): every story route resumed vs CSR. Chromium, one app at a time (never both
       // at once), `--maxWorkers=1`; `RIVET_FUZZ_SHARD=i/n` / `RIVET_FUZZ_ROUTES=` / `RIVET_FUZZ_STEPS=` select.
       node("cdk-resume-fuzz", ["libs/cdk/tests-fuzz/*.test.ts"], { fileParallelism: false }),

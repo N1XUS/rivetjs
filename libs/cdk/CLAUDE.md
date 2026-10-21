@@ -133,7 +133,7 @@ npx vitest run --project cdk --maxWorkers=2                                     
 npx vitest run --project cdk-browser                                              # tests/*.browser.test.tsx (Chromium, ~10 s)
 npx vitest run --project cdk-components                                           # tests-components/ (story app, serial)
 npx vitest run --project cdk-resume-fuzz --maxWorkers=1                           # tests-fuzz/ (resume fuzz; RIVET_FUZZ_ROUTES= / _SHARD=i/n / _STEPS=)
-# NX_DAEMON=false npx nx run cdk:test runs cdk, cdk-browser and cdk-components (CI test job)
+# NX_DAEMON=false npx nx run cdk:test runs cdk + cdk-dev, cdk-browser, cdk-components (scripts/vitest-seq.ts; CI: --shard=i/2)
 npx vitest run --project cdk libs/cdk/tests/overlay.test.ts                      # one file
 node libs/cdk/tests-components/app/serve.ts [--dev]                               # story app manually (PORT=4322)
 NX_DAEMON=false npx nx run cdk-docs:typecheck --output-style=static --skip-nx-cache  # docs examples import the subpaths

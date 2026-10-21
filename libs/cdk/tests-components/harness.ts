@@ -2,7 +2,9 @@
 import { readFileSync } from "node:fs";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
+import { inject } from "vitest";
 import { buildApp, dist } from "./app/serve.ts";
+import type {} from "./global-setup.ts";
 
 let built: Promise<void> | null = null;
 
@@ -13,11 +15,12 @@ export interface Stories {
 }
 
 /**
- * Build once per process, start the server and a browser. `preload`: the server's preload planner option
+ * Build (once per run via `global-setup.ts`, else once per process), start the server and a browser. `preload`: the server's preload planner option
  * (e.g. `{ background: 0 }` for viewport-only `visible` timing; default: the router's 1 MiB background budget).
  */
 export async function stories(options: { preload?: NonNullable<Parameters<typeof start>[0]>["preload"] } = {}): Promise<Stories> {
-  await (built ??= buildApp());
+  // `cdk-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here.
+  await (built ??= inject("cdkStoriesDist") === dist ? Promise.resolve() : buildApp());
   const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, ...(options.preload ? { preload: options.preload } : {}) });
   const browser = await chromium.launch({ headless: true });
   return {

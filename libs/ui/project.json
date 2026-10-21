@@ -6,7 +6,7 @@
     "test": {
       "executor": "nx:run-commands",
       "cache": false,
-      "options": { "command": "vitest run --project ui --maxWorkers=2 && vitest run --project ui-components --maxWorkers=2" }
+      "options": { "command": "node scripts/vitest-seq.ts \"--project ui --maxWorkers=2\" \"--project ui-components --maxWorkers=2\"" }
     },
     "typecheck": { "executor": "nx:run-commands", "cache": false, "options": { "command": "node scripts/tsc.ts -p libs/ui --checkers 1" } }
   }

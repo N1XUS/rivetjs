@@ -11,7 +11,7 @@
       "executor": "nx:run-commands",
       "cache": false,
       "options": {
-        "command": "vitest run --project cdk --project cdk-dev --maxWorkers=2; a=$?; vitest run --project cdk-browser; b=$?; vitest run --project cdk-components; c=$?; exit $((a | b | c))"
+        "command": "node scripts/vitest-seq.ts \"--project cdk --project cdk-dev --maxWorkers=2\" \"--project cdk-browser\" \"--project cdk-components\""
       }
     },
     "typecheck": {

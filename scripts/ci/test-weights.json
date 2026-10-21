@@ -1,0 +1,31 @@
+{
+  "//": "Seconds per test file for scripts/vitest-seq.ts --shard balancing (local serial run 2026-10-21, CI-TIME); files under 10 s use their directory default. Refresh when a shard runs long.",
+  "seconds": {
+    "libs/ui/tests-components/visual.test.ts": 293,
+    "libs/ui/tests-components/a11y.test.ts": 216,
+    "libs/ui/tests-components/lightbox.test.ts": 31,
+    "libs/ui/tests-components/sheet.test.ts": 25,
+    "libs/ui/tests-components/reanimate.test.ts": 22,
+    "libs/ui/tests-components/geometry.test.ts": 17,
+    "libs/ui/tests-components/morph.test.ts": 15,
+    "libs/ui/tests-components/compare.test.ts": 13,
+    "libs/ui/tests-components/drawer.test.ts": 13,
+    "libs/ui/tests-components/morph-icons.test.ts": 13,
+    "libs/ui/tests-components/navbar.test.ts": 13,
+    "libs/ui/tests-components/toast.test.ts": 12,
+    "libs/ui/tests-components/item-morph.test.ts": 11,
+    "libs/ui/tests-components/modal.test.ts": 11,
+    "libs/cdk/tests-components/sidebar.test.ts": 18,
+    "libs/cdk/tests-components/tooltip.test.ts": 14,
+    "libs/cdk/tests-components/scroll-area.test.ts": 11,
+    "libs/cdk/tests/sheet-motion.browser.test.tsx": 26,
+    "libs/cdk/tests/item-morph.browser.test.tsx": 12,
+    "libs/cdk/tests/scheduler-keyboard.browser.test.tsx": 11,
+    "libs/cdk/tests/scheduler-drag.browser.test.tsx": 10
+  },
+  "defaults": {
+    "libs/ui/tests-components/": 4,
+    "libs/cdk/tests-components/": 3.5,
+    "libs/cdk/tests/": 1.6
+  }
+}

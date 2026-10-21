@@ -1,0 +1,68 @@
+{
+  "shards": [
+    {
+      "name": "runtime 1/2",
+      "projects": ["runtime"],
+      "args": "--shard=1/2"
+    },
+    {
+      "name": "runtime 2/2",
+      "projects": ["runtime"],
+      "args": "--shard=2/2"
+    },
+    {
+      "name": "cdk 1/2",
+      "projects": ["cdk"],
+      "args": "--shard=1/2"
+    },
+    {
+      "name": "cdk 2/2",
+      "projects": ["cdk"],
+      "args": "--shard=2/2"
+    },
+    {
+      "name": "ui 1/3",
+      "projects": ["ui"],
+      "args": "--shard=1/3"
+    },
+    {
+      "name": "ui 2/3",
+      "projects": ["ui"],
+      "args": "--shard=2/3"
+    },
+    {
+      "name": "ui 3/3",
+      "projects": ["ui"],
+      "args": "--shard=3/3"
+    },
+    {
+      "name": "libs + apps",
+      "projects": [
+        "bridge",
+        "bridge-preact",
+        "bridge-react",
+        "compiler",
+        "create-rivet",
+        "devtools",
+        "docs",
+        "docs-kit",
+        "dom-bench",
+        "forms",
+        "i18n",
+        "kit",
+        "language-core",
+        "mcp",
+        "motion",
+        "nx",
+        "playground",
+        "reactivity",
+        "router",
+        "ssr-bench",
+        "testing",
+        "typescript-plugin",
+        "ui-docs",
+        "vscode"
+      ]
+    }
+  ]
+}

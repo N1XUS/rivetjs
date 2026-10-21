@@ -16,7 +16,7 @@
 6. Docs: `node libs/docs-kit/cli.ts check-content apps/docs --strict` and `node libs/docs-kit/cli.ts check-snippets apps/docs` (same for `apps/cdk-docs`) after content changes; code fences that are pseudo-code take the `nocheck` meta (```` ```ts nocheck ````), self-contained ones can opt into a full typecheck with `check`.
 7. Update the nearest `CLAUDE.md` (and `docs/guides/*` when behaviour changes) in the same commit.
 
-CI (`.github/workflows/ci.yml`) runs all of these plus `gen-events --check`, `compiler:parity` and the cdk docs build.
+CI (`.github/workflows/ci.yml`) runs all of these plus `gen-events --check`, `compiler:parity` and the cdk docs build. The nx `test` targets run as parallel shards listed in `scripts/ci/test-shards.json`; a new project with a `test` target must be added to one (`node scripts/ci/check-test-shards.ts` fails otherwise).
 
 ## Packaging and release checks
 

@@ -25,12 +25,29 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
-  # Every nx `test` target: library suites incl. the Chromium projects (kit-browser, testing-browser,
-  # cdk-browser, cdk-components), compiler + DOM v2 parity, docs (builds the docs site + templates),
-  # ssr-bench CI subset + Python unit tests.
-  test:
+  # Every nx `test` target (library suites incl. the Chromium projects, compiler + DOM v2 parity, docs (builds the docs
+  # site + templates), ssr-bench CI subset + Python unit tests), split into parallel shards: scripts/ci/test-shards.json
+  # (projects per shard; `args` = `--shard=i/n` file shard of one project: vitest's own for runtime, scripts/vitest-seq.ts
+  # weighted for cdk / ui). The gates job checks the shards cover every target exactly once (scripts/ci/check-test-shards.ts).
+  # Budget ≤ 20 min per shard (the unsplit job hit its 60 min timeout on every run since 2026-10-16).
+  test-shards:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    outputs:
+      matrix: ${{ steps.read.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: read
+        run: echo "matrix=$(jq -c .shards scripts/ci/test-shards.json)" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: test-shards
+    name: test (${{ matrix.shard.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.test-shards.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,7 +59,10 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx nx run-many -t test --output-style=static --skip-nx-cache
+      - run: npx nx run-many -t test --projects="$PROJECTS" --output-style=static --skip-nx-cache $ARGS
+        env:
+          PROJECTS: ${{ join(matrix.shard.projects, ',') }}
+          ARGS: ${{ matrix.shard.args }}
 
   # Resume fuzz (Function Bridge T31, `@rivetjs/testing/fuzz`): every story route resumed vs CSR, sharded per story app
   # and route shard (`RIVET_FUZZ_SHARD`); budget ≤ 10 min per shard.
@@ -115,6 +135,8 @@ jobs:
         run: node libs/mcp/build-data.ts --check
       - name: AI instruction files (AGENTS.md / CLAUDE.md / skills / editor rules in starters + plugin)
         run: node libs/mcp/ai/sync.ts --check
+      - name: CI test shards cover every nx test target
+        run: node scripts/ci/check-test-shards.ts
       # scripts/tests/ai-eval.test.ts runs the AI eval's behaviour checks in Chromium.
       - run: npx playwright install --with-deps chromium
       - name: Repo script tests
