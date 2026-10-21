@@ -852,6 +852,7 @@ function rivetPlugin(
               },
             }),
             captures: {},
+            ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
           }
         : devManifest(),
     describe(id) {
@@ -1019,20 +1020,23 @@ function rivetPlugin(
     for (const file of facts.keys()) derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file) });
   };
   /** Derived model manifest (`.vite/rivet-resume.json`): `model`, `runtime` (the derived entry chunk), `symbols` (boundary
-   * name → the chunk of its module), `sizes` (those chunks' bytes). */
+   * name → the chunk of its module), `sizes` (those chunks' bytes), `builtins` (the built-in decoders' chunk: the server
+   * names it in a route payload that needs it, `_rData`). */
   function derivedManifest(this: Rollup.PluginContext, bundle: Rollup.OutputBundle): void {
     const symbols: Record<string, string> = {},
       sizes: Record<string, number> = {};
-    let runtime: string | null = null;
+    let runtime: string | null = null,
+      builtins: string | null = null;
     for (const output of Object.values(bundle)) {
       if (output.type !== "chunk" || !output.facadeModuleId) continue;
       if (output.facadeModuleId === DERIVED_ENTRY) runtime = base + output.fileName;
+      if (output.facadeModuleId === builtinsId) builtins = base + output.fileName;
       const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
       if (!names?.length) continue;
       sizes[base + output.fileName] = Buffer.byteLength(output.code);
       for (const name of names) symbols[name] = base + output.fileName;
     }
-    const body = { model: "derived", runtime, symbols, sizes };
+    const body = { model: "derived", runtime, symbols, sizes, ...(builtins ? { builtins } : {}) };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
   }
@@ -1307,13 +1311,15 @@ function rivetPlugin(
       }
       // Derived model (M2 C3): verdicts in every build environment (server + client compile with the same boundaries), then
       // the client build emits one chunk per module holding boundaries (its exports = the boundaries' components) and the
-      // runtime entry; no symbol chunks, builtins or loader module (the derived loader is inline).
+      // runtime entry + the built-in decoders (`builtins`: route payloads with RegExp / binary / errors / registered classes,
+      // DERIVED-S); no symbol chunks or loader module (the derived loader is inline).
       if (resume && derivedModel) {
         if (serve) return;
         await derivedWalk(this);
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
         for (const [file, verdict] of derivedVerdicts) if (verdict.boundaries.length) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
         this.emitFile({ type: "chunk", id: DERIVED_ENTRY, name: "derived-runtime", preserveSignature: "strict" });
+        if (builtinsId) this.emitFile({ type: "chunk", id: builtinsId, name: "resume-builtins", preserveSignature: "strict" });
         return;
       }
       // Dev renders without resumability: symbol chunks and the manifest exist only in client builds.

@@ -5,7 +5,8 @@
 //!   return _rBOut(__rivetB, v); … } finally { _rBEnd(__rivetB); }`, `_rBAttr(__rivetB)` last in an ATTR root's start
 //!   tag, keyed state `signal(x)` → `_rSig("<h5>-<n>", x)` / `createStore(x)` → `_rSigStore(…)`, and `<!--[-->…<!--]-->`
 //!   around the dynamic slots of a native element the adopt walk needs delimited (a structural slot, or any dynamic slot
-//!   among other children). ABI from `@rivetjs/runtime/server-derived`.
+//!   among other children); a list-mounted `<For>` (`$list`) calls `_rFor` instead of `For` (DERIVED-S: rows from the
+//!   list tape inside `<!--r[-->…<!--]-->`). ABI from `@rivetjs/runtime/server-derived`.
 //! - DOM: plain DOM output plus, per boundary, the body wrapped `return _b("<module>#Name", () => { … })` (a concise
 //!   arrow: `() => _b("…", () => value)`) and keyed state `_sig("<h5>-<n>", x)` / `_sigStore(…)`. ABI from
 //!   `@rivetjs/runtime/dom-derived` (the runtime adopts: no `_tpl` / `_insert` / `_for` change, §3.5 "As built").
@@ -21,7 +22,7 @@ use crate::resume::{self, derived::Plan, derived::Verdicts};
 
 /// Server derived ABI: local suffix → export of `@rivetjs/runtime/server-derived`.
 const DERIVED_ABI: &[(&str, &str)] =
-    &[("b", "_rB"), ("bOut", "_rBOut"), ("bEnd", "_rBEnd"), ("bAttr", "_rBAttr"), ("sig", "_rSig"), ("sigStore", "_rSigStore")];
+    &[("b", "_rB"), ("bOut", "_rBOut"), ("bEnd", "_rBEnd"), ("bAttr", "_rBAttr"), ("sig", "_rSig"), ("sigStore", "_rSigStore"), ("for", "_rFor")];
 /// DOM derived ABI: local suffix → export of `@rivetjs/runtime/dom-derived`.
 const DOM_DERIVED_ABI: &[(&str, &str)] = &[("b", "_b"), ("sig", "_sig"), ("sigStore", "_sigStore")];
 
@@ -76,6 +77,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
             d.used.push(name);
         }
         d.names.iter().find(|(n, _)| *n == name).map(|(_, local)| local.clone()).unwrap_or_default()
+    }
+
+    /// The derived For local (`_rFor`, DERIVED-S): server target, a `<For>` with a list mount (`$list`).
+    pub(super) fn derived_for(&mut self) -> String {
+        self.derived_name("for")
     }
 
     fn derived_token(&self) -> String {

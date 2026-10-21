@@ -439,10 +439,21 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   // Root: the server renders the request's router; the browser rebuilds the router and provides the payload as `Revived`.
   assert.match(
     app,
-    /export default function Root\(props: \{ s: RootData \}\) \{\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
+    /export default function Root\(props: \{ s: RootData \| EncodedRoot \}\) \{\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
   );
   assert.match(app, /<Provider token=\{Revived\} value=\{server\}>/);
-  assert.match(app, /Root\.ready = \(\): Promise<unknown> \| undefined => loadPage\(new URL\(globalThis\.location\.href\)\);/);
+  // A payload that is not JSON data arrives as its resume table (server `_rData`): decoded here, its built-in decoders first.
+  assert.match(app, /const s = rootPayload\(props\.s\),/);
+  assert.match(app, /import \{ createDecoder \} from "@rivetjs\/runtime\/resume-format";/);
+  assert.match(
+    app,
+    /Root\.ready = \(props: \{ s\?: RootData \| EncodedRoot \}\): Promise<unknown> \| undefined => \{\n {2}const page = loadPage\(new URL\(globalThis\.location\.href\)\);/,
+  );
+  assert.match(app, /const src = props\.s && "t" in props\.s \? props\.s\.x : undefined;/);
+  assert.match(
+    app,
+    /return src \? Promise\.all\(\[page, new Promise\(\(onload\) => globalThis\.document\.head\.append\(Object\.assign\(globalThis\.document\.createElement\("script"\), \{ type: "module", src, onload, onerror: onload \}\)\)\)\]\) : page;/,
+  );
   assert.match(app, /_ssrLevel\(work, [^\n]*\) \?\? revived\(work, [^\n]*\) \?\? /);
   assert.match(app, /const server = useContext\(ServerData\) \?\? useContext\(Revived\);/);
   // The routes view is built where it renders (inside the root layout's adopt run).
@@ -454,8 +465,12 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   assert.match(app, /\{view\(\)\}/);
   assert.match(entry, /import Root from "\.\/app\.tsx";/);
   assert.match(entry, /<Root s=\{rootData\(input\)\} \/>/);
+  // The payload's `byURL` is a copy: the handler's shared empty one is frozen, which sends the tail's JSON.stringify off V8's
+  // fast path (DERIVED-S).
+  assert.match(entry, /x: \[\.\.\.input\.byURL\]/);
   // Link clicks outside every boundary (document shell, content outside the app's markup) are Root's: tail `g`.
-  assert.match(entry, /import \{ _rListen \} from "@rivetjs\/runtime\/server-derived";/);
+  assert.match(entry, /import \{ _rData, _rListen \} from "@rivetjs\/runtime\/server-derived";/);
+  assert.match(entry, /return _rData\(\{ d, /);
   assert.match(entry, /<Links \/>\n\s*<Root s=/);
   assert.doesNotMatch(entry, /createRouter/);
   // CSR mode has no server payload: the option is ignored.

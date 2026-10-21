@@ -78,7 +78,7 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javas
 interface Built {
   root: string;
   html: string;
-  manifest: { model?: string; runtime: string; symbols: Record<string, string> };
+  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string };
 }
 async function buildApp(model: "derived" | "serialized", rows: "static" | "interactive", roots: string[]): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
@@ -161,6 +161,8 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         // Manifest: model, the derived runtime entry, boundary names (`<module>#<export>`) → the chunk of their module.
         assert.equal(derived.manifest.model, "derived");
         assert.match(derived.manifest.runtime, /^\/assets\/derived-runtime-.*\.js$/);
+        // The built-in decoders' chunk (DERIVED-S): route payloads with RegExp / binary / errors / registered classes name it.
+        assert.match(derived.manifest.builtins!, /^\/assets\/resume-builtins-.*\.js$/);
         assert.deepEqual(Object.keys(derived.manifest.symbols).sort(), ["src/counter.tsx#Counter", "src/counter.tsx#Other", "src/page.tsx#default"]);
         assert.equal(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/counter.tsx#Other"]);
         assert.notEqual(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/page.tsx#default"]);

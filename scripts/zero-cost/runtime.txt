@@ -16,7 +16,7 @@
 @rivetjs/runtime/server-resume 5e3605a794bd 117671
 @rivetjs/runtime/server-resume [domData] 1c471531825c 126732
 @rivetjs/runtime/server-shell 6dfa3d010c83 1384
-@rivetjs/runtime/server-derived 49673e3e3d55 102469
+@rivetjs/runtime/server-derived dfe9b694e4ac 119614
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache 36d571bcca51 32251
 @rivetjs/runtime/props e7a083669b54 9737

@@ -23,18 +23,19 @@
 // tail also names each boundary's chunk (`m`), the keys its cold keydowns hold (`k`), the delegated event types
 // (`data-events`), the runtime (`data-rt`) and `data-boot` (a load / idle / visible trigger), and the derived inline loader
 // (`resume-loader-derived.ts`) follows it. Plain `resumableToString(…, { model: "derived" })` writes the tail only.
-import { createContext, provide, useContext, getOwner, signal, _dispose } from "@rivetjs/reactivity";
+import { createContext, createRoot, provide, useContext, getOwner, signal, _dispose } from "@rivetjs/reactivity";
 import type { EqualsOptions, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { compiledTemplate, template, _attributeRecord } from "./template.ts";
-import { _scopedRecord } from "./server-structural.ts";
-import { escapeJSON } from "./resume-format.ts";
+import { For, ROWS, _scopedRecord } from "./server-structural.ts";
+import { _list } from "./server.ts";
+import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
 import { _setDerived, renderResumable, resumableToString } from "./server-resume.ts";
 import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
-import type { BoundaryRecord, BoundaryTail } from "./resume-format.ts";
+import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, TableEntry } from "./resume-format.ts";
 import { DERIVED_LOADER } from "./resume-loader-derived.min.ts";
-import type { ServerValue } from "./server.ts";
+import type { ListPlan, ServerValue } from "./server.ts";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
 export const INDEPENDENT = 1,
@@ -101,6 +102,8 @@ export interface DerivedRender {
 export interface DerivedOptions {
   manifest?: Partial<ResumeManifest>;
   nonce?: string;
+  /** The request's origin (`ResumableOptions.origin`): same-origin `URL` values in `_rData` payloads ship relative. */
+  origin?: string;
 }
 // The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously).
 let pending: DerivedOptions | null = null;
@@ -179,6 +182,8 @@ const current = (ctx: DerivedRender): Boundary | null => (ctx.stack.length ? ctx
 /** Plain JSON data: primitives, arrays and plain objects of such (no functions, signals, class instances, Dates, Maps). */
 export function isData(value: unknown, depth = 0): boolean {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+  // `_rData`'s payload, checked a moment ago (the generated `Root`'s props): not walked twice.
+  if (value === verified && value !== null) return true;
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value !== "object" || depth > 64) return false;
   if (Array.isArray(value)) {
@@ -207,6 +212,7 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     if (props && isData(props)) keep = props;
     else flags = (flags & ~INDEPENDENT) | DEMOTED;
   }
+  verified = null;
   const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false };
   if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
   if (keys) ctx.keys[boundary.id] = keys;
@@ -298,6 +304,140 @@ export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
   const owner = ctx && current(ctx);
   if (ctx && owner) register(owner, key, () => read(store));
   return store;
+}
+
+// ---- Route payload (DERIVED-S, 2026-10-21) ----
+// The router's generated server entry passes its `Root` props payload through `_rData`: plain JSON data stays as it is (the
+// tail's one `JSON.stringify`); anything else the resume table encodes — Date, Map, Set, BigInt, undefined, NaN / ±Infinity,
+// -0, URL, cycles / shared references, RegExp, URLSearchParams, binary, errors, `registerClass` instances — ships as the
+// table `{ t, r }` (the router's data-endpoint wire, `encodeData`), decoded by the generated browser `Root` (`createDecoder`);
+// RegExp / URLSearchParams / binary / errors / registered classes need `@rivetjs/runtime/resume-builtins`: the payload then
+// names its chunk (`x` = manifest `builtins`, as the data endpoint does) and `Root.ready` loads it as a module script (a
+// bundled `import()` of the side-effect module would be dropped: the package is `sideEffects: false`). What the table cannot encode (functions, symbols, promises, other class instances — `static [revive]`
+// needs a class symbol, which the derived model has not) warns RV2107 once per message and the payload is kept as is:
+// `Root` is demoted (no props), the page renders but does not resume.
+let verified: object | null = null;
+const warned = new Set<string>();
+// The `registerClass` hooks of `value`'s own class (the first own `constructor` on its chain), as server-resume finds them.
+function hooksOf(value: object): ClassHooks | undefined {
+  const registry = (globalThis as { [_CLASSES]?: ClassRegistry })[_CLASSES]?.of;
+  if (registry === undefined || typeof value === "function" || Array.isArray(value)) return undefined;
+  for (let p = Object.getPrototypeOf(value); p !== null && p !== Object.prototype; p = Object.getPrototypeOf(p))
+    if (Object.hasOwn(p, "constructor")) return registry.get((p as { constructor: object }).constructor);
+  return undefined;
+}
+function registered(value: object, ref: (value: unknown) => number): TableEntry | undefined {
+  const hooks = hooksOf(value);
+  if (hooks === undefined) return undefined;
+  const write = hooks.serialize ?? (value as { [serialize]?: () => unknown })[serialize];
+  if (typeof write !== "function")
+    throw new TypeError(typeName(value) + " is not serializable: registerClass `" + hooks.id + "` has no serialize hook and the instance no [serialize]()");
+  return { cls: hooks.id, a: [ref(hooks.serialize ? hooks.serialize(value) : (write as () => unknown).call(value))], rv: 1 };
+}
+const opaque = (value: object): boolean => hooksOf(value) !== undefined;
+/** A wire-encoded route payload (`_rData`): the resume table and its root reference. */
+export interface EncodedData {
+  t: TableEntry[];
+  r: number;
+  /** The built-in decoders' chunk (manifest `builtins`) when the table holds built-in entries. */
+  x?: string;
+}
+/**
+ * Router ABI (generated `entry.server.tsx`, derived model): the `Root` boundary's route payload as `Root` props can carry it —
+ * `payload` itself when it is JSON data, else its resume table encoding (`EncodedData`), else (RV2107 warning) `payload`.
+ */
+export function _rData<T extends object>(payload: T): T | EncodedData {
+  if (isData(payload)) return (verified = payload);
+  try {
+    const options = useContext(DERIVED)?.options;
+    const encoder = createEncoder({ special: registered, opaque, origin: options?.origin });
+    const r = encoder.ref(payload),
+      x = _builtinKinds(encoder.table) ? options?.manifest?.builtins : undefined;
+    return (verified = x ? { t: encoder.table, r, x } : { t: encoder.table, r });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    if (warned.size < 64 && !warned.has(reason)) {
+      warned.add(reason);
+      console.warn(
+        "[RV2107] Route data cannot resume (derived model): " +
+          reason +
+          ". The page renders but does not resume. Return JSON data, Date / Map / Set / BigInt / URL values, or instances of a class registered with registerClass(…) from loaders.",
+      );
+    }
+    return payload;
+  }
+}
+
+// ---- Derived rows (DERIVED-S, 2026-10-21) ----
+// A keyed `<For>` the derived server target list-mounts (`$list: [plan, each]`, the plain server's FLATTEN-CMP-3 row
+// plan) calls `_rFor` instead of `For`. Under a derived render its rows are written from ONE list tape — the plan with the
+// row region markers folded into its first / last fragment (`<!--r[-->…<!--]-->`: the derived client claims row groups by
+// balance, never by id) — so byte writers take the WebAssembly row emitter (`_listRows`) as plain server lists do, instead
+// of one row record + template record + REGION record per row through the resume row hook (`forRow`). Outside a derived
+// render (or without a list mount): the ordinary `For`. Same evaluation order as `For` under the row hook: `each`, every
+// `by`, then the rows in order under the For's root.
+const ROW = /* @__PURE__ */ Object.freeze(["<!--r[-->", "<!--]-->"]);
+const rowPlans = new WeakMap<ListPlan, ListPlan>();
+function rowPlan(plan: ListPlan): ListPlan {
+  let marked = rowPlans.get(plan);
+  if (marked === undefined) {
+    const fragments = plan.fragments.slice(),
+      last = fragments.length - 1;
+    fragments[0] = "<!--r[-->" + fragments[0];
+    fragments[last] = fragments[last] + "<!--]-->";
+    rowPlans.set(plan, (marked = { fragments: Object.freeze(fragments), attributes: plan.attributes, bytes: null, fixed: 0, rows: plan.rows }));
+  }
+  return marked;
+}
+type ForProps = Parameters<typeof For>[0];
+const noRow = (): never => {
+  throw new Error("unreachable");
+};
+// Test hook: false sends every `_rFor` through `For` (the resume row hook's per-row records), the pre-DERIVED-S path.
+let tapeRows = true;
+/** Test hook (internal): derived list rows from one tape on / off for the rest of the process (`tests/derived-rows.test.ts`). */
+export function _setDerivedRows(enabled: boolean): void {
+  tapeRows = enabled;
+}
+/** Compiler ABI (derived server target): a list-mounted `<For>` (`$list`). */
+export function _rFor(props: ForProps): ServerValue {
+  const $list = props.$list;
+  if ($list === undefined || !tapeRows || !useContext(DERIVED)) return For(props) as unknown as ServerValue;
+  let owner = getOwner();
+  const root = createRoot(() => {
+    owner = getOwner();
+    return derivedRows(props, $list);
+  });
+  return _scopedRecord(owner, root.value, root.dispose) as unknown as ServerValue;
+}
+function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>): unknown {
+  const { each, by, children } = props;
+  const items = typeof each === "function" ? (each as () => readonly unknown[])() : each;
+  if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
+  const keys = new Set<unknown>();
+  let dense = Object.getPrototypeOf(items) === Array.prototype;
+  for (let index = 0; index < items.length; index++) {
+    if (!(index in items)) dense = false;
+    const key = (by as (item: unknown, index: number) => unknown)(items[index], index);
+    if (keys.has(key)) throw new Error("Duplicate For key");
+    keys.add(key);
+  }
+  // A plain dense array: one list over the marked plan (`_list` keeps `.map`'s observable reads: Get map / length /
+  // constructor, then each index).
+  if (dense) return _list(items, noRow, rowPlan($list[0]), $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void);
+  // Holes / subclasses: row by row, each between its row region markers (as the resume row hook writes them).
+  const rows: ServerValue[] = new Array(items.length);
+  for (let index = 0; index < items.length; index++) {
+    const item = items[index];
+    rows[index] = compiledTemplate(ROW, [
+      (children as (get: () => unknown, at: () => number) => ServerValue)(
+        () => item,
+        () => index,
+      ),
+    ]) as unknown as ServerValue;
+  }
+  ROWS.add(rows);
+  return rows;
 }
 
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */

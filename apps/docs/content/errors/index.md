@@ -61,6 +61,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV2104](RV2104.md) | warning | Keyed state (signal / createStore) created in a loop under the derived resume model |
 | [RV2105](RV2105.md) | warning | Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / `Date()` / new `Date()`): its rows stay recorded instead of lazy (resume) |
 | [RV2106](RV2106.md) | warning | Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) |
+| [RV2107](RV2107.md) | warning | Route data cannot resume under the derived model: a loader / action / error value the resume table cannot encode (function, symbol, promise, unregistered class instance); the page renders but does not resume (server) |
 | [RV2145](RV2145.md) | error | A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build) |
 | [RV2146](RV2146.md) | warning | Non-component export of a framework module used in browser code of a Rivet module (Vite build) |
 | [RV2148](RV2148.md) | error | A module owned by a framework bridge uses the Rivet runtime (Vite build) |

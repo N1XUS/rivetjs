@@ -119,7 +119,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7297,
+          "htmlBr": 7308,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -936,8 +936,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
-            "resume-symbols.js"
+            "resume-symbols.js",
+            "rivet-merge-index.js"
           ]
         }
       }
@@ -1319,8 +1319,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
             "routes.js",
+            "rivet-merge-index.js",
             "rivet-merge-minimize-2.js",
             "resume-builtins.js"
           ]

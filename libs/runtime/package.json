@@ -7,7 +7,7 @@
   "type": "module",
   "sideEffects": false,
   "rivet": {
-    "abi": 8
+    "abi": 9
   },
   "imports": {
     "#dev": {

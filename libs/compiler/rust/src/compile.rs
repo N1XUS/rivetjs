@@ -1788,6 +1788,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
             if let Some(call) = self.lone_spread_call(el, &callee, &props) {
                 return call;
             }
+            // exception: derived model (DERIVED-S 2026-10-21) — a list-mounted `<For>` (`$list`) calls the derived For
+            // (`_rFor`, `@rivetjs/runtime/server-derived`): a derived render writes its rows from the list tape.
+            let derived_for = self.derived.is_some() && props.iter().any(|(key, _)| key.text() == "$list");
+            let callee = if derived_for { Expr::Ident(self.derived_for()) } else { callee };
             return self.mark_component(el, callee, props);
         }
         if !self.server {

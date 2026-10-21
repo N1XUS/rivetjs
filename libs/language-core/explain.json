@@ -377,6 +377,16 @@
       "note": "Resume mode (lazy collection rows, LAZY-ROWS T2). A warning: the module compiles and the `For` keeps today's per-row resume records. A lazy row is re-run in the browser over its server markup (adopt mode); `clientOnly(…)` / an element of a `clientOnly` component, `<Async>`, a `<Portal>` element and a `ref` into a local declared outside the row cannot be replayed that way, so the whole `For` stays recorded (one rule per `For`). Reported once per `For`, on the server compile."
     },
     {
+      "code": "RV2107",
+      "messages": [
+        "Route data cannot resume (derived model): {reason}. The page renders but does not resume. Return JSON data, Date / Map / Set / BigInt / URL values, or instances of a class registered with registerClass(…) from loaders."
+      ],
+      "fix": "Return data from loaders / actions: JSON values plus what the resume table encodes (Date, Map, Set, BigInt, undefined, NaN / ±Infinity, -0, URL, cycles and shared references, RegExp, URLSearchParams, typed arrays, errors). For your own class, register it with `registerClass(Class, { id, serialize, revive })` from `@rivetjs/runtime/resume-format` in a module both the server and the browser import; build functions, SDK clients and other library objects in the component instead of returning them.",
+      "avoid": "import { load } from \"@rivetjs/router\";\nclass Price {\n  constructor(readonly cents: number) {}\n  format() { return (this.cents / 100).toFixed(2); }\n}\nexport const data = load(async () => ({ price: new Price(1999), onBuy: () => fetch(\"/buy\") }));",
+      "prefer": "import { load } from \"@rivetjs/router\";\nimport { registerClass } from \"@rivetjs/runtime/resume-format\";\nexport class Price {\n  constructor(readonly cents: number) {}\n  format() { return (this.cents / 100).toFixed(2); }\n}\nregisterClass(Price, { id: \"price\", serialize: (p) => p.cents, revive: (cents) => new Price(cents as number) });\nexport const data = load(async () => ({ price: new Price(1999) }));",
+      "note": "Server, derived resume model only (`resume: { model: \"derived\" }`). The router's `Root` boundary carries the route payload (loader data, action result, error) as its props: JSON data ships as it is, other encodable values as the resume table (`{ t, r }`, the data-endpoint wire), decoded by the generated `Root` in the browser. A value the table cannot encode demotes `Root`: the page is server HTML that does not resume until the next client navigation. `static [revive]` classes need a class symbol and are not supported here; use `registerClass`. `console.warn`, once per distinct reason per server process."
+    },
+    {
       "code": "RV2145",
       "messages": [
         "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",

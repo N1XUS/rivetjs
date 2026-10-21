@@ -2272,7 +2272,7 @@
    "summary": "Runtime helper contract the compiler emits for.",
    "remarks": "Runtime helper contract the compiler emits for. Bump it together with `rivet.abi` in\nlibs/runtime/package.json whenever compiled output and runtime helpers change in a way the other\nside must match (new/removed/renamed helper, changed arguments, template/marker/resume format).",
    "signatures": [
-    "const RUNTIME_ABI: 8"
+    "const RUNTIME_ABI: 9"
    ],
    "params": [],
    "members": [],
@@ -2281,8 +2281,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/abi.ts",
-    "line": 16,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L16"
+    "line": 17,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L17"
    },
    "href": "/api/rivetjs/compiler/RUNTIME_ABI/"
   },

@@ -283,6 +283,12 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV2106"
     },
     {
+      "code": "RV2107",
+      "severity": "warning",
+      "title": "Route data cannot resume under the derived model: a loader / action / error value the resume table cannot encode (function, symbol, promise, unregistered class instance); the page renders but does not resume (server)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2107"
+    },
+    {
       "code": "RV2145",
       "severity": "error",
       "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",
