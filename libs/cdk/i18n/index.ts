@@ -39,7 +39,50 @@ export function isRTL(localeString: string): boolean {
   }
   return rtl;
 }
+// Languages CLDR writes left to right in every script and region it gives them: their direction needs no likely-subtags
+// lookup (`maximize` costs ~1 ms at 1× on its first call — the first event of a resumed page pays it) unless a script
+// subtag says otherwise.
+const LTR_LANGS = new Set([
+  "bg",
+  "ca",
+  "cs",
+  "da",
+  "de",
+  "el",
+  "en",
+  "es",
+  "et",
+  "fi",
+  "fr",
+  "hr",
+  "hu",
+  "id",
+  "it",
+  "ja",
+  "ko",
+  "lt",
+  "lv",
+  "nb",
+  "nl",
+  "nn",
+  "no",
+  "pl",
+  "pt",
+  "ro",
+  "ru",
+  "sk",
+  "sl",
+  "sr",
+  "sv",
+  "th",
+  "tr",
+  "uk",
+  "vi",
+  "zh",
+]);
 function computeRTL(localeString: string): boolean {
+  const [lang, second] = localeString.split("-");
+  if (LTR_LANGS.has(lang!.toLowerCase()) && (second?.length !== 4 || !RTL_SCRIPTS.has(second[0]!.toUpperCase() + second.slice(1).toLowerCase()))) return false;
   if (Intl.Locale) {
     const locale = new Intl.Locale(localeString).maximize() as Intl.Locale & {
       getTextInfo?: () => { direction: string };
@@ -59,8 +102,10 @@ export function getDefaultLocale(): Locale {
   // direction of one requested string are pure, so the last one is reused (a fresh object per call, as before).
   if (requested !== lastRequested) {
     let locale = requested;
+    // Validation only (a malformed tag throws): `getCanonicalLocales` is syntax-only, `DateTimeFormat.supportedLocalesOf`
+    // loads the formatter's locale data first (4–5 ms at 1× on the first call — the first event of a resumed page pays it).
     try {
-      Intl.DateTimeFormat.supportedLocalesOf([locale]);
+      Intl.getCanonicalLocales(locale);
     } catch {
       locale = "en-US";
     }

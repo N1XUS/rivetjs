@@ -66,6 +66,8 @@ let disposed: DOMException | undefined;
 export function _onAsync(fn: () => AsyncStream | null): void {
   asyncHook = fn;
 }
+/** @internal `server-derived.ts`: the hook installed so far (the derived model's hook runs in front of it). */
+export const _asyncHook = (): (() => AsyncStream | null) | null => asyncHook;
 
 let contentHook: (() => (<R>(fn: () => R) => R) | null) | null = null;
 /** Resume ABI: awaited (non-streamed) content renders in the recorder region active where the boundary was constructed. */

@@ -4,8 +4,17 @@ import { brotliCompressSync } from "node:zlib";
 import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, ROWS, STREAM } from "../resume-loader.min.ts";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { compileResume, importServer } from "./resume/compile.ts";
-import { minifiedDerived, minifiedExpand, minifiedLazy, minifiedLoader, minifiedRows, minifiedStream, minifiedStrided } from "../build-loader.ts";
-import { DERIVED_LOADER } from "../resume-loader-derived.min.ts";
+import {
+  minifiedDerived,
+  minifiedDerivedStream,
+  minifiedExpand,
+  minifiedLazy,
+  minifiedLoader,
+  minifiedRows,
+  minifiedStream,
+  minifiedStrided,
+} from "../build-loader.ts";
+import { DERIVED_LOADER, DERIVED_STREAM } from "../resume-loader-derived.min.ts";
 import { loader } from "../resume-loader.ts";
 
 // Budget 2,329 B brotli: round 2 (lane SEC) added the state-script binding (U2), digit-only ids (SEC1) and the
@@ -90,6 +99,16 @@ test("shipped derived loader is current, inline-safe and fits 1,160 B brotli", a
   const size = brotliCompressSync(DERIVED_LOADER).length;
   assert.ok(size <= 1160, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
+});
+
+// Derived stream add-on (DERIVED-C2): `$rD`, shipped once before a derived page's first streamed segment (the serialized
+// stream add-on is 1 KB): 294 B brotli at landing.
+test("shipped derived stream add-on is current, inline-safe and fits 400 B brotli", async () => {
+  assert.equal(DERIVED_STREAM, await minifiedDerivedStream(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
+  assert.ok(!/<\/script|<!--/i.test(DERIVED_STREAM));
+  const size = brotliCompressSync(DERIVED_STREAM).length;
+  assert.ok(size <= 400, `minified ${size} B`);
+  console.log(`derived stream add-on brotli: ${size} B`);
 });
 
 test("shipped stream add-on is current, inline-safe and fits 1 KB brotli", async () => {

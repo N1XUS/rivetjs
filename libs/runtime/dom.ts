@@ -24,6 +24,7 @@ import type { Coordinator } from "./async-coordinator.ts";
 import { INVALID_URL, MEDIA_URLS, URLS, unsafeUrl } from "./url.ts";
 import { _adoption, _anchor, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
+import { DERIVED } from "./derived.ts";
 import { _restProps } from "./props.ts";
 import type { Slot } from "./slot.ts";
 // Pinned branded function: see slot.ts.
@@ -247,6 +248,11 @@ export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, Resource
  * disposes old output. Explicit work.get / run restore ownership after await. Current asynchronous failures
  * use error, or retain fallback and report once through the nearest ErrorBoundary (else a deferred throw). */
 export function Async<T>(props: AsyncProps<T>): DOMValue {
+  // Derived builds: in an adopt run, a boundary the server streamed (or awaited) is a hole (`dom-derived.ts`).
+  if (DERIVED && _adoption.async) {
+    const hole = _adoption.async(props as AsyncProps<unknown>, Async as never);
+    if (hole !== undefined) return hole as DOMValue;
+  }
   const doc = _constructionDoc(),
     outer = getOwner(),
     shown = signal<Output | null>(null);

@@ -32,8 +32,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 67191,
@@ -102,8 +102,8 @@
             "resume-loader.js",
             "resume-entry.js",
             "rivet-merge-index-1.js",
-            "resume-resume_tsx.js",
             "resume-route_main.js",
+            "resume-resume_tsx.js",
             "rivet-merge-index.js",
             "analytics.js",
             "browser-widget.js"
@@ -119,7 +119,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7300,
+          "htmlBr": 7302,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -204,8 +204,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 67191,
@@ -1319,8 +1319,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
             "routes.js",
+            "rivet-merge-index.js",
             "rivet-merge-minimize-2.js",
             "resume-builtins.js"
           ]

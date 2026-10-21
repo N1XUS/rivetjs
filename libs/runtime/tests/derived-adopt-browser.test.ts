@@ -169,6 +169,33 @@ test("lazy rows: adopted O(1) without running a row; a row event materialises it
   });
 });
 
+test("lazy rows on demand (DERIVED-C2): a deep row event builds that row, a keyed write writes only the rows it changes", async () => {
+  await withPage(await files(200), async (page) => {
+    await page.goto("http://rivet.test/");
+    await tag(page, ["ul li:nth-child(150)", "ul li:nth-child(3)"]);
+    // Every `data-sel` write on the page from now on (a same-value write is a record too).
+    await page.evaluate(() => {
+      const w = window as unknown as { writes: string[] };
+      w.writes = [];
+      new MutationObserver((list) => {
+        for (const r of list) if (r.attributeName === "data-sel") w.writes.push((r.target as Element).querySelector(".pick")!.textContent!);
+      }).observe(document.body, { subtree: true, attributes: true });
+    });
+    // The rows written (a row's adopt run writes its own attribute once too, same value).
+    const writes = async () => [...new Set(await page.evaluate(() => (window as unknown as { writes: string[] }).writes.splice(0)))].sort();
+    const sel = () => page.evaluate(() => [...document.querySelectorAll("li")].flatMap((li, i) => (li.getAttribute("data-sel") === "y" ? [i + 1] : [])));
+    // Row 150's opener is counted from the event path (149 groups before it): its own row, its own item.
+    await page.click("ul li:nth-child(150) button");
+    await page.waitForFunction(() => document.querySelector("ul li:nth-child(150)")!.getAttribute("data-sel") === "y");
+    assert.deepEqual(await sel(), [150]);
+    assert.deepEqual(await writes(), ["Pick 150"], "one row's output changed: no other row written");
+    await page.click("ul li:nth-child(3) button");
+    assert.deepEqual(await sel(), [3]);
+    assert.deepEqual(await writes(), ["Pick 150", "Pick 3"]);
+    assert.deepEqual(await tagged(page, ["ul li:nth-child(150)", "ul li:nth-child(3)"]), [true, true], "server nodes kept");
+  });
+});
+
 test("lazy rows: a keyed read outside a row writer (a text binding) wakes the whole list on the first write", async () => {
   const mark = (source: string) => source.replace("Pick {row().id}", 'Pick {row().id}{selected() === row().id ? "*" : ""}');
   await withPage(await files(6, { edit: mark, server: mark }), async (page) => {

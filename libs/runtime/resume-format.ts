@@ -1382,4 +1382,14 @@ export interface BoundaryTail {
    * outside every boundary whose target is inside a `selector` match is held for that boundary (loader: `data-g`).
    */
   g?: [id: number, match: string][];
+  /**
+   * Derived client (DERIVED-C2): the `Async` boundaries with a fallback whose load was pending (`<!--a<id>-->…<!--/a-->` on
+   * the page): `[id, boundary, k]` while its content streams, `[id, boundary, k, 1, value]` settled with JSON data `value`,
+   * `[id, boundary, k, 0]` settled without one (failed, not JSON data, the stream ended first: the browser renders it).
+   * `boundary` = the record whose unit constructs it (0: none), `k` = its place among that unit's `Async`s with a fallback.
+   * A patch re-sends an entry whole when it settles.
+   */
+  a?: DerivedAsync[];
 }
+/** One `BoundaryTail.a` entry. */
+export type DerivedAsync = [id: number, boundary: number, k: number, settled?: 0 | 1, value?: unknown];

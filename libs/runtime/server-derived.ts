@@ -29,12 +29,14 @@ import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { compiledTemplate, template, _attributeRecord } from "./template.ts";
 import { For, ROWS, _scopedRecord } from "./server-structural.ts";
-import { _list } from "./server.ts";
+import { _list, renderToString } from "./server.ts";
+import { _asyncHook, _onAsync } from "./server-async.ts";
+import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
 import { _setDerived, renderResumable, resumableToString } from "./server-resume.ts";
 import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
-import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, TableEntry } from "./resume-format.ts";
-import { DERIVED_LOADER } from "./resume-loader-derived.min.ts";
+import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, TableEntry } from "./resume-format.ts";
+import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
@@ -70,6 +72,8 @@ export interface Boundary {
   attr: boolean;
   /** `_rBOut` ran. */
   out: boolean;
+  /** `Async`s with a fallback constructed while it was the current boundary (their `k` in `BoundaryTail.a`). */
+  an: number;
 }
 
 /** The derived recorder of one render (held by `server-resume.ts`'s Recorder, provided as the `DERIVED` context). */
@@ -96,6 +100,39 @@ export interface DerivedRender {
   listen: string[];
   /** Selectors of the shell's document click listeners (`data-g`). */
   clicks: string;
+  /** `Async`s whose load was pending (DERIVED-C2): every one, those changed since the last flush. */
+  asyncs: DerivedAsyncState[];
+  changed: Set<DerivedAsyncState>;
+  /** `Async`s with a fallback constructed outside every boundary. */
+  an: number;
+  /** The render streams (`renderDerived` with `stream`): a pending `Async` writes its fallback, its content follows the shell. */
+  stream: boolean;
+  /** The segment whose content is rendering (its synchronous part): `Async`s constructed there are its children. */
+  segment: DerivedAsyncState | null;
+  /** The segment writer waits for a settled segment. */
+  wakeup: (() => void) | null;
+  /** The swap add-on (`$rD`) is on the page. */
+  addon: boolean;
+}
+
+/** A pending `Async` of a derived render (wire: `BoundaryTail.a`). */
+interface DerivedAsyncState {
+  id: number;
+  /** The boundary whose unit constructed it (0: none) and its place among that unit's `Async`s with a fallback. */
+  b: number;
+  k: number;
+  /** 0 pending, 1 settled with JSON data (`value`), 2 settled without (the browser renders it), 3 content rendering. */
+  state: number;
+  value: unknown;
+  /** The boundary current where it was constructed; `Async`s constructed while its content renders (`an`: their `k`). */
+  at: Boundary | null;
+  an: number;
+  /** Streamed only: the segment it renders in (written after it), its content's HTML (null: none), written yet. */
+  parent: DerivedAsyncState | null;
+  html: string | null;
+  out: boolean;
+  dispose: (() => void) | null;
+  own: (() => void) | null;
 }
 
 /** What the derived client needs from the render options. */
@@ -107,9 +144,15 @@ export interface DerivedOptions {
   origin?: string;
   /** `lean`: no fetch-ahead (`data-fo`): chunks load on intent / interaction only. */
   preload?: { lean?: boolean };
+  /** `renderDerived` with `stream` (out-of-order streaming): `deadline` stops waiting (the browser renders what is left). */
+  stream?: { deadline?: number };
+  signal?: AbortSignal;
+  variant?: unknown;
 }
-// The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously).
-let pending: DerivedOptions | null = null;
+// The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously), and
+// the recorder it created (`renderDerived` writes its segments after the shell).
+let pending: DerivedOptions | null = null,
+  created: DerivedRender | null = null;
 
 const DERIVED = createContext<DerivedRender | null>(null);
 /** The boundary whose subtree the renderer is walking (`_rBOut` provides it around the rendered value). */
@@ -119,7 +162,7 @@ const CURRENT = createContext<Boundary | null>(null);
 export function createDerived(): DerivedRender {
   const options = pending;
   pending = null;
-  return {
+  return (created = {
     boundaries: [],
     stack: [],
     wake: new Map(),
@@ -132,7 +175,14 @@ export function createDerived(): DerivedRender {
     boot: false,
     listen: [],
     clicks: "",
-  };
+    asyncs: [],
+    changed: new Set(),
+    an: 0,
+    stream: !!options?.stream,
+    segment: null,
+    wakeup: null,
+    addon: false,
+  });
 }
 
 /**
@@ -156,11 +206,24 @@ export function renderDerived(
   options: Partial<StreamingResumableOptions> = {},
 ): void | Promise<void> {
   pending = options as DerivedOptions;
+  created = null;
+  let shell: void | Promise<void>;
   try {
-    return renderResumable(factory, writer, { ...options, model: "derived" } as StreamingResumableOptions);
+    shell = renderResumable(factory, writer, { ...options, model: "derived" } as StreamingResumableOptions);
   } finally {
     pending = null;
   }
+  const ctx = created as DerivedRender | null;
+  created = null;
+  // Streamed `Async`s (DERIVED-C2): their segments follow the shell (state + loader included), in completion order.
+  if (!ctx || !ctx.stream) return shell;
+  return Promise.resolve(shell).then(
+    () => segments(ctx, writer),
+    (error: unknown) => {
+      release(ctx);
+      throw error;
+    },
+  );
 }
 
 /**
@@ -180,7 +243,10 @@ export function withDerived<T>(ctx: DerivedRender, fn: () => T): T {
 }
 
 /** The boundary reads attribute to: the innermost body being evaluated, else the subtree being rendered. */
-const current = (ctx: DerivedRender): Boundary | null => (ctx.stack.length ? ctx.stack[ctx.stack.length - 1]! : useContext(CURRENT));
+// A streamed segment's content renders under its `Async`'s owner, outside the boundary frame it was constructed in: that
+// boundary (DERIVED-C2).
+const current = (ctx: DerivedRender): Boundary | null =>
+  ctx.stack.length ? ctx.stack[ctx.stack.length - 1]! : (useContext(CURRENT) ?? ctx.segment?.at ?? null);
 
 /** Plain JSON data: primitives, arrays and plain objects of such (no functions, signals, class instances, Dates, Maps). */
 export function isData(value: unknown, depth = 0): boolean {
@@ -216,7 +282,7 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     else flags = (flags & ~INDEPENDENT) | DEMOTED;
   }
   verified = null;
-  const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false };
+  const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false, an: 0 };
   if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
   if (keys) ctx.keys[boundary.id] = keys;
   if (flags & TRIGGERS) ctx.boot = true;
@@ -307,6 +373,162 @@ export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
   const owner = ctx && current(ctx);
   if (ctx && owner) register(owner, key, () => read(store));
   return store;
+}
+
+// ---- Streamed holes (DERIVED-C2, 2026-10-21) ----
+// An `Async` with a fallback whose load is pending writes `<!--a<id>-->…<!--/a-->` around its output and an entry in the
+// tail / patch (`BoundaryTail.a`): the boundary whose unit constructed it and its place `k` among that unit's `Async`s
+// with a fallback (the browser's adopt run counts them the same way and turns that one into a hole), then its value once
+// settled. Not streaming (`derivedToString`, `renderDerived` without `stream`): the content renders in place, the value is
+// in the shell's tail. Streaming: the fallback renders in place; once the load settles the content renders as a segment
+// (`<template data-a>` + `<script type="rivet/boundaries" data-patch>` + `$rD(id)`, the swap add-on `DERIVED_STREAM`
+// first) after the shell, its boundaries numbered on from the shell's, in completion order (a nested one after the
+// segment holding it). The browser swaps the content in and adopts it with the value (`dom-derived.ts` async holes); a
+// value that is not JSON data, a failed load or a stream cut by `deadline` leaves it to the browser (its load runs there).
+// Ruling (DERIVED-C2): the hole is keyed by (boundary, k), not by a marker id the client cannot know before aligning — the
+// adopt run must decide hole vs plain `Async` while probing, before it sees the server's nodes.
+const ASYNC = /* @__PURE__ */ Object.freeze(["<!--a", "-->", "<!--/a-->"]);
+const NONE: unique symbol = Symbol();
+const noop = (): void => {};
+const prior = _asyncHook();
+_onAsync(() => {
+  const ctx = useContext(DERIVED);
+  return ctx ? derivedAsync(ctx) : prior ? prior() : null;
+});
+function derivedAsync(ctx: DerivedRender): AsyncStream {
+  // Constructed while another `Async`'s content renders, in that content's own unit (not in a boundary body inside it):
+  // keyed by that `Async` (`-id`: the browser adopts its content as a unit of its own and counts there).
+  const seg = ctx.segment,
+    at = current(ctx),
+    by = seg && at === seg.at ? seg : at,
+    b = by === seg ? -seg!.id : (at?.id ?? 0),
+    k = by ? by.an++ : ctx.an++;
+  let entry: DerivedAsyncState | null = null;
+  return {
+    defer(loaded, success, failure, fallback, owner, _abort, own) {
+      const a: DerivedAsyncState = (entry = {
+        id: ctx.asyncs.length + 1,
+        b,
+        k,
+        state: 0,
+        value: undefined,
+        at,
+        an: 0,
+        parent: seg,
+        html: null,
+        out: false,
+        dispose: null,
+        own,
+      });
+      ctx.asyncs.push(a);
+      ctx.changed.add(a);
+      // In place: the content renders where the boundary is (its `Async`s constructed meanwhile are its own).
+      const inside = (fn: () => unknown): ServerValue => {
+        const outer = ctx.segment;
+        ctx.segment = a;
+        try {
+          return fn() as ServerValue;
+        } finally {
+          ctx.segment = outer;
+        }
+      };
+      if (!ctx.stream)
+        return compiledTemplate(ASYNC, [
+          a.id,
+          loaded.then(
+            (value) => ((a.html = ""), settled(ctx, a, value), inside(() => success(value))),
+            (cause) => (settled(ctx, a, NONE), inside(() => failure(cause))),
+          ),
+        ]);
+      const content = (outcome: () => unknown, value: unknown): void => {
+        const outer = ctx.segment;
+        ctx.segment = a;
+        a.state = 3;
+        let html: string | Promise<string> | null;
+        try {
+          html = renderToString(
+            _scopedRecord(owner ?? null, outcome() as ServerValue, noop) as unknown as ServerValue,
+            {
+              signal: ctx.options?.signal,
+              variant: ctx.options?.variant,
+            } as never,
+          );
+        } catch {
+          html = null;
+        } finally {
+          ctx.segment = outer;
+        }
+        Promise.resolve(html).then(
+          (text) => ((a.html = text), settled(ctx, a, value)),
+          () => ((a.html = null), settled(ctx, a, NONE)),
+        );
+      };
+      loaded.then(
+        (value) => content(() => success(value), value),
+        (cause) => content(() => failure(cause), NONE),
+      );
+      return compiledTemplate(ASYNC, [a.id, fallback()]);
+    },
+    release(dispose) {
+      if (!entry || !ctx.stream) return dispose();
+      entry.dispose = dispose;
+    },
+  };
+}
+function settled(ctx: DerivedRender, a: DerivedAsyncState, value: unknown): void {
+  if (value !== NONE && a.html !== null && isData(value)) ((a.state = 1), (a.value = value));
+  else a.state = 2;
+  ctx.changed.add(a);
+  const wake = ctx.wakeup;
+  ctx.wakeup = null;
+  wake?.();
+}
+// After the shell: each settled segment whose parent is out, then wait; at the deadline the rest continue in the browser.
+async function segments(ctx: DerivedRender, writer: { write(chunk: string): unknown }): Promise<void> {
+  const options = ctx.options,
+    signal = options?.signal,
+    deadline = options?.stream?.deadline,
+    nonce = options?.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
+    open = "<script" + nonce + ">";
+  let expired = false;
+  const timer = deadline == null ? null : setTimeout(() => ((expired = true), ctx.wakeup?.()), Math.max(0, deadline));
+  const chunk = (a: DerivedAsyncState): string => {
+    let out = ctx.addon ? "" : ((ctx.addon = true), open + DERIVED_STREAM + "</script>");
+    if (a.state === 1 || a.html !== null) out += '<template data-a="' + a.id + '">' + (a.html ?? "") + "</template>";
+    return out + derivedPatch(ctx, a.id) + open + "$rD(" + a.id + ")</script>";
+  };
+  try {
+    for (;;) {
+      if (signal?.aborted) return;
+      const next = ctx.asyncs.find((a) => !a.out && (a.state === 1 || a.state === 2) && (!a.parent || a.parent.out));
+      if (next) {
+        next.out = true;
+        await writer.write(chunk(next));
+        continue;
+      }
+      const left = ctx.asyncs.filter((a) => !a.out);
+      if (!left.length) return;
+      if (expired) {
+        for (const a of left) ((a.out = true), (a.state = 2), (a.html = null), ctx.changed.add(a));
+        await writer.write(chunk(left[0]!));
+        return;
+      }
+      await new Promise<void>((resolve) => (ctx.wakeup = resolve));
+    }
+  } finally {
+    if (timer) clearTimeout(timer);
+    release(ctx);
+  }
+}
+// The stream is over: every streamed boundary's root goes (its content rendered, or it never will).
+function release(ctx: DerivedRender): void {
+  for (const a of ctx.asyncs) {
+    const dispose = a.dispose ?? a.own;
+    a.dispose = a.own = null;
+    try {
+      dispose?.();
+    } catch {}
+  }
 }
 
 // ---- Route payload (DERIVED-S, 2026-10-21) ----
@@ -445,7 +667,7 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>): un
 
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */
 function flush(ctx: DerivedRender): BoundaryTail | null {
-  if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0) return null;
+  if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0) return null;
   const b: BoundaryRecord[] = [];
   for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
     const boundary = ctx.boundaries[i]!;
@@ -490,6 +712,19 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     for (const id of ctx.dirty) w[id] = [...ctx.wake.get(id)!];
     ctx.dirty.clear();
     tail.w = w;
+  }
+  if (ctx.changed.size) {
+    // A segment settled but not written yet ships as pending: its value comes with its own content.
+    const a: DerivedAsync[] = [],
+      later: DerivedAsyncState[] = [];
+    for (const x of ctx.changed) {
+      const done = (x.state === 1 || x.state === 2) && (x.out || !ctx.stream);
+      a.push(done ? (x.state === 1 ? [x.id, x.b, x.k, 1, x.value] : [x.id, x.b, x.k, 0]) : [x.id, x.b, x.k]);
+      if (!done && x.state !== 0 && x.state !== 3) later.push(x);
+    }
+    ctx.changed.clear();
+    for (const x of later) ctx.changed.add(x);
+    tail.a = a;
   }
   return tail;
 }

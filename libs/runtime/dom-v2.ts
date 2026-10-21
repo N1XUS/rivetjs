@@ -797,6 +797,12 @@ export const _adoption: {
    * a token's `n()` gives the list's server nodes.
    */
   keep?: WeakSet<object>;
+  /**
+   * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only, DERIVED-C2): called first by every `Async` with its
+   * props and `Async` itself; a returned value replaces it (an `Async` the server streamed or awaited: probe run a hole,
+   * adopt run the server's nodes), `undefined` lets it run as usual.
+   */
+  async?: ((props: { load: unknown; children: unknown; fallback?: unknown }, self: (props: never) => unknown) => unknown) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

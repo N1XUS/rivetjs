@@ -203,8 +203,9 @@ function getLocale(): string {
   // Match browser language setting here, NOT react-aria's I18nProvider, so that we match other browser-provided
   // validation messages, which to not respect our provider's language.
   let locale = (typeof navigator !== "undefined" && navigator.language) || "en-US";
+  // Validation only (a malformed tag throws); syntax-only, no formatter locale data loaded (`getDefaultLocale`).
   try {
-    Intl.DateTimeFormat.supportedLocalesOf([locale]);
+    Intl.getCanonicalLocales(locale);
   } catch {
     locale = "en-US";
   }

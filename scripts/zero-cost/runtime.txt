@@ -4,7 +4,7 @@
 @rivetjs/runtime/server 1d4f11e873b7 55052
 @rivetjs/runtime/dom 30f0676d62b2 51024
 @rivetjs/runtime/dom [lazyRows] 6e96a1d4d6cf 51385
-@rivetjs/runtime/dom [derived] a371c3dafb55 51620
+@rivetjs/runtime/dom [derived] 1911052e0de6 51674
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176
@@ -16,15 +16,15 @@
 @rivetjs/runtime/server-resume 6e6768d1ff92 118370
 @rivetjs/runtime/server-resume [domData] b2c8af0776af 127433
 @rivetjs/runtime/server-shell 6b5a2d0539fb 98157
-@rivetjs/runtime/server-derived eb4ef3de19ce 120805
+@rivetjs/runtime/server-derived 1d03fc2ca2d1 124971
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache 36d571bcca51 32251
 @rivetjs/runtime/props e7a083669b54 9737
 @rivetjs/runtime/dom-resume 82098aed5fd8 46511
 @rivetjs/runtime/dom-resume [lazyRows] de87ae275bec 57327
 @rivetjs/runtime/dom-resume [domData] 92356f200870 48261
-@rivetjs/runtime/dom-derived 4b23d8650223 41855
-@rivetjs/runtime/dom-derived [derived] b53d7a3e7a46 42175
+@rivetjs/runtime/dom-derived effa5863c3c8 46435
+@rivetjs/runtime/dom-derived [derived] 297308eda6f0 46755
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ad5a7200976 8151
 @rivetjs/runtime/hot-reactivity a1e1e089e1f5 17082

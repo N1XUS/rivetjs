@@ -125,3 +125,43 @@ export function derivedLoader(): void {
       fo.split(" ").map((href) => d.head.append(Object.assign(d.createElement("link"), { rel: "modulepreload", href, fetchPriority: "low" }))),
     );
 }
+
+/**
+ * Streamed segment add-on (DERIVED-C2), shipped once before a derived page's first streamed segment (`server-derived.ts`
+ * `segments`). `$rD(id)` runs at the end of each segment: its `<template data-a>` (when the segment has content) replaces
+ * what is between `<!--a<id>-->` and its `<!--/a-->` (the fallback), its patch (`<script type="rivet/boundaries"
+ * data-patch>`: new records, wake lists, chunk names, the settled `Async` entry) is queued on `document.$rd` for a runtime
+ * that starts later, and handed to a started one (`document.$rdp`). Bound by position (the template, the patch, this call's
+ * own script), never by a document query an injected earlier copy would win.
+ */
+export function derivedStream(): void {
+  const d = document as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
+  (window as Window & { $rD?: (id: number) => void }).$rD = (id: number) => {
+    const s = d.currentScript!,
+      p = s.previousElementSibling!,
+      t = p.previousElementSibling as HTMLTemplateElement | null,
+      x: BoundaryTail = JSON.parse(p.textContent!);
+    p.remove();
+    s.remove();
+    if (t?.getAttribute("data-a") == (id as unknown as string)) {
+      const walker = d.createTreeWalker(d.body, 128);
+      let n: Node | null,
+        depth = 0;
+      while ((n = walker.nextNode()) && (n as Comment).data != "a" + id);
+      for (let c = n && n.nextSibling; c;) {
+        const next: ChildNode | null = c.nextSibling,
+          v = c.nodeType == 8 ? (c as Comment).data : "";
+        if (/^a\d+$/.test(v)) depth++;
+        else if (v == "/a" && !depth--) {
+          c.before(t.content);
+          break;
+        }
+        c.remove();
+        c = next;
+      }
+      t.remove();
+    }
+    (d.$rd ??= []).push(x);
+    d.$rdp?.(x);
+  };
+}

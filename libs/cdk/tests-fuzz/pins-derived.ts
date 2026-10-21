@@ -18,7 +18,7 @@ const MOUNT =
 const ADOPTED =
   "a page root that rendered in the browser before DERIVED-C (UNKEYED) now adopts: the later steps compare, and browser-created collection parts number their `useId`s after the adopted ones (`#4-news` vs `#3-news`), plus hover / roving tabindex after clicks";
 const BASE =
-  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/deferred-loader` (deferred loader holes), `/shell-loader` + `/shell-replay` (+ `/shell-provider`, PPR-T57) (the same deferred hole; the shell cache rejects derived documents, PPR-T23 / PPR-T6) and `/dom-data` (DOM-backed data) are not derived-model routes yet";
+  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/dom-data` (DOM-backed data) is not a derived-model route yet; `/deferred-loader` + `/shell-loader` (deferred holes) resume since DERIVED-C2 streamed holes (pins deleted; `/shell-loader` is fuzzed without the shell cache, which rejects derived documents); `/shell-replay` resumes too (0 findings × 4, pins deleted); `/shell-provider` (PPR-T57) stays: its `Async` sits in a component's children slot under a `Provider`, which DERIVED-C2 streamed holes do not adopt (C2 gap: nested `Async` built after the synchronous part) — the browser re-runs the content with the deferred handle as `{}` (`reading 'map'`), DERIVED-C3";
 const GROUPS = { PRESS, RECREATE, MOUNT, ADOPTED, BASE } as const;
 
 const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): FuzzPin => ({
@@ -31,12 +31,7 @@ const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): 
 });
 
 export const pins: FuzzPin[] = [
-  pin("/deferred-loader", "mismatch", "BASE"),
-  pin("/deferred-loader", "page-error", "BASE"),
-  pin("/shell-loader", "mismatch", "BASE"),
-  pin("/shell-loader", "page-error", "BASE"),
-  pin("/shell-replay", "mismatch", "BASE"),
-  pin("/shell-replay", "page-error", "BASE"),
+  pin("/shell-provider", "recreated", "BASE"),
   pin("/shell-provider", "mismatch", "BASE"),
   pin("/shell-provider", "page-error", "BASE"),
   pin("/dom-data", "load", "BASE"),

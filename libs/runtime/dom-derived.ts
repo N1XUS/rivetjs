@@ -35,7 +35,7 @@ import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, same, save, textOf } from "./dom-adopt.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt.ts";
 import { _setUnrecorded } from "./resume-format.ts";
-import type { BoundaryTail } from "./resume-format.ts";
+import type { BoundaryTail, DerivedAsync } from "./resume-format.ts";
 import { DEV } from "#dev";
 
 /** Record flags (`BoundaryRecord[2]`, `server-derived.ts`). */
@@ -49,7 +49,9 @@ const PROBE = 0,
   ADOPT = 1,
   CLIENT = 2;
 const R_OPEN = /^r\d*\[$/,
-  B_OPEN = /^b\d+$/;
+  B_OPEN = /^b\d+$/,
+  A_OPEN = /^a\d+$/,
+  HTML_NS = "http://www.w3.org/1999/xhtml";
 
 /** A server boundary record, as the browser tracks it. */
 interface Rec {
@@ -94,7 +96,24 @@ interface FHole {
   /** The server nodes `claim` gave it (not a sole list). */
   span: Node[] | null;
 }
-type Hole = BHole | FHole;
+/**
+ * An `Async` the server streamed or awaited (DERIVED-C2; tail / patch `a` names it by its unit and place `k`): the probe
+ * gets a comment pair, the alignment its server range `<!--a<id>-->…<!--/a-->` (fallback, or the content once swapped in),
+ * the adopt run a keep token for it; once its value is known its content adopts as a unit of its own (`landAsync`).
+ */
+interface AHole {
+  kind: 2;
+  id: number;
+  nodes: Node[];
+  start: Node | null;
+  end: Node | null;
+  props: { load: (work: unknown) => unknown; fallback?: unknown } | null;
+  self: ((props: never) => unknown) | null;
+  owner: Owner | null;
+  token: { n(): Node[] };
+  done: boolean;
+}
+type Hole = BHole | FHole | AHole;
 /** One run (probe / adopt / client fallback) of a unit. */
 interface Unit {
   mode: number;
@@ -115,6 +134,10 @@ interface Unit {
   inline: Set<number> | null;
   /** Inside an inline body: every `_b` runs its body. */
   depth: number;
+  /** `Async`s with a fallback so far (their place `k`, DERIVED-C2). */
+  an: number;
+  /** An `Async`'s content unit: its id (its own `Async`s are keyed `-aid`). */
+  aid: number;
 }
 /**
  * A list adopted lazily (DERIVED-C: O(1) at adopt): no row object, no client `_for` until needed — its slot keeps the
@@ -122,8 +145,10 @@ interface Unit {
  * event inside one, keyed write or wake (`rowsOf`), the client `_for` on the first change of its items (`realFor`).
  */
 interface Lazy {
-  /** null: not built yet (`rowsOf`). */
+  /** Every row (null: not built yet, `rowsOf`). */
   rows: LRow[] | null;
+  /** The rows built on demand before that (sparse, by index: `rowAt`), null before the first. */
+  part: LRow[] | null;
   items: unknown[];
   props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown };
   hole: FHole;
@@ -161,12 +186,18 @@ interface LRow extends ForRow {
  * its index getter. A write to the signal runs the writer over each lazy row (untracked, on the server nodes) instead
  * of materialising every row.
  */
-type WArg = [0, unknown] | [1, number[], string] | [2] | [3];
+type WArg = [0, unknown] | [1, number[], string, string | null] | [2] | [3];
 interface Writer {
   fn: (a: unknown, b: unknown, c: unknown) => void;
   args: WArg[];
   /** Element slot of this writer's element capture in `LRow.els` (one per writer with an element capture). */
   slot: number;
+  /** A blank detached element like the captured one: the writer's dry runs (`touched`) start from clones of it. */
+  stub: Element | null;
+  /** The dry runs' elements (before / after the write), kept while equal (`touched`). */
+  dry: [Element, Element] | null;
+  /** Its dry runs left an expando (compared too); `2`: a non-scalar one (a slot: dry runs are not used). */
+  keys: number;
 }
 /** A keyed signal: its wake list (first write) and the lazy lists whose rows read it. */
 interface Keyed {
@@ -226,7 +257,14 @@ const recs = new Map<number, Rec>(),
   listsIn = new WeakMap<Node, Lazy>(),
   // `_sig` getters: the only non-row captures a keyed row writer may take (they are the same in every row).
   keyedGetters = new WeakSet<object>(),
-  pending: HeldEvent[] = [];
+  pending: HeldEvent[] = [],
+  // Streamed / awaited `Async`s (tail + patches `a`): entry by id, id by unit key (record id, `-id` of an Async) and
+  // place, holes adopted before their value arrived.
+  asyncs = new Map<number, DerivedAsync>(),
+  asyncAt = new Map<number, Map<number, number>>(),
+  waiting = new Map<number, AHole>();
+// The next `Async` call is a landed hole's own run (`landAsync`): it runs as usual.
+let asyncRun = false;
 const DIVERGED = "Rivet resume: an adopt run diverged from its probe";
 
 const pair = (): Node[] => [document.createComment("b?"), document.createComment("/b?")];
@@ -241,6 +279,8 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   n: 0,
   inline: null,
   depth: 0,
+  an: 0,
+  aid: 0,
 });
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
@@ -304,14 +344,14 @@ export function _sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sign
     before(e);
     const was = e.rows && untrack(s),
       out = s.set(value);
-    if (e.rows && untrack(s) !== was) rewrite(e);
+    if (e.rows && untrack(s) !== was) rewrite(e, get, was);
     return out;
   };
   get.update = (fn) => {
     before(e);
     const was = e.rows && untrack(s),
       out = s.update(fn);
-    if (e.rows && untrack(s) !== was) rewrite(e);
+    if (e.rows && untrack(s) !== was) rewrite(e, get, was);
     return out;
   };
   return get;
@@ -366,6 +406,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
   if (!hole || hole.kind !== 1) throw Error(DIVERGED);
   const lazy: Lazy = {
     rows: null,
+    part: null,
     items,
     props,
     hole,
@@ -402,6 +443,95 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     return lazy.real();
   };
 }
+// `Async` in a unit's runs (`_adoption.async`, DERIVED-C2): one the server streamed or awaited (tail `a`, by the unit's key
+// and the place among its `Async`s with a fallback, as the server counted them) is a hole: probe → a comment pair, adopt
+// run → its server range (kept: a token), landed after the run; any other runs as usual.
+function asyncHook(props: NonNullable<AHole["props"]>, self: (props: never) => unknown): unknown {
+  if (asyncRun) return void (asyncRun = false);
+  const u = cur;
+  if (u === null || u.mode === CLIENT || inner || u.depth || typeof props.fallback !== "function") return undefined;
+  const k = u.an++,
+    id = asyncAt.get(u.aid ? -u.aid : (u.rec?.id ?? 0))?.get(k);
+  if (id === undefined) return undefined;
+  if (u.mode === PROBE) {
+    const hole: AHole = { kind: 2, id, nodes: pair(), start: null, end: null, props: null, self: null, owner: null, token: { n: () => [] }, done: false };
+    hole.token = { n: () => (hole.start ? spanOf(hole.start, hole.end!) : []) };
+    u.holes.push(hole);
+    return hole.nodes;
+  }
+  const hole = u.holes[u.at++];
+  if (!hole || hole.kind !== 2 || hole.id !== id) throw Error(DIVERGED);
+  hole.props = props;
+  hole.self = self;
+  hole.owner = getOwner();
+  _adoption.keep!.add(hole.token);
+  return hole.token;
+}
+// The nodes from `start` to `end`, both included (an `Async` hole's server range as it is now).
+function spanOf(start: Node, end: Node): Node[] {
+  const out: Node[] = [];
+  for (let n: Node | null = start; n !== null; n = n === end ? null : n.nextSibling) out.push(n);
+  return out;
+}
+// A slot's current holding an `Async` hole's range: read live (a streamed segment swaps its content in later).
+function liveSpan(hole: AHole): Node[] {
+  return new Proxy([] as Node[], {
+    get: (_, key) => Reflect.get(spanOf(hole.start!, hole.end!), key),
+    has: (_, key) => Reflect.has(spanOf(hole.start!, hole.end!), key),
+    ownKeys: () => Reflect.ownKeys(spanOf(hole.start!, hole.end!)),
+    getOwnPropertyDescriptor: (_, key) => Reflect.getOwnPropertyDescriptor(spanOf(hole.start!, hole.end!), key),
+  });
+}
+// After the adopt run of the unit holding it: the hole's content adopts with its value (a unit of its own, its `load`
+// not run: the first call answers the server's value), waits for its segment (the document still parses), or renders
+// in the browser (no value: failed, not data, the stream ended first).
+function landAsync(h: AHole): void {
+  if (h.done || !h.start) return;
+  const e = asyncs.get(h.id);
+  if (e && e[3] === 1) {
+    h.done = true;
+    waiting.delete(h.id);
+    // Its probe, adopt (and fallback client) runs answer the server's value without running `load` (which therefore
+    // tracks nothing: the resumed boundary does not reload on a change of what its load read on the server — gap).
+    const value = e[4],
+      props = h.props!;
+    let live = false;
+    queueMicrotask(() => (live = true));
+    const once = Object.create(props, { load: { value: (work: unknown) => (live ? props.load(work) : value) } });
+    const run = (): unknown => {
+      asyncRun = true;
+      const u = cur;
+      if (u) u.aid = h.id;
+      return h.self!(once as never);
+    };
+    try {
+      adoptUnit(h.owner, run, h.start, h.end!, null, false, "Async");
+    } catch (error) {
+      report(error);
+    }
+    return;
+  }
+  if ((!e || e.length < 4) && doc!.readyState === "loading") return void waiting.set(h.id, h);
+  h.done = true;
+  waiting.delete(h.id);
+  try {
+    client(h.owner, () => ((asyncRun = true), h.self!(h.props as never)), h.start, h.end!, null, false);
+  } catch (error) {
+    report(error);
+  }
+}
+// Tail / patch `a` entries: known holes; a waiting hole whose entry settled lands.
+function asyncEntries(list: DerivedAsync[] | undefined): void {
+  for (const e of list ?? []) {
+    asyncs.set(e[0], e);
+    let at = asyncAt.get(e[1]);
+    if (!at) asyncAt.set(e[1], (at = new Map()));
+    at.set(e[2], e[0]);
+    const h = waiting.get(e[0]);
+    if (h && e.length > 3) landAsync(h);
+  }
+}
+
 // A lazy row's item accessor (the client `_for`'s `itemRead`: a signal once read tracked).
 function itemRead(this: ForRow): unknown {
   return this.sig !== null ? this.sig() : _tracking() ? (this.sig = signal(this.value))() : this.value;
@@ -434,30 +564,89 @@ function rowsOf(lazy: Lazy): LRow[] {
   if (groups.length !== items.length) {
     // The server rows are not the items' (count): the list renders in the browser (its slot's accessor builds the
     // client `_for` without adopted rows).
-    lazy.bad = true;
-    if (lazy.real === null && !building) lazy.tick.set(1);
+    bad(lazy);
     return (lazy.rows = []);
   }
+  const part = lazy.part;
   return (lazy.rows = groups.map(([start, end], k) => {
-    const item = items[k];
-    const row: LRow = {
-      value: item,
-      key: by ? by(item, k) : item,
-      sig: null,
-      index: indexed ? signal(k) : null,
-      nodes: null,
-      start,
-      end,
-      owner: null,
-      pass: 0,
-      lz: lazy,
-      done: false,
-      els: null,
-      get: null,
-    };
-    rowsByStart.set(start, row);
-    return row;
+    const row = part?.[k];
+    // A row built on demand stands for the same server group (`rowAt` counts the groups the same way).
+    return row && row.start === start ? row : makeRow(lazy, k, start, end, by, indexed);
   }));
+}
+function makeRow(lazy: Lazy, k: number, start: Node, end: Node, by: ((item: unknown, index: number) => unknown) | undefined, indexed: boolean): LRow {
+  const item = lazy.items[k];
+  const row: LRow = {
+    value: item,
+    key: by ? by(item, k) : item,
+    sig: null,
+    index: indexed ? signal(k) : null,
+    nodes: null,
+    start,
+    end,
+    owner: null,
+    pass: 0,
+    lz: lazy,
+    done: false,
+    els: null,
+    get: null,
+  };
+  rowsByStart.set(start, row);
+  return row;
+}
+function bad(lazy: Lazy): void {
+  lazy.bad = true;
+  if (lazy.real === null && !building) lazy.tick.set(1);
+}
+// Row `k` of a list, built on demand (DERIVED-C2: the first event builds its target's row, a keyed write the rows whose
+// output it changes — not the whole list). A sole list's groups are counted on its element's children from the nearest
+// row built before (`start`: the group's opener when the caller counted it, `enclosing`). Null: no such server row
+// (the list renders in the browser, `bad`).
+function rowAt(lazy: Lazy, k: number, start?: Node): LRow | null {
+  if (lazy.rows) return lazy.rows[k] ?? null;
+  const part = (lazy.part ??= []),
+    known = part[k];
+  if (known) return known;
+  const props = lazy.props,
+    by = props.by as ((item: unknown, index: number) => unknown) | undefined,
+    indexed = props.children.length > 1,
+    groups = lazy.hole.groups;
+  let s: Node | null = null,
+    e: Node | null = null;
+  if (k < lazy.items.length) {
+    if (groups) [s, e] = groups[k] ?? [null, null];
+    else {
+      s = start ?? seek(lazy, part, k);
+      // The group's close (balanced: rows of a nested list sit at the same level).
+      for (let n = s, depth = 0; n !== null; n = n.nextSibling) {
+        const d = data(n);
+        if (d === null) continue;
+        if (R_OPEN.test(d)) depth++;
+        else if (d === "]" && --depth === 0) {
+          e = n;
+          break;
+        }
+      }
+    }
+  }
+  if (!s || !e) return (bad(lazy), null);
+  return (part[k] = makeRow(lazy, k, s, e, by, indexed));
+}
+// The opener of group `k` of a sole list: counted from the nearest row built before it (else the element's first child).
+function seek(lazy: Lazy, part: LRow[], k: number): Node | null {
+  let j = k - 1;
+  while (j >= 0 && !part[j]) j--;
+  let count = j + 1,
+    depth = 0;
+  for (let n = j >= 0 ? part[j]!.end!.nextSibling : lazy.hole.sole!.firstChild; n !== null; n = n.nextSibling) {
+    const d = data(n);
+    if (d === null) continue;
+    if (R_OPEN.test(d)) {
+      if (!depth && count === k) return n;
+      depth++;
+    } else if (d === "]" && --depth === 0) count++;
+  }
+  return null;
 }
 // The client `_for` of a lazy list, under the list's owner: takes the server rows (adopted by key, materialised ones keep
 // their owners) unless they did not match (`bad`: rendered in the browser, the slot's server nodes replaced).
@@ -489,17 +678,17 @@ function realFor(lazy: Lazy): () => Node[] {
     _adoption.rows = outer;
   }
 }
-// The lazy list whose server rows an element holds (sole lists), for a row opener the event path meets.
-function listAt(opener: Node): LRow | undefined {
+// The row of a sole list (by the element holding its server rows) a row opener the event path meets stands for: `k`
+// groups before it (`enclosing` counted them).
+function listAt(opener: Node, k: number): LRow | null | undefined {
   const lazy = opener.parentNode ? listsIn.get(opener.parentNode) : undefined;
-  if (lazy) rowsOf(lazy);
-  return rowsByStart.get(opener);
+  return lazy && rowAt(lazy, k, opener);
 }
 
-// A sole list's hole start (its span is a lazy view of its element's children).
+// A sole list's hole start (its span is a lazy view of its element's children), or an `Async` hole's (a live view).
 const soleOf = (a: UnitAlign, n: Node): boolean => {
   const hole = a.holes.get(n);
-  return hole !== undefined && hole.kind === 1 && hole.sole !== null;
+  return hole !== undefined && ((hole.kind === 1 && hole.sole !== null) || hole.kind === 2);
 };
 // An element's children, read on first use (a slot's current that stays untouched while a lazy list keeps its rows).
 function lazyKids(el: Element): Node[] {
@@ -535,7 +724,7 @@ function closeAt(ll: Node[], j: number, open: RegExp, close: string): number {
 }
 const claimable = (hole: Hole, n: Node): boolean => {
   const d = data(n);
-  return d !== null && (hole.kind ? R_OPEN : B_OPEN).test(d);
+  return d !== null && (hole.kind === 2 ? A_OPEN : hole.kind ? R_OPEN : B_OPEN).test(d);
 };
 function mismatch(a: UnitAlign, at: Node, server: Node | undefined, probe: Node | undefined): void {
   a.fail = true;
@@ -582,6 +771,15 @@ function runs(a: UnitAlign, fr: Node[], lr: Node[], at: Node, before: Node | nul
 }
 // A hole takes its server range at `ll[j]`: a For its `n` row groups, a boundary its `<!--bN-->` range or `data-b` element.
 function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): number {
+  if (hole.kind === 2) {
+    const e = data(ll[j]) === "a" + hole.id ? closeAt(ll, j, A_OPEN, "/a") : -1;
+    if (e < 0) return (mismatch(a, at, ll[j], hole.nodes[0]), j);
+    hole.start = ll[j]!;
+    hole.end = ll[e]!;
+    a.span.set(hole.nodes[0]!, liveSpan(hole));
+    a.span.set(hole.nodes[1]!, []);
+    return e + 1;
+  }
   if (hole.kind === 1) {
     const groups: [Node, Node][] = [],
       nodes: Node[] = [];
@@ -784,6 +982,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   const own = pu.holes.length + pu.counts.size;
   // 5. Child boundaries: dependent ones now, independent ones deferred; lists: which keyed signals their rows read.
   for (const hole of au.holes) if (hole.kind === 0 && hole.rec && !hole.rec.done) child(hole.rec, hole);
+  for (const hole of au.holes) if (hole.kind === 2) landAsync(hole);
   for (const lazy of au.fors) sample(lazy);
   shape = own;
   return owner;
@@ -882,7 +1081,7 @@ function describeArg(run: Sampled, a: unknown): WArg | null {
       let i = 0;
       for (let p = n.previousElementSibling; p !== null; p = p.previousElementSibling) i++;
       path.unshift(i);
-      if (n.parentNode === run.frag) return [1, path, a.localName];
+      if (n.parentNode === run.frag) return [1, path, a.localName, a.namespaceURI];
     }
   }
   return null;
@@ -906,7 +1105,7 @@ function sample(lazy: Lazy): void {
     for (const e of r) reads.add(e);
     const other = same ? last.fxs[i]! : null;
     if (other) for (const e of other[2]) reads.add(e);
-    let w: Writer | null = other && other[0] === fn ? { fn, args: [], slot: -1 } : null;
+    let w: Writer | null = other && other[0] === fn ? { fn, args: [], slot: -1, stub: null, dry: null, keys: 0 } : null;
     for (let j = 0; w && j < 3; j++) {
       const x = describeArg(first, args[j]),
         y = describeArg(last, other![1][j]);
@@ -933,34 +1132,107 @@ function sample(lazy: Lazy): void {
     else (e.fors ??= new Set()).add(lazy);
   }
 }
-// A write to a keyed signal with row writers: rerun them over every lazy row still on the page (materialised rows have
-// their own bindings). A row whose element capture does not resolve to the sampled element materialises instead.
-function rewrite(e: Keyed): void {
+// A write to a keyed signal (`get`, its value before: `was`) with row writers: rerun them over the lazy rows still on
+// the page (materialised rows have their own bindings). While the items are the server's, only the rows whose output
+// the write changes are built and written (`touched`). A row whose element capture does not resolve to the sampled
+// element materialises instead.
+function rewrite(e: Keyed, get: unknown, was: unknown): void {
   for (const [lazy, writers] of e.rows!)
-    rows: for (const row of rowsOf(lazy)) {
-      if (row.done || !row.start!.isConnected) continue;
-      for (const w of writers) {
-        let a: unknown, b: unknown, c: unknown;
-        for (let j = 0; j < 3; j++) {
-          const arg = w.args[j]!;
-          let v: unknown;
-          if (arg[0] === 0) v = arg[1];
-          else if (arg[0] === 2) v = row.get ??= lazy.read ? lazy.read.bind(row) : () => row.value;
-          else if (arg[0] === 3) v = row.index ?? null;
-          else v = element(row, w.slot, arg[1], arg[2]);
-          if (v === null) {
-            materialiseRow(row);
-            continue rows;
-          }
-          j === 0 ? (a = v) : j === 1 ? (b = v) : (c = v);
-        }
-        try {
-          untrack(() => w.fn(a, b, c));
-        } catch (error) {
-          report(error);
-        }
-      }
+    if (lazy.real === null && !lazy.bad && writers.every((w) => w.slot >= 0 && w.keys < 2 && !w.args.some((arg) => arg[0] === 3)))
+      touched(lazy, writers, get, was);
+    else for (const row of rowsOf(lazy)) if (!row.done && row.start!.isConnected) writeRow(lazy, row, writers);
+}
+function writeRow(lazy: Lazy, row: LRow, writers: Writer[]): void {
+  for (const w of writers) {
+    let a: unknown, b: unknown, c: unknown;
+    for (let j = 0; j < 3; j++) {
+      const arg = w.args[j]!;
+      let v: unknown;
+      if (arg[0] === 0) v = arg[1];
+      else if (arg[0] === 2) v = row.get ??= lazy.read ? lazy.read.bind(row) : () => row.value;
+      else if (arg[0] === 3) v = row.index ?? null;
+      else v = element(row, w.slot, arg[1], arg[2]);
+      if (v === null) return materialiseRow(row);
+      j === 0 ? (a = v) : j === 1 ? (b = v) : (c = v);
     }
+    try {
+      untrack(() => w.fn(a, b, c));
+    } catch (error) {
+      report(error);
+    }
+  }
+}
+// Each row's writers run twice into detached elements (`Writer.dry`: no page node, no row object) — with the written
+// signal's value before and after; a row whose output differs (attributes, children, form state, expandos) is built
+// (`rowAt`) and written. Rows the write does not change keep their server nodes untouched: their output is the same
+// function of the same values (the page shows what the values before it produce). The two elements carry on from row
+// to row while equal: the writers overwrite what they write (attribute, class, style, text, form property), so equal
+// elements before a run end unequal exactly when the run's writes differ.
+function touched(lazy: Lazy, writers: Writer[], get: unknown, was: unknown): void {
+  const items = lazy.items,
+    known = lazy.rows ?? lazy.part,
+    before = () => was;
+  for (let k = 0; k < items.length; k++) {
+    const row = known?.[k];
+    if (row && (row.done || !row.start!.isConnected)) continue;
+    const item = row ? (row.get ??= lazy.read ? lazy.read.bind(row) : () => row.value) : () => items[k];
+    let changed = false;
+    for (let i = 0; !changed && i < writers.length; i++) changed = differs(writers[i]!, item, get, before);
+    if (!changed) continue;
+    const at = row ?? rowAt(lazy, k);
+    if (!at) return;
+    writeRow(lazy, at, writers);
+    if (lazy.real !== null || lazy.bad) return rewriteRest(lazy, writers, k);
+  }
+}
+// A write built the list's client `_for` / found its rows wrong: the rows after `k` are written as before DERIVED-C2.
+function rewriteRest(lazy: Lazy, writers: Writer[], k: number): void {
+  const rows = rowsOf(lazy);
+  for (let j = k + 1; j < rows.length; j++) if (!rows[j]!.done && rows[j]!.start!.isConnected) writeRow(lazy, rows[j]!, writers);
+}
+// The writer's dry runs for one row (`get` answered by its value before, then as now): true when they wrote differently
+// (or threw).
+function differs(w: Writer, item: () => unknown, get: unknown, before: () => unknown): boolean {
+  let pair = w.dry;
+  if (!pair) {
+    const arg = w.args.find((x) => x[0] === 1) as [1, number[], string, string | null];
+    w.stub ??= arg[3] === HTML_NS ? doc!.createElement(arg[2]) : doc!.createElementNS(arg[3], arg[2]);
+    pair = w.dry = [w.stub.cloneNode(false) as Element, w.stub.cloneNode(false) as Element];
+  }
+  const [x, y] = pair;
+  if (!dryRun(w, x, item, get, before) || !dryRun(w, y, item, get, get) || !x.isEqualNode(y) || !alike(w, x, y)) {
+    w.dry = null;
+    return true;
+  }
+  return false;
+}
+function dryRun(w: Writer, el: Element, item: () => unknown, get: unknown, value: unknown): boolean {
+  let a: unknown, b: unknown, c: unknown;
+  for (let j = 0; j < 3; j++) {
+    const arg = w.args[j]!,
+      v = arg[0] === 0 ? (arg[1] === get ? value : arg[1]) : arg[0] === 2 ? item : el;
+    j === 0 ? (a = v) : j === 1 ? (b = v) : (c = v);
+  }
+  try {
+    untrack(() => w.fn(a, b, c));
+    return true;
+  } catch {
+    return false;
+  }
+}
+// Form state and expandos (`_t`'s `$$t`) of two dry-run elements `isEqualNode` found equal.
+function alike(w: Writer, x: Element, y: Element): boolean {
+  const p = x as unknown as Record<string, unknown>,
+    q = y as unknown as Record<string, unknown>;
+  if ("value" in x && (p.value !== q.value || p.checked !== q.checked || p.selected !== q.selected)) return false;
+  if (w.keys === 0) {
+    // The first dry run tells whether this writer leaves expandos at all.
+    const own = Object.keys(x);
+    if (!own.length) return ((w.keys = -1), true);
+    w.keys = own.some((key) => (typeof p[key] === "object" && p[key] !== null) || typeof p[key] === "function") ? 2 : 1;
+  }
+  if (w.keys === 1) for (const key of Object.keys(x)) if (p[key] !== q[key]) return false;
+  return w.keys !== 2;
 }
 // The row's element at an element-index path from its start (cached per writer slot), null when the server row's
 // elements are not the sampled ones.
@@ -1077,6 +1349,44 @@ function need(r: Rec): true | Promise<void> {
   standalone(r, module);
   return true;
 }
+// The records of the tail or of a streamed segment's patch (its names, keys and wake lists merged into the tail), then
+// its `Async` entries.
+function records(t: BoundaryTail, patch: boolean): void {
+  const added: Rec[] = [];
+  for (const [id, parent, flags, name, signals, props] of t.b) {
+    const values = new Map<string, unknown>();
+    for (let i = 0; i < signals.length; i += 2) values.set(signals[i] as string, signals[i + 1]);
+    const r: Rec = {
+      id,
+      parent: recs.get(parent) ?? null,
+      flags,
+      name,
+      values,
+      props: props ?? null,
+      done: false,
+      owner: null,
+      hole: null,
+      loading: null,
+      ready: null,
+      sources: null,
+    };
+    recs.set(id, r);
+    added.push(r);
+  }
+  if (patch) {
+    // The segment's markup is in the page now: the opener walk starts over (it may have passed where it went).
+    openers = null;
+    if (t.m) Object.assign((tail!.m ??= {}), t.m);
+    if (t.k) Object.assign((tail!.k ??= {}), t.k);
+    if (t.w) Object.assign((tail!.w ??= {}), t.w);
+  }
+  for (const key in t.w ?? {}) {
+    const source = recs.get(+key.slice(0, key.indexOf(".")));
+    if (source) for (const id of t.w![key]!) recs.get(id) && (recs.get(id)!.sources ??= []).push(source);
+  }
+  for (const r of added) if (r.flags & (LOAD | IDLE | VISIBLE) && !r.hole) trigger(r);
+  asyncEntries(t.a);
+}
 function trigger(r: Rec): void {
   const go = () => {
     const p = need(r);
@@ -1096,20 +1406,25 @@ function trigger(r: Rec): void {
 }
 
 // The units around `node`, outermost first: boundary ranges (`data-b` elements, `<!--bN-->` openers) and region
-// openers (`<!--rN[-->`: lazy rows; Show branches are no units and are skipped by the caller).
+// openers (`<!--rN[-->`: lazy rows, with the count of row groups before them at their level; Show branches are no
+// units and are skipped by the caller).
 function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
   const out: [number, number, Node][] = [];
   for (let n = node; n !== null && n.nodeType !== 9; n = n.parentNode ?? (n as unknown as ShadowRoot).host ?? null) {
     if (n.nodeType === 1 && (n as Element).hasAttribute("data-b")) out.push([0, +(n as Element).getAttribute("data-b")!, n]);
     let b = 0,
-      r = 0;
+      r = 0,
+      row: [number, number, Node] | null = null;
     for (let s = n.previousSibling; s !== null; s = s.previousSibling) {
       const d = data(s);
       if (d === null) continue;
       if (d === "/b") b++;
       else if (d === "]") r++;
       else if (B_OPEN.test(d)) b ? b-- : out.push([0, +d.slice(1), s]);
-      else if (R_OPEN.test(d)) r ? r-- : out.push([1, 0, s]);
+      else if (R_OPEN.test(d)) {
+        if (!r) out.push((row = [1, 0, s]));
+        else if (!--r && row) row[1]++;
+      }
     }
   }
   return out.reverse();
@@ -1120,7 +1435,7 @@ function around(target: EventTarget | null): true | Promise<void> {
     let step: true | Promise<void> | null = null;
     for (const [kind, id, at] of enclosing(target as Node | null)) {
       if (kind) {
-        const row = rowsByStart.get(at) ?? listAt(at);
+        const row = rowsByStart.get(at) ?? listAt(at, id);
         if (row && !row.done) {
           materialiseRow(row);
           step = true;
@@ -1399,29 +1714,14 @@ const runtime: DerivedRuntime = {
         cur = u;
       }
     });
-    for (const [id, parent, flags, name, signals, props] of t.b) {
-      const values = new Map<string, unknown>();
-      for (let i = 0; i < signals.length; i += 2) values.set(signals[i] as string, signals[i + 1]);
-      recs.set(id, {
-        id,
-        parent: recs.get(parent) ?? null,
-        flags,
-        name,
-        values,
-        props: props ?? null,
-        done: false,
-        owner: null,
-        hole: null,
-        loading: null,
-        ready: null,
-        sources: null,
-      });
-    }
-    for (const key in t.w ?? {}) {
-      const source = recs.get(+key.slice(0, key.indexOf(".")));
-      if (source) for (const id of t.w![key]!) recs.get(id) && (recs.get(id)!.sources ??= []).push(source);
-    }
-    for (const r of recs.values()) if (r.flags & (LOAD | IDLE | VISIBLE) && !r.hole) trigger(r);
+    _adoption.async = asyncHook as typeof _adoption.async;
+    records(t, false);
+    // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
+    const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
+    for (const x of sd.$rd ?? []) records(x, true);
+    sd.$rdp = (x: BoundaryTail) => records(x, true);
+    // Stream over (document parsed) with `Async` holes still waiting: they render in the browser.
+    if (d.readyState === "loading") d.addEventListener("DOMContentLoaded", () => [...waiting.values()].forEach(landAsync));
     for (const item of loader.q.splice(0)) runtime.cold(item);
   },
   on(event) {

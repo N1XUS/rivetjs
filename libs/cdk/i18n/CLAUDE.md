@@ -28,7 +28,7 @@ Locale resolution, RTL detection, cached date formatters, localized string table
 - `I18nProvider` children: plain JSX (lazy slot, `renderSlot`) or `{() => <Page/>}`
 - `getStringsForLocale` fallback order: exact, language-script, language, any region of the language, `defaultLocale`
 - `getDateFormatter` cache cleared past 256 entries
-- memoised per locale string (pure Intl data, bounded 256): `isRTL` (`Intl.Locale(…).maximize()`), `getStringsForLocale`'s language / script parse; `getDefaultLocale` reads `<html lang>` / `navigator.language` every call and reuses the last string's validation + direction (fresh object per call). Select / ComboBox 300 mounts −13–14%, DatePicker −19% with the date memos (HOTPATH 2026-10-09)
+- memoised per locale string (pure Intl data, bounded 256): `isRTL` (`Intl.Locale(…).maximize()`; DERIVED-C2 2026-10-21: no lookup for `LTR_LANGS` — languages CLDR writes left to right in every script / region — unless a script subtag is right to left, `maximize` ~1 ms at 1× on first use; `tests/i18n-direction.test.ts` checks the list against the lookup), `getDefaultLocale` validates with `Intl.getCanonicalLocales` (syntax only; `DateTimeFormat.supportedLocalesOf` loaded formatter data: 4–5 ms at 1× on a resumed page's first event; `state/date-field.ts` `getLocale` likewise), `getStringsForLocale`'s language / script parse; `getDefaultLocale` reads `<html lang>` / `navigator.language` every call and reuses the last string's validation + direction (fresh object per call). Select / ComboBox 300 mounts −13–14%, DatePicker −19% with the date memos (HOTPATH 2026-10-09)
 - `*/intl.ts` tables are generated - do not edit by hand
 - package-wide rules: [../CLAUDE.md](../CLAUDE.md)
 
@@ -37,7 +37,7 @@ Locale resolution, RTL detection, cached date formatters, localized string table
 
 ## Gotchas
 - `Direction` type re-exported from `../collections/types.ts`; `isRTL` (Intl.Locale textInfo) and `../bidi` `isRtlLocale` (regex) are separate implementations
-- no unit tests for `getStringsForLocale` / `formatString` / `isRTL`
+- no unit tests for `getStringsForLocale` / `formatString`; `isRTL` fast path + `getDefaultLocale` fallback: `tests/i18n-direction.test.ts`
 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../bidi/CLAUDE.md](../bidi/CLAUDE.md)

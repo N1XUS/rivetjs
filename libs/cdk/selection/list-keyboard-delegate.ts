@@ -277,12 +277,18 @@ export class ListKeyboardDelegate<T> implements KeyboardDelegate {
 
 const collators = new Map<string, Intl.Collator>();
 
-/** Search collator (react-aria `useCollator({ usage: "search", sensitivity: "base" })`), cached per locale. */
+/**
+ * Search collator (react-aria `useCollator({ usage: "search", sensitivity: "base" })`), cached per locale. The
+ * `Intl.Collator` is made on the first `compare` / `resolvedOptions` (typeahead): its collation data costs ~3.5 ms
+ * at 1× on first use, which a collection's mount (or a resumed page's first event) would otherwise pay.
+ */
 export function searchCollator(locale?: string): Intl.Collator {
   const lang = locale ?? (typeof document !== "undefined" ? document.documentElement.lang || undefined : undefined) ?? "en-US";
   let collator = collators.get(lang);
   if (!collator) {
-    collator = new Intl.Collator(lang, { usage: "search", sensitivity: "base" });
+    let real: Intl.Collator | undefined;
+    const made = (): Intl.Collator => (real ??= new Intl.Collator(lang, { usage: "search", sensitivity: "base" }));
+    collator = { compare: (x: string, y: string) => made().compare(x, y), resolvedOptions: () => made().resolvedOptions() } as Intl.Collator;
     collators.set(lang, collator);
   }
   return collator;
