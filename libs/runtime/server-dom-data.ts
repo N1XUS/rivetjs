@@ -9,7 +9,7 @@
 // previous tree's skeleton are checked against it in one walk (no skeleton per row).
 import { ATTRIBUTE, booleanAttributes, COMPILED, _attributeName } from "./template.ts";
 import type { AttributeNamespace } from "./template.ts";
-import { rowTexts } from "./server-resume-paths.ts";
+import { rowContent, rowTexts } from "./server-resume-paths.ts";
 import { URLS } from "./url.ts";
 import type { BindingEntry, CompactRows, DomLast, DomTexts, DomTree, EntryRecord, Literal, TableEntry } from "./resume-format.ts";
 
@@ -29,6 +29,8 @@ export interface DomRegistry extends DomTexts {
   rows(plan: DomPlan, tape: readonly unknown[], rows: readonly DomRow[], count: number, width: number): void;
   /** A lazy row's compiled template value, row region `marker`. */
   lazyRow(value: unknown, marker: number, item: unknown): void;
+  /** A recorded row's compiled template value (anchor: its root element's `data-r` id); `item` its data object. */
+  recordedRow(value: unknown, item: unknown): void;
   /** Wire form: runs of single `D` trees → `Dr` entries (in place, `t`; `table`: the encoder's, for the shapes). */
   runs(t: TableEntry[], table: readonly TableEntry[]): void;
   /** Wire form (DOM-DATA builds): compact rows' item refs `r` → runs `rs` when shorter (in place, the binding entries `b`). */
@@ -67,7 +69,8 @@ export function _domRegistry(): DomRegistry {
         (dom.items.set(item, dom.info.push(anchor, base, dom.sources.push(source) - 1) - 3), dom.slots.push(slots));
     },
     rows: (plan, tape, rows, count, width) => domRows(dom, plan, tape, rows, count, width),
-    lazyRow: (value, marker, item) => domLazyRow(dom, value, marker, item),
+    lazyRow: (value, marker, item) => domTemplateRow(dom, value, -1 - marker, item),
+    recordedRow: (value, item) => domTemplateRow(dom, value, null, item),
     tree: (value, shapeRef, last) => domTree(dom, value, shapeRef, last as DomMemo),
     runs: domRuns,
     strided: domStrided,
@@ -109,33 +112,47 @@ function domRows(dom: DomRegistry, plan: DomPlan, tape: readonly unknown[], rows
     if (item !== null && typeof item === "object" && !items.has(item)) items.set(item, info.push(rows[k]!.id + 1, k * width, block) - 3);
   }
 }
-// Compiled templates of lazy rows: their DOM-DATA slots (`rowTexts`, slots in a start tag = attributes), per fragments,
-// and the same slots over the template's block (`[i, …]`: its rows' values sit side by side, n per row).
-const templateTexts = new WeakMap<readonly string[], [texts: DomSlot[], block: DomSlot[]] | null>();
-/** A lazy row's own template (`render(get, at)`'s value): its values, addressed from the row root (row region `marker`:
- * anchor `-1 - marker`), when every content slot holds a primitive (a nested template could add elements before a path).
- * The row's slots array dies with its HTML: the values (references) go to one array per template (`lazyBlocks`). */
-function domLazyRow(dom: DomRegistry, value: unknown, marker: number, item: unknown): void {
+// Compiled templates of row regions: their DOM-DATA slots (`rowTexts`, slots in a start tag = attributes), per fragments,
+// the same slots over the template's block (`[i, …]`: its rows' values sit side by side, n per row) and its content slots.
+const templateTexts = new WeakMap<readonly string[], [texts: DomSlot[], block: DomSlot[], content: number[], root: number[]] | null>();
+/** A row's own template — a lazy row's `render(get, at)` value (anchor `-1 - marker`: its row region), or (SMALL-FIXES
+ * 2026-10-21) a recorded row's value (`anchor` null: the `data-r` id its root element's start tag holds; none → not
+ * registered), whose item may be the data object a cdk collection row named (`server-resume` `rowItem`): its values,
+ * addressed from the row root, when every content slot holds a primitive (a nested template could add elements before a
+ * path; start-tag slots — attribute records, a spread's attribute list — add none). The row's slots array dies with its
+ * HTML: the values (references) go to one array per template (`lazyBlocks`). */
+function domTemplateRow(dom: DomRegistry, value: unknown, anchor: number | null, item: unknown): void {
   if (item === null || typeof item !== "object" || dom.items.has(item)) return;
   if (value === null || typeof value !== "object" || !(value as { [COMPILED]?: true })[COMPILED]) return;
   const { fragments, slots } = value as { fragments: readonly string[]; slots: readonly unknown[] };
   let texts = templateTexts.get(fragments);
   if (texts === undefined) {
-    const all = rowTexts(fragments, null);
+    const all = rowTexts(fragments, null),
+      content = all && rowContent(fragments);
     templateTexts.set(
       fragments,
-      (texts = all && [
-        all.map(([slot, path]): DomSlot => [slot, path, "#" + path, path.endsWith("@") ? 1 : 0, "", true]),
-        all.map(([, path], i): DomSlot => [i, path, "#" + path, 0, "", true]),
-      ]),
+      (texts = all &&
+        content && [
+          all.map(([slot, path]): DomSlot => [slot, path, "#" + path, path.endsWith("@") ? 1 : 0, "", true]),
+          all.map(([, path], i): DomSlot => [i, path, "#" + path, 0, "", true]),
+          content,
+          all.filter(([, path]) => /^[^:.]*:@$/.test(path)).map(([slot]) => slot),
+        ]),
     );
   }
   if (texts === null) return;
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
-    if ((slot !== null && typeof slot === "object" && !(slot as Attribute)[ATTRIBUTE]) || typeof slot === "function") return;
+  const [mine, shared, content, root] = texts;
+  for (let i = 0; i < content.length; i++) {
+    const slot = slots[content[i]!];
+    if ((slot !== null && typeof slot === "object") || typeof slot === "function") return;
   }
-  const [mine, shared] = texts;
+  // A recorded row: its root element's id (`_rId`'s `data-r` record in the root start tag).
+  for (let i = 0; anchor === null && i < root.length; i++) {
+    const record = slots[root[i]!] as Attribute | null;
+    if (record !== null && typeof record === "object" && record[ATTRIBUTE] && record.name === "data-r" && typeof record.value === "number")
+      anchor = record.value;
+  }
+  if (anchor === null) return;
   let block = dom.lazyBlocks.get(mine);
   if (block === undefined) (dom.lazyBlocks.set(mine, (block = dom.sources.push([]) - 1)), dom.slots.push(shared));
   const values = dom.sources[block] as unknown[],
@@ -157,7 +174,7 @@ function domLazyRow(dom: DomRegistry, value: unknown, marker: number, item: unkn
     }
     values.push(v);
   }
-  dom.items.set(item, dom.info.push(-1 - marker, base, block) - 3);
+  dom.items.set(item, dom.info.push(anchor, base, block) - 3);
 }
 /** The value row h holds at DOM-DATA slot i of its template when it is worth a DOM reference (a string of ≥ 8 chars, a
  * finite number: `String(value)`, read back with `Number`; -0 never reaches a JSON tree), else undefined. */

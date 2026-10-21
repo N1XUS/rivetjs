@@ -52,12 +52,12 @@ rivet-for.mjs ead5072f9f82
 rivet-router-bunserve.mjs 400b5e5dfd8c
 rivet-router-uws.mjs 2e0a32c8d399
 rivet-router.mjs 34417ee36c65
-rivet-router/client/.vite/rivet-resume.json 4be71fa030af
+rivet-router/client/.vite/rivet-resume.json d401f07d9be9
 rivet-router/client/assets/page-Cj6x5bfY.js 061f922ae984
 rivet-router/client/assets/resume-BVi8YVzS.js 45f198780b0c
 rivet-router/client/assets/resume-builtins-Bml1wg2k.js 32e247d7ec71
-rivet-router/client/assets/resume-entry-DwM5Nr_n.deps.js 320bac4a7cc8
-rivet-router/client/assets/resume-entry-DwM5Nr_n.js 0e20a16261f3
+rivet-router/client/assets/resume-entry-BoPNLUjd.deps.js 320bac4a7cc8
+rivet-router/client/assets/resume-entry-BoPNLUjd.js 2734c17f21b3
 rivet-router/client/assets/resume-index_tsx-CIidB0Tq.deps.js 77e2541a94b1
 rivet-router/client/assets/resume-index_tsx-CIidB0Tq.js 14e87609030f
 rivet-router/client/assets/resume-loader-DEOXaVdQ.js afe6e8bb8a46

@@ -49,6 +49,7 @@ import type { RefProp } from "@rivetjs/runtime/jsx-runtime";
 import { _rUnrecorded, resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { HiddenContext } from "./hidden.ts";
+import { domRowItem } from "#server";
 import { rowKey, stampSet, stamp, type RowBox } from "./row-stamps.ts";
 import { hasLive } from "../utils/live.tsx";
 import { mergeProps as mergeLive, splitProps } from "@rivetjs/runtime/props";
@@ -779,6 +780,8 @@ export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null
   if (isServer)
     return untrack(() => {
       const n = collection()?.getItem(rowKey(key())) ?? null;
+      // DOM-DATA servers: the row's data object (the For iterates keys), registered with the row (`domRowItem`).
+      if (n !== null) domRowItem(n.value);
       return n?.render ? n.render(n) : null;
     });
   const node = computed(() => collection()?.getItem(rowKey(key())) ?? null, { equals: sameRender });

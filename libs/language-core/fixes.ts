@@ -17,7 +17,7 @@ export interface CodeFix {
 }
 
 /** Codes with fixes below. */
-export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1102", "RV2001", "RV2002", "RV2003", "RV2102", "RV3002", "RV3010"] as const;
+export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1102", "RV2001", "RV2002", "RV2003", "RV2016", "RV2102", "RV3002", "RV3010"] as const;
 
 const PRELOAD = ["eager", "idle", "visible", "intent", "interaction"] as const;
 
@@ -322,6 +322,150 @@ function wrapServerExport(ts: typeof TS, file: TS.SourceFile, node: TS.Node): Co
   return [{ fixName: "rivetWrapServerExport", description: `Wrap in \`${magic.wrapper}(…)\`: export const ${next} = ${magic.wrapper}(…)`, edits }];
 }
 
+/** The handle name for a resource: `loadUser` / `fetchUser` / `getUser` → `user`, else `res` (unique in the file). */
+function handleName(file: TS.SourceFile, ts: typeof TS, call: TS.CallExpression): string {
+  for (const arg of call.arguments) {
+    const m = ts.isIdentifier(arg) ? /^(?:load|fetch|get)([A-Z][\w$]*)$/.exec(arg.text) : null;
+    if (m) return uniqueName(file, m[1]![0]!.toLowerCase() + m[1]!.slice(1));
+  }
+  return uniqueName(file, "res");
+}
+
+/** Edits replacing every read of each binding (by symbol, through the one-file checker) with its replacement expression
+ * (`loading` → `user.loading`; shorthand `{ loading }` → `loading: user.loading`; `typeof loading` → `typeof user.loading`).
+ * Undefined (no fix) when a binding is written (`x = …`, `x++`) or exported by name: a handle member is not a variable. */
+function replaceReads(ts: typeof TS, file: TS.SourceFile, bindings: [TS.Identifier, string][]): TextEdit[] | undefined {
+  const { copy, checker } = fileChecker(ts, file);
+  const targets = new Map<TS.Symbol, [string, TS.Node]>();
+  for (const [identifier, replacement] of bindings) {
+    const own = nodeAt(ts, copy, identifier.getStart(file), identifier.end);
+    const symbol = own && checker.getSymbolAtLocation(own);
+    if (!symbol) return undefined;
+    targets.set(symbol, [replacement, own]);
+  }
+  const edits: TextEdit[] = [];
+  let refused = false;
+  const visit = (n: TS.Node): void => {
+    if (ts.isIdentifier(n)) {
+      const parent = n.parent;
+      if (ts.isShorthandPropertyAssignment(parent) && parent.name === n) {
+        const hit = targets.get(checker.getShorthandAssignmentValueSymbol(parent)!);
+        if (hit) edits.push({ start: n.end, end: n.end, newText: `: ${hit[0]}` });
+        return;
+      }
+      const symbol = checker.getSymbolAtLocation(n);
+      const hit = symbol && targets.get(symbol);
+      if (!hit || hit[1] === n) return;
+      if (
+        ts.isExportSpecifier(parent) ||
+        ((ts.isPrefixUnaryExpression(parent) || ts.isPostfixUnaryExpression(parent)) &&
+          (parent.operator === ts.SyntaxKind.PlusPlusToken || parent.operator === ts.SyntaxKind.MinusMinusToken)) ||
+        (ts.isBinaryExpression(parent) &&
+          parent.left === n &&
+          parent.operatorToken.kind >= ts.SyntaxKind.FirstAssignment &&
+          parent.operatorToken.kind <= ts.SyntaxKind.LastAssignment)
+      )
+        refused = true;
+      else edits.push({ start: n.getStart(copy), end: n.end, newText: hit[0] });
+      return;
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(copy);
+  return refused ? undefined : edits;
+}
+
+/** RV2016 `rivetResourceConst`: put the `resource(…)` call in a `const` of its own in the component and use the handle.
+ * Destructured (`const { loading, refetch: again } = resource(…)`, Solid-style `const [data, { refetch }] = …`) → `const
+ * user = resource(…)`, reads become `user.loading` / `user.refetch` / `user` (by symbol); a `let` / `var` never reassigned →
+ * `const`; a call outside a `const` initializer (JSX attribute, argument, object value, returned value) → hoisted into
+ * `const user = resource(…);` before its statement in the same function body. No fix for a hook (`useUser`: the caller
+ * must create it), rest / default / nested patterns, several declarators, or a call inside a nested function. */
+function resourceFixes(ts: typeof TS, file: TS.SourceFile, node: TS.Node): CodeFix[] {
+  const call = ts.findAncestor(node, ts.isCallExpression);
+  if (!call) return [];
+  let at: TS.Node = call;
+  while (ts.isParenthesizedExpression(at.parent) || ts.isAsExpression(at.parent) || ts.isSatisfiesExpression(at.parent) || ts.isNonNullExpression(at.parent))
+    at = at.parent;
+  const callText = file.text.slice(call.getStart(file), call.end);
+  const declaration = at.parent;
+  if (ts.isVariableDeclaration(declaration) && declaration.initializer === at) {
+    const list = declaration.parent;
+    if (!ts.isVariableDeclarationList(list) || list.declarations.length !== 1) return [];
+    const pattern = declaration.name;
+    if (ts.isIdentifier(pattern)) {
+      // `let` / `var`: a `const` when nothing writes the binding (it then is the recipe).
+      if (list.flags & ts.NodeFlags.Const) return [];
+      if (!replaceReads(ts, file, [[pattern, pattern.text]])) return [];
+      // `let` / `var`: both three characters.
+      const keyword = list.getStart(file);
+      return [
+        {
+          fixName: "rivetResourceConst",
+          description: `Declare it with const: const ${pattern.text} = resource(…)`,
+          edits: [{ start: keyword, end: keyword + 3, newText: "const" }],
+        },
+      ];
+    }
+    // Destructured: one handle, its members read through it.
+    const name = handleName(file, ts, call);
+    const bindings: [TS.Identifier, string][] = [];
+    const members = (object: TS.ObjectBindingPattern, base: string): boolean =>
+      object.elements.every((element) => {
+        if (element.dotDotDotToken || element.initializer || !ts.isIdentifier(element.name)) return false;
+        const key = element.propertyName ?? element.name;
+        if (!ts.isIdentifier(key)) return false;
+        bindings.push([element.name, `${base}.${key.text}`]);
+        return true;
+      });
+    if (ts.isObjectBindingPattern(pattern)) {
+      if (!members(pattern, name)) return [];
+    } else {
+      // Solid's `[data, actions]` shape: the handle is the accessor and holds the actions.
+      if (pattern.elements.length > 2) return [];
+      for (const element of pattern.elements) {
+        if (ts.isOmittedExpression(element)) continue;
+        if (element.dotDotDotToken || element.initializer) return [];
+        if (ts.isIdentifier(element.name)) bindings.push([element.name, name]);
+        else if (ts.isObjectBindingPattern(element.name) && element === pattern.elements[1]) {
+          if (!members(element.name, name)) return [];
+        } else return [];
+      }
+    }
+    const reads = replaceReads(ts, file, bindings);
+    if (!reads) return [];
+    const end = declaration.type ? declaration.type.end : pattern.end;
+    return [
+      {
+        fixName: "rivetResourceConst",
+        description: `Keep the handle: const ${name} = resource(…); use ${name}.member`,
+        edits: [{ start: pattern.getStart(file), end, newText: name }, ...reads],
+      },
+    ];
+  }
+  // Outside a `const` initializer: hoist into a `const` before the statement, in the same function body.
+  if (ts.isVariableDeclaration(declaration)) return [];
+  const statement = bodyStatement(ts, call);
+  if (!statement || ts.findAncestor(call.parent, (n) => n === statement || ts.isFunctionLike(n) || ts.isClassLike(n)) !== statement) return [];
+  const fn = statement.parent.parent as TS.SignatureDeclaration;
+  const fnName = (fn as TS.FunctionDeclaration).name ?? (ts.isVariableDeclaration(fn.parent) && ts.isIdentifier(fn.parent.name) ? fn.parent.name : undefined);
+  // A hook (lowercase named function) is no place for it either.
+  if (fnName && /^[a-z_$]/.test(fnName.text) && !(ts.getCombinedModifierFlags(fn as TS.Declaration) & ts.ModifierFlags.Default)) return [];
+  const name = handleName(file, ts, call);
+  const nl = newLineOf(file);
+  const start = statement.getStart(file);
+  return [
+    {
+      fixName: "rivetResourceConst",
+      description: `Create it in the component: const ${name} = resource(…)`,
+      edits: [
+        { start, end: start, newText: `const ${name} = ${callText};${nl}${indentOf(file, start)}` },
+        { start: at.getStart(file), end: at.end, newText: name },
+      ],
+    },
+  ];
+}
+
 /** Fixes for one compiler diagnostic. */
 export function codeFixes(ts: typeof TS, file: TS.SourceFile, diagnostic: { code: string; start: number; end: number; message?: string }): CodeFix[] {
   const node = nodeAt(ts, file, diagnostic.start, diagnostic.end);
@@ -329,6 +473,8 @@ export function codeFixes(ts: typeof TS, file: TS.SourceFile, diagnostic: { code
   switch (diagnostic.code) {
     case "RV3010":
       return wrapServerExport(ts, file, node);
+    case "RV2016":
+      return resourceFixes(ts, file, node);
     case "RV1102": {
       const attribute = ts.findAncestor(node, ts.isJsxAttribute);
       const value = attribute?.initializer;

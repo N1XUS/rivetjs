@@ -67,6 +67,7 @@ export default function Page() {
 - A handler expression that reads state when it binds ([RV1016](../../errors/RV1016.md)): wrap it in an arrow.
 - A ref callback in the wrong form ([RV2002](../../errors/RV2002.md)): use `const el = ref<…>()` or rewrite it to `ref={(el) => (local = el)}`.
 - A captured class instance that cannot be sent ([RV2003](../../errors/RV2003.md), [RV2102](../../errors/RV2102.md)): build it in the browser with `const m = reconstruct(() => new WeakMap())` and read it as `m()` (adds the import).
+- A `resource(…)` the server cannot hand to the browser ([RV2016](../../errors/RV2016.md)): keep the handle in one `const` — `const { refetch } = resource(loadUser)` becomes `const user = resource(loadUser)` with `user.refetch()`, a `let` becomes `const`, and a resource written straight into JSX moves into a `const` of the component.
 - A namespace import of a target helper ([RV3002](../../errors/RV3002.md)): import the helper as a named binding.
 
 ### Where code runs

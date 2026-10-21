@@ -22,3 +22,6 @@ export const idScoping = false;
 export function scopedIdUpdaters(): Map<string, unknown> | undefined {
   return undefined;
 }
+
+// DOM-backed loader data (DOM-DATA): browsers register no rows (folds away).
+export function domRowItem(_item: unknown): void {}

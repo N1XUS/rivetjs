@@ -54,6 +54,11 @@ export function rowTexts(fragments: readonly string[], entries: readonly unknown
   return walk(fragments, entries, [], texts) && texts.length ? texts : null;
 }
 
+/** The content slots of a compiled template (slots outside every start tag), null when the parser could restructure it. */
+export function rowContent(fragments: readonly string[]): number[] | null {
+  return walk(fragments, null, [], null)?.content ?? null;
+}
+
 function walk(fragments: readonly string[], entries: readonly unknown[] | null, ids: readonly number[], texts: [number, string][] | null): RowPaths | null {
   const stack: { tag: string; path: string; count: number }[] = [];
   const paths: string[] = [],

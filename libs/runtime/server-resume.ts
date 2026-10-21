@@ -814,6 +814,15 @@ function addInner(site: Scope, reads: Signal<unknown>[]): void {
 type RowCall = [render: (get: () => unknown, at: () => number) => ServerValue, get: () => unknown, at: () => number];
 // Module level (no closure per row: V8 keeps its optimized code across renders).
 const renderRow = (call: RowCall): ServerValue => call[0](call[1], call[2]);
+// DOM-DATA (`resume: { domData: true }` builds only; `DOM_DATA` folds this away elsewhere): the data object a row
+// renders when its `For` iterates keys — cdk built-collection rows name their node's `value` (`@rivetjs/cdk` `#server`
+// `domRowItem`, from `renderNodeAt`) through this hook. The first call inside a row wins (its own node renders before
+// nested rows, which save and clear it); the row registers it instead of its key (`DomRegistry.lazyRow`).
+let rowItem: unknown;
+if (DOM_DATA)
+  (globalThis as unknown as Record<symbol, (item: unknown) => void>)[Symbol.for("rivet.domRowItem")] = (item) => {
+    if (rowItem === undefined && item !== null && typeof item === "object") rowItem = item;
+  };
 // For rows inside a region render as row regions `<!--rN[-->…<!--]-->`; the browser For adopts them
 // by key when its first run keeps the row's item (and index, if the row read it).
 const forRow = (list: object, item: unknown, key: unknown, index: number, render: RowCall[0]): ServerValue => {
@@ -860,7 +869,8 @@ const forRow = (list: object, item: unknown, key: unknown, index: number, render
     f0 = r.effects.length,
     c0 = r.clientEvents.length,
     others = r.asyncs.length + r.links.length + r.lists.length;
-  let value;
+  let value, outerItem: unknown;
+  if (DOM_DATA) ((outerItem = rowItem), (rowItem = undefined));
   try {
     // The row's own reads (a TabPanel deciding to render nothing for an unselected tab): no site inside the row binds
     // them, so the browser cannot keep this server row when the region re-runs (`reads`). Still the region's reads too.
@@ -872,6 +882,11 @@ const forRow = (list: object, item: unknown, key: unknown, index: number, render
     }
   } finally {
     recorder!.region = parent;
+    // DOM-DATA: the row's values, anchored at its root element's `data-r` id (packed rows write no row markers).
+    if (DOM_DATA) {
+      if (r.dom !== null) r.dom.recordedRow(value, rowItem ?? item);
+      rowItem = outerItem;
+    }
   }
   (parent.rows ??= []).push(record);
   if (parent.site && parent.pack !== null) pack(r, parent, record, e0, t0, r0, f0, c0, others);
@@ -971,8 +986,12 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   const { signal, variant } = lazy.recorder.options,
     dom = lazy.recorder.dom;
   const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () => {
+    // DOM-DATA: the row's data object (`rowItem`, cdk collection rows iterate keys), else its item.
+    const outerItem = DOM_DATA ? rowItem : undefined;
+    if (DOM_DATA) rowItem = undefined;
     const value = render(get, at);
-    if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, item);
+    if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, DOM_DATA && rowItem !== undefined ? rowItem : item);
+    if (DOM_DATA) rowItem = outerItem;
     return renderToString(_scopedRecord(getOwner(), value, noop), { signal, variant });
   });
   if (typeof html !== "string") {

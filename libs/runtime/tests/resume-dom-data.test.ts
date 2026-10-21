@@ -10,6 +10,7 @@ import type { DomTree, EntryRecord, TableEntry } from "../resume-format.ts";
 import { _domRegistry } from "../server-dom-data.ts";
 import type { DomRegistry, DomSlot } from "../server-dom-data.ts";
 import { _domData } from "../dom-resume-data.ts";
+import { _attributeRecord, compiledTemplate } from "../template.ts";
 
 test("rowTexts: sole-child text slots and attribute slots, with their paths below the template root", () => {
   assert.deepEqual(rowTexts(["<li><b>", "</b><i>Note: ", "</i><span>", "</span></li>"], null), [
@@ -177,4 +178,42 @@ test("a row whose value is not the one its template wrote: no DOM leaf for it (f
   encoder.ref(list[0]);
   const ref = encoder.ref(list[1]);
   assert.ok(JSON.stringify(encoder.table[ref]).includes("customer.1@example.com"));
+});
+
+test("recorded rows (cdk collection rows): anchored at the root's data-r id; start-tag objects allowed, a nested content template refused", () => {
+  // A cdk ListBoxItem's row: a spread's attribute list and the `_rId` record in the root start tag, the name as its whole text.
+  const list = [0, 1, 2].map((k) => ({ id: 10 + k, name: "Customer " + k + " Holdings & Co" }));
+  const fragments = ["<div", "", ">", "</div>"];
+  const dom = _domRegistry();
+  list.forEach((item, k) =>
+    dom.recordedRow(
+      compiledTemplate(fragments, [[_attributeRecord("role", "option", "html")], _attributeRecord("data-r", 3 + 2 * k, "html"), item.name]),
+      item,
+    ),
+  );
+  // No data-r in the root start tag: not registered. A content slot holding a template: not registered.
+  const loose = { id: 1, name: "Loose row value here" };
+  dom.recordedRow(compiledTemplate(["<div>", "</div>"], [loose.name]), loose);
+  const nested = { id: 2, name: "Nested row value here" };
+  dom.recordedRow(
+    compiledTemplate(["<div", "><span>", "</span>", "</div>"], [_attributeRecord("data-r", 40, "html"), nested.name, compiledTemplate(["<i>x</i>"])]),
+    nested,
+  );
+  assert.deepEqual([...dom.items.keys()], list);
+  assert.deepEqual(
+    list.map((item) => dom.info[dom.items.get(item)!]),
+    [3, 5, 7],
+  );
+  const encoder = createEncoder({ dom });
+  const ref = encoder.ref(list);
+  const wire = JSON.stringify(encoder.table);
+  assert.ok((encoder.table[ref] as EntryRecord).D, "a D tree");
+  for (const item of list) assert.ok(!wire.includes(JSON.stringify(item.name)), item.name);
+  // Read back from the rows (fake elements by data-r id).
+  const elements: Record<number, Fake> = {};
+  list.forEach((item, k) => (elements[3 + 2 * k] = el("div", item.name)));
+  const reader = _domData({ element: (id) => elements[id] as unknown as Element, row: () => null });
+  const table = JSON.parse(wire) as TableEntry[];
+  reader.expand(table);
+  assert.deepEqual(reader.dom((table[ref] as EntryRecord).D!, createDecoder(table).get), list);
 });

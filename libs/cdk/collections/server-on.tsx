@@ -77,3 +77,14 @@ export function scopedIdUpdaters(): Map<string, unknown> | undefined {
   if (!map) scopedIds.set(scope, (map = new Map()));
   return map;
 }
+
+/**
+ * DOM-backed loader data (DOM-DATA, `resume: { domData: true }` servers): a built collection row renders `item` (the
+ * node's `value`, the user's data object) although its `For` iterates keys. `@rivetjs/runtime/server-resume` installs the
+ * hook only in domData builds (`Symbol.for("rivet.domRowItem")`): the row then registers that object, so the item's
+ * strings the row shows as an element's whole text / a plain attribute travel as DOM paths. Elsewhere: nothing.
+ */
+const DOM_ROW_ITEM = Symbol.for("rivet.domRowItem");
+export function domRowItem(item: unknown): void {
+  (globalThis as unknown as Record<symbol, ((item: unknown) => void) | undefined>)[DOM_ROW_ITEM]?.(item);
+}

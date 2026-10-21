@@ -1248,7 +1248,11 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // queued while it dispatches hides its mouse focus instead, landing later in this task (`hide`, until the next task
       // or replay): a cold focus event dispatched now is never that move (a live press start's `focus()` whose group
       // handler is cold — `/morph-icons` ComboBox trigger: dropped as a stale press's move, the group lost focus-within).
-      if (/^(focus|blur)/.test(event.type)) pressed && !path.length && moved.add(event);
+      // Only a blur or the focus of the press's own default target is that move: a focus elsewhere came from something
+      // after it (a label click's activation focusing its radio, which no cold event recorded) and replays as on a
+      // loaded page (cdk `/dom-events-forms` RadioGroup: the group's `focusin` was dropped, its focus-within lost).
+      if (/^(focus|blur)/.test(event.type))
+        pressed && !path.length && (/^(blur|focusout)$/.test(event.type) || (pressed as [Element | null])[0] === event.target) && moved.add(event);
       else if (
         (pressed = (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event)) &&
         path.length

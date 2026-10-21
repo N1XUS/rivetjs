@@ -339,3 +339,26 @@ test("resume: a cold focusin queued before a cold press replays with focus where
     assert.equal(await page.evaluate(() => document.getElementById("combo")!.getAttribute("data-focus-within")), "true");
   });
 });
+
+test("resume: a label click's activation focus queued before the runtime started replays (cdk RadioGroup focus-within shape)", async () => {
+  // The runtime itself loads late: the press, the click's native activation focus and its `focusin` queue in the
+  // loader. Only a blur or a focus of the press's own default target is its mouse focus move (`moved`, never replayed);
+  // the radio's focus came from the label click's activation (a loaded page fires it once, after the canceled
+  // mousedown), so the group's `focusin` handler sees it.
+  await withPage(
+    files,
+    async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("http://rivet.test/");
+      await page.click("#radio-text");
+      assert.equal(await active(page), "radio-input");
+      await counted(page, "__radioDown");
+      await idle(page);
+      assert.equal(await active(page), "radio-input");
+      assert.equal(await page.evaluate(() => (globalThis as unknown as Record<string, number>).__radioIn), 1);
+      assert.deepEqual(errors, []);
+    },
+    { delays: { ...delays, "/rt.js": 600 } },
+  );
+});

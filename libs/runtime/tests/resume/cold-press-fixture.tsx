@@ -397,6 +397,25 @@ function Cover() {
   );
 }
 
+/** A cdk RadioGroup items preset's shape: the label's mousedown cancels (RA useRadio), the label click's activation
+ * focuses its radio (no cold event of its own: no click handler), the group counts its `focusin`s. */
+function Radio() {
+  return (
+    <div id="radio" onFocusIn={() => count("__radioIn")}>
+      <label
+        id="radio-label"
+        onMouseDown={(event: MouseEvent) => {
+          event.preventDefault();
+          count("__radioDown");
+        }}
+      >
+        <input id="radio-input" type="radio" name="radio" value="a" />
+        <span id="radio-text">radio</span>
+      </label>
+    </div>
+  );
+}
+
 export function Page() {
   return (
     <main>
@@ -424,6 +443,7 @@ export function Page() {
       <Stepper />
       <Cover />
       <Combo />
+      <Radio />
     </main>
   );
 }

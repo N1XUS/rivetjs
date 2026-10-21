@@ -195,3 +195,81 @@ test("rivetReconstruct: an existing (aliased) reconstruct import is reused; a .t
   const diagnostic = { code: "RV2003", start, end: start + 18, message: "Resumable code cannot capture `m`: class instances are not serializable" };
   assert.deepEqual(codeFixes(ts, file, diagnostic), []);
 });
+
+/** The `rivetResourceConst` fix for the first RV2016 of `body` (after a `resource` import + `loadUser`), applied; the
+ * output has no RV2016 left. Undefined when no fix is offered. */
+const RESOURCE_HEAD = `import { resource } from "@rivetjs/runtime/dom";\nasync function loadUser(_: true) {\n  return "Ada";\n}\n`;
+function resourceFix(body: string): string | undefined {
+  const source = RESOURCE_HEAD + body;
+  const options = { filename: "a.tsx", resume: { module: "a.tsx" } };
+  const diagnostic = compiler.check(source, options).diagnostics.find((d) => d.code === "RV2016");
+  assert.ok(diagnostic, `RV2016 reported for ${body}`);
+  const file = ts.createSourceFile("a.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const fix = codeFixes(ts, file, diagnostic).find((f) => f.fixName === "rivetResourceConst");
+  if (!fix) return undefined;
+  const out = applyEdits(source, fix.edits);
+  assert.deepEqual(
+    compiler.check(out, options).diagnostics.filter((d) => d.code === "RV2016"),
+    [],
+    out,
+  );
+  assert.deepEqual(syntaxErrors(out, "a.tsx"), [], out);
+  return out.slice(RESOURCE_HEAD.length);
+}
+
+test("RV2016: a destructured resource keeps its handle; reads go through it (shorthand, renamed keys, typeof)", () => {
+  const out = resourceFix(
+    `export function User() {\n  const { refetch: again, loading } = resource(loadUser);\n  const api = { loading };\n  type L = typeof loading;\n  return <button onClick={() => again()}>{loading() ? "…" : String(api)}</button>;\n}\n`,
+  );
+  assert.equal(
+    out,
+    `export function User() {\n  const user = resource(loadUser);\n  const api = { loading: user.loading };\n  type L = typeof user.loading;\n  return <button onClick={() => user.refetch()}>{user.loading() ? "…" : String(api)}</button>;\n}\n`,
+  );
+});
+
+test("RV2016: Solid's [data, { refetch }] shape becomes the handle; a shadowing local keeps its name", () => {
+  const out = resourceFix(
+    `export function User() {\n  const [data, { refetch }] = resource(loadUser);\n  const other = (data: number) => data;\n  return <button onClick={() => refetch()}>{data()}{other(1)}</button>;\n}\n`,
+  );
+  assert.equal(
+    out,
+    `export function User() {\n  const user = resource(loadUser);\n  const other = (data: number) => data;\n  return <button onClick={() => user.refetch()}>{user()}{other(1)}</button>;\n}\n`,
+  );
+});
+
+test("RV2016: a let never reassigned becomes const; a reassigned one, a rest pattern or a hook gets no fix", () => {
+  assert.equal(
+    resourceFix(`export function User() {\n  let user = resource(loadUser);\n  return <button onClick={() => user.refetch()}>{user()}</button>;\n}\n`),
+    `export function User() {\n  const user = resource(loadUser);\n  return <button onClick={() => user.refetch()}>{user()}</button>;\n}\n`,
+  );
+  assert.equal(
+    resourceFix(`export function User() {\n  let user = resource(loadUser);\n  if (Math.random()) user = resource(loadUser);\n  return <p>{user()}</p>;\n}\n`),
+    undefined,
+  );
+  assert.equal(
+    resourceFix(`export function User() {\n  const { loading, ...rest } = resource(loadUser);\n  return <p>{loading() ? 1 : String(rest)}</p>;\n}\n`),
+    undefined,
+  );
+  assert.equal(
+    resourceFix(
+      `function useUser() {\n  const user = resource(loadUser);\n  return user;\n}\nexport function User() {\n  const user = useUser();\n  return <p>{user()}</p>;\n}\n`,
+    ),
+    undefined,
+  );
+});
+
+test("RV2016: a call outside a const initializer is hoisted into a const of the component (a nested function: no fix)", () => {
+  const out = resourceFix(
+    `function Show(props: { when: unknown }) {\n  return <p>{String(props.when)}</p>;\n}\nexport function User() {\n  return <Show when={resource(loadUser)} />;\n}\n`,
+  );
+  assert.equal(
+    out,
+    `function Show(props: { when: unknown }) {\n  return <p>{String(props.when)}</p>;\n}\nexport function User() {\n  const user = resource(loadUser);\n  return <Show when={user} />;\n}\n`,
+  );
+  assert.equal(
+    resourceFix(
+      `export function User(props: { ids: number[] }) {\n  return <ul>{props.ids.map((id) => <li>{String(resource(() => id, loadUser))}</li>)}</ul>;\n}\n`,
+    ),
+    undefined,
+  );
+});

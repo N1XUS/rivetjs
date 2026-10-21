@@ -215,6 +215,17 @@ T2 / T3 CPU, Docker harness (DD-T2T3): `rivet-ssr-bench-node:local`, 1 CPU, 512 
   - no page errors, no `rivet:resume-error`.
 - Resume-bench was not run: its fixture is the 1000-row `{id,label}` list, not this grid.
 
+### cdk collection rows (SMALL-FIXES 2026-10-21)
+
+- What: recorded `For` rows whose value is one compiled template register as `D` entries (`recordedRow`); anchor = the `data-r` id in the root start tag (packed rows have no row markers); cdk `renderNodeAt` names `node.value` as the row item through `domRowItem` (`#server`) → runtime hook `Symbol.for("rivet.domRowItem")` (domData builds only).
+- Bytes (story app, html / state raw + br q11, default → domData):
+  - `/dom-data`, 12 ListBox rows (`"Customer N Holdings & Co"` + mail): html 31936 → 31434, br ≈ 7835 → 7867 (noise ± 15); state 18536 → 18034, br 4415 → 4383.
+  - same route, 200 rows: html 171553 → 161738, br 14237 → 14039; state 110673 → 100858, br 9778 → 9534 (−2.5 %).
+  - 1000 rows: state 511644 → 461832, br 29704 → 28534 (−3.9 %).
+  - `/list-data`, `/listbox`, `/grid-list`, `/select`: no `D` (strings < 8 chars or < `DOM_MIN` per tree; Select options not rendered while closed). ui-docs select showcase: same closed-popover case, structurally 0 (not built).
+- Server CPU in process (`process.cpuUsage`, 6 interleaved rounds × 200 requests, median, load 9–11): `/dom-data` 200 rows 13.44 → 13.36 ms/req, `/list-data` 6.46 → 6.35 — within noise.
+- Limits: GridList items (content slot = nested template → row refused), rows outside a virtualizer window, mixed-text cells. Gain is small because cdk rows carry most state in bindings / collection keys, not item text.
+
 ## 6. Risks and open points
 
 - DOM text edited before idle by non-resume code: the value comes back edited. Only tag checks guard it. Options: a per-tree hash (costs bytes), or the documented rule "do not mutate server markup before the runtime starts" (proposed).

@@ -7,7 +7,11 @@ import { rivetRouter } from "@rivetjs/router/vite";
 const model = process.env.RIVET_RESUME_MODEL;
 if (model !== undefined && model !== "serialized" && model !== "derived")
   throw new Error(`RIVET_RESUME_MODEL must be "serialized" or "derived" (got ${model})`);
+// `RIVET_DOM_DATA=1` (DOM-DATA measurements): build with `resume: { domData: true }` — pair it with its own `STORIES_DIST`.
+const domData = process.env.RIVET_DOM_DATA === "1";
 export default defineConfig({
-  plugins: [rivetRouter({ styles: ["src/styles.css"], ...(model ? { resume: { model } } : {}) })],
+  plugins: [
+    rivetRouter({ styles: ["src/styles.css"], ...(model || domData ? { resume: { ...(model ? { model } : {}), ...(domData ? { domData } : {}) } } : {}) }),
+  ],
   logLevel: "warn",
 });

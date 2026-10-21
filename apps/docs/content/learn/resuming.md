@@ -220,6 +220,7 @@ export default defineConfig({
 ```
 
 - **What qualifies.** Only text that is alone in its element: `<i>Note: {row().note}</i>` stays in the state. Strings with a carriage return, URLs in `href` / `src`, boolean attributes and attributes that change later stay in the state too.
+- **Collections too.** Rows of `@rivetjs/cdk` / `@rivetjs/ui` lists such as `ListBox` that show an item's text count as list rows. Grid list rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
 - **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data.
 - **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
 - **Why it is off by default.** Without lazy rows the server renders as fast as without it; with lazy rows it still costs about 2 to 11 % more server time per render, being reduced.
