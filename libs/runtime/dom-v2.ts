@@ -237,7 +237,14 @@ export const _fx: (fn: () => void) => void = _bindingEffect;
  * variable and the locals the value reads), e.g. `const __rivetFx0 = (el, n, count) => _t(el, `${n}: ${count()}`)`
  * + `_fx1(__rivetFx0, _el$1, n, count)`. Same lifetime and release rule as `_fx`; tree-shaken when unused.
  */
-export const _fx1: <A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C) => void = _bindingEffect1;
+export const _fx1: <A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C) => void = DERIVED ? derivedFx1 : _bindingEffect1;
+// Derived builds (`DERIVED`): a row sample run of the adopt runtime (`_adoption.fx`, `dom-derived.ts`) sees each binding
+// with its captures (DERIVED-C keyed row writers); folded away elsewhere.
+function derivedFx1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C): void {
+  const hook = _adoption.fx;
+  if (hook) hook(fn as never, a, b, c);
+  else _bindingEffect1(fn, a, b, c);
+}
 /** Compiler ABI: write a class value (see `_className`). */
 export const _cls: (el: Element, value: unknown) => void = className;
 /** Compiler ABI: write a plain attribute value (null/undefined remove it). */
@@ -526,6 +533,8 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
       // does not re-run — re-creating that content (the array's nodes) — on each of its updates.
       if (typeof value === "function" || (Array.isArray(value) && hasAccessor(value))) return (inner = value);
     }
+    // Derived builds: a lazily adopted `<For>` (`dom-derived.ts`) keeps the server rows the slot holds.
+    if (DERIVED && value !== null && typeof value === "object" && _adoption.keep?.has(value)) return value;
     if (value !== null && typeof value === "object") {
       // A `_for` node list is flat already (its own array, kept as the slot's current: see `_for`'s accessor).
       // Dropped at once: a module-level reference would retain a cleared list's nodes.
@@ -535,6 +544,7 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
     return value;
   };
   value = within(parent, evaluate);
+  if (DERIVED && value !== null && typeof value === "object" && _adoption.keep?.has(value)) return;
   const read = inner as unknown; // set by `evaluate` (no control-flow narrowing through the closure)
   // Follow the marker, not `parent`: content first bound in a detached fragment (an `Output`, a row) moves with its
   // anchors, and an inner update must insert where the marker is now (`tests/dom-v2-children-browser.test.ts` movedParent).
@@ -579,6 +589,8 @@ function flatten(value: readonly unknown[], nodes: Node[]): void {
     while (typeof item === "function") item = (item as () => unknown)();
     if (item == null || item === true || item === false) continue;
     if (Array.isArray(item)) flatten(item, nodes);
+    // Derived builds: a lazily adopted list inside an array (or a cell) stands for its server rows.
+    else if (DERIVED && _adoption.keep?.has(item)) flatten((item as { n(): Node[] }).n(), nodes);
     else if (typeof item === "object") {
       if ((item as Node).nodeType === 11) for (const n of Array.from((item as Node).childNodes)) nodes.push(n);
       else if ((item as Node).nodeType !== undefined) nodes.push(item as Node);
@@ -773,6 +785,18 @@ export const _adoption: {
    * taking those rows lazily), `undefined` lets `_for` run as usual.
    */
   list?: ((props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown }) => (() => Node[]) | undefined) | null;
+  /**
+   * Derived model row sample runs (`dom-derived.ts` `sample`, `DERIVED` builds only): every `_fx1` binding goes through
+   * it (the hook creates the binding itself), so the runtime learns which hoisted binding reads which keyed signal and
+   * with which captures.
+   */
+  fx?: ((fn: (a: unknown, b: unknown, c: unknown) => void, a: unknown, b: unknown, c: unknown) => void) | null;
+  /**
+   * Derived model (`DERIVED` builds only): the tokens a lazily adopted `<For>`'s accessor returns while its items are the
+   * server's — a slot holding one keeps what it holds (the server rows: no node list built); inside an array or a cell,
+   * a token's `n()` gives the list's server nodes.
+   */
+  keep?: WeakSet<object>;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

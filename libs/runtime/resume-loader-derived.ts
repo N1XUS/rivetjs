@@ -3,7 +3,8 @@
 // `server-derived.ts` `derivedToString` / `renderDerived`), so it is self-contained: browser globals only.
 //
 // It reads nothing but the tail script's attributes until an event: `data-events` (delegated types, default
-// "click input change submit keydown"), `data-rt` (the runtime URL: its default export is `dom-derived.ts`'s instance),
+// "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout": a cold press holds its
+// pointer / mouse / focus events too, DERIVED-C), `data-rt` (the runtime URL: its default export is `dom-derived.ts`'s instance),
 // `data-boot` (a boundary has a load / idle / visible trigger: start now). An event inside a boundary (`data-b`, or
 // `<!--b<id>-->` openers before an ancestor) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
@@ -98,7 +99,7 @@ export function derivedLoader(): void {
       if ((" " + keys + " ").includes(" " + (key == " " ? "Space" : key) + " ")) event.preventDefault();
     }
     if (replay) event.preventDefault();
-    const item: HeldEvent = [event, event.composedPath(), replay, [target.value, target.checked]];
+    const item: HeldEvent = [event, event.composedPath(), replay, [target.value, target.checked, d.activeElement]];
     rt ? rt.cold(item) : (q.push(item), boot().catch(fail));
   };
   const listen = (type: string, fn: (event: Event) => unknown, active?: boolean): void => d.addEventListener(type, fn, { capture: true, passive: !active });
@@ -109,8 +110,18 @@ export function derivedLoader(): void {
     const e = event as KeyboardEvent;
     if (!(e.metaKey || e.ctrlKey || e.key == "Shift")) im.__rvIM = "keyboard";
   });
-  (script.dataset.events || "click input change submit keydown").split(" ").map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
+  (script.dataset.events || "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout")
+    .split(" ")
+    .map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
   listen("focusin", warm);
   listen("touchstart", warm);
   if (script.hasAttribute("data-boot")) boot().catch(fail);
+  // Fetch-ahead (`data-fo`, DERIVED-C): after `load`, low-priority modulepreloads of the runtime + the page's boundary
+  // chunks + their static closures (fetched and compiled, never evaluated): the first event evaluates modules already in
+  // the module map instead of waiting on the import waterfall.
+  const fo = script.dataset.fo;
+  fo &&
+    addEventListener("load", () =>
+      fo.split(" ").map((href) => d.head.append(Object.assign(d.createElement("link"), { rel: "modulepreload", href, fetchPriority: "low" }))),
+    );
 }

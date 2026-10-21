@@ -78,7 +78,7 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javas
 interface Built {
   root: string;
   html: string;
-  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string };
+  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]> };
 }
 async function buildApp(model: "derived" | "serialized", rows: "static" | "interactive", roots: string[]): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
@@ -181,13 +181,21 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         );
         assert.equal(tail.m["src/page.tsx#default"], derived.manifest.symbols["src/page.tsx#default"]);
         assert.ok(!derived.html.includes('type="rivet/state"'));
-        let derivedInput = 0;
+        // Fetch-ahead (DERIVED-C): the tail lists the runtime + the page's boundary chunks + their static closures
+        // (manifest `deps`); the loader modulepreloads them after `load`, nothing evaluates before input.
+        const ahead = /data-fo="([^"]*)"/.exec(derived.html)![1]!.split(" ");
+        assert.equal(ahead[0], derived.manifest.runtime);
+        for (const url of Object.values(tail.m as Record<string, string>)) assert.ok(ahead.includes(url), url);
+        for (const url of [derived.manifest.runtime, ...Object.values(tail.m as Record<string, string>)])
+          for (const dep of derived.manifest.deps?.[url] ?? []) assert.ok(ahead.includes(dep), dep);
+        let derivedInput = 0,
+          derivedBefore = 0;
         await serve(derived, browser, async (page, requests) => {
-          assert.deepEqual(
-            requests.map((r) => r.path),
-            ["/"],
-            "nothing loads before input",
-          );
+          await page.waitForLoadState("networkidle");
+          assert.deepEqual(requests.map((r) => r.path).sort(), ["/", ...ahead].sort(), "only the fetch-ahead list loads before input");
+          assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "nothing evaluated before input");
+          derivedBefore = jsAfterPage(requests);
+          const fetched = requests.length;
           await page.evaluate((list) => list.forEach((s, i) => ((document.querySelector(s) as any).__t = i + 1)), TAGGED);
           // Cold click on an independent boundary of another module: the loader boots the runtime, Counter adopts alone.
           await page.click("#inc");
@@ -206,7 +214,8 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
           const kept = await page.evaluate((list) => list.map((s, i) => (document.querySelector(s) as any)?.__t === i + 1), TAGGED);
           assert.deepEqual(kept, [true, true, true, true, true, true], "server nodes adopted in place");
           assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "Other never ran in the browser");
-          derivedInput = jsAfterPage(requests);
+          derivedInput = jsAfterPage(requests.slice(fetched - 1));
+          assert.equal(requests.length, fetched, "the first input fetches nothing more");
         });
         // Baseline: the same app on the serialized model (same interactions).
         const serialized = await buildApp("serialized", rows, roots);
@@ -227,7 +236,7 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
           serializedInput = jsAfterPage(requests);
         });
         bytes[rows] = {
-          derived: { ...pageBytes(derived.html), jsBeforeInput: 0, jsOnInput: derivedInput },
+          derived: { ...pageBytes(derived.html), jsBeforeInput: derivedBefore, jsOnInput: derivedInput },
           serialized: { ...pageBytes(serialized.html), jsBeforeInput: 0, jsOnInput: serializedInput },
         };
       }

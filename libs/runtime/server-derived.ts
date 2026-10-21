@@ -100,10 +100,13 @@ export interface DerivedRender {
 
 /** What the derived client needs from the render options. */
 export interface DerivedOptions {
-  manifest?: Partial<ResumeManifest>;
+  /** `deps`: static import closure per chunk URL (the derived build's manifest): fetch-ahead (`data-fo`) lists them too. */
+  manifest?: Partial<ResumeManifest> & { deps?: Record<string, string[]> };
   nonce?: string;
   /** The request's origin (`ResumableOptions.origin`): same-origin `URL` values in `_rData` payloads ship relative. */
   origin?: string;
+  /** `lean`: no fetch-ahead (`data-fo`): chunks load on intent / interaction only. */
+  preload?: { lean?: boolean };
 }
 // The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously).
 let pending: DerivedOptions | null = null;
@@ -498,6 +501,20 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   const options = ctx.options,
     json = escapeJSON(JSON.stringify(tail));
   if (!options?.manifest?.runtime) return template(['<script type="rivet/boundaries">' + json + "</script>"]);
+  // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
+  // (manifest `deps`), as low-priority modulepreloads after `load` (`data-fo`; fetched + compiled, never evaluated before
+  // an event): the first click evaluates modules already in the module map instead of an import waterfall.
+  const manifest = options.manifest,
+    deps = manifest.deps;
+  let ahead = "";
+  if (!options.preload?.lean) {
+    const urls = new Set<string>();
+    for (const url of [manifest.runtime!, ...(tail.m ? Object.values(tail.m) : [])]) {
+      urls.add(url);
+      if (deps?.[url]) for (const dep of deps[url]!) urls.add(dep);
+    }
+    ahead = [...urls].join(" ");
+  }
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const nonce = options.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
     events = [...ctx.events].join(" "),
@@ -507,11 +524,12 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
       '"' +
       (events && events !== DEFAULT_EVENTS ? ' data-events="' + attr(events) + '"' : "") +
       (ctx.boot ? " data-boot" : "") +
-      (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "");
+      (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
+      (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
   return template(['<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`). */
-const DEFAULT_EVENTS = "click input change submit keydown";
+const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout";
 const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */

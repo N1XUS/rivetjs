@@ -1,6 +1,8 @@
 // Resume-fuzz findings on the cdk story app built with the derived resume model (`RIVET_RESUME_MODEL=derived`, own
 // build `dist-fuzz-derived`; `./resume-fuzz.test.ts` picks this set under that env). Triage of lane M2-R5
-// (2026-10-20, one run of shards 1/3 to 3/3, `docs/benchmarks/2026-10-20-derived-r5.md`): every pin is `design: true`
+// (2026-10-20, one run of shards 1/3 to 3/3, `docs/benchmarks/2026-10-20-derived-r5.md`), narrowed by lane DERIVED-C
+// (2026-10-21: cold press port, cold hover, UNKEYED adopt, unrecorded build pass; pins that passed in its two full runs
+// after those fixes were deleted — 118 → 59 + 4, `docs/benchmarks/2026-10-21-derived-c.md`): every pin is `design: true`
 // with an empty match (route + kind only) — the derived client is experimental and these are its known gaps, grouped by
 // root cause below; replace a group's pins with narrow ones (or delete them) as the gap closes. Never reuse
 // `./pins.ts` here: those describe the serialized model.
@@ -8,139 +10,91 @@ import type { FuzzPin } from "@rivetjs/testing/fuzz";
 
 /** Root causes (spec `docs/design/specs/2026-10-18-structural-resume-design.md` §3.4 "As built", gaps). */
 const PRESS =
-  "derived cold press: the loader holds click / input / change / submit / keydown only (no `_rB` events, no pointerdown / pointerup) and `dom-derived` has no port of dom-resume's cold-press replay — the first press of a usePress / overlay trigger is lost (no `data-pressed` / focus / open; an overlay's `inert` siblings follow)";
+  "derived cold press (left after DERIVED-C's port of dom-resume's cold-press replay + cold hover): mostly `data-hovered` on the first press target / its neighbours after the click (a hover the synthetic enter does not reach: pointer moved between elements before the adopt), measured-layout styles (carousel / masonry), date-field segments after a held key";
 const RECREATE =
-  "derived adopt mismatch: the unit (a collection host, mostly) probes differently in the browser (a computed first evaluated inside a probe caches what the probe saw; server-only / browser-only render branches) and renders in the browser; a held event whose target left is dropped";
+  "derived adopt (after DERIVED-C: UNKEYED units adopt, build passes run outside the unit — 24 of 25 `recreated` findings gone): what is left is mostly later-step DOM differences on the now adopted collection pages (`useId` counters of browser-created collection parts, hover / focus-visible after keys, roving tabindex) and five units still rendered in the browser";
 const MOUNT =
   "a mount-time browser effect (or a browser-only attribute) of a client render the resumed page has not run — the serialized pins' MOUNT_EFFECT / design rows, unpinned per route here";
-const GROUPS = { PRESS, RECREATE, MOUNT } as const;
+const ADOPTED =
+  "a page root that rendered in the browser before DERIVED-C (UNKEYED) now adopts: the later steps compare, and browser-created collection parts number their `useId`s after the adopted ones (`#4-news` vs `#3-news`), plus hover / roving tabindex after clicks";
+const BASE =
+  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/deferred-loader` (deferred loader holes), `/shell-loader` (the same deferred hole; the shell cache rejects derived documents, PPR-T23) and `/dom-data` (DOM-backed data) are not derived-model routes yet";
+const GROUPS = { PRESS, RECREATE, MOUNT, ADOPTED, BASE } as const;
 
 const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): FuzzPin => ({
   route,
   kind,
   match: "",
   owner: "runtime",
-  note: GROUPS[group] + " (M2-R5 triage, 1 run)",
+  note: GROUPS[group] + " (M2-R5 triage, narrowed DERIVED-C)",
   design: true,
 });
 
 export const pins: FuzzPin[] = [
-  pin("/autocomplete", "load", "MOUNT"),
+  pin("/deferred-loader", "mismatch", "BASE"),
+  pin("/deferred-loader", "page-error", "BASE"),
+  pin("/shell-loader", "mismatch", "BASE"),
+  pin("/shell-loader", "page-error", "BASE"),
+  pin("/dom-data", "load", "BASE"),
+  pin("/dom-data", "mismatch", "BASE"),
+  pin("/tag-group", "mismatch", "ADOPTED"),
   pin("/autocomplete", "mismatch", "RECREATE"),
-  pin("/autocomplete", "recreated", "RECREATE"),
   pin("/button", "mismatch", "PRESS"),
   pin("/button-render", "mismatch", "PRESS"),
-  pin("/buttons", "load", "MOUNT"),
   pin("/buttons", "mismatch", "PRESS"),
   pin("/calendar", "mismatch", "PRESS"),
-  pin("/callbacks", "mismatch", "PRESS"),
   pin("/carousel", "load", "MOUNT"),
   pin("/carousel", "mismatch", "PRESS"),
   pin("/color", "mismatch", "RECREATE"),
-  pin("/color", "recreated", "RECREATE"),
-  pin("/combobox", "load", "MOUNT"),
   pin("/combobox", "mismatch", "PRESS"),
-  pin("/combobox", "reload", "RECREATE"),
   pin("/date-picker", "mismatch", "PRESS"),
-  pin("/dialog", "mismatch", "PRESS"),
-  pin("/disclosure", "load", "MOUNT"),
   pin("/disclosure", "mismatch", "PRESS"),
   pin("/dom-events-collections", "mismatch", "RECREATE"),
-  pin("/dom-events-collections", "recreated", "RECREATE"),
   pin("/dom-events-dates", "mismatch", "PRESS"),
-  pin("/dom-events-forms", "load", "MOUNT"),
   pin("/dom-events-forms", "mismatch", "RECREATE"),
-  pin("/dom-events-forms", "recreated", "RECREATE"),
   pin("/dom-events-overlays", "load", "MOUNT"),
-  pin("/dom-events-overlays", "mismatch", "RECREATE"),
-  pin("/dom-events-overlays", "recreated", "RECREATE"),
-  pin("/focus-scope", "load", "MOUNT"),
-  pin("/focus-scope", "mismatch", "PRESS"),
   pin("/forms", "mismatch", "PRESS"),
   pin("/grid-list", "load", "MOUNT"),
   pin("/grid-list", "mismatch", "RECREATE"),
-  pin("/grid-list", "missing", "RECREATE"),
-  pin("/grid-list", "recreated", "RECREATE"),
   pin("/lazy-rows", "mismatch", "RECREATE"),
-  pin("/lazy-rows", "recreated", "RECREATE"),
   pin("/lightbox", "recreated", "RECREATE"),
-  pin("/links", "load", "MOUNT"),
   pin("/links", "mismatch", "RECREATE"),
-  pin("/links", "recreated", "RECREATE"),
   pin("/list-data", "mismatch", "RECREATE"),
-  pin("/list-data", "recreated", "RECREATE"),
   pin("/listbox", "mismatch", "RECREATE"),
-  pin("/listbox", "recreated", "RECREATE"),
-  pin("/live-props", "load", "MOUNT"),
   pin("/live-props", "mismatch", "RECREATE"),
-  pin("/live-props", "recreated", "RECREATE"),
-  pin("/masonry", "load", "MOUNT"),
-  pin("/masonry", "mismatch", "RECREATE"),
-  pin("/masonry", "recreated", "RECREATE"),
   pin("/masonry-expand", "mismatch", "PRESS"),
   pin("/masonry-measured", "load", "MOUNT"),
   pin("/masonry-measured", "mismatch", "PRESS"),
-  pin("/menu", "mismatch", "PRESS"),
-  pin("/modal", "load", "MOUNT"),
-  pin("/modal", "mismatch", "PRESS"),
   pin("/modal-open", "load", "MOUNT"),
   pin("/number-field", "mismatch", "RECREATE"),
-  pin("/number-field", "recreated", "RECREATE"),
-  pin("/number-field", "reload", "RECREATE"),
-  pin("/popover", "mismatch", "PRESS"),
-  pin("/preview-trigger", "load", "MOUNT"),
   pin("/preview-trigger", "mismatch", "PRESS"),
   pin("/progress", "mismatch", "PRESS"),
   pin("/radio-group", "mismatch", "PRESS"),
-  pin("/region-state-repro", "load", "MOUNT"),
-  pin("/region-state-repro", "mismatch", "RECREATE"),
   pin("/region-state-repro", "recreated", "RECREATE"),
   pin("/render-resumed", "load", "MOUNT"),
   pin("/render-resumed", "mismatch", "RECREATE"),
-  pin("/render-resumed", "recreated", "RECREATE"),
   pin("/resizable", "load", "MOUNT"),
-  pin("/resume-context", "load", "MOUNT"),
-  pin("/resume-context", "mismatch", "PRESS"),
   pin("/scheduler", "mismatch", "PRESS"),
   pin("/scheduler-zone", "load", "MOUNT"),
   pin("/scroll-area", "load", "MOUNT"),
-  pin("/scroll-area-cold", "load", "MOUNT"),
   pin("/scroll-area-cold", "mismatch", "RECREATE"),
   pin("/scroll-area-cold", "recreated", "RECREATE"),
-  pin("/select", "load", "MOUNT"),
   pin("/select", "mismatch", "RECREATE"),
-  pin("/select", "recreated", "RECREATE"),
   pin("/select-autofocus", "load", "MOUNT"),
   pin("/select-autofocus", "mismatch", "RECREATE"),
-  pin("/select-autofocus", "recreated", "RECREATE"),
   pin("/selection-indicator", "mismatch", "PRESS"),
   pin("/selection-indicator-groups", "load", "MOUNT"),
   pin("/selection-indicator-groups", "mismatch", "RECREATE"),
-  pin("/selection-indicator-groups", "recreated", "RECREATE"),
   pin("/sidebar", "mismatch", "PRESS"),
-  pin("/sidebar-extensions", "load", "MOUNT"),
   pin("/sidebar-extensions", "mismatch", "PRESS"),
-  pin("/slots", "load", "MOUNT"),
-  pin("/slots", "mismatch", "PRESS"),
   pin("/table", "load", "MOUNT"),
   pin("/table", "mismatch", "RECREATE"),
-  pin("/table", "recreated", "RECREATE"),
   pin("/tabs", "load", "MOUNT"),
   pin("/tabs", "mismatch", "RECREATE"),
-  pin("/tabs", "recreated", "RECREATE"),
-  pin("/tag-group", "load", "MOUNT"),
-  pin("/tag-group", "missing", "RECREATE"),
-  pin("/tag-group", "recreated", "RECREATE"),
   pin("/text-field", "mismatch", "PRESS"),
   pin("/toast", "mismatch", "PRESS"),
-  pin("/toggle-button-group", "load", "MOUNT"),
   pin("/toggle-button-group", "mismatch", "RECREATE"),
-  pin("/toggle-button-group", "recreated", "RECREATE"),
   pin("/tree", "mismatch", "RECREATE"),
-  pin("/tree", "missing", "RECREATE"),
-  pin("/tree", "recreated", "RECREATE"),
   pin("/virtualized-collections", "load", "MOUNT"),
   pin("/virtualized-collections", "mismatch", "RECREATE"),
-  pin("/virtualized-collections", "missing", "RECREATE"),
-  pin("/virtualized-collections", "recreated", "RECREATE"),
 ];

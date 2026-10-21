@@ -55,7 +55,10 @@ const handled = (page: Page, selector: string): Promise<boolean> =>
 
 test("server: tail with chunk names, held keys, runtime URL and the derived loader", async () => {
   const html = await serverHtml(3);
-  const match = /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown">(.*?)<\/script><script>\(function\(\)\{/s.exec(html);
+  const match =
+    /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown" data-fo="\/rt.js \/page.js">(.*?)<\/script><script>\(function\(\)\{/s.exec(
+      html,
+    );
   assert.ok(match, html.slice(-600));
   const tail = JSON.parse(match[1]!);
   assert.deepEqual(tail.m, { App: "/page.js", Header: "/page.js", Counter: "/page.js" });
@@ -73,10 +76,26 @@ test("server: tail with chunk names, held keys, runtime URL and the derived load
   assert.ok(!html.includes('type="rivet/state"'));
 });
 
-test("boot from the tail: nothing loads before input; a cold click adopts the boundary and updates in place", async () => {
+test("boot from the tail: nothing runs before input (fetch-ahead only); a cold click adopts the boundary and updates in place", async () => {
   await withPage(await files(), async (page, requests) => {
     await page.goto("http://rivet.test/");
-    assert.deepEqual(requests, ["/"], "no module before an interaction");
+    // Fetch-ahead (DERIVED-C, tail `data-fo`): the runtime + the boundary chunks as low-priority modulepreloads after
+    // `load` — fetched, never evaluated: nothing is adopted before the click.
+    await page.waitForFunction(() => document.querySelectorAll('link[rel="modulepreload"]').length === 2);
+    assert.deepEqual(
+      await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"]')].map((l) => [l.getAttribute("href"), l.fetchPriority]),
+      ),
+      [
+        ["/rt.js", "low"],
+        ["/page.js", "low"],
+      ],
+    );
+    assert.ok(
+      requests.every((r) => ["/", "/rt.js", "/page.js", "/dom-derived.ts"].includes(r) || r.endsWith(".ts")),
+      requests.join(" "),
+    );
+    assert.equal(await handled(page, "#inc"), false, "no module evaluated before an interaction");
     await tag(page, ["main", "#count", "#inc", "#title", "ul li:nth-child(2)"]);
     // Counter's first click: the loader holds it, boots the runtime, the runtime adopts App (Counter's wake source) and
     // Counter, then replays the click to Counter's handler.
@@ -126,7 +145,7 @@ test("deferred independent child + wake list: Counter stays inert until App's ke
   });
 });
 
-test("lazy rows: adopted O(1) without running a row; a row event materialises it, a keyed write the rest", async () => {
+test("lazy rows: adopted O(1) without running a row; a row event materialises it, a keyed write reruns its row writers", async () => {
   await withPage(await files(6), async (page) => {
     await page.goto("http://rivet.test/");
     await tag(page, ["ul li:nth-child(3)", "ul li:nth-child(5)", "ul li:nth-child(3) button"]);
@@ -137,18 +156,38 @@ test("lazy rows: adopted O(1) without running a row; a row event materialises it
     await page.click("ul li:nth-child(3) button");
     const sel = () => page.evaluate(() => [...document.querySelectorAll("li")].map((li) => li.getAttribute("data-sel")).join(""));
     assert.equal(await sel(), "nnynnn");
-    // `selected` is read by every row (sampled): its first write materialised the whole list.
-    assert.deepEqual(await rows(), [true, true, true, true, true, true]);
+    // Rows read `selected` only through a hoisted binding whose captures every row supplies (element, `selected`, the
+    // row's item): a write reruns that writer over the lazy rows (DERIVED-C) — only the clicked row materialised.
+    assert.deepEqual(await rows(), [false, false, true, false, false, false]);
     await page.click("ul li:nth-child(5) button");
     assert.equal(await sel(), "nnnnyn");
+    assert.deepEqual(await rows(), [false, false, true, false, true, false]);
+    // A write from outside the list (a third pick through row 3's handler again) keeps every row right.
+    await page.click("ul li:nth-child(3) button");
+    assert.equal(await sel(), "nnynnn");
     assert.deepEqual(await tagged(page, ["ul li:nth-child(3)", "ul li:nth-child(5)", "ul li:nth-child(3) button"]), [true, true, true]);
+  });
+});
+
+test("lazy rows: a keyed read outside a row writer (a text binding) wakes the whole list on the first write", async () => {
+  const mark = (source: string) => source.replace("Pick {row().id}", 'Pick {row().id}{selected() === row().id ? "*" : ""}');
+  await withPage(await files(6, { edit: mark, server: mark }), async (page) => {
+    await page.goto("http://rivet.test/");
+    const rows = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b as unknown as Record<string, unknown>).$$click !== undefined));
+    await page.click("ul li:nth-child(2) button");
+    await page.waitForFunction(() => document.querySelector("ul li:nth-child(2)")!.getAttribute("data-sel") === "y");
+    assert.deepEqual(await rows(), [true, true, true, true, true, true]);
+    const marks = () => page.evaluate(() => [...document.querySelectorAll(".pick")].map((b) => (b.textContent!.endsWith("*") ? "*" : "-")).join(""));
+    assert.equal(await marks(), "-*----");
+    await page.click("ul li:nth-child(6) button");
+    assert.equal(await marks(), "-----*");
   });
 });
 
 test("triggers: a load / idle / visible boundary materialises without input (data-boot)", async () => {
   for (const flag of [32, 64, 128]) {
     const served = await files(4, { server: (s) => s.replace('_rB("Counter", 1,', '_rB("Counter", ' + (1 | flag) + ",") });
-    assert.match(served["/"]!, /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown" data-boot>/);
+    assert.match(served["/"]!, /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown" data-boot data-fo="\/rt.js \/page.js">/);
     await withPage(served, async (page, requests) => {
       await page.goto("http://rivet.test/");
       await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
@@ -218,7 +257,7 @@ test("document click listeners (`_rListen`, M2-R5) + `ready`: a link outside eve
   const html = (await derivedToString(() => (_rListen("a.nav"), App({ data: data(4) })), { manifest })) as string;
   const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
   assert.deepEqual(tail.g, [[1, "a.nav"]]);
-  assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-events="click keydown" data-g="a\.nav">/);
+  assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-events="click keydown" data-g="a\.nav" data-fo="\/rt\.js \/page\.js">/);
   // Browser: App's chunk exports `ready` (the router's `Root.ready`: page modules), awaited once before its adopt run.
   const page = await domModule();
   const ready = page + "\nApp.ready = () => new Promise((done) => setTimeout(() => ((window.__ready = (window.__ready || 0) + 1), done()), 30));\n";
@@ -346,4 +385,76 @@ compiled("discarded child boundary (build pass): runs inline, the unit adopts in
       assert.deepEqual(warnings, []);
     });
   }
+});
+
+// DERIVED-C: a boundary whose keyed state holds a non-data value (a selection `Set`: UNKEYED, left out of the record)
+// adopts with that signal's browser init instead of rendering in the browser; a build pass (`_rUnrecorded`) run inside
+// a unit runs outside it (its boundaries register, its signals are plain).
+const UNKEYED_PAGE = `import { signal } from "@rivetjs/reactivity";
+import { _rUnrecorded } from "@rivetjs/runtime/resume-format";
+export function Item(props: { label: string }) {
+  return <b>{props.label}</b>;
+}
+export function App() {
+  const selected = signal(new Set(["b"]));
+  const n = signal(0);
+  const seen: string[] = [];
+  _rUnrecorded(() => {
+    const scratch = signal(1);
+    seen.push(String(scratch()));
+    return <Item label="x" />;
+  });
+  return (
+    <div>
+      <button id="inc" onClick={() => n.set(n() + 1)}>{n()}</button>
+      <p id="sel">{[...selected()].join(",")}</p>
+      <i id="seen">{seen.join("")}</i>
+    </div>
+  );
+}
+`;
+compiled("UNKEYED boundary (non-data keyed state) adopts over the server nodes; a build pass runs outside the unit", async () => {
+  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Item"], independent: ["App"] };
+  const server = compile(UNKEYED_PAGE, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(UNKEYED_PAGE, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  const { App } = await importServer<{ App: () => ServerValue }>(server.code);
+  const symbols = { "src/page.tsx#App": "/page.js", "src/page.tsx#Item": "/page.js" };
+  const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols } })) as string;
+  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  assert.ok(tail.b[0][2] & 4, "App is UNKEYED");
+  const served = {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/page.js": rewrite(dom.code),
+  };
+  await withPage(served, async (page) => {
+    await page.goto("http://rivet.test/");
+    await tag(page, ["#inc", "#sel", "#seen"]);
+    await page.click("#inc");
+    await page.waitForFunction(() => document.querySelector("#inc")!.textContent === "1");
+    assert.deepEqual(await tagged(page, ["#inc", "#sel", "#seen"]), [true, true, true], "adopted, not rendered in the browser");
+    assert.equal(await text(page, "#sel"), "b");
+    assert.equal(await text(page, "#seen"), "1");
+  });
+});
+
+// DERIVED-S writes list-plan rows without ids (`<!--r[-->…<!--]-->`, the tape): rows are claimed by balance, never by id.
+test("lazy rows: id-less row markers (DERIVED-S list tape) adopt and materialise the same", async () => {
+  const served = await files(6);
+  served["/"] = served["/"]!.replace(/<!--r\d+\[-->/g, "<!--r[-->");
+  assert.ok(!/<!--r\d+\[-->/.test(served["/"]!) && served["/"]!.includes("<!--r[-->"));
+  await withPage(served, async (page) => {
+    await page.goto("http://rivet.test/");
+    await tag(page, ["ul li:nth-child(3)", "ul li:nth-child(5)"]);
+    await page.click("ul li:nth-child(3) button");
+    const sel = () => page.evaluate(() => [...document.querySelectorAll("li")].map((li) => li.getAttribute("data-sel")).join(""));
+    await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.getAttribute("data-sel") === "y");
+    assert.equal(await sel(), "nnynnn");
+    await page.click("ul li:nth-child(5) button");
+    assert.equal(await sel(), "nnnnyn");
+    assert.deepEqual(await tagged(page, ["ul li:nth-child(3)", "ul li:nth-child(5)"]), [true, true]);
+  });
 });

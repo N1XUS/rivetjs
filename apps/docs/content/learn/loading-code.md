@@ -85,7 +85,7 @@ export const preload = "idle";
 
 By default each route is one chunk. The `resume.chunks` option in `vite.config.ts` can split them per component (`"component"`, the default until 2026-10-18) or per `<ChunkGroup>` (a part of the page you mark) instead. Fewer, larger chunks mean fewer requests but more unused code. Small shared chunks that load together are merged automatically (`resume.merge`). See [chunks](../guides/performance/chunks.md).
 
-With the experimental [derived model](resuming.md#derived-model-experimental) (`resume: { model: "derived" }`), the build writes one file per module that holds interactive components instead, and `chunks`, `merge`, `cap` and preload rules do not apply. Nothing loads before the first input, and the first click waits for those files to arrive one after another (on the 1,000-row benchmark page 8 scripts, 89 ms against 6.6 ms with the default model).
+With the experimental [derived model](resuming.md#derived-model-experimental) (`resume: { model: "derived" }`), the build writes one file per module that holds interactive components instead, and `chunks`, `merge`, `cap` and preload rules do not apply. After the page loads, the browser fetches the files of the page's interactive components at low priority without running them, so the first input does not wait for the network (on the 1,000-row benchmark page 10 files, 38 KB, against 6 files and 36 KB with the default model).
 
 ## What it means for your code
 

@@ -1020,23 +1020,41 @@ function rivetPlugin(
     for (const file of facts.keys()) derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file) });
   };
   /** Derived model manifest (`.vite/rivet-resume.json`): `model`, `runtime` (the derived entry chunk), `symbols` (boundary
-   * name → the chunk of its module), `sizes` (those chunks' bytes), `builtins` (the built-in decoders' chunk: the server
-   * names it in a route payload that needs it, `_rData`). */
+   * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
+   * every boundary chunk: the server's fetch-ahead list `data-fo`, DERIVED-C), `builtins` (the built-in decoders' chunk: the
+   * server names it in a route payload that needs it, `_rData`). */
   function derivedManifest(this: Rollup.PluginContext, bundle: Rollup.OutputBundle): void {
     const symbols: Record<string, string> = {},
-      sizes: Record<string, number> = {};
+      sizes: Record<string, number> = {},
+      deps: Record<string, string[]> = {},
+      chunks = new Map<string, Rollup.OutputChunk>(),
+      roots: string[] = [];
     let runtime: string | null = null,
       builtins: string | null = null;
     for (const output of Object.values(bundle)) {
-      if (output.type !== "chunk" || !output.facadeModuleId) continue;
-      if (output.facadeModuleId === DERIVED_ENTRY) runtime = base + output.fileName;
+      if (output.type !== "chunk") continue;
+      chunks.set(output.fileName, output);
+      if (!output.facadeModuleId) continue;
+      if (output.facadeModuleId === DERIVED_ENTRY) ((runtime = base + output.fileName), roots.push(output.fileName));
       if (output.facadeModuleId === builtinsId) builtins = base + output.fileName;
       const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
       if (!names?.length) continue;
       sizes[base + output.fileName] = Buffer.byteLength(output.code);
       for (const name of names) symbols[name] = base + output.fileName;
+      roots.push(output.fileName);
     }
-    const body = { model: "derived", runtime, symbols, sizes, ...(builtins ? { builtins } : {}) };
+    for (const file of roots) {
+      const seen = new Set<string>(),
+        stack = [...(chunks.get(file)?.imports ?? [])];
+      while (stack.length) {
+        const next = stack.pop()!;
+        if (seen.has(next) || next === file) continue;
+        seen.add(next);
+        stack.push(...(chunks.get(next)?.imports ?? []));
+      }
+      if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
+    }
+    const body = { model: "derived", runtime, symbols, sizes, deps, ...(builtins ? { builtins } : {}) };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
   }

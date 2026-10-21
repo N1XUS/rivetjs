@@ -13,8 +13,9 @@ const { stories } = await import("../tests-components/harness.ts");
 
 // Shell cache route (`/shell-loader`, rule `shell`): the store is primed before the run so its resumed document load is a
 // hit (`RIVET_FUZZ_SHELL=hit`, default: two loads, the doorkeeper stores on the second), the fill (`miss`: one) or a
-// plain render (`off`).
-const prime = process.env.RIVET_FUZZ_SHELL ?? "hit";
+// plain render (`off`). The derived model is not supported by the shell cache yet (`shell-cache.ts` rejects a
+// `rivet/boundaries` document), so a derived run never primes: the route renders plain and is fuzzed as such.
+const prime = isDerived ? "off" : (process.env.RIVET_FUZZ_SHELL ?? "hit");
 const start = async () => {
   const app = await stories();
   const states: (string | null)[] = [];
