@@ -13,7 +13,9 @@ import { noncedSources } from "../shared/csp-hash.ts";
 import { DATA_PARAM } from "../shared/data.ts";
 import { deferredHandle } from "./deferred.ts";
 import { BodyWriter } from "./render.ts";
-import { shellHoles, shellHook, shellSlots, type ShellHoles, type ShellSeal } from "@rivetjs/runtime/server-shell";
+import { shellHoles, shellHook, shellSlots, shellWritten, type ShellHoles, type ShellSeal, type ShellSwap } from "@rivetjs/runtime/server-shell";
+import { ServerData, type ServerRoutePayload } from "../client/route-context.ts";
+import type { HeadSink } from "../shared/data.ts";
 import type { CachedPage, HeaderOf, Resolved, ShellHost, ShellServe, _Cache as Cache } from "./route-cache.ts";
 
 const SHELL = Symbol.for("rivet.shell");
@@ -63,10 +65,16 @@ interface ShellEntry extends CachedPage {
   seal: ShellSeal | null;
   /** Hits so far, modulo VERIFY (0: this hit replays in full). */
   hits: number;
-  /** H-holes (PPR-T6): the fill's retained boundaries (a hit renders no shell); null: hits replay (`holesWhy`). */
-  readonly holes: ShellHoles | null;
-  readonly holesWhy: string | null;
+  /**
+   * H-holes (PPR-T6): the fill's retained boundaries (a hit renders no shell); null: hits replay (`holesWhy`). Frames that
+   * share signals through context (`watch`) turn H-holes on once the fill's holes ended without writing one, and off for
+   * good when a hit's holes wrote one (PPR-T57).
+   */
+  holes: ShellHoles | null;
+  holesWhy: string | null;
 }
+/** Until the fill's holes ended: retained frames whose provided signals a hole may still write. */
+const WATCHING = "the fill's holes are still streaming (an enclosing component provides signals through context)";
 /** A fill's deferred slot: its handle follows the hit's slot during an H-holes hit (`shellSlots`); stale once the fill ended. */
 interface Slot {
   p: PromiseLike<unknown>;
@@ -475,6 +483,12 @@ class Run implements ShellRequest {
     if (holes) {
       // The request's deferred promises per slot: the retained boundaries' handles (the fill's) follow them (`shellSlots`).
       const slots: (Promise<unknown> | undefined)[] = [];
+      // The frame's route payload carries the fill's head sink: the holes push into the hit's (live nonce, `app.ts`).
+      let phase: ShellPhase | null = null;
+      const swaps = (): readonly ShellSwap[] => {
+        const sink = phase?.headSink;
+        return sink ? [[ServerData as never, (fill) => swapSink(fill as ServerRoutePayload | null, sink)]] : NO_SWAPS;
+      };
       const render: ShellPhase["render"] = {
         body: (enqueued) => (composer.body = new ShellBody(enqueued, null)),
         shell: shellHook({
@@ -483,15 +497,15 @@ class Run implements ShellRequest {
           slots,
           mismatch: (why) => void (composer.body && (composer.body.verdict ??= why)),
         }),
-        holes: shellHoles(holes),
+        holes: shellHoles(holes, swaps),
       };
-      return {
+      return (phase = {
         data: entry.data,
         byURL: entry.byURL,
         ...(entry.deps ? { deps: entry.deps } : {}),
         handle: (promise, _dev, index) => ((slots[index] = promise), promise),
         render,
-      };
+      });
     }
     const render: ShellPhase["render"] = muted
       ? {
@@ -525,9 +539,12 @@ class Run implements ShellRequest {
       loaded: (data, byURL, deps) => ((this.data = data), (this.byURL = byURL), (this.deps = deps)),
       handle: (promise, dev, index) => this.handle(promise, dev, index),
       url: trackedURL(new URL(this.request.url), this.cache, (what) => this.note("render reads " + what)),
-      // Prod: where the root tail starts (byte count) and the root numbering, for muted replays of the stored shell.
+      // Prod: where the root tail starts (byte count) and the root numbering, for muted replays of the stored shell. Dev:
+      // only the retained frames, to name a hole that writes a provided signal (PPR-T57).
       ...(this.dev
-        ? {}
+        ? HOLES
+          ? { render: { shell: shellHook({ holes: (holes: ShellHoles | null) => void (this.holes = holes) }) } }
+          : {}
         : {
             render: {
               body: (enqueued: () => void) => (this.body = new ShellBody(enqueued, null)),
@@ -626,6 +643,17 @@ class Run implements ShellRequest {
     promise.then(settled, settled);
     const follows: PromiseLike<unknown> = { then: (ok, fail) => (shellSlots()?.[index] ?? slot.p).then(ok, fail) };
     return deferredHandle(follows as Promise<unknown>, dev);
+  }
+  /** The fill's holes ended: H-holes on when none wrote a signal the retained frames share; else hits replay (named in dev). */
+  watched(): void {
+    const holes = this.holes;
+    if (!holes?.watch.length) return;
+    const why = shellWritten(holes);
+    if (why !== null) this.shells.log(this.route!.id, ["H-holes off: " + why]);
+    const entry = this.stored;
+    if (!entry || entry.holes !== null || entry.holesWhy !== WATCHING) return;
+    if (why === null) ((entry.holes = holes), (entry.holesWhy = null));
+    else entry.holesWhy = why;
   }
   /** The fill's response ended: its handles no longer reach its visitor's data (a retained boundary reads a hit's slot). */
   stale(): void {
@@ -740,6 +768,7 @@ class Run implements ShellRequest {
             flushHeld("", -1);
             if (!answered) answer(dev ? reason() : null);
           }
+          this.watched();
           this.stale();
           relay.end();
         },
@@ -835,8 +864,8 @@ class Run implements ShellRequest {
       tail,
       seal: this.seal,
       hits: 0,
-      holes: this.holes,
-      holesWhy: this.holesWhy,
+      holes: this.holes && !this.holes.watch.length ? this.holes : null,
+      holesWhy: this.holes?.watch.length ? WATCHING : this.holesWhy,
     };
     this.stored = entry;
     store.set(entry);
@@ -994,6 +1023,7 @@ class Composer {
       },
       () => {
         if (body.verdict !== null || body.against !== null) return this.mismatch(body.verdict ?? "the replay ended before its shell did");
+        this.watched();
         relay.end();
       },
       (error) => {
@@ -1001,6 +1031,16 @@ class Composer {
         relay.error(error);
       },
     );
+  }
+  /** After an H-holes hit: a hole that wrote a signal the retained frames share turns the entry to replays (PPR-T57). */
+  watched(): void {
+    const entry = this.entry,
+      holes = entry.holes;
+    if (!holes?.watch.length) return;
+    const why = shellWritten(holes);
+    if (why === null) return;
+    entry.holes = null;
+    entry.holesWhy = why;
   }
   /** Never holes against a mismatched shell: drop the entry, stop filling the route, the page reloads once. */
   mismatch(why: string): void {
@@ -1062,6 +1102,10 @@ class Shells {
       .catch(() => void (entry.retry = Date.now() + Math.min(1000 * 2 ** entry.failures++, 300_000)));
   }
 }
+const NO_SWAPS: readonly ShellSwap[] = [];
+/** The fill's route payload with the hit's head sink (H-holes: a hole's head components push into the hit's). */
+const swapSink = (fill: ServerRoutePayload | null, sink: HeadSink): ServerRoutePayload | null =>
+  fill?.headSink && fill.headSink !== sink ? { ...fill, headSink: sink } : fill;
 const freshNonce = (): string => {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   let text = "";

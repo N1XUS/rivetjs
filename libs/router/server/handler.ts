@@ -4,7 +4,7 @@ import { compileRoutes } from "@rivetjs/runtime/router/server";
 import { createEncoder, _builtinKinds } from "@rivetjs/runtime/resume-format";
 import { HttpError, isHttpError } from "../shared/errors.ts";
 import { isActionFailure } from "../shared/actions.ts";
-import { DATA_PARAM, KEEP_PAGE, KEEP_PARAM, withoutRivet, type ActionAnswer, type ActionResult, type DataAnswer, type Head, type LoaderDeps } from "../shared/data.ts";
+import { DATA_PARAM, KEEP_PAGE, KEEP_PARAM, withoutRivet, type ActionAnswer, type ActionResult, type DataAnswer, type Head, type HeadSink, type LoaderDeps } from "../shared/data.ts";
 export { DATA_PARAM, type ActionResult } from "../shared/data.ts";
 import { loadServer } from "./module.ts";
 import { crossSite, limitBody, type BodyLimit } from "./security.ts";
@@ -159,6 +159,8 @@ export interface ShellPhase {
   readonly url?: URL;
   /** Set by `app.ts`: this render does not stream (dev `devResume` check mode), deferred data waits in place. */
   plain?: boolean;
+  /** Set by `app.ts` on an H-holes hit: the request's head sink (closed: the stored shell's head is out), for the holes. */
+  headSink?: HeadSink;
   /**
    * Render options of the fill / replay: `render.ts` `RenderPageOptions` `body` + `shell` (byte counting / compare-only writer,
    * recorder hook). Typed opaquely: the public types reach this file, and `render.ts` pulls in the server runtime's.

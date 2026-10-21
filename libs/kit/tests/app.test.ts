@@ -37,6 +37,36 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
   const app = await start({ dist: root + "dist", port: 0, onError: () => {} });
   const browser = await chromium.launch({ headless: true });
   try {
+    // Shell cache (`/shell`, PPR-T57): a hole's head components on an H-holes hit write what a fresh render writes — the
+    // body-valid tags in place with the hit's own nonce; `<Title>` inside the hole is ignored (warned once).
+    const warn = console.warn;
+    const warned: string[] = [];
+    console.warn = (...args: unknown[]) => void warned.push(args.join(" "));
+    try {
+      const shellOf = async (expected: string | null) => {
+        const response = await fetch(app.url + "/shell");
+        assert.equal(response.headers.get("x-rivet-cache"), expected);
+        const nonce = /'nonce-([^']+)'/.exec(response.headers.get("content-security-policy") ?? "")![1]!;
+        return { html: await response.text(), nonce };
+      };
+      await shellOf(null); // the doorkeeper: stored on the second miss
+      const fill = await shellOf("SHELL-MISS");
+      const hit = await shellOf("SHELL-HIT");
+      for (const { html, nonce } of [fill, hit]) {
+        assert.match(html, /<title>Shell \| Kit<\/title>/);
+        const late = /<script\b[^>]* src="\/late-hole\.js"[^>]*>/.exec(html)?.[0]; // the nonce is base64 (`+`): no RegExp from it
+        assert.ok(late?.includes(`nonce="${nonce}"`), html);
+        assert.match(html, /<link rel="prefetch" href="\/next\.json"/);
+        for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="(rivet\/state|application\/(ld\+)?json)"/.test(tag), tag);
+      }
+      assert.notEqual(fill.nonce, hit.nonce);
+      const unnonced = (html: string) => html.replace(/ nonce="[^"]*"/g, ' nonce=""');
+      assert.equal(unnonced(hit.html), unnonced(fill.html));
+      assert.ok(warned.some((line) => line.includes("<Title> rendered after the shell")), warned.join("\n"));
+    } finally {
+      console.warn = warn;
+    }
+
     const first = await fetch(app.url + "/");
     const html = await first.text();
     const nonce = /'nonce-([^']+)'/.exec(first.headers.get("content-security-policy") ?? "")![1]!;

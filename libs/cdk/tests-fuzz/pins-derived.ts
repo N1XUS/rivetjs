@@ -18,7 +18,7 @@ const MOUNT =
 const ADOPTED =
   "a page root that rendered in the browser before DERIVED-C (UNKEYED) now adopts: the later steps compare, and browser-created collection parts number their `useId`s after the adopted ones (`#4-news` vs `#3-news`), plus hover / roving tabindex after clicks";
 const BASE =
-  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/deferred-loader` (deferred loader holes), `/shell-loader` + `/shell-replay` (the same deferred hole; the shell cache rejects derived documents, PPR-T23 / PPR-T6) and `/dom-data` (DOM-backed data) are not derived-model routes yet";
+  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/deferred-loader` (deferred loader holes), `/shell-loader` + `/shell-replay` (+ `/shell-provider`, PPR-T57) (the same deferred hole; the shell cache rejects derived documents, PPR-T23 / PPR-T6) and `/dom-data` (DOM-backed data) are not derived-model routes yet";
 const GROUPS = { PRESS, RECREATE, MOUNT, ADOPTED, BASE } as const;
 
 const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): FuzzPin => ({
@@ -37,6 +37,8 @@ export const pins: FuzzPin[] = [
   pin("/shell-loader", "page-error", "BASE"),
   pin("/shell-replay", "mismatch", "BASE"),
   pin("/shell-replay", "page-error", "BASE"),
+  pin("/shell-provider", "mismatch", "BASE"),
+  pin("/shell-provider", "page-error", "BASE"),
   pin("/dom-data", "load", "BASE"),
   pin("/dom-data", "mismatch", "BASE"),
   pin("/tag-group", "mismatch", "ADOPTED"),

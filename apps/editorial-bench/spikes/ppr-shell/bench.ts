@@ -269,6 +269,16 @@ if (pages.includes("editorial")) {
     const state = (await handler(new Request("http://localhost" + path, { headers }))).headers.get("x-rivet-cache");
     await (await handler(new Request("http://localhost" + path, { headers }))).text();
     if (state !== "SHELL-HIT") throw new Error(`${path}: expected SHELL-HIT (H-holes), got ${state}`);
+    // The `-h` lanes: the same entry's hits on H-replay answer `SHELL-HIT-REPLAY` (PPR-T6 header split).
+    (globalThis as Record<symbol, unknown>)[TEST] = { replay: true };
+    try {
+      const replayed = await handler(new Request("http://localhost" + path, { headers }));
+      await replayed.text();
+      const header = replayed.headers.get("x-rivet-cache");
+      if (header !== "SHELL-HIT-REPLAY") throw new Error(`${path}: expected SHELL-HIT-REPLAY (H-replay), got ${header}`);
+    } finally {
+      delete (globalThis as Record<symbol, unknown>)[TEST];
+    }
   }
   if (only.length) for (const name of Object.keys(lanes)) if (!only.includes(name)) delete lanes[name];
   const out = await measure(`editorial article ${slug} (signed in, sid cookie)`, lanes);

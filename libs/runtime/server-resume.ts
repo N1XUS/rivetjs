@@ -410,6 +410,11 @@ interface Encoding {
   /** Symbol id → page symbol index (wire `s`; assigned per written segment, `symbolList`). */
   symbols: Map<string, number>;
   events: Set<string>;
+  /**
+   * Provider lists (`providersOf`) → their table entry (null: none of their values encodes), one per frame chain and render.
+   * A Map, not a WeakMap: it lives with the render, and the shell cache forks it with the table (H-holes, PPR-T57).
+   */
+  providers: Map<unknown[], number | null>;
 }
 /** One recorder's encoded entries (see encodeRecords). */
 interface Encoded extends Omit<StatePatch, "boot"> {
@@ -728,10 +733,19 @@ interface Frame {
 }
 const frameOf = (): Frame | null => (getOwner() as unknown as { ctx: Frame | null } | null)?.ctx ?? null;
 const providerLists = new WeakMap<Frame, unknown[] | null>();
+// A frame of an unidentified token (id scopes, the router's `ServerData`, …) adds nothing: it shares the list of the
+// frame above, so a list's identity depends only on the identified providers (the shell cache's H-holes re-run a hole
+// under extra unidentified frames and reuse the fill's list entry, PPR-T57).
+const transparent = (token: Context<unknown>): boolean => token.id === undefined || _contextById(token.id) !== token;
 function providersOf(frame: Frame | null): unknown[] | null {
   if (frame === null) return null;
   let list = providerLists.get(frame);
   if (list !== undefined) return list;
+  if (transparent(frame.token)) {
+    list = providersOf(frame.up);
+    providerLists.set(frame, list);
+    return list;
+  }
   const seen = new Set<string>(),
     inner: unknown[] = [];
   for (let at: Frame | null = frame; at !== null; at = at.up) {
@@ -3747,7 +3761,6 @@ function encoding(root: Recorder): Encoding {
   // browser creates the computed under them); values that do not encode are left out (that context reads its default).
   // One list entry per frame chain and render. Not for recipe consts (`_rFn` values): their symbol runs their initializer
   // with the same captures, and their provider values would join the state (+3–7% on ui showcases) and chunk reach.
-  const lists = new WeakMap<unknown[], number | null>();
   const withProviders = (
     entry: EntryRecord,
     frame: Frame | null | undefined,
@@ -3756,6 +3769,7 @@ function encoding(root: Recorder): Encoding {
   ): EntryRecord => {
     const list = frame ? providersOf(frame) : null;
     if (list === null) return entry;
+    const lists = root.enc!.providers;
     let at = lists.get(list);
     if (at === undefined) {
       const kept: unknown[] = [];
@@ -3807,6 +3821,7 @@ function encoding(root: Recorder): Encoding {
     chunkOf: new Map(),
     symbols: new Map(),
     events: new Set(),
+    providers: new Map(),
   });
 }
 

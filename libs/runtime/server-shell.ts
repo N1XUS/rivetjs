@@ -20,7 +20,7 @@
 // renders no shell at all: `shellHoles(retained)` is the page factory; it re-runs each boundary's `Async` under its frame
 // (the id counter shadowed by the hit's) with the fill's numbering, its fallback rendered empty and discarded; the
 // segments stream as in a fresh render and encode against a read-through overlay of the fill's table (`base`).
-import { createRoot, getOwner, runWithOwner, _detach, _rootIn, type Owner } from "@rivetjs/reactivity";
+import { createRoot, getOwner, provide, runWithOwner, _detach, _inspect, _rootIn, type Context, type Owner } from "@rivetjs/reactivity";
 import { Async, type AsyncProps } from "./server-async.ts";
 import { _idScope, _inIdScope, type IdScope } from "./id.ts";
 import { renderToString, type ServerValue } from "./server.ts";
@@ -43,21 +43,25 @@ export interface ShellSeal {
   readonly fork?: EncoderFork;
 }
 
-/** H-holes: a sealed encoder's numbering (a copy, never written): table entries and interned values. */
+/**
+ * H-holes: a sealed encoder's numbering (a copy, never written): table entries and interned values, and the provider
+ * lists the shell's encode wrote (a hole's computed under the same providers reuses that table entry, as in the fill).
+ */
 export interface EncoderFork {
   readonly table: readonly EncoderState["table"][number][];
   readonly primitives: ReadonlyMap<unknown, number>;
   readonly specials: ReadonlyMap<string, number>;
   readonly objects: ReadonlyMap<object, number>;
+  readonly providers: ReadonlyMap<unknown[], number | null>;
 }
 /** Read-through overlay of a fork's map: own writes, the base's entries visible (copy-on-write without the copy). */
-class Overlay<K> extends Map<K, number> {
-  declare base: ReadonlyMap<K, number>;
-  constructor(base: ReadonlyMap<K, number>) {
+class Overlay<K, V = number> extends Map<K, V> {
+  declare base: ReadonlyMap<K, V>;
+  constructor(base: ReadonlyMap<K, V>) {
     super();
     this.base = base;
   }
-  override get(key: K): number | undefined {
+  override get(key: K): V | undefined {
     const own = super.get(key);
     return own === undefined ? this.base.get(key) : own;
   }
@@ -65,12 +69,16 @@ class Overlay<K> extends Map<K, number> {
     return super.has(key) || this.base.has(key);
   }
 }
-const forkOf = (state: EncoderState): EncoderFork => ({
-  table: state.table.slice(),
-  primitives: new Map(state.primitives),
-  specials: new Map(state.specials),
-  objects: new Map(state.objects),
-});
+const forkOf = (enc: Encoding): EncoderFork => {
+  const state = enc.encoder.state();
+  return {
+    table: state.table.slice(),
+    primitives: new Map(state.primitives),
+    specials: new Map(state.specials),
+    objects: new Map(state.objects),
+    providers: new Map(enc.providers),
+  };
+};
 /** A hit's encoder start: the fork's table copied, its maps behind overlays. */
 const opened = (fork: EncoderFork) => (): EncoderState => ({
   table: fork.table.slice(),
@@ -101,7 +109,14 @@ export interface ShellHoles {
   /** Provided context values / identified tokens of the shell (the encoder's `{x}` references, region providers). */
   readonly contexts: ReadonlyMap<unknown, string>;
   readonly tokens: ReadonlyMap<string, unknown>;
+  /**
+   * Signals the retained frames reach through provided context values (an ancestor's state the holes share across hits),
+   * with their values at the cut: a hole that writes one makes the entry replay-only (`shellWritten`, PPR-T57).
+   */
+  readonly watch: readonly (readonly [signal: () => unknown, value: unknown])[];
 }
+/** A context value of the retained frames swapped per hit (`shellHoles`): the fill's value in, the hit's out. */
+export type ShellSwap = readonly [token: Context<unknown>, swap: (fill: unknown) => unknown];
 
 export interface ShellHookOptions {
   /** Fill: the root numbering (called before the first patch encodes; never when nothing streams). */
@@ -135,7 +150,7 @@ const sealOf = (recorder: Recorder, enc: Encoding, fork?: boolean): ShellSeal =>
   s: [...enc.symbols],
   e: [...enc.events],
   f: flags(recorder),
-  ...(fork ? { fork: forkOf(enc.encoder.state()) } : {}),
+  ...(fork ? { fork: forkOf(enc) } : {}),
 });
 /** The chunk / symbol / event numbering of a seal, seeded into a replay's encoding. */
 const seed = (enc: Encoding, replay: ShellSeal): void => {
@@ -145,6 +160,60 @@ const seed = (enc: Encoding, replay: ShellSeal): void => {
   for (const type of replay.e) enc.events.add(type);
 };
 const NO_FALLBACK = (): null => null;
+
+/** Reactivity's context chain of an owner (`ctx`: immutable frames, the nearest provider first). */
+interface Frame {
+  readonly token: Context<unknown>;
+  readonly value: unknown;
+  readonly up: Frame | null;
+}
+const frameOf = (owner: Owner): Frame | null => (owner as unknown as { ctx: Frame | null }).ctx;
+/** Context values are walked this deep (plain data: objects, arrays) and this wide per fill. */
+const DEPTH = 4,
+  WIDE = 1024;
+/**
+ * The signals the retained frames reach through provided context values (stores included: a store's root is a signal),
+ * with their values now. Data properties only (no getter runs); computeds are skipped (derived: their sources count).
+ */
+function frameSignals(holes: readonly ShellHole[]): [() => unknown, unknown][] {
+  const out: [() => unknown, unknown][] = [];
+  const frames = new Set<Frame>(),
+    seen = new Set<unknown>();
+  const scan = (value: unknown, depth: number): void => {
+    if (typeof value === "function") {
+      const info = _inspect(value);
+      if (info?.kind === "signal" && !seen.has(value)) (seen.add(value), out.push([value as () => unknown, info.value]));
+      return;
+    }
+    if (value === null || typeof value !== "object" || depth > DEPTH || seen.size >= WIDE || seen.has(value)) return;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      for (const item of value) scan(item, depth + 1);
+      return;
+    }
+    for (const key of Object.keys(value)) {
+      const desc = Object.getOwnPropertyDescriptor(value, key);
+      if (desc && "value" in desc) scan(desc.value, depth + 1);
+    }
+  };
+  for (const hole of holes)
+    for (let frame = frameOf(hole.pin); frame !== null && !frames.has(frame); frame = frame.up) {
+      frames.add(frame);
+      scan(frame.value, 0);
+    }
+  return out;
+}
+/**
+ * H-holes (PPR-T57): why the retained frames are no longer what the fill's shell left (a hole wrote a signal an enclosing
+ * provider shares: later hits would read that write), or null. The shell cache asks at the fill's end and after each hit;
+ * a reason makes the entry replay-only.
+ */
+export function shellWritten(retained: ShellHoles): string | null {
+  for (const [signal, value] of retained.watch)
+    if (!Object.is((_inspect(signal) as { value: unknown }).value, value))
+      return "a hole wrote a signal an enclosing component provides through context (shared by every hit's holes)";
+  return null;
+}
 /** Inside a boundary's content (`ErrorBoundary`): a failing hole would route to the fill's boundary. */
 const caught = (scope: Segment["M"] | null): boolean => {
   for (; scope; scope = scope.parent) if (scope.boundary) return true;
@@ -204,7 +273,15 @@ export function shellHook(options: ShellHookOptions): ShellHook {
             else {
               retain = true;
               options.holes(
-                { holes: kept!, n: recorder.next, ids: scope.n, prefix: scope.prefix, contexts: new Map(recorder.contexts), tokens: new Map(recorder.tokens) },
+                {
+                  holes: kept!,
+                  n: recorder.next,
+                  ids: scope.n,
+                  prefix: scope.prefix,
+                  contexts: new Map(recorder.contexts),
+                  tokens: new Map(recorder.tokens),
+                  watch: frameSignals(kept!),
+                },
                 null,
               );
             }
@@ -259,6 +336,7 @@ export function shellHook(options: ShellHookOptions): ShellHook {
           }
           recorder.base = opened(replay.fork);
           const enc = encoding(recorder);
+          enc.providers = new Overlay(replay.fork.providers) as Map<unknown[], number | null>;
           for (let i = 0; i < replay.c.length; i++) enc.chunkOf.set(replay.c[i]!, enc.chunks.push(replay.c[i]!) - 1);
           for (const [symbol, index] of replay.s) enc.symbols.set(symbol, index);
           for (const type of replay.e) enc.events.add(type);
@@ -292,13 +370,21 @@ export function shellSlots(): readonly (PromiseLike<unknown> | undefined)[] | un
   return (_shellRecorder()?.options.shell as { slots?: readonly (PromiseLike<unknown> | undefined)[] } | undefined)?.slots;
 }
 
+/** The nearest provided value of `token` in an owner's frame (`MISSING`: none). */
+const MISSING = {};
+const providedIn = (owner: Owner, token: Context<unknown>): unknown => {
+  for (let frame = frameOf(owner); frame !== null; frame = frame.up) if (frame.token === token) return frame.value;
+  return MISSING;
+};
+
 /**
  * H-holes: the page factory of a hit (`renderResumable` with `shell: shellHook({ replay, retained })`): no shell — each
  * retained boundary's `Async` runs again under its context frame (fresh root; the id counter is the hit's, continued from
  * the fill's), with the fill's marker ids and region; its fallback renders empty and is discarded. Nothing is written:
- * the segments stream after the (muted) root tail as in a fresh render.
+ * the segments stream after the (muted) root tail as in a fresh render. `swaps` (read per hit): context values of the
+ * frame that belong to the request (the router's head sink), provided again with the hit's value around the boundary.
  */
-export function shellHoles(retained: ShellHoles): () => ServerValue {
+export function shellHoles(retained: ShellHoles, swaps?: () => readonly ShellSwap[]): () => ServerValue {
   return () => {
     const recorder = _shellRecorder();
     if (!recorder?.stream) throw new Error("Shell holes need a streaming resumable render");
@@ -309,6 +395,7 @@ export function shellHoles(retained: ShellHoles): () => ServerValue {
     ids.n = retained.ids;
     const { signal, variant } = recorder.options;
     const holder: { owner: never } = { owner: null as never };
+    const swapped = swaps?.();
     for (const hole of retained.holes) {
       const M = hole.M;
       // The claimed region as the boundary found it (unclaimed, no id yet); its fill id once claimed.
@@ -316,11 +403,24 @@ export function shellHoles(retained: ShellHoles): () => ServerValue {
       recorder.region = region;
       recorder.next = hole.A;
       const props = { ...hole.props, fallback: NO_FALLBACK };
+      let run = (): ServerValue => _inIdScope(ids, () => Async(props));
+      if (swapped)
+        for (const [token, swap] of swapped) {
+          const fill = providedIn(hole.pin, token);
+          if (fill === MISSING) continue;
+          const value = swap(fill);
+          if (value === fill) continue;
+          // A captured value the encoder writes as a `{x}` reference stays one (the hit's value, the fill's name).
+          const name = retained.contexts.get(fill);
+          if (name !== undefined) recorder.contexts.set(value, name);
+          const inner = run;
+          run = () => provide(token, value, inner);
+        }
       const value = _rootIn(
         hole.pin as never,
         (h) => {
           _detach(h.owner);
-          return _inIdScope(ids, () => Async(props));
+          return run();
         },
         holder,
       );

@@ -304,6 +304,8 @@ export function createApp(config: AppConfig): AppHandler {
         else if (!warned.has(message)) (warned.add(message), console.warn("[rivet] " + message));
       });
       page = { ...page, headSink: sink };
+      // Shell cache H-holes hit: no hold (the stored shell's head is out), so the holes' head components get late entries.
+      if (page.shell?.render?.holes) (sink.close(), (page.shell.headSink = sink));
     }
     const signal = request.signal;
     if (hinter && routeId !== undefined) {

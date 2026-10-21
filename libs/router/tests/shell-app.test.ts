@@ -2,7 +2,8 @@
 // miss stores the shell, later visitors (other sessions) get the stored prefix at once and their own holes; a hit's
 // document (and every patch) is byte-identical to a fresh render modulo the nonce — H-holes (PPR-T6: no shell render,
 // only the retained holes re-run; `x-rivet-cache: SHELL-HIT`), muted replay (PPR-T3B) or full replay (`SHELL-HIT-REPLAY`);
-// a route with an H-holes ineligible hole replays; every 64th hit (VERIFY) replays in full and catches a shell that
+// a route with an H-holes ineligible hole replays, so does one whose hole writes a signal an enclosing component
+// provides through context (PPR-T57 frame watch; a read-only twin stays H-holes); every 64th hit (VERIFY) replays in full and catches a shell that
 // changed under an H-holes entry (R1); shell loaders do
 // not run on hits; guards do; fills that read request input outside the key are not stored (cookie, header, locals, unkeyed query parameter, the search params
 // context in render, deferred data rendered in order); unkeyed query parameters bypass; `revalidate()` drops; a stale
@@ -133,6 +134,28 @@ test(
       const { html } = await read(hit);
       assert.match(html, /<p id="stock">Stock 3<\/p>/);
       assert.equal(unnonced(html), unnonced(fillHTML));
+    });
+
+    await t.test("a hole writing a signal an ancestor provides makes the entry replay-only; reading it keeps H-holes (PPR-T57)", async () => {
+      const fill = await get("/tally", "ann");
+      assert.equal(fill.headers.get("x-rivet-cache"), "SHELL-MISS");
+      const fillHTML = (await read(fill)).html;
+      const marked = (html: string) => html.replace(/<!--[^>]*-->/g, "");
+      assert.match(marked(fillHTML), /<p id="tally">Seen 1 by ann<\/p>/);
+      for (let i = 0; i < 3; i++) {
+        const hit = await get("/tally", "ann");
+        assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY", "hit " + i);
+        assert.equal(unnonced((await read(hit)).html), unnonced(fillHTML), "a fresh render's bytes, hit " + i);
+      }
+      const readFill = await get("/tally-read", "ann");
+      assert.equal(readFill.headers.get("x-rivet-cache"), "SHELL-MISS");
+      const readHTML = (await read(readFill)).html;
+      assert.match(marked(readHTML), /<p id="tally">Seen 0 by ann<\/p>/);
+      for (let i = 0; i < 3; i++) {
+        const hit = await get("/tally-read", "ann");
+        assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT", "hit " + i);
+        assert.equal(unnonced((await read(hit)).html), unnonced(readHTML), "hit " + i);
+      }
     });
 
     await t.test("guards run on hits (R4): an anonymous visitor is redirected before the stored shell goes out", async () => {
