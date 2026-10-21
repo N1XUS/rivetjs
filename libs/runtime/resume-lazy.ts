@@ -54,3 +54,31 @@ export function lazy(): void {
     }
   };
 }
+
+/**
+ * The lazy rows runtime's preload + import (LAZY-BLOCKERS), appended to the lazy add-on in builds whose lazy rows runtime
+ * is a chunk (`resume.lazyRows`, manifest `lazyRows` = its URL; the server writes it and its static imports as the add-on
+ * script's `data-lz`): the first `$rw` call — the loader's first event walk, intent or interaction, when it boots the
+ * runtime — preloads them, so the resume entry's wait for the chunk (`lazy-rows-resume.ts` `_lazyReady`) costs no round
+ * trip; `$rl` imports it (an inline script's `import()`: none in the runtime, whose bundler would add its preload helper
+ * to every page). Shipped only by `LAZY_ROWS` servers.
+ */
+export function lazyPreload(): void {
+  const d = document as LoaderDocument,
+    prev = d.$rw!,
+    urls = (d.currentScript as HTMLScriptElement).dataset.lz!;
+  let z = urls,
+    loading: Promise<Record<string, unknown>> | undefined;
+  d.$rl = () => (loading ??= import(urls.split(" ")[0]!));
+  d.$rw = (x: number | Element, observer?: IntersectionObserver): Element | string | undefined => {
+    if (z)
+      for (const url of z.split(" ")) {
+        const link = d.createElement("link");
+        link.rel = "modulepreload";
+        link.href = url;
+        d.head.append(link);
+        z = "";
+      }
+    return prev(x, observer);
+  };
+}

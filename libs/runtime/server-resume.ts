@@ -55,7 +55,7 @@ import {
   _setUnrecorded,
 } from "./resume-format.ts";
 import type { ClassHooks, ClassRegistry, EncoderState } from "./resume-format.ts";
-import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
+import { EXPAND, EXPAND_DOM, LAZY, LAZY_PRELOAD, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import { addReads, encodeLazy, lazyKeyed, lazyLocal, lazyRowsOn, lazyWarn } from "./server-resume-lazy.ts";
 import type { LazyFor as LazyRecord } from "./server-resume-lazy.ts";
@@ -144,9 +144,11 @@ export interface ResumeManifest {
   captures?: Record<string, readonly string[]>;
   /**
    * The build's browser runtime materialises lazy collection rows (`rivet({ resume: { lazyRows: true } })`, LAZY-T5B):
-   * with `RIVET_LAZY_ROWS=on` in the server env, `$lazy` Fors write lazy row records (state `L`). Absent: never.
+   * with `RIVET_LAZY_ROWS=on` in the server env, `$lazy` Fors write lazy row records (state `L`). Absent: never. A URL: the
+   * lazy rows runtime's chunk (production builds, LAZY-BLOCKERS): the lazy add-on of a page with `L` entries preloads it
+   * (`data-lz`) at the first event walk, with the runtime.
    */
-  lazyRows?: boolean;
+  lazyRows?: boolean | string;
   /**
    * The build's browser runtime reads DOM-backed loader data (`rivet({ resume: { domData: true } })`, DOM-DATA): plain
    * JSON trees whose strings the page rendered as an element's whole text encode as `D` entries (read back from the DOM).
@@ -2175,7 +2177,12 @@ class Stream {
     // The lazy add-on wraps the rows add-on's `$rw`: shipped after it (again, when the rows add-on comes later).
     let relazy = false;
     if (delta.w && !root.rowsAddon) ((root.rowsAddon = true), (out += open + ROWS + "</script>"), (relazy = root.lazyAddon), (root.lazyAddon = false));
-    if ((delta.L || relazy) && !root.lazyAddon) ((root.lazyAddon = true), (out += open + LAZY + "</script>"));
+    if ((delta.L || relazy) && !root.lazyAddon)
+      ((root.lazyAddon = true),
+        (out +=
+          (LAZY_ROWS && typeof root.options.manifest?.lazyRows == "string"
+            ? open.slice(0, -1) + lazyAttr(root.options.manifest) + ">" + LAZY + LAZY_PRELOAD
+            : open + LAZY) + "</script>"));
     // The expand add-on replaces `$rx` (it chains to nothing): a repeat add-on shipped before it ships again after it.
     if (rx && !root.expandAddon) ((root.expandAddon = true), (out += open + (DOM_DATA ? EXPAND_DOM : EXPAND) + "</script>"), (root.repeatAddon = false));
     if (rr && !root.repeatAddon) ((root.repeatAddon = true), (out += open + REPEAT + "</script>"));
@@ -4162,7 +4169,13 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
     encoder,
     handlers,
     models: m,
-    bindings: planned.length ? [...b, ...(planned as unknown as BindingEntry[])] : b,
+    // `resume.lazyRows` builds: a lazy For's reads count as bindings of its row chunks (`lazyReaders`).
+    bindings:
+      LAZY_ROWS && L.length
+        ? lazyReaders(planned.length ? [...b, ...(planned as unknown as BindingEntry[])] : b, L)
+        : planned.length
+          ? [...b, ...(planned as unknown as BindingEntry[])]
+          : b,
     clientEvents: recorder.clientEvents,
     ce,
     reach,
@@ -4452,6 +4465,19 @@ const tail = (loader: string, stream: boolean): readonly string[] =>
 const TAILS = [tail(LOADER, false), tail(LOADER_KEYS, false), tail(LOADER, true), tail(LOADER_KEYS, true)] as const;
 const ROWS_SCRIPT = Object.freeze(["<script", ">" + ROWS + "</script>"]);
 const LAZY_SCRIPT = Object.freeze(["<script", ">" + LAZY + "</script>"]);
+// The lazy add-on of a build whose lazy rows runtime is a chunk (manifest `lazyRows`: its URL): `data-lz` names it and its
+// static imports (manifest `deps`), which the add-on's preload part (`LAZY_PRELOAD`) preloads; one template per manifest.
+const lazyScripts = new WeakMap<BuildManifest, readonly string[]>();
+const lazyScript = (manifest: BuildManifest): readonly string[] => {
+  if (typeof manifest.lazyRows != "string") return LAZY_SCRIPT;
+  let script = lazyScripts.get(manifest);
+  if (!script) lazyScripts.set(manifest, (script = Object.freeze(["<script" + lazyAttr(manifest), ">" + LAZY + LAZY_PRELOAD + "</script>"])));
+  return script;
+};
+const lazyAttr = (manifest: BuildManifest): string =>
+  ' data-lz="' +
+  [manifest.lazyRows as string, ...(manifest.deps?.[manifest.lazyRows as string] ?? [])].join(" ").replace(/&/g, "&amp;").replace(/"/g, "&quot;") +
+  '"';
 // DOM-DATA builds: the expand add-on with the strided item refs part (`rs`, `EXPAND_DOM`).
 const EXPAND_SCRIPT = Object.freeze(["<script", ">" + (DOM_DATA ? EXPAND_DOM : EXPAND) + "</script>"]);
 const REPEAT_SCRIPT = Object.freeze(["<script", ">" + REPEAT + "</script>"]);
@@ -5110,7 +5136,7 @@ function encodeState(recorder: Recorder, ahead = false): ServerValue {
   const before = [
     ...(w ? [compiledTemplate(ROWS_SCRIPT, [attrs])] : []),
     // Lazy rows (`L`): the lazy add-on, after the rows add-on (it wraps its `$rw`).
-    ...(L ? [compiledTemplate(LAZY_SCRIPT, [attrs])] : []),
+    ...(L ? [compiledTemplate(LAZY_ROWS ? lazyScript(manifest) : LAZY_SCRIPT, [attrs])] : []),
     ...(rx ? [compiledTemplate(EXPAND_SCRIPT, [attrs])] : []),
     ...(rr ? [compiledTemplate(REPEAT_SCRIPT, [attrs])] : []),
   ];
@@ -5355,6 +5381,20 @@ function reachStack(table: readonly TableEntry[], root: number, memo: ReachMemo)
  * - schedule: `[[url, "e"|"i"|"v", elementIds?], …]` (the loader prefixes the runtime url) by impact (event weight × elements), smaller first on ties;
  * - interaction: chunk indexes intent must not prefetch.
  */
+// A lazy For's row chunks (`L` [6]) read the signals its rows read (`reads` [7], keyed sources [12]): for the preload plan
+// they are bindings of those signals, so a handler reaching one loads them at its intent, as a recorded row's binding
+// chunks (LAZY-BLOCKERS: cdk Tabs panels — a selection change woke panel rows whose chunk had not loaded, the panel
+// showed one chunk load after the tab).
+function lazyReaders(bindings: BindingEntry[], L: readonly LazyRowsEntry[]): BindingEntry[] {
+  const out = bindings.slice();
+  for (const e of L) {
+    const reads = e[7] ? e[7].slice() : [];
+    if (e[12]) for (let i = 0; i < e[12].length; i += 3) reads.push(e[12][i] as number);
+    if (reads.length) out.push([-1, "", "", [], reads, e[6], -1] as unknown as BindingEntry);
+  }
+  return out;
+}
+
 /**
  * Lazy rows (LAZY-FLIP): a lazy For has no row handlers to plan from, so its chunks would wait for the first click (story
  * harness, Slow 4G + 4× CPU: first row click 28 → 467 ms). Its row function's chunks (entry [6]) and its rows' handler

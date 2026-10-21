@@ -24,7 +24,7 @@ export function Page(p) {
 }`;
 const dom = compileResume(source, "dom", "src/svg.tsx");
 const mod = await importServer<{ Page(p: { rows: R[] }): ServerValue }>(compileResume(source, "server", "src/svg.tsx").code);
-const manifest: ResumeManifest = { hash: "svg", runtime: "/rt.js", symbols: symbolUrls(dom.symbols), lazyRows: true };
+const manifest: ResumeManifest = { hash: "svg", runtime: "/rt.js", symbols: symbolUrls(dom.symbols), lazyRows: "/dom-resume-lazy.ts" };
 const rows: R[] = [
   { id: 1, label: "a" },
   { id: 2, label: "b" },
@@ -42,7 +42,8 @@ assert.equal(state.L?.length, 1, "the For is lazy");
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   ...LAZY_ROWS_BUILD,
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+  "/rt.js":
+    'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
   "/": "<!doctype html><html><head></head><body>" + body + "</body></html>",
 };
 Object.assign(files, symbolModules(symbolChunks(dom.symbols)));

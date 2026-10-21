@@ -112,6 +112,7 @@
 - From then on the value is plain data: later DOM edits never reach it.
 - Tested: after idle, every `<b>` and `data-id` is edited, and the decoded rows still deep-equal the server data.
 - Risk: client code that rewrites server nodes before idle, without going through resume (a third-party script mutating the DOM at `DOMContentLoaded`). That is already "drift" for resume; the reader throws on a tag mismatch, but not on edited text. See §6.
+- As built, cost (LAZY-BLOCKERS 2026-10-21, item 4 not landed): the idle sweep is the domData-only build's script before input — `/resume-1000` 17.6 → 76.9 ms at 4× CPU (4.6 → 19.3 at 1×), `/dom-data-1000` 25.4 → 32.7 at 4× (`docs/benchmarks/2026-10-21-lazy-flip.md`). With `lazyRows` the lazy rows' items are read per materialised row, so "both" is the lowest (7.6 ms). Per-key decode without the sweep needs a snapshot before client code changes or replaces server nodes (pinned anchors + a mutation-record overlay, or a sweep in the first write's batch, which moves the cost into the first interaction); not done — the ruling is to ship `domData` only together with `lazyRows`.
 
 ### 3.5 Lazy rows and the parent capture (Q5)
 

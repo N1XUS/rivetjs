@@ -66,7 +66,8 @@ const files = (body: string, lazy: boolean, dd: boolean): Record<string, Served>
     "/fixture.mjs": rewrite(dom.code),
     ...(dd ? DOM_DATA_BUILD : {}),
     ...(lazy ? LAZY_ROWS_BUILD : {}),
-    "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+    "/rt.js":
+      'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
     "/": "<!doctype html><html><head></head><body>" + body + "</body></html>",
   };
   for (const [path, list] of Object.entries(byComponent)) out[path] = rewrite(compileSymbolModule(list, "/fixture.mjs"));
@@ -87,7 +88,7 @@ for (const [dd, lazy] of [
   [false, true],
 ] as const)
   test(`${dd ? "domData build" : "default build"}${lazy ? " + lazy rows" : ""}: rows decode to the server's data${dd ? "; snapshot at idle" : ""}`, async () => {
-    const manifest: ResumeManifest = { runtime: "/rt.js", symbols, ...(dd ? { domData: true } : {}), ...(lazy ? { lazyRows: true } : {}) };
+    const manifest: ResumeManifest = { runtime: "/rt.js", symbols, ...(dd ? { domData: true } : {}), ...(lazy ? { lazyRows: "/dom-resume-lazy.ts" } : {}) };
     const html = await render(manifest, lazy);
     const state = stateOf(html);
     const wire = JSON.stringify(state.t);

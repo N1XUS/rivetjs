@@ -145,9 +145,10 @@ export interface RivetResumeOptions {
    * Lazy collection rows (LAZY-ROWS, experimental; spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`):
    * the browser runtime of this build can materialise lazy `<For>` rows (state `L`: rows rendered without resume
    * records, materialised on their first event / a read signal's first change). Adds the lazy rows runtime (about
-   * 11.1 KB min / 3.5 KB br, zero-cost `dom` + `dom-resume` `[lazyRows]` lines: `@rivetjs/runtime` `dom-resume-lazy.ts`, `dom-adopt.ts` `_adoptRow` and the adopt-run hooks
-   * of the DOM runtime) to the build and `lazyRows: true` to the resume manifest; builds without it carry none of it
-   * (0 bytes). The server writes lazy row records only when the manifest says so AND its environment has
+   * a chunk of its own: `@rivetjs/runtime` `dom-resume-lazy.ts` + `dom-adopt-run.ts`, loaded only by pages whose state holds
+   * `L` entries, preloaded by their lazy add-on — LAZY-BLOCKERS; plus the adopt-run hooks of the DOM runtime and the resume
+   * runtime's lazy hooks in the entry, zero-cost `dom` + `dom-resume` `[lazyRows]` lines) to the build and the chunk's URL
+   * as `lazyRows` to the resume manifest (dev: `true`); builds without it carry none of it (0 bytes). The server writes lazy row records only when the manifest says so AND its environment has
    * `RIVET_LAZY_ROWS=on` (read per render): build once with this option, toggle the variable to A/B. Default false.
    */
   lazyRows?: boolean;
@@ -416,8 +417,8 @@ export interface DevResume {
     captures: Record<string, readonly string[]>;
     /** Framework island key (`<module>#<export>`) → dev island module URL (`rivet({ bridges })`). */
     islands?: Record<string, string>;
-    /** `resume.lazyRows`: the dev resume runtime materialises lazy rows. */
-    lazyRows?: boolean;
+    /** `resume.lazyRows`: the dev resume runtime materialises lazy rows (the lazy rows chunk's dev URL; `true` when it does not resolve). */
+    lazyRows?: boolean | string;
     /** `resume.domData`: the dev resume runtime reads DOM-backed loader data. */
     domData?: boolean;
     /** `resume.model: "derived"`: `runtime` is the dev derived entry, `symbols` maps boundary names to dev module URLs. */
@@ -457,6 +458,29 @@ const DERIVED_ENTRY = "\0rivet-derived-entry";
 const DERIVED_SERVER = "\0rivet-derived-server-resume";
 const ROUTER_MODULE = /[\\/](?:libs[\\/]router|@rivetjs[\\/]router)[\\/]/;
 const MANIFEST = ".vite/rivet-resume.json";
+/**
+ * `resume.lazyRows` (LAZY-BLOCKERS): appended to the client build's resume entry — before the loader starts the runtime,
+ * the entry waits for the lazy rows chunk on pages whose state holds `L` entries (`@rivetjs/runtime` `lazy-rows-resume.ts`
+ * `_lazyReady`, its opted-in content). A top-level await in the entry, which nothing imports: in a runtime module the lazy
+ * chunk imports, it would wait for itself. The entry's `import()` makes the chunk a dynamic import of the entry, whose static
+ * closure (the runtime) the bundler then leaves in place — as a second entry (`emitFile`) every module both use became a
+ * shared chunk of its own (+1–2 eager requests on every page); the preload helper it brings is the entry's, not the
+ * runtime's. "" when the runtime does not resolve.
+ */
+async function lazyReady(ctx: { resolve: Rollup.PluginContext["resolve"] }, importer: string): Promise<string> {
+  const file = await runtimeSibling(ctx, importer, "lazy-rows-resume"),
+    lazy = await runtimeSibling(ctx, importer, "dom-resume-lazy");
+  return file && lazy
+    ? `\nimport { _lazyReady as __rivetLazyReady } from ${JSON.stringify(file)};\nawait __rivetLazyReady?.(() => import(${JSON.stringify(lazy)}));\n`
+    : "";
+}
+/** The `@rivetjs/runtime` module `name` beside `dom-resume` (not a package export: switch / lazy runtime modules), or "". */
+async function runtimeSibling(ctx: { resolve: Rollup.PluginContext["resolve"] }, importer: string, name: string): Promise<string> {
+  const hit = await ctx.resolve("@rivetjs/runtime/dom-resume", importer, { skipSelf: true });
+  const file = hit && !hit.external ? hit.id.split("?", 1)[0]! : "";
+  const sibling = file.replace(/dom-resume(\.[cm]?[jt]s)$/, name + "$1");
+  return sibling !== file && existsSync(sibling) ? sibling : "";
+}
 /**
  * `resume.lazyRows` (LAZY-T5B): the runtime's build-time switch modules (`@rivetjs/runtime` `lazy-rows.ts` /
  * `lazy-rows-resume.ts`, sources or published `.js`) → their opted-in content (`switches.ts`). Matched by path: the workspace source
@@ -801,6 +825,10 @@ function rivetPlugin(
   // `@rivetjs/runtime/resume-builtins` (built-in entry decoders, loaded only by pages whose state holds such entries):
   // its resolved id (production: an emitted chunk, manifest `builtins`) once `buildStart` resolved it.
   let builtinsId: string | null = null;
+  // `resume.lazyRows` (LAZY-BLOCKERS): the lazy rows runtime (`@rivetjs/runtime` `dom-resume-lazy`), a dynamic import of
+  // the resume entry (`lazyReady`; manifest `lazyRows`: its URL, which the lazy add-on imports later, `data-lz`) — no
+  // `import()` of it in the runtime.
+  let lazyRowsId: string | null = null;
   // `@rivetjs/runtime/resume-loader-module` (the resume loader's scheduled prefetch / idle warm-up, imported by the inline
   // stub after the first frame or with the first intent): an emitted chunk, manifest `loader` (hashed, cached across pages).
   let loaderId: string | null = null;
@@ -809,7 +837,7 @@ function rivetPlugin(
     runtime: base + (resume?.entry ? posix(resume.entry).replace(/^\.?\//, "") : "@id/__x00__rivet-resume-entry"),
     ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
     ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
-    ...(resume?.lazyRows ? { lazyRows: true } : {}),
+    ...(resume?.lazyRows ? { lazyRows: lazyRowsId ? base + devUrl(lazyRowsId) : true } : {}),
     ...(resume?.domData ? { domData: true } : {}),
     symbols: new Proxy({} as Record<string, string>, {
       get: (_, id) => {
@@ -1321,6 +1349,7 @@ function rivetPlugin(
         const problem = runtime && runtimeAbiProblem(runtime);
         if (problem) this.error(problem);
       }
+      if (resume?.lazyRows && lazyRowsId === null) lazyRowsId = await runtimeSibling(this, join(root, "index.html"), "dom-resume-lazy");
       if (resume && builtinsId === null) {
         const hit = await this.resolve("@rivetjs/runtime/resume-builtins", join(root, "index.html"), { skipSelf: true });
         builtinsId = hit && !hit.external ? hit.id.split("?")[0]! : "";
@@ -1714,7 +1743,11 @@ function rivetPlugin(
         }
         return sheetText(css);
       }
-      if (id === ENTRY) return 'import { createResume } from "@rivetjs/runtime/dom-resume";\nexport default createResume({});\n';
+      if (id === ENTRY)
+        return (
+          'import { createResume } from "@rivetjs/runtime/dom-resume";\nexport default createResume({});\n' +
+          (resume?.lazyRows && this.environment?.config?.consumer !== "server" ? await lazyReady(this, join(root, "index.html")) : "")
+        );
       const part = parts.get(id);
       // Route mode parts register their symbols by module id (`_rSym`): a placed part's chunk exports are the bundler's.
       if (part)
@@ -1854,10 +1887,13 @@ function rivetPlugin(
         const rules = resume.preload?.rules ?? [];
         let runtime: string | null = null,
           builtins: string | null = null,
-          loader: string | null = null;
+          loader: string | null = null,
+          lazyChunk: string | null = null;
         for (const output of Object.values(bundle)) {
           if (output.type !== "chunk" || !output.facadeModuleId) continue;
           if (output.facadeModuleId === builtinsId) builtins = base + output.fileName;
+          // `resume.lazyRows`: the lazy rows runtime's chunk (`lazy-rows-resume.ts` imports it on pages with `L` entries).
+          if (lazyRowsIn && output.facadeModuleId === lazyRowsId) lazyChunk = base + output.fileName;
           if (output.facadeModuleId === loaderId) loader = base + output.fileName;
           const chunk = chunks.get(output.facadeModuleId);
           if (chunk) {
@@ -1974,6 +2010,8 @@ function rivetPlugin(
           for (const name of seen) sizes[base + name] ??= Buffer.byteLength((byFile.get(name)?.code ?? "") as string);
         };
         if (runtime) closure(runtime.slice(base.length));
+        // `resume.lazyRows`: the lazy rows chunk's closure (its add-on preloads it with the chunk, `data-lz`).
+        if (lazyChunk) closure(lazyChunk.slice(base.length));
         for (const name of placedChunks) closure(name);
         // Framework island chunks (`rivet({ bridges })`): island key → URL, sizes + static closures (the framework runtime),
         // so the server's `_rPreload(key)` plans them like symbol chunks.
@@ -2033,8 +2071,9 @@ function rivetPlugin(
           ...(groups.length ? { groups } : {}),
           // Route chunks: few, page-sized handler chunks — servers fetch a page's ahead (`data-fo`) when the app prefetches.
           ...(chunkStrategy() === "route" ? { fetchAhead: true } : {}),
-          // `resume.lazyRows`: the resume runtime of this build materialises lazy rows (servers write `L` records then).
-          ...(lazyRowsIn ? { lazyRows: true } : {}),
+          // `resume.lazyRows`: the resume runtime of this build materialises lazy rows (servers write `L` records then); its
+          // lazy rows chunk, which the lazy add-on preloads (`data-lz`).
+          ...(lazyRowsIn ? { lazyRows: lazyChunk ?? true } : {}),
           // `resume.domData`: the resume runtime of this build reads `D` entries (servers write them then).
           ...(domDataIn ? { domData: true } : {}),
         };
@@ -2044,6 +2083,9 @@ function rivetPlugin(
     },
     transform(original, id, options) {
       const [filename = "", query = ""] = id.split("?", 2);
+      // `resume.lazyRows`: an app resume entry (`resume.entry`, the router's `entry.resume.ts`) waits for the lazy rows chunk.
+      if (resume?.lazyRows && resume.entry && filename === resolve(root, resume.entry) && !ssrBuild && this.environment?.config?.consumer !== "server")
+        return lazyReady(this, filename).then((ready) => (ready ? { code: original + ready, map: null } : null));
       // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
       const facade = virtual(filename);
       if ((id.startsWith("\0") && !facade) || (/(?:^|[/\\])node_modules[/\\]/.test(filename) && !sourcePackage(filename) && !frameworkJsx(filename)))

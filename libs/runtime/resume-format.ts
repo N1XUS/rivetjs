@@ -1165,7 +1165,6 @@ export type RegionProviders = (string | number)[];
  *   flipped: kind 0 the previous and next value (default `fn`), kind 1 `memberKeys` (Sets: their symmetric difference,
  *   else every listed row); `1` instead of the list: every row reads its own key (`_keyAt(items[k], by)`, key path `by`).
  *   A signal some row also reads plainly is in `reads` instead.
-=======
  * - `count`: the row count, when the `items` entry does not show it (an `i` child of a tree, a DOM-backed `D` tree).
  * No per-row id, key, handler, binding, capture or provider entry: keys are `by(items[k])`, everything else is recomputed by
  * re-running `rowFn` for row k in adopt mode (browser materialisation, T5: `dom-resume.ts`, `dom-adopt.ts` `_adoptRow`).
@@ -1334,8 +1333,8 @@ export interface ResumeInstance {
   /** `live`: a cold event's target `[value, checked]` at dispatch (shown to its handlers during the replay). */
   dispatch(event: Event, target: Element, id: string, type: string, replaying?: boolean, entry?: HandlerEntry, live?: unknown[]): { prevented: boolean };
   /** A lazy row's synthetic entry `["L", [], chunks]` on a delegated event's path (LAZY-ROWS T5): materialise row `id`
-   * (`next`: the next target's element, bounding a cold replay's delegation). */
-  L?(event: Event, id: number, next: Element | null): void;
+   * (`next`: the next target's element, bounding a cold replay's delegation); true when a replayed handler canceled it. */
+  L?(event: Event, id: number, next: Element | null): boolean;
   /** A delegated event: run its handlers now when nothing cold is queued and its chunks are evaluated (true), else false. */
   on(event: Event, hit: Hit): boolean;
   /** Queue a held cold event: replayed after every earlier one, once its chunks loaded. */
@@ -1361,6 +1360,8 @@ export type LoaderDocument = Document & {
   $rx?: (state: ResumeState, list: BindingEntry[], patch?: StatePatch | ResumeState) => void;
   /** Rows add-on (`resume-rows.ts`, pages with path-addressed rows): element of an id / id of an element. */
   $rw?: (x: number | Element, observer?: IntersectionObserver) => Element | string | undefined;
+  /** Lazy rows runtime import (the lazy add-on's preload part, `resume-lazy.ts` `lazyPreload`: its `data-lz` chunk). */
+  $rl?: () => Promise<Record<string, unknown>>;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

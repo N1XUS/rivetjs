@@ -237,9 +237,10 @@ export const _fx: (fn: () => void) => void = _bindingEffect;
  * variable and the locals the value reads), e.g. `const __rivetFx0 = (el, n, count) => _t(el, `${n}: ${count()}`)`
  * + `_fx1(__rivetFx0, _el$1, n, count)`. Same lifetime and release rule as `_fx`; tree-shaken when unused.
  */
-export const _fx1: <A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C) => void = DERIVED ? derivedFx1 : _bindingEffect1;
-// Derived builds (`DERIVED`): a row sample run of the adopt runtime (`_adoption.fx`, `dom-derived.ts`) sees each binding
-// with its captures (DERIVED-C keyed row writers); folded away elsewhere.
+export const _fx1: <A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C) => void = DERIVED || LAZY_ROWS ? derivedFx1 : _bindingEffect1;
+// Derived / lazy rows builds (`DERIVED`, `LAZY_ROWS`): a row sample run of the adopt runtime (`_adoption.fx`:
+// `dom-derived.ts`, `dom-resume-lazy.ts`) sees each binding with its captures (DERIVED-C keyed row writers, LAZY-BLOCKERS
+// shared-read row writers); folded away elsewhere.
 function derivedFx1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b?: B, c?: C): void {
   const hook = _adoption.fx;
   if (hook) hook(fn as never, a, b, c);
@@ -786,7 +787,7 @@ export const _adoption: {
    */
   list?: ((props: { each: unknown; by: unknown; children: (item: () => never, index: () => number) => unknown }) => (() => Node[]) | undefined) | null;
   /**
-   * Derived model row sample runs (`dom-derived.ts` `sample`, `DERIVED` builds only): every `_fx1` binding goes through
+   * Row sample runs (`dom-derived.ts` / `dom-resume-lazy.ts` `sample`, `DERIVED` / `LAZY_ROWS` builds only): every `_fx1` binding goes through
    * it (the hook creates the binding itself), so the runtime learns which hoisted binding reads which keyed signal and
    * with which captures.
    */

@@ -59,7 +59,7 @@ const manifest: ResumeManifest = {
   hash: "t6",
   runtime: "/rt.js",
   symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])),
-  lazyRows: true,
+  lazyRows: "/dom-resume-lazy.ts",
 };
 const byComponent: Record<string, ResumeSymbol[]> = {};
 for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
@@ -75,7 +75,8 @@ const state = JSON.parse(/<script type="rivet\/state"[^>]*>(.*?)<\/script>/s.exe
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   ...LAZY_ROWS_BUILD,
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+  "/rt.js":
+    'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
   "/": "<!doctype html><html><head></head><body>" + body + "</body></html>",
 };
 for (const [path, symbols] of Object.entries(byComponent)) files[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));

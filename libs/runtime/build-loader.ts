@@ -10,7 +10,7 @@ import { transform } from "esbuild";
 import { loader } from "./resume-loader.ts";
 import { stream } from "./resume-stream.ts";
 import { rows } from "./resume-rows.ts";
-import { lazy } from "./resume-lazy.ts";
+import { lazy, lazyPreload } from "./resume-lazy.ts";
 import { expand, strided } from "./resume-expand.ts";
 import { repeat } from "./resume-repeat.ts";
 import { derivedLoader, derivedStream } from "./resume-loader-derived.ts";
@@ -52,12 +52,15 @@ export const minifiedDerivedStream = async (): Promise<string> =>
   (await transform("(" + derivedStream + ")()", { minify: true, target: "es2020" })).code.trim();
 /** Minified lazy rows add-on, shipped before the state script (after the rows add-on) on pages with lazy rows (state `L`). */
 export const minifiedLazy = async (): Promise<string> => (await transform("(" + lazy + ")()", { minify: true, target: "es2020" })).code.trim();
+/** Minified lazy rows runtime preload (`data-lz`), appended to the lazy add-on by `resume.lazyRows` servers (LAZY-BLOCKERS). */
+export const minifiedLazyPreload = async (): Promise<string> => (await transform("(" + lazyPreload + ")()", { minify: true, target: "es2020" })).code.trim();
 
 if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
   const { plain, keys, at, branch } = await minifiedLoaders(),
     add = await minifiedStream(),
     addRows = await minifiedRows(),
     addLazy = await minifiedLazy(),
+    addLazyPreload = await minifiedLazyPreload(),
     addExpand = await minifiedExpand(),
     addStrided = await minifiedStrided(),
     addRepeat = await minifiedRepeat(),
@@ -85,6 +88,10 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       ";\n" +
       "export const LAZY = " +
       JSON.stringify(addLazy) +
+      ";\n" +
+      "/** The lazy rows runtime chunk's preload (`data-lz`), after LAZY in `resume.lazyRows` builds. */\n" +
+      "export const LAZY_PRELOAD = " +
+      JSON.stringify(addLazyPreload) +
       ";\n" +
       "export const EXPAND = " +
       JSON.stringify(addExpand) +
@@ -118,6 +125,9 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       addRows.length +
       " + lazy " +
       addLazy.length +
+      " (+ preload " +
+      addLazyPreload.length +
+      ")" +
       " + expand " +
       addExpand.length +
       " (+ strided " +

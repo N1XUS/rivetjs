@@ -35,7 +35,7 @@ const manifest: ResumeManifest = {
   hash: "lazy",
   runtime: "/rt.js",
   symbols: symbolUrls(dom.symbols),
-  lazyRows: true,
+  lazyRows: "/dom-resume-lazy.ts",
 };
 const byComponent = symbolChunks(dom.symbols);
 
@@ -57,7 +57,8 @@ test("lazy row records (RIVET_LAZY_ROWS=on): the page boots, regions re-create t
   const files: Record<string, Served> = {
     "/fixture.mjs": rewrite(dom.code),
     ...LAZY_ROWS_BUILD,
-    "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+    "/rt.js":
+      'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
     "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
   };
   Object.assign(files, symbolModules(byComponent));

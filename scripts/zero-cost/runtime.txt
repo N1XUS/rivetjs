@@ -3,7 +3,7 @@
 @rivetjs/reactivity/store 664762e65a46 10381
 @rivetjs/runtime/server 1d4f11e873b7 55052
 @rivetjs/runtime/dom 2fc504784c7c 51037
-@rivetjs/runtime/dom [lazyRows] 8b292d5c70ef 51398
+@rivetjs/runtime/dom [lazyRows] 29f5c2ecdb62 51461
 @rivetjs/runtime/dom [derived] 166983332b53 51702
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
@@ -21,7 +21,8 @@
 @rivetjs/runtime/server-cache 36d571bcca51 32251
 @rivetjs/runtime/props e7a083669b54 9737
 @rivetjs/runtime/dom-resume 82098aed5fd8 46511
-@rivetjs/runtime/dom-resume [lazyRows] de87ae275bec 57327
+@rivetjs/runtime/dom-resume [lazyRows] e7fb568a7f34 50436
+@rivetjs/runtime/dom-resume [lazyRows chunk] ea451d58b7f9 13392
 @rivetjs/runtime/dom-resume [domData] 92356f200870 48261
 @rivetjs/runtime/dom-derived ef1a31e07991 46588
 @rivetjs/runtime/dom-derived [derived] 35a733b74b11 46908

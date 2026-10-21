@@ -67,7 +67,7 @@ const manifest: ResumeManifest = {
   hash: "t5",
   runtime: "/rt.js",
   symbols: symbolUrls(dom.symbols),
-  lazyRows: true,
+  lazyRows: "/dom-resume-lazy.ts",
 };
 const byComponent = symbolChunks(dom.symbols);
 const rows: R[] = [
@@ -87,7 +87,8 @@ assert.equal(state.L?.length, 2, "both Fors are lazy");
 const files: Record<string, Served> = {
   "/fixture.mjs": rewrite(dom.code),
   ...LAZY_ROWS_BUILD,
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+  "/rt.js":
+    'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
   "/": "<!doctype html><html><head></head><body>" + body + "</body></html>",
   // The server markup alone (no state, no loader): `_adoptRow` driven directly.
   "/bare": "<!doctype html><html><head></head><body>" + body.replace(/<script[\s\S]*?<\/script>/g, "") + "</body></html>",
@@ -245,7 +246,7 @@ test("_adoptRow (row symbol + the components it calls): handler, binding, ref, n
     const result = await page.evaluate(
       async ([path, name, items, forId]) => {
         const [{ _adoptRow }, { signal }, { _inIdScope, _rowIdPrefix }, chunk] = (await Promise.all([
-          import("/dom-adopt.ts" as string),
+          import("/dom-adopt-run.ts" as string),
           import("/reactivity.mjs" as string),
           import("/id.ts" as string),
           import(path as string),

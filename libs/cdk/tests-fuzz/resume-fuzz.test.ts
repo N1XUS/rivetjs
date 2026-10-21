@@ -21,8 +21,14 @@ const { stories } = await import("../tests-components/harness.ts");
 // (a signal created in the shell: hits replay it), `/shell-provider` an eligible one that writes a signal an ancestor
 // provides (PPR-T57: the fill sees the write, hits replay); a `hit` run checks each answers its path once before the fuzz.
 // The derived model primes the same way (DERIVED-C3: the shell cache stores derived documents; same paths per route).
+// A flip build (lazy rows + DOM data) is not covered by the H-holes seal (`server-shell.ts` `covered`: no DOM data), so
+// `/shell-loader` hits replay there (LAZY-BLOCKERS).
 const prime = process.env.RIVET_FUZZ_SHELL ?? "hit";
-const SHELL_ROUTES = { "/shell-loader": "SHELL-HIT", "/shell-replay": "SHELL-HIT-REPLAY", "/shell-provider": "SHELL-HIT-REPLAY" };
+const SHELL_ROUTES = {
+  "/shell-loader": isFlip ? "SHELL-HIT-REPLAY" : "SHELL-HIT",
+  "/shell-replay": "SHELL-HIT-REPLAY",
+  "/shell-provider": "SHELL-HIT-REPLAY",
+};
 const start = async () => {
   const app = await stories();
   for (const [path, hit] of Object.entries(SHELL_ROUTES)) {

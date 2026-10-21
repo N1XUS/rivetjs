@@ -25,7 +25,7 @@ import { _model } from "./dom-v2-controls.ts";
 import { _takeover } from "./dom-v2-spread.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
-import { _lazyRows } from "./lazy-rows-resume.ts";
+import { _lazyLoad, _lazyRows } from "./lazy-rows-resume.ts";
 import { DOM_DATA } from "./dom-data.ts";
 import { _domData } from "./dom-data-resume.ts";
 import { createRouter } from "./dom-router.ts";
@@ -34,6 +34,7 @@ import { _rSyms } from "./resume-symbols.ts";
 import { DEV } from "#dev";
 import type { Context, Disposer, Owner, Signal } from "@rivetjs/reactivity";
 import type { AdoptedBranch, AdoptedRow } from "./dom-adopt.ts";
+import type { LazyContext, LazyRows } from "./dom-resume-lazy.ts";
 import type {
   BindingEntry,
   BranchesSpec,
@@ -323,14 +324,20 @@ function liveProps(args: unknown[]): Record<string, unknown> {
 // next target's element bounds a cold replay's delegation inside it.
 const deliver = (rt: ResumeInstance, event: Event, targets: Hit[0], replaying?: boolean, live?: unknown[]): boolean => {
   let prevented = false;
-  if (LAZY_ROWS)
+  if (LAZY_ROWS) {
+    // A cold key event whose focus moved meanwhile replays on the focused element's path (`dispatch`'s retarget, id
+    // "": no handler of its own), never on the old path's lazy rows.
+    if (live && KEY_EVENT.test(event.type) && targets.length) {
+      prevented = rt.dispatch(event, targets[0]![0], "", event.type, replaying, undefined, live).prevented;
+      if (event.cancelBubble) return prevented;
+    }
     for (let i = 0; i < targets.length; i++) {
       const [element, id, entry] = targets[i]!;
-      if (entry?.[0] === "L") rt.L!(event, +id, targets[i + 1]?.[0] ?? null);
+      if (entry?.[0] === "L") prevented = rt.L!(event, +id, targets[i + 1]?.[0] ?? null) || prevented;
       else prevented = rt.dispatch(event, element, id, event.type, replaying, entry, live).prevented || prevented;
       if (event.cancelBubble) break;
     }
-  else
+  } else
     for (const [element, id, entry] of targets) {
       prevented = rt.dispatch(event, element, id, event.type, replaying, entry, live).prevented || prevented;
       if (event.cancelBubble) break;
@@ -619,7 +626,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       if (isDead(region)) source.set(undefined);
       else runWithOwner(ownerOf(region), () => onCleanup(() => untrack(source) === held && source.set(undefined)));
     // Lazy rows reading it (LAZY-ROWS T5 builds): its first change materialises every row of those Fors (a wake).
-    if (LAZY_ROWS) lazy!.arm(ref, source);
+    if (LAZY_ROWS) lazy?.arm(ref, source);
     const bindings = stubs.get(ref);
     if (!bindings) return;
     readers.set(source, bindings);
@@ -711,7 +718,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           } else if (
             // A lazy For's region (LAZY-ROWS T5 builds): the re-created For keys its server rows (`dom-resume-lazy.ts`).
             LAZY_ROWS &&
-            lazy!.region(
+            lazy?.region(
               node,
               range,
               read,
@@ -814,8 +821,11 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       })
     : null;
   // Lazy row records (state `L`, LAZY-ROWS T5): only builds with `resume: { lazyRows: true }` create them (`LAZY_ROWS`).
-  const lazy = LAZY_ROWS
-    ? _lazyRows!({
+  // Their runtime is a chunk of its own (`dom-resume-lazy.ts`, LAZY-BLOCKERS): the resume entry waits for it when the
+  // page's state holds `L` entries (`lazy-rows-resume.ts` `_lazyReady`: `_lazyRows` set by then), else it stays unloaded —
+  // `lazy` null — until a state with them registers (a streamed patch, an entry without the wait: `registerLazy` loads it).
+  const lazyContext: LazyContext | null = LAZY_ROWS
+    ? {
         get state() {
           return state;
         },
@@ -838,6 +848,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
         parents,
         named,
         idle,
+        blurred: (element) => void blurredAt.set(element, performance.now()),
         unrecorded(fn) {
           const during = replayed;
           replayed &&= null;
@@ -847,8 +858,18 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
             replayed = during;
           }
         },
-      })
+      }
     : null;
+  let lazy: LazyRows | null = null,
+    lazyLoading: Promise<unknown> | undefined;
+  const registerLazy = (): unknown =>
+    (lazy ??= _lazyRows && _lazyRows(lazyContext!))
+      ? lazy.register()
+      : state.L?.length &&
+        (lazyLoading ??= _lazyLoad!().then(
+          (module) => ((lazy = module._lazyRows(lazyContext!)), lazy.register()),
+          (error: unknown) => report("lazy rows", error),
+        ));
   // Whether a node sits in a region's server content (strictly between its markers).
   const inside = (range: Markers | undefined, node: Node): boolean =>
     !!(range?.end && range.start.compareDocumentPosition(node) & 4 && range.end.compareDocumentPosition(node) & 2);
@@ -1184,7 +1205,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // DOM-DATA: every tree not decoded yet is read at the first idle (snapshot before server nodes can be replaced).
       if (DOM_DATA && state.D) idle(() => data!.sweep(state.t, decoder.get, decoder.decoded));
       // Lazy row records (LAZY-ROWS T5 builds): rows, wakes, the region a re-created For keys them in.
-      if (LAZY_ROWS) lazy!.register();
+      if (LAZY_ROWS) registerLazy();
       // Lazy components (routes, deferred views) load at idle; navigation then renders synchronously.
       _warmLazy(idle);
       // Dev: chunk loads the loader's idle warm-up would swallow are logged.
@@ -1220,7 +1241,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // The rescan may no longer see the starts an id-less one continued (a re-created region): keep what this scan read.
       if (comments) for (const [id, pair] of comments) if (pair.start.data.length < 3) (chained ??= new WeakMap()).set(pair.start, id);
       comments = elements = null;
-      if (LAZY_ROWS) lazy!.register();
+      if (LAZY_ROWS) registerLazy();
       // DOM-DATA: a segment's trees (the stream add-on merged its table into state.t).
       if (DOM_DATA) (data!.expand(state.t), idle(() => data!.sweep(state.t, decoder.get, decoder.decoded)));
       if (DEV && api?.p) DEV.resumeChunks(api.p, state.c);
@@ -1230,7 +1251,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
     dead: (region: number) => isDead(region),
     /** Path-addressed row elements (state `w`): the element of an id, or the id of an element (the loader's `$rw`). */
     q: (x: number | Element): Element | string | undefined =>
-      typeof x == "number" ? build().get("" + x) : LAZY_ROWS ? ((build(), pathIds.get(x)) ?? lazy!.id(x)) : (build(), pathIds.get(x)),
+      typeof x == "number" ? build().get("" + x) : LAZY_ROWS ? ((build(), pathIds.get(x)) ?? lazy?.id(x)) : (build(), pathIds.get(x)),
     on(event: Event, hit: Hit): boolean {
       if (held || !ready(hit[1])) return false;
       deliver(this, event, hit[0]);
@@ -1261,7 +1282,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       if (!path.length)
         for (let n = event.target as (Node & { host?: Node; defaultView?: Window }) | null; n; n = (n.parentNode ?? n.host ?? n.defaultView) as typeof n)
           path.push(n);
-      if (LAZY_ROWS) lazy!.paths.set(event, path);
+      if (LAZY_ROWS) lazy?.paths.set(event, path);
       record(1);
       chain = chain
         .then(() => api.ensure(hit[1]))
@@ -1371,16 +1392,23 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       // A cold key event replays where focus is now when a replayed handler moved focus after the event's dispatch
       // (typed "8" "0" "0" on a cold time field: "8" moves focus to the minute segment, so the zeros are the minute's,
       // as on a live page; all were dispatched at the hour segment). Handlers on the focused element's path run with
-      // `target` = it; the loader's own walk over the old path stops (cancelBubble).
+      // `target` = it; the loader's own walk over the old path stops (cancelBubble). Lazy rows builds (LAZY-BLOCKERS): the
+      // focused element's lazy row materialises first and the client-delegated handlers on the new path run in bubbling
+      // order around the resumed ones (a lazy row's handlers are client ones: cdk Tabs manual activation, Enter replayed
+      // after the arrow keys moved focus to a lazy tab, ran only the tab list's resumed handler); `deliver` calls this
+      // before a lazy row's synthetic entry on the old path.
       if (live && KEY_EVENT.test(type) && !keyed.has(event)) {
         keyed.add(event);
         const focus = doc.activeElement,
           from = event.target as Element,
           moved = blurredAt.get(from);
         if (focus && focus !== from && focus !== doc.body && moved !== undefined && event.timeStamp < moved) {
+          if (LAZY_ROWS) lazy?.focus(focus);
           const path: [Element, string, HandlerEntry][] = [],
-            caps: typeof path = [];
+            caps: typeof path = [],
+            nodes: EventTarget[] = [];
           for (let node: Node | null = focus; node; node = node.parentNode ?? (node as unknown as ShadowRoot).host ?? null) {
+            if (LAZY_ROWS) nodes.push(node);
             const at = (node as Element).getAttribute?.("data-r") ?? (state.w ? (build(), pathIds.get(node as Element)) : undefined);
             const handlers = at && !/\D/.test(at) ? state.e[at] : undefined;
             if (handlers?.[type + "!"]) caps.unshift([node as Element, at!, handlers[type + "!"]!]);
@@ -1389,13 +1417,17 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
           const all = caps.concat(path);
           if (all.every((hit) => ready(hit[2][2]))) {
             Object.defineProperty(event, "target", { configurable: true, value: focus });
+            if (LAZY_ROWS) (nodes.push(doc.defaultView!), Object.defineProperty(event, "composedPath", { configurable: true, value: () => nodes }));
             try {
               for (const [element, at, handler] of all) {
+                if (LAZY_ROWS && path.some((hit) => hit[2] === handler) && _delegateBelow(event, element)) break;
                 prevented = this.dispatch(event, element, at, type, replaying, handler).prevented || prevented;
                 if (event.cancelBubble) break;
               }
+              if (LAZY_ROWS && !event.cancelBubble) _delegateBelow(event, doc);
             } finally {
               delete (event as { target?: unknown }).target;
+              if (LAZY_ROWS) delete (event as { composedPath?: unknown }).composedPath;
             }
             event.stopPropagation();
             return { prevented };
@@ -1472,7 +1504,7 @@ export function createResume({ contexts = [] }: { contexts?: Array<[Context<unkn
       return { prevented: prevented || (!replaying && event.defaultPrevented) };
     },
     // A lazy row's synthetic entry on a delegated event's path (`deliver`, LAZY-ROWS T5 builds): materialise the row.
-    ...(LAZY_ROWS ? { L: lazy!.L } : {}),
+    ...(LAZY_ROWS ? { L: (event: Event, id: number, next: Element | null) => !!lazy?.L(event, id, next) } : {}),
     // Dev server (a resumed page switching to client rendering on a hot update): dispose what resumed,
     // and never start (or activate anything) afterwards. Production builds have no `dispose`.
     ...(DEV

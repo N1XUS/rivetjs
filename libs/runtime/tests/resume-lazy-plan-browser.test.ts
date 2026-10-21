@@ -60,7 +60,7 @@ const dom = compileResume(source, "dom", "src/lazy-plan.tsx");
 const server = compileResume(source, "server", "src/lazy-plan.tsx");
 assert.match(server.code.slice(server.code.indexOf("function Plan(")), /"\$rows"[\s\S]*"\$lazy"/, "Plan: row plan + lazy verdict");
 const mod = await importServer<Record<string, (p: { rows: Row[] }) => ServerValue>>(server.code);
-const manifest: ResumeManifest = { hash: "lazy-plan", runtime: "/rt.js", symbols: symbolUrls(dom.symbols), lazyRows: true };
+const manifest: ResumeManifest = { hash: "lazy-plan", runtime: "/rt.js", symbols: symbolUrls(dom.symbols), lazyRows: "/dom-resume-lazy.ts" };
 const byComponent = symbolChunks(dom.symbols);
 const rows: Row[] = Array.from({ length: 12 }, (_, k) => ({
   id: k + 1,
@@ -89,7 +89,8 @@ const files = (html: string, domData: boolean): Record<string, Served> => ({
   "/fixture.mjs": rewrite(dom.code),
   ...LAZY_ROWS_BUILD,
   ...(domData ? DOM_DATA_BUILD : {}),
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
+  "/rt.js":
+    'import { createResume } from "/dom-resume.ts"; import { _lazyReady } from "/lazy-rows-resume.ts"; export default createResume({}); await _lazyReady?.();',
   "/": "<!doctype html><html><head></head><body>" + html + "</body></html>",
   ...symbolModules(byComponent),
 });

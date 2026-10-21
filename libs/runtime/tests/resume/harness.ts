@@ -18,6 +18,7 @@ const sources: Record<string, string> = {
   "/dom-v2-controls.ts": "dom-v2-controls.ts",
   "/dom-svg.ts": "dom-svg.ts",
   "/dom-adopt.ts": "dom-adopt.ts",
+  "/dom-adopt-run.ts": "dom-adopt-run.ts",
   "/lazy.ts": "lazy.ts",
   "/url.ts": "url.ts",
   "/style.ts": "style.ts",
@@ -57,7 +58,7 @@ const sources: Record<string, string> = {
 // The switch modules' opted-in content, served at their paths (the compiler plugin's table: `libs/compiler/switches.ts`).
 function switchBuild(names: readonly string[]): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const name of names) out["/" + name + ".ts"] = switchContent(name, (module) => "/" + module + ".ts")!;
+  for (const name of names) out["/" + name + ".ts"] = switchContent(name, (module) => "/" + module + ".ts", true)!;
   return out;
 }
 /** Served in place of the production `#dev` (`/dev/off.ts`): the development toolkit (`dev/on.ts`; its imports are in `sources`). */

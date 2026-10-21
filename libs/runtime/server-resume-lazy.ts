@@ -58,7 +58,7 @@ export interface LazyFor<S = unknown, R = unknown> {
 /** `RIVET_LAZY_ROWS=on` (server env) and a build whose manifest has `lazyRows`: lazy row records for `$lazy` Fors. Read
  * once per render. Dev: the variable on with a build that did not opt in warns once (the rows stay recorded). */
 let lazyHinted = false;
-export function lazyRowsOn(manifest: { lazyRows?: boolean } | undefined): boolean {
+export function lazyRowsOn(manifest: { lazyRows?: boolean | string } | undefined): boolean {
   if ((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS !== "on") return false;
   if (manifest?.lazyRows) return true;
   if (DEV && !lazyHinted) {

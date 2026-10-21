@@ -11,15 +11,29 @@
 // `_materialise(node)` (cdk focus / `aria-activedescendant` targets). A re-created For region keys the rows like adopted
 // server rows: kept rows stay as they are (inert or materialised), rows it keeps materialise later through its row
 // function. State: 0 inert, 1 materialised, 2 dead (dropped, or its region died).
-import { _dispose, _setRegionStateHook, effect, memberKeys, provide, runWithOwner, untrack } from "@rivetjs/reactivity";
-import { _adoption, _delegateBelow } from "./dom-v2.ts";
-import { _adoptRow, _region, _regionHost, _ABSENT_STATE } from "./dom-adopt.ts";
+import {
+  _bindingEffect1,
+  _dispose,
+  _rootIn,
+  _setRegionStateHook,
+  _trackReads,
+  _wrapEffects,
+  effect,
+  memberKeys,
+  provide,
+  runWithOwner,
+  untrack,
+} from "@rivetjs/reactivity";
+import { _adoption, _delegateBelow, _insert } from "./dom-v2.ts";
+import { _region, _regionHost, _ABSENT_STATE } from "./dom-adopt.ts";
+import { _adoptRow } from "./dom-adopt-run.ts";
 import { _inIdScope, _rowIdPrefix } from "./id.ts";
 import { _keyAt, _placeholderContext } from "./resume-format.ts";
 import { DEV } from "#dev";
 import type { Owner, Signal } from "@rivetjs/reactivity";
 import type { ForRow } from "./dom-v2.ts";
-import type { AdoptedBranch, AdoptedRow, AdoptedState, LazyHost, RowPlanCache } from "./dom-adopt.ts";
+import type { AdoptedBranch, AdoptedRow, AdoptedState, LazyHost } from "./dom-adopt.ts";
+import type { RowPlanCache } from "./dom-adopt-run.ts";
 import type { LazyRowsEntry, LoaderApi, RegionLocals, RegionProviders, ResumeState, SymbolRef } from "./resume-format.ts";
 
 interface Markers {
@@ -46,6 +60,8 @@ export interface LazyContext {
   idle(fn: () => void): unknown;
   /** Run `fn` outside the cold replay's listener recording (the replay's `replayed` cleared, as `drain` does). */
   unrecorded(fn: () => void): void;
+  /** A replayed handler moved focus away from `element` (cold key events dispatched before retarget to the focus). */
+  blurred(element: Element): void;
 }
 /** The hooks `dom-resume.ts` calls (each behind `LAZY_ROWS`). */
 export interface LazyRows {
@@ -65,8 +81,10 @@ export interface LazyRows {
   ): boolean;
   /** `q`: an element directly in an inert lazy row → the row's id, with its synthetic entries. */
   id(x: Element): string | undefined;
-  /** `ResumeInstance.L`. */
-  L(event: Event, m: number, next: Element | null): void;
+  /** `ResumeInstance.L`: true when a cold replay's delegated handler canceled the event. */
+  L(event: Event, m: number, next: Element | null): boolean;
+  /** A cold key event replayed where focus is now (`dispatch`): materialise the lazy row holding the focused element. */
+  focus(node: Node): void;
   /** Cold events → their path at dispatch (`cold`): a lazy row's delegated handlers run over it in the replay. */
   paths: WeakMap<Event, EventTarget[]>;
 }
@@ -80,6 +98,31 @@ interface LazyRow {
   /** The re-created For's row keeping it (its item / index sources and owner). */
   row: ForRow | null;
   loading: boolean;
+  /** Row writers (LAZY-BLOCKERS): the server elements their element captures resolve to (null: not the sampled ones). */
+  els: (Element | null)[] | null;
+}
+/**
+ * A row writer (LAZY-BLOCKERS, the lazy rows twin of DERIVED-C's keyed row writers): a hoisted `_fx1` binding of a lazy
+ * For's row reading a signal the rows share (entry [7]), with captures every inert row supplies without running —
+ * `[0, value]` the same object / function in every sampled row (the signal, a context value) or undefined, `[1, path,
+ * name]` the row's element at an element-index path from its start, `[2]` its item getter, `[3]` its index getter. A
+ * change of the signal reruns the writers over the inert rows (on their server nodes) instead of materialising every row.
+ */
+type WArg = [0, unknown] | [1, number[], string] | [2] | [3];
+interface LazyWriter {
+  fn: (a: unknown, b: unknown, c: unknown) => void;
+  args: WArg[];
+  /** Its element capture's slot in `LazyRow.els` (-1: none). */
+  slot: number;
+}
+const some = (x: unknown): boolean => Array.isArray(x) && x.length > 0;
+/** One detached sample run of a row: the signals it read outside `_fx1` bindings, and those bindings with their reads. */
+interface Sample {
+  frag: DocumentFragment;
+  item: () => unknown;
+  index: () => number;
+  outside: Set<unknown>;
+  fxs: [fn: LazyWriter["fn"], args: unknown[], reads: Set<unknown>][];
 }
 /** Keyed reads of one selector source (entry [12]): the rows by the key they read. */
 interface KeyedWake {
@@ -97,6 +140,9 @@ interface LazyFor {
   state: Map<number, RegionLocals> | null;
   /** Row plan (T6): rows of the same structure adopt without a probe run. */
   plan: RowPlanCache;
+  /** Row writers per read signal (null: that signal wakes the For); the first and last rows' samples (null: unusable). */
+  writers: Map<Signal<unknown>, LazyWriter[] | null> | null;
+  samples: [Sample, Sample] | null | undefined;
 }
 
 /** @internal The lazy rows of one resume runtime (`createResume`, `LAZY_ROWS` builds only). */
@@ -124,9 +170,9 @@ export function _lazyRows(c: LazyContext): LazyRows {
       const e = list[lazySeen]!,
         held = state.t[e[3]] as { j?: unknown[] } | unknown[] | null,
         count = (Array.isArray(held) ? held : (held?.j ?? (get(e[3]) as unknown[]))).length,
-        f: LazyFor = { e, rows: [], host: null, woken: false, state: null, plan: {} };
+        f: LazyFor = { e, rows: [], host: null, woken: false, state: null, plan: {}, writers: null, samples: undefined };
       for (let k = 0; k < count; k++) {
-        const row: LazyRow = { f, k, m: e[0] + 1 + k, state: 0, owner: null, row: null, loading: false };
+        const row: LazyRow = { f, k, m: e[0] + 1 + k, state: 0, owner: null, row: null, loading: false, els: null };
         lazyRows.set(row.m, row);
         f.rows.push(row);
       }
@@ -158,6 +204,13 @@ export function _lazyRows(c: LazyContext): LazyRows {
           if (c.decoded(ref)) armKeyed(get(ref) as Signal<unknown>, [w]);
           else (keyedWakes.get(ref) ?? keyedWakes.set(ref, []).get(ref)!).push(w);
         }
+      // Rows reading signals (LAZY-BLOCKERS): their row chunks evaluate now (the runtime starts at the first interaction),
+      // so a write wakes them in the writer's flush, not one chunk load later. A recorded row's binding chunks load with
+      // the writing handler's (its entry's extras, which `lazyReaders` gives lazy rows' chunks too), but a lazy row's own
+      // handlers are client ones whose captures were never encoded (cdk Tabs: a tab's press selects, the panel rows woke
+      // with their chunk still loading — the panel showed a frame later; masonry Space right after a click: the rows'
+      // `resume-builtins` chunk was still evaluating).
+      if ((e[7] || keyed) && !c.ready(e[6])) c.api.ensure(e[6]).catch((error: unknown) => c.report("lazy rows r" + e[0], error));
       if (e[5] & 8) c.idle(() => wake(f));
       // Rows with client effects / listeners: materialised at idle, as a recorded effect runs (`effects` [11]).
       const effects = e[11];
@@ -169,20 +222,192 @@ export function _lazyRows(c: LazyContext): LazyRows {
       return !!row && materialise(row);
     };
   }
-  // A read signal's first change wakes its Fors.
+  // A read signal's first change wakes its Fors — unless their rows read it only through row writers (LAZY-BLOCKERS): each
+  // change then reruns those over the inert rows (after the change: the writers read the new value), nothing materialises.
   function armWake(source: Signal<unknown>, fors: LazyFor[]): void {
+    beforeWrite(source, () => untrack(() => fors.forEach((f) => f.woken || writersFor(f, source) || wake(f))));
     runWithOwner(c.root, () => {
       let first = true;
       effect(() => {
         source();
         if (first) return void (first = false);
-        untrack(() => fors.forEach(wake));
+        untrack(() =>
+          fors.forEach((f) => {
+            if (f.woken) return;
+            const writers = writersFor(f, source);
+            if (writers) rewrite(f, writers);
+            else wake(f);
+          }),
+        );
       });
     });
   }
+  // The row writers of `f` for `source` (null: it wakes the For), from detached sample runs of its first and last rows:
+  // every `_fx1` binding reading it must have captures each row supplies, and no other read of it (outside a binding:
+  // the row body, a nested Show / For, a component's effect) may exist. Rows of a chunk still loading: null, not kept.
+  function writersFor(f: LazyFor, source: Signal<unknown>): LazyWriter[] | null {
+    const known = f.writers?.get(source);
+    if (known !== undefined) return known;
+    if (f.rows.length < 2 || !c.ready(f.e[6])) return null;
+    if (f.samples === undefined) {
+      // Component rows (row locals, providers, client effects or keyed selector reads: cdk collection items) are never
+      // sampled — a detached run of their components registers with shared state (collection / focus managers).
+      const e = f.e,
+        first = some(e[8]) || some(e[10]) || some(e[11]) || some(e[12]) ? null : sampleRow(f, 0),
+        last = first && sampleRow(f, f.rows.length - 1);
+      f.samples = first && last ? [first, last] : null;
+    }
+    const writers = f.samples && sampled(f.samples, source);
+    (f.writers ??= new Map()).set(source, writers);
+    return writers;
+  }
+  function sampled([x, y]: [Sample, Sample], source: Signal<unknown>): LazyWriter[] | null {
+    if (x.outside.has(source) || y.outside.has(source) || x.fxs.length !== y.fxs.length) return null;
+    const writers: LazyWriter[] = [];
+    let slots = 0;
+    for (let i = 0; i < x.fxs.length; i++) {
+      const [fn, xs, reads] = x.fxs[i]!,
+        [other, ys, more] = y.fxs[i]!;
+      if (!reads.has(source) && !more.has(source)) continue;
+      if (fn !== other) return null;
+      const w: LazyWriter = { fn, args: [], slot: -1 };
+      for (let j = 0; j < 3; j++) {
+        const a = describeArg(x, xs[j]),
+          b = describeArg(y, ys[j]);
+        if (!a || !b || !sameArg(a, b)) return null;
+        w.args.push(a);
+      }
+      const elements = w.args.filter((arg) => arg[0] === 1).length;
+      if (elements > 1) return null;
+      if (elements) w.slot = slots++;
+      writers.push(w);
+    }
+    return writers.length ? writers : null;
+  }
+  // Row k's row function run detached (create mode, the row's providers / id scope / `_regionState` values) with every
+  // effect's reads recorded: those of `_fx1` bindings per binding (`_adoption.fx`), the rest as `outside`.
+  function sampleRow(f: LazyFor, k: number): Sample | null {
+    const e = f.e,
+      fn = get(e[2]) as (item: () => unknown, index: () => number) => unknown,
+      value = (get(e[3]) as unknown[])[k],
+      frag = c.doc.createDocumentFragment(),
+      anchor = c.doc.createTextNode(""),
+      out: Sample = { frag, item: () => value, index: () => k, outside: new Set(), fxs: [] },
+      hook = _adoption.fx,
+      holder = { owner: null as Owner | null };
+    let tag: Set<unknown> | null = null;
+    frag.append(anchor);
+    const wrap = _wrapEffects((run) => {
+      const reads = tag ?? out.outside;
+      return () => {
+        const tracked = _trackReads(run);
+        for (const s of tracked.signals) reads.add(s);
+        return tracked.value;
+      };
+    });
+    _adoption.fx = (g, a, b, d) => {
+      const reads = new Set<unknown>(),
+        at = tag;
+      out.fxs.push([g, [a, b, d], reads]);
+      tag = reads;
+      try {
+        _bindingEffect1(g, a, b, d);
+      } finally {
+        tag = at;
+      }
+    };
+    try {
+      const run = () => _rootIn(c.ownerOf(parents.get(e[1])), () => _insert(null, fn(out.item, out.index), anchor), holder);
+      for (const s of _trackReads(() => enterRow(f.rows[k]!, true)(run)).signals) out.outside.add(s);
+      return out;
+    } catch {
+      return null;
+    } finally {
+      _adoption.fx = hook;
+      _wrapEffects(wrap);
+      _dispose(holder.owner);
+    }
+  }
+  // A writer capture as a row-independent descriptor (null: no inert row could supply it). Primitives never are (a row's
+  // local value equal in both samples by chance).
+  function describeArg(s: Sample, a: unknown): WArg | null {
+    if (a === s.item) return [2];
+    if (a === s.index) return [3];
+    if (a instanceof Element) {
+      if (!s.frag.contains(a)) return null;
+      const path: number[] = [];
+      for (let n: Element = a; ; n = n.parentNode as Element) {
+        let i = 0;
+        for (let p = n.previousElementSibling; p !== null; p = p.previousElementSibling) i++;
+        path.unshift(i);
+        if (n.parentNode === s.frag) return [1, path, a.localName];
+      }
+    }
+    return a === undefined || (a !== null && (typeof a === "object" || typeof a === "function")) ? [0, a] : null;
+  }
+  const sameArg = (x: WArg, y: WArg): boolean =>
+    x[0] === y[0] && (x[0] === 0 ? x[1] === y[1] : x[0] === 1 ? x[2] === (y as typeof x)[2] && x[1].join() === (y as typeof x)[1].join() : true);
+  // Rerun `writers` over every inert row of `f` still on the page (materialised rows have their own bindings; a kept row
+  // reads its item / index from the re-created For). A row whose element capture is not the sampled element materialises.
+  function rewrite(f: LazyFor, writers: LazyWriter[]): void {
+    const items = get(f.e[3]) as unknown[],
+      host = f.host;
+    rows: for (const row of f.rows) {
+      if (row.state || (row.row === null && c.isDead(f.e[1]))) continue;
+      const marks = markers().get(row.m);
+      if (!marks?.end || !marks.start.isConnected) continue;
+      const kept = row.row,
+        item = kept && host ? (host[1].bind(kept) as () => unknown) : () => items[row.k],
+        index = kept ? (kept.index as unknown as () => number) : () => row.k;
+      for (const w of writers) {
+        const v: unknown[] = [];
+        for (const arg of w.args) {
+          const x = arg[0] === 0 ? arg[1] : arg[0] === 2 ? item : arg[0] === 3 ? index : element(row, marks, w.slot, arg[1], arg[2]);
+          if (x === null) {
+            materialise(row, true);
+            continue rows;
+          }
+          v.push(x);
+        }
+        try {
+          w.fn(v[0], v[1], v[2]);
+        } catch (error) {
+          c.report("lazy row " + row.m, error);
+        }
+      }
+    }
+  }
+  // The row's server element at an element-index path from its start marker (cached per writer slot), null when it is not
+  // the sampled element (another tag, missing).
+  function element(row: LazyRow, marks: Markers, slot: number, path: number[], name: string): Element | null {
+    const els = (row.els ??= []);
+    let el = els[slot];
+    if (el === undefined) {
+      let n: Node | null = marks.start.nextSibling;
+      for (let i = path[0]!; n !== null && n !== marks.end; n = n.nextSibling) if (n.nodeType === 1 && i-- === 0) break;
+      el = n !== null && n !== marks.end ? (n as Element) : null;
+      for (let d = 1; el !== null && d < path.length; d++) el = el.children[path[d]!] ?? null;
+      els[slot] = el = el !== null && el.localName === name ? el : null;
+    }
+    return el;
+  }
   // Keyed reads (T6): a change materialises only the rows whose key may have flipped — the previous and next value
-  // (kind 0) or `memberKeys` of the two (kind 1; null: every row of the read).
+  // (kind 0) or `memberKeys` of the two (kind 1; null: every row of the read). Writes through the signal's `set` /
+  // `update` materialise those rows before the value changes (LAZY-BLOCKERS: rows adopt the server markup with the values
+  // it was rendered from, then their own bindings see the change — the row losing a selection keeps its server
+  // `SelectionIndicator` as a live instance, which snapshots for the new one's move instead of the new one entering);
+  // the effect covers any other write (after the change, as before).
   function armKeyed(source: Signal<unknown>, list: KeyedWake[]): void {
+    const flip = (next: unknown, before: unknown): void =>
+      untrack(() => {
+        for (const w of list) {
+          if (w.f.woken) continue;
+          const keys = w.kind === 0 ? [next, before] : memberKeys(next, before);
+          if (keys === null) for (const row of w.rows) materialise(row, true);
+          else for (const key of keys) w.byKey.get(key)?.forEach((row) => materialise(row, true));
+        }
+      });
+    beforeWrite(source, (next) => flip(next, untrack(source)));
     runWithOwner(c.root, () => {
       let first = true,
         previous: unknown;
@@ -191,16 +416,17 @@ export function _lazyRows(c: LazyContext): LazyRows {
         if (first) return void ((first = false), (previous = next));
         const before = previous;
         previous = next;
-        untrack(() => {
-          for (const w of list) {
-            if (w.f.woken) continue;
-            const keys = w.kind === 0 ? [next, before] : memberKeys(next, before);
-            if (keys === null) for (const row of w.rows) materialise(row, true);
-            else for (const key of keys) w.byKey.get(key)?.forEach((row) => materialise(row, true));
-          }
-        });
+        flip(next, before);
       });
     });
+  }
+  // Run `fn(next)` before each `set` / `update` (`update` calls `set`) of a read signal that changes its value.
+  function beforeWrite(source: Signal<unknown>, fn: (next: unknown) => void): void {
+    const write = source.set;
+    source.set = function (this: Signal<unknown>, value: unknown) {
+      if (!Object.is(untrack(source), value)) fn(value);
+      return write.call(this, value);
+    } as Signal<unknown>["set"];
   }
   function wake(f: LazyFor): void {
     if (f.woken) return;
@@ -387,19 +613,37 @@ export function _lazyRows(c: LazyContext): LazyRows {
     // A lazy row's synthetic entry on the event's path (`deliver`): materialise the row. A live event then reaches its
     // handlers natively (they attached inside the loader's capture listener); a cold replay (dispatch over) runs its
     // delegated ones over the recorded path, up to `next` (the next target's element), and its direct listeners through
-    // `late` (attached as the loader's `drain` would: seen by this event).
+    // `late` (attached as the loader's `drain` would: seen by this event). The replayed handlers see their own
+    // `preventDefault` only, as `dispatch`'s replays do: the loader canceled the cold event, and a handler canceling it
+    // must stop its held default's replay (LAZY-BLOCKERS: a CheckboxButton label's `onClick` preventDefault + press
+    // toggle, then the replayed label activation toggled the input back — ui `/pro-forms` `#sh-cbg`).
     L(event, m, next) {
       const row = lazyRows.get(m);
-      if (!row) return;
+      if (!row) return false;
       c.unrecorded(() => void materialise(row));
       const path = paths.get(event);
-      if (event.eventPhase !== 0 || !path || row.state !== 1 || !event.bubbles) return;
-      Object.defineProperty(event, "composedPath", { configurable: true, value: () => path });
+      if (event.eventPhase !== 0 || !path || row.state !== 1 || !event.bubbles) return false;
+      let prevented = false;
+      Object.defineProperties(event, {
+        composedPath: { configurable: true, value: () => path },
+        preventDefault: { configurable: true, value: () => void (prevented = true) },
+        defaultPrevented: { configurable: true, get: () => prevented },
+      });
+      // A handler moving focus (sync or in a microtask) retargets the cold key events queued before (`dispatch`).
+      const before = c.doc.activeElement;
+      if (before) queueMicrotask(() => c.doc.activeElement !== before && c.blurred(before));
       try {
         _delegateBelow(event, next ?? c.doc);
       } finally {
         delete (event as { composedPath?: unknown }).composedPath;
+        delete (event as { preventDefault?: unknown }).preventDefault;
+        delete (event as { defaultPrevented?: unknown }).defaultPrevented;
       }
+      return prevented;
+    },
+    focus(node) {
+      const row = rowOf(node);
+      if (row) c.unrecorded(() => void materialise(row));
     },
   };
 }
