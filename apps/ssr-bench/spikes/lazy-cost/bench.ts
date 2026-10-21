@@ -5,6 +5,8 @@
 // `node --cpu-prof`).
 //
 //   node apps/ssr-bench/spikes/lazy-cost/bench.ts [--rows 100,1000,5000] [--rounds 7] [--samples 40] [--profile lazy --seconds 8]
+//   node --expose-gc apps/ssr-bench/spikes/lazy-cost/bench.ts --heap 20 [--rows 1000]: heap retained per render (MB, gc'd,
+//   no timer phase between renders) per lane — server memory probe (VIRT-LEAK, runtime CLAUDE.md "Server memory").
 import { performance } from "node:perf_hooks";
 import { compileResume, importServer } from "../../../../libs/runtime/tests/resume/compile.ts";
 import { makePage } from "../splice/splice.ts";
@@ -121,6 +123,20 @@ const dump = arg("dump", "");
 if (dump) {
   const data = pageOf(Number(arg("rows", "3")));
   console.log(await text(dump, data));
+  process.exit(0);
+}
+const heapRenders = Number(arg("heap", "0"));
+if (heapRenders) {
+  const gc = (globalThis as { gc?: () => void }).gc;
+  if (!gc) throw new Error("--heap needs node --expose-gc");
+  const used = () => (gc(), gc(), process.memoryUsage().heapUsed);
+  const data = pageOf(Number(arg("rows", "1000")));
+  for (const name of Object.keys(lanes)) {
+    for (let i = 0; i < 4; i++) await lanes[name]!(data);
+    const before = used();
+    for (let i = 0; i < heapRenders; i++) await lanes[name]!(data);
+    console.log(`${name}: ${((used() - before) / heapRenders / 1e6).toFixed(3)} MB / render retained (${heapRenders} renders)`);
+  }
   process.exit(0);
 }
 const profile = arg("profile", "");

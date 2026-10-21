@@ -710,8 +710,12 @@ const sameKey = (a: unknown, b: unknown): boolean => a === b || (a !== a && b !=
 const pairKeys = (next: unknown, previous: unknown): Iterable<unknown> => [next, previous];
 // The fold runs in a timer task after the one that subscribed (not an idle callback: a selection change soon after
 // a mount would scan every pending source first — cdk ListBox first update 0.06 → 0.14 ms with idle callbacks).
+// `_scheduleFolds` (server-resume) replaces the timer: a Node timer keeps the async context it was created in, and a
+// fold scheduled inside a render kept that render (its resume recorder) alive until the timer phase (VIRT-LEAK).
+let schedule: ((fn: () => void) => void) | null = null;
 const later = (fn: () => void): void => {
-  (setTimeout(fn, 0) as unknown as { unref?: () => void }).unref?.();
+  if (schedule !== null) schedule(fn);
+  else (setTimeout(fn, 0) as unknown as { unref?: () => void }).unref?.();
 };
 // Index the pending sources still observed (behind a live head of the same key: one chain per key). After
 // readers left (`dead`), first drop the unobserved sources from the index; nothing observed → the watcher goes.
@@ -965,6 +969,13 @@ export function _wrapEffects(wrap: ((fn: () => unknown) => () => unknown) | null
   const previous = wrapEffect;
   wrapEffect = wrap;
   return previous;
+}
+
+/** @internal Runtime ABI (server-resume): schedule the keyed selectors' index folds (`selector`) through `run` instead of
+ * a plain `setTimeout(fn, 0)` (null restores it) — server-resume creates the timer outside the request's async context,
+ * so a pending fold does not keep the render that subscribed alive. `run` must call `fn` in a later task. */
+export function _scheduleFolds(run: ((fn: () => void) => void) | null): void {
+  schedule = run;
 }
 
 /** @internal Debug tools retain internal binding owners once graph inspection is available. */

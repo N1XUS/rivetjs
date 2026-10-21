@@ -1,4 +1,4 @@
-@rivetjs/reactivity 0dbae8bbf2fe 16975
+@rivetjs/reactivity 6c5d8dfe516a 17050
 @rivetjs/reactivity/debug 55ad570f4b06 9342
 @rivetjs/reactivity/store 664762e65a46 10381
 @rivetjs/runtime/server d77ee4bb734c 55049
@@ -13,9 +13,9 @@
 @rivetjs/runtime/router bd3c70cbcceb 2796
 @rivetjs/runtime/router/dom ef803acbaed1 17527
 @rivetjs/runtime/router/server 60e67c0521b1 12115
-@rivetjs/runtime/server-resume 7ee45fc1ff22 117586
-@rivetjs/runtime/server-resume [domData] eba22a27f1ae 126649
-@rivetjs/runtime/server-derived 3d9e5d0252fc 102384
+@rivetjs/runtime/server-resume 07eb8fdfab62 117611
+@rivetjs/runtime/server-resume [domData] 111774eb7cae 126674
+@rivetjs/runtime/server-derived 6356fa40890c 102411
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache 36d571bcca51 32251
 @rivetjs/runtime/props e7a083669b54 9737
@@ -26,7 +26,7 @@
 @rivetjs/runtime/dom-derived [derived] 131df579ccee 33234
 @rivetjs/runtime/node 3c195fe5ea08 5769
 @rivetjs/runtime/hot 3ad5a7200976 8151
-@rivetjs/runtime/hot-reactivity 4c829a6bd4c1 17007
+@rivetjs/runtime/hot-reactivity a1e1e089e1f5 17082
 @rivetjs/runtime/resume-format 1c5dff529176 13779
 @rivetjs/runtime/resume-builtins 2b1ce9fab926 2136
 @rivetjs/runtime/resume-loader-module dd6138219abf 1269
@@ -42,4 +42,4 @@
 @rivetjs/runtime/testing 71f234f8296e 14168
 @rivetjs/runtime/testing/server ca2448f21f0f 21587
 @rivetjs/runtime/testing/register ee215ae102b9 2942
-@rivetjs/runtime/testing/resume 1920925adcaa 103895
+@rivetjs/runtime/testing/resume b0194e9e0ecc 103921

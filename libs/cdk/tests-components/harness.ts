@@ -141,6 +141,23 @@ export const hinted = async (page: Page): Promise<Set<string>> => {
   return closureOf(urls.map((url) => path(url).replace(/\.deps\.js$/, ".js")));
 };
 
+/**
+ * Chunk paths the page's client effects need (state `fx` entries, chunk indexes into `c`; the loader runs them at load /
+ * idle / when visible, fetching these chunks without any interaction) plus their static import closure. VIRT-LEAK
+ * 2026-10-21: a lazy-rows render of `/table` fetches the same 15 chunks (504 KB) as a recorded one: the effect runner asks for resume-table + column-resize +
+ * components (their imports follow),
+ * but has no row handler entries, so the preload plan (`hinted`) no longer lists the rows' chunk that happened to cover them.
+ */
+export const effectChunks = async (page: Page): Promise<Set<string>> => {
+  const urls = await page.evaluate(() => {
+    const text = document.querySelector<HTMLScriptElement>('script[type="rivet/state"]')?.textContent;
+    if (!text) return [];
+    const state = JSON.parse(text) as { c?: string[]; fx?: [unknown, unknown, unknown, number[]][] };
+    return (state.fx ?? []).flatMap((entry) => entry[3].map((i) => state.c![i]!));
+  });
+  return closureOf(urls.map((url) => path(url).replace(/\.deps\.js$/, ".js")));
+};
+
 /** Library chunks requested so far: aria / cdk code (in route mode the story route's own chunk holds it too). */
 export const libraryScripts = (seen: Watch): string[] => among(seen.scripts, codeOf(/^@rivetjs\/cdk\//));
 

@@ -5,7 +5,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { hinted, stories, watch, libraryScripts, type Stories } from "./harness.ts";
+import { effectChunks, hinted, stories, watch, libraryScripts, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -47,9 +47,11 @@ test("table: server markup (roles, ids, aria-sort, descriptions), no library JS 
   assert.equal(await page.getAttribute("#tbl-empty tbody", "data-empty"), "true");
   assert.equal(await page.textContent("#tbl-empty tbody [role=rowheader]"), "Nothing here");
   // The rows' handler chunk is small enough for the runtime's visible preload (CELL-DIET 2026-10-19: one data object
-  // per row / cell, logic in module functions): it may be fetched while the table is visible; nothing else loads.
+  // per row / cell, logic in module functions): it may be fetched while the table is visible, and the table's client
+  // effects (state `fx`: Table effects) load their chunks at idle / visible — on a lazy-rows render the
+  // effects alone (no row handler entries: no preload plan). Nothing else loads.
   await page.waitForLoadState("networkidle");
-  const hints = await hinted(page);
+  const hints = new Set([...(await hinted(page)), ...(await effectChunks(page))]);
   const early = libraryScripts(seen).filter((url) => !hints.has(url.replace(/\.deps\.js$/, ".js")));
   assert.deepEqual(early, [], "no library code before interaction beyond the page's own preload hints: " + JSON.stringify(early));
   assert.deepEqual(seen.errors, []);

@@ -17,6 +17,7 @@ import {
   _observeProvide,
   _setRegionStateHook,
   _wrapEffects,
+  _scheduleFolds,
 } from "@rivetjs/reactivity";
 import {
   attribute,
@@ -419,6 +420,13 @@ _wrapEffects((fn) => {
   const snapshot = AsyncLocalStorage.snapshot();
   return () => snapshot(fn);
 });
+// Server memory (VIRT-LEAK 2026-10-21): a keyed selector read during a render schedules its index fold in a timer
+// (reactivity `later`); a Node timer keeps the async context it was created in, and with it this store's Recorder —
+// every record, region and computed of the render (cdk `/virtualized-collections`: ~12 MB) stayed alive until the
+// timer phase. In-process loops that never reach it (benchmarks; a server whose poll phase serves many requests)
+// retained every render. The fold timer is created in the context captured here, at module load, outside any render.
+const outside = store.exit(() => AsyncLocalStorage.snapshot());
+_scheduleFolds((fn) => outside(() => (setTimeout(fn, 0) as unknown as { unref?: () => void }).unref?.()));
 // Hoisted frozen marker fragments around a marker id slot: one encode-cache entry each (byte writers write the
 // id through writeInteger), instead of a fresh fragment array per marker. Their MARK brand lets the writer leave
 // the id out when it continues the stride of the two marks written before it (`<!--r-->`; docs/resume.md

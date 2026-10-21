@@ -28,7 +28,9 @@ export const pins: FuzzPin[] = [
     owner: "cdk",
     note: "Select autoFocus: a client render never focuses the trigger (the focusable `clientEffect` calls no `focus()`, probe 2026-10-12); a document load focuses it through the native `autofocus`",
   },
-  ...["/grid-list", "/render-resumed", "/selection-indicator-groups", "/virtualized-collections"].map((route): FuzzPin => ({
+  // `/dom-data` (VIRT-LEAK 2026-10-21): its GridList `#dd-contacts` rows, recorded and lazy rows alike (the lazy row's
+  // `rvr…` id seed only renames the stale token).
+  ...["/dom-data", "/grid-list", "/render-resumed", "/selection-indicator-groups", "/virtualized-collections"].map((route): FuzzPin => ({
     route,
     kind: "load",
     match: "resumed only [aria-labelledby=",
