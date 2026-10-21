@@ -118,11 +118,12 @@ What the response looks like for the layout above and a page with a normal loade
 Several deferred parts arrive in the order their loaders finish. A page with a deferred loader streams this way even when [streaming](/guides/performance/streaming.md) is off for the app. A `resource` read inside `Suspense` waits in place instead: the page streams up to it, then waits.
 
 - **Client navigation:** the data request waits for deferred loaders and answers with their values. The page then gets the value itself in `data`, and `<Async load={() => data}>` renders it at once.
-- **Errors:** the status line is already sent, so a deferred loader that throws `notFound()`, `redirect()` or an error does not change the response. Its boundary shows its `error` view, or the page reports a render error.
+- **Errors:** the status line is already sent, so a deferred loader that throws `notFound()` or an error does not change the response. Its boundary shows its `error` view, or the page reports a render error. A `redirect()` moves the browser: the document ends with a script that goes to the target.
 - **Headers and cookies:** a deferred loader can read cookies and headers, but `setHeader`, `setHeaders`, `cookies.set` and `cookies.delete` throw a `TypeError`. Set them in a normal loader or a guard.
 - **`head` exports** get the `Deferred` handle too: take titles and meta tags from a normal loader.
 - **Reading the value directly** (`data.title`) is a bug. In development it throws a `DeferredDataError` that names the field.
 - **Static sites:** the build waits for every loader. Use deferred loaders in server apps.
+- **Shell cache:** with a [`shell` route rule](./headers-and-caching.md#partial-prerendering-shell-cache) the rest of the page is stored and only the deferred parts render per request.
 
 ## Reload data after a change
 

@@ -62,6 +62,25 @@ export interface RouteRule {
    * cache's own `maxAge` / `swr`, `isr` (and `maxAge: Infinity`) rules `s-maxage=0, must-revalidate`.
    */
   readonly cdn?: CdnRule;
+  /**
+   * Shell cache (partial prerendering, `server/shell-cache.ts`): the document up to its first streamed boundary (the shell:
+   * everything outside `<Async fallback>` holes reading deferred loaders) is stored once and sent at once on later
+   * requests — signed-in ones too (cookies never bypass it, never key it) — while the holes render live per request in
+   * the same response. `true`: the rule's `cache` / `swr` / `isr` times, else stored until `revalidate()` (needs a fixed
+   * `origin`, like `isr`); an object sets them. Fills that read request input outside the key (cookies, headers, locals,
+   * unkeyed query parameters) are not stored (dev logs why). `false` turns off a less specific rule's shell. Not with `cdn`.
+   */
+  readonly shell?: boolean | ShellRule;
+}
+/** `RouteRule.shell` times and keys (defaults: the rule's `cache` / `swr` / `isr`, else stored until `revalidate()`). */
+export interface ShellRule {
+  readonly maxAge?: number;
+  readonly swr?: number | true;
+  readonly tags?: readonly string[];
+  /** Request headers whose values key separate shells (never `cookie` / `authorization`). */
+  readonly varies?: readonly string[];
+  /** `true` (default): one shell per query string; `false`: query-less URLs only; a list: those parameters (other URLs render without the shell). */
+  readonly query?: boolean | readonly string[];
 }
 /**
  * Rules by path pattern (pathname below the app's base): `/about` exact, `*` one segment (`/blog/*`), a trailing
@@ -133,9 +152,14 @@ interface Cache {
   /** Headers responses named in `Vary` (beyond `varies`): part of the key from then on. */
   readonly learned: string[];
 }
-interface Resolved {
+/** @internal A rule's normalised cache (exported for `shell-cache.ts`). */
+export type { Cache as _Cache };
+/** @internal */
+export interface Resolved {
   readonly headers: readonly (readonly [string, string])[];
   readonly cache: Cache | undefined;
+  /** Shell cache (`RouteRule.shell`): wins over `cache` for documents. */
+  readonly shell?: Cache;
 }
 interface Compiled {
   readonly test: RegExp;
@@ -143,7 +167,8 @@ interface Compiled {
   readonly rule: RouteRule;
 }
 
-const RULE_KEYS = new Set(["headers", "cache", "swr", "isr", "cdn"]);
+const RULE_KEYS = new Set(["headers", "cache", "swr", "isr", "cdn", "shell"]);
+const SHELL_KEYS = new Set(["maxAge", "swr", "tags", "varies", "query"]);
 const CREDENTIALS = new Set(["cookie", "authorization"]);
 // Request headers a fill / refresh never forwards (unless the rule's `varies` names them): credentials and what
 // identifies the visitor behind a proxy — a stored page must not depend on the visitor whose miss rendered it.
@@ -209,6 +234,37 @@ function cacheOf(rule: RouteRule, pattern: string, origin: boolean): Cache | fal
   };
 }
 
+/** Check and normalise one rule's `shell` (defaults: the rule's own cache times, else stored until `revalidate()`). */
+function shellOf(rule: RouteRule, pattern: string, origin: boolean, cache: Cache | false | undefined): Cache | false | undefined {
+  const where = `"${pattern}"`;
+  const given = rule.shell;
+  if (given === undefined) return undefined;
+  if (given === false) return false;
+  if (given !== true && (typeof given !== "object" || given === null))
+    throw new TypeError(`routeRules ${where}: shell must be true, false or { maxAge, swr, tags, varies, query }`);
+  if (rule.cdn !== undefined) throw new TypeError(`routeRules ${where}: shell cannot take cdn (shell documents carry per-visitor holes: private, no-cache)`);
+  const own: ShellRule = given === true ? {} : given;
+  for (const key of Object.keys(own)) if (!SHELL_KEYS.has(key)) throw new TypeError(`routeRules ${where}: unknown shell option "${key}"`);
+  const base = cache || undefined;
+  const maxAge = own.maxAge ?? base?.maxAge ?? Infinity;
+  const swr = own.swr ?? (base ? (base.swr === Infinity ? true : base.swr) : undefined);
+  const normal = cacheOf(
+    {
+      cache: {
+        maxAge,
+        ...(swr !== undefined ? { swr } : {}),
+        ...((own.tags ?? base?.tags)?.length ? { tags: own.tags ?? base!.tags } : {}),
+        ...((own.varies ?? base?.varies)?.length ? { varies: own.varies ?? base!.varies } : {}),
+        ...(own.query !== undefined ? { query: own.query } : base ? { query: base.query } : {}),
+      },
+    },
+    pattern + " shell",
+    origin,
+  );
+  // Documents with live holes: never shared-cacheable, revalidated by the browser every time.
+  return normal ? { ...normal, control: "private, no-cache" } : undefined;
+}
+
 /**
  * Compile `rules` (throws `TypeError` on a malformed pattern or rule) into a pathname → rule lookup. `origin`: a fixed
  * origin is configured (`isr` rules need one).
@@ -216,6 +272,7 @@ function cacheOf(rule: RouteRule, pattern: string, origin: boolean): Cache | fal
 export function compileRules(rules: RouteRules, origin = false): (pathname: string) => Resolved | undefined {
   const compiled: Compiled[] = [];
   const caches = new Map<RouteRule, Cache | false | undefined>();
+  const shells = new Map<RouteRule, Cache | false | undefined>();
   for (const [pattern, rule] of Object.entries(rules)) {
     const segments = pattern.split("/");
     if (
@@ -229,7 +286,9 @@ export function compileRules(rules: RouteRules, origin = false): (pathname: stri
       for (const [name, value] of Object.entries(rule.headers))
         if (!/^[!#$%&'*+.^`|~\w-]+$/.test(name) || typeof value !== "string" || /[\r\n\0]/.test(value))
           throw new TypeError(`routeRules "${pattern}": invalid header ${JSON.stringify(name)}`);
-    caches.set(rule, cacheOf(rule, pattern, origin));
+    const own = cacheOf(rule, pattern, origin);
+    caches.set(rule, own);
+    if (rule.shell !== undefined) shells.set(rule, shellOf(rule, pattern, origin, own));
     const any = pattern.endsWith("/**");
     const body = any ? pattern.slice(0, -3) : pattern;
     const source = body
@@ -246,6 +305,7 @@ export function compileRules(rules: RouteRules, origin = false): (pathname: stri
     if (hit === undefined) {
       let headers: Map<string, string> | undefined;
       let cache: Cache | false | undefined;
+      let shell: Cache | false | undefined;
       let matched = false;
       for (const { test, rule } of compiled) {
         if (!test.test(pathname)) continue;
@@ -253,8 +313,15 @@ export function compileRules(rules: RouteRules, origin = false): (pathname: stri
         if (rule.headers) for (const [name, value] of Object.entries(rule.headers)) (headers ??= new Map()).set(name.toLowerCase(), value);
         const own = caches.get(rule);
         if (own !== undefined) cache = own;
+        const shelled = shells.get(rule);
+        if (shelled !== undefined) shell = shelled;
       }
-      hit = matched ? { headers: headers ? [...headers] : [], cache: cache || undefined } : null;
+      // A shell rule wins for documents: no whole-page copy of them (their holes are per visitor).
+      hit = matched
+        ? shell
+          ? { headers: headers ? [...headers] : [], cache: undefined, shell }
+          : { headers: headers ? [...headers] : [], cache: cache || undefined }
+        : null;
       // Bounded: request paths are client-controlled.
       if (memo.size >= 2048) memo.clear();
       memo.set(pathname, hit);
@@ -263,9 +330,11 @@ export function compileRules(rules: RouteRules, origin = false): (pathname: stri
   };
 }
 
-/** Bounded page store, CLOCK eviction (a hit sets one bit). */
+/** Bounded page store, CLOCK eviction (a hit sets one bit). Shell entries (`shell-cache.ts`) live here too (key `…\0shell`). */
 class Store {
   readonly pages = new Map<string, CachedPage>();
+  /** Shell cache: rejected fills per route id (3 in a row → no more attempts until a `revalidate()`). */
+  readonly sticky = new Map<string, number>();
   bytes = 0;
   /** Fills running now (`path`, `tags`): a `revalidate()` matching one voids it (it answers but does not store). */
   readonly filling = new Set<{ readonly path: string; readonly tags: readonly string[]; void: boolean }>();
@@ -314,6 +383,8 @@ class Store {
   }
 }
 const stores = new Set<WeakRef<Store>>();
+/** @internal The page store type (`shell-cache.ts` keeps its entries in it). */
+export type { Store as _Store };
 
 // Path segments: kept as sent when printable ASCII outside the WHATWG path percent-encode set (and `%`, `/`);
 // everything else percent-encoded (upper-case hex) — the form browsers send and the router's links use.
@@ -380,6 +451,7 @@ function dropLocal(target: { readonly path?: string; readonly tag?: string }): n
       (target.tag === undefined || page.tags.includes(target.tag));
     // Renders already running for a matching page: their result predates the change.
     for (const fill of store.filling) if (matches(fill)) fill.void = true;
+    store.sticky.clear();
     for (const page of [...store.pages.values()]) if (matches(page) && store.delete(page.key)) dropped++;
   }
   return dropped;
@@ -522,11 +594,44 @@ interface Filled {
   readonly response: Response;
 }
 
+/** @internal What `withRouteRules` hands the shell cache (`shell-cache.ts` `createShells`). */
+export interface ShellHost {
+  readonly handler: AppHandler;
+  readonly store: Store;
+  readonly csp: CachePolicy;
+  readonly fixed: string | undefined;
+  readonly dev: boolean;
+  /** Build identity (the resume runtime's URL): part of each shell's `h`. */
+  readonly build: string;
+  keyOf(cache: Cache, origin: string, path: string, search: string, header: HeaderOf): string;
+  secondMiss(cache: Cache, search: string, header: HeaderOf): boolean;
+  readonly doorkeeper: Set<string>;
+  withHeaders(response: Response, headers: Resolved["headers"]): Response;
+}
+/** @internal The shell cache's request entry (`shell-cache.ts`); undefined: render without it. */
+export type ShellServe = (
+  request: Request,
+  context: Parameters<AppHandler>[1],
+  resolved: Resolved,
+  origin: string,
+  path: string,
+  search: string,
+) => Promise<Response> | undefined;
+
 /**
  * Wrap the app's handler with route rules. `base`: the app's base path (stripped before matching). The result
- * carries `ROUTE_CACHE` (node adapter fast path).
+ * carries `ROUTE_CACHE` (node adapter fast path). `shells`: the shell cache module (`createApp` loads it only for
+ * rules with `shell`); `internal.dev`: shell rules only probe (never store; reasons logged), `internal.build`: build id.
  */
-export function withRouteRules(handler: AppHandler, rules: RouteRules, csp: CachePolicy, base = "", options: RouteCacheOptions = {}): CachingHandler {
+export function withRouteRules(
+  handler: AppHandler,
+  rules: RouteRules,
+  csp: CachePolicy,
+  base = "",
+  options: RouteCacheOptions = {},
+  shells?: { createShells(host: ShellHost): ShellServe },
+  internal: { dev?: boolean; build?: string } = {},
+): CachingHandler {
   const fixed = options.origin === undefined ? undefined : new URL(options.origin).origin;
   const resolve = compileRules(rules, fixed !== undefined);
   const store = new Store(options.maxBytes ?? 32 * 1024 * 1024, options.maxEntries ?? 5000, base);
@@ -608,6 +713,18 @@ export function withRouteRules(handler: AppHandler, rules: RouteRules, csp: Cach
       return copy;
     }
   };
+  const shellServe = shells?.createShells({
+    handler,
+    store,
+    csp,
+    fixed,
+    dev: internal.dev === true,
+    build: internal.build ?? "",
+    keyOf,
+    secondMiss,
+    doorkeeper,
+    withHeaders,
+  });
   const age = (page: CachedPage, now: number) => String(Math.max(0, Math.floor((now - page.created) / 1000)));
   /** Serve a stored page (`state`: HIT / STALE), 304 when the request's validators hold. */
   const serve = (page: CachedPage, request: Request, state: string): Response => {
@@ -822,6 +939,11 @@ export function withRouteRules(handler: AppHandler, rules: RouteRules, csp: Cach
     // Seeded `locals` (`context.locals`): the page depends on input that is not in the URL, so it is neither read
     // from nor written to the store (rule headers still apply).
     if (context?.locals) return withHeaders(await handler(request, context), resolved.headers);
+    // Shell rules (documents): stored shell + live holes (`shell-cache.ts`); undefined = render as usual.
+    if (resolved.shell && shellServe && canonical) {
+      const served = shellServe(request, context, resolved, origin, path, search);
+      if (served) return served;
+    }
     const header: HeaderOf = (name) => request.headers.get(name);
     const cache = cacheFor(resolved, request.method, origin, canonical, search, header);
     if (!cache) return withHeaders(await handler(request, context), resolved.headers);

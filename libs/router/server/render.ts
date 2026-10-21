@@ -65,6 +65,8 @@ export interface RenderPageOptions {
    * page's root state and loader are cut (the browser client-renders). Not with `stream`.
    */
   discardState?: boolean;
+  /** Markup written after the app's output (and its streamed boundaries), before `around.end` (deferred loaders' client redirect). */
+  epilogue?: () => string;
 }
 
 /** Coalesced write size (bytes): fewer, larger body chunks. */
@@ -518,6 +520,8 @@ function stream(
         await wait;
       }
       release();
+      const epilogue = options.epilogue?.();
+      if (epilogue && (wait = writer.write(epilogue))) await wait;
       if (options.around && (wait = writer.write(options.around.end))) await wait;
       if ((wait = writer.write(parts!.end))) await wait;
       flush();

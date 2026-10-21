@@ -43,6 +43,12 @@ const BASE_MODULE = fileURLToPath(new URL("../shared/base.ts", import.meta.url))
 /** The router's trailing-slash module (its `TRAILING_SLASH` constant is rewritten when the option is set). */
 const SLASH_MODULE = fileURLToPath(new URL("../shared/slash.ts", import.meta.url));
 const SLASH_DEFAULT = '"ignore" as TrailingSlash';
+/** The shell cache loader (`SHELL_BUILD`, rewritten to an `import()` when a route rule has `shell`). */
+const SHELL_MODULE = fileURLToPath(new URL("../server/shell-build.ts", import.meta.url));
+/** `SHELL_BUILD`'s declaration in the source (`.ts`, with its type cast) and in the published `.js` (cast stripped). */
+const SHELL_DEFAULT = /export const SHELL_BUILD = undefined(?: as [^;]+)?;/;
+/** The shell cache module the rewritten loader imports (by file path: also what keeps it in the published package). */
+const SHELL_CACHE = fileURLToPath(new URL("../server/shell-cache.ts", import.meta.url));
 
 /** Options of the `rivetRouter()` Vite plugin. */
 export interface RivetRouterOptions {
@@ -466,6 +472,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     throw new Error(`rivetRouter: inlineStylesheets must be "auto", "always", "never" or { maxTotalBrotli: <bytes> } (got ${JSON.stringify(inlineOption)})`);
   const serverOnly = serverOnlyOption(options.serverOnly);
   const slash = options.trailingSlash ?? "ignore";
+  const shellBuild = Object.values(options.routeRules ?? {}).some((rule) => Boolean(rule?.shell));
   if (slash !== "ignore" && slash !== "never" && slash !== "always")
     throw new Error(`rivetRouter: trailingSlash must be "ignore", "never" or "always" (got ${JSON.stringify(slash)})`);
   // Filled in `config`, which runs before the compiler plugin reads it in `configResolved`.
@@ -723,6 +730,10 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     // build's copy of shared/base.ts changes, so other apps' bundles stay byte-identical.
     // `trailingSlash`: the policy constant (client and server bundles); unset, the module stays as is.
     transform(code, id, transformOptions) {
+      if (shellBuild && id.split("?")[0] === SHELL_MODULE) {
+        if (!SHELL_DEFAULT.test(code)) this.error("rivetRouter: server/shell-build.ts no longer declares SHELL_BUILD as expected");
+        return { code: code.replace(SHELL_DEFAULT, `export const SHELL_BUILD = () => import(${JSON.stringify(SHELL_CACHE)});`), map: null };
+      }
       if (slash !== "ignore" && id.split("?")[0] === SLASH_MODULE) {
         if (!code.includes(SLASH_DEFAULT)) this.error("rivetRouter: shared/slash.ts no longer declares TRAILING_SLASH as expected");
         return { code: code.replace(SLASH_DEFAULT, JSON.stringify(slash) + " as TrailingSlash"), map: null };

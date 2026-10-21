@@ -15,5 +15,5 @@ export {
   type RenderPageOptions,
 } from "./render.ts";
 export { serverExports, mergeServer, loadServer } from "./module.ts";
-export type { CacheRule, RouteCacheOptions, RouteRule, RouteRules } from "./route-cache.ts";
+export type { CacheRule, RouteCacheOptions, RouteRule, RouteRules, ShellRule } from "./route-cache.ts";
 export type { EarlyHintsOptions } from "./early-hints.ts";

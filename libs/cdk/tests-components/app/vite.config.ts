@@ -11,7 +11,12 @@ if (model !== undefined && model !== "serialized" && model !== "derived")
 const domData = process.env.RIVET_DOM_DATA === "1";
 export default defineConfig({
   plugins: [
-    rivetRouter({ styles: ["src/styles.css"], ...(model || domData ? { resume: { ...(model ? { model } : {}), ...(domData ? { domData } : {}) } } : {}) }),
+    rivetRouter({
+      styles: ["src/styles.css"],
+      // Shell cache story (`/shell-loader`, PPR-T23): stored shell + live hole.
+      routeRules: { "/shell-loader": { shell: { maxAge: 3600 } } },
+      ...(model || domData ? { resume: { ...(model ? { model } : {}), ...(domData ? { domData } : {}) } } : {}),
+    }),
   ],
   logLevel: "warn",
 });

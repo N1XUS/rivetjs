@@ -120,11 +120,46 @@ export interface RenderInput {
   readonly head: Head | undefined;
   /** Set when a `data` slot is a deferred loader's `Deferred` handle (`load(fn, { defer: true })`): the page streams. */
   readonly deferred?: true;
+  /**
+   * A deferred loader's `redirect()` (same origin, or `{ external: true }`): its first target, read when the document
+   * ends — the status is long sent, so the page navigates there in the browser (`location.replace`).
+   */
+  readonly moved?: () => string | undefined;
+  /** @internal Route rule `shell` (`shell-cache.ts`): this render fills or replays a stored shell (always streams). */
+  readonly shell?: ShellPhase;
   /** Layouts (indices into `data`) whose loader read the request URL: their data follows every URL change. */
   readonly byURL?: readonly number[];
   /** Keys the loaders passed to `event.depends()` (index into `data`); absent when none called it. */
   readonly deps?: LoaderDeps;
 }
+/**
+ * @internal Route rule `shell` (`server/shell-cache.ts`): the route rules wrapper sets it on a document GET's Request
+ * (`SHELL`). After the guards and `headers()` the handler asks it how to load: a hit's stored shell data (the composed
+ * response already went out with the stored shell), a fill's read tracking, or nothing (render as usual).
+ */
+export interface ShellRequest {
+  begin(route: AppRoute, event: RequestEvent, headers: Headers): ShellPhase | undefined;
+}
+/** @internal One shell render (fill or hit replay). */
+export interface ShellPhase {
+  /** Hit: the fill's non-deferred loader results (those loaders are skipped) and URL / depends facts. */
+  readonly data?: readonly unknown[];
+  readonly byURL?: readonly number[];
+  readonly deps?: LoaderDeps;
+  /** Fill: a non-deferred loader's event view that records its request reads. */
+  event?(view: RequestEvent, index: number): RequestEvent;
+  /** Fill: the non-deferred loaders' results (deferred slots undefined), stored with the shell. */
+  loaded?(data: readonly unknown[], byURL: readonly number[], deps: LoaderDeps | undefined): void;
+  /** Fill: a deferred slot's handle (delivers only after the shell is out: in-order use is detected). */
+  handle?(promise: Promise<unknown>, dev: boolean): object;
+  /** Fill: the page's URL for the render (named query reads outside the key recorded). */
+  readonly url?: URL;
+  /** Set by `app.ts`: this render does not stream (dev `devResume` check mode), deferred data waits in place. */
+  plain?: boolean;
+}
+/** @internal Request property carrying a `ShellRequest` (`Symbol.for("rivet.shell")`). */
+export const SHELL: unique symbol = Symbol.for("rivet.shell") as never;
+
 /** What the error renderer receives: request, matched route, status and a user-safe message. */
 export interface ErrorInput {
   readonly request: Request;
@@ -648,6 +683,9 @@ export function createHandler(options: AppOptions): AppHandler {
         const extra = module?.headers?.(event);
         if (extra) new Headers(extra).forEach((value, name) => headers.set(name, value));
       }
+      // Route rule `shell` (document GET of a page): a hit sends the stored shell now; a fill tracks request reads.
+      const shell =
+        route.page && action === undefined && !data ? (request as unknown as { [SHELL]?: ShellRequest })[SHELL]?.begin(route, event, headers) : undefined;
       if (!route.page) {
         const endpoint = own?.[on!];
         if (!endpoint) {
@@ -723,24 +761,38 @@ export function createHandler(options: AppOptions): AppHandler {
       phase = "loader";
       // Deferred loaders (`load(fn, { defer: true })`, document requests only; data requests await them like any loader):
       // started now, not awaited; their slot is a `Deferred` handle (`deferred.ts`, imported on first use).
-      let lazy: typeof import("./deferred.ts") | undefined, promises: (Promise<unknown> | undefined)[] | undefined;
+      let lazy: typeof import("./deferred.ts") | undefined, promises: (Promise<unknown> | undefined)[] | undefined, moved: string | undefined;
       if (!data && modules.some((module) => module?.load && (module.load as { [DEFER]?: true })[DEFER])) lazy = await (deferredModule ??= import("./deferred.ts"));
       const loaded = await Promise.all(
         modules.map((module, i) => {
           if (skip.has(i) || !module?.load) return (loads[i] = undefined);
           if (lazy && (module.load as { [DEFER]?: true })[DEFER]) {
+            // Deferred loaders are the shell's holes: live on every request, never tracked.
             const view = lazy.lateEvent(loaderEvent(i, i < route.layouts.length));
             // Error pages await it like the other loaders (`errorLayouts`): they render after the failure, not streamed.
-            ((promises ??= [])[i] = loads[i] = lazy.startDeferred(() => module.load!(view)));
+            const started = ((promises ??= [])[i] = loads[i] = lazy.startDeferred(() => module.load!(view)));
+            // A redirect after the head is out: a client redirect at the document's end (other origins need `external`).
+            started.catch((failure) => {
+              if (
+                isHttpError(failure) &&
+                isRedirect(failure) &&
+                ((failure as { external?: boolean }).external || !ABSOLUTE.test(failure.location!) || new URL(failure.location!).origin === url.origin)
+              )
+                moved ??= failure.location;
+            });
             // The handle is a thenable: set after `Promise.all`, which would await it.
             return undefined;
           }
-          const load = Promise.resolve(module.load(loaderEvent(i, i < route.layouts.length)));
+          // Shell hit: the stored shell's data (its loaders read no request input; the composed response is out).
+          if (shell?.data) return (loads[i] = undefined), shell.data[i];
+          const view = loaderEvent(i, i < route.layouts.length);
+          const load = Promise.resolve(module.load(shell?.event ? shell.event(view, i) : view));
           // Dev: a layout loader used as access control is skipped for kept layouts (`_rivet_keep`).
           return (loads[i] = dev && i < route.layouts.length ? load.catch((failure) => accessHint(route, i, failure)) : load);
         }),
       );
-      if (promises) promises.forEach((promise, i) => (loaded[i] = lazy!.deferredHandle(promise!, dev)));
+      shell?.loaded?.(loaded.slice(), [...byURL], depsOf().deps);
+      if (promises) promises.forEach((promise, i) => (loaded[i] = shell?.handle ? shell.handle(promise!, dev) : lazy!.deferredHandle(promise!, dev)));
       const head = await options.head?.(route, loaded, { params: found.params, url });
       if (data) {
         if (!headers.has("cache-control")) headers.set("cache-control", "private, no-store");
@@ -774,9 +826,10 @@ export function createHandler(options: AppOptions): AppHandler {
         action: performed,
         locals: event.locals,
         head,
-        byURL: byURL.size ? [...byURL] : NO_LAYOUTS,
-        ...depsOf(),
-        ...(promises ? { deferred: true } : {}),
+        byURL: shell?.byURL ?? (byURL.size ? [...byURL] : NO_LAYOUTS),
+        ...(shell?.data ? (shell.deps ? { deps: shell.deps } : {}) : depsOf()),
+        ...(promises ? { deferred: true, moved: () => moved } : {}),
+        ...(shell ? { shell } : {}),
       });
     } catch (failure) {
       return settle(failure);

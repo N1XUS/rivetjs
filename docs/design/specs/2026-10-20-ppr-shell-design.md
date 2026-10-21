@@ -96,6 +96,26 @@
 - node: full (fast path stays route-cache only; shell hits go through the handler because guards run). fetch / cloudflare / vercel-edge / deno / bun: same code via `createApp` (in-isolate store, cold isolates refill; documented). Vercel Build Output PPR mapping = F4.
 - CDN trade-off: server-composed ⇒ TTFB = RTT to origin + ~0.05 ms, not edge RTT. Client-composed (F1) ⇒ shell from CDN (edge TTFB, `public, s-maxage`), holes = one extra round trip each (or one batched `?_rivet=holes` fetch with cookies), hole LCP later, guards rerun per hole request, `h` check mandatory. Pick: server-composed now; F1 when a deploy target with far-from-origin users asks for it.
 
+### 3.9 As built (T2 + T3, lane PPR-T23, 2026-10-21)
+
+Code `libs/router/server/shell-cache.ts` (+ hooks in `handler.ts`, `app.ts`, `render.ts`, `route-cache.ts`); internals `docs/guides/routing.md` "File routes: shell cache"; user docs `headers-and-caching.md#partial-prerendering-shell-cache`. Deviations from §3.1–3.8:
+
+- **No runtime change** (runtime hashes identical). The cut is found in bytes: after the root state tail (`<script type="rivet/state" data-region="0" …>` + loader script + stream add-on when `data-stream` is set; `shellCut`). No `ShellRecorder`, no snapshot / fingerprint object: the hit's replay is a **full live render whose prefix is compared byte for byte with the stored one** and then discarded. Ids, resume sites, chunk lists and state are in those bytes, so the comparison subsumes §3.4's fingerprint; a mismatch before the first hole is caught every time, not sampled.
+- H-replay renders bytes and encodes state (no discarding writer / shell-muted recorder: both need runtime hooks). Measured cost: §4.1. A muted replay (writer that only compares + recorder that skips the shell's state encode) is the next CPU step (T3b, runtime change).
+- **Prefix before verification:** the hit sends status, headers and the stored prefix right after the guards (TTFB ≈ guards + copy), then replays. A mismatch can therefore not fall back to a full render in the same response: the response ends with `rivet:resume-error` ("Shell mismatch") + reload once (`sessionStorage["rivet:shell"]`), the entry is evicted, the route goes sticky, a warning is logged. R3 rests on the tracker, not on the comparison (the comparison proves determinism, not request independence).
+- `h` = FNV-1a over the bare prefix + build + route id + key. Carried by router-written scripts, not the runtime state / patches: `self.$rvh="h"` after the prefix, and before the first hole a script that compares it and reloads once on a difference. Same guard for F1 later; `dom-resume` untouched.
+- Nonce slots as D5 (attribute offsets from `noncedSources`); a request whose nonce presence differs from the entry's renders without the store (no overwrite). Policy = the app's nonce policy for the live nonce (`'strict-dynamic'` kept).
+- Shell data stored **by reference** (no `structuredClone`, no dev deep-freeze): a hole that mutates shell data changes the next replay's bytes → caught by the comparison (mismatch path), not silently served.
+- Loader `setHeader`s of shell loaders are stored (`extra`) and replayed; guard / `headers()` headers are live. `cookies.set` from a shell loader = a read (not stored).
+- Tracking (T2) = allow-list Proxies per loader event (free: `params`, `route`, `isDataRequest`, `dev`, `signal`, `depends`, `url` with `TrackedParams`; `locals.locale` / `locals.dir` = partition, in the key) + the render's `url` (tracked `searchParams`, so `useSearchParams` reads are seen). No `_trackReads` hook needed: the router hands the render its URL.
+- Deferred-outside-boundary detection: each deferred handle is gated during the fill; a handle whose promise settles while the cut has not been reached (one macrotask later) means the render waits for it in order → dev rejects it with `DeferredDataError` (fix hint), prod does not store. False positive: a shell that awaits slow I/O of its own after the deferred data settled (not stored, never wrong bytes).
+- "Always stream" = `stream: {}` for shell pages (existing runtime: an `Async` with a fallback always streams in stream mode). No inline-when-ready mode exists, so nothing new.
+- Dev: probe only, never stores (no `RIVET_SHELL_DEV`): every shell route answers `x-rivet-cache: SHELL-BYPASS <first reason>` + one `console.warn` per route + reason. The dev double render (§3.3 verify) is **not built**: nondeterminism is caught by prod's comparison (one reload, then sticky).
+- Unkeyed requests bypass: a query string outside `query` (`false` / list), `HEAD`, data requests, derived resume model (boundaries script → not stored).
+- Stale: hit + one detached anonymous re-fill (route-cache `VISITOR` headers dropped), failures back off like route-cache; `revalidate()` drops entries, voids fills, resets sticky.
+- R5: a deferred loader's `redirect()` → `location.replace` script at the document's end (`render.ts` `epilogue`), for every deferred page (not only shell routes).
+- Not built: learned `Vary` in the shell key (T4), early-hint learning for shell routes, cluster relay of entries beyond `revalidate`, anonymous `"page"` mode (Q4 ruled out), H-holes (T6).
+
 ## 4. Measured shell share (T0, lane PPR-T01, 2026-10-21)
 
 - Harness `apps/editorial-bench/spikes/ppr-shell/bench.ts` (CLAUDE.md there): in-process, `process.cpuUsage` per request (process CPU incl. GC threads), 5 interleaved rounds × 1,500 requests per lane, median round; Apple M4 Pro, Node 26.5.1, no bench lock on this host (none exists; other lanes running), 1-min load 5.4–8.6 beside each run. 4 runs; runs 2–4 (load 5.4–6.7) quoted, run 1 (load 8.1–8.6) agrees within 5 %.
@@ -118,14 +138,29 @@
 - ssr-bench `/resume` 1000 rows (lazy-cost source, in-process `renderResumable` into the router's byte writer; no pipeline / gRPC): full 1.20–1.23 ms, shell (rows → constant placeholder) 0.010–0.012 ms (**shell share ≈ 1 %**), rows alone 1.19–1.20 ms → H-replay / H-holes 1.00–1.03×; TTFB 0.26–0.27 → 0.008 ms (render only). Not a target (as estimated); deferred loaders (T1) give the TTFB without a cache.
 - **Go / no-go: GO for T3+ on the signed-in article (bar ≥ 1.5×: H-replay 1.75–1.83×, H-holes 3.0–3.3×), with the caveat that H-replay clears the bar only when the shell's loaders cost real CPU / I/O.** Expect T5 (H-replay) to miss 2× on pages with cheap shell loaders → plan T6 (H-holes) as likely, not optional (Q5 trigger). Rule of thumb confirmed: win ≈ shell share of (loader I/O + render CPU); data grids gain nothing.
 
+### 4.1 T3 measured (H-replay as built, lane PPR-T23, 2026-10-21)
+
+- Same harness, real lanes: `shell` = `/shell/articles/<slug>/` (route rule `shell: { maxAge: 3600, query: false }`, user menu = deferred layout loader under `<Async fallback>`, warm store, each request `SHELL-HIT`), `deferred` = same page with `?bypass=1` (no store). 5 × 1,500, runs 3–5 at 1-min load 7.6–8.2 (runs 1–2 higher, agree).
+
+| lane | CPU ms/req | wall ms/req | TTFB ms | bytes |
+| --- | ---: | ---: | ---: | ---: |
+| `full` | 0.246–0.250 | 0.208–0.216 | 0.189–0.190 | 12,301 |
+| `shell` (hit) | 0.199–0.208 | 0.149–0.152 | 0.0105–0.0107 | 14,475 |
+| `deferred` (no store) | 0.310–0.324 | 0.254–0.262 | 0.218–0.221 | 14,223 |
+| `floor` | 0.059–0.069 | 0.043–0.044 | 0.038 | 5,827 |
+
+- **CPU 1.18–1.26× vs `full` (bar 1.5×: missed); TTFB 0.011 ms ≤ `floor` + 0.05 (met, ~17× better than `full`).**
+- Why below T0's 1.75–1.83×: the replay is the whole `renderDocument` incl. bytes + state encode (profile: `renderResumable` 0.129 ms of a 0.147 ms hit in main-thread JS; `encodeState` 0.036, `admit` 0.028; shell-cache's own code ≈ 0.01), not `r-shell-null` (0.052, no bytes / no encode); the hit also allocates ~2× `full`'s garbage (replay bytes compared then dropped, prefix copy with the live nonce). Saving = the shell loader only (0.093).
+- Next: T3b muted replay (runtime: compare-only writer + shell recorder without state encode, est. 1.6–1.8×) or T6 H-holes (≈ `hole` + copy, ~3×).
+
 ## 5. Plan
 
 | Task | What | Gate |
 | --- | --- | --- |
 | T0 | Measure shell share: in-process script over the editorial dynamic build + `/resume` (boundaries' contents stubbed, `process.cpuUsage`, 5 × 1,500 req) → fill §4 with numbers; go / no-go (bar: ≥ 1.5× CPU on the signed-in article) | **done 2026-10-21 (PPR-T01): GO** — §4 |
 | T1 | Deferred loaders (N-6): `load(fn, { defer: true })` → `Deferred<T>` handle, resolved per render; `Async` / `resource` accept it; streamed via existing segments; data endpoint sends resolved values; types (`DataOf`) | router + runtime tests, resume fuzz, zero-cost (0 B unused), docs `guides/routing` + llms — **done 2026-10-21 (PPR-T01)**: per-request handle (D3 note), data endpoint awaits, auto `stream: {}`, late header / cookie writes throw |
-| T2 | Read tracking: `LoaderEvent` read sets, render-phase request-signal tracking, deferred-outside-boundary dev throw, "always stream" mode for shell routes | tests per forbidden read |
-| T3 | `shell` rule + store kind + fill capture (prefix offset, nonce slots, snapshot, fingerprint) + H-replay + mismatch fallback + `h` in state / patches | router e2e (Chromium): signed-in hit = byte-identical to a fresh render modulo nonce; resume fuzz on a shell fixture; CSP `'strict-dynamic'` test |
+| T2 | Read tracking: `LoaderEvent` read sets, render-phase request-signal tracking, deferred-outside-boundary dev throw, "always stream" mode for shell routes | tests per forbidden read — **done 2026-10-21 (PPR-T23)**: allow-list event Proxies + tracked render URL + deferred gate; dev probe header per forbidden read (§3.9) |
+| T3 | `shell` rule + store kind + fill capture (prefix offset, nonce slots, snapshot, fingerprint) + H-replay + mismatch fallback + `h` in state / patches | router e2e (Chromium): signed-in hit = byte-identical to a fresh render modulo nonce; resume fuzz on a shell fixture; CSP `'strict-dynamic'` test — **done 2026-10-21 (PPR-T23)**: byte cut + byte-compare replay instead of snapshot / fingerprint, `h` in router scripts (§3.9); guards on hit, swr re-fill, revalidate, R5 client redirects included (part of T4); bench §4.1: bar missed (1.18–1.26×), TTFB met (H-replay renders + encodes) |
 | T4 | Headers / Vary / guards-on-hit / `revalidate` / swr re-fill / cluster relay | `route-cache` test suite extended |
 | T5 | Bench: editorial `rivet-dynamic-shell` target (session cookie + hole), in-process + loadgen; report `docs/benchmarks/2026-10-2x-ppr-shell.md` | ≥ 1.5× CPU vs bypass, TTFB p50 ≤ route-cache hit + 0.05 ms |
 | T6 | H-holes: compiler eligibility fact per boundary (capture classes) → retained thunks + frame swap + COW encoding overlay | same e2e + fuzz in both modes; CPU ≥ 3× vs bypass |

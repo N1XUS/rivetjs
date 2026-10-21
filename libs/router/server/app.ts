@@ -8,10 +8,11 @@ import { nonceCSP, type CSPOptions } from "../shared/csp.ts";
 import { inlineStylesFor, type InlineStyleManifest } from "./inline-styles.ts";
 import type { TrailingSlash } from "../shared/slash.ts";
 import { escapeJSON } from "@rivetjs/runtime/resume-format";
-import { createHandler, _digest, encodeData, type AppHandler, type AppRoute, type BodyLimit, type ErrorInfo } from "./handler.ts";
+import { createHandler, _digest, encodeData, type AppHandler, type AppRoute, type BodyLimit, type ErrorInfo, type ShellPhase } from "./handler.ts";
 import { renderDocument, type DocumentShell } from "./render.ts";
 import type { EarlyHintsOptions, Hinter, HintWriter } from "./early-hints.ts";
 import type { CachePolicy, CachingHandler, RouteCacheOptions, RouteRules } from "./route-cache.ts";
+import { SHELL_BUILD } from "./shell-build.ts";
 
 /** How a dev page renders (`AppConfig.devResume`). */
 export type DevResumeMode = "check" | "resume";
@@ -32,6 +33,10 @@ export interface PageInput {
   readonly deps?: LoaderDeps;
   /** A `data` slot is a deferred loader's handle (`load(fn, { defer: true })`): the page streams (out of order) even without `stream`. */
   readonly deferred?: true;
+  /** A deferred loader's redirect target, read at the document's end (client redirect). */
+  readonly moved?: () => string | undefined;
+  /** @internal Route rule `shell`: a shell fill / replay (always streams). */
+  readonly shell?: ShellPhase;
 }
 type HeadExport = Head | ((context: { data: unknown; params: Readonly<Record<string, string>>; url: URL }) => Head | undefined);
 /** Shape of the generated `.rivet/entry.server.tsx` module. */
@@ -239,6 +244,8 @@ export function createApp(config: AppConfig): AppHandler {
   const warned = new Set<string>();
   const document = config.document ?? entry.document;
   if (!document) throw new TypeError("createApp: no document shell (pass `document` or generate the entry with one)");
+  const moveScript = (to: string | undefined, nonce: string | undefined) =>
+    to === undefined ? "" : `<script${scriptAttrs(nonce)}>location.replace(${JSON.stringify(to).replace(/</g, "\\u003c")})</script>`;
   const scriptAttrs = (nonce: string | undefined) => (nonce !== undefined ? ` nonce="${nonce.replace(/[^\w+/=-]/g, "")}"` : "");
   // Dev pages: what the data endpoint would answer for this URL, so the client mount needs no request.
   const devAround = (page: PageInput, status: number, nonce: string | undefined, locale: string | undefined, mode: DevResumeMode | undefined) => {
@@ -312,6 +319,8 @@ export function createApp(config: AppConfig): AppHandler {
     const devMode =
       built || !config.devResume ? undefined : typeof config.devResume.mode === "function" ? config.devResume.mode(locale) : config.devResume.mode;
     const pageManifest = built || config.devResume?.manifest;
+    // Dev check mode streams nothing: a shell fill's deferred data waits in place there (not an in-order read).
+    if (page.shell && devMode === "check") page.shell.plain = true;
     const dir = locals?.dir === "rtl" || locals?.dir === "ltr" ? locals.dir : undefined;
     const exports = page.head ? (levels.get(page.head) ?? ranked([page.head], config.head)) : ranked([], config.head);
     // Root layout component entries stay in the browser (that layout never re-renders there).
@@ -354,7 +363,8 @@ export function createApp(config: AppConfig): AppHandler {
           ...(pageManifest ? { manifest: pageManifest } : {}),
           ...(variant ? { variant } : {}),
           // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
-          ...(config.stream ? { stream: config.stream } : page.deferred ? { stream: {} } : {}),
+          // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
+          ...(config.stream ? { stream: config.stream } : page.deferred || page.shell ? { stream: {} } : {}),
           ...(background !== undefined || lean || ahead
             ? { preload: { ...(background !== undefined ? { background } : {}), ...(lean ? { lean } : {}), ...(ahead ? { ahead } : {}) } }
             : {}),
@@ -368,6 +378,8 @@ export function createApp(config: AppConfig): AppHandler {
             return digest;
           },
           ...(config.devScripts && !built ? { around: devAround(page, status, nonce, locale, devMode) } : {}),
+          // Deferred loaders' redirects (status already sent): the browser navigates at the document's end.
+          ...(page.moved ? { epilogue: () => moveScript(page.moved!(), nonce) } : {}),
           ...(devMode === "check" ? { discardState: true } : {}),
         },
         { status, headers },
@@ -435,12 +447,15 @@ export function createApp(config: AppConfig): AppHandler {
       respond(
         {
           data: input.data,
-          url: input.url,
+          // Shell fills: a URL whose named query reads outside the rule's key are recorded (`shell-cache.ts`).
+          url: input.shell?.url ?? input.url,
           head: input.head,
           ...(input.action ? { action: input.action } : {}),
           ...(input.byURL ? { byURL: input.byURL } : {}),
           ...(input.deps ? { deps: input.deps } : {}),
           ...(input.deferred ? { deferred: input.deferred } : {}),
+          ...(input.moved ? { moved: input.moved } : {}),
+          ...(input.shell ? { shell: input.shell } : {}),
         },
         input.status,
         input.headers,
@@ -467,10 +482,18 @@ export function createApp(config: AppConfig): AppHandler {
   });
   const given = config.routeRules ?? entry.routeRules;
   if (!given || !Object.keys(given).length) return app;
-  // Dev: headers only (a stored page would hide edits).
+  // Dev: headers only (a stored page would hide edits); `shell` rules probe (track reads, log why a shell would not be stored).
   const rules: RouteRules = dev
-    ? Object.fromEntries(Object.entries(given).map(([pattern, rule]) => [pattern, rule.headers ? { headers: rule.headers } : {}]))
+    ? Object.fromEntries(
+        Object.entries(given).map(([pattern, rule]) => [
+          pattern,
+          { ...(rule.headers ? { headers: rule.headers } : {}), ...(rule.shell !== undefined ? { shell: devShell(rule) } : {}) },
+        ]),
+      )
     : given;
+  const shelled = Object.values(rules).some((rule) => rule.shell);
+  if (shelled && !SHELL_BUILD)
+    throw new TypeError("createApp: `shell` route rules need a build whose `rivetRouter({ routeRules })` has a `shell` rule (it bundles the shell cache)");
   // Route rules: their module loads at startup (pay-per-use); malformed rules reject there (unhandled: the process
   // fails like a synchronous throw would). Requests before it settles wait for it.
   const policy: CachePolicy = {
@@ -479,11 +502,27 @@ export function createApp(config: AppConfig): AppHandler {
     hash: config.csp === undefined ? {} : typeof config.csp === "object" ? config.csp : null,
   };
   let cached: CachingHandler | null = null;
-  const loading = import("./route-cache.ts").then(({ withRouteRules }) => (cached = withRouteRules(app, rules, policy, entry.base ?? "", config.routeCache)));
+  // Shell rules: the shell cache module loads with the rules module (pay-per-use: only apps with `shell` rules).
+  const loading = Promise.all([import("./route-cache.ts"), SHELL_BUILD && shelled ? SHELL_BUILD() : undefined]).then(
+    ([{ withRouteRules }, shells]) =>
+      (cached = withRouteRules(app, rules, policy, entry.base ?? "", config.routeCache, shells, {
+        dev,
+        build: manifest?.runtime ?? "",
+      })),
+  );
   const handler: AppHandler = (request, context) => (cached ? cached(request, context) : loading.then((ready) => ready(request, context)));
   // The node adapter's fast path (a stored page before a Request is built), once the module loaded.
   Object.defineProperty(handler, ROUTE_CACHE, { get: () => (cached ? (cached as unknown as Record<symbol, unknown>)[ROUTE_CACHE] : undefined) });
   return handler;
+  // Dev shell rules: keys only (the probe never stores, so no times and no fixed origin).
+  function devShell(rule: RouteRules[string]): false | { maxAge: number; query?: boolean | readonly string[]; varies?: readonly string[] } {
+    if (rule.shell === false) return false;
+    const own: { query?: boolean | readonly string[]; varies?: readonly string[] } = typeof rule.shell === "object" ? rule.shell : {};
+    const cache: { query?: boolean | readonly string[]; varies?: readonly string[] } = typeof rule.cache === "object" ? rule.cache : {};
+    const query = own.query ?? cache.query;
+    const varies = own.varies ?? cache.varies;
+    return { maxAge: 0, ...(query !== undefined ? { query } : {}), ...(varies ? { varies } : {}) };
+  }
   // Error pages without a settled locale: the app's resolver, else the URL's locale prefix.
   async function errorLocals(locals: Record<string, unknown>, request: Request, url: URL): Promise<Record<string, unknown>> {
     const i18n = config.i18n;

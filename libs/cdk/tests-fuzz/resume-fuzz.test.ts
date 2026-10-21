@@ -11,10 +11,28 @@ process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : "dist-fuzz";
 const pins = isDerived ? derived : serialized;
 const { stories } = await import("../tests-components/harness.ts");
 
+// Shell cache route (`/shell-loader`, rule `shell`): the store is primed before the run so its resumed document load is a
+// hit (`RIVET_FUZZ_SHELL=hit`, default: two loads, the doorkeeper stores on the second), the fill (`miss`: one) or a
+// plain render (`off`).
+const prime = process.env.RIVET_FUZZ_SHELL ?? "hit";
+const start = async () => {
+  const app = await stories();
+  const states: (string | null)[] = [];
+  for (let i = 0; i < (prime === "hit" ? 2 : prime === "miss" ? 1 : 0); i++) {
+    const response = await fetch(app.origin + "/shell-loader");
+    states.push(response.headers.get("x-rivet-cache"));
+    await response.text();
+  }
+  // hit: the second load filled the store; miss: the first only passed the doorkeeper (the resumed load fills).
+  const want = prime === "hit" ? "null,SHELL-MISS" : prime === "miss" ? "null" : "";
+  if (states.map(String).join() !== want) throw new Error(`RIVET_FUZZ_SHELL=${prime}: priming answered ${states.join()} (want ${want})`);
+  return app;
+};
+
 fuzzSuite({
   project: "cdk-resume-fuzz",
   routes: storyRoutes(new URL("../tests-components/app/src/routes/", import.meta.url)),
-  start: stories,
+  start,
   pins,
   options: routeOptions,
 });

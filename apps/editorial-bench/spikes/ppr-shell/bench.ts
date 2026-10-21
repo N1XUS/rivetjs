@@ -7,6 +7,9 @@
 //      stub  — the same page with the hole (user menu) replaced by a constant placeholder of the same markup, no request read
 //      hole  — the hole alone (pipeline + session loader + user menu in an empty document) = H-holes proxy
 //      floor — pipeline floor (no loader, one element)
+//      shell — PPR-T23: the `full` page under the `shell` route rule (user menu = deferred hole), warm store, signed in:
+//              guards + stored prefix + H-replay (the shell re-rendered and compared, not written) + the hole streamed
+//      deferred — the same `shell` page with the store bypassed (an unkeyed query parameter): today's deferred render
 //    + the same page compiled in-process (`libs/runtime/tests/resume/compile.ts`) and rendered by `renderResumable`:
 //      r-full / r-shell into the router's byte writer (`NodeStreamWriter` over a counting sink), r-shell-null into a no-op
 //      string writer (H-replay proxy: the shell's JS runs, no bytes are written), r-hole.
@@ -17,7 +20,7 @@
 // sink write). Estimates: H-replay ≈ hole + shell-null (+ prefix copy); H-holes ≈ hole (+ prefix copy).
 //
 //   node apps/editorial-bench/spikes/ppr-shell/bench.ts [--build] [--rounds 5] [--requests 1500] [--rows 1000]
-//        [--pages editorial,resume] [--json out.json] [--dump <lane>]
+//        [--pages editorial,resume] [--lanes full,shell,floor] [--json out.json] [--dump <lane>]
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadavg } from "node:os";
@@ -46,6 +49,7 @@ if (process.argv.includes("--build")) {
 const rounds = Number(arg("rounds", "5"));
 const requests = Number(arg("requests", "1500"));
 const pages = arg("pages", "editorial,resume").split(",");
+const only = arg("lanes", "").split(",").filter(Boolean);
 const load = () =>
   loadavg()
     .map((n) => n.toFixed(2))
@@ -172,7 +176,14 @@ if (pages.includes("editorial")) {
       }
       return { bytes, ttfb };
     };
-  const paths = { full: `/full${SLUG}${slug}/`, stub: `/stub${SLUG}${slug}/`, hole: `/hole/${slug}/`, floor: "/floor/" };
+  const paths = {
+    full: `/full${SLUG}${slug}/`,
+    stub: `/stub${SLUG}${slug}/`,
+    hole: `/hole/${slug}/`,
+    floor: "/floor/",
+    shell: `/shell${SLUG}${slug}/`,
+    deferred: `/shell${SLUG}${slug}/?bypass=1`,
+  };
   if (dump in paths) {
     const r = await handler(new Request("http://localhost" + paths[dump as keyof typeof paths], { headers }));
     console.log(await r.text());
@@ -200,6 +211,8 @@ if (pages.includes("editorial")) {
     stub: handlerLane(paths.stub),
     hole: handlerLane(paths.hole),
     floor: handlerLane(paths.floor),
+    shell: handlerLane(paths.shell),
+    deferred: handlerLane(paths.deferred),
     "r-full": renderLane(() => mod.Full!({ article: data, user }), "bytes"),
     "r-shell": renderLane(() => mod.Full!({ article: data, user: PLACEHOLDER }), "bytes"),
     "r-shell-null": renderLane(() => mod.Full!({ article: data, user: PLACEHOLDER }), "null"),
@@ -225,8 +238,22 @@ if (pages.includes("editorial")) {
     sinkhole += article(slug)!.body.length;
     return { bytes: 0, ttfb: 0 };
   };
+  // The shell lane must hit: two misses store (doorkeeper), the third request is a hit.
+  for (let i = 0; i < 3; i++) await (await handler(new Request("http://localhost" + paths.shell, { headers }))).text();
+  const state = (await handler(new Request("http://localhost" + paths.shell, { headers }))).headers.get("x-rivet-cache");
+  await (await handler(new Request("http://localhost" + paths.shell, { headers }))).text();
+  if (state !== "SHELL-HIT") throw new Error(`shell lane: expected SHELL-HIT, got ${state}`);
+  if (only.length) for (const name of Object.keys(lanes)) if (!only.includes(name)) delete lanes[name];
   const out = await measure(`editorial article ${slug} (signed in, sid cookie)`, lanes);
-  const at = (lane: string) => out.find((o) => o.lane === lane)!.cpu;
+  const at = (lane: string) => out.find((o) => o.lane === lane)?.cpu ?? NaN;
+  const shell = out.find((o) => o.lane === "shell"),
+    full = out.find((o) => o.lane === "full"),
+    floor = out.find((o) => o.lane === "floor");
+  if (shell && full)
+    console.log(
+      `shell lane: CPU ${(full.cpu / shell.cpu).toFixed(2)}× vs full (bar ≥ 1.5×) · TTFB shell ${shell.ttfb.toFixed(4)} vs full ${full.ttfb.toFixed(4)}` +
+        (floor ? ` vs floor ${floor.ttfb.toFixed(4)} ms (bar ≤ floor + 0.05)` : " ms"),
+    );
   // H-holes: pipeline + session loader + hole render (lane `hole`) + one copy of the stored prefix.
   // H-replay: that + the shell's JS without bytes (in-process `r-shell-null`; no loaders, no state encode).
   const holes = at("hole") + at("prefix-copy"),

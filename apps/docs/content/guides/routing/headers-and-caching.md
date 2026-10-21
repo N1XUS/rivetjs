@@ -196,6 +196,68 @@ closeOnSignals(serving);
 
 For parts of a page instead of whole pages, see the render cache option `renderCache` of `createApp()` and `start()`: it takes `createRenderCache()` from `@rivetjs/runtime/server-cache`, and components wrapped in `cached()` then render once across requests.
 
+## Partial prerendering: shell cache
+
+A page that greets the signed-in visitor cannot be stored whole, but most of it (the layout, the article, the footer) is the same for everyone. The `shell` rule stores that part, the **shell**, and renders only the personal parts, the **holes**, per request. The holes are [deferred loaders](./loading-data.md#deferred-loaders) shown through `<Async fallback>`:
+
+```ts title="vite.config.ts"
+rivetRouter({
+  routeRules: {
+    "/articles/**": { shell: { maxAge: 3600, tags: ["articles"] } },
+  },
+});
+```
+
+```tsx title="src/routes/_layout.tsx"
+import { load, type LayoutProps } from "@rivetjs/router";
+import { Async } from "@rivetjs/runtime/dom";
+import { sessions } from "../sessions.server.ts";
+
+// The hole: reads the visitor's cookie, so it is a deferred loader.
+export const loader = load(async ({ cookies }) => sessions.user(cookies.get("sid")), { defer: true });
+
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
+  return (
+    <>
+      <header>
+        <a href="/">Home</a>
+        <Async load={() => data()} fallback={() => <span>…</span>}>
+          {(user) => (user ? <a href="/account">{user.name}</a> : <a href="/login">Sign in</a>)}
+        </Async>
+      </header>
+      {children}
+    </>
+  );
+}
+```
+
+The page's normal loader (the article) reads only its params, so its data belongs to the shell. What a request to a shell route does:
+
+1. **First requests:** the page renders as usual and streams to the visitor. The server records what the normal loaders and the render read from the request. When they read nothing that differs per visitor, it stores the document up to where the first hole starts, plus the normal loaders' data.
+2. **Later requests:** guards and `headers(…)` run first (a guard that redirects still redirects). Then the server sends the stored shell at once with the request's own CSP nonce, renders the page again with the stored data (the normal loaders do not run), and streams the holes behind it. The visitor sees the page about as fast as a stored page, and the deferred loaders still see their own cookies.
+3. **Check:** the second render must produce the same shell bytes. If it does not (a clock, a random number or module state in the shell), the page sends no holes, reloads itself once and gets a fresh render; the route stops storing shells and the server logs a warning.
+
+| Option | Meaning |
+| --- | --- |
+| `shell: true` | Keep the shell with the rule's `cache` / `swr` times; without them until `revalidate()` (needs a fixed origin, like `isr: true`). |
+| `shell: { maxAge, swr }` | Own times, in seconds. After `maxAge`, the stale shell is served while one background render (without the visitor's cookies) replaces it. |
+| `shell: { tags }` | Names for `revalidate({ tag })`. `revalidate({ path })` drops shells too. |
+| `shell: { query }` | `true` (default): one shell per query string. `false`: only URLs without a query string get a shell. A list: only those parameters count, and URLs with other parameters render without the store. |
+| `shell: { varies }` | Request headers that get their own shell, for example `["accept-language"]`. Not `cookie` or `authorization`. |
+| `shell: false` | Turn it off below a broader rule. |
+
+What may be in a shell:
+
+- **Inputs:** the path and its params, the query string (or the listed parameters), the `varies` headers, the locale and direction a guard put in `locals`. Anything else read by a normal loader (a cookie, another header, other `locals`, the client address, the raw `request`, a `RequestEvent` member Rivet does not know) means the shell is not stored. So does a render read of another query parameter (`useSearchParams()`), a loader that sets a cookie, and an answer other than `200`. After three such renders in a row the route stops trying until `revalidate()` or a restart.
+- **Holes stream:** a hole must sit inside an `<Async fallback>`. Deferred data read where the page waits for it (an `Async` without a fallback, `Suspense` + `resource`) ends the shell too early: in development that read throws, in production the shell is not stored.
+- **Headers:** headers a normal loader set are stored with the shell; guards and `headers(…)` set theirs on every request. The response says `Cache-Control: private, no-cache` (the whole document is personal) and `x-rivet-cache: SHELL-HIT`, `SHELL-STALE` or `SHELL-MISS`.
+- **Deferred redirects:** the status line is out before a hole's loader finishes, so a `redirect()` from a deferred loader moves the browser with a script at the end of the document.
+- **CSP:** the shell is stored without nonces and every response gets its own, so the nonce policy keeps `'strict-dynamic'` (unlike stored whole pages).
+- **Not stored:** requests without a nonce when the shell has one (and the reverse), `HEAD` requests, client navigation data (`?_rivet=data`), and pages built with the derived resume model.
+- **Build:** put at least one `shell` rule in `rivetRouter({ routeRules })`. Only then does the server bundle include the shell cache; a server's own `routeRules` option can change shell rules, but `createApp` throws a `TypeError` for a `shell` rule when the build has none.
+- **Memory:** shells share the route rules' store (`routeCache: { maxBytes, maxEntries }`); a new key is stored on its second request, like whole pages.
+- **Dev** never stores shells. It renders every shell route as a probe and answers `x-rivet-cache: SHELL-BYPASS <reason>` with the first read that would keep the shell from being stored, and logs it once per route.
+
 ## Early hints
 
 A page whose loaders wait on a database sends nothing while they run. With early hints the server tells the browser which files the page will need before that, in a `103 Early Hints` response, and the browser starts loading them while the server still works:
@@ -242,6 +304,7 @@ A static site has no server to set headers per request. The build writes HTML fi
 - **Expecting `headers(…)` on a guard redirect.** A guard that stops the request answers before the `headers(…)` exports run.
 - **Long caching for HTML.** Pages link to hashed asset files. A cached old page can point to files that a new deploy removed. Keep HTML on `no-cache` or short `max-age`. Route rules keep browsers on `max-age=0` for this reason; a server restart (a deploy) starts with an empty store.
 - **Caching a personal page with a route rule.** A stored page skips guards and loaders. Put pages that differ per visitor under `cache: false`, or keep them out of the pattern.
+- **Reading the session in a shell loader.** On a `shell` route, only deferred loaders may read cookies or the session. A normal loader that does keeps the shell from being stored (dev says which read in `x-rivet-cache: SHELL-BYPASS`).
 
 ## See also
 
