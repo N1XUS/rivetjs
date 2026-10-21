@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/bridge-preact",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "license": "MIT",
   "description": "Preact islands for Rivet: server render into the stream, hydrate on a client policy, live props, slots; coexists with React islands.",
   "private": true,
@@ -30,7 +30,7 @@
   },
   "peerDependencies": {
     "@preact/preset-vite": ">=2.10.0 <3",
-    "@rivetjs/bridge": "0.1.0-alpha.0",
+    "@rivetjs/bridge": "0.1.0-alpha.1",
     "preact": ">=10.29.0 <12",
     "preact-render-to-string": ">=6.7.0 <7"
   },

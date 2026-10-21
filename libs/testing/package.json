@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/testing",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Test harnesses for Rivet apps: happy-dom and browser rendering, user-event, Vitest plugin.",
   "license": "MIT",
   "private": true,
@@ -65,8 +65,8 @@
     }
   },
   "dependencies": {
-    "@rivetjs/reactivity": "0.1.0-alpha.0",
-    "@rivetjs/runtime": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.1",
+    "@rivetjs/runtime": "0.1.0-alpha.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/user-event": "^14.6.1"
@@ -74,7 +74,7 @@
   "peerDependencies": {
     "happy-dom": "^20.14.5",
     "playwright": "^1.63.0",
-    "@rivetjs/compiler": "0.1.0-alpha.0",
+    "@rivetjs/compiler": "0.1.0-alpha.1",
     "vite": "^8.3.2",
     "vitest": "^5.0.3"
   },

@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/runtime",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Rivet runtime: streaming server renderer, compiled DOM templates, resumability, router runtime, images and styles.",
   "license": "MIT",
   "private": true,
@@ -165,10 +165,10 @@
     }
   },
   "dependencies": {
-    "@rivetjs/reactivity": "0.1.0-alpha.0"
+    "@rivetjs/reactivity": "0.1.0-alpha.1"
   },
   "peerDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.0"
+    "@rivetjs/compiler": "0.1.0-alpha.1"
   },
   "peerDependenciesMeta": {
     "@rivetjs/compiler": {

@@ -1,6 +1,6 @@
 {
   "name": "@rivetjs/devtools",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Rivet DevTools for the Vite dev server: component tree, signals, updates, HMR and error log, performance.",
   "license": "MIT",
   "private": true,
@@ -21,8 +21,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@rivetjs/reactivity": "0.1.0-alpha.0",
-    "@rivetjs/runtime": "0.1.0-alpha.0",
+    "@rivetjs/reactivity": "0.1.0-alpha.1",
+    "@rivetjs/runtime": "0.1.0-alpha.1",
     "lucide": "1.52.0"
   },
   "publishConfig": {
@@ -33,7 +33,7 @@
     "vite": "^8.3.2"
   },
   "devDependencies": {
-    "@rivetjs/compiler": "0.1.0-alpha.0",
+    "@rivetjs/compiler": "0.1.0-alpha.1",
     "vite": "8.3.2"
   },
   "engines": {
