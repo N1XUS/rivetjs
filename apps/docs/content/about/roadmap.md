@@ -62,5 +62,5 @@ These have a written design. They are not available yet; names in the design may
 ## Goals that are not met yet
 
 - **Server speed.** The goal is to beat ASP.NET Razor on CPU per page, response time, time to first byte and memory. Static pages meet it in the latest measurements at 1,000 and 5,000 rows, the page of short text fields included (measured one request at a time); the smallest page is level. Interactive (resumable) pages still use more CPU than plain hydratable Solid 1.9 on a 100-row page under ten concurrent requests, more server memory than Solid on small pages, and download more JavaScript before the first input than Solid. See [benchmarks](benchmarks.md).
-- **Large pages in the browser.** Mounting 5,000 rows is slower than Solid 1.9 in the browser benchmark. The gap was traced to when V8 finishes garbage collection after the benchmark's forced collection, not to the per-row work; a protocol change is proposed. See [benchmarks](benchmarks.md#building-the-page-in-the-browser).
+- **Large pages in the browser.** Mounting 1,000 and 5,000 rows is level with Solid 1.9 and Solid 2 in the browser benchmark, not ahead; updates and memory are ahead. See [benchmarks](benchmarks.md#building-the-page-in-the-browser).
 - **Stable APIs.** Packages are on npm as an alpha. Names and behaviour still change between releases.

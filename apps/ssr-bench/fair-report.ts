@@ -10,6 +10,8 @@
 // profile, strings, rate) matches; mixed provenance inside one group is refused.
 // Later --ssr inputs supersede earlier ones per (profile, rows, concurrency, lane) group.
 // --store-competitors rewrites apps/dom-bench/competitors.json ssr/dom/resume blocks (with provenance) from the inputs.
+// Without --ssr, `--dom <results.json> --store-competitors` rewrites only the dom block (DOM-only fair re-measure:
+// every lane in one apps/dom-bench/run.ts run, same browser; provenance records browser, mount protocol, load range).
 import { existsSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
@@ -426,12 +428,18 @@ interface DomSection {
   json: unknown;
   competitors: Record<string, unknown>;
 }
+const loadRange = (values: (number | undefined)[]) => {
+  const known = values.filter((v): v is number => typeof v === "number");
+  return known.length ? `${Math.min(...known).toFixed(1)}–${Math.max(...known).toFixed(1)}` : undefined;
+};
 async function domSection(file: string): Promise<DomSection> {
   const data = JSON.parse(await readFile(file, "utf8")) as {
     environment: { browser: string; crossOriginIsolated?: boolean };
+    methodology?: { protocol?: string };
     trials: {
       framework: string;
       rows: number;
+      load1?: number;
       mount: { wallMs: number };
       updates: { percent: number; wallMs: { median: number } }[];
       memory: { mountedDeltaBytes: number };
@@ -457,8 +465,10 @@ async function domSection(file: string): Promise<DomSection> {
     provenance: {
       browser: data.environment.browser,
       crossOriginIsolated: data.environment.crossOriginIsolated ?? false,
+      protocol: data.methodology?.protocol,
       measured: new Date().toISOString().slice(0, 10),
       source: relative(repoRoot, file),
+      load1: loadRange(data.trials.map((t) => t.load1)),
     },
   };
   const json: Record<string, unknown> = {};
@@ -552,7 +562,17 @@ async function scoreboardSection(file: string): Promise<ScoreboardSection> {
   return { lines, losses: pick.filter((s) => s.verdict === "LOSE").map((s) => `${s.id} vs ${s.losesTo.join(", ")}`) };
 }
 
-if (import.meta.main) {
+const domOnly = !list("ssr").length && !!option("dom") && args.includes("--store-competitors");
+if (import.meta.main && domOnly) {
+  const dom = await domSection(resolve(option("dom")!));
+  const path = resolve(repoRoot, "apps/dom-bench/competitors.json");
+  const competitors = JSON.parse(await readFile(path, "utf8")) as Record<string, unknown>;
+  competitors.dom = { ...dom.competitors, gzip: (competitors.dom as { gzip?: unknown } | undefined)?.gzip };
+  await writeFile(path, JSON.stringify(competitors, null, 2) + "\n");
+  console.log(dom.lines.join("\n"));
+  console.log(`Updated ${relative(repoRoot, path)} (dom block only)`);
+}
+if (import.meta.main && !domOnly) {
   const inputs = list("ssr");
   if (!inputs.length) throw Error("--ssr <results.json|run dir>[,…] required");
   const runs = await Promise.all(inputs.map(loadRun));

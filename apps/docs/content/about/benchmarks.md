@@ -5,15 +5,15 @@ template: page
 related: [about/roadmap, guides/performance/measuring]
 ---
 
-Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The latest runs (server 2026-10-19, browser 2026-10-20) show where that holds and where it does not:
+Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The latest runs (server 2026-10-19, browser 2026-10-21) show where that holds and where it does not:
 
 - **Static pages** use less CPU than Razor and Solid at 1,000 and 5,000 rows, and at 100 rows under ten concurrent requests. On the smallest page one request at a time the trial ranges overlap, so the report counts it as level.
 - **Text-heavy pages** (1,000 rows of short strings, the case that favours Razor) are now a win too: less CPU, more pages per second and a faster median response than Razor. This run measured them at one request at a time only.
 - **Interactive (resumable) pages**, one request at a time, use less CPU than every Solid and Qwik lane at 1,000 and 5,000 rows, including plain hydratable Solid 1.9, which renders the rows without handlers, links or page data; at 1,000 rows under ten concurrent requests they are level with it. Two losses remain: on a 100-row page under ten concurrent requests plain hydratable Solid 1.9 needs less CPU, and the server process of an interactive page uses more memory than every Solid lane at 100 rows.
-- **In the browser**, Rivet updates 1,000 rows faster than Solid and React. Mounting 1,000 rows is level with Solid; mounting 5,000 rows, Solid 1.9 is faster under this benchmark's protocol.
+- **In the browser**, Rivet updates 1,000 rows faster than Solid and React and keeps less memory. Mounting 1,000 and 5,000 rows is level with Solid 1.9 and Solid 2 and faster than React.
 - **After resuming**, a click paints as fast as Qwik and faster than hydrated Solid, and navigation is faster than Solid and level with Qwik. Solid's handlers change the DOM sooner after a click or a filter input, and plain Solid 1.9 downloads less JavaScript before the first input.
 
-This page explains what was measured. Each chart reads its numbers from the report it names (the [server and resume report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) or the [browser mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md)) and links to it; the reports also list every loss.
+This page explains what was measured. Each chart reads its numbers from the report it names (the [server and resume report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) or the [browser mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md)) and links to it; the reports also list every loss.
 
 All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64 for the servers). The host was not quiet during any of the runs: an IDE, a virtual machine and other test suites ran alongside, and each chart's caption gives the load. Treat small gaps as noise. The reports call a result a win or a loss only when the medians differ by at least three percent and the trial ranges do not overlap; everything else is level. These are exploratory numbers for one implementation, not a ranking of frameworks.
 
@@ -69,13 +69,13 @@ Before the first input, Rivet's page downloads more JavaScript than both Solid l
 
 ### Building the page in the browser
 
-Client-side mount and updates, with every framework measured in the same interleaved run. Rivet updates 1,000 rows faster than every lane. Mounting 1,000 rows, Rivet and both Solid versions are level:
+Client-side mount and updates, with every framework measured in the same interleaved runs. Rivet updates 1,000 rows faster than every lane. Mounting 1,000 rows, Rivet and both Solid versions are level:
 
 ::chart{id=dom-mount-1000}
 
 ::chart{id=dom-update-1000}
 
-Mounting 5,000 rows, Solid 1.9 is faster. The [mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md) traced it to the benchmark protocol rather than the per-field cost: the protocol forces a garbage collection right before the timed mount, and when V8 then finishes its next collection depends on the page's earlier tasks. Without the forced collection, or with incremental marking off, Rivet mounts 5,000 rows faster. A protocol change has been proposed; it needs every framework measured again:
+Mounting 5,000 rows is level too. An earlier protocol forced a garbage collection right before the timed mount; when V8 then finished its next collection depended on the page's earlier tasks, which put Solid 1.9 ahead at 5,000 rows ([2026-10-20 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md)). The benchmark now runs one untimed mount after that collection, and every framework was measured again under it ([2026-10-21 mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md)):
 
 ::chart{id=dom-mount-5000}
 
@@ -112,7 +112,8 @@ The reports use these measures:
 | Report | What it compared |
 | --- | --- |
 | [Fair comparison 2026-10-19](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) | The latest server and resume run of every lane (static and resumable classes, text grid at concurrency 1, resume in Chrome 155), with the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md) of the same day. The charts above read it. |
-| [DOM mount 2026-10-20](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md) | Every browser lane re-measured interleaved, plus the attribution of the 5,000-row mount gap to the benchmark's forced garbage collection. The browser charts above read it. |
+| [DOM mount 2026-10-21](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md) | The browser benchmark's mount protocol fix and every browser lane measured again under it, with how much memory each framework allocates per row. The browser charts above read it. |
+| [DOM mount 2026-10-20](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md) | Every browser lane re-measured interleaved, plus the attribution of the 5,000-row mount gap to the benchmark's forced garbage collection. Superseded by the 2026-10-21 report. |
 | [Fair comparison 2026-10-09](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-09-fair-comparison.md) | The previous run of every lane, with the text grid at concurrency 10 and a 1,000-row browser re-measure. Superseded by the 2026-10-19 report. |
 | [Fair comparison 2026-10-06](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-06-fair-comparison.md) | The first like-for-like run of every lane (static and resumable classes, Bun and Deno, escaping, default GC). Superseded by the 2026-10-09 report. |
 | [Large DOM comparison](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/large-dom-comparison.md) | An early browser run with 5,000 rows (285,001 elements). Rivet mounted in 728.9 ms against 85.1 ms for Solid. Run on 2026-10-02, before the DOM v2 lowering. |

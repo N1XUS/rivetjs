@@ -8,7 +8,7 @@ import { test } from "vitest";
 import { charts, editorialLoss, homeFacts, homeStrip } from "../content/_charts.ts";
 import { verdict, type Stat } from "../../dom-bench/verdict.ts";
 import fair from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
-import domRun from "../../../docs/benchmarks/2026-10-20-dom-mount.json" with { type: "json" };
+import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
 import competitors from "../../dom-bench/competitors.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
 
@@ -142,7 +142,7 @@ test("resume charts equal the report; competitors.json stores the same numbers; 
   for (const peer of ["qwik-stable", "qwik"]) assert.equal(resumeVerdict("load", "jsBytesBeforeInteraction", peer), "WIN", `js vs ${peer}`);
 });
 
-test("DOM charts equal the interleaved 2026-10-20 run; mount level at 1,000 rows, a loss at 5,000; updates win", () => {
+test("DOM charts equal the interleaved 2026-10-21 run; mount level with Solid at 1,000 and 5,000 rows; updates win", () => {
   for (const [lane, label] of [
     ["solid-stable", "Solid 1.9.15"],
     ["solid", "Solid 2.0.0-rc.13"],
@@ -153,12 +153,17 @@ test("DOM charts equal the interleaved 2026-10-20 run; mount level at 1,000 rows
     assert.equal(point("dom-update-1000", 0, label).value, dom["1000"][lane].update100.median);
     assert.equal(point("dom-update-1000", 1, label).value, dom["1000"][lane].update1.median);
     assert.equal(competitors.labels[lane], label);
+    // competitors.json stores the same run (fair-report.ts --dom … --store-competitors).
+    for (const rows of ["1000", "5000"] as const)
+      assert.deepEqual(competitors.dom[rows][lane].mount, dom[rows][lane].mount, `stored ${rows} ${lane}`);
     for (const metric of ["update100", "update1"] as const) assert.equal(domVerdict("1000", metric, lane), "WIN", `${metric} vs ${lane}`);
   }
   assert.equal(point("dom-mount-1000", 0, "Rivet").value, dom["1000"].rivet.mount.median);
-  for (const peer of ["solid-stable", "solid"] as const) assert.equal(domVerdict("1000", "mount", peer), "TIE", `mount 1000 vs ${peer}`);
-  assert.equal(domVerdict("1000", "mount", "react"), "WIN");
-  assert.equal(domVerdict("5000", "mount", "solid-stable"), "LOSE", "mount 5000: Solid 1.9 ahead under the run.ts protocol");
+  for (const rows of ["1000", "5000"] as const) {
+    for (const peer of ["solid-stable", "solid"] as const) assert.equal(domVerdict(rows, "mount", peer), "TIE", `mount ${rows} vs ${peer}`);
+    assert.equal(domVerdict(rows, "mount", "react"), "WIN");
+  }
+  assert.equal(domRun.runTs.protocol, competitors.dom.provenance.protocol, "charts and stored competitors share the mount protocol");
 });
 
 test("homepage strip: values equal the reports, big ratios computed and backed by their verdicts", () => {
@@ -187,11 +192,13 @@ test("homepage strip: values equal the reports, big ratios computed and backed b
   assert.equal(value("navigate", "Rivet"), resume["slow/navigate/rivet"]!.paintLatency!.median);
   assert.equal(strip.navigate!.big, (resume["slow/navigate/solid-stable"]!.paintLatency!.median / resume["slow/navigate/rivet"]!.paintLatency!.median).toFixed(1) + "×");
   assert.match(strip.navigate!.footnote, /Qwik also resumes and is level/);
-  // DOM update 100% vs Solid 1.9 (WIN vs every lane, tested above); mount 1,000 level, 5,000 loss line.
+  // DOM update 100% vs Solid 1.9 (WIN vs every lane, tested above); mount level at 1,000 and 5,000 rows (TIE, tested above).
   assert.equal(value("update", "Rivet"), dom["1000"].rivet.update100.median);
   assert.equal(strip.update!.big, (dom["1000"]["solid-stable"].update100.median / dom["1000"].rivet.update100.median).toFixed(1) + "×");
   assert.match(strip.update!.footnote, /level with Solid 1\.9/);
-  assert.ok(strip.update!.loss?.includes(dom["5000"]["solid-stable"].mount.median.toFixed(1) + " ms"), "5,000-row mount loss carries its number");
+  for (const rows of ["1000", "5000"] as const)
+    assert.ok(strip.update!.footnote.includes(dom[rows]["solid-stable"].mount.median.toFixed(1) + " ms"), `${rows}-row mount carries its number`);
+  assert.equal(strip.update!.loss, undefined, "no browser mount loss left");
   // Dynamic rendering: wins vs interactive Solid and both Qwik lanes; the 100-row c10 loss vs plain Solid is shown.
   assert.equal(value("dynamic", "Rivet"), ssr["rivet-resume"].cpu_ms.median);
   assert.equal(value("dynamic", "Solid 1.9"), ssr["solid-stable-interactive"].cpu_ms.median);
@@ -206,7 +213,7 @@ test("benchmarks page: the findings carry no typed numbers (charts render them f
   assert.ok(findings.length > 1000);
   assert.doesNotMatch(findings, /\d+(\.\d+)?\s?(×|ms\b|MiB|KB\b|%)/, "no typed measurements above the method section");
   for (const chart of findings.matchAll(/::chart\{id=([\w-]+)\}/g)) assert.ok(charts[chart[1]!], `chart ${chart[1]} exists`);
-  for (const report of ["2026-10-19-fair-comparison.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
+  for (const report of ["2026-10-19-fair-comparison.md", "2026-10-21-dom-mount-2.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
     assert.ok(page.includes(`docs/benchmarks/${report}`), `links ${report}`);
     assert.ok(existsSync(repo + "docs/benchmarks/" + report), `${report} exists`);
   }

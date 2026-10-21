@@ -4,21 +4,21 @@
 // - SSR + resume: docs/benchmarks/2026-10-19-fair-comparison.json (written by apps/ssr-bench/fair-report.ts; path in each
 //   comment). apps/dom-bench/competitors.json stores the same SSR and resume competitor numbers
 //   (`fair-report.ts --store-competitors`).
-// - DOM (browser mount / update): docs/benchmarks/2026-10-20-dom-mount.json `runTs.baseline` — every lane re-measured
-//   interleaved in one run (the 2026-10-19 fair report has no DOM block; the scoreboard compares Rivet with competitor
-//   numbers stored on 2026-10-06, which the mount report shows is not like-for-like).
+// - DOM (browser mount / update): docs/benchmarks/2026-10-21-dom-mount-2.json `runTs.baseline` — every lane re-measured
+//   interleaved in the same runs under the run.ts mount protocol rewarm-2026-10-21; apps/dom-bench/competitors.json
+//   `dom` stores the same competitor numbers (`fair-report.ts --dom … --store-competitors`).
 // - Homepage loss row: docs/benchmarks/2026-10-11-editorial.json.
 // tests/charts.test.ts re-checks every value against those files and the verdicts (≥ 3% and non-overlapping trial
 // ranges, apps/dom-bench/verdict.ts) behind every win / tie / loss the page and the homepage state.
 // Lanes are like-for-like within a group; where Rivet loses or ties, the chart shows it.
 import { advantage, formatValue, type BenchChartSpec, type ChartPoint } from "@rivetjs/docs-kit/components/chart-model.ts";
 import fair from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
-import domRun from "../../../docs/benchmarks/2026-10-20-dom-mount.json" with { type: "json" };
+import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
 
 const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
 const FAIR = { label: "Fair comparison 2026-10-19 (full report)", href: REPO + "docs/benchmarks/2026-10-19-fair-comparison.md" };
-const DOM = { label: "DOM mount report 2026-10-20 (full report)", href: REPO + "docs/benchmarks/2026-10-20-dom-mount.md" };
+const DOM = { label: "DOM mount report 2026-10-21 (full report)", href: REPO + "docs/benchmarks/2026-10-21-dom-mount-2.md" };
 
 interface Stat {
   median: number;
@@ -44,7 +44,7 @@ const grid1000 = fair.ssr["tuned+grid"]["1000"]["1"];
 const resume = fair.resume as unknown as Record<string, Record<string, Stat>>;
 const paint = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.paintLatency!;
 const firstChange = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.latency!;
-// domRun.runTs.baseline[rows][lane].<metric> — 2026-10-20-dom-mount.md "Step 1 — interleaved re-measure".
+// domRun.runTs.baseline[rows][lane].<metric> — 2026-10-21-dom-mount-2.md "Re-stored competitors".
 const dom = domRun.runTs.baseline;
 
 const SSR_CAPTION = {
@@ -64,11 +64,11 @@ const RESUME_CAPTION = {
   source: FAIR,
 };
 const DOM_CAPTION = {
-  // 2026-10-20-dom-mount.md header + "Step 1 — interleaved re-measure".
-  machine: "Apple M4 Pro, Playwright Chromium, cross-origin isolated",
-  date: "2026-10-20",
+  // 2026-10-21-dom-mount-2.md header + "Re-stored competitors".
+  machine: "Apple M4 Pro, Playwright Chromium 153, cross-origin isolated",
+  date: "2026-10-21",
   method:
-    "dom-bench run.ts, every lane interleaved, 3 trials × 5 samples; median of trial medians, whiskers = min–max. A Docker benchmark shared the host (1-minute load 16–70).",
+    "dom-bench run.ts, every lane interleaved, 3 runs × 3 trials × 5 samples; median of trial medians, whiskers = min–max. Other test suites shared the host (1-minute load 2–8).",
   source: DOM,
 };
 const C1 = "Concurrency 1. ";
@@ -336,7 +336,7 @@ export const charts: Record<string, BenchChartSpec> = {
         points: [point("Rivet", dom["5000"].rivet.mount, { rivet: true }), ...DOM_LANES.map(([lane, label]) => point(label, dom["5000"][lane].mount))],
       },
     ],
-    caption: { ...DOM_CAPTION, method: DOM_CAPTION.method + " The protocol forces a garbage collection right before the timed mount." },
+    caption: { ...DOM_CAPTION, method: DOM_CAPTION.method + " After the garbage collection that sets the memory baseline, one untimed mount and unmount runs before the timed mount." },
   },
   "dom-update-1000": {
     id: "dom-update-1000",
@@ -452,7 +452,7 @@ const small = relabel(pointsOf("ssr-resumable-cpu-100-c10", 1), { "Solid 1 hydra
 const smallRivet = valueOf(pointsOf("ssr-resumable-cpu-100-c10", 0), "Rivet resumable");
 
 const FAIR_LINE = { text: "Fair comparison, 2026-10-19 · Apple M4 Pro", href: FAIR.href };
-const DOM_LINE = { text: "DOM mount report, 2026-10-20 · Apple M4 Pro", href: DOM.href };
+const DOM_LINE = { text: "DOM mount report, 2026-10-21 · Apple M4 Pro", href: DOM.href };
 
 export const homeStrip: HomeChart[] = [
   {
@@ -497,8 +497,7 @@ export const homeStrip: HomeChart[] = [
     better: "lower",
     digits: 2,
     points: rivetFirst(update100),
-    footnote: `Update every field of 1,000 rows in Chromium, every framework measured in the same run. Mounting 1,000 rows is level with Solid 1.9 (${ms(valueOf(mount1000, "Rivet"), 1)} vs ${ms(valueOf(mount1000, "Solid 1.9"), 1)}).`,
-    loss: `Mounting 5,000 rows, Solid 1.9 is faster (${ms(valueOf(mount5000, "Solid 1.9"), 1)} vs ${ms(valueOf(mount5000, "Rivet"), 1)}). The gap comes from when V8 finishes garbage collection after the forced collection before the timed mount; without that collection Rivet mounts 5,000 rows faster. A protocol fix, which means measuring every framework again, is proposed in the report.`,
+    footnote: `Update every field of 1,000 rows in Chromium, every framework measured in the same run. Mounting is level with Solid 1.9: ${ms(valueOf(mount1000, "Rivet"), 1)} vs ${ms(valueOf(mount1000, "Solid 1.9"), 1)} at 1,000 rows, ${ms(valueOf(mount5000, "Rivet"), 1)} vs ${ms(valueOf(mount5000, "Solid 1.9"), 1)} at 5,000.`,
     chart: "dom-update-1000",
     source: DOM_LINE,
   },

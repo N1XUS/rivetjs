@@ -2,7 +2,7 @@ import { chromium, type Page } from "playwright";
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cpus, platform, arch, totalmem } from "node:os";
+import { cpus, platform, arch, totalmem, loadavg } from "node:os";
 import { createHash } from "node:crypto";
 import { startServer } from "./server.ts";
 import { hostElements, selectFields, summarize, type Summary } from "./metrics.ts";
@@ -122,6 +122,7 @@ async function settle(page: Page) {
 }
 
 async function trial(framework: string, rows: number, repeat: number) {
+  const load1 = loadavg()[0]!;
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   page.setDefaultTimeout(120000);
@@ -153,12 +154,21 @@ async function trial(framework: string, rows: number, repeat: number) {
     await page.waitForFunction(() => window.bench);
     // Timer resolution guard (B4): the fixture server cross-origin-isolates every page (5 µs timers, not 100 µs).
     if (!(await page.evaluate(() => crossOriginIsolated))) throw new Error(`${framework}: page is not cross-origin isolated (coarse performance.now)`);
-    await page.evaluate((rows) => {
-      window.bench.mount(rows);
-      window.bench.dispose();
-    }, rows);
+    const cycle = () =>
+      page.evaluate((rows) => {
+        window.bench.mount(rows);
+        window.bench.dispose();
+      }, rows);
+    await cycle();
     await settle(page);
     const baselineHeapBytes = await heap();
+    // Mount protocol (2026-10-21, docs/benchmarks/2026-10-20-dom-mount.md "Protocol applied"): the forced GC above leaves a ~1 MiB heap,
+    // so V8 would start incremental marking inside a 5000-row mount and pick (or not) its finalization delay from the
+    // page's task history. One unforced re-warm cycle grows the heap limits back (no marking cycle starts inside the
+    // timed mount on the Rivet / Solid lanes), then one macrotask before the timed mount.
+    await cycle();
+    await settle(page);
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
     const mount = await timed("mount", [rows]);
     const mountSettle = await settle(page);
     const expected: number[] = Array(rows * 10).fill(0);
@@ -254,6 +264,7 @@ async function trial(framework: string, rows: number, repeat: number) {
       framework,
       rows,
       repeat,
+      load1,
       mount: { ...mount, ...mountSettle },
       size,
       updates,
@@ -291,12 +302,16 @@ const result = () => ({
   manifest,
   experimentSources,
   methodology: {
+    /** Mount protocol id; scoreboard.ts compares it with competitors.json `dom.provenance.protocol` (mismatch = n/a). */
+    protocol: "rewarm-2026-10-21",
     updates:
       "Synchronous committed DOM; performance.now in-page. React flushSync, Solid preview flush, Solid stable synchronous signals, Rivet batch. No virtualization.",
     cpu: "Chromium TaskDuration with threadTicks: main-thread task CPU delta including evaluation/CDP bookkeeping; excludes GPU/workers and is not isolated framework CPU.",
     frames: "Forced layout then two requestAnimationFrame callbacks; frame settle is not a direct paint metric.",
     memory:
       "Chromium forced-GC JavaScript heap, not browser process RSS. Warmed page baseline; five disposal cycles; caches intentionally remain.",
+    mount:
+      "Warm-up mount + dispose, forced GC (baseline heap), one unforced mount + dispose cycle, two frames, one macrotask, then the timed mount (no forced GC right before it: V8's incremental-marking finalization delay would otherwise depend on task history).",
     sampling:
       "Fresh browser context per framework/row/repeat. Framework order rotates each repeat. Three warmup updates before sampled updates at each percentage. Validation outside measurement.",
   },

@@ -1,0 +1,888 @@
+{
+ "lane": "DOM-MOUNT-2",
+ "date": "2026-10-21",
+ "base": "e14ab639",
+ "host": "macOS arm64 (Apple M4 Pro), Playwright Chromium 153.0.8010.12 headless shell, cross-origin isolated; other agent lanes running tests on the host",
+ "runTs": {
+  "note": "apps/dom-bench/run.ts --frameworks rivet,solid-stable,solid,react --rows 1000,5000 --repeats 3 --samples 5, three rounds (each started at 1-minute load < 8), merged: 9 trials per lane; per-trial median of the sampled updates, then median (min–max) over trials. Mount protocol rewarm-2026-10-21.",
+  "protocol": "rewarm-2026-10-21",
+  "browser": "153.0.8010.12",
+  "rounds": [
+   {
+    "started": "2026-10-21T16:39:16.381Z",
+    "finished": "2026-10-21T16:42:30.874Z"
+   },
+   {
+    "started": "2026-10-21T16:47:33.262Z",
+    "finished": "2026-10-21T16:50:42.546Z"
+   },
+   {
+    "started": "2026-10-21T16:50:43.966Z",
+    "finished": "2026-10-21T16:53:53.521Z"
+   }
+  ],
+  "baseline": {
+   "1000": {
+    "rivet": {
+     "mount": {
+      "median": 16.240000002086163,
+      "min": 15.894999995827675,
+      "max": 18.259999997913837,
+      "n": 9
+     },
+     "update1": {
+      "median": 0.17000000178813934,
+      "min": 0.16499999910593033,
+      "max": 0.1900000050663948,
+      "n": 9
+     },
+     "update10": {
+      "median": 1,
+      "min": 0.9699999988079071,
+      "max": 1.0600000023841858,
+      "n": 9
+     },
+     "update100": {
+      "median": 2.5150000005960464,
+      "min": 2.3599999994039536,
+      "max": 2.605000004172325,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 4.057559967041016,
+      "min": 4.057559967041016,
+      "max": 4.057613372802734,
+      "n": 9
+     },
+     "dispose": {
+      "median": 13.195000000298023,
+      "min": 12.310000002384186,
+      "max": 14.004999995231628,
+      "n": 9
+     },
+     "load1": "2.0–6.9"
+    },
+    "react": {
+     "mount": {
+      "median": 40.07000000029802,
+      "min": 35.48499999940395,
+      "max": 42.33500000089407,
+      "n": 9
+     },
+     "update1": {
+      "median": 0.9149999991059303,
+      "min": 0.8149999976158142,
+      "max": 1.0700000002980232,
+      "n": 9
+     },
+     "update10": {
+      "median": 4.949999995529652,
+      "min": 4.425000004470348,
+      "max": 5.875,
+      "n": 9
+     },
+     "update100": {
+      "median": 18.645000003278255,
+      "min": 17.939999997615814,
+      "max": 20.53999999910593,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 16.845611572265625,
+      "min": 16.842525482177734,
+      "max": 16.862060546875,
+      "n": 9
+     },
+     "dispose": {
+      "median": 27.635000005364418,
+      "min": 26.615000002086163,
+      "max": 29.359999999403954,
+      "n": 9
+     },
+     "load1": "2.0–6.2"
+    },
+    "solid": {
+     "mount": {
+      "median": 17.88000000268221,
+      "min": 17.145000003278255,
+      "max": 19.189999997615814,
+      "n": 9
+     },
+     "update1": {
+      "median": 0.3400000035762787,
+      "min": 0.3349999934434891,
+      "max": 0.39000000059604645,
+      "n": 9
+     },
+     "update10": {
+      "median": 1.7750000059604645,
+      "min": 1.619999997317791,
+      "max": 1.8900000005960464,
+      "n": 9
+     },
+     "update100": {
+      "median": 4.53999999910593,
+      "min": 4.245000004768372,
+      "max": 4.889999993145466,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 7.372478485107422,
+      "min": 7.371875762939453,
+      "max": 7.372478485107422,
+      "n": 9
+     },
+     "dispose": {
+      "median": 13.505000002682209,
+      "min": 12.865000002086163,
+      "max": 14.369999997317791,
+      "n": 9
+     },
+     "load1": "2.0–6.9"
+    },
+    "solid-stable": {
+     "mount": {
+      "median": 16.479999996721745,
+      "min": 15.070000000298023,
+      "max": 17.439999997615814,
+      "n": 9
+     },
+     "update1": {
+      "median": 0.25,
+      "min": 0.23499999940395355,
+      "max": 0.30000000447034836,
+      "n": 9
+     },
+     "update10": {
+      "median": 1.7100000008940697,
+      "min": 1.6450000032782555,
+      "max": 2,
+      "n": 9
+     },
+     "update100": {
+      "median": 5.115000002086163,
+      "min": 4.810000002384186,
+      "max": 5.91499999910593,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 6.1262969970703125,
+      "min": 6.115718841552734,
+      "max": 6.126583099365234,
+      "n": 9
+     },
+     "dispose": {
+      "median": 12.924999997019768,
+      "min": 12.399999998509884,
+      "max": 13.53999999910593,
+      "n": 9
+     },
+     "load1": "2.0–6.6"
+    }
+   },
+   "5000": {
+    "rivet": {
+     "mount": {
+      "median": 79.79999999701977,
+      "min": 77.17500000447035,
+      "max": 87.56499999761581,
+      "n": 9
+     },
+     "update1": {
+      "median": 0.7149999961256981,
+      "min": 0.6850000023841858,
+      "max": 0.7599999979138374,
+      "n": 9
+     },
+     "update10": {
+      "median": 5.490000002086163,
+      "min": 5.320000000298023,
+      "max": 5.75,
+      "n": 9
+     },
+     "update100": {
+      "median": 13.189999997615814,
+      "min": 12.705000005662441,
+      "max": 13.635000005364418,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 19.89501953125,
+      "min": 19.894527435302734,
+      "max": 19.89706802368164,
+      "n": 9
+     },
+     "dispose": {
+      "median": 73.35000000149012,
+      "min": 71.25499999523163,
+      "max": 75.42500000447035,
+      "n": 9
+     },
+     "load1": "3.3–7.7"
+    },
+    "react": {
+     "mount": {
+      "median": 204.79499999433756,
+      "min": 179.30499999970198,
+      "max": 221.52499999850988,
+      "n": 9
+     },
+     "update1": {
+      "median": 3.774999998509884,
+      "min": 3.6699999943375587,
+      "max": 4.100000001490116,
+      "n": 9
+     },
+     "update10": {
+      "median": 25.79000000655651,
+      "min": 25.405000001192093,
+      "max": 27.75,
+      "n": 9
+     },
+     "update100": {
+      "median": 116.5300000011921,
+      "min": 112.375,
+      "max": 122.32000000029802,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 84.22515106201172,
+      "min": 84.220703125,
+      "max": 84.23624801635742,
+      "n": 9
+     },
+     "dispose": {
+      "median": 148.57000000029802,
+      "min": 139.07499999552965,
+      "max": 159.4699999988079,
+      "n": 9
+     },
+     "load1": "3.9–5.7"
+    },
+    "solid": {
+     "mount": {
+      "median": 84.625,
+      "min": 78.32500000298023,
+      "max": 86.72999999672174,
+      "n": 9
+     },
+     "update1": {
+      "median": 1.5449999943375587,
+      "min": 1.3550000041723251,
+      "max": 1.7049999982118607,
+      "n": 9
+     },
+     "update10": {
+      "median": 11.679999999701977,
+      "min": 11.189999997615814,
+      "max": 12.70499999821186,
+      "n": 9
+     },
+     "update100": {
+      "median": 23.384999997913837,
+      "min": 21.54500000178814,
+      "max": 25.155000001192093,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 37.44414520263672,
+      "min": 37.442623138427734,
+      "max": 37.44425964355469,
+      "n": 9
+     },
+     "dispose": {
+      "median": 75.0949999988079,
+      "min": 70.42000000178814,
+      "max": 76.625,
+      "n": 9
+     },
+     "load1": "3.6–7.4"
+    },
+    "solid-stable": {
+     "mount": {
+      "median": 79.49000000208616,
+      "min": 77.5949999988079,
+      "max": 84.61499999463558,
+      "n": 9
+     },
+     "update1": {
+      "median": 1.280000001192093,
+      "min": 1.1849999949336052,
+      "max": 1.494999997317791,
+      "n": 9
+     },
+     "update10": {
+      "median": 9.820000000298023,
+      "min": 9.615000002086163,
+      "max": 10.640000000596046,
+      "n": 9
+     },
+     "update100": {
+      "median": 26.62999999523163,
+      "min": 25.470000006258488,
+      "max": 28.75,
+      "n": 9
+     },
+     "heapMiB": {
+      "median": 31.145488739013672,
+      "min": 31.144508361816406,
+      "max": 31.14611053466797,
+      "n": 9
+     },
+     "dispose": {
+      "median": 72.54999999701977,
+      "min": 70.14500000327826,
+      "max": 74.55499999970198,
+      "n": 9
+     },
+     "load1": "3.2–6.0"
+    }
+   }
+  }
+ },
+ "mountQuick": {
+  "note": "apps/dom-bench/mount-quick.ts, 15 samples, lanes interleaved per sample, no trace",
+  "oldProtocol": {
+   "lanes": [
+    "rivet",
+    "solid-stable",
+    "solid"
+   ],
+   "samples": 15,
+   "gc": true,
+   "rewarm": false,
+   "yield": false,
+   "browser": "153.0.8010.12",
+   "load1": "3.3–4.8",
+   "mount": {
+    "1000": {
+     "rivet": {
+      "median": 17.90999999642372,
+      "min": 16.71000000089407,
+      "max": 19.314999997615814,
+      "n": 15
+     },
+     "solid-stable": {
+      "median": 18.350000001490116,
+      "min": 17.71500000357628,
+      "max": 20.065000005066395,
+      "n": 15
+     },
+     "solid": {
+      "median": 19.859999999403954,
+      "min": 18.325000002980232,
+      "max": 22.445000000298023,
+      "n": 15
+     }
+    },
+    "5000": {
+     "rivet": {
+      "median": 97.0899999961257,
+      "min": 93.92999999970198,
+      "max": 101.17500000447035,
+      "n": 15
+     },
+     "solid-stable": {
+      "median": 87.23499999940395,
+      "min": 83.43500000238419,
+      "max": 101.15499999374151,
+      "n": 15
+     },
+     "solid": {
+      "median": 88.25,
+      "min": 84.84000000357628,
+      "max": 101.48499999940395,
+      "n": 15
+     }
+    }
+   }
+  },
+  "newProtocol": {
+   "lanes": [
+    "rivet",
+    "solid-stable",
+    "solid"
+   ],
+   "samples": 15,
+   "gc": true,
+   "rewarm": true,
+   "yield": true,
+   "browser": "153.0.8010.12",
+   "load1": "2.5–4.0",
+   "mount": {
+    "1000": {
+     "rivet": {
+      "median": 16.92000000178814,
+      "min": 15.409999996423721,
+      "max": 17.92000000178814,
+      "n": 15
+     },
+     "solid-stable": {
+      "median": 16.890000000596046,
+      "min": 15.599999994039536,
+      "max": 18.179999999701977,
+      "n": 15
+     },
+     "solid": {
+      "median": 17.769999995827675,
+      "min": 16.815000005066395,
+      "max": 19.685000002384186,
+      "n": 15
+     }
+    },
+    "5000": {
+     "rivet": {
+      "median": 79.57500000298023,
+      "min": 76.96000000089407,
+      "max": 87.5899999961257,
+      "n": 15
+     },
+     "solid-stable": {
+      "median": 80.5300000011921,
+      "min": 74.9699999988079,
+      "max": 84.05000000447035,
+      "n": 15
+     },
+     "solid": {
+      "median": 86.36500000208616,
+      "min": 79.2149999961257,
+      "max": 89.39000000059605,
+      "n": 15
+     }
+    }
+   }
+  }
+ },
+ "gcTrace": {
+  "note": "mount-quick.ts --gc-trace --samples 5: 'Delaying GC via stack guard' decisions (delayed / notDelayed) and mark-compacts inside the timed mount; timings of this mode are diagnostic (one browser per sample, trace output)",
+  "old": {
+   "lanes": [
+    "rivet",
+    "solid-stable",
+    "solid",
+    "react"
+   ],
+   "samples": 5,
+   "gc": true,
+   "rewarm": false,
+   "yield": false,
+   "browser": "153.0.8010.12",
+   "load1": "4.2–5.1",
+   "mount": {
+    "1000": {
+     "rivet": {
+      "median": 16.924999997019768,
+      "min": 16.50500000268221,
+      "max": 16.990000002086163,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 17.385000005364418,
+      "min": 17.100000001490116,
+      "max": 17.74499999731779,
+      "n": 5
+     },
+     "solid": {
+      "median": 18.609999999403954,
+      "min": 18.49499999731779,
+      "max": 18.88000000268221,
+      "n": 5
+     },
+     "react": {
+      "median": 54.75,
+      "min": 53.92999999970198,
+      "max": 55.225000001490116,
+      "n": 5
+     }
+    },
+    "5000": {
+     "rivet": {
+      "median": 95.70999999344349,
+      "min": 94.36999999731779,
+      "max": 96.08500000089407,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 83.27499999850988,
+      "min": 82.21000000089407,
+      "max": 100.625,
+      "n": 5
+     },
+     "solid": {
+      "median": 84.2199999988079,
+      "min": 83.75,
+      "max": 100.13499999791384,
+      "n": 5
+     },
+     "react": {
+      "median": 182.1899999976158,
+      "min": 181.35999999940395,
+      "max": 188.5600000023842,
+      "n": 5
+     }
+    }
+   },
+   "trace": {
+    "rivet": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 5,
+      "notDelayed": 0,
+      "mountMarkCompacts": 5
+     }
+    },
+    "solid-stable": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 2,
+      "notDelayed": 6,
+      "mountMarkCompacts": 8
+     }
+    },
+    "solid": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 1,
+      "notDelayed": 8,
+      "mountMarkCompacts": 9
+     }
+    },
+    "react": {
+     "1000": {
+      "delayed": 5,
+      "notDelayed": 0,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 0,
+      "notDelayed": 10,
+      "mountMarkCompacts": 10
+     }
+    }
+   }
+  },
+  "yieldOnly": {
+   "lanes": [
+    "rivet",
+    "solid-stable",
+    "solid",
+    "react"
+   ],
+   "samples": 5,
+   "gc": true,
+   "rewarm": false,
+   "yield": true,
+   "browser": "153.0.8010.12",
+   "load1": "3.1–3.9",
+   "mount": {
+    "1000": {
+     "rivet": {
+      "median": 17.390000000596046,
+      "min": 16.940000005066395,
+      "max": 17.92500000447035,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 17.59000000357628,
+      "min": 17.109999999403954,
+      "max": 18.015000000596046,
+      "n": 5
+     },
+     "solid": {
+      "median": 20.114999994635582,
+      "min": 18.66499999910593,
+      "max": 21.17000000178814,
+      "n": 5
+     },
+     "react": {
+      "median": 53.82500000298023,
+      "min": 53.28000000119209,
+      "max": 56.9100000038743,
+      "n": 5
+     }
+    },
+    "5000": {
+     "rivet": {
+      "median": 95.6600000038743,
+      "min": 94.4100000038743,
+      "max": 96.07499999552965,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 84.96500000357628,
+      "min": 83.79999999701977,
+      "max": 98.875,
+      "n": 5
+     },
+     "solid": {
+      "median": 98.74000000208616,
+      "min": 84.18999999761581,
+      "max": 101.6600000038743,
+      "n": 5
+     },
+     "react": {
+      "median": 183.25999999791384,
+      "min": 181.43000000715256,
+      "max": 185.38499999791384,
+      "n": 5
+     }
+    }
+   },
+   "trace": {
+    "rivet": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 5,
+      "notDelayed": 0,
+      "mountMarkCompacts": 5
+     }
+    },
+    "solid-stable": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 1,
+      "notDelayed": 8,
+      "mountMarkCompacts": 9
+     }
+    },
+    "solid": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 5,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 3,
+      "notDelayed": 4,
+      "mountMarkCompacts": 7
+     }
+    },
+    "react": {
+     "1000": {
+      "delayed": 5,
+      "notDelayed": 0,
+      "mountMarkCompacts": 5
+     },
+     "5000": {
+      "delayed": 0,
+      "notDelayed": 10,
+      "mountMarkCompacts": 10
+     }
+    }
+   }
+  },
+  "rewarm": {
+   "lanes": [
+    "rivet",
+    "solid-stable",
+    "solid",
+    "react"
+   ],
+   "samples": 5,
+   "gc": true,
+   "rewarm": true,
+   "yield": true,
+   "browser": "153.0.8010.12",
+   "load1": "3.1–5.8",
+   "mount": {
+    "1000": {
+     "rivet": {
+      "median": 17.125,
+      "min": 17.03499999642372,
+      "max": 17.484999999403954,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 16.009999997913837,
+      "min": 15.58500000089407,
+      "max": 18.240000002086163,
+      "n": 5
+     },
+     "solid": {
+      "median": 17.785000003874302,
+      "min": 17.390000000596046,
+      "max": 18.064999997615814,
+      "n": 5
+     },
+     "react": {
+      "median": 42.060000002384186,
+      "min": 41.269999995827675,
+      "max": 42.769999995827675,
+      "n": 5
+     }
+    },
+    "5000": {
+     "rivet": {
+      "median": 78.35999999940395,
+      "min": 77.02999999374151,
+      "max": 80.02499999850988,
+      "n": 5
+     },
+     "solid-stable": {
+      "median": 75.60500000417233,
+      "min": 74.1550000011921,
+      "max": 79.95499999821186,
+      "n": 5
+     },
+     "solid": {
+      "median": 83.40000000596046,
+      "min": 80.61500000208616,
+      "max": 87.76500000059605,
+      "n": 5
+     },
+     "react": {
+      "median": 203.4399999976158,
+      "min": 177.64500000327826,
+      "max": 205.78999999910593,
+      "n": 5
+     }
+    }
+   },
+   "trace": {
+    "rivet": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     },
+     "5000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     }
+    },
+    "solid-stable": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     },
+     "5000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     }
+    },
+    "solid": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     },
+     "5000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     }
+    },
+    "react": {
+     "1000": {
+      "delayed": 0,
+      "notDelayed": 0,
+      "mountMarkCompacts": 0
+     },
+     "5000": {
+      "delayed": 1,
+      "notDelayed": 4,
+      "mountMarkCompacts": 6
+     }
+    }
+   }
+  }
+ },
+ "allocation": {
+  "note": "CDP HeapProfiler sampling (64 B interval, objects collected by minor + major GC included) over one timed 5000-row mount (run.ts protocol), 2 mounts per lane; bytes per row (10 fields)",
+  "bytesPerRow": {
+   "rivet": 5437,
+   "solid-stable": 8804,
+   "solid": 10721
+  },
+  "rivetPerField": {
+   "template clones + node walk wrappers + handler closure (Field body)": 133,
+   "ArgNode binding record (_fx1)": 96,
+   "text binding string (__rivetFx0)": 89,
+   "signal (Source + bound getter + property array)": 84,
+   "setAttribute number → string (2 per field)": 59,
+   "_on expandos": 20,
+   "root template clone": 18,
+   "props + Array.from callback": 16,
+   "row share (section, _t slot, flatten / assign arrays, row binding, main list)": 55
+  }
+ },
+ "slope": {
+  "note": "ArgNode padded with 5 extra fields (+20 B per field, +3.7 % bytes), mount-quick 15 samples",
+  "lanes": [
+   "rivet",
+   "rivet-base",
+   "solid-stable"
+  ],
+  "samples": 15,
+  "gc": true,
+  "rewarm": true,
+  "yield": true,
+  "browser": "153.0.8010.12",
+  "load1": "4.2–5.4",
+  "mount": {
+   "1000": {
+    "rivet": {
+     "median": 16.260000005364418,
+     "min": 15.95499999821186,
+     "max": 17.734999999403954,
+     "n": 15
+    },
+    "rivet-base": {
+     "median": 16.479999996721745,
+     "min": 15.859999999403954,
+     "max": 17.905000001192093,
+     "n": 15
+    },
+    "solid-stable": {
+     "median": 16.155000001192093,
+     "min": 15.119999997317791,
+     "max": 17.655000001192093,
+     "n": 15
+    }
+   },
+   "5000": {
+    "rivet": {
+     "median": 80.04000000655651,
+     "min": 75.53499999642372,
+     "max": 81.64499999582767,
+     "n": 15
+    },
+    "rivet-base": {
+     "median": 78.28999999910593,
+     "min": 75.17999999970198,
+     "max": 83.00999999791384,
+     "n": 15
+    },
+    "solid-stable": {
+     "median": 77.5300000011921,
+     "min": 73.66499999910593,
+     "max": 85.375,
+     "n": 15
+    }
+   }
+  }
+ }
+}
