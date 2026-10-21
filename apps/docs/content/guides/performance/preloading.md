@@ -12,7 +12,7 @@ The automatic choice works for most pages. This page explains what Rivet does by
 
 ## What happens by default
 
-Before the first interaction, a page with only event handlers loads no JavaScript modules at all. A small inline loader script (about 1.8 KB compressed) watches for user intent.
+Before the first interaction, a page with only event handlers loads no JavaScript modules at all. A small inline loader script (about 1.9 KB compressed) watches for user intent.
 
 For each [chunk](chunks.md), the server picks a strategy from how the code is used:
 

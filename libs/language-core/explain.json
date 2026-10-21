@@ -685,9 +685,11 @@
         "Invalid compiler option `styles.layer`: expected a string, null or false",
         "Invalid compiler option `resume.module`: expected a string",
         "Invalid compiler option `resume`: expected `{ module?: string }`, true or false",
+        "Invalid compiler option `resume.model`: expected \"serialized\" or \"derived\"",
+        "Invalid compiler option `resume.{key}`: expected an array of component names",
         "Invalid compiler option `targets`: unknown target \"{bad}\""
       ],
-      "fix": "Pass the option in the documented shape (e.g. resume: { module: \"src/a.tsx\" } or true; styles: { scope: string }).",
+      "fix": "Pass the option in the documented shape (e.g. resume: { module: \"src/a.tsx\" } or true, resume.model: \"serialized\" or \"derived\", resume.boundaries / resume.independent: arrays of component names; styles: { scope: string }).",
       "avoid": "check(src, { resume: 5 })",
       "prefer": "check(src, { resume: { module: \"src/a.tsx\" } })",
       "note": "Integration error; no source range."

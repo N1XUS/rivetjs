@@ -14,7 +14,7 @@ The build puts the browser code of each page into a :term[chunk]{id=chunk} (one 
 
 The browser also needs a few shared files:
 
-- **The loader**: a small inline script in the HTML (about 1.8 KB compressed). It listens for events, holds the first ones until their code is ready, and decides what to fetch. Its prefetch scheduling is a separate cached file that loads with the first intent, or after the first paint on pages that prefetch in the background.
+- **The loader**: a small inline script in the HTML (about 1.9 KB compressed). It listens for events, holds the first ones until their code is ready, and decides what to fetch. Its prefetch scheduling is a separate cached file that loads with the first intent, or after the first paint on pages that prefetch in the background.
 - **The runtime**: the code that reads the saved state and updates the page. It loads together with the first chunk the page needs.
 - **The router's link handling** (with file routes): loaded right after the page appears, so a link click can swap the page without a full reload.
 
@@ -84,6 +84,8 @@ export const preload = "idle";
 ## Group code differently
 
 By default each route is one chunk. The `resume.chunks` option in `vite.config.ts` can split them per component (`"component"`, the default until 2026-10-18) or per `<ChunkGroup>` (a part of the page you mark) instead. Fewer, larger chunks mean fewer requests but more unused code. Small shared chunks that load together are merged automatically (`resume.merge`). See [chunks](../guides/performance/chunks.md).
+
+With the experimental [derived model](resuming.md#derived-model-experimental) (`resume: { model: "derived" }`), the build writes one file per module that holds interactive components instead, and `chunks`, `merge`, `cap` and preload rules do not apply. Nothing loads before the first input, and the first click waits for those files to arrive one after another (on the 1,000-row benchmark page 8 scripts, 89 ms against 6.6 ms with the default model).
 
 ## What it means for your code
 

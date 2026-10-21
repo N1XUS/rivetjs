@@ -42,7 +42,7 @@ What to look at:
 
 ### Read the page state
 
-In the **Elements** panel, find `<script type="rivet/state">` near the end of `<body>`. It holds the values the browser needs to continue where the server stopped (signals, captured values, the list of chunks). If it is large, look for big data captured by handlers. Pass only what the handler needs; see [Serializable captures](../../best-practices/serializable-captures.md).
+In the **Elements** panel, find `<script type="rivet/state">` near the end of `<body>`. It holds the values the browser needs to continue where the server stopped (signals, captured values, the list of chunks). If it is large, look for big data captured by handlers. Pass only what the handler needs; see [Serializable captures](../../best-practices/serializable-captures.md). In development the server names the largest captures for you, and long lists have their own options: see [large data in resume state](../../learn/resuming.md#large-data-in-resume-state). A page built with the experimental [derived model](../../learn/resuming.md#derived-model-experimental) has a `<script type="rivet/boundaries">` instead, with the state values of its interactive components only.
 
 The `data-preload` attribute on the same script lists the chunks the loader will fetch without waiting for the user, with their strategy: `"e"` (eager), `"i"` (idle) or `"v"` (visible). Chunks with the `intent` strategy are not listed; they load when the user is about to interact. See [Preloading](preloading.md).
 

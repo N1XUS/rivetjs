@@ -15,7 +15,7 @@ Think of a board game you pause. You do not replay every move to continue tomorr
 A Rivet page works the same way:
 
 - The **server** runs your components once, writes the HTML, and saves the current state: the values of signals, which elements have handlers, and which parts of the page depend on which signals.
-- The **browser** gets the HTML, the saved state and a small loader script (about 1.8 KB compressed). When you use the page, it loads only the code for what you touched and continues with the saved state.
+- The **browser** gets the HTML, the saved state and a small loader script (about 1.9 KB compressed). When you use the page, it loads only the code for what you touched and continues with the saved state.
 
 ## Why it matters
 
@@ -180,14 +180,14 @@ What to change, in this order:
    }
    ```
 
-3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. By default each row still ships its item and its own handler and binding records; [lazy rows](#lazy-rows-experimental), an experimental opt-in, cut a row to its key.
+3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. By default each row still ships its item and its own handler and binding records; two experimental opt-ins shrink that: [lazy rows](#lazy-rows-experimental) cut a row to its key, and [data from the page](#data-from-the-page-experimental) leaves out the text the rows already show.
 4. **A library object** (a chart, an editor, an SDK client): build it with [`reconstruct`](#library-objects-reconstruct). The browser builds it on first use; nothing about it ships.
 
 ### Lazy rows (experimental)
 
 Lazy rows are off by default. With them on, a keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. Turning them on takes two switches:
 
-1. **The build option** `resume: { lazyRows: true }` on `rivetRouter(…)` (or `rivet(…)`) in `vite.config.ts`. It adds the code that rebuilds rows to that build's browser runtime (about 2.8 KB brotli). Builds without it contain none of that code.
+1. **The build option** `resume: { lazyRows: true }` on `rivetRouter(…)` (or `rivet(…)`) in `vite.config.ts`. It adds the code that rebuilds rows to that build's browser runtime (about 3.5 KB brotli). Builds without it contain none of that code.
 2. **The server environment variable** `RIVET_LAZY_ROWS=on`, read on every render. Without the build option the variable does nothing (development prints a warning); with the option but without the variable, rows are recorded as usual. Build once with the option and switch the variable to compare.
 
 ```ts
@@ -203,7 +203,7 @@ export default defineConfig({
 - **Not every list qualifies.** The compiler decides per `<For>`: for example the row must be an inline function, `by` a key path such as `(row) => row.id` or an inline function, and the list must not spread props onto the `<For>`, read render props in a row or use values that change between renders (`Date.now()`, `Math.random()`). A row that renders a `Portal`, `clientOnly`, `Async` or `Suspense` content turns the whole list back to recorded rows; development prints a warning naming the reason.
 - **Selection wakes only the rows it changes.** A row that reads state through a keyed selector (`selector(signal, fn, { keys: memberKeys })` from `@rivetjs/reactivity`, which the cdk collections use for selection and focus) is rebuilt only when its own key flips: selecting one row rebuilds that row and the one that lost the selection. Select-all still rebuilds every row.
 - **Keep a list recorded** with `lazy={false}` on its `<For>` (or a function that returns `false` on the server), for example an outer list whose rows hold another list, so the inner list is the lazy one. The cdk collections do this for sections, tree children and table headers.
-- **Server time.** A row that is one element with plain attributes, text and handlers (no components inside) is written straight from its compiled template, as recorded rows are, and costs less server time than recording it: on the 1,000-row benchmark page about half the CPU per page. A row that renders components is rendered to HTML in batches of rows, without a renderer per row; on a 1,000-item list box that is about 0.4× the CPU of recording the rows. A row whose content still has to run when it is written (a function child) is rendered on its own. `domData` does not change this.
+- **Server time.** A row that is one element with plain attributes, text and handlers (no components inside) is written straight from its compiled template, as recorded rows are, and costs less server time than recording it: on the 1,000-row benchmark page about 0.6× the CPU per page (0.75× at 5,000 rows). A row that renders components is rendered to HTML in batches of rows, without a renderer per row; on a 1,000-item list box that is about 0.4× the CPU of recording the rows. A row whose content still has to run when it is written (a function child) is rendered on its own. `domData` does not change this. Numbers: [lazy rows cost report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-cost.md).
 - **Why it is off by default.** A signal every row reads plainly still wakes every row when it first changes. In a virtualized list the rendered rows read the virtualizer's layout, so the first click or scroll rebuilds the whole visible window: at 4× CPU slowdown that first click is still 5–18 ms slower than with recorded rows.
 
 ### Data from the page (experimental)
@@ -224,9 +224,11 @@ export default defineConfig({
 - **Collections too.** Rows of `@rivetjs/cdk` / `@rivetjs/ui` lists such as `ListBox` that show an item's text count as list rows. Grid list rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
 - **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data.
 - **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
-- **Why it is off by default.** Without lazy rows the server renders as fast as without it; with lazy rows it still costs about 2 to 11 % more server time per render, being reduced.
+- **Why it is off by default.** Server time is level with the same build without it, with or without lazy rows (a 1,000-item list box with lazy rows: 19.6 against 20.5 ms CPU per render, [lazy rows cost report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-cost.md)). It adds about 0.6 KB brotli to the browser runtime and about 9 KB to the server code; turning it on by default is not decided yet.
 
-### Derived model (experimental)
+## Derived model (experimental)
+
+The sections above describe the default model, which writes a resume record for every handler, binding and captured value. The derived model is an experimental alternative that drops that table.
 
 Off by default. With `resume: { model: "derived" }` on `rivetRouter(…)` (or `rivet(…)`), the page carries no resume state table: the server lists only the components that can react to input (and their signal values), and the browser runs a component's ordinary compiled code over the server markup the first time it is used (an event inside it, or a change of a signal it read on the server). The nodes stay the same, so focus and typed values stay. A component whose props are plain data waits for its own first use; one that gets functions or other non-data props starts with its parent.
 
@@ -244,7 +246,8 @@ export default defineConfig({
 - **Render the same thing twice.** The browser repeats the component's render, so a value that differs between server and browser (`Date.now()`, `Math.random()`, `new Date()`) is an error ([RV2103](../errors/RV2103.md)), and a signal created inside a loop is a warning ([RV2104](../errors/RV2104.md)); a signal created under a condition is fine. If the markup still differs, that component renders in the browser instead (development prints a warning naming it).
 - **Routing.** With `rivetRouter` the page's root is one more such component: its props are the route's loader data, so the browser rebuilds the router and the current route from them without a data request, and links then navigate in the client as on the default model. Loader data that is not plain JSON (a `Date`, a `Map`) makes the root render in the browser instead.
 - **Components are functions that return JSX.** A capitalised function returning a plain object (a renderer or factory) is not treated as a component.
-- **What it does not do yet.** Streamed `Async` content that arrives after the first chunk is not resumed; framework bridges and forms are not covered; `resume.entry`, `chunks`, `merge`, `budget` and `preload` are ignored; an edit in development reloads the page. A press before the code arrives is not replayed yet: the first press on a button, toggle or menu trigger built on `@rivetjs/cdk` press handling can be lost, and some collection components (list box, select, tag group) render again in the browser on their first interaction.
+- **Why it is off by default.** On the 1,000-row benchmark page (one request at a time) the page is smaller (24.0 KB brotli of HTML instead of 27.2 KB, no JavaScript before input instead of 36 KB) and the server peaks lower (122 MiB instead of 153), but each page costs more server time (2.05 instead of 1.47 ms CPU, first byte after 1.13 instead of 0.70 ms) and the first click waits for a chain of 8 scripts: 89 ms instead of 6.6 ms. Numbers: [derived model report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-derived-r5.md).
+- **What it does not do yet.** Streamed `Async` content that arrives after the first chunk is not resumed; framework bridges and forms are not covered; `resume.entry`, `chunks`, `merge`, `cap`, `lazy` and `preload` are ignored, and so are `lazyRows` and `domData` (rows of a `<For>` are always picked up lazily); an edit in development reloads the page. A press before the code arrives is not replayed yet: the first press on a button, toggle or menu trigger built on `@rivetjs/cdk` press handling can be lost, and some collection components (list box, select, tag group) render again in the browser on their first interaction.
 
 ## What it means for your code
 
@@ -255,7 +258,7 @@ export default defineConfig({
 - **Values built in the component arrive as data.** A constant made by calling a function (`const columns = buildColumns()`, `const rows = items.map(…)`) is sent to the browser as it was when the page was sent; the browser does not call that function again. Changes made to the object later, while the rest of a streamed page is still loading, do not reach the browser. If a library function must run in the browser (to register a listener or a global), call it in `clientEffect`.
 - **Components outside `src/routes` resume too.** `rivetRouter` resumes every `.tsx`/`.jsx` component file in your project that a route imports; no list needed. To opt out, set `resume: { appModules: false }` and list files in `resume.modules`.
 - **The first mouse click updates the page one task later.** The handler runs during the click as usual; the DOM update of a page's first mouse click lands in the next task, because Chrome would otherwise hold the next frame. Tests that read the DOM right after that click must wait. See [batching](../guides/state/batching.md#the-first-mouse-click-on-a-page).
-- **A press before its code arrives behaves like a loaded one.** When you press an element whose handler is still loading, the browser focuses it as usual; once the handler arrives, Rivet replays the press with the focus it would have seen, so a handler that keeps focus where it was (a radio label, a number field's step button) leaves you where a loaded page does. Same-page `#hash` links focus their target like any client navigation.
+- **A press before its code arrives behaves like a loaded one.** When you press an element whose handler is still loading, the browser focuses it as usual; once the handler arrives, Rivet replays the press with the focus it would have seen, so a handler that keeps focus where it was (a radio label, a number field's step button) leaves you where a loaded page does, and a group around the element (a radio group tracking focus within) sees the same focus changes. When the press itself opens something under the pointer (a select's popover over its trigger), the release and the click land where they would on a loaded page. Same-page `#hash` links focus their target like any client navigation.
 - **Dev resumes too.** The dev server serves pages resumable like production, until your first edit switches the page to rendering in the browser (for hot reload). Check speed with a production build. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 
 ## Related

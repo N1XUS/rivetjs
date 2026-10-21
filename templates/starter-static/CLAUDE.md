@@ -140,8 +140,8 @@ const theme = useContext(ThemeContext); // import { useContext } from "@rivetjs/
 
 Everything a handler, effect, computed or binding uses from its component (its **captures**) is written into the HTML. It must be serializable.
 
-- OK: primitives, plain objects/arrays, `Date`, `URL`, `URLSearchParams`, `Map`, `Set`, `RegExp`, typed arrays, `ArrayBuffer`, `DataView`, `Error`, signals, `computed`, and functions Rivet compiled: inline arrows, local `const` functions, inline callback props, functions in object literals, returned functions, inline functions written into a value a handler uses (`api.inc = () => …`, `signal(() => …)`, `[() => …]`), local functions stored by name into such a value (`api.open = open`, `list.push(open)`), module-level or imported functions used by name inside a component (called by a handler, passed as a prop, kept in a local const, put in an object / array / call argument).
-- Not OK: class instances (`new Intl.NumberFormat()`, `new Api()` → RV2003; a data class declared in the component module resumes — no `#private` field, no base other than a data class of that module, no decorator, no `window` / `document` read while constructing, else RV2102; `reconstruct(() => new Api(…))` from `@rivetjs/runtime/dom` builds it in the browser on first read (no value in the page); a resource holder resumes with `[serialize]()` + `static [revive](data)`, a package class with `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`), `Promise`, `WeakMap`, `Symbol`, `Error`, `.bind(...)` written inside an object literal (RV2014; inline in a prop / handler or a local `const inc = add.bind(null, 2)` of a compiled function used by name is OK; `.bind(ctx)` of a `this` function stays RV2007), methods / getters, functions using `this`, functions created at runtime by libraries (`memoize(fn)`), module-level / imported functions put into objects only outside a component (module level, hooks, helpers).
+- OK: primitives, plain objects/arrays, `Date`, `URL`, `URLSearchParams`, `Map`, `Set`, `RegExp`, typed arrays, `ArrayBuffer`, `DataView`, `Error`, `bigint`, signals, `computed`, and functions Rivet compiled: inline arrows, local `const` functions, inline callback props, functions in object literals, returned functions, inline functions written into a value a handler uses (`api.inc = () => …`, `signal(() => …)`, `[() => …]`), local functions stored by name into such a value (`api.open = open`, `list.push(open)`), module-level or imported functions used by name inside a component (called by a handler, passed as a prop, kept in a local const, put in an object / array / call argument).
+- Not OK: class instances (`new Intl.NumberFormat()`, `new Api()` → RV2003; a data class declared in the component module resumes — no `#private` field, no base other than a data class of that module, no decorator, no `window` / `document` read while constructing, else RV2102; `reconstruct(() => new Api(…))` from `@rivetjs/runtime/dom` builds it in the browser on first read (no value in the page); a resource holder resumes with `[serialize]()` + `static [revive](data)`, a package class with `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`), `Promise`, `WeakMap`, `Symbol`, `.bind(...)` written inside an object literal (RV2014; inline in a prop / handler or a local `const inc = add.bind(null, 2)` of a compiled function used by name is OK; `.bind(ctx)` of a `this` function stays RV2007), methods / getters, functions using `this`, functions created at runtime by libraries (`memoize(fn)`), module-level / imported functions put into objects only outside a component (module level, hooks, helpers).
 
 ```tsx
 // Avoid: captures a class instance
@@ -179,7 +179,7 @@ src/
     _404.tsx  _error.tsx
 ```
 
-- Files/folders starting with `_` (except `_layout`, `_404`, `_error`), `.`, `*.test.*`, `*.d.ts` are ignored. `*.server.ts` = server-only module (cannot be imported by browser code, RV3008).
+- Files/folders starting with `_` (except `_layout`, `_404`, `_error`), `.`, `*.test.*`, `*.d.ts` are ignored. `*.server.ts` = server-only module: browser code cannot use it (RV3008 in a route module's browser part); a page that imports one itself becomes a document route (full page load), a component, layout or error page that reaches one fails the build (RV3011).
 - `.rivet/` is generated (route types `routes.d.ts`, editor manifest): never edit; `rivet sync` regenerates it.
 
 ### Page module exports
@@ -404,36 +404,39 @@ import { Select } from "@rivetjs/ui/select";
 - Where: Vite (terminal + overlay) as `[RV1016] src/x.tsx:12:8: message`; `rivet-check` as `file:line:col - error RV1016: message`; editor via the TS plugin. The MCP tool `explain_diagnostic("RV1016")` gives the meaning, the mechanical fix and an Avoid / Prefer pair; `check_code` returns the fix and the fixed source for a whole file.
 - Ranges: 1xxx JSX / attributes, 2xxx resume, 3xxx imports / helpers / route modules, 4xxx i18n, 5xxx styles, 6xxx slots, 7xxx config, 9xxx internal.
 
-| Code            | Meaning                                                                                     | Fix                                                     |
-| --------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| RV1000          | Parse error                                                                                 | fix syntax                                              |
-| RV1005          | HTML nesting the parser would repair (`<div>` in `<p>`)                                     | valid nesting                                           |
-| RV1012          | Unknown native event (`onclick`, `onTransitionend`)                                         | `on` + PascalCase                                       |
-| RV1015          | Handler is a literal, not a function                                                        | pass a function                                         |
-| RV1016          | Handler expression reads state when it binds                                                | wrap in an arrow                                        |
-| RV1101          | Unsafe / unsupported attribute or URL (`innerHTML`, `javascript:`)                          | remove; build-time assets                               |
-| RV1102          | Invalid `preload` value                                                                     | `eager` / `idle` / `visible` / `intent` / `interaction` |
-| RV2001          | Browser global read during server rendering                                                 | handler / `clientEffect` / `clientEvent` / `clientOnly` |
-| RV2002          | Ref callback must assign a local                                                            | `ref={(el) => (local = el)}` or `ref()`                 |
-| RV2003          | Captured class instance                                                                     | pass data; inside handler; `reconstruct(…)`             |
-| RV2102          | Captured instance of a module class that is not a data class (`#private`, base, resource)   | inside handler; `reconstruct(…)`; plain fields          |
-| RV2006          | JSX inside handler / effect / computed                                                      | JSX in component + signal                               |
-| RV2007          | Resumable code captures `this`                                                              | `event.currentTarget`                                   |
-| RV2009          | Two module references share a browser name                                                  | rename one import                                       |
-| RV2011          | Mutually recursive functions split by an early exit                                         | move them together before the exit                      |
-| RV2012–RV2014   | (warning; error on a provable function) `.bind` that may not resume                         | `const g = f.bind(t, …)`; arrow for other callees       |
-| RV2015          | (warning) component returns a function that cannot resume (anon default / wrapper / `let`)  | `export function Name(props) { return () => …; }`       |
-| RV2101          | (warning) captured value not serializable (type-aware)                                      | as RV2003                                               |
-| RV3003 / RV3004 | Structural helper namespace import / alias                                                  | `import { For } from "@rivetjs/runtime/dom"`            |
-| RV3006          | `clientOnly` erasure shape                                                                  | inline `() => import("…")`                              |
-| RV3007          | Route module server export shape (`export *` in a route)                                    | declare server exports directly                         |
-| RV3008          | Server-only code reached from browser code                                                  | keep in `load(…)` / `*.server.ts`                       |
-| RV3101          | (warning) Link matches no route                                                             | fix the path                                            |
-| RV4001–4004     | i18n key / param / argument / tag errors                                                    | see section 5                                           |
-| RV5001–5003     | ``css`…` `` syntax / usage; invalid or unsafe class / style (style string, two class attrs) | style object, one `class`                               |
-| RV6001–6004     | Slot errors (`<slot>`, `r:name`, `r:slot`)                                                  | see JSX reference, slots                                |
-| RV7101 / RV7102 | `.rivet/editor.json` missing / stale                                                        | `rivet sync`                                            |
-| RV9000 / RV9001 | Unclassified / internal compiler error                                                      | report it                                               |
+| Code            | Meaning                                                                                                                  | Fix                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| RV1000          | Parse error                                                                                                              | fix syntax                                                                |
+| RV1005          | HTML nesting the parser would repair (`<div>` in `<p>`)                                                                  | valid nesting                                                             |
+| RV1012          | Unknown native event (`onclick`, `onTransitionend`)                                                                      | `on` + PascalCase                                                         |
+| RV1015          | Handler is a literal, not a function                                                                                     | pass a function                                                           |
+| RV1016          | Handler expression reads state when it binds                                                                             | wrap in an arrow                                                          |
+| RV1101          | Unsafe / unsupported attribute or URL (`innerHTML`, `javascript:`)                                                       | remove; build-time assets                                                 |
+| RV1102          | Invalid `preload` value                                                                                                  | `eager` / `idle` / `visible` / `intent` / `interaction`                   |
+| RV2001          | Browser global read during server rendering                                                                              | handler / `clientEffect` / `clientEvent` / `clientOnly`                   |
+| RV2002          | Ref callback must assign a local                                                                                         | `ref={(el) => (local = el)}` or `ref()`                                   |
+| RV2003          | Captured class instance                                                                                                  | pass data; inside handler; `reconstruct(…)`                               |
+| RV2102          | Captured instance of a module class that is not a data class (`#private`, base, resource)                                | inside handler; `reconstruct(…)`; plain fields                            |
+| RV2006          | JSX inside handler / effect / computed                                                                                   | JSX in component + signal                                                 |
+| RV2007          | Resumable code captures `this`                                                                                           | `event.currentTarget`                                                     |
+| RV2009          | Two module references share a browser name                                                                               | rename one import                                                         |
+| RV2011          | Mutually recursive functions split by an early exit                                                                      | move them together before the exit                                        |
+| RV2012–RV2014   | (warning; error on a provable function) `.bind` that may not resume                                                      | `const g = f.bind(t, …)`; arrow for other callees                         |
+| RV2015          | (warning) component returns a function that cannot resume (anon default / wrapper / `let`)                               | `export function Name(props) { return () => …; }`                         |
+| RV2016          | (warning) `resource()` that cannot resume (destructured, `let`, not a `const` initializer)                               | one `const user = resource(…)`; quick fix                                 |
+| RV2101          | (warning) captured value not serializable (type-aware)                                                                   | as RV2003                                                                 |
+| RV2103 / RV2104 | `resume: { model: "derived" }` only: `Date.now()` / `Math.random()` while rendering / (warning) signal created in a loop | keyed `signal(Date.now())` or `clientEffect`; one signal outside the loop |
+| RV3003 / RV3004 | Structural helper namespace import / alias                                                                               | `import { For } from "@rivetjs/runtime/dom"`                              |
+| RV3006          | `clientOnly` erasure shape                                                                                               | inline `() => import("…")`                                                |
+| RV3007          | Route module server export shape (`export *` in a route)                                                                 | declare server exports directly                                           |
+| RV3008          | Server-only code reached from browser code                                                                               | keep in `load(…)` / `*.server.ts`                                         |
+| RV3011          | Server-only module reached from a component, layout or error page (router build)                                         | pass it as props from the page's `load(…)`                                |
+| RV3101          | (warning) Link matches no route                                                                                          | fix the path                                                              |
+| RV4001–4004     | i18n key / param / argument / tag errors                                                                                 | see section 5                                                             |
+| RV5001–5003     | ``css`…` `` syntax / usage; invalid or unsafe class / style (style string, two class attrs)                              | style object, one `class`                                                 |
+| RV6001–6004     | Slot errors (`<slot>`, `r:name`, `r:slot`)                                                                               | see JSX reference, slots                                                  |
+| RV7101 / RV7102 | `.rivet/editor.json` missing / stale                                                                                     | `rivet sync`                                                              |
+| RV9000 / RV9001 | Unclassified / internal compiler error                                                                                   | report it                                                                 |
 
 - Not a code: render-time `… is not serializable` (see section 3).
 

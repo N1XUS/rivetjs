@@ -95,6 +95,15 @@ Component props are live. A prop expression that reads a signal updates only the
 - State flags follow too, on the same elements, and handlers check the current value when the event fires: `isDisabled` / `isReadOnly` / `isInvalid` (the fields, groups, ComboBox, the color parts, the date fields, pickers and calendars) and `isRequired` (TextField, SearchField, NumberField, Select, RadioGroup, CheckboxGroup, Checkbox, SwitchField, ComboBox, ColorField, the date fields and pickers).
 - Not live yet: `isRequired` of a channel `ColorField` (`channel` set), the props of the `RadioGroup` `items` preset, and a `CalendarCell`'s own `isDisabled`. Their `class`, `style` and `children` are live.
 
+## Large collections
+
+A collection with hundreds of items (`ListBox`, `GridList`, `Table`, `Tree`) sends each row's resume data with the page by default. Two experimental build options of the framework shrink that; both are off by default:
+
+- **[Lazy rows](https://rivetjs.severyn.pro/learn/resuming#lazy-rows-experimental)** (`resume: { lazyRows: true }` plus `RIVET_LAZY_ROWS=on` on the server): rows are sent as their keys and rebuilt from the server HTML when first used. Selection and focus read keyed selectors, so selecting a row rebuilds that row and the one that lost the selection, not the whole list. Sections, tree children and table headers stay recorded, so the rows inside them are the lazy ones. Server time per page drops too: a 1,000-item `ListBox` renders in about 0.4× the CPU.
+- **[Data from the page](https://rivetjs.severyn.pro/learn/resuming#data-from-the-page-experimental)** (`resume: { domData: true }`): item text a `ListBox` row shows is read back from the page instead of being sent twice. `GridList` rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
+
+Under the experimental [derived model](https://rivetjs.severyn.pro/learn/resuming#derived-model-experimental) (`resume: { model: "derived" }`) the first press on a press-based control (button, toggle, menu trigger) before its code arrives can be lost, and `ListBox`, `Select` and `TagGroup` render again in the browser on their first interaction.
+
 ## Known limits
 
 - **`on*Capture` handlers resume.** Capture-phase props (`onPointerDownCapture`, `onWheelCapture`, …) record a capture entry on the server-rendered page and are dispatched outermost-first before the bubbling handlers, whether written as JSX attributes or spread from a props bag.

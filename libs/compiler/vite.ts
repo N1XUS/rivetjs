@@ -145,7 +145,7 @@ export interface RivetResumeOptions {
    * Lazy collection rows (LAZY-ROWS, experimental; spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`):
    * the browser runtime of this build can materialise lazy `<For>` rows (state `L`: rows rendered without resume
    * records, materialised on their first event / a read signal's first change). Adds the lazy rows runtime (about
-   * 8.6 KB min / 2.8 KB br: `@rivetjs/runtime` `dom-resume-lazy.ts`, `dom-adopt.ts` `_adoptRow` and the adopt-run hooks
+   * 11.1 KB min / 3.5 KB br, zero-cost `dom` + `dom-resume` `[lazyRows]` lines: `@rivetjs/runtime` `dom-resume-lazy.ts`, `dom-adopt.ts` `_adoptRow` and the adopt-run hooks
    * of the DOM runtime) to the build and `lazyRows: true` to the resume manifest; builds without it carry none of it
    * (0 bytes). The server writes lazy row records only when the manifest says so AND its environment has
    * `RIVET_LAZY_ROWS=on` (read per render): build once with this option, toggle the variable to A/B. Default false.
@@ -156,7 +156,7 @@ export interface RivetResumeOptions {
    * plain JSON data the page renders as an element's whole text (`<dd>{row().name}</dd>`: loader rows, `<For>` items) is
    * not written into `rivet/state` again — the browser reads those strings back from the DOM on first access (at the latest
    * at the first idle after resume). Adds the reader (`@rivetjs/runtime` `dom-resume-data.ts`, about 1.8 KB min / 0.6 KB br)
-   * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 5.8 KB min) to its server and
+   * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 9.1 KB min) to its server and
    * `domData: true` to the resume manifest; servers write `D` entries only then. Builds without it carry neither. Default
    * false.
    */

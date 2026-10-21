@@ -54,6 +54,9 @@ These have a written design. They are not available yet; names in the design may
 | Feature | What it adds | Design |
 | --- | --- | --- |
 | Lazy list rows | A resumable keyed `<For>` sends each row as its key and the items once; the browser rebuilds a row when it is first used. Available today as an experimental opt-in, off by default: see [large data in resume state](../learn/resuming.md#lazy-rows-experimental). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-19-lazy-collection-rows-design.md) |
+| Resumable components (derived model) | The page carries the state values of its interactive components only, and the browser runs a component's compiled code over the server markup on first use. Available today as an experimental opt-in, off by default: see [derived model](../learn/resuming.md#derived-model-experimental). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-18-structural-resume-design.md) |
+| Data from the page | Text that list rows already show is read back from the page instead of being sent twice. Available today as an experimental opt-in, off by default: see [data from the page](../learn/resuming.md#data-from-the-page-experimental). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-20-dom-backed-loader-data-design.md) |
+| Cached page shells | A route rule `shell: true` stores the rendered page up to its deferred parts and sends it first; the parts that differ per visitor (`load(fn, { defer: true })`) render per request and stream in. | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-20-ppr-shell-design.md) |
 | Solid, Vue and Svelte components | Bridges for three more frameworks, and keeping an island alive across client navigation (`persist`). | [spec](https://github.com/N1XUS/rivetjs/blob/main/docs/design/specs/2026-10-11-framework-bridges-design.md) |
 
 ## Goals that are not met yet
