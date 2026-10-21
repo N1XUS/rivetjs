@@ -13,14 +13,15 @@ import { noncedSources } from "../shared/csp-hash.ts";
 import { DATA_PARAM } from "../shared/data.ts";
 import { deferredHandle } from "./deferred.ts";
 import { BodyWriter } from "./render.ts";
-import { shellHook, type ShellSeal } from "@rivetjs/runtime/server-shell";
+import { shellHoles, shellHook, shellSlots, type ShellHoles, type ShellSeal } from "@rivetjs/runtime/server-shell";
 import type { CachedPage, HeaderOf, Resolved, ShellHost, ShellServe, _Cache as Cache } from "./route-cache.ts";
 
 const SHELL = Symbol.for("rivet.shell");
 const RENDER_FAILED = Symbol.for("rivet.renderFailed");
 /**
  * Test hook (`globalThis[Symbol.for("rivet.shellTest")]`): `{ holes: n }` — the next `n` hits write a wrong holes `h`;
- * `{ full: true }` — hits replay in full (no muted replay; benches compare both in one process).
+ * `{ full: true }` — hits replay in full (no muted replay; benches compare both in one process); `{ replay: true }` — hits
+ * of H-holes entries replay (muted) instead (benches compare H-holes with H-replay).
  */
 const TEST = Symbol.for("rivet.shellTest");
 const DOCS = "https://rivetjs.severyn.pro/guides/routing/headers-and-caching#partial-prerendering-shell-cache";
@@ -34,6 +35,8 @@ const PARTITION = new Set(["locale", "dir"]);
 const FREE = new Set(["params", "route", "isDataRequest", "dev", "signal", "depends"]);
 /** Request headers a re-fill never forwards (`route-cache.ts` `VISITOR`). */
 const VISITOR = /^(?:cookie|authorization|forwarded|x-forwarded-.+|x-real-ip|true-client-ip|x-client-ip|cf-.+|fastly-client-ip)$/;
+/** H-holes (PPR-T6) on: `RIVET_SHELL_HOLES=0` in the server's environment (read once) keeps every entry on H-replay. */
+const HOLES = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_SHELL_HOLES !== "0";
 /** Every VERIFY-th hit of an entry replays in full (state encoded and compared too); the others replay muted. */
 const VERIFY = 64;
 /** Rejected fills per route before it stops attempting (until `revalidate()`). */
@@ -60,7 +63,16 @@ interface ShellEntry extends CachedPage {
   seal: ShellSeal | null;
   /** Hits so far, modulo VERIFY (0: this hit replays in full). */
   hits: number;
+  /** H-holes (PPR-T6): the fill's retained boundaries (a hit renders no shell); null: hits replay (`holesWhy`). */
+  readonly holes: ShellHoles | null;
+  readonly holesWhy: string | null;
 }
+/** A fill's deferred slot: its handle follows the hit's slot during an H-holes hit (`shellSlots`); stale once the fill ended. */
+interface Slot {
+  p: PromiseLike<unknown>;
+}
+const STALE: Promise<never> = Promise.reject(new Error("Deferred loader data of a stored shell's fill read after it ended (outside a hit)"));
+STALE.catch(() => {});
 
 /**
  * The document's body writer on shell routes (`render.ts` `body`). Fill: counts the bytes handed off (`sent`: where the
@@ -359,6 +371,10 @@ class Run implements ShellRequest {
   declare tailAt: number;
   declare seal: ShellSeal | null;
   declare stored: ShellEntry | null;
+  // Fill: retained boundaries (H-holes) or why not; its deferred slots (stale once the fill's response ended).
+  declare holes: ShellHoles | null;
+  declare holesWhy: string | null;
+  declare slots: Slot[] | null;
   constructor(
     shells: Shells,
     request: Request,
@@ -371,6 +387,9 @@ class Run implements ShellRequest {
     refill: ShellEntry | null,
   ) {
     this.search = search;
+    this.holes = null;
+    this.holesWhy = null;
+    this.slots = null;
     this.phase = null;
     this.body = null;
     this.tailAt = -1;
@@ -444,16 +463,36 @@ class Run implements ShellRequest {
     if (policy && !headers.has("content-security-policy")) headers.set("content-security-policy", policy);
     headers.set("cache-control", this.cache.control);
     if (this.cache.varies.length) headers.set("vary", this.cache.varies.join(", "));
-    headers.set("x-rivet-cache", state);
-    // Muted replay (the fill's numbering known, not a verify hit): compare-only writer, no root state encode.
-    const muted =
-      entry.seal !== null &&
-      entry.tail >= 0 &&
-      (entry.hits = (entry.hits + 1) % VERIFY) !== 0 &&
-      (globalThis as unknown as Record<symbol, { full?: boolean } | undefined>)[TEST]?.full !== true;
+    // Muted replay (the fill's numbering known, not a verify hit): compare-only writer, no root state encode. H-holes (the
+    // fill retained its boundaries): no shell render at all.
+    const test = (globalThis as unknown as Record<symbol, { full?: boolean; replay?: boolean } | undefined>)[TEST];
+    const muted = entry.seal !== null && entry.tail >= 0 && (entry.hits = (entry.hits + 1) % VERIFY) !== 0 && test?.full !== true;
+    const holes = muted && entry.holes !== null && entry.seal!.fork !== undefined && test?.replay !== true ? entry.holes : null;
+    headers.set("x-rivet-cache", holes ? state : state + "-REPLAY");
     const composer = new Composer(this, entry, muted);
     this.composer = composer;
     this.resolve!(this.host.withHeaders(composer.relay.response(headers), this.resolved.headers));
+    if (holes) {
+      // The request's deferred promises per slot: the retained boundaries' handles (the fill's) follow them (`shellSlots`).
+      const slots: (Promise<unknown> | undefined)[] = [];
+      const render: ShellPhase["render"] = {
+        body: (enqueued) => (composer.body = new ShellBody(enqueued, null)),
+        shell: shellHook({
+          replay: entry.seal!,
+          retained: holes,
+          slots,
+          mismatch: (why) => void (composer.body && (composer.body.verdict ??= why)),
+        }),
+        holes: shellHoles(holes),
+      };
+      return {
+        data: entry.data,
+        byURL: entry.byURL,
+        ...(entry.deps ? { deps: entry.deps } : {}),
+        handle: (promise, _dev, index) => ((slots[index] = promise), promise),
+        render,
+      };
+    }
     const render: ShellPhase["render"] = muted
       ? {
           body: (enqueued) => (composer.body = new ShellBody(enqueued, composer.prefix)),
@@ -484,7 +523,7 @@ class Run implements ShellRequest {
     const phase: ShellPhase = (this.phase = {
       event: (view, index) => this.track(view, label(index)),
       loaded: (data, byURL, deps) => ((this.data = data), (this.byURL = byURL), (this.deps = deps)),
-      handle: (promise, dev) => this.handle(promise, dev),
+      handle: (promise, dev, index) => this.handle(promise, dev, index),
       url: trackedURL(new URL(this.request.url), this.cache, (what) => this.note("render reads " + what)),
       // Prod: where the root tail starts (byte count) and the root numbering, for muted replays of the stored shell.
       ...(this.dev
@@ -501,6 +540,7 @@ class Run implements ShellRequest {
                   this.seal = seal;
                   if (this.stored) this.stored.seal = seal;
                 },
+                ...(HOLES ? { holes: (holes: ShellHoles | null, why: string | null) => ((this.holes = holes), (this.holesWhy = why)) } : {}),
               }),
             },
           }),
@@ -556,10 +596,15 @@ class Run implements ShellRequest {
     });
   }
 
-  /** A deferred slot's handle in a fill: gated until the cut; settling before the shell is out = consumed in order. */
-  handle(promise: Promise<unknown>, dev: boolean): object {
+  /**
+   * A deferred slot's handle in a fill: gated until the cut; settling before the shell is out = consumed in order. It follows
+   * slot `index` of an H-holes hit (a retained boundary's `load` reads it there: frame swap) and is stale once the fill ended.
+   */
+  handle(promise: Promise<unknown>, dev: boolean, index: number): object {
     const gated = this.gate!.then((error) => (error ? Promise.reject(error) : promise));
     gated.catch(noop);
+    const slot: Slot = { p: gated };
+    (this.slots ??= []).push(slot);
     const settled = () =>
       setTimeout(() => {
         if (this.cut || !this.open) return;
@@ -579,7 +624,14 @@ class Run implements ShellRequest {
         this.release(error);
       }, 0);
     promise.then(settled, settled);
-    return deferredHandle(gated, dev);
+    const follows: PromiseLike<unknown> = { then: (ok, fail) => (shellSlots()?.[index] ?? slot.p).then(ok, fail) };
+    return deferredHandle(follows as Promise<unknown>, dev);
+  }
+  /** The fill's response ended: its handles no longer reach its visitor's data (a retained boundary reads a hit's slot). */
+  stale(): void {
+    const slots = this.slots;
+    this.slots = null;
+    if (slots) for (const slot of slots) slot.p = STALE;
   }
   release(error?: unknown): void {
     const open = this.open;
@@ -688,11 +740,13 @@ class Run implements ShellRequest {
             flushHeld("", -1);
             if (!answered) answer(dev ? reason() : null);
           }
+          this.stale();
           relay.end();
         },
         (error) => {
           this.release();
           this.done();
+          this.stale();
           if (!answered) {
             flushHeld("", -1);
             answer(null);
@@ -764,7 +818,8 @@ class Run implements ShellRequest {
       fresh: now + this.cache.maxAge * 1000,
       stale: now + (this.cache.maxAge + this.cache.swr) * 1000,
       used: false,
-      size: bare.length + this.key.length * 2 + estimate,
+      // H-holes: the retained boundaries, frames and the fill's encoder numbering (≈ 64 B per table entry).
+      size: bare.length + this.key.length * 2 + estimate + (this.holes ? 1024 * this.holes.holes.length + 64 * (this.seal?.t ?? 64) : 0),
       failures: 0,
       retry: 0,
       charge: (bytes) => store.grow(entry, bytes),
@@ -780,6 +835,8 @@ class Run implements ShellRequest {
       tail,
       seal: this.seal,
       hits: 0,
+      holes: this.holes,
+      holesWhy: this.holesWhy,
     };
     this.stored = entry;
     store.set(entry);

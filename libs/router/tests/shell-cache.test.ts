@@ -106,7 +106,7 @@ test("store: miss stores, hits skip shell loaders and re-fill nonce slots; holes
   assert.match(missed, /self\.\$rvh="[0-9a-f]{8}"/);
   assert.match(missed, /Hello ann/);
   const hit = await get(handler, "/post", { cookie: "user=bob" }, "BBBBBB");
-  assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT");
+  assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
   assert.equal(hit.headers.get("content-security-policy"), "script-src 'nonce-BBBBBB' 'strict-dynamic'");
   const html = await hit.text();
   assert.match(html, /Hello bob/);
@@ -125,7 +125,7 @@ test("keys: the locale a guard sets partitions shells; tags + revalidate drop th
     assert.match(await response.text(), new RegExp(`<h1>T ${locale}</h1>`));
   }
   const de = await get(handler, "/post", { "x-locale": "de" });
-  assert.equal(de.headers.get("x-rivet-cache"), "SHELL-HIT");
+  assert.equal(de.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
   assert.match(await de.text(), /<h1>T de<\/h1>/);
   assert.equal(counts.load, 2);
   assert.equal(revalidate({ tag: "posts" }), 2);
@@ -163,7 +163,7 @@ test("tracker: unknown event members and the client address count as reads (allo
   const fill = await get(handler, "/post", { "accept-language": "fr" });
   assert.equal(fill.headers.get("x-rivet-cache"), "SHELL-MISS", "a keyed header value is stored on its second miss");
   await fill.text();
-  assert.equal((await get(handler, "/post", { "accept-language": "fr" })).headers.get("x-rivet-cache"), "SHELL-HIT");
+  assert.equal((await get(handler, "/post", { "accept-language": "fr" })).headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
 });
 
 test("single flight: misses while a fill runs render on their own (no second fill)", async () => {
@@ -174,7 +174,7 @@ test("single flight: misses while a fill runs render on their own (no second fil
   assert.match(await a.text(), /Hello a/);
   assert.match(await b.text(), /Hello b/);
   assert.equal(counts.load, 2);
-  assert.equal((await get(handler, "/post")).headers.get("x-rivet-cache"), "SHELL-HIT");
+  assert.equal((await get(handler, "/post")).headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
 });
 
 test("nonce presence must match the stored shell; HEAD and non-HTML answers bypass", async () => {

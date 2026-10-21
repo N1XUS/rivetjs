@@ -260,3 +260,19 @@ pub fn boundary_facts(source: &str, filename: &str) -> Value {
     let resumed = crate::resume::analyze(&tree, filename, &mut scratch, &Default::default(), &[], &Default::default());
     crate::resume::derived::facts_json(&tree, &resumed)
 }
+
+/// Shell cache H-holes (PPR-T6): every streamed boundary element and whether a stored shell may re-run only its content
+/// (`moduleFacts(…, { holes: true })`, `crate::holes`).
+pub fn hole_facts(source: &str, filename: &str) -> Value {
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, source, crate::source_type::of(filename))
+        .with_options(ParseOptions { preserve_parens: true, ..ParseOptions::default() })
+        .parse();
+    if parsed.panicked {
+        return Value::Array(Vec::new());
+    }
+    let program = allocator.alloc(parsed.program);
+    let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
+    let tree = Tree::new(source, program, semantic);
+    crate::holes::facts_json(&tree)
+}

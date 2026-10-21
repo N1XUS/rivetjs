@@ -70,6 +70,12 @@ export interface RenderPageOptions {
   /** @internal Route rule `shell` (`shell-cache.ts`): the body writer (`enqueued`: as `BodyWriter`'s) and the recorder hook. */
   body?: (enqueued: () => void) => BodyWriter;
   shell?: ShellHook;
+  /**
+   * @internal Route rule `shell`, H-holes hit (`shell-cache.ts`): the page factory is the stored shell's retained boundaries
+   * (`@rivetjs/runtime/server-shell` `shellHoles`); the document start, `around.start` and the head hold are not written
+   * (the stored prefix is out).
+   */
+  holes?: () => ServerValue;
 }
 
 /** Coalesced write size (bytes): fewer, larger body chunks. */
@@ -419,7 +425,8 @@ function stream(
   init: { status: number; headers: Headers },
   deferred: boolean,
 ): Response | Promise<Response> {
-  const hold = options.hold;
+  const holes = options.holes;
+  const hold = holes ? undefined : options.hold;
   let parts: DocumentParts | null = hold ? null : options.document(input);
   // Deferred: no Response until the renderer is really waiting (pending content, not a failure that
   // is already settled) and bytes are queued, or the render ended; a failure before it rejects. Eager
@@ -493,15 +500,15 @@ function stream(
     for (const chunk of pending) void (typeof chunk === "string" ? out.write(chunk) : out.writeBytes(chunk));
     return null;
   };
-  const app: () => ServerValue = hold ? () => [factory(), release] : factory;
+  const app: () => ServerValue = holes ?? (hold ? () => [factory(), release] : factory);
   let ended = false;
   void (async () => {
     try {
       // Await only real waits (backpressure, pending content): a bare `await` would yield to the
       // coalescing microtask and split a synchronous page into several chunks.
       let wait: void | Promise<void>;
-      if (!hold && (wait = writer.write(parts!.start))) await wait;
-      if (options.around && (wait = writer.write(options.around.start))) await wait;
+      if (!hold && !holes && (wait = writer.write(parts!.start))) await wait;
+      if (options.around && !holes && (wait = writer.write(options.around.start))) await wait;
       const signal = options.signal;
       const variant = options.variant;
       // One id counter per render (`rv0`, `rv1`, …): the same page renders the same ids whatever the

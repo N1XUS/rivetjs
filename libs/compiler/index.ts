@@ -349,6 +349,12 @@ export interface ModuleFacts {
    * (`facts-fixpoint.ts` `boundaryFacts`) closes over. Empty on older wasm builds (`hasDerivedModel()` false).
    */
   boundaries: Map<string, ComponentBoundaryFacts>;
+  /**
+   * `holes: true` only (shell cache H-holes, PPR-T6): every streamed boundary element (`<Async>` / `<Suspense>` from
+   * `@rivetjs/runtime*`) in source order, and whether a stored shell may re-run only its content on a hit. The server
+   * resume target marks eligible ones with a `$hole: 1` prop. Absent without the option.
+   */
+  holes?: HoleFacts[];
   /** `serverExports` only: facts are of the browser source; these list what was removed. */
   serverExports?: string[];
   /** Kind per server export (parallel to `serverExports`, see `CompileResult.serverKinds`). */
@@ -372,6 +378,25 @@ export interface ComponentBoundaryFacts {
   calls: { tag: string; data: boolean }[];
 }
 
+/**
+ * One streamed boundary element (`ModuleFacts.holes`). Eligible = an `<Async>` with a `fallback` whose `load` / `children` /
+ * `error` (and render-function child) capture only data — module-level bindings, globals, parameters, `const`s
+ * initialised by literals / object and array literals / member reads / operators over those — and whose component creates
+ * no reactive state (`signal` / `computed` / `createStore` / `_regionState`) outside them; else `because` names the first
+ * reason (the shell then replays on a hit: H-replay).
+ */
+export interface HoleFacts {
+  /** The module-level component it is in (null: anonymous / module scope). */
+  component: string | null;
+  tag: "Async" | "Suspense";
+  /** Source offset of the element's `<`, and its 1-based line / column. */
+  at: number;
+  line: number;
+  column: number;
+  eligible: boolean;
+  because: string | null;
+}
+
 /** Options of `moduleFacts()`. */
 export interface ModuleFactsOptions {
   /** Route module (see `CompileOptions.serverExports`). */
@@ -380,6 +405,8 @@ export interface ModuleFactsOptions {
   resume?: boolean;
   /** Derived model (M2 C1): also compute `ModuleFacts.boundaries` (runs the resume analysis on the module). */
   boundaries?: boolean;
+  /** Shell cache H-holes (PPR-T6): also compute `ModuleFacts.holes`. */
+  holes?: boolean;
 }
 
 interface RawFacts {
@@ -394,6 +421,7 @@ interface RawFacts {
     string,
     { interactive: boolean; context: boolean; params: "none" | "object" | "destructured"; renders: string[]; calls: [string, boolean][] },
   ][];
+  holes?: HoleFacts[];
   serverExports?: string[];
   serverKinds?: string[];
   serverImports?: string[];
@@ -425,6 +453,7 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
         { ...facts, renders: new Set(facts.renders), calls: facts.calls.map(([tag, data]) => ({ tag, data })) } satisfies ComponentBoundaryFacts,
       ]),
     ),
+    ...(raw.holes ? { holes: raw.holes } : {}),
   };
 }
 

@@ -10,6 +10,7 @@ mod entities;
 mod entities_data;
 mod events_data;
 mod facts;
+mod holes;
 mod html;
 mod i18n;
 mod ir;
@@ -63,6 +64,8 @@ struct FactsOptions {
     resume: Option<bool>,
     /// Derived model (M2 C1): also report `boundaries` (`facts::boundary_facts`).
     boundaries: Option<bool>,
+    /// Shell cache H-holes (PPR-T6): also report `holes` (`facts::hole_facts`).
+    holes: Option<bool>,
 }
 
 #[derive(Deserialize, Default)]
@@ -245,10 +248,16 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
 /// server export names and kinds, dropped imports and server-split errors.
 fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> Value {
     let boundaries = options.as_ref().is_some_and(|o| o.boundaries.unwrap_or(false));
+    let holes = options.as_ref().is_some_and(|o| o.holes.unwrap_or(false));
     let Some(options) = options.filter(|o| o.server_exports.unwrap_or(false)) else {
         let mut facts = facts::module_facts(source, filename);
-        if let (true, Value::Object(map)) = (boundaries, &mut facts) {
-            map.insert("boundaries".into(), facts::boundary_facts(source, filename));
+        if let Value::Object(map) = &mut facts {
+            if boundaries {
+                map.insert("boundaries".into(), facts::boundary_facts(source, filename));
+            }
+            if holes {
+                map.insert("holes".into(), facts::hole_facts(source, filename));
+            }
         }
         return facts;
     };
@@ -258,6 +267,9 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
     if let Value::Object(map) = &mut facts {
         if boundaries {
             map.insert("boundaries".into(), facts::boundary_facts(browser, filename));
+        }
+        if holes {
+            map.insert("holes".into(), facts::hole_facts(browser, filename));
         }
         map.insert("serverExports".into(), json!(server.exports));
         map.insert("serverKinds".into(), json!(server.kinds));

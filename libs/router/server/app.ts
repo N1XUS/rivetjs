@@ -382,7 +382,7 @@ export function createApp(config: AppConfig): AppHandler {
           ...(page.moved ? { epilogue: () => moveScript(page.moved!(), nonce) } : {}),
           ...(devMode === "check" ? { discardState: true } : {}),
           // Shell fills / replays (`shell-cache.ts`): byte-counting / compare-only body writer, recorder hook.
-          ...(page.shell?.render as Pick<RenderPageOptions, "body" | "shell"> | undefined),
+          ...(page.shell?.render as Pick<RenderPageOptions, "body" | "shell" | "holes"> | undefined),
         },
         { status, headers },
       );

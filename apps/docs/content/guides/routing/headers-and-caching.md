@@ -234,10 +234,53 @@ export default function Layout({ data, children }: LayoutProps<typeof loader>) {
 The page's normal loader (the article) reads only its params, so its data belongs to the shell. What a request to a shell route does:
 
 1. **First requests:** the page renders as usual and streams to the visitor. The server records what the normal loaders and the render read from the request. When they read nothing that differs per visitor, it stores the document up to where the first hole starts, plus the normal loaders' data.
-2. **Later requests:** guards and `headers(…)` run first (a guard that redirects still redirects). Then the server sends the stored shell at once with the request's own CSP nonce, renders the page again with the stored data (the normal loaders do not run), and streams the holes behind it. The visitor sees the page about as fast as a stored page, and the deferred loaders still see their own cookies.
-3. **Check:** the second render must produce the same shell bytes. If it does not (a clock, a random number or module state in the shell), the page sends no holes, reloads itself once and gets a fresh render; the route stops storing shells and the server logs a warning.
+2. **Later requests:** guards and `headers(…)` run first (a guard that redirects still redirects). Then the server sends the stored shell at once with the request's own CSP nonce and streams the holes behind it. The normal loaders do not run. The visitor sees the page about as fast as a stored page, and the deferred loaders still see their own cookies.
+3. **Check:** every 64th request of a shell renders the page in full and compares it with the stored shell, bytes and resume state. If they differ (a clock, a random number or module state in the shell), the page sends no holes, reloads itself once and gets a fresh render; the route stops storing shells and the server logs a warning.
 
-What a hit costs: the shell is rendered again, but its bytes are only compared with the stored ones (nothing is copied or sent twice), and the page's resume state is not encoded again (the stored shell holds it). The saving is the shell's loaders and that state. A page whose shell loaders are cheap (data already in memory) gains mainly time to first byte, not CPU. Every 64th hit of a shell renders it in full and also compares the stored resume state.
+What a hit costs depends on the holes:
+
+- **Holes only** (`x-rivet-cache: SHELL-HIT`): the shell does not render at all. The server keeps each hole's code from the first render and runs only that, with the visitor's deferred data. This costs about as much as rendering the holes alone: on a signed-in article, 2–4× less CPU than rendering the whole page (more when the shell loaders are slow).
+- **Shell replay** (`x-rivet-cache: SHELL-HIT-REPLAY`): the shell renders again with the stored data, but its bytes are only compared with the stored ones (nothing is sent twice) and its resume state is not encoded again. The saving is the shell's loaders and that state. A page whose shell loaders are cheap (data already in memory) gains mainly time to first byte, not CPU. The 64th-request check is a replay too.
+
+### Which holes skip the shell
+
+The compiler checks each `<Async>` and marks the ones a hit may run on their own. A route gets the "holes only" path when every hole on the page is marked; otherwise all of its hits replay the shell. Nothing is ever served wrong either way: the replay is the slower path, not a different page.
+
+A hole is marked when all of this holds:
+
+- It is an `<Async>` from `@rivetjs/runtime` with a `fallback`, no `{...spread}` props, and its children are one render function (`{(user) => …}`). `<Suspense>` holes always replay.
+- Its `load`, `children` and `error` use only data from outside: props (such as `data`), module-level values and imports, and `const`s set to plain data (literals, objects, arrays, property reads). A `let`, a function or class declared in the component, or a `const` that holds a call result (a signal, a memo) keeps the hole on replay. Anything declared inside the render function is fine.
+- The component that contains it creates no reactive state around it (`signal`, `computed`, `createStore`). Put shell state such as a counter in its own component, and state of the hole inside its render function.
+- It is not inside an `<ErrorBoundary>`. A hole inside another hole runs as part of the outer one.
+
+```tsx title="src/routes/_layout.tsx"
+import { signal } from "@rivetjs/reactivity";
+import { Async } from "@rivetjs/runtime/dom";
+
+// Replays: the hole's button sets `opened`, a signal of the layout.
+function Replayed({ data }: { data: () => Promise<{ name: string }> }) {
+  const opened = signal(false);
+  return (
+    <Async load={() => data()} fallback={() => <span>…</span>}>
+      {(user) => <button onClick={() => opened.set(true)}>{user.name}</button>}
+    </Async>
+  );
+}
+
+// Holes only: the state lives inside the render function.
+function HolesOnly({ data }: { data: () => Promise<{ name: string }> }) {
+  return (
+    <Async load={() => data()} fallback={() => <span>…</span>}>
+      {(user) => {
+        const opened = signal(false);
+        return <button onClick={() => opened.set(true)}>{user.name}</button>;
+      }}
+    </Async>
+  );
+}
+```
+
+To see which path a route takes, read `x-rivet-cache` on its second request: `SHELL-HIT` (holes only) or `SHELL-HIT-REPLAY` (`SHELL-STALE` / `SHELL-STALE-REPLAY` for stale shells). `moduleFacts(source, file, { holes: true })` from `@rivetjs/compiler` lists every boundary of a module with the reason it is not marked. Setting `RIVET_SHELL_HOLES=0` in the server's environment puts every route on replay.
 
 | Option | Meaning |
 | --- | --- |
@@ -252,12 +295,12 @@ What may be in a shell:
 
 - **Inputs:** the path and its params, the query string (or the listed parameters), the `varies` headers, the locale and direction a guard put in `locals`. Anything else read by a normal loader (a cookie, another header, other `locals`, the client address, the raw `request`, a `RequestEvent` member Rivet does not know) means the shell is not stored. So does a render read of another query parameter (`useSearchParams()`), a loader that sets a cookie, and an answer other than `200`. After three such renders in a row the route stops trying until `revalidate()` or a restart.
 - **Holes stream:** a hole must sit inside an `<Async fallback>`. Deferred data read where the page waits for it (an `Async` without a fallback, `Suspense` + `resource`) ends the shell too early: in development that read throws, in production the shell is not stored.
-- **Headers:** headers a normal loader set are stored with the shell; guards and `headers(…)` set theirs on every request. The response says `Cache-Control: private, no-cache` (the whole document is personal) and `x-rivet-cache: SHELL-HIT`, `SHELL-STALE` or `SHELL-MISS`.
+- **Headers:** headers a normal loader set are stored with the shell; guards and `headers(…)` set theirs on every request. The response says `Cache-Control: private, no-cache` (the whole document is personal) and `x-rivet-cache: SHELL-HIT` / `SHELL-HIT-REPLAY`, `SHELL-STALE` / `SHELL-STALE-REPLAY` or `SHELL-MISS`.
 - **Deferred redirects:** the status line is out before a hole's loader finishes, so a `redirect()` from a deferred loader moves the browser with a script at the end of the document.
 - **CSP:** the shell is stored without nonces and every response gets its own, so the nonce policy keeps `'strict-dynamic'` (unlike stored whole pages).
 - **Not stored:** requests without a nonce when the shell has one (and the reverse), `HEAD` requests, client navigation data (`?_rivet=data`), and pages built with the derived resume model.
 - **Build:** put at least one `shell` rule in `rivetRouter({ routeRules })`. Only then does the server bundle include the shell cache; a server's own `routeRules` option can change shell rules, but `createApp` throws a `TypeError` for a `shell` rule when the build has none.
-- **Memory:** shells share the route rules' store (`routeCache: { maxBytes, maxEntries }`); a new key is stored on its second request, like whole pages.
+- **Memory:** shells share the route rules' store (`routeCache: { maxBytes, maxEntries }`); a new key is stored on its second request, like whole pages. A shell that keeps its holes' code is charged about 1 kB per hole plus its resume numbering on top of its bytes.
 - **Dev** never stores shells. It renders every shell route as a probe and answers `x-rivet-cache: SHELL-BYPASS <reason>` with the first read that would keep the shell from being stored, and logs it once per route.
 
 ## Early hints

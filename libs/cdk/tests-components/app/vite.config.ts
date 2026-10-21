@@ -13,8 +13,8 @@ export default defineConfig({
   plugins: [
     rivetRouter({
       styles: ["src/styles.css"],
-      // Shell cache story (`/shell-loader`, PPR-T23): stored shell + live hole.
-      routeRules: { "/shell-loader": { shell: { maxAge: 3600 } } },
+      // Shell cache stories (PPR-T23 / T6): stored shell + live hole; `/shell-loader` H-holes, `/shell-replay` replays.
+      routeRules: { "/shell-loader": { shell: { maxAge: 3600 } }, "/shell-replay": { shell: { maxAge: 3600 } } },
       ...(model || domData ? { resume: { ...(model ? { model } : {}), ...(domData ? { domData } : {}) } } : {}),
     }),
   ],

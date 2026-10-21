@@ -1,6 +1,9 @@
 // Shell cache end to end (route rule `shell`, `server/shell-cache.ts`; production build of fixture-shell): a signed-in
 // miss stores the shell, later visitors (other sessions) get the stored prefix at once and their own holes; a hit's
-// document is byte-identical to a fresh render modulo the nonce, muted (PPR-T3B) or replayed in full; shell loaders do
+// document (and every patch) is byte-identical to a fresh render modulo the nonce — H-holes (PPR-T6: no shell render,
+// only the retained holes re-run; `x-rivet-cache: SHELL-HIT`), muted replay (PPR-T3B) or full replay (`SHELL-HIT-REPLAY`);
+// a route with an H-holes ineligible hole replays; every 64th hit (VERIFY) replays in full and catches a shell that
+// changed under an H-holes entry (R1); shell loaders do
 // not run on hits; guards do; fills that read request input outside the key are not stored (cookie, header, locals, unkeyed query parameter, the search params
 // context in render, deferred data rendered in order); unkeyed query parameters bypass; `revalidate()` drops; a stale
 // shell is re-filled by a detached anonymous request (R3); a replay that differs from the stored shell ends with the
@@ -96,20 +99,40 @@ test(
       assert.match(hit.headers.get("content-security-policy")!, new RegExp(`'nonce-${[...nonces][0]}' 'strict-dynamic'`));
     });
 
-    await t.test("muted replay (no root state encode, shell bytes compared in place) = full replay, byte for byte", async () => {
-      const muted = await get("/article", "ann");
-      assert.equal(muted.headers.get("x-rivet-cache"), "SHELL-HIT");
-      const mutedHTML = (await read(muted)).html;
-      (globalThis as unknown as Record<symbol, unknown>)[TEST] = { full: true };
-      try {
-        const full = await get("/article", "ann");
-        assert.equal(full.headers.get("x-rivet-cache"), "SHELL-HIT");
-        assert.equal(unnonced((await read(full)).html), unnonced(mutedHTML));
-      } finally {
-        delete (globalThis as unknown as Record<symbol, unknown>)[TEST];
+    await t.test("H-holes (no shell render) = muted replay = full replay, byte for byte", async () => {
+      const holes = await get("/article", "ann");
+      assert.equal(holes.headers.get("x-rivet-cache"), "SHELL-HIT", "the layout's hole is H-holes eligible");
+      const holesHTML = (await read(holes)).html;
+      assert.equal(unnonced(holesHTML), unnonced(missHTML));
+      for (const mode of [{ replay: true }, { full: true }]) {
+        (globalThis as unknown as Record<symbol, unknown>)[TEST] = mode;
+        try {
+          const replay = await get("/article", "ann");
+          assert.equal(replay.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY", JSON.stringify(mode));
+          assert.equal(unnonced((await read(replay)).html), unnonced(holesHTML), JSON.stringify(mode));
+        } finally {
+          delete (globalThis as unknown as Record<symbol, unknown>)[TEST];
+        }
       }
       // Every 64th hit of an entry replays in full (`VERIFY`): a run of hits stays byte-identical across it.
-      for (let i = 0; i < 70; i++) assert.equal(unnonced((await read(await get("/article", "ann"))).html), unnonced(mutedHTML), "hit " + i);
+      const states = new Set<string | null>();
+      for (let i = 0; i < 70; i++) {
+        const hit = await get("/article", "ann");
+        states.add(hit.headers.get("x-rivet-cache"));
+        assert.equal(unnonced((await read(hit)).html), unnonced(holesHTML), "hit " + i);
+      }
+      assert.deepEqual([...states].sort(), ["SHELL-HIT", "SHELL-HIT-REPLAY"], "H-holes hits and one VERIFY hit");
+    });
+
+    await t.test("a route with an H-holes ineligible hole (a signal created in the shell) replays its hits", async () => {
+      const fill = await get("/replay", "ann");
+      assert.equal(fill.headers.get("x-rivet-cache"), "SHELL-MISS");
+      const fillHTML = (await read(fill)).html;
+      const hit = await get("/replay", "ann");
+      assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
+      const { html } = await read(hit);
+      assert.match(html, /<p id="stock">Stock 3<\/p>/);
+      assert.equal(unnonced(html), unnonced(fillHTML));
     });
 
     await t.test("guards run on hits (R4): an anonymous visitor is redirected before the stored shell goes out", async () => {
@@ -164,14 +187,22 @@ test(
       await read(refill);
     });
 
-    await t.test("a replay that differs from the stored shell: no holes, mismatch fallback, the route stops filling (R1)", async () => {
+    await t.test("a VERIFY replay that differs from the stored shell: no holes, mismatch fallback, the route stops filling (R1)", async () => {
       const warn = console.warn;
       const warned: string[] = [];
       console.warn = (...args: unknown[]) => void warned.push(args.join(" "));
       try {
-        await read(await get("/clock", "ann"));
+        const stored = (await read(await get("/clock", "ann"))).html;
+        // H-holes hits render no shell: the stored one goes out (its clock) until the VERIFY hit replays it.
+        for (let i = 1; i < 64; i++) {
+          const holes = await get("/clock", "bob");
+          assert.equal(holes.headers.get("x-rivet-cache"), "SHELL-HIT", "hit " + i);
+          const { html } = await read(holes);
+          assert.match(html, /Hello bob/);
+          assert.equal(/<p id="clock">[^<]*<\/p>/.exec(html)![0], /<p id="clock">[^<]*<\/p>/.exec(stored)![0], "hit " + i);
+        }
         const hit = await get("/clock", "bob");
-        assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT");
+        assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
         const { html } = await read(hit);
         assert.match(html, /Shell mismatch/);
         assert.match(html, /location\.reload\(\)/);
@@ -252,6 +283,24 @@ test(
           assert.deepEqual(errors, [], expected);
           await context.close();
         }
+      });
+
+      await t.test("Chromium: first clicks after a replayed hit (H-holes ineligible route)", async () => {
+        for (let i = 0; i < 2; i++) await fetch(app.url + "/replay", { headers: { cookie: "user=zed" } }).then((r) => r.text());
+        const context = await browser.newContext();
+        await context.addCookies([{ name: "user", value: "bob", url: app.url }]);
+        const page = await context.newPage();
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        const response = await page.goto(app.url + "/replay");
+        assert.equal(response!.headers()["x-rivet-cache"], "SHELL-HIT-REPLAY");
+        await page.waitForSelector("#stock");
+        await page.click("#pick");
+        await page.waitForFunction(() => document.querySelector("#pick")?.textContent === "Picked 1");
+        await page.click("#menu");
+        await page.waitForFunction(() => document.querySelector("#menu")?.textContent === "Close");
+        assert.deepEqual(errors, []);
+        await context.close();
       });
 
       await t.test("Chromium: holes rendered against another shell (`h` mismatch, forced) reload once, then work", async () => {

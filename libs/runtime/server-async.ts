@@ -38,6 +38,9 @@ export interface AsyncStream {
     owner: Owner | null | undefined,
     abort: (reason?: unknown) => void,
     own: Disposer,
+    prepare?: undefined,
+    /** The boundary's props (shell cache H-holes: a boundary the compiler marked `$hole` may be re-run on a hit). */
+    hole?: object,
   ): ServerValue;
   release(dispose: Disposer): void;
 }
@@ -92,7 +95,8 @@ class Work implements AsyncWork {
 /** Construct a single-response owned async data boundary. */
 // Await data in ordered server output; error handles only load failures. `fallback` is DOM-only,
 // except in a streaming resumable render, which writes it first and streams the content later.
-export function Async<T>({ load, children, error, fallback }: AsyncProps<T>): ServerScope {
+export function Async<T>(props: AsyncProps<T>): ServerScope {
+  const { load, children, error, fallback } = props;
   const stream = asyncHook !== null && typeof fallback === "function" ? asyncHook() : null;
   // Resumable renders: the content renders later, in the traversal, outside the enclosing site's read; it still belongs
   // to that site's region (the browser disposes it with the region). Streamed content renders in its segment instead.
@@ -187,7 +191,7 @@ export function Async<T>({ load, children, error, fallback }: AsyncProps<T>): Se
         // Streamed: the stream renders the outcome later, inside its segment's recorder, and disposes the boundary
         // (`release`, else `own` once the segment is dropped): it leaves its parent, whose render (the shell, a segment)
         // ends first. Only once deferred: a throwing fallback leaves it to its parent.
-        const deferred = stream.defer(loaded, success, failure, fallback!, owner, abort, root.dispose);
+        const deferred = stream.defer(loaded, success, failure, fallback!, owner, abort, root.dispose, undefined, props);
         _detach(owner!);
         return deferred;
       }

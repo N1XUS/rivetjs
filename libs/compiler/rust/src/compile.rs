@@ -604,6 +604,9 @@ pub struct Compiler<'t, 'a> {
     for_rows: Vec<resume::ForRowFact>,
     twins: FxHashMap<NodeId, Twin>,
     twin_order: Vec<NodeId>,
+    /// Shell cache H-holes (PPR-T6, `crate::holes`): source offsets of eligible `<Async>` elements (server resume target:
+    /// `$hole: 1` prop).
+    holes: FxHashSet<u32>,
     edges: FxHashMap<NodeId, Vec<NodeId>>,
     widths: FxHashMap<NodeId, usize>,
     list_name: String,
@@ -724,6 +727,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         for_rows: Vec::new(),
         twins: FxHashMap::default(),
         twin_order: Vec::new(),
+        holes: if target == "server" && options.resume.is_some() { crate::holes::eligible(&tree) } else { FxHashSet::default() },
         edges: FxHashMap::default(),
         widths: FxHashMap::default(),
         list_name: String::new(),
@@ -1848,7 +1852,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         )
     }
 
-    fn mark_component(&mut self, el: &'a JSXElement<'a>, callee: Expr, props: Vec<(Key, Expr)>) -> Expr {
+    fn mark_component(&mut self, el: &'a JSXElement<'a>, callee: Expr, mut props: Vec<(Key, Expr)>) -> Expr {
+        if self.holes.contains(&el.span.start) {
+            props.push((Key::Str("$hole".into()), Expr::Num(1)));
+        }
         let spread = el.opening_element.attributes.iter().any(|a| matches!(a, JSXAttributeItem::SpreadAttribute(_)));
         let declaration = if spread { None } else { self.resolve_tag(&el.opening_element.name) };
         let twin = declaration.filter(|d| self.twins.contains_key(d));

@@ -12,7 +12,20 @@
 //   its patch can reference nothing of the shell, so the encoder is seeded with the fill's numbering (no shell walk at all);
 // - else the shell's records are encoded now, exactly as the fill's tail did (same walk, same order: same table indexes,
 //   chunk and symbol numbers), the output dropped; the result is checked against the seal (`mismatch`, then a throw).
-import type { ShellHook, _Encoding as Encoding, _Recorder as Recorder } from "./server-resume.ts";
+//
+// H-holes (PPR-T6): a fill of a page whose every streamed boundary is a top-level `Async` the compiler marked `$hole`
+// (`moduleFacts` `holes`: its `load` / `children` capture data consts, deferred handles and module refs only, no signal
+// made in its component) retains each boundary — props, a detached owner holding its context frame, its marker ids and
+// region — plus the encoder's numbering at the seal (`fork`) and the render's next id / id counter at the cut. A hit then
+// renders no shell at all: `shellHoles(retained)` is the page factory; it re-runs each boundary's `Async` under its frame
+// (the id counter shadowed by the hit's) with the fill's numbering, its fallback rendered empty and discarded; the
+// segments stream as in a fresh render and encode against a read-through overlay of the fill's table (`base`).
+import { createRoot, getOwner, runWithOwner, _detach, _rootIn, type Owner } from "@rivetjs/reactivity";
+import { Async, type AsyncProps } from "./server-async.ts";
+import { _idScope, _inIdScope, type IdScope } from "./id.ts";
+import { renderToString, type ServerValue } from "./server.ts";
+import type { EncoderState } from "./resume-format.ts";
+import { _shellRecorder, type ShellHook, type _Encoding as Encoding, type _Recorder as Recorder, type _Segment as Segment } from "./server-resume.ts";
 
 /** The root encode's numbering after a fill's tail: what the replay's patches encode against. */
 export interface ShellSeal {
@@ -26,6 +39,68 @@ export interface ShellSeal {
   readonly e: readonly string[];
   /** Add-ons the page shipped: 1 rows, 2 lazy, 4 expand, 8 repeat. */
   readonly f: number;
+  /** H-holes: the encoder's numbering (table + interned values; in memory only, never serialized). */
+  readonly fork?: EncoderFork;
+}
+
+/** H-holes: a sealed encoder's numbering (a copy, never written): table entries and interned values. */
+export interface EncoderFork {
+  readonly table: readonly EncoderState["table"][number][];
+  readonly primitives: ReadonlyMap<unknown, number>;
+  readonly specials: ReadonlyMap<string, number>;
+  readonly objects: ReadonlyMap<object, number>;
+}
+/** Read-through overlay of a fork's map: own writes, the base's entries visible (copy-on-write without the copy). */
+class Overlay<K> extends Map<K, number> {
+  declare base: ReadonlyMap<K, number>;
+  constructor(base: ReadonlyMap<K, number>) {
+    super();
+    this.base = base;
+  }
+  override get(key: K): number | undefined {
+    const own = super.get(key);
+    return own === undefined ? this.base.get(key) : own;
+  }
+  override has(key: K): boolean {
+    return super.has(key) || this.base.has(key);
+  }
+}
+const forkOf = (state: EncoderState): EncoderFork => ({
+  table: state.table.slice(),
+  primitives: new Map(state.primitives),
+  specials: new Map(state.specials),
+  objects: new Map(state.objects),
+});
+/** A hit's encoder start: the fork's table copied, its maps behind overlays. */
+const opened = (fork: EncoderFork) => (): EncoderState => ({
+  table: fork.table.slice(),
+  primitives: new Overlay(fork.primitives),
+  specials: new Overlay(fork.specials),
+  objects: new Overlay(fork.objects),
+});
+
+/** H-holes: one retained boundary of a fill (`ShellHookOptions.holes`). */
+export interface ShellHole {
+  /** Marker ids: the boundary (`A`), its fallback region (`F`). */
+  readonly A: number;
+  readonly F: number;
+  /** The region the boundary claimed (its id is read at the hit: assigned once the shell's site closed). */
+  readonly M: Segment["M"];
+  readonly props: AsyncProps<unknown>;
+  /** A detached owner under the boundary's: its context frame. */
+  readonly pin: Owner;
+}
+/** H-holes: what a fill retains for hits that run no shell (`ShellHookOptions.holes`). */
+export interface ShellHoles {
+  readonly holes: readonly ShellHole[];
+  /** The recorder's next id where the shell ended. */
+  readonly n: number;
+  /** The render's id counter (`createId`) where the shell ended, and its prefix. */
+  readonly ids: number;
+  readonly prefix: string;
+  /** Provided context values / identified tokens of the shell (the encoder's `{x}` references, region providers). */
+  readonly contexts: ReadonlyMap<unknown, string>;
+  readonly tokens: ReadonlyMap<string, unknown>;
 }
 
 export interface ShellHookOptions {
@@ -37,6 +112,15 @@ export interface ShellHookOptions {
   cut?(): void;
   /** Replay: the render cannot reproduce the fill's numbering (`why`); the patch encode then throws. */
   mismatch?(why: string): void;
+  /**
+   * Fill: at the cut, the retained boundaries when every streamed boundary of the shell is retainable (top-level `Async`
+   * marked `$hole`, outside an `ErrorBoundary`); else `why` (the entry then replays: H-replay).
+   */
+  holes?(holes: ShellHoles | null, why: string | null): void;
+  /** Replay with no shell render (`shellHoles` is the page factory): the fill's retained boundaries. */
+  retained?: ShellHoles;
+  /** H-holes hit: the request's deferred loader promises per data slot (`shellSlots`). */
+  slots?: readonly (PromiseLike<unknown> | undefined)[];
 }
 
 /** A pending segment stand-in: the replay's late shell encode sees the segments the fill's tail saw (`j` entries off). */
@@ -45,13 +129,27 @@ const PENDING = { out: null } as unknown as NonNullable<Recorder["stream"]>["seg
 const flags = (recorder: Recorder): number =>
   (recorder.rowsAddon ? 1 : 0) | (recorder.lazyAddon ? 2 : 0) | (recorder.expandAddon ? 4 : 0) | (recorder.repeatAddon ? 8 : 0);
 
-const sealOf = (recorder: Recorder, enc: Encoding): ShellSeal => ({
+const sealOf = (recorder: Recorder, enc: Encoding, fork?: boolean): ShellSeal => ({
   t: enc.encoder.table.length,
   c: enc.chunks.slice(),
   s: [...enc.symbols],
   e: [...enc.events],
   f: flags(recorder),
+  ...(fork ? { fork: forkOf(enc.encoder.state()) } : {}),
 });
+/** The chunk / symbol / event numbering of a seal, seeded into a replay's encoding. */
+const seed = (enc: Encoding, replay: ShellSeal): void => {
+  enc.encoder.table.length = replay.t;
+  for (let i = 0; i < replay.c.length; i++) enc.chunkOf.set(replay.c[i]!, enc.chunks.push(replay.c[i]!) - 1);
+  for (const [symbol, index] of replay.s) enc.symbols.set(symbol, index);
+  for (const type of replay.e) enc.events.add(type);
+};
+const NO_FALLBACK = (): null => null;
+/** Inside a boundary's content (`ErrorBoundary`): a failing hole would route to the fill's boundary. */
+const caught = (scope: Segment["M"] | null): boolean => {
+  for (; scope; scope = scope.parent) if (scope.boundary) return true;
+  return false;
+};
 
 /** Nothing a patch encode would reference the table, chunks or symbols for. */
 const quiet = (view: Recorder): boolean =>
@@ -68,18 +166,57 @@ const quiet = (view: Recorder): boolean =>
 
 /** The `shell` option of `renderResumable` for a fill (`seal`) or a replay (`replay` + `cut`). */
 export function shellHook(options: ShellHookOptions): ShellHook {
+  // Fill with `holes`: the retainable boundaries so far; `refused`: the first reason one is not.
+  let kept: ShellHole[] | null = null,
+    refused: string | null = null;
   return {
+    ...(options.slots ? { slots: options.slots } : {}),
+    ...(options.holes
+      ? {
+          hole(segment: Segment, props: object, owner: Owner | null | undefined): void {
+            if (segment.parent !== null) return; // inside a hole: re-created with its content on a hit
+            const list = (kept ??= []);
+            if ((props as { $hole?: unknown }).$hole !== 1) return void (refused ??= "a streamed `Async` the compiler did not mark `$hole`");
+            if (caught(segment.M)) return void (refused ??= "a streamed `Async` inside an `ErrorBoundary`");
+            if (!owner) return void (refused ??= "a streamed `Async` without an owner");
+            const pin = runWithOwner(owner as never, () => createRoot(getOwner).value)!;
+            _detach(pin);
+            list.push({ A: segment.A, F: segment.F, M: segment.M, props: props as AsyncProps<unknown>, pin: pin as unknown as Owner });
+          },
+        }
+      : {}),
     tail(recorder, encode, encoding) {
       // Not covered (falls back to the default tail): no root state, the derived model, DOM-backed data, bridge lean tails.
       const covered = recorder.used && recorder.stream !== null && !recorder.derived && !recorder.dom && !recorder.lean;
       const replay = options.replay;
       if (!replay) {
+        let retain = false;
+        if (options.holes) {
+          const why = !covered
+            ? "no streamed resumable state of the serialized model"
+            : (refused ?? ((kept ??= []).length === 0 ? "no streamed boundary" : null));
+          const segments = recorder.stream?.segments ?? [];
+          const reason = why ?? (segments.length !== kept!.length ? "a streamed boundary is not a top-level `Async` the compiler marked `$hole`" : null);
+          if (reason !== null) options.holes(null, reason);
+          else {
+            const scope = runWithOwner(kept![0]!.pin, _idScope);
+            if (!scope) options.holes(null, "no id scope");
+            else {
+              retain = true;
+              options.holes(
+                { holes: kept!, n: recorder.next, ids: scope.n, prefix: scope.prefix, contexts: new Map(recorder.contexts), tokens: new Map(recorder.tokens) },
+                null,
+              );
+            }
+          }
+          kept = null;
+        }
         // The root encode itself (the default tail, right after this) passes through: sealed at the first patch.
         if (covered)
           recorder.thaw = (view) => {
             if (view === recorder) return;
             recorder.thaw = undefined;
-            options.seal?.(sealOf(recorder, recorder.enc!));
+            options.seal?.(sealOf(recorder, recorder.enc!, retain));
           };
         options.cut?.();
         return false;
@@ -93,11 +230,35 @@ export function shellHook(options: ShellHookOptions): ShellHook {
       recorder.lazyAddon = (replay.f & 2) !== 0;
       recorder.expandAddon = (replay.f & 4) !== 0;
       recorder.repeatAddon = (replay.f & 8) !== 0;
+      const retained = options.retained;
+      if (retained) {
+        // H-holes: no shell rendered; the boundaries re-ran with the fill's ids (checked here), the rest continues after them.
+        const segments = recorder.stream!.segments;
+        const holes = retained.holes;
+        let at = 0;
+        for (const segment of segments) {
+          if (segment.parent !== null) continue;
+          const hole = holes[at++];
+          if (!hole || segment.A !== hole.A || segment.F !== hole.F) {
+            options.mismatch?.("the hit's boundaries number differently from the stored shell's");
+            break;
+          }
+        }
+        if (at !== holes.length) options.mismatch?.("the hit opened " + at + " boundaries, the stored shell " + holes.length);
+        recorder.next = retained.n;
+      }
       recorder.thaw = (view) => {
         recorder.thaw = undefined;
-        if (quiet(view)) {
+        if (quiet(view)) return seed(encoding(recorder), replay);
+        if (retained) {
+          // The holes' records reference the shell's values: encode against the fill's numbering (read-through overlay).
+          if (!replay.fork) {
+            const why = "the stored shell has no encoder numbering";
+            options.mismatch?.(why);
+            throw new Error("Shell mismatch: " + why);
+          }
+          recorder.base = opened(replay.fork);
           const enc = encoding(recorder);
-          enc.encoder.table.length = replay.t;
           for (let i = 0; i < replay.c.length; i++) enc.chunkOf.set(replay.c[i]!, enc.chunks.push(replay.c[i]!) - 1);
           for (const [symbol, index] of replay.s) enc.symbols.set(symbol, index);
           for (const type of replay.e) enc.events.add(type);
@@ -120,5 +281,53 @@ export function shellHook(options: ShellHookOptions): ShellHook {
       options.cut?.();
       return true;
     },
+  };
+}
+
+/**
+ * H-holes: the running render's per-slot deferred loader promises (`ShellHookOptions.slots`), when it is a hit: a fill's
+ * deferred handle (retained in a boundary's captures) follows the hit's slot instead of its own fill's (frame swap).
+ */
+export function shellSlots(): readonly (PromiseLike<unknown> | undefined)[] | undefined {
+  return (_shellRecorder()?.options.shell as { slots?: readonly (PromiseLike<unknown> | undefined)[] } | undefined)?.slots;
+}
+
+/**
+ * H-holes: the page factory of a hit (`renderResumable` with `shell: shellHook({ replay, retained })`): no shell — each
+ * retained boundary's `Async` runs again under its context frame (fresh root; the id counter is the hit's, continued from
+ * the fill's), with the fill's marker ids and region; its fallback renders empty and is discarded. Nothing is written:
+ * the segments stream after the (muted) root tail as in a fresh render.
+ */
+export function shellHoles(retained: ShellHoles): () => ServerValue {
+  return () => {
+    const recorder = _shellRecorder();
+    if (!recorder?.stream) throw new Error("Shell holes need a streaming resumable render");
+    recorder.used = true;
+    for (const [value, token] of retained.contexts) recorder.contexts.set(value, token);
+    for (const [id, token] of retained.tokens) recorder.tokens.set(id, token as never);
+    const ids: IdScope = _idScope() ?? { prefix: retained.prefix, n: 0 };
+    ids.n = retained.ids;
+    const { signal, variant } = recorder.options;
+    const holder: { owner: never } = { owner: null as never };
+    for (const hole of retained.holes) {
+      const M = hole.M;
+      // The claimed region as the boundary found it (unclaimed, no id yet); its fill id once claimed.
+      const region = { ...M, async: false, id: null } as Segment["M"];
+      recorder.region = region;
+      recorder.next = hole.A;
+      const props = { ...hole.props, fallback: NO_FALLBACK };
+      const value = _rootIn(
+        hole.pin as never,
+        (h) => {
+          _detach(h.owner);
+          return _inIdScope(ids, () => Async(props));
+        },
+        holder,
+      );
+      region.id = M.id;
+      void renderToString(value, { ...(signal ? { signal } : {}), ...(variant ? { variant } : {}) });
+      recorder.region = null;
+    }
+    return null;
   };
 }

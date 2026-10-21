@@ -150,8 +150,11 @@ export interface ShellPhase {
   event?(view: RequestEvent, index: number): RequestEvent;
   /** Fill: the non-deferred loaders' results (deferred slots undefined), stored with the shell. */
   loaded?(data: readonly unknown[], byURL: readonly number[], deps: LoaderDeps | undefined): void;
-  /** Fill: a deferred slot's handle (delivers only after the shell is out: in-order use is detected). */
-  handle?(promise: Promise<unknown>, dev: boolean): object;
+  /**
+   * Fill: a deferred slot's handle (delivers only after the shell is out: in-order use is detected). H-holes hit: the slot's
+   * promise for the retained boundaries (the page itself does not render).
+   */
+  handle?(promise: Promise<unknown>, dev: boolean, index: number): object;
   /** Fill: the page's URL for the render (named query reads outside the key recorded). */
   readonly url?: URL;
   /** Set by `app.ts`: this render does not stream (dev `devResume` check mode), deferred data waits in place. */
@@ -160,7 +163,7 @@ export interface ShellPhase {
    * Render options of the fill / replay: `render.ts` `RenderPageOptions` `body` + `shell` (byte counting / compare-only writer,
    * recorder hook). Typed opaquely: the public types reach this file, and `render.ts` pulls in the server runtime's.
    */
-  readonly render?: { readonly body?: (enqueued: () => void) => object; readonly shell?: object };
+  readonly render?: { readonly body?: (enqueued: () => void) => object; readonly shell?: object; readonly holes?: () => unknown };
 }
 /** @internal Request property carrying a `ShellRequest` (`Symbol.for("rivet.shell")`). */
 export const SHELL: unique symbol = Symbol.for("rivet.shell") as never;
@@ -797,7 +800,7 @@ export function createHandler(options: AppOptions): AppHandler {
         }),
       );
       shell?.loaded?.(loaded.slice(), [...byURL], depsOf().deps);
-      if (promises) promises.forEach((promise, i) => (loaded[i] = shell?.handle ? shell.handle(promise!, dev) : lazy!.deferredHandle(promise!, dev)));
+      if (promises) promises.forEach((promise, i) => (loaded[i] = shell?.handle ? shell.handle(promise!, dev, i) : lazy!.deferredHandle(promise!, dev)));
       const head = await options.head?.(route, loaded, { params: found.params, url });
       if (data) {
         if (!headers.has("cache-control")) headers.set("cache-control", "private, no-store");

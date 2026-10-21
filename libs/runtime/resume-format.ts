@@ -281,6 +281,18 @@ export interface EncoderOptions {
   /** Same-origin `URL` values serialize relative to this origin (path, search, hash); the decoder resolves them
    * against the browser's location, so prerendered state never bakes the build's origin in. */
   origin?: string | undefined;
+  /**
+   * @internal Shell cache H-holes (`server-shell.ts`, PPR-T6): the state to start from (a sealed encoder's numbering:
+   * its table copied, its interned values behind read-through maps), so a hit's references equal the fill's.
+   */
+  base?: (() => EncoderState) | undefined;
+}
+/** @internal An encoder's numbering: table entries and interned primitives / specials / objects. */
+export interface EncoderState {
+  table: (TableEntry | null)[];
+  primitives: Map<unknown, number>;
+  specials: Map<string, number>;
+  objects: Map<object, number>;
 }
 type Journal = [Map<unknown, number>, unknown, number | undefined][];
 
@@ -348,15 +360,18 @@ function binaryKind(value: object, proto: unknown): string | undefined {
 }
 
 /** Create an encoder. `special(value, ref)` may return a finished entry for functions/objects. */
-export function createEncoder({ special, opaque, json: jsonOn = true, origin, dom }: EncoderOptions = {}): {
+export function createEncoder({ special, opaque, json: jsonOn = true, origin, dom, base }: EncoderOptions = {}): {
   ref: (value: unknown) => number;
   table: TableEntry[];
   json: (on: boolean) => void;
+  /** @internal The live numbering (shell cache fills copy it, `server-shell.ts`). */
+  state: () => EncoderState;
 } {
-  const table: (TableEntry | null)[] = [],
-    primitives = new Map<unknown, number>(),
-    specials = new Map<string, number>(),
-    objects = new Map<object, number>();
+  const start = base?.(),
+    table: (TableEntry | null)[] = start ? start.table : [],
+    primitives = start ? start.primitives : new Map<unknown, number>(),
+    specials = start ? start.specials : new Map<string, number>(),
+    objects = start ? start.objects : new Map<object, number>();
   const add = (entry: TableEntry | null): number => table.push(entry) - 1;
   // Undo log of a running `plain()` attempt: interned keys to forget (or restore) on failure.
   let journal: Journal | null = null;
@@ -585,7 +600,7 @@ export function createEncoder({ special, opaque, json: jsonOn = true, origin, do
       throw new RangeError(DEEP + " (" + error.message.slice(0, 400) + ")", { cause: error });
     }
   };
-  return { ref: encode, table: table as TableEntry[], json: (on) => void (jsonOn = on) };
+  return { ref: encode, table: table as TableEntry[], json: (on) => void (jsonOn = on), state: () => ({ table, primitives, specials, objects }) };
 }
 const empty = (value: object): boolean => {
   for (const _ in value) return false;

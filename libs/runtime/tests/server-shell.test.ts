@@ -94,3 +94,89 @@ test("shell hook: a page without streamed boundaries is not sealed; its replay r
   assert.equal(mismatches.length, 1);
   assert.equal(replayed.html, "<p>flat</p>");
 });
+
+// H-holes (PPR-T6): a fill retains its `$hole` boundaries; a hit renders no shell — the boundaries re-run under their frames
+// with the fill's numbering, their patches equal the fill's byte for byte (overlay over the fill's table when they capture).
+// `$hole={1}` by hand tests the runtime mechanism apart from the compiler's policy (CapturingHoles captures a signal: the
+// compiler would not mark it); Unmarked's second boundary captures a `let`, so the compiler leaves it unmarked.
+const holesSource = `
+import { signal, createContext, useContext } from "@rivetjs/reactivity";
+import { Async, Provider } from "@rivetjs/runtime/server";
+import { createId } from "@rivetjs/runtime/id";
+const load = (key: string) => Promise.resolve("value " + key);
+const Theme = createContext("light", { id: "test:theme" });
+function Leaf(props: { v: string }) {
+  const id = createId();
+  const theme = useContext(Theme);
+  return <label for={id} data-theme={theme}>{props.v}<input id={id} /></label>;
+}
+export function QuietHoles() {
+  return <main>
+    <p>{createId()}</p>
+    <Async $hole={1} load={() => load("a")} fallback={() => <i>wait</i>}>{(v: string) => <em id="a">{v}</em>}</Async>
+    <Provider token={Theme} value="dark">
+      <section><Async $hole={1} load={() => load("b")} fallback={() => <i>wait</i>}>{(v: string) => <Leaf v={v} />}</Async></section>
+    </Provider>
+    <footer>after</footer>
+  </main>;
+}
+export function CapturingHoles() {
+  const n = signal(0);
+  const label = { text: "shared" };
+  return <main>
+    <button id="top" onClick={() => n.set(label.text.length)}>{n()}</button>
+    <Async $hole={1} load={() => load("c")} fallback={() => <i>wait</i>}>{(v: string) => <button id="c" onClick={() => n.set(label.text.length + v.length)}>{v}</button>}</Async>
+  </main>;
+}
+export function Unmarked() {
+  let key = "b";
+  return <main>
+    <Async $hole={1} load={() => load("a")} fallback={() => <i>wait</i>}>{(v: string) => <em>{v}</em>}</Async>
+    <Async load={() => load(key)} fallback={() => <i>wait</i>}>{(v: string) => <em>{v}</em>}</Async>
+  </main>;
+}
+`;
+const holesDom = compileResume(holesSource, "dom");
+const holesServer = await importServer<Record<"QuietHoles" | "CapturingHoles" | "Unmarked", () => ServerValue>>(compileResume(holesSource, "server").code);
+const holesManifest: ResumeManifest = { hash: "t", runtime: "/rt.js", symbols: symbolUrls(holesDom.symbols) };
+const { withIdScope } = await import("@rivetjs/runtime/id");
+const { shellHoles } = await import("@rivetjs/runtime/server-shell");
+type Holes = NonNullable<Parameters<NonNullable<Parameters<typeof shellHook>[0]["holes"]>>[0]>;
+
+async function renderIn(page: () => ServerValue, hook: Parameters<typeof shellHook>[0]): Promise<{ html: string; at: number }> {
+  let html = "",
+    at = -1;
+  const options = { ...hook, cut: () => ((at = html.length), hook.cut?.()) };
+  await withIdScope("rv", () =>
+    renderResumable(page, { write: (chunk: string) => void (html += chunk) }, { manifest: holesManifest, stream: {}, shell: shellHook(options) }),
+  );
+  return { html, at };
+}
+
+for (const name of ["QuietHoles", "CapturingHoles"] as const) {
+  test(`shell hook: H-holes — a hit of ${name} renders no shell and streams the fill's holes byte for byte`, async () => {
+    const page = () => holesServer[name]();
+    let seal: ShellSeal | undefined,
+      retained: Holes | null = null,
+      why: string | null = null;
+    const filled = await renderIn(page, { seal: (value) => (seal = value), holes: (holes, reason) => ((retained = holes), (why = reason)) });
+    assert.equal(why, null);
+    assert.ok(seal?.fork, "the seal carries the encoder numbering");
+    assert.ok(retained);
+    for (let hit = 0; hit < 3; hit++) {
+      const mismatches: string[] = [];
+      const out = await renderIn(shellHoles(retained!), { replay: seal!, retained: retained!, mismatch: (why) => void mismatches.push(why) });
+      assert.deepEqual(mismatches, []);
+      assert.equal(out.at, 0, "nothing before the holes");
+      assert.equal(out.html, filled.html.slice(filled.html.indexOf(HOLES)));
+    }
+  });
+}
+
+test("shell hook: H-holes — a streamed boundary without the compiler's `$hole` keeps the entry on replay", async () => {
+  let retained: unknown = 1,
+    why: string | null = null;
+  await renderIn(() => holesServer.Unmarked(), { seal: () => {}, holes: (holes, reason) => ((retained = holes), (why = reason)) });
+  assert.equal(retained, null);
+  assert.match(why!, /did not mark `\$hole`/);
+});

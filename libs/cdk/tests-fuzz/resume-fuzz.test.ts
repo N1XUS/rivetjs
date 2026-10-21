@@ -15,22 +15,27 @@ process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : isFlip ? "dist-fu
 const pins = isDerived ? derived : isFlip ? flip : serialized;
 const { stories } = await import("../tests-components/harness.ts");
 
-// Shell cache route (`/shell-loader`, rule `shell`): the store is primed before the run so its resumed document load is a
-// hit (`RIVET_FUZZ_SHELL=hit`, default: two loads, the doorkeeper stores on the second), the fill (`miss`: one) or a
-// plain render (`off`). The derived model is not supported by the shell cache yet (`shell-cache.ts` rejects a
-// `rivet/boundaries` document), so a derived run never primes: the route renders plain and is fuzzed as such.
+// Shell cache routes (rule `shell`): the store is primed before the run so their resumed document loads are hits
+// (`RIVET_FUZZ_SHELL=hit`, default: two loads, the doorkeeper stores on the second), fills (`miss`: one) or plain renders
+// (`off`). `/shell-loader` has an H-holes eligible hole (a hit renders no shell, PPR-T6), `/shell-replay` an ineligible one
+// (a signal created in the shell: hits replay it); a `hit` run checks each answers its path once before the fuzz.
+// The derived model is not supported by the shell cache yet (`shell-cache.ts` rejects a `rivet/boundaries` document), so a
+// derived run never primes: both routes render plain and are fuzzed as such.
 const prime = isDerived ? "off" : (process.env.RIVET_FUZZ_SHELL ?? "hit");
+const SHELL_ROUTES = { "/shell-loader": "SHELL-HIT", "/shell-replay": "SHELL-HIT-REPLAY" };
 const start = async () => {
   const app = await stories();
-  const states: (string | null)[] = [];
-  for (let i = 0; i < (prime === "hit" ? 2 : prime === "miss" ? 1 : 0); i++) {
-    const response = await fetch(app.origin + "/shell-loader");
-    states.push(response.headers.get("x-rivet-cache"));
-    await response.text();
+  for (const [path, hit] of Object.entries(SHELL_ROUTES)) {
+    const states: (string | null)[] = [];
+    for (let i = 0; i < (prime === "hit" ? 3 : prime === "miss" ? 1 : 0); i++) {
+      const response = await fetch(app.origin + path);
+      states.push(response.headers.get("x-rivet-cache"));
+      await response.text();
+    }
+    // hit: the second load filled the store, the third is a hit; miss: the first only passed the doorkeeper (the resumed load fills).
+    const want = prime === "hit" ? "null,SHELL-MISS," + hit : prime === "miss" ? "null" : "";
+    if (states.map(String).join() !== want) throw new Error(`RIVET_FUZZ_SHELL=${prime} ${path}: priming answered ${states.join()} (want ${want})`);
   }
-  // hit: the second load filled the store; miss: the first only passed the doorkeeper (the resumed load fills).
-  const want = prime === "hit" ? "null,SHELL-MISS" : prime === "miss" ? "null" : "";
-  if (states.map(String).join() !== want) throw new Error(`RIVET_FUZZ_SHELL=${prime}: priming answered ${states.join()} (want ${want})`);
   return app;
 };
 

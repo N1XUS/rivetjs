@@ -54,7 +54,7 @@ import {
   _registeredId,
   _setUnrecorded,
 } from "./resume-format.ts";
-import type { ClassHooks, ClassRegistry } from "./resume-format.ts";
+import type { ClassHooks, ClassRegistry, EncoderState } from "./resume-format.ts";
 import { EXPAND, EXPAND_DOM, LAZY, LOADER, LOADER_KEYS, REPEAT, ROWS, STREAM } from "./resume-loader.min.ts";
 import { rowPaths } from "./server-resume-paths.ts";
 import { addReads, encodeLazy, lazyKeyed, lazyLocal, lazyRowsOn, lazyWarn } from "./server-resume-lazy.ts";
@@ -210,6 +210,8 @@ export interface ResumableOptions {
  */
 export interface ShellHook {
   tail(recorder: Recorder, encode: typeof encodeRecords, encoding: (root: Recorder) => Encoding): boolean;
+  /** A streamed `Async` boundary (its props, its root owner) whose compiler fact marks it retainable (`$hole`, PPR-T6). */
+  hole?(segment: Segment, props: object, owner: Owner | null | undefined): void;
 }
 /** Options of streaming resumable rendering. */
 export interface StreamingResumableOptions extends ResumableOptions {
@@ -2028,6 +2030,7 @@ class Boundary implements AsyncStream {
     abort: (reason?: unknown) => void,
     own: Disposer,
     prepare?: (segment: Segment) => Recorder,
+    hole?: object,
   ): ServerValue {
     const recorder = store.getStore()!;
     const marker = recorder.next++;
@@ -2055,6 +2058,7 @@ class Boundary implements AsyncStream {
       abort,
     });
     if (prepare) segment.prepared = prepare(segment);
+    else if (hole) recorder.options.shell?.hole?.(segment, hole, owner);
     recorder.asyncs.push(segment);
     this.stream.add(segment, loaded, success, failure, owner);
     return compiledTemplate(PAIR, [compiledTemplate(BOUNDARY, [marker, value]), reset()]);
@@ -2065,33 +2069,6 @@ class Boundary implements AsyncStream {
     this.stream.settle(this.segment);
   }
 }
-
-// A recorder for one streamed segment: own record lists and scope cursor, shared ids, flags,
-// contexts and encoder.
-const viewOf = (root: Recorder, segment: Segment): Recorder => {
-  const view: Recorder = Object.create(root, {
-    next: { get: () => root.next, set: (value: number) => (root.next = value) },
-    used: { get: () => root.used, set: (value: boolean) => (root.used = value) },
-  });
-  return Object.assign(view, {
-    pending: null,
-    late: false,
-    region: segment.M,
-    segment,
-    events: new Set(),
-    elements: [],
-    texts: [],
-    effects: [],
-    clientEvents: [],
-    regions: [],
-    asyncs: [],
-    links: [],
-    lists: [],
-    paths: [],
-    preloads: [],
-    lazy: [],
-  });
-};
 
 const OPEN = (segment: Segment): boolean => !segment.parent || segment.parent.out === "content";
 // Nested boundaries are owned by their parent's Async scope: dispose a scope only once its own
@@ -2365,6 +2342,8 @@ class Recorder {
   declare dom: DomRegistry | null;
   /** Shell cache (`server-shell.ts`): runs before the next patch encodes (fill: seals the root numbering; replay: thaws it). */
   declare thaw?: (recorder: Recorder) => void;
+  /** Shell cache H-holes (`server-shell.ts`): the fill's sealed encoder numbering this render's encoder starts from. */
+  declare base?: () => EncoderState;
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
@@ -2403,6 +2382,71 @@ class Recorder {
     return (this.pending ??= { handlers: null, bindings: null, model: null, refs: null });
   }
 }
+
+// A recorder for one streamed segment: own record lists and scope cursor, shared ids, flags,
+// contexts and encoder. Not `Object.create(root)`: turning each request's root into a prototype costs ~5 µs per
+// streamed request (V8 prototype map setup, PPR-T6 profile). The view inherits `Recorder.prototype`'s methods; shared
+// members read through to the root (a write shadows on the view, as with a prototype), `next` / `used` write through.
+const SHARED = [
+  "options",
+  "contexts",
+  "tokens",
+  "rowsAddon",
+  "lazyAddon",
+  "expandAddon",
+  "repeatAddon",
+  "lean",
+  "enc",
+  "stream",
+  "derived",
+  "lazyRows",
+  "dom",
+  "thaw",
+  "base",
+] as const;
+interface View extends Recorder {
+  up: Recorder;
+}
+const View = function (this: View, root: Recorder, segment: Segment) {
+  this.up = root;
+  this.pending = null;
+  this.late = false;
+  this.region = segment.M;
+  this.segment = segment;
+  this.events = new Set();
+  this.elements = [];
+  this.texts = [];
+  this.effects = [];
+  this.clientEvents = [];
+  this.regions = [];
+  this.asyncs = [];
+  this.links = [];
+  this.lists = [];
+  this.paths = [];
+  this.preloads = [];
+  this.lazy = [];
+} as unknown as new (root: Recorder, segment: Segment) => View;
+const shared: PropertyDescriptorMap = {};
+for (const key of SHARED)
+  shared[key] = {
+    get(this: View) {
+      return this.up[key];
+    },
+    set(this: View, value: unknown) {
+      Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
+    },
+  };
+for (const key of ["next", "used"] as const)
+  shared[key] = {
+    get(this: View) {
+      return this.up[key];
+    },
+    set(this: View, value: never) {
+      this.up[key] = value;
+    },
+  };
+View.prototype = Object.create(Recorder.prototype, shared);
+const viewOf = (root: Recorder, segment: Segment): Recorder => new View(root, segment);
 
 const primitive = (value: unknown): boolean => value == null || (typeof value !== "object" && typeof value !== "function");
 
@@ -3208,6 +3252,8 @@ export function _rLean<T extends LeanTail>(create: () => T): T | null {
  * way the runtime writes it into its own scripts), for framework islands whose inline scripts need it (React / Solid).
  * `undefined` outside a resumable render or when the render has no nonce.
  */
+/** @internal Shell cache H-holes (`server-shell.ts`): the running render's recorder. */
+export const _shellRecorder = (): Recorder | undefined => store.getStore();
 export function _renderNonce(): string | undefined {
   const nonce = store.getStore()?.options.nonce;
   return nonce ? String(nonce).replace(/[^\w+/=-]/g, "") : undefined;
@@ -3756,7 +3802,7 @@ function encoding(root: Recorder): Encoding {
   };
   return (root.enc = {
     manifest,
-    encoder: createEncoder({ special, opaque, json: false, origin: root.options.origin, dom: root.dom ?? undefined }),
+    encoder: createEncoder({ special, opaque, json: false, origin: root.options.origin, dom: root.dom ?? undefined, base: root.base }),
     chunks: [],
     chunkOf: new Map(),
     symbols: new Map(),

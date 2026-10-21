@@ -7,8 +7,8 @@
         "br": 42729
       },
       "serverJS": {
-        "min": 229923,
-        "br": 80335
+        "min": 230551,
+        "br": 80560
       },
       "routes": {
         "/": {
@@ -32,8 +32,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 67191,
@@ -101,9 +101,9 @@
           "eagerFiles": [
             "resume-loader.js",
             "resume-entry.js",
+            "resume-resume_tsx.js",
             "rivet-merge-index-1.js",
             "resume-route_main.js",
-            "resume-resume_tsx.js",
             "rivet-merge-index.js",
             "analytics.js",
             "browser-widget.js"
@@ -119,7 +119,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7295,
+          "htmlBr": 7290,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -171,8 +171,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 67191,
@@ -204,8 +204,8 @@
             "rivet-merge-index-1.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 67191,
@@ -258,8 +258,8 @@
         "br": 30177
       },
       "serverJS": {
-        "min": 182628,
-        "br": 62687
+        "min": 183256,
+        "br": 62998
       },
       "routes": {
         "/": {
@@ -334,8 +334,8 @@
         "br": 32014
       },
       "serverJS": {
-        "min": 185396,
-        "br": 64774
+        "min": 186026,
+        "br": 65033
       },
       "routes": {
         "/": {
@@ -378,8 +378,8 @@
         "br": 31675
       },
       "serverJS": {
-        "min": 191149,
-        "br": 64241
+        "min": 191777,
+        "br": 64452
       },
       "routes": {
         "/": {
@@ -422,8 +422,8 @@
         "br": 26621
       },
       "serverJS": {
-        "min": 180949,
-        "br": 62275
+        "min": 181577,
+        "br": 62478
       },
       "routes": {
         "/": {
@@ -460,8 +460,8 @@
         "br": 28295
       },
       "serverJS": {
-        "min": 180158,
-        "br": 61777
+        "min": 180786,
+        "br": 61999
       },
       "routes": {
         "/": {
@@ -512,8 +512,8 @@
         "br": 26581
       },
       "serverJS": {
-        "min": 174260,
-        "br": 59624
+        "min": 174888,
+        "br": 59923
       },
       "routes": {
         "/": {
@@ -550,8 +550,8 @@
         "br": 67563
       },
       "serverJS": {
-        "min": 251871,
-        "br": 81722
+        "min": 252499,
+        "br": 81833
       },
       "routes": {
         "/": {
@@ -602,8 +602,8 @@
         "br": 26651
       },
       "serverJS": {
-        "min": 174377,
-        "br": 59744
+        "min": 175005,
+        "br": 59890
       },
       "routes": {
         "/": {
@@ -652,8 +652,8 @@
         "br": 28451
       },
       "serverJS": {
-        "min": 199105,
-        "br": 68151
+        "min": 199733,
+        "br": 68298
       },
       "routes": {
         "/": {
@@ -701,8 +701,8 @@
         "br": 26865
       },
       "serverJS": {
-        "min": 181441,
-        "br": 62576
+        "min": 182070,
+        "br": 62668
       },
       "routes": {
         "/": {
@@ -750,8 +750,8 @@
         "br": 27925
       },
       "serverJS": {
-        "min": 200263,
-        "br": 68559
+        "min": 200891,
+        "br": 68700
       },
       "routes": {
         "/": {
@@ -800,8 +800,8 @@
         "br": 27036
       },
       "serverJS": {
-        "min": 175061,
-        "br": 59937
+        "min": 175689,
+        "br": 60137
       },
       "routes": {
         "/": {
@@ -850,8 +850,8 @@
         "br": 28733
       },
       "serverJS": {
-        "min": 181661,
-        "br": 61456
+        "min": 182289,
+        "br": 61624
       },
       "routes": {
         "/": {
@@ -899,8 +899,8 @@
         "br": 26895
       },
       "serverJS": {
-        "min": 175940,
-        "br": 60224
+        "min": 176568,
+        "br": 60420
       },
       "routes": {
         "/": {
@@ -949,8 +949,8 @@
         "br": 30474
       },
       "serverJS": {
-        "min": 191747,
-        "br": 67117
+        "min": 192375,
+        "br": 67345
       },
       "routes": {
         "/": {
@@ -993,8 +993,8 @@
         "br": 27361
       },
       "serverJS": {
-        "min": 182653,
-        "br": 62825
+        "min": 183281,
+        "br": 63013
       },
       "routes": {
         "/": {
@@ -1031,8 +1031,8 @@
         "br": 44801
       },
       "serverJS": {
-        "min": 207317,
-        "br": 70983
+        "min": 207945,
+        "br": 71114
       },
       "routes": {
         "/": {
@@ -1082,8 +1082,8 @@
         "br": 45757
       },
       "serverJS": {
-        "min": 209208,
-        "br": 71498
+        "min": 209836,
+        "br": 71686
       },
       "routes": {
         "/": {
@@ -1134,8 +1134,8 @@
         "br": 49634
       },
       "serverJS": {
-        "min": 231687,
-        "br": 78255
+        "min": 232315,
+        "br": 78484
       },
       "routes": {
         "/": {
@@ -1185,8 +1185,8 @@
         "br": 49463
       },
       "serverJS": {
-        "min": 228121,
-        "br": 77525
+        "min": 228749,
+        "br": 77699
       },
       "routes": {
         "/": {
@@ -1237,8 +1237,8 @@
         "br": 37668
       },
       "serverJS": {
-        "min": 184528,
-        "br": 63065
+        "min": 185156,
+        "br": 63194
       },
       "routes": {
         "/": {
@@ -1282,8 +1282,8 @@
         "br": 65608
       },
       "serverJS": {
-        "min": 279193,
-        "br": 91479
+        "min": 279821,
+        "br": 91693
       },
       "routes": {
         "/": {
@@ -1334,8 +1334,8 @@
         "br": 65000
       },
       "serverJS": {
-        "min": 278423,
-        "br": 91218
+        "min": 279051,
+        "br": 91330
       },
       "routes": {
         "/": {

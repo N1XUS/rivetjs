@@ -20,15 +20,21 @@ export const loader = load(
   { defer: true },
 );
 
-export default function Layout({ data, children }: LayoutProps<typeof loader>) {
+// Shell state lives in its own component: the layout itself creates none, so its hole is H-holes eligible (PPR-T6).
+function Visits() {
   const visits = signal(0);
+  return (
+    <button id="visits" type="button" onClick={() => visits.update((n) => n + 1)}>
+      Visits {visits()}
+    </button>
+  );
+}
+
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
   return (
     <div id="shell">
       <header>
-        <a href="/article">Article</a>{" "}
-        <button id="visits" type="button" onClick={() => visits.update((n) => n + 1)}>
-          Visits {visits()}
-        </button>
+        <a href="/article">Article</a> <Visits />
         <Async load={() => data()} fallback={() => <span id="user-wait">…</span>}>
           {(user) => {
             const opened = signal(false);
