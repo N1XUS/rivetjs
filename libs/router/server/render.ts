@@ -1,7 +1,7 @@
 // Stream a page into a web Response: document start, resumable app, document end.
 import { renderToWriter, SlabWriter, type ServerValue } from "@rivetjs/runtime/server";
 import { escapeText } from "@rivetjs/runtime/escape";
-import { renderResumable, type ResumeManifest } from "@rivetjs/runtime/server-resume";
+import { renderResumable, type ResumeManifest, type ShellHook } from "@rivetjs/runtime/server-resume";
 import { withIdScope } from "@rivetjs/runtime/id";
 import type { Head } from "../shared/data.ts";
 import type { HeadManaged } from "../shared/head.ts";
@@ -67,6 +67,9 @@ export interface RenderPageOptions {
   discardState?: boolean;
   /** Markup written after the app's output (and its streamed boundaries), before `around.end` (deferred loaders' client redirect). */
   epilogue?: () => string;
+  /** @internal Route rule `shell` (`shell-cache.ts`): the body writer (`enqueued`: as `BodyWriter`'s) and the recorder hook. */
+  body?: (enqueued: () => void) => BodyWriter;
+  shell?: ShellHook;
 }
 
 /** Coalesced write size (bytes): fewer, larger body chunks. */
@@ -117,7 +120,7 @@ const retire = (slab: Slab): void => {
  * (high-water mark 0: `pull` = a read waits; parked chunks go out, later ones straight to a waiting read),
  * or a direct sink (`attach`, node adapter: views of pooled slabs, released by the sink; no stream at all).
  */
-class BodyWriter extends SlabWriter {
+export class BodyWriter extends SlabWriter {
   declare bytes: Uint8Array | null;
   declare slab: Slab | null;
   declare controller: ReadableStreamDefaultController<Uint8Array>;
@@ -431,10 +434,11 @@ function stream(
     Object.defineProperty(response, DIRECT_BODY, { value: direct });
     return response;
   };
-  const out = new BodyWriter(() => {
+  const enqueued = () => {
     sent = true;
     if (!responded) armed ? open() : (queued = true);
-  });
+  };
+  const out = options.body ? options.body(enqueued) : new BodyWriter(enqueued);
   const flush = (): void => void out.flush();
   const arm = (): void => {
     armed = true;
@@ -509,6 +513,7 @@ function stream(
               ...(options.stream && !options.discardState ? { stream: options.stream } : {}),
               ...(options.preload ? { preload: options.preload } : {}),
               ...(variant ? { variant } : {}),
+              ...(options.shell ? { shell: options.shell } : {}),
             })
           : renderToWriter(app, writer, { ...(signal ? { signal } : {}), ...(variant ? { variant } : {}) }),
       );

@@ -156,6 +156,11 @@ export interface ShellPhase {
   readonly url?: URL;
   /** Set by `app.ts`: this render does not stream (dev `devResume` check mode), deferred data waits in place. */
   plain?: boolean;
+  /**
+   * Render options of the fill / replay: `render.ts` `RenderPageOptions` `body` + `shell` (byte counting / compare-only writer,
+   * recorder hook). Typed opaquely: the public types reach this file, and `render.ts` pulls in the server runtime's.
+   */
+  readonly render?: { readonly body?: (enqueued: () => void) => object; readonly shell?: object };
 }
 /** @internal Request property carrying a `ShellRequest` (`Symbol.for("rivet.shell")`). */
 export const SHELL: unique symbol = Symbol.for("rivet.shell") as never;

@@ -196,6 +196,18 @@ export interface ResumableOptions {
    * `Switch` branches keep their `<!--rN[-->…<!--]-->` markers; out-of-order streaming is not entered (no site scopes).
    */
   model?: "serialized" | "derived";
+  /**
+   * @internal Shell cache (router route rule `shell`, PPR-T3B): built by `@rivetjs/runtime/server-shell` `shellHook`. A fill
+   * hands over the root encode's numbering; a replay writes and encodes no root state (`server-shell.ts`).
+   */
+  shell?: ShellHook;
+}
+/**
+ * @internal `server-shell.ts`: at the root tail; true = the tail writes nothing (a replay). `encode` / `encoding` are the
+ * recorder's encoders (only the shell module calls them: other pages carry nothing but this call and `Recorder#thaw`'s).
+ */
+export interface ShellHook {
+  tail(recorder: Recorder, encode: typeof encodeRecords, encoding: (root: Recorder) => Encoding): boolean;
 }
 /** Options of streaming resumable rendering. */
 export interface StreamingResumableOptions extends ResumableOptions {
@@ -385,6 +397,7 @@ interface Segment {
   prepared?: Recorder;
 }
 /** Persistent per-render encoding state (see encoding). */
+export type { Encoding as _Encoding, Recorder as _Recorder, Segment as _Segment };
 interface Encoding {
   manifest: BuildManifest;
   encoder: ReturnType<typeof createEncoder>;
@@ -2347,6 +2360,8 @@ class Recorder {
   declare lazy: LazyFor[];
   /** DOM-DATA (manifest `domData`): strings written as an element's whole text, shared by the render's segments. */
   declare dom: DomRegistry | null;
+  /** Shell cache (`server-shell.ts`): runs before the next patch encodes (fill: seals the root numbering; replay: thaws it). */
+  declare thaw?: (recorder: Recorder) => void;
   constructor(options: RecorderOptions) {
     drainRefs();
     this.options = options;
@@ -3861,6 +3876,7 @@ function regionEntry(
  * `a`: streamed boundary entries [marker, fallback region, region, status 0 pending | 1 content | 2 continue].
  */
 function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = []): Encoded {
+  root.thaw?.(recorder);
   // Modules evaluated during the render (lazy imports) stamped after it started.
   drainRefs();
   if (recorder.late) settleLate(recorder);
@@ -5464,6 +5480,7 @@ function planPreload({
 
 const tailOf = (recorder: Recorder) => (): ServerValue => {
   if (recorder.pending) throw new Error("Internal error: unclosed resumable element");
+  if (recorder.options.shell?.tail(recorder, encodeRecords, encoding)) return null;
   const state = recorder.used ? (recorder.lean?.tail(recorder, deferredState(recorder)) ?? encodeState(recorder)) : null;
   // Derived model: the boundaries script follows the content (and any serialized-model state a `.ts` helper recorded).
   const derived = recorder.derived ? derivedHooks!.tail(recorder.derived) : null;

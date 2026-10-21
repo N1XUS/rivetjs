@@ -62,6 +62,10 @@
       "types": "./server-resume.ts",
       "default": "./server-resume.ts"
     },
+    "./server-shell": {
+      "types": "./server-shell.ts",
+      "default": "./server-shell.ts"
+    },
     "./server-derived": {
       "types": "./server-derived.ts",
       "default": "./server-derived.ts"

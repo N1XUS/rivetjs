@@ -96,12 +96,17 @@
 - node: full (fast path stays route-cache only; shell hits go through the handler because guards run). fetch / cloudflare / vercel-edge / deno / bun: same code via `createApp` (in-isolate store, cold isolates refill; documented). Vercel Build Output PPR mapping = F4.
 - CDN trade-off: server-composed ⇒ TTFB = RTT to origin + ~0.05 ms, not edge RTT. Client-composed (F1) ⇒ shell from CDN (edge TTFB, `public, s-maxage`), holes = one extra round trip each (or one batched `?_rivet=holes` fetch with cookies), hole LCP later, guards rerun per hole request, `h` check mandatory. Pick: server-composed now; F1 when a deploy target with far-from-origin users asks for it.
 
-### 3.9 As built (T2 + T3, lane PPR-T23, 2026-10-21)
+### 3.9 As built (T2 + T3, lane PPR-T23; T3b, lane PPR-T3B, 2026-10-21)
 
 Code `libs/router/server/shell-cache.ts` (+ hooks in `handler.ts`, `app.ts`, `render.ts`, `route-cache.ts`); internals `docs/guides/routing.md` "File routes: shell cache"; user docs `headers-and-caching.md#partial-prerendering-shell-cache`. Deviations from §3.1–3.8:
 
 - **No runtime change** (runtime hashes identical). The cut is found in bytes: after the root state tail (`<script type="rivet/state" data-region="0" …>` + loader script + stream add-on when `data-stream` is set; `shellCut`). No `ShellRecorder`, no snapshot / fingerprint object: the hit's replay is a **full live render whose prefix is compared byte for byte with the stored one** and then discarded. Ids, resume sites, chunk lists and state are in those bytes, so the comparison subsumes §3.4's fingerprint; a mismatch before the first hole is caught every time, not sampled.
-- H-replay renders bytes and encodes state (no discarding writer / shell-muted recorder: both need runtime hooks). Measured cost: §4.1. A muted replay (writer that only compares + recorder that skips the shell's state encode) is the next CPU step (T3b, runtime change).
+- T3 H-replay rendered bytes and encoded state (no runtime hooks), measured §4.1. **T3b muted replay** (PPR-T3B) replaces it on sealed entries:
+  - Compare-only writer: `ShellBody` (router `shell-cache.ts`, a `BodyWriter` subclass through `render.ts` option `body`) — each `flush()` until the cut compares the slab's pending bytes with the live-nonce prefix at a rolling cursor (`Buffer#compare`) and reuses the slab: no chunk handed off, no shell bytes materialised. First divergent byte = verdict → after the cut the body drains, the mismatch path runs (as T3).
+  - Shell-muted recorder: `@rivetjs/runtime/server-shell` `shellHook` (option `shell`): the root tail (state encode + state / loader / add-on scripts) writes and encodes nothing; the prefix already holds the fill's. Numbering for the holes: the fill seals the root encode (`ShellSeal`: table length, chunks, symbols, events, add-ons) before its first patch; the replay thaws it before its first patch — a segment with no captures seeds the encoder from the seal (no shell walk), else the shell's records are encoded then (same walk as the fill's tail) and checked against the seal. Holes' patches = the fill's byte for byte (test `server-shell.test.ts`).
+  - Runtime cost on every resume page: `server-resume` `tailOf` one optional call + `encodeRecords` one optional call (`Recorder#thaw`), +60 B min. `server-shell` itself ships only with the router's shell cache.
+  - Verification: the muted replay compares the shell's HTML bytes, not its state bytes. Every 64th hit of an entry (`VERIFY`) and entries without seal / tail replay in full (T3: whole prefix incl. state compared); state nondeterminism the HTML does not show is caught there (≤ 63 hits served).
+  - Cut check: `ShellBody.cut` requires the cursor at the stored tail offset (`entry.tail`, counted by the fill's `ShellBody`), so a shell that rendered fewer / more bytes is a mismatch.
 - **Prefix before verification:** the hit sends status, headers and the stored prefix right after the guards (TTFB ≈ guards + copy), then replays. A mismatch can therefore not fall back to a full render in the same response: the response ends with `rivet:resume-error` ("Shell mismatch") + reload once (`sessionStorage["rivet:shell"]`), the entry is evicted, the route goes sticky, a warning is logged. R3 rests on the tracker, not on the comparison (the comparison proves determinism, not request independence).
 - `h` = FNV-1a over the bare prefix + build + route id + key. Carried by router-written scripts, not the runtime state / patches: `self.$rvh="h"` after the prefix, and before the first hole a script that compares it and reloads once on a difference. Same guard for F1 later; `dom-resume` untouched.
 - Nonce slots as D5 (attribute offsets from `noncedSources`); a request whose nonce presence differs from the entry's renders without the store (no overwrite). Policy = the app's nonce policy for the live nonce (`'strict-dynamic'` kept).
@@ -151,7 +156,26 @@ Code `libs/router/server/shell-cache.ts` (+ hooks in `handler.ts`, `app.ts`, `re
 
 - **CPU 1.18–1.26× vs `full` (bar 1.5×: missed); TTFB 0.011 ms ≤ `floor` + 0.05 (met, ~17× better than `full`).**
 - Why below T0's 1.75–1.83×: the replay is the whole `renderDocument` incl. bytes + state encode (profile: `renderResumable` 0.129 ms of a 0.147 ms hit in main-thread JS; `encodeState` 0.036, `admit` 0.028; shell-cache's own code ≈ 0.01), not `r-shell-null` (0.052, no bytes / no encode); the hit also allocates ~2× `full`'s garbage (replay bytes compared then dropped, prefix copy with the live nonce). Saving = the shell loader only (0.093).
-- Next: T3b muted replay (runtime: compare-only writer + shell recorder without state encode, est. 1.6–1.8×) or T6 H-holes (≈ `hole` + copy, ~3×).
+- Next: T3b muted replay (runtime: compare-only writer + shell recorder without state encode, est. 1.6–1.8×) or T6 H-holes (≈ `hole` + copy, ~3×). T3b done: §4.2.
+
+### 4.2 T3b measured (muted replay, lane PPR-T3B, 2026-10-21)
+
+- Same harness (`bench.ts --rounds 5|9 --requests 1500 --pages editorial`), 6 runs at 1-min load 6–29 (host shared with other lanes; never ≤ 8 for the 3 scripted runs). `shell` = muted hit, `shell-h` = the same hits replayed in full (T3 cost); cached-loader variant (T0 caveat: article memoised per slug, shell loader ≈ 0): `full-cached` / `shell-cached`.
+
+| lane | CPU ms/req | TTFB ms | bytes |
+| --- | ---: | ---: | ---: |
+| `full` | 0.254–0.311 | 0.196–0.209 | 12,514 |
+| `shell` (muted hit) | 0.141–0.205 | 0.0101–0.0110 | 14,688 |
+| `shell-h` (full replay) | 0.196–0.255 | 0.0109–0.0121 | 14,688 |
+| `deferred` (no store) | 0.319–0.350 | 0.222–0.237 | 14,436 |
+| `floor` | 0.076–0.087 | 0.045–0.047 | 6,040 |
+| `full-cached` | 0.131–0.164 | 0.102–0.107 | 12,517 |
+| `shell-cached` (muted hit) | 0.158–0.180 | 0.0100–0.0110 | 14,692 |
+
+- **CPU vs `full`: 1.40–1.84× (median 1.61×; 4 of 6 runs ≥ 1.5×, the two below at load 6 and 29). TTFB 0.010–0.011 ms ≤ `floor` + 0.05 (met).** Muted vs full replay: 1.23–1.39× (−0.04 to −0.05 ms per hit = state encode + byte hand-off).
+- Cached-loader page: **0.83–0.95× vs `full-cached`** (the hit costs more CPU than the page without a shell), TTFB 10× better. The shell saves its loader and its state encode; the hit pays the deferred hole (`deferred` − `full` ≈ 0.04–0.08 ms: deferred handle, `Async` fallback + streamed segment, patch) + prefix copy with the live nonce. Shell rules pay off in CPU when the shell's loaders cost more than ≈ 0.04 ms, in TTFB always.
+- Remaining hit (≈ 0.16 ms, `--cpu-prof`): shell content render ≈ 0.07 (compared, not sent), hole + deferred machinery ≈ 0.05–0.06, router pipeline / guards / prefix copy / `$rvh` ≈ 0.02, segment views (`viewOf` `Object.create` on a fresh prototype per request) ≈ 0.006, GC rest.
+- T6 (H-holes) estimate from it: drops the shell render → ≈ 0.09 ms/hit ≈ 2.8× `full`, ≈ 1.7× `full-cached`. A cheaper deferred / hole path helps every deferred page (not only shells).
 
 ## 5. Plan
 
@@ -161,6 +185,7 @@ Code `libs/router/server/shell-cache.ts` (+ hooks in `handler.ts`, `app.ts`, `re
 | T1 | Deferred loaders (N-6): `load(fn, { defer: true })` → `Deferred<T>` handle, resolved per render; `Async` / `resource` accept it; streamed via existing segments; data endpoint sends resolved values; types (`DataOf`) | router + runtime tests, resume fuzz, zero-cost (0 B unused), docs `guides/routing` + llms — **done 2026-10-21 (PPR-T01)**: per-request handle (D3 note), data endpoint awaits, auto `stream: {}`, late header / cookie writes throw |
 | T2 | Read tracking: `LoaderEvent` read sets, render-phase request-signal tracking, deferred-outside-boundary dev throw, "always stream" mode for shell routes | tests per forbidden read — **done 2026-10-21 (PPR-T23)**: allow-list event Proxies + tracked render URL + deferred gate; dev probe header per forbidden read (§3.9) |
 | T3 | `shell` rule + store kind + fill capture (prefix offset, nonce slots, snapshot, fingerprint) + H-replay + mismatch fallback + `h` in state / patches | router e2e (Chromium): signed-in hit = byte-identical to a fresh render modulo nonce; resume fuzz on a shell fixture; CSP `'strict-dynamic'` test — **done 2026-10-21 (PPR-T23)**: byte cut + byte-compare replay instead of snapshot / fingerprint, `h` in router scripts (§3.9); guards on hit, swr re-fill, revalidate, R5 client redirects included (part of T4); bench §4.1: bar missed (1.18–1.26×), TTFB met (H-replay renders + encodes) |
+| T3b | Muted replay: compare-only writer for the prefix + shell-muted recorder (no root state encode, numbering kept) | runtime hashes delta minimal; bench ≥ 1.5× CPU vs `full`, TTFB ≤ floor + 0.05 — **done 2026-10-21 (PPR-T3B)**: `ShellBody` + `@rivetjs/runtime/server-shell` (§3.9), every 64th hit full; bench §4.2: 1.40–1.84× (median 1.61×) at load 6–29, TTFB met; cheap-loader page 0.83–0.95× |
 | T4 | Headers / Vary / guards-on-hit / `revalidate` / swr re-fill / cluster relay | `route-cache` test suite extended |
 | T5 | Bench: editorial `rivet-dynamic-shell` target (session cookie + hole), in-process + loadgen; report `docs/benchmarks/2026-10-2x-ppr-shell.md` | ≥ 1.5× CPU vs bypass, TTFB p50 ≤ route-cache hit + 0.05 ms |
 | T6 | H-holes: compiler eligibility fact per boundary (capture classes) → retained thunks + frame swap + COW encoding overlay | same e2e + fuzz in both modes; CPU ≥ 3× vs bypass |

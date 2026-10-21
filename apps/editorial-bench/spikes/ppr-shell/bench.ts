@@ -8,8 +8,12 @@
 //      hole  — the hole alone (pipeline + session loader + user menu in an empty document) = H-holes proxy
 //      floor — pipeline floor (no loader, one element)
 //      shell — PPR-T23: the `full` page under the `shell` route rule (user menu = deferred hole), warm store, signed in:
-//              guards + stored prefix + H-replay (the shell re-rendered and compared, not written) + the hole streamed
+//              guards + stored prefix + H-replay (PPR-T3B muted: the shell re-rendered, its bytes compared in place, no
+//              root state encode; every 64th hit in full) + the hole streamed
 //      deferred — the same `shell` page with the store bypassed (an unkeyed query parameter): today's deferred render
+//      shell-h — the `shell` lane with every hit replayed in full (PPR-T23's H-replay: bytes + root state encoded, compared)
+//      full-cached / shell-cached (+ shell-cached-h) — PPR-T3B: `full` / `shell` with the article loader memoised (cached-loader variant: the
+//              loaders cost ~0, so a hit saves only what the muted replay skips)
 //    + the same page compiled in-process (`libs/runtime/tests/resume/compile.ts`) and rendered by `renderResumable`:
 //      r-full / r-shell into the router's byte writer (`NodeStreamWriter` over a counting sink), r-shell-null into a no-op
 //      string writer (H-replay proxy: the shell's JS runs, no bytes are written), r-hole.
@@ -176,6 +180,17 @@ if (pages.includes("editorial")) {
       }
       return { bytes, ttfb };
     };
+  const TEST = Symbol.for("rivet.shellTest");
+  const fullReplay =
+    (lane: Lane): Lane =>
+    async () => {
+      (globalThis as Record<symbol, unknown>)[TEST] = { full: true };
+      try {
+        return await lane();
+      } finally {
+        delete (globalThis as Record<symbol, unknown>)[TEST];
+      }
+    };
   const paths = {
     full: `/full${SLUG}${slug}/`,
     stub: `/stub${SLUG}${slug}/`,
@@ -183,6 +198,8 @@ if (pages.includes("editorial")) {
     floor: "/floor/",
     shell: `/shell${SLUG}${slug}/`,
     deferred: `/shell${SLUG}${slug}/?bypass=1`,
+    "full-cached": `/fullc${SLUG}${slug}/`,
+    "shell-cached": `/shellc${SLUG}${slug}/`,
   };
   if (dump in paths) {
     const r = await handler(new Request("http://localhost" + paths[dump as keyof typeof paths], { headers }));
@@ -213,6 +230,11 @@ if (pages.includes("editorial")) {
     floor: handlerLane(paths.floor),
     shell: handlerLane(paths.shell),
     deferred: handlerLane(paths.deferred),
+    "full-cached": handlerLane(paths["full-cached"]),
+    "shell-cached": handlerLane(paths["shell-cached"]),
+    // PPR-T23's H-replay (full replay: shell bytes + root state encoded, then compared) on the same warm entry.
+    "shell-h": fullReplay(handlerLane(paths.shell)),
+    "shell-cached-h": fullReplay(handlerLane(paths["shell-cached"])),
     "r-full": renderLane(() => mod.Full!({ article: data, user }), "bytes"),
     "r-shell": renderLane(() => mod.Full!({ article: data, user: PLACEHOLDER }), "bytes"),
     "r-shell-null": renderLane(() => mod.Full!({ article: data, user: PLACEHOLDER }), "null"),
@@ -238,11 +260,13 @@ if (pages.includes("editorial")) {
     sinkhole += article(slug)!.body.length;
     return { bytes: 0, ttfb: 0 };
   };
-  // The shell lane must hit: two misses store (doorkeeper), the third request is a hit.
-  for (let i = 0; i < 3; i++) await (await handler(new Request("http://localhost" + paths.shell, { headers }))).text();
-  const state = (await handler(new Request("http://localhost" + paths.shell, { headers }))).headers.get("x-rivet-cache");
-  await (await handler(new Request("http://localhost" + paths.shell, { headers }))).text();
-  if (state !== "SHELL-HIT") throw new Error(`shell lane: expected SHELL-HIT, got ${state}`);
+  // The shell lanes must hit: two misses store (doorkeeper), the third request is a hit.
+  for (const path of [paths.shell, paths["shell-cached"]]) {
+    for (let i = 0; i < 3; i++) await (await handler(new Request("http://localhost" + path, { headers }))).text();
+    const state = (await handler(new Request("http://localhost" + path, { headers }))).headers.get("x-rivet-cache");
+    await (await handler(new Request("http://localhost" + path, { headers }))).text();
+    if (state !== "SHELL-HIT") throw new Error(`${path}: expected SHELL-HIT, got ${state}`);
+  }
   if (only.length) for (const name of Object.keys(lanes)) if (!only.includes(name)) delete lanes[name];
   const out = await measure(`editorial article ${slug} (signed in, sid cookie)`, lanes);
   const at = (lane: string) => out.find((o) => o.lane === lane)?.cpu ?? NaN;
@@ -253,6 +277,12 @@ if (pages.includes("editorial")) {
     console.log(
       `shell lane: CPU ${(full.cpu / shell.cpu).toFixed(2)}× vs full (bar ≥ 1.5×) · TTFB shell ${shell.ttfb.toFixed(4)} vs full ${full.ttfb.toFixed(4)}` +
         (floor ? ` vs floor ${floor.ttfb.toFixed(4)} ms (bar ≤ floor + 0.05)` : " ms"),
+    );
+  const shellCached = out.find((o) => o.lane === "shell-cached"),
+    fullCached = out.find((o) => o.lane === "full-cached");
+  if (shellCached && fullCached)
+    console.log(
+      `cached-loader variant: CPU ${(fullCached.cpu / shellCached.cpu).toFixed(2)}× vs full-cached · TTFB shell-cached ${shellCached.ttfb.toFixed(4)} vs full-cached ${fullCached.ttfb.toFixed(4)} ms`,
     );
   // H-holes: pipeline + session loader + hole render (lane `hole`) + one copy of the stored prefix.
   // H-replay: that + the shell's JS without bytes (in-process `r-shell-null`; no loaders, no state encode).

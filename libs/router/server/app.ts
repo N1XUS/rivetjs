@@ -9,7 +9,7 @@ import { inlineStylesFor, type InlineStyleManifest } from "./inline-styles.ts";
 import type { TrailingSlash } from "../shared/slash.ts";
 import { escapeJSON } from "@rivetjs/runtime/resume-format";
 import { createHandler, _digest, encodeData, type AppHandler, type AppRoute, type BodyLimit, type ErrorInfo, type ShellPhase } from "./handler.ts";
-import { renderDocument, type DocumentShell } from "./render.ts";
+import { renderDocument, type DocumentShell, type RenderPageOptions } from "./render.ts";
 import type { EarlyHintsOptions, Hinter, HintWriter } from "./early-hints.ts";
 import type { CachePolicy, CachingHandler, RouteCacheOptions, RouteRules } from "./route-cache.ts";
 import { SHELL_BUILD } from "./shell-build.ts";
@@ -381,6 +381,8 @@ export function createApp(config: AppConfig): AppHandler {
           // Deferred loaders' redirects (status already sent): the browser navigates at the document's end.
           ...(page.moved ? { epilogue: () => moveScript(page.moved!(), nonce) } : {}),
           ...(devMode === "check" ? { discardState: true } : {}),
+          // Shell fills / replays (`shell-cache.ts`): byte-counting / compare-only body writer, recorder hook.
+          ...(page.shell?.render as Pick<RenderPageOptions, "body" | "shell"> | undefined),
         },
         { status, headers },
       );

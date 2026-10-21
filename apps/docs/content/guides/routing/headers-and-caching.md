@@ -237,6 +237,8 @@ The page's normal loader (the article) reads only its params, so its data belong
 2. **Later requests:** guards and `headers(…)` run first (a guard that redirects still redirects). Then the server sends the stored shell at once with the request's own CSP nonce, renders the page again with the stored data (the normal loaders do not run), and streams the holes behind it. The visitor sees the page about as fast as a stored page, and the deferred loaders still see their own cookies.
 3. **Check:** the second render must produce the same shell bytes. If it does not (a clock, a random number or module state in the shell), the page sends no holes, reloads itself once and gets a fresh render; the route stops storing shells and the server logs a warning.
 
+What a hit costs: the shell is rendered again, but its bytes are only compared with the stored ones (nothing is copied or sent twice), and the page's resume state is not encoded again (the stored shell holds it). The saving is the shell's loaders and that state. A page whose shell loaders are cheap (data already in memory) gains mainly time to first byte, not CPU. Every 64th hit of a shell renders it in full and also compares the stored resume state.
+
 | Option | Meaning |
 | --- | --- |
 | `shell: true` | Keep the shell with the rule's `cache` / `swr` times; without them until `revalidate()` (needs a fixed origin, like `isr: true`). |

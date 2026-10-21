@@ -12,11 +12,16 @@ import { DIRECT_BODY, type BodySink, type DirectBody } from "./body.ts";
 import { noncedSources } from "../shared/csp-hash.ts";
 import { DATA_PARAM } from "../shared/data.ts";
 import { deferredHandle } from "./deferred.ts";
+import { BodyWriter } from "./render.ts";
+import { shellHook, type ShellSeal } from "@rivetjs/runtime/server-shell";
 import type { CachedPage, HeaderOf, Resolved, ShellHost, ShellServe, _Cache as Cache } from "./route-cache.ts";
 
 const SHELL = Symbol.for("rivet.shell");
 const RENDER_FAILED = Symbol.for("rivet.renderFailed");
-/** Test hook (`globalThis[Symbol.for("rivet.shellTest")] = { holes: n }`): the next `n` hits write a wrong holes `h`. */
+/**
+ * Test hook (`globalThis[Symbol.for("rivet.shellTest")]`): `{ holes: n }` — the next `n` hits write a wrong holes `h`;
+ * `{ full: true }` — hits replay in full (no muted replay; benches compare both in one process).
+ */
 const TEST = Symbol.for("rivet.shellTest");
 const DOCS = "https://rivetjs.severyn.pro/guides/routing/headers-and-caching#partial-prerendering-shell-cache";
 /** The root state script: the start of the shell's tail (`render.ts` `ROOT_STATE`). */
@@ -29,6 +34,8 @@ const PARTITION = new Set(["locale", "dir"]);
 const FREE = new Set(["params", "route", "isDataRequest", "dev", "signal", "depends"]);
 /** Request headers a re-fill never forwards (`route-cache.ts` `VISITOR`). */
 const VISITOR = /^(?:cookie|authorization|forwarded|x-forwarded-.+|x-real-ip|true-client-ip|x-client-ip|cf-.+|fastly-client-ip)$/;
+/** Every VERIFY-th hit of an entry replays in full (state encoded and compared too); the others replay muted. */
+const VERIFY = 64;
 /** Rejected fills per route before it stops attempting (until `revalidate()`). */
 const STICKY = 3;
 const KIND = "shell";
@@ -47,6 +54,56 @@ interface ShellEntry extends CachedPage {
   readonly deps: LoaderDeps | undefined;
   /** Headers the shell loaders set (`setHeader`), and the render's `Link`. */
   readonly extra: readonly (readonly [string, string])[];
+  /** Offset in `bare` where the root tail (state, loader, stream add-on) starts; -1: unknown (no muted replay). */
+  readonly tail: number;
+  /** The fill's root numbering (`@rivetjs/runtime/server-shell`); set when its first patch encoded (null: full replays only). */
+  seal: ShellSeal | null;
+  /** Hits so far, modulo VERIFY (0: this hit replays in full). */
+  hits: number;
+}
+
+/**
+ * The document's body writer on shell routes (`render.ts` `body`). Fill: counts the bytes handed off (`sent`: where the
+ * root tail starts). Muted replay: until the cut, the bytes are compared with the stored prefix (`against`, live nonce) in
+ * place and never handed off (the slab is reused); after a mismatch (`verdict`) every later byte is dropped.
+ */
+class ShellBody extends BodyWriter {
+  declare sent: number;
+  declare against: Uint8Array | null;
+  declare cursor: number;
+  declare verdict: string | null;
+  declare drain: boolean;
+  constructor(enqueued: () => void, against: Uint8Array | null) {
+    super(enqueued);
+    this.sent = 0;
+    this.against = against;
+    this.cursor = 0;
+    this.verdict = null;
+    this.drain = false;
+  }
+  override flush(): Promise<void> | undefined {
+    if (this.against === null && !this.drain) {
+      this.sent += this.offset - this.start;
+      return super.flush();
+    }
+    this.scheduled = false;
+    const take = this.offset - this.start;
+    if (take > 0 && this.against !== null && this.verdict === null) {
+      const at = this.cursor + take > this.against.length ? 0 : differs(this.bytes!.subarray(this.start, this.offset), this.against, this.cursor, take);
+      if (this.cursor + take > this.against.length || at >= 0)
+        this.verdict = "the replay's shell differs from the stored one (byte " + (this.cursor + Math.max(at, 0)) + ")";
+      this.cursor += take;
+    }
+    this.offset = this.start;
+    return undefined;
+  }
+  /** The replay reached the root tail: the shell's bytes must have ended at `at`; from here on bytes go out. */
+  cut(at: number): void {
+    this.flush();
+    if (this.verdict === null && this.cursor !== at) this.verdict = "the replay's shell ends at byte " + this.cursor + ", the stored one at " + at;
+    this.against = null;
+    this.drain = this.verdict !== null;
+  }
 }
 
 const encoder = new TextEncoder();
@@ -297,6 +354,11 @@ class Run implements ShellRequest {
   declare link: string | null;
   declare phase: ShellPhase | null;
   declare search: string;
+  // Fill: its body writer, where the root tail started, the root numbering, the stored entry.
+  declare body: ShellBody | null;
+  declare tailAt: number;
+  declare seal: ShellSeal | null;
+  declare stored: ShellEntry | null;
   constructor(
     shells: Shells,
     request: Request,
@@ -310,6 +372,10 @@ class Run implements ShellRequest {
   ) {
     this.search = search;
     this.phase = null;
+    this.body = null;
+    this.tailAt = -1;
+    this.seal = null;
+    this.stored = null;
     this.link = null;
     this.composer = undefined;
     this.host = shells.host;
@@ -379,10 +445,26 @@ class Run implements ShellRequest {
     headers.set("cache-control", this.cache.control);
     if (this.cache.varies.length) headers.set("vary", this.cache.varies.join(", "));
     headers.set("x-rivet-cache", state);
-    const composer = new Composer(this, entry);
+    // Muted replay (the fill's numbering known, not a verify hit): compare-only writer, no root state encode.
+    const muted =
+      entry.seal !== null &&
+      entry.tail >= 0 &&
+      (entry.hits = (entry.hits + 1) % VERIFY) !== 0 &&
+      (globalThis as unknown as Record<symbol, { full?: boolean } | undefined>)[TEST]?.full !== true;
+    const composer = new Composer(this, entry, muted);
     this.composer = composer;
     this.resolve!(this.host.withHeaders(composer.relay.response(headers), this.resolved.headers));
-    return { data: entry.data, byURL: entry.byURL, ...(entry.deps ? { deps: entry.deps } : {}) };
+    const render: ShellPhase["render"] = muted
+      ? {
+          body: (enqueued) => (composer.body = new ShellBody(enqueued, composer.prefix)),
+          shell: shellHook({
+            replay: entry.seal!,
+            cut: () => composer.body?.cut(composer.tail),
+            mismatch: (why) => void (composer.body && (composer.body.verdict ??= why)),
+          }),
+        }
+      : undefined;
+    return { data: entry.data, byURL: entry.byURL, ...(entry.deps ? { deps: entry.deps } : {}), ...(render ? { render } : {}) };
   }
   declare composer: Composer | undefined;
 
@@ -404,6 +486,24 @@ class Run implements ShellRequest {
       loaded: (data, byURL, deps) => ((this.data = data), (this.byURL = byURL), (this.deps = deps)),
       handle: (promise, dev) => this.handle(promise, dev),
       url: trackedURL(new URL(this.request.url), this.cache, (what) => this.note("render reads " + what)),
+      // Prod: where the root tail starts (byte count) and the root numbering, for muted replays of the stored shell.
+      ...(this.dev
+        ? {}
+        : {
+            render: {
+              body: (enqueued: () => void) => (this.body = new ShellBody(enqueued, null)),
+              shell: shellHook({
+                cut: () => {
+                  const body = this.body;
+                  if (body) this.tailAt = body.sent + body.offset - body.start;
+                },
+                seal: (seal) => {
+                  this.seal = seal;
+                  if (this.stored) this.stored.seal = seal;
+                },
+              }),
+            },
+          }),
     });
     return phase;
   }
@@ -617,6 +717,7 @@ class Run implements ShellRequest {
     let bare = prefix;
     const slots: number[] = [];
     const nonce = this.nonce;
+    let tail = this.tailAt > 0 && this.tailAt < prefix.length ? this.tailAt : -1;
     if (nonce) {
       const found = noncedSources(text, nonce, true, (from, to) => utf8.decode(prefix.subarray(from, to)));
       if (!found) why.push("its CSP nonce appears outside the renderer's script / style tags");
@@ -626,6 +727,7 @@ class Run implements ShellRequest {
         let from = 0,
           to = 0;
         for (const at of found.attrs) {
+          if (tail >= 0 && at < this.tailAt) tail -= cut;
           bare.set(prefix.subarray(from, at), to);
           to += at - from;
           slots.push(to);
@@ -675,7 +777,11 @@ class Run implements ShellRequest {
       byURL: this.byURL,
       deps: this.deps,
       extra: this.link !== null && !this.extra.some(([name]) => name === "link") ? [...this.extra, ["link", this.link]] : this.extra,
+      tail,
+      seal: this.seal,
+      hits: 0,
     };
+    this.stored = entry;
     store.set(entry);
     store.sticky.delete(route.id);
     return h;
@@ -723,18 +829,26 @@ class Composer {
   declare entry: ShellEntry;
   declare relay: Relay;
   declare prefix: Uint8Array;
-  constructor(run: Run, entry: ShellEntry) {
+  /** Muted replay: the compare-only body writer, and where the root tail starts in `prefix`. */
+  declare body: ShellBody | null;
+  declare tail: number;
+  declare muted: boolean;
+  constructor(run: Run, entry: ShellEntry, muted: boolean) {
+    this.body = null;
+    this.muted = muted;
     this.run = run;
     this.entry = entry;
     this.relay = new Relay();
     const nonce = run.nonce;
     let prefix = entry.bare;
+    let tail = entry.tail;
     if (nonce && entry.slots.length) {
       const attr = encoder.encode(attrOf(nonce));
       prefix = new Uint8Array(entry.bare.length + entry.slots.length * attr.length);
       let from = 0,
         to = 0;
       for (const at of entry.slots) {
+        if (at < entry.tail) tail += attr.length;
         prefix.set(entry.bare.subarray(from, at), to);
         to += at - from;
         prefix.set(attr, to);
@@ -744,6 +858,7 @@ class Composer {
       prefix.set(entry.bare.subarray(from), to);
     }
     this.prefix = prefix;
+    this.tail = tail;
     this.relay.write(prefix, noop);
     this.relay.text(shellScript(nonce, entry.h));
   }
@@ -757,6 +872,7 @@ class Composer {
       void response.body?.cancel().catch(noop);
       return this.mismatch(`status ${response.status}`);
     }
+    if (this.muted) return this.holes(response);
     let matched = 0;
     let broken = false;
     readBody(
@@ -790,6 +906,41 @@ class Composer {
       (error) => {
         if (broken) return;
         if (matched < prefix.length) return this.mismatch(error instanceof Error ? error.message : String(error));
+        relay.error(error);
+      },
+    );
+  }
+  /**
+   * Muted replay: the body holds only what follows the shell (the writer compared the shell's bytes, the root state was not
+   * encoded). Its verdict is known before the first byte; a late one (the holes' numbering, `server-shell.ts`) ends the page
+   * with the mismatch reload.
+   */
+  holes(response: Response): void {
+    const body = this.body,
+      relay = this.relay,
+      run = this.run;
+    if (!body) return this.mismatch("the replay wrote no body");
+    let opened = false;
+    readBody(
+      response,
+      (view, done) => {
+        if (body.verdict !== null && !opened) {
+          done();
+          throw new TypeError("shell mismatch");
+        }
+        if (!opened) {
+          opened = true;
+          const test = (globalThis as unknown as Record<symbol, { holes?: number } | undefined>)[TEST];
+          relay.text(holesScript(run.nonce, test?.holes ? (test.holes--, this.entry.h + "-") : this.entry.h));
+        }
+        return relay.write(view, done);
+      },
+      () => {
+        if (body.verdict !== null || body.against !== null) return this.mismatch(body.verdict ?? "the replay ended before its shell did");
+        relay.end();
+      },
+      (error) => {
+        if (body.verdict !== null || !opened) return this.mismatch(body.verdict ?? (error instanceof Error ? error.message : String(error)));
         relay.error(error);
       },
     );

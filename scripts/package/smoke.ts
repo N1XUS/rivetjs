@@ -208,6 +208,24 @@ export function smoke(names: string[], { build = true, keep = false, dist: distR
     });
   }
 
+  // Build constants the router's Vite plugin rewrites (`TRAILING_SLASH`, `SHELL_BUILD`): the published `.js` has the
+  // type casts stripped, so the plugin's patterns must match that form too (libs/router/tests/build-constants.test.ts).
+  if (manifests.has("@rivetjs/router") && manifests.has("@rivetjs/compiler")) {
+    writeFileSync(
+      join(app, "router-constants.mjs"),
+      `import { readFileSync } from "node:fs";\nimport { fileURLToPath } from "node:url";\nimport { rivetRouter } from "@rivetjs/router/vite";\n` +
+        `const dir = fileURLToPath(new URL("./node_modules/@rivetjs/router/", import.meta.url));\n` +
+        `const run = (options, file, expect) => {\n` +
+        `  const plugin = rivetRouter(options).find((p) => p.name === "vite-plugin-rivet-router");\n` +
+        `  const out = plugin.transform.call({ error(m) { throw new Error(m); } }, readFileSync(dir + file, "utf8"), dir + file, { ssr: true });\n` +
+        `  if (!out || !expect.test(out.code)) throw new Error(file + ": build constant not rewritten");\n};\n` +
+        `run({ trailingSlash: "never" }, "shared/slash.js", /TRAILING_SLASH = "never";/);\n` +
+        `run({ routeRules: { "/s/**": { shell: true } } }, "server/shell-build.js", /SHELL_BUILD = \\(\\) => import\\(/);\n` +
+        `console.log(JSON.stringify({ ok: 2, compiled: [] }));\n`,
+    );
+    node("router build constants", ["router-constants.mjs"]);
+  }
+
   // 2. Consumer type-check. Script declarations (`client.d.ts`: ambient `declare module "*?image"`) are referenced.
   const ambient: string[] = [];
   const modules: string[] = [];

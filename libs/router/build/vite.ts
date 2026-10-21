@@ -42,7 +42,8 @@ import { adapterOptions, targetBuildConfig, targetEntryPlugin, type AdapterName,
 const BASE_MODULE = fileURLToPath(new URL("../shared/base.ts", import.meta.url));
 /** The router's trailing-slash module (its `TRAILING_SLASH` constant is rewritten when the option is set). */
 const SLASH_MODULE = fileURLToPath(new URL("../shared/slash.ts", import.meta.url));
-const SLASH_DEFAULT = '"ignore" as TrailingSlash';
+/** `TRAILING_SLASH`'s declaration in the source (`.ts`, with its type cast) and in the published `.js` (cast stripped). */
+const SLASH_DEFAULT = /export const TRAILING_SLASH = "ignore"(?: as TrailingSlash)?;/;
 /** The shell cache loader (`SHELL_BUILD`, rewritten to an `import()` when a route rule has `shell`). */
 const SHELL_MODULE = fileURLToPath(new URL("../server/shell-build.ts", import.meta.url));
 /** `SHELL_BUILD`'s declaration in the source (`.ts`, with its type cast) and in the published `.js` (cast stripped). */
@@ -735,8 +736,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         return { code: code.replace(SHELL_DEFAULT, `export const SHELL_BUILD = () => import(${JSON.stringify(SHELL_CACHE)});`), map: null };
       }
       if (slash !== "ignore" && id.split("?")[0] === SLASH_MODULE) {
-        if (!code.includes(SLASH_DEFAULT)) this.error("rivetRouter: shared/slash.ts no longer declares TRAILING_SLASH as expected");
-        return { code: code.replace(SLASH_DEFAULT, JSON.stringify(slash) + " as TrailingSlash"), map: null };
+        if (!SLASH_DEFAULT.test(code)) this.error("rivetRouter: shared/slash.ts no longer declares TRAILING_SLASH as expected");
+        return { code: code.replace(SLASH_DEFAULT, (decl) => decl.replace('"ignore"', JSON.stringify(slash))), map: null };
       }
       // i18n dev: one client serves every locale, so `underBase` also requires the target's locale to be
       // the page's (read once at load): another locale's URL loads its document, as in a build.

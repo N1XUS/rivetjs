@@ -1,7 +1,7 @@
 // Shell cache end to end (route rule `shell`, `server/shell-cache.ts`; production build of fixture-shell): a signed-in
 // miss stores the shell, later visitors (other sessions) get the stored prefix at once and their own holes; a hit's
-// document is byte-identical to a fresh render modulo the nonce; shell loaders do not run on hits; guards do; fills that
-// read request input outside the key are not stored (cookie, header, locals, unkeyed query parameter, the search params
+// document is byte-identical to a fresh render modulo the nonce, muted (PPR-T3B) or replayed in full; shell loaders do
+// not run on hits; guards do; fills that read request input outside the key are not stored (cookie, header, locals, unkeyed query parameter, the search params
 // context in render, deferred data rendered in order); unkeyed query parameters bypass; `revalidate()` drops; a stale
 // shell is re-filled by a detached anonymous request (R3); a replay that differs from the stored shell ends with the
 // mismatch fallback and stops filling the route (R1); a deferred loader's redirect becomes a client redirect (R5). In
@@ -94,6 +94,22 @@ test(
       const nonces = new Set([...html.matchAll(/ nonce="([^"]*)"/g)].map((match) => match[1]));
       assert.equal(nonces.size, 1, "one live nonce everywhere (stored slots re-filled)");
       assert.match(hit.headers.get("content-security-policy")!, new RegExp(`'nonce-${[...nonces][0]}' 'strict-dynamic'`));
+    });
+
+    await t.test("muted replay (no root state encode, shell bytes compared in place) = full replay, byte for byte", async () => {
+      const muted = await get("/article", "ann");
+      assert.equal(muted.headers.get("x-rivet-cache"), "SHELL-HIT");
+      const mutedHTML = (await read(muted)).html;
+      (globalThis as unknown as Record<symbol, unknown>)[TEST] = { full: true };
+      try {
+        const full = await get("/article", "ann");
+        assert.equal(full.headers.get("x-rivet-cache"), "SHELL-HIT");
+        assert.equal(unnonced((await read(full)).html), unnonced(mutedHTML));
+      } finally {
+        delete (globalThis as unknown as Record<symbol, unknown>)[TEST];
+      }
+      // Every 64th hit of an entry replays in full (`VERIFY`): a run of hits stays byte-identical across it.
+      for (let i = 0; i < 70; i++) assert.equal(unnonced((await read(await get("/article", "ann"))).html), unnonced(mutedHTML), "hit " + i);
     });
 
     await t.test("guards run on hits (R4): an anonymous visitor is redirected before the stored shell goes out", async () => {

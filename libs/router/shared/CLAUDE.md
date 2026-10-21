@@ -46,7 +46,7 @@ Code imported by both server and client (and by `@rivetjs/kit`): handler ↔ cli
 ## Gotchas
 
 - `base.ts` must keep reading `import.meta.env?.BASE_URL` in its current form: `build/vite.ts` `transform` regex-rewrites it for i18n client builds (and errors if it no longer matches). `vite.ts` resolves this file by absolute path (`BASE_MODULE`) — don't move it.
-- `slash.ts` must keep declaring `TRAILING_SLASH = "ignore" as TrailingSlash` verbatim: `build/vite.ts` (`SLASH_MODULE`/`SLASH_DEFAULT`) rewrites that text when `trailingSlash` is set (errors if missing). Callers gate on `TRAILING_SLASH !== "ignore"` so the minifier folds the code away by default (measured 0 B client/server for unset apps).
+- `slash.ts` must keep declaring `export const TRAILING_SLASH = "ignore" as TrailingSlash;` verbatim: `build/vite.ts` (`SLASH_MODULE`/`SLASH_DEFAULT`, a regex matching both the `.ts` source and the published `.js` where the cast is stripped) rewrites the literal when `trailingSlash` is set (errors if missing; before 2026-10-21 the pattern was the `.ts` text only, so npm consumers setting `trailingSlash` hit that error). Test: `tests/build-constants.test.ts` (source + TypeScript-emitted form, also `SHELL_BUILD`); `scripts/package/smoke.ts` "router build constants" runs the installed tarball's plugin on its own `shared/slash.js` / `server/shell-build.js`. Callers gate on `TRAILING_SLASH !== "ignore"` so the minifier folds the code away by default (measured 0 B client/server for unset apps).
 - `_scriptBootstrap` is hand-minified; `adapters/static.ts` `hashCSP` searches pages for its `BOOT_LIST_END` marker — keep the marker inside the bootstrap.
 
 ## Commands
