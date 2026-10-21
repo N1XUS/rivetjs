@@ -34,9 +34,46 @@ function wrap<K extends ServerKind, F extends (...args: never[]) => unknown>(kin
   return tag(kind, fn.bind(undefined) as F);
 }
 
+/**
+ * Marks a deferred loader (`load(fn, { defer: true })`): an own non-enumerable property of the wrapped function. The
+ * handler starts it with the request and renders without awaiting it (`server/deferred.ts`).
+ */
+export const DEFER: unique symbol = Symbol.for("rivet.defer") as never;
+declare const deferred: unique symbol;
+/**
+ * The data of a deferred loader (`load(fn, { defer: true })`): a handle the page renders through a boundary —
+ * `<Async load={() => data}>` / `resource(() => data)` — while the shell streams without waiting for it. On the server
+ * it follows this request's run of the loader (started with the request); after a client navigation (the data
+ * endpoint awaits deferred loaders) the slot holds the resolved value itself, which boundaries take as it is. Reading
+ * it directly (`data.title`) is a bug: dev throws `DeferredDataError`.
+ */
+export interface Deferred<T> extends PromiseLike<T> {
+  readonly [deferred]: T;
+}
+/** Options of `load(fn, options)`. */
+export interface LoadOptions {
+  /**
+   * Start the loader with the request but do not wait for it before rendering: the page's (layout's) `data` is a
+   * `Deferred<T>`, rendered through `<Async load={() => data}>` / `resource(() => data)`; the response streams the
+   * shell first and the boundary's content when the loader settles. Client navigations (`?_rivet=data`) get the
+   * resolved value. A deferred loader cannot set headers or cookies (TypeError: the response head is already out).
+   */
+  readonly defer?: boolean;
+}
 /** Loader: data for the page / layout (`data` prop; `PageProps<typeof loader>`). Runs on the server only. */
-export function load<T, P extends Params = Record<string, string>>(fn: (event: RequestEvent<P>) => T): ServerExport<"load", (event: RequestEvent<P>) => T> {
-  return wrap("load", fn);
+export function load<T, P extends Params = Record<string, string>>(
+  fn: (event: RequestEvent<P>) => T,
+  options?: LoadOptions & { readonly defer?: false },
+): ServerExport<"load", (event: RequestEvent<P>) => T>;
+/** Deferred loader (`{ defer: true }`): the data is a `Deferred<T>` the page renders through a boundary. */
+export function load<T, P extends Params = Record<string, string>>(
+  fn: (event: RequestEvent<P>) => T,
+  options: LoadOptions & { readonly defer: true },
+): ServerExport<"load", (event: RequestEvent<P>) => Deferred<Awaited<T>>>;
+export function load<T, P extends Params = Record<string, string>>(fn: (event: RequestEvent<P>) => T, options?: LoadOptions): unknown {
+  const loader = wrap("load", fn);
+  if (options?.defer) Object.defineProperty(loader, DEFER, { value: true });
+  return loader;
 }
 /** Guard: runs outer → inner before loaders and actions; return a `Response` / throw `redirect()` / `deny()` to stop. */
 export function guard<T, P extends Params = Record<string, string>>(fn: (event: RequestEvent<P>) => T): ServerExport<"guard", (event: RequestEvent<P>) => T> {

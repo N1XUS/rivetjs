@@ -30,6 +30,8 @@ export interface PageInput {
   readonly byURL?: readonly number[];
   /** Loaders' `event.depends()` keys (absent when none called it): resumed with the layout state for `invalidate(key)`. */
   readonly deps?: LoaderDeps;
+  /** A `data` slot is a deferred loader's handle (`load(fn, { defer: true })`): the page streams (out of order) even without `stream`. */
+  readonly deferred?: true;
 }
 type HeadExport = Head | ((context: { data: unknown; params: Readonly<Record<string, string>>; url: URL }) => Head | undefined);
 /** Shape of the generated `.rivet/entry.server.tsx` module. */
@@ -351,7 +353,8 @@ export function createApp(config: AppConfig): AppHandler {
             : {}),
           ...(pageManifest ? { manifest: pageManifest } : {}),
           ...(variant ? { variant } : {}),
-          ...(config.stream ? { stream: config.stream } : {}),
+          // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
+          ...(config.stream ? { stream: config.stream } : page.deferred ? { stream: {} } : {}),
           ...(background !== undefined || lean || ahead
             ? { preload: { ...(background !== undefined ? { background } : {}), ...(lean ? { lean } : {}), ...(ahead ? { ahead } : {}) } }
             : {}),
@@ -437,6 +440,7 @@ export function createApp(config: AppConfig): AppHandler {
           ...(input.action ? { action: input.action } : {}),
           ...(input.byURL ? { byURL: input.byURL } : {}),
           ...(input.deps ? { deps: input.deps } : {}),
+          ...(input.deferred ? { deferred: input.deferred } : {}),
         },
         input.status,
         input.headers,

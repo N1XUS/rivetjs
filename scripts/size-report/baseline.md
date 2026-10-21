@@ -74,30 +74,30 @@ CSS before first paint = the stylesheets the route's HTML links (`minified / bro
 
 | app | client JS files | all client JS | server build JS |
 |---|--:|--:|--:|
-| playground | 29 | 112.81 k / 42.73 k | 225.42 k / 78.62 k |
-| kit-fixture | 14 | 82.15 k / 30.18 k | 178.22 k / 61.04 k |
-| router:nav-api | 16 | 85.18 k / 32.01 k | 180.90 k / 63.06 k |
-| router:nested | 15 | 87.58 k / 31.68 k | 186.64 k / 62.63 k |
-| starter-server | 10 | 71.07 k / 26.62 k | 176.45 k / 60.59 k |
-| starter-static | 12 | 75.34 k / 28.30 k | 175.75 k / 60.19 k |
-| starter-minimal | 11 | 70.73 k / 26.58 k | 169.85 k / 57.94 k |
-| starter-ui | 14 | 213.27 k / 67.56 k | 247.46 k / 79.90 k |
-| example:counter | 11 | 70.84 k / 26.65 k | 169.97 k / 58.01 k |
-| example:todo-list | 10 | 76.36 k / 28.45 k | 194.70 k / 66.45 k |
-| example:loader-data | 10 | 71.80 k / 26.86 k | 176.94 k / 60.77 k |
-| example:search-with-debounce | 10 | 74.72 k / 27.93 k | 195.76 k / 66.84 k |
-| example:lazy-chunk-demo | 10 | 71.91 k / 27.04 k | 170.66 k / 58.20 k |
-| example:nested-layouts | 8 | 78.19 k / 28.73 k | 177.25 k / 59.68 k |
-| example:two-way-input | 11 | 71.42 k / 26.89 k | 171.53 k / 58.51 k |
-| example:route-transitions | 13 | 80.50 k / 30.47 k | 187.25 k / 65.44 k |
-| example:action-form | 11 | 73.18 k / 27.36 k | 178.16 k / 61.07 k |
-| example:motion-basics | 12 | 133.48 k / 44.80 k | 202.91 k / 69.26 k |
-| example:motion-gestures | 15 | 136.00 k / 45.76 k | 204.80 k / 69.79 k |
-| example:motion-presence | 16 | 148.39 k / 49.63 k | 227.28 k / 76.57 k |
-| example:motion-layout | 15 | 147.82 k / 49.46 k | 223.71 k / 75.83 k |
-| example:motion-scroll | 13 | 100.61 k / 37.67 k | 180.12 k / 61.32 k |
-| cdk-example:masonry-expand | 15 | 192.87 k / 65.61 k | 274.78 k / 89.74 k |
-| cdk-example:masonry-feed | 13 | 191.82 k / 65.00 k | 274.01 k / 89.53 k |
+| playground | 29 | 112.81 k / 42.73 k | 226.99 k / 79.46 k |
+| kit-fixture | 14 | 82.15 k / 30.18 k | 179.70 k / 61.74 k |
+| router:nav-api | 16 | 85.18 k / 32.01 k | 182.47 k / 63.76 k |
+| router:nested | 15 | 87.58 k / 31.68 k | 188.21 k / 63.33 k |
+| starter-server | 10 | 71.07 k / 26.62 k | 178.02 k / 61.29 k |
+| starter-static | 12 | 75.34 k / 28.30 k | 177.23 k / 60.87 k |
+| starter-minimal | 11 | 70.73 k / 26.58 k | 171.33 k / 58.64 k |
+| starter-ui | 14 | 213.27 k / 67.56 k | 248.94 k / 80.63 k |
+| example:counter | 11 | 70.84 k / 26.65 k | 171.45 k / 58.67 k |
+| example:todo-list | 10 | 76.36 k / 28.45 k | 196.17 k / 67.19 k |
+| example:loader-data | 10 | 71.80 k / 26.86 k | 178.51 k / 61.55 k |
+| example:search-with-debounce | 10 | 74.72 k / 27.93 k | 197.33 k / 67.53 k |
+| example:lazy-chunk-demo | 10 | 71.91 k / 27.04 k | 172.13 k / 58.91 k |
+| example:nested-layouts | 8 | 78.19 k / 28.73 k | 178.73 k / 60.37 k |
+| example:two-way-input | 11 | 71.42 k / 26.89 k | 173.01 k / 59.22 k |
+| example:route-transitions | 13 | 80.50 k / 30.47 k | 188.82 k / 66.14 k |
+| example:action-form | 11 | 73.18 k / 27.36 k | 179.72 k / 61.84 k |
+| example:motion-basics | 12 | 133.48 k / 44.80 k | 204.39 k / 69.96 k |
+| example:motion-gestures | 15 | 136.00 k / 45.76 k | 206.28 k / 70.54 k |
+| example:motion-presence | 16 | 148.39 k / 49.63 k | 228.76 k / 77.27 k |
+| example:motion-layout | 15 | 147.82 k / 49.46 k | 225.19 k / 76.52 k |
+| example:motion-scroll | 13 | 100.61 k / 37.67 k | 181.60 k / 62.03 k |
+| cdk-example:masonry-expand | 15 | 192.87 k / 65.61 k | 276.26 k / 90.44 k |
+| cdk-example:masonry-feed | 13 | 191.82 k / 65.00 k | 275.49 k / 90.24 k |
 
 | ssr-bench lane | server bundle |
 |---|--:|

@@ -1,11 +1,11 @@
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import type { HttpError as HttpErrorType } from "./shared/errors.ts";
 import type { ActionFailure } from "./shared/actions.ts";
-import type { SERVER_EXPORT } from "./shared/server-exports.ts";
+import type { Deferred, SERVER_EXPORT } from "./shared/server-exports.ts";
 
 // Route-module API: server export wrappers, control-flow helpers and types for guards, loaders and actions.
 export { load, guard, actions, entries, headers, onRequest, onGet, onPost, onPut, onPatch, onDelete, onOptions } from "./shared/server-exports.ts";
-export type { ServerExport, ServerKind } from "./shared/server-exports.ts";
+export type { ServerExport, ServerKind, Deferred, LoadOptions } from "./shared/server-exports.ts";
 export { HttpError, redirect, deny, notFound, error, isHttpError, type RedirectOptions } from "./shared/errors.ts";
 export { safeRedirect } from "./shared/redirect.ts";
 export { parseCookies } from "./shared/cookie.ts";
@@ -61,24 +61,27 @@ type Serializable<T, D extends number = 8> = [D] extends [never]
   ? true
   : T extends Leaf
     ? true
-    : T extends symbol | ((...args: never[]) => unknown)
-      ? false
-      : IsError<T> extends true
-        ? true
-        : T extends ReadonlyMap<infer K, infer V>
-          ? Serializable<K, Depth[D]> extends true
-            ? Serializable<V, Depth[D]>
-            : false
-          : T extends ReadonlySet<infer V>
-            ? Serializable<V, Depth[D]>
-            : T extends readonly (infer E)[]
-              ? Serializable<E, Depth[D]>
-              : T extends object
-                ? false extends { [K in keyof T]-?: Serializable<T[K], Depth[D]> }[keyof T]
-                  ? false
-                  : true
-                : true;
-type Returned<L> = L extends (...args: never[]) => infer R ? Awaited<R> : L;
+    : T extends Deferred<infer V>
+      ? Serializable<V, D>
+      : T extends symbol | ((...args: never[]) => unknown)
+        ? false
+        : IsError<T> extends true
+          ? true
+          : T extends ReadonlyMap<infer K, infer V>
+            ? Serializable<K, Depth[D]> extends true
+              ? Serializable<V, Depth[D]>
+              : false
+            : T extends ReadonlySet<infer V>
+              ? Serializable<V, Depth[D]>
+              : T extends readonly (infer E)[]
+                ? Serializable<E, Depth[D]>
+                : T extends object
+                  ? false extends { [K in keyof T]-?: Serializable<T[K], Depth[D]> }[keyof T]
+                    ? false
+                    : true
+                  : true;
+// A deferred loader's data stays a `Deferred<T>` (its value is checked): `Awaited` would unwrap the handle.
+type Returned<L> = L extends (...args: never[]) => infer R ? (R extends Deferred<infer V> ? Deferred<V> : Awaited<R>) : L;
 /**
  * Data type of a loader (`DataOf<typeof loader>`, `loader = load(…)`), checked to be serializable; plain data types
  * pass through unchanged (`DataOf<Item[]>` is `Item[]`).

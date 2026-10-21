@@ -207,7 +207,7 @@ export default function Post({ data, params }: PageProps<"blog/[slug]">) {
 }
 ```
 
-- Server exports: `load(…)`, `actions(…)`, `guard(…)` (throw/return `redirect()`, `deny()`, `notFound()`, `error()`), `headers(…)`, `entries(…)` (prerender params), `prerender`, `onRequest(…)` / `onGet(…)` / `onPost(…)` …. The compiler strips them (and code only they use) from the browser build.
+- Server exports: `load(…)`, `actions(…)`, `guard(…)` (throw/return `redirect()`, `deny()`, `notFound()`, `error()`), `headers(…)`, `entries(…)` (prerender params), `prerender`, `onRequest(…)` / `onGet(…)` / `onPost(…)` …. `load(fn, { defer: true })` = the page streams without waiting: `data` is a `Deferred` handle, render it only through `<Async load={() => data}>` (layouts: `data()`) or `resource(() => data)`, never `data.field`; it cannot set headers / cookies. The compiler strips them (and code only they use) from the browser build.
 - `event`: `request`, `url`, `params`, `locals`, `signal`, `cookies`, `setHeader`.
 - Page props: `{ data, params, url }` — plain values. Layout props (`LayoutProps`): `data()`, `params()`, `url()` are **accessors**, plus `children`.
 

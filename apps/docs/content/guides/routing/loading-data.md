@@ -75,11 +75,54 @@ Return only what the page shows. Everything you return is visible in the page so
 
 In a server app (the default `mode: "server"`):
 
-1. **First visit:** the server runs all guards, then the loaders of every layout and of the page, at the same time. Then it renders the HTML.
+1. **First visit:** the server runs all guards, then the loaders of every layout and of the page, at the same time. Then it renders the HTML. [Deferred loaders](#deferred-loaders) start at the same time, but the HTML does not wait for them.
 2. **Client navigation:** when the user clicks a link, the browser asks the server for the next page's data. The server runs the same guards and loaders and answers with data instead of HTML. Guards always run on the server, also here.
 3. **Hover or focus on a link:** the router starts fetching the data early and reuses it if the click follows within 5 seconds.
 
 Layout loaders whose data the browser already has are skipped when you navigate between pages under the same layout. See [layouts](./layouts.md).
+
+## Deferred loaders
+
+By default the server waits for every loader before it sends the first byte, so the slowest loader decides when the page starts to arrive. Mark a loader whose data can come later with `{ defer: true }`. The server starts it with the others but does not wait for it: the page streams at once, and the part that needs the data follows in the same response.
+
+```tsx title="src/routes/_layout.tsx"
+import { load, type LayoutProps } from "@rivetjs/router";
+import { Async } from "@rivetjs/runtime/dom";
+import { sessions } from "../sessions.server.ts";
+
+export const loader = load(async ({ cookies }) => sessions.user(cookies.get("sid")), { defer: true });
+
+export default function Layout({ data, children }: LayoutProps<typeof loader>) {
+  return (
+    <>
+      <header>
+        <a href="/">Home</a>
+        <Async load={() => data()} fallback={() => <span>…</span>}>
+          {(user) => (user ? <a href="/account">{user.name}</a> : <a href="/login">Sign in</a>)}
+        </Async>
+      </header>
+      {children}
+    </>
+  );
+}
+```
+
+The `data` of a deferred loader is a `Deferred<T>` (`PageProps<typeof loader>` and `LayoutProps<typeof loader>` type it), not the value. In a layout `data` is an accessor as usual, so `data()` is the handle. Return it from a boundary's `load`, or from a [`resource`](/guides/components/async.md#data-as-a-signal-resource) fetcher: `<Async load={() => data}>`, `resource(() => data)`. The boundary gets the value.
+
+What the response looks like for the layout above and a page with a normal loader:
+
+1. Guards and the normal loaders run; the deferred loader starts.
+2. The server sends the document: head, header with `…`, the page, the resume state. The deferred loader has not finished.
+3. The loader finishes. The server sends the header part (the user link and its resume state) at the end of the same response, and the browser puts it in place of `…`.
+
+Several deferred parts arrive in the order their loaders finish. A page with a deferred loader streams this way even when [streaming](/guides/performance/streaming.md) is off for the app. A `resource` read inside `Suspense` waits in place instead: the page streams up to it, then waits.
+
+- **Client navigation:** the data request waits for deferred loaders and answers with their values. The page then gets the value itself in `data`, and `<Async load={() => data}>` renders it at once.
+- **Errors:** the status line is already sent, so a deferred loader that throws `notFound()`, `redirect()` or an error does not change the response. Its boundary shows its `error` view, or the page reports a render error.
+- **Headers and cookies:** a deferred loader can read cookies and headers, but `setHeader`, `setHeaders`, `cookies.set` and `cookies.delete` throw a `TypeError`. Set them in a normal loader or a guard.
+- **`head` exports** get the `Deferred` handle too: take titles and meta tags from a normal loader.
+- **Reading the value directly** (`data.title`) is a bug. In development it throws a `DeferredDataError` that names the field.
+- **Static sites:** the build waits for every loader. Use deferred loaders in server apps.
 
 ## Reload data after a change
 

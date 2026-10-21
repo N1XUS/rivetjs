@@ -68,7 +68,7 @@ Server code lives in the page or layout file itself, as exports made by a wrappe
 | Export | Purpose |
 | --- | --- |
 | `guard((event) => …)` | Runs outer to inner before loaders. Throw or return `redirect()`, `deny()`, `notFound()`, `error()` to stop. |
-| `load((event) => …)` | Data for the page or layout. Arrives as the `data` prop; `PageProps<typeof loader>` infers its type. |
+| `load((event) => …)` | Data for the page or layout. Arrives as the `data` prop; `PageProps<typeof loader>` infers its type. `load(fn, { defer: true })` does not hold the response back: `data` is a `Deferred` handle that `<Async load={() => data}>` streams in ([deferred loaders](../guides/routing/loading-data.md#deferred-loaders)). |
 | `actions({ … })` | `{ [name]: (event) => result }`. Form posts to `?/name`, for example `<form method="post" action="?/add">`. |
 | `headers((event) => …)` | Extra response headers. |
 | `entries(() => […])` | Parameter values to prerender for dynamic routes. |

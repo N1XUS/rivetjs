@@ -34,7 +34,7 @@
 
 - D1 **Server-composed by default.** Stored shell prefix + live holes in ONE response from the origin process (Next self-host model). Client-composed holes (CDN shell + hole fetches, Astro server islands) = follow-up F1. Reason: one round trip, holes keep the existing segment / patch protocol, no new endpoint security surface (guards per hole fetch), personal data never in a CDN object.
 - D2 **Opt-in rule** `routeRules: { "/blog/**": { shell: true } }` (or `shell: { maxAge, swr, tags }`, defaults = the rule's `cache` / `swr` values, else `isr` semantics in-process). Not inferred in v1: dev prints a hint for routes whose fills pass every check (§3.3) with ≥ 1 deferred boundary. Inference/default-on = decision ask.
-- D3 **Holes = streamed boundaries reading deferred loader data.** Rivet components cannot read cookies / headers in render; request data reaches pages through loaders. So: non-deferred loaders = shell data (must not read request input outside the key); deferred loaders (T1, `load(fn, { defer: true })`, value `Deferred<T>` = a request-independent handle) = hole data, consumed by `<Async load={data.x}>` / `<Suspense>` + `resource(data.x)`. A handle resolves against the **current render's** deferred map (render scope), not a captured promise — the same handle object works in the fill and on every hit.
+- D3 **Holes = streamed boundaries reading deferred loader data.** Rivet components cannot read cookies / headers in render; request data reaches pages through loaders. So: non-deferred loaders = shell data (must not read request input outside the key); deferred loaders (T1, `load(fn, { defer: true })`, value `Deferred<T>` = a request-independent handle) = hole data, consumed by `<Async load={data.x}>` / `<Suspense>` + `resource(data.x)`. A handle resolves against the **current render's** deferred map (render scope), not a captured promise — the same handle object works in the fill and on every hit. **As built (T1, PPR-T01 2026-10-21): per-request handle capturing the loader's promise** — a render-scope handle failed `await data` (continuation outside the owner; would need AsyncLocalStorage). Consequence: H-replay (T3) is unaffected (live handles per hit); H-holes (T6) must swap a retained shell's handles for the hit's (frame swap) instead of reusing one object.
 - D4 **Two hit strategies, picked per route at fill time.**
   - H-replay (T3, generic): write stored prefix → re-run the page with stored shell data + live deferred handles under a discarding writer and a shell-muted recorder (no HTML bytes, no state encode) → segments render and stream as today. Ids / sites match because the shell is request-independent (§3.4). CPU win = loaders + bytes + encode of the shell; TTFB win full.
   - H-holes (T6, compiler-proven): no shell execution; the entry keeps each boundary's content thunk (`load` + `children` closure) + its context frame; a hit runs only the thunks under a fresh root. Eligible when the compiler proves the thunk's captures are data consts / deferred handles / module refs (`_rFn` capture classes) and the frame holds no signals created in the shell. Else H-replay.
@@ -96,28 +96,34 @@
 - node: full (fast path stays route-cache only; shell hits go through the handler because guards run). fetch / cloudflare / vercel-edge / deno / bun: same code via `createApp` (in-isolate store, cold isolates refill; documented). Vercel Build Output PPR mapping = F4.
 - CDN trade-off: server-composed ⇒ TTFB = RTT to origin + ~0.05 ms, not edge RTT. Client-composed (F1) ⇒ shell from CDN (edge TTFB, `public, s-maxage`), holes = one extra round trip each (or one batched `?_rivet=holes` fetch with cookies), hole LCP later, guards rerun per hole request, `h` check mandatory. Pick: server-composed now; F1 when a deploy target with far-from-origin users asks for it.
 
-## 4. Expected numbers (estimates — not measured; T0 measures)
+## 4. Measured shell share (T0, lane PPR-T01, 2026-10-21)
 
-- Basis: editorial-bench N=1000 (`docs/benchmarks/2026-10-11-editorial.md`, route-cache spec "Measure"): article uncached 0.294–0.348 ms CPU/req, route-cache hit 0.023 ms, static file 0.092–0.100 ms; ssr-bench 2026-10-19 `/resume`: 1000 rows c1 2.69 ms CPU, TTFB 1.37 ms (gRPC loader before first byte).
-- Editorial article + one personalized hole (user menu / "saved" badge from a session-cookie deferred loader, ~0.5 KB), signed-in visitor (today: cookie → route-cache bypass):
+- Harness `apps/editorial-bench/spikes/ppr-shell/bench.ts` (CLAUDE.md there): in-process, `process.cpuUsage` per request (process CPU incl. GC threads), 5 interleaved rounds × 1,500 requests per lane, median round; Apple M4 Pro, Node 26.5.1, no bench lock on this host (none exists; other lanes running), 1-min load 5.4–8.6 beside each run. 4 runs; runs 2–4 (load 5.4–6.7) quoted, run 1 (load 8.1–8.6) agrees within 5 %.
+- Editorial article (rivet-dynamic shape: lane `content.ts` loader = marked lexer + tree per request, `Markdown` component, server mode) + signed-in user menu (~0.44 KB, `sid` cookie → session loader) in the header, through the real router pipeline (`loadBuild` of a Vite build):
 
-| | CPU ms/req | TTFB (in-process) | Notes |
-| --- | --- | --- | --- |
-| today (bypass, full render) | ~0.35 + hole | after loaders + render | |
-| H-replay | ~0.13–0.18 | ~0.04 ms (guards + prefix) | shell JS runs, no bytes / encode / loaders; article body is one big pre-rendered string → discarded write = most of the saving |
-| H-holes | ~0.06–0.09 | ~0.04 ms | pipeline ~0.03 + prefix ~0.01 + hole segment ~0.02–0.04 |
-| route-cache hit (anonymous, for scale) | 0.023 | ~0.02 ms | holes frozen |
+| lane | CPU ms/req | TTFB ms (handler → first body byte) | bytes |
+| --- | ---: | ---: | ---: |
+| `full` = today, signed in (cookie → route-cache bypass, full render) | 0.213–0.224 | 0.177–0.182 | 11,983 |
+| `stub` = same page, hole replaced by a constant same-shape placeholder (no request read) | 0.221–0.230 | 0.178–0.180 | 11,904 |
+| `hole` = pipeline + session loader + user menu in an empty document (H-holes proxy) | 0.063–0.073 | 0.037–0.038 | 5,978 |
+| `floor` = pipeline, no loader, one element | 0.062–0.067 | 0.032–0.033 | 5,529 |
+| `loader` = the article loader alone (marked lexer) | 0.092 | — | — |
+| `r-shell` / `r-shell-null` = the shell's render in-process into the byte writer / a no-op writer | 0.057 / 0.052 | 0.050 / — | 6,155 / 0 |
+| `r-hole` = the user menu render in-process | 0.0035–0.006 | 0.002 | 439 |
+| `prefix-copy` = one copy of the 11.9 KB stored prefix | 0.0015–0.007 | — | — |
 
-  - ⇒ signed-in article pages 2–2.7× (replay) / 4–6× (holes) less CPU; TTFB independent of the deferred loader's latency.
-- ssr-bench `/resume` shape: the shell (layout + nav + nested layout state) is an estimated 5–10 % of render CPU; the 1000 rows are the hole. CPU win ≤ 10 %, TTFB 1.37 → ~0.1 ms but complete p50 unchanged (+ `<template>` + swap ≈ +1 % bytes). Not a target; deferred loaders alone (T1) give the same TTFB with no cache.
-- Rule of thumb: win ≈ shell share of (loader I/O + render CPU); PPR pays on chrome-heavy, mostly-static, signed-in pages (articles, product pages, docs with a user menu), not on data grids.
+  - Estimates: **H-replay ≈ `hole` + `prefix-copy` + `r-shell-null` = 0.116–0.127 ms → 1.75–1.83× less CPU than today**; **H-holes ≈ `hole` + `prefix-copy` = 0.065–0.075 ms → 3.0–3.3×**. TTFB of a hit ≈ `floor` TTFB + prefix (~0.035 ms) vs 0.18 ms today (and independent of the deferred loader's latency).
+  - Where the shell's cost is: loader 0.092 ms (43 % of the request), pipeline floor 0.065 (30 %), page JS 0.052 (24 %), bytes ≈ 0 (`r-shell-null` ≈ `r-shell`: writing the bytes is not the cost, running the components is). The hole itself is ~2 % of the page.
+  - Caveat (decides T6): ~0.09 ms of H-replay's saving is the per-request markdown parse this fixture's loader does. An app that caches its parsed article (common) has today ≈ 0.13 ms → H-replay ≈ 1.05–1.1× (below the bar), H-holes ≈ 1.8×. H-replay's win = loader cost of the shell; H-holes' win = loader + page JS.
+- ssr-bench `/resume` 1000 rows (lazy-cost source, in-process `renderResumable` into the router's byte writer; no pipeline / gRPC): full 1.20–1.23 ms, shell (rows → constant placeholder) 0.010–0.012 ms (**shell share ≈ 1 %**), rows alone 1.19–1.20 ms → H-replay / H-holes 1.00–1.03×; TTFB 0.26–0.27 → 0.008 ms (render only). Not a target (as estimated); deferred loaders (T1) give the TTFB without a cache.
+- **Go / no-go: GO for T3+ on the signed-in article (bar ≥ 1.5×: H-replay 1.75–1.83×, H-holes 3.0–3.3×), with the caveat that H-replay clears the bar only when the shell's loaders cost real CPU / I/O.** Expect T5 (H-replay) to miss 2× on pages with cheap shell loaders → plan T6 (H-holes) as likely, not optional (Q5 trigger). Rule of thumb confirmed: win ≈ shell share of (loader I/O + render CPU); data grids gain nothing.
 
 ## 5. Plan
 
 | Task | What | Gate |
 | --- | --- | --- |
-| T0 | Measure shell share: in-process script over the editorial dynamic build + `/resume` (boundaries' contents stubbed, `process.cpuUsage`, 5 × 1,500 req) → fill §4 with numbers; go / no-go (bar: ≥ 1.5× CPU on the signed-in article) | numbers in this spec |
-| T1 | Deferred loaders (N-6): `load(fn, { defer: true })` → `Deferred<T>` handle, resolved per render; `Async` / `resource` accept it; streamed via existing segments; data endpoint sends resolved values; types (`DataOf`) | router + runtime tests, resume fuzz, zero-cost (0 B unused), docs `guides/routing` + llms |
+| T0 | Measure shell share: in-process script over the editorial dynamic build + `/resume` (boundaries' contents stubbed, `process.cpuUsage`, 5 × 1,500 req) → fill §4 with numbers; go / no-go (bar: ≥ 1.5× CPU on the signed-in article) | **done 2026-10-21 (PPR-T01): GO** — §4 |
+| T1 | Deferred loaders (N-6): `load(fn, { defer: true })` → `Deferred<T>` handle, resolved per render; `Async` / `resource` accept it; streamed via existing segments; data endpoint sends resolved values; types (`DataOf`) | router + runtime tests, resume fuzz, zero-cost (0 B unused), docs `guides/routing` + llms — **done 2026-10-21 (PPR-T01)**: per-request handle (D3 note), data endpoint awaits, auto `stream: {}`, late header / cookie writes throw |
 | T2 | Read tracking: `LoaderEvent` read sets, render-phase request-signal tracking, deferred-outside-boundary dev throw, "always stream" mode for shell routes | tests per forbidden read |
 | T3 | `shell` rule + store kind + fill capture (prefix offset, nonce slots, snapshot, fingerprint) + H-replay + mismatch fallback + `h` in state / patches | router e2e (Chromium): signed-in hit = byte-identical to a fresh render modulo nonce; resume fuzz on a shell fixture; CSP `'strict-dynamic'` test |
 | T4 | Headers / Vary / guards-on-hit / `revalidate` / swr re-fill / cluster relay | `route-cache` test suite extended |

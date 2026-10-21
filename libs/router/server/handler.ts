@@ -118,6 +118,8 @@ export interface RenderInput {
   readonly locals: Record<string, unknown>;
   /** Merged head (layouts → page) from `head` exports. */
   readonly head: Head | undefined;
+  /** Set when a `data` slot is a deferred loader's `Deferred` handle (`load(fn, { defer: true })`): the page streams. */
+  readonly deferred?: true;
   /** Layouts (indices into `data`) whose loader read the request URL: their data follows every URL change. */
   readonly byURL?: readonly number[];
   /** Keys the loaders passed to `event.depends()` (index into `data`); absent when none called it. */
@@ -286,6 +288,9 @@ const seeOther = (failure: unknown): unknown => {
   return out;
 };
 const NO_PLATFORM: Platform = Object.freeze({});
+/** `load(fn, { defer: true })` marker (`shared/server-exports.ts` `DEFER`). */
+const DEFER: unique symbol = Symbol.for("rivet.defer") as never;
+let deferredModule: Promise<typeof import("./deferred.ts")> | undefined;
 // `event.depends()` outside loaders.
 const noDeps = (): void => {};
 
@@ -716,14 +721,26 @@ export function createHandler(options: AppOptions): AppHandler {
       }
       // Layout loaders that read the URL (or request) cannot be kept across URL changes: the client learns which.
       phase = "loader";
+      // Deferred loaders (`load(fn, { defer: true })`, document requests only; data requests await them like any loader):
+      // started now, not awaited; their slot is a `Deferred` handle (`deferred.ts`, imported on first use).
+      let lazy: typeof import("./deferred.ts") | undefined, promises: (Promise<unknown> | undefined)[] | undefined;
+      if (!data && modules.some((module) => module?.load && (module.load as { [DEFER]?: true })[DEFER])) lazy = await (deferredModule ??= import("./deferred.ts"));
       const loaded = await Promise.all(
         modules.map((module, i) => {
           if (skip.has(i) || !module?.load) return (loads[i] = undefined);
+          if (lazy && (module.load as { [DEFER]?: true })[DEFER]) {
+            const view = lazy.lateEvent(loaderEvent(i, i < route.layouts.length));
+            // Error pages await it like the other loaders (`errorLayouts`): they render after the failure, not streamed.
+            ((promises ??= [])[i] = loads[i] = lazy.startDeferred(() => module.load!(view)));
+            // The handle is a thenable: set after `Promise.all`, which would await it.
+            return undefined;
+          }
           const load = Promise.resolve(module.load(loaderEvent(i, i < route.layouts.length)));
           // Dev: a layout loader used as access control is skipped for kept layouts (`_rivet_keep`).
           return (loads[i] = dev && i < route.layouts.length ? load.catch((failure) => accessHint(route, i, failure)) : load);
         }),
       );
+      if (promises) promises.forEach((promise, i) => (loaded[i] = lazy!.deferredHandle(promise!, dev)));
       const head = await options.head?.(route, loaded, { params: found.params, url });
       if (data) {
         if (!headers.has("cache-control")) headers.set("cache-control", "private, no-store");
@@ -759,6 +776,7 @@ export function createHandler(options: AppOptions): AppHandler {
         head,
         byURL: byURL.size ? [...byURL] : NO_LAYOUTS,
         ...depsOf(),
+        ...(promises ? { deferred: true } : {}),
       });
     } catch (failure) {
       return settle(failure);

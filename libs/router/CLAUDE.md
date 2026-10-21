@@ -86,6 +86,7 @@ npm run zero-cost                                       # repo gate: runtime + s
 - e2e tests rebuild their fixture's `dist/` + `.rivet/`; edit fixture `src/`, never their generated output.
 - Playwright Chromium launches pass `args: ["--use-mock-keychain", "--password-store=basic"]` (macOS "Chromium Safe Storage" keychain prompt otherwise); keep it on new launches.
 - Route server exports are wrapper calls from `@rivetjs/router` (`shared/server-exports.ts`: `load` `guard` `actions` `entries` `headers` `onRequest` `onGet` … `onOptions`; any export name, tag `Symbol.for("rivet.server")` = kind), the same in page / layout modules, sibling `*.server.ts` and `.ts` endpoints; `prerender` / `csrf` / `live` stay plain named data exports. No magic names: untagged `serverLoad`… / `onGet`… (and sibling `load` / `GET`…) are errors (compiler RV3010, editor, `server/module.ts` at runtime). Codemod: `rivet migrate server-exports`. Spec `docs/design/specs/2026-10-20-server-exports-design.md`.
+- Deferred loaders (PPR-T01, 2026-10-21): `load(fn, { defer: true })` → `loader[Symbol.for("rivet.defer")]`; type `Deferred<T>` (exported with `LoadOptions`); document requests render without awaiting them (per-request thenable handle, auto `stream: {}`), data requests await them; `setHeader(s)` / cookie writes throw. Handler half in `server/deferred.ts` (dynamic import). Details `docs/guides/routing.md` "File routes: deferred loaders"; user docs `apps/docs/content/guides/routing/loading-data.md#deferred-loaders`.
 
 ## Known gaps
 

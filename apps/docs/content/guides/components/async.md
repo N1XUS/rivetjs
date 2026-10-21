@@ -8,7 +8,7 @@ related: [guides/routing/loading-data, guides/performance/streaming, gotchas/pro
 Some parts of a page need data that takes time to arrive. The `Async` component wraps such a part: it starts the work, shows a fallback while it waits, shows an error if it fails, and renders the result. After reading this page you can use `Async`, reload it when a signal changes, keep loaded data in a `resource`, and load components only when they are needed.
 
 :::tip
-For the main data of a page, use a route [loader](/guides/routing/loading-data.md). It runs on the server before the page renders. Use `Async` for parts of a page that load on their own.
+For the main data of a page, use a route [loader](/guides/routing/loading-data.md). It runs on the server before the page renders. Use `Async` for parts of a page that load on their own. A [deferred loader](/guides/routing/loading-data.md#deferred-loaders) is both: a server loader whose data an `Async` streams in.
 :::
 
 ::example{id=async-data}

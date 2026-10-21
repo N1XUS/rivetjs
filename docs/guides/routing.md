@@ -177,6 +177,20 @@ Spec: [2026-10-08-partial-render-design.md](../design/specs/2026-10-08-partial-r
 - Codegen (only with a live page + `navigate`): `LIVE` page-index list, `const live = _live(…)` (before the listeners that capture it; single-level apps: `_live(source, router)`, Router `_liveRouter(router, live)`, entry points `(_armLive(router, live[, nest, NEST]), …)`; nested levels: `arm()` syncs with `_sync(router, nest, NEST, (from, url) => _liveLevels(router, live, nest, NEST, from, url))` — inline arrow, a `_liveLevels(…)` closure stored in a const is not resumable), route render hoists `const data = LIVE.includes(row[2]) ? _livePage(live, result.data[depth], match.url, depth) : result.data[depth]` and passes `data={data}` (static prop: a getter would create a signal per read). Apps without a live page: byte-identical output.
 - Known gaps: kit component heads / `applyRouteHead` are not re-applied (title from `head` still set); in static mode `_data.json` reloads every layout.
 
+## File routes: deferred loaders
+
+Spec: [2026-10-20-ppr-shell-design.md](../design/specs/2026-10-20-ppr-shell-design.md) T1 (lane PPR-T01).
+
+- `load(fn, { defer: true })` (`shared/server-exports.ts`): sets `loader[Symbol.for("rivet.defer")] = true`; type `(event) => Deferred<Awaited<T>>`. `Deferred<T>` = `PromiseLike<T>` + phantom brand; `DataOf` / `PageProps` / `LayoutProps` keep it (`Returned<L>`), `Serializable` checks the inner value. One loader per module → the whole data slot is deferred.
+- Document request (`server/handler.ts`): any `load[DEFER]` among the matched modules → dynamic `import("./deferred.ts")` (other apps' server bundles never load it). Deferred loaders start in the same `Promise.all` turn as the others (`startDeferred`: rejection pre-caught, never unhandled) but are not awaited; after `Promise.all`, each slot = `deferredHandle(promise, dev)` — per request, frozen `{}` with non-enumerable `then` (resume encoder → `{"o":[]}`, JSON → `{}`). `RenderInput.deferred: true` → `app.ts` renders with `stream: {}` when the app's `stream` is off.
+- Ruling (PPR-T01): per-request handle, not spec D3's request-independent handle resolved against the render scope — `await data` continuations run outside the owner (would need AsyncLocalStorage). Shell-cache H-replay re-runs the page with live handles; H-holes (T6) must swap retained handles per hit.
+- Event view `lateEvent(event)`: reads pass through; `setHeader(s)` / `cookies.set` / `cookies.delete` throw `TypeError` (head already sent) — in data requests too (same contract).
+- Data requests (`?_rivet=data`) await deferred loaders like normal ones (one JSON answer, values resolved); client slots hold `T`, boundaries accept `T` or a thenable.
+- Dev: handle = Proxy; any string key except `then` / `toJSON` / `constructor` / `valueOf` / `toString` throws `DeferredDataError` (docs anchor `loading-data#deferred-loaders`).
+- `head()` exports receive the handle. `resource()` inside `Suspense` waits in order (existing runtime behaviour).
+- Known gap: a layout with a deferred loader that re-creates on the client after resume reads `{}` (the encoded handle); `Async` over `{}` renders `{}`.
+- Tests: `tests/deferred.test.ts` (handler units), `tests/deferred-types.test.ts`, `tests/deferred-app.test.ts` (`fixture-deferred`: stream order, data endpoint, error view, late TypeErrors, Chromium resume + client nav, dev overlay); runtime `tests/server-stream-thenable.test.ts`; fuzz route `cdk/tests-components` `deferred-loader`.
+
 ## File routes: revalidation by key
 
 ```ts

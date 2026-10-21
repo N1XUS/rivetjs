@@ -27,7 +27,7 @@ export default function Item({ data }: PageProps<typeof loader>) {
 }
 ```
 
-- `load(…)` gets the request event and runs on the server before the page renders. See [loading data](./loading-data.md).
+- `load(…)` gets the request event and runs on the server before the page renders. See [loading data](./loading-data.md). `load(…, { defer: true })` runs with it but streams its part later: [deferred loaders](./loading-data.md#deferred-loaders).
 - `PageProps<typeof loader>` takes the data type from the loader. You do not write it by hand.
 - `PageProps<"items/[id]">` uses the route id (the file path without extension) instead: it gives `params` from the file name and `data` from the route's `load(…)`. Use it when the page reads params. See [typed routes](./typed-routes.md).
 - `RequestEvent<"items/[id]">` takes the params from the route id in the same way.

@@ -86,6 +86,8 @@ If the visitor leaves the page, the server stops writing.
 
 Route loaders (`load(…)`) finish before the page renders. They never stream. Use them for data the page cannot show without. Use a streamed `Async` for parts that can appear a moment later. See [Loading data](../routing/loading-data.md).
 
+A [deferred loader](../routing/loading-data.md#deferred-loaders) (`load(fn, { defer: true })`) is both: it runs on the server with the other loaders, and its part streams like an `Async` when it finishes. A page with one streams even when `stream` is off for the app.
+
 ## Make sure the response is really streamed
 
 The Node adapter sends a page in one piece when it is complete before the next event-loop turn. A large uncompressed page sends its first part (the document head) at once and the rest when it is rendered. A page that is still waiting streams, and compressed responses are flushed after every piece.
