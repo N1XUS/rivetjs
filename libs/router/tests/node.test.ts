@@ -245,6 +245,56 @@ test("rendered pages go out directly: small bodies with Content-Length, large pl
   );
 });
 
+// LAZY-FLIP 2026-10-21: a client that stops reading and leaves while a rendered page waits on the socket's backpressure
+// rejected the adapter's write wait; the renderer's scheduled flush (and the attach-time wait) dropped that promise, so
+// the rejection was unhandled (default Node: the server process exits).
+test("a client gone while a streamed page waits on backpressure leaves no unhandled rejection; the server keeps serving", async () => {
+  const { renderDocument } = await import("../server/render.ts");
+  const document = () => ({ start: "<!doctype html><body>", end: "</body>" });
+  const input = { head: undefined, nonce: undefined, url: new URL("http://x/"), status: 200, styles: [] };
+  const row = "w".repeat(1000) + "\n";
+  const unhandled: unknown[] = [];
+  const onUnhandled = (reason: unknown) => void unhandled.push(reason);
+  process.on("unhandledRejection", onUnhandled);
+  try {
+    await withServer(
+      (request) =>
+        new URL(request.url).pathname === "/ok"
+          ? new Response("ok")
+          : renderDocument(
+              // Shell, then ~8 MB in async holes below the flush size: each lands in a scheduled flush (microtask), the
+              // way a page with many async boundaries streams, into a socket nobody reads.
+              (() => ["shell", Array.from({ length: 800 }, () => Promise.resolve(row.repeat(10)))]) as never,
+              input,
+              { document },
+              { status: 200, headers: new Headers() },
+            ),
+      async (url) => {
+        for (let i = 0; i < 3; i++)
+          await new Promise<void>((done) => {
+            const req = httpRequest(url + "/big", (res) => {
+              res.once("data", () => {
+                res.pause();
+                // The renderer fills the socket buffers and waits; then the client goes away.
+                setTimeout(() => (req.destroy(), done()), 150);
+              });
+            });
+            req.on("error", () => done());
+            req.end();
+          });
+        await new Promise((done) => setTimeout(done, 200));
+        assert.equal((await get(url + "/ok")).body.toString(), "ok");
+      },
+    );
+  } finally {
+    process.off("unhandledRejection", onUnhandled);
+  }
+  assert.deepEqual(
+    unhandled.map((e) => String((e as Error)?.message ?? e)),
+    [],
+  );
+});
+
 // Early bytes: a long synchronous render's head is on the socket while the rest still renders (TTFB = document
 // head, not the whole page); status and headers were final before (the Response existed). Compressed bodies
 // keep one compression call.

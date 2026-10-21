@@ -147,6 +147,8 @@ export class BodyWriter extends SlabWriter {
   /** Runs after each hand-off (the Response may open). */
   declare enqueued: () => void;
   declare later: () => void;
+  /** A sink wait rejected (the client went away): cancel, so the next hand-off throws and the render ends. */
+  declare gone: () => void;
   constructor(enqueued: () => void) {
     super(FLUSH_AT, SLAB, false, undefined);
     this.slab = null;
@@ -170,6 +172,7 @@ export class BodyWriter extends SlabWriter {
         /* Cancelled by the consumer: the next write fails and ends the render. */
       }
     };
+    this.gone = () => this.cancel();
   }
   /** The consumer caught up (or cancelled): writes coalesce again; a waiting renderer resumes. */
   ready(): void {
@@ -212,7 +215,7 @@ export class BodyWriter extends SlabWriter {
     else if (wait) {
       this.full = true;
       this.threshold = 0;
-      this.waiting = wait.then(() => this.ready());
+      this.waiting = wait.then(() => this.ready(), this.gone);
     } else this.ready();
     return true;
   }
@@ -273,6 +276,9 @@ export class BodyWriter extends SlabWriter {
       if (this.mode === 2) {
         const wait = this.sink!.write(chunk, () => --slab.pending === 0 && slab.retired && recycle(slab));
         this.enqueued();
+        // Callers that do not await the wait (the scheduled flush `later`, renderer paths that drop it) must not leave
+        // its rejection (the client went away mid-backpressure) unhandled: that ends a Node process (LAZY-FLIP).
+        if (wait) wait.then(undefined, this.gone);
         return wait;
       }
       if (this.wanted) {

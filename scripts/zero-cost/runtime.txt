@@ -3,8 +3,8 @@
 @rivetjs/reactivity/store 664762e65a46 10381
 @rivetjs/runtime/server d77ee4bb734c 55049
 @rivetjs/runtime/dom 30f0676d62b2 51024
-@rivetjs/runtime/dom [lazyRows] 937bbb9e0082 51287
-@rivetjs/runtime/dom [derived] 3d08051ff0a7 51522
+@rivetjs/runtime/dom [lazyRows] 6e96a1d4d6cf 51385
+@rivetjs/runtime/dom [derived] a371c3dafb55 51620
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176

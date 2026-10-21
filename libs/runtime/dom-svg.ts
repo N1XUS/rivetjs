@@ -1,7 +1,8 @@
 // `_svgShapes` (DOM twin of `server-svg.ts`): static SVG child shapes from `[tag, attributes]` data (lucide
 // `IconNode`), built once per data array and document, cloned per call. Its own module: pages that never call it
 // bundle none of it.
-import { _attrWrite } from "./dom-v2.ts";
+import { _adoption, _attrWrite } from "./dom-v2.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _constructionDoc, _parseHTML } from "./dom.ts";
 import type { CompiledElement } from "./jsx-runtime.ts";
 
@@ -32,8 +33,16 @@ export function _svgShapes(shapes: SvgShapes): CompiledElement {
   const doc = _constructionDoc();
   let built = (cache ??= new WeakMap()).get(shapes);
   if (built === undefined || built.doc !== doc) cache.set(shapes, (built = { doc, node: build(doc, shapes) }));
+  const clone = built.node.cloneNode(true);
+  // Adopt run (lazy rows, `dom-adopt.ts` `_adoptRow`): like a `_tpl` clone, the probe records each shape and the adopt
+  // run gets the server's back, so a materialised row keeps the server's `<path>` nodes (LAZY-FLIP 2026-10-21). Several
+  // shapes go as an array of elements (a fragment has no server twin to map to).
+  if (LAZY_ROWS && _adoption.node) {
+    const hook = _adoption.node;
+    return (clone.nodeType === 11 ? Array.from(clone.childNodes, (n) => hook(n, 0)) : hook(clone, 0)) as unknown as CompiledElement;
+  }
   // A Node: typed as a JSX child (the twin returns a server record).
-  return built.node.cloneNode(true) as unknown as CompiledElement;
+  return clone as unknown as CompiledElement;
 }
 
 function build(doc: Document, shapes: SvgShapes): Node {

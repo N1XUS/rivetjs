@@ -61,6 +61,7 @@ import { addReads, encodeLazy, lazyKeyed, lazyLocal, lazyRowsOn, lazyWarn } from
 import type { LazyFor as LazyRecord } from "./server-resume-lazy.ts";
 import { domServer } from "./dom-data-server.ts";
 import { DOM_DATA } from "./dom-data.ts";
+import { LAZY_ROWS } from "./lazy-rows.ts";
 import type { DomRegistry, DomSlot } from "./server-dom-data.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
 import { CONSTANT, SCOPED, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
@@ -99,6 +100,7 @@ import type { AttributeNamespace } from "./template.ts";
 import type {
   AsyncEntry,
   BindingEntry,
+  LazyRowsEntry,
   BranchSpec,
   ClientEventEntry,
   CompactRows,
@@ -1156,6 +1158,7 @@ function lazyPlanRows(lazy: LazyFor, [plan, write, env]: RowsProp, items: readon
   for (const site of sites)
     if (site.kind === 1) {
       lazyListen(lazy, site.name.endsWith("!") ? site.name.slice(0, -1) : site.name);
+      if (LAZY_ROWS) lazyHandler(lazy, site.symbol);
       lazy.sites += k - 1;
     }
   if (k < n) tape.length = k * stride;
@@ -2419,7 +2422,10 @@ export function _rOn(
   const recorder = store.getStore();
   if (!recorder || present === false) {
     // A lazy row's handler: nothing recorded, but the page listens for its type (the row materialises on it).
-    if (present !== false && lazyRow !== null && !recorder) lazyListen(lazyRow, type);
+    if (present !== false && lazyRow !== null && !recorder) {
+      lazyListen(lazyRow, type);
+      if (LAZY_ROWS) lazyHandler(lazyRow, id);
+    }
     return null;
   }
   const element = recorder.element();
@@ -2440,6 +2446,10 @@ const EVENT_TYPE = /^[\w:.-]+$/;
 function listen(recorder: Recorder, type: string): void {
   if (!EVENT_TYPE.test(type)) throw new TypeError("Cannot resume a handler for event type " + JSON.stringify(type) + ": use letters, digits, _ : . - only");
   recorder.events.add(type);
+}
+// `resume.lazyRows` builds (`LAZY_ROWS`): a lazy row's handler symbol, for the page's preload plan (`lazyPreloads`).
+function lazyHandler(lazy: LazyFor, symbol: string): void {
+  (lazy.handlers ??= new Set()).add(symbol);
 }
 function lazyListen(lazy: LazyFor, type: string): void {
   lazy.sites++;
@@ -4096,7 +4106,8 @@ function encodeRecords(root: Recorder, recorder: Recorder, a: AsyncEntry[] = [])
     ce,
     reach,
     background: root.options.preload?.background ?? BACKGROUND_DEFAULT,
-    preloads: recorder.preloads,
+    // `resume.lazyRows` builds: a lazy For's chunks plan like a `_rPreload` registration (`lazyPreloads`).
+    preloads: LAZY_ROWS && L.length ? lazyPreloads(recorder.preloads, chunks, L, recorder.lazy, needs) : recorder.preloads,
   });
   if (preload.interaction.length) out.x = preload.interaction;
   // Chunk group / route siblings among this page's chunks: an interaction that loads one prefetches the rest.
@@ -5283,6 +5294,38 @@ function reachStack(table: readonly TableEntry[], root: number, memo: ReachMemo)
  * - schedule: `[[url, "e"|"i"|"v", elementIds?], …]` (the loader prefixes the runtime url) by impact (event weight × elements), smaller first on ties;
  * - interaction: chunk indexes intent must not prefetch.
  */
+/**
+ * Lazy rows (LAZY-FLIP): a lazy For has no row handlers to plan from, so its chunks would wait for the first click (story
+ * harness, Slow 4G + 4× CPU: first row click 28 → 467 ms). Its row function's chunks (entry [6]) and its rows' handler
+ * symbols' chunks (registered in the page's chunk list like a recorded handler's) plan as the rows' handlers would on
+ * recorded rows: `visible` when the rows hold handlers and are a list (`LIST` rows or more) or handle a non-intent event,
+ * as registrations without observed ids (lazy rows carry none), so the background budget fetches them at idle (`intent`
+ * past VISIBLE_MAX); `intent` otherwise (a two-row todo list, rows without handlers: no JS before input, as recorded).
+ */
+function lazyPreloads(
+  preloads: readonly PreloadRecord[],
+  chunks: readonly string[],
+  L: readonly LazyRowsEntry[],
+  lazies: readonly LazyFor[],
+  needs: (symbol: string, refs: number[]) => number[],
+): PreloadRecord[] {
+  const entries = new Map<number, LazyRowsEntry>();
+  for (const entry of L) entries.set(entry[0], entry);
+  const plan = new Map<number, Strategy>();
+  for (const lazy of lazies) {
+    const entry = entries.get(lazy.forId);
+    if (!entry) continue;
+    const handlers = lazy.handlers ?? new Set<string>();
+    let visible = handlers.size > 0 && lazy.items.length >= LIST;
+    if (handlers.size) for (const type of lazy.events) if (!INTENT.has(type.endsWith("!") ? type.slice(0, -1) : type)) visible = true;
+    const strategy: Strategy = visible ? "visible" : "intent";
+    const add = (i: number): void => void (plan.get(i) !== "visible" && plan.set(i, strategy));
+    for (const i of entry[6]) add(i);
+    for (const symbol of handlers) for (const i of needs(symbol, [])) add(i);
+  }
+  return [...preloads, ...[...plan].map(([i, strategy]): PreloadRecord => [chunks[i]!, strategy, []])];
+}
+
 function planPreload({
   manifest,
   chunks: shipped,

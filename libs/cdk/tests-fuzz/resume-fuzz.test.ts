@@ -1,14 +1,18 @@
 // Resume fuzz over the cdk story app (Function Bridge T31, `@rivetjs/testing/fuzz`): every route resumed vs CSR, every
 // interactive element driven, DOM compared after each step. Own build output (`STORIES_DIST`, default `dist-fuzz`) so a
 // concurrent `cdk-components` run never races this build. Pins (known findings + owner): `./pins.ts`; the derived
-// resume model (`RIVET_RESUME_MODEL=derived`, own build `dist-fuzz-derived`) has its own set, `./pins-derived.ts`.
+// resume model (`RIVET_RESUME_MODEL=derived`, own build `dist-fuzz-derived`) has its own set, `./pins-derived.ts`; the
+// lazy rows + DOM-DATA build (`RIVET_LAZY_ROWS=on RIVET_LAZY_ROWS_HARNESS=1 RIVET_DOM_DATA=1`, own build `dist-fuzz-flip`,
+// LAZY-FLIP) uses `./pins-flip.ts`.
 import { fuzzSuite, storyRoutes } from "@rivetjs/testing/fuzz";
 import { pins as serialized, routeOptions } from "./pins.ts";
 import { pins as derived } from "./pins-derived.ts";
+import { pins as flip } from "./pins-flip.ts";
 
 const isDerived = process.env.RIVET_RESUME_MODEL === "derived";
-process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : "dist-fuzz";
-const pins = isDerived ? derived : serialized;
+const isFlip = !isDerived && process.env.RIVET_LAZY_ROWS === "on";
+process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : isFlip ? "dist-fuzz-flip" : "dist-fuzz";
+const pins = isDerived ? derived : isFlip ? flip : serialized;
 const { stories } = await import("../tests-components/harness.ts");
 
 // Shell cache route (`/shell-loader`, rule `shell`): the store is primed before the run so its resumed document load is a

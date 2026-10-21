@@ -46,6 +46,9 @@ export interface LazyFor<S = unknown, R = unknown> {
   events: Set<string>;
   /** Every event type a row handles (entry [9]: a row materialises on one), the page's types included. */
   types: Set<string>;
+  /** Handler symbols of the rows (`_rOn` / row plan sites; spreads: none known), `resume.lazyRows` builds only, for the
+   * page's preload plan (LAZY-FLIP: the chunks a recorded row's handlers would plan). Not encoded. */
+  handlers?: Set<string>;
   /** Identified providers around the For (`[token id, value, …]`, non-default values; entry [10]). */
   providers: unknown[] | null;
   /** Rows holding a client effect / `clientEvent` listener (entry [11]: materialised at idle, so they run as on any page). */
