@@ -20,8 +20,12 @@ import {
 } from "@rivetjs/reactivity";
 import {
   attribute,
+  ATTRIBUTE,
   COMPILED,
   compiledTemplate,
+  LIST as LISTED,
+  MARK,
+  SPREAD,
   MARK_CHAIN,
   MARK_KEEP,
   MARK_RESET,
@@ -58,7 +62,8 @@ import { domServer } from "./dom-data-server.ts";
 import { DOM_DATA } from "./dom-data.ts";
 import type { DomRegistry, DomSlot } from "./server-dom-data.ts";
 import type { RowPaths } from "./server-resume-paths.ts";
-import { CONSTANT, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, SCOPED, _onForRow, _onForRows, _onForLazy, _onPortal, _onBranch, _onForEach, _scopedRecord } from "./server-structural.ts";
+import { inert, isOmitted } from "./omitted.ts";
 import { _inIdScope, _rowIdPrefix } from "./id.ts";
 const noop = (): void => {};
 /**
@@ -979,10 +984,16 @@ function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
     lazy.row = at;
   }
 }
-// One lazy row: its marker pair (id forId + 1 + index) around the row rendered under its id seed. The row renders to HTML
+// One lazy row: its marker pair (id forId + 1 + index) around the row rendered under its id seed. The row is rendered
 // here, inside the row's context (recorder exited, `lazyRow` set, id seed provided): every site of its content — slot
 // content too, which the traversal would otherwise render after the For's decision — is seen before the decision, so a
-// fallback reason is never found after the rows were written. Pending async content is itself a reason.
+// fallback reason is never found after the rows were written. Pending async content is itself a reason. A row whose
+// value holds nothing left to run (`writable`, LAZY-COST-2: every cdk collection row) is returned as is (counted in
+// `lazyDirect`) and the For renders such rows to HTML `LAZY_BATCH` at a time (`_onForLazy`); any other row is rendered to HTML here (`renderToString`
+// under the row's owner).
+let lazyDirect = 0;
+const LAZY_BATCH = 32;
+const lazyOptions = ({ options }: Recorder) => ({ signal: options.signal, variant: options.variant });
 function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCall[0]): ServerValue {
   const get: ConstantGetter<unknown> = () => item,
     at: ConstantGetter<number> = () => index;
@@ -991,6 +1002,7 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   lazy.row = index;
   const { signal, variant } = lazy.recorder.options,
     dom = lazy.recorder.dom;
+  let direct = false;
   const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () => {
     // DOM-DATA: the row's data object (`rowItem`, cdk collection rows iterate keys), else its item.
     const outerItem = DOM_DATA ? rowItem : undefined;
@@ -998,8 +1010,14 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
     const value = render(get, at);
     if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, DOM_DATA && rowItem !== undefined ? rowItem : item);
     if (DOM_DATA) rowItem = outerItem;
+    // LAZY-COST-2: a row whose value needs nothing of its context to write (no function, promise, owner-bound or
+    // error-caught content: cdk `renderNodeAt` rows) is kept as is — the For writes its rows with one renderer
+    // (`_onForLazy`), no renderer / owner record per row; anything else renders here, inside the row's context (id seed,
+    // `lazyRow`, recorder exited).
+    if (lazyPlanned && writable(value, 0)) return ((direct = true), lazyDirect++, value as unknown as string);
     return renderToString(_scopedRecord(getOwner(), value, noop), { signal, variant });
   });
+  if (direct) return compiledTemplate(REGION, [lazy.forId + 1 + index, html as unknown as ServerValue]);
   if (typeof html !== "string") {
     html.then(noop, noop);
     lazy.reason ??= "async content";
@@ -1007,6 +1025,34 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   }
   return compiledTemplate(REGION, [lazy.forId + 1 + index, template([html])]);
 }
+// LAZY-COST-2: whether a renderer outside the row's context writes `value` exactly as a `renderToString` of it in the row's
+// context would:
+// scalars, compiled / template records, arrays, attribute / spread records and scoped records over such content, and
+// omitted slots of inert values — no function (deferred content: its owner, id seed and lazy row are this row's), no
+// promise, no ErrorBoundary record, no translated value, no resume marker record (the row-by-row path resets the marker
+// chain per row). Bounded depth (deeper: the row-by-row path).
+function writable(value: unknown, depth: number): boolean {
+  if (value === null || typeof value !== "object") return scalar(value);
+  if (depth > 32) return false;
+  const record = value as Record<symbol, unknown> & { fragments?: Record<symbol, unknown>; slots?: readonly unknown[]; value?: unknown };
+  if (record[COMPILED] || record[TEMPLATE]) {
+    if (record[VARIANTS] !== undefined || record.fragments === undefined || record.fragments[MARK] !== undefined) return false;
+    const slots = record.slots!;
+    for (let i = 0; i < slots.length; i++) if (!writable(slots[i], depth + 1)) return false;
+    return true;
+  }
+  if (record[ATTRIBUTE]) return scalar(record.value);
+  if (record[SPREAD]) {
+    for (const entry of value as readonly { value: unknown }[]) if (!scalar(entry.value)) return false;
+    return true;
+  }
+  if (record[SCOPED]) return writable(record.value, depth + 1);
+  if (isOmitted(value)) return inert(record.value);
+  if (record[LISTED] || !Array.isArray(value)) return false;
+  for (let i = 0; i < value.length; i++) if (!writable(value[i], depth + 1)) return false;
+  return true;
+}
+const scalar = (value: unknown): boolean => value == null || typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 // ---- LAZY-COST: lazy rows from a compiled row plan (R-PLAN `$rows`) ----
 // A lazy For whose row is a row plan (one native template, only plain attributes / values, `_rId` / `_rOn` / `_rAttr` sites)
 // writes its rows the way a row region plan does (`markPlans`): one list over `regionPlan(withoutIds(plan))` — marker id
@@ -1018,9 +1064,11 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
 // function (a template, an accessor: may hold components, Async, Portal) or a `createId()` in a slot (its row id seed) — and
 // every row after it render one by one (`lazyRowValue`).
 const lazyPlans = new WeakMap<object, RowsProp>();
-// Test hook: false renders every lazy row one by one (`lazyRowValue`), the pre-LAZY-COST path.
+// Test hook: false renders every lazy row one by one, each to its own string (`lazyRowValue` without `writable`), the
+// pre-LAZY-COST path.
 let lazyPlanned = true;
-/** Test hook (internal): lazy rows from row plans on / off for the rest of the process (differential `tests/resume-lazy-plan.test.ts`). */
+/** Test hook (internal): lazy rows from row plans and settled component rows rendered by one renderer per For on / off for the
+ * rest of the process (differentials `tests/resume-lazy-plan.test.ts`, `tests/resume-lazy-plan-browser.test.ts`). */
 export function _setLazyPlans(enabled: boolean): void {
   lazyPlanned = enabled;
 }
@@ -1090,6 +1138,8 @@ function lazyPlanRows(lazy: LazyFor, [plan, write, env]: RowsProp, items: readon
       lazy.sites += k - 1;
     }
   if (k < n) tape.length = k * stride;
+  // DOM-DATA: the tape rows' values, anchored at their row regions (as `lazyRowValue` registers a row rendered by itself).
+  if (lazy.recorder.dom !== null) lazy.recorder.dom.lazyTape(plan, tape, items, k, stride);
   const list = _list(NO_ROWS, noRow, (plan.pathRegion ??= regionPlan(withoutIds(plan))), noRow) as { tape: unknown[]; rows: number };
   list.tape = tape;
   list.rows = k;
@@ -1158,9 +1208,32 @@ _onForLazy((_list, items, verdict, children, by, render) => {
       () =>
         store.exit(() => {
           // LAZY-COST: rows of a row plan go onto one list tape (byte writers: the WebAssembly row emitter), the rest one by one.
-          const from = planned === undefined || recorder.dom !== null ? 0 : lazyPlanRows(lazy, planned, items, rows);
-          for (let k = from; k < items.length && lazy.reason === null; k++) rows[k] = lazyRowValue(lazy, k, items[k], render);
-          if (from) rows.splice(1, from - 1);
+          const from = planned === undefined ? 0 : lazyPlanRows(lazy, planned, items, rows),
+            outerDirect = lazyDirect;
+          // LAZY-COST-2: rows kept as values (`writable`) render to HTML together, `LAZY_BATCH` at a time, in one renderer
+          // (nothing in them runs at traversal, so the row context does not matter) — no renderer per row, and a batch's
+          // records die young (measured: one renderer for the whole For +10–25 % CPU over 32-row batches on /lazy-rows and
+          // /list-data-1000; handing the values to the page writer directly +15–20 % on /lazy-rows).
+          const tail: ServerValue[] = [];
+          let start = 0;
+          const flush = (): void => {
+            if (lazyDirect !== 0) {
+              const html = renderToString(tail.length - start === 1 ? tail[start]! : (tail.slice(start) as unknown as ServerValue), lazyOptions(recorder));
+              if (typeof html === "string") ((tail.length = start), tail.push(template([html])));
+            }
+            start = tail.length;
+            lazyDirect = 0;
+          };
+          lazyDirect = 0;
+          for (let k = from; k < items.length && lazy.reason === null; k++) {
+            tail.push(lazyRowValue(lazy, k, items[k], render));
+            if (lazyDirect >= LAZY_BATCH) flush();
+          }
+          if (lazy.reason === null) flush();
+          rows.length = from ? 1 : 0;
+          for (let i = 0; i < tail.length; i++) rows.push(tail[i]!);
+          // A lazy For inside a row of another (nested collections): the outer For's count goes on.
+          lazyDirect = outerDirect;
         }),
       undefined,
       lazy.hook,

@@ -181,7 +181,7 @@ Synthetic 1000-row table (runtime harness; median of 5 loads; paint = pointerdow
 
 Finding (M2-R5 control, `docs/benchmarks/2026-10-20-derived-r5.notes.md`): ssr-bench `/resume` with lazy rows cost 5.7 ms CPU/page at 1000 rows c1 vs 1.5 recorded. Cause (in-process profile, 1000 rows, byte writer): `lazyRowValue` rendered every row with its own `renderToString` (renderer, owner record, id scope per row: 1.04 of 2.57 ms/render), then the outer writer copied the 1000 row strings again (~0.8 ms incl. GC ×4.4); the row plan + WebAssembly emitter of recorded rows was never used. State encoding was the same (~0.4 ms both).
 
-Fix: a lazy For whose row is a row plan (`$rows`) writes its rows as a row region plan does — one list over `regionPlan(withoutIds(plan))` (marker id + slots per row on one tape, no ids), recording what a lazy row records (`_rAttr` reads, `_rOn` types). Rows with a non-primitive content slot or an id created in a slot, and every row after them, keep the row-by-row path; rows with components (no row plan; the cdk collections) and DOM-DATA renders too. Same state; HTML equal except chained row marker ids left out (`<!--r[-->`). Runtime details: `libs/runtime/CLAUDE.md` "Lazy rows from row plans"; differential test `libs/runtime/tests/resume-lazy-plan.test.ts`.
+Fix: a lazy For whose row is a row plan (`$rows`) writes its rows as a row region plan does — one list over `regionPlan(withoutIds(plan))` (marker id + slots per row on one tape, no ids), recording what a lazy row records (`_rAttr` reads, `_rOn` types). Rows with a non-primitive content slot or an id created in a slot, and every row after them, keep the row-by-row path; rows with components (no row plan; the cdk collections) and DOM-DATA renders too (both fixed by LAZY-COST-2, below). Same state; HTML equal except chained row marker ids left out (`<!--r[-->`). Runtime details: `libs/runtime/CLAUDE.md` "Lazy rows from row plans"; differential test `libs/runtime/tests/resume-lazy-plan.test.ts`.
 
 Docker ssr-bench `rivet-resume`, c1, median of 5 (host load 6–8; base lazy 10–11). Full table + rerun: `docs/benchmarks/2026-10-21-lazy-cost.md`.
 
@@ -264,3 +264,19 @@ R6 (T4 intake, 2026-10-19): a client effect or `clientEvent` inside a row is a f
 - **R5 — loss budget.** Select-all on 1000 rows ≤ one frame at 4× CPU is accepted as the cost of not shipping 1000 rows of closures; measured at T6, mitigated by the keyed selector wake. T6 (2026-10-20): paint +9.5 ms (within), DOM change +19 ms; the keyed wake helps single-row changes, not select-all (every key flips).
 
 If R1 is declined, the fallback is to keep the two diet lanes' serialized wire and accept ~1.5–2.7 KB per component row as the floor (the lazy-state note's bound tables show no other lever below −40 %).
+
+### LAZY-COST-2 measured (2026-10-21, component rows + DOM-DATA)
+
+- Component rows (cdk `renderNodeAt`, no row plan): a row value holding nothing left to run (`server-resume.ts` `writable`: every cdk collection row kind, 0 fallbacks counted on lazy-rows / list-data / virtualized / grid-list / table / tree / listbox) is kept as a value; the For renders such rows 32 at a time with one `renderToString` instead of one per row. Rows with traversal-time content (function children) keep their own renderer.
+- DOM-DATA + row-plan lazy rows: the tape rows register at their row regions (`DomRegistry.lazyTape`), so a domData render keeps the LAZY-COST tape.
+- In-process story harness (`apps/ssr-bench/spikes/lazy-cost/stories.ts`, 6 interleaved rounds, CPU ms / render median, host load 8.3–9.0):
+
+| page | recorded rows | lazy before | lazy after |
+| --- | ---: | ---: | ---: |
+| `/list-data-1000` (1000-item ListBox) | 52.5 | 23.3 | 20.5 |
+| `/list-data` | 8.0 | 4.67 | 3.83 |
+| `/virtualized-collections` | — | 40.4 | 40.2 |
+| `/lazy-rows` | — | 60.8 | 68.5 (noise band 59–72) |
+| `/plan-rows-1000` domData (row plan) | 2.42 | 5.56 | 2.21 |
+
+- Target "≤ recorded rows + 10 %" met everywhere (lazy is 0.37–0.48× recorded on the list pages). Remaining cost is the cdk component render itself, not the row write. Full tables: `docs/benchmarks/2026-10-21-lazy-cost.md` "Component rows / DOM-DATA".

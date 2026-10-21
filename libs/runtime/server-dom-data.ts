@@ -1,6 +1,7 @@
 // DOM-backed loader data, server half (DOM-DATA, spec docs/design/specs/2026-10-20-dom-backed-loader-data-design.md):
 // the render's registry of the list rows whose template writes values as an element's whole text / a plain attribute
-// value (`domRows` for keyed plan rows, `domLazyRow` for lazy rows), the encoder's `D` form of plain JSON trees holding
+// value (`domRows` for keyed plan rows, `domTemplateRow` for lazy rows rendered one by one, `domLazyTape` for lazy rows of a
+// row plan), the encoder's `D` form of plain JSON trees holding
 // them (`domTree`, called by `resume-format.ts` `createEncoder({ dom })`) and the `Dr` run compaction of the state table
 // (`domRuns`). Only builds with `rivet({ resume: { domData: true } })` reach this module: the compiler plugin serves
 // `dom-data-server.ts` with `_domRegistry` from here (default: null, so other servers carry none of it).
@@ -31,6 +32,9 @@ export interface DomRegistry extends DomTexts {
   lazyRow(value: unknown, marker: number, item: unknown): void;
   /** A recorded row's compiled template value (anchor: its root element's `data-r` id); `item` its data object. */
   recordedRow(value: unknown, item: unknown): void;
+  /** Lazy rows 0 … count − 1 of a row plan on one list tape (`lazyPlanRows`): row k = `tape[k * stride]` (its row region
+   * marker id) + its slots, `items[k]` its data object. */
+  lazyTape(plan: DomPlan, tape: readonly unknown[], items: readonly unknown[], count: number, stride: number): void;
   /** Wire form: runs of single `D` trees → `Dr` entries (in place, `t`; `table`: the encoder's, for the shapes). */
   runs(t: TableEntry[], table: readonly TableEntry[]): void;
   /** Wire form (DOM-DATA builds): compact rows' item refs `r` → runs `rs` when shorter (in place, the binding entries `b`). */
@@ -71,6 +75,7 @@ export function _domRegistry(): DomRegistry {
     rows: (plan, tape, rows, count, width) => domRows(dom, plan, tape, rows, count, width),
     lazyRow: (value, marker, item) => domTemplateRow(dom, value, -1 - marker, item),
     recordedRow: (value, item) => domTemplateRow(dom, value, null, item),
+    lazyTape: (plan, tape, items, count, stride) => domLazyTape(dom, plan, tape, items, count, stride),
     tree: (value, shapeRef, last) => domTree(dom, value, shapeRef, last as DomMemo),
     runs: domRuns,
     strided: domStrided,
@@ -110,6 +115,27 @@ function domRows(dom: DomRegistry, plan: DomPlan, tape: readonly unknown[], rows
   for (let k = 0; k < count; k++) {
     const item = rows[k]!.item;
     if (item !== null && typeof item === "object" && !items.has(item)) items.set(item, info.push(rows[k]!.id + 1, k * width, block) - 3);
+  }
+}
+// LAZY-COST-2: a row plan's DOM-DATA slots on a lazy tape (`planTexts`, one slot later: the row's marker id comes first).
+const tapeTexts = new WeakMap<DomPlan, DomSlot[] | null>();
+/** Lazy rows of a row plan written from one list tape (`lazyPlanRows`): row k's anchor is its row region (`-1 - marker`,
+ * marker = `tape[k * stride]`, as `lazyRow` anchors a row rendered by itself), its values `tape[k * stride + 1 + slot]`: one
+ * block for the tape, three numbers per row. Slots as for recorded plan rows (`planTexts`: no `_rAttr` site's attribute). */
+function domLazyTape(dom: DomRegistry, plan: DomPlan, tape: readonly unknown[], items: readonly unknown[], count: number, stride: number): void {
+  let texts = tapeTexts.get(plan);
+  if (texts === undefined) {
+    const own = plan.texts === undefined ? (plan.texts = planTexts(plan)) : plan.texts;
+    tapeTexts.set(plan, (texts = own && own.map(([slot, path, number, attr, name, ok]): DomSlot => [slot + 1, path, number, attr, name, ok])));
+  }
+  if (texts === null) return;
+  const { info, items: registered } = dom,
+    block = dom.sources.push(tape) - 1;
+  dom.slots.push(texts);
+  for (let k = 0; k < count; k++) {
+    const item = items[k];
+    if (item !== null && typeof item === "object" && !registered.has(item))
+      registered.set(item, info.push(-1 - (tape[k * stride] as number), k * stride, block) - 3);
   }
 }
 // Compiled templates of row regions: their DOM-DATA slots (`rowTexts`, slots in a start tag = attributes), per fragments,

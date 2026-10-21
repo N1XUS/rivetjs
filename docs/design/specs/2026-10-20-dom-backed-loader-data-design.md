@@ -39,6 +39,7 @@
 - **Where values come from.** Only list rows.
   - Keyed `For` row plans (`planRows`, structural ids, root-anchored plan: `c.structural && c.anchor && !c.unsafe`).
   - Lazy rows (`lazyRowValue`): the row's compiled template value.
+  - Lazy rows of a row plan (`lazyPlanRows`, LAZY-COST-2 2026-10-21): the list tape (`DomRegistry.lazyTape`: one block = the tape, anchor `-1 - marker`, slots = `planTexts` one slot later). No `_rAttr` site attribute (as plan rows). Before, a domData render kept these rows row by row: `/plan-rows-1000` lazy CPU 5.56 → 2.21 ms, state unchanged.
   - No per-text work anywhere else. Non-row text writes are untouched, so the static lane is unaffected.
 - **Which slots** (`server-resume-paths.ts` `rowTexts`, computed once per template and cached on the plan or in a `WeakMap`):
   - A content slot whose fragment before ends with the element's start tag, and whose fragment after starts with its end tag. This is the element's sole child (`<dd>{x}</dd>`).

@@ -1,4 +1,5 @@
-// LAZY-COST: a lazy `<For>` whose row is a row plan (`$rows`, R-PLAN) writes its rows from one list tape
+// LAZY-COST (+ LAZY-COST-2: settled component rows, `writable`, rendered by one renderer per For): a lazy `<For>` whose row is
+// a row plan (`$rows`, R-PLAN) writes its rows from one list tape
 // (`server-resume.ts` `lazyPlanRows`: region plan without ids, WebAssembly row emitter on byte writers) instead of rendering
 // each row to a string. Differential: every case renders with row plans (default) and with `_setLazyPlans(false)` (each row
 // through `lazyRowValue`, the pre-LAZY-COST path): the same resume state, and the same HTML once chained marker ids are
@@ -49,9 +50,29 @@ export function Ids(p) {
 export function Plain(p) {
   return <ul><For each={() => p.rows} by={(r) => r.id}>{(row) => <li title={row().label}>{row().n}</li>}</For></ul>;
 }
+// LAZY-COST-2 — component rows (no row plan; the cdk collections' \`renderNodeAt\` rows): a row whose value is settled
+// (compiled records, attribute / spread records, text) is kept as is and the For renders all such rows at once; one holding deferred content (a
+// function child) renders to a string in the row's context.
+function Item(props) {
+  const id = createId();
+  return <li id={id} data-key={props.k} {...props.attrs} aria-selected={isSel(props.k) ? "true" : "false"} onClick={() => sel.set(props.k)}>{props.label}</li>;
+}
+export function Comp(p) {
+  return <ul><For each={() => p.rows} by={(r) => r.id}>{(row) => <Item k={row().id} label={row().label} attrs={{ title: row().label, "data-n": row().n }} />}</For></ul>;
+}
+// Content the writer renders later (a function child): its id comes from the row's seed only inside the row's context.
+const later = () => <b id={createId()}>later</b>;
+export function Deferred(p) {
+  return <section><For each={() => p.rows} by={(r) => r.id}>{(row) =>
+    <div class="wrap" title={row().label} onClick={() => sel.set(row().id)}>{later}</div>}</For></section>;
+}
 `;
 const dom = compileResume(source, "dom", "src/plan.tsx");
 const server = compileResume(source, "server", "src/plan.tsx");
+for (const name of ["Comp", "Deferred"]) {
+  const body = server.code.slice(server.code.indexOf("function " + name + "("));
+  assert.match(body.slice(0, body.indexOf("\nexport function", 1) >>> 0), /"\$lazy"/, name + ": lazy verdict");
+}
 for (const name of ["Bench", "Indexed", "Mixed", "Ids", "Plain"]) {
   const body = server.code.slice(server.code.indexOf("function " + name + "("));
   assert.match(body.slice(0, body.indexOf("\nexport function", 1) >>> 0), /"\$rows"[\s\S]*"\$lazy"/, name + ": row plan + lazy verdict");
@@ -108,7 +129,7 @@ for (const [label, render] of [
   ["string", stringPage],
   ["bytes", bytePage],
 ] as const)
-  for (const name of ["Bench", "Indexed", "Mixed", "Ids", "Plain"])
+  for (const name of ["Bench", "Indexed", "Mixed", "Ids", "Plain", "Comp", "Deferred"])
     test(`${label}: ${name} — planned lazy rows equal the row-by-row lazy rows (state byte-equal, HTML modulo chained marker ids)`, async () => {
       for (const n of [1, 2, 3, 40]) {
         const data = rows(n, name === "Mixed" ? 1 : -1);
@@ -117,7 +138,8 @@ for (const [label, render] of [
         else assert.match(planned, /<!--r\d+\[--><li title=/);
         assert.equal(state(planned), state(rowByRow));
         assert.equal(normal(planned), normal(rowByRow));
-        if (name === "Bench" && n === 40) assert.ok(planned.length < rowByRow.length, "chained marker ids left out");
+        if ((name === "Bench" || name === "Comp") && n === 40) assert.ok(planned.length < rowByRow.length, "chained marker ids left out");
+        if (name === "Deferred") assert.equal(planned, rowByRow, "deferred rows: the row-by-row path, byte-equal");
       }
     });
 
@@ -128,4 +150,13 @@ test("Mixed / Ids: rows after the first unplannable one render one by one (their
   assert.match(ids, /<li id="rvr\d+_2_0">/);
   const mixed = await stringPage("Mixed", rows(4, 2));
   assert.match(mixed, /<li>&lt;i&gt;2part<\/li>/);
+});
+
+test("component rows: ids from the row seed on both paths (settled rows and deferred content)", async () => {
+  process.env.RIVET_LAZY_ROWS = "on";
+  const comp = await stringPage("Comp", rows(3));
+  assert.match(comp, /<li id="rvr\d+_0_0" data-key="1" title="&lt;b&gt;&amp;0&lt;\/b&gt;" data-n="0" aria-selected="false">/);
+  assert.match(comp, /<li id="rvr\d+_2_0" data-key="3"/);
+  const deferred = await stringPage("Deferred", rows(2));
+  assert.match(deferred, /<div class="wrap" title="row 1"><b id="rvr\d+_1_0">later<\/b><\/div>/);
 });

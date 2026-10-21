@@ -805,6 +805,8 @@ function leafNodes(collection: CollectionInput, parent: Node<unknown> | null): b
   for (const n of parent ? c.getChildren(parent.key) : c) {
     if (n.type === "content") continue;
     if (n.type === "section") return false;
+    // No children (built nodes keep `firstChildKey`): no iterator per leaf (LAZY-COST-2: 1000 options ≈ 0.5 ms / render).
+    if ((n as { firstChildKey?: Key | null }).firstChildKey === null) continue;
     for (const child of c.getChildren(n.key)) {
       for (const _ of c.getChildren(child.key)) return false;
       break;

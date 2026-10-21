@@ -7,8 +7,8 @@
         "br": 42729
       },
       "serverJS": {
-        "min": 224363,
-        "br": 78359
+        "min": 225328,
+        "br": 78547
       },
       "routes": {
         "/": {
@@ -119,7 +119,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7277,
+          "htmlBr": 7302,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -652,8 +652,8 @@
         "br": 28451
       },
       "serverJS": {
-        "min": 193706,
-        "br": 66173
+        "min": 194671,
+        "br": 66398
       },
       "routes": {
         "/": {
@@ -750,8 +750,8 @@
         "br": 27925
       },
       "serverJS": {
-        "min": 194772,
-        "br": 66513
+        "min": 195737,
+        "br": 66864
       },
       "routes": {
         "/": {
@@ -1134,8 +1134,8 @@
         "br": 49634
       },
       "serverJS": {
-        "min": 226288,
-        "br": 76288
+        "min": 227253,
+        "br": 76561
       },
       "routes": {
         "/": {
@@ -1185,8 +1185,8 @@
         "br": 49463
       },
       "serverJS": {
-        "min": 222722,
-        "br": 75588
+        "min": 223687,
+        "br": 75816
       },
       "routes": {
         "/": {
@@ -1222,8 +1222,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "routes.js",
             "rivet-merge-index.js",
+            "routes.js",
             "shuffle.js",
             "preload-helper.js"
           ]
@@ -1282,8 +1282,8 @@
         "br": 65608
       },
       "serverJS": {
-        "min": 273794,
-        "br": 89486
+        "min": 274759,
+        "br": 89751
       },
       "routes": {
         "/": {
@@ -1319,8 +1319,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
             "routes.js",
+            "rivet-merge-index.js",
             "rivet-merge-minimize-2.js",
             "resume-builtins.js"
           ]
@@ -1334,8 +1334,8 @@
         "br": 65000
       },
       "serverJS": {
-        "min": 273024,
-        "br": 89222
+        "min": 273989,
+        "br": 89565
       },
       "routes": {
         "/": {
