@@ -16,6 +16,9 @@ import { nodeEnv } from "./vite-env.ts";
 
 const root = new URL("./fixture-deferred/", import.meta.url).pathname;
 const configFile = root + "vite.config.ts";
+// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the same steps over a derived-model build of the fixture.
+const derived = process.env.RIVET_RESUME_MODEL === "derived";
+const dist = root + (derived ? "dist/derived" : "dist");
 
 /** Read a body chunk by chunk: the text and the text received before `marker` first appeared. */
 async function chunks(response: Response, onChunk?: (text: string) => void): Promise<string> {
@@ -34,10 +37,10 @@ test(
   "deferred loaders: shell first, holes streamed, data endpoint resolved, resumed in Chromium",
   steps(async (t) => {
     delete process.env.GATE_AUTO;
-    await rm(root + "dist", { recursive: true, force: true });
-    await build({ root, configFile, logLevel: "silent" });
-    await build({ root, configFile, logLevel: "silent", build: { ssr: true } });
-    const { handler } = await loadBuild(root + "dist", { onError: () => {} });
+    await rm(dist, { recursive: true, force: true });
+    await build({ root, configFile, logLevel: "silent", build: { outDir: dist + "/client" } });
+    await build({ root, configFile, logLevel: "silent", build: { ssr: true, outDir: dist + "/server" } });
+    const { handler } = await loadBuild(dist, { onError: () => {} });
     const get = (path: string) => handler(new Request("http://localhost" + path, { headers: { cookie: "user=ann" } }));
 
     await t.test("the shell streams before the deferred loaders settle; each hole arrives as a segment", async () => {
@@ -48,13 +51,27 @@ test(
       // The shell (both fallbacks + the sync sibling after the page's boundary) is out while both gates are closed.
       await new Promise((done) => setTimeout(done, 30));
       assert.match(before, /<span id="user-wait">…<\/span>/);
-      assert.match(before, /<p id="item-wait">Loading item…<\/p><!--\]--><!--\]--><p id="sync">Sync sibling<\/p>/);
+      if (derived) assert.match(before, /<p id="item-wait">Loading item…<\/p><!--\/a--><!--\]--><p id="sync">Sync sibling<\/p>/);
+      else assert.match(before, /<p id="item-wait">Loading item…<\/p><!--\]--><!--\]--><p id="sync">Sync sibling<\/p>/);
       assert.doesNotMatch(before, /Hello ann|Deferred item/);
       // Out of order: the page's hole first (its gate opens first), then the layout's.
       await get("/gate?open=item");
       await new Promise((done) => setTimeout(done, 20));
       await get("/gate?open=user");
       const html = await body;
+      if (derived) {
+        // Derived model: the boundaries tail, then the segments in settle order; the item's value (a Date inside) ships as
+        // its resume table (settled 2), the user's as JSON data.
+        const item = html.indexOf('<template data-a="2"><article id="item"><h2>Deferred item</h2><p id="year">1970</p>');
+        const user = html.indexOf('<template data-a="1"><span id="user">Hello <!--[-->ann<!--]--></span></template>');
+        const tail = html.indexOf('<script type="rivet/boundaries" data-rt=');
+        assert.ok(tail > 0 && item > tail && user > item, "boundaries tail, then the item segment, then the user segment");
+        assert.match(html, /"a":\[\[1,3,0\],\[2,4,0\]\]/);
+        assert.match(html, /<script type="rivet\/boundaries" data-patch="2">\{"v":1,"b":\[\],"a":\[\[2,4,0,2,\{"t":/);
+        assert.match(html, /data-patch="1">\{"v":1,"b":\[\],"a":\[\[1,3,0,1,\{"name":"ann"\}\]\]\}/);
+        assert.ok(html.endsWith("</div></body></html>"));
+        return;
+      }
       const item = html.indexOf('<template data-a="7"><article id="item"><h2>Deferred item</h2><p id="year">1970</p>');
       const user = html.indexOf('<template data-a="4"><span id="user">Hello ann</span></template>');
       const state = html.indexOf('<script type="rivet/state" data-region="0"');
@@ -99,7 +116,7 @@ test(
     });
 
     process.env.GATE_AUTO = "1";
-    const app = await start({ dist: root + "dist", port: 0, onError: () => {} });
+    const app = await start({ dist, port: 0, onError: () => {} });
     const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
     try {
       await t.test("Chromium: holes swap in and resume; client navigation renders deferred data", async () => {

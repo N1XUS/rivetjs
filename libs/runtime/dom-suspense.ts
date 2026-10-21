@@ -4,6 +4,8 @@
 import { batch, computed, effect, getOwner, onCleanup, provide, runWithOwner, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { _constructionDoc, _dom } from "./dom.ts";
 import { _coordinate } from "./async-coordinator.ts";
+import { DERIVED } from "./derived.ts";
+import { _adoption } from "./dom-v2.ts";
 import type { Context, Signal } from "@rivetjs/reactivity";
 import type { AsyncProps, DOMValue, Output } from "./dom.ts";
 
@@ -145,6 +147,9 @@ export function Suspense(props: { fallback?: () => DOMValue; children: DOMValue 
     hidden = false,
     shown: Output | null = null;
   const pending: Pending = (inTransition) => {
+    // Derived builds: the server awaited the content in place and ships no resource state, so a load that suspends while a
+    // unit adopts (its probe run) makes that unit render in the browser instead (`dom-derived.ts`, a dev warning names it).
+    if (DERIVED) _adoption.suspense?.();
     // A transition keeps revealed content: its new loads do not hide it.
     if (revealed && inTransition) return noop;
     count.set(untrack(count) + 1);
@@ -161,6 +166,9 @@ export function Suspense(props: { fallback?: () => DOMValue; children: DOMValue 
   onCleanup(drop);
   effect(() => {
     const wait = waiting();
+    // Disposal goes in creation order: the content (its pending Asyncs) before this effect, under an owner already marked
+    // disposed — a release then lands here with nothing left to show (unmount while a load is pending).
+    if ((owner as { disposed?: boolean } | null)?.disposed) return;
     untrack(() =>
       runWithOwner(owner, () => {
         if (wait) {

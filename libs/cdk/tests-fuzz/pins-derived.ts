@@ -5,7 +5,12 @@
 // after those fixes were deleted — 118 → 59 + 4, `docs/benchmarks/2026-10-21-derived-c.md`): every pin is `design: true`
 // with an empty match (route + kind only) — the derived client is experimental and these are its known gaps, grouped by
 // root cause below; replace a group's pins with narrow ones (or delete them) as the gap closes. Never reuse
-// `./pins.ts` here: those describe the serialized model.
+// `./pins.ts` here: those describe the serialized model. The base group (findings at dcc93d7ac before DERIVED-C) is gone
+// (DERIVED-C3): `/deferred-loader` + `/shell-loader` + `/shell-replay` resume since DERIVED-C2 streamed holes,
+// `/shell-provider` (its `Async` in a component's children slot under a `Provider`) since DERIVED-C3 (the server keys the
+// hole by the boundary whose body made the provider, as the browser's adopt run counts it), all four also under the shell
+// cache (`RIVET_FUZZ_SHELL=hit|miss`); `/dom-data` shows only the generic classes (its GridList's server
+// `aria-labelledby`, as `/grid-list`; hover / focus-visible after keys) and is pinned with them.
 import type { FuzzPin } from "@rivetjs/testing/fuzz";
 
 /** Root causes (spec `docs/design/specs/2026-10-18-structural-resume-design.md` §3.4 "As built", gaps). */
@@ -17,9 +22,7 @@ const MOUNT =
   "a mount-time browser effect (or a browser-only attribute) of a client render the resumed page has not run — the serialized pins' MOUNT_EFFECT / design rows, unpinned per route here";
 const ADOPTED =
   "a page root that rendered in the browser before DERIVED-C (UNKEYED) now adopts: the later steps compare, and browser-created collection parts number their `useId`s after the adopted ones (`#4-news` vs `#3-news`), plus hover / roving tabindex after clicks";
-const BASE =
-  "found at base dcc93d7ac too (DERIVED-C fuzz before / after, unchanged): `/dom-data` (DOM-backed data) is not a derived-model route yet; `/deferred-loader` + `/shell-loader` (deferred holes) resume since DERIVED-C2 streamed holes (pins deleted; `/shell-loader` is fuzzed without the shell cache, which rejects derived documents); `/shell-replay` resumes too (0 findings × 4, pins deleted); `/shell-provider` (PPR-T57) stays: its `Async` sits in a component's children slot under a `Provider`, which DERIVED-C2 streamed holes do not adopt (C2 gap: nested `Async` built after the synchronous part) — the browser re-runs the content with the deferred handle as `{}` (`reading 'map'`), DERIVED-C3";
-const GROUPS = { PRESS, RECREATE, MOUNT, ADOPTED, BASE } as const;
+const GROUPS = { PRESS, RECREATE, MOUNT, ADOPTED } as const;
 
 const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): FuzzPin => ({
   route,
@@ -31,11 +34,8 @@ const pin = (route: string, kind: FuzzPin["kind"], group: keyof typeof GROUPS): 
 });
 
 export const pins: FuzzPin[] = [
-  pin("/shell-provider", "recreated", "BASE"),
-  pin("/shell-provider", "mismatch", "BASE"),
-  pin("/shell-provider", "page-error", "BASE"),
-  pin("/dom-data", "load", "BASE"),
-  pin("/dom-data", "mismatch", "BASE"),
+  pin("/dom-data", "load", "MOUNT"),
+  pin("/dom-data", "mismatch", "RECREATE"),
   pin("/tag-group", "mismatch", "ADOPTED"),
   pin("/autocomplete", "mismatch", "RECREATE"),
   pin("/button", "mismatch", "PRESS"),

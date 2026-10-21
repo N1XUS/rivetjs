@@ -25,7 +25,7 @@
 // TTFB = time from the request (render call) to the first body byte handed out (handler: first `body` read; render: first
 // sink write). Estimates: H-replay ≈ hole + shell-null (+ prefix copy); H-holes ≈ hole (+ prefix copy).
 //
-//   node apps/editorial-bench/spikes/ppr-shell/bench.ts [--build] [--rounds 5] [--requests 1500] [--rows 1000]
+//   [RIVET_RESUME_MODEL=derived] node apps/editorial-bench/spikes/ppr-shell/bench.ts [--build] [--rounds 5] [--requests 1500] [--rows 1000]
 //        [--pages editorial,resume] [--lanes full,shell,floor] [--json out.json] [--dump <lane>]
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
@@ -41,7 +41,8 @@ function arg(name: string, def: string): string {
 }
 const here = import.meta.dirname;
 const root = resolve(here, "app");
-const dist = resolve(root, ".artifacts", "dist");
+// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the app built with the derived resume model (own output directory).
+const dist = resolve(root, ".artifacts", process.env.RIVET_RESUME_MODEL === "derived" ? "dist-derived" : "dist");
 const content = resolve(here, "../../fixture/content/n1000");
 process.env.EDITORIAL_CONTENT ??= content;
 if (process.argv.includes("--build")) {

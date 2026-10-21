@@ -444,7 +444,8 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   assert.match(app, /<Provider token=\{Revived\} value=\{server\}>/);
   // A payload that is not JSON data arrives as its resume table (server `_rData`): decoded here, its built-in decoders first.
   assert.match(app, /const s = rootPayload\(props\.s\),/);
-  assert.match(app, /import \{ createDecoder \} from "@rivetjs\/runtime\/resume-format";/);
+  assert.match(app, /import \{ createDecoder, _useTableDecoder \} from "@rivetjs\/runtime\/resume-format";/);
+  assert.match(app, /if \(!import.meta.env.SSR\) _useTableDecoder\(\);/);
   assert.match(
     app,
     /Root\.ready = \(props: \{ s\?: RootData \| EncodedRoot \}\): Promise<unknown> \| undefined => \{\n {2}const page = loadPage\(new URL\(globalThis\.location\.href\)\);/,

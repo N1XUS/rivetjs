@@ -41,6 +41,16 @@ export function _rUnrecorded<T>(fn: () => T): T {
   return unrecorded(fn);
 }
 let unrecorded: <T>(fn: () => T) => T = (fn) => fn();
+/**
+ * Derived client: the decoder of table-encoded `Async` values (tail `a` entries settled `2`), installed by whoever already
+ * ships `createDecoder` (the router's generated derived `Root`) so the derived runtime carries none of it. Null: such a
+ * hole renders in the browser.
+ */
+export let _tableDecoder: ((table: readonly unknown[]) => { get: (index: number) => unknown }) | null = null;
+/** @internal Installs `createDecoder` as `_tableDecoder` (router codegen, derived model). */
+export function _useTableDecoder(): void {
+  _tableDecoder = createDecoder;
+}
 /** @internal `server-resume` hook. */
 export function _setUnrecorded(run: <T>(fn: () => T) => T): void {
   unrecorded = run;
@@ -1385,11 +1395,13 @@ export interface BoundaryTail {
   /**
    * Derived client (DERIVED-C2): the `Async` boundaries with a fallback whose load was pending (`<!--a<id>-->…<!--/a-->` on
    * the page): `[id, boundary, k]` while its content streams, `[id, boundary, k, 1, value]` settled with JSON data `value`,
-   * `[id, boundary, k, 0]` settled without one (failed, not JSON data, the stream ended first: the browser renders it).
+   * `[id, boundary, k, 2, { t, r }]` settled with a value that is not JSON data, as its resume table (decoded by the table
+   * decoder `_useTableDecoder` installs: the router's derived `Root` does; without one the browser renders it),
+   * `[id, boundary, k, 0]` settled without one (failed, not encodable, the stream ended first: the browser renders it).
    * `boundary` = the record whose unit constructs it (0: none), `k` = its place among that unit's `Async`s with a fallback.
    * A patch re-sends an entry whole when it settles.
    */
   a?: DerivedAsync[];
 }
 /** One `BoundaryTail.a` entry. */
-export type DerivedAsync = [id: number, boundary: number, k: number, settled?: 0 | 1, value?: unknown];
+export type DerivedAsync = [id: number, boundary: number, k: number, settled?: 0 | 1 | 2, value?: unknown];

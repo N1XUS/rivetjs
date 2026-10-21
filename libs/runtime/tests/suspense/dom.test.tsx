@@ -166,3 +166,12 @@ test("unmounting during a transition releases it", async () => {
   await done;
   assert.equal(text(view), "");
 });
+
+test("unmounting a Suspense while a load below it is pending disposes it quietly", () => {
+  const a = gate<string>(), b = gate<string>();
+  const view = render(() => <Pair a={a.promise} b={b.promise} />);
+  assert.equal(view.html(), '<main><p class="wait">loading</p></main>');
+  // The pending Async (made before the Suspense's own effect) is disposed first: its release must not run the effect
+  // over the disposed owner (DERIVED-C3: a derived adopt's probe run is disposed the same way).
+  assert.doesNotThrow(() => view.unmount());
+});

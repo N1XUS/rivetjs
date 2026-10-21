@@ -34,7 +34,7 @@ import { _adoption, _delegateBelow, _for, _insert } from "./dom-v2.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, same, save, textOf } from "./dom-adopt.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt.ts";
-import { _setUnrecorded } from "./resume-format.ts";
+import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
 import type { BoundaryTail, DerivedAsync } from "./resume-format.ts";
 import { DEV } from "#dev";
 
@@ -138,6 +138,8 @@ interface Unit {
   an: number;
   /** An `Async`'s content unit: its id (its own `Async`s are keyed `-aid`). */
   aid: number;
+  /** A load suspended a `Suspense` during the probe (DERIVED-C3): the unit renders in the browser. */
+  sus: boolean;
 }
 /**
  * A list adopted lazily (DERIVED-C: O(1) at adopt): no row object, no client `_for` until needed — its slot keeps the
@@ -281,6 +283,7 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   depth: 0,
   an: 0,
   aid: 0,
+  sus: false,
 });
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
@@ -488,12 +491,14 @@ function liveSpan(hole: AHole): Node[] {
 function landAsync(h: AHole): void {
   if (h.done || !h.start) return;
   const e = asyncs.get(h.id);
-  if (e && e[3] === 1) {
+  // Settled 2: a value that is not JSON data, as its resume table (decoded with the router `Root`'s decoder, if any).
+  const table = e && e[3] === 2 && _tableDecoder ? (e[4] as { t: unknown[]; r: number }) : null;
+  if (e && (e[3] === 1 || table)) {
     h.done = true;
     waiting.delete(h.id);
     // Its probe, adopt (and fallback client) runs answer the server's value without running `load` (which therefore
     // tracks nothing: the resumed boundary does not reload on a change of what its load read on the server — gap).
-    const value = e[4],
+    const value = table ? _tableDecoder!(table.t).get(table.r) : e[4],
       props = h.props!;
     let live = false;
     queueMicrotask(() => (live = true));
@@ -914,6 +919,14 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
     for (const hole of pu.holes) if (hole.kind === 0 && hole.nodes[0]!.parentNode === null) ((inline ??= new Set()).add(hole.k), (again = true));
     if (!again) break;
     _dispose(probe.owner);
+  }
+  // `Suspense` under the derived model (DERIVED-C3): its content was awaited in place on the server and no resource state
+  // ships, so the unit renders in the browser (its resources load again) — gap, documented.
+  if (pu.sus) {
+    if (DEV)
+      DEV.adopt(label + (rec ? " (b" + rec.id + ")" : ""), "a load suspended a <Suspense> (Suspense content renders in the browser on the derived model)");
+    _dispose(probe.owner);
+    return client(parent, run, start, end, rec, self);
   }
   const fresh = kids(probe.frag);
   fresh.pop(); // the anchor
@@ -1658,8 +1671,10 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
 }
 // Cold hover (DERIVED-C): the pointer entered the units an event just adopted before their hover listeners existed (RA
 // useHover's `pointerenter`: direct, non-bubbling listeners): a mouse / pen event that adopted something gives the
-// elements on its path the enter events a loaded page had seen (outermost first, once per element): the first mouse /
-// pen event after an adopt run (`adopted`; a focus or key event may have adopted them).
+// elements on its path the enter events a loaded page had seen, in the browser's order (DERIVED-C3: every
+// `pointerenter`, outermost first, then every `mouseenter` likewise; once per element): the first mouse / pen event
+// after an adopt run (`adopted`; a focus or key event may have adopted them). `pointerover` / `mouseover` are not
+// replayed: they bubble to delegated listeners that may have seen the native one (a page running since before).
 const entered = new WeakSet<EventTarget>();
 let adopted = false;
 function enter(event: Event, path: EventTarget[]): void {
@@ -1667,14 +1682,14 @@ function enter(event: Event, path: EventTarget[]): void {
   if (!adopted || !/^(pointer|mouse)(down|over|move|up)$|^click$/.test(event.type) || type === "touch") return;
   adopted = false;
   const { clientX, clientY } = event as MouseEvent,
-    init = { clientX, clientY, pointerType: type || "mouse", pointerId: (event as PointerEvent).pointerId || 1, isPrimary: true };
+    init = { clientX, clientY, pointerType: type || "mouse", pointerId: (event as PointerEvent).pointerId || 1, isPrimary: true },
+    els: Element[] = [];
   for (let i = path.length; i--;) {
     const el = path[i] as Element;
-    if (el.nodeType !== 1 || entered.has(el)) continue;
-    entered.add(el);
-    el.dispatchEvent(new PointerEvent("pointerenter", init));
-    el.dispatchEvent(new MouseEvent("mouseenter", init));
+    if (el.nodeType === 1 && !entered.has(el)) (entered.add(el), els.push(el));
   }
+  for (const el of els) el.dispatchEvent(new PointerEvent("pointerenter", init));
+  for (const el of els) el.dispatchEvent(new MouseEvent("mouseenter", init));
 }
 async function drain(): Promise<void> {
   while (pending.length) {
@@ -1715,6 +1730,9 @@ const runtime: DerivedRuntime = {
       }
     });
     _adoption.async = asyncHook as typeof _adoption.async;
+    _adoption.suspense = () => {
+      if (cur !== null && cur.mode === PROBE) cur.sus = true;
+    };
     records(t, false);
     // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
     const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };

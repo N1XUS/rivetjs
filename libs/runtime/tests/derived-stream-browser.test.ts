@@ -186,3 +186,195 @@ compiled("streamed, landing after the unit adopted over its fallback: the hole w
     },
   );
 });
+
+// DERIVED-C3: an `Async` in a component's children slot under a `Provider` (cdk story `/shell-provider`). The slot renders
+// after the boundary's body returned, under the provider's owner: the server attributes it to the boundary whose body made
+// that owner (as the browser's adopt run of that unit counts it), so it is a hole of that unit, not of the one above.
+const PROVIDED = `import { signal, createContext, useContext, type Signal } from "@rivetjs/reactivity";
+import { Async, Provider, type DOMValue } from "@rivetjs/runtime/dom";
+const Board = createContext<{ picked: Signal<string> } | null>(null);
+function Counted(props: { children: DOMValue }) {
+  const picked = signal("none");
+  return <Provider token={Board} value={{ picked }}>{props.children}</Provider>;
+}
+export function Shell(props: { children: DOMValue }) {
+  return <main>{props.children}</main>;
+}
+export function App(props: { data: PromiseLike<{ items: string[] }> }) {
+  const count = signal(0);
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <Counted>
+        <Async load={() => ((globalThis as { loads?: number }).loads = ((globalThis as { loads?: number }).loads ?? 0) + 1, props.data)} fallback={() => <p id="wait">wait</p>}>
+          {(value) => {
+            const board = useContext(Board)!;
+            return (
+              <div id="list">
+                <ul>
+                  {value.items.map((item) => (
+                    <li>
+                      <button onClick={() => board.picked.set(item)}>{item}</button>
+                    </li>
+                  ))}
+                </ul>
+                <p id="picked">{board.picked()}</p>
+              </div>
+            );
+          }}
+        </Async>
+      </Counted>
+    </section>
+  );
+}
+export function Page(props: { data: PromiseLike<{ items: string[] }> }) {
+  const n = signal(0);
+  return (
+    <Shell>
+      <button id="outer" onClick={() => n.set(n() + 1)}>{n()}</button>
+      <App data={props.data} />
+    </Shell>
+  );
+}
+`;
+const PROVIDED_RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["Page", "App"], independent: ["Page"] };
+const providedManifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#Page": "/page.js", "src/page.tsx#App": "/page.js" } };
+async function buildProvided(): Promise<{ Page: (props: { data: PromiseLike<unknown> }) => ServerValue; dom: string }> {
+  const server = compile(PROVIDED, { target: "server", filename: "page.tsx", resume: PROVIDED_RESUME } as never);
+  const dom = compile(PROVIDED, { target: "dom", filename: "page.tsx", resume: PROVIDED_RESUME } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  const { Page } = await importServer<{ Page: (props: { data: PromiseLike<unknown> }) => ServerValue }>(server.code);
+  return { Page, dom: rewrite(dom.code) };
+}
+
+compiled("server: an `Async` in a children slot under a provider is keyed by the boundary whose body made the provider", async () => {
+  const { Page } = await buildProvided();
+  const chunks: string[] = [];
+  await renderDerived(
+    () => Page({ data: Promise.resolve(ITEMS) }),
+    { write: (chunk: string) => void chunks.push(chunk) },
+    { manifest: providedManifest, stream: {} },
+  );
+  const html = chunks.join("");
+  const tail = JSON.parse(/<script type="rivet\/boundaries" data-rt[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const app = tail.b.find((r: unknown[]) => r[3] === "src/page.tsx#App")[0];
+  assert.deepEqual(tail.a, [[1, app, 0]], "keyed by App (its body made the provider), place 0");
+  const patch = JSON.parse(/data-patch="1">(.*?)<\/script>/s.exec(html)![1]!);
+  assert.equal(patch.w, undefined, "the content's reads of App's keyed state are App's own (no wake list)");
+});
+
+compiled("streamed under a provider: the content adopts with the server's value (no browser load, provided state live)", async () => {
+  const { Page, dom } = await buildProvided();
+  const chunks: string[] = [];
+  await renderDerived(
+    () => Page({ data: Promise.resolve(ITEMS) }),
+    { write: (chunk: string) => void chunks.push(chunk) },
+    { manifest: providedManifest, stream: {} },
+  );
+  await withPage({ ...files(chunks.join(""), dom) }, async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("http://rivet.test/");
+    await tag(page, ["main", "#list", "li:nth-child(2) button"]);
+    await page.click("li:nth-child(2) button");
+    await page.waitForFunction(() => document.querySelector("#picked")!.textContent === "Europa");
+    assert.deepEqual(await tagged(page, ["main", "#list", "li:nth-child(2) button"]), [true, true, true], "server nodes kept");
+    await page.click("#count");
+    assert.equal(await text(page, "#count"), "1");
+    await page.click("#outer");
+    assert.equal(await text(page, "#outer"), "1");
+    assert.equal(await page.evaluate(() => (globalThis as { loads?: number }).loads ?? 0), 0, "its load never ran in the browser");
+    assert.deepEqual(errors, []);
+  });
+});
+
+// DERIVED-C3: a settled value that is not JSON data (a deferred loader's `Date`) ships as its resume table (tail / patch
+// entry settled 2); the browser decodes it with the decoder the router's derived `Root` installs (`_useTableDecoder`) and
+// adopts the content with it — its load never runs (before: settled 0, the content re-rendered in the browser with a
+// load that read the route payload's `{}` deferred handle).
+const DATED = { items: ["Io", "Europa"], at: new Date(0) };
+async function streamedDated(App: (props: { data: PromiseLike<unknown> }) => ServerValue): Promise<string> {
+  const chunks: string[] = [];
+  await renderDerived(
+    () => App({ data: Promise.resolve().then(() => DATED) }),
+    { write: (chunk: string) => void chunks.push(chunk) },
+    { manifest, stream: {} },
+  );
+  return chunks.join("");
+}
+
+compiled("server: a settled value that is not JSON data ships as its resume table (settled 2)", async () => {
+  const { App } = await build();
+  const html = await streamedDated(App);
+  const [entry] = JSON.parse(/<script type="rivet\/boundaries" data-patch="1">(.*?)<\/script>/s.exec(html)![1]!).a;
+  assert.deepEqual(entry.slice(0, 4), [1, 1, 0, 2]);
+  const { createDecoder } = await import("@rivetjs/runtime/resume-format");
+  assert.deepEqual(createDecoder(entry[4].t).get(entry[4].r), DATED);
+});
+
+compiled("streamed, table-encoded value: decoded with the installed table decoder, adopted, its load never runs", async () => {
+  const { App, dom } = await build();
+  const html = await streamedDated(App);
+  const rt = 'import { _useTableDecoder } from "/resume-format.ts"; _useTableDecoder(); export { default } from "/dom-derived.ts";';
+  await withPage({ ...files(html, dom), "/rt.js": rt }, async (page) => {
+    await page.goto("http://rivet.test/");
+    await tag(page, ["#list"]);
+    await page.click("li:nth-child(2) button");
+    await page.waitForFunction(() => document.querySelector("#picked")!.textContent === "Europa");
+    assert.deepEqual(await tagged(page, ["#list"]), [true], "server nodes kept");
+    assert.equal(await page.evaluate(() => (globalThis as { loads?: number }).loads ?? 0), 0, "its load never ran in the browser");
+  });
+});
+
+// DERIVED-C3: `Suspense` under the derived model — the server awaits its content in place and ships no resource state, so
+// the unit holding it renders in the browser on its first adopt (its resources and loads run again; a dev warning names
+// it). Before: the probe run's disposal wrote the Suspense's pending count into its disposed owner ("Cannot run with a
+// disposed owner") and the page reloaded.
+const SUSPENDED = `import { signal } from "@rivetjs/reactivity";
+import { Async, Suspense, resource } from "@rivetjs/runtime/dom";
+export function App(props: { n: number }) {
+  const count = signal(0);
+  const user = resource(() => props.n, (key) => new Promise<string>((done) => setTimeout(() => done("u" + key), 5)));
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <Suspense fallback={() => <p id="wait">wait</p>}>
+        {() => (
+          <div>
+            <b id="user">{user()}</b>
+            <Async load={() => Promise.resolve({ x: "ax" })}>{(v) => <i id="a">{v.x}</i>}</Async>
+          </div>
+        )}
+      </Suspense>
+    </section>
+  );
+}
+`;
+compiled("a unit holding a Suspense renders in the browser (no resume error), then works", async () => {
+  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App"], independent: ["App"] };
+  const server = compile(SUSPENDED, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(SUSPENDED, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { App } = await importServer<{ App: (props: { n: number }) => ServerValue }>(server.code);
+  const html = (await derivedToString(() => App({ n: 1 }), { manifest: { ...manifest, symbols: { "src/page.tsx#App": "/page.js" } } })) as string;
+  assert.match(html, /<b id="user">u1<\/b>.*<i id="a">ax<\/i>/);
+  await withPage(files(html, rewrite(dom.code)), async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.addInitScript(() =>
+      document.addEventListener("rivet:resume-error", (event) => {
+        event.preventDefault();
+        console.error("resume error " + String((event as CustomEvent).detail));
+      }),
+    );
+    page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+    await page.goto("http://rivet.test/");
+    await page.dispatchEvent("#count", "pointerdown");
+    await page.waitForFunction(() => !document.querySelector("[data-b]"));
+    await page.click("#count");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+    await page.waitForFunction(() => document.querySelector("#user")?.textContent === "u1" && document.querySelector("#a")?.textContent === "ax");
+    assert.deepEqual(errors, []);
+  });
+});

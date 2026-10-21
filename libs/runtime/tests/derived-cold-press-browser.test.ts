@@ -127,3 +127,26 @@ compiled("cold hover: the units a press adopted get the enter events the pointer
     await page.waitForFunction(() => !document.querySelector("#hover")!.hasAttribute("data-hovered"), undefined, { timeout: 2000 });
   });
 });
+
+compiled("cold hover: the synthetic enters follow the browser's order (every pointerenter outermost first, then every mouseenter)", async () => {
+  await cold(async (page) => {
+    await page.evaluate(() => {
+      const log: string[] = ((window as unknown as { enters: string[] }).enters = []);
+      for (const type of ["pointerenter", "mouseenter"])
+        window.addEventListener(
+          type,
+          (event) => event.isTrusted || log.push(type + " " + ((event.target as Element).id || (event.target as Element).localName)),
+          true,
+        );
+    });
+    await page.hover("#hover");
+    await page.click("#hover");
+    await page.waitForFunction(() => document.querySelector("#clicks")!.textContent === "1", undefined, { timeout: 5000 });
+    await idle(page);
+    const enters = await page.evaluate(() => (window as unknown as { enters: string[] }).enters);
+    assert.deepEqual(
+      enters,
+      ["html", "body", "main", "hover"].map((el) => "pointerenter " + el).concat(["html", "body", "main", "hover"].map((el) => "mouseenter " + el)),
+    );
+  });
+});

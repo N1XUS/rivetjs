@@ -23,7 +23,7 @@
 // tail also names each boundary's chunk (`m`), the keys its cold keydowns hold (`k`), the delegated event types
 // (`data-events`), the runtime (`data-rt`) and `data-boot` (a load / idle / visible trigger), and the derived inline loader
 // (`resume-loader-derived.ts`) follows it. Plain `resumableToString(…, { model: "derived" })` writes the tail only.
-import { createContext, createRoot, provide, useContext, getOwner, signal, _dispose } from "@rivetjs/reactivity";
+import { createContext, createRoot, provide, useContext, getOwner, runWithOwner, signal, _dispose } from "@rivetjs/reactivity";
 import type { EqualsOptions, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
@@ -33,11 +33,14 @@ import { _list, renderToString } from "./server.ts";
 import { _asyncHook, _onAsync } from "./server-async.ts";
 import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
-import { _setDerived, renderResumable, resumableToString } from "./server-resume.ts";
+import { _setDerived, _shellRecorder, renderResumable, resumableToString } from "./server-resume.ts";
 import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
 import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, TableEntry } from "./resume-format.ts";
 import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
+import { _idScope } from "./id.ts";
+import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
+import type { _Recorder as Recorder } from "./server-resume.ts";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
 export const INDEPENDENT = 1,
@@ -74,6 +77,12 @@ export interface Boundary {
   out: boolean;
   /** `Async`s with a fallback constructed while it was the current boundary (their `k` in `BoundaryTail.a`). */
   an: number;
+  /** While its body evaluates: the owner whose context frame names it (`CURRENT`), and that owner's frame before. */
+  frame: [owner: OwnerFrames, ctx: unknown] | null;
+}
+/** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
+interface OwnerFrames {
+  ctx: unknown;
 }
 
 /** The derived recorder of one render (held by `server-resume.ts`'s Recorder, provided as the `DERIVED` context). */
@@ -113,6 +122,47 @@ export interface DerivedRender {
   wakeup: (() => void) | null;
   /** The swap add-on (`$rD`) is on the page. */
   addon: boolean;
+  /** Shell cache (`server-shell.ts`, DERIVED-C3): the derived half of a stored shell's fill / replay / H-holes hit. */
+  readonly shell: DerivedShell;
+  /** H-holes hit: boundaries numbered below it are the stored shell's (their keyed state is not this render's). */
+  base: number;
+  /** H-holes hit: the next `Async` is a retained hole (its unit key and place, as the fill counted them). */
+  forced: readonly [b: number, k: number] | null;
+  /** Shell cache renders (`options.shell`): keyed signal getter → its signal (the frame watch reads the value). */
+  sources: WeakMap<object, () => unknown> | null;
+}
+
+/** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
+export interface DerivedSeal {
+  /** Boundary id the content of the holes numbers on from. */
+  readonly next: number;
+  /** Per retained hole (`Async` id order): its unit key and place. */
+  readonly holes: readonly (readonly [b: number, k: number])[];
+}
+/** @internal The shell cache's view of a derived render (`server-shell.ts` calls it through `DerivedRender.shell`). */
+export interface DerivedShell {
+  /** `shellHook`'s root tail of a derived render: fill (seal / retained holes) or replay (muted); true = written nothing. */
+  tail(
+    ctx: DerivedRender,
+    options: ShellHookOptions,
+    recorder: Recorder,
+    kept: ShellHole[] | null,
+    refused: string | null,
+    reset: () => void,
+    frameSignals: FrameSignals,
+  ): boolean;
+  /** Replay: the shell tail writes nothing; its records count as written (the segments number on from them). */
+  mute(ctx: DerivedRender): void;
+  /** Fill, at the cut: the numbering for H-holes hits, or why not. */
+  seal(ctx: DerivedRender): DerivedSeal | string;
+  /** H-holes hit: before the holes run (the content numbers on from the fill's shell). */
+  begin(ctx: DerivedRender, seal: DerivedSeal): void;
+  /** H-holes hit: run hole `i` (`fn` constructs its `Async`) under this render's recorder. */
+  hole<T>(ctx: DerivedRender, seal: DerivedSeal, i: number, fn: () => T): T;
+  /** Fill, once its holes ended: why hits cannot re-run the holes alone (their content's reads woke shell boundaries). */
+  crossed(ctx: DerivedRender, seal: DerivedSeal): string | null;
+  /** A keyed signal getter's signal (`_rSig` wraps it), else undefined. */
+  source(ctx: DerivedRender, fn: object): (() => unknown) | undefined;
 }
 
 /** A pending `Async` of a derived render (wire: `BoundaryTail.a`). */
@@ -124,6 +174,8 @@ interface DerivedAsyncState {
   /** 0 pending, 1 settled with JSON data (`value`), 2 settled without (the browser renders it), 3 content rendering. */
   state: number;
   value: unknown;
+  /** `value` is the resume table encoding of a value that is not JSON data (Date, Map, … : tail entry settled `2`). */
+  enc: boolean;
   /** The boundary current where it was constructed; `Async`s constructed while its content renders (`an`: their `k`). */
   at: Boundary | null;
   an: number;
@@ -182,6 +234,10 @@ export function createDerived(): DerivedRender {
     segment: null,
     wakeup: null,
     addon: false,
+    shell: SHELL,
+    base: 0,
+    forced: null,
+    sources: options && (options as { shell?: unknown }).shell ? new WeakMap() : null,
   });
 }
 
@@ -282,12 +338,21 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     else flags = (flags & ~INDEPENDENT) | DEMOTED;
   }
   verified = null;
-  const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false, an: 0 };
+  const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false, an: 0, frame: null };
   if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
   if (keys) ctx.keys[boundary.id] = keys;
   if (flags & TRIGGERS) ctx.boot = true;
   ctx.boundaries.push(boundary);
   ctx.stack.push(boundary);
+  // Owners the body makes (a `Provider`, a scoped slot) render their lazy content after the body returned, outside the
+  // `_rBOut` frame: while the body runs, its owner's context names this boundary (restored at `_rBEnd`), so content those
+  // owners render later — an `Async` in a children slot under a provider (DERIVED-C3) — attributes to it, as the browser's
+  // adopt run of this boundary's unit counts it.
+  const owner = getOwner() as unknown as OwnerFrames | null;
+  if (owner) {
+    boundary.frame = [owner, owner.ctx];
+    owner.ctx = { token: CURRENT, value: boundary, up: owner.ctx, owner, memo: null };
+  }
   return boundary;
 }
 
@@ -297,7 +362,13 @@ export function _rBEnd(token: Boundary | null): void {
   const ctx = useContext(DERIVED);
   if (!ctx) return;
   const at = ctx.stack.lastIndexOf(token);
-  if (at >= 0) ctx.stack.length = at;
+  if (at < 0) return;
+  for (let i = ctx.stack.length - 1; i >= at; i--) {
+    const frame = ctx.stack[i]!.frame;
+    if (frame) frame[0].ctx = frame[1];
+    ctx.stack[i]!.frame = null;
+  }
+  ctx.stack.length = at;
 }
 
 const COMMENTS = /* @__PURE__ */ Object.freeze(["<!--b", "-->", "<!--/b-->"]);
@@ -353,7 +424,8 @@ export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sig
   const s = signal(init as T, options);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
-  if (!ctx || !owner) return s;
+  // (An H-holes hit's content outside a child boundary: the stored shell's boundary, not this render's — never registered.)
+  if (!ctx || !owner || owner.id < ctx.base) return s;
   const id = register(owner, key, s);
   const get = function () {
     const at = current(ctx);
@@ -362,6 +434,7 @@ export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sig
   } as Signal<T>;
   get.set = (value) => s.set(value);
   get.update = (fn) => s.update(fn);
+  ctx.sources?.set(get, s);
   return get;
 }
 
@@ -371,7 +444,7 @@ export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
   const store = createStore(init);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
-  if (ctx && owner) register(owner, key, () => read(store));
+  if (ctx && owner && owner.id >= ctx.base) register(owner, key, () => read(store));
   return store;
 }
 
@@ -401,17 +474,21 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
   const seg = ctx.segment,
     at = current(ctx),
     by = seg && at === seg.at ? seg : at,
-    b = by === seg ? -seg!.id : (at?.id ?? 0),
-    k = by ? by.an++ : ctx.an++;
+    forced = ctx.forced;
+  // An H-holes hit re-runs a retained hole: its key and place are the fill's (the shell's counters are not re-run).
+  ctx.forced = null;
+  const b = forced ? forced[0] : by === seg ? -seg!.id : (at?.id ?? 0),
+    k = forced ? forced[1] : by ? by.an++ : ctx.an++;
   let entry: DerivedAsyncState | null = null;
   return {
-    defer(loaded, success, failure, fallback, owner, _abort, own) {
+    defer(loaded, success, failure, fallback, owner, _abort, own, _prepare, hole) {
       const a: DerivedAsyncState = (entry = {
         id: ctx.asyncs.length + 1,
         b,
         k,
         state: 0,
         value: undefined,
+        enc: false,
         at,
         an: 0,
         parent: seg,
@@ -422,6 +499,8 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
       });
       ctx.asyncs.push(a);
       ctx.changed.add(a);
+      // Shell cache fill (H-holes): a streamed top-level boundary the compiler marked `$hole` may be retained.
+      if (hole && ctx.stream && !seg && ctx.sources) _shellRecorder()?.options.shell?.hole?.({ parent: null, A: a.id, F: 0, M: null } as never, hole, owner);
       // In place: the content renders where the boundary is (its `Async`s constructed meanwhile are its own).
       const inside = (fn: () => unknown): ServerValue => {
         const outer = ctx.segment;
@@ -476,8 +555,16 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
   };
 }
 function settled(ctx: DerivedRender, a: DerivedAsyncState, value: unknown): void {
-  if (value !== NONE && a.html !== null && isData(value)) ((a.state = 1), (a.value = value));
-  else a.state = 2;
+  if (value === NONE || a.html === null) a.state = 2;
+  else if (isData(value)) ((a.state = 1), (a.value = value));
+  else {
+    // Not JSON data (a Date, Map, URL, registerClass instance, …): its resume table (`_rData`'s wire, decoded by the
+    // decoder the router's generated `Root` installs); what the table cannot encode, or what needs the built-in decoders'
+    // chunk, renders in the browser (settled 0) as before.
+    const encoded = encodeTable(ctx, value);
+    if (encoded) ((a.state = 1), (a.value = encoded), (a.enc = true));
+    else a.state = 2;
+  }
   ctx.changed.add(a);
   const wake = ctx.wakeup;
   ctx.wakeup = null;
@@ -566,6 +653,16 @@ export interface EncodedData {
   r: number;
   /** The built-in decoders' chunk (manifest `builtins`) when the table holds built-in entries. */
   x?: string;
+}
+// A settled `Async` value that is not JSON data as its resume table (no warning: the hole then renders in the browser).
+function encodeTable(ctx: DerivedRender, value: unknown): EncodedData | null {
+  try {
+    const encoder = createEncoder({ special: registered, opaque, origin: ctx.options?.origin });
+    const r = encoder.ref(value);
+    return _builtinKinds(encoder.table) ? null : { t: encoder.table, r };
+  } catch {
+    return null;
+  }
 }
 /**
  * Router ABI (generated `entry.server.tsx`, derived model): the `Root` boundary's route payload as `Root` props can carry it —
@@ -719,7 +816,7 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
       later: DerivedAsyncState[] = [];
     for (const x of ctx.changed) {
       const done = (x.state === 1 || x.state === 2) && (x.out || !ctx.stream);
-      a.push(done ? (x.state === 1 ? [x.id, x.b, x.k, 1, x.value] : [x.id, x.b, x.k, 0]) : [x.id, x.b, x.k]);
+      a.push(done ? (x.state === 1 ? [x.id, x.b, x.k, x.enc ? 2 : 1, x.value] : [x.id, x.b, x.k, 0]) : [x.id, x.b, x.k]);
       if (!done && x.state !== 0 && x.state !== 3) later.push(x);
     }
     ctx.changed.clear();
@@ -772,5 +869,114 @@ export function derivedPatch(ctx: DerivedRender, marker: number): string {
   const tail = flush(ctx);
   return tail ? '<script type="rivet/boundaries" data-patch="' + marker + '">' + escapeJSON(JSON.stringify(tail)) + "</script>" : "";
 }
+
+// ---- Shell cache (DERIVED-C3, 2026-10-21) ----
+// A stored shell of a derived page (router route rule `shell`, `server-shell.ts`): the prefix ends after the derived tail
+// (boundaries script + loader). Muted replay: the shell renders again, its tail is flushed (records count as written) but
+// not written. H-holes: the fill retains its top-level `Async` holes (`$hole`) with their unit key / place and the next
+// boundary id; a hit renders no shell, re-runs each hole under its frame with this render's recorder (`hole`: the fill's
+// key / place forced, content boundaries numbered from the fill's `next`), and its patches carry what the fill's did — not
+// wake lists from the content's reads of shell boundaries: a fill whose content made one keeps the entry on replays.
+const DERIVED_SEAL: ShellSeal = Object.freeze({ t: 0, c: [], s: [], e: [], f: 0, d: 1 });
+/**
+ * The shell tail of a derived render (DERIVED-C3; `server-shell.ts` `shellHook` calls it as `DerivedShell.tail`, so servers
+ * of serialized builds carry none of it): the tail is the boundaries script + the loader, values only (no
+ * numbering to seal or thaw). Fill: the default tail writes (the prefix ends after it); with `holes`, the top-level holes
+ * retained with the derived recorder's keys and numbering. Replay: the tail is flushed, not written; an H-holes hit checks
+ * its holes against the fill's.
+ */
+function shellTail(
+  derived: DerivedRender,
+  options: ShellHookOptions,
+  recorder: Recorder,
+  kept: ShellHole[] | null,
+  refused: string | null,
+  reset: () => void,
+  frameSignals: FrameSignals,
+): boolean {
+  // Not covered: serialized-model state beside the derived tail, DOM-backed data, no stream.
+  const covered = !recorder.used && recorder.stream !== null && !recorder.dom && !recorder.lean;
+  const replay = options.replay;
+  if (!replay) {
+    if (options.holes) {
+      const seal = covered ? SHELL.seal(derived) : null;
+      const why = !covered
+        ? "no streamed resumable state of the derived model"
+        : typeof seal === "string"
+          ? seal
+          : (refused ??
+            ((kept ??= []).length === 0
+              ? "no streamed boundary"
+              : kept.length !== derived.asyncs.length
+                ? "a streamed boundary is not a top-level `Async` the compiler marked `$hole`"
+                : null));
+      const scope = why === null ? runWithOwner(kept![0]!.pin, _idScope) : null;
+      if (why !== null || !scope) options.holes(null, why ?? "no id scope");
+      else {
+        const sealed = seal as DerivedSeal;
+        options.holes(
+          {
+            holes: kept!,
+            n: recorder.next,
+            ids: scope.n,
+            prefix: scope.prefix,
+            contexts: new Map(recorder.contexts),
+            tokens: new Map(recorder.tokens),
+            watch: frameSignals(kept!, (fn) => SHELL.source(derived, fn)),
+            derived: sealed,
+            check: () => SHELL.crossed(derived, sealed),
+          },
+          null,
+        );
+      }
+      reset();
+    }
+    if (covered) options.seal?.(DERIVED_SEAL);
+    options.cut?.(true);
+    return false;
+  }
+  if (!covered) {
+    options.mismatch?.("the replay's page has no streamed resumable state of the derived model");
+    options.cut?.(true);
+    return false;
+  }
+  const retained = options.retained;
+  if (retained) {
+    const holes = retained.derived?.holes ?? [];
+    if (derived.asyncs.length !== holes.length) options.mismatch?.("the hit opened " + derived.asyncs.length + " boundaries, the stored shell " + holes.length);
+    else if (derived.asyncs.some((a, i) => a.id !== i + 1 || a.b !== holes[i]![0] || a.k !== holes[i]![1]))
+      options.mismatch?.("the hit's boundaries number differently from the stored shell's");
+  }
+  SHELL.mute(derived);
+  options.cut?.(true);
+  return true;
+}
+
+const SHELL: DerivedShell = {
+  tail: shellTail,
+  mute: (ctx) => void flush(ctx),
+  seal(ctx) {
+    if (ctx.asyncs.some((a) => a.state !== 0 || a.parent !== null)) return "a hole's content rendered before the shell ended";
+    return { next: ctx.next, holes: ctx.asyncs.map((a) => [a.b, a.k] as const) };
+  },
+  begin(ctx, seal) {
+    ctx.next = ctx.base = seal.next;
+  },
+  hole(ctx, seal, i, fn) {
+    ctx.forced = seal.holes[i] ?? null;
+    try {
+      return withDerived(ctx, fn);
+    } finally {
+      ctx.forced = null;
+    }
+  },
+  crossed(ctx, seal) {
+    for (const [id, readers] of ctx.wake)
+      if (+id.slice(0, id.indexOf(".")) < seal.next)
+        for (const reader of readers) if (reader >= seal.next) return "a hole's content reads keyed state of a shell boundary (wake list)";
+    return null;
+  },
+  source: (ctx, fn) => ctx.sources?.get(fn),
+};
 
 _setDerived({ create: createDerived, run: withDerived, tail: derivedTail, patch: derivedPatch });

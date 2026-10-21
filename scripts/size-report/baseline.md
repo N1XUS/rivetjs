@@ -75,7 +75,7 @@ CSS before first paint = the stylesheets the route's HTML links (`minified / bro
 | app | client JS files | all client JS | server build JS |
 |---|--:|--:|--:|
 | playground | 29 | 112.81 k / 42.73 k | 230.70 k / 80.60 k |
-| kit-fixture | 17 | 83.97 k / 31.94 k | 212.30 k / 74.75 k |
+| kit-fixture | 17 | 83.97 k / 31.94 k | 212.87 k / 74.97 k |
 | router:nav-api | 16 | 85.18 k / 32.01 k | 186.18 k / 65.01 k |
 | router:nested | 15 | 87.58 k / 31.68 k | 191.94 k / 64.53 k |
 | starter-server | 10 | 71.07 k / 26.62 k | 181.73 k / 62.59 k |

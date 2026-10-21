@@ -492,7 +492,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       ? [
           `import { createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
           `import { createRouter as serverRouter } from "@rivetjs/runtime/router/server";`,
-          `import { createDecoder } from "@rivetjs/runtime/resume-format";`,
+          `import { createDecoder, _useTableDecoder } from "@rivetjs/runtime/resume-format";`,
           ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
@@ -585,6 +585,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           "// A payload that is not JSON data (Date, Map, BigInt, registerClass instances, …) arrives as its resume table (server `_rData`).",
           "type EncodedRoot = { t: unknown[]; r: number; x?: string };",
           'const rootPayload = (s: RootData | EncodedRoot): RootData => ("t" in s ? (createDecoder(s.t).get(s.r) as RootData) : s);',
+          "// Streamed `Async` values that are not JSON data (a deferred loader's Date, Map, …) decode with the same decoder.",
+          "if (!import.meta.env.SSR) _useTableDecoder();",
           "const Revived = createContext<ServerRoutePayload | null>(null);",
           "const spent = new WeakMap<object, boolean>();",
           "const revived = <R, T>(work: { get<V>(token: Context<V>): V }, ok: (data: ServerRoutePayload) => R, fail: (cause: unknown) => R, land: (result: R) => T): T | undefined => {",

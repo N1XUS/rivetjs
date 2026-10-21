@@ -803,6 +803,8 @@ export const _adoption: {
    * adopt run the server's nodes), `undefined` lets it run as usual.
    */
   async?: ((props: { load: unknown; children: unknown; fallback?: unknown }, self: (props: never) => unknown) => unknown) | null;
+  /** Derived builds (`dom-derived.ts`, DERIVED-C3): a load suspended a `Suspense` — in a probe run its unit renders in the browser. */
+  suspense?: (() => void) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

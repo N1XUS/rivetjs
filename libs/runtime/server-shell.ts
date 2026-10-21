@@ -26,6 +26,7 @@ import { _idScope, _inIdScope, type IdScope } from "./id.ts";
 import { renderToString, type ServerValue } from "./server.ts";
 import type { EncoderState } from "./resume-format.ts";
 import { _shellRecorder, type ShellHook, type _Encoding as Encoding, type _Recorder as Recorder, type _Segment as Segment } from "./server-resume.ts";
+import type { DerivedSeal } from "./server-derived.ts";
 
 /** The root encode's numbering after a fill's tail: what the replay's patches encode against. */
 export interface ShellSeal {
@@ -41,6 +42,8 @@ export interface ShellSeal {
   readonly f: number;
   /** H-holes: the encoder's numbering (table + interned values; in memory only, never serialized). */
   readonly fork?: EncoderFork;
+  /** The derived model (DERIVED-C3): no state numbering (the tail is values only); muted replays flush it, H-holes run. */
+  readonly d?: 1;
 }
 
 /**
@@ -114,6 +117,10 @@ export interface ShellHoles {
    * with their values at the cut: a hole that writes one makes the entry replay-only (`shellWritten`, PPR-T57).
    */
   readonly watch: readonly (readonly [signal: () => unknown, value: unknown])[];
+  /** Derived model (DERIVED-C3): the fill's hole keys and content numbering. */
+  readonly derived?: DerivedSeal;
+  /** Derived model: why the fill's holes (once ended) made hits unable to serve them alone (`shellWritten`), else null. */
+  readonly check?: () => string | null;
 }
 /** A context value of the retained frames swapped per hit (`shellHoles`): the fill's value in, the hit's out. */
 export type ShellSwap = readonly [token: Context<unknown>, swap: (fill: unknown) => unknown];
@@ -123,8 +130,9 @@ export interface ShellHookOptions {
   seal?(seal: ShellSeal): void;
   /** Replay: the fill's numbering. The root tail writes and encodes nothing. */
   replay?: ShellSeal;
-  /** The shell's content ends here: the root tail starts (fill) / would start (replay; nothing of it is written). */
-  cut?(): void;
+  /** The shell's content ends here: the root tail starts (fill) / would start (replay; nothing of it is written). `derived`: the
+   * tail is the derived model's (boundaries script + loader, DERIVED-C3). */
+  cut?(derived?: boolean): void;
   /** Replay: the render cannot reproduce the fill's numbering (`why`); the patch encode then throws. */
   mismatch?(why: string): void;
   /**
@@ -175,12 +183,15 @@ const DEPTH = 4,
  * The signals the retained frames reach through provided context values (stores included: a store's root is a signal),
  * with their values now. Data properties only (no getter runs); computeds are skipped (derived: their sources count).
  */
-function frameSignals(holes: readonly ShellHole[]): [() => unknown, unknown][] {
+export type _FrameSignals = typeof frameSignals;
+function frameSignals(holes: readonly ShellHole[], source?: (fn: object) => (() => unknown) | undefined): [() => unknown, unknown][] {
   const out: [() => unknown, unknown][] = [];
   const frames = new Set<Frame>(),
     seen = new Set<unknown>();
   const scan = (value: unknown, depth: number): void => {
     if (typeof value === "function") {
+      // A derived keyed signal is a getter around its signal (`_rSig`): the signal is watched.
+      value = source?.(value) ?? value;
       const info = _inspect(value);
       if (info?.kind === "signal" && !seen.has(value)) (seen.add(value), out.push([value as () => unknown, info.value]));
       return;
@@ -209,11 +220,15 @@ function frameSignals(holes: readonly ShellHole[]): [() => unknown, unknown][] {
  * a reason makes the entry replay-only.
  */
 export function shellWritten(retained: ShellHoles): string | null {
+  const why = retained.check?.();
+  if (why) return why;
   for (const [signal, value] of retained.watch)
     if (!Object.is((_inspect(signal) as { value: unknown }).value, value))
       return "a hole wrote a signal an enclosing component provides through context (shared by every hit's holes)";
   return null;
 }
+/** The fill's holes must end before hits may serve them alone (a frame watch or a derived check). */
+export const shellWatching = (retained: ShellHoles): boolean => retained.watch.length > 0 || retained.check !== undefined;
 /** Inside a boundary's content (`ErrorBoundary`): a failing hole would route to the fill's boundary. */
 const caught = (scope: Segment["M"] | null): boolean => {
   for (; scope; scope = scope.parent) if (scope.boundary) return true;
@@ -255,8 +270,11 @@ export function shellHook(options: ShellHookOptions): ShellHook {
         }
       : {}),
     tail(recorder, encode, encoding) {
-      // Not covered (falls back to the default tail): no root state, the derived model, DOM-backed data, bridge lean tails.
-      const covered = recorder.used && recorder.stream !== null && !recorder.derived && !recorder.dom && !recorder.lean;
+      const derived = recorder.derived;
+      // The derived model's shell tail lives with its recorder (`server-derived.ts`: derived builds only carry it).
+      if (derived) return derived.shell.tail(derived, options, recorder, kept, refused, () => ((kept = null), (refused = null)), frameSignals);
+      // Not covered (falls back to the default tail): no root state, DOM-backed data, bridge lean tails (the derived model: above).
+      const covered = recorder.used && recorder.stream !== null && !recorder.dom && !recorder.lean;
       const replay = options.replay;
       if (!replay) {
         let retain = false;
@@ -388,7 +406,12 @@ export function shellHoles(retained: ShellHoles, swaps?: () => readonly ShellSwa
   return () => {
     const recorder = _shellRecorder();
     if (!recorder?.stream) throw new Error("Shell holes need a streaming resumable render");
-    recorder.used = true;
+    const derived = recorder.derived,
+      seal = retained.derived;
+    if (derived && !seal) throw new Error("Shell holes of the serialized model in a derived render");
+    // Derived: the content's boundaries number on from the fill's shell, its row / branch markers from the fill's count.
+    if (derived) (derived.shell.begin(derived, seal!), (recorder.next = retained.n));
+    else recorder.used = true;
     for (const [value, token] of retained.contexts) recorder.contexts.set(value, token);
     for (const [id, token] of retained.tokens) recorder.tokens.set(id, token as never);
     const ids: IdScope = _idScope() ?? { prefix: retained.prefix, n: 0 };
@@ -396,14 +419,20 @@ export function shellHoles(retained: ShellHoles, swaps?: () => readonly ShellSwa
     const { signal, variant } = recorder.options;
     const holder: { owner: never } = { owner: null as never };
     const swapped = swaps?.();
-    for (const hole of retained.holes) {
+    for (let i = 0; i < retained.holes.length; i++) {
+      const hole = retained.holes[i]!;
       const M = hole.M;
-      // The claimed region as the boundary found it (unclaimed, no id yet); its fill id once claimed.
-      const region = { ...M, async: false, id: null } as Segment["M"];
-      recorder.region = region;
-      recorder.next = hole.A;
+      // The claimed region as the boundary found it (unclaimed, no id yet); its fill id once claimed. Derived: no regions —
+      // the hole runs under this render's derived recorder with the fill's key and place.
+      const region = derived ? null : ({ ...M, async: false, id: null } as Segment["M"]);
+      if (region) {
+        recorder.region = region;
+        recorder.next = hole.A;
+      }
       const props = { ...hole.props, fallback: NO_FALLBACK };
-      let run = (): ServerValue => _inIdScope(ids, () => Async(props));
+      let run = derived
+        ? (): ServerValue => derived.shell.hole(derived, seal!, i, () => _inIdScope(ids, () => Async(props)))
+        : (): ServerValue => _inIdScope(ids, () => Async(props));
       if (swapped)
         for (const [token, swap] of swapped) {
           const fill = providedIn(hole.pin, token);
@@ -424,7 +453,7 @@ export function shellHoles(retained: ShellHoles, swaps?: () => readonly ShellSwa
         },
         holder,
       );
-      region.id = M.id;
+      if (region) region.id = M.id;
       void renderToString(value, { ...(signal ? { signal } : {}), ...(variant ? { variant } : {}) });
       recorder.region = null;
     }

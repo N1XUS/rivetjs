@@ -26,10 +26,19 @@ import { nodeEnv } from "./vite-env.ts";
 
 const root = new URL("./fixture-shell/", import.meta.url).pathname;
 const configFile = root + "vite.config.ts";
+// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the same steps over a derived-model build of the fixture.
+const derived = process.env.RIVET_RESUME_MODEL === "derived";
+const dist = root + (derived ? "dist/derived" : "dist");
 const ORIGIN = "http://localhost";
 const TEST = Symbol.for("rivet.shellTest");
 const revalidate = (target: { path?: string; tag?: string }): number =>
   (globalThis as unknown as Record<symbol, (target: object) => number>)[Symbol.for("rivet.revalidate.local")]!(target);
+/** Content assertions see the text without the derived model's content markers (`<!--[-->` / `<!--]-->`). */
+const plain = (html: string) => (derived ? html.replace(/<!--[[\]]-->/g, "") : html);
+const match = (html: string, pattern: RegExp, message?: string): void =>
+  message ? assert.match(plain(html), pattern, message) : assert.match(plain(html), pattern);
+const noMatch = (html: string, pattern: RegExp, message?: string): void =>
+  message ? assert.doesNotMatch(plain(html), pattern, message) : assert.doesNotMatch(plain(html), pattern);
 /** The document with every CSP nonce attribute value blanked. */
 const unnonced = (html: string) => html.replace(/ nonce="[^"]*"/g, ' nonce=""');
 let counter = 0;
@@ -39,10 +48,10 @@ test(
   "shell cache: stored shell + live holes, request-read tracking, fallbacks",
   steps(async (t) => {
     delete process.env.GATE_AUTO;
-    await rm(root + "dist", { recursive: true, force: true });
-    await build({ root, configFile, logLevel: "silent" });
-    await build({ root, configFile, logLevel: "silent", build: { ssr: true } });
-    const { handler } = await loadBuild(root + "dist", { onError: () => {}, routeCache: { origin: ORIGIN } });
+    await rm(dist, { recursive: true, force: true });
+    await build({ root, configFile, logLevel: "silent", build: { outDir: dist + "/client" } });
+    await build({ root, configFile, logLevel: "silent", build: { ssr: true, outDir: dist + "/server" } });
+    const { handler } = await loadBuild(dist, { onError: () => {}, routeCache: { origin: ORIGIN } });
     const get = (path: string, user?: string, headers: Record<string, string> = {}) =>
       handler(new Request(ORIGIN + path, { headers: { ...(user ? { cookie: "user=" + user } : {}), ...headers } }), { nonce: nonce() });
     const runs = async (): Promise<Record<string, number>> => (await handler(new Request(ORIGIN + "/gate"))).json();
@@ -73,17 +82,17 @@ test(
       assert.equal(miss.headers.get("cache-control"), "private, no-cache");
       const first = await read(miss);
       missHTML = first.html;
-      assert.match(first.html, /Hello ann/);
-      assert.doesNotMatch(first.shell, /Hello ann/, "the hole streams after the shell");
+      match(first.html, /Hello ann/);
+      noMatch(first.shell, /Hello ann/, "the hole streams after the shell");
       const before = await runs();
       const hit = await get("/article", "bob");
       assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT");
       assert.equal(hit.headers.get("cache-control"), "private, no-cache");
       const second = await read(hit);
-      assert.match(second.shell, /<h1 id="title">Shell article<\/h1>/);
-      assert.doesNotMatch(second.shell, /Hello bob/);
-      assert.match(second.html, /Hello bob/);
-      assert.doesNotMatch(second.html, /Hello ann/, "no other visitor's hole");
+      match(second.shell, /<h1 id="title">Shell article<\/h1>/);
+      noMatch(second.shell, /Hello bob/);
+      match(second.html, /Hello bob/);
+      noMatch(second.html, /Hello ann/, "no other visitor's hole");
       const after = await runs();
       assert.equal(after.article, before.article, "the shell loader did not run on the hit");
       assert.equal(after.user, (before.user ?? 0) + 1, "the deferred loader ran live");
@@ -132,7 +141,7 @@ test(
       const hit = await get("/replay", "ann");
       assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
       const { html } = await read(hit);
-      assert.match(html, /<p id="stock">Stock 3<\/p>/);
+      match(html, /<p id="stock">Stock 3<\/p>/);
       assert.equal(unnonced(html), unnonced(fillHTML));
     });
 
@@ -189,7 +198,7 @@ test(
     await t.test("unkeyed query parameters render without the shell; keyed queries are separate shells", async () => {
       const extra = await get("/search?page=2&sort=old", "ann");
       assert.equal(extra.headers.get("x-rivet-cache"), null);
-      assert.match((await read(extra)).html, /<p id="page">2 old<\/p>/);
+      match((await read(extra)).html, /<p id="page">2 old<\/p>/);
       // `query: true` (default): a query string is client-chosen input, stored on its second miss.
       assert.equal((await get("/article?v=1", "ann")).headers.get("x-rivet-cache"), null);
       const second = await get("/article?v=1", "ann");
@@ -221,19 +230,19 @@ test(
           const holes = await get("/clock", "bob");
           assert.equal(holes.headers.get("x-rivet-cache"), "SHELL-HIT", "hit " + i);
           const { html } = await read(holes);
-          assert.match(html, /Hello bob/);
-          assert.equal(/<p id="clock">[^<]*<\/p>/.exec(html)![0], /<p id="clock">[^<]*<\/p>/.exec(stored)![0], "hit " + i);
+          match(html, /Hello bob/);
+          assert.equal(/<p id="clock"[^>]*>[^<]*<\/p>/.exec(plain(html))![0], /<p id="clock"[^>]*>[^<]*<\/p>/.exec(plain(stored))![0], "hit " + i);
         }
         const hit = await get("/clock", "bob");
         assert.equal(hit.headers.get("x-rivet-cache"), "SHELL-HIT-REPLAY");
         const { html } = await read(hit);
         assert.match(html, /Shell mismatch/);
         assert.match(html, /location\.reload\(\)/);
-        assert.doesNotMatch(html, /Hello bob/, "no holes against a mismatched shell");
+        noMatch(html, /Hello bob/, "no holes against a mismatched shell");
         assert.ok(warned.some((line) => line.includes('route "clock" not stored: shell mismatch on a hit')));
         const after = await get("/clock", "cy");
         assert.equal(after.headers.get("x-rivet-cache"), null, "evicted, sticky off");
-        assert.match((await read(after)).html, /Hello cy/);
+        match((await read(after)).html, /Hello cy/);
       } finally {
         console.warn = warn;
       }
@@ -243,14 +252,14 @@ test(
       const response = await get("/moved");
       assert.equal(response.status, 200);
       const { html } = await read(response);
-      assert.match(html, /<p id="moved-error">moved<\/p>/);
+      match(html, /<p id="moved-error">moved<\/p>/);
       assert.match(html, /<script nonce="[^"]+">location\.replace\("\/other"\)<\/script><\/div><\/body><\/html>$/);
       const stays = await get("/moved", "ann");
-      assert.doesNotMatch((await read(stays)).html, /location\.replace/);
+      noMatch((await read(stays)).html, /location\.replace/);
     });
 
     await t.test("swr: a stale shell is served and re-filled by a detached anonymous request (R3)", async () => {
-      const { handler: swr } = await loadBuild(root + "dist", {
+      const { handler: swr } = await loadBuild(dist, {
         onError: () => {},
         routeRules: { "/**": { shell: { maxAge: 0, swr: 60 } }, "/gate": { shell: false } },
         routeCache: { origin: ORIGIN },
@@ -264,12 +273,12 @@ test(
         const guests = (await runs())["as:guest"] ?? 0;
         const stale = await fetchSWR("bob");
         assert.equal(stale.headers.get("x-rivet-cache"), "SHELL-STALE");
-        assert.match(await stale.text(), /Hello bob/);
+        match(await stale.text(), /Hello bob/);
         await new Promise((done) => setTimeout(done, 80));
         assert.equal((await runs())["as:guest"], guests + 1, "the re-fill rendered without the visitor's cookie");
         const again = await fetchSWR("cy");
         assert.equal(again.headers.get("x-rivet-cache"), "SHELL-STALE");
-        assert.match(await again.text(), /Hello cy/);
+        match(await again.text(), /Hello cy/);
       } finally {
         delete process.env.GATE_AUTO;
       }
@@ -277,7 +286,7 @@ test(
 
     process.env.GATE_AUTO = "1";
     // No fixed origin here: the doorkeeper stores a key on its second miss.
-    const app = await start({ dist: root + "dist", port: 0, onError: () => {}, routeRules: { "/**": { shell: { maxAge: 3600 } }, "/gate": { shell: false } } });
+    const app = await start({ dist, port: 0, onError: () => {}, routeRules: { "/**": { shell: { maxAge: 3600 } }, "/gate": { shell: false } } });
     const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
     try {
       await t.test("Chromium: first clicks on a hole and on the shell behave the same after a hit as after a miss", async () => {
@@ -383,7 +392,7 @@ test("dev: shell rules probe — each forbidden read named (header + warning), d
     const html = await inorder.text();
     // The in-order read failed the render (DeferredDataError, reported through onError; dev pages get the marker).
     assert.match(html, /rivet:resume-error/);
-    assert.doesNotMatch(html, /<p id="stock">/);
+    noMatch(html, /<p id="stock">/);
     assert.ok(warned.some((line) => line.includes('route "cookie" not stored: page "cookie" loader reads cookies.theme')));
     assert.ok(warned.some((line) => line.includes('route "inorder" not stored: the shell waits for deferred loader data')));
   } finally {

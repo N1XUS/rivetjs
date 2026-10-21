@@ -20,9 +20,8 @@ const { stories } = await import("../tests-components/harness.ts");
 // (`off`). `/shell-loader` has an H-holes eligible hole (a hit renders no shell, PPR-T6), `/shell-replay` an ineligible one
 // (a signal created in the shell: hits replay it), `/shell-provider` an eligible one that writes a signal an ancestor
 // provides (PPR-T57: the fill sees the write, hits replay); a `hit` run checks each answers its path once before the fuzz.
-// The derived model is not supported by the shell cache yet (`shell-cache.ts` rejects a `rivet/boundaries` document), so a
-// derived run never primes: both routes render plain and are fuzzed as such.
-const prime = isDerived ? "off" : (process.env.RIVET_FUZZ_SHELL ?? "hit");
+// The derived model primes the same way (DERIVED-C3: the shell cache stores derived documents; same paths per route).
+const prime = process.env.RIVET_FUZZ_SHELL ?? "hit";
 const SHELL_ROUTES = { "/shell-loader": "SHELL-HIT", "/shell-replay": "SHELL-HIT-REPLAY", "/shell-provider": "SHELL-HIT-REPLAY" };
 const start = async () => {
   const app = await stories();

@@ -10,7 +10,7 @@
 // runs of `--seconds` each. RSS = the server's peak `ps` RSS during the measured runs. A measurement waits for the 1-min load
 // to drop to `--max-load` (default 8) and records the load at its start and end.
 //
-//   node apps/editorial-bench/spikes/ppr-shell/loadgen.ts [--build] [--rounds 3] [--seconds 5] [--targets full,shell,shell-h,floor]
+//   [RIVET_RESUME_MODEL=derived] node apps/editorial-bench/spikes/ppr-shell/loadgen.ts [--build] [--rounds 3] [--seconds 5] [--targets full,shell,shell-h,floor]
 //        [--max-load 8] [--json out.json]
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { writeFileSync } from "node:fs";
@@ -25,7 +25,8 @@ const arg = (name: string, def: string): string => {
 };
 const here = import.meta.dirname;
 const root = resolve(here, "app");
-const dist = resolve(root, ".artifacts", "dist");
+// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the app built with the derived resume model (own output directory, `serve.ts` too).
+const dist = resolve(root, ".artifacts", process.env.RIVET_RESUME_MODEL === "derived" ? "dist-derived" : "dist");
 const content = resolve(here, "../../fixture/content/n1000");
 process.env.EDITORIAL_CONTENT ??= content;
 if (process.argv.includes("--build")) {
