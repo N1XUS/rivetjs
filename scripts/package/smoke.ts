@@ -74,6 +74,8 @@ export const TEMPLATES = ["starter-minimal", "starter-static", "starter-server",
 const HOST_ONLY = new Set([
   "@rivetjs/runtime/testing/register",
   "@rivetjs/testing/node-env",
+  // Vitest browser-mode setup file: installs the headless cursor guard on `window` (tester frame).
+  "@rivetjs/testing/browser-env",
   "@rivetjs/testing/jest",
   "@rivetjs/testing/jasmine",
   "@rivetjs/testing/jest-dom",

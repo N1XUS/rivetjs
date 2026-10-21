@@ -309,3 +309,13 @@ test("local publish: project .npmrc, global npmrc and proxy env refused; proxies
   writeFileSync(join(dir, ".npmrc"), "@rivetjs:registry=https://registry.npmjs.org/\n");
   assert.throws(() => assertNpmTargets(local, args, env, npmrc, dir), /\.npmrc exists \(project npm config\)/);
 });
+
+test("local publish: npm-redacted config paths (a UUID in the checkout path) are refused with the cause (no network)", () => {
+  const local = "http://127.0.0.1:9/";
+  const dir = join(scratch, "redact", "0b9c2f4e-8d1a-4c3b-9e7f-5a6d7c8b9e0f");
+  mkdirSync(dir, { recursive: true });
+  const npmrc = join(dir, "npmrc");
+  writeFileSync(npmrc, `cache=${join(dir, "cache")}\n`);
+  const env = localNpmEnv(npmrc, { PATH: process.env["PATH"] ?? "", HOME: dir });
+  assert.throws(() => assertNpmTargets(local, localNpmArgs(local, npmrc), env, npmrc, dir), /npm redacts the config paths/);
+});

@@ -5,8 +5,9 @@
 //      (`<app> --template <id> --yes --no-install --no-git`),
 //   3. checks the written package.json (name, `@rivetjs/*` → the release version), then points the `@rivetjs/*`
 //      dependencies at the tarballs (`file:` + `overrides`, the local stand-in for the registry),
-//   4. `npm install --offline` (no network: `@rivetjs/*` from the tarballs; see INSTALL_MODE for the third-party
-//      tools), `npm run build`,
+//   4. checks the AI instruction files (AGENTS.md, CLAUDE.md, skills, Cursor / Copilot rules) equal what
+//      `libs/mcp/ai/sync.ts` generates for that starter, `npm install --offline` (no network: `@rivetjs/*` from the
+//      tarballs; see INSTALL_MODE for the third-party tools), `npm run build`, `npm run check` (`rivet sync && rivet-check`),
 //   5. starts the app's server (`start`, `preview`, or a static file server over dist/client for starters
 //      without one) on a free port ≥ 4400, fetches `/` (PAGE_CHECK): interactive starters = HTML + the resume state
 //      script + the inline resume bootstrap + the resume runtime file; the server starter (a loader + a form action,
@@ -24,6 +25,7 @@ import { createServer, type Server } from "node:http";
 import { createServer as createNetServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
+import { aiOutputs } from "../../libs/mcp/ai/sync.ts";
 import { buildPackage } from "./build.ts";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -204,8 +206,30 @@ export async function checkPage(base: string): Promise<string> {
   return `GET / 200 (${(html.length / 1024).toFixed(1)} KB, resume state + bootstrap), GET ${rt} 200`;
 }
 
-/** One template: create from the unpacked create-rivet tarball, install offline, build, serve, fetch. */
-export async function runTemplate(entry: string, work: string, tarballs: Map<string, string>, cli: string): Promise<TemplateResult> {
+/**
+ * AI instruction files of a scaffolded app that differ from what `libs/mcp/ai/sync.ts` generates for its starter
+ * (`templates/<starter>/…` entries of `aiOutputs()`): `missing <path>` / `differs <path>`.
+ */
+export function aiFileProblems(app: string, starter: string, ai: ReadonlyMap<string, string>): string[] {
+  const prefix = `templates/${starter}/`;
+  const problems: string[] = [];
+  for (const [path, contents] of ai) {
+    if (!path.startsWith(prefix)) continue;
+    const file = join(app, path.slice(prefix.length));
+    if (!existsSync(file)) problems.push(`missing ${path.slice(prefix.length)}`);
+    else if (readFileSync(file, "utf8") !== contents) problems.push(`differs ${path.slice(prefix.length)}`);
+  }
+  return problems;
+}
+
+/** One template: create from the unpacked create-rivet tarball, check its AI files, install offline, build, check, serve, fetch. */
+export async function runTemplate(
+  entry: string,
+  work: string,
+  tarballs: Map<string, string>,
+  cli: string,
+  ai?: ReadonlyMap<string, string>,
+): Promise<TemplateResult> {
   const template = entry;
   const [id, deploy] = entry.split("+") as [string, string | undefined];
   const started = performance.now();
@@ -242,6 +266,11 @@ export async function runTemplate(entry: string, work: string, tarballs: Map<str
         deps[dep] = "file:" + tarball;
       }
     if (!existsSync(join(app, ".gitignore"))) throw new Error(".gitignore missing (bundled as _gitignore)");
+    if (ai && !deploy) {
+      const problems = aiFileProblems(app, `starter-${id}`, ai);
+      if (problems.length) throw new Error(`AI files differ from libs/mcp/ai/sync.ts output (run node libs/mcp/ai/sync.ts):\n${problems.join("\n")}`);
+      steps.push(`AI files = sync.ts output (${[...ai.keys()].filter((path) => path.startsWith(`templates/starter-${id}/`)).length} files)`);
+    }
     pkg.overrides = Object.fromEntries([...tarballs].filter(([dep]) => dep.startsWith("@rivetjs/")).map(([dep, file]) => [dep, "file:" + file]));
     writeFileSync(join(app, "package.json"), JSON.stringify(pkg, null, 2) + "\n");
     steps.push(`package.json ok (@rivetjs/* ${expected})`);
@@ -311,6 +340,8 @@ export async function runTemplate(entry: string, work: string, tarballs: Map<str
       steps.push(`${deploy} layout: ${expected.join(", ")}`);
       return { template, ok: true, steps, ms: Math.round(performance.now() - started) };
     }
+    run("npm", ["run", "check"], app);
+    steps.push("npm run check");
 
     const port = await freePort();
     const base = `http://127.0.0.1:${port}/`;
@@ -352,8 +383,9 @@ export async function createE2E({ templates = [...E2E_TEMPLATES, ...E2E_DEPLOYS]
     execFileSync("tar", ["-xzf", tarballs.get("create-rivet")!, "-C", unpacked]);
     const cli = join(unpacked, "package", "cli.js");
     const bundled = readdirSync(join(unpacked, "package", "templates")).sort();
+    const ai = await aiOutputs();
     const results: TemplateResult[] = [];
-    for (const template of templates) results.push(await runTemplate(template, dir, tarballs, cli));
+    for (const template of templates) results.push(await runTemplate(template, dir, tarballs, cli, ai));
     return { work: dir, bundled, results };
   } finally {
     if (!keep && !work) rmSync(dir, { recursive: true, force: true });

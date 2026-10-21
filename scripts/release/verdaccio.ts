@@ -70,12 +70,23 @@ export function assertNpmTargets(registry: string, args: string[], env: NodeJS.P
   // npm config layers the flags cannot pin away: a project `.npmrc` (repo root) or an existing global npmrc.
   if (existsSync(join(projectRoot, ".npmrc"))) throw new Error(`refusing to publish: ${join(projectRoot, ".npmrc")} exists (project npm config)`);
   for (const key of Object.keys(env)) if (PROXY_ENV.test(key)) throw new Error(`refusing to publish: proxy setting ${key} in the environment`);
+  // npm (11.17, `@npmcli/redact`) masks secret-looking path segments (a UUID: `/…/d5c17ad1-…/` → `/…/***/`) in config
+  // output and refuses `config get` of such a value: the checks below cannot read the paths, so they fail closed with
+  // the cause named instead of a misleading "protected" / "reads the user config" refusal.
+  const redacted = () =>
+    new Error(
+      `refusing to publish: npm redacts the config paths under ${projectRoot} (a path segment looks like a secret, e.g. a UUID), so the npm targets cannot be verified: run from a checkout path without one`,
+    );
   const npm = (npmArgs: string[]) => {
     const result = spawnSync("npm", [...npmArgs, ...args], { cwd: projectRoot, env, encoding: "utf8" });
-    if (result.status !== 0) throw new Error(`npm ${npmArgs.join(" ")}: ${(result.stderr || result.stdout).trim()}`);
+    if (result.status !== 0) {
+      if (/option is protected, and cannot be retrieved/.test(result.stderr)) throw redacted();
+      throw new Error(`npm ${npmArgs.join(" ")}: ${(result.stderr || result.stdout).trim()}`);
+    }
     return result.stdout;
   };
   const globalconfig = npm(["config", "get", "globalconfig"]).trim();
+  if (globalconfig.includes("***")) throw redacted();
   if (existsSync(globalconfig)) throw new Error(`refusing to publish: global npm config ${globalconfig} exists`);
   for (const key of ["registry", "@rivetjs:registry"]) {
     const value = npm(["config", "get", key]).trim();
@@ -87,7 +98,8 @@ export function assertNpmTargets(registry: string, args: string[], env: NodeJS.P
   }
   const list = npm(["config", "list"]);
   for (const [, file] of list.matchAll(/^; "user" config from (.+)$/gm))
-    if (resolve(file!) !== resolve(userconfig)) throw new Error(`refusing to publish: npm reads the user config ${file}, not ${userconfig}`);
+    if (file!.includes("***") && !userconfig.includes("***")) throw redacted();
+    else if (resolve(file!) !== resolve(userconfig)) throw new Error(`refusing to publish: npm reads the user config ${file}, not ${userconfig}`);
   for (const [, host] of list.matchAll(/^\/\/([^/\s]+)\/\S*:_(?:authToken|auth|password)\b/gm)) {
     const hostname = new URL(`http://${host}`).hostname;
     if (!LOCAL_HOSTS.has(hostname)) throw new Error(`refusing to publish: npm config holds credentials for ${host}`);

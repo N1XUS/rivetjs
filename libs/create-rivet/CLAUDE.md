@@ -33,7 +33,7 @@
 
 - Run in-repo: `node libs/create-rivet/cli.ts <dir> --template <id> [--no-install --no-git]` (inside the repo the project resolves the workspace packages).
 - Tests: `npx vitest run --project create-rivet`; typecheck `node scripts/tsc.ts -p libs/create-rivet` (tsgo); package `node scripts/package/build.ts libs/create-rivet`.
-- End to end from tarballs: `node scripts/package/create-e2e.ts [template …] [--keep]` (vitest `scripts`: `scripts/tests/create-rivet-e2e.test.ts`).
+- End to end from tarballs: `node scripts/package/create-e2e.ts [template …] [--keep]` (scaffold → AI files = `libs/mcp/ai/sync.ts` output → install → build → `npm run check` → serve) (vitest `scripts`: `scripts/tests/create-rivet-e2e.test.ts`).
 
 ## See also
 
