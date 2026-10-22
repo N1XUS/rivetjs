@@ -17,6 +17,10 @@
       "types": "./debug.ts",
       "default": "./debug.ts"
     },
+    "./track": {
+      "types": "./track.ts",
+      "default": "./track.ts"
+    },
     "./store": {
       "types": "./store.ts",
       "development": "./store-dev.ts",

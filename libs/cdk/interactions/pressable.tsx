@@ -23,11 +23,9 @@ import { focusableProps, type FocusableOptions } from "../focus/focusable.tsx";
 import { mergeRefValues, type RefValue } from "../slots/index.tsx";
 import { mergeProps } from "./merge-props.tsx";
 import { PressResponderContext, pressProps, type PressProps } from "./press.tsx";
-import { isFocusable } from "./utils.ts";
+import { DEV, isFocusable } from "./utils.ts";
 
 export { PressResponderContext } from "./press.tsx";
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 
 export interface PressResponderProps extends PressProps {
   children?: Content;
@@ -56,7 +54,7 @@ export function PressResponder(props: PressResponderProps) {
 
 function renderResponderChildren(children: Content, state: { isRegistered: boolean }): Content {
   const content = renderSlot(children);
-  if (!state.isRegistered && typeof document !== "undefined" && isDev()) {
+  if (!state.isRegistered && typeof document !== "undefined" && DEV) {
     console.warn("A PressResponder was rendered without a pressable child. Either spread pressProps, or wrap your DOM node with <Pressable> component.");
     state.isRegistered = true;
   }
@@ -93,7 +91,7 @@ export function Pressable(props: PressableProps) {
   const focusable = focusableProps(options as FocusableOptions, element);
   const merged = mergeProps(press.pressProps, focusable);
   merged.ref = focusable.ref ?? element;
-  if (isDev()) {
+  if (DEV) {
     const isDisabled = options.isDisabled;
     clientEffect(() => {
       const el = typeof element === "function" ? (element as () => Element | undefined)() : (element as { current: Element | null }).current;

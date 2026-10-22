@@ -25,7 +25,7 @@ import { _regionState, untrack, useContext, type Signal } from "@rivetjs/reactiv
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { createId, idSignal } from "../utils/id.ts";
-import { isFocusWithin } from "../utils/dom.ts";
+import { DEV, isFocusWithin } from "../utils/dom.ts";
 import { focusMovedByUser, focusSafely } from "../focus/index.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
@@ -403,7 +403,7 @@ export function Dialog(inProps: DialogProps) {
     }
     return dialogFocus(el, entering);
   });
-  if (isDev()) clientEffect(() => dialogTitleWarning(element()));
+  if (DEV) clientEffect(() => dialogTitleWarning(element()));
 
   const dom = globalDOMProps(props, OWNED);
   const id = d.id,
@@ -450,5 +450,3 @@ export function Dialog(inProps: DialogProps) {
     </section>
   );
 }
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";

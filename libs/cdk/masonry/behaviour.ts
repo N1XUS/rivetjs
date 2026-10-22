@@ -703,13 +703,12 @@ export function watchRatios(grid: HTMLElement, pending: (key: Key) => boolean, r
   };
 }
 
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 /**
  * Dev warning: items of unknown size in a server-placed grid. At mount (`layout="exact"`): they are measured in the
  * browser, like `auto`. After mount (`afterMount`): the layout kind was chosen at mount, so they are placed as squares.
  */
 export function warnUnknownExact(count: number, afterMount = false): void {
-  if (DEV && isDev())
+  if (DEV)
     console.warn(
       (afterMount
         ? `[rivet:cdk] Masonry: an item of unknown size was added to a server-placed grid (every item had a size at mount): it is placed as a square. Give it a size or use layout="measure".`

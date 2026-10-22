@@ -7,7 +7,8 @@
 // mistakes (dev/a11y.ts).
 import * as dom from "../dom.ts";
 import { _adoption } from "../dom-v2.ts";
-import { getOwner, onCleanup, signal, untrack, _rootIn, _scoped, _trackReads, _inspect, type Disposer, type Signal } from "@rivetjs/reactivity";
+import { getOwner, onCleanup, signal, untrack, _rootIn, _scoped, _inspect, type Disposer, type Signal } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import { _debug, devtoolsHook, type DevtoolsHook } from "@rivetjs/reactivity/debug";
 import type { ClientOnlyOptions, Component, DOMValue, LazyComponentOptions } from "../dom.ts";
 export * from "../dom.ts";

@@ -9,6 +9,9 @@
 // sense (owner document / window fall back to `undefined`); everything else is browser-only.
 import { signal, type Signal } from "@rivetjs/reactivity";
 import { isIOS, isWebKit } from "../platform/index.ts";
+// `DEV` (`#dev`) for cdk modules that import this file anyway: re-exported here instead of a direct `#dev` import, which would add
+// a module edge per importer and regroup merge chunks (DIET-CODE 2026-10-22: +1 eager chunk on 3 cdk story pages).
+export { DEV } from "#dev";
 
 /**
  * `CSS.escape(value)` (CSSOM "serialize an identifier"): the native one when the global `CSS` exists, else the same

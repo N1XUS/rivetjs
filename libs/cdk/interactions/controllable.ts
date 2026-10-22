@@ -42,7 +42,6 @@ export interface ControlledState<T, C = T> {
 }
 
 const isSignal = <T>(v: unknown): v is Signal<T> => typeof v === "function" && typeof (v as Signal<T>).set === "function";
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 
 /**
  * @deprecated Two-argument form (two-way Signal or region signal, no `onChange`): kept until the
@@ -69,7 +68,7 @@ export function controllable<T, C = T>(
   const isControlled = value !== undefined;
   const sig = isSignal<T>(value);
   const accessor = !sig && typeof value === "function";
-  if (DEV && isControlled && !sig && !onChange && isDev())
+  if (DEV && isControlled && !sig && !onChange)
     console.warn(
       "[rivet:cdk] controllable: A component has a controlled value but no onChange handler; it is read-only. Pass a Signal or an onChange handler." +
         devWhere(),

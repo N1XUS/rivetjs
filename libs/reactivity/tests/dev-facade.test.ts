@@ -2,6 +2,7 @@
 import { test, vi } from "vitest";
 import assert from "node:assert/strict";
 import * as base from "../index.ts";
+import { _trackReads } from "../track.ts";
 import * as dev from "../dev.ts";
 import { HOOK, _debug, type DevtoolsHook } from "../debug.ts";
 
@@ -152,7 +153,7 @@ test("the façade returns real primitives: resume hooks and identity are unchang
     const c = dev.computed(() => s() + 1);
     assert.deepEqual(base._inspect(s), { kind: "signal", value: 3, equals: null });
     assert.equal(base._inspect(c)!.kind, "computed");
-    assert.deepEqual(base._trackReads(() => c()).signals, [s]);
+    assert.deepEqual(_trackReads(() => c()).signals, [s]);
     let runs = 0;
     dev.effect(() => void (runs++, s()));
     s.set(3);

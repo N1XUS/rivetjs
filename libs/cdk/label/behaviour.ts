@@ -48,7 +48,7 @@ export function labelProps(props: LabelAriaProps): LabelAria {
     const labelId = props.id ? props.id + "-label" : createId();
     labelledBy = labelledBy ? `${labelId} ${labelledBy}` : labelId;
     attrs = { id: labelId, for: (props.labelElementType ?? "label") === "label" ? id : undefined };
-  } else if (DEV && !labelledBy && !ariaLabel && isDev()) {
+  } else if (DEV && !labelledBy && !ariaLabel) {
     console.warn(
       "[rivet:cdk] labelProps: If you do not provide a visible label, you must specify an aria-label or aria-labelledby attribute for accessibility" +
         devWhere(),
@@ -56,8 +56,6 @@ export function labelProps(props: LabelAriaProps): LabelAria {
   }
   return { labelProps: attrs, fieldProps: labelsProps(id, ariaLabel, labelledBy) };
 }
-
-const isDev = (): boolean => typeof process !== "undefined" && process.env?.NODE_ENV === "development";
 
 export interface FieldAriaProps extends LabelAriaProps {
   /** Whether a description renders (RA `description`). */

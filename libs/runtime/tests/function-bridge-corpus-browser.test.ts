@@ -30,6 +30,7 @@ const RUNTIME = [
   "@rivetjs/runtime/resume-format",
   "@rivetjs/runtime/props",
   "@rivetjs/reactivity/store",
+  "@rivetjs/reactivity/track",
   "@rivetjs/reactivity",
 ];
 const typed = compiler as unknown as { compile(source: string, options: object): CompileResult };

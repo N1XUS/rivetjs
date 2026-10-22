@@ -7,6 +7,7 @@ import { _adoption, _attrWrite, _cls, _insert, _on } from "./dom-v2.ts";
 import { bindRef } from "./dom.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _applyStyle } from "./style.ts";
+import { _setTakeover, type Takeover } from "./dom-v2-takeover.ts";
 
 const HTML = "http://www.w3.org/1999/xhtml";
 // Bubbling events delegated through `_on` (the compiler's list, `compile/dom_v2.rs`).
@@ -31,17 +32,9 @@ const RENDERED = {};
 // Resumed `flags & 1` spread before its first run: the content is the server's.
 const SERVER = {},
   SLOT = Symbol.for("rivet.slot");
-/** Resume hook (pay-per-use: installed by a resumed `_spread`, so pages without resumed spreads ship none of it):
- * event types an activated spread took over per element (its own handler replaces the element's resumed entry),
- * and the deferral of an ancestor's resumed bubbling handler behind such a descendant (the loader's capture-phase
- * walk would run it first). */
-export let _takeover: Takeover | undefined;
-interface Takeover {
-  add(el: Element, type: string): void;
-  /** Run `call` after the handler of the outermost element between the event's target and `ancestor` (exclusive)
-   * that took `type` over (unless it stopped propagation); false when there is none. */
-  defer(event: Event, ancestor: Element, type: string, call: () => void): boolean;
-}
+// Resume hook (pay-per-use: installed by a resumed `_spread` into `dom-v2-takeover.ts`, so pages without resumed
+// spreads ship none of it): event types an activated spread took over per element (its own handler replaces the
+// element's resumed entry), and the deferral of an ancestor's resumed bubbling handler behind such a descendant.
 let taken: WeakMap<Element, Set<string>> | undefined;
 const TAKEOVER: Takeover = {
   add(el, type) {
@@ -152,7 +145,7 @@ export function _spread(
     // Resumed, function `children` rendered as its own site (`#r`): never written here (it binds / re-creates itself).
     site = false;
   if (resumed) {
-    _takeover = TAKEOVER;
+    _setTakeover(TAKEOVER);
     for (const name of rendered!.slice(3).split(" "))
       if (name === "#c") keep = false;
       else if (name === "#r") site = true;
@@ -283,7 +276,7 @@ export function _spread(
   // `flags & 2`: an uncopied object (compiler: `<el {...rest}>`, a lone identifier spread) that may hold live getters
   // (props helpers' / compiled props objects): read inside the effect, which reactivity releases at once when the run
   // read no signal (a plain object retains no effect). No brand check: importing `props.ts` here would put it in the
-  // resume runtime's graph (`_takeover`) and split a shared chunk off before the first interaction.
+  // graph of every chunk that spreads (and, while `dom-resume` imported `_takeover` from here, the resume runtime's).
   else if (flags & 2) _bindingEffect(() => run((value ?? {}) as Record<string, unknown>));
   else {
     const object = (value ?? {}) as Record<string, unknown>;

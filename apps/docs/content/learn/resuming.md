@@ -187,7 +187,7 @@ What to change, in this order:
 
 ### Lazy rows
 
-Lazy rows are on by default in resumable builds. A keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. The code that rebuilds rows (about 4.9 KB brotli) is a file of its own that only pages with lazy rows load, when the page starts its browser runtime; every page of the build carries about 0.9–2.8 KB brotli more for the hooks it calls into.
+Lazy rows are on by default in resumable builds. A keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. The code that rebuilds rows (about 4.9 KB brotli) is a file of its own that only pages with lazy rows load, when the page starts its browser runtime; every page of the build carries about 0.9–2.8 KB brotli more for the hooks it calls into. Unless the option is `true`, a build in which no resumable component has a keyed `<For>` that can use lazy rows leaves all of it out: its pages carry 0 bytes for them.
 
 Two switches turn them off:
 
@@ -213,7 +213,7 @@ export default defineConfig({
 
 ### Data from the page
 
-On by default in resumable builds: loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 4 KB. `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`) writes that data into the state again, and the build carries none of the code that reads it back:
+On by default in resumable builds that have a `<For>` in a resumable component (a build without one leaves the reader out unless `domData: true` is set): loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 4 KB. `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`) writes that data into the state again, and the build carries none of the code that reads it back:
 
 ```ts
 // vite.config.ts

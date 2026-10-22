@@ -4,7 +4,7 @@
 // the island records (`<script type="rivet/islands">`) + the inline lean boot (`boot.ts`, which modulepreloads the
 // island chunks at idle after the first paint entry), instead of the state script + resume loader. Exact per render, so the same route
 // takes either tail depending on its props; anything else keeps the full driver (dev: one log line naming why).
-import { _trackReads } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import { _rLean, type DeferredState, type LeanTail, type LeanView } from "@rivetjs/runtime/server-resume";
 import { _markup } from "@rivetjs/runtime/server-markup";
 import type { ServerValue } from "@rivetjs/runtime/server";

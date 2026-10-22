@@ -1,6 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { signal, computed, effect, provide, createContext, _trackReads, _inspect, _observeProvide } from "@rivetjs/reactivity";
+import { signal, computed, effect, provide, createContext, _inspect, _observeProvide } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 
 test("_trackReads reports signals read directly and through computeds, deduped in first-read order", () => {
   const a = signal(1), b = signal(2), c = signal(3);

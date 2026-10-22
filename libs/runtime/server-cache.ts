@@ -18,7 +18,8 @@
 // Pay-per-use: only apps importing this subpath carry it (and its AsyncLocalStorage).
 import { AsyncLocalStorage } from "node:async_hooks";
 import { DEV } from "#dev";
-import { _trackReads, getOwner } from "@rivetjs/reactivity";
+import { getOwner } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import { _compiledRecord, template } from "./template.ts";
 import { renderToString } from "./server.ts";
 import { isSlot, _slot } from "./slot.ts";

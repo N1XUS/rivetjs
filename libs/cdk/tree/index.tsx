@@ -89,7 +89,7 @@ import {
 import { dataBool, focusStateBlur, focusStateFocus, hoverStateEnter, hoverStateLeave, type InteractionStateOptions } from "../utils/data-attrs.tsx";
 import { useFocusRing } from "../focus/focus-ring.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { getScrollParent, nodeContains, scrollIntoView } from "../utils/dom.ts";
+import { DEV, getScrollParent, nodeContains, scrollIntoView } from "../utils/dom.ts";
 import { getFocusableTreeWalker } from "../focus/index.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { loadMoreSentinel, type LoadMoreSentinelProps } from "../utils/load-more-sentinel.tsx";
@@ -135,7 +135,6 @@ const removedNode = (key: Key): Node<unknown> =>
   }) as unknown as Node<unknown>;
 /** A two-way Signal (callable with `.set`), as `collections/tree-state.ts`. */
 const isSignal = (value: unknown): value is Signal<Set<Key>> => typeof value === "function" && typeof (value as Signal<unknown>).set === "function";
-const isDev = (): boolean => typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
 
 // ---------------------------------------------------------------------------------------------
 // Tree
@@ -685,10 +684,10 @@ export const TreeItem = /* @__PURE__ */ createBranchComponent("item", function T
       hasLive(props) ? (liveRenderProps(props) as never) : undefined,
     ),
   );
-  if (isDev() && !item.textValue) {
+  if (DEV && !item.textValue) {
     console.warn("A `textValue` prop is required for <TreeItem> elements in order to support accessibility features such as type to select.");
   }
-  if (isDev()) {
+  if (DEV) {
     clientEffect(() => {
       const el = row();
       if (el && untrack(hasChildItems) && !el.querySelector('[slot="chevron"]')) {

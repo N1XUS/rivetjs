@@ -51,7 +51,7 @@ import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { ChevronUp } from "lucide";
-import { cx } from "tailwind-variants";
+import { cx } from "tailwind-variants/lite";
 
 import type { TableVariants } from "../../../styles/src/components/table/index.ts";
 import { tableVariants } from "../../../styles/src/components/table/index.ts";

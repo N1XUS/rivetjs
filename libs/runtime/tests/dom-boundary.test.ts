@@ -27,6 +27,7 @@ test("compiled ErrorBoundary catches render, effect and Async failures in the br
     "/derived.ts": stripTypeScriptTypes(await readFile(new URL("../derived.ts", import.meta.url), "utf8")),
     "/dom-v2.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2.ts", import.meta.url), "utf8")),
     "/dom-v2-spread.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2-spread.ts", import.meta.url), "utf8")),
+    "/dom-v2-takeover.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2-takeover.ts", import.meta.url), "utf8")),
     "/dom-v2-controls.ts": stripTypeScriptTypes(await readFile(new URL("../dom-v2-controls.ts", import.meta.url), "utf8")),
     "/dom-svg.ts": stripTypeScriptTypes(await readFile(new URL("../dom-svg.ts", import.meta.url), "utf8")),
     "/dom-adopt.ts": stripTypeScriptTypes(await readFile(new URL("../dom-adopt.ts", import.meta.url), "utf8")),

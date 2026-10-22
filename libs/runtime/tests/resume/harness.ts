@@ -15,6 +15,7 @@ const sources: Record<string, string> = {
   "/dom.ts": "dom.ts",
   "/dom-v2.ts": "dom-v2.ts",
   "/dom-v2-spread.ts": "dom-v2-spread.ts",
+  "/dom-v2-takeover.ts": "dom-v2-takeover.ts",
   "/dom-v2-controls.ts": "dom-v2-controls.ts",
   "/dom-svg.ts": "dom-svg.ts",
   "/dom-adopt.ts": "dom-adopt.ts",
@@ -87,6 +88,7 @@ export const rewrite = (code: string): string =>
     // The browser build of `@rivetjs/runtime/id` (`browser` export condition).
     .replaceAll('"@rivetjs/runtime/id"', '"/id-dom.ts"')
     .replaceAll("@rivetjs/reactivity/store", "/store.mjs")
+    .replaceAll("@rivetjs/reactivity/track", "/track.mjs")
     .replaceAll("@rivetjs/reactivity", "/reactivity.mjs")
     .replaceAll('"#dev"', '"/dev/off.ts"');
 
@@ -125,6 +127,7 @@ export async function withPage<T>(
   const served: Record<string, string> = {
     "/reactivity.mjs": await source(new URL("../reactivity/index.ts", runtime)),
     "/store.mjs": (await source(new URL("../reactivity/store.ts", runtime))).replaceAll('"./index.ts"', '"/reactivity.mjs"'),
+    "/track.mjs": (await source(new URL("../reactivity/track.ts", runtime))).replaceAll('"./index.ts"', '"/reactivity.mjs"'),
   };
   for (const [path, file] of Object.entries(sources)) {
     try {

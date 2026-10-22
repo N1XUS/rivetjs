@@ -179,7 +179,7 @@ export function toggleProps(props: AriaToggleProps, state: ToggleState, inputRef
   const isDisabled = () => !!read(isDisabledProp);
   const ctx: ToggleContext = { state, validation, item };
 
-  if (props.children == null && props["aria-label"] == null && props["aria-labelledby"] == null && DEV && isDev())
+  if (props.children == null && props["aria-label"] == null && props["aria-labelledby"] == null && DEV)
     console.warn("[rivet:cdk] checkbox: If you do not provide children, you must specify an aria-label for accessibility" + devWhere());
 
   // Handle press state for keyboard interactions and cases where labelProps is not used.
@@ -570,7 +570,5 @@ export function syncGroupValidity(group: CheckboxGroupState, input: HTMLInputEle
     updateValidation(validation, invalid.length ? mergeValidation(...invalid) : DEFAULT_VALIDATION_RESULT);
   }
 }
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 
 export { createToggleState };

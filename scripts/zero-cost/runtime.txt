@@ -1,42 +1,43 @@
-@rivetjs/reactivity 6c5d8dfe516a 17050
-@rivetjs/reactivity/debug 55ad570f4b06 9342
-@rivetjs/reactivity/store 664762e65a46 10381
-@rivetjs/runtime/server 1d4f11e873b7 55052
-@rivetjs/runtime/dom 29f5c2ecdb62 51461
-@rivetjs/runtime/dom [opt-out] 2fc504784c7c 51037
-@rivetjs/runtime/dom [derived] 166983332b53 51702
+@rivetjs/reactivity 2759953f16c4 15931
+@rivetjs/reactivity/debug 92de6ced67bd 9324
+@rivetjs/reactivity/track b6213b0c09c8 1697
+@rivetjs/reactivity/store f5338450ce75 10363
+@rivetjs/runtime/server 53fbf161a8b0 55034
+@rivetjs/runtime/dom e1d5b10081cf 51443
+@rivetjs/runtime/dom [opt-out] 1814f7921f7a 51019
+@rivetjs/runtime/dom [derived] c05bccd04b5c 51684
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176
-@rivetjs/runtime/async 52c63321731f 884
+@rivetjs/runtime/async 82848baeb0de 866
 @rivetjs/runtime/lazy 3c11119c2312 697
 @rivetjs/runtime/router bd3c70cbcceb 2796
-@rivetjs/runtime/router/dom 9e85a89ff9c3 17708
-@rivetjs/runtime/router/dom [opt-out] ef803acbaed1 17527
-@rivetjs/runtime/router/server 92e85e0f97c0 12118
-@rivetjs/runtime/server-resume 92eb3278c86d 129803
-@rivetjs/runtime/server-resume [opt-out] a205f281c4c2 118779
-@rivetjs/runtime/server-shell 4fc936c25a3d 113019
-@rivetjs/runtime/server-shell [opt-out] 070eb9848a34 99073
-@rivetjs/runtime/server-derived 38ec163cae12 135232
+@rivetjs/runtime/router/dom 7e0ef8bbc0c9 17690
+@rivetjs/runtime/router/dom [opt-out] 640c02d045c4 17509
+@rivetjs/runtime/router/server f21949015ac1 12100
+@rivetjs/runtime/server-resume 811ff5810f9b 129853
+@rivetjs/runtime/server-resume [opt-out] c01ac1dbb079 118829
+@rivetjs/runtime/server-shell 9981638af2fe 113066
+@rivetjs/runtime/server-shell [opt-out] 886ff9e37b91 99118
+@rivetjs/runtime/server-derived b67ac3b99401 135282
 @rivetjs/runtime/derived-eager 553e40d9faea 84
-@rivetjs/runtime/server-derived-reactivity 5b333ef92a98 132440
-@rivetjs/runtime/server-derived-reactivity [opt-out] d42ce242ada0 115568
-@rivetjs/runtime/server-derived-store 42a57a10ab72 127626
-@rivetjs/runtime/server-derived-store [opt-out] 08c28c30aea5 110756
+@rivetjs/runtime/server-derived-reactivity 198fcceb8f7c 132635
+@rivetjs/runtime/server-derived-reactivity [opt-out] 954fcd11d0c1 115763
+@rivetjs/runtime/server-derived-store 850adb16df34 127678
+@rivetjs/runtime/server-derived-store [opt-out] 7a361f638ad4 110802
 @rivetjs/runtime/server-markup 13a2369b8d72 767
-@rivetjs/runtime/server-cache 36d571bcca51 32251
-@rivetjs/runtime/props e7a083669b54 9737
-@rivetjs/runtime/dom-resume 8123e4abf0bb 52193
-@rivetjs/runtime/dom-resume [lazyRows chunk] 5e7c9d922e7c 13560
-@rivetjs/runtime/dom-resume [opt-out] 82098aed5fd8 46511
-@rivetjs/runtime/dom-derived 019b8996cffa 47829
-@rivetjs/runtime/dom-derived [derived] 55c248d58e34 48149
-@rivetjs/runtime/derived-reactivity 5997981d8fa4 35378
-@rivetjs/runtime/derived-reactivity [opt-out] 4bcf224ff939 35224
+@rivetjs/runtime/server-cache 6098d695a865 32299
+@rivetjs/runtime/props 3abce6a08d15 9719
+@rivetjs/runtime/dom-resume da9f92936995 50976
+@rivetjs/runtime/dom-resume [lazyRows chunk] 3866ca426ecb 14861
+@rivetjs/runtime/dom-resume [opt-out] a3163556c6f6 46493
+@rivetjs/runtime/dom-derived cc8ad64abe45 47811
+@rivetjs/runtime/dom-derived [derived] 107185f9b449 48131
+@rivetjs/runtime/derived-reactivity 720b92459931 34257
+@rivetjs/runtime/derived-reactivity [opt-out] c6407de5f48b 34103
 @rivetjs/runtime/node 3c195fe5ea08 5769
-@rivetjs/runtime/hot 3ad5a7200976 8151
-@rivetjs/runtime/hot-reactivity a1e1e089e1f5 17082
+@rivetjs/runtime/hot c4a5883cf49d 8133
+@rivetjs/runtime/hot-reactivity 3a66a69f85df 15963
 @rivetjs/runtime/resume-format 94dca0b82123 14014
 @rivetjs/runtime/resume-format [opt-out] af321997149a 13965
 @rivetjs/runtime/resume-builtins 2b1ce9fab926 2136
@@ -45,15 +46,15 @@
 @rivetjs/runtime/image 0de77cc9b31f 10324
 @rivetjs/runtime/image/dom 6ae44f0b636d 11131
 @rivetjs/runtime/image/dom [opt-out] 2850ec23f843 11042
-@rivetjs/runtime/style 4a43b7cf2eb5 7637
+@rivetjs/runtime/style f2540b6562a4 7619
 @rivetjs/runtime/escape 294256b1b2d3 308
 @rivetjs/runtime/slot 67a96bfb615f 534
 @rivetjs/runtime/css 0c5a7ea47dd6 586
-@rivetjs/runtime/id 046650442b74 2972
+@rivetjs/runtime/id cc6a03db08cd 2954
 @rivetjs/runtime/image-plan 987fd7613ef7 1782
-@rivetjs/runtime/testing 62c47a1cf4ac 14296
-@rivetjs/runtime/testing [opt-out] 71f234f8296e 14168
-@rivetjs/runtime/testing/server ca2448f21f0f 21587
+@rivetjs/runtime/testing 1d3fb493af54 14278
+@rivetjs/runtime/testing [opt-out] 76fd53364153 14150
+@rivetjs/runtime/testing/server ede91108a12d 21569
 @rivetjs/runtime/testing/register ee215ae102b9 2942
-@rivetjs/runtime/testing/resume b8d2ec723d47 119491
-@rivetjs/runtime/testing/resume [opt-out] c07ce28ba818 105050
+@rivetjs/runtime/testing/resume 483fe454fce1 119540
+@rivetjs/runtime/testing/resume [opt-out] 6688ab1b3e1f 105100

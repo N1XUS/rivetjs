@@ -10,7 +10,7 @@
 //   (`react-aria-landmark-navigation`, public API).
 // - `useLandmarkManager` (useSyncExternalStore) → `registerLandmark` subscribes to the manager-change
 //   event and re-registers with the new manager.
-import { getEventTarget, nodeContains } from "../utils/dom.ts";
+import { DEV, getEventTarget, nodeContains } from "../utils/dom.ts";
 
 type FocusableElement = HTMLElement | SVGElement;
 export type LandmarkRef = () => FocusableElement | null | undefined;
@@ -88,7 +88,6 @@ const landmarkSymbol = Symbol.for("rivet-cdk-landmark-manager");
 const CHANGE_EVENT = "rv-landmark-manager-change";
 
 // RA: `process.env.NODE_ENV !== 'production'` (bundlers replace it; a missing `process` counts as dev).
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV !== "production";
 
 function subscribe(fn: () => void): () => void {
   document.addEventListener(CHANGE_EVENT, fn);
@@ -159,7 +158,7 @@ class LandmarkManager implements LandmarkManagerApi {
     const element = newLandmark.ref();
     if (this.landmarks.find((landmark) => landmark.ref === newLandmark.ref) || !element) return;
 
-    if (this.landmarks.filter((landmark) => landmark.role === "main").length > 1 && isDev()) {
+    if (this.landmarks.filter((landmark) => landmark.role === "main").length > 1 && DEV) {
       console.error('Page can contain no more than one landmark with the role "main".');
     }
 
@@ -209,12 +208,12 @@ class LandmarkManager implements LandmarkManagerApi {
     const landmarksWithRole = this.getLandmarksByRole(role);
     if (landmarksWithRole.size > 1) {
       const duplicatesWithoutLabel = [...landmarksWithRole].filter((landmark) => !landmark.label);
-      if (duplicatesWithoutLabel.length > 0 && isDev()) {
+      if (duplicatesWithoutLabel.length > 0 && DEV) {
         console.warn(
           `Page contains more than one landmark with the '${role}' role. If two or more landmarks on a page share the same role, all must be labeled with an aria-label or aria-labelledby attribute: `,
           duplicatesWithoutLabel.map((landmark) => landmark.ref()),
         );
-      } else if (isDev()) {
+      } else if (DEV) {
         const labels = [...landmarksWithRole].map((landmark) => landmark.label);
         const duplicateLabels = labels.filter((item, index) => labels.indexOf(item) !== index);
 

@@ -17,7 +17,6 @@ import {
   _rootIn,
   getOwner,
   _setRegionStateHook,
-  _trackReads,
   _wrapEffects,
   effect,
   memberKeys,
@@ -25,6 +24,7 @@ import {
   runWithOwner,
   untrack,
 } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import { _adoption, _delegateBelow, _insert } from "./dom-v2.ts";
 import { _region, _regionHost, _ABSENT_STATE } from "./dom-adopt.ts";
 import { _adoptRow } from "./dom-adopt-run.ts";

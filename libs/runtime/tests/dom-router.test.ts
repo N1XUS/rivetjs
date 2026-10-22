@@ -17,6 +17,7 @@ test("owned browser router navigates history and cancels route work", async () =
     "dom",
     "dom-v2",
     "dom-v2-spread",
+    "dom-v2-takeover",
     "dom-v2-controls",
     "dom-svg",
     "dom-adopt",

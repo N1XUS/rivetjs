@@ -150,7 +150,8 @@ test("ttl: an expired entry renders again", async () => {
 });
 
 test("the CSP nonce is never stored; signals and async renders are never stored", async () => {
-  const { signal, _trackReads } = await import("@rivetjs/reactivity");
+  const { signal } = await import("@rivetjs/reactivity");
+  const { _trackReads } = await import("@rivetjs/reactivity/track");
   const nonce = "n0nceAbc123+/=";
   const scope = scopeOf({ nonce });
   const Leaky = cached(() => ["<p data-nonce=", nonce, ">"] as never);

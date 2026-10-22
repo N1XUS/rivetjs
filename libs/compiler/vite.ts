@@ -150,7 +150,8 @@ export interface RivetResumeOptions {
    * runtime's lazy hooks in the entry, zero-cost `dom` + `dom-resume` `[lazyRows]` lines) to the build and the chunk's URL
    * as `lazyRows` to the resume manifest (dev: `true`); builds with `false` carry none of it (0 bytes). The server writes lazy
    * row records when the manifest says so, unless its environment has `RIVET_LAZY_ROWS=off` (read per render): build once,
-   * toggle the variable to A/B. Default true (LAZY-FLIP); `false` leaves the runtime and the manifest flag out.
+   * toggle the variable to A/B. Default true (LAZY-FLIP); `false` leaves the runtime and the manifest flag out. Unset, a build
+   * whose resume modules have no lazy-eligible keyed `<For>` (compile `forRows`) leaves them out too; `true` keeps them.
    */
   lazyRows?: boolean;
   /**
@@ -160,9 +161,10 @@ export interface RivetResumeOptions {
    * at the first idle after resume). Adds the reader (`@rivetjs/runtime` `dom-resume-data.ts`, about 1.8 KB min / 0.6 KB br)
    * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 9.1 KB min) to its server and
    * `domData: true` to the resume manifest; servers write `D` entries only then. Default true (LAZY-FLIP); `false`
-   * builds carry neither. With `model: "derived"` (DERIVED-C5) it is off unless set to `true`: `<For>` items of a
-   * record's data props become tail `d` entries the derived client reads back from the rows (`DOM_DATA` in
-   * `dom-derived.ts`; no `dom-data-resume` / server registry).
+   * builds carry neither. Unset, a build whose resume modules have no structural `<For>` carries neither too; `true` keeps them.
+   * With `model: "derived"` (DERIVED-C5) it is off unless set to `true`: `<For>` items of a record's data props become
+   * tail `d` entries the derived client reads back from the rows (`DOM_DATA` in `dom-derived.ts`; no `dom-data-resume` /
+   * server registry).
    */
   domData?: boolean;
   /**
@@ -746,10 +748,16 @@ function rivetPlugin(
   const derivedModel = resume?.model === "derived";
   // `resume.lazyRows` / `resume.domData`: on unless set to `false` (default flipped by LAZY-FLIP); the derived model
   // serves its own runtime switches and ignores both.
-  const lazyRowsOn = (): boolean => !!resume && !derivedModel && resume.lazyRows !== false;
-  // Serialized builds: on unless `false` (LAZY-FLIP). Derived builds: off unless `true` (DERIVED-C5; the row read-back
-  // costs the first click a few ms, kept opt-in until that is noise).
-  const domDataOn = (): boolean => !!resume && (derivedModel ? resume.domData === true : resume.domData !== false);
+  // Left unset, each also follows the client build's facts (`rowFacts`: `forRows` of the resume modules buildStart
+  // compiles): off when no module has a lazy-eligible keyed `<For>` (lazy rows) / any structural `<For>` (DOM data: every
+  // `D` row is a For row) — such builds carry neither runtime (DIET-CODE 2026-10-22). Explicit `true` keeps it on.
+  // Derived builds: DOM data off unless `true` (DERIVED-C5; the row read-back costs the first click a few ms, kept opt-in
+  // until that is noise).
+  const lazyRowsOn = (): boolean => !!resume && !derivedModel && resume.lazyRows !== false && (resume.lazyRows === true || rowFacts?.lazy !== false);
+  const domDataOn = (): boolean =>
+    !!resume && (derivedModel ? resume.domData === true : resume.domData !== false && (resume.domData === true || rowFacts?.rows !== false));
+  // Set by the client build's buildStart walk, before any switch module loads; null (dev, a server-only build) = on.
+  let rowFacts: { lazy: boolean; rows: boolean } | null = null;
   const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
@@ -1442,6 +1450,10 @@ function rivetPlugin(
         }
         resolved.set(filename, map);
       }
+      // Default `resume.lazyRows` / `resume.domData` follow these facts (`lazyRowsOn` / `domDataOn`); the server writes
+      // `L` / `D` entries only when the manifest names the browser half.
+      rowFacts = { lazy: false, rows: false };
+      for (const result of compiled.values()) for (const row of result.forRows ?? []) ((rowFacts.rows = true), row.lazy && (rowFacts.lazy = true));
       // `lateFiles` is filled below, before the first route key is read (the shell walk is lazy).
       const groups = groupComponents(facts, resolved, through, (file) => lateFiles.has(file));
       // Route keys: `route:<root>` (one route), `route:main` (no route); a module several routes reach is placed (above).

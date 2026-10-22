@@ -11,7 +11,7 @@
 import { createId } from "../utils/id.ts";
 import { slotIdRef, type SlotId } from "../slots/index.tsx";
 import { focusSafely } from "../focus/index.ts";
-import { getActiveElement, isFocusWithin } from "../utils/dom.ts";
+import { DEV, getActiveElement, isFocusWithin } from "../utils/dom.ts";
 
 export interface AriaDialogProps {
   id?: string;
@@ -132,12 +132,10 @@ export function dialogBlur(event: FocusEvent): void {
  * the trigger id as a fallback).
  */
 export function dialogTitleWarning(element: HTMLElement | null | undefined): void {
-  if (!isDev() || !element) return;
+  if (!DEV || !element) return;
   if (!element.hasAttribute("aria-label") && !element.hasAttribute("aria-labelledby")) {
     console.warn(
       "A dialog must have a title for accessibility. " + "Either provide an aria-label or aria-labelledby prop, or render a heading element inside the dialog.",
     );
   }
 }
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";

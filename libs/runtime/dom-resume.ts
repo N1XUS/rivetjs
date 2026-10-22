@@ -22,7 +22,7 @@ import {
 import { clientEvent, _matches, _warmLazy } from "./dom.ts";
 import { _attrWrite, _delegateBelow } from "./dom-v2.ts";
 import { _model } from "./dom-v2-controls.ts";
-import { _takeover } from "./dom-v2-spread.ts";
+import { _takeover } from "./dom-v2-takeover.ts";
 import { _region, _ABSENT_STATE } from "./dom-adopt.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _lazyLoad, _lazyRows } from "./lazy-rows-resume.ts";

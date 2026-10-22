@@ -1,6 +1,7 @@
 import { test, vi, onTestFinished } from "vitest";
 import assert from "node:assert/strict";
-import { _trackReads, untrack } from "@rivetjs/reactivity";
+import { untrack } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import { z } from "zod";
 import {
   autofocus,

@@ -2,7 +2,8 @@
 // an untracked scope so reads there become its dependencies.
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { signal, computed, effect, untrack, _observer, _reobserve, _trackReads } from "@rivetjs/reactivity";
+import { signal, computed, effect, untrack, _observer, _reobserve } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 
 test("_reobserve makes reads inside untrack dependencies of the captured computed", () => {
   const a = signal(1);

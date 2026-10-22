@@ -60,3 +60,41 @@ test("a chunk importing _serverBranch from /dom does not bundle the resume adopt
   assert.ok(modules.includes("libs/runtime/dom-v2.ts"));
   assert.ok(!modules.includes("libs/runtime/dom-adopt.ts"), "dom-adopt.ts bundled with _serverBranch");
 });
+
+test("the resume runtime does not carry _spread: dom-resume reads the takeover hook from its own slot module", async () => {
+  // `dom-resume.ts` imported `_takeover` from `dom-v2-spread.ts`: the spread module (and `style.ts`) sat in the resume
+  // runtime's graph on every page, also when no template on it spreads (DIET-CODE 2026-10-22: `dom-v2-takeover.ts`).
+  const build = await rolldown({
+    input: { entry: "entry" },
+    cwd: runtime,
+    platform: "browser",
+    logLevel: "silent",
+    resolve: { conditionNames: ["import", "production", "default"] },
+    plugins: [
+      {
+        name: "entries",
+        resolveId: (id) => (id === "entry" || id === "lazy" ? id : null),
+        load: (id) =>
+          id === "entry"
+            ? `import { createResume } from "@rivetjs/runtime/dom-resume"; export const r = createResume; export const load = () => import("lazy");`
+            : id === "lazy"
+              ? sources.lazy!
+              : null,
+      },
+    ],
+  });
+  const { output } = await build.generate({ format: "esm", minify: true });
+  const chunks = output.flatMap((o) => (o.type === "chunk" ? [o] : []));
+  const eager = new Set<string>();
+  const visit = (name: string) => {
+    if (eager.has(name)) return;
+    eager.add(name);
+    for (const next of chunks.find((c) => c.fileName === name)!.imports) visit(next);
+  };
+  visit(chunks.find((c) => c.isEntry)!.fileName);
+  const eagerModules = chunks.filter((c) => eager.has(c.fileName)).flatMap((c) => c.moduleIds.map((id) => id.slice(root.length)));
+  assert.ok(eagerModules.includes("libs/runtime/dom-resume.ts") && eagerModules.includes("libs/runtime/dom-v2-takeover.ts"), "resume runtime closure");
+  for (const file of ["libs/runtime/dom-v2-spread.ts", "libs/runtime/style.ts"]) assert.ok(!eagerModules.includes(file), `resume runtime bundles ${file}`);
+  const all = chunks.flatMap((c) => c.moduleIds.map((id) => id.slice(root.length)));
+  assert.ok(all.includes("libs/runtime/dom-v2-spread.ts"), "the lazy chunk carries the spread");
+});

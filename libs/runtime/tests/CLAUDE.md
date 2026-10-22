@@ -64,7 +64,7 @@ npx vitest run --project runtime -t "shipped loader"          # by name
 
 ## Rules
 
-- Browser suites import runtime sources by explicit path lists (`dom.test.ts` `routerFiles`, `dom-router.test.ts`, `dom-async.test.ts`, `dom-boundary.test.ts`, `resume/harness.ts` `sources`, `libs/compiler/tests/compiler-dom.test.ts`; `dom-v2.ts` → `dom-v2-spread.ts`, `dom.ts` → `dom-v2-controls.ts` + `dom-adopt.ts`): a new relative import inside `dom.ts`, `dom-v2.ts`, `dom-resume.ts`, … must be added there (404 in Chromium otherwise).
+- Browser suites import runtime sources by explicit path lists (`dom.test.ts` `routerFiles`, `dom-router.test.ts`, `dom-async.test.ts`, `dom-boundary.test.ts`, `resume/harness.ts` `sources`, `libs/compiler/tests/compiler-dom.test.ts`; `dom-v2.ts` → `dom-v2-spread.ts` (→ `dom-v2-takeover.ts`), `dom.ts` → `dom-v2-controls.ts` + `dom-adopt.ts`): a new relative import inside `dom.ts`, `dom-v2.ts`, `dom-resume.ts`, … must be added there (404 in Chromium otherwise).
 - Resume fixtures assert `__componentRuns` stays unset in the browser — a component running client-side is a bug, not a flake.
 - `resume-loader.test.ts` fails when `resume-loader.min.ts` is stale: run `node libs/runtime/build-loader.ts` after touching `resume-loader.ts` / `resume-stream.ts`.
 - Keep test locations: the root vitest config is not editable from this package; new suites go in this folder as `*.test.ts`.

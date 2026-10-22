@@ -42,7 +42,7 @@ RAC `Label` (reads `LabelContext`) + legacy `FieldError` + label/field id wiring
 - `npx vitest run --project cdk-components libs/cdk/tests-components/dom-events-forms.test.ts`
 
 ## Gotchas
-- `labelProps` dev-only `console.warn` when no label / aria-label / aria-labelledby (behaviour.ts:49-50); `isDev` reads `process.env.NODE_ENV`
+- `labelProps` dev-only `console.warn` when no label / aria-label / aria-labelledby (behaviour.ts:49-50); guarded by `DEV` (`#dev`)
 - two FieldErrors: legacy one here (`errorMessage` / `validation` / `hasError` props, used by checkbox / radio-group / date-field / date-picker / select) vs RAC `FieldError` + `FieldErrorContext` in `../form/field-error.tsx` (render-prop API); re-export the form one here once those importers migrate
 - FieldError renders three branches on `errorMessage` type at component run; switching type later does not re-branch
 

@@ -1,7 +1,8 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { queryObjects } from "node:v8";
-import { selector, signal, computed, effect, batch, createRoot, untrack, getOwner, memberKeys, _trackReads } from "../index.ts";
+import { selector, signal, computed, effect, batch, createRoot, untrack, getOwner, memberKeys } from "../index.ts";
+import { _trackReads } from "../track.ts";
 import { _debug } from "../debug.ts";
 
 // Keyed selector: per-key readers re-run only when their key's result changes.

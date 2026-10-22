@@ -25,6 +25,7 @@
 // `render` (RAC DOMRenderProps) on TagGroup / TagList / Tag: given, the attributes object goes to `render(attrs, renderProps)` instead of the default `<div>`. The SharedElementTransition scope is a `SharedElementContext` provider entry.
 // Integration points: `SelectableCollectionContext` filtering (Autocomplete) — rows the `filter` rejects do
 //   not render; `ListStateContext` — B5 ListBox.
+import { DEV } from "#dev";
 import { computed, createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import { buildCollection, ItemNode } from "../collections/base.ts";
@@ -596,7 +597,6 @@ export interface TagProps
 }
 
 const TAG_OWNED = ["onPointerDown", "onPointerUp", "onPointerCancel", "onClick", "onDblClick", "onPointerEnter", "onPointerLeave", "style", "id"] as const;
-const isDev = (): boolean => typeof process !== "undefined" && process.env?.NODE_ENV !== "production";
 
 /** A Tag is an individual item within a TagList (RAC `Tag`). */
 export const Tag = /*#__PURE__*/ createLeafComponent(ItemNode, function Tag(props: TagProps, forwardedRef: unknown, item: Node<any>) {
@@ -607,7 +607,7 @@ export const Tag = /*#__PURE__*/ createLeafComponent(ItemNode, function Tag(prop
   const spec = rowSpec(key, item, props as Record<string, any>);
   const removeButtonId = createId();
   const router = useRouter();
-  if (!item.textValue && isDev() && typeof document !== "undefined")
+  if (!item.textValue && DEV && typeof document !== "undefined")
     console.warn("A `textValue` prop is required for <Tag> elements with non-plain text children for accessibility.");
   // Resumable closures / bags read locals only (a `props.x` read captures the whole props object).
   const { onHoverStart, onHoverEnd, onHoverChange, onFocus, onBlur, onFocusChange } = props;

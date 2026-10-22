@@ -198,13 +198,6 @@ describe("controllable (Rivet)", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
-  test("production: no warning", () => {
-    process.env.NODE_ENV = "production";
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    controllable("x", "d", undefined);
-    expect(warn).not.toHaveBeenCalled();
-  });
-
   test("deprecated two-argument form returns the signal (caller's or a new one)", () => {
     const external = signal(3);
     expect(controllable(external, 0)).toBe(external);

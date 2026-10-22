@@ -10,6 +10,7 @@
 //
 // The resulting nodes follow react-stately exactly (keys, `$.0` fallback keys, child key prefixing,
 // levels, wrappers, `shouldInvalidate` caching, type constraints).
+import { DEV } from "#dev";
 import type {
   Collection,
   CollectionBase,
@@ -86,7 +87,7 @@ export const Item: GenericCollectionComponent<ItemProps<any>> = /* @__PURE__ */ 
   const rendered = props.title || props.children;
   const textValue = props.textValue || (typeof rendered === "string" ? rendered : "") || props["aria-label"] || "";
   // suppressTextValueWarning is used in components like Tabs, which don't have type to select support.
-  if (!textValue && !context?.suppressTextValueWarning && isDev()) {
+  if (!textValue && !context?.suppressTextValueWarning && DEV) {
     console.warn("<Item> with non-plain text contents is unsupported by type to select for accessibility. Please add a `textValue` prop.");
   }
   yield {
@@ -131,8 +132,6 @@ export const Section: GenericCollectionComponent<SectionProps<any>> = /* @__PURE
     };
   },
 );
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 
 interface CollectionBuilderState {
   renderer?: ItemRenderer<any> | undefined;

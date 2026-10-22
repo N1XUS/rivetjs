@@ -48,7 +48,7 @@ import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronLeft, ChevronRight } from "lucide";
-import { cx } from "tailwind-variants";
+import { cx } from "tailwind-variants/lite";
 
 import type { RangeCalendarVariants } from "../../../styles/src/components/range-calendar/index.ts";
 import { rangeCalendarVariants } from "../../../styles/src/components/range-calendar/index.ts";

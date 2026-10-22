@@ -12,13 +12,13 @@ import {
   untrack,
   useContext,
   _detach,
-  _trackReads,
   _inspect,
   _observeProvide,
   _setRegionStateHook,
   _wrapEffects,
   _scheduleFolds,
 } from "@rivetjs/reactivity";
+import { _trackReads } from "@rivetjs/reactivity/track";
 import {
   attribute,
   ATTRIBUTE,

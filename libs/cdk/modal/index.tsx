@@ -31,7 +31,7 @@ import { hasLive, liveOmit, liveOptions } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
 import { splitProps } from "@rivetjs/runtime/props";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
-import { isScrollable, viewportSize, type ViewportSize } from "../utils/dom.ts";
+import { DEV, isScrollable, viewportSize, type ViewportSize } from "../utils/dom.ts";
 import { createEnterAnimation, createExitAnimationState, watchExitAnimation, type ExitAnimationState } from "../utils/animation.tsx";
 import { overlayPresence, type OverlayPresence } from "@rivetjs/kit/transition";
 import { DismissButton } from "../overlay/dismiss-button.tsx";
@@ -147,7 +147,7 @@ const presences = new WeakMap<object, OverlayPresence>();
 export function Modal(props: ModalOverlayProps) {
   const ctx = useContext(InternalModalContext);
   if (ctx) {
-    if (isDev() && (props.onOpenChange || props.defaultOpen !== undefined || props.isOpen !== undefined)) {
+    if (DEV && (props.onOpenChange || props.defaultOpen !== undefined || props.isOpen !== undefined)) {
       // create a list of props that are passed in but not allowed when using an external ModalOverlay
       const invalidSet = new Set([
         "isDismissable",
@@ -223,7 +223,7 @@ function resolveOverlay(props: ModalOverlayProps, ref: RefValue<HTMLDivElement> 
   const contextState = useContext(OverlayTriggerStateContext);
   const localState = untrack(() => createOverlayTriggerState(props));
   const state = untrack(() => props.isOpen != null || props.defaultOpen != null) || !contextState ? localState : contextState;
-  if (state === contextState && isDev() && (props.onOpenChange || props.defaultOpen !== undefined || props.isOpen !== undefined)) {
+  if (state === contextState && DEV && (props.onOpenChange || props.defaultOpen !== undefined || props.isOpen !== undefined)) {
     console.warn("This modals state is controlled by a trigger, place onOpenChange on the trigger instead.");
   }
   const portal = useContext(PortalContext);
@@ -539,8 +539,6 @@ function ModalContent(input: { props: ModalOverlayProps; ctx: InternalModalConte
     </div>
   );
 }
-
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
 
 /** @internal Opens / closes a modal state (re-exported for callers of the old API). */
 export { setOpen };

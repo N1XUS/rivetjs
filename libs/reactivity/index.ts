@@ -1272,85 +1272,34 @@ export function runWithOwner<T>(capturedOwner: OwnerHandle | null, fn: () => T):
   finally { currentOwner = previousOwner; currentObserver = previousObserver; }
 }
 
-// Dedupe by linear scan up to this many entries, then by a Set (most bindings read 1–3 signals).
-const SCAN = 16;
-const EMPTY: Signal<unknown>[] = Object.freeze([]) as never;
-// Append `item` unless present; returns the (possibly promoted) index Set.
-function unique(list: unknown[], index: Set<unknown> | null, item: unknown): Set<unknown> | null {
-  if (index !== null) { if (index.has(item)) return index; index.add(item); }
-  else if (list.includes(item)) return null;
-  else if (list.length === SCAN) (index = new Set(list)).add(item);
-  list.push(item);
-  return index;
-}
-// The collector's `add` (track() calls `node.add(source)`): one shared function, no closure per
-// `_trackReads` call; referenced only from `_trackReads`, so bundles without it drop `collect` too.
-function collectThis(this: Collector, source: Tracked): void {
-  collect(this, source);
-}
-// A selector read inside the collector (`selectorRead`): reported to the keyed hook when the wake can be the key's own —
-// the source is a signal and the selector's change hint one resume knows (`KeyedRead` kinds) — and then read without
-// listing the signal; otherwise the source's reads are the collector's, as any read.
-function collectKey(this: Collector, selector: Selector, key: unknown): unknown {
-  if (this.keyed === null || !keyedRead(this.keyed, selector, key)) return selector.fn(key, selector.source());
-  currentObserver = null;
-  try { return selector.fn(key, selector.source()); }
-  finally { currentObserver = this; }
-}
-function keyedRead(keyed: KeyedRead, selector: Selector, key: unknown): boolean {
+// `_trackReads` lives in `track.ts` (`@rivetjs/reactivity/track`, DIET-CODE 2026-10-22): only resume code calls it, and its
+// own module lets a client build place it in the chunk of its caller (the lazy rows runtime) instead of the eager
+// reactivity chunk. The hooks it needs from here:
+/** Resume ABI (`track.ts`): whether a `selector` read of `key` is recorded keyed by `keyed` (signal source, known change hint). */
+export function _keyedRead(keyed: KeyedRead, selector: Selector, key: unknown): boolean {
   const source = selector.source as Getter, kind = selector.keys === pairKeys ? 0 : selector.keys === memberKeys ? 1 : -1;
   return kind >= 0 && source[SIGNAL] !== undefined && source[SIGNAL].getter === source && keyed(source as Signal<unknown>, kind as 0 | 1, key);
 }
-function collect(collector: Collector, source: Tracked): void {
-  let item: Getter | Node;
-  if (source.kind === SOURCE) item = (source as Source).getter!;
-  else { item = source as Node; collector.computed = true; }
-  if (collector.reads === null) collector.reads = [item];
-  else collector.index = unique(collector.reads, collector.index, item);
+/** `_trackReads`'s type (`track.ts`). */
+export type TrackReads = <T, A = undefined>(fn: (arg: A) => T, arg?: A, keyed?: KeyedRead | null) => { value: T; signals: Signal<unknown>[] };
+let tracker: TrackReads | null = null;
+/** Resume ABI: `_trackReads` once `@rivetjs/reactivity/track` is loaded (it installs itself; the server resume runtime
+ * imports it), else null. For code shared by server and browser that tracks only on the server (cdk `serverRows`): a
+ * static import of `track.ts` there would put it — and, through the merge planner, the shared component chunk — into
+ * the browser's lazy rows chunk. */
+export const _tracker = (): TrackReads | null => tracker;
+/** `track.ts` installs `_trackReads` (`_tracker`). */
+export const _setTracker = (fn: TrackReads): void => {
+  tracker = fn;
+};
+/** Resume ABI (`track.ts`): set the current observer, returning the previous one. */
+export function _swapObserver(observer: Node | Collector | null): Node | Collector | null {
+  const previous = currentObserver;
+  currentObserver = observer;
+  return previous;
 }
-// Leaf signals below the collected reads, depth-first in first-read order (computeds visited once).
-interface Walk { signals: Signal<unknown>[]; index: Set<unknown> | null; visited: Node[]; vindex: Set<unknown> | null; keyed: KeyedRead | null }
-function walk(state: Walk, item: Getter | Tracked): void {
-  if (typeof item === "function") state.index = unique(state.signals, state.index, item);
-  else if (item.kind === SOURCE) {
-    const getter = (item as Source).getter;
-    if (getter !== null) state.index = unique(state.signals, state.index, getter);
-    // A `selector` key source (no getter, `value` = its Selector): keyed (the collector's hook took it), else the signals
-    // behind it are its watcher's.
-    else {
-      const selector = (item as Source).value as Selector;
-      if (state.keyed !== null && keyedRead(state.keyed, selector, (item as KeySource).key)) return;
-      const watcher = selector.node; if (watcher !== null) walk(state, watcher);
-    }
-  }
-  else {
-    const visited = state.visited, length = visited.length;
-    state.vindex = unique(visited, state.vindex, item);
-    if (visited.length === length) return;
-    const sources = (item as Node).sources;
-    if (sources === null) return;
-    if (!isArray(sources)) walk(state, sources);
-    else for (let i = 0; i < sources.length; i++) walk(state, sources[i]);
-  }
-}
-
-/** Resume ABI: run fn untracked by the caller and report the signals it read, through computeds.
- * `signals` is read-only (a shared frozen empty array when nothing was read). `arg` is passed to fn
- * (compiled server attribute reads are module-level functions over their captures array). */
-export function _trackReads<T, A = undefined>(fn: (arg: A) => T, arg?: A, keyed?: KeyedRead | null): { value: T; signals: Signal<unknown>[] } {
-  const collector: Collector = { kind: COLLECTOR, disposed: false, add: collectThis, key: collectKey, keyed: keyed ?? null, reads: null, index: null, computed: false };
-  const previousObserver = currentObserver;
-  currentObserver = collector;
-  let value: T;
-  try { value = fn(arg as A); }
-  finally { currentObserver = previousObserver; }
-  const reads = collector.reads;
-  if (reads === null) return { value, signals: EMPTY };
-  if (!collector.computed) return { value, signals: reads as Signal<unknown>[] };
-  const state: Walk = { signals: [], index: null, visited: [], vindex: null, keyed: collector.keyed };
-  for (let i = 0; i < reads.length; i++) walk(state, reads[i]);
-  return { value, signals: state.signals.length ? state.signals : EMPTY };
-}
+export { COLLECTOR as _COLLECTOR, SOURCE as _SOURCE };
+export type { Collector as _Collector, Tracked as _Tracked, Getter as _Getter, Node as _Node, Source as _Source, Selector as _Selector, KeySource as _KeySource };
 
 type RegionStateHook = <T>(create: () => T) => T;
 let regionStateHook: RegionStateHook | null = null;

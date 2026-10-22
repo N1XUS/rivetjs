@@ -45,6 +45,7 @@ const specifiers = [
   // Projection captures (`globalDOMProps(props)`) import the cdk helper from the symbol module.
   "@rivetjs/cdk/dom-props",
   "@rivetjs/reactivity/store",
+  "@rivetjs/reactivity/track",
   "@rivetjs/reactivity",
 ];
 /** Compile for a target in resume mode; throw on diagnostics. */

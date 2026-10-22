@@ -14,6 +14,7 @@ import { getEventTarget as domEventTarget } from "../utils/dom.ts";
 import { isIOS, isWebKit } from "../platform/index.ts";
 import { getActiveElement, getOwnerDocument, getOwnerWindow, isShadowRoot, nodeContains } from "../utils/dom.ts";
 import { focusWithoutScrolling, runAfterTransition } from "../utils/transitions.ts";
+export { DEV } from "../utils/dom.ts";
 
 export { isAndroid, isChrome, isFirefox, isIOS, isIPad, isIPhone, isMac, isWebKit, isVirtualClick, isVirtualPointerEvent } from "../platform/index.ts";
 export { getActiveElement, getOwnerDocument, getOwnerWindow, isFocusWithin, isShadowRoot, nodeContains } from "../utils/dom.ts";

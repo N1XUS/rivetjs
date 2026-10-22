@@ -34,7 +34,7 @@ import {
   _regionState,
   _reobserve,
   _scoped,
-  _trackReads,
+  _tracker,
   computed,
   createContext,
   provide,
@@ -840,8 +840,12 @@ export function serverRows(collection: CollectionInput, keys: () => readonly Key
   if (typeof collection !== "function" || parentType === "section" || parentType === "item") return null;
   return _regionState(() => {
     if (!isServer) return null;
+    // `_trackReads` through the slot (`_tracker`, installed by the server resume runtime): a static import would ship
+    // `@rivetjs/reactivity/track` to the browser with this module. Null = no resumable render, nothing records stamps.
+    const track = _tracker();
+    if (!track) return null;
     return untrack(() => {
-      const c = _trackReads(collection);
+      const c = track(collection);
       if (!c.signals.length || !c.value) return null;
       let out = "";
       for (const k of keys()) {

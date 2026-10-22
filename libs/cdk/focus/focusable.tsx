@@ -20,7 +20,7 @@ import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { focusProps } from "../interactions/focus.tsx";
 import { keyboardProps } from "../interactions/keyboard.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
-import { isFocusable } from "../interactions/utils.ts";
+import { DEV, isFocusable } from "../interactions/utils.ts";
 import { mergeRefValues, type RefValue } from "../slots/index.tsx";
 import type { FocusableDOMProps, FocusableProps } from "../utils/types.ts";
 import { focusSafely } from "./index.ts";
@@ -94,8 +94,6 @@ export interface FocusableComponentProps extends FocusableOptions {
   ref?: RefValue<Element>;
 }
 
-const isDev = (): boolean => (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NODE_ENV === "development";
-
 const INTERACTIVE_ROLES =
   /^(application|button|checkbox|combobox|gridcell|link|menuitem|menuitemcheckbox|menuitemradio|option|radio|searchbox|separator|slider|spinbutton|switch|tab|tabpanel|textbox|treeitem|img|meter|progressbar)$/;
 
@@ -104,7 +102,7 @@ export function Focusable(props: FocusableComponentProps) {
   const { children, ref, ...options } = props;
   const element = ref ?? createRef<Element>();
   const merged = focusableProps(options, element);
-  if (isDev()) {
+  if (DEV) {
     const isDisabled = options.isDisabled;
     clientEffect(() => {
       const el = typeof element === "function" ? (element as () => Element | undefined)() : (element as { current: Element | null }).current;
