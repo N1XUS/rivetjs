@@ -116,6 +116,8 @@ type Cdp = import("playwright").CDPSession;
 async function open(url: string, condition: string): Promise<{ page: BrowserPage; cdp: Cdp; close: () => Promise<void> }> {
   const context = await browser.newContext({ viewport: { width: 1000, height: 800 } });
   const page = await context.newPage();
+  page.on("pageerror", (e) => console.error(`page error ${url}: ${e.message.slice(0, 200)}`));
+  page.on("console", (m) => void (m.type() === "error" && console.error(`console error ${url}: ${m.text().slice(0, 200)}`)));
   const cdp = await context.newCDPSession(page);
   await cdp.send("Performance.enable");
   if (condition !== "fast1") await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
@@ -198,7 +200,8 @@ async function idleOnce(url: string) {
 
 async function docFacts(origin: string, path: string) {
   const html = await (await fetch(origin + path, { headers: { "accept-encoding": "identity" } })).text();
-  const state = /<script type="rivet\/state"[^>]*>(.*?)<\/script>/s.exec(html)?.[1] ?? "";
+  // Serialized: the `rivet/state` table; derived model: the `rivet/boundaries` tail (+ streamed `data-patch` tails), summed.
+  const state = [...html.matchAll(/<script type="rivet\/(?:state|boundaries)"[^>]*>(.*?)<\/script>/gs)].map((m) => m[1]).join("");
   const { pageRows } = await import("../../../../libs/docs-kit/tools/rows.ts");
   let fors = "-";
   try {
@@ -254,11 +257,18 @@ for (let trial = 0; trial < loads; trial++) {
       if (!target) continue;
       for (const condition of conditions) {
         if (sc !== "row" && condition === "slow4") continue; // slow 4G: the row click only (time box)
-        for (const b of order)
-          push(path, b.name, `${sc}:${condition}`, {
-            load: Math.round(loadavg()[0]! * 10) / 10,
-            ...(await clickOnce(origins.get(b.name)! + path, condition, target)),
-          });
+        for (const b of order) {
+          // A sample that starts above `--max-load` waits for the load to drop and reruns (up to 3 times; the last one is kept).
+          for (let attempt = 0; ; attempt++) {
+            const load = await waitQuiet();
+            const s = await clickOnce(origins.get(b.name)! + path, condition, target);
+            const after = Math.round(loadavg()[0]! * 10) / 10;
+            if ((load <= maxLoad && after <= maxLoad) || attempt >= 2) {
+              push(path, b.name, `${sc}:${condition}`, { load: Math.max(load, after), ...s });
+              break;
+            }
+          }
+        }
       }
     }
   }

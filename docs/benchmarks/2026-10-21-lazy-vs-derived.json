@@ -1,0 +1,2490 @@
+{
+ "lane": "LVD-2",
+ "date": "2026-10-22",
+ "base": "831b5d5ee",
+ "host": "macOS arm64 (battery), Node 26.5.1, Chromium 153.0.8010.12 headless shell",
+ "client": {
+  "loads": 7,
+  "conditions": [
+   "fast1",
+   "fast4",
+   "slow4"
+  ],
+  "maxLoad": 8,
+  "maxWait": 30,
+  "note": "medians of the first 7 samples per cell with 1-min load <= 8 (6 of 1232 samples above 8 dropped)",
+  "builds": [
+   "default",
+   "lazy",
+   "both",
+   "derived"
+  ],
+  "summary": {
+   "/list-data-1000": {
+    "row:fast1": {
+     "default": {
+      "paint": 31.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–4.5",
+      "js": {
+       "kb": 101.7,
+       "files": 11,
+       "script": 10.1
+      }
+     },
+     "lazy": {
+      "paint": 8.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–4.6",
+      "js": {
+       "kb": 107.4,
+       "files": 13,
+       "script": 4.1
+      }
+     },
+     "both": {
+      "paint": 8.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–4.5",
+      "js": {
+       "kb": 108,
+       "files": 13,
+       "script": 5.2
+      }
+     },
+     "derived": {
+      "paint": 14.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–4.5",
+      "js": {
+       "kb": 86.8,
+       "files": 33,
+       "script": 1.4
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 104.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–4.3",
+      "js": {
+       "kb": 101.7,
+       "files": 11,
+       "script": 24.9
+      }
+     },
+     "lazy": {
+      "paint": 29.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–4.5",
+      "js": {
+       "kb": 107.4,
+       "files": 13,
+       "script": 10.7
+      }
+     },
+     "both": {
+      "paint": 29.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–4.3",
+      "js": {
+       "kb": 108,
+       "files": 13,
+       "script": 16.7
+      }
+     },
+     "derived": {
+      "paint": 46.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–4.3",
+      "js": {
+       "kb": 86.8,
+       "files": 33,
+       "script": 4.9
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 103.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–4.7",
+      "js": {
+       "kb": 101.7,
+       "files": 11,
+       "script": 26.7
+      }
+     },
+     "lazy": {
+      "paint": 30.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–5",
+      "js": {
+       "kb": 107.4,
+       "files": 13,
+       "script": 14
+      }
+     },
+     "both": {
+      "paint": 29.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–4.3",
+      "js": {
+       "kb": 108,
+       "files": 13,
+       "script": 15.2
+      }
+     },
+     "derived": {
+      "paint": 50.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–4.7",
+      "js": {
+       "kb": 86.8,
+       "files": 33,
+       "script": 6.1
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 8.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–5"
+     },
+     "lazy": {
+      "paint": 13.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–4.8"
+     },
+     "both": {
+      "paint": 5.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–5"
+     },
+     "derived": {
+      "paint": 29.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–5"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 29.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.5–4.8"
+     },
+     "lazy": {
+      "paint": 31.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–4.6"
+     },
+     "both": {
+      "paint": 29.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.5–4.8"
+     },
+     "derived": {
+      "paint": 57.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.5–4.8"
+     }
+    },
+    "move:fast1": {
+     "default": {
+      "paint": 14.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.4–4.7"
+     },
+     "lazy": {
+      "paint": 14.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.5–4.7"
+     },
+     "both": {
+      "paint": 15.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.1"
+     },
+     "derived": {
+      "paint": 25,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.1"
+     }
+    },
+    "move:fast4": {
+     "default": {
+      "paint": 65.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.1"
+     },
+     "lazy": {
+      "paint": 51.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.4–6"
+     },
+     "both": {
+      "paint": 57.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.4–6"
+     },
+     "derived": {
+      "paint": 70.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.4–6"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 3.65,
+      "kb": 101.7,
+      "files": 11,
+      "script": 10.2,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 2.44,
+      "kb": 107.4,
+      "files": 13,
+      "script": 4,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 2.47,
+      "kb": 108,
+      "files": 13,
+      "script": 5.5,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 1.37,
+      "kb": 86.8,
+      "files": 33,
+      "script": 1.3,
+      "n": 7
+     }
+    }
+   },
+   "/dom-data-1000": {
+    "row:fast1": {
+     "default": {
+      "paint": 50.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–6",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 10
+      }
+     },
+     "lazy": {
+      "paint": 31.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–6",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 4.5
+      }
+     },
+     "both": {
+      "paint": 32.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.7",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 4.8
+      }
+     },
+     "derived": {
+      "paint": 48.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.7",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 1.3
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 136.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.7",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 25.8
+      }
+     },
+     "lazy": {
+      "paint": 57.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.8",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 12.1
+      }
+     },
+     "both": {
+      "paint": 55.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–5.8",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 14.3
+      }
+     },
+     "derived": {
+      "paint": 80.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–5.8",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 5.2
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 140.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–6.1",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 26.5
+      }
+     },
+     "lazy": {
+      "paint": 56.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–6.5",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 13.7
+      }
+     },
+     "both": {
+      "paint": 56.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–6.5",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 15.9
+      }
+     },
+     "derived": {
+      "paint": 87.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–6.8",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 6.4
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 11.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–6.8"
+     },
+     "lazy": {
+      "paint": 11.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–6.8"
+     },
+     "both": {
+      "paint": 12.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–7.1"
+     },
+     "derived": {
+      "paint": 28.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–7.1"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 26.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–7.1"
+     },
+     "lazy": {
+      "paint": 25.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–7.1"
+     },
+     "both": {
+      "paint": 29.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–7.2"
+     },
+     "derived": {
+      "paint": 62,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "3–7.2"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 3.5,
+      "kb": 96.4,
+      "files": 10,
+      "script": 9.8,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 2.25,
+      "kb": 102.1,
+      "files": 12,
+      "script": 4.8,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 2.27,
+      "kb": 102.7,
+      "files": 12,
+      "script": 4.7,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 1.35,
+      "kb": 85.9,
+      "files": 32,
+      "script": 1.4,
+      "n": 7
+     }
+    }
+   },
+   "/dom-data-200": {
+    "row:fast1": {
+     "default": {
+      "paint": 36.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–8",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 5.3
+      }
+     },
+     "lazy": {
+      "paint": 31.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–8",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 3.6
+      }
+     },
+     "both": {
+      "paint": 31.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–8",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 4
+      }
+     },
+     "derived": {
+      "paint": 42.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–7.9",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 1.4
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 61.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–7.9",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 14.9
+      }
+     },
+     "lazy": {
+      "paint": 50.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–7.9",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 10.8
+      }
+     },
+     "both": {
+      "paint": 52.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–7.7",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 10.6
+      }
+     },
+     "derived": {
+      "paint": 67.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–7.7",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 5.4
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 70.1,
+      "n": 6,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–7.7",
+      "js": {
+       "kb": 96.4,
+       "files": 10,
+       "script": 15.6
+      }
+     },
+     "lazy": {
+      "paint": 48.1,
+      "n": 6,
+      "of": 7,
+      "fails": 0,
+      "load": "2.9–7.4",
+      "js": {
+       "kb": 102.1,
+       "files": 12,
+       "script": 10.6
+      }
+     },
+     "both": {
+      "paint": 52.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.8–7.3",
+      "js": {
+       "kb": 102.7,
+       "files": 12,
+       "script": 13.1
+      }
+     },
+     "derived": {
+      "paint": 70.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.7–7.3",
+      "js": {
+       "kb": 85.9,
+       "files": 32,
+       "script": 6.1
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 14.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.8"
+     },
+     "lazy": {
+      "paint": 15.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.8"
+     },
+     "both": {
+      "paint": 11.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–8"
+     },
+     "derived": {
+      "paint": 16.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.8"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 30.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.4–7.3"
+     },
+     "lazy": {
+      "paint": 26.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.3"
+     },
+     "both": {
+      "paint": 30.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.3"
+     },
+     "derived": {
+      "paint": 48.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.6–7.2"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 2.25,
+      "kb": 96.4,
+      "files": 10,
+      "script": 5.4,
+      "n": 6
+     },
+     "lazy": {
+      "heapMB": 1.99,
+      "kb": 102.1,
+      "files": 12,
+      "script": 3.9,
+      "n": 6
+     },
+     "both": {
+      "heapMB": 2.01,
+      "kb": 102.7,
+      "files": 12,
+      "script": 5,
+      "n": 6
+     },
+     "derived": {
+      "heapMB": 1.35,
+      "kb": 85.9,
+      "files": 32,
+      "script": 1.3,
+      "n": 6
+     }
+    }
+   },
+   "/resume-1000": {
+    "row:fast1": {
+     "default": {
+      "paint": 27.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–7.1",
+      "js": {
+       "kb": 73.2,
+       "files": 8,
+       "script": 5
+      }
+     },
+     "lazy": {
+      "paint": 23.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–7.1",
+      "js": {
+       "kb": 43.4,
+       "files": 8,
+       "script": 4.4
+      }
+     },
+     "both": {
+      "paint": 18.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–7.1",
+      "js": {
+       "kb": 44,
+       "files": 8,
+       "script": 3
+      }
+     },
+     "derived": {
+      "paint": 28.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.6",
+      "js": {
+       "kb": 39.8,
+       "files": 8,
+       "script": 0.8
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 27.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–6.6",
+      "js": {
+       "kb": 73.2,
+       "files": 8,
+       "script": 15.7
+      }
+     },
+     "lazy": {
+      "paint": 19.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.6",
+      "js": {
+       "kb": 43.4,
+       "files": 8,
+       "script": 13.2
+      }
+     },
+     "both": {
+      "paint": 22.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–6.1",
+      "js": {
+       "kb": 44,
+       "files": 8,
+       "script": 8.3
+      }
+     },
+     "derived": {
+      "paint": 30.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–6.1",
+      "js": {
+       "kb": 39.8,
+       "files": 8,
+       "script": 3.4
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 26.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.4",
+      "js": {
+       "kb": 73.2,
+       "files": 8,
+       "script": 16.8
+      }
+     },
+     "lazy": {
+      "paint": 24.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–6.4",
+      "js": {
+       "kb": 43.4,
+       "files": 8,
+       "script": 12.4
+      }
+     },
+     "both": {
+      "paint": 25.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.3",
+      "js": {
+       "kb": 44,
+       "files": 8,
+       "script": 8.7
+      }
+     },
+     "derived": {
+      "paint": 34.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.3",
+      "js": {
+       "kb": 39.8,
+       "files": 8,
+       "script": 3.2
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 22.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.1"
+     },
+     "lazy": {
+      "paint": 28.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.1"
+     },
+     "both": {
+      "paint": 30.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–6.1"
+     },
+     "derived": {
+      "paint": 21.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.8"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 30.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.8"
+     },
+     "lazy": {
+      "paint": 26.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.8"
+     },
+     "both": {
+      "paint": 22.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.7"
+     },
+     "derived": {
+      "paint": 33.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.7"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 2.23,
+      "kb": 73.2,
+      "files": 8,
+      "script": 5,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 1.55,
+      "kb": 43.4,
+      "files": 8,
+      "script": 4.6,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 1.78,
+      "kb": 44,
+      "files": 8,
+      "script": 3.2,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 0.97,
+      "kb": 39.8,
+      "files": 8,
+      "script": 0.8,
+      "n": 7
+     }
+    }
+   },
+   "/virtualized-collections": {
+    "row:fast1": {
+     "default": {
+      "paint": 31.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.4",
+      "js": {
+       "kb": 210.7,
+       "files": 26,
+       "script": 15.2
+      }
+     },
+     "lazy": {
+      "paint": 33.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–5.4",
+      "js": {
+       "kb": 216.5,
+       "files": 28,
+       "script": 14.2
+      }
+     },
+     "both": {
+      "paint": 33.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.4",
+      "js": {
+       "kb": 217.1,
+       "files": 28,
+       "script": 14.7
+      }
+     },
+     "derived": {
+      "paint": 72.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.4",
+      "js": {
+       "kb": 191.4,
+       "files": 63,
+       "script": 2
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 55.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.5",
+      "js": {
+       "kb": 210.7,
+       "files": 26,
+       "script": 45.5
+      }
+     },
+     "lazy": {
+      "paint": 59,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–5.5",
+      "js": {
+       "kb": 216.5,
+       "files": 28,
+       "script": 90.9
+      }
+     },
+     "both": {
+      "paint": 53.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–5.5",
+      "js": {
+       "kb": 217.1,
+       "files": 28,
+       "script": 87.2
+      }
+     },
+     "derived": {
+      "paint": 205.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–5.5",
+      "js": {
+       "kb": 191.4,
+       "files": 63,
+       "script": 8.3
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 55.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–5.2",
+      "js": {
+       "kb": 210.7,
+       "files": 26,
+       "script": 42.7
+      }
+     },
+     "lazy": {
+      "paint": 57.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–5.2",
+      "js": {
+       "kb": 216.5,
+       "files": 28,
+       "script": 41.9
+      }
+     },
+     "both": {
+      "paint": 53.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–5",
+      "js": {
+       "kb": 217.1,
+       "files": 28,
+       "script": 41.9
+      }
+     },
+     "derived": {
+      "paint": 226.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–4.9",
+      "js": {
+       "kb": 191.4,
+       "files": 63,
+       "script": 8.9
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 11,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–4.9"
+     },
+     "lazy": {
+      "paint": 5.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–4.9"
+     },
+     "both": {
+      "paint": 13.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–5.9"
+     },
+     "derived": {
+      "paint": 58.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.1–4.7"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 21.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.9"
+     },
+     "lazy": {
+      "paint": 28.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.9"
+     },
+     "both": {
+      "paint": 25.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.6"
+     },
+     "derived": {
+      "paint": 188.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.9"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 8.17,
+      "kb": 210.7,
+      "files": 26,
+      "script": 15.7,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 8.65,
+      "kb": 216.5,
+      "files": 28,
+      "script": 14.1,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 8.65,
+      "kb": 217.1,
+      "files": 28,
+      "script": 15.5,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 2.28,
+      "kb": 191.4,
+      "files": 63,
+      "script": 2,
+      "n": 7
+     }
+    }
+   },
+   "/table": {
+    "row:fast1": {
+     "default": {
+      "paint": 40.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–4.9",
+      "js": {
+       "kb": 138.6,
+       "files": 15,
+       "script": 13.2
+      }
+     },
+     "lazy": {
+      "paint": 35.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.3",
+      "js": {
+       "kb": 144.3,
+       "files": 17,
+       "script": 12.7
+      }
+     },
+     "both": {
+      "paint": 36.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.5–5.3",
+      "js": {
+       "kb": 144.9,
+       "files": 17,
+       "script": 13.3
+      }
+     },
+     "derived": {
+      "paint": 50.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–4.9",
+      "js": {
+       "kb": 125.1,
+       "files": 45,
+       "script": 1.6
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 52,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.3",
+      "js": {
+       "kb": 138.6,
+       "files": 15,
+       "script": 35.3
+      }
+     },
+     "lazy": {
+      "paint": 51.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.3",
+      "js": {
+       "kb": 144.3,
+       "files": 17,
+       "script": 33
+      }
+     },
+     "both": {
+      "paint": 51.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.1",
+      "js": {
+       "kb": 144.9,
+       "files": 17,
+       "script": 33
+      }
+     },
+     "derived": {
+      "paint": 62.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.3",
+      "js": {
+       "kb": 125.1,
+       "files": 45,
+       "script": 6.4
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 47.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.5",
+      "js": {
+       "kb": 138.6,
+       "files": 15,
+       "script": 30.3
+      }
+     },
+     "lazy": {
+      "paint": 48.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2–5.5",
+      "js": {
+       "kb": 144.3,
+       "files": 17,
+       "script": 32.4
+      }
+     },
+     "both": {
+      "paint": 48.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.3–5.3",
+      "js": {
+       "kb": 144.9,
+       "files": 17,
+       "script": 31.7
+      }
+     },
+     "derived": {
+      "paint": 71.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "2.2–5.5",
+      "js": {
+       "kb": 125.1,
+       "files": 45,
+       "script": 6.7
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 9.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.3"
+     },
+     "lazy": {
+      "paint": 14.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.3"
+     },
+     "both": {
+      "paint": 12.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.3"
+     },
+     "derived": {
+      "paint": 18.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.9–5.3"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 26,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.1"
+     },
+     "lazy": {
+      "paint": 28.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.1"
+     },
+     "both": {
+      "paint": 21.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.1"
+     },
+     "derived": {
+      "paint": 61.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.1"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 3.23,
+      "kb": 138.6,
+      "files": 15,
+      "script": 12.6,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 3.36,
+      "kb": 144.3,
+      "files": 17,
+      "script": 14,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 3.37,
+      "kb": 144.9,
+      "files": 17,
+      "script": 12.4,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 1.68,
+      "kb": 125.1,
+      "files": 45,
+      "script": 1.6,
+      "n": 7
+     }
+    }
+   },
+   "/grid-list": {
+    "row:fast1": {
+     "default": {
+      "paint": 12.7,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–4.8",
+      "js": {
+       "kb": 118.8,
+       "files": 12,
+       "script": 12.4
+      }
+     },
+     "lazy": {
+      "paint": 6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–4.8",
+      "js": {
+       "kb": 124.5,
+       "files": 14,
+       "script": 12.2
+      }
+     },
+     "both": {
+      "paint": 5.8,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–4.8",
+      "js": {
+       "kb": 125.1,
+       "files": 14,
+       "script": 11.7
+      }
+     },
+     "derived": {
+      "paint": 12.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.2",
+      "js": {
+       "kb": 116.6,
+       "files": 48,
+       "script": 1.7
+      }
+     }
+    },
+    "row:fast4": {
+     "default": {
+      "paint": 27.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.2",
+      "js": {
+       "kb": 118.8,
+       "files": 12,
+       "script": 30
+      }
+     },
+     "lazy": {
+      "paint": 19.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.2",
+      "js": {
+       "kb": 124.5,
+       "files": 14,
+       "script": 30.7
+      }
+     },
+     "both": {
+      "paint": 16.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.4",
+      "js": {
+       "kb": 125.1,
+       "files": 14,
+       "script": 30.4
+      }
+     },
+     "derived": {
+      "paint": 43.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.4",
+      "js": {
+       "kb": 116.6,
+       "files": 48,
+       "script": 6.3
+      }
+     }
+    },
+    "row:slow4": {
+     "default": {
+      "paint": 28.5,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.7–5.4",
+      "js": {
+       "kb": 118.8,
+       "files": 12,
+       "script": 32.3
+      }
+     },
+     "lazy": {
+      "paint": 18.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.4",
+      "js": {
+       "kb": 124.5,
+       "files": 14,
+       "script": 29.2
+      }
+     },
+     "both": {
+      "paint": 17.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.4",
+      "js": {
+       "kb": 125.1,
+       "files": 14,
+       "script": 30.5
+      }
+     },
+     "derived": {
+      "paint": 36.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.7–5.3",
+      "js": {
+       "kb": 116.6,
+       "files": 48,
+       "script": 7.6
+      }
+     }
+    },
+    "ctl:fast1": {
+     "default": {
+      "paint": 13.6,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5.3"
+     },
+     "lazy": {
+      "paint": 11.9,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5"
+     },
+     "both": {
+      "paint": 10.3,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5"
+     },
+     "derived": {
+      "paint": 17.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.8–5"
+     }
+    },
+    "ctl:fast4": {
+     "default": {
+      "paint": 25.4,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.7–5"
+     },
+     "lazy": {
+      "paint": 26.1,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.7–4.9"
+     },
+     "both": {
+      "paint": 23.2,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.7–4.9"
+     },
+     "derived": {
+      "paint": 48,
+      "n": 7,
+      "of": 7,
+      "fails": 0,
+      "load": "1.6–4.9"
+     }
+    },
+    "idle": {
+     "default": {
+      "heapMB": 2.46,
+      "kb": 118.8,
+      "files": 12,
+      "script": 12.6,
+      "n": 7
+     },
+     "lazy": {
+      "heapMB": 2.45,
+      "kb": 124.5,
+      "files": 14,
+      "script": 12.1,
+      "n": 7
+     },
+     "both": {
+      "heapMB": 2.46,
+      "kb": 125.1,
+      "files": 14,
+      "script": 12.4,
+      "n": 7
+     },
+     "derived": {
+      "heapMB": 1.61,
+      "kb": 116.6,
+      "files": 48,
+      "script": 1.6,
+      "n": 7
+     }
+    }
+   }
+  },
+  "facts": {
+   "/list-data-1000": {
+    "default": {
+     "docRaw": 730393,
+     "docBr": 44013,
+     "stateRaw": 467284,
+     "stateBr": 35404,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 1 rec (1000 rows)"
+    },
+    "lazy": {
+     "docRaw": 301459,
+     "docBr": 15851,
+     "stateRaw": 51354,
+     "stateBr": 8524,
+     "domEntries": 0,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "both": {
+     "docRaw": 267635,
+     "docBr": 13928,
+     "stateRaw": 17530,
+     "stateBr": 6577,
+     "domEntries": 1,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "derived": {
+     "docRaw": 286190,
+     "docBr": 7442,
+     "stateRaw": 38936,
+     "stateBr": 2346,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/dom-data-1000": {
+    "default": {
+     "docRaw": 752648,
+     "docBr": 37066,
+     "stateRaw": 491753,
+     "stateBr": 28759,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 0 rec (0 rows)"
+    },
+    "lazy": {
+     "docRaw": 353876,
+     "docBr": 14216,
+     "stateRaw": 88980,
+     "stateBr": 6377,
+     "domEntries": 0,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "both": {
+     "docRaw": 304059,
+     "docBr": 12873,
+     "stateRaw": 39163,
+     "stateBr": 4912,
+     "domEntries": 1,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "derived": {
+     "docRaw": 263257,
+     "docBr": 6094,
+     "stateRaw": 1114,
+     "stateBr": 360,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/dom-data-200": {
+    "default": {
+     "docRaw": 156980,
+     "docBr": 11773,
+     "stateRaw": 99793,
+     "stateBr": 7705,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 0 rec (0 rows)"
+    },
+    "lazy": {
+     "docRaw": 79310,
+     "docBr": 6743,
+     "stateRaw": 20970,
+     "stateBr": 2658,
+     "domEntries": 0,
+     "fors": "1 lazy (200 rows) / 0 rec (0 rows)"
+    },
+    "both": {
+     "docRaw": 69493,
+     "docBr": 6427,
+     "stateRaw": 11153,
+     "stateBr": 2376,
+     "domEntries": 1,
+     "fors": "1 lazy (200 rows) / 0 rec (0 rows)"
+    },
+    "derived": {
+     "docRaw": 56849,
+     "docBr": 3304,
+     "stateRaw": 1111,
+     "stateBr": 358,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/resume-1000": {
+    "default": {
+     "docRaw": 962711,
+     "docBr": 30071,
+     "stateRaw": 172162,
+     "stateBr": 10332,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 1 rec (1000 rows)"
+    },
+    "lazy": {
+     "docRaw": 955106,
+     "docBr": 26540,
+     "stateRaw": 162078,
+     "stateBr": 8842,
+     "domEntries": 0,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "both": {
+     "docRaw": 794529,
+     "docBr": 18596,
+     "stateRaw": 1501,
+     "stateBr": 651,
+     "domEntries": 1,
+     "fors": "1 lazy (1000 rows) / 0 rec (0 rows)"
+    },
+    "derived": {
+     "docRaw": 951533,
+     "docBr": 25139,
+     "stateRaw": 161362,
+     "stateBr": 8500,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/virtualized-collections": {
+    "default": {
+     "docRaw": 353627,
+     "docBr": 30953,
+     "stateRaw": 277977,
+     "stateBr": 24845,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 6 rec (123 rows)"
+    },
+    "lazy": {
+     "docRaw": 263233,
+     "docBr": 20681,
+     "stateRaw": 191632,
+     "stateBr": 14675,
+     "domEntries": 0,
+     "fors": "7 lazy (91 rows) / 2 rec (4 rows)"
+    },
+    "both": {
+     "docRaw": 263233,
+     "docBr": 20597,
+     "stateRaw": 191632,
+     "stateBr": 14744,
+     "domEntries": 0,
+     "fors": "7 lazy (91 rows) / 2 rec (4 rows)"
+    },
+    "derived": {
+     "docRaw": 215730,
+     "docBr": 9207,
+     "stateRaw": 141655,
+     "stateBr": 4441,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/table": {
+    "default": {
+     "docRaw": 60065,
+     "docBr": 14415,
+     "stateRaw": 44451,
+     "stateBr": 10376,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 5 rec (34 rows)"
+    },
+    "lazy": {
+     "docRaw": 29706,
+     "docBr": 8029,
+     "stateRaw": 14883,
+     "stateBr": 4048,
+     "domEntries": 0,
+     "fors": "5 lazy (12 rows) / 2 rec (6 rows)"
+    },
+    "both": {
+     "docRaw": 29706,
+     "docBr": 8049,
+     "stateRaw": 14883,
+     "stateBr": 4051,
+     "domEntries": 0,
+     "fors": "5 lazy (12 rows) / 2 rec (6 rows)"
+    },
+    "derived": {
+     "docRaw": 19310,
+     "docBr": 3910,
+     "stateRaw": 6086,
+     "stateBr": 913,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   },
+   "/grid-list": {
+    "default": {
+     "docRaw": 38772,
+     "docBr": 9751,
+     "stateRaw": 25970,
+     "stateBr": 6142,
+     "domEntries": 0,
+     "fors": "0 lazy (0 rows) / 1 rec (9 rows)"
+    },
+    "lazy": {
+     "docRaw": 26001,
+     "docBr": 7371,
+     "stateRaw": 12153,
+     "stateBr": 3340,
+     "domEntries": 0,
+     "fors": "5 lazy (14 rows) / 0 rec (0 rows)"
+    },
+    "both": {
+     "docRaw": 26001,
+     "docBr": 7367,
+     "stateRaw": 12153,
+     "stateBr": 3340,
+     "domEntries": 0,
+     "fors": "5 lazy (14 rows) / 0 rec (0 rows)"
+    },
+    "derived": {
+     "docRaw": 13830,
+     "docBr": 3262,
+     "stateRaw": 2554,
+     "stateBr": 592,
+     "domEntries": 0,
+     "fors": "-"
+    }
+   }
+  }
+ },
+ "cpu": {
+  "builds": [
+   "default",
+   "lazy",
+   "both",
+   "derived"
+  ],
+  "date": "2026-10-22T06:58:30.233Z",
+  "pages": [
+   "/list-data-1000",
+   "/resume-1000"
+  ],
+  "rounds": 5,
+  "samples": 1500,
+  "warm": 50,
+  "results": {
+   "/list-data-1000": {
+    "default": [
+     {
+      "cpu": 44.96786533333333,
+      "wall": 27.226761805333332,
+      "bytes": 730327,
+      "load": 2.8
+     },
+     {
+      "cpu": 47.598119999999994,
+      "wall": 29.082677083333344,
+      "bytes": 730327,
+      "load": 4.8
+     },
+     {
+      "cpu": 47.75595466666667,
+      "wall": 29.368649972000004,
+      "bytes": 730327,
+      "load": 4.7
+     },
+     {
+      "cpu": 46.702162,
+      "wall": 28.79400997266666,
+      "bytes": 730327,
+      "load": 4.8
+     },
+     {
+      "cpu": 47.06685933333333,
+      "wall": 29.059502528000003,
+      "bytes": 730327,
+      "load": 4.8
+     }
+    ],
+    "lazy": [
+     {
+      "cpu": 9.825207333333333,
+      "wall": 6.942523777999997,
+      "bytes": 301393,
+      "load": 3.2
+     },
+     {
+      "cpu": 10.259136666666667,
+      "wall": 7.301704333333338,
+      "bytes": 301393,
+      "load": 4
+     },
+     {
+      "cpu": 10.162659333333334,
+      "wall": 7.313656110666673,
+      "bytes": 301393,
+      "load": 4.5
+     },
+     {
+      "cpu": 10.341604666666667,
+      "wall": 7.420302222000008,
+      "bytes": 301393,
+      "load": 5
+     },
+     {
+      "cpu": 10.22768,
+      "wall": 7.338809610666669,
+      "bytes": 301393,
+      "load": 5.6
+     }
+    ],
+    "both": [
+     {
+      "cpu": 10.129701333333333,
+      "wall": 7.319120694666669,
+      "bytes": 267569,
+      "load": 3.2
+     },
+     {
+      "cpu": 10.123613333333333,
+      "wall": 7.389704500000002,
+      "bytes": 267569,
+      "load": 4.2
+     },
+     {
+      "cpu": 9.996967333333332,
+      "wall": 7.3230556113333245,
+      "bytes": 267569,
+      "load": 4.9
+     },
+     {
+      "cpu": 11.168238,
+      "wall": 8.269592805999991,
+      "bytes": 267569,
+      "load": 5
+     },
+     {
+      "cpu": 10.033157333333333,
+      "wall": 7.380360111333352,
+      "bytes": 267569,
+      "load": 5.6
+     }
+    ],
+    "derived": [
+     {
+      "cpu": 7.030587333333333,
+      "wall": 4.681848833333327,
+      "bytes": 286157,
+      "load": 3.3
+     },
+     {
+      "cpu": 6.664234666666667,
+      "wall": 4.488487639333325,
+      "bytes": 286157,
+      "load": 4.2
+     },
+     {
+      "cpu": 7.080332666666666,
+      "wall": 4.761373500000007,
+      "bytes": 286157,
+      "load": 4.9
+     },
+     {
+      "cpu": 6.675562,
+      "wall": 4.522361750000001,
+      "bytes": 286157,
+      "load": 4
+     },
+     {
+      "cpu": 6.579558666666666,
+      "wall": 4.458687416666692,
+      "bytes": 286157,
+      "load": 5.3
+     }
+    ]
+   },
+   "/resume-1000": {
+    "default": [
+     {
+      "cpu": 2.832056666666667,
+      "wall": 1.866357416666695,
+      "bytes": 962612,
+      "load": 5.3
+     },
+     {
+      "cpu": 2.9325213333333333,
+      "wall": 1.9801307226666638,
+      "bytes": 962612,
+      "load": 15.7
+     },
+     {
+      "cpu": 2.9091979999999995,
+      "wall": 1.9692708886666612,
+      "bytes": 962612,
+      "load": 15.6
+     },
+     {
+      "cpu": 2.900348,
+      "wall": 1.9932125833333314,
+      "bytes": 962612,
+      "load": 14.4
+     },
+     {
+      "cpu": 2.897095333333333,
+      "wall": 1.985460721999989,
+      "bytes": 962612,
+      "load": 14.2
+     }
+    ],
+    "lazy": [
+     {
+      "cpu": 2.631679333333333,
+      "wall": 2.144955194666671,
+      "bytes": 955040,
+      "load": 5
+     },
+     {
+      "cpu": 2.7065946666666667,
+      "wall": 1.8873738613333553,
+      "bytes": 955040,
+      "load": 13.5
+     },
+     {
+      "cpu": 2.6811073333333333,
+      "wall": 1.8570553886666505,
+      "bytes": 955040,
+      "load": 15.6
+     },
+     {
+      "cpu": 2.6570473333333333,
+      "wall": 1.8471720833333287,
+      "bytes": 955040,
+      "load": 14.4
+     },
+     {
+      "cpu": 2.70091,
+      "wall": 1.8896349446666816,
+      "bytes": 955040,
+      "load": 13.4
+     }
+    ],
+    "both": [
+     {
+      "cpu": 2.819749333333333,
+      "wall": 2.607766860666646,
+      "bytes": 794463,
+      "load": 14.1
+     },
+     {
+      "cpu": 2.6488666666666667,
+      "wall": 2.0105920000000235,
+      "bytes": 794463,
+      "load": 14.1
+     },
+     {
+      "cpu": 2.6358906666666666,
+      "wall": 1.9881594166666812,
+      "bytes": 794463,
+      "load": 15.7
+     },
+     {
+      "cpu": 2.6413393333333333,
+      "wall": 1.9990710560000347,
+      "bytes": 794463,
+      "load": 14.2
+     },
+     {
+      "cpu": 2.6465026666666667,
+      "wall": 2.0033654720000147,
+      "bytes": 794463,
+      "load": 12.9
+     }
+    ],
+    "derived": [
+     {
+      "cpu": 1.9233419999999999,
+      "wall": 1.4047585280000154,
+      "bytes": 951500,
+      "load": 14.1
+     },
+     {
+      "cpu": 1.962112,
+      "wall": 1.4254870553333312,
+      "bytes": 951500,
+      "load": 14.1
+     },
+     {
+      "cpu": 1.9084519999999998,
+      "wall": 1.4024253613333373,
+      "bytes": 951500,
+      "load": 15.7
+     },
+     {
+      "cpu": 1.916624,
+      "wall": 1.4292960273333204,
+      "bytes": 951500,
+      "load": 15
+     },
+     {
+      "cpu": 1.9215319999999998,
+      "wall": 1.419804805333338,
+      "bytes": 951500,
+      "load": 12.9
+     }
+    ]
+   }
+  }
+ },
+ "cpuResumeRerun": {
+  "builds": [
+   "default",
+   "lazy",
+   "both",
+   "derived"
+  ],
+  "date": "2026-10-22T07:03:26.052Z",
+  "pages": [
+   "/resume-1000"
+  ],
+  "rounds": 5,
+  "samples": 1500,
+  "warm": 50,
+  "results": {
+   "/resume-1000": {
+    "default": [
+     {
+      "cpu": 2.8020526666666665,
+      "wall": 2.051475944,
+      "bytes": 962612,
+      "load": 5.7
+     },
+     {
+      "cpu": 2.7015233333333333,
+      "wall": 2.039249806,
+      "bytes": 962612,
+      "load": 9.6
+     },
+     {
+      "cpu": 3.2053499999999997,
+      "wall": 2.5104762499999995,
+      "bytes": 962612,
+      "load": 8.9
+     },
+     {
+      "cpu": 2.7200873333333333,
+      "wall": 2.0301100000000005,
+      "bytes": 962612,
+      "load": 9.1
+     },
+     {
+      "cpu": 2.714053333333333,
+      "wall": 2.035081056,
+      "bytes": 962612,
+      "load": 8.8
+     }
+    ],
+    "lazy": [
+     {
+      "cpu": 2.7889406666666665,
+      "wall": 1.9423656393333337,
+      "bytes": 955040,
+      "load": 5.7
+     },
+     {
+      "cpu": 2.669697333333333,
+      "wall": 1.8656465833333338,
+      "bytes": 955040,
+      "load": 5.6
+     },
+     {
+      "cpu": 2.8030213333333336,
+      "wall": 1.9805327499999985,
+      "bytes": 955040,
+      "load": 8.9
+     },
+     {
+      "cpu": 2.7438566666666664,
+      "wall": 1.9304310280000014,
+      "bytes": 955040,
+      "load": 9.1
+     },
+     {
+      "cpu": 2.737275333333333,
+      "wall": 1.9254315833333338,
+      "bytes": 955040,
+      "load": 8.7
+     }
+    ],
+    "both": [
+     {
+      "cpu": 2.7610819999999996,
+      "wall": 1.9932405279999996,
+      "bytes": 794463,
+      "load": 5.6
+     },
+     {
+      "cpu": 3.1922639999999998,
+      "wall": 2.5624725273333326,
+      "bytes": 794463,
+      "load": 5.6
+     },
+     {
+      "cpu": 2.61355,
+      "wall": 1.9359428333333344,
+      "bytes": 794463,
+      "load": 8.9
+     },
+     {
+      "cpu": 2.771988,
+      "wall": 2.084620888666667,
+      "bytes": 794463,
+      "load": 8.8
+     },
+     {
+      "cpu": 2.643320666666667,
+      "wall": 1.950165778,
+      "bytes": 794463,
+      "load": 8.7
+     }
+    ],
+    "derived": [
+     {
+      "cpu": 1.9049793333333334,
+      "wall": 1.3954983606666658,
+      "bytes": 951500,
+      "load": 5.4
+     },
+     {
+      "cpu": 2.1807366666666668,
+      "wall": 1.7540329166666682,
+      "bytes": 951500,
+      "load": 9.6
+     },
+     {
+      "cpu": 2.1550433333333334,
+      "wall": 1.6742542226666677,
+      "bytes": 951500,
+      "load": 8.9
+     },
+     {
+      "cpu": 1.9395146666666667,
+      "wall": 1.451277249999999,
+      "bytes": 951500,
+      "load": 9.1
+     },
+     {
+      "cpu": 1.9344446666666666,
+      "wall": 1.4556537773333305,
+      "bytes": 951500,
+      "load": 8.9
+     }
+    ]
+   }
+  }
+ },
+ "resume1000ClickProfile": {
+  "fast1": {
+   "default": {
+    "paint": 14,
+    "dom": 7.7,
+    "n": 7
+   },
+   "lazy": {
+    "paint": 13.2,
+    "dom": 5.8,
+    "n": 7
+   },
+   "both": {
+    "paint": 12.2,
+    "dom": 5.6,
+    "n": 7
+   },
+   "derived": {
+    "paint": 20.3,
+    "dom": 7.4,
+    "n": 7
+   }
+  },
+  "fast4": {
+   "default": {
+    "paint": 36.5,
+    "dom": 34,
+    "n": 7
+   },
+   "lazy": {
+    "paint": 31.1,
+    "dom": 24.9,
+    "n": 7
+   },
+   "both": {
+    "paint": 29.3,
+    "dom": 25.4,
+    "n": 7
+   },
+   "derived": {
+    "paint": 38.7,
+    "dom": 33.1,
+    "n": 7
+   }
+  }
+ }
+}
