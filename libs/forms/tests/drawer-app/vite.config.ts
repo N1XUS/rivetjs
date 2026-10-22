@@ -5,6 +5,6 @@ import { rivetRouter } from "@rivetjs/router/vite";
 // `RIVET_RESUME_MODEL=derived` (M6-PARITY): the derived resume model (generated files in `.rivet-derived/`, build in `dist/derived/`).
 const derived = process.env.RIVET_RESUME_MODEL === "derived";
 export default defineConfig({
-  plugins: [rivetRouter({ styles: ["src/styles.css"], ...(derived ? { resume: { model: "derived" }, outDir: ".rivet-derived" } : {}) })],
+  plugins: [rivetRouter({ clientRouter: true, styles: ["src/styles.css"], ...(derived ? { resume: { model: "derived" }, outDir: ".rivet-derived" } : {}) })],
   logLevel: "warn",
 });

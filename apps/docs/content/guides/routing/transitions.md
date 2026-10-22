@@ -23,9 +23,11 @@ import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
 export default defineConfig({
-  plugins: [rivetRouter({ styles: ["src/styles.css"], transitions: true })],
+  plugins: [rivetRouter({ styles: ["src/styles.css"], transitions: true, clientRouter: true })],
 });
 ```
+
+Transitions run on client navigations. `clientRouter: true` makes every page navigate in place; without it, links on pages that ship no JavaScript load the next document (no animation). See [when the router is active](./links-and-navigation.md#when-the-router-is-active).
 
 Then import the default styles in your stylesheet:
 

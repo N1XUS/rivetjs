@@ -84,6 +84,7 @@ Pages still resume in the browser exactly as in server mode. Use it for: documen
 
 - Server code is not allowed: no `.server.ts` route files and no server exports in route files. The build stops with an error that lists them.
 - Pages render without loader data.
+- The `index.html` shell has no page head: the browser applies each route's `head` (the title) when it renders the route.
 
 Use it for: an app behind a login where search engines and the first paint do not matter.
 

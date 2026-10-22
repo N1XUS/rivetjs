@@ -67,8 +67,8 @@ export interface CodegenOptions {
   /** `rivetRouter({ routeRules })`: the server entry exports them (JSON data). */
   routeRules?: Readonly<Record<string, unknown>>;
   /**
-   * `rivetRouter({ clientRouter })`: `false` marks the App's router listeners `standalone: false` (alone
-   * they do not make a page resumable: inert pages ship zero JS). Default: `false` in `static` mode.
+   * `rivetRouter({ clientRouter })`: off (the default, every mode but csr) marks the App's router listeners
+   * `standalone: false` (alone they do not make a page resumable: inert pages ship zero JS); `true` opts in.
    */
   clientRouter?: boolean;
   /**
@@ -255,8 +255,8 @@ function rootComponent(transitions: boolean, search: boolean): string[] {
 export function generate(table: RouteTable, options: CodegenOptions): Generated {
   const outDir = options.outDir ?? ".rivet";
   const mode = options.mode ?? "server";
-  // Router listeners that alone keep a page resumable (`clientRouter`), else `standalone: false`.
-  const lone = (options.clientRouter ?? mode !== "static") ? "" : ", standalone: false";
+  // Router listeners that alone keep a page resumable (`clientRouter: true`, opt-in; csr: no resume), else `standalone: false`.
+  const lone = options.clientRouter === true || mode === "csr" ? "" : ", standalone: false";
   // Matched URL paths include the base: `/` → `/app`, `/items/:id` → `/app/items/:id`.
   const base = normalizeBase(options.base);
   const at = (pattern: string) => (base ? (pattern === "/" ? base : base + pattern) : pattern);
@@ -449,7 +449,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       `    route: (n: number) =>`,
       `      defineRoute(PATHS${name}[n]!, {`,
       `        load: (work, match) => ${nested ? `_take<Loaded>(${k}, match.url) ?? ` : ""}${served}Promise.all([routeData(work, match, router, ${source}${keeps ? ", _keepIds(nest, NEST, match.url)" : ""}), loadPage(match.url)${transitions ? ", transitions()" : ""}])` +
-        `.then(([data${transitions ? ", page" : ""}]) => ${transitions ? "(_routeModule(page), data)" : "data"})${kit ? `.then((result) => applyRouteHead(result, ROUTES${name}[n]![1]))` : ""}.then(loaded, failed)${useNest ? `.then((result) => _landed(nest, NEST, ${k}, ROUTES${name}[n]![0], result, match))` : ""},`,
+        (mode === "csr"
+          ? // CSR: no server writes the head; the route's modules give it (`_csrHead`: title, the merged head for the kit).
+            `.then(([data, page]) => ${transitions ? "(_routeModule(page), " : ""}_csrHead(data, HEADS[ROUTES${name}[n]![0]]!, page, match${kit ? ", rankMerge" : ""})${transitions ? ")" : ""})`
+          : `.then(([data${transitions ? ", page" : ""}]) => ${transitions ? "(_routeModule(page), data)" : "data"})`) +
+        `${kit ? `.then((result) => applyRouteHead(result, ROUTES${name}[n]![1]))` : ""}.then(loaded, failed)${useNest ? `.then((result) => _landed(nest, NEST, ${k}, ROUTES${name}[n]![0], result, match))` : ""},`,
       `        render: (result, match) => {`,
       ...(usesRow ? [`          const row = ROUTES${name}[n]!;`] : []),
       `          if (result.failure !== undefined) return ${pick(fails, (j) => `fail${j}(result.failure, match.url)`, "row[4]")};`,
@@ -492,6 +496,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           : []),
     `import { Router, defineRoute, lazyComponent${single && !go ? "" : ", clientEvent"}${kit || (pageRoutes.length && params) || derived ? ", Provider" : ""} } from "@rivetjs/runtime/dom";`,
     ...(kit ? [`import { HeadLevel, applyRouteHead } from "@rivetjs/kit";`] : []),
+    ...(kit && mode === "csr" ? [`import { rankMerge } from "@rivetjs/router/head";`] : []),
     ...(derived
       ? [
           `import { createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
@@ -502,7 +507,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
       : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
     `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
@@ -510,7 +515,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "type PageProps = { data: any; params: any; url: URL };",
     "type LayoutProps = { data: () => any; params: () => any; url: () => URL; children?: any };",
     ...(specials.size ? ["type NotFoundProps = { url: URL };", "type ErrorProps = { error: any };"] : []),
-    ...[...layouts].flatMap(([file, name]) => [`import ${name}$ from ${str(spec(file))};`, `const ${name}: (props: LayoutProps) => unknown = ${name}$;`]),
+    ...[...layouts].flatMap(([file, name]) =>
+      mode === "csr"
+        ? [`import * as ${name}$ from ${str(spec(file))};`, `const ${name}: (props: LayoutProps) => unknown = ${name}$.default;`]
+        : [`import ${name}$ from ${str(spec(file))};`, `const ${name}: (props: LayoutProps) => unknown = ${name}$;`],
+    ),
     ...[...specials].flatMap(([file, name]) => [
       `import ${name}$ from ${str(spec(file))};`,
       `const ${name}: (props: ${errorViews.has(file) ? "ErrorProps" : "NotFoundProps"}) => unknown = ${name}$;`,
@@ -526,6 +535,12 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       ? [
           "// Live pages (page indices): `data` is an accessor, revalidated in place.",
           `const LIVE: readonly number[] = ${str([...new Set(live.map((route) => pageIndex.get(route.page!)!))])};`,
+        ]
+      : []),
+    ...(mode === "csr"
+      ? [
+          "// CSR: the layout modules of each route (route index), outermost first, for its head (`_csrHead`).",
+          `const HEADS: readonly (readonly unknown[])[] = [${pageRoutes.map((route) => "[" + route.layouts.flatMap((layout) => (layout.page ? [layouts.get(layout.page)! + "$"] : [])).join(", ") + "]").join(", ")}];`,
         ]
       : []),
     "// Route tables per Router level (see App): paths + [route index, data depth, page, enter view, failure view] rows.",

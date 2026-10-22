@@ -66,10 +66,10 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
   assert.match(out, /    _liveIntent\(event, live, modules, nest\);/);
   assert.match(
     out,
-    /clientEvent\(document, "pointerdown", \(event: PointerEvent\) => _liveIntent\(event, live, modules, nest\), \{ passive: true, preload: "intent", match: "form" \}\);/,
+    /clientEvent\(document, "pointerdown", \(event: PointerEvent\) => _liveIntent\(event, live, modules, nest\), \{ passive: true, preload: "intent", match: "form", standalone: false \}\);/,
   );
-  assert.match(out, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a,form" \}\);/);
-  assert.match(out, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a,form" \}\);/);
+  assert.match(out, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a,form", standalone: false \}\);/);
+  assert.match(out, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a,form", standalone: false \}\);/);
   assert.doesNotMatch(out, /\b_serve\b/);
   assert.match(out, /const LIVE: readonly number\[\] = \[\d\];/);
   // Single-level app: the top Router keys on the slot; the navigation entry points start its location sync.

@@ -11,6 +11,7 @@ if (model !== undefined && model !== "serialized" && model !== "derived")
 export default defineConfig({
   plugins: [
     rivetRouter({
+      clientRouter: true,
       styles: ["src/styles.css"],
       // Shell cache stories (PPR-T23 / T6 / T57): stored shell + live hole; `/shell-loader` H-holes, `/shell-replay` replays,
       // `/shell-provider` replays (its hole writes a signal an ancestor provides).

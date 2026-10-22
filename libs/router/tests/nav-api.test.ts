@@ -22,18 +22,21 @@ test("codegen: the App serves navigate() requests; routes provide params; the se
   const table = routeTable(["index.tsx", "items/[id].tsx"]);
   const files = generate(table, { routesDir: "src/routes", searchParams: true, navigate: true, params: true }).files;
   const app = files["app.tsx"]!;
-  assert.match(app, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent" \}\);/);
+  assert.match(app, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent", standalone: false \}\);/);
   assert.match(app, /prefetchModule\(url, modules\);\n {4}prefetchData\(url, "server"/);
   assert.match(app, /<Provider token=\{RouteParamsContext\} value=\{signal\(match\.params\)\}>/);
   assert.match(files["entry.server.tsx"]!, /<Provider token=\{SearchParams\} value=\{signal\(input\.url\.searchParams\)\}>/);
   // Server apps with layouts hand invalidate(key) their layout state; the entry passes depends() keys on.
   const nested = generate(routeTable(["_layout.tsx", "_layout.server.ts", "index.tsx"]), { routesDir: "src/routes", navigate: true }).files;
-  assert.match(nested["app.tsx"]!, /clientEvent\(document, "rivet:go", \(\) => _serve\(router, nest, NEST\), \{ preload: "intent" \}\);/);
+  assert.match(nested["app.tsx"]!, /clientEvent\(document, "rivet:go", \(\) => _serve\(router, nest, NEST\), \{ preload: "intent", standalone: false \}\);/);
   assert.match(nested["entry.server.tsx"]!, /\.\.\.\(input\.deps \? \{ deps: input\.deps \} : \{\}\)/);
   assert.match(nested["dev-mount.tsx"]!, /\.\.\.\(body\.deps \? \{ deps: body\.deps \} : \{\}\)/);
   const statics = generate(routeTable(["_layout.tsx", "_layout.server.ts", "index.tsx"]), { routesDir: "src/routes", mode: "static", navigate: true }).files;
-  // Static mode (`clientRouter` off): the router's listeners alone keep no page resumable.
+  // `clientRouter` off (the default, every mode): the router's listeners alone keep no page resumable; on: they do.
   assert.match(statics["app.tsx"]!, /_serve\(router\), \{ preload: "intent", standalone: false \}\);/);
+  const routed = generate(table, { routesDir: "src/routes", navigate: true, clientRouter: true }).files["app.tsx"]!;
+  assert.match(routed, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent" \}\);/);
+  assert.doesNotMatch(routed, /standalone/);
   // Without navigate() use: no listener, but the server entry still passes depends() keys on.
   const nestedLean = generate(routeTable(["_layout.tsx", "_layout.server.ts", "index.tsx"]), { routesDir: "src/routes" }).files;
   assert.doesNotMatch(nestedLean["app.tsx"]!, /rivet:go|_serve|data-rivet-go/);
@@ -52,7 +55,7 @@ test("codegen: the App serves navigate() requests; routes provide params; the se
   // `<Link active>` used: the App re-marks active links after each navigation, armed by the first one (Z1).
   const activeApp = generate(table, { routesDir: "src/routes", activeLinks: true, navigate: true }).files["app.tsx"]!;
   assert.match(activeApp, /const arm = \(\) => _arm\(router, \(\) => onNavigate\(\(\) => _markActive\)\);/);
-  assert.match(activeApp, /clientEvent\(document, "rivet:go", \(\) => \(arm\(\), _serve\(router\)\), \{ preload: "intent" \}\);/);
+  assert.match(activeApp, /clientEvent\(document, "rivet:go", \(\) => \(arm\(\), _serve\(router\)\), \{ preload: "intent", standalone: false \}\);/);
   assert.doesNotMatch(activeApp, /clientEffect/);
   assert.match(lean["app.tsx"]!, /<div data-rivet-routes="">/);
 });

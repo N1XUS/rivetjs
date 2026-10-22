@@ -242,7 +242,7 @@ export default function Layout({ data, children }: LayoutProps<typeof loader>) {
 ### Modes (`vite.config.ts`)
 
 - `rivetRouter()` = `mode: "server"` (render per request; `npm run build` → `dist/server`, `npm start`).
-- `rivetRouter({ mode: "static" })` = prerender to HTML files (`prerender.js` / `prerenderBuild`). `load(…)` runs at build time. A page with nothing to resume (no handlers, signals in markup, client effects, forms) ships zero JS and its links load documents; `clientRouter: true` keeps in-place navigation on every page.
+- `rivetRouter({ mode: "static" })` = prerender to HTML files (`prerender.js` / `prerenderBuild`). `load(…)` runs at build time. A page with nothing to resume (no handlers, signals in markup, client effects, forms) ships zero JS and its links load documents (any mode: the client router is opt-in); `clientRouter: true` keeps in-place navigation on every page.
 - `mode: "csr"` = SPA, no server code.
 
 ### Forms (`@rivetjs/forms`)

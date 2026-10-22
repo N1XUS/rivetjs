@@ -192,6 +192,36 @@ export async function routeData(work: Work, match: { url: URL }, router: Navigat
   };
 }
 
+/** A route module's `head` export: tags, or a function of the level's data, the params and the URL. */
+type HeadExport = Head | ((input: { data: unknown; params: unknown; url: URL }) => Head | undefined);
+/**
+ * @internal CSR apps (`mode: "csr"`: no server writes the head): the route's head from its modules' `head` exports —
+ * `layouts` outermost first (their module namespaces), then the loaded `page` module — on every route load, the first
+ * render included. Sets `document.title` (the innermost title, the innermost `titleTemplate` applied once). `merge`
+ * (component head: kit `applyRouteHead` applies the rest): the whole merged head goes on the result.
+ */
+export function _csrHead<T extends { data: readonly unknown[] }>(
+  result: T,
+  layouts: readonly unknown[],
+  page: unknown,
+  match: { params: unknown; url: URL },
+  merge?: (entries: readonly { level: number; phase: 0; seq: number; head: Head }[]) => Head | undefined,
+): T {
+  const heads = [...layouts, page].map((module, level) => {
+    const head = (module as { head?: HeadExport } | undefined)?.head;
+    return typeof head === "function" ? head({ data: result.data[level], params: match.params, url: match.url }) : head;
+  });
+  let title: string | undefined, template: string | undefined;
+  for (const head of heads) {
+    if (head?.title !== undefined) title = head.title;
+    if (head?.titleTemplate !== undefined) template = head.titleTemplate;
+  }
+  if (title !== undefined) document.title = template === undefined ? title : template.replace("%s", title);
+  if (!merge) return result;
+  const head = merge(heads.flatMap((head, level) => (head ? [{ level, phase: 0 as const, seq: 0, head }] : [])));
+  return head ? { ...result, head } : result;
+}
+
 /**
  * Same-origin, same-document-eligible anchor for a click/hover event, else null. With the app's page
  * `modules`, a URL no page route matches (an endpoint, a file, another app on the origin) is not
@@ -325,6 +355,13 @@ export function interceptClick(event: MouseEvent, router: Navigator, modules?: M
   const url = new URL(anchor.href);
   // Same page, another fragment (or the same one again): no route work, scroll to the target.
   if (url.pathname === location.pathname && url.search === location.search && (url.hash || location.hash)) {
+    // Another fragment (`#` included), no route navigation in flight: the browser's own fragment navigation (`hashchange`,
+    // `:target`, its history entry); its popstate keys the entry (`notePopstate`). The shown entry's position is saved now.
+    if (url.href.includes("#") && url.href !== location.href && !current && !anchor.hasAttribute("data-rivet-replace")) {
+      leave(true, index);
+      fragment = url.href;
+      return;
+    }
     event.preventDefault();
     if (url.href !== location.href) {
       if (!current) leave(true, index);
@@ -355,9 +392,23 @@ export function interceptClick(event: MouseEvent, router: Navigator, modules?: M
   started(nav);
   go(router, url, replace);
 }
+// The URL of a same-document fragment link the browser is navigating to (`interceptClick` let it through).
+let fragment: string | undefined;
 /** Back/forward: the next settled route restores its saved position. */
 export function notePopstate(event?: PopStateEvent): void {
   if (event && popBlocked(event)) return;
+  if (fragment !== undefined) {
+    const href = fragment;
+    fragment = undefined;
+    // The fragment link's own entry (pushed by the browser, scrolled to its target): number it, focus the target.
+    if (href === location.href) {
+      enter(++index);
+      committed = href;
+      const target = fragmentTarget(new URL(href));
+      if (target) focusOn(target);
+      return;
+    }
+  }
   traversal = true;
   const i = entryIndex();
   const from = new URL(committed),

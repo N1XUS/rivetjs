@@ -65,7 +65,7 @@ The `_data.json` files hold the route data. When a visitor clicks a link on an i
 
 A page with nothing to resume ships no JavaScript at all: no loader, no state script, no preload links. Nothing to resume means no event handlers, no signals read in the markup, no `clientEffect` and no forms. The build decides this per page, from what each page actually rendered. A mixed site keeps JavaScript on its interactive pages only.
 
-On such a page, links load the next document, like on any static site. The client router does not count as a reason to ship JavaScript in `mode: "static"`. To keep in-place navigation on every page, set `rivetRouter({ clientRouter: true })` (the default in `mode: "server"`).
+On such a page, links load the next document, like on any static site. The client router does not count as a reason to ship JavaScript (in `mode: "server"` too). To keep in-place navigation on every page, set `rivetRouter({ clientRouter: true })`.
 
 When no page resumes at all:
 

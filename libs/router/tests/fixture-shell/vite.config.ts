@@ -7,6 +7,7 @@ const derived = process.env.RIVET_RESUME_MODEL === "derived";
 export default defineConfig({
   plugins: [
     rivetRouter({
+      clientRouter: true,
       ...(derived ? { resume: { model: "derived" as const }, outDir: ".rivet-derived" } : {}),
       routeRules: {
         "/**": { shell: true },

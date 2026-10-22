@@ -1,5 +1,8 @@
 import { signal } from "@rivetjs/reactivity";
 
+// CSR: the client applies route heads (the shell has none).
+export const head = { title: "CSR home" };
+
 export default function Home() {
   const count = signal(0);
   return (

@@ -32,6 +32,16 @@ export default function Layout({ children }: LayoutProps) {
 
 You do not register click handlers. The router listens for clicks on the whole document and handles every link that qualifies.
 
+## When the router is active
+
+The client router is opt-in. By default it never makes a page ship JavaScript: on a page with nothing else to resume (no event handlers, no signals in the markup, no client effects, no forms), links load the next document like on any website. On a page that ships JavaScript anyway, the router comes with it, and links to your pages navigate in place. To navigate in place from every page, turn it on:
+
+```ts title="vite.config.ts"
+rivetRouter({ clientRouter: true });
+```
+
+An app with a single page route has no client router at all. A CSR app (`mode: "csr"`) always routes in the browser.
+
 ## Use `<Link>` for typed links
 
 `<Link>` renders the same plain `<a href>`, with two extras: TypeScript checks `to` against your pages (see [typed routes](./typed-routes.md)), and its props set the router's options for this link.
@@ -97,6 +107,8 @@ Use `data-rivet-reload` (or `<Link reload>`) when a page of this app must load a
 5. It scrolls to the top, or to the element named in `#hash`, and moves keyboard focus to the page's first `<h1>` (inside `<main>` if there is one), so screen readers announce the new page.
 
 Back and forward buttons restore the scroll position you had on that page.
+
+A link to another `#fragment` of the page you are on (`href="#terms"`, or `href="#"` to clear it) is not a route navigation: the router leaves it to the browser, which scrolls to the target, updates `:target` and fires `hashchange`, so hash-driven overlays and CSS `:target` styles work. The router only saves the scroll position for the back button and moves focus to the target. A link to the same fragment again, one marked `data-rivet-replace`, or one clicked while another page is still loading is handled by the router instead (no new history entry, no `hashchange`).
 
 If rendering the new page throws after the URL changed (a bug in the page, a module the browser cannot use), the router loads that URL's document instead, so the URL and the page never disagree. It does this at most once per URL within 10 seconds, so a page whose document fails too does not reload forever. In development the error overlay shows the error first.
 

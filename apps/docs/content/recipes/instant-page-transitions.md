@@ -28,7 +28,7 @@ export default defineConfig({
 
 Every same-origin link that loads a document is now prefetched on intent. For one link only, set the `prefetch` prop instead. The router notices the prop in your sources and turns the feature on.
 
-A link to one of your app's pages is handled by the client router, which already loads the next page's data and code on hover. A link whose path matches none of your page routes (a page served by another app on the same origin, a static file, an endpoint) loads a whole document on click; the router finds these links itself, so they need no `reload`. Those links, and links you mark with `reload`, take `prefetch`:
+When the client router is active on the page (an interactive page, or every page with `clientRouter: true`; see [when the router is active](../guides/routing/links-and-navigation.md#when-the-router-is-active)), a link to one of your app's pages is handled by it, and it already loads the next page's data and code on hover. A link whose path matches none of your page routes (a page served by another app on the same origin, a static file, an endpoint) loads a whole document on click; the router finds these links itself, so they need no `reload`. Those links, and links you mark with `reload`, take `prefetch`:
 
 ```tsx
 import { Link } from "@rivetjs/router/link";

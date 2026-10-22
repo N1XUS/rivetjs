@@ -10,4 +10,4 @@ const secret: Plugin = {
 
 // Document links (`tests/document-links.test.ts`): links to URLs no page route matches load documents, so do links to
 // document routes (pages whose browser graph reaches a server-only module: `report`, `secret`).
-export default defineConfig({ plugins: [rivetRouter({ serverOnly: ["virtual:fixture-secret"] }), secret], logLevel: "warn" });
+export default defineConfig({ plugins: [rivetRouter({ clientRouter: true, serverOnly: ["virtual:fixture-secret"] }), secret], logLevel: "warn" });

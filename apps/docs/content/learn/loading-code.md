@@ -40,7 +40,7 @@ When a chunk loads depends on how the element is used. The server decides this f
 | `clientEffect` / `clientEvent` on `window` or `document` | **idle**: when the browser has nothing else to do |
 | `clientEvent` on an element | **visible** |
 
-A `clientEvent` with `standalone: false` only resumes when something else on the page does. On its own, the page ships no JavaScript. The router's link listeners use it in static builds (`rivetRouter({ clientRouter })`).
+A `clientEvent` with `standalone: false` only resumes when something else on the page does. On its own, the page ships no JavaScript. The router's link listeners use it unless you turn the client router on for every page (`rivetRouter({ clientRouter: true })`).
 
 A `clientEvent` with `match` (a CSS selector) runs only for events inside a matching element, and its chunk loads only then. The router listens for clicks and hovers with `match: "a"`, so a first click on a plain button loads no router code.
 

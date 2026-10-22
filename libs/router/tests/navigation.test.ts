@@ -18,12 +18,16 @@ const configFile = root + "vite.config.ts";
 
 interface TestWindow extends Window {
   __said: string[];
+  __hashes: string[];
 }
 
 /** Record every distinct text the live region shows (clear then set yields "", text). */
 function instrument() {
   const w = window as unknown as TestWindow;
   w.__said = [];
+  // Same-document fragment links are the browser's own navigations: `hashchange` fires (hash-driven overlays).
+  w.__hashes = [];
+  addEventListener("hashchange", () => w.__hashes.push(location.hash));
   document.addEventListener("securitypolicyviolation", (event) => console.error("CSP " + event.violatedDirective + " " + event.blockedURI));
   new MutationObserver(() => {
     const region = document.querySelector("[aria-live]");
@@ -124,6 +128,9 @@ test(
         await page.waitForFunction(() => document.activeElement?.id === "one");
         assert.ok((await scrolled()) > 2000);
         assert.equal(await page.evaluate(() => history.length), length + 1);
+        // Not intercepted (alpha.1 report: hash overlays broke): `hashchange` fired, `:target` matches.
+        await page.waitForFunction(() => (window as unknown as TestWindow).__hashes.join() === "#one");
+        assert.equal(await page.evaluate(() => document.querySelector(":target")?.id), "one");
         // Same page instance, same state, no route data fetched, nothing announced.
         assert.equal(await page.textContent("#count"), "Count 1");
         assert.equal(await page.evaluate(() => (document.querySelector("h1") as unknown as { mark?: number }).mark), 1);
@@ -138,6 +145,7 @@ test(
         await page.waitForURL(app.url + "/");
         await near(0);
         assert.equal((await state())?.mine, "home");
+        await page.waitForFunction(() => (window as unknown as TestWindow).__hashes.join() === "#one,");
         await page.goForward();
         await page.waitForURL(/\/#one$/);
         await near(far);
@@ -158,6 +166,21 @@ test(
         await page.waitForURL(app.url + "/");
         await near(0);
         assert.equal(await page.evaluate(() => history.length), length + 1);
+        assert.equal(await page.textContent("#count"), "Count 1");
+        assert.deepEqual(data, []);
+      });
+
+      await t.test("an empty fragment link (`#`, overlay close) is the browser's too: hashchange, top, no route work", async () => {
+        const length = await page.evaluate(() => history.length);
+        await page.evaluate(() => ((window as unknown as TestWindow).__hashes = []));
+        await click("#to-one");
+        await page.waitForURL(/\/#one$/);
+        await click("#close");
+        await page.waitForURL(/\/#$/);
+        await near(0);
+        await page.waitForFunction(() => (window as unknown as TestWindow).__hashes.join() === "#one,");
+        assert.equal(await page.evaluate(() => document.querySelector(":target")), null);
+        assert.equal(await page.evaluate(() => history.length), length + 2);
         assert.equal(await page.textContent("#count"), "Count 1");
         assert.deepEqual(data, []);
       });

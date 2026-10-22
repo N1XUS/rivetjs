@@ -369,11 +369,15 @@ test("CSR mode: index.html shell mounts the app; client navigation needs no serv
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("request", (request) => request.resourceType() === "document" && documents.push(new URL(request.url()).pathname));
     await page.goto(app.url + "/");
+    // The route head applies in the browser (alpha.1 report: the shell's title never changed): first render + navigations.
+    const titled = (title: string) => page.waitForFunction((title) => document.title === title, title);
+    await titled("CSR home");
     await page.getByRole("button", { name: "Count 0" }).click();
     await page.getByRole("button", { name: "Count 1" }).waitFor();
     await page.getByRole("link", { name: "About" }).click();
     await page.waitForSelector("#about");
     assert.equal(await page.textContent("#about"), "About /about");
+    await titled("About /about");
     // No page route matches `/nowhere`: a document load (the SPA fallback shell renders the 404 view).
     await page.getByRole("link", { name: "Nowhere" }).click();
     await page.waitForURL(app.url + "/nowhere");
@@ -386,10 +390,12 @@ test("CSR mode: index.html shell mounts the app; client navigation needs no serv
     await page.goBack();
     await page.goForward();
     await shopHeading("Shop page a");
+    await titled("A · Shop");
     await page.click("#shop-count");
     await page.fill("#shop-input", "typed");
     await page.click('#shop a[href="/shop/b"]');
     await shopHeading("Shop page b");
+    await titled("B · Shop");
     assert.equal(await page.textContent("#shop-count"), "Shop 1");
     assert.equal(await page.inputValue("#shop-input"), "typed");
     assert.equal(await page.textContent("#shop-url"), "/shop/b");

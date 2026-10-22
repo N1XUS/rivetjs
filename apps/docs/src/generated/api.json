@@ -25121,7 +25121,7 @@
      "name": "clientRouter",
      "kind": "property",
      "signature": "clientRouter?: boolean",
-     "doc": "Client-side navigation on pages with nothing else to resume (Astro's `<ClientRouter />` model).\n`true`: every resumed page ships the router (link clicks / intent prefetch / back-forward served in\nplace). `false`: the router's listeners alone do not make a page resumable — a page without resumable\nsymbols, client effects or forms ships zero JS (no loader, state script or modulepreloads) and its\nlinks load documents; interactive pages still route in place. Default: `false` in `static` mode,\n`true` in `server` mode (ignored in `csr`).",
+     "doc": "Client-side navigation on pages with nothing else to resume (opt-in, Astro's `<ClientRouter />` model).\n`true`: every page ships the router (link clicks / intent prefetch / back-forward served in place).\n`false` (default): the router's listeners alone do not make a page resumable — a page without resumable\nsymbols, client effects or forms ships zero JS (no loader, state script or modulepreloads) and its\nlinks load documents; pages that resume anyway still route in place. Ignored in `csr` (always routed).",
      "optional": true
     },
     {

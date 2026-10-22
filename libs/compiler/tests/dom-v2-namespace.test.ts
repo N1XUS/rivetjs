@@ -120,3 +120,32 @@ test("B1: unset handler props (direct and delegated) bind nothing", async () => 
   assert.equal(focused, 1);
   assert.throws(() => mount(() => A({ onFocus: "nope" }), host), /Event handler must be a function/);
 });
+
+// EXT-A item 1 (alpha.1 report): an `<a>` root holding an `<svg>` is HTML — the SVG-only tags inside
+// the `<svg>` (`<path>`) do not make the link an SVG `<a>`; parsed inside `<svg>`, the HTML `<span>`
+// after it broke out of the foreign content and the walk crashed (`firstChild` of null).
+test("an <a> root wrapping an <svg> icon stays HTML, siblings after the <svg> included", async () => {
+  const r = v2(`
+import { signal } from "@rivetjs/reactivity";
+export const name = signal("Rivet");
+export const Logo = () => <a href="/" class="logo"><svg viewBox="0 0 10 10"><path d="M0 0h10" /></svg><span>{name()}</span></a>;
+export const Mark = () => <a href="#m"><g><path d="M0 0" /></g></a>;
+export const Page = () => <div><Logo /><p>after</p></div>;`);
+  assert.deepEqual(r.diagnostics, []);
+  assert.match(r.code, /_tpl\("<a href=\\"\/\\" class=logo><svg/, r.code);
+  assert.doesNotMatch(r.code, /class=logo>.*", 1\)/, r.code);
+  assert.match(r.code, /_tpl\("<a href=#m><g>.*", 1\)/, r.code);
+  const { host } = setup();
+  const { Page, Mark, name } = await load(r.code);
+  const { mount } = await import(runtime);
+  mount(() => [Page(), Mark()], host);
+  const [logo, mark] = [...host.querySelectorAll("a")];
+  assert.equal(logo!.namespaceURI, HTML);
+  assert.equal(logo!.querySelector("svg")!.namespaceURI, SVG);
+  assert.equal(logo!.querySelector("span")!.namespaceURI, HTML);
+  assert.equal(logo!.querySelector("span")!.textContent, "Rivet");
+  assert.equal(mark!.namespaceURI, SVG);
+  name.set("R");
+  assert.equal(logo!.querySelector("span")!.textContent, "R");
+  assert.equal(host.querySelector("p")!.namespaceURI, HTML);
+});

@@ -1,6 +1,8 @@
 import { signal } from "@rivetjs/reactivity";
 import type { LayoutProps } from "@rivetjs/router";
 
+export const head = { titleTemplate: "%s · Shop" };
+
 // Nested layout: stays mounted across /shop/* navigation.
 export default function ShopLayout({ url, children }: LayoutProps) {
   const count = signal(0);

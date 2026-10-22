@@ -11,7 +11,7 @@ export default function Home() {
       </button>
       <a href="#one" id="to-one">To one</a>
       <p id="one" class="far">
-        One <a href="#one" id="again-one">Again</a> <a href="/" id="no-hash">Top</a>
+        One <a href="#one" id="again-one">Again</a> <a href="/" id="no-hash">Top</a> <a href="#" id="close">Close</a>
       </p>
     </section>
   );

@@ -26,7 +26,7 @@ const config = (adapter: RivetRouterOptions["adapter"], ssr: boolean, extra: Par
   root,
   configFile: false as const,
   logLevel: "silent" as const,
-  plugins: [rivetRouter({ styles: ["src/styles.css"], adapter, ...extra })],
+  plugins: [rivetRouter({ clientRouter: true, styles: ["src/styles.css"], adapter, ...extra })],
   ...(ssr ? { build: { ssr: true } } : {}),
 });
 /** Client build (shared by every target) + the target's server build (packages the platform output). */

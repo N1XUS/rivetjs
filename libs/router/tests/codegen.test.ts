@@ -234,10 +234,10 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
   assert.match(app, /if \(!anchor \|\| anchor\.getAttribute\("data-rivet-prefetch"\) === "none"\) return;/);
   // Z1: router listeners load on interaction (no eager chunk, no boot at idle); the nested App arms its
   // level sync from the first navigation entry point instead of a load effect.
-  assert.match(app, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => notePopstate\(event\), \{ preload: "intent" \}\);/);
+  assert.match(app, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => notePopstate\(event\), \{ preload: "intent", standalone: false \}\);/);
   assert.match(
     app,
-    /clientEvent\(document, "click", \(event: MouseEvent\) => interceptClick\(event, router, modules\), \{ preload: "intent", match: "a" \}\);/,
+    /clientEvent\(document, "click", \(event: MouseEvent\) => interceptClick\(event, router, modules\), \{ preload: "intent", match: "a", standalone: false \}\);/,
   );
   assert.doesNotMatch(app, /clientEffect|preload: "eager"|\barm\b/);
   const deep = generate(routeTable(["_layout.tsx", "index.tsx", "shop/_layout.tsx", "shop/a.tsx", "shop/b.tsx"]), { routesDir: "src/routes" }).files[
@@ -246,14 +246,17 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
   assert.match(deep, /const arm = \(\) => _arm\(router, \(\) => _sync\(router, nest, NEST\)\);/);
   assert.match(
     deep,
-    /clientEvent\(document, "click", \(event: MouseEvent\) => \(arm\(\), interceptClick\(event, router, modules\)\), \{ preload: "intent", match: "a" \}\);/,
+    /clientEvent\(document, "click", \(event: MouseEvent\) => \(arm\(\), interceptClick\(event, router, modules\)\), \{ preload: "intent", match: "a", standalone: false \}\);/,
   );
-  assert.match(deep, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => \(arm\(\), notePopstate\(event\)\), \{ preload: "intent" \}\);/);
+  assert.match(
+    deep,
+    /clientEvent\(window, "popstate", \(event: PopStateEvent\) => \(arm\(\), notePopstate\(event\)\), \{ preload: "intent", standalone: false \}\);/,
+  );
   assert.doesNotMatch(deep, /clientEffect|preload: "eager"/);
-  assert.match(bare, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => notePopstate\(event\), \{ preload: "intent" \}\);/);
-  assert.match(bare, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a" \}\);/);
+  assert.match(bare, /clientEvent\(window, "popstate", \(event: PopStateEvent\) => notePopstate\(event\), \{ preload: "intent", standalone: false \}\);/);
+  assert.match(bare, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a", standalone: false \}\);/);
   // ROUTER-LAZY: only link targets reach the router's listeners (a click / hover elsewhere loads no router chunk).
-  assert.match(bare, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a" \}\);/);
+  assert.match(bare, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a", standalone: false \}\);/);
   assert.doesNotMatch(bare, /\barm\b|_arm/);
 });
 
@@ -480,4 +483,20 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   // CSR mode has no server payload: the option is ignored.
   const csr = generate(routeTable(["_layout.tsx", "index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr", derived: true }).files["app.tsx"]!;
   assert.doesNotMatch(csr, /export default function Root|revived\(/);
+});
+
+test("csr: route loads apply the route head in the browser (`_csrHead`); server / static output has none", () => {
+  const files = ["_layout.tsx", "index.tsx", "shop/_layout.tsx", "shop/a.tsx"];
+  const csr = generate(routeTable(files), { routesDir: "src/routes", mode: "csr" }).files["app.tsx"]!;
+  assert.match(csr, /import \* as Layout\d+\$ from "\.\.\/src\/routes\/_layout\.tsx";/);
+  assert.match(csr, /const HEADS: readonly \(readonly unknown\[\]\)\[\] = \[\[Layout\d+\$, Layout\d+\$\], \[Layout\d+\$\]\];/);
+  assert.match(csr, /\.then\(\(\[data, page\]\) => _csrHead\(data, HEADS\[ROUTES\[n\]!\[0\]\]!, page, match\)\)/);
+  assert.doesNotMatch(csr, /rankMerge/);
+  const kit = generate(routeTable(files), { routesDir: "src/routes", mode: "csr", head: "components" }).files["app.tsx"]!;
+  assert.match(kit, /import \{ rankMerge \} from "@rivetjs\/router\/head";/);
+  assert.match(kit, /_csrHead\(data, HEADS\[ROUTES\[n\]!\[0\]\]!, page, match, rankMerge\)\)\.then\(\(result\) => applyRouteHead\(result/);
+  for (const mode of ["server", "static"] as const) {
+    const app = generate(routeTable(files), { routesDir: "src/routes", mode }).files["app.tsx"]!;
+    assert.doesNotMatch(app, /_csrHead|HEADS|import \* as/, mode);
+  }
 });

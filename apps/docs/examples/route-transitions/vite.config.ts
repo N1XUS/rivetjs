@@ -4,7 +4,7 @@ import { rivetRouter } from "@rivetjs/router/vite";
 
 // #region demo
 export default defineConfig({
-  // `transitions: true` turns on animated route changes and pending state.
-  plugins: [rivetRouter({ styles: ["src/styles.css"], transitions: true }), tailwindcss()],
+  // `transitions: true` turns on animated route changes and pending state; `clientRouter: true` routes every page in place.
+  plugins: [rivetRouter({ styles: ["src/styles.css"], transitions: true, clientRouter: true }), tailwindcss()],
 });
 // #endregion

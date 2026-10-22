@@ -41,7 +41,7 @@ const BOOLEAN_NAMES: &[&str] = crate::html::BOOLEAN_ATTRIBUTES;
 /// SVG element names HTML does not define (a superset of `SVG_TAGS`): a template rooted at one parses
 /// inside `<svg>` (`_tpl` flag 1) and its subtree walks in the SVG namespace. `image` included: the
 /// HTML parser rewrites it to `<img>`. `a` (also an HTML tag) roots an SVG template only when it holds
-/// one of these (`svg_root`); `script` / `style` are diagnostics (`report_dom`).
+/// one of these outside a nested `<svg>` (`svg_root`); `script` / `style` are diagnostics (`report_dom`).
 const SVG_ONLY: &[&str] = &[
     "animate", "animateMotion", "animateTransform", "circle", "clipPath", "defs", "desc", "ellipse", "feBlend",
     "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap",
@@ -371,9 +371,15 @@ impl<'t, 'a> Compiler<'t, 'a> {
         SVG_ONLY.contains(&tag) || (tag == "a" && self.svg_descendant(&el.children))
     }
 
+    /// An SVG-only element below `children`, not counting the subtree of a nested `<svg>`: an `<svg>` icon
+    /// inside a link (`<a><svg><path/></svg><span/></a>`) opens its own namespace, so the `<a>` stays HTML
+    /// (parsed inside `<svg>`, its HTML children after the icon would break out of the foreign content).
     fn svg_descendant(&self, children: &'a oxc_allocator::Vec<'a, JSXChild<'a>>) -> bool {
         children.iter().any(|child| match child {
-            JSXChild::Element(child) => SVG_ONLY.contains(&self.tag_of(child)) || self.svg_descendant(&child.children),
+            JSXChild::Element(child) => {
+                let tag = self.tag_of(child);
+                tag != "svg" && (SVG_ONLY.contains(&tag) || self.svg_descendant(&child.children))
+            }
             JSXChild::Fragment(fragment) => self.svg_descendant(&fragment.children),
             _ => false,
         })

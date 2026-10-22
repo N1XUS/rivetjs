@@ -32,6 +32,7 @@ export { mergeRouteCSS } from "./route-css.ts";
 import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
 import { lazyRowsBuild, lazyRowsHarness } from "./lazy-rows.ts";
+import { unexportHead } from "./head-strip.ts";
 import { analyzeReach, serverOnlyOption, RV_REACH, type Reach, type ReachProblem, type ServerOnlyOption } from "./reach.ts";
 import { compileRoutes } from "@rivetjs/runtime/router/server";
 import type { createApp as CreateApp, GeneratedEntry } from "../server/app.ts";
@@ -169,12 +170,11 @@ export interface RivetRouterOptions {
    */
   prefetchPaths?: boolean;
   /**
-   * Client-side navigation on pages with nothing else to resume (Astro's `<ClientRouter />` model).
-   * `true`: every resumed page ships the router (link clicks / intent prefetch / back-forward served in
-   * place). `false`: the router's listeners alone do not make a page resumable — a page without resumable
+   * Client-side navigation on pages with nothing else to resume (opt-in, Astro's `<ClientRouter />` model).
+   * `true`: every page ships the router (link clicks / intent prefetch / back-forward served in place).
+   * `false` (default): the router's listeners alone do not make a page resumable — a page without resumable
    * symbols, client effects or forms ships zero JS (no loader, state script or modulepreloads) and its
-   * links load documents; interactive pages still route in place. Default: `false` in `static` mode,
-   * `true` in `server` mode (ignored in `csr`).
+   * links load documents; pages that resume anyway still route in place. Ignored in `csr` (always routed).
    */
   clientRouter?: boolean;
   /**
@@ -996,9 +996,22 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       };
     },
   };
+  // Server / static apps: route modules' `head` export leaves the client build (server data; `head-strip.ts`).
+  const headStrip: Plugin = {
+    name: "vite-plugin-rivet-router-head",
+    enforce: "post",
+    transform(code, id, transformOptions) {
+      if (mode === "csr" || transformOptions?.ssr || this.environment?.config?.consumer === "server") return null;
+      const file = id.split("?")[0]!;
+      if (!serverExports.modules.some((path) => resolve(root, path) === file)) return null;
+      const out = unexportHead(code);
+      return out === null ? null : { code: out, map: null };
+    },
+  };
   return [
     router,
     ...plugins,
+    headStrip,
     // Measurement only (`RIVET_LAZY_ROWS=swap`, dev / lazy-rows tools): inert otherwise.
     lazyRowsHarness(() => resolve(root, outDir, "entry.server.tsx")),
     ...(adapter ? [targetEntryPlugin(adapter, { serverEntry: () => resolve(root, outDir, "entry.server.tsx"), mode: () => mode })] : []),

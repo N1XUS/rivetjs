@@ -1,4 +1,4 @@
 import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
-export default defineConfig({ plugins: [rivetRouter({ styles: ["src/styles.css"] })], logLevel: "warn" });
+export default defineConfig({ plugins: [rivetRouter({ clientRouter: true, styles: ["src/styles.css"] })], logLevel: "warn" });

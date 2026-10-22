@@ -7,6 +7,6 @@ import { rivetRouter } from "@rivetjs/router/vite";
 // imports of visual-matrix demos (theme-swap). Lazy rows + DOM-DATA
 // are on by default (`resume.lazyRows` / `resume.domData`, LAZY-FLIP 2026-10-22).
 export default defineConfig({
-  plugins: [rivetRouter({ styles: ["src/styles.css"], images: true }), tailwindcss()],
+  plugins: [rivetRouter({ clientRouter: true, styles: ["src/styles.css"], images: true }), tailwindcss()],
   logLevel: "warn",
 });

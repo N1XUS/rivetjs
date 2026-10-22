@@ -7,6 +7,7 @@ import { rivetRouter } from "@rivetjs/router/vite";
 export default defineConfig({
   plugins: [
     rivetRouter({
+      clientRouter: true,
       styles: ["src/styles.css"],
       resume: { modules: ["src/resume-demo.tsx", "src/page-views.tsx"] },
       images: { presets: { hero: { layout: "full-width" } } },

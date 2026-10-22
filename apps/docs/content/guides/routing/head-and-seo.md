@@ -11,7 +11,7 @@ Search engines and link previews read the `<head>` of your HTML: the title, the 
 
 ## Set a title
 
-Export `head` from a page. Unlike `load(…)`, `head` is not server-only: it stays in the browser build.
+Export `head` from a page. In server and static apps the server writes it into the HTML and the browser build leaves it out, along with code only `head` uses (raw CSS strings, meta helpers): on a client navigation the router receives the next page's head with its data. A CSR app has no server, so there the browser applies `head` (see [client navigation](#client-navigation)).
 
 ```tsx title="src/routes/about.tsx"
 export const head = { title: "About us" };
@@ -142,7 +142,9 @@ If your shell does not call `headTags`, the `head` exports have no effect.
 
 ## Client navigation
 
-When the user follows a link, the router updates `document.title` from the new page's head. Meta and link tags are not changed in the browser. This is fine for search engines and link previews: they load each URL as a full page and read the HTML the server sends.
+When the user follows a link, the router updates `document.title` from the new page's head. Meta and link tags are not changed in the browser.
+
+In a CSR app (`mode: "csr"`) the `index.html` shell has no page head. The browser builds it from the `head` exports of the route's layouts and page on the first render and on every navigation, and sets `document.title` (with the layouts' `titleTemplate`). A `head` function gets `data: undefined` there, because CSR pages have no loaders. This is fine for search engines and link previews: they load each URL as a full page and read the HTML the server sends.
 
 With the [kit](../../ui/kit.md) installed, client navigation also updates meta tags, links and JSON-LD.
 
@@ -156,7 +158,7 @@ With the [kit](../../ui/kit.md) installed, client navigation also updates meta t
 
 ## Common mistakes
 
-- **Using server code in `head`.** `head` is browser code: it cannot call `load(…)` or use values imported from `*.server.ts` modules; the build stops with an error. Read the loader's result from `data`. See [server code in route files](./server-code-in-routes.md).
+- **Using server code in `head`.** `head` cannot call `load(…)` or use values imported from `*.server.ts` modules: the build checks route files as the browser sees them (and a CSR app runs `head` in the browser); the build stops with an error. Read the loader's result from `data`. See [server code in route files](./server-code-in-routes.md).
 - **Setting `document.title` in a component.** The component runs on the server, where there is no `document`. Use `head`, or `<Title>` from the [kit](../../ui/kit.md).
 - **Expecting meta tags to change after client navigation.** Without the kit, only the title updates in the browser.
 

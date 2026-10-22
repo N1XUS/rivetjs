@@ -1,3 +1,5 @@
+export const head = ({ url }: { url: URL }) => ({ title: "About " + url.pathname });
+
 export default function About({ url }: { url: URL }) {
   return (
     <section>
