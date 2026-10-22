@@ -48,7 +48,7 @@ export default function AiChat() {
   return (
     <main class="mx-auto flex h-[100dvh] max-w-3xl flex-col gap-3 p-4">
       <output id="status">{status()}</output>
-      <ChatConversation id="conv" class="min-h-0 flex-1" isStreaming={() => status() === "streaming"}>
+      <ChatConversation id="conv" class="min-h-0 flex-1" scrollButton isStreaming={() => status() === "streaming"}>
         <ChatConversation.Content>
           <For each={turns} by={(t: Turn) => t.id}>
             {(turn: () => Turn) =>

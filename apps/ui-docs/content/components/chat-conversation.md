@@ -6,7 +6,7 @@ status: experimental
 related: [components/chat-message, components/prompt-input, components/scroll-shadow]
 ---
 
-`ChatConversation` is the scroll container of a thread. It is a `column-reverse` scroller, so the browser itself starts at the bottom and keeps it pinned while content grows: no scroll script runs at load or while tokens stream. When the user scrolls up, `data-at-bottom` goes away and `ScrollButton` appears.
+`ChatConversation` is the scroll container of a thread. It is a `column-reverse` scroller, so the browser itself starts at the bottom and keeps it pinned while content grows: no scroll script runs at load or while tokens stream. With `scrollButton`, `data-at-bottom` goes away when the user scrolls up and `ScrollButton` appears; without it the root has no scroll handler and a conversation is static markup.
 
 Accessibility: the root is a focusable `role="log"` (default name "Conversation"), so new messages are announced politely and keyboard users can scroll it; `isStreaming` sets `aria-busy`. The scroll button is named "Scroll to bottom".
 
@@ -21,7 +21,7 @@ import { ChatConversation } from "@rivetjs/ui/chat-conversation";
 ## Anatomy
 
 ```tsx
-<ChatConversation isStreaming={() => streaming()}>
+<ChatConversation isStreaming={() => streaming()} scrollButton>
   <ChatConversation.Content>…messages…</ChatConversation.Content>
   <ChatConversation.ScrollButton />
 </ChatConversation>
@@ -59,6 +59,7 @@ Every AI component together: a keyed `For` thread of [ChatMessage](/components/c
 | ----------------------------- | -------------------------- | -------------------- |
 | `aria-label`                  | `string`                   | `"Conversation"`     |
 | `isStreaming`                 | `boolean \| () => boolean` | `false`              |
+| `scrollButton`                | `boolean`                  | `false`              |
 | `aria-label` (`ScrollButton`) | `string`                   | `"Scroll to bottom"` |
 | `behavior` (`ScrollButton`)   | `ScrollBehavior`           | `"smooth"`           |
 
@@ -70,4 +71,4 @@ Other `div` attributes pass to the root; `ScrollButton` takes the [Button](/comp
 
 ## Resumability
 
-Pinning is CSS. The scroll handler (button visibility) resumes on the first user scroll; a resumed chat page runs no code until the user interacts.
+Pinning is CSS. Without `scrollButton` the root has no handler: a conversation without the button ships no JS at all. With it, the scroll handler (button visibility) resumes on the first user scroll; a resumed chat page runs no code until the user interacts.

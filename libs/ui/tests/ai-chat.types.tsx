@@ -25,7 +25,7 @@ export const ok = () => {
   const status = signal<PromptInputStatus>("ready");
   const streaming = () => status() === "streaming";
   return (
-    <ChatConversation isStreaming={streaming} class="h-96">
+    <ChatConversation isStreaming={streaming} scrollButton class="h-96">
       <ChatConversation.Content>
         <ChatMessage.User>
           <ChatMessage.Bubble>Hi</ChatMessage.Bubble>

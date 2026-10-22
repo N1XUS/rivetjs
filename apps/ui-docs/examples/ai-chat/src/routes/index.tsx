@@ -64,7 +64,7 @@ export function AiChat() {
   };
   return (
     <div class="flex h-[34rem] w-full max-w-2xl flex-col gap-3">
-      <ChatConversation id="ai-thread" class="min-h-0 flex-1" isStreaming={() => status() !== "ready"}>
+      <ChatConversation id="ai-thread" class="min-h-0 flex-1" scrollButton isStreaming={() => status() !== "ready"}>
         <ChatConversation.Content>
           <For each={turns} by={(turn: Turn) => turn.id}>
             {(turn: () => Turn) =>

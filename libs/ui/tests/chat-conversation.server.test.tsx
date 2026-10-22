@@ -7,7 +7,7 @@ import { ChatConversation } from "../src/components/chat-conversation/index.ts";
 
 test("chat-conversation SSR", async () => {
   const html = await renderToString(() => (
-    <ChatConversation isStreaming>
+    <ChatConversation isStreaming scrollButton>
       <ChatConversation.Content>m</ChatConversation.Content>
       <ChatConversation.ScrollAnchor />
       <ChatConversation.ScrollButton />

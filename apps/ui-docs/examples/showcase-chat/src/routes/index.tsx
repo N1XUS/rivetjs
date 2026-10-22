@@ -203,7 +203,7 @@ export default function ChatShowcase() {
           </Chip>
         </header>
 
-        <ChatConversation id="chat-log" class="min-h-0 flex-1" isStreaming={() => status() !== "ready"}>
+        <ChatConversation id="chat-log" class="min-h-0 flex-1" scrollButton isStreaming={() => status() !== "ready"}>
           <ChatConversation.Content class="px-4 py-6">
             {turns().length === 0 ? (
               <div class="m-auto flex max-w-sm flex-col items-center gap-2 py-24 text-center text-muted">

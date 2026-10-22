@@ -4,8 +4,10 @@
 // styles.
 // - Stick-to-bottom is CSS: the root scrolls with `flex-direction: column-reverse` (the browser opens it at the bottom and
 //   keeps it there while content grows; nothing runs at load or per token). A single inner stack keeps document order.
-// - `data-at-bottom` is server-rendered `"true"`; the root's `scroll` handler (`@rivetjs/cdk/chat` `syncAtBottom`) updates
-//   it, and CSS shows the `ScrollButton` only without it. The button scrolls the root to the end (`scrollToBottom`).
+// - `data-at-bottom` is server-rendered `"true"`; with `scrollButton` the root's `scroll` handler (`@rivetjs/cdk/chat`
+//   `syncAtBottom`) updates it, and CSS shows the `ScrollButton` only without it. The button scrolls the root to the end
+//   (`scrollToBottom`). Without `scrollButton` the root has no handler at all: a conversation without the button is static
+//   markup (no resume region, no loader, no runtime boot — 2026-10-22: a static demo booted ~80 KB for this one handler).
 // - Root = `role="log"` (accessible name `aria-label`, default "Conversation"), focusable for keyboard scrolling;
 //   `isStreaming` (value or accessor) sets `aria-busy` so screen readers wait for the finished message.
 import { conversationViewportOf, scrollToBottom, syncAtBottom } from "@rivetjs/cdk/chat";
@@ -28,10 +30,15 @@ interface ChatConversationRootProps extends DivProps {
   "aria-label"?: string;
   /** A response is streaming (`aria-busy`). Value or accessor. */
   isStreaming?: boolean | (() => boolean);
+  /**
+   * The conversation renders a `ScrollButton`: the root tracks `data-at-bottom` on scroll (the button's visibility).
+   * Off (default), the root has no scroll handler and a static conversation ships no JS.
+   */
+  scrollButton?: boolean;
 }
 
 const ChatConversationRoot = (props: ChatConversationRootProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class", "children", "aria-label", "isStreaming"]);
+  const [local, rest] = splitLive(props, ["class", "children", "aria-label", "isStreaming", "scrollButton"]);
   const busy = (): "true" | undefined => {
     const value = local.isStreaming;
     return (typeof value === "function" ? value() : value) === true ? "true" : undefined;
@@ -46,7 +53,7 @@ const ChatConversationRoot = (props: ChatConversationRootProps): JSX.Element => 
       data-chat-viewport=""
       data-at-bottom="true"
       data-slot="chat-conversation"
-      onScroll={(event: Event) => syncAtBottom(event.currentTarget as Element)}
+      onScroll={local.scrollButton ? (event: Event) => syncAtBottom(event.currentTarget as Element) : undefined}
       {...rest}
     >
       <div class={SLOTS.stack()}>{local.children}</div>

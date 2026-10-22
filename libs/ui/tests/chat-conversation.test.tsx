@@ -29,7 +29,7 @@ test("chat-conversation: exports", () => {
 
 test("chat-conversation: at-bottom sync + scroll button", () => {
   const r = render(() => (
-    <ChatConversation>
+    <ChatConversation scrollButton>
       <ChatConversation.Content>m</ChatConversation.Content>
       <ChatConversation.ScrollButton behavior="auto" />
     </ChatConversation>
@@ -45,5 +45,20 @@ test("chat-conversation: at-bottom sync + scroll button", () => {
   viewport.scrollTo = ((options: ScrollToOptions) => (target = options)) as never;
   press(r.container.querySelector("[data-slot=chat-conversation-scroll-button]")!);
   assert.deepEqual(target, { top: 1000, behavior: "auto" });
+  r.unmount();
+});
+
+test("chat-conversation: without scrollButton the root has no scroll handler", () => {
+  const r = render(() => (
+    <ChatConversation>
+      <ChatConversation.Content>m</ChatConversation.Content>
+    </ChatConversation>
+  ));
+  const viewport = r.container.querySelector("[data-chat-viewport]") as HTMLElement;
+  Object.defineProperty(viewport, "scrollHeight", { configurable: true, value: 1000 });
+  Object.defineProperty(viewport, "clientHeight", { configurable: true, value: 100 });
+  viewport.scrollTop = 0;
+  viewport.dispatchEvent(new W.Event("scroll"));
+  assert.equal(viewport.getAttribute("data-at-bottom"), "true");
   r.unmount();
 });

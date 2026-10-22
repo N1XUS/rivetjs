@@ -13,7 +13,7 @@ const TURNS = Array.from({ length: 12 }, (_, i) =>
 
 export function ScrollButtonDemo() {
   return (
-    <ChatConversation id="long-thread" class="h-72 w-[28rem] rounded-xl border border-separator">
+    <ChatConversation id="long-thread" scrollButton class="h-72 w-[28rem] rounded-xl border border-separator">
       <ChatConversation.Content>
         {TURNS.map((turn) =>
           turn.role === "user" ? (
