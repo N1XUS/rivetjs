@@ -162,11 +162,15 @@ export function encodeLazy<S>(
         }
       // Keyed reads (T6) of signals no row reads plainly: `[signal ref, kind, [k, key, …] | 1], …` flat; 1 = every row reads
       // its own key, the key path of `by` (the browser derives it: no per-row bytes).
+      // A module static data reference (`{f}`, DIET-STATE 1) as the items: the browser registers the rows before its chunk
+      // loads, so the keys travel (1 needs the items decoded).
+      const shown = encoder.table[items] as TableEntry,
+        inline = !(shown !== null && typeof shown === "object" && "f" in shown);
       const keyed: unknown[] = [];
       for (const record of lazy.keyed ?? [])
         if (!own.has(record.signal) && !lazy.reads.has(record.signal))
           try {
-            keyed.push(encoder.ref(record.signal), record.kind, ownKeys(lazy, record.rows) ? 1 : record.rows);
+            keyed.push(encoder.ref(record.signal), record.kind, inline && ownKeys(lazy, record.rows) ? 1 : record.rows);
           } catch {
             flags |= 8;
           }
@@ -204,7 +208,6 @@ export function encodeLazy<S>(
       // Trailing slots only as far as needed (0 / "" = none).
       // The row count at [13] when the items entry does not show it (an `i` child of a tree, a DOM-backed `D` tree): the
       // lazy add-on's row range.
-      const shown = encoder.table[items] as TableEntry;
       const count = Array.isArray(shown) || (shown !== null && typeof shown === "object" && "j" in shown) ? 0 : lazy.items.length;
       const tail: unknown[] = [reads, state, types, providers.length ? providers : 0, lazy.effects ?? 0, keyed.length ? keyed : 0, count];
       while (tail.length && (tail[tail.length - 1] === 0 || tail[tail.length - 1] === "")) tail.pop();

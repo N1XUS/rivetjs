@@ -364,6 +364,9 @@ pub struct Resumed {
     /// Function Bridge C11 / T13: captured store declarators → their literal paths (server
     /// `const s = _rStorePaths(createStore(…), [paths])`, `stores.rs`).
     pub store_paths: FxHashMap<NodeId, Vec<String>>,
+    /// DIET-STATE 1c: captured pure-literal component `const`s → their hoisted module name (`const x = __rivetData0_x`,
+    /// hoist `const __rivetData0_x = <literal>;`, both targets; `refs.rs` `local_data`).
+    pub local_data: FxHashMap<NodeId, String>,
     /// Function Bridge C12 / T24: data classes the server registers at module end (`_rClass(Cls, id)`, `classes.rs`).
     pub classes: Vec<ClassReg>,
     /// Function Bridge C12 / T24: class-field arrows of registered classes → symbol id (server `_rFn(id, arrow, [this])`).
@@ -378,6 +381,8 @@ pub struct ModuleRef {
     pub value: String,
     pub id: String,
     pub imported: bool,
+    /// DIET-STATE 1: module static data (stamp flag `2`: nested objects stamped with their key paths).
+    pub data: bool,
 }
 
 
@@ -3617,7 +3622,10 @@ pub fn analyze(
         symbol.id = id;
     }
     // Function Bridge C3: one `() => (g)` symbol per module reference (`refs.rs`), after the closure symbols.
-    let module_refs = a.module_ref_symbols(module, &mut symbols, &mut scope, diags);
+    let mut module_refs = a.module_ref_symbols(module, &mut symbols, &mut scope, diags);
+    // DIET-STATE 1c: captured pure-literal component locals hoisted to module scope as module static data.
+    let (local_data, local_refs) = a.local_data(module, &queue, &mut symbols, &mut scope);
+    module_refs.extend(local_refs);
     // Function Bridge C12 / T24: data class registrations + class symbols + class-field arrow symbols.
     let (class_regs, class_arrows) = a.class_symbols(module, &class_verdicts, &mut symbols, &mut scope);
     // Function Bridge T6 (C5): function declarations register at the top of their statement list (hoisted, thunk captures).
@@ -3662,6 +3670,7 @@ pub fn analyze(
         group_after,
         group_of,
         store_paths,
+        local_data,
         classes: class_regs,
         class_arrows,
         for_rows,

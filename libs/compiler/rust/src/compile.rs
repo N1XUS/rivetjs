@@ -1281,6 +1281,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 return Some(replaced);
             }
         }
+        // DIET-STATE 1c: the DOM resume output hoists the same literals (its symbol modules import them).
+        if !self.server && self.resumed.as_ref().is_some_and(|r| !r.local_data.is_empty()) {
+            if let Some(out) = self.local_data_node(id) {
+                return Some(out);
+            }
+        }
         // Plain server builds (no resume): `clientEvent(…)` never attaches on the server, but its target argument
         // (`window` / `document`) would still be evaluated and throw where those globals do not exist; the call lowers
         // to `undefined` (resume builds record it as a site instead, `resume_node`).
@@ -4578,6 +4584,20 @@ impl<'t, 'a> Compiler<'t, 'a> {
     }
 
     /// Server-target resume rewrites outside JSX: browser-only calls are recorded, never run.
+    /// DIET-STATE 1c (`resume/refs.rs` `local_data`): a captured pure-literal component `const` → module hoist
+    /// `const __rivetData<n>_x = <literal>;` + `x = __rivetData<n>_x` in place (server and DOM resume targets).
+    fn local_data_node(&mut self, id: NodeId) -> Option<Expr> {
+        let tree = self.tree;
+        let hoisted = self.resumed.as_ref()?.local_data.get(&id)?.clone();
+        let AstKind::VariableDeclarator(d) = tree.kind(id) else { return None };
+        let init = d.init.as_ref()?;
+        let span = tree.span(id);
+        let head = tree.text_of(Span::new(span.start, init.span().start)).trim_end().trim_end_matches('=').trim_end().to_string();
+        let value = self.expr(init);
+        self.hoists.push(format!("const {hoisted} = {};", value.print()));
+        Some(Expr::Stmts(format!("{head} = {hoisted}")))
+    }
+
     fn resume_node(&mut self, id: NodeId) -> Option<Expr> {
         let tree = self.tree;
         // Function Bridge C12 / T24: a registered data class's field arrow captures the instance (`_rFn(id, arrow, [this])`).
@@ -4742,6 +4762,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
             if self.resumed.as_ref().is_some_and(|r| r.ref_cells.contains(&id)) {
                 let call = self.r("refCell", Vec::new());
                 return Some(Expr::Stmts(format!("{head} = {}", call.print())));
+            }
+            // DIET-STATE 1c: a captured pure-literal local → hoisted module static data (`x = __rivetData0_x`), both targets.
+            if let Some(out) = self.local_data_node(id) {
+                return Some(out);
             }
             // Function Bridge C11 / T13: a captured store with literal paths → `s = _rStorePaths(createStore(…), [paths])`.
             if self.server {

@@ -19,6 +19,8 @@ const HINTS = {
     "a resumed binding or handler captures a value provided through an identified context; pass it to createResume({ contexts: [[token, value]] }) in the resume entry, or register the token with resumableContext() so its values ship in the page state",
   parser:
     "the HTML parser restructured the server markup (rows directly in a <table> get an implied <tbody>, a block element closes an open <p>, table content is foster-parented); wrap rows in <tbody> and keep the nesting valid (the compiler reports the statically visible cases, RV1005)",
+  moduleData:
+    "module static data resumes by reference (the browser uses its own module's value, DIET-STATE 1): do not change a module-level const that components read — copy it ([...rows], structuredClone(data)) or build it inside the component",
   moduleRef:
     "two installed copies of one package are loaded (their versions share the id), so the browser resumes both as the one its chunk imports; dedupe the package",
   lazy: "the row renders differently in the browser than on the server (Date.now / Math.random / browser globals in the row body, data that changed between render and resume, or a row function whose output depends on more than its item, index and the shipped state); the row was created afresh and swapped in (dev only: production adopts the server markup)",
@@ -33,6 +35,8 @@ const warned = new Set<string>();
 // Module reference id → the current value stamped with it and every module that stamped that value (process-wide: every
 // drain, every request). Two importers of one export share a value; a new value from one of them is a re-evaluation (HMR).
 const moduleRefs = new Map<string, { value: unknown; modules: Set<string> }>();
+// Module static data (`_rMod(…, 2)`): id → its JSON when stamped.
+const moduleData = new Map<string, string>();
 // `at file:///x/a.tsx:1:2`, `at f (/x/a.tsx:1:2)` → `/x/a.tsx` (query and position dropped).
 const FRAME = /(?:^|[\s(])((?:file:\/\/|\/|[A-Za-z]:[\\/])[^()]*?)(?:\?[^():]*)?(?::\d+){1,2}\)?$/;
 const watched = new WeakSet<Promise<unknown>>(); // resume chunk loads already logged on failure
@@ -126,6 +130,22 @@ export const DEV = {
     warned.add("ref " + id);
     const other = [...known.modules].join(", ");
     console.warn("Rivet: " + DEV.hint("resume module reference " + id + " is stamped with two different values, by " + other + " and " + module, "moduleRef"));
+  },
+  /**
+   * Module static data (DIET-STATE 1): `stamp` records its JSON; an encode compares (the browser resumes the module's own
+   * value, so data changed on the server since its module evaluated resumes as the original) — a warning once per id.
+   */
+  moduleData(id: string, value: unknown, stamp: boolean): void {
+    let json: string;
+    try {
+      json = JSON.stringify(value) ?? "";
+    } catch {
+      return;
+    }
+    if (stamp) return void moduleData.set(id, json);
+    if (moduleData.get(id) === json || warned.has("data " + id)) return;
+    warned.add("data " + id);
+    console.warn("Rivet: " + DEV.hint("resume module reference " + id + " (module static data) changed after its module evaluated", "moduleData"));
   },
   /** Run `encode`; an error thrown inside gains `path` as a prefix (`.items[2].onClick: …`). */
   at<T>(path: string, encode: () => T): T {

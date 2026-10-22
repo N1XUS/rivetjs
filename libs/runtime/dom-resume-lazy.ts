@@ -169,7 +169,9 @@ export function _lazyRows(c: LazyContext): LazyRows {
     for (; lazySeen < list.length; lazySeen++) {
       const e = list[lazySeen]!,
         held = state.t[e[3]] as { j?: unknown[] } | unknown[] | null,
-        count = (Array.isArray(held) ? held : (held?.j ?? (get(e[3]) as unknown[]))).length,
+        // The row count [13] when the items entry does not show it: a module static data reference (DIET-STATE 1) decodes
+        // only once its chunk is loaded (with the rows' chunks, `e[6]`), a DOM-backed tree from the page.
+        count = Array.isArray(held) ? held.length : held?.j ? held.j.length : (((e as unknown[])[13] as number | undefined) ?? (get(e[3]) as unknown[]).length),
         f: LazyFor = { e, rows: [], host: null, woken: false, state: null, plan: {}, writers: null, samples: undefined };
       for (let k = 0; k < count; k++) {
         const row: LazyRow = { f, k, m: e[0] + 1 + k, state: 0, owner: null, row: null, loading: false, els: null };

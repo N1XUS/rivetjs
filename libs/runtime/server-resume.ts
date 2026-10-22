@@ -555,6 +555,9 @@ const fns = Recipe;
 // starts and before each encode, keeping one that still throws a ReferenceError for the next drain (T3 fix H3).
 // Only functions (not signals / computeds) and static data (plain objects / arrays of primitives, functions and such
 // data) are referable: an object holding signals or other state goes by value (T3 fix M4).
+// Module static data (DIET-STATE 1, flag `2`: a module-level const the compiler proved static and never mutated): every
+// nested object is stamped too, with its key path as captures (`{f: id, a: [k, …]}`; the browser symbol walks the path in
+// its module's value), so an element reached on its own resumes as the module's object (identity kept).
 // `render: MODULE` marks it for every render; a per-render `_rFn` on the same value never replaces it. Import ids are one
 // compiler id per imported value (resolved module id + exported name), so every importer stamps the same id. A value
 // stamped several times keeps, independent of module evaluation order (lazy routes = request order): an own-module stamp
@@ -562,12 +565,14 @@ const fns = Recipe;
 const MODULE: object = Object.freeze({});
 // Values whose MODULE stamp came from an import (`_rMod(…, 1)`): an own-module stamp replaces it.
 const importStamps = new WeakSet<object>();
-// Stamps not read yet: [read, id, imported, stamping module (development only)].
-const pendingRefs: [() => unknown, string, 1 | undefined, string | undefined][] = [];
+// Stamps not read yet: [read, id, flag (1 import, 2 module static data), stamping module (development only)].
+const pendingRefs: [() => unknown, string, 1 | 2 | undefined, string | undefined][] = [];
+// Development: module static data roots (their encodes compare with the stamped JSON, `DEV.moduleData`).
+const dataRoots: WeakSet<object> | undefined = DEV ? new WeakSet() : undefined;
 
-/** Function Bridge Reference: the value `read()` returns (a module-level function / static data, or an import when `imported`) is the browser module's own binding `id`. */
-export function _rMod(read: () => unknown, id: string, imported?: 1): void {
-  pendingRefs.push([read, id, imported, DEV ? DEV.stamper(_rMod) : undefined]);
+/** Function Bridge Reference: the value `read()` returns (a module-level function / static data, or an import when `flag` is 1) is the browser module's own binding `id` (flag 2: module static data, nested objects by key path). */
+export function _rMod(read: () => unknown, id: string, flag?: 1 | 2): void {
+  pendingRefs.push([read, id, flag, DEV ? DEV.stamper(_rMod) : undefined]);
 }
 function drainRefs(): void {
   if (pendingRefs.length === 0) return;
@@ -587,9 +592,24 @@ function drainRefs(): void {
     // value from a module never seen for the id = two installed copies of a package loaded together (the browser would
     // resume one as the other) — a warning once per id, in any drain. Every value is stamped either way.
     if (DEV) DEV.moduleRef(entry[1], value, entry[3] ?? "");
-    stampRef(value as object, entry[1], entry[2]);
+    if (entry[2] === 2) {
+      stampData(value as object, entry[1], [], new Set());
+      if (DEV) (DEV.moduleData(entry[1], value, true), dataRoots!.add(value as object));
+    }
+    stampRef(value as object, entry[1], entry[2] === 1 ? 1 : undefined);
   }
   pendingRefs.length = kept;
+}
+// Nested objects of module static data `id`: stamped with their key path (a stamp of their own — another reference, an
+// earlier path — is kept).
+function stampData(value: object, id: string, path: (string | number)[], seen: Set<object>): void {
+  seen.add(value);
+  if (path.length && fns.get(value)?.render !== MODULE) fns.set(value, { id, captures: path, render: MODULE });
+  const array = Array.isArray(value);
+  for (const key of Object.keys(value)) {
+    const child = (value as Record<string, unknown>)[key];
+    if (child !== null && typeof child === "object" && !seen.has(child)) stampData(child, id, [...path, array ? +key : key], seen);
+  }
 }
 // A function that is not a signal / computed, or static data: a plain object / array whose values are primitives,
 // such functions or such data (lucide icon nodes, route tables). `seen` = null at the top (primitives are not referable).
@@ -3633,6 +3653,14 @@ function compactRows(encoder: Encoding["encoder"], rows: RowRecord[], items: num
 }
 
 /** Whether `value` has an own enumerable accessor (`{ get x() {…} }`). */
+/** DOM-DATA: `value` is a registered row item or an array of them (module static data the page shows). */
+function domItems(items: Map<object, number>, value: object): boolean {
+  if (items.has(value)) return true;
+  if (!Array.isArray(value) || value.length === 0) return false;
+  for (const item of value) if (item === null || typeof item !== "object" || !items.has(item)) return false;
+  return true;
+}
+
 function hasAccessor(value: object): boolean {
   for (const key in value) if (Object.getOwnPropertyDescriptor(value, key)?.get) return true;
   return false;
@@ -3706,7 +3734,13 @@ function encoding(root: Recorder): Encoding {
       }
       const meta = metaOf(value);
       if (meta === undefined) return undefined;
-      if (meta.render === MODULE) return { f: meta.id, a: [] };
+      if (meta.render === MODULE) {
+        // DOM-DATA first: module static data whose objects are rendered row items reads back from the page (`D`, no
+        // chunk to load before the first interaction) instead of referring to its module.
+        if (DOM_DATA && root.dom !== null && root.dom.items.size !== 0 && domItems(root.dom.items, value)) return undefined;
+        if (DEV && dataRoots!.has(value)) DEV.moduleData(meta.id, value, false);
+        return { f: meta.id, a: (meta.captures as readonly unknown[]).map(ref) };
+      }
       if (meta.live) {
         // A recipe whose captures did not serialize once (e.g. a module-level function among them) goes by
         // value from then on: no failed attempt (a thrown encode) per instance and render.
@@ -3805,6 +3839,8 @@ function encoding(root: Recorder): Encoding {
     return meta ? { f: meta.id, a: capturesOf(meta).map(ref) } : undefined;
   };
   // Objects `special` encodes itself (side-effect free mirror of its checks): never inside a plain JSON (`j`) entry.
+  // DOM-DATA: a module static data object shown as a row item goes in its list's `D` tree (`special` declines the reference).
+  const moduleItem = (value: object): boolean => DOM_DATA && root.dom !== null && root.dom.items.has(value) && metaOf(value)!.render === MODULE;
   const opaque = (value: object): boolean => {
     const context = contexts.get(value);
     return (
@@ -3817,7 +3853,7 @@ function encoding(root: Recorder): Encoding {
       value instanceof Href ||
       (value as { [TEMPLATE]?: true })[TEMPLATE] !== undefined ||
       (value as Partial<Forward>)[FORWARD] !== undefined ||
-      metaOf(value) !== undefined ||
+      (metaOf(value) !== undefined && !moduleItem(value)) ||
       (classes !== undefined && classes(value) !== undefined)
     );
   };

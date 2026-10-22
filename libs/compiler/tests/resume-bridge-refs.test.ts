@@ -348,3 +348,83 @@ export function Page() { const n = signal(0); const api = { inc }; return <butto
   // One name: no aliases.
   assert.equal(own("export { inc };").aliases, undefined);
 });
+
+// DIET-STATE 1: a module-level const holding static data the module never mutates is a module reference (flag 2, key-path
+// symbol); anything computed, mutable, mutated or under MIN_MODULE_DATA_SIZE (64 source bytes) stays by value.
+test("module static data: literal / Array.from / nested consts stamp with flag 2; calls, let, mutated consts do not", () => {
+  const src = `import { List } from "./list";
+const TEAMS = ["Platform", "Design"] as const;
+const PEOPLE = Array.from({ length: 100 }, (_, i) => ({ id: i, name: \`P \${i + 1}\`, team: TEAMS[i % 2]!, ok: !(i & 1) }));
+const PATHS: readonly string[] = ["/", "/a"];
+const NESTED = { list: PATHS, n: -1, s: null, u: undefined, a: "The quick brown fox jumps over the lazy dog, then naps for a while in the warm afternoon sun near the old river bank.", b: "The quick brown fox jumps over the lazy dog, then naps for a while in the warm afternoon sun near the old river bank." };
+const SMALL = { a: [1, 2] };
+const PUSHED = [1];
+const SORTED = [{ a: [2, 1] }];
+const ASSIGNED = { a: { b: 1 } };
+const ASSIGNED2 = [{ a: 1 }];
+const CALLED = [Date.now()];
+const SPREAD = [...PATHS];
+const FN = [() => 1];
+let MUTABLE = [1];
+const PRIMITIVE = 3;
+PUSHED.push(2);
+Object.assign(ASSIGNED2[0]!, { a: 2 });
+export default function Page() {
+  SORTED[0]!.a.sort();
+  ASSIGNED.a.b++;
+  return <List a={PEOPLE} b={NESTED} c={PUSHED} d={SORTED} e={ASSIGNED} f={ASSIGNED2} g={CALLED} h={SPREAD} i={FN} j={MUTABLE} k={PRIMITIVE} l={SMALL} />;
+}`;
+  const server = out(src, "server").code;
+  const stamped = [...server.matchAll(/__rivetR_mod\(\(\(\) => (\w+)\), "[^"]+", 2\)/g)].map((m) => m[1]).sort();
+  assert.deepEqual(stamped, ["NESTED", "PEOPLE"]);
+  assert.doesNotMatch(server, /__rivetR_mod\(\(\(\) => (PUSHED|SORTED|ASSIGNED|ASSIGNED2|CALLED|SPREAD|FN|MUTABLE|PRIMITIVE|TEAMS|PATHS|SMALL)\)/);
+  const dom = out(src, "dom");
+  const people = dom.symbols.find((s) => s.id === local("src/a.tsx", "PEOPLE"))!;
+  assert.equal(people.kind, "ref");
+  assert.equal(people.source, `export const ${people.name} = (...p) => p.reduce((o, k) => o[k], PEOPLE);\n`);
+  assert.match(dom.code, /export \{[^}]*\bPEOPLE\b/);
+});
+
+test("module static data reached through an object property of a component local (the router's route table) stamps too", () => {
+  const src = `const PATHS: readonly string[] = [${Array.from({ length: 40 }, (_, i) => `"/route-${i}"`).join(", ")}];
+export function App() {
+  const routes = { paths: PATHS, route: (n: number) => n };
+  return <button onClick={() => routes.route(1)}>{routes.paths.length}</button>;
+}`;
+  assert.match(out(src, "server").code, new RegExp(`__rivetR_mod\\(\\(\\(\\) => PATHS\\), "${esc(local("src/a.tsx", "PATHS"))}", 2\\);`));
+});
+
+// DIET-STATE 1c: a captured pure-literal component const is hoisted to module scope (both targets) and stamped as module
+// static data; one built from component values, mutated, smaller than a reference or declared in a nested function
+// stays a local.
+test("captured pure-literal component locals hoist to module static data (server + DOM); others stay local", () => {
+  const src = `import { signal } from "@rivetjs/reactivity";
+import { List } from "./list";
+export default function Page() {
+  const s = signal(0);
+  const users: { id: number; name: string }[] = [${Array.from({ length: 12 }, (_, i) => `{ id: ${i}, name: "User ${i}" }`).join(", ")}];
+  const rows = Array.from({ length: 100 }, (_, i) => ({ i }));
+  const small = [{ id: 1 }];
+  const dyn = [{ n: s() }];
+  const mutated = [1];
+  mutated.push(2);
+  const inner = () => { const nested = [1]; return nested; };
+  return <button onClick={() => s.set(users.length + rows.length + small.length + dyn.length + mutated.length + inner().length)}><List items={users} /></button>;
+}`;
+  for (const target of ["server", "dom"] as const) {
+    const code = out(src, target).code;
+    assert.match(code, /^const __rivetData0_users = \[\s*\{/m);
+    assert.match(code, /^const __rivetData1_rows = Array\.from\(/m);
+    assert.match(code, /const users = __rivetData0_users;/);
+    assert.match(code, /const rows = __rivetData1_rows;/);
+    assert.match(code, /const dyn = \[\{ n: s\(\) \}\];/);
+    assert.match(code, /const mutated = \[1\];/);
+    assert.match(code, /const small = \[\{ id: 1 \}\];/);
+    assert.doesNotMatch(code, /__rivetData\d_(small|dyn|mutated|nested)/);
+    if (target === "server") assert.match(code, /__rivetR_mod\(\(\(\) => __rivetData0_users\), "src\/a\.tsx#__rivetData0_users\$l\$[0-9a-z]{5}\$ref", 2\);/);
+    else assert.match(code, /export \{[^}]*__rivetData0_users[^}]*\}/);
+  }
+  const symbol = out(src, "dom").symbols.find((s) => s.id.includes("__rivetData0_users"))!;
+  assert.equal(symbol.kind, "ref");
+  assert.equal(symbol.source, `export const ${symbol.name} = (...p) => p.reduce((o, k) => o[k], __rivetData0_users);\n`);
+});

@@ -58,6 +58,7 @@ A handler often uses values from its component, such as `count` above. These are
 | signals and `computed` values | promises, `WeakMap`, symbols |
 | functions written in a component: local `const f = () => …`, inline props (`onChange={(v) => …}`), values in objects, returned functions, function defaults (`{ format = (n) => … }`), functions written straight into, or stored by name in, a value a handler uses (`api.inc = () => …`, `api.open = open`, `list.push(open)`, `signal(() => …)`, `[() => …]`, `new Map([["k", () => …]])`) — also after they travel through props; local functions that call each other (`even` / `odd`); `.bind(…)` of such a function or of a module-level one: inline in a prop or handler, or a local constant (`const inc = add.bind(null, 2)`, also a `.bind` of that) used by name anywhere (captured, passed as a prop or argument, stored in an object / array) | |
 | module-level and imported functions (also npm exports) used by name inside a component: called, passed as a prop, kept in a local constant, or stored in an object / array / call argument (`{ format: formatEuro }`) — the page refers to the module's own function | |
+| module-level `const` data used by name inside a component: literals (`const TEAMS = ["Design", "Sales"]`, `{ "/": "Home" }`, nested, other such constants) or `Array.from({ length: 1000 }, (_, i) => ({ id: i, name: \`Row ${i}\` }))` that no statement of the module changes (`TEAMS.push(…)`, `ROWS[0].name = …`) — the page refers to the module's own data instead of writing it down, also for one row reached on its own (`selected = signal(ROWS[3])` stays `ROWS[3]`); do not change such data later, even through another name: development warns when a page sends data that changed after its module loaded | |
 
 If you capture something that does not fit, rendering fails with an error such as "function is not serializable". See [function is not serializable](../gotchas/function-is-not-serializable.md) and [serializable captures](../best-practices/serializable-captures.md).
 
@@ -148,6 +149,7 @@ Rivet resume: <Picker> onClick handler captures `products` (src/routes/shop.tsx#
 
 What to change, in this order:
 
+1. **Keep fixed data at module level.** A module-level `const` of literals or `Array.from({ length: n }, …)` that nothing changes is not written into the page at all: the browser uses its own copy from the module ([what the handler can use](#what-the-handler-can-use)). A larger literal `const` in the component's own body (a list of options, a table's demo rows) is moved there for you when nothing changes it.
 1. **Do not capture it.** Read the data on the server and capture only what the browser code needs: an id, a key, a count. A handler that reads members of a `const` object captures just those members, so `onClick={() => cart.add(product.id)}` ships one number:
 
    ```tsx

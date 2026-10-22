@@ -257,3 +257,37 @@ test("importers sharing a value, then one re-evaluating it: no warning; another 
     warn.mockRestore();
   }
 });
+
+// DIET-STATE 1: module static data (`_rMod(…, 2)`): the root encodes as `{f: id, a: []}`, every nested object as
+// `{f: id, a: [key path]}`, so an element reached on its own resumes as the module's own object (identity kept) and no
+// row data ships.
+const rows = Array.from({ length: 50 }, (_, i) => ({ id: i, name: `Row ${i}`, tags: ["a", "b"] }));
+_rMod(() => rows, "m.tsx#rows$l$ref", 2);
+test("module static data: the root and nested objects by key path; identity kept in the browser; no row data in state", async () => {
+  const browserRows = Array.from({ length: 50 }, (_, i) => ({ id: i, name: `Row ${i}`, tags: ["a", "b"] }));
+  const { state, values } = await roundTrip(() => [rows, rows[7], { picked: rows[3]!.tags }, signal(rows[7])], {
+    "m.tsx#rows$l$ref": (...p: never[]) => (p as (string | number)[]).reduce((o: any, k) => o[k], browserRows),
+  });
+  const [all, seven, holder, sig] = values as [unknown[], unknown, { picked: unknown }, () => unknown];
+  assert.equal(all, browserRows);
+  assert.equal(seven, browserRows[7]);
+  assert.equal(holder.picked, browserRows[3]!.tags);
+  assert.equal(sig(), browserRows[7]);
+  assert.doesNotMatch(JSON.stringify(state.t), /Row \d/);
+});
+
+test("module static data changed after its module evaluated: development warns once per id (the browser keeps its own)", async () => {
+  const data = [{ n: 1 }];
+  _rMod(() => data, "m.tsx#changed$l$ref", 2);
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    await roundTrip(() => [data], { "m.tsx#changed$l$ref": () => "browser" });
+    assert.equal(warn.mock.calls.length, 0);
+    data[0]!.n = 2;
+    for (let i = 0; i < 2; i++) await roundTrip(() => [data], { "m.tsx#changed$l$ref": () => "browser" });
+    assert.equal(warn.mock.calls.length, DEV ? 1 : 0);
+    if (DEV) assert.match(String(warn.mock.calls[0]![0]), /m\.tsx#changed\$l\$ref \(module static data\) changed after its module evaluated/);
+  } finally {
+    warn.mockRestore();
+  }
+});

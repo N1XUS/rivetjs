@@ -76,13 +76,26 @@ export function controllable<T, C = T>(
     );
   return {
     // Upstream: `useState(value || defaultValue)` — a falsy controlled value still shows (controlled wins).
-    value: sig || accessor ? (value as Signal<T>) : isControlled ? signal(value as T) : _regionState(() => signal(defaultValue)),
+    value: sig || accessor ? (value as Signal<T>) : isControlled ? constantCell(value as T) : _regionState(() => signal(defaultValue)),
     isControlled,
     isSignal: sig,
     isAccessor: accessor,
     onChange,
     pending: { has: false, v: undefined },
   };
+}
+
+/** The server encoder's constant-getter brand (`server-structural.ts` `CONSTANT`): resumes as `{ k: "const" }`. */
+const CONSTANT = Symbol.for("rivet.constant");
+
+/**
+ * A plain controlled value never changes in place (`setControlledValue` only calls `onChange`): a constant getter, no
+ * reactive source in either environment. Typed as a Signal for the `ControlledState.value` shape; it has no `set`.
+ */
+export function constantCell<T>(value: T): Signal<T> {
+  const get = (() => value) as Signal<T> & { [CONSTANT]?: T };
+  get[CONSTANT] = value;
+  return get;
 }
 
 /** The current value, including a value set earlier in the same task (upstream `valueRef.current`). */

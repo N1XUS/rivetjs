@@ -175,22 +175,52 @@ export function renderProps<T>(props: RenderPropsHookOptions<T>, from?: RenderPr
       children: () => resolveChildren(childrenView.children, values, defaultChildren),
     };
   }
+  // Static options: each accessor is made for its key's value (`classOf` / `styleOf` / `childrenOf`), so only a render
+  // function captures `values` — a string class / style or plain children resume without the render-props bag (the
+  // collection / selection state) — DIET-STATE 2, 2026-10-22.
   const { class: className, style, children } = props;
   return {
-    class: () => (typeof className === "function" ? className({ ...values, defaultClassName }) : className) ?? defaultClassName,
-    style: () => {
-      const computed = typeof style === "function" ? style({ ...values, defaultStyle: defaultStyle || {} }) : style;
-      return computed || defaultStyle ? { ...defaultStyle, ...computed } : undefined;
-    },
-    children: () => {
-      let computed: Content | undefined;
-      if (isSlot(children)) computed = renderSlot(children) as Content;
-      else if (typeof children === "function") computed = (children as (v: unknown) => Content)({ ...values, defaultChildren });
-      else if (children == null) computed = renderSlot(defaultChildren);
-      else computed = children;
-      return computed ?? renderSlot(defaultChildren);
-    },
+    class: classOf(className, values, defaultClassName),
+    style: styleOf(style, values, defaultStyle),
+    children: childrenOf(children, values, defaultChildren),
   };
+}
+
+// One accessor per shape, each an object-literal function value (a resumable symbol capturing only what it reads).
+function classOf<T>(className: RenderProps<T>["class"], values: T, defaultClassName: string | undefined): () => string | undefined {
+  if (typeof className === "function") {
+    const accessor = { fn: () => className({ ...values, defaultClassName }) ?? defaultClassName };
+    return accessor.fn;
+  }
+  const accessor = { fn: () => className ?? defaultClassName };
+  return accessor.fn;
+}
+
+function styleOf<T>(style: RenderProps<T>["style"], values: T, defaultStyle: StyleObject | undefined): () => StyleObject | undefined {
+  if (typeof style === "function") {
+    const accessor = {
+      fn: () => {
+        const computed = style({ ...values, defaultStyle: defaultStyle || {} });
+        return computed || defaultStyle ? { ...defaultStyle, ...computed } : undefined;
+      },
+    };
+    return accessor.fn;
+  }
+  const accessor = { fn: () => (style || defaultStyle ? { ...defaultStyle, ...style } : undefined) };
+  return accessor.fn;
+}
+
+function childrenOf<T>(children: RenderProps<T>["children"], values: T, defaultChildren: Content | undefined): () => Content {
+  if (typeof children === "function" && !isSlot(children)) {
+    const accessor = { fn: () => (children as (v: unknown) => Content)({ ...values, defaultChildren }) ?? renderSlot(defaultChildren) };
+    return accessor.fn;
+  }
+  const accessor = {
+    fn: () =>
+      (children == null ? renderSlot(defaultChildren) : isSlot(children) ? (renderSlot(children) as Content) : (children as Content)) ??
+      renderSlot(defaultChildren),
+  };
+  return accessor.fn;
 }
 
 /**

@@ -6,7 +6,8 @@
 // React (react-interactions), MIT, © Meta.
 //
 // Rivet: the returned handlers are resumable symbols (R2: function expressions in the returned
-// object), state is a plain JSON object plus an `isPressed` signal, all browser listeners are added
+// object), state is a plain JSON object created on the first event (`pressState`: an idle press ships none in resume
+// state) plus an `isPressed` signal, all browser listeners are added
 // inside handlers. `pressProps` holds only runtime-delegated handlers (keydown / click / pointerdown /
 // mousedown / pointerup: no listener per element); the target's `dragstart` / `pointerenter` /
 // `pointerleave` (RA: element listeners for the element's whole life, acting only while a pointer press is
@@ -140,7 +141,8 @@ interface EventBase {
 /** A press instance: options, transient state and the pressed sink (a signal, or `data-pressed` on the element). */
 export interface Press {
   props: PressHookProps;
-  state: PressState;
+  /** Transient state, created on the first event (`pressState`): an idle press resumes without it. */
+  state?: PressState;
   pressed: { set(value: boolean): unknown };
   /**
    * Element listeners a pointer press binds on its target while pressed (`PRESS_TRACK_*` bits): `dragstart`
@@ -155,7 +157,7 @@ export const PRESS_TRACK_DRAG = 1;
 /** `Press.track`: bind `pointerenter` / `pointerleave` while pressed. */
 export const PRESS_TRACK_EXIT = 2;
 
-/** Fresh transient press state (browser-only, never serialized). */
+/** Fresh transient press state (browser-only: `pressState` creates it on a press's first event). */
 export function createPressState(): PressState {
   return {
     isPressed: false,
@@ -172,6 +174,9 @@ export function createPressState(): PressState {
     lastClick: -1,
   };
 }
+
+/** The press's transient state, created on first use (browser-only: server renders never fire press events). */
+export const pressState = (press: Press): PressState => (press.state ??= createPressState());
 
 /** Context through which a parent (e.g. a trigger wrapper) passes press props to a child's usePress. */
 export const PressResponderContext = resumableContext(createContext<(PressProps & { register?: () => void }) | null>(null, { id: "rv-press-responder" }));
@@ -229,15 +234,16 @@ const disabled = (press: Press): boolean => !!read(press.props.isDisabled);
 function addGlobal(press: Press, target: EventTarget, type: string, listener: (e: never) => void, options?: boolean | AddEventListenerOptions): void {
   const fn = listener as unknown as EventListener;
   target.addEventListener(type, fn, options);
-  press.state.globals.push(() => target.removeEventListener(type, fn, options));
+  pressState(press).globals.push(() => target.removeEventListener(type, fn, options));
 }
 
 function removeAllGlobals(press: Press): void {
-  for (const remove of press.state.globals.splice(0)) remove();
+  for (const remove of pressState(press).globals.splice(0)) remove();
 }
 
 function triggerPressStart(press: Press, originalEvent: EventBase, pointerType: PointerType): boolean {
-  const { state, props } = press;
+  const { props } = press;
+  const state = pressState(press);
   if (disabled(press) || state.didFirePressStart) return false;
   let shouldStopPropagation = true;
   state.isTriggeringEvent = true;
@@ -254,7 +260,8 @@ function triggerPressStart(press: Press, originalEvent: EventBase, pointerType: 
 }
 
 function triggerPressEnd(press: Press, originalEvent: EventBase, pointerType: PointerType, wasPressed = true): boolean {
-  const { state, props } = press;
+  const { props } = press;
+  const state = pressState(press);
   if (!state.didFirePressStart) return false;
   state.didFirePressStart = false;
   state.isTriggeringEvent = true;
@@ -276,7 +283,8 @@ function triggerPressEnd(press: Press, originalEvent: EventBase, pointerType: Po
 }
 
 function triggerPressUp(press: Press, originalEvent: EventBase, pointerType: PointerType): boolean {
-  const { state, props } = press;
+  const { props } = press;
+  const state = pressState(press);
   if (disabled(press)) return false;
   if (props.onPressUp) {
     state.isTriggeringEvent = true;
@@ -289,7 +297,8 @@ function triggerPressUp(press: Press, originalEvent: EventBase, pointerType: Poi
 }
 
 function cancel(press: Press, e: EventBase): void {
-  const { state, props } = press;
+  const { props } = press;
+  const state = pressState(press);
   if (state.isPressed && state.target) {
     if (state.didFirePressStart && state.pointerType != null) triggerPressEnd(press, createEvent(state.target, e), state.pointerType, false);
     state.isPressed = false;
@@ -328,13 +337,13 @@ function triggerSyntheticClick(press: Press, e: KeyboardEvent | TouchEvent, targ
  * during a press.
  */
 export function cancelPress(press: Press): void {
-  const { state } = press;
-  if (state.isPressed) cancel(press, { currentTarget: state.target, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false });
+  const state = press.state;
+  if (state?.isPressed) cancel(press, { currentTarget: state.target, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false });
 }
 
 /** @internal keydown handler of pressProps. */
 export function pressKeyDown(press: Press, e: KeyboardEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   const currentTarget = e.currentTarget as FocusableElement;
   if (isValidKeyboardEvent(e, currentTarget) && nodeContains(currentTarget, getEventTarget(e))) {
     // A cold (replayed) keydown whose click was already handled: nothing to start.
@@ -379,7 +388,7 @@ export function pressKeyDown(press: Press, e: KeyboardEvent): void {
 }
 
 function onKeyUp(press: Press, e: KeyboardEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   if (state.isPressed && state.target && isValidKeyboardEvent(e, state.target)) {
     const target = getEventTarget(e);
     // Native activatable elements: the click (Enter keydown / Space keyup) ends the press.
@@ -406,7 +415,7 @@ function onKeyUp(press: Press, e: KeyboardEvent): void {
 
 /** @internal click handler of pressProps (virtual clicks and the end of pointer presses). */
 export function pressClick(press: Press, e: MouseEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   if (e && !nodeContains(e.currentTarget as Node, getEventTarget(e))) return;
   state.lastClick = e.timeStamp;
   if (e && e.button === 0 && !state.isTriggeringEvent && !linkState.isOpening) {
@@ -437,7 +446,8 @@ export function pressClick(press: Press, e: MouseEvent): void {
 
 /** @internal pointerdown handler of pressProps. */
 export function pressPointerDown(press: Press, e: PointerEvent): void {
-  const { state, props } = press;
+  const { props } = press;
+  const state = pressState(press);
   // Left button only; ignore events bubbling through portals.
   if (e.button !== 0 || !nodeContains(e.currentTarget as Node, getEventTarget(e))) return;
   // react-aria's `[data-react-aria-pressable] { touch-action: pan-x pan-y pinch-zoom }`: no double-tap zoom delay.
@@ -481,7 +491,7 @@ export function pressMouseDown(press: Press, e: MouseEvent): void {
   if (e.button === 0) {
     if (press.props.preventFocusOnPress) {
       const dispose = preventFocus(e.target as FocusableElement);
-      if (dispose) press.state.disposables.push(dispose);
+      if (dispose) pressState(press).disposables.push(dispose);
     }
     e.stopPropagation();
   }
@@ -489,7 +499,7 @@ export function pressMouseDown(press: Press, e: MouseEvent): void {
 
 /** @internal pointerup handler on the target of pressProps. */
 export function pressPointerUp(press: Press, e: PointerEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   // iOS fires pointerup with zero size: check the pointer type recorded at pointerdown.
   if (!nodeContains(e.currentTarget as Node, getEventTarget(e)) || state.pointerType === "virtual") return;
   // Left button; a press that started here waits for onClick.
@@ -498,7 +508,7 @@ export function pressPointerUp(press: Press, e: PointerEvent): void {
 
 /** @internal pointerenter handler of a press (bound on the target while pressed: `PRESS_TRACK_EXIT`). */
 export function pressPointerEnter(press: Press, e: PointerEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   if (e.target !== e.currentTarget) return; // delegated dispatch of a descendant's (non-bubbling) enter
   if (e.pointerId === state.activePointerId && state.target && !state.isOverTarget && state.pointerType != null) {
     state.isOverTarget = true;
@@ -508,7 +518,7 @@ export function pressPointerEnter(press: Press, e: PointerEvent): void {
 
 /** @internal pointerleave handler of a press (bound on the target while pressed: `PRESS_TRACK_EXIT`). */
 export function pressPointerLeave(press: Press, e: PointerEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   if (e.target !== e.currentTarget) return;
   if (e.pointerId === state.activePointerId && state.target && state.isOverTarget && state.pointerType != null) {
     state.isOverTarget = false;
@@ -518,7 +528,7 @@ export function pressPointerLeave(press: Press, e: PointerEvent): void {
 }
 
 function onGlobalPointerUp(press: Press, e: PointerEvent): void {
-  const { state } = press;
+  const state = pressState(press);
   if (e.pointerId === state.activePointerId && state.isPressed && e.button === 0 && state.target) {
     if (nodeContains(state.target, getEventTarget(e)) && state.pointerType != null) {
       // onPress waits for onClick (DOM mutations between pointerup and click break browsers). iOS and
@@ -588,7 +598,6 @@ export function pressProps(props: PressHookProps = {}): PressResult {
   const press: Press = {
     props,
     pressed,
-    state: createPressState(),
     track: PRESS_TRACK_DRAG | PRESS_TRACK_EXIT,
   };
   const handlers = {
