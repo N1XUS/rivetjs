@@ -27,7 +27,7 @@ Docs site of `@rivetjs/cdk` (headless components + foundations), second site on 
 ## Pages (content/*.md)
 - Frontmatter: `title`, `description` (≤160 chars, hard limit), `template: guide`, `status: experimental`, `related: [section/page, …]` (pages of THIS site only).
 - Every page appears exactly once in the nav (build fails on orphans/duplicates). New page → add it to the area file that owns it.
-- Links: relative `.md` (`../foundations/overlays.md`, `menu.md#events`). Main Rivet docs: absolute `http://127.0.0.1:4321/<path>/`.
+- Links: relative `.md` (`../foundations/overlays.md`, `menu.md#events`). Main Rivet docs: `site:docs/<path>/` (resolved from `site.sites.docs` = `DOCS_ORIGIN`; the layout footer uses `site.sites` too — a hard-coded `127.0.0.1:4321` shipped in production HTML until 2026-10-22).
 - Directives: `::example{id=<id>}`, `::api{symbol="@rivetjs/cdk/<entry>#name"}`, `:kbd[Escape]`, `:term[…]`; callouts `:::note|tip|warning|gotcha`. No raw HTML.
 - Component page template (mirror the upstream React Aria Components page):
   1. Intro + hero example. 2. Anatomy (rendered HTML block, parts table: element, default `rv-*` class, data attributes, ids). 3. Import snippet.
