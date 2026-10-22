@@ -285,6 +285,10 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const derived = options.derived === true && mode !== "csr";
   // Derived model: the Routers swap through `adoptSwap` (the adopt task's route renders are the page load, not a navigation).
   const swapProp = derived ? "adoptSwap" : swap;
+  // Derived model: the boundary a Router level renders in (and its ancestors) adopts with its parent, never deferred to
+  // idle (DERIVED-C4 dependency facts): its swap and revived loads belong to the page load's adopt task.
+  const eager = derived ? "(import.meta.env.SSR && _rEager(), " : "";
+  const eagerEnd = derived ? ")" : "";
   const routesDir = options.routesDir.replace(/\/$/, "");
   const fromOut = (path: string) => {
     const relative = posix.relative(outDir, path);
@@ -372,7 +376,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const enterView = (key: string): string => {
     const [k, i, at] = key.split(":").map(Number) as [number, number, number];
     const name = layouts.get(layoutModulesList[i]!.page!)!;
-    const inner = `<div data-rivet-outlet="${k + 1}"><Router router={_level(router, nest, ${k + 1}, t)} routes={routes${i}} swap={${swapProp}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
+    const inner = `<div data-rivet-outlet="${k + 1}"><Router router={${eager}_level(router, nest, ${k + 1}, t)${eagerEnd}} routes={routes${i}} swap={${swapProp}} hold={() => heldRoutes(${k + 1})} notFound={() => null} /></div>`;
     const view = level(at, `<${name} data={${slot(i)}.d} params={${slot(i)}.p} url={${slot(i)}.u}>${inner}</${name}>`);
     return `_enter(${k}, result, url, (t) => ${params ? `<Provider token={RouteParamsContext} value={${slot(i)}.p}>${view}</Provider>` : view})`;
   };
@@ -493,6 +497,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `import { createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
           `import { createRouter as serverRouter } from "@rivetjs/runtime/router/server";`,
           `import { createDecoder, _useTableDecoder } from "@rivetjs/runtime/resume-format";`,
+          `import { _rEager } from "@rivetjs/runtime/derived-eager";`,
           ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
@@ -708,7 +713,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     // The Router sits directly inside an element so the compiler makes it (and `routes`) a resumable
     // region; the root layout wraps it outside that region and stays mounted.
     ...(derived ? ["  // Derived model: built where it renders (inside the root layout's adopt run), not passed in ready-made."] : []),
-    `  const view = ${derived ? "() => " : ""}<div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}><Router router={${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}} routes={routes} swap={${swapProp}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
+    `  const view = ${derived ? "() => " : ""}<div data-rivet-routes=""${go ? ' data-rivet-go=""' : ""}><Router router={${eager}${nested ? "_level(router, nest, 0, 0)" : liveTop ? "_liveRouter(router, live)" : "router"}${eagerEnd}} routes={routes} swap={${swapProp}} hold={heldRoutes} notFound={(url) => (${unmatched})} /></div>;`,
     !rootLayout
       ? `  return view${derived ? "()" : ""};`
       : rootLayoutServer

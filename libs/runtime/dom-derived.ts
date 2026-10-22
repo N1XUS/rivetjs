@@ -36,7 +36,8 @@ import { same } from "./dom-adopt.ts";
 import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
 import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
-import type { BoundaryTail, DerivedAsync } from "./resume-format.ts";
+import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
+import { DOM_DATA } from "./dom-data.ts";
 import { DEV } from "#dev";
 
 /** Record flags (`BoundaryRecord[2]`, `server-derived.ts`). */
@@ -45,7 +46,9 @@ const INDEPENDENT = 1,
   UNKEYED = 4,
   LOAD = 32,
   IDLE = 64,
-  VISIBLE = 128;
+  VISIBLE = 128,
+  DEFER = 256,
+  MOD = 512;
 const PROBE = 0,
   ADOPT = 1,
   CLIENT = 2;
@@ -141,6 +144,8 @@ interface Unit {
   aid: number;
   /** A load suspended a `Suspense` during the probe (DERIVED-C3): the unit renders in the browser. */
   sus: boolean;
+  /** Plain signals made so far (DERIVED-C4: numbered as the server did, `_dsignal`). */
+  made: number;
 }
 /**
  * A list adopted lazily (DERIVED-C: O(1) at adopt): no row object, no client `_for` until needed — its slot keeps the
@@ -285,6 +290,7 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   an: 0,
   aid: 0,
   sus: false,
+  made: 0,
 });
 const report = (error: unknown): void => (api ? api.f(error) : console.error(error));
 
@@ -370,6 +376,56 @@ export function _sigStore<T extends object>(key: string, init: T): Store<T> {
   u.counts.set(key, n);
   const k = n > 1 ? key + "#" + n : key;
   return createStore((rec.values.has(k) ? rec.values.get(k) : init) as T);
+}
+
+// ---- Dependency facts (DERIVED-C4) ----
+// A dependent record the server flagged `DEFER` (its subtree closed: `server-derived.ts` "Dependency facts") is claimed by
+// its parent's adopt run but adopted on its own: on an event inside it, a write its wake lists name, at idle — not with its
+// parent (a cdk collection host builds its collection in both of its adopt runs). The derived alias of `signal` (every
+// module but the runtime's, Vite plugin) numbers the plain signals of an adopt run as the server numbered them and guards
+// the first write of one a wake key `"<id>.$<n>"` names; a signal no key can name (outside an adopt run: module level,
+// build passes, client renders) wakes the `MOD` records on a write. A unit whose count differs from the server's (tail `c`)
+// adopts the readers of its keys at once.
+/** Deferred `MOD` records: adopted before the first write to a signal no wake key names. */
+let loose: Set<Rec> | null = null;
+/** The derived alias of `signal` (`@rivetjs/runtime/derived-reactivity`). */
+export function _dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
+  const s = signal(init as T, options),
+    u = cur;
+  if (u === null || u.rec === null || u.depth || _tracking()) return guard(s, wakeLoose);
+  const n = u.made++,
+    ids = u.mode === PROBE ? undefined : tail?.w?.[u.rec.id + ".$" + n];
+  return ids ? guard(s, () => wakeAll(ids)) : s;
+}
+function guard<T>(s: Signal<T>, fn: () => void): Signal<T> {
+  const set = s.set;
+  s.set = function (this: unknown, value: T) {
+    fn();
+    return set.call(this, value);
+  } as Signal<T>["set"];
+  return s;
+}
+function wakeAll(ids: number[]): void {
+  for (const id of ids) {
+    const r = recs.get(id);
+    if (r && !r.done) {
+      const p = need(r);
+      if (p !== true) p.catch(report);
+    }
+  }
+}
+function wakeLoose(): void {
+  if (!loose?.size) return;
+  const all = [...loose];
+  loose.clear();
+  wakeAll(all.map((r) => r.id));
+}
+/** After a unit's run: its plain signal count against the server's (tail `c`); a difference adopts its keys' readers now. */
+function counted(rec: Rec | null, n: number): void {
+  const want = rec && tail?.c?.[rec.id];
+  if (want === undefined || want === null || want === n) return;
+  const prefix = rec!.id + ".$";
+  for (const key in tail!.w) if (key.startsWith(prefix)) wakeAll(tail!.w![key]!);
 }
 
 // The first write to a keyed signal: the lazy lists whose rows read it materialise every row, the boundaries on its
@@ -657,6 +713,8 @@ function seek(lazy: Lazy, part: LRow[], k: number): Node | null {
 // The client `_for` of a lazy list, under the list's owner: takes the server rows (adopted by key, materialised ones keep
 // their owners) unless they did not match (`bad`: rendered in the browser, the slot's server nodes replaced).
 function realFor(lazy: Lazy): () => Node[] {
+  // Rows are about to move / change: the DOM data still unread is read first (snapshot rule).
+  if (DOM_DATA) sweepDom();
   building = true;
   let rows: LRow[];
   try {
@@ -998,6 +1056,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   for (const hole of au.holes) if (hole.kind === 0 && hole.rec && !hole.rec.done) child(hole.rec, hole);
   for (const hole of au.holes) if (hole.kind === 2) landAsync(hole);
   for (const lazy of au.fors) sample(lazy);
+  counted(rec, au.made);
   shape = own;
   return owner;
 }
@@ -1005,18 +1064,20 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
 // Render the unit in the browser in place of its server nodes (mismatch, a value that did not ship). Its own keyed
 // state keeps the record's values; child boundaries render as plain client components.
 function client(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean): Owner | null {
+  if (DOM_DATA) sweepDom();
   for (const n of between(start, end)) {
     dead(n);
     n.parentNode!.removeChild(n);
   }
   const previous = cur,
-    holder = { owner: null as Owner | null };
-  cur = unit(CLIENT, rec, self);
+    holder = { owner: null as Owner | null },
+    u = (cur = unit(CLIENT, rec, self));
   try {
     untrack(() => _rootIn(parent, () => _insert(null, run(), end), holder));
   } finally {
     cur = previous;
   }
+  counted(rec, u.made);
   return holder.owner;
 }
 // Records whose markup leaves the page (a unit rendered in the browser instead): nothing to adopt any more.
@@ -1030,12 +1091,21 @@ function dead(n: Node): void {
 
 function child(r: Rec, hole: BHole): void {
   r.hole = hole;
-  if (!(r.flags & INDEPENDENT)) return void runHole(r);
-  trigger(r);
+  if (r.flags & INDEPENDENT) return trigger(r);
+  if (!(r.flags & DEFER)) return void runHole(r);
+  // Deferred (DERIVED-C4): its own event, a wake, a loose write (`MOD`), else idle.
+  if (r.flags & MOD) (loose ??= new Set()).add(r);
+  ((window.requestIdleCallback as ((fn: () => void) => number) | undefined) || setTimeout)(() => {
+    if (!r.done) {
+      const p = need(r);
+      if (p !== true) p.catch(report);
+    }
+  });
 }
 function runHole(r: Rec): void {
   const hole = r.hole!;
   r.done = true;
+  loose?.delete(r);
   if (hole.start) r.owner = adoptUnit(hole.owner, hole.body!, hole.start, hole.end!, r, false, r.name);
 }
 
@@ -1340,16 +1410,28 @@ const load = (name: string): Promise<void> => {
   }
   return p;
 };
+/** Records whose sources `need` is walking (DERIVED-C5): wake lists can be cyclic — an ancestor reading a signal its
+ * descendant made (the descendant adopts inside the ancestor's run), siblings reading each other's — a record met again
+ * on the walk is left to whichever run adopts it first. */
+const needing = new Set<Rec>();
 /** Materialise `r` and what it needs first: true when done now, a promise while a chunk loads. */
 function need(r: Rec): true | Promise<void> {
   if (r.done) return true;
   if (r.hole) return (runHole(r), true);
-  for (const s of r.sources ?? [])
-    if (!s.done) {
-      const p = need(s);
-      if (p !== true) return p.then(() => void need(r));
-      if (r.done || r.hole) return need(r);
+  if (r.sources !== null) {
+    if (needing.has(r)) return true;
+    needing.add(r);
+    try {
+      for (const s of r.sources)
+        if (!s.done) {
+          const p = need(s);
+          if (p !== true) return p.then(() => void need(r));
+          if (r.done || r.hole) return need(r);
+        }
+    } finally {
+      needing.delete(r);
     }
+  }
   if (r.parent && !(r.flags & INDEPENDENT)) {
     const p = need(r.parent);
     if (p !== true) return p.then(() => void need(r));
@@ -1363,6 +1445,167 @@ function need(r: Rec): true | Promise<void> {
   standalone(r, module);
   return true;
 }
+// ---- DOM data (DERIVED-C5, `resume: { model: "derived", domData: true }` builds only: `DOM_DATA`) ----
+// A tail `d` entry stands for a list items array of a record's props that the server left out: its rows are the page's
+// rows after the list's anchor (`<!--r0<n>[-->`), each item rebuilt from the entry's skeleton. Each top-level key holding a
+// page value is an accessor that reads its value from the row's DOM the first time (then a plain data property); the
+// rest are literals. Everything still unread is read in idle slices after start, and before rows move or a unit renders
+// in the browser (`realFor`, `client`): as on the serialized model (read on first use, the rest at idle).
+let anchors: Map<number, Comment> | null = null,
+  unread: Record<string, unknown>[] | null = null;
+const domRows = new Map<number, (Element | null)[]>();
+// Row k's root = the first element inside its `<!--r…[-->` … `<!--]-->` group (balance as `closeAt` counts it: row
+// openers up, `]` down), the groups in a run from the anchor. One pass over the siblings, no regex per node.
+const rowOpen = (d: string): boolean => d.charCodeAt(0) === 114 && d.charCodeAt(d.length - 1) === 91 && R_OPEN.test(d);
+function rowRoots(n: number): (Element | null)[] {
+  let roots = domRows.get(n);
+  if (roots) return roots;
+  if (anchors === null) {
+    anchors = new Map();
+    const walk = doc!.createTreeWalker(doc!, 128);
+    for (let c = walk.nextNode() as Comment | null; c; c = walk.nextNode() as Comment | null) {
+      const d = c.data;
+      if (d.charCodeAt(0) === 114 && d.charCodeAt(1) === 48 && d.length > 3) {
+        const m = /^r0(\d+)\[$/.exec(d);
+        if (m) anchors.set(+m[1]!, c);
+      }
+    }
+  }
+  roots = [];
+  let depth = 0,
+    root: Element | null = null;
+  for (let x: Node | null = anchors.get(n) ?? null; x; x = x.nextSibling) {
+    if (x.nodeType === 8) {
+      const d = (x as Comment).data;
+      if (rowOpen(d)) {
+        if (depth++ === 0) root = null;
+      } else if (depth === 0) break;
+      else if (d === "]" && --depth === 0) roots.push(root);
+    } else if (depth === 0) break;
+    else if (root === null && x.nodeType === 1) root = x as Element;
+  }
+  domRows.set(n, roots);
+  return roots;
+}
+// `tag:i.j` below the row root by element child index (the server's `rowTexts` path; tag checked): its whole text, with
+// `@name` its attribute, `#…` the number it spells.
+type DomPath = [number: boolean, tag: string, steps: number[], attribute: string | null];
+const parsedPaths = new Map<string, DomPath>();
+function domText(n: number, k: number, path: string): string | number {
+  let p = parsedPaths.get(path);
+  if (p === undefined) {
+    const number = path.charCodeAt(0) === 35,
+      at = path.indexOf("@"),
+      steps = path.slice(+number, at < 0 ? undefined : at).split(/[:.]/);
+    parsedPaths.set(path, (p = [number, steps[0]!, steps.slice(1).filter(Boolean).map(Number), at < 0 ? null : path.slice(at + 1)]));
+  }
+  let node: Element | null | undefined = rowRoots(n)[k];
+  for (let i = 0; node && i < p[2].length; i++) node = node.children[p[2][i]!];
+  const value = !node || node.localName !== p[1] ? null : p[3] === null ? node.textContent : node.getAttribute(p[3]);
+  if (value === null)
+    throw Error(DEV ? DEV.hint("Rivet resume: DOM-backed data has no <" + p[1] + "> at " + path + " in row " + k, "drift") : "Missing resume DOM data");
+  return p[0] ? +value : value;
+}
+const zeros = (skel: unknown): number =>
+  typeof skel === "number" ? +(skel === 0) : skel !== null && typeof skel === "object" ? Object.values(skel).reduce((a: number, v) => a + zeros(v), 0) : 0;
+const paged = (skel: unknown): boolean => (typeof skel === "number" ? skel > 0 : skel !== null && typeof skel === "object" && Object.values(skel).some(paged));
+function fill(skel: unknown, n: number, k: number, paths: string[], lits: unknown[], at: { i: number }): unknown {
+  if (typeof skel === "number") return skel === 0 ? lits[at.i++] : domText(n, k, paths[skel - 1]!);
+  if (Array.isArray(skel)) return skel.map((x) => fill(x, n, k, paths, lits, at));
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(skel as object)) set(out, key, fill((skel as Record<string, unknown>)[key], n, k, paths, lits, at));
+  return out;
+}
+const ROW = Symbol();
+const own = (o: object, key: string, value: unknown): void =>
+  void Object.defineProperty(o, key, { value, writable: true, enumerable: true, configurable: true });
+// A plain store (a `__proto__` key defines the own property, as JSON.parse does).
+const set = (o: Record<string, unknown>, key: string, value: unknown): void => (key === "__proto__" ? own(o, key, value) : void (o[key] = value));
+function domEntry([id, n, path, count, skel, paths, lits, whole]: DerivedDom): void {
+  let host = recs.get(id)?.props as Record<string | number, unknown> | null | undefined;
+  for (let i = 0; host && i < path.length - 1; i++) host = host[path[i]!] as Record<string | number, unknown> | null;
+  if (!host || typeof host !== "object") return;
+  // Per top-level key of an object skeleton: its sub-skeleton, its literals' offset within the row, whether the page holds part of it.
+  const keys =
+      skel !== null && typeof skel === "object" && !Array.isArray(skel)
+        ? Object.keys(skel).map(
+            (key, i, all) =>
+              [
+                key,
+                (skel as Record<string, unknown>)[key],
+                all.slice(0, i).reduce((a, x) => a + zeros((skel as Record<string, unknown>)[x]), 0),
+                paged((skel as Record<string, unknown>)[key]),
+              ] as const,
+          )
+        : null,
+    width = zeros(skel),
+    items: unknown[] = new Array(count);
+  // One accessor pair per page-held key, shared by every item (the items keep one shape: monomorphic reads); the item's
+  // row is its non-enumerable `ROW` symbol, the value cached per row on first read (written values too).
+  const pairs =
+    keys &&
+    keys.map(([key, sub, offset, lazy]) => {
+      if (!lazy) return null;
+      const cache: unknown[] = new Array(count),
+        known = new Uint8Array(count);
+      return {
+        configurable: true,
+        enumerable: true,
+        get(this: Record<symbol, number>): unknown {
+          const k = this[ROW]!;
+          if (!known[k]) ((known[k] = 1), (cache[k] = fill(sub, n, k, paths, lits, { i: bases[k]! + offset })));
+          return cache[k];
+        },
+        set(this: Record<symbol, number>, value: unknown): void {
+          const k = this[ROW]!;
+          ((known[k] = 1), (cache[k] = value));
+        },
+      };
+    });
+  // Row k's first literal (rows kept whole take none).
+  const bases = new Uint32Array(count);
+  for (let k = 0, base = 0; k < count; k++) {
+    if (whole && k in whole) {
+      items[k] = whole[k];
+      continue;
+    }
+    if (keys === null) items[k] = fill(skel, n, k, paths, lits, { i: base });
+    else {
+      const item: Record<string | symbol, unknown> = {};
+      for (let j = 0; j < keys.length; j++) {
+        const [key, sub, offset] = keys[j]!;
+        if (pairs![j] === null) set(item as Record<string, unknown>, key, fill(sub, n, k, paths, lits, { i: base + offset }));
+        else Object.defineProperty(item, key, pairs![j]!);
+      }
+      Object.defineProperty(item, ROW, { value: k });
+      bases[k] = base;
+      items[k] = item;
+      (unread ??= []).push(item as Record<string, unknown>);
+    }
+    base += width;
+  }
+  host[path[path.length - 1]!] = items;
+}
+function sweepDom(): void {
+  const all = unread;
+  unread = null;
+  if (all) for (const item of all) for (const key in item) void item[key];
+}
+// The idle read: 16 items per idle callback (a 1000-row page reads for ~9 ms at 4x CPU in all). Idle periods also come
+// while the first input waits for its chunks: a longer slice there delayed that input's DOM update (+8 ms at 4x).
+type Idle = (fn: (deadline?: { timeRemaining(): number }) => void) => number;
+let sweeping = false;
+function idleSweep(deadline?: { timeRemaining(): number }): void {
+  const all = unread;
+  if (!all) return void (sweeping = false);
+  let i = 0;
+  while (i < all.length && i < 16 && (!deadline || deadline.timeRemaining() > 1)) for (const key in all[i++]!) void all[i - 1]![key];
+  all.splice(0, i);
+  if (unread !== all) return void (sweeping = false);
+  if (all.length) (((window.requestIdleCallback as Idle | undefined) || setTimeout) as Idle)(idleSweep);
+  else ((unread = null), (sweeping = false));
+}
+
 // The records of the tail or of a streamed segment's patch (its names, keys and wake lists merged into the tail), then
 // its `Async` entries.
 function records(t: BoundaryTail, patch: boolean): void {
@@ -1397,6 +1640,10 @@ function records(t: BoundaryTail, patch: boolean): void {
   for (const key in t.w ?? {}) {
     const source = recs.get(+key.slice(0, key.indexOf(".")));
     if (source) for (const id of t.w![key]!) recs.get(id) && (recs.get(id)!.sources ??= []).push(source);
+  }
+  if (DOM_DATA && t.d) {
+    for (const entry of t.d) domEntry(entry);
+    if (unread && !sweeping) ((sweeping = true), (((window.requestIdleCallback as Idle | undefined) || setTimeout) as Idle)(idleSweep));
   }
   for (const r of added) if (r.flags & (LOAD | IDLE | VISIBLE) && !r.hole) trigger(r);
   asyncEntries(t.a);
@@ -1471,10 +1718,26 @@ function around(target: EventTarget | null): true | Promise<void> {
   return true;
 }
 
+// A form's submit / reset (a click on its submit / image / reset control, or the event itself) runs its controls'
+// `invalid` / `reset` listeners, which no delegated type covers: the deferred units inside it adopt first (DERIVED-C5,
+// fuzz `/checkbox`: a deferred CheckboxField missed the submit's `invalid`).
+function formOf(event: Event, target: Element | null): HTMLFormElement | null {
+  if (event.type === "submit" || event.type === "reset") return target as HTMLFormElement | null;
+  if (event.type !== "click") return null;
+  const control = target?.closest?.("button,input") as HTMLButtonElement | HTMLInputElement | null | undefined;
+  return control?.form && /^(submit|image|reset)$/.test(control.type) ? control.form : null;
+}
 // Document click listeners (tail `g`, server `_rListen`: the router's link clicks): materialise the boundaries listening
 // for a click wherever its target is, before the units around the target. True when done now, a promise while a chunk loads.
 function listeners(event: Event): true | Promise<void> {
   const target = event.target as Element | null;
+  const form = formOf(event, target);
+  if (form !== null)
+    for (const r of recs.values())
+      if (r.flags & DEFER && r.hole?.start && !r.done && form.contains(r.hole.start)) {
+        const p = need(r);
+        if (p !== true) return p;
+      }
   if (event.type !== "click") return true;
   for (const [id, match] of tail?.g ?? []) {
     const r = recs.get(id);

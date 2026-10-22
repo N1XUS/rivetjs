@@ -32,11 +32,11 @@
             "rivet-merge-index-1.js",
             "rivet-merge-dom-resume.js",
             "preload-helper.js",
+            "dom-resume-lazy.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "dom-resume-lazy.js",
-            "browser-widget.js",
-            "analytics.js"
+            "analytics.js",
+            "browser-widget.js"
           ],
           "runtimeJS": {
             "min": 73940,
@@ -126,7 +126,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7335,
+          "htmlBr": 7327,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -182,8 +182,8 @@
             "preload-helper.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 73940,

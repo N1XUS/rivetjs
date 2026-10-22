@@ -1403,6 +1403,32 @@ export interface BoundaryTail {
    * A patch re-sends an entry whole when it settles.
    */
   a?: DerivedAsync[];
+  /**
+   * Derived client (DERIVED-C4): per boundary whose numbered plain signals a wake key names (`"<id>.$<n>"`), how many its
+   * unit made on the server — the browser's adopt run counts its own and wakes those keys' readers when it differs.
+   */
+  c?: Record<string, number>;
+  /**
+   * DOM data on derived (DERIVED-C5, builds with `resume: { model: "derived", domData: true }`): list item arrays of a
+   * record's props that the page shows, left out of the props (`0` at `path`) and rebuilt by the browser from the rows
+   * after the list's anchor (`<!--r0<n>[-->`). `DerivedDom`.
+   */
+  d?: DerivedDom[];
 }
+/**
+ * One `BoundaryTail.d` entry: the record whose props hold the array, the list anchor number, the array's key path in the
+ * props, its length, the item skeleton (leaves: 0 = the row's next literal, k ≥ 1 = the text at `paths[k - 1]` below the row
+ * root, `#…` = a number), the literals of every row in turn, and rows kept whole (row index → item).
+ */
+export type DerivedDom = [
+  record: number,
+  anchor: number,
+  path: (string | number)[],
+  count: number,
+  skeleton: unknown,
+  paths: string[],
+  literals: unknown[],
+  whole?: Record<number, unknown>,
+];
 /** One `BoundaryTail.a` entry. */
 export type DerivedAsync = [id: number, boundary: number, k: number, settled?: 0 | 1 | 2, value?: unknown];

@@ -70,6 +70,18 @@
       "types": "./server-derived.ts",
       "default": "./server-derived.ts"
     },
+    "./derived-eager": {
+      "types": "./derived-eager.ts",
+      "default": "./derived-eager.ts"
+    },
+    "./server-derived-reactivity": {
+      "types": "./server-derived-reactivity.ts",
+      "default": "./server-derived-reactivity.ts"
+    },
+    "./server-derived-store": {
+      "types": "./server-derived-store.ts",
+      "default": "./server-derived-store.ts"
+    },
     "./server-markup": {
       "types": "./server-markup.ts",
       "default": "./server-markup.ts"
@@ -89,6 +101,10 @@
     "./dom-derived": {
       "types": "./dom-derived.ts",
       "default": "./dom-derived.ts"
+    },
+    "./derived-reactivity": {
+      "types": "./derived-reactivity.ts",
+      "default": "./derived-reactivity.ts"
     },
     "./node": {
       "types": "./node.ts",

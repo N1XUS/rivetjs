@@ -23,7 +23,7 @@
 // tail also names each boundary's chunk (`m`), the keys its cold keydowns hold (`k`), the delegated event types
 // (`data-events`), the runtime (`data-rt`) and `data-boot` (a load / idle / visible trigger), and the derived inline loader
 // (`resume-loader-derived.ts`) follows it. Plain `resumableToString(…, { model: "derived" })` writes the tail only.
-import { createContext, createRoot, provide, useContext, getOwner, runWithOwner, signal, _dispose } from "@rivetjs/reactivity";
+import { computed, createContext, createRoot, provide, selector, useContext, getOwner, runWithOwner, signal, _dispose, _tracking } from "@rivetjs/reactivity";
 import type { EqualsOptions, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
@@ -35,8 +35,11 @@ import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
 import { _setDerived, _shellRecorder, renderResumable, resumableToString } from "./server-resume.ts";
 import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
-import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, TableEntry } from "./resume-format.ts";
+import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, TableEntry } from "./resume-format.ts";
+import { derivedDom } from "./dom-data-derived.ts";
+import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
+import { _onEager } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 import { _idScope } from "./id.ts";
 import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
@@ -56,7 +59,16 @@ export const INDEPENDENT = 1,
   /** Client trigger: materialise at idle (`idle` island / effect). */
   IDLE = 64,
   /** Client trigger: materialise when its first element enters the viewport (`visible` island / effect). */
-  VISIBLE = 128;
+  VISIBLE = 128,
+  /**
+   * Dependency facts (DERIVED-C4): a dependent boundary whose subtree is closed (every reactive source it read from outside
+   * is named in the wake lists, nothing it made escaped, it wrote nothing outside) and heavy enough: the browser adopts it
+   * after its parent at idle, or earlier on an event inside it / a write its wake lists name, not with its parent.
+   */
+  DEFER = 256,
+  /** `DEFER` whose subtree also read a source the wake lists cannot name (module level, a build pass): any write to such a
+   * source in the browser adopts it first. */
+  MOD = 512;
 const TRIGGERS = LOAD | IDLE | VISIBLE;
 
 /** One boundary of a render (the token the compiled body holds). */
@@ -79,6 +91,11 @@ export interface Boundary {
   an: number;
   /** While its body evaluates: the owner whose context frame names it (`CURRENT`), and that owner's frame before. */
   frame: [owner: OwnerFrames, ctx: unknown] | null;
+  /** Dependency facts (DERIVED-C4): plain signals made in its unit, numbered (`"<id>.$<n>"` wake keys); reactive sources made in
+   * its unit (signals, computeds: the deferral weight); `EAGER` / `MOD` marks (below). */
+  made: number;
+  weight: number;
+  mark: number;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -130,6 +147,14 @@ export interface DerivedRender {
   forced: readonly [b: number, k: number] | null;
   /** Shell cache renders (`options.shell`): keyed signal getter → its signal (the frame watch reads the value). */
   sources: WeakMap<object, () => unknown> | null;
+  /** Dependency facts (DERIVED-C4): computeds evaluating, innermost last (their reads become their sources). */
+  ev: Src[];
+  /** A store was made in this render (store reads are not tracked): no boundary of it defers. */
+  stores: boolean;
+  /** Creators whose numbered signals some wake key names (tail `c`: their counts, the browser checks its own). */
+  counted: Set<Boundary>;
+  /** DOM data (DERIVED-C5, manifest `domData`): the lists written from a tape with DOM text slots; null when off. */
+  dom: DomList[] | null;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -238,6 +263,10 @@ export function createDerived(): DerivedRender {
     base: 0,
     forced: null,
     sources: options && (options as { shell?: unknown }).shell ? new WeakMap() : null,
+    ev: [],
+    stores: false,
+    counted: new Set(),
+    dom: options?.manifest?.domData && derivedDom.api ? [] : null,
   });
 }
 
@@ -338,7 +367,22 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     else flags = (flags & ~INDEPENDENT) | DEMOTED;
   }
   verified = null;
-  const boundary: Boundary = { id: ctx.next++, parent, name, flags, props: keep, signals: [], keys: null, attr: false, out: false, an: 0, frame: null };
+  const boundary: Boundary = {
+    id: ctx.next++,
+    parent,
+    name,
+    flags,
+    props: keep,
+    signals: [],
+    keys: null,
+    attr: false,
+    out: false,
+    an: 0,
+    frame: null,
+    made: 0,
+    weight: 0,
+    mark: 0,
+  };
   if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
   if (keys) ctx.keys[boundary.id] = keys;
   if (flags & TRIGGERS) ctx.boot = true;
@@ -427,13 +471,15 @@ export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sig
   // (An H-holes hit's content outside a child boundary: the stored shell's boundary, not this render's — never registered.)
   if (!ctx || !owner || owner.id < ctx.base) return s;
   const id = register(owner, key, s);
+  const src: Src = { c: owner, n: -1, k: id, x: ctx, s: null, r: null, z: 0 };
+  owner.weight++;
   const get = function () {
-    const at = current(ctx);
-    if (at && at !== owner) wake(ctx, id, at.id);
+    note(src);
     return s();
   } as Signal<T>;
-  get.set = (value) => s.set(value);
-  get.update = (fn) => s.update(fn);
+  get.set = (value) => (wrote(src), s.set(value));
+  get.update = (fn) => (wrote(src), s.update(fn));
+  (get as unknown as Tracked)[SRC] = src;
   ctx.sources?.set(get, s);
   return get;
 }
@@ -444,8 +490,184 @@ export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
   const store = createStore(init);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
+  // Store reads are not tracked (M2): a render holding one defers nothing (DERIVED-C4).
+  if (ctx) ctx.stores = true;
   if (ctx && owner && owner.id >= ctx.base) register(owner, key, () => read(store));
   return store;
+}
+
+// ---- Dependency facts (DERIVED-C4, 2026-10-21) ----
+// The browser adopts a heavy dependent boundary (a cdk collection host: its build pass runs in both adopt runs) after its
+// parent at idle, not with it, when every reactive source its subtree read from outside is named — the derived build
+// routes `@rivetjs/reactivity`'s `signal` / `computed` / `selector` (and `/store`'s `createStore`) of every module but the
+// runtime's own through `_dsignal` / `_dcomputed` / `_dselector` / `_dstore` (`server-derived-reactivity.ts`; the Vite plugin's
+// derived alias). A plain signal made in a unit is numbered there (`made`, in creation order, outside build passes /
+// computeds / streamed content — the browser's adopt run numbers its own the same way and checks the count, tail `c`); a
+// read by a boundary outside the maker's subtree adds the reader to the wake list `"<maker>.$<n>"` (a write in the browser
+// adopts the readers first, as for keyed signals). Marks (`mark`): `EAGER` — something made in the subtree was read outside
+// it (it escaped), or the subtree wrote a source made outside it: the boundary adopts with its parent; `MOD` — the subtree
+// read a source no wake key can name (module level, another render, a build pass): any such write in the browser adopts it
+// first. Computed reads stand for their sources (recorded while they evaluate); a store in the render defers nothing.
+/** A reactive source made through the derived alias: maker, number (-1: none), keyed wake id, render, computed sources;
+ * the last boundary whose read was noted and (computeds) how many sources it had then — a read again by the same boundary
+ * notes nothing new (DERIVED-C5: 1000 rows reading one host signal paid the walk + wake key per read, +27 % server CPU). */
+interface Src {
+  c: Boundary | null;
+  n: number;
+  k: string | null;
+  x: DerivedRender | null;
+  s: Set<Src> | null;
+  r: Boundary | null;
+  z: number;
+  /** Numbered: its wake key, built on the first cross read. */
+  w?: string;
+}
+const EAGER_MARK = 1,
+  MOD_MARK = 2,
+  /** Sources a subtree makes before it is worth adopting on its own (a cdk ListBox host: 15, a Table 30+). */
+  DEFER_WEIGHT = 8;
+/** A tracked getter's source (a property, not a WeakMap: no ephemeron per signal for the collector). */
+const SRC = Symbol();
+type Tracked = { [SRC]?: Src };
+/** A store was made outside every render (module level): its reads are not tracked, nothing defers. */
+let moduleStores = false;
+/** `b` is `a` or inside its subtree. */
+const within = (a: Boundary, b: Boundary | null): boolean => {
+  for (let x = b; x !== null; x = x.parent) if (x === a) return true;
+  return false;
+};
+/** Mark `from` and its ancestors up to (not including) the first one whose subtree holds `stop` (null: all of them). */
+function markUp(from: Boundary, stop: Boundary | null, bit: number): void {
+  for (let x: Boundary | null = from; x !== null && !(stop !== null && within(x, stop)); x = x.parent) x.mark |= bit;
+}
+/** A tracked read of `src`: inside a computed's evaluation one of its sources, else the current boundary's. */
+function note(src: Src): void {
+  const ctx = src.x ?? useContext(DERIVED);
+  if (ctx === null) return;
+  const ev = ctx.ev;
+  if (ev.length) return void (ev[ev.length - 1]!.s ??= new Set()).add(src);
+  const r = current(ctx);
+  if (r !== null && r !== src.c && (src.r !== r || (src.s !== null && src.z !== src.s.size))) cross(ctx, src, r, 0);
+}
+function cross(ctx: DerivedRender, src: Src, r: Boundary, depth: number): void {
+  if (src.r === r && (src.s === null || src.z === src.s.size)) return;
+  src.r = r;
+  if (src.s !== null) src.z = src.s.size;
+  const c = src.x === ctx ? src.c : null;
+  if (src.s !== null) {
+    // A computed: its sources, read now by `r` (cached reads ran nothing).
+    if (src.x !== ctx) return markUp(r, null, MOD_MARK);
+    if (depth < 32) for (const t of src.s) if (t.c !== r) cross(ctx, t, r, depth + 1);
+    if (c !== null && !within(r, c) && !within(c, r)) markUp(c, r, EAGER_MARK);
+    return;
+  }
+  if (c === null) return markUp(r, null, MOD_MARK);
+  if (src.k !== null && c !== r) wake(ctx, src.k, r.id);
+  if (within(r, c)) return;
+  if (!within(c, r)) markUp(c, r, EAGER_MARK);
+  if (src.k !== null) return;
+  if (src.n < 0) return markUp(r, c, MOD_MARK);
+  wake(ctx, (src.w ??= c.id + ".$" + src.n), r.id);
+  ctx.counted.add(c);
+}
+/** A write while the server renders: a boundary writing a source made outside its subtree adopts with its parent. */
+function wrote(src: Src): void {
+  const ctx = useContext(DERIVED);
+  const w = ctx && current(ctx);
+  if (w === null || (src.x === ctx && src.c !== null && within(w, src.c))) return;
+  markUp(w, src.x === ctx ? src.c : null, EAGER_MARK);
+}
+function made(ctx: DerivedRender | null, s: Src): void {
+  const c = s.c;
+  if (ctx === null || c === null) return;
+  c.weight++;
+  if (s.s === null && !_tracking() && ctx.segment === null && _shellRecorder() !== undefined) s.n = c.made++;
+}
+/** Derived alias of `signal` (DERIVED-C4): the signal, its reads and writes noted while a derived render runs. */
+export function _dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
+  const s = signal(init as T, options);
+  const ctx = useContext(DERIVED);
+  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: null, r: null, z: 0 };
+  made(ctx, src);
+  const get = function () {
+    note(src);
+    return s();
+  } as Signal<T>;
+  get.set = (value) => (wrote(src), s.set(value));
+  get.update = (fn) => (wrote(src), s.update(fn));
+  (get as unknown as Tracked)[SRC] = src;
+  ctx?.sources?.set(get, s);
+  return get;
+}
+/** Derived alias of `computed` (DERIVED-C4): its reads while it evaluates become its sources; a read of it reads them. */
+export function _dcomputed<T>(fn: () => T, options?: EqualsOptions<T>): () => T {
+  const ctx = useContext(DERIVED);
+  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: new Set(), r: null, z: 0 };
+  made(ctx, src);
+  const base = computed(
+    ctx === null
+      ? fn
+      : () => {
+          ctx.ev.push(src);
+          try {
+            return fn();
+          } finally {
+            ctx.ev.pop();
+          }
+        },
+    options,
+  ) as () => T;
+  const get = (): T => {
+    const value = base();
+    note(src);
+    return value;
+  };
+  (get as unknown as Tracked)[SRC] = src;
+  return get;
+}
+/** Derived alias of `selector` (DERIVED-C4): a key read reads its source (the selector caches it). */
+export function _dselector<T, K = T, R = boolean>(
+  source: () => T,
+  fn?: (key: K, value: T) => R,
+  options?: { keys?: (next: T, previous: T) => Iterable<K> | null | undefined },
+): (key: K) => R {
+  const tracked = (source as Tracked)[SRC] ? source : _dcomputed(source);
+  const src = (tracked as Tracked)[SRC]!;
+  const read = selector(tracked, fn, options);
+  return (key) => {
+    note(src);
+    return read(key);
+  };
+}
+/** Derived alias of `createStore` (DERIVED-C4): store reads are not tracked, so a render holding one defers nothing. */
+export function _dstore<T extends object>(init: T): Store<T> {
+  const ctx = useContext(DERIVED);
+  if (ctx) ctx.stores = true;
+  else moduleStores = true;
+  return createStore(init);
+}
+// A `Router` level renders here (generated route modules, `derived-eager.ts`): its swap and revived loads are the page
+// load's, so this boundary and its ancestors adopt with their parents.
+_onEager(() => {
+  const ctx = useContext(DERIVED),
+    r = ctx && current(ctx);
+  if (r) markUp(r, null, EAGER_MARK);
+});
+/** Flush: `DEFER` / `MOD` on the dependent boundaries whose subtree is closed and heavy enough (`flags`), creator counts. */
+function deferFlags(ctx: DerivedRender, from: number): void {
+  if (ctx.stores || moduleStores || ctx.sources !== null || (ctx.stream && ctx.asyncs.some((a) => a.state === 0 || a.state === 3))) return;
+  const weight = new Map<Boundary, number>();
+  for (let i = ctx.boundaries.length - 1; i >= 0; i--) {
+    const b = ctx.boundaries[i]!,
+      w = (weight.get(b) ?? 0) + b.weight;
+    weight.set(b, w);
+    if (b.parent) weight.set(b.parent, (weight.get(b.parent) ?? 0) + w);
+  }
+  for (let i = from; i < ctx.boundaries.length; i++) {
+    const b = ctx.boundaries[i]!;
+    if (b.parent === null || !b.out || b.flags & (INDEPENDENT | TRIGGERS) || b.mark & EAGER_MARK || weight.get(b)! < DEFER_WEIGHT) continue;
+    b.flags |= DEFER | (b.mark & MOD_MARK ? MOD : 0);
+  }
 }
 
 // ---- Streamed holes (DERIVED-C2, 2026-10-21) ----
@@ -723,16 +945,17 @@ export function _setDerivedRows(enabled: boolean): void {
 }
 /** Compiler ABI (derived server target): a list-mounted `<For>` (`$list`). */
 export function _rFor(props: ForProps): ServerValue {
-  const $list = props.$list;
-  if ($list === undefined || !tapeRows || !useContext(DERIVED)) return For(props) as unknown as ServerValue;
+  const $list = props.$list,
+    ctx = useContext(DERIVED);
+  if ($list === undefined || !tapeRows || !ctx) return For(props) as unknown as ServerValue;
   let owner = getOwner();
   const root = createRoot(() => {
     owner = getOwner();
-    return derivedRows(props, $list);
+    return derivedRows(props, $list, ctx);
   });
   return _scopedRecord(owner, root.value, root.dispose) as unknown as ServerValue;
 }
-function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>): unknown {
+function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx: DerivedRender): unknown {
   const { each, by, children } = props;
   const items = typeof each === "function" ? (each as () => readonly unknown[])() : each;
   if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
@@ -746,7 +969,11 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>): un
   }
   // A plain dense array: one list over the marked plan (`_list` keeps `.map`'s observable reads: Get map / length /
   // constructor, then each index).
-  if (dense) return _list(items, noRow, rowPlan($list[0]), $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void);
+  if (dense) {
+    const marked = rowPlan($list[0]),
+      list = _list(items, noRow, marked, $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void);
+    return ctx.dom !== null && items.length ? derivedDom.api!.list(ctx.dom, items, $list[0], marked, list, ROWS) : list;
+  }
   // Holes / subclasses: row by row, each between its row region markers (as the resume row hook writes them).
   const rows: ServerValue[] = new Array(items.length);
   for (let index = 0; index < items.length; index++) {
@@ -766,6 +993,8 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>): un
 function flush(ctx: DerivedRender): BoundaryTail | null {
   if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0) return null;
   const b: BoundaryRecord[] = [];
+  let d: DerivedDom[] | undefined;
+  deferFlags(ctx, ctx.flushed);
   for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
     const boundary = ctx.boundaries[i]!;
     const signals: unknown[] = [];
@@ -776,11 +1005,13 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     }
     if (!boundary.out) boundary.flags |= SILENT;
     const record: BoundaryRecord = [boundary.id, boundary.parent?.id ?? 0, boundary.flags, boundary.name, signals];
-    if (boundary.props) record.push(boundary.props);
+    if (boundary.props)
+      record.push(ctx.dom?.length ? (derivedDom.api!.props(ctx.dom, boundary.id, boundary.props, [], (d ??= []), 0) as object) : boundary.props);
     b.push(record);
   }
   ctx.flushed = ctx.boundaries.length;
   const tail: BoundaryTail = { v: 1, b };
+  if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
   if (ctx.listen.length) {
     const root = b.find((record) => record[1] === 0);
@@ -809,6 +1040,12 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     for (const id of ctx.dirty) w[id] = [...ctx.wake.get(id)!];
     ctx.dirty.clear();
     tail.w = w;
+  }
+  if (ctx.counted.size) {
+    const c: Record<string, number> = {};
+    for (const x of ctx.counted) c[x.id] = x.made;
+    ctx.counted.clear();
+    tail.c = c;
   }
   if (ctx.changed.size) {
     // A segment settled but not written yet ships as pending: its value comes with its own content.

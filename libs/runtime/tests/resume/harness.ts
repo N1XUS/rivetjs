@@ -49,6 +49,8 @@ const sources: Record<string, string> = {
   // Derived model (M2 lane R): the `DERIVED` switch (`false`: every other build) and the derived client runtime.
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
+  // DERIVED-C4: the derived build's `@rivetjs/reactivity` alias (fixtures import it by path).
+  "/derived-reactivity.ts": "derived-reactivity.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
   "/dev/off.ts": "dev/off.ts",
   // Imported by `dev/on.ts` (suites serving it at `/dev/off.ts` for development diagnostics).

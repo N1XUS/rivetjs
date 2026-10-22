@@ -160,7 +160,9 @@ export interface RivetResumeOptions {
    * at the first idle after resume). Adds the reader (`@rivetjs/runtime` `dom-resume-data.ts`, about 1.8 KB min / 0.6 KB br)
    * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 9.1 KB min) to its server and
    * `domData: true` to the resume manifest; servers write `D` entries only then. Default true (LAZY-FLIP); `false`
-   * builds carry neither.
+   * builds carry neither. With `model: "derived"` (DERIVED-C5) it is off unless set to `true`: `<For>` items of a
+   * record's data props become tail `d` entries the derived client reads back from the rows (`DOM_DATA` in
+   * `dom-derived.ts`; no `dom-data-resume` / server registry).
    */
   domData?: boolean;
   /**
@@ -172,7 +174,8 @@ export interface RivetResumeOptions {
    * chunk per module holding boundaries plus the runtime entry (default export of `@rivetjs/runtime/dom-derived`), and
    * writes the manifest with `model: "derived"`, `runtime` and `symbols` keyed by boundary name (`<module>#<Name>`); the
    * router renders such builds with `renderDerived`. `chunks` / `merge` / `cap` / `preload` / `lazy` / `entry` /
-   * `lazyRows` / `domData` do not apply. Dev: an edit of a resume module reloads the page.
+   * `lazyRows` do not apply; `domData` applies to list rows (DERIVED-C5: tail `d`, read back by `dom-derived.ts`). Dev: an
+   * edit of a resume module reloads the page.
    */
   model?: "serialized" | "derived";
   /**
@@ -494,14 +497,16 @@ function lazySwitch(id: string): string | null {
 }
 /** `resume.model: "derived"` (M2 C3): the runtime's `derived.ts` switch (`DERIVED`, the adopt run's `_for` hook) → its
  * opted-in content (`switches.ts`); the derived build serves the lazy rows switches with it (browser only). */
+/** Importers the derived reactivity alias leaves alone (DERIVED-C4): the runtime and reactivity packages themselves. */
+const RUNTIME_OWN = /[\\/](?:libs[\\/](?:runtime|reactivity)|@rivetjs[\\/](?:runtime|reactivity))[\\/]/;
 const DERIVED_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](derived)\.([cm]?[jt]s)$/;
 function derivedSwitch(id: string): string | null {
   const hit = DERIVED_SWITCH.exec(id) ?? LAZY_SWITCH.exec(id);
   return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
 }
 /** `resume.domData` (DOM-DATA): the runtime's switch modules (`dom-data.ts` / `dom-data-resume.ts` for the browser,
- * `dom-data-server.ts` for the server) → their opted-in content (`switches.ts`). */
-const DOM_DATA_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](dom-data(?:-resume|-server)?)\.([cm]?[jt]s)$/;
+ * `dom-data-server.ts` / `dom-data-derived.ts` for the server) → their opted-in content (`switches.ts`). */
+const DOM_DATA_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](dom-data(?:-resume|-server|-derived)?)\.([cm]?[jt]s)$/;
 function domDataSwitch(id: string): string | null {
   const hit = DOM_DATA_SWITCH.exec(id);
   return hit && switchContent(hit[1]!, (module) => "./" + module + "." + hit[2]);
@@ -742,7 +747,9 @@ function rivetPlugin(
   // `resume.lazyRows` / `resume.domData`: on unless set to `false` (default flipped by LAZY-FLIP); the derived model
   // serves its own runtime switches and ignores both.
   const lazyRowsOn = (): boolean => !!resume && !derivedModel && resume.lazyRows !== false;
-  const domDataOn = (): boolean => !!resume && !derivedModel && resume.domData !== false;
+  // Serialized builds: on unless `false` (LAZY-FLIP). Derived builds: off unless `true` (DERIVED-C5; the row read-back
+  // costs the first click a few ms, kept opt-in until that is noise).
+  const domDataOn = (): boolean => !!resume && (derivedModel ? resume.domData === true : resume.domData !== false);
   const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
@@ -1087,7 +1094,8 @@ function rivetPlugin(
       }
       if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
     }
-    const body = { model: "derived", runtime, symbols, sizes, deps, ...(builtins ? { builtins } : {}) };
+    // `resume.domData` (DERIVED-C5): the derived client reads list data from the page (`DOM_DATA` loaded); servers write `d` then.
+    const body = { model: "derived", runtime, symbols, sizes, deps, ...(builtins ? { builtins } : {}), ...(domDataIn ? { domData: true } : {}) };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
   }
@@ -1662,6 +1670,17 @@ function rivetPlugin(
       if (id === "@rivetjs/reactivity" && serve && importer && this.environment?.config?.consumer !== "server" && appModule(importer.split("?")[0]!))
         return this.resolve("@rivetjs/runtime/hot-reactivity", importer, { skipSelf: true });
       if (id === ENTRY || id === DERIVED_ENTRY || id === DERIVED_SERVER || id.startsWith(CHUNK) || id.startsWith(PART)) return id;
+      // Derived build (DERIVED-C4): every module but the runtime's / reactivity's own makes its signals through the derived
+      // alias (server: which boundary made and read each source — the wake lists' dependency facts; browser: adopt runs
+      // number their plain signals), `runtime/derived-reactivity.ts` / `server-derived-reactivity.ts`.
+      if (derivedModel && (id === "@rivetjs/reactivity" || id === "@rivetjs/reactivity/store") && importer && !RUNTIME_OWN.test(importer.split("?")[0]!)) {
+        const server = ssrBuild || this.environment?.config?.consumer === "server";
+        if (server)
+          return this.resolve(id === "@rivetjs/reactivity" ? "@rivetjs/runtime/server-derived-reactivity" : "@rivetjs/runtime/server-derived-store", importer, {
+            skipSelf: true,
+          });
+        if (id === "@rivetjs/reactivity") return this.resolve("@rivetjs/runtime/derived-reactivity", importer, { skipSelf: true });
+      }
       // Derived build, server: the router renders through the derived renderer (`DERIVED_SERVER`).
       if (
         derivedModel &&
@@ -1714,10 +1733,13 @@ function rivetPlugin(
         }
       }
       // `resume.domData`: the DOM data reader is in (`DOM_DATA`); the resume manifest says so when the switch loaded.
-      if (domDataOn()) {
+      // Derived builds (DERIVED-C5): the derived client's reader is behind `DOM_DATA` itself (no `dom-data-resume`), and
+      // the server's is `server-derived-dom.ts` (`dom-data-derived`; the serialized registry stays out: `dom-data-server`
+      // keeps null). Serialized builds get `dom-data-derived` too (nothing imports it there).
+      if (domDataOn() && !(derivedModel && /[\\/]dom-data-(?:server|resume)\.[cm]?[jt]s$/.test(clean))) {
         const code = domDataSwitch(clean);
         if (code !== null) {
-          if (code.includes("_domData") && this.environment?.config?.consumer !== "server") domDataIn = true;
+          if ((derivedModel ? code.includes("DOM_DATA") : code.includes("_domData")) && this.environment?.config?.consumer !== "server") domDataIn = true;
           return code;
         }
       }

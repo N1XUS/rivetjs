@@ -78,9 +78,9 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javas
 interface Built {
   root: string;
   html: string;
-  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]> };
+  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]>; domData?: boolean };
 }
-async function buildApp(model: "derived" | "serialized", rows: "static" | "interactive", roots: string[]): Promise<Built> {
+async function buildApp(model: "derived" | "serialized", rows: "static" | "interactive", roots: string[], domData = false): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-derived-" + model + "-" + rows + "-"));
   roots.push(root);
@@ -94,7 +94,7 @@ async function buildApp(model: "derived" | "serialized", rows: "static" | "inter
   const plugin = () =>
     rivet({
       serverExports: { modules: ["src/page.tsx"] },
-      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(model === "derived" ? { model } : {}) },
+      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(model === "derived" ? { model } : {}), ...(domData ? { domData } : {}) },
     });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true } });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "server-dist", ssr: "src/server.tsx" } });
@@ -241,6 +241,45 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         };
       }
       if (process.env.RIVET_DERIVED_BYTES) console.info(JSON.stringify(bytes));
+    } finally {
+      await browser.close();
+      for (const root of roots) await rm(root, { recursive: true, force: true });
+    }
+  },
+);
+
+(hasDerivedModel() ? test : test.skip)(
+  "rivet({ resume: { model: 'derived', domData: true } }): manifest domData, rows left out of the route payload, read back from the page",
+  async () => {
+    const browser = await chromium.launch({ headless: true });
+    const roots: string[] = [];
+    try {
+      const plain = await buildApp("derived", "interactive", roots);
+      assert.equal(plain.manifest.domData, undefined);
+      const built = await buildApp("derived", "interactive", roots, true);
+      assert.equal(built.manifest.domData, true);
+      const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(built.html)![1]!);
+      assert.equal(tail.d?.length, 1, "one d entry: the 50 rows");
+      assert.equal(tail.d[0][3], 50);
+      assert.ok(!JSON.stringify(tail.b).includes("row 17"), "row names are in the page only");
+      assert.ok(pageBytes(built.html).tailBr < pageBytes(plain.html).tailBr);
+      // The derived client carries the DOM data reader (its row anchor scan).
+      const js = (
+        await Promise.all(
+          Object.values(built.manifest.deps ?? {})
+            .flat()
+            .concat(built.manifest.runtime)
+            .map((url) => readFile(resolve(built.root, "client-dist" + url), "utf8")),
+        )
+      ).join("");
+      assert.match(js, /r0\(\\d\+\)/);
+      await serve(built, browser, async (page) => {
+        await page.click("ul li:nth-child(3)");
+        await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.className === "on");
+        assert.equal(await page.evaluate(() => document.querySelectorAll("ul li.on").length), 1);
+        await page.click("#dark");
+        await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+      });
     } finally {
       await browser.close();
       for (const root of roots) await rm(root, { recursive: true, force: true });

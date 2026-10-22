@@ -462,6 +462,9 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   // The adopt task's route renders swap without scroll / focus / announce (the page load, not a navigation).
   assert.match(app, /const adoptSwap = \(apply: \(\) => void, next: ParentNode\): void => \(adopting \? apply\(\) : swapRoute\(apply, next\)\);/);
   assert.match(app, /swap=\{adoptSwap\}/);
+  // DERIVED-C4: the boundary a Router level renders in adopts with its parent (never deferred to idle).
+  assert.match(app, /import \{ _rEager \} from "@rivetjs\/runtime\/derived-eager";/);
+  assert.match(app, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), /);
   assert.doesNotMatch(app, /swap=\{swapRoute\}/);
   assert.match(app, /\{view\(\)\}/);
   assert.match(entry, /import Root from "\.\/app\.tsx";/);

@@ -5,8 +5,9 @@
 
 /** `resume.lazyRows` (LAZY-T5B): `lazy-rows.ts` (browser + server flag) / `lazy-rows-resume.ts` (resume factory slot). */
 export const LAZY_SWITCHES = ["lazy-rows", "lazy-rows-resume"] as const;
-/** `resume.domData` (DOM-DATA): `dom-data.ts` / `dom-data-resume.ts` (browser), `dom-data-server.ts` (server). */
-export const DOM_DATA_SWITCHES = ["dom-data", "dom-data-resume", "dom-data-server"] as const;
+/** `resume.domData` (DOM-DATA): `dom-data.ts` / `dom-data-resume.ts` (browser), `dom-data-server.ts` (server), `dom-data-derived.ts`
+ * (derived server, DERIVED-C5). */
+export const DOM_DATA_SWITCHES = ["dom-data", "dom-data-resume", "dom-data-server", "dom-data-derived"] as const;
 /** `resume.model: "derived"` (M2 lane R): `derived.ts` (the adopt runtime's `_for` hook). A derived build serves it with the
  * `LAZY_SWITCHES` (their `_adoption.node` / `slot` hooks carry the adopt run). */
 export const DERIVED_SWITCHES = ["derived"] as const;
@@ -45,6 +46,8 @@ export function switchContent(name: string, from: (module: string) => string, un
       return "export const DERIVED = true;\n";
     case "dom-data-server":
       return `import { _domRegistry } from "${from("server-dom-data")}";\nexport const domServer = { create: _domRegistry };\n`;
+    case "dom-data-derived":
+      return `import { _derivedDom } from "${from("server-derived-dom")}";\nexport const derivedDom = { api: _derivedDom };\n`;
   }
   return null;
 }
