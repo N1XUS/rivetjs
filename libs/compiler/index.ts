@@ -108,6 +108,11 @@ export interface ResumeOptions {
   boundaries?: string[];
   /** Derived model: names of this module's components the build proved independent (every input is data). */
   independent?: string[];
+  /**
+   * Derived model: names of this module's boundaries without a change source of their own (`BoundaryVerdict.conditional`):
+   * their `_rB` carries `COND`, so the server keeps the record only for a live instance.
+   */
+  conditional?: string[];
 }
 
 /** Scoped style options of `compile()` for css`` blocks. */
@@ -344,6 +349,14 @@ export interface ModuleFacts {
   groups: { key: string; preload: string | null; tags: Set<string> }[];
   preload: string | null;
   defaultName: string | null;
+  /** Local exports: exported name → local binding (`export { a as b }`, `export function X`, `export default X`). */
+  exports: Map<string, string>;
+  /** Re-exports: exported name → source + imported name (`*` for `export * as ns from`). */
+  reexports: Map<string, { from: string; imported: string }>;
+  /** `export * from "m"` sources. */
+  stars: string[];
+  /** Top-level compound components `const X = Object.assign(Root, { Part: Local })`: X → root local + part → local. */
+  compounds: Map<string, { root: string; parts: Map<string, string> }>;
   /**
    * `boundaries: true` only (derived model, M2 C1): per module-level component, the facts the boundary fixpoint
    * (`facts-fixpoint.ts` `boundaryFacts`) closes over. Empty on older wasm builds (`hasDerivedModel()` false).
@@ -367,6 +380,14 @@ export interface ModuleFacts {
 export interface ComponentBoundaryFacts {
   /** Its own subtree holds a resume site (handler, binding, model, ref, client effect / event, computed, local function, spread). */
   interactive: boolean;
+  /**
+   * M6-PARITY 6b: it has a change source of its own (a handler, client effect / event, element effect, model binding,
+   * keyed state, a `resource`, an `Async` / `Suspense` / `clientOnly` component, or a site reading module state). A
+   * component whose sites only read props / context is dependent: a boundary only when live data flows in.
+   */
+  source: boolean;
+  /** It renders a context provider (`<Provider>`, `<X.Provider>`). */
+  provides: boolean;
   /** It (or a nested function / hook of it) calls `useContext` / a `use…Context` helper: its inputs are not only props. */
   context: boolean;
   /** `object`: `function C(props)`; `destructured`: `function C({ a })`; `none`: no parameter. */
@@ -375,7 +396,16 @@ export interface ComponentBoundaryFacts {
   renders: Set<string>;
   /** Every component element it renders, source order: the tag and whether the call site passes data only (no spread,
    * literal / data-literal / data-const attributes, text or site-free static element children). */
-  calls: { tag: string; data: boolean }[];
+  calls: {
+    tag: string;
+    data: boolean;
+    /** The call passes a function (an inline function or a function binding): live data. */
+    fn: boolean;
+    /** Component tags enclosing the call in this component's JSX, innermost first (context providers around it). */
+    around: string[];
+    /** Its attributes and expression children are data (element children are calls of their own, function children slots). */
+    inputs: boolean;
+  }[];
 }
 
 /**
@@ -417,9 +447,21 @@ interface RawFacts {
   groups: { key: string; preload: string | null; tags: string[] }[];
   preload: string | null;
   defaultName: string | null;
+  exports?: [string, string][];
+  reexports?: [string, string, string][];
+  stars?: string[];
+  compounds?: [string, string, [string, string][]][];
   boundaries?: [
     string,
-    { interactive: boolean; context: boolean; params: "none" | "object" | "destructured"; renders: string[]; calls: [string, boolean][] },
+    {
+      interactive: boolean;
+      source?: boolean;
+      provides?: boolean;
+      context: boolean;
+      params: "none" | "object" | "destructured";
+      renders: string[];
+      calls: [string, boolean, boolean?, string[]?, boolean?][];
+    },
   ][];
   holes?: HoleFacts[];
   serverExports?: string[];
@@ -447,10 +489,21 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
     groups: raw.groups.map((group) => ({ ...group, tags: new Set(group.tags) })),
     preload: raw.preload,
     defaultName: raw.defaultName,
+    exports: new Map(raw.exports ?? []),
+    reexports: new Map((raw.reexports ?? []).map(([exported, from, imported]) => [exported, { from, imported }])),
+    stars: raw.stars ?? [],
+    compounds: new Map((raw.compounds ?? []).map(([name, root, parts]) => [name, { root, parts: new Map(parts) }])),
     boundaries: new Map(
       (raw.boundaries ?? []).map(([name, facts]) => [
         name,
-        { ...facts, renders: new Set(facts.renders), calls: facts.calls.map(([tag, data]) => ({ tag, data })) } satisfies ComponentBoundaryFacts,
+        {
+          ...facts,
+          // An older wasm (no `source`): every own site is a source (the pre-6b verdict).
+          source: facts.source ?? facts.interactive,
+          provides: facts.provides ?? false,
+          renders: new Set(facts.renders),
+          calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data]) => ({ tag, data, fn, around, inputs })),
+        } satisfies ComponentBoundaryFacts,
       ]),
     ),
     ...(raw.holes ? { holes: raw.holes } : {}),

@@ -12,7 +12,8 @@ import { untrack } from "@rivetjs/reactivity";
 import { DEV, devWhere } from "#dev";
 import { _hydratedRoot, _staticRoot } from "./root.tsx";
 import { _renderIslands } from "./ids.ts";
-import { offerLean } from "./lean.ts";
+import { derivedLean, leanValues, offerLean } from "./lean.ts";
+import { _rIsland } from "@rivetjs/runtime/derived-eager";
 import { slotMark, splitSlots } from "./slots.ts";
 import type { ClientOn, ClientPolicy, IslandContext, IslandDef, IslandModule, IslandRender, PolicyOptions, PreloadStrategy, SlotMark } from "./adapter.ts";
 
@@ -114,19 +115,18 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
       if (on !== undefined && def.chunk !== undefined) _rPreload(def.chunk, own.preload ?? strategyOf(on));
       const options: PolicyOptions = typeof client === "object" ? { ...client, id } : on !== undefined ? { id, on } : { id };
       const props = live();
-      // Islands-only lean tail (T7b): the render decides at its end whether every resumable is a lean island.
-      offerLean(
-        id,
-        def.id,
-        on,
-        props,
+      const blocked =
         slotKeys !== null
           ? 'slot "' + (slotKeys[0] === "children" ? "default" : slotKeys[0]) + '" holds Rivet content'
           : on === "intent"
             ? 'client="intent" (cold-event replay)'
-            : null,
-        DEV,
-      );
+            : null;
+      let answer: Record<string, unknown> | string | undefined;
+      const values = () => (answer ??= leanValues(on, props, blocked));
+      // Derived model (M6-PARITY): plain JSON props → the lean boot; else the adopt run of the boundary rendering it.
+      if (!_rIsland({ id, key: def.id, on, values, props: null, tail: derivedLean }))
+        // Islands-only lean tail (T7b): the render decides at its end whether every resumable is a lean island.
+        offerLean(id, def.id, on, values, DEV);
       return _hydratedRoot(id, rf, rc, parts, load, props, options, on !== undefined ? whenOf(on) : "idle") as ServerValue;
     }
     return _staticRoot(id, rf, rc, parts) as ServerValue;
@@ -192,6 +192,8 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
       },
       children: written,
       error: (cause) => failed(cause, where),
+      // The runtime's own (`server-async.ts`): never a derived hole.
+      ...({ $i: 1 } as object),
     }) as ServerValue,
   );
 }

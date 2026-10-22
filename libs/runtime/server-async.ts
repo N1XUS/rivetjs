@@ -68,6 +68,11 @@ export function _onAsync(fn: () => AsyncStream | null): void {
 }
 /** @internal `server-derived.ts`: the hook installed so far (the derived model's hook runs in front of it). */
 export const _asyncHook = (): (() => AsyncStream | null) | null => asyncHook;
+let userHook: (() => AsyncStream | null) | null = null;
+/** @internal `server-derived.ts` (M6-PARITY task 4): an `Async` of the app's own (`<Async>`) without a fallback function. */
+export function _onUserAsync(fn: () => AsyncStream | null): void {
+  userHook = fn;
+}
 
 let contentHook: (() => (<R>(fn: () => R) => R) | null) | null = null;
 /** Resume ABI: awaited (non-streamed) content renders in the recorder region active where the boundary was constructed. */
@@ -99,7 +104,10 @@ class Work implements AsyncWork {
 // except in a streaming resumable render, which writes it first and streams the content later.
 export function Async<T>(props: AsyncProps<T>): ServerScope {
   const { load, children, error, fallback } = props;
-  const stream = asyncHook !== null && typeof fallback === "function" ? asyncHook() : null;
+  // Without a fallback function: on the derived model an app's own `Async` resumes too (M6-PARITY task 4); the runtime's
+  // (router levels, `lazyComponent`, `resource`'s Suspense builds, bridges: `$i`) stay awaited in place.
+  const stream =
+    typeof fallback === "function" ? (asyncHook !== null ? asyncHook() : null) : userHook !== null && !(props as { $i?: 1 }).$i ? userHook() : null;
   // Resumable renders: the content renders later, in the traversal, outside the enclosing site's read; it still belongs
   // to that site's region (the browser disposes it with the region). Streamed content renders in its segment instead.
   const enter = contentHook !== null && stream === null ? contentHook() : null;
@@ -193,7 +201,7 @@ export function Async<T>(props: AsyncProps<T>): ServerScope {
         // Streamed: the stream renders the outcome later, inside its segment's recorder, and disposes the boundary
         // (`release`, else `own` once the segment is dropped): it leaves its parent, whose render (the shell, a segment)
         // ends first. Only once deferred: a throwing fallback leaves it to its parent.
-        const deferred = stream.defer(loaded, success, failure, fallback!, owner, abort, root.dispose, undefined, props);
+        const deferred = stream.defer(loaded, success, failure, fallback as () => ServerValue, owner, abort, root.dispose, undefined, props);
         _detach(owner!);
         return deferred;
       }
@@ -231,7 +239,8 @@ export function lazyComponent<M, P>(
       children: (component) => component(props),
       error: options.error,
       fallback: options.fallback,
-    });
+      $i: 1,
+    } as AsyncProps<(props: P) => ServerValue>);
 }
 
 let clientOnlyHook: ((when: string) => void) | null = null;

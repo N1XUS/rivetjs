@@ -6,7 +6,7 @@ import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
-import { buildApp } from "./drawer-app/serve.ts";
+import { buildApp, dist } from "./drawer-app/serve.ts";
 
 const root = new URL("./drawer-app/", import.meta.url).pathname;
 let origin = "";
@@ -15,7 +15,7 @@ let browser: Browser;
 
 beforeAll(async () => {
   await buildApp();
-  const app = await start({ dist: root + "dist", port: 0, host: "127.0.0.1", onError: () => {} });
+  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {} });
   origin = app.url;
   close = () => app.close();
   browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
@@ -26,10 +26,10 @@ afterAll(async () => {
 });
 
 function watch(page: Page) {
-  const seen = { documents: 0, posts: [] as number[], data: 0, errors: [] as string[] };
+  const seen = { documents: 0, posts: [] as number[], data: 0, urls: [] as string[], errors: [] as string[] };
   page.on("request", (request) => {
     if (request.resourceType() === "document") seen.documents++;
-    if (new URL(request.url()).searchParams.has("_rivet")) seen.data++;
+    if (new URL(request.url()).searchParams.has("_rivet")) (seen.data++, seen.urls.push(request.method() + " " + request.url()));
   });
   page.on("requestfinished", async (request) => {
     if (request.method() === "POST") seen.posts.push((await request.sizes()).responseBodySize);
@@ -71,7 +71,7 @@ test("JS: drawer submit keeps the page — issues in the open drawer, then list 
   assert.equal(Number(await page.textContent("#total")), total + 1, "the layout's loader data updated too");
   assert.equal(await page.textContent("#clicks"), "Clicked 2", "the page was not re-rendered");
   assert.equal(seen.documents, 1);
-  assert.equal(seen.data, 0);
+  assert.equal(seen.data, 0, seen.urls.join(", "));
   assert.equal(seen.posts.length, 2);
   // Nothing left inert behind the closed drawer: the page stays usable.
   assert.equal(await page.evaluate(() => document.querySelector("[inert]")), null);

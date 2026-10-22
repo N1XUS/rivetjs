@@ -129,8 +129,7 @@ export function _t(el: Element, value: unknown): void {
     el.textContent = "";
   }
   let slot = last as Slot | undefined;
-  if (typeof slot !== "object")
-    (el as unknown as { $$t?: Slot }).$$t = slot = { current: null };
+  if (typeof slot !== "object") (el as unknown as { $$t?: Slot }).$$t = slot = { current: null };
   // An accessor (component content such as a `<For>`), or an array holding one: read in its own effect,
   // so the caller's binding does not track it and re-create the content (components, focused nodes)
   // on each of its updates (Solid `insertExpression`).
@@ -192,8 +191,7 @@ function write(el: Element, name: string, value: unknown): void {
   }
   // `popover` is enumerated: `true` is the empty keyword (`auto`), `false` removes it (server parity, C4).
   if (html && lower === "popover" && typeof value === "boolean") value = value ? "" : null;
-  const
-    // `hidden` is enumerated (`until-found`): a non-empty string is its keyword, written verbatim; "" omits it (server parity).
+  const // `hidden` is enumerated (`until-found`): a non-empty string is its keyword, written verbatim; "" omits it (server parity).
     word = lower === "hidden" && typeof value === "string",
     bool = html && _booleans.test(lower) && !(word && value);
   if (html && (lower === "value" || lower === "checked" || lower === "selected") && lower in el) {
@@ -539,7 +537,7 @@ function assign(parent: Parent, value: unknown, slot: Slot, marker: Node | null)
     if (value !== null && typeof value === "object") {
       // A `_for` node list is flat already (its own array, kept as the slot's current: see `_for`'s accessor).
       // Dropped at once: a module-level reference would retain a cleared list's nodes.
-      if (value === forNodes) (nodes = value as Node[]), (forNodes = null);
+      if (value === forNodes) ((nodes = value as Node[]), (forNodes = null));
       else flatten(Array.isArray(value) ? value : [value], (nodes = []));
     }
     return value;
@@ -597,8 +595,7 @@ function flatten(value: readonly unknown[], nodes: Node[]): void {
       else if ((item as Node).nodeType !== undefined) nodes.push(item as Node);
       else if (typeof (item as PromiseLike<unknown>).then === "function") throw TypeError("Promise DOM children require an Async boundary");
       else unsupported();
-    } else
-      nodes.push(LAZY_ROWS && _adoption.node ? _adoption.node(host.doc().createTextNode(coerce(item)), 1) : host.doc().createTextNode(coerce(item)));
+    } else nodes.push(LAZY_ROWS && _adoption.node ? _adoption.node(host.doc().createTextNode(coerce(item)), 1) : host.doc().createTextNode(coerce(item)));
   }
 }
 
@@ -614,7 +611,14 @@ function replace(parent: Parent, current: Current, next: Node | null, marker: No
   }
   if (Array.isArray(current)) {
     // Whole-parent fast clear: the list is the parent's only content.
-    if (!next && marker === null && current.length > 1 && parent.firstChild === current[0] && parent.lastChild === current[current.length - 1] && !_deferredFlush()) {
+    if (
+      !next &&
+      marker === null &&
+      current.length > 1 &&
+      parent.firstChild === current[0] &&
+      parent.lastChild === current[current.length - 1] &&
+      !_deferredFlush()
+    ) {
       parent.textContent = "";
       return;
     }
@@ -803,9 +807,11 @@ export const _adoption: {
    * props and `Async` itself; a returned value replaces it (an `Async` the server streamed or awaited: probe run a hole,
    * adopt run the server's nodes), `undefined` lets it run as usual.
    */
-  async?: ((props: { load: unknown; children: unknown; fallback?: unknown }, self: (props: never) => unknown) => unknown) | null;
+  async?: ((props: { load: unknown; children: unknown; fallback?: unknown }, self: (props: never) => unknown, user: boolean) => unknown) | null;
   /** Derived builds (`dom-derived.ts`, DERIVED-C3): a load suspended a `Suspense` — in a probe run its unit renders in the browser. */
   suspense?: (() => void) | null;
+  /** Derived builds (`dom-derived.ts`, M6-PARITY task 3): in an adopt run, the server's seed of the next `resource()`. */
+  resource?: (() => unknown) | null;
 } = { rows: null, branch: null, key: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place

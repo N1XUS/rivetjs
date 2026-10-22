@@ -27,6 +27,7 @@ React 19 adapter for `@rivetjs/bridge` (framework islands). Spec `docs/design/sp
 - A function component returning only `null` types as a Rivet component (own props, no island options); React components must return `ReactElement`.
 - `stopPropagation` in a React handler stops the native event at the island root (React's listener) — ancestors above the island never see it; inside the island React order applies.
 - No `"rivet": { "source": true }` (on purpose, unlike `@rivetjs/bridge`): that flag makes the Rivet compiler compile a package's `.tsx` as Rivet code (`libs/compiler/vite.ts` `sourcePackage`); this package's JSX (React `Slot`, T6) is React-owned and must never be Rivet-compiled. Every `@rivetjs/bridge-<fw>` adapter follows this rule.
+- Derived resume model: nothing adapter-specific — `@rivetjs/bridge` routes islands to the lean boot or the enclosing boundary's adopt run (`libs/bridge/CLAUDE.md` "Derived model"); island-bench `RIVET_RESUME_MODEL=derived` builds the React lane on it.
 
 ## Commands
 

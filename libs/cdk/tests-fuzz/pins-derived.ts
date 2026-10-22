@@ -10,7 +10,9 @@
 // `/shell-provider` (its `Async` in a component's children slot under a `Provider`) since DERIVED-C3 (the server keys the
 // hole by the boundary whose body made the provider, as the browser's adopt run counts it), all four also under the shell
 // cache (`RIVET_FUZZ_SHELL=hit|miss`); `/dom-data` shows only the generic classes (its GridList's server
-// `aria-labelledby`, as `/grid-list`; hover / focus-visible after keys) and is pinned with them.
+// `aria-labelledby`, as `/grid-list`; hover / focus-visible after keys) and is pinned with them. M6-PARITY (2026-10-22,
+// shards 1–3 after forms / bridges / Suspense / user Async / COND / retarget): every pin still hit except
+// `/forms` mismatch (PRESS), 0 findings in 3/3 runs — deleted (62 → 61); groups unchanged.
 import type { FuzzPin } from "@rivetjs/testing/fuzz";
 
 /** Root causes (spec `docs/design/specs/2026-10-18-structural-resume-design.md` §3.4 "As built", gaps). */
@@ -52,7 +54,6 @@ export const pins: FuzzPin[] = [
   pin("/dom-events-dates", "mismatch", "PRESS"),
   pin("/dom-events-forms", "mismatch", "RECREATE"),
   pin("/dom-events-overlays", "load", "MOUNT"),
-  pin("/forms", "mismatch", "PRESS"),
   pin("/grid-list", "load", "MOUNT"),
   pin("/grid-list", "mismatch", "RECREATE"),
   pin("/lazy-rows", "mismatch", "RECREATE"),

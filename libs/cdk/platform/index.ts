@@ -51,40 +51,45 @@ const testUserAgent = (re: RegExp): boolean | undefined => {
   return (Array.isArray(brands) && brands.some((brand) => re.test(brand.brand))) || re.test(n.userAgent);
 };
 
+/** react-aria `cached`: the first browser answer is kept (the server's `undefined` is not). */
+const cached = (fn: () => boolean | undefined): (() => boolean | undefined) => {
+  let value: boolean | undefined;
+  return () => (value !== undefined ? value : (value = fn()));
+};
 /** macOS. Server: undefined. */
-export const isMac = (): boolean | undefined => testPlatform(/^Mac/i);
+export const isMac = /* @__PURE__ */ cached(() => testPlatform(/^Mac/i));
 /** iPhone. */
-export const isIPhone = (): boolean | undefined => testPlatform(/^iPhone/i);
+export const isIPhone = /* @__PURE__ */ cached(() => testPlatform(/^iPhone/i));
 /** iPad, incl. iPadOS 13+ reporting as Mac (told apart by touch support). */
-export const isIPad = (): boolean | undefined => {
+export const isIPad = /* @__PURE__ */ cached(() => {
   const ipad = testPlatform(/^iPad/i);
   if (ipad === undefined) return undefined;
   return ipad || (!!isMac() && navigator.maxTouchPoints > 1);
-};
+});
 /** iPhone / iPad. */
-export const isIOS = (): boolean | undefined => {
+export const isIOS = /* @__PURE__ */ cached(() => {
   const iphone = isIPhone();
   return iphone === undefined ? undefined : iphone || !!isIPad();
-};
+});
 /** macOS or iOS. */
-export const isAppleDevice = (): boolean | undefined => {
+export const isAppleDevice = /* @__PURE__ */ cached(() => {
   const mac = isMac();
   return mac === undefined ? undefined : mac || !!isIOS();
-};
+});
 /** Chrome (incl. Chrome on iOS, `CriOS`). */
-export const isChrome = (): boolean | undefined => testUserAgent(/Chrome|CriOS|CrMo/i);
+export const isChrome = /* @__PURE__ */ cached(() => testUserAgent(/Chrome|CriOS|CrMo/i));
 /** WebKit engine: every iOS browser, or AppleWebKit without Chrome. */
-export const isWebKit = (): boolean | undefined => {
+export const isWebKit = /* @__PURE__ */ cached(() => {
   const webkit = testUserAgent(/AppleWebKit/i);
   return webkit === undefined ? undefined : webkit && (!!isIOS() || !isChrome());
-};
-export const isFirefox = (): boolean | undefined => testUserAgent(/(Firefox|FxiOS)/i);
+});
+export const isFirefox = /* @__PURE__ */ cached(() => testUserAgent(/(Firefox|FxiOS)/i));
 /** Safari: WebKit, not Chrome or Firefox. */
-export const isSafari = (): boolean | undefined => {
+export const isSafari = /* @__PURE__ */ cached(() => {
   const webkit = isWebKit();
   return webkit === undefined ? undefined : webkit && !isChrome() && !isFirefox();
-};
-export const isAndroid = (): boolean | undefined => testUserAgent(/Android/i);
+});
+export const isAndroid = /* @__PURE__ */ cached(() => testUserAgent(/Android/i));
 /** The platform's "command" modifier: Meta on Apple platforms, else Control. */
 export const isCtrlKeyPressed = (event: { metaKey: boolean; ctrlKey: boolean }): boolean => (isMac() ? event.metaKey : event.ctrlKey);
 

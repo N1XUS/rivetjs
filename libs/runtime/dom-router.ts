@@ -1,5 +1,6 @@
 import { batch, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
 import { Async } from "./dom.ts";
+import { DERIVED } from "./derived.ts";
 import { routeMatcher, renderRoute, _popGate } from "./router.ts";
 import type { Signal } from "@rivetjs/reactivity";
 import type { AsyncWork, DOMValue } from "./dom.ts";
@@ -72,8 +73,7 @@ export function createRouter(options: { window?: Window; href?: Signal<string> }
       live();
       const current = untrack(location);
       const next = new URL(to, current);
-      if (!["http:", "https:"].includes(next.protocol) || next.origin !== current.origin)
-        throw TypeError("Navigation requires a same-origin HTTP(S) URL");
+      if (!["http:", "https:"].includes(next.protocol) || next.origin !== current.origin) throw TypeError("Navigation requires a same-origin HTTP(S) URL");
       if (next.href === current.href) {
         // Same URL: a revalidation invalidates location readers once (the batch flushes after the
         // value is back), so the routes region reloads its data and commits once.
@@ -95,7 +95,15 @@ export function createRouter(options: { window?: Window; href?: Signal<string> }
 
 /** Compile once. Each URL change cancels old loading and disposes its rendered branch. */
 // Compile the registry once and render each location in an owned cancellable Async region.
-export function Router({ router, routes, fallback, error, notFound, swap, hold }: {
+export function Router({
+  router,
+  routes,
+  fallback,
+  error,
+  notFound,
+  swap,
+  hold,
+}: {
   router: Pick<BrowserRouter, "location">;
   /** Definitions, or a `RouteTable` (paths compiled once per array, only the matched route defined). */
   routes: readonly DOMRoute[] | Routes<DOMValue>;
@@ -110,7 +118,17 @@ export function Router({ router, routes, fallback, error, notFound, swap, hold }
   // Route work tracks the URL without its fragment: a hash-only change keeps the route (no reload, no remount).
   const page = (router as { [PAGE]?: () => string })[PAGE];
   return renderRoute(
-    swap || hold ? (props) => Async({ ...props, swap, hold: !!hold, fallback: hold || props.fallback }) : Async,
+    // Derived builds: a route level is the runtime's own `Async` (`$i`, as the server marks it: never a hole of its own).
+    swap || hold
+      ? (props) =>
+          Async(
+            DERIVED
+              ? ({ ...props, swap, hold: !!hold, fallback: hold || props.fallback, $i: 1 } as typeof props)
+              : { ...props, swap, hold: !!hold, fallback: hold || props.fallback },
+          )
+      : DERIVED
+        ? (props) => Async({ ...props, $i: 1 } as typeof props)
+        : Async,
     routeMatcher(routes as Routes<DOMValue>),
     page ? () => (page(), untrack(router.location)) : router.location,
     { fallback, error, notFound },

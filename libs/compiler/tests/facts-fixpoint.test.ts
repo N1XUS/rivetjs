@@ -4,18 +4,32 @@ import assert from "node:assert/strict";
 import { boundaryFacts } from "../facts-fixpoint.ts";
 import type { ComponentBoundaryFacts, ModuleFacts } from "../index.ts";
 
-type Component = Omit<Partial<ComponentBoundaryFacts>, "renders"> & { renders?: string[] };
+type Call = { tag: string; data: boolean; fn?: boolean; around?: string[]; inputs?: boolean };
+type Component = Omit<Partial<ComponentBoundaryFacts>, "renders" | "calls"> & { renders?: string[]; calls?: Call[] };
 
 /** A module's facts from its components (name → partial boundary facts) and imports (local → [from, imported]). */
-function module(components: Record<string, Component>, imports: Record<string, [string, string]> = {}, defaultName: string | null = null): ModuleFacts {
+function module(
+  components: Record<string, Component>,
+  imports: Record<string, [string, string]> = {},
+  defaultName: string | null = null,
+  extra: Partial<Pick<ModuleFacts, "exports" | "reexports" | "stars" | "compounds">> = {},
+): ModuleFacts {
   const boundaries = new Map<string, ComponentBoundaryFacts>();
   for (const [name, c] of Object.entries(components))
     boundaries.set(name, {
       interactive: c.interactive ?? false,
+      // Pre-6b cases: every own site is a source unless the case says otherwise.
+      source: c.source ?? c.interactive ?? false,
+      provides: c.provides ?? false,
       context: c.context ?? false,
       params: c.params ?? "object",
       renders: new Set(c.renders ?? []),
-      calls: c.calls ?? (c.renders ?? []).map((tag) => ({ tag, data: true })),
+      calls: (c.calls ?? (c.renders ?? []).map((tag) => ({ tag, data: true }))).map((call) => ({
+        fn: false,
+        around: [],
+        inputs: call.data,
+        ...call,
+      })),
     });
   return {
     imports: new Map(Object.entries(imports).map(([local, [from, imported]]) => [local, { from, imported }])),
@@ -25,6 +39,10 @@ function module(components: Record<string, Component>, imports: Record<string, [
     groups: [],
     preload: null,
     defaultName,
+    exports: extra.exports ?? new Map(),
+    reexports: extra.reexports ?? new Map(),
+    stars: extra.stars ?? [],
+    compounds: extra.compounds ?? new Map(),
     boundaries,
   };
 }
@@ -112,4 +130,140 @@ test('an anonymous default export (facts name "default", no defaultName) resolve
   assert.deepEqual(result.boundaries("src/routes/index.tsx"), ["default"]);
   assert.deepEqual(result.independent("src/routes/index.tsx"), ["default"]);
   assert.deepEqual(result.independent("src/widget.tsx"), ["default"]);
+});
+
+// M6-PARITY 6b (user ruling 2026-10-22): props are live when the caller passes a reactive value; literals are static.
+test("6b: a component whose sites only read its props is a boundary only when a live caller feeds it", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/routes/index.tsx",
+      module(
+        {
+          default: {
+            renders: ["Meter", "Counter", "Live"],
+            calls: [
+              { tag: "Meter", data: true },
+              { tag: "Counter", data: true },
+              { tag: "Live", data: true },
+            ],
+          },
+        },
+        { Meter: ["../meter", "Meter"], Counter: ["../counter", "Counter"], Live: ["../counter", "Live"] },
+      ),
+    ],
+    ["src/meter.tsx", module({ Meter: { interactive: true, source: false } })],
+    [
+      "src/counter.tsx",
+      module(
+        {
+          // Keyed state + a handler; passes its signal's value on to a reading-only component.
+          Counter: { interactive: true, source: true, renders: ["Meter"], calls: [{ tag: "Meter", data: false }] },
+          // No state, passes a callback: the callee's inputs are live.
+          Live: { renders: ["Fill"], calls: [{ tag: "Fill", data: false, fn: true }] },
+          Fill: { interactive: true, source: false },
+        },
+        { Meter: ["./meter", "Meter"] },
+      ),
+    ],
+  ]);
+  const resolved = new Map([
+    [
+      "src/routes/index.tsx",
+      new Map([
+        ["../meter", "src/meter.tsx"],
+        ["../counter", "src/counter.tsx"],
+      ]),
+    ],
+    ["src/counter.tsx", new Map([["./meter", "src/meter.tsx"]])],
+  ]);
+  const only = (static_: boolean) => {
+    const f = new Map(facts);
+    // Without Counter's call, the Meter is only rendered with literals.
+    if (static_) f.set("src/counter.tsx", module({ Counter: { interactive: true, source: true } }));
+    return boundaryFacts(f, resolved, new Set(["src/routes/index.tsx"]));
+  };
+  assert.deepEqual(only(true).boundaries("src/meter.tsx"), []);
+  assert.equal(only(true).verdicts.get("src/meter.tsx")!.get("Meter")!.dependentBecause, "not-interactive");
+  const out = only(false);
+  assert.deepEqual(out.boundaries("src/meter.tsx"), ["Meter"]);
+  assert.equal(out.verdicts.get("src/meter.tsx")!.get("Meter")!.because, "live-props");
+  assert.deepEqual(out.boundaries("src/counter.tsx"), ["Counter", "Live", "Fill"]);
+  assert.equal(out.verdicts.get("src/counter.tsx")!.get("Live")!.because, "renders");
+  // Conditional (no change source of its own): the server keeps such a record per live instance only.
+  assert.deepEqual(out.conditional("src/meter.tsx"), ["Meter"]);
+  assert.deepEqual(
+    out.conditional("src/counter.tsx"),
+    ["Live", "Fill"].filter((n) => out.verdicts.get("src/counter.tsx")!.get(n)!.because !== "source"),
+  );
+  assert.ok(!out.conditional("src/counter.tsx").includes("Counter"));
+});
+
+test("6b: context readers follow their provider's liveness (enclosing elements and callers)", () => {
+  const page = (liveRoot: boolean) =>
+    module(
+      {
+        default: {
+          source: liveRoot,
+          renders: ["Meter", "Output"],
+          calls: [
+            { tag: "Meter", data: false, inputs: !liveRoot },
+            { tag: "Output", data: true, around: ["Meter"] },
+          ],
+        },
+      },
+      { Meter: ["../meter", "MeterRoot"], Output: ["../meter", "MeterOutput"] },
+    );
+  const meter = module({ MeterRoot: { interactive: true, source: false, provides: true }, MeterOutput: { interactive: true, source: false, context: true } });
+  const resolved = new Map([["src/routes/index.tsx", new Map([["../meter", "src/meter.tsx"]])]]);
+  for (const live of [false, true]) {
+    const out = boundaryFacts(
+      new Map([
+        ["src/routes/index.tsx", page(live)],
+        ["src/meter.tsx", meter],
+      ]),
+      resolved,
+      new Set(["src/routes/index.tsx"]),
+    );
+    assert.deepEqual(out.boundaries("src/meter.tsx"), live ? ["MeterRoot", "MeterOutput"] : [], String(live));
+  }
+});
+
+test("6b: tags resolve through re-export modules, export * and compound parts", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/routes/index.tsx",
+      module(
+        {
+          default: {
+            source: true,
+            renders: ["Meter", "Meter.Output"],
+            calls: [
+              { tag: "Meter", data: false },
+              { tag: "Meter.Output", data: false },
+            ],
+          },
+        },
+        { Meter: ["ui", "Meter"] },
+      ),
+    ],
+    ["ui/index.ts", module({}, {}, null, { stars: ["./meter/index.ts"] })],
+    [
+      "ui/meter/index.ts",
+      module({}, { MeterRoot: ["./meter.tsx", "MeterRoot"], MeterOutput: ["./meter.tsx", "MeterOutput"] }, null, {
+        exports: new Map([["Meter", "Meter"]]),
+        compounds: new Map([["Meter", { root: "MeterRoot", parts: new Map([["Output", "MeterOutput"]]) }]]),
+      }),
+    ],
+    ["ui/meter/meter.tsx", module({ MeterRoot: { interactive: true }, MeterOutput: { interactive: true } })],
+  ]);
+  const resolved = new Map([
+    ["src/routes/index.tsx", new Map([["ui", "ui/index.ts"]])],
+    ["ui/index.ts", new Map([["./meter/index.ts", "ui/meter/index.ts"]])],
+    ["ui/meter/index.ts", new Map([["./meter.tsx", "ui/meter/meter.tsx"]])],
+  ]);
+  // Pre-6b semantics for the callees (`interactive` own sites = sources): resolution is what this case checks.
+  const out = boundaryFacts(facts, resolved, new Set(["src/routes/index.tsx"]));
+  assert.deepEqual(out.boundaries("ui/meter/meter.tsx"), ["MeterRoot", "MeterOutput"]);
+  assert.equal(out.verdicts.get("ui/meter/meter.tsx")!.get("MeterRoot")!.dependentBecause, "call-site");
+  assert.equal(out.verdicts.get("ui/meter/meter.tsx")!.get("MeterOutput")!.dependentBecause, "call-site");
 });

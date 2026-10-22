@@ -248,9 +248,10 @@ export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, Resource
  * disposes old output. Explicit work.get / run restore ownership after await. Current asynchronous failures
  * use error, or retain fallback and report once through the nearest ErrorBoundary (else a deferred throw). */
 export function Async<T>(props: AsyncProps<T>): DOMValue {
-  // Derived builds: in an adopt run, a boundary the server streamed (or awaited) is a hole (`dom-derived.ts`).
+  // Derived builds: in an adopt run, a boundary the server streamed (or awaited) is a hole (`dom-derived.ts`); the
+  // runtime's own (`$i`: router levels, `lazyComponent`, `clientOnly`) only with a fallback function (M6-PARITY task 4).
   if (DERIVED && _adoption.async) {
-    const hole = _adoption.async(props as AsyncProps<unknown>, Async as never);
+    const hole = _adoption.async(props as AsyncProps<unknown>, Async as never, !(props as { $i?: 1 }).$i);
     if (hole !== undefined) return hole as DOMValue;
   }
   const doc = _constructionDoc(),
@@ -471,12 +472,14 @@ export function lazyComponent<M, P>(
   const lazy = (props: P) => {
     const loaded = reference.peek();
     if (loaded) return _c(loaded, props) as DOMValue;
-    return Async({
+    const p: AsyncProps<Component<P>> = {
       load: (work) => reference.load({ signal: work.signal }),
       children: (fn) => _c(fn, props) as DOMValue,
       fallback: options.fallback,
       error: options.error,
-    });
+    };
+    if (DERIVED) (p as { $i?: 1 }).$i = 1;
+    return Async(p);
   };
   // Load now, so the next render is synchronous (routers await it with the route's data).
   (lazy as Component<P> & { load?: () => Promise<unknown> }).load = () => reference.load();
@@ -493,13 +496,16 @@ export function clientOnly<P>(
 export function clientOnly<M, P>(importer: () => M | PromiseLike<M>, select: (module: M) => Component<P>, options?: ClientOnlyOptions<P>): Component<P>;
 export function clientOnly<M, P>(importer: () => M | PromiseLike<M>, select?: (module: M) => Component<P>, options: ClientOnlyOptions<P> = {}): Component<P> {
   const reference = lazyFunction(importer, select!);
-  return (props: P) =>
-    Async({
+  return (props: P) => {
+    const p: AsyncProps<Component<P>> = {
       load: (work) => reference.load({ signal: work.signal }),
       children: (fn) => _c(fn, props) as DOMValue,
       fallback: options.fallback ? () => options.fallback!(props) : undefined,
       error: options.error,
-    });
+    };
+    if (DERIVED) (p as { $i?: 1 }).$i = 1;
+    return Async(p);
+  };
 }
 
 // A listener can fire while its owner is mid-disposal (removing a focused control fires focusout

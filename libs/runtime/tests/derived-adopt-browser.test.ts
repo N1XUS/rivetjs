@@ -235,11 +235,10 @@ test("dev adopt verifier: a hand-broken fixture warns with the boundary name and
     const warnings: string[] = [];
     page.on("console", (message) => message.type() === "warning" && warnings.push(message.text()));
     await page.goto("http://rivet.test/");
-    // The cold click materialises App: the verifier warns, App renders in the browser (the click's target left the page
-    // with the server nodes, so it is dropped); the next click runs on the client-rendered nodes.
+    // The cold click materialises App: the verifier warns, App renders in the browser; the click's target left the page
+    // with the server nodes, and the click replays on the node at its place in the browser's render (M6-PARITY task 5).
     await page.click("#toggle");
     await page.waitForFunction(() => document.querySelector("#title")!.localName === "h2");
-    await page.click("#toggle");
     await page.waitForFunction(() => document.querySelector("#open") !== null);
     const adopt = warnings.filter((w) => w.includes("did not adopt"));
     assert.equal(adopt.length, 1, warnings.join("\n"));
@@ -247,6 +246,23 @@ test("dev adopt verifier: a hand-broken fixture warns with the boundary name and
     assert.match(adopt[0]!, /<h1>|h2/);
     await page.click("#toggle");
     assert.equal(await text(page, "#closed"), "closed");
+  });
+});
+
+test("retarget (M6-PARITY task 5): a live click whose unit renders in the browser runs on the browser's node", async () => {
+  const broken = await files(3, { dev: true, edit: (s) => s.replace('<span id="count">{n()}</span>', '<em id="count">{n()}</em>') });
+  await withPage(broken, async (page) => {
+    await page.goto("http://rivet.test/");
+    // The runtime is live (App adopted); Counter, independent, adopts on its own first click: a mismatch renders it in
+    // the browser while that click is being dispatched — the click runs on the browser's `#inc`.
+    await page.click("ul li:nth-child(2) button");
+    await page.waitForFunction(() => document.querySelector("ul li:nth-child(2)")!.getAttribute("data-sel") === "y");
+    assert.equal(await page.evaluate(() => document.querySelector("#count")!.localName), "span", "Counter not adopted yet");
+    await page.click("#inc");
+    await page.waitForFunction(() => document.querySelector("#count")!.localName === "em");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+    await page.click("#inc");
+    assert.equal(await text(page, "#count"), "7");
   });
 });
 

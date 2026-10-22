@@ -19,6 +19,9 @@ use crate::tree::Tree;
 pub const INDEPENDENT: u32 = 1;
 /// Boundary flag: every return is one native element, which carries `_rBAttr` (`data-b`) instead of comment markers.
 pub const ATTR: u32 = 2;
+/// Boundary flag (M6-PARITY 6b): a boundary without a change source of its own (build verdict `resume.conditional`): the
+/// server keeps its record only for an instance that turned out live (`server-derived.ts` "Conditional boundaries").
+pub const COND: u32 = 1024;
 
 /// Module-level facts of one component (`ModuleFacts.boundaries`).
 pub struct Component {
@@ -36,6 +39,178 @@ pub struct Component {
     pub renders: Vec<String>,
     /// Every component element rendered: tag, data-only call site.
     pub calls: Vec<(String, bool)>,
+    /// M6-PARITY 6b: an own change source — an event handler, client effect / event, element effect, model binding,
+    /// keyed state (`signal` / `createStore`), a `resource`, an `Async` / `Suspense` / `clientOnly` component, or a read
+    /// site over module state (an import or module binding used as a value, a module `let`, a browser global).
+    pub source: bool,
+    /// Renders a context provider (`<Provider>`, `<X.Provider>`).
+    pub provides: bool,
+    /// Per call (same order as `calls`): the call passes a function (an inline function or a function binding), the
+    /// component elements enclosing it in this component's JSX (innermost first), and whether its attributes and
+    /// expression children are data (element children are calls of their own, function children slots).
+    pub call_info: Vec<(bool, Vec<String>, bool)>,
+}
+
+/// Site kinds that run in the browser whatever the inputs (change sources). A `ref` is not one: the element reaches
+/// whoever reads it in browser code (its own handler / effect: a source already; a ref from props or a context: the
+/// caller / provider, whose liveness makes this component live).
+fn source_site(kind: SiteKind) -> bool {
+    matches!(kind, SiteKind::Event | SiteKind::ClientEvent | SiteKind::Effect | SiteKind::Element | SiteKind::Model)
+}
+
+/// A constant-looking name: PascalCase (components, classes, context objects) or SCREAMING_CASE (constants).
+fn constant_name(name: &str) -> bool {
+    name.starts_with(|c: char| c.is_ascii_uppercase())
+}
+
+/// `createContext(…)` / `resumableContext(…)` (any wrapping of them): a context token, not state.
+fn context_token(e: &Expression<'_>) -> bool {
+    let Expression::CallExpression(call) = unwrap(e) else { return false };
+    matches!(unwrap(&call.callee), Expression::Identifier(i) if i.name.ends_with("Context") || i.name == "createContext")
+}
+
+/// Whether the reference `n` uses its module binding as a value: anything but the callee of a call with arguments
+/// (`cn(a, b)`, `t("key")`, `ns.helper(x)` on a namespace import), a JSX tag, or a `typeof` operand. A method call on
+/// a named binding (`rows.map(f)`, `todos.filter(f)`) is a value use: the binding may be a store.
+fn value_use(tree: &Tree<'_>, n: NodeId, namespace: bool) -> bool {
+    let span = tree.span(n);
+    let mut at = n;
+    let mut parent = tree.parent(n);
+    // `ns.helper(x)`: the member's object.
+    if let (Some(p), true) = (parent, namespace) {
+        if let AstKind::StaticMemberExpression(m) = tree.kind(p) {
+            if m.object.span() == span {
+                at = p;
+                parent = tree.parent(p);
+            }
+        }
+    }
+    match parent.map(|p| tree.kind(p)) {
+        Some(AstKind::CallExpression(c)) => !(c.callee.span() == tree.span(at) && !c.arguments.is_empty()),
+        Some(AstKind::NewExpression(_)) => false,
+        Some(AstKind::JSXOpeningElement(_) | AstKind::JSXClosingElement(_) | AstKind::JSXMemberExpression(_)) => false,
+        Some(AstKind::UnaryExpression(u)) => u.operator != UnaryOperator::Typeof,
+        _ => true,
+    }
+}
+
+/// A read site's closure reads module state (M6-PARITY 6b): a browser global, a module-level `let`, or an import /
+/// module `const` (other than a function, a data literal or a context token) used as a value (`count()`, `store.items`,
+/// a bare reference). Module functions and imports called with arguments are helpers; constant names are not state.
+fn reads_module_state(tree: &Tree<'_>, closure: NodeId) -> bool {
+    let mut found = false;
+    tree.walk(closure, &mut |n| {
+        if found {
+            return false;
+        }
+        let AstKind::IdentifierReference(ident) = tree.kind(n) else { return true };
+        if tree.in_type_name(n) {
+            return true;
+        }
+        let Some(symbol) = tree.symbol_of_ref(ident) else {
+            if super::BROWSER_GLOBALS.contains(&ident.name.as_str()) {
+                found = true;
+            }
+            return true;
+        };
+        if !tree.module_symbol(symbol) || constant_name(&ident.name) {
+            return true;
+        }
+        let decl = tree.decl_of_symbol(symbol);
+        let state = match tree.kind(decl) {
+            AstKind::Function(_) | AstKind::Class(_) => false,
+            AstKind::VariableDeclarator(d) => {
+                let constant = matches!(tree.raw_parent(decl).map(|p| tree.kind(p)), Some(AstKind::VariableDeclaration(v)) if v.kind == VariableDeclarationKind::Const);
+                match &d.init {
+                    _ if !constant => true,
+                    Some(init) if matches!(unwrap(init), Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)) => false,
+                    Some(init) if data_literal(tree, init, 0) || context_token(init) => false,
+                    _ => value_use(tree, n, false),
+                }
+            }
+            AstKind::ImportSpecifier(_) | AstKind::ImportDefaultSpecifier(_) => value_use(tree, n, false),
+            AstKind::ImportNamespaceSpecifier(_) => value_use(tree, n, true),
+            _ => false,
+        };
+        found = state;
+        true
+    });
+    found
+}
+
+/// The imported name and source of a callee / tag identifier (`import { a as b } from "m"` → ("a", "m")).
+fn imported<'a>(tree: &Tree<'a>, ident: &IdentifierReference<'a>) -> Option<(String, &'a str)> {
+    let decl = tree.resolve(ident, false)?;
+    let name = match tree.kind(decl) {
+        AstKind::ImportSpecifier(s) => s.imported.name().to_string(),
+        AstKind::ImportDefaultSpecifier(_) => "default".to_string(),
+        _ => return None,
+    };
+    Some((name, import_source(tree, decl)?))
+}
+
+/// A tag that renders browser-loaded content: `Async` / `Suspense` from `@rivetjs/runtime*`, or a module `const` made by
+/// `clientOnly(…)`.
+fn source_tag<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
+    let JSXElementName::IdentifierReference(ident) = &el.opening_element.name else { return false };
+    if let Some((name, from)) = imported(tree, ident) {
+        return matches!(name.as_str(), "Async" | "Suspense") && from.starts_with("@rivetjs/runtime");
+    }
+    let Some(decl) = tree.resolve(ident, false) else { return false };
+    let AstKind::VariableDeclarator(d) = tree.kind(decl) else { return false };
+    matches!(d.init.as_ref().map(unwrap), Some(Expression::CallExpression(c)) if matches!(unwrap(&c.callee), Expression::Identifier(i) if i.name == "clientOnly"))
+}
+
+/// The call passes a function: an attribute holding an inline function, or an identifier bound to a function.
+fn passes_function<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
+    el.opening_element.attributes.iter().any(|item| {
+        let JSXAttributeItem::Attribute(attr) = item else { return false };
+        let Some(JSXAttributeValue::ExpressionContainer(c)) = &attr.value else { return false };
+        let Some(e) = c.expression.as_expression() else { return false };
+        match unwrap(e) {
+            Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_) => true,
+            Expression::Identifier(ident) => tree.resolve(ident, false).is_some_and(|decl| match tree.kind(decl) {
+                AstKind::Function(_) => true,
+                AstKind::VariableDeclarator(d) => {
+                    matches!(d.init.as_ref().map(unwrap), Some(Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)))
+                }
+                _ => false,
+            }),
+            _ => false,
+        }
+    })
+}
+
+/// Attributes and expression children of a call are data: element / fragment children are calls of their own and
+/// function children are slots the callee renders.
+fn data_inputs<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
+    data_attributes(tree, el)
+        && el.children.iter().all(|child| match child {
+            JSXChild::Text(_) | JSXChild::Element(_) | JSXChild::Fragment(_) => true,
+            JSXChild::ExpressionContainer(c) => match c.expression.as_expression() {
+                None => true,
+                Some(e) => data_literal(tree, e, 0) || matches!(unwrap(e), Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)),
+            },
+            JSXChild::Spread(_) => false,
+        })
+}
+
+/// Component elements enclosing `node` in `function`'s JSX (innermost first).
+fn enclosing(tree: &Tree<'_>, node: NodeId, function: NodeId) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut n = tree.raw_parent(node);
+    while let Some(id) = n {
+        if id == function {
+            break;
+        }
+        if let AstKind::JSXElement(el) = tree.kind(id) {
+            if let Some(tag) = component_tag(tree, el) {
+                out.push(tag.to_string());
+            }
+        }
+        n = tree.raw_parent(id);
+    }
+    out
 }
 
 /// Build verdicts (`resume.boundaries` / `resume.independent`); absent lists fall back to the module-local closure.
@@ -43,6 +218,7 @@ pub struct Component {
 pub struct Verdicts {
     pub boundaries: Option<Vec<String>>,
     pub independent: Option<Vec<String>>,
+    pub conditional: Option<Vec<String>>,
 }
 
 /// The derived server target's plan for one module.
@@ -300,6 +476,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
     let list: Vec<(String, NodeId)> = module_components(tree).into_iter().filter(|&(_, function)| renders(tree, function)).collect();
     let index: FxHashMap<NodeId, usize> = list.iter().enumerate().map(|(i, (_, id))| (*id, i)).collect();
     let mut own = vec![false; list.len()];
+    let mut source = vec![false; list.len()];
     for (node, site) in resumed.map.iter() {
         let site = &resumed.sites[site];
         if matches!(site.kind, SiteKind::Region | SiteKind::Props) || (site.kind == SiteKind::Slot && site.lazy_children) {
@@ -307,31 +484,50 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
         }
         if let Some(&i) = outermost_function(tree, node).and_then(|f| index.get(&f)) {
             own[i] = true;
+            if source_site(site.kind) || site.closure.is_some_and(|closure| reads_module_state(tree, closure)) {
+                source[i] = true;
+            }
         }
     }
     list.into_iter()
-        .zip(own)
-        .map(|((name, function), own)| {
+        .zip(own.into_iter().zip(source))
+        .map(|((name, function), (own, source))| {
             let (params, props) = params(tree, function);
             let mut context = false;
+            let mut source = source;
+            let mut provides = false;
             let mut renders: Vec<String> = Vec::new();
             let mut calls = Vec::new();
+            let mut call_info = Vec::new();
             tree.walk(function, &mut |n| {
                 match tree.kind(n) {
                     AstKind::CallExpression(c) if context_call(c) => context = true,
+                    AstKind::CallExpression(c) => {
+                        let resource = matches!(unwrap(&c.callee), Expression::Identifier(i) if imported(tree, i).is_some_and(|(name, from)| name == "resource" && from.starts_with("@rivetjs/runtime")));
+                        if resource || keyed_callee(tree, c).is_some() {
+                            source = true;
+                        }
+                    }
                     AstKind::JSXElement(el) => {
                         if let Some(tag) = component_tag(tree, el) {
+                            if tag == "Provider" || tag.ends_with(".Provider") {
+                                provides = true;
+                            }
+                            if source_tag(tree, el) {
+                                source = true;
+                            }
                             if !renders.iter().any(|r| r == tag) {
                                 renders.push(tag.to_string());
                             }
                             calls.push((tag.to_string(), data_call(tree, resumed, el)));
+                            call_info.push((passes_function(tree, el), enclosing(tree, n, function), data_inputs(tree, el)));
                         }
                     }
                     _ => {}
                 }
                 true
             });
-            Component { name, function, own, context, params, props, renders, calls }
+            Component { name, function, own, context, params, props, renders, calls, source, provides, call_info }
         })
         .collect()
 }
@@ -508,6 +704,9 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         if independent[i] {
             flags |= INDEPENDENT;
         }
+        if verdicts.conditional.as_ref().is_some_and(|list| list.iter().any(|n| n == &c.name)) {
+            flags |= COND;
+        }
         if attr {
             flags |= ATTR;
             plan.attr_roots.extend(roots.into_iter().flatten());
@@ -575,13 +774,27 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
     plan
 }
 
-/// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, context, params, renders, calls: [[tag, data]] }]]`.
+/// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, context, params, renders, calls: [[tag,
+/// data, function, enclosing, data inputs]] }]]`.
 pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
     let list: Vec<serde_json::Value> = components(tree, resumed)
         .into_iter()
         .map(|c| {
-            let calls: Vec<serde_json::Value> = c.calls.iter().map(|(tag, data)| serde_json::json!([tag, data])).collect();
-            serde_json::json!([c.name, { "interactive": c.own, "context": c.context, "params": c.params, "renders": c.renders, "calls": calls }])
+            let calls: Vec<serde_json::Value> = c
+                .calls
+                .iter()
+                .zip(&c.call_info)
+                .map(|((tag, data), (function, around, inputs))| serde_json::json!([tag, data, function, around, inputs]))
+                .collect();
+            serde_json::json!([c.name, {
+                "interactive": c.own,
+                "source": c.source,
+                "provides": c.provides,
+                "context": c.context,
+                "params": c.params,
+                "renders": c.renders,
+                "calls": calls
+            }])
         })
         .collect();
     serde_json::Value::Array(list)

@@ -5,6 +5,8 @@
 import { createRoot, effect, getOwner, onCleanup, runWithOwner, signal, untrack, useContext } from "@rivetjs/reactivity";
 import type { Context, Disposer, Signal } from "@rivetjs/reactivity";
 import { coordinator } from "./async-coordinator.ts";
+import { DERIVED } from "./derived.ts";
+import { _adoption } from "./dom-v2.ts";
 import type { Coordinator } from "./async-coordinator.ts";
 import type { AsyncProps, Output } from "./dom.ts";
 import { _OPS, _PROTO, _STATES, _sameKey } from "./resource.ts";
@@ -160,6 +162,11 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
     if (seed.x === 1 || status === 1 || status === 3) status = value === undefined ? 0 : 2;
     else skip = "k" in seed ? [seed.k] : [];
   };
+  // Derived model (M6-PARITY task 3): made in an adopt run, the server's state (its keyed value `$r`): no load on first use.
+  if (DERIVED && _adoption.resource) {
+    const seed = _adoption.resource() as Omit<ResourceSeed, "n"> | undefined;
+    if (seed) adopt({ ...seed, n: version });
+  }
   if (owner)
     onCleanup(() => {
       disposed = true;

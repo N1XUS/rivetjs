@@ -29,8 +29,7 @@ export function compileRoutes<T, V>(routes: readonly RouteDefinition<T, V>[]): (
 // Location reads return fresh copies.
 export function createRouter(input: URL | string): ServerRouter {
   const url = new URL(input);
-  if (url.protocol !== "http:" && url.protocol !== "https:")
-    throw new TypeError("Server router requires an absolute HTTP(S) URL");
+  if (url.protocol !== "http:" && url.protocol !== "https:") throw new TypeError("Server router requires an absolute HTTP(S) URL");
   const href = signal(url.href);
   _hrefs.add(href);
   return Object.freeze({ location: () => new URL(href()), [ROUTER]: href });
@@ -59,7 +58,13 @@ export function defineRoute(path: string, options: object): object {
 
 /** Render one request's route; fallback is reserved for the DOM target. */
 // Render one request's matched route in an owned server Async boundary.
-export function Router({ router, routes, fallback, error, notFound }: {
+export function Router({
+  router,
+  routes,
+  fallback,
+  error,
+  notFound,
+}: {
   router: ServerRouter;
   /** Heterogeneous routes retain data typing through defineRoute; erase only here. A `RouteTable` compiles its paths once per array and defines only the matched route. */
   routes: Routes<ServerValue>;
@@ -69,5 +74,11 @@ export function Router({ router, routes, fallback, error, notFound }: {
 }): ServerScope {
   // Read once while constructing, so a resumable region records the location dependency.
   const url = router.location();
-  return renderRoute(Async, routeMatcher(routes, _bucketPaths), () => url, { fallback, error, notFound });
+  // A route level is the runtime's own `Async` (`$i`): never a derived hole of its own (M6-PARITY task 4).
+  return renderRoute(
+    (props) => Async({ ...props, $i: 1 } as typeof props),
+    routeMatcher(routes, _bucketPaths),
+    () => url,
+    { fallback, error, notFound },
+  );
 }

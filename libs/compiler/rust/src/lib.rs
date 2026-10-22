@@ -303,7 +303,7 @@ fn resume_module(resume: &Option<Value>, filename: &str) -> Result<Option<String
 }
 
 /// Derived model options of a `resume` object: `model: "serialized" | "derived"` (absent = serialized), `boundaries` /
-/// `independent` string lists (the build's verdicts, `facts-fixpoint.ts`). `Some` only for `model: "derived"`.
+/// `independent` / `conditional` string lists (the build's verdicts, `facts-fixpoint.ts`). `Some` only for `model: "derived"`.
 fn resume_model(resume: &Option<Value>) -> Result<Option<resume::derived::Verdicts>, String> {
     let Some(Value::Object(map)) = resume else { return Ok(None) };
     match map.get("model") {
@@ -323,7 +323,7 @@ fn resume_model(resume: &Option<Value>) -> Result<Option<resume::derived::Verdic
             Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
         }
     };
-    Ok(Some(resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")? }))
+    Ok(Some(resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")? }))
 }
 
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)

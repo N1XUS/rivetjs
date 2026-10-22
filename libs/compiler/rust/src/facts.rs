@@ -52,6 +52,32 @@ struct Facts<'t, 'a> {
     groups: Vec<Group>,
     preload: Option<String>,
     default_name: Option<String>,
+    /// Local exports: (exported, local name) — `export { a as b }`, `export function X`, `export const X`, `export default X`.
+    exports: Vec<(String, String)>,
+    /// Re-exports: (exported, from, imported) — `export { a as b } from "m"`, `export * as ns from "m"` (imported `*`).
+    reexports: Vec<(String, String, String)>,
+    /// `export * from "m"` sources.
+    stars: Vec<String>,
+    /// Compound components: `const X = Object.assign(Root, { Part: Local, … })` at the top level → (X, Root, parts).
+    compounds: Vec<(String, String, Vec<(String, String)>)>,
+}
+
+/// `Object.assign(Root, { Part: Local, … })` (identifiers only): (root, parts).
+fn compound<'a>(init: &Expression<'a>) -> Option<(String, Vec<(String, String)>)> {
+    let Expression::CallExpression(call) = init else { return None };
+    let Expression::StaticMemberExpression(m) = &call.callee else { return None };
+    if !matches!(&m.object, Expression::Identifier(o) if o.name == "Object") || m.property.name != "assign" || call.arguments.len() != 2 {
+        return None;
+    }
+    let Some(Expression::Identifier(root)) = call.arguments[0].as_expression() else { return None };
+    let Some(Expression::ObjectExpression(o)) = call.arguments[1].as_expression() else { return None };
+    let mut parts = Vec::new();
+    for p in &o.properties {
+        let ObjectPropertyKind::ObjectProperty(p) = p else { continue };
+        let (PropertyKey::StaticIdentifier(key), Expression::Identifier(value)) = (&p.key, &p.value) else { continue };
+        parts.push((key.name.to_string(), value.name.to_string()));
+    }
+    Some((root.name.to_string(), parts))
 }
 
 /// `attribute(element, name)`: Some(Some(text)) for a string, Some(None) otherwise, None if absent.
@@ -124,9 +150,44 @@ impl<'t, 'a> Facts<'t, 'a> {
             AstKind::ExportNamedDeclaration(d) => {
                 if let Some(source) = &d.source {
                     add(&mut self.statics, &source.value);
+                    for spec in &d.specifiers {
+                        self.reexports.push((spec.exported.name().to_string(), source.value.to_string(), spec.local.name().to_string()));
+                    }
+                } else {
+                    for spec in &d.specifiers {
+                        self.exports.push((spec.exported.name().to_string(), spec.local.name().to_string()));
+                    }
+                    match &d.declaration {
+                        Some(Declaration::FunctionDeclaration(f)) => {
+                            if let Some(id) = &f.id {
+                                self.exports.push((id.name.to_string(), id.name.to_string()));
+                            }
+                        }
+                        Some(Declaration::VariableDeclaration(v)) => {
+                            for declarator in &v.declarations {
+                                if let BindingPatternKind::BindingIdentifier(id) = &declarator.id.kind {
+                                    self.exports.push((id.name.to_string(), id.name.to_string()));
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
-            AstKind::ExportAllDeclaration(d) => add(&mut self.statics, &d.source.value),
+            AstKind::ExportAllDeclaration(d) => {
+                add(&mut self.statics, &d.source.value);
+                match &d.exported {
+                    Some(name) => self.reexports.push((name.name().to_string(), d.source.value.to_string(), "*".into())),
+                    None => self.stars.push(d.source.value.to_string()),
+                }
+            }
+            AstKind::ExportDefaultDeclaration(d) => match &d.declaration {
+                ExportDefaultDeclarationKind::Identifier(i) => self.exports.push(("default".into(), i.name.to_string())),
+                ExportDefaultDeclarationKind::FunctionDeclaration(f) => {
+                    self.exports.push(("default".into(), f.id.as_ref().map_or_else(|| "default".to_string(), |id| id.name.to_string())))
+                }
+                _ => {}
+            },
             AstKind::ImportExpression(e) => {
                 if let Expression::StringLiteral(s) = &e.source {
                     add(&mut self.dynamics, &s.value);
@@ -147,6 +208,11 @@ impl<'t, 'a> Facts<'t, 'a> {
                 let top = tree
                     .raw_parent(id)
                     .is_some_and(|declaration| self.top_level(declaration));
+                if let (BindingPatternKind::BindingIdentifier(name), Some(init), true) = (&d.id.kind, &d.init, top) {
+                    if let Some((root, parts)) = compound(init) {
+                        self.compounds.push((name.name.to_string(), root, parts));
+                    }
+                }
                 if let (BindingPatternKind::BindingIdentifier(name), Some(init)) = (&d.id.kind, &d.init) {
                     if component(&name.name)
                         && matches!(init, Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_))
@@ -230,6 +296,10 @@ pub fn module_facts(source: &str, filename: &str) -> Value {
         groups: Vec::new(),
         preload: None,
         default_name: None,
+        exports: Vec::new(),
+        reexports: Vec::new(),
+        stars: Vec::new(),
+        compounds: Vec::new(),
     };
     facts.visit(tree.root(), None);
     json!({
@@ -240,6 +310,10 @@ pub fn module_facts(source: &str, filename: &str) -> Value {
         "groups": facts.groups,
         "preload": facts.preload,
         "defaultName": facts.default_name,
+        "exports": facts.exports.iter().map(|(e, l)| json!([e, l])).collect::<Vec<_>>(),
+        "reexports": facts.reexports.iter().map(|(e, f, i)| json!([e, f, i])).collect::<Vec<_>>(),
+        "stars": facts.stars,
+        "compounds": facts.compounds.iter().map(|(n, r, p)| json!([n, r, p.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>()])).collect::<Vec<_>>(),
     })
 }
 

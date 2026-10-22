@@ -7,3 +7,27 @@ let hook: (() => void) | null = null;
 export const _rEager = (): void => void hook?.();
 /** @internal The derived server's mark. */
 export const _onEager = (fn: () => void): void => void (hook = fn);
+
+// Framework islands on the derived model (M6-PARITY, `@rivetjs/bridge` `_island`): the server bridge offers each hydrated
+// island to the derived render. One with plain JSON props (`props`) boots through the bridge's lean boot (records +
+// inline boot before the derived tail, `tail` writes them): no Rivet runtime involved. Any other (live / callback props,
+// Rivet slot content, `intent`, `props` null) hydrates in the adopt run of the boundary rendering it, which then adopts at
+// the island's policy trigger (`on`; tail `i` names those islands). A no-op outside a derived server render (false).
+/** A hydrated island of a derived render. */
+export interface DerivedIsland {
+  /** Root id (`data-ri`), island key (manifest `islands`), policy (undefined: hydrate on change). */
+  id: string;
+  key: string;
+  on: string | undefined;
+  /** Its framework props as plain JSON (lean boot), or why not (the boundary's adopt run hydrates it); asked once. */
+  values(): Record<string, unknown> | string;
+  /** `values()`' props once the derived render asked (null: not lean). */
+  props: Record<string, unknown> | null;
+  /** The bridge's lean tail writer: records + boot for the lean islands (`nonce` sanitised, manifest for chunk URLs). */
+  tail(islands: readonly DerivedIsland[], manifest: { islands?: Record<string, string>; deps?: Record<string, string[]> } | undefined, nonce: string): string;
+}
+let island: ((entry: DerivedIsland) => boolean) | null = null;
+/** Offer a hydrated island to the derived render (true: taken). */
+export const _rIsland = (entry: DerivedIsland): boolean => island?.(entry) ?? false;
+/** @internal The derived server's island collector. */
+export const _onIsland = (fn: (entry: DerivedIsland) => boolean): void => void (island = fn);

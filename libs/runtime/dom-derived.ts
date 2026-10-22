@@ -30,7 +30,7 @@ import { _bindingEffect1, _dispose, _rootIn, _tracking, getOwner, runWithOwner, 
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
-import { _adoption, _delegateBelow, _for, _insert } from "./dom-v2.ts";
+import { _adoption, _delegateBelow, _for, _insert, _on } from "./dom-v2.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
 import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
@@ -117,7 +117,20 @@ interface AHole {
   token: { n(): Node[] };
   done: boolean;
 }
-type Hole = BHole | FHole | AHole;
+/**
+ * A framework island (M6-PARITY, `@rivetjs/bridge/dom` `_island` through the `rivet.island` hook): the probe gets a comment
+ * pair, the alignment its server root (`<rivet-island data-ri>`), the adopt run a keep token for it; after the run the
+ * bridge's `adopt` hydrates it under the unit's owner when tail `i` names it (else the lean boot owns it, or it is static).
+ */
+interface IHole {
+  kind: 3;
+  nodes: Node[];
+  el: Element | null;
+  run: ((root: Element) => void) | null;
+  owner: Owner | null;
+  token: { n(): Node[] };
+}
+type Hole = BHole | FHole | AHole | IHole;
 /** One run (probe / adopt / client fallback) of a unit. */
 interface Unit {
   mode: number;
@@ -142,6 +155,11 @@ interface Unit {
   an: number;
   /** An `Async`'s content unit: its id (its own `Async`s are keyed `-aid`). */
   aid: number;
+  /**
+   * A `<For>` row (M6-PARITY task 4): the server numbers a boundary's `Async`s across all its rows, the row counts from
+   * 0 — its `Async` holes take their ids from the server markers they claim instead.
+   */
+  row: boolean;
   /** A load suspended a `Suspense` during the probe (DERIVED-C3): the unit renders in the browser. */
   sus: boolean;
   /** Plain signals made so far (DERIVED-C4: numbered as the server did, `_dsignal`). */
@@ -274,6 +292,10 @@ const recs = new Map<number, Rec>(),
 // The next `Async` call is a landed hole's own run (`landAsync`): it runs as usual.
 let asyncRun = false;
 const DIVERGED = "Rivet resume: an adopt run diverged from its probe";
+/** `@rivetjs/bridge/dom` `_island` asks this hook first (M6-PARITY). */
+const ISLAND = Symbol.for("rivet.island");
+/** Bubbling event types the loader holds by default (`resume-loader-derived.ts`): delegated from the start. */
+const DELEGATED = ["click", "input", "change", "submit", "keydown", "pointerdown", "pointerup", "mousedown", "mouseup", "focusin", "focusout"];
 
 const pair = (): Node[] => [document.createComment("b?"), document.createComment("/b?")];
 const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []): Unit => ({
@@ -289,6 +311,7 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   depth: 0,
   an: 0,
   aid: 0,
+  row: false,
   sus: false,
   made: 0,
 });
@@ -504,14 +527,15 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
   };
 }
 // `Async` in a unit's runs (`_adoption.async`, DERIVED-C2): one the server streamed or awaited (tail `a`, by the unit's key
-// and the place among its `Async`s with a fallback, as the server counted them) is a hole: probe → a comment pair, adopt
-// run → its server range (kept: a token), landed after the run; any other runs as usual.
-function asyncHook(props: NonNullable<AHole["props"]>, self: (props: never) => unknown): unknown {
+// and the place among its `Async`s with a fallback — or any app `<Async>`, M6-PARITY task 4 — as the server counted them)
+// is a hole: probe → a comment pair, adopt run → its server range (kept: a token), landed after the run; any other runs as
+// usual. In a row (`u.row`) the id is the marker the hole claims (0 until then).
+function asyncHook(props: NonNullable<AHole["props"]>, self: (props: never) => unknown, user: boolean): unknown {
   if (asyncRun) return void (asyncRun = false);
   const u = cur;
-  if (u === null || u.mode === CLIENT || inner || u.depth || typeof props.fallback !== "function") return undefined;
+  if (u === null || u.mode === CLIENT || inner || u.depth || (!user && typeof props.fallback !== "function")) return undefined;
   const k = u.an++,
-    id = asyncAt.get(u.aid ? -u.aid : (u.rec?.id ?? 0))?.get(k);
+    id = u.row ? 0 : asyncAt.get(u.aid ? -u.aid : (u.rec?.id ?? 0))?.get(k);
   if (id === undefined) return undefined;
   if (u.mode === PROBE) {
     const hole: AHole = { kind: 2, id, nodes: pair(), start: null, end: null, props: null, self: null, owner: null, token: { n: () => [] }, done: false };
@@ -520,12 +544,40 @@ function asyncHook(props: NonNullable<AHole["props"]>, self: (props: never) => u
     return hole.nodes;
   }
   const hole = u.holes[u.at++];
-  if (!hole || hole.kind !== 2 || hole.id !== id) throw Error(DIVERGED);
+  if (!hole || hole.kind !== 2 || (!u.row && hole.id !== id)) throw Error(DIVERGED);
   hole.props = props;
   hole.self = self;
   hole.owner = getOwner();
   _adoption.keep!.add(hole.token);
   return hole.token;
+}
+// `_island` in a unit's runs (M6-PARITY): probe → a comment pair, adopt run → a keep token over the server root.
+function islandHook(run: (root: Element) => void): unknown {
+  const u = cur;
+  if (u === null || u.mode === CLIENT || inner || u.depth) return undefined;
+  if (u.mode === PROBE) {
+    const hole: IHole = { kind: 3, nodes: pair(), el: null, run: null, owner: null, token: { n: () => [] } };
+    hole.token = { n: () => (hole.el ? [hole.el] : []) };
+    u.holes.push(hole);
+    return hole.nodes;
+  }
+  const hole = u.holes[u.at++];
+  if (!hole || hole.kind !== 3) throw Error(DIVERGED);
+  hole.run = run;
+  hole.owner = getOwner();
+  _adoption.keep!.add(hole.token);
+  return hole.token;
+}
+/** Island roots (`data-ri`) the adopt run hydrates (tail / patch `i`). */
+const islandIds = new Set<string>();
+function landIsland(h: IHole): void {
+  const el = h.el;
+  if (!el || !islandIds.delete(el.getAttribute("data-ri")!)) return;
+  try {
+    runWithOwner(h.owner, () => h.run!(el));
+  } catch (error) {
+    report(error);
+  }
 }
 // The nodes from `start` to `end`, both included (an `Async` hole's server range as it is now).
 function spanOf(start: Node, end: Node): Node[] {
@@ -788,7 +840,7 @@ function closeAt(ll: Node[], j: number, open: RegExp, close: string): number {
 }
 const claimable = (hole: Hole, n: Node): boolean => {
   const d = data(n);
-  return d !== null && (hole.kind === 2 ? A_OPEN : hole.kind ? R_OPEN : B_OPEN).test(d);
+  return hole.kind !== 3 && d !== null && (hole.kind === 2 ? A_OPEN : hole.kind ? R_OPEN : B_OPEN).test(d);
 };
 function mismatch(a: UnitAlign, at: Node, server: Node | undefined, probe: Node | undefined): void {
   a.fail = true;
@@ -835,8 +887,19 @@ function runs(a: UnitAlign, fr: Node[], lr: Node[], at: Node, before: Node | nul
 }
 // A hole takes its server range at `ll[j]`: a For its `n` row groups, a boundary its `<!--bN-->` range or `data-b` element.
 function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): number {
+  if (hole.kind === 3) {
+    const n = ll[j] as Element | undefined;
+    if (n === undefined || n.nodeType !== 1 || n.localName !== "rivet-island" || !n.hasAttribute("data-ri")) return (mismatch(a, at, n, hole.nodes[0]), j);
+    hole.el = n;
+    a.span.set(hole.nodes[0]!, [n]);
+    a.span.set(hole.nodes[1]!, []);
+    return j + 1;
+  }
   if (hole.kind === 2) {
-    const e = data(ll[j]) === "a" + hole.id ? closeAt(ll, j, A_OPEN, "/a") : -1;
+    const d = data(ll[j]);
+    // A row's hole (id 0): the marker it meets names it.
+    if (hole.id === 0 && d !== null && A_OPEN.test(d)) hole.id = +d.slice(1);
+    const e = d === "a" + hole.id ? closeAt(ll, j, A_OPEN, "/a") : -1;
     if (e < 0) return (mismatch(a, at, ll[j], hole.nodes[0]), j);
     hole.start = ll[j]!;
     hole.end = ll[e]!;
@@ -875,7 +938,27 @@ function claim(a: UnitAlign, hole: Hole, ll: Node[], j: number, at: Node): numbe
     hole.range = anchored(n as Element);
     j++;
   }
-  const rec = recs.get(id);
+  let rec = recs.get(id);
+  // A conditional boundary the server found static (no record, M6-PARITY 6b): a materialised parent adopts it as a
+  // dependent unit of its own, from an empty record (it has no keyed state; its props come from the parent's run).
+  if (id && rec === undefined)
+    recs.set(
+      id,
+      (rec = {
+        id,
+        parent: null,
+        flags: 0,
+        name: hole.name,
+        values: new Map(),
+        props: null,
+        done: false,
+        owner: null,
+        hole: null,
+        loading: null,
+        ready: null,
+        sources: null,
+      }),
+    );
   if (id && rec?.name === hole.name) {
     hole.rec = rec;
     hole.start = hole.range[0]!;
@@ -968,6 +1051,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   for (;;) {
     pu = unit(PROBE, rec, self);
     pu.inline = inline;
+    pu.row = label === "row";
     cur = pu;
     try {
       probe = probeRow(parent, (fn) => fn(), run, start.ownerDocument!, verify, outer);
@@ -979,8 +1063,9 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
     if (!again) break;
     _dispose(probe.owner);
   }
-  // `Suspense` under the derived model (DERIVED-C3): its content was awaited in place on the server and no resource state
-  // ships, so the unit renders in the browser (its resources load again) — gap, documented.
+  // `Suspense` under the derived model (DERIVED-C3): its content was awaited in place on the server; the resources it read
+  // adopt the server's state (`$r`, M6-PARITY task 3), so it suspends here only for a load the server could not ship (a
+  // value that is not JSON data, a resource made outside a boundary): then the unit renders in the browser.
   if (pu.sus) {
     if (DEV)
       DEV.adopt(label + (rec ? " (b" + rec.id + ")" : ""), "a load suspended a <Suspense> (Suspense content renders in the browser on the derived model)");
@@ -1042,6 +1127,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   const dirty = dirtyOf(controlsOf(map));
   // 4. Adopt: the run again, every creation returns its live node; holes take their server nodes.
   const au = unit(ADOPT, rec, self, pu.holes);
+  au.row = pu.row;
   au.inline = inline;
   let owner: Owner | null;
   cur = au;
@@ -1055,6 +1141,7 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   // 5. Child boundaries: dependent ones now, independent ones deferred; lists: which keyed signals their rows read.
   for (const hole of au.holes) if (hole.kind === 0 && hole.rec && !hole.rec.done) child(hole.rec, hole);
   for (const hole of au.holes) if (hole.kind === 2) landAsync(hole);
+  for (const hole of au.holes) if (hole.kind === 3) landIsland(hole);
   for (const lazy of au.fors) sample(lazy);
   counted(rec, au.made);
   shape = own;
@@ -1065,7 +1152,9 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
 // state keeps the record's values; child boundaries render as plain client components.
 function client(parent: Owner | null, run: () => unknown, start: Node, end: Node, rec: Rec | null, self: boolean): Owner | null {
   if (DOM_DATA) sweepDom();
-  for (const n of between(start, end)) {
+  const old = between(start, end),
+    held = addresses(old);
+  for (const n of old) {
     dead(n);
     n.parentNode!.removeChild(n);
   }
@@ -1077,8 +1166,46 @@ function client(parent: Owner | null, run: () => unknown, start: Node, end: Node
   } finally {
     cur = previous;
   }
+  if (held) resolve(held, between(start, end));
   counted(rec, u.made);
   return holder.owner;
+}
+// Retarget (M6-PARITY task 5): an event held on a server node (or the live event being dispatched) whose unit rendered in
+// the browser instead of adopting is replayed on the node at the same place in the browser's render — the element path
+// from the unit's top-level elements (comments and text differ: markers, split text), a text target by its element.
+const retargets = new WeakMap<Node, Node>();
+let live: Event | null = null;
+function addresses(old: Node[]): [Node, number[]][] | null {
+  let out: [Node, number[]][] | null = null;
+  const tops = old.filter((n) => n.nodeType === 1);
+  for (const event of live ? [live, ...pending.map((item) => item[0])] : pending.map((item) => item[0])) {
+    const target = event.target as Node | null;
+    if (!target || retargets.has(target)) continue;
+    const steps: number[] = [];
+    let el = (target.nodeType === 1 ? target : target.parentNode) as Element | null;
+    while (el && !tops.includes(el)) {
+      const up: Element | null = el.parentElement;
+      steps.unshift(up ? Array.prototype.indexOf.call(up.children, el) : -1);
+      el = up;
+    }
+    if (el) (out ??= []).push([target, [tops.indexOf(el), ...steps]]);
+  }
+  return out;
+}
+function resolve(held: [Node, number[]][], fresh: Node[]): void {
+  const tops = fresh.filter((n) => n.nodeType === 1) as Element[];
+  for (const [target, [top, ...steps]] of held) {
+    let el: Element | undefined = tops[top!];
+    for (const i of steps) el = el?.children[i];
+    if (el) retargets.set(target, el);
+  }
+}
+/** The propagation path of a node in the page (as `composedPath` lists it: node, ancestors, document, window). */
+function pathOf(n: Node): EventTarget[] {
+  const out: EventTarget[] = [];
+  for (let x: Node | null = n; x !== null; x = x.parentNode ?? (x as unknown as ShadowRoot).host ?? null) out.push(x);
+  out.push(window);
+  return out;
 }
 // Records whose markup leaves the page (a unit rendered in the browser instead): nothing to adopt any more.
 function dead(n: Node): void {
@@ -1128,6 +1255,7 @@ function sampleRow(lazy: Lazy, k: number): Sampled | null {
     holder = { owner: null as Owner | null };
   frag.append(anchor);
   cur = unit(PROBE, lazy.rec, false);
+  cur.row = true;
   collector = out.outside;
   // Each hoisted binding: created as usual, the keyed reads of its first run kept apart (DERIVED-C row writers).
   _adoption.fx = (fn, a, b, c) => {
@@ -1645,6 +1773,7 @@ function records(t: BoundaryTail, patch: boolean): void {
     for (const entry of t.d) domEntry(entry);
     if (unread && !sweeping) ((sweeping = true), (((window.requestIdleCallback as Idle | undefined) || setTimeout) as Idle)(idleSweep));
   }
+  for (const id of (t as BoundaryTail & { i?: string[] }).i ?? []) islandIds.add(id);
   for (const r of added) if (r.flags & (LOAD | IDLE | VISIBLE) && !r.hole) trigger(r);
   asyncEntries(t.a);
 }
@@ -1857,10 +1986,17 @@ function queued([event, , , state]: HeldEvent): void {
 // form state its target had at dispatch; a cold press puts focus back first and focuses as its default afterwards; the
 // event's default replays unless a handler canceled it. Resolves once the press's default focus ran (a microtask).
 function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
-  let canceled = false;
-  const target = event.target as HTMLInputElement;
-  // Its boundary rendered in the browser instead of adopting (mismatch): the target left the page, the event is dropped.
-  if (target && !target.isConnected) return;
+  let canceled = false,
+    target = event.target as HTMLInputElement;
+  // Its boundary rendered in the browser instead of adopting (mismatch): the target left the page — replayed on the node
+  // at its place in the browser's render (`retargets`), dropped when there is none.
+  const shifted = target && !target.isConnected;
+  if (shifted) {
+    const to = retargets.get(target) as HTMLInputElement | undefined;
+    if (!to?.isConnected) return;
+    Object.defineProperty(event, "target", { configurable: true, value: (target = to) });
+    path = pathOf(to);
+  }
   hide();
   const type = event.type,
     press = isPress(event),
@@ -1911,7 +2047,7 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     delete (event as { composedPath?: unknown }).composedPath;
     delete (event as { defaultPrevented?: unknown }).defaultPrevented;
     delete (event as { preventDefault?: unknown }).preventDefault;
-    to && delete (event as { target?: unknown }).target;
+    (to || shifted) && delete (event as { target?: unknown }).target;
     if (now && (target.value !== now[0] || target.checked !== now[1])) ((target.value = now[0] as string), (target.checked = now[1] as boolean));
   }
   const kept = canceled;
@@ -1994,9 +2130,25 @@ const runtime: DerivedRuntime = {
       }
     });
     _adoption.async = asyncHook as typeof _adoption.async;
+    (globalThis as { [ISLAND]?: typeof islandHook })[ISLAND] = islandHook;
+    _adoption.resource = () => {
+      const u = cur,
+        rec = u?.rec;
+      if (!u || !rec) return undefined;
+      const n = (u.counts.get("$r") ?? 0) + 1;
+      u.counts.set("$r", n);
+      return rec.values.get(n > 1 ? "$r#" + n : "$r");
+    };
     _adoption.suspense = () => {
       if (cur !== null && cur.mode === PROBE) cur.sus = true;
     };
+    // Rivet's delegated listeners go on the document before any adopt run adds its own document listeners (the router's
+    // `clientEvent(document, "click", interceptClick)`): natively they then run in a client render's order — a link's own
+    // `onClick` `preventDefault()` before the router's bubbling listener (M6-PARITY, forms drawer: a live click on an
+    // `<a href="?new">` whose handler opens a drawer navigated, because the page's first delegated `click` registered
+    // after the router's).
+    const probe = d.createElement("i");
+    for (const type of DELEGATED) _on(probe, type, null);
     records(t, false);
     // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
     const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
@@ -2010,7 +2162,20 @@ const runtime: DerivedRuntime = {
     if (pending.length && !replaying) return false;
     const listening = listeners(event);
     if (listening !== true) return (listening.catch(() => {}), false);
-    const step = around(event.target);
+    live = event;
+    let step: true | Promise<void>;
+    try {
+      step = around(event.target);
+    } finally {
+      live = null;
+    }
+    const target = event.target as HTMLInputElement | null;
+    if (step === true && target && !target.isConnected && retargets.has(target)) {
+      // Its unit rendered in the browser while adopting: the native dispatch would reach the removed server nodes only.
+      event.stopImmediatePropagation();
+      runtime.cold([event, event.composedPath(), undefined, [target.value, target.checked, doc!.activeElement]]);
+      return true;
+    }
     if (step === true) return (enter(event, event.composedPath()), true);
     step.catch(() => {});
     return false;

@@ -327,15 +327,15 @@ compiled("streamed, table-encoded value: decoded with the installed table decode
   });
 });
 
-// DERIVED-C3: `Suspense` under the derived model — the server awaits its content in place and ships no resource state, so
-// the unit holding it renders in the browser on its first adopt (its resources and loads run again; a dev warning names
-// it). Before: the probe run's disposal wrote the Suspense's pending count into its disposed owner ("Cannot run with a
-// disposed owner") and the page reloaded.
+// DERIVED-C3 / M6-PARITY task 3: `Suspense` under the derived model — the server awaits its content in place and ships each
+// resource's settled state on its boundary (`$r`), so the unit holding it adopts: its resources do not load again, the
+// `Async` inside adopts its value. (DERIVED-C3 rendered the unit in the browser; before that, the probe run's disposal
+// wrote the Suspense's pending count into its disposed owner and the page reloaded.)
 const SUSPENDED = `import { signal } from "@rivetjs/reactivity";
 import { Async, Suspense, resource } from "@rivetjs/runtime/dom";
 export function App(props: { n: number }) {
   const count = signal(0);
-  const user = resource(() => props.n, (key) => new Promise<string>((done) => setTimeout(() => done("u" + key), 5)));
+  const user = resource(() => props.n, (key) => ((globalThis as { fetches?: number }).fetches = ((globalThis as { fetches?: number }).fetches ?? 0) + 1, new Promise<string>((done) => setTimeout(() => done("u" + key), 5))));
   return (
     <section>
       <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
@@ -351,7 +351,7 @@ export function App(props: { n: number }) {
   );
 }
 `;
-compiled("a unit holding a Suspense renders in the browser (no resume error), then works", async () => {
+compiled("a unit holding a Suspense adopts the server's resource state (no load in the browser), then works", async () => {
   const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App"], independent: ["App"] };
   const server = compile(SUSPENDED, { target: "server", filename: "page.tsx", resume } as never);
   const dom = compile(SUSPENDED, { target: "dom", filename: "page.tsx", resume } as never);
@@ -370,11 +370,92 @@ compiled("a unit holding a Suspense renders in the browser (no resume error), th
     );
     page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
     await page.goto("http://rivet.test/");
-    await page.dispatchEvent("#count", "pointerdown");
-    await page.waitForFunction(() => !document.querySelector("[data-b]"));
+    await page.evaluate(
+      () => (((document.querySelector("#user") as unknown as { __t: number }).__t = 1), ((document.querySelector("#a") as unknown as { __t: number }).__t = 1)),
+    );
     await page.click("#count");
     await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
     await page.waitForFunction(() => document.querySelector("#user")?.textContent === "u1" && document.querySelector("#a")?.textContent === "ax");
+    assert.deepEqual(
+      await page.evaluate(() => [
+        (document.querySelector("#user") as unknown as { __t?: number }).__t,
+        (document.querySelector("#a") as unknown as { __t?: number }).__t,
+        (globalThis as { fetches?: number }).fetches ?? 0,
+      ]),
+      [1, 1, 0],
+      "server nodes kept, no fetch in the browser",
+    );
+    assert.deepEqual(errors, []);
+  });
+});
+
+// M6-PARITY task 3: a Suspense build discarded because a resource was pending drops the boundaries and counts it recorded
+// (`server-derived.ts` resource `cut`): the build that renders numbers them as the browser's single run does.
+const REBUILT = `import { signal } from "@rivetjs/reactivity";
+import { Suspense, resource } from "@rivetjs/runtime/dom";
+export function Inner(props: { label: string }) {
+  const n = signal(0);
+  return <button id={"inner-" + props.label} onClick={() => n.set(n() + 1)}>{props.label + n()}</button>;
+}
+export function App() {
+  const count = signal(0);
+  const user = resource(() => ((globalThis as { fetches?: number }).fetches = ((globalThis as { fetches?: number }).fetches ?? 0) + 1, new Promise<string>((done) => setTimeout(() => done("u"), 5))));
+  const plain = resource(() => "p");
+  return (
+    <section>
+      <button id="count" onClick={() => count.set(count() + 1)}>{count()}</button>
+      <Suspense fallback={() => <p id="wait">wait</p>}>
+        {() => (
+          <div>
+            <Inner label="a" />
+            <b id="user">{user()}</b>
+            <Inner label="b" />
+          </div>
+        )}
+      </Suspense>
+      <i id="plain">{plain()}</i>
+    </section>
+  );
+}
+`;
+compiled("a discarded Suspense build leaves no records: the boundaries of the rendered build adopt", async () => {
+  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Inner"], independent: ["App"] };
+  const server = compile(REBUILT, { target: "server", filename: "page.tsx", resume } as never);
+  const dom = compile(REBUILT, { target: "dom", filename: "page.tsx", resume } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { App } = await importServer<{ App: () => ServerValue }>(server.code);
+  const symbols = { "src/page.tsx#App": "/page.js", "src/page.tsx#Inner": "/page.js" };
+  const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols } })) as string;
+  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  assert.deepEqual(
+    tail.b.map((r: unknown[]) => r.slice(0, 2)),
+    [
+      [1, 0],
+      [2, 1],
+      [3, 1],
+    ],
+    "one record per rendered boundary, numbered on",
+  );
+  const values = tail.b[0][4] as unknown[];
+  assert.deepEqual(
+    values.flatMap((v, i) => (i % 2 === 0 && String(v).startsWith("$r") ? [v, values[i + 1]] : [])),
+    ["$r", { s: 2, v: "u" }, "$r#2", { s: 2, v: "p" }],
+    "each resource's settled state, in creation order",
+  );
+  await withPage(files(html, rewrite(dom.code)), async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("http://rivet.test/");
+    await page.evaluate(() => void ((document.querySelector("#user") as unknown as { __t: number }).__t = 1));
+    await page.click("#inner-b");
+    await page.waitForFunction(() => document.querySelector("#inner-b")!.textContent === "b1");
+    await page.click("#count");
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "1");
+    assert.deepEqual(
+      await page.evaluate(() => [(document.querySelector("#user") as unknown as { __t?: number }).__t, (globalThis as { fetches?: number }).fetches ?? 0]),
+      [1, 0],
+    );
+    assert.equal(await page.textContent("#plain"), "p");
     assert.deepEqual(errors, []);
   });
 });

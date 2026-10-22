@@ -88,6 +88,10 @@ export function Shell({ title }) { const n = signal(0); return <b onClick={() =>
   assert.ok(build.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Page"'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Shell"'), build.code);
+  // M6-PARITY 6b: a `conditional` verdict (no change source of its own) sets COND (1024) on its `_rB`.
+  const cond = server(source, { model: "derived", boundaries: ["Counter", "Page"], independent: [], conditional: ["Page"] });
+  assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Page", 1026)'), cond.code);
+  assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), cond.code);
 });
 
 it("moduleFacts boundaries: own interactivity, context, params, renders, data-only calls", () => {
@@ -107,20 +111,71 @@ export default function () { return <Page data={null} />; }
     { ...page, renders: [...page.renders] },
     {
       interactive: false,
+      source: false,
+      provides: false,
       context: false,
       params: "destructured",
       renders: ["Shell", "Counter"],
       calls: [
-        { tag: "Shell", data: true },
-        { tag: "Counter", data: false },
+        { tag: "Shell", data: true, fn: false, around: [], inputs: true },
+        { tag: "Counter", data: false, fn: false, around: [], inputs: false },
       ],
     },
   );
   assert.equal(facts.boundaries.get("Shell")!.context, true);
   assert.equal(facts.boundaries.get("Counter")!.interactive, true);
+  // M6-PARITY 6b: keyed state + a handler = an own change source.
+  assert.equal(facts.boundaries.get("Counter")!.source, true);
+  assert.equal(facts.boundaries.get("Shell")!.source, false);
   assert.equal(facts.boundaries.get("Counter")!.params, "object");
-  assert.deepEqual(facts.boundaries.get("default")!.calls, [{ tag: "Page", data: true }]);
+  assert.deepEqual(facts.boundaries.get("default")!.calls, [{ tag: "Page", data: true, fn: false, around: [], inputs: true }]);
   assert.equal(moduleFacts(COUNTER, "m.tsx").boundaries.size, 0);
+});
+
+it("moduleFacts boundaries (6b): sources vs reads, module state, providers, function props, enclosing tags; export maps", () => {
+  const facts = moduleFacts(
+    `
+import { Provider } from "@rivetjs/runtime/dom";
+import { count, cn } from "./state.ts";
+import * as ns from "./helpers.ts";
+let mode = "a";
+const LIMIT = 3;
+const helper = (x) => x * 2;
+export function Reads(props) { return <b class={cn(props.a, ns.size(props.b))} title={helper(props.c)}>{props.d}</b>; }
+export function Global(props) { return <b>{count()}</b>; }
+export function Let(props) { return <b>{mode.toUpperCase()}</b>; }
+export function Ref(props) { return <b ref={props.ref}>{props.x}</b>; }
+export function Root(props) { return <Provider token={T} value={props.v}><Part onPick={() => 1} label={LIMIT} /></Provider>; }
+export const Meter = Object.assign(Root, { Part: Reads });
+export { Reads as Alias };
+export * from "./more.ts";
+export { x as y } from "./other.ts";
+`,
+    "m.tsx",
+    { boundaries: true },
+  );
+  const b = (name: string) => facts.boundaries.get(name)!;
+  assert.deepEqual(
+    ["Reads", "Global", "Let", "Ref", "Root"].map((n) => [n, b(n).interactive, b(n).source]),
+    [
+      ["Reads", true, false],
+      ["Global", true, true],
+      ["Let", true, true],
+      ["Ref", true, false],
+      ["Root", true, false],
+    ],
+  );
+  assert.equal(b("Root").provides, true);
+  assert.deepEqual(b("Root").calls, [
+    { tag: "Provider", data: false, fn: false, around: [], inputs: false },
+    { tag: "Part", data: false, fn: true, around: ["Provider"], inputs: false },
+  ]);
+  assert.equal(facts.exports.get("Alias"), "Reads");
+  assert.equal(facts.exports.get("Meter"), "Meter");
+  assert.deepEqual(facts.stars, ["./more.ts"]);
+  assert.deepEqual(facts.reexports.get("y"), { from: "./other.ts", imported: "x" });
+  assert.deepEqual([...facts.compounds.get("Meter")!.parts], [["Part", "Reads"]]);
+  assert.equal(facts.compounds.get("Meter")!.root, "Root");
 });
 
 it("RV2103 (non-deterministic render, error) and RV2104 (keyed state in a loop, warning); `check` reports them too", () => {

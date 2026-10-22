@@ -3,11 +3,11 @@
 // (builds first; `--no-build` reuses dist/). JSON on stdout.
 import { chromium, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
-import { buildApp } from "./serve.ts";
+import { buildApp, dist } from "./serve.ts";
 
 const root = new URL("./", import.meta.url).pathname;
 if (!process.argv.includes("--no-build")) await buildApp();
-const app = await start({ dist: root + "dist", port: Number(process.env.PORT ?? 4642), host: "127.0.0.1", onError: () => {} });
+const app = await start({ dist, port: Number(process.env.PORT ?? 4642), host: "127.0.0.1", onError: () => {} });
 const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
 
 type Sample = {

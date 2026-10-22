@@ -1289,13 +1289,18 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         // Plain server builds (no resume): `clientEvent(…)` never attaches on the server, but its target argument
         // (`window` / `document`) would still be evaluated and throw where those globals do not exist; the call lowers
-        // to `undefined` (resume builds record it as a site instead, `resume_node`).
+        // to `undefined` (resume builds record it as a site instead, `resume_node`). The derived server target lowers
+        // `clientEffect(…)` the same way (M6-PARITY): a server no-op whose closure would keep browser-only imports
+        // (`import("./dialog.tsx")`) in the SSR bundle.
         if self.server && self.resumed.is_none() {
             if let AstKind::CallExpression(call) = kind {
                 if let Expression::Identifier(ident) = &call.callee {
                     if let Some(decl) = tree.resolve(ident, false) {
                         if let AstKind::ImportSpecifier(s) = tree.kind(decl) {
-                            if s.imported.name() == "clientEvent" && resume::import_source(tree, decl).is_some_and(|from| from.starts_with("@rivetjs/runtime")) {
+                            let name = s.imported.name();
+                            if (name == "clientEvent" || (name == "clientEffect" && self.derived.is_some()))
+                                && resume::import_source(tree, decl).is_some_and(|from| from.starts_with("@rivetjs/runtime"))
+                            {
                                 return Some(Expr::ident("undefined"));
                             }
                         }

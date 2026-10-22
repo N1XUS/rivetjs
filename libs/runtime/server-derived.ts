@@ -30,7 +30,8 @@ import type { Store } from "@rivetjs/reactivity/store";
 import { compiledTemplate, template, _attributeRecord } from "./template.ts";
 import { For, ROWS, _scopedRecord } from "./server-structural.ts";
 import { _list, renderToString } from "./server.ts";
-import { _asyncHook, _onAsync } from "./server-async.ts";
+import { _asyncHook, _onAsync, _onUserAsync } from "./server-async.ts";
+import { _onDerivedResource } from "./server-resource-slot.ts";
 import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
 import { _setDerived, _shellRecorder, renderResumable, resumableToString } from "./server-resume.ts";
@@ -39,7 +40,8 @@ import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAs
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
-import { _onEager } from "./derived-eager.ts";
+import { _onEager, _onIsland } from "./derived-eager.ts";
+import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 import { _idScope } from "./id.ts";
 import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
@@ -68,7 +70,12 @@ export const INDEPENDENT = 1,
   DEFER = 256,
   /** `DEFER` whose subtree also read a source the wake lists cannot name (module level, a build pass): any write to such a
    * source in the browser adopts it first. */
-  MOD = 512;
+  MOD = 512,
+  /**
+   * Conditional (M6-PARITY 6b, compiler: build verdict `conditional`): a boundary without a change source of its own. Its
+   * record is kept only for a live instance (`keep` below); never on the wire.
+   */
+  COND = 1024;
 const TRIGGERS = LOAD | IDLE | VISIBLE;
 
 /** One boundary of a render (the token the compiled body holds). */
@@ -96,6 +103,10 @@ export interface Boundary {
   made: number;
   weight: number;
   mark: number;
+  /** `COND` boundaries: a read in its unit of a source that can change from outside its subtree (`note`). */
+  hot?: boolean;
+  /** A boundary below it keeps its record (flush). */
+  kept?: boolean;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -155,6 +166,11 @@ export interface DerivedRender {
   counted: Set<Boundary>;
   /** DOM data (DERIVED-C5, manifest `domData`): the lists written from a tape with DOM text slots; null when off. */
   dom: DomList[] | null;
+  /** Framework islands (M6-PARITY): lean ones (booted by the bridge's lean boot, shell only), the ids and keys of those
+   * the adopt run of their boundary hydrates (tail / patch `i`, fetch-ahead), the shell tail is written. */
+  lean: DerivedIsland[];
+  adopt: DerivedIsland[];
+  tailed: boolean;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -267,6 +283,9 @@ export function createDerived(): DerivedRender {
     stores: false,
     counted: new Set(),
     dom: options?.manifest?.domData && derivedDom.api ? [] : null,
+    lean: [],
+    adopt: [],
+    tailed: false,
   });
 }
 
@@ -547,7 +566,21 @@ function note(src: Src): void {
   const ev = ctx.ev;
   if (ev.length) return void (ev[ev.length - 1]!.s ??= new Set()).add(src);
   const r = current(ctx);
-  if (r !== null && r !== src.c && (src.r !== r || (src.s !== null && src.z !== src.s.size))) cross(ctx, src, r, 0);
+  if (r === null) return;
+  if (r.flags & COND && !r.hot && changes(ctx, src, r, 0)) r.hot = true;
+  if (r !== src.c && (src.r !== r || (src.s !== null && src.z !== src.s.size))) cross(ctx, src, r, 0);
+}
+/**
+ * `src` can change from outside `r`'s subtree: a signal made outside it (another boundary, module level, another render),
+ * or a computed over such a source. A computed whose sources are all constant (cdk render props over literal props) or
+ * made inside `r`'s subtree does not make `r` live (a write to those comes from a handler inside, whose boundary is kept).
+ */
+function changes(ctx: DerivedRender, src: Src, r: Boundary, depth: number): boolean {
+  if (src.x !== ctx) return true;
+  if (src.s === null) return src.c === null || !within(r, src.c);
+  if (depth >= 32) return true;
+  for (const t of src.s) if (changes(ctx, t, r, depth + 1)) return true;
+  return false;
 }
 function cross(ctx: DerivedRender, src: Src, r: Boundary, depth: number): void {
   if (src.r === r && (src.s === null || src.z === src.s.size)) return;
@@ -653,6 +686,37 @@ _onEager(() => {
     r = ctx && current(ctx);
   if (r) markUp(r, null, EAGER_MARK);
 });
+// ---- Framework islands (M6-PARITY, `@rivetjs/bridge`) ----
+// A hydrated island with plain JSON props rendered in the shell boots through the bridge's lean boot (its records + boot
+// script before the boundaries tail): the Rivet runtime never runs for it. Any other one (live / callback props, Rivet
+// slot content, `intent`, or first rendered in a streamed segment) is hydrated by the adopt run of the boundary rendering
+// it (`dom-derived.ts` island holes): that boundary gets the island's trigger (`load` / `only` → LOAD, `visible` → VISIBLE,
+// else IDLE: the bridge driver applies the policy itself once adopted) and tail / patch `i` names the island. Outside every
+// boundary such an island cannot hydrate (dev warning).
+const ISLAND_WHEN: Record<string, number> = { load: LOAD, only: LOAD, visible: VISIBLE };
+_onIsland((entry) => {
+  const ctx = useContext(DERIVED);
+  if (!ctx) return false;
+  const values = entry.values();
+  entry.props = typeof values === "string" ? null : values;
+  if (entry.props !== null && !ctx.tailed) return (ctx.lean.push(entry), true);
+  const at = current(ctx);
+  if (at === null) {
+    if (warned.size < 64 && !warned.has(entry.key)) {
+      warned.add(entry.key);
+      console.warn(
+        "[rivet:bridge] island " +
+          entry.key +
+          " does not hydrate on the derived model: its props need the Rivet runtime and no interactive component renders it",
+      );
+    }
+    return true;
+  }
+  at.flags |= entry.on === undefined ? IDLE : (ISLAND_WHEN[entry.on] ?? IDLE);
+  ctx.boot = true;
+  ctx.adopt.push(entry);
+  return true;
+});
 /** Flush: `DEFER` / `MOD` on the dependent boundaries whose subtree is closed and heavy enough (`flags`), creator counts. */
 function deferFlags(ctx: DerivedRender, from: number): void {
   if (ctx.stores || moduleStores || ctx.sources !== null || (ctx.stream && ctx.asyncs.some((a) => a.state === 0 || a.state === 3))) return;
@@ -690,6 +754,79 @@ _onAsync(() => {
   const ctx = useContext(DERIVED);
   return ctx ? derivedAsync(ctx) : prior ? prior() : null;
 });
+// An app `<Async>` without a fallback function (M6-PARITY task 4): awaited in place as before, now between its markers
+// with its value in the tail, so the browser adopts its content instead of loading again.
+_onUserAsync(() => {
+  const ctx = useContext(DERIVED);
+  return ctx ? derivedAsync(ctx) : null;
+});
+// `resource()` (M6-PARITY task 3): its state ships as a keyed value `$r` of the boundary whose body made it (in creation
+// order; the browser's adopt run numbers its own the same way and binds the seed, so it does not load again). A Suspense
+// build discarded because a read was pending (`server-resource.ts` `build`) drops what it recorded: its boundaries, the
+// `Async` places and keyed values it counted — the build that renders numbers them again, as the browser's single run does.
+interface DerivedMark {
+  ctx: DerivedRender;
+  next: number;
+  n: number;
+  asyncs: number;
+  an: number;
+  at: Boundary | null;
+  atAn: number;
+  seg: DerivedAsyncState | null;
+  segAn: number;
+  signals: number;
+  keys: [string, number][] | null;
+  made: number;
+}
+_onDerivedResource({
+  seed(get) {
+    const ctx = useContext(DERIVED);
+    const owner = ctx && current(ctx);
+    if (!ctx || !owner || owner.id < ctx.base) return;
+    register(owner, "$r", () => {
+      const seed = get();
+      return isData(seed) ? seed : { x: 1 };
+    });
+  },
+  mark() {
+    const ctx = useContext(DERIVED);
+    if (!ctx) return null;
+    const at = current(ctx),
+      seg = ctx.segment;
+    return {
+      ctx,
+      next: ctx.next,
+      n: ctx.boundaries.length,
+      asyncs: ctx.asyncs.length,
+      an: ctx.an,
+      at,
+      atAn: at?.an ?? 0,
+      seg,
+      segAn: seg?.an ?? 0,
+      signals: at?.signals.length ?? 0,
+      keys: at?.keys ? [...at.keys] : null,
+      made: at?.made ?? 0,
+    } satisfies DerivedMark;
+  },
+  cut(mark) {
+    const m = mark as DerivedMark,
+      ctx = m.ctx;
+    for (let i = m.n; i < ctx.boundaries.length; i++) delete ctx.keys[ctx.boundaries[i]!.id];
+    ctx.boundaries.length = m.n;
+    ctx.next = m.next;
+    for (let i = m.asyncs; i < ctx.asyncs.length; i++) ctx.changed.delete(ctx.asyncs[i]!);
+    ctx.asyncs.length = m.asyncs;
+    ctx.an = m.an;
+    if (m.seg) m.seg.an = m.segAn;
+    const at = m.at;
+    if (at) {
+      at.an = m.atAn;
+      at.signals.length = m.signals;
+      at.keys = m.keys && new Map(m.keys);
+      at.made = m.made;
+    }
+  },
+});
 function derivedAsync(ctx: DerivedRender): AsyncStream {
   // Constructed while another `Async`'s content renders, in that content's own unit (not in a boundary body inside it):
   // keyed by that `Async` (`-id`: the browser adopts its content as a unit of its own and counts there).
@@ -719,6 +856,9 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
         dispose: null,
         own,
       });
+      // No fallback to stream first (an app `Async` without one): awaited in place, also while streaming.
+      const inplace = !ctx.stream || typeof fallback !== "function";
+      if (ctx.stream && inplace) a.out = true;
       ctx.asyncs.push(a);
       ctx.changed.add(a);
       // Shell cache fill (H-holes): a streamed top-level boundary the compiler marked `$hole` may be retained.
@@ -733,7 +873,7 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
           ctx.segment = outer;
         }
       };
-      if (!ctx.stream)
+      if (inplace)
         return compiledTemplate(ASYNC, [
           a.id,
           loaded.then(
@@ -771,7 +911,8 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
       return compiledTemplate(ASYNC, [a.id, fallback()]);
     },
     release(dispose) {
-      if (!entry || !ctx.stream) return dispose();
+      // Rendered in place (no stream, or no fallback to stream): its content is in the shell already.
+      if (!entry || !ctx.stream || entry.out) return dispose();
       entry.dispose = dispose;
     },
   };
@@ -990,13 +1131,19 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
 }
 
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */
+// Island keys of the last flush's `i` (the tail's fetch-ahead lists their chunks).
+let islandUrls: string[] = [];
 function flush(ctx: DerivedRender): BoundaryTail | null {
-  if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0) return null;
+  islandUrls = [];
+  if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0 && ctx.adopt.length === 0) return null;
   const b: BoundaryRecord[] = [];
   let d: DerivedDom[] | undefined;
   deferFlags(ctx, ctx.flushed);
+  keep(ctx, ctx.flushed);
   for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
     const boundary = ctx.boundaries[i]!;
+    if (boundary.flags & COND && !boundary.kept) continue;
+    boundary.flags &= ~COND;
     const signals: unknown[] = [];
     for (const [key, value] of boundary.signals) {
       const v = value();
@@ -1010,7 +1157,8 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     b.push(record);
   }
   ctx.flushed = ctx.boundaries.length;
-  const tail: BoundaryTail = { v: 1, b };
+  const tail: BoundaryTail & { i?: string[] } = { v: 1, b };
+  if (ctx.adopt.length) tail.i = ctx.adopt.splice(0).map((island) => (islandUrls.push(island.key), island.id));
   if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
   if (ctx.listen.length) {
@@ -1060,16 +1208,45 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     for (const x of later) ctx.changed.add(x);
     tail.a = a;
   }
+  // Every boundary of this flush was a static conditional instance: nothing for the browser (no runtime, no chunk).
+  if (!b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a) return null;
   return tail;
+}
+
+// ---- Conditional boundaries (M6-PARITY 6b, 2026-10-22) ----
+// Props are live when the caller passes a reactive value; literals are static. The build marks `COND` the boundaries
+// without a change source of their own (no handler, keyed state, effect, resource, Async, island): they are boundaries
+// only because some caller may feed them live data, a live context, or because they render an interactive child. Per
+// instance, the server keeps such a record when the instance turned out live: its unit read a source that can change
+// from outside its subtree (`changes`: a live prop getter, slot content reading the caller's signal, a context value over
+// a signal), a boundary below it was kept, it holds an `Async` / island trigger / keyed state, something it made escaped
+// or it wrote outside (`EAGER_MARK`), or the render holds a store (store reads are not tracked). Otherwise the record is
+// dropped: its markers stay on the page (inert: no record, the browser's adopt run of an ancestor keeps its server nodes
+// as a hole), and a page of static instances only (`<Meter value={40}>`) ships no tail, no runtime, no chunk.
+function keep(ctx: DerivedRender, from: number): void {
+  const all = ctx.stores || moduleStores;
+  for (let i = ctx.boundaries.length - 1; i >= from; i--) {
+    const x = ctx.boundaries[i]!;
+    if (!(x.flags & COND) || all || x.hot || x.kept || x.flags & TRIGGERS || x.an || x.signals.length || x.mark & EAGER_MARK || ctx.keys[x.id] !== undefined) {
+      x.kept = true;
+      if (x.parent) x.parent.kept = true;
+    }
+  }
 }
 
 /** The shell's tail script (null when the render opened no boundary). A trusted one-fragment template, as the state script. */
 export function derivedTail(ctx: DerivedRender): ServerValue {
   const tail = flush(ctx);
-  if (!tail) return null;
-  const options = ctx.options,
-    json = escapeJSON(JSON.stringify(tail));
-  if (!options?.manifest?.runtime) return template(['<script type="rivet/boundaries">' + json + "</script>"]);
+  ctx.tailed = true;
+  const options = ctx.options;
+  // Lean islands (M6-PARITY): their records + the bridge's boot, before the boundaries tail (each script reads the one
+  // right before it). A page whose only boundaries are such islands ships nothing else.
+  const lean = ctx.lean.length
+    ? ctx.lean[0]!.tail(ctx.lean, options?.manifest as never, options?.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "")
+    : "";
+  if (!tail) return lean ? template([lean]) : null;
+  const json = escapeJSON(JSON.stringify(tail));
+  if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + json + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
   // (manifest `deps`), as low-priority modulepreloads after `load` (`data-fo`; fetched + compiled, never evaluated before
   // an event): the first click evaluates modules already in the module map instead of an import waterfall.
@@ -1078,7 +1255,9 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   let ahead = "";
   if (!options.preload?.lean) {
     const urls = new Set<string>();
-    for (const url of [manifest.runtime!, ...(tail.m ? Object.values(tail.m) : [])]) {
+    // (+ the chunks of the islands an adopt run hydrates, M6-PARITY.)
+    const islands = (manifest as { islands?: Record<string, string> }).islands;
+    for (const url of [manifest.runtime!, ...(tail.m ? Object.values(tail.m) : []), ...islandUrls.map((key) => islands?.[key]!).filter(Boolean)]) {
       urls.add(url);
       if (deps?.[url]) for (const dep of deps[url]!) urls.add(dep);
     }
@@ -1095,7 +1274,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
       (ctx.boot ? " data-boot" : "") +
       (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
       (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
-  return template(['<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
+  return template([lean + '<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`). */
 const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout";

@@ -163,6 +163,8 @@ Render props (a slot that React calls with arguments) are not supported. Use a c
 
 When a page's only browser code is islands with plain JSON props, Rivet skips its own resume state and loader. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. Rivet content in a slot, `client="intent"`, callbacks and live props need Rivet's full runtime, and then it loads as usual. On file-router pages the router waits until the first link hover, focus or click.
 
+On the [derived resume model](../../learn/resuming.md#derived-model-experimental) every island with plain JSON props starts through that inline script, whatever else the page holds. An island that needs Rivet (live props, callbacks, Rivet content in a slot) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; its handlers work from then on. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it).
+
 ## Common mistakes
 
 - **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.

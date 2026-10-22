@@ -6,13 +6,14 @@
 // for re-creation once the page resumed (the browser loads it then). Resumable renders encode a resource function as a
 // `bind` of the recipe the compiler gave its `const` with the server state (`ResourceSeed`); dom-resume rebuilds it from
 // that recipe and binds the seed (dom-resource.ts `adopt`), so the browser does not load the value again.
+// Derived renders ship the seed as the making boundary's keyed value `$r` instead (`seedOf`, `server-derived.ts`).
 import { createRoot, getOwner, onCleanup, provide, runWithOwner, signal, untrack, useContext } from "@rivetjs/reactivity";
 import type { Context, Owner, Signal } from "@rivetjs/reactivity";
 import { DEV } from "#dev";
 import { captureAsyncContext } from "./async.ts";
 import { Async, clientOnly } from "./server-async.ts";
 import { _onBuild } from "./server-suspense.ts";
-import { _resourceResume } from "./server-resource-slot.ts";
+import { _derivedResource, _resourceResume } from "./server-resource-slot.ts";
 import { _OPS, _PROTO, _STATES, _sameKey } from "./resource.ts";
 import type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource } from "./resource.ts";
 import type { AsyncContext } from "./async.ts";
@@ -68,7 +69,9 @@ function build(content: () => unknown, builds: Builds): unknown {
   builds.i = 0;
   builds.wait = [];
   const hooks = _resourceResume(),
-    mark = hooks && hooks.mark();
+    mark = hooks && hooks.mark(),
+    dh = _derivedResource(),
+    dmark = dh && dh.mark();
   let root: { value: unknown; dispose: () => void } | undefined, failure: [unknown] | undefined;
   try {
     root = createRoot(() => provide(BUILDS, builds, content));
@@ -82,8 +85,9 @@ function build(content: () => unknown, builds: Builds): unknown {
   }
   if (root) root.dispose();
   if (mark != null) hooks!.cut(mark);
+  if (dmark != null) dh!.cut(dmark);
   const wait = Promise.all(builds.wait);
-  return Async({ load: () => wait, children: () => build(content, builds) as ServerValue });
+  return Async({ load: () => wait, children: () => build(content, builds) as ServerValue, $i: 1 } as never);
 }
 
 // Marks the reading region for re-creation once the page resumed (`clientOnly`'s hook; nothing outside resumable renders).
@@ -114,6 +118,16 @@ function encode(value: object, ref: (value: unknown) => number): EntryRecord | u
   }
   if (st.key !== undefined && data(st.key)) seed.k = st.key;
   return { k: "bind", a: [ref(alias), ref(undefined), ref(seed)] };
+}
+// The derived model's seed (`dom-resource.ts` `adopt`, without the change counter: the browser makes its own): what the
+// server settled; pending → `x` (the browser loads on first use). The recorder ships it when it is JSON data, else `x`.
+function seedOf(st: State): unknown {
+  const seed: Record<string, unknown> = { s: st.status };
+  if (st.status === 1 || st.status === 3) seed.x = 1;
+  else if (st.status === 4) seed.e = st.error;
+  else if (st.value !== undefined) seed.v = st.value;
+  if (st.key !== undefined && st.key !== true) seed.k = st.key;
+  return seed;
 }
 // Data the resume encoder ships by value (else the browser loads again rather than fail the render).
 function data(value: unknown, seen = new Set<object>()): boolean {
@@ -212,6 +226,8 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
   };
   const fn = make<T>(st);
   if (builds) builds.list[at] = st;
+  // Derived model: the state ships on the boundary whose body made it (read at the flush: settled by then when awaited).
+  _derivedResource()?.seed(() => seedOf(st));
   if (key === false || key == null) return fn;
   if (options?.ssr === false) {
     st.status = 1;

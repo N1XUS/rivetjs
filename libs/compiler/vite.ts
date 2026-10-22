@@ -758,7 +758,7 @@ function rivetPlugin(
     !!resume && (derivedModel ? resume.domData === true : resume.domData !== false && (resume.domData === true || rowFacts?.rows !== false));
   // Set by the client build's buildStart walk, before any switch module loads; null (dev, a server-only build) = on.
   let rowFacts: { lazy: boolean; rows: boolean } | null = null;
-  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
+  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[]; conditional: string[] }>();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
   // Dev: boundary name (`<module>#<export>`, compile results) → defining file, for the dev manifest's `symbols`.
@@ -1046,26 +1046,41 @@ function rivetPlugin(
       graph = new Map<string, Map<string, string>>(),
       roots = new Set<string>();
     const pending = [...resumable];
+    // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
+    // `index.ts`, `meter/index.ts` with `Object.assign(MeterRoot, { … })`) join the walk without boundaries, so tags
+    // resolve through them to the component's call sites; they are never compiled as resume modules.
+    const plain = new Set<string>();
+    const passThrough = (file: string) =>
+      /\.[cm]?[jt]s$/.test(file) && !/[/\\]node_modules[/\\]/.test(file) && (!relative(root, file).startsWith("..") || sourcePackage(file) !== null);
     for (let filename; (filename = pending.shift());) {
       if (facts.has(filename)) continue;
       const source = prepared(filename, await sourceOf(ctx, filename));
       const route = isRoute(filename);
-      const f = moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
+      const f = plain.has(filename)
+        ? moduleFacts(source, filename)
+        : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
       facts.set(filename, f);
       if (route || isDerivedRoot(filename)) roots.add(filename);
       const map = new Map<string, string>();
       for (const spec of new Set([...f.statics, ...f.dynamics])) {
         const hit = await resolveFact(ctx, spec, filename);
         const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
-        if (!file || !isResumable(file)) continue;
-        map.set(spec, file);
-        if (!resumable.has(file)) (resumable.add(file), pending.push(file));
+        if (!file) continue;
+        if (isResumable(file)) {
+          map.set(spec, file);
+          if (!resumable.has(file)) (resumable.add(file), pending.push(file));
+        } else if (f.statics.has(spec) && !file.startsWith("\0") && passThrough(file) && existsSync(file)) {
+          map.set(spec, file);
+          if (!plain.has(file)) (plain.add(file), pending.push(file));
+        }
       }
       graph.set(filename, map);
     }
     const verdicts = boundaryFacts(facts, graph, roots);
     derivedVerdicts.clear();
-    for (const file of facts.keys()) derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file) });
+    for (const file of facts.keys())
+      if (!plain.has(file))
+        derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file), conditional: verdicts.conditional(file) });
   };
   /** Derived model manifest (`.vite/rivet-resume.json`): `model`, `runtime` (the derived entry chunk), `symbols` (boundary
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
@@ -1075,6 +1090,7 @@ function rivetPlugin(
     const symbols: Record<string, string> = {},
       sizes: Record<string, number> = {},
       deps: Record<string, string[]> = {},
+      islands: Record<string, string> = {},
       chunks = new Map<string, Rollup.OutputChunk>(),
       roots: string[] = [];
     let runtime: string | null = null,
@@ -1085,6 +1101,9 @@ function rivetPlugin(
       if (!output.facadeModuleId) continue;
       if (output.facadeModuleId === DERIVED_ENTRY) ((runtime = base + output.fileName), roots.push(output.fileName));
       if (output.facadeModuleId === builtinsId) builtins = base + output.fileName;
+      // Framework island chunks (M6-PARITY): island key → URL + size + closure, as on the serialized manifest.
+      const island = bridges ? bridges.islandKey(output.facadeModuleId) : null;
+      if (island) ((islands[island] = base + output.fileName), (sizes[base + output.fileName] = Buffer.byteLength(output.code)), roots.push(output.fileName));
       const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
       if (!names?.length) continue;
       sizes[base + output.fileName] = Buffer.byteLength(output.code);
@@ -1103,7 +1122,16 @@ function rivetPlugin(
       if (seen.size) deps[base + file] = [...seen].sort().map((name) => base + name);
     }
     // `resume.domData` (DERIVED-C5): the derived client reads list data from the page (`DOM_DATA` loaded); servers write `d` then.
-    const body = { model: "derived", runtime, symbols, sizes, deps, ...(builtins ? { builtins } : {}), ...(domDataIn ? { domData: true } : {}) };
+    const body = {
+      model: "derived",
+      runtime,
+      symbols,
+      sizes,
+      deps,
+      ...(Object.keys(islands).length ? { islands } : {}),
+      ...(builtins ? { builtins } : {}),
+      ...(domDataIn ? { domData: true } : {}),
+    };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
   }
@@ -1159,7 +1187,9 @@ function rivetPlugin(
     const sourcePackages = sourcePackagesOf(filename, source);
     const resolved = resolvedImports.get(filename);
     // Derived model: the build's verdicts for this module (absent in dev: the compiler's module-local closure).
-    let verdict: { boundaries?: string[]; independent: string[] } | undefined = derivedModel ? derivedVerdicts.get(filename) : undefined;
+    let verdict: { boundaries?: string[]; independent: string[]; conditional?: string[] } | undefined = derivedModel
+      ? derivedVerdicts.get(filename)
+      : undefined;
     // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
     if (derivedModel && !verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {

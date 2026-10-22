@@ -18,7 +18,7 @@ Platform and feature detection: Rivet feature probes, React Aria platform checks
 ## Upstream
 - angular/components `src/cdk/platform` (MIT): Platform, features (passive listeners, scroll behavior, RTL scroll axis, input types, shadow DOM), test-environment
 - react-spectrum `packages/react-aria/src/utils/{platform,isVirtualEvent}.ts` + `shadowdom/DOMFunctions.ts` (Apache-2.0)
-- header deviations: lazy (nothing at import), memoized where upstream memoizes
+- header deviations: lazy (nothing at import), memoized where upstream memoizes; react-aria checks wrapped in `cached()` like upstream (`/* @__PURE__ */`), first browser answer kept, server `undefined` never cached (M6-PARITY: `testUserAgent` was ~3.4 ms of a 4× first click on `/list-data-1000`)
 
 ## Rules / invariants
 - server: Rivet/react-aria probes (`supports`, `isMac`, ...) return `undefined`; Angular `getPlatform()` flags `false` - never branch markup on the user agent (HTML cached and shared)

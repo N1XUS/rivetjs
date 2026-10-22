@@ -69,7 +69,7 @@ function coordinate<T>(props: AsyncProps<T>, held: () => Output | undefined): As
     left = true,
     pending = false;
   const leave = (): void => {
-    if (!left) (left = true), settle(t!);
+    if (!left) ((left = true), settle(t!));
   };
   const done = (): void => (release(), leave());
   const failed = (error: unknown): never => {
@@ -102,7 +102,7 @@ function coordinate<T>(props: AsyncProps<T>, held: () => Output | undefined): As
       if (typeof then !== "function") return value;
       pending = true;
       if (suspense && !kept) release = suspense(!!t);
-      if (t) (left = false), t.n++;
+      if (t) ((left = false), t.n++);
       onCleanup(done);
       // Observe the thenable's getter once; a failure without `error` ends this generation's part.
       return {
@@ -122,7 +122,7 @@ function coordinate<T>(props: AsyncProps<T>, held: () => Output | undefined): As
     swap(apply, next) {
       const applied = (): void => (apply(), pending ? release() : undefined);
       const go = (): void => (props.swap ? props.swap(applied, next) : applied());
-      if (pending && t) t.q.push(go), leave();
+      if (pending && t) (t.q.push(go), leave());
       else go();
     },
   };
@@ -147,8 +147,8 @@ export function Suspense(props: { fallback?: () => DOMValue; children: DOMValue 
     hidden = false,
     shown: Output | null = null;
   const pending: Pending = (inTransition) => {
-    // Derived builds: the server awaited the content in place and ships no resource state, so a load that suspends while a
-    // unit adopts (its probe run) makes that unit render in the browser instead (`dom-derived.ts`, a dev warning names it).
+    // Derived builds: the server awaited the content in place and shipped what its resources settled (`$r`); a load that
+    // still suspends while a unit adopts (its probe run) makes that unit render in the browser (`dom-derived.ts`, dev warning).
     if (DERIVED) _adoption.suspense?.();
     // A transition keeps revealed content: its new loads do not hide it.
     if (revealed && inTransition) return noop;
@@ -202,7 +202,7 @@ export function startTransition(fn: () => void, pending?: Signal<boolean>): Prom
   const t = (on.p ??= { n: 0, q: [], s: [], r: [] });
   const done = new Promise<void>((resolve) => t.r.push(resolve));
   t.n++;
-  if (pending) t.s.push(pending), pending.set(true);
+  if (pending) (t.s.push(pending), pending.set(true));
   try {
     within(t, () => batch(fn));
   } finally {

@@ -130,36 +130,68 @@ function plain(value: unknown, depth = 0): boolean {
 }
 
 /**
- * @internal `_island` (server) for a hydrated island: offer it to this render's lean tail. `blocked` = why it needs the
- * full driver (slots, `intent`), else its framework props are checked to be plain JSON values; `dev` = the caller's
- * `#dev` build (log lines). No-op outside a resumable render.
+ * @internal A hydrated island's framework props as plain JSON values (what the lean boot passes), or why it needs the full
+ * driver: `blocked` (slots, `intent`), no policy (hydrate on change), a live getter (reads a signal), a function, a value
+ * that is not plain JSON.
  */
-export function offerLean(id: string, key: string, on: string | undefined, props: Record<string, unknown>, blocked: string | null, dev: boolean): void {
+export function leanValues(on: string | undefined, props: Record<string, unknown>, blocked: string | null): Record<string, unknown> | string {
+  if (blocked === null && on === undefined) blocked = "live props without a client policy (hydrate on change)";
+  if (blocked !== null) return blocked;
+  const values: Record<string, unknown> = {};
+  for (const name of Object.keys(props)) {
+    const descriptor = Object.getOwnPropertyDescriptor(props, name)!;
+    let value = descriptor.value;
+    if (descriptor.get) {
+      // A getter prop is live only when it reads a signal: a computed constant (`rows.map(…)`, `t("x")`,
+      // `fmt(n)`) is the compiler's `_rProps` getter over plain values, sent as its value.
+      const read = _trackReads(descriptor.get.bind(props));
+      if (read.signals.length) return 'prop "' + name + '" is live (reads a signal)';
+      value = read.value;
+    }
+    if (typeof value === "function") return 'prop "' + name + '" is a function (callback)';
+    if (value !== undefined && !plain(value)) return 'prop "' + name + '" is not a plain JSON value';
+    if (value !== undefined) values[name] = value;
+  }
+  return values;
+}
+
+/**
+ * @internal `_island` (server) for a hydrated island: offer it to this render's lean tail. `values` = `leanValues`'
+ * answer (computed on demand: skipped once the render is blocked); `dev` = the caller's `#dev` build (log lines). No-op
+ * outside a resumable render.
+ */
+export function offerLean(id: string, key: string, on: string | undefined, values: () => Record<string, unknown> | string, dev: boolean): void {
   const lean = _rLean(create);
   if (!lean) return;
   lean.dev = dev;
   if (lean.blocked !== null) return;
-  if (blocked === null && on === undefined) blocked = "live props without a client policy (hydrate on change)";
-  const values: Record<string, unknown> = {};
-  if (blocked === null)
-    for (const name of Object.keys(props)) {
-      const descriptor = Object.getOwnPropertyDescriptor(props, name)!;
-      let value = descriptor.value;
-      if (descriptor.get) {
-        // A getter prop is live only when it reads a signal: a computed constant (`rows.map(…)`, `t("x")`,
-        // `fmt(n)`) is the compiler's `_rProps` getter over plain values, sent as its value.
-        const read = _trackReads(descriptor.get.bind(props));
-        if (read.signals.length) blocked = 'prop "' + name + '" is live (reads a signal)';
-        value = read.value;
-      }
-      if (blocked === null && typeof value === "function") blocked = 'prop "' + name + '" is a function (callback)';
-      else if (blocked === null && value !== undefined && !plain(value)) blocked = 'prop "' + name + '" is not a plain JSON value';
-      if (blocked !== null) break;
-      if (value !== undefined) values[name] = value;
-    }
-  if (blocked !== null) {
-    lean.blocked = "island " + id + " (" + key + "): " + blocked;
+  const props = values();
+  if (typeof props === "string") {
+    lean.blocked = "island " + id + " (" + key + "): " + props;
     return;
   }
-  lean.islands.push({ id, key, props: values, on: on! });
+  lean.islands.push({ id, key, props, on: on! });
+}
+
+/**
+ * @internal Derived model (M6-PARITY, runtime `_rIsland`): the lean islands of a derived render's shell — their records +
+ * the lean boot, written before the boundaries tail (no Rivet runtime for them). An island without a chunk in the
+ * manifest is left out (it stays static, as on a lean page).
+ */
+export function derivedLean(
+  islands: readonly { id: string; key: string; on: string | undefined; props: Record<string, unknown> | null }[],
+  manifest: { islands?: Record<string, string>; deps?: Record<string, string[]> } | undefined,
+  nonce: string,
+): string {
+  const records: LeanRecord[] = [];
+  for (const island of islands) {
+    const url = manifest?.islands?.[island.key];
+    if (url === undefined || island.props === null || island.on === undefined) continue;
+    records.push(
+      PREFETCH.has(island.on) ? [island.id, url, island.props, island.on, [url, ...(manifest?.deps?.[url] ?? [])]] : [island.id, url, island.props, island.on],
+    );
+  }
+  if (!records.length) return "";
+  const attr = nonce ? ' nonce="' + nonce + '"' : "";
+  return '<script type="rivet/islands"' + attr + ">" + json(records) + "</script><script" + attr + ">" + BOOT + "</script>";
 }

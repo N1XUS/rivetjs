@@ -48,8 +48,8 @@
 @rivetjs/kit/transition [server] 1e1c5a1c6a55 4578
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 892733714ae7 415995 css c833ea632e3c 1004413
-@rivetjs/ui [server] 1e6bcb569456 368453 css c833ea632e3c 1004413
+@rivetjs/ui [dom] 68557e412248 416032 css c833ea632e3c 1004413
+@rivetjs/ui [server] 508c374ec786 368538 css c833ea632e3c 1004413
 @rivetjs/ui/surface [dom] 0926b8d4b29e 1961 css 319605878d70 769
 @rivetjs/ui/surface [server] b80c550b11f6 1843 css 319605878d70 769
 @rivetjs/ui/card [dom] ba980dddb861 3548 css c833ea632e3c 1004413
@@ -298,8 +298,8 @@
 @rivetjs/ui/chat-source [server] 335d4eb66469 11514 css c833ea632e3c 1004413
 @rivetjs/ui/chat-tool [dom] e11b0c6ddd4b 15965 css c833ea632e3c 1004413
 @rivetjs/ui/chat-tool [server] a37c8ed829ea 13527 css c833ea632e3c 1004413
-@rivetjs/ui/chat-conversation [dom] f2893704f48a 5520 css c833ea632e3c 1004413
-@rivetjs/ui/chat-conversation [server] 1ce2213dd6d3 5024 css c833ea632e3c 1004413
+@rivetjs/ui/chat-conversation [dom] d763af15a06f 5557 css c833ea632e3c 1004413
+@rivetjs/ui/chat-conversation [server] 55de159ddafe 5120 css c833ea632e3c 1004413
 @rivetjs/ui/chat-attachment [dom] c8a91c0572e9 11826 css c833ea632e3c 1004413
 @rivetjs/ui/chat-attachment [server] 0ee32eddb847 10055 css c833ea632e3c 1004413
 @rivetjs/ui/prompt-input [dom] cc4c2ffacda9 15356 css c833ea632e3c 1004413
@@ -318,10 +318,10 @@
 @rivetjs/motion/in-view [server] c427de7fce62 406
 @rivetjs/motion/reduced-motion 0307d0c23965 284
 @rivetjs/bridge 56e1b0c10087 9
-@rivetjs/bridge/server [dom] b3276433f2c5 9250
-@rivetjs/bridge/server [server] 202878c8dbb8 9246
-@rivetjs/bridge/dom [dom] 628b2c7ae002 3835
-@rivetjs/bridge/dom [server] 59ea47ff72e5 3807
+@rivetjs/bridge/server [dom] 3dfdea4bd0ef 11458
+@rivetjs/bridge/server [server] d2232025c378 11454
+@rivetjs/bridge/dom [dom] 375df848ae66 4562
+@rivetjs/bridge/dom [server] 1fb611f9228f 4534
 @rivetjs/bridge/client 43619979ca7e 2159
 @rivetjs/bridge/intent fd8e0ac73097 1275
 @rivetjs/bridge/adapter ca26e8eea25e 184
