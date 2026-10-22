@@ -52,9 +52,12 @@ export function Live() {
     <ul><For each={list} by={(r) => r.id}>{(row) => <li onClick={() => sel.set(row().id)}>{row().label}</li>}</For></ul>
   </section>;
 }
+// Odd rows create their state directly in the row (the row function's component body): shipped. A value made inside a
+// child site / branch of the row is not (created afresh by the browser: \`resume-lazy-nested-state-browser.test.ts\`).
 function Counter(p) {
+  if (p.n % 2 === 0) return <li>even</li>;
   const v = _regionState(() => signal(p.n * 10));
-  return <b>{v()}</b>;
+  return <li><b>{v()}</b></li>;
 }
 const Theme = resumableContext(createContext("light", { id: "lazy-theme" }));
 export function Provided(p) {
@@ -65,7 +68,7 @@ export function Quiet(p) {
   return <ul><For each={() => p.rows} by={(n) => n}>{(n) => <li onClick={() => sel.set(n())}>{untrack(() => <i class={sel() === n() ? "a" : "b"} />)}</li>}</For></ul>;
 }
 export function Stateful(p) {
-  return <ul><For each={() => p.rows} by={(n) => n}>{(n) => <li>{n() % 2 ? <Counter n={n()} /> : "even"}</li>}</For></ul>;
+  return <ul><For each={() => p.rows} by={(n) => n}>{(n) => <Counter n={n()} />}</For></ul>;
 }
 `;
 const dom = compileResume(source, "dom", "src/rows.tsx");

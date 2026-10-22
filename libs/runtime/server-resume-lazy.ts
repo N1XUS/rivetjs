@@ -29,8 +29,12 @@ export interface LazyFor<S = unknown, R = unknown> {
   keyed: { signal: Signal<unknown>; kind: 0 | 1; rows: unknown[] }[] | null;
   /** The `_trackReads` keyed hook of this For (records into `keyed` for the rendering row). */
   hook: KeyedRead;
-  /** Per row: its `_regionState` values and nested counts (`RegionLocals` shape), creation order. */
+  /** Per row: its `_regionState` values created directly in the row (`lazyLocal`), nested counts (`RegionLocals` shape),
+   * creation order. */
   locals: ({ l: unknown[]; n: number[] } | undefined)[] | null;
+  /** The rows' `_regionState` values made inside a nested site / branch / row or the traversal: created afresh in the
+   * browser (not shipped), but still the rows' own (their reads wake nothing). */
+  own?: unknown[] | null;
   recorder: R;
   /** The row rendering now (`_regionState` slots; slot content the traversal renders later). */
   row: number;
@@ -115,8 +119,19 @@ export const addReads = (lazy: LazyFor, signals: readonly Signal<unknown>[]): vo
 };
 
 // `_regionState` in a lazy row: its value is kept per row (state `[k, RegionLocals]`), the slot before the ones its
-// `create()` records (`n`), as a site's locals.
-export function lazyLocal<T>(lazy: LazyFor, create: () => T): T {
+// `create()` records (`n`), as a site's locals. Only values created directly in the row's render (`nested` false: the row
+// function and the component bodies it calls, not a child / attribute site's read, a Show / Switch branch, a nested For's
+// rows or slot content the traversal renders): the browser hands them out by position to the row's direct creations
+// (`dom-resume-lazy.ts` `enterRow`), and only those run in the same order on both sides — the server renders nested content
+// in document order (traversal), the browser when it inserts it (a Show branch after the sibling components the same
+// children array creates). A nested value is created afresh by the browser (UI-CHAT-RED 2026-10-22: a ChatTool disclosure
+// signal in a keyed Show, adopted by the next row's TooltipTrigger as its state: "state.isOpen is not a function").
+export function lazyLocal<T>(lazy: LazyFor, create: () => T, nested: boolean): T {
+  if (nested) {
+    const value = create();
+    (lazy.own ??= []).push(value);
+    return value;
+  }
   const locals = ((lazy.locals ??= [])[lazy.row] ??= { l: [], n: [] });
   const i = locals.l.push(undefined) - 1;
   locals.n.push(0);
@@ -153,6 +168,7 @@ export function encodeLazy<S>(
       // can write them (T5).
       const own = new Set<unknown>();
       for (const locals of lazy.locals ?? []) for (const value of locals?.l ?? []) own.add(value);
+      for (const value of lazy.own ?? []) own.add(value);
       const shared = [...lazy.reads].filter((read) => !own.has(read));
       if (shared.length)
         try {

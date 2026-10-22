@@ -15,6 +15,7 @@ import {
   _bindingEffect1,
   _dispose,
   _rootIn,
+  getOwner,
   _setRegionStateHook,
   _trackReads,
   _wrapEffects,
@@ -144,6 +145,17 @@ interface LazyFor {
   writers: Map<Signal<unknown>, LazyWriter[] | null> | null;
   samples: [Sample, Sample] | null | undefined;
 }
+
+// Created directly by the row run (`enterRow`): only provide / catchError owners (context frames) and the dev runtime's
+// per-component owners between the creating owner and the row's — as `dom-adopt.ts` `direct` for a region's `_adoptState`
+// (a copy: this chunk only, the eager runtime keeps its bytes).
+const direct = (owner: Owner | null, at: Owner | null): boolean => {
+  type Frame = { parent: Frame | null; ctx: { owner: Frame } | null };
+  const dev = _adoption.dev;
+  for (let o = owner as unknown as Frame | null; o !== (at as unknown as Frame); o = o.parent)
+    if (o === null || (o.ctx?.owner !== o && (dev === null || !dev.has(o)))) return false;
+  return true;
+};
 
 /** @internal The lazy rows of one resume runtime (`createResume`, `LAZY_ROWS` builds only). */
 export function _lazyRows(c: LazyContext): LazyRows {
@@ -319,8 +331,9 @@ export function _lazyRows(c: LazyContext): LazyRows {
       }
     };
     try {
-      const run = () => _rootIn(c.ownerOf(parents.get(e[1])), () => _insert(null, fn(out.item, out.index), anchor), holder);
-      for (const s of _trackReads(() => enterRow(f.rows[k]!, true)(run)).signals) out.outside.add(s);
+      // `enterRow` inside the root, as a probe / adopt run (`_adoptRow`): its direct creations are the row root's.
+      const run = () => _rootIn(c.ownerOf(parents.get(e[1])), () => enterRow(f.rows[k]!, true)(() => _insert(null, fn(out.item, out.index), anchor)), holder);
+      for (const s of _trackReads(run).signals) out.outside.add(s);
       return out;
     } catch {
       return null;
@@ -457,21 +470,25 @@ export function _lazyRows(c: LazyContext): LazyRows {
       if (row) return row;
     }
   };
-  // Row k's providers, id scope and `_regionState` values around one run of its row function (probe or adopt).
+  // Row k's providers, id scope and `_regionState` values around one run of its row function (probe or adopt), called
+  // under the row's own owner. The server ships the values the row created directly (`server-resume-lazy.ts` `lazyLocal`);
+  // they go by position to the row's direct creations only (`direct`: not inside a binding, branch or nested row — the
+  // browser runs those in insertion order, the server in document order), the others are created afresh.
   const enterRow =
     (row: LazyRow, outer: boolean) =>
     <T>(fn: () => T): T => {
       const e = row.f.e,
         locals = row.f.state?.get(row.k),
         values = locals ? locals.l.map((ref) => (ref === null ? _ABSENT_STATE : get(ref))) : null,
-        nested = locals?.n;
+        nested = locals?.n,
+        at = getOwner();
       let next = 0;
       type Hook = <V>(create: () => V) => V;
       const previous: Hook | null | undefined =
         values === null
           ? undefined
           : (_setRegionStateHook(<V>(create: () => V): V => {
-              if (next < values.length) {
+              if (next < values.length && direct(getOwner(), at)) {
                 const i = next++,
                   value = values[i];
                 if (value !== _ABSENT_STATE) return (nested && (next += nested[i]!), value) as V;

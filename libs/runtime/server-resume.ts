@@ -812,6 +812,15 @@ _onBranch((pick, keyed, render) => {
     get[CONSTANT] = value;
     // Derived model: no branch record; the branch keeps its `<!--rN[-->…<!--]-->` markers (the adopt run's branch anchors).
     if (recorder?.derived && !site) return compiledTemplate(REGION, [recorder.next++, render(key, get)]);
+    // A branch in a lazy row: nested content of that row (the browser renders it inside the Show / Switch).
+    if (recorder === undefined && lazyRow !== null) {
+      lazyNest++;
+      try {
+        return render(key, get);
+      } finally {
+        lazyNest--;
+      }
+    }
     return render(key, get);
   }
   const { value: picked, signals } = _trackReads(pick);
@@ -905,7 +914,16 @@ const forRow = (list: object, item: unknown, key: unknown, index: number, render
   if (!parent || parent.held) {
     const at: ConstantGetter<number> = () => index;
     at[CONSTANT] = index;
-    if (!recorder) return render(get, at);
+    if (!recorder) {
+      // A nested For's rows in a lazy row: nested content of that row (the browser creates them inside the For).
+      if (lazyRow === null) return render(get, at);
+      lazyNest++;
+      try {
+        return render(get, at);
+      } finally {
+        lazyNest--;
+      }
+    }
     // Derived model: no row records; the row keeps its `<!--rN[-->…<!--]-->` markers (the adopt run's row anchors).
     if (recorder.derived && !parent) return compiledTemplate(REGION, [recorder.next++, render(get, at)]);
     // No region: rows are not adoptable, but their elements still count as list rows for preload planning.
@@ -1006,6 +1024,9 @@ _onForRows((list, items, keys, rows, render) => {
 /** A lazy For's record in this module (`server-resume-lazy.ts` `LazyFor`, its scope / recorder types bound). */
 type LazyFor = LazyRecord<Scope, Recorder>;
 let lazyRow: LazyFor | null = null;
+// > 0 while the lazy row renders nested content (a site's read, a branch, a nested For's rows, the traversal): its
+// `_regionState` values are not the row's direct ones (`lazyLocal`).
+let lazyNest = 0;
 // A lazy row is rendering (recorder exited): what a row would record goes to `lazyRow`.
 const inLazyRow = (): LazyFor | null => (lazyRow !== null && store.getStore() === undefined ? lazyRow : null);
 // A site a row re-run cannot replay: the For falls back (or, found in the traversal, its entry is dropped).
@@ -1023,18 +1044,25 @@ function lazyEffect(): void {
 // A site's read inside a lazy row: its signals are the row's reads (entry `reads`). Component bodies run untracked, so the
 // For's own collector sees only reads outside components (cdk rows: none) — every site tracks its own, as a recorded one does.
 function lazyRead<T>(lazy: LazyFor, read: () => T): T {
-  const tracked = _trackReads(read, undefined, lazy.hook);
-  if (tracked.signals.length) addReads(lazy, tracked.signals);
-  return tracked.value;
+  lazyNest++;
+  try {
+    const tracked = _trackReads(read, undefined, lazy.hook);
+    if (tracked.signals.length) addReads(lazy, tracked.signals);
+    return tracked.value;
+  } finally {
+    lazyNest--;
+  }
 }
 // Run `fn` as part of lazy row `row` (slot content the traversal renders after the rows): still unrecorded, same row.
 function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
   const outer = lazyRow,
     unrecorded = unrecordedRender,
-    at = lazy.row;
+    at = lazy.row,
+    nest = lazyNest;
   lazyRow = lazy;
   unrecordedRender = lazy.recorder;
   lazy.row = row;
+  lazyNest = 1;
   try {
     const tracked = _trackReads(() => store.exit(fn), undefined, lazy.hook);
     if (tracked.signals.length) addReads(lazy, tracked.signals);
@@ -1043,6 +1071,7 @@ function inLazy<T>(lazy: LazyFor, row: number, fn: () => T): T {
     lazyRow = outer;
     unrecordedRender = unrecorded;
     lazy.row = at;
+    lazyNest = nest;
   }
 }
 // One lazy row: its marker pair (id forId + 1 + index) around the row rendered under its id seed. The row is rendered
@@ -1064,20 +1093,29 @@ function lazyRowValue(lazy: LazyFor, index: number, item: unknown, render: RowCa
   const { signal, variant } = lazy.recorder.options,
     dom = lazy.recorder.dom;
   let direct = false;
-  const html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () => {
-    // DOM-DATA: the row's data object (`rowItem`, cdk collection rows iterate keys), else its item.
-    const outerItem = DOM_DATA ? rowItem : undefined;
-    if (DOM_DATA) rowItem = undefined;
-    const value = render(get, at);
-    if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, DOM_DATA && rowItem !== undefined ? rowItem : item);
-    if (DOM_DATA) rowItem = outerItem;
-    // LAZY-COST-2: a row whose value needs nothing of its context to write (no function, promise, owner-bound or
-    // error-caught content: cdk `renderNodeAt` rows) is kept as is — the For writes its rows with one renderer
-    // (`_onForLazy`), no renderer / owner record per row; anything else renders here, inside the row's context (id seed,
-    // `lazyRow`, recorder exited).
-    if (lazyPlanned && writable(value, 0)) return ((direct = true), lazyDirect++, value as unknown as string);
-    return renderToString(_scopedRecord(getOwner(), value, noop), { signal, variant });
-  });
+  const nest = lazyNest;
+  lazyNest = 0;
+  let html: string | Promise<string>;
+  try {
+    html = _inIdScope({ prefix: _rowIdPrefix(lazy.forId, index), n: 0 }, () => {
+      // DOM-DATA: the row's data object (`rowItem`, cdk collection rows iterate keys), else its item.
+      const outerItem = DOM_DATA ? rowItem : undefined;
+      if (DOM_DATA) rowItem = undefined;
+      const value = render(get, at);
+      if (dom !== null) dom.lazyRow(value, lazy.forId + 1 + index, DOM_DATA && rowItem !== undefined ? rowItem : item);
+      if (DOM_DATA) rowItem = outerItem;
+      // LAZY-COST-2: a row whose value needs nothing of its context to write (no function, promise, owner-bound or
+      // error-caught content: cdk `renderNodeAt` rows) is kept as is — the For writes its rows with one renderer
+      // (`_onForLazy`), no renderer / owner record per row; anything else renders here, inside the row's context (id seed,
+      // `lazyRow`, recorder exited).
+      if (lazyPlanned && writable(value, 0)) return ((direct = true), lazyDirect++, value as unknown as string);
+      // The traversal renders the row's deferred content (slots, branches): nested (`lazyNest`).
+      lazyNest = 1;
+      return renderToString(_scopedRecord(getOwner(), value, noop), { signal, variant });
+    });
+  } finally {
+    lazyNest = nest;
+  }
   if (direct) return compiledTemplate(REGION, [lazy.forId + 1 + index, html as unknown as ServerValue]);
   if (typeof html !== "string") {
     html.then(noop, noop);
@@ -1972,7 +2010,7 @@ const inside = (scope: Scope | null, ancestor: Scope): boolean => {
 _setRegionStateHook((create) => {
   const recorder = store.getStore();
   const scope = recorder?.region;
-  if (!scope?.site) return recorder === undefined && lazyRow !== null ? lazyLocal(lazyRow, create) : create();
+  if (!scope?.site) return recorder === undefined && lazyRow !== null ? lazyLocal(lazyRow, create, lazyNest > 0) : create();
   const locals = (scope.locals ??= []),
     nested = (scope.nested ??= []);
   const i = locals.push(undefined) - 1;

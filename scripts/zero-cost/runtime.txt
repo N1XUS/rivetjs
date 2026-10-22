@@ -14,21 +14,21 @@
 @rivetjs/runtime/router/dom 9e85a89ff9c3 17708
 @rivetjs/runtime/router/dom [opt-out] ef803acbaed1 17527
 @rivetjs/runtime/router/server 92e85e0f97c0 12118
-@rivetjs/runtime/server-resume 92b47ea894a8 129771
-@rivetjs/runtime/server-resume [opt-out] 58f580ee070d 118747
-@rivetjs/runtime/server-shell 819e8ee059b0 112987
-@rivetjs/runtime/server-shell [opt-out] a5a93224685c 99041
-@rivetjs/runtime/server-derived 0b0d2ed159f4 135053
+@rivetjs/runtime/server-resume 92eb3278c86d 129803
+@rivetjs/runtime/server-resume [opt-out] a205f281c4c2 118779
+@rivetjs/runtime/server-shell 4fc936c25a3d 113019
+@rivetjs/runtime/server-shell [opt-out] 070eb9848a34 99073
+@rivetjs/runtime/server-derived 38ec163cae12 135232
 @rivetjs/runtime/derived-eager 553e40d9faea 84
-@rivetjs/runtime/server-derived-reactivity f0cfeade4789 132408
-@rivetjs/runtime/server-derived-reactivity [opt-out] 355999c4fe3a 115536
-@rivetjs/runtime/server-derived-store e8b3890533b2 127594
-@rivetjs/runtime/server-derived-store [opt-out] d38d52a55b00 110724
+@rivetjs/runtime/server-derived-reactivity 5b333ef92a98 132440
+@rivetjs/runtime/server-derived-reactivity [opt-out] d42ce242ada0 115568
+@rivetjs/runtime/server-derived-store 42a57a10ab72 127626
+@rivetjs/runtime/server-derived-store [opt-out] 08c28c30aea5 110756
 @rivetjs/runtime/server-markup 13a2369b8d72 767
 @rivetjs/runtime/server-cache 36d571bcca51 32251
 @rivetjs/runtime/props e7a083669b54 9737
 @rivetjs/runtime/dom-resume 8123e4abf0bb 52193
-@rivetjs/runtime/dom-resume [lazyRows chunk] 42f092724906 13414
+@rivetjs/runtime/dom-resume [lazyRows chunk] 5e7c9d922e7c 13560
 @rivetjs/runtime/dom-resume [opt-out] 82098aed5fd8 46511
 @rivetjs/runtime/dom-derived 019b8996cffa 47829
 @rivetjs/runtime/dom-derived [derived] 55c248d58e34 48149
@@ -55,5 +55,5 @@
 @rivetjs/runtime/testing [opt-out] 71f234f8296e 14168
 @rivetjs/runtime/testing/server ca2448f21f0f 21587
 @rivetjs/runtime/testing/register ee215ae102b9 2942
-@rivetjs/runtime/testing/resume 0ecce13147ff 119459
-@rivetjs/runtime/testing/resume [opt-out] 884bd6594abf 105018
+@rivetjs/runtime/testing/resume b8d2ec723d47 119491
+@rivetjs/runtime/testing/resume [opt-out] c07ce28ba818 105050
