@@ -4,7 +4,21 @@
 import { onCleanup, useContext } from "@rivetjs/reactivity";
 import { linkKey, metaKey, rankMerge, type RankedHead } from "@rivetjs/router/head";
 import type { RoutePayload } from "@rivetjs/router/client";
-import { HeadLevel, KIT_POLICY, childText, themeScript, type Head as HeadFields, type HeadLink as HeadLinkFields, type HeadMeta, type HeadLinkProps, type HeadScript, type JsonLdProps, type MetaProps, type ScriptProps, type ThemeScriptProps } from "./shared.ts";
+import {
+  HeadLevel,
+  KIT_POLICY,
+  childText,
+  themeScript,
+  type Head as HeadFields,
+  type HeadLink as HeadLinkFields,
+  type HeadMeta,
+  type HeadLinkProps,
+  type HeadScript,
+  type JsonLdProps,
+  type MetaProps,
+  type ScriptProps,
+  type ThemeScriptProps,
+} from "./shared.ts";
 export * from "./shared.ts";
 
 interface Mounted {
@@ -86,7 +100,8 @@ function apply(head: HeadFields): void {
   if (head.title !== undefined && document.title !== head.title) document.title = head.title;
   const root = document.documentElement;
   for (const [name, value] of Object.entries(head.html ?? {})) if (value !== undefined && root.getAttribute(name) !== value) root.setAttribute(name, value);
-  if (head.body?.class !== undefined && document.body.className !== head.body.class) document.body.className = head.body.class;
+  for (const [name, value] of Object.entries(head.body ?? {}))
+    if (value !== undefined && document.body.getAttribute(name) !== value) document.body.setAttribute(name, value);
   const wanted = new Map<string, () => Element>();
   for (const meta of head.meta ?? []) wanted.set("m " + metaKey(meta), () => element("meta", meta));
   for (const link of head.links ?? []) wanted.set("l " + linkKey(link), () => element("link", link));
@@ -133,7 +148,15 @@ function keyOf(el: Element): string | undefined {
     return "m " + metaKey(Object.fromEntries(Object.entries(meta).filter(([, v]) => v !== undefined)) as unknown as HeadMeta);
   }
   if (el.localName === "link") {
-    const link = { rel: get("rel") ?? "", href: get("href") ?? "", hreflang: get("hreflang"), type: get("type"), sizes: get("sizes"), media: get("media"), imagesrcset: get("imagesrcset") };
+    const link = {
+      rel: get("rel") ?? "",
+      href: get("href") ?? "",
+      hreflang: get("hreflang"),
+      type: get("type"),
+      sizes: get("sizes"),
+      media: get("media"),
+      imagesrcset: get("imagesrcset"),
+    };
     return "l " + linkKey(Object.fromEntries(Object.entries(link).filter(([, v]) => v !== undefined)) as unknown as HeadLinkFields);
   }
   if (el.localName === "script" && (el as HTMLScriptElement).type === "application/ld+json") return "j " + (el.id || el.textContent);
@@ -183,7 +206,12 @@ export function loadScript(src: string, options: { type?: "module" | "classic"; 
 }
 function load(script: Extract<HeadScript, { src: string }>): void {
   if (scripts.has(script.src)) return;
-  const run = () => void loadScript(script.src, { ...(script.type ? { type: script.type } : {}), ...(script.integrity ? { integrity: script.integrity } : {}), ...(script.crossorigin ? { crossorigin: script.crossorigin } : {}) }).catch(() => {});
+  const run = () =>
+    void loadScript(script.src, {
+      ...(script.type ? { type: script.type } : {}),
+      ...(script.integrity ? { integrity: script.integrity } : {}),
+      ...(script.crossorigin ? { crossorigin: script.crossorigin } : {}),
+    }).catch(() => {});
   if (script.strategy === "idle") (globalThis.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 1)))(run, { timeout: 4000 });
   else if (script.strategy === "interaction") {
     const events = ["pointerdown", "keydown", "touchstart", "wheel"];

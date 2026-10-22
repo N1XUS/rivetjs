@@ -483,7 +483,7 @@ class Run implements ShellRequest {
     this.entry = entry;
     entry.used = true;
     const headers = new Headers();
-    for (const [name, value] of entry.extra) headers.set(name, value);
+    for (const [name, value] of entry.extra) headers.has(name) ? headers.append(name, value) : headers.set(name, value);
     live.forEach((value, name) => name !== "set-cookie" && headers.set(name, value));
     for (const cookie of live.getSetCookie()) headers.append("set-cookie", cookie);
     headers.set("content-type", "text/html; charset=utf-8");
@@ -593,6 +593,12 @@ class Run implements ShellRequest {
     this.reads.add(what);
   }
 
+  /** A loader's `setHeader` during a fill: replaces the name's earlier recorded entries (set semantics on replay). */
+  setExtra(name: string, value: string): void {
+    const lower = name.toLowerCase();
+    for (let i = this.extra.length - 1; i >= 0; i--) if (this.extra[i]![0] === lower) this.extra.splice(i, 1);
+    this.extra.push([lower, value]);
+  }
   /** A shell loader's event view: request input outside the key is noted (allow-list: unknown members count as reads). */
   track(view: RequestEvent, who: string): RequestEvent {
     const note = (what: string) => this.note(who + " reads " + what);
@@ -604,12 +610,20 @@ class Run implements ShellRequest {
         switch (key) {
           case "url":
             return (url ??= trackedURL(Reflect.get(target, key, target) as URL, this.cache, note));
+          // Recorded in order; a set drops the name's earlier entries, so a hit replays them as set-then-append.
           case "setHeader":
-            return (name: string, value: string) => (this.extra.push([name.toLowerCase(), value]), target.setHeader(name, value));
+            return (name: string, value: string) => (this.setExtra(name, value), target.setHeader(name, value));
           case "setHeaders":
             return (values: Readonly<Record<string, string>>) => {
               target.setHeaders(values);
-              for (const name in values) this.extra.push([name.toLowerCase(), values[name]!]);
+              for (const name in values) this.setExtra(name, values[name]!);
+            };
+          case "appendHeader":
+            return (name: string, value: string) => {
+              // A raw `Set-Cookie` is per visitor, like `cookies.set` (a read: no shell for this entry).
+              if (name.toLowerCase() === "set-cookie") note("cookies.set");
+              else this.extra.push([name.toLowerCase(), value]);
+              target.appendHeader(name, value);
             };
           case "cookies": {
             const jar = target.cookies;

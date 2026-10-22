@@ -45,8 +45,8 @@ export const head: Head = {
 All fields are optional. The others:
 
 - `titleTemplate`: a pattern for the title, see [below](#layouts-and-pages-combine).
-- `scripts`: external (`src`) or inline scripts with a loading `strategy`. See the [kit](../../ui/kit.md) for inline scripts under a CSP.
-- `html` and `body`: attributes for `<html>` (`lang`, `dir`, `class`) and `<body>` (`class`). The document shell writes them with `htmlAttributes(head)` and `bodyAttributes(head)` from `@rivetjs/router/head`.
+- `scripts`: external (`src`) or inline scripts with a loading `strategy`. `strategy: "body"` puts the script at the end of `<body>`, after the page's markup, so it can use the elements above it without waiting for an event. See the [kit](../../ui/kit.md) for inline scripts under a CSP.
+- `html` and `body`: attributes for `<html>` and `<body>`: `lang`, `dir`, `class` and any other, such as `data-theme` or `style` (`on…` event handler attributes are refused). Layouts and pages merge them per attribute. The document shell writes them with `htmlAttributes(head)` and `bodyAttributes(head)`.
 - `base`: a `<base href>` (and optional `target`).
 - `styles`: inline `<style>` blocks (`css`, optional `media` and `key`) for trusted CSS that components generate, such as `@rivetjs/motion` entrance rules. They carry the request's CSP nonce, render after the stylesheets, and client navigation keeps them.
 
@@ -122,23 +122,28 @@ A page with `title: "Pricing"` then gets `Pricing · Acme`. The template also ap
 The merged head reaches your document shell (`src/document.ts`), which turns it into HTML with `headTags`. The starter templates already do this:
 
 ```ts title="src/document.ts"
-import { headTags, type DocumentShell } from "@rivetjs/router/server";
+import { bodyAttributes, bodyTags, headTags, htmlAttributes, type DocumentShell } from "@rivetjs/router/server";
 
-const document: DocumentShell = ({ head, styles }) => ({
+const document: DocumentShell = (input) => ({
   start:
-    '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    `<!doctype html><html${htmlAttributes(input.head, { lang: "en" })}><head><meta charset="utf-8">` +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-    headTags(head) +
-    styles.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
-    "</head><body>",
-  end: "</body></html>",
+    headTags(input.head, input) +
+    `</head><body${bodyAttributes(input.head)}>`,
+  end: bodyTags(input.head, input) + "</body></html>",
 });
 export default document;
 ```
 
-If your shell does not call `headTags`, the `head` exports have no effect.
+- `headTags(head, input)` writes the head tags and the page's stylesheets, with the request's CSP nonce.
+- `htmlAttributes(head, defaults)` and `bodyAttributes(head)` write the `html` / `body` attributes (with a leading space).
+- `bodyTags(head, input)` writes the `strategy: "body"` scripts before `</body>`.
+
+If your shell does not call `headTags`, the `head` exports have no effect. Pages are rendered inside the router's own container (`<div data-rivet-routes>`), so attributes for the outer elements go through `html` / `body`.
 
 ::api{symbol="@rivetjs/router/server#headTags"}
+
+::api{symbol="@rivetjs/router/server#bodyTags"}
 
 ## Client navigation
 

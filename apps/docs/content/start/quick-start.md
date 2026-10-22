@@ -9,7 +9,7 @@ related: [start/project-structure, start/tutorial/index, gotchas/dev-and-product
 After this page you have a running Rivet app: two pages, a layout and a button that counts. One command creates it.
 
 :::note[Available on npm]
-`create-rivet` and the `@rivetjs/*` packages are published as `0.1.0-alpha.0` on the `latest` tag. You can create an app outside this repository. Rivet is an alpha release; APIs may change.
+`create-rivet` and the `@rivetjs/*` packages are published as `0.1.0-alpha.1`. You can create an app outside this repository. Rivet is an alpha release; APIs may change.
 :::
 
 ## You need

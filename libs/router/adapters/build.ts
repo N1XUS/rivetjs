@@ -28,7 +28,8 @@ export interface LoadBuildOptions {
 }
 
 /** Read the client build manifests of `<dist>/client` (per locale with i18n). */
-export async function readManifests(dist: string, { locales, base = "" }: LoadBuildOptions = {}): Promise<BuildManifests> {
+export async function readManifests(dist: string, options: LoadBuildOptions = {}): Promise<BuildManifests> {
+  const { locales, base = "" } = options;
   const root = resolve(dist);
   const read = async <T>(path: string): Promise<T> => JSON.parse(await readFile(resolve(root, path), "utf8")) as T;
   const dirs = locales?.length

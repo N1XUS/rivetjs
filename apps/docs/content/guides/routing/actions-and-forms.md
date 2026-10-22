@@ -128,7 +128,7 @@ The same check runs for every `POST`, `PUT`, `PATCH` and `DELETE` request, on pa
 
 ## Other request details
 
-- Posting to a page without `?/name` gives `405 Method Not Allowed`. An unknown action name gives `404`.
+- Posting to a page that has actions without `?/name` gives `400 Bad Request`; posting to a page without actions (and without `onPost(…)`) gives `405 Method Not Allowed` after the request handlers ran, so a layout's `onRequest(…)` can still answer it. An unknown action name gives `404`.
 - A request with `Accept: application/json` gets data instead of a page: the body holds `{ action: { name, result, status? } }` (or `{ redirect }`, or `{ error }`), written in the format the router uses for route data. The forms library uses this for submits in the background.
 - File inputs need `enctype="multipart/form-data"` on the form; `form.get("file")` is then a `File`.
 

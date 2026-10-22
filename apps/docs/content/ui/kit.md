@@ -149,6 +149,7 @@ import { Script } from "@rivetjs/kit";
 | `blocking` | While the page is parsed (`<script src>`). |
 | `eager` | As soon as possible (`<script async>`). |
 | `defer` (default) | After parsing (`<script defer>`). |
+| `body` | At the end of `<body>`, after the page's markup (the shell writes it with `bodyTags`). Inline scripts too. |
 | `load` | After the page's `load` event. |
 | `idle` | When the browser is idle after load (at most 4 seconds later). |
 | `interaction` | On the first pointer, key or wheel input. |
@@ -162,6 +163,8 @@ import { Script, unsafeInlineScript } from "@rivetjs/kit";
 
 <Script inline={unsafeInlineScript("window.dataLayer = window.dataLayer || [];")} strategy="blocking" />;
 ```
+
+An inline script with `strategy="body"` runs once the elements above it exist, for example to wire up an `<iframe>` the page rendered: `<Script inline={unsafeInlineScript(code)} strategy="body" />`. Client navigation does not run inline scripts again; use a component's event handlers for code that must run on every page.
 
 ## Fonts
 

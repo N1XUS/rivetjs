@@ -129,6 +129,8 @@ vite build          # browser files → dist/client
 vite build --ssr    # server entry → dist/server
 ```
 
+`rivetRouter` minifies the server build too (Vite leaves server output unminified by default): smaller deploys and faster cold starts. Pass `vite build --ssr --minify false`, or set `build.minify` in the config, for readable server stack traces; `build.sourcemap` maps minified traces back to your source.
+
 A static app adds a prerender step that writes HTML files; see [Static hosts](../deploy/static-hosts.md). A CSR app (`mode: "csr"`) has only the browser build, which also writes `index.html`.
 
 With images, use Vite's app builder (`vite build --app`, or `createBuilder({ builder: {} })` then `buildApp()`), so images used only in server code reach the browser output.

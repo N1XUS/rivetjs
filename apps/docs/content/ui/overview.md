@@ -6,7 +6,7 @@ status: experimental
 related: [ui/kit, guides/styling/css-and-tailwind]
 ---
 
-Rivet UI is a set of separate packages. Each one builds on the one below it, and you install only what you use. All packages are available on npm at `0.1.0-alpha.0` (`latest`). Their APIs are experimental.
+Rivet UI is a set of separate packages. Each one builds on the one below it, and you install only what you use. All packages are available on npm at `0.1.0-alpha.1`. Their APIs are experimental.
 
 ## The layers
 

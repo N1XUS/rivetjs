@@ -131,10 +131,10 @@ test("handler: page routes accept methods their module handles; undefined render
   assert.equal((await handler(new Request("http://x/form", { method: "DELETE" }))).status, 410);
   const patch = await handler(new Request("http://x/form", { method: "PATCH" }));
   assert.equal(patch.status, 405);
-  assert.equal(patch.headers.get("allow"), "GET, HEAD, POST, PUT, DELETE");
+  assert.equal(patch.headers.get("allow"), "GET, HEAD, PUT, DELETE");
   const put = await handler(new Request("http://x/plain", { method: "PUT" }));
   assert.equal(put.status, 405);
-  assert.equal(put.headers.get("allow"), "GET, HEAD, POST");
+  assert.equal(put.headers.get("allow"), "GET, HEAD");
   const moved = await handler(new Request("http://x/moved"));
   assert.equal(moved.status, 302);
   assert.equal(moved.headers.get("location"), "/plain");

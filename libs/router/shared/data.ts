@@ -29,9 +29,14 @@ export interface Head {
   title?: string;
   /** `"%s · Shop"`: applied once to the merged title; innermost wins. */
   titleTemplate?: string;
-  /** `<html>` attributes (needs the kit head hold; merged per attribute). */
-  html?: { lang?: string; dir?: "ltr" | "rtl" | "auto"; class?: string };
-  body?: { class?: string };
+  /**
+   * `<html>` attributes, merged per attribute (layouts → page): `lang`, `dir`, `class` and any other (`data-theme`,
+   * `style`…; names checked, values escaped). Written by shells through `htmlAttributes(head)`; `@rivetjs/kit` keeps them
+   * current on client navigation.
+   */
+  html?: { lang?: string; dir?: "ltr" | "rtl" | "auto"; class?: string; readonly [attribute: string]: string | undefined };
+  /** `<body>` attributes, as `html` (`bodyAttributes(head)` in shells). */
+  body?: { class?: string; readonly [attribute: string]: string | undefined };
   base?: { href: string; target?: string };
   meta?: readonly HeadMeta[];
   /** `<link>` tags; keyed per rel (one `canonical`; alternates by hreflang/type; others by href). */
@@ -79,8 +84,11 @@ export interface HeadLink {
   referrerpolicy?: string;
   key?: string;
 }
-/** When a script runs: in the head while parsing (`blocking`, `eager` = async, `defer`) or later from a tiny bootstrap. */
-export type ScriptStrategy = "blocking" | "eager" | "defer" | "load" | "idle" | "interaction";
+/**
+ * When a script runs: in the head while parsing (`blocking`, `eager` = async, `defer`), at the end of `<body>` (`body`:
+ * after the page's markup, written by shells through `bodyTags(head)`), or later from a tiny bootstrap.
+ */
+export type ScriptStrategy = "blocking" | "eager" | "defer" | "body" | "load" | "idle" | "interaction";
 /** Static inline script code (see `inlineScript`); plain strings are refused. */
 export interface InlineScript {
   readonly code: string;
@@ -100,8 +108,8 @@ export type HeadScript =
     }
   | {
       inline: InlineScript;
-      /** Position in the head (inline scripts always run while parsing). Default `defer`. */
-      strategy?: "blocking" | "eager" | "defer";
+      /** Position in the head, or `body` (end of `<body>`: the page's markup is parsed); inline scripts run while parsing. Default `defer`. */
+      strategy?: "blocking" | "eager" | "defer" | "body";
       /** JSON the script reads from `document.currentScript.previousElementSibling`. */
       data?: unknown;
       id?: string;

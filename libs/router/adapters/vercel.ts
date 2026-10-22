@@ -11,14 +11,15 @@ import type { BodyLimit } from "../server/security.ts";
 import type { AppConfig } from "../server/app.ts";
 import { assemble, type BuildManifests } from "./assemble.ts";
 import { createListener, type CompressOptions } from "./node.ts";
+import type { BaseHeaders } from "./base-headers.ts";
 
 export interface VercelOptions {
   /** Fixed public origin; default: the request's `Host` + `X-Forwarded-Proto` (Vercel's proxy sets both). */
   origin?: string;
   maxBody?: BodyLimit;
   stream?: { deadline?: number };
-  /** Extra headers on every response; defaults add nosniff + referrer policy. */
-  headers?: Record<string, string>;
+  /** Extra headers on every response; defaults add nosniff + referrer policy (same name replaces, `null` removes). */
+  headers?: BaseHeaders;
   onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void;
   resolveLocale?: (request: Request) => string | undefined | Promise<string | undefined>;
   csp?: AppConfig["csp"];

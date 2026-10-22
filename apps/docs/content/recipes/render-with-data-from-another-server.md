@@ -20,13 +20,13 @@ No side channel is needed (no request id header, no shared map): the server hand
 The app handler takes a second argument, `context`. Its `locals` member seeds `event.locals` for that one request:
 
 ```ts title="server.ts"
-import { serve, closeOnSignals } from "@rivetjs/router/node";
-import { createApp } from "@rivetjs/router/server";
+import { closeOnSignals, loadBuild, serve } from "@rivetjs/router/node";
 
-const app = createApp({ /* … */ });
+// The production build (`vite build` + `vite build --ssr`), loaded as `start()` loads it.
+const { handler: app, client } = await loadBuild("dist");
 
 const serving = await serve({
-  client: "dist/client",
+  client,
   handler: async (request, context) => {
     const { template, viewModel } = await request.json();
     const page = new Request(new URL(`/splash/${template}`, request.url), { headers: request.headers });
@@ -36,11 +36,14 @@ const serving = await serve({
 closeOnSignals(serving);
 ```
 
+- `loadBuild(dist, config?, options?)` returns the app handler, the client directory and the server entry. `config` takes the `createApp` options `start()` passes on (`csp`, `stream`, `maxBody`, `routeRules`, …); `readManifests(dist)` reads only the client manifests, for a handler you assemble yourself.
 - `{ ...context }` keeps what the Node adapter passes: the response's CSP `nonce` and the client `address`.
 - The page request is a `GET` for the file route. Guards, loaders and the page render run for it as for any visitor.
 - Add `signal: request.signal` to the new `Request` if the render should stop when the backend gives up waiting.
 
 ::api{symbol="@rivetjs/router/server#AppHandlerContext"}
+
+::api{symbol="@rivetjs/router/node#loadBuild"}
 
 ### 2. The page reads it in its loader
 
@@ -68,7 +71,7 @@ export default function Survey({ data }: PageProps<typeof loader>) {
 }
 ```
 
-Every request starts with a copy of the `locals` you pass. Request handlers, guards, loaders, actions, `headers(…)` and error pages all see it. A guard that writes `locals.user` changes only this request's copy, never your object or another request.
+`event.locals` is the object you pass, not a copy. Request handlers, guards, loaders, actions, `headers(…)` and error pages all see it, and what they write to it is still there when the handler returns: a loader can hand a value back to your server through it (for example `locals.status`). Pass a new object for every request, as above, so one request never sees another's values.
 
 ### 3. Only what the loader returns reaches the browser
 

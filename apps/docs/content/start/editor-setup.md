@@ -53,7 +53,7 @@ The starters use Tailwind CSS. Install the official Tailwind CSS IntelliSense ex
 ## Add the Rivet language service (experimental)
 
 :::warning[Experimental]
-The Rivet language service is experimental. The TypeScript plugin and language core are available on npm as `0.1.0-alpha.0`. The optional VS Code extension is not published to the Marketplace yet.
+The Rivet language service is experimental. The TypeScript plugin and language core are available on npm as `0.1.0-alpha.1`. The optional VS Code extension is not published to the Marketplace yet.
 :::
 
 The plugin `@rivetjs/typescript-plugin` adds what only the Rivet compiler knows. The starters already install and configure it. In other projects, install it and add it to `tsconfig.json`:

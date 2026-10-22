@@ -29,6 +29,7 @@ const event = (path: string, headers: Record<string, string> = {}, params: Recor
     },
     setHeader: (k, v) => void set.set(k, v),
     setHeaders: (values) => Object.entries(values).forEach(([k, v]) => set.set(k, v)),
+    appendHeader: (k, v) => void set.set(k, v),
     route: { id: null },
     isDataRequest: false,
     depends: () => {},

@@ -9,7 +9,7 @@ related: [learn/server-first, learn/resuming, start/quick-start, start/tutorial/
 Rivet is a framework for building websites with JSX and TypeScript. You write components the way you know from React or Solid. Rivet turns them into HTML on the server. In the browser, the page keeps working, but your components do not run a second time.
 
 :::warning[Experimental]
-Rivet is experimental. The packages are available on npm as `0.1.0-alpha.0`, and APIs can still change. The [quick start](quick-start.md) shows how to try it today.
+Rivet is experimental. The packages are available on npm as `0.1.0-alpha.1`, and APIs can still change. The [quick start](quick-start.md) shows how to try it today.
 :::
 
 ## What it is
@@ -68,7 +68,7 @@ Writing for Rivet feels like writing for other JSX frameworks, with a few rules 
 
 ## Alpha status
 
-Rivet is available on npm as `0.1.0-alpha.0`. APIs may change while the framework is experimental. The [roadmap](../about/roadmap.md) lists what ships and what is planned.
+Rivet is available on npm as `0.1.0-alpha.1`. APIs may change while the framework is experimental. The [roadmap](../about/roadmap.md) lists what ships and what is planned.
 
 ## Next steps
 

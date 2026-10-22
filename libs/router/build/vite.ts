@@ -640,8 +640,14 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const input = config.build?.rollupOptions?.input;
       if (ssr && mode === "csr") throw new Error("rivetRouter: CSR apps have no server build");
       const serverOut = config.build?.outDir ?? "dist/server";
-      if (ssr === true && adapter) return targetBuildConfig(adapter, resolve(root, outDir, "entry.server.tsx"), serverOut);
-      if (ssr === true) return { build: { ssr: resolve(root, outDir, "entry.server.tsx"), outDir: serverOut } };
+      // Server bundles are minified like the client's (Vite leaves SSR output as is): smaller deploys, faster cold
+      // starts. `build.minify` (`vite build --ssr --minify false`) wins, e.g. for readable stack traces.
+      const minify = config.build?.minify ?? true;
+      if (ssr === true && adapter) {
+        const target = targetBuildConfig(adapter, resolve(root, outDir, "entry.server.tsx"), serverOut);
+        return { ...target, build: { ...target.build, minify } };
+      }
+      if (ssr === true) return { build: { ssr: resolve(root, outDir, "entry.server.tsx"), outDir: serverOut, minify } };
       if (ssr) return;
       // Keyed by file name, so stylesheets land flat in `assets/` (`styles-<hash>.css`).
       const stylesInput = Object.fromEntries(

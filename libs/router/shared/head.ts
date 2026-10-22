@@ -228,6 +228,7 @@ export function headTags(head: Head | undefined, options: HeadTagOptions = {}): 
   groups[5] += inlineStyles;
   const later: SrcScript[] = [];
   for (const script of head?.scripts ?? []) {
+    if ("strategy" in script && script.strategy === "body") continue; // `bodyTags`
     if ("jsonLd" in script) groups[11] += jsonLdTag(script.jsonLd, script.id, markOf(script));
     else if ("inline" in script) {
       const strategy = script.strategy ?? "defer";
@@ -257,10 +258,34 @@ export function headTags(head: Head | undefined, options: HeadTagOptions = {}): 
   return groups.join("");
 }
 
+const ATTRIBUTE_NAME = /^[A-Za-z_:][-\w:.]*$/;
+/** Every attribute of `record` but `skip`, in order (leading spaces); a malformed name or an `on*` handler throws. */
+function attributes(record: Readonly<Record<string, string | undefined>> | undefined, html: boolean): string {
+  let out = "";
+  for (const name in record) {
+    if (html && (name === "lang" || name === "dir")) continue; // written first, over the request defaults
+    if (!ATTRIBUTE_NAME.test(name) || /^on/i.test(name)) throw new TypeError(`head html / body: attribute name ${JSON.stringify(name)} is not allowed`);
+    out += attr(name, record[name]);
+  }
+  return out;
+}
 /** `<html>` attributes (leading space) for shells: the head's `html` over request defaults (i18n `locale`/`dir`). */
 export function htmlAttributes(head: Head | undefined, defaults: { lang?: string | undefined; dir?: string | undefined } = {}): string {
   const html = { ...defaults, ...head?.html };
-  return attr("lang", html.lang) + attr("dir", html.dir) + attr("class", head?.html?.class);
+  return attr("lang", html.lang) + attr("dir", html.dir) + attributes(head?.html, true);
 }
-/** `<body>` attributes (leading space). */
-export const bodyAttributes = (head: Head | undefined): string => attr("class", head?.body?.class);
+/** `<body>` attributes (leading space): every `head.body` attribute. */
+export const bodyAttributes = (head: Head | undefined): string => (head?.body ? attributes(head.body, false) : "");
+/**
+ * End-of-body tags for shells (before `</body>`): the head's `strategy: "body"` scripts, in order, with the request
+ * nonce — they run once the page's markup is parsed. Document loads only: client navigation loads `src` ones (kit) and
+ * never runs inline ones again.
+ */
+export function bodyTags(head: Head | undefined, options: Pick<HeadTagOptions, "nonce"> = {}): string {
+  let out = "";
+  const nonce = options.nonce !== undefined ? ` nonce="${options.nonce.replace(/[^\w+/=-]/g, "")}"` : "";
+  for (const script of head?.scripts ?? [])
+    if ("strategy" in script && script.strategy === "body")
+      out += "inline" in script ? inlineTag(script, nonce) : scriptTag({ ...script, strategy: "blocking" }, nonce, "");
+  return out;
+}

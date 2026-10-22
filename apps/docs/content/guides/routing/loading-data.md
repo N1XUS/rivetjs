@@ -60,6 +60,7 @@ A separate `index.server.ts` next to the page works too, with the same `load(…
 | `signal` | An `AbortSignal` that fires when the request is cancelled. Pass it to `fetch` and database calls. |
 | `setHeader(name, value)` | Set a response header. See [headers and caching](./headers-and-caching.md). |
 | `setHeaders(headers)` | Set several headers at once (`set-cookie` is refused: use `cookies`). |
+| `appendHeader(name, value)` | Add a header value next to the ones set (a second `Link`, a serialized `Set-Cookie`). |
 | `depends(...keys)` | Name what this data depends on, for `invalidate(key)`. See [reload data after a change](#reload-data-after-a-change). |
 | `route.id` | The matched route, for example `"blog/[slug]"`. |
 | `isDataRequest` | `true` for a client navigation's data request, `false` for a full page load. |
@@ -119,7 +120,7 @@ Several deferred parts arrive in the order their loaders finish. A page with a d
 
 - **Client navigation:** the data request waits for deferred loaders and answers with their values. The page then gets the value itself in `data`, and `<Async load={() => data}>` renders it at once.
 - **Errors:** the status line is already sent, so a deferred loader that throws `notFound()` or an error does not change the response. Its boundary shows its `error` view, or the page reports a render error. A `redirect()` moves the browser: the document ends with a script that goes to the target.
-- **Headers and cookies:** a deferred loader can read cookies and headers, but `setHeader`, `setHeaders`, `cookies.set` and `cookies.delete` throw a `TypeError`. Set them in a normal loader or a guard.
+- **Headers and cookies:** a deferred loader can read cookies and headers, but `setHeader`, `setHeaders`, `appendHeader`, `cookies.set` and `cookies.delete` throw a `TypeError`. Set them in a normal loader or a guard.
 - **`head` exports** get the `Deferred` handle too: take titles and meta tags from a normal loader.
 - **Head components** (`@rivetjs/kit`) inside a deferred part render after `<head>` was sent: `<HeadLink>` and `<Script>` render in place, `<Title>` and `<Meta>` are ignored with a warning ([kit](/ui/kit.md)).
 - **Reading the value directly** (`data.title`) is a bug. In development it throws a `DeferredDataError` that names the field.

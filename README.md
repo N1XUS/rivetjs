@@ -18,7 +18,7 @@ cd my-app
 npm run dev
 ```
 
-All 20 packages are available on npm as `0.1.0-alpha.0` on the `latest` tag. Create an app with the command above; this is an alpha release and APIs may change.
+All 20 packages are available on npm as `0.1.0-alpha.1`. Create an app with the command above; this is an alpha release and APIs may change.
 
 ## Documentation hosting
 

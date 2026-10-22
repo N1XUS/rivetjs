@@ -431,7 +431,8 @@ test(
     await t.test("deno: deno.js exports start and listens only when run directly", async () => {
       await target("deno");
       const source = await readFile(dist + "server/deno.js", "utf8");
-      assert.match(source, /if \(import\.meta\.main\) start\(\);/);
+      // Minified server build: `if (import.meta.main) start();` becomes `import.meta.main&&k();`.
+      assert.match(source, /import\.meta\.main(\)\s*|&&)\w+\(\)/);
       assert.deepEqual([...(await imports(dist + "server/"))].sort(), ["node:async_hooks", "node:fs", "node:path", "node:url"]);
       const module = await load<{ start(options?: object): unknown }>(dist + "server/", "deno.js");
       assert.throws(() => module.start(), /runs under Deno/);

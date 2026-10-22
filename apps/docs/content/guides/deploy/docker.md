@@ -95,6 +95,8 @@ HEALTHCHECK CMD node -e "fetch('http://127.0.0.1:3000/healthz').then((r) => proc
 
 Orchestrators like Kubernetes call the paths over HTTP directly: point the liveness probe at `/healthz` and the readiness probe at `/readyz`.
 
+If your app has routes at these paths, move the checks (`start({ health: { live: "/_live", ready: "/_ready" } })`) or turn them off (`health: false`).
+
 ## Clean shutdown
 
 `docker stop` sends `SIGTERM`. `closeOnSignals` then stops new connections, lets running requests finish for up to 10 seconds, and exits. Docker also waits 10 seconds by default before it kills the container. Give Docker a little more time than `grace`, for example `docker stop -t 15`, and raise both together.

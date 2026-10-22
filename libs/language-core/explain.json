@@ -63,7 +63,7 @@
         "Script/style JSX content is not supported; use css`` from @rivetjs/runtime/css or build-time assets",
         "Script/style JSX content is not supported; use build-time assets"
       ],
-      "fix": "Remove the <style>/<script> children: put CSS in a css`` block (import { css } from \"@rivetjs/runtime/css\") or a .css import, and scripts in a module/asset.",
+      "fix": "Remove the <style>/<script> children: put CSS in a css`` block (import { css } from \"@rivetjs/runtime/css\") or a .css import, and scripts in a module/asset. Page-level inline code goes through the route head: a head styles entry { css } for an inline <style>, a head scripts entry { inline: unsafeInlineScript(code), strategy: \"body\" } (unsafeInlineScript from @rivetjs/kit, or <Script inline={unsafeInlineScript(code)} strategy=\"body\" />) for an inline <script> at the end of <body>; both carry the request's CSP nonce.",
       "avoid": "export const A = () => <style>{\".a{color:red}\"}</style>;",
       "prefer": "import { css } from \"@rivetjs/runtime/css\";\nconst s = css`.a { color: red }`;\nexport const A = () => <p class={s.a} />;"
     },

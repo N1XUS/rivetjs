@@ -23,7 +23,7 @@ You write compound JSX (`<Card>`, `<Card.Header>`, `<Button variant="secondary">
 
 `@rivetjs/ui` is installed and updated as a dependency; you do not copy component sources into your app. The stylesheet lives in `libs/ui/styles` (local changes listed in `libs/ui/styles/TWEAKS.md`), and each component module imports its own compiled CSS.
 
-The library is available on npm as `0.1.0-alpha.0` on the `latest` tag. APIs are experimental. [All components](/components/overview/) lists what ships today.
+The library is available on npm as `0.1.0-alpha.1`. APIs are experimental. [All components](/components/overview/) lists what ships today.
 
 ## Where it fits
 

@@ -55,7 +55,7 @@ The export name is yours: `export const pageData = load(…)` works the same. Th
 - Throw `redirect()` or an HTTP error to stop, as in a guard.
 - Return nothing to let the request continue: then the guards run, then actions, then loaders, then the page renders.
 
-They run for each module from the outermost layout to the page, `onRequest(…)` before `onGet(…)` / `onPost(…)` / …. A page that exports `onPut(…)`, `onPatch(…)`, `onDelete(…)` or `onPost(…)` also accepts that method.
+They run for each module from the outermost layout to the page, `onRequest(…)` before `onGet(…)` / `onPost(…)` / …. `onRequest(…)` runs for every method, before the router checks whether the page accepts it: a layout can answer a `POST` to a page that has no actions. A page that exports `onPut(…)`, `onPatch(…)`, `onDelete(…)` or `onPost(…)` also accepts that method; anything else then gets `405` with an `Allow` header listing only what the page handles.
 
 ```tsx title="src/routes/index.tsx"
 // /?format=json answers with the loader's data as JSON; other requests render the page.

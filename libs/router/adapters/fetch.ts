@@ -6,6 +6,7 @@ import type { BodyLimit } from "../server/security.ts";
 import type { ErrorInfo } from "../server/handler.ts";
 import { assemble, type BuildManifests } from "./assemble.ts";
 import { nonce } from "../shared/nonce.ts";
+import { baseHeaders, type BaseHeaders } from "./base-headers.ts";
 
 /** Workers-style module: `export default { fetch }`. */
 export interface FetchModule {
@@ -22,8 +23,8 @@ export interface FetchOptions {
   maxBody?: BodyLimit;
   /** Out-of-order streaming for pending `Async` boundaries. */
   stream?: { deadline?: number };
-  /** Extra headers on every handler response; defaults add nosniff + referrer policy (as node). */
-  headers?: Record<string, string>;
+  /** Extra headers on every handler response; defaults add nosniff + referrer policy (as node: same name replaces, `null` removes). */
+  headers?: BaseHeaders;
   /** Log unexpected failures (default console.error); app failures get `info` (`digest`, `phase`, `route`). */
   onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void;
   /**
@@ -75,7 +76,7 @@ export function createFetch(entry: GeneratedEntry, build: BuildManifests, option
     },
     "fetch entry",
   );
-  const base = Object.entries({ "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin", ...options.headers });
+  const base = Object.entries(baseHeaders(options.headers));
   const fixedOrigin = options.origin ? new URL(options.origin).origin : null;
   /** Add the base headers the response lacks (immutable headers, e.g. a proxied `fetch()`: copy). */
   const finish = (response: Response, head: boolean): Response => {

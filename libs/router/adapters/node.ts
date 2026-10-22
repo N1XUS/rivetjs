@@ -21,7 +21,12 @@ import {
 import { promisify } from "node:util";
 import { availableParallelism } from "node:os";
 import { loadBuild } from "./build.ts";
+// `loadBuild` / `readManifests`: a custom `serve({ handler })` that renders a production build itself (seeded `locals`,
+// several apps behind one server) loads it the way `start()` does.
+export { loadBuild, readManifests, type LoadedBuild, type LoadBuildOptions } from "./build.ts";
+export type { BuildManifests } from "./assemble.ts";
 import { negotiate, type Encoding } from "./files.ts";
+import { baseHeaders, type BaseHeaders } from "./base-headers.ts";
 import {
   buildDictionary,
   dczBest,
@@ -63,13 +68,32 @@ export interface RequestContext {
   readonly nonce: string;
   /** Client address, when known. */
   readonly address?: string;
+  /** Adapter facts for `event.platform` (the app handler spreads them in): `node`, the raw Node request / response (every request `serve()` / `start()` answers). */
+  readonly platform?: { readonly node: NodePlatform };
+}
+/**
+ * `event.platform.node` on the Node adapter (and the Vercel Node.js target): the raw Node request and response, for
+ * what the web `Request` does not carry — the original request target (`req.url`, before base / origin handling),
+ * repeated headers as sent (`req.rawHeaders`), the client port (`req.socket.remotePort`), the TLS socket. Read from
+ * them; writing to `res` yourself bypasses the adapter (compression, headers, streaming) — return a `Response` instead.
+ */
+export interface NodePlatform {
+  readonly req: IncomingMessage;
+  readonly res: ServerResponse;
 }
 /** A request handler (web `Request` → `Response`) served by the Node adapter. */
 export type Handler = (request: Request, context: RequestContext) => Response | Promise<Response>;
 /** `serve({ compress })` as an object: which codecs and whether immutable files' compressed copies are written to disk. */
 export interface CompressOptions {
-  /** Offer `zstd` (default true). `false`: brotli / gzip only. */
-  zstd?: boolean;
+  /**
+   * Offer `zstd` (default true). `false`: brotli / gzip only. A number: offer it at that level (−7 … 22) for every
+   * dynamic response, instead of the default by size (1 for bodies of 256 KiB and more, 3 below).
+   */
+  zstd?: boolean | number;
+  /** Brotli quality of dynamic responses, 0 … 11 (default 4). */
+  br?: number;
+  /** Gzip level of dynamic responses, 1 … 9 (default 6). */
+  gzip?: number;
   /** Write immutable files' compressed copies next to them on their first request (default true). */
   precompress?: boolean;
 }
@@ -104,7 +128,9 @@ export interface ServeOptions {
   /**
    * Compress responses by `Accept-Encoding` (default true): `zstd` when the client accepts it (level 1 for bodies of
    * 256 KiB and more, 3 below; streamed bodies by what is collected when streaming starts), else brotli (q4), else gzip
-   * (6). Immutable `client` files are precompressed once per file at the best quality (brotli q11, zstd 19, gzip 9) on
+   * (6); `{ zstd: n, br: n, gzip: n }` sets those levels (brotli 1 / gzip 1 = ASP.NET Core `CompressionLevel.Fastest`; a
+   * number for `zstd` replaces the by-size choice). Immutable `client` files are precompressed once per file at the best
+   * quality (brotli q11, zstd 19, gzip 9) on
    * their first request and written next to the file (`.br` / `.zst` / `.gz`, hidden temp + rename; a read-only
    * directory keeps them in memory only), so the next process start serves them from disk; build-time siblings are
    * used as they are. `{ zstd: false }`: brotli / gzip only (no zstd work at all); `{ precompress: false }`: nothing
@@ -136,10 +162,21 @@ export interface ServeOptions {
   reusePort?: boolean;
   /** Milliseconds to drain in-flight requests on close (default 10000). */
   grace?: number;
+  /**
+   * Health endpoints answered by the adapter itself, after the Host check and before static files and the app:
+   * `live` (default `/healthz`: 200 `ok` while the process serves) and `ready` (default `/readyz`: 200 `ready`, 503
+   * `draining` once `close()` started). A path of your own moves one, `false` turns it off (the app gets the path);
+   * `health: false` turns both off.
+   */
+  health?: false | { live?: string | false; ready?: string | false };
   /** Log unexpected failures (default console.error); app failures get `info` (`digest`, `phase`, `route`). */
   onError?: (error: unknown, request?: Request, info?: ErrorInfo) => void;
-  /** Extra headers on every response; defaults add nosniff + referrer policy. */
-  headers?: Record<string, string>;
+  /**
+   * Extra headers on every response. Defaults: `X-Content-Type-Options: nosniff` and `Referrer-Policy:
+   * strict-origin-when-cross-origin`; a header of the same name (any case) replaces a default, `null` removes it
+   * (`{ "Referrer-Policy": null }`). A route's own response header always wins over these.
+   */
+  headers?: BaseHeaders;
   /**
    * Fixed public origin (`https://shop.example`) for request URLs, regardless of `Host`: set it behind
    * a proxy so the handler's same-origin checks compare with what the browser sees.
@@ -260,38 +297,60 @@ const ZSTD_SYNC = 4 * 1024 * 1024;
 // bodies (0.18× brotli q5's CPU at +10 % bytes on a 757 KB table), −3 on content-sized ones (0.5× at +14 %); brotli
 // q4 is the brotli sweet spot (0.54×) for clients without zstd; gzip last.
 const LARGE_BODY = 256 * 1024;
-const HTML_BROTLI = { [zlib.BROTLI_PARAM_QUALITY]: 4, [zlib.BROTLI_PARAM_MODE]: zlib.BROTLI_MODE_TEXT };
-const zstdLevel = (size: number) => ({ [zlib.ZSTD_c_compressionLevel]: size >= LARGE_BODY ? 1 : 3 });
-function compressOnce(encoding: Exclude<Encoding, null>, body: Uint8Array): Buffer | Promise<Buffer> {
+/** Per-response codec levels of one listener (`CompressOptions` `zstd` / `br` / `gzip`); `zstd: null` = by body size. */
+interface Levels {
+  readonly zstd: number | null;
+  readonly br: number;
+  readonly gzip: number;
+}
+const DEFAULT_LEVELS: Levels = { zstd: null, br: 4, gzip: 6 };
+const zstdLevel = (levels: Levels, size: number) => ({ [zlib.ZSTD_c_compressionLevel]: levels.zstd ?? (size >= LARGE_BODY ? 1 : 3) });
+const brotliParams = (levels: Levels) => ({ [zlib.BROTLI_PARAM_QUALITY]: levels.br, [zlib.BROTLI_PARAM_MODE]: zlib.BROTLI_MODE_TEXT });
+function compressOnce(encoding: Exclude<Encoding, null>, body: Uint8Array, levels: Levels): Buffer | Promise<Buffer> {
   if (encoding === "zstd") {
-    const params = zstdLevel(body.length);
+    const params = zstdLevel(levels, body.length);
     return body.length > ZSTD_SYNC ? zstd(body, { params }) : zstdCompressSync(body, { params });
   }
-  const params = { ...HTML_BROTLI, [zlib.BROTLI_PARAM_SIZE_HINT]: body.length };
-  if (body.length > ONE_SHOT_SYNC) return encoding === "br" ? brotli(body, { params }) : gz(body, { level: 6 });
-  return encoding === "br" ? brotliCompressSync(body, { params }) : gzipSync(body, { level: 6 });
+  const params = { ...brotliParams(levels), [zlib.BROTLI_PARAM_SIZE_HINT]: body.length };
+  const level = levels.gzip;
+  if (body.length > ONE_SHOT_SYNC) return encoding === "br" ? brotli(body, { params }) : gz(body, { level });
+  return encoding === "br" ? brotliCompressSync(body, { params }) : gzipSync(body, { level });
+}
+/** `CompressOptions` levels → `Levels` (TypeError outside a codec's range). */
+function levelsOf(options: CompressOptions | null): Levels {
+  if (!options || (typeof options.zstd !== "number" && options.br === undefined && options.gzip === undefined)) return DEFAULT_LEVELS;
+  const check = (name: string, value: number | undefined, min: number, max: number): number | undefined => {
+    if (value !== undefined && !(Number.isInteger(value) && value >= min && value <= max))
+      throw new TypeError(`serve({ compress: { ${name} } }): an integer from ${min} to ${max} (got ${String(value)})`);
+    return value;
+  };
+  return {
+    zstd: typeof options.zstd === "number" ? check("zstd", options.zstd, -7, 22)! : null,
+    br: check("br", options.br, 0, 11) ?? DEFAULT_LEVELS.br,
+    gzip: check("gzip", options.gzip, 1, 9) ?? DEFAULT_LEVELS.gzip,
+  };
 }
 
 /**
  * Streaming compressor that flushes every chunk, so streamed HTML reaches the browser promptly. `collected`: bytes
  * in hand when streaming starts (a body already past `LARGE_BODY` takes zstd's large-body level).
  */
-function compressor(encoding: Exclude<Encoding, null>, collected = 0): Transform {
-  if (encoding === "zstd") return createZstdCompress({ flush: zlib.ZSTD_e_flush, params: zstdLevel(collected) });
+function compressor(encoding: Exclude<Encoding, null>, collected: number, levels: Levels): Transform {
+  if (encoding === "zstd") return createZstdCompress({ flush: zlib.ZSTD_e_flush, params: zstdLevel(levels, collected) });
   return encoding === "br"
     ? createBrotliCompress({
         flush: zlib.BROTLI_OPERATION_FLUSH,
-        params: HTML_BROTLI,
+        params: brotliParams(levels),
       })
-    : createGzip({ flush: zlib.Z_SYNC_FLUSH, level: 6 });
+    : createGzip({ flush: zlib.Z_SYNC_FLUSH, level: levels.gzip });
 }
 
 /** A response coding: the negotiated encoding, or `dcz` with the request's dictionary. */
 type Coding = Exclude<Encoding, null> | "dcz";
-const packOnce = (coding: Coding, body: Uint8Array, dict: Dictionary | undefined): Buffer | Promise<Buffer> =>
-  coding === "dcz" ? dczOnce(dict!, body) : compressOnce(coding, body);
-const packStream = (coding: Coding, collected: number, dict: Dictionary | undefined): Transform =>
-  coding === "dcz" ? dczStream(dict!, collected) : compressor(coding, collected);
+const packOnce = (coding: Coding, body: Uint8Array, dict: Dictionary | undefined, levels: Levels): Buffer | Promise<Buffer> =>
+  coding === "dcz" ? dczOnce(dict!, body) : compressOnce(coding, body, levels);
+const packStream = (coding: Coding, collected: number, dict: Dictionary | undefined, levels: Levels): Transform =>
+  coding === "dcz" ? dczStream(dict!, collected) : compressor(coding, collected, levels);
 
 /** Best-quality compression of a body compressed once and reused (client files, stored pages): brotli q11, zstd 19, gzip 9. */
 function compressBest(encoding: Exclude<Encoding, null>, body: Uint8Array): Promise<Buffer> {
@@ -346,7 +405,8 @@ function sendDirect(
   headers: Record<string, string | string[]>,
   encoding: Coding | null,
   vary: () => void,
-  dict?: Dictionary,
+  dict: Dictionary | undefined,
+  levels: Levels,
 ): Promise<void> | null {
   let collected: Uint8Array[] | null = [];
   let releases: (() => void)[] = [];
@@ -398,7 +458,7 @@ function sendDirect(
     if (encoding) vary();
     if (encoding && size >= MIN_COMPRESS) {
       const one = chunks.length === 1;
-      const packed = packOnce(encoding, one ? chunks[0]! : Buffer.concat(chunks, size), dict);
+      const packed = packOnce(encoding, one ? chunks[0]! : Buffer.concat(chunks, size), dict, levels);
       // Concatenated: copied already. One chunk: its slab is read until compression ends.
       if (!one) release();
       const send = (bytes: Buffer) => {
@@ -426,7 +486,7 @@ function sendDirect(
       vary();
     }
     head();
-    const packer = encoding ? packStream(encoding, size, dict) : null;
+    const packer = encoding ? packStream(encoding, size, dict, levels) : null;
     if (packer) pipeline(packer, res).catch(close);
     const to = (target = packer ?? res);
     const chunks = collected,
@@ -641,16 +701,22 @@ export function createListener(options: ServeOptions): {
   const compress = options.compress !== false;
   const codecs = typeof options.compress === "object" ? options.compress : null;
   const withZstd = codecs?.zstd !== false;
+  const levels = levelsOf(codecs);
   const precompress = compress && codecs?.precompress !== false;
   const prefix = normalizeBase(options.base);
   const immutable = options.immutable ?? ((pathname: string) => pathname.startsWith(prefix + "/assets/"));
   // Header names compare case-insensitively: `res.writeHead` sends differently cased keys as separate
   // headers, so an option (or a response header) of the same name replaces the default, never doubles it.
-  const base: Record<string, string> = { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "strict-origin-when-cross-origin" };
-  for (const [name, value] of Object.entries(options.headers ?? {})) {
-    for (const key of Object.keys(base)) if (key.toLowerCase() === name.toLowerCase()) delete base[key];
-    base[name] = value;
-  }
+  const base = baseHeaders(options.headers);
+  const health: { live?: string | false; ready?: string | false } = options.health === false ? { live: false, ready: false } : (options.health ?? {});
+  const healthPath = (path: string | false | undefined, fallback: string): string | null => {
+    if (path === false) return null;
+    if (path === undefined) return fallback;
+    if (!path.startsWith("/")) throw new TypeError(`serve({ health }): a path starting with "/" (got ${JSON.stringify(path)})`);
+    return path;
+  };
+  const live = healthPath(health.live, "/healthz"),
+    ready = healthPath(health.ready, "/readyz");
   const client = options.client ? resolve(options.client) : null;
   // Compression dictionaries (RFC 9842): sampled at start (`serve`), else the client build's manifest.
   const dictionaries: DictionaryRegistry | null =
@@ -1014,7 +1080,7 @@ export function createListener(options: ServeOptions): {
       return;
     }
     const direct = (response as { [DIRECT_BODY]?: DirectBody })[DIRECT_BODY];
-    const sent = direct && !body.locked ? sendDirect(direct, res, response, request, headers, encoding, vary, work?.use) : null;
+    const sent = direct && !body.locked ? sendDirect(direct, res, response, request, headers, encoding, vary, work?.use, levels) : null;
     if (sent) return sent;
     // Most pages render synchronously: when the whole body is in before the event loop turns, it
     // goes out in one write with a Content-Length (compressed in one call). A body still pending
@@ -1042,7 +1108,7 @@ export function createListener(options: ServeOptions): {
       for (const chunk of chunks) size += chunk.byteLength;
       if (encoding) vary();
       if (encoding && size >= MIN_COMPRESS) {
-        const packed = await packOnce(encoding, chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks, size), work?.use);
+        const packed = await packOnce(encoding, chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks, size), work?.use, levels);
         headers["content-encoding"] = encoding;
         headers["content-length"] = String(packed.length);
         res.writeHead(response.status, response.statusText || undefined, headers);
@@ -1079,7 +1145,7 @@ export function createListener(options: ServeOptions): {
       })(),
       { objectMode: false },
     );
-    await (encoding ? pipeline(source, packStream(encoding, collected, work?.use), res) : pipeline(source, res));
+    await (encoding ? pipeline(source, packStream(encoding, collected, work?.use, levels), res) : pipeline(source, res));
   }
 
   const reject = (res: ServerResponse, status: number, message: string) =>
@@ -1091,11 +1157,11 @@ export function createListener(options: ServeOptions): {
     const target = pathOf(req.url ?? "/", origin);
     if (target === null) return reject(res, 400, "Bad Request: request target");
     const pathname = target.split("?", 1)[0]!;
-    if (pathname === "/healthz") {
+    if (pathname === live) {
       res.writeHead(200, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }).end("ok");
       return;
     }
-    if (pathname === "/readyz") {
+    if (pathname === ready) {
       res.writeHead(draining ? 503 : 200, { ...base, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
       res.end(draining ? "draining" : "ready");
       return;
@@ -1132,7 +1198,7 @@ export function createListener(options: ServeOptions): {
         // response is out, as Node does for untouched requests, so the connection stays usable.
         if (converted.request.body) res.once("finish", () => drain(req));
         const address = via.address;
-        const context: RequestContext = { nonce: nonce(), ...(address ? { address } : {}) };
+        const context: RequestContext = { nonce: nonce(), ...(address ? { address } : {}), platform: { node: { req, res } } };
         const response = await handler(request, context);
         await serveResponse(req, res, response, request, pathname);
       } catch (error) {

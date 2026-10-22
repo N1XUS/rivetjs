@@ -208,7 +208,7 @@ Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 | `immutable` | `(pathname) => boolean` | starts with `<base>/assets/` | Files that get `Cache-Control: immutable`. |
 | `port` | `number` | `3000` | Port. |
 | `host` | `string` | `"127.0.0.1"` | Host. |
-| `compress` | `boolean` \| `{ zstd?: boolean, precompress?: boolean }` | `true` | Compress responses by `Accept-Encoding`: zstd when accepted (level 3; 1 for bodies of 256 KB and more), else Brotli (4), else gzip (6). Immutable `client` files are compressed once at the best quality on their first request and written next to the file (`.zst` / `.br` / `.gz`). `{ zstd: false }`: Brotli / gzip only. `{ precompress: false }`: nothing written to disk. See [Node](../guides/deploy/node.md#what-the-server-does-for-you). |
+| `compress` | `boolean` \| `{ zstd?: boolean \| number, br?: number, gzip?: number, precompress?: boolean }` | `true` | Compress responses by `Accept-Encoding`: zstd when accepted (level 3; 1 for bodies of 256 KB and more), else Brotli (4), else gzip (6). `{ zstd: n, br: n, gzip: n }`: those levels for dynamic responses (zstd −7 … 22, Brotli 0 … 11, gzip 1 … 9; Brotli 1 / gzip 1 = ASP.NET Core `Fastest`). Immutable `client` files are compressed once at the best quality on their first request and written next to the file (`.zst` / `.br` / `.gz`). `{ zstd: false }`: Brotli / gzip only. `{ precompress: false }`: nothing written to disk. See [Node](../guides/deploy/node.md#what-the-server-does-for-you). |
 | `dictionary` | `false` \| `{ samples?: string[], max?: number }` | the `client` build's dictionaries | [Compression dictionaries](../guides/routing/headers-and-caching.md#compression-dictionaries): HTML pages link the dictionary, and browsers that have it get `dcz` answers (zstd with the dictionary). Default: the dictionaries `prerenderBuild` wrote into `client`. `{ samples }`: paths rendered once at start whose shared parts become the site's dictionary (server-rendered apps). `false`: off. Needs `compress`. |
 | `earlyHints` | `boolean` | `false` | Send the `103 Early Hints` the handler asks for (HTTP/1.1 clients). |
 | `reusePort` | `boolean` | `false` | Bind with `SO_REUSEPORT` so several processes share the port (Linux, FreeBSD; needs a fixed `port`). |
@@ -217,6 +217,7 @@ Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 | `idleMemory` | `boolean` | `true` | Return heap memory to the OS when the server goes idle after traffic. |
 | `grace` | `number` (ms) | `10000` | Time to finish open requests on close. |
 | `onError` | `(error, request?) => void` | `console.error` | Unexpected failures. |
-| `headers` | `Record<string, string>` | `nosniff` + referrer policy | Extra headers on every response. |
+| `headers` | `Record<string, string \| null>` | `nosniff` + referrer policy | Extra headers on every response; a name of a default replaces it (any case), `null` removes it. |
+| `health` | `false` \| `{ live?: string \| false, ready?: string \| false }` | `/healthz`, `/readyz` | Health paths answered before the app; other paths, `false` for one, `false` for both. |
 
 Returns `{ server, url, close() }`. `closeOnSignals(serving)` closes it on `SIGINT` / `SIGTERM`.

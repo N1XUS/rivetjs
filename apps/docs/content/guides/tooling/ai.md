@@ -84,7 +84,7 @@ To share it with your team, put it in `.mcp.json` at the project root instead:
 ```
 
 :::note
-`@rivetjs/mcp` is available on npm as `0.1.0-alpha.0`. The `npx` commands above use its bundled docs data. For development inside a clone of the Rivet repository, `node libs/mcp/cli.ts` reads the current docs sources.
+`@rivetjs/mcp` is available on npm as `0.1.0-alpha.1`. The `npx` commands above use its bundled docs data. For development inside a clone of the Rivet repository, `node libs/mcp/cli.ts` reads the current docs sources.
 :::
 
 ## Project instructions

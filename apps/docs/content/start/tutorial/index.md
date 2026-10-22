@@ -23,7 +23,7 @@ You learn:
 
 You need:
 
-- A running static starter project (`npm create rivet@latest my-app -- --template static`). Until the packages are on npm, follow the [quick start](../quick-start.md) option 3, from the repository.
+- A running static starter project (`npm create rivet@latest my-app -- --template static`). The [quick start](../quick-start.md) shows the options.
 - Some HTML and JavaScript. If you know React or Vue components, the JSX will look familiar.
 
 Each step shows the files you change. You can also read the code in the live examples without running anything.

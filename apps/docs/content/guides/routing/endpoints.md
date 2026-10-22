@@ -120,7 +120,7 @@ So an endpoint inside `(private)/` or `admin/` is protected by the `guard(…)` 
 
 ## Methods you did not export
 
-A request with a method the file has no handler for gets `405 Method Not Allowed`, with an `Allow` header that lists the methods you did handle (`onGet(…)` always brings `HEAD`).
+A request with a method the file has no handler for gets `405 Method Not Allowed` (after `onRequest(…)` ran), with an `Allow` header that lists the methods you did handle (`onGet(…)` always brings `HEAD`). On a page route, `Allow` lists `GET, HEAD`, `POST` only when the page has `actions(…)` or `onPost(…)`, and `PUT` / `PATCH` / `DELETE` when it has their handlers.
 
 ## Pages and endpoints at the same URL
 

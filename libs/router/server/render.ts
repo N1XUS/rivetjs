@@ -6,7 +6,7 @@ import { withIdScope } from "@rivetjs/runtime/id";
 import type { Head } from "../shared/data.ts";
 import type { HeadManaged } from "../shared/head.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "./body.ts";
-export { headTags, htmlAttributes, bodyAttributes, type HeadTagOptions, type HeadManaged } from "../shared/head.ts";
+export { headTags, htmlAttributes, bodyAttributes, bodyTags, type HeadTagOptions, type HeadManaged } from "../shared/head.ts";
 
 /** Document around the app. `start` ends inside the app container; `end` closes it. */
 export interface DocumentParts {

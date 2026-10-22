@@ -55,12 +55,13 @@ const lateCookies = (cookies: Cookies): Cookies => ({
   set: late("set cookies"),
   delete: late("delete cookies"),
 });
-/** A deferred loader's event view: reads like its loader view, but `setHeader(s)` / `cookies.set` / `cookies.delete` throw. */
+/** A deferred loader's event view: reads like its loader view, but `setHeader(s)` / `appendHeader` / `cookies.set` / `cookies.delete` throw. */
 export function lateEvent(event: RequestEvent): RequestEvent {
   return new Proxy(event, {
     get(target, key) {
       if (key === "setHeader") return late("set headers");
       if (key === "setHeaders") return late("set headers");
+      if (key === "appendHeader") return late("set headers");
       if (key === "cookies") return lateCookies(target.cookies);
       const value = Reflect.get(target, key, target);
       return value;

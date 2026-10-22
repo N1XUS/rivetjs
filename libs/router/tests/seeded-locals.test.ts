@@ -1,5 +1,5 @@
 // Seeded `locals` (`context.locals` of the app handler): the caller of the handler hands a page its data (e.g. a view
-// model another server computed). Each request starts from a shallow copy; guards, loaders, actions, request handlers,
+// model another server computed). `event.locals` is the caller's object itself (no copy: writes come back); guards, loaders, actions, request handlers,
 // `headers`, error pages and the i18n locale see it; it reaches the browser only through what loaders return; the
 // route rules' page cache is bypassed; the node adapter forwards it from a custom `serve({ handler })`.
 // Run: `npx vitest run --project router libs/router/tests/seeded-locals.test.ts`.
@@ -78,7 +78,7 @@ test("seeded locals reach request handlers, guards, loaders, actions, headers, h
   assert.equal(await (await handler(new Request("http://x/nowhere"))).text(), "error 404 {}");
 });
 
-test("guards writing locals change neither the caller's object nor a later request", async () => {
+test("event.locals is the caller's object: guard / loader writes come back; an unseeded request gets its own {}", async () => {
   const handler = createHandler({
     routes: [
       {
@@ -91,19 +91,23 @@ test("guards writing locals change neither the caller's object nor a later reque
             e.locals.user = "ada";
             e.locals.count = ((e.locals.count as number) ?? 0) + 1;
           },
-          load: (e) => ({ ...e.locals }),
+          load: (e) => {
+            const seen = { ...e.locals };
+            e.locals.status = "rendered";
+            return seen;
+          },
         }),
       },
     ],
     render: (input) => new Response(JSON.stringify(input.data[0])),
   });
-  const seed = Object.freeze({ count: 1 });
+  const seed: Record<string, unknown> = { count: 1 };
   const first = await handler(new Request("http://x/p"), { locals: seed });
   assert.deepEqual(JSON.parse(await first.text()), { count: 2, user: "ada" });
-  assert.deepEqual(seed, { count: 1 });
-  const second = await handler(new Request("http://x/p"), { locals: seed });
+  assert.deepEqual(seed, { count: 2, user: "ada", status: "rendered" });
+  // A fresh seed per request: nothing carries over.
+  const second = await handler(new Request("http://x/p"), { locals: { count: 1 } });
   assert.deepEqual(JSON.parse(await second.text()), { count: 2, user: "ada" });
-  // An unseeded request never sees what a seeded one wrote.
   assert.deepEqual(JSON.parse(await (await handler(new Request("http://x/p"))).text()), { count: 1, user: "ada" });
 });
 
@@ -259,7 +263,7 @@ test("node adapter: serve({ handler }) forwarding { ...context, locals } renders
     assert.match(html, /\/en\/assets\/resume-entry\.js/);
     assert.match(response.headers.get("content-security-policy") ?? "", /'nonce-/);
     // The adapter's context carries nonce + address only: nothing from the request (headers, query, body) seeds locals.
-    assert.deepEqual(Object.keys(contexts[0] as object).sort(), ["address", "nonce"]);
+    assert.deepEqual(Object.keys(contexts[0] as object).sort(), ["address", "nonce", "platform"]);
   } finally {
     await serving.close();
   }

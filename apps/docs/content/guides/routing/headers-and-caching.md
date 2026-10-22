@@ -50,6 +50,13 @@ export const loader = load(async ({ params, setHeader }: RequestEvent<"posts/[sl
 });
 ```
 
+`setHeader` replaces a value set earlier. `appendHeader(name, value)` adds one next to it, like `Headers.append`: a second `Link`, another `Vary` entry, or a `Set-Cookie` line you already serialized (for example one a backend sent you). Every appended `Set-Cookie` goes out as its own header line, on the Node adapter and the fetch adapters alike, and makes the response `Cache-Control: private`.
+
+```ts
+appendHeader("link", "</fonts/inter.woff2>; rel=preload; as=font; crossorigin");
+appendHeader("set-cookie", backendCookie); // as received, not re-encoded
+```
+
 ## Defaults for pages and data
 
 | Response | `Cache-Control` default |
@@ -70,7 +77,7 @@ Do not mark a page `public` if it shows anything per visitor (a name, a cart, a 
 
 **Content Security Policy.** HTML pages get a strict policy by default: only scripts that carry the response's random nonce may run. A `content-security-policy` header from your `headers(…)` export replaces it. See [Content Security Policy](/guides/security/csp.md) before you change it.
 
-**Node server headers.** The Node adapter (`start` / `serve` from `@rivetjs/router/node`) adds `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` to every response. Add your own with the `headers` option:
+**Node server headers.** The Node adapter (`start` / `serve` from `@rivetjs/router/node`) adds `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin` to every response (`null` for one of them in the `headers` option removes it; a route that sets the header itself keeps its value). Add your own with the `headers` option:
 
 ```js title="serve.js"
 import { closeOnSignals, start } from "@rivetjs/router/node";
@@ -368,7 +375,7 @@ What it saves, measured on built sites: a page of the UI documentation (69–213
 
 ## Cookies
 
-Cookies are headers too, but use `event.cookies.set()` rather than `setHeader("set-cookie", …)`: it handles encoding, adds several cookies correctly and applies safe defaults. See [cookies in guards](./guards.md#cookies).
+Cookies are headers too, but use `event.cookies.set()` rather than `setHeader("set-cookie", …)`: it handles encoding, adds several cookies correctly and applies safe defaults. A cookie that is already serialized (passed through from another server) goes in with `appendHeader("set-cookie", value)`, as it is. See [cookies in guards](./guards.md#cookies).
 
 ## Static sites
 

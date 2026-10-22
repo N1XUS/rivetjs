@@ -5,7 +5,7 @@ template: page
 related: [about/benchmarks, start/what-is-rivet]
 ---
 
-Rivet is experimental. The first npm release, `0.1.0-alpha.0`, is available on the `latest` tag. APIs can still change. "Done" means built and tested, not stable.
+Rivet is experimental. The current npm release is `0.1.0-alpha.1` (the first, `0.1.0-alpha.0`, shipped on 2026-10-16). APIs can still change. "Done" means built and tested, not stable.
 
 ## Done
 

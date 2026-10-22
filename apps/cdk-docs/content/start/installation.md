@@ -9,7 +9,7 @@ related: [start/introduction, start/styling, components/overview, foundations/ov
 `@rivetjs/cdk` works in any Rivet app (the starters in `templates/`). After this page you can import a component, know which import path holds what, and have Tailwind set up for the state variants.
 
 :::note[Alpha release]
-`@rivetjs/cdk` is available on npm as `0.1.0-alpha.0` on the `latest` tag. Its APIs are experimental. Start with a [Rivet app](site:docs/start/quick-start/), then install the package:
+`@rivetjs/cdk` is available on npm as `0.1.0-alpha.1`. Its APIs are experimental. Start with a [Rivet app](site:docs/start/quick-start/), then install the package:
 
 ```bash
 npm install @rivetjs/cdk
@@ -21,9 +21,9 @@ npm install @rivetjs/cdk
 ```json title="package.json"
 {
   "dependencies": {
-    "@rivetjs/cdk": "0.1.0-alpha.0",
-    "@rivetjs/reactivity": "0.1.0-alpha.0",
-    "@rivetjs/runtime": "0.1.0-alpha.0"
+    "@rivetjs/cdk": "0.1.0-alpha.1",
+    "@rivetjs/reactivity": "0.1.0-alpha.1",
+    "@rivetjs/runtime": "0.1.0-alpha.1"
   }
 }
 ```

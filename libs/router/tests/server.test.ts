@@ -416,7 +416,7 @@ test("OPTIONS reaches onRequest (CORS preflight: no CSRF check, no guards); unan
   ]);
   const page = await handler(new Request("http://x/p", { method: "OPTIONS", headers: { origin: "https://other.example" } }));
   assert.equal(page.status, 204);
-  assert.equal(page.headers.get("allow"), "GET, HEAD, POST, PUT, OPTIONS");
+  assert.equal(page.headers.get("allow"), "GET, HEAD, PUT, OPTIONS");
   const preflight = await handler(new Request("http://x/api/x", { method: "OPTIONS", headers: { origin: "https://other.example" } }));
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get("access-control-allow-origin"), "https://other.example");
@@ -452,7 +452,7 @@ test("onOptions answers OPTIONS after onRequest, outer → inner (page and endpo
   // A page whose onOptions returns nothing: 204 + `Allow` (onOptions adds no method of its own), no guards.
   const page = await handler(new Request("http://x/p", { method: "OPTIONS" }));
   assert.equal(page.status, 204);
-  assert.equal(page.headers.get("allow"), "GET, HEAD, POST, OPTIONS");
+  assert.equal(page.headers.get("allow"), "GET, HEAD, OPTIONS");
   assert.deepEqual(log.splice(0), ["page options"], "no guards");
   // Other methods never reach onOptions.
   assert.equal(await (await handler(new Request("http://x/api/hook", { method: "POST", headers: { origin: "http://x" } }))).text(), "posted");

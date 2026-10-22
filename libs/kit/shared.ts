@@ -28,7 +28,15 @@ export function childText(children: unknown): string {
 
 // ---- builders (pure: route `head` exports and `<Head value>` alike) ----
 
-const MIME: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", avif: "image/avif", gif: "image/gif", svg: "image/svg+xml" };
+const MIME: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  avif: "image/avif",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+};
 
 /** Absolute URL for `href` against `baseUrl` (or `url`'s origin); relative without either is an error. */
 export function absolute(href: string, base?: string | URL): string {
@@ -36,7 +44,8 @@ export function absolute(href: string, base?: string | URL): string {
   if (base === undefined) throw new TypeError(`"${href}" must be absolute for social/SEO tags: pass baseUrl (or a URL) to the builder`);
   return new URL(href, base).href;
 }
-const baseOf = (url: string | URL | undefined, baseUrl: string | undefined) => baseUrl ?? (url instanceof URL ? url.origin : url && /^https?:/.test(url) ? url : undefined);
+const baseOf = (url: string | URL | undefined, baseUrl: string | undefined) =>
+  baseUrl ?? (url instanceof URL ? url.origin : url && /^https?:/.test(url) ? url : undefined);
 
 /** Options of `canonical()`. */
 export interface CanonicalOptions {
@@ -96,7 +105,8 @@ export interface OpenGraphOptions {
 export function openGraph(options: OpenGraphOptions): HeadMeta[] {
   const base = baseOf(options.url, options.baseUrl);
   const meta: HeadMeta[] = [];
-  const add = (property: string, content: string | number | undefined) => content !== undefined && content !== "" && meta.push({ property, content: String(content) });
+  const add = (property: string, content: string | number | undefined) =>
+    content !== undefined && content !== "" && meta.push({ property, content: String(content) });
   add("og:title", options.title);
   add("og:description", options.description);
   if (options.url !== undefined) add("og:url", absolute(String(options.url), base));
@@ -171,8 +181,16 @@ export type MetaProps = HeadMeta;
 export type HeadLinkProps = HeadLink;
 /** Props of `<Script>`: an external script with a load strategy, or a static inline script. */
 export type ScriptProps =
-  | { src: string; type?: "module" | "classic"; strategy?: ScriptStrategy; id?: string; integrity?: string; crossorigin?: "anonymous" | "use-credentials"; referrerpolicy?: string }
-  | { inline: InlineScript; strategy?: "blocking" | "eager" | "defer"; data?: unknown; id?: string };
+  | {
+      src: string;
+      type?: "module" | "classic";
+      strategy?: ScriptStrategy;
+      id?: string;
+      integrity?: string;
+      crossorigin?: "anonymous" | "use-credentials";
+      referrerpolicy?: string;
+    }
+  | { inline: InlineScript; strategy?: "blocking" | "eager" | "defer" | "body"; data?: unknown; id?: string };
 /** Props of `<JsonLd>`. */
 export interface JsonLdProps<T extends object = object> {
   data: T;

@@ -77,7 +77,7 @@ export default function Account({ data }: PageProps<typeof loader>) {
 }
 ```
 
-`locals` is a plain object, new for every request. It starts empty, or with a copy of what the code that calls the app handler passed as `context.locals` (see [render with data from another server](../../recipes/render-with-data-from-another-server.md)). Its type is `Record<string, unknown>`, so cast when you read it.
+`locals` is a plain object, new for every request. It starts empty, or is the very object the code that calls the app handler passed as `context.locals` (not a copy) (see [render with data from another server](../../recipes/render-with-data-from-another-server.md)). Its type is `Record<string, unknown>`, so cast when you read it.
 
 ## Ways to stop a request
 
@@ -117,6 +117,8 @@ Set `maxAge` (seconds) or `expires` for a cookie that outlives the browser sessi
 ## The visitor's IP address
 
 `event.platform.clientAddress` is the visitor's IP address, when the adapter knows it: the Node adapter sets it from the connection (behind a proxy, from `X-Forwarded-For` with `trustProxy: true`; see [behind a proxy](../deploy/node.md#behind-a-proxy)). The fetch adapter for edge platforms sets it with its `address` option, for example `address: (request) => request.headers.get("cf-connecting-ip") ?? undefined`. It is `undefined` in static builds and when the adapter cannot tell.
+
+On the Node adapter, `event.platform.node` also holds the raw Node request and response (`{ req, res }`) for what the web `Request` does not carry: the request target as sent (`req.url`), repeated headers (`req.rawHeaders`), the client port (`req.socket.remotePort`). Read from them; answer with a `Response`.
 
 ```ts title="src/routes/login.tsx"
 import type { RequestEvent } from "@rivetjs/router";

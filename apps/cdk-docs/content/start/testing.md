@@ -9,7 +9,7 @@ related: [start/installation, start/resumability, components/overview, component
 Test cdk components the way you use them: render them in a real browser, drive them like a user, and assert ARIA state. After this page you have a Vitest setup with a browser project and a server project, a component test with a React Aria tester, and a test of the server HTML.
 
 :::note[Alpha release]
-`@rivetjs/testing` is available on npm as `0.1.0-alpha.0`. Install it as a dev dependency with `npm install -D @rivetjs/testing`. Its API may change.
+`@rivetjs/testing` is available on npm as `0.1.0-alpha.1`. Install it as a dev dependency with `npm install -D @rivetjs/testing`. Its API may change.
 :::
 
 ## Packages

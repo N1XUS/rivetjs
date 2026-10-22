@@ -12,7 +12,7 @@ export default defineConfig({ plugins: [kit(), rivetRouter()] });
 
 - `kit()` → router `head: "components"` (detected by plugin name; explicit `rivetRouter({ head: "components" | "early" })` wins).
 - Browser builds resolve `@rivetjs/kit` → `@rivetjs/kit/dom`, `@rivetjs/runtime/image` → `/image/dom`.
-- Shell passes the whole input: `headTags(input.head, input)` (styles, nonce, managed marks); `htmlAttributes` / `bodyAttributes` from `@rivetjs/router/head`.
+- Shell passes the whole input: `headTags(input.head, input)` (styles, nonce, managed marks); `htmlAttributes` / `bodyAttributes` (any attribute; `on*` refused) / `bodyTags` (end-of-body `strategy: "body"` scripts, EXT-B 2026-10-22) from `@rivetjs/router/server` (or `/head`); starters call all four.
 - Trusted Types: `strictCSP(nonce, { trustedTypes: ["rivet-script"] })` / `hashCSP(html, { trustedTypes: ["rivet-script"] })`. `rivet-script` created once per page: the bootstrap creates it and leaves `document.$rs` (`{ p: policy, l: script list }`, `libs/router/shared/head.ts`); the client head manager reuses it (or creates it when no bootstrap ran). No `'allow-duplicates'`.
 - Router only in v1 (no head sink → components throw with setup hint).
 

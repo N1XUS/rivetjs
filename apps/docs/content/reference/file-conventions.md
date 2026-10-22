@@ -73,13 +73,13 @@ Server code lives in the page or layout file itself, as exports made by a wrappe
 | `headers((event) => …)` | Extra response headers. |
 | `entries(() => […])` | Parameter values to prerender for dynamic routes. |
 | `prerender` | Plain `boolean`. Force prerendering on or off (static mode). Default: on for static routes and routes with entries. |
-| `onRequest(…)`, `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` | Request handlers. They run before guards, outermost module first, `onRequest(…)` before the method's handler. A returned `Response` ends the request; `undefined` continues. |
+| `onRequest(…)`, `onGet(…)`, `onPost(…)`, `onPut(…)`, `onPatch(…)`, `onDelete(…)`, `onOptions(…)` | Request handlers. They run before guards, outermost module first, `onRequest(…)` before the method's handler. `onRequest(…)` runs for every method, before the 405 method check, so it can answer methods the route does not handle. A returned `Response` ends the request; `undefined` continues. |
 
 Endpoint routes: a plain `.ts` file in `src/routes` that exports request handlers (for example `api/time.ts` with `export const GET = onGet(…)`). Its handler for the method must return a `Response`. Plain `.ts` files without handlers are helpers, not routes.
 
 A separate `name.server.ts` next to a page or layout works too, with the same wrappers; its exports are merged with the route file's (the same wrapper in both is an error). Old export names (`serverLoad`, `onGet`, …, and `load`, `GET`, … in `.server.ts` files) are errors; `rivet migrate server-exports [--routes src/routes] [--dry-run]` (a bin of `@rivetjs/router`) rewrites them. See [server code in routes](../guides/routing/server-code-in-routes.md).
 
-`event` is a `RequestEvent`: `request`, `url`, `params`, `locals`, `signal`, `cookies`, `setHeader(name, value)`.
+`event` is a `RequestEvent`: `request`, `url`, `params`, `locals`, `signal`, `cookies`, `setHeader(name, value)`, `appendHeader(name, value)`.
 
 Files named `*.server.*`, modules that `import "@rivetjs/router/server-only"`, and modules listed in `rivetRouter({ serverOnly })` never reach browser code. A page that uses one itself is a document route (links load its document, no page code in the browser); a component or layout that uses one fails the build with [RV3011](../errors/RV3011.md); any other browser import stops with `… is server-only and cannot be imported by browser code`.
 

@@ -14,6 +14,7 @@ import { extname, join, resolve } from "node:path";
 import { brotliCompressSync, constants as zlib, createBrotliCompress, createGzip, gzipSync } from "node:zlib";
 import type { Transform } from "node:stream";
 import { nonce } from "../shared/nonce.ts";
+import { baseHeaders, type BaseHeaders } from "./base-headers.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "../server/body.ts";
 import { negotiate, type Handler, type RequestContext } from "./node.ts";
 
@@ -63,8 +64,8 @@ export interface UwsServeOptions {
   compress?: boolean;
   /** Fixed public origin for request URLs (default `http://<Host>`). */
   origin?: string;
-  /** Extra headers on every response; defaults add nosniff + referrer policy. */
-  headers?: Record<string, string>;
+  /** Extra headers on every response; defaults add nosniff + referrer policy (same name replaces, `null` removes). */
+  headers?: BaseHeaders;
   /** Milliseconds to drain in-flight requests on close (default 10000). */
   grace?: number;
   onError?: (error: unknown, request?: Request) => void;
@@ -166,8 +167,8 @@ export async function serveUws(options: UwsServeOptions): Promise<UwsServing> {
   const uws = options.uws ?? (createRequire(import.meta.url)("uWebSockets.js") as UwsModule);
   const { handler, compress = true, onError = (error: unknown) => console.error(error) } = options;
   const prefix = options.base && options.base !== "/" ? options.base.replace(/\/$/, "") : "";
-  const base: Record<string, string> = { "x-content-type-options": "nosniff", "referrer-policy": "strict-origin-when-cross-origin" };
-  for (const [name, value] of Object.entries(options.headers ?? {})) base[name.toLowerCase()] = value;
+  const base: Record<string, string> = {};
+  for (const [name, value] of Object.entries(baseHeaders(options.headers))) base[name.toLowerCase()] = value;
   const fixedOrigin = options.origin ? new URL(options.origin).origin : null;
   const files = options.client ? indexFiles(options.client) : null;
   let draining = false,

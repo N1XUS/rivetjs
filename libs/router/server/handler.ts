@@ -4,7 +4,18 @@ import { compileRoutes } from "@rivetjs/runtime/router/server";
 import { createEncoder, _builtinKinds } from "@rivetjs/runtime/resume-format";
 import { HttpError, isHttpError } from "../shared/errors.ts";
 import { isActionFailure } from "../shared/actions.ts";
-import { DATA_PARAM, KEEP_PAGE, KEEP_PARAM, withoutRivet, type ActionAnswer, type ActionResult, type DataAnswer, type Head, type HeadSink, type LoaderDeps } from "../shared/data.ts";
+import {
+  DATA_PARAM,
+  KEEP_PAGE,
+  KEEP_PARAM,
+  withoutRivet,
+  type ActionAnswer,
+  type ActionResult,
+  type DataAnswer,
+  type Head,
+  type HeadSink,
+  type LoaderDeps,
+} from "../shared/data.ts";
 export { DATA_PARAM, type ActionResult } from "../shared/data.ts";
 import { loadServer } from "./module.ts";
 import { crossSite, limitBody, type BodyLimit } from "./security.ts";
@@ -47,6 +58,12 @@ export interface RequestEvent<P extends Record<string, string> | RouteId = Recor
   setHeader(name: string, value: string): void;
   /** Set several response headers; `set-cookie` is rejected (use `cookies.set`). */
   setHeaders(headers: Readonly<Record<string, string>>): void;
+  /**
+   * Append a response header value (web `Headers.append`): a second `Link`, `Vary` or `Set-Cookie` line next to the
+   * ones already set. `set-cookie` takes a serialized cookie as it is (no validation, unlike `cookies.set`) and makes
+   * the response `Cache-Control: private` like a cookie set through `cookies`.
+   */
+  appendHeader(name: string, value: string): void;
   /** The matched route (`id`: file route id, e.g. `blog/[slug]`); `null` for unmatched URLs. */
   readonly route: { readonly id: string | null };
   /** A client-navigation data request (`?_rivet=data`, answered with JSON), not a document request. */
@@ -240,13 +257,13 @@ export interface AppHandlerContext {
   /** Adapter-provided request facts (`event.platform`). */
   platform?: Platform;
   /**
-   * Seeds `event.locals`: each request starts with a shallow copy, before any request handler, guard, loader or action
-   * runs (the caller's object is never changed). Only from the code that calls the handler (no adapter fills it from the
-   * request), e.g. a view model another server computed. Never sent to the browser unless a loader returns it. Requests
+   * `event.locals` of this request: this very object (not a copy), seen by every request handler, guard, loader, action
+   * and error page; what they write to it is there after the response (pass a fresh object per request). Only from the
+   * code that calls the handler (no adapter fills it from the request), e.g. a view model another server computed. Never sent to the browser unless a loader returns it. Requests
    * that pass it bypass the route rules' page cache (their page depends on more than the URL). Client-navigation data
    * requests (`?_rivet=data`) need the same seed.
    */
-  locals?: Readonly<Record<string, unknown>>;
+  locals?: Record<string, unknown>;
 }
 /** The app's web-standard request handler. */
 export type AppHandler = (request: Request, context?: AppHandlerContext) => Promise<Response>;
@@ -418,6 +435,9 @@ class LoaderEvent {
   get setHeaders(): RequestEvent["setHeaders"] {
     return this.#event.setHeaders;
   }
+  get appendHeader(): RequestEvent["appendHeader"] {
+    return this.#event.appendHeader;
+  }
 }
 
 /** Create the app's request handler. */
@@ -441,9 +461,8 @@ export function createHandler(options: AppOptions): AppHandler {
     if (data) url.search = withoutRivet(url.search);
     const headers = new Headers();
     const nonce = context.nonce;
-    // Seeded by the caller (`context.locals`): a copy, so guards writing `locals` never reach the caller's object.
-    const seed = context.locals;
-    const locals: Record<string, unknown> = seed ? { ...seed } : {};
+    // Seeded by the caller (`context.locals`): the same object, so what guards / loaders write comes back to the caller.
+    const locals: Record<string, unknown> = context.locals ?? {};
     const found = match(url);
     const route = found ? (found.route.render(undefined, found) as AppRoute) : undefined;
     const method = request.method === "HEAD" ? "GET" : request.method;
@@ -550,6 +569,10 @@ export function createHandler(options: AppOptions): AppHandler {
           headers.set(name, values[name]!);
         }
       },
+      appendHeader: (name, value) => {
+        if (name.toLowerCase() === "set-cookie") setsCookie = true;
+        headers.append(name, value);
+      },
       route: { id: route?.id ?? null },
       isDataRequest: data,
       platform: context.platform || context.address ? { ...(context.address ? { clientAddress: context.address } : {}), ...context.platform } : NO_PLATFORM,
@@ -622,39 +645,32 @@ export function createHandler(options: AppOptions): AppHandler {
         return early(new Response(null, { status: 308, headers }));
       }
     }
-    if (!METHODS.has(method)) {
-      if (route.page) headers.set("allow", "GET, HEAD, POST");
-      return fail(405, "Method not allowed");
-    }
-
     try {
       modules = await Promise.all([...route.layouts.map(loadServer), loadServer(route.server)]);
       const own = modules[modules.length - 1];
-      const on = method === "OPTIONS" ? "onOptions" : ON[method as Method];
-      // Unsafe methods: cross-site check before any handler, guard or action; then the body limit.
-      // OPTIONS (CORS preflight) is safe: no check, no body.
+      const known = METHODS.has(method);
+      const on = method === "OPTIONS" ? "onOptions" : known ? ON[method as Method] : undefined;
+      // Unsafe methods (anything but GET / OPTIONS, unknown ones too): cross-site check before any handler, guard or
+      // action; then the body limit. OPTIONS (CORS preflight) is safe: no check, no body.
       if (method !== "GET" && method !== "OPTIONS") {
         if (own?.csrf !== false && crossSite(request, url.origin, dev)) throw new HttpError(403, "Cross-site request rejected");
         request = limitBody(request, options.maxBody, body);
         (event as { request: Request }).request = request;
       }
       if (malformed) throw new HttpError(400, "Malformed action name");
-      // Page routes take GET, actions, and methods the route module handles (`onPost`…).
-      // `Allow`: page routes take GET/HEAD, POST (actions) and the methods the route module handles;
-      // endpoints what they export. 405 answers list those; OPTIONS answers add OPTIONS.
+      // `Allow` = what the route really handles. Page routes: GET / HEAD, POST with `actions(…)` or `onPost(…)`, and
+      // PUT / PATCH / DELETE with their handlers; endpoints what they export. 405 answers list those; OPTIONS answers
+      // add OPTIONS.
       const allow = (options: boolean): string =>
         [
           ...(route.page
-            ? ["GET, HEAD, POST", ...(["PUT", "PATCH", "DELETE"] as const).filter((m) => own?.[ON[m]])]
+            ? ["GET, HEAD", ...(["POST", "PUT", "PATCH", "DELETE"] as const).filter((m) => own?.[ON[m]] || (m === "POST" && own?.actions))]
             : (Object.keys(ON) as Method[]).filter((m) => own?.[ON[m]]).map((m) => (m === "GET" ? "GET, HEAD" : m))),
           ...(options ? ["OPTIONS"] : []),
         ].join(", ");
-      if (route.page && method !== "GET" && method !== "OPTIONS" && action === undefined && !own?.[on!]) {
-        headers.set("allow", allow(false));
-        return fail(405, "Method not allowed");
-      }
-      // Request handlers: outermost first, `onRequest` then `on<Method>`; an endpoint route's own
-      // `on<Method>` produces its response below. OPTIONS: `onRequest` then `onOptions` (own module too).
+      // Request handlers, for every method (before the method check): outermost first, `onRequest` then
+      // `on<Method>`; an endpoint route's own `on<Method>` produces its response below. OPTIONS: `onRequest` then
+      // `onOptions` (own module too).
       for (const module of modules) {
         if (!module) continue;
         const first = module.onRequest;
@@ -663,12 +679,23 @@ export function createHandler(options: AppOptions): AppHandler {
           if (result instanceof Response) return early(result);
           if (isHttpError(result)) throw result;
         }
-        const second = route.page || module !== own || method === "OPTIONS" ? module[on] : undefined;
+        const second = on && (route.page || module !== own || method === "OPTIONS") ? module[on] : undefined;
         if (second) {
           const result: unknown = await second(event);
           if (result instanceof Response) return early(result);
           if (isHttpError(result)) throw result;
         }
+      }
+      if (!known) {
+        headers.set("allow", allow(false));
+        return fail(405, "Method not allowed");
+      }
+      // Page routes: GET, actions (`POST ?/name`), and methods the route module handles (`onPost`…). A POST without
+      // an action name to a page that has actions is malformed (POST is allowed there), else the method is refused.
+      if (route.page && method !== "GET" && method !== "OPTIONS" && action === undefined && !own?.[on!]) {
+        if (method === "POST" && own?.actions) throw new HttpError(400, "Missing action name (POST ?/name)");
+        headers.set("allow", allow(false));
+        return fail(405, "Method not allowed");
       }
       // OPTIONS no handler answered: what the route allows (no guards, loaders or render).
       if (method === "OPTIONS") {
@@ -772,7 +799,8 @@ export function createHandler(options: AppOptions): AppHandler {
       // Deferred loaders (`load(fn, { defer: true })`, document requests only; data requests await them like any loader):
       // started now, not awaited; their slot is a `Deferred` handle (`deferred.ts`, imported on first use).
       let lazy: typeof import("./deferred.ts") | undefined, promises: (Promise<unknown> | undefined)[] | undefined, moved: string | undefined;
-      if (!data && modules.some((module) => module?.load && (module.load as { [DEFER]?: true })[DEFER])) lazy = await (deferredModule ??= import("./deferred.ts"));
+      if (!data && modules.some((module) => module?.load && (module.load as { [DEFER]?: true })[DEFER]))
+        lazy = await (deferredModule ??= import("./deferred.ts"));
       const loaded = await Promise.all(
         modules.map((module, i) => {
           if (skip.has(i) || !module?.load) return (loads[i] = undefined);
@@ -794,7 +822,7 @@ export function createHandler(options: AppOptions): AppHandler {
             return undefined;
           }
           // Shell hit: the stored shell's data (its loaders read no request input; the composed response is out).
-          if (shell?.data) return (loads[i] = undefined), shell.data[i];
+          if (shell?.data) return ((loads[i] = undefined), shell.data[i]);
           const view = loaderEvent(i, i < route.layouts.length);
           const load = Promise.resolve(module.load(shell?.event ? shell.event(view, i) : view));
           // Dev: a layout loader used as access control is skipped for kept layouts (`_rivet_keep`).
