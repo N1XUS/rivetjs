@@ -172,8 +172,9 @@ See [translating text](../guides/i18n/translating-text.md) and [locale URLs](../
 | `shell` | `() => string \| Promise<string>` | none | Browser-rendered shell written to `200.html` for routes that cannot be prerendered. Required if such routes exist. |
 | `csp` | `false` \| `{ trustedTypes?: boolean \| string[] }` | on | Each page gets a `<meta>` CSP that allows its own inline scripts by hash. `false`: no meta tag. |
 | `locales` | `string[]` | none | With i18n: one client build per locale. |
+| `dictionary` | `false` \| `{ max?: number }` | on | The site's [compression dictionary](../guides/routing/headers-and-caching.md#compression-dictionaries), built from up to 12 pages per route group and their `_data.json`, at most `max` (131072) bytes, written to `_rivet/dict/`. Only the Node adapter uses it. `false`: none. |
 
-Returns `{ pages: string[], fallback: string[] }`.
+Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 
 ## start
 
@@ -208,6 +209,7 @@ Returns `{ pages: string[], fallback: string[] }`.
 | `port` | `number` | `3000` | Port. |
 | `host` | `string` | `"127.0.0.1"` | Host. |
 | `compress` | `boolean` \| `{ zstd?: boolean, precompress?: boolean }` | `true` | Compress responses by `Accept-Encoding`: zstd when accepted (level 3; 1 for bodies of 256 KB and more), else Brotli (4), else gzip (6). Immutable `client` files are compressed once at the best quality on their first request and written next to the file (`.zst` / `.br` / `.gz`). `{ zstd: false }`: Brotli / gzip only. `{ precompress: false }`: nothing written to disk. See [Node](../guides/deploy/node.md#what-the-server-does-for-you). |
+| `dictionary` | `false` \| `{ samples?: string[], max?: number }` | the `client` build's dictionaries | [Compression dictionaries](../guides/routing/headers-and-caching.md#compression-dictionaries): HTML pages link the dictionary, and browsers that have it get `dcz` answers (zstd with the dictionary). Default: the dictionaries `prerenderBuild` wrote into `client`. `{ samples }`: paths rendered once at start whose shared parts become the site's dictionary (server-rendered apps). `false`: off. Needs `compress`. |
 | `earlyHints` | `boolean` | `false` | Send the `103 Early Hints` the handler asks for (HTTP/1.1 clients). |
 | `reusePort` | `boolean` | `false` | Bind with `SO_REUSEPORT` so several processes share the port (Linux, FreeBSD; needs a fixed `port`). |
 | `origin` | `string` | none | Fixed public origin for request URLs, for servers behind a proxy. |

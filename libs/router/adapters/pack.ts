@@ -141,6 +141,8 @@ async function prerenderWith(
     routes,
     outDir,
     trailingSlash,
+    // Platform CDNs answer static files without reading `Available-Dictionary`: no dictionary to ship.
+    dictionary: false,
     ...(context.base ? { base: context.base } : {}),
     ...(options.csp !== undefined ? { csp: options.csp } : {}),
   });

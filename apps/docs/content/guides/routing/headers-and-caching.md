@@ -340,6 +340,32 @@ Files are compressed with zstd, Brotli or gzip when the browser accepts it; hash
 
 ::api{symbol="@rivetjs/router/node#start"}
 
+## Compression dictionaries
+
+Pages of one site repeat most of their markup: the header, the navigation, the footer, the same components. Chrome and Edge (130 and later) can keep a *compression dictionary* of a site, and then download later pages as the difference against it ([Compression Dictionary Transport](https://www.rfc-editor.org/rfc/rfc9842)). The Node adapter does this for you:
+
+1. An HTML page tells the browser where the dictionary is (`Link: </_rivet/dict/….dict>; rel="compression-dictionary"`). The browser downloads it when it is idle.
+2. The dictionary file has a content-hashed name and is fresh for a year (`Use-As-Dictionary: match="/*"`). Browsers keep a dictionary only while it is fresh.
+3. Later requests under the dictionary's path say which dictionary the browser has (`Available-Dictionary`). The server answers `Content-Encoding: dcz`: zstd with the dictionary. That covers documents, the data of client navigations and any other text answer, but not the hashed files in `/assets/` (they keep their precompressed copies).
+
+Where the dictionaries come from:
+
+- **Static builds.** `prerenderBuild` builds one dictionary for the whole site from up to 12 pages of each route group (the first path segment) and their `_data.json` files, at most 128 KB. One dictionary for the site measured as good as one per group, for a single download.
+- **Server-rendered apps.** Name a few pages that stand for the site; the server renders them once when it starts:
+
+```ts
+import { start } from "@rivetjs/router/node";
+
+await start({ dictionary: { samples: ["/", "/docs/intro", "/blog/first-post"] } });
+```
+
+What it saves, measured on built sites: a page of the UI documentation (69–213 KB of HTML) arrives in 14–37 % of its zstd size, about a quarter on average; a page of a generated news site (4–18 KB of HTML) in 35–73 %, about three quarters for an article, since most of an article is its own text. The dictionary is one download of 6–25 KB; on the documentation it pays for itself on the second page.
+
+- **Browsers.** Chromium-based browsers. Safari and Firefox do not send `Available-Dictionary` and get zstd, Brotli or gzip as before.
+- **Caches.** Answers under a dictionary's path carry `Vary: Accept-Encoding, Available-Dictionary`, so a shared cache never hands a `dcz` answer to a browser without the dictionary.
+- **Hosts.** Only the Node adapter answers with dictionaries. Static hosts and edge workers cannot pick a file by the `Available-Dictionary` header, so the Vercel, Netlify and Cloudflare builds write no dictionary, and a plain static host ignores the dictionary file.
+- **Off.** `start({ dictionary: false })`, or `prerenderBuild({ dictionary: false })` to write none.
+
 ## Cookies
 
 Cookies are headers too, but use `event.cookies.set()` rather than `setHeader("set-cookie", …)`: it handles encoding, adds several cookies correctly and applies safe defaults. See [cookies in guards](./guards.md#cookies).

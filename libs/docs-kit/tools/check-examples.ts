@@ -74,6 +74,8 @@ export async function buildFrames(root: string, ids: readonly string[], options:
     origin: site.origin,
     ...(build.entry.base ? { base: build.entry.base } : {}),
     ...(build.entry.trailingSlash ? { trailingSlash: build.entry.trailingSlash } : {}),
+    // Example checks only: no compression dictionaries.
+    dictionary: false,
   });
   return { dist, build, origin: site.origin, pages: report.pages.length, started, vite, rendered: performance.now() };
 }

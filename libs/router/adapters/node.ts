@@ -22,11 +22,27 @@ import { promisify } from "node:util";
 import { availableParallelism } from "node:os";
 import { loadBuild } from "./build.ts";
 import { negotiate, type Encoding } from "./files.ts";
+import {
+  buildDictionary,
+  dczBest,
+  dczOnce,
+  dczStream,
+  dictionaryEntry,
+  dictionaryFor,
+  dictionaryLink,
+  dictionaryOf,
+  dictionaryRegistry,
+  readDictionaries,
+  varyDictionary,
+  type Dictionary,
+  type DictionaryRegistry,
+} from "./dictionary.ts";
 import type { BodyLimit } from "../server/security.ts";
 import type { ErrorInfo } from "../server/handler.ts";
 import type { AppConfig } from "../server/app.ts";
 import { normalizeBase } from "../shared/base.ts";
 import { nonce } from "../shared/nonce.ts";
+import { DATA_PARAM } from "../shared/data.ts";
 import { DIRECT_BODY, type BodySink, type DirectBody } from "../server/body.ts";
 import { idleMemory, idleMemorySupported } from "./idle-memory.ts";
 import type { CachedPage, CacheLookup } from "../server/route-cache.ts";
@@ -35,6 +51,8 @@ import type { CachedPage, CacheLookup } from "../server/route-cache.ts";
 const ROUTE_CACHE = Symbol.for("rivet.routeCache");
 // `server/early-hints.ts` `EARLY_HINTS`: the app calls it (`createApp({ earlyHints })`) before guards and loaders.
 const EARLY_HINTS = Symbol.for("rivet.earlyHints");
+// `serve({ dictionary: { samples } })`: the registry built at start, handed to `createListener` on its options.
+const SAMPLED = Symbol("rivet.dictionary.sampled");
 
 /**
  * Per-request context passed to the handler. It never carries `locals`: the adapter fills nothing from request
@@ -54,6 +72,17 @@ export interface CompressOptions {
   zstd?: boolean;
   /** Write immutable files' compressed copies next to them on their first request (default true). */
   precompress?: boolean;
+}
+/** `serve({ dictionary })` as an object: a compression dictionary built at start from sample pages (server mode). */
+export interface DictionaryOptions {
+  /**
+   * Paths (with query) rendered once through the handler when the server starts — each page and its client-navigation
+   * data answer (`?_rivet=data`) — whose shared segments become the site's dictionary (`match="<base>/*"`). Pick pages
+   * that stand for the site (one or two per route group); deterministic pages give every worker the same dictionary.
+   */
+  samples?: readonly string[];
+  /** Byte cap of the dictionary (default 131072). */
+  max?: number;
 }
 /** Options of `serve()`. */
 export interface ServeOptions {
@@ -82,6 +111,16 @@ export interface ServeOptions {
    * written to disk. `false`: no compression (a proxy that compresses).
    */
   compress?: boolean | CompressOptions;
+  /**
+   * Compression Dictionary Transport (RFC 9842; Chromium 130+): HTML pages announce a dictionary (`Link: <…>;
+   * rel="compression-dictionary"`, fetched by the browser at idle, served with `Use-As-Dictionary` and a year of
+   * `max-age`), and requests whose `Available-Dictionary` names it get `dcz` answers (zstd with the dictionary) —
+   * documents, navigation data, any compressible response under the dictionary's path; `Vary: Accept-Encoding,
+   * Available-Dictionary`. Default: the `client` build's dictionaries (`.vite/rivet-dictionaries.json`, written by the
+   * static adapter's prerender) when `compress` is on. `{ samples }`: build the site's dictionary at start from sample
+   * pages (server mode). `false`: none.
+   */
+  dictionary?: false | DictionaryOptions;
   /**
    * Send `103 Early Hints` when the app asks (`createApp({ earlyHints })`; `start({ earlyHints })` sets both), to
    * HTTP/1.1 clients only (1xx are not allowed for 1.0). Browsers use 103s over HTTP/2+ only: behind a proxy or CDN
@@ -247,6 +286,13 @@ function compressor(encoding: Exclude<Encoding, null>, collected = 0): Transform
     : createGzip({ flush: zlib.Z_SYNC_FLUSH, level: 6 });
 }
 
+/** A response coding: the negotiated encoding, or `dcz` with the request's dictionary. */
+type Coding = Exclude<Encoding, null> | "dcz";
+const packOnce = (coding: Coding, body: Uint8Array, dict: Dictionary | undefined): Buffer | Promise<Buffer> =>
+  coding === "dcz" ? dczOnce(dict!, body) : compressOnce(coding, body);
+const packStream = (coding: Coding, collected: number, dict: Dictionary | undefined): Transform =>
+  coding === "dcz" ? dczStream(dict!, collected) : compressor(coding, collected);
+
 /** Best-quality compression of a body compressed once and reused (client files, stored pages): brotli q11, zstd 19, gzip 9. */
 function compressBest(encoding: Exclude<Encoding, null>, body: Uint8Array): Promise<Buffer> {
   if (encoding === "zstd") return zstd(body, { params: { [zlib.ZSTD_c_compressionLevel]: 19 } });
@@ -298,8 +344,9 @@ function sendDirect(
   response: Response,
   request: Request,
   headers: Record<string, string | string[]>,
-  encoding: Encoding,
+  encoding: Coding | null,
   vary: () => void,
+  dict?: Dictionary,
 ): Promise<void> | null {
   let collected: Uint8Array[] | null = [];
   let releases: (() => void)[] = [];
@@ -351,7 +398,7 @@ function sendDirect(
     if (encoding) vary();
     if (encoding && size >= MIN_COMPRESS) {
       const one = chunks.length === 1;
-      const packed = compressOnce(encoding, one ? chunks[0]! : Buffer.concat(chunks, size));
+      const packed = packOnce(encoding, one ? chunks[0]! : Buffer.concat(chunks, size), dict);
       // Concatenated: copied already. One chunk: its slab is read until compression ends.
       if (!one) release();
       const send = (bytes: Buffer) => {
@@ -379,7 +426,7 @@ function sendDirect(
       vary();
     }
     head();
-    const packer = encoding ? compressor(encoding, size) : null;
+    const packer = encoding ? packStream(encoding, size, dict) : null;
     if (packer) pipeline(packer, res).catch(close);
     const to = (target = packer ?? res);
     const chunks = collected,
@@ -605,6 +652,30 @@ export function createListener(options: ServeOptions): {
     base[name] = value;
   }
   const client = options.client ? resolve(options.client) : null;
+  // Compression dictionaries (RFC 9842): sampled at start (`serve`), else the client build's manifest.
+  const dictionaries: DictionaryRegistry | null =
+    !compress || options.dictionary === false
+      ? null
+      : ((options as { [SAMPLED]?: DictionaryRegistry | null })[SAMPLED] ?? (client ? readDictionaries(client) : null));
+  /**
+   * A request's dictionary work, for a compressible response at `pathname`: `covers` = the most specific dictionary of
+   * the path (its answers vary by `Available-Dictionary`; HTML pages link it when the browser lacks it), `use` = the
+   * dictionary to encode with (`dcz`), when the request names one that covers the path and accepts `dcz`.
+   */
+  const dictionaryWork = (req: IncomingMessage, pathname: string): { covers: Dictionary; use: Dictionary | undefined; has: boolean } | null => {
+    const covers = dictionaries && dictionaryFor(dictionaries, pathname);
+    if (!covers) return null;
+    const available = req.headers["available-dictionary"];
+    return {
+      covers,
+      use: dictionaryOf(dictionaries, available, req.headers["accept-encoding"], pathname),
+      has: typeof available === "string" && available.trim() === covers.available,
+    };
+  };
+  /** `Link` of an HTML answer: the covering dictionary appended when the browser does not have it. */
+  const linked = (work: { covers: Dictionary; has: boolean }, link: string | undefined): string | undefined =>
+    work.has ? link : link ? link + ", " + dictionaryLink(work.covers) : dictionaryLink(work.covers);
+  const dictionaryBodies = new Map<string, Promise<Buffer>>(); // a dictionary file's zstd / br copy by id|encoding
   const fixedOrigin = options.origin ? new URL(options.origin).origin : null;
   const trust = options.trustProxy;
   const hops = trust === true ? 1 : typeof trust === "number" && trust > 0 ? Math.floor(trust) : 0;
@@ -695,6 +766,28 @@ export function createListener(options: ServeOptions): {
     return meta;
   }
 
+  /** A dictionary file: content-hashed, a year fresh (browsers keep a dictionary only while it is fresh), `Use-As-Dictionary`. */
+  async function serveDictionary(req: IncomingMessage, res: ServerResponse, entry: Dictionary): Promise<void> {
+    const headers: Record<string, string> = {
+      ...base,
+      "Content-Type": "application/octet-stream",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      ETag: `"${entry.id}"`,
+      "Use-As-Dictionary": entry.use,
+      Vary: "Accept-Encoding",
+    };
+    if (etagMatches(one(req.headers["if-none-match"]), headers.ETag!)) return void res.writeHead(304, headers).end();
+    const encoding = negotiate(req.headers["accept-encoding"], withZstd);
+    if (!encoding)
+      return void res.writeHead(200, { ...headers, "Content-Length": String(entry.bytes.length) }).end(req.method === "HEAD" ? undefined : entry.bytes);
+    const key = entry.id + "|" + encoding;
+    let job = dictionaryBodies.get(key);
+    if (!job) dictionaryBodies.set(key, (job = compressBest(encoding, entry.bytes)));
+    const body = await job;
+    res.writeHead(200, { ...headers, "Content-Encoding": encoding, "Content-Length": String(body.length) });
+    res.end(req.method === "HEAD" ? undefined : body);
+  }
+
   async function serveFile(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<boolean> {
     if (prefix && !pathname.startsWith(prefix + "/")) return false;
     const found = await file(pathname.slice(prefix.length));
@@ -708,6 +801,13 @@ export function createListener(options: ServeOptions): {
       "Last-Modified": modified,
       Vary: "Accept-Encoding",
     };
+    // Immutable (content-hashed) files keep their precompressed copies: the dictionaries are built from pages and data.
+    const work = compress && COMPRESSIBLE.test(type) && !immutable(pathname) ? dictionaryWork(req, pathname) : null;
+    if (work) {
+      headers.Vary = "Accept-Encoding, Available-Dictionary";
+      const link = type.startsWith("text/html") ? linked(work, undefined) : undefined;
+      if (link) headers.Link = link;
+    }
     // `If-None-Match` wins over `If-Modified-Since` (RFC 9110 13.2.2); dates compare at second precision.
     const match = req.headers["if-none-match"];
     const since = match === undefined ? req.headers["if-modified-since"] : undefined;
@@ -733,6 +833,30 @@ export function createListener(options: ServeOptions): {
       });
       if (req.method === "HEAD") res.end();
       else await pipeline(createReadStream(found.path, { start: from, end: to }), res);
+      return true;
+    }
+    if (work?.use && found.size >= MIN_COMPRESS) {
+      // `dcz` against the browser's dictionary: zstd 19 once per (file, dictionary), kept in memory.
+      const use = work.use;
+      const key = found.path + "|" + etag + "|dcz:" + use.id;
+      let body = cache.get(key);
+      if (!body) {
+        let job = pending.get(key);
+        if (!job) {
+          job = readFile(found.path)
+            .then((raw) => dczBest(use, raw))
+            .then((bytes) => {
+              if (cache.size > 512) cache.clear();
+              cache.set(key, bytes);
+              return bytes;
+            })
+            .finally(() => pending.delete(key));
+          pending.set(key, job);
+        }
+        body = await job;
+      }
+      res.writeHead(200, { ...headers, "Content-Encoding": "dcz", "Content-Length": String(body.length) });
+      res.end(req.method === "HEAD" ? undefined : body);
       return true;
     }
     const encoding = compress && COMPRESSIBLE.test(type) && found.size >= MIN_COMPRESS ? negotiate(req.headers["accept-encoding"], withZstd) : null;
@@ -797,6 +921,8 @@ export function createListener(options: ServeOptions): {
     zstd?: Promise<Buffer>;
     br?: Promise<Buffer>;
     gzip?: Promise<Buffer>;
+    /** `dcz` copies by dictionary id. */
+    dcz?: Map<string, Promise<Buffer>>;
   }
   const pages = new WeakMap<CachedPage, PageOut>();
   const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value.join(", ") : value);
@@ -817,13 +943,31 @@ export function createListener(options: ServeOptions): {
     }
     return out;
   }
-  async function serveCached(req: IncomingMessage, res: ServerResponse, page: CachedPage): Promise<void> {
-    const out = pageOut(page);
+  async function serveCached(req: IncomingMessage, res: ServerResponse, page: CachedPage, pathname: string): Promise<void> {
+    let out = pageOut(page);
     const age = String(Math.max(0, Math.floor((Date.now() - page.created) / 1000)));
+    const type = out.plain["content-type"] ?? "";
+    const work = compress && page.body.byteLength >= MIN_COMPRESS && COMPRESSIBLE.test(type) ? dictionaryWork(req, pathname) : null;
+    if (work) {
+      // Per request: the dictionary's Vary, and the Link while the browser lacks it (a copy of the merged headers).
+      const vary = varyDictionary(out.plain.vary);
+      const link = type.startsWith("text/html") ? linked(work, out.plain.link) : out.plain.link;
+      out = { ...out, plain: { ...out.plain, vary, ...(link ? { link } : {}) }, unchanged: { ...out.unchanged, vary } };
+    }
     const match = one(req.headers["if-none-match"]);
     const since = match === undefined ? one(req.headers["if-modified-since"]) : undefined;
     if (match !== undefined ? etagMatches(match, page.etag) : since !== undefined && page.modifiedAt <= Date.parse(since)) {
       res.writeHead(304, { ...out.unchanged, age, "x-rivet-cache": "HIT" }).end();
+      return;
+    }
+    if (work?.use && req.method !== "HEAD") {
+      const use = work.use;
+      const copies = (pageOut(page).dcz ??= new Map());
+      let job = copies.get(use.id);
+      if (!job) copies.set(use.id, (job = dczBest(use, page.body).then((packed) => (page.charge(packed.length), packed))));
+      const body = await job;
+      res.writeHead(200, { ...out.plain, age, "x-rivet-cache": "HIT", "content-encoding": "dcz", "content-length": String(body.length) });
+      res.end(body);
       return;
     }
     const encoding =
@@ -835,12 +979,13 @@ export function createListener(options: ServeOptions): {
       res.end(req.method === "HEAD" ? undefined : page.body);
       return;
     }
-    const body = await (out[encoding] ??= compressBest(encoding, page.body).then((packed) => (page.charge(packed.length), packed)));
+    const stored = pageOut(page);
+    const body = await (stored[encoding] ??= compressBest(encoding, page.body).then((packed) => (page.charge(packed.length), packed)));
     res.writeHead(200, { ...out.plain, age, "x-rivet-cache": "HIT", "content-encoding": encoding, "content-length": String(body.length) });
     res.end(body);
   }
 
-  async function serveResponse(req: IncomingMessage, res: ServerResponse, response: Response, request: Request): Promise<void> {
+  async function serveResponse(req: IncomingMessage, res: ServerResponse, response: Response, request: Request, pathname: string): Promise<void> {
     const headers: Record<string, string | string[]> = {};
     for (const name in base) if (!response.headers.has(name)) headers[name] = base[name]!;
     response.headers.forEach((value, name) => {
@@ -851,9 +996,16 @@ export function createListener(options: ServeOptions): {
     if (cookies.length) headers["set-cookie"] = cookies;
     const type = response.headers.get("content-type") ?? "";
     const body = response.body;
-    const encoding =
-      compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type) ? negotiate(req.headers["accept-encoding"], withZstd) : null;
-    const vary = () => (headers.vary = response.headers.has("vary") ? response.headers.get("vary") + ", Accept-Encoding" : "Accept-Encoding");
+    const compressible = compress && body && !response.headers.has("content-encoding") && COMPRESSIBLE.test(type);
+    const work = compressible ? dictionaryWork(req, pathname) : null;
+    const encoding: Coding | null = work?.use ? "dcz" : compressible ? negotiate(req.headers["accept-encoding"], withZstd) : null;
+    const vary = work
+      ? () => (headers.vary = varyDictionary(response.headers.get("vary") ?? undefined))
+      : () => (headers.vary = response.headers.has("vary") ? response.headers.get("vary") + ", Accept-Encoding" : "Accept-Encoding");
+    if (work && response.status === 200 && type.startsWith("text/html")) {
+      const link = linked(work, response.headers.get("link") ?? undefined);
+      if (link) headers.link = link;
+    }
     if (!body || req.method === "HEAD") {
       if (encoding) vary();
       res.writeHead(response.status, response.statusText || undefined, headers);
@@ -862,7 +1014,7 @@ export function createListener(options: ServeOptions): {
       return;
     }
     const direct = (response as { [DIRECT_BODY]?: DirectBody })[DIRECT_BODY];
-    const sent = direct && !body.locked ? sendDirect(direct, res, response, request, headers, encoding, vary) : null;
+    const sent = direct && !body.locked ? sendDirect(direct, res, response, request, headers, encoding, vary, work?.use) : null;
     if (sent) return sent;
     // Most pages render synchronously: when the whole body is in before the event loop turns, it
     // goes out in one write with a Content-Length (compressed in one call). A body still pending
@@ -890,7 +1042,7 @@ export function createListener(options: ServeOptions): {
       for (const chunk of chunks) size += chunk.byteLength;
       if (encoding) vary();
       if (encoding && size >= MIN_COMPRESS) {
-        const packed = await compressOnce(encoding, chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks, size));
+        const packed = await packOnce(encoding, chunks.length === 1 ? chunks[0]! : Buffer.concat(chunks, size), work?.use);
         headers["content-encoding"] = encoding;
         headers["content-length"] = String(packed.length);
         res.writeHead(response.status, response.statusText || undefined, headers);
@@ -927,7 +1079,7 @@ export function createListener(options: ServeOptions): {
       })(),
       { objectMode: false },
     );
-    await (encoding ? pipeline(source, compressor(encoding, collected), res) : pipeline(source, res));
+    await (encoding ? pipeline(source, packStream(encoding, collected, work?.use), res) : pipeline(source, res));
   }
 
   const reject = (res: ServerResponse, status: number, message: string) =>
@@ -962,10 +1114,12 @@ export function createListener(options: ServeOptions): {
     void (async () => {
       try {
         if (req.method === "GET" || req.method === "HEAD") {
+          const dictionaryFile = dictionaries?.files.get(pathname);
+          if (dictionaryFile) return await serveDictionary(req, res, dictionaryFile);
           if (await serveFile(req, res, pathname)) return;
           const lookup = (handler as { [ROUTE_CACHE]?: CacheLookup })[ROUTE_CACHE];
           const page = lookup?.(req.method, origin, pathname, target.slice(pathname.length), (name) => one(req.headers[name]));
-          if (page) return await serveCached(req, res, page);
+          if (page) return await serveCached(req, res, page, pathname);
         }
         const converted = toRequest(req, res, origin + target);
         request = converted.request;
@@ -980,7 +1134,7 @@ export function createListener(options: ServeOptions): {
         const address = via.address;
         const context: RequestContext = { nonce: nonce(), ...(address ? { address } : {}) };
         const response = await handler(request, context);
-        await serveResponse(req, res, response, request);
+        await serveResponse(req, res, response, request, pathname);
       } catch (error) {
         if (request?.signal.aborted || (error as { code?: string })?.code === "ERR_STREAM_PREMATURE_CLOSE") return;
         try {
@@ -1006,6 +1160,29 @@ export function createListener(options: ServeOptions): {
   };
 }
 
+/**
+ * `serve({ dictionary: { samples } })`: each sample path and its data answer rendered once through the handler (fixed
+ * nonce, so the bytes repeat across workers), their shared segments = the site's dictionary (`match="<base>/*"`).
+ */
+async function sampleDictionary(options: ServeOptions): Promise<DictionaryRegistry | null> {
+  const { samples = [], max } = options.dictionary || {};
+  const origin = options.origin ? new URL(options.origin).origin : "http://localhost";
+  const prefix = normalizeBase(options.base);
+  const bodies: Uint8Array[] = [];
+  for (const path of samples)
+    for (const data of [false, true]) {
+      const url = new URL(path, origin);
+      if (data) url.searchParams.set(DATA_PARAM, "data");
+      const response = await options.handler(new Request(url, { headers: { accept: data ? "application/json" : "text/html" } }), { nonce: "rivet-dictionary" });
+      if (response.status === 200) bodies.push(new Uint8Array(await response.arrayBuffer()));
+      else await response.body?.cancel();
+    }
+  const bytes = buildDictionary(bodies, { ...(max ? { max } : {}), minSamples: samples.length > 1 ? 2 : 1 });
+  if (bytes.length < 256) return null;
+  const { id } = dictionaryEntry(bytes, "", prefix + "/");
+  return dictionaryRegistry([dictionaryEntry(bytes, `${prefix}/_rivet/dict/${id}.dict`, prefix + "/")]);
+}
+
 /** Listen on `port` (0 = ephemeral). Resolves once listening. */
 export async function serve(options: ServeOptions): Promise<ServerServing> {
   if (options.reusePort) {
@@ -1014,7 +1191,8 @@ export async function serve(options: ServeOptions): Promise<ServerServing> {
     if (process.platform !== "linux" && process.platform !== "freebsd")
       throw new TypeError(`serve({ reusePort }) balances connections only on Linux and FreeBSD (this is ${process.platform}); leave it off here`);
   }
-  const { listener, drain, idle } = createListener(options);
+  const sampled = options.dictionary && options.dictionary.samples?.length && options.compress !== false ? await sampleDictionary(options) : undefined;
+  const { listener, drain, idle } = createListener(sampled !== undefined ? ({ ...options, [SAMPLED]: sampled } as ServeOptions) : options);
   const server = createServer({ requestTimeout: 30_000, headersTimeout: 15_000, keepAliveTimeout: 5_000 }, listener);
   const sockets = new Set<Socket>();
   server.on("connection", (socket) => {

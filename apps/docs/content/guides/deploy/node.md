@@ -58,6 +58,7 @@ The default host `127.0.0.1` accepts only local connections. In a container or o
 
 - **Static files.** Files in `dist/client` are served before any page. Files under `/assets/` have hashed names, so they get `Cache-Control: public, max-age=31536000, immutable`. Other files get `no-cache` and an `ETag`.
 - **Compression.** Responses are compressed by the `Accept-Encoding` header: zstd when the browser accepts it (Chrome, Edge, Firefox), else Brotli, else gzip. Pages and other dynamic responses use fast levels (zstd 3, or 1 for bodies of 256 KB and more; Brotli 4; gzip 6), so compressing costs a fraction of the render. Hashed files under `/assets/` are compressed once at the best quality (zstd 19, Brotli 11, gzip 9) on their first request and written next to the file as `.zst`, `.br` or `.gz`, so the next start serves them from disk; a file that already has such a sibling (from your build) is served as it is. Other files of 1 KB or more are compressed once and kept in memory. `compress: { zstd: false }` keeps Brotli and gzip only; `compress: { precompress: false }` writes nothing to disk; `compress: false` turns compression off.
+- **Compression dictionaries.** Chrome and Edge can keep a [compression dictionary](../routing/headers-and-caching.md#compression-dictionaries) of the site, so later pages and navigation data arrive as differences against it (`dcz`). A static build brings its dictionaries; a server-rendered app gets one with `dictionary: { samples: ["/", "/docs/intro"] }`.
 - **Streaming.** A page that is complete right away goes out in one piece. A large page sends its first part (the document head) as soon as the status and headers are final, and the rest when it is rendered. A page that still waits for data streams, and each piece is sent at once. See [Streaming](../performance/streaming.md).
 - **Security headers.** Every response gets `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. HTML pages get a strict [Content Security Policy](../security/csp.md) with a new nonce per request.
 - **Health checks.** `/healthz` always answers `ok`. `/readyz` answers `ready`, or `503 draining` while the server shuts down.
@@ -103,6 +104,7 @@ In a container with a CPU limit, set `workers` to that limit: `"auto"` may count
 | `host` | `"127.0.0.1"` | Address to listen on |
 | `stream` | off | `{ deadline?: number }` turns on [streaming](../performance/streaming.md) |
 | `compress` | `true` | zstd / Brotli / gzip compression; `{ zstd?: boolean, precompress?: boolean }` for brotli-only or no on-disk copies of assets |
+| `dictionary` | the build's | [Compression dictionaries](../routing/headers-and-caching.md#compression-dictionaries): `{ samples: string[], max? }` builds one at start from sample pages; `false` turns them off |
 | `grace` | `10000` | Milliseconds to finish running requests on close |
 | `headers` | | Extra headers on every response. Replaces a default of the same name (any letter case); a response's own header wins |
 | `immutable` | `/assets/` | `(pathname) => boolean`: which files are cached forever |

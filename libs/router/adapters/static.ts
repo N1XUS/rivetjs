@@ -10,8 +10,10 @@ import type { AppConfig } from "../server/app.ts";
 import type { CSPOptions } from "../shared/csp.ts";
 import { hashPolicy, inlineSources } from "../shared/csp-hash.ts";
 export type { CSPDirectives, CSPOptions } from "../shared/csp.ts";
+export { buildDictionary, writeDictionaries, type DictionaryBuildOptions, type DictionaryManifest, type WriteDictionariesOptions } from "./dictionary.ts";
 import { normalizeBase } from "../shared/base.ts";
 import { slashPath, type TrailingSlash } from "../shared/slash.ts";
+import { writeDictionaries, type DictionaryManifest, type WriteDictionariesOptions } from "./dictionary.ts";
 
 /** Options of `prerender()`. */
 export interface PrerenderOptions {
@@ -48,6 +50,13 @@ export interface PrerenderOptions {
    * modulepreload links, and the resume loader's `*.deps.js` modules). `prerenderBuild` turns it on (`prune: false` keeps them).
    */
   prune?: boolean;
+  /**
+   * Compression dictionary (RFC 9842 `dcz`, served by the node adapter / docs-kit serve): after the pages are written,
+   * the site's dictionary (≤ `max` 128 KiB) from up to 12 pages per route group and their `_data.json`
+   * (`_rivet/dict/<id>.dict` + `.vite/rivet-dictionaries.json`). Default on; `false` writes none (a host that cannot
+   * negotiate `Available-Dictionary` ignores the file either way).
+   */
+  dictionary?: false | Omit<WriteDictionariesOptions, "base">;
 }
 /** What `prerender()` wrote: page paths and the routes served by the CSR shell. */
 export interface PrerenderReport {
@@ -58,6 +67,8 @@ export interface PrerenderReport {
   resumes: boolean;
   /** Script files `prune` deleted (outDir-relative). */
   pruned?: string[];
+  /** Compression dictionaries written (`dictionary`). */
+  dictionaries?: DictionaryManifest["dictionaries"];
 }
 
 /** Fill a router pattern with params (`:name` encoded, `*name` encoded per segment). */
@@ -245,6 +256,10 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
     if (!options.shell) throw new Error(`Routes ${report.fallback.join(", ")} need a CSR shell (options.shell)`);
     await write(join(resolve(outDir), "200.html"), await options.shell());
   }
+  if (options.dictionary !== false) {
+    const written = writeDictionaries(resolve(outDir), { ...options.dictionary, ...(base ? { base } : {}) });
+    if (written.dictionaries.length) report.dictionaries = written.dictionaries;
+  }
   return report;
 }
 
@@ -264,6 +279,8 @@ export async function prerenderBuild(
     locales?: readonly string[];
     /** `PrerenderOptions.prune` (default true): a zero-JS site keeps no unreferenced scripts. */
     prune?: boolean;
+    /** `PrerenderOptions.dictionary` (default on): compression dictionaries of the prerendered pages. */
+    dictionary?: PrerenderOptions["dictionary"];
   } = {},
 ): Promise<PrerenderReport> {
   const { loadBuild } = await import("./build.ts");
@@ -282,5 +299,6 @@ export async function prerenderBuild(
     ...(options.shell ? { shell: options.shell } : {}),
     ...(options.csp !== undefined ? { csp: options.csp } : {}),
     prune: options.prune ?? true,
+    ...(options.dictionary !== undefined ? { dictionary: options.dictionary } : {}),
   });
 }

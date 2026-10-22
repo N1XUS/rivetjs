@@ -22,7 +22,7 @@ qwik-stable-server/qwik-stable.js 4c1201940f5c
 qwik-stable.mjs 3b1399687b9b
 qwik.mjs 044b6e77a931
 rivet-compiled.mjs ebd215ee4153
-rivet-derived.mjs f64cdff42d0c
+rivet-derived.mjs 139ed141cdd2
 rivet-derived/client/.vite/rivet-resume.json 106e7a8b06e4
 rivet-derived/client/assets/_layout-BfoKeCfn.js 519cfa72879f
 rivet-derived/client/assets/_layout-DVfmt3lv.js d6a30908b5e1
@@ -52,8 +52,8 @@ rivet-derived/server/assets/strict-csp-WU_CmDCe.js 8542d9604be2
 rivet-derived/server/entry.server.js fba916740428
 rivet-for.mjs 018d44d35f88
 rivet-router-bunserve.mjs 400b5e5dfd8c
-rivet-router-uws.mjs 2e0a32c8d399
-rivet-router.mjs 34417ee36c65
+rivet-router-uws.mjs 75ae94d08f22
+rivet-router.mjs 2b45ff89eaae
 rivet-router/client/.vite/rivet-resume.json c03f322337f8
 rivet-router/client/assets/dom-resume-lazy-zpqN_YRN.deps.js 0b12fef395af
 rivet-router/client/assets/dom-resume-lazy-zpqN_YRN.js cf6efecfe0dc

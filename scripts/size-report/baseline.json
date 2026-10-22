@@ -32,11 +32,11 @@
             "rivet-merge-index-1.js",
             "rivet-merge-dom-resume.js",
             "preload-helper.js",
-            "dom-resume-lazy.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
-            "analytics.js",
-            "browser-widget.js"
+            "dom-resume-lazy.js",
+            "browser-widget.js",
+            "analytics.js"
           ],
           "runtimeJS": {
             "min": 72719,
@@ -106,10 +106,10 @@
           "eagerFiles": [
             "resume-loader.js",
             "resume-entry.js",
-            "resume-resume_tsx.js",
             "rivet-merge-index-1.js",
             "rivet-merge-dom-resume.js",
             "preload-helper.js",
+            "resume-resume_tsx.js",
             "resume-route_main.js",
             "rivet-merge-index.js",
             "analytics.js",
@@ -126,7 +126,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 7323,
+          "htmlBr": 7308,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -954,8 +954,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
-            "resume-symbols.js"
+            "resume-symbols.js",
+            "rivet-merge-index.js"
           ]
         }
       }
@@ -1086,8 +1086,8 @@
             "resume-entry.js",
             "resume-loader.js",
             "resume-index_tsx.js",
-            "rivet-merge-index.js",
             "routes.js",
+            "rivet-merge-index.js",
             "preload-helper.js"
           ]
         }
@@ -1137,8 +1137,8 @@
             "resume-entry.js",
             "resume-index_tsx.js",
             "resume-loader.js",
-            "rivet-merge-index.js",
             "routes.js",
+            "rivet-merge-index.js",
             "heart.js",
             "preload-helper.js"
           ]
@@ -1441,12 +1441,12 @@
       "br": 12701
     },
     "rivet-router": {
-      "min": 23161,
-      "br": 8836
+      "min": 29195,
+      "br": 10815
     },
     "rivet-derived": {
-      "min": 23163,
-      "br": 8838
+      "min": 29197,
+      "br": 10785
     }
   }
 }

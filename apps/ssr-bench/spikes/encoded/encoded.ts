@@ -5,6 +5,10 @@
 // 3-page session (document, 2 client navigations = the router's JSON data answers, 1 action = a JSON answer) summing
 // wire bytes, and an in-process brotli q5 encode reference (the usual CDN / origin default) for the M5 E2 gate
 // (zstd encode CPU ≤ 0.3× brotli q5 at ≤ +15 % bytes).
+// E3 (`docs/benchmarks/2026-10-22-dictionary-transport.md`): `dcz` = a second server with `dictionary: { samples }`
+// (articles 3 and 4 and their data answers, never a measured page) — the client fetches the linked dictionary once
+// (its wire bytes reported apart), then sends `Available-Dictionary` + `dcz`; bodies decoded with the dictionary. TTFB =
+// request written → response headers, median per request.
 //
 // Method: the server (this process) renders the ssr-bench pages compiled with the real Rivet server compiler (table
 // 100 / 1000 rows: `adapters/rivet-compiled.jsx`'s shape, data from `spikes/splice` `makePage`; article: the X1 content
@@ -14,7 +18,7 @@
 // `process.cpuUsage()` (user + system, all threads: zlib's pool included) around the child = server CPU per request,
 // request parsing and the response path included. Rounds interleave encodings; the median round is reported.
 //
-//   node apps/ssr-bench/spikes/encoded/encoded.ts [--encoding identity|gzip|br|zstd|all] [--pages table100,table1000,article]
+//   node apps/ssr-bench/spikes/encoded/encoded.ts [--encoding identity|gzip|br|zstd|dcz|all] [--pages table100,table1000,article]
 //                                                [--requests 200] [--rounds 5] [--sessions 100] [--json out.json]
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
@@ -29,9 +33,15 @@ import { PAGE_STYLE } from "../../fixture/emitter.ts";
 import { makePage } from "../splice/splice.ts";
 import { median } from "../../../../scripts/bench/shared.ts";
 
-type Encoding = "identity" | "gzip" | "br" | "zstd";
-const ENCODINGS: Encoding[] = ["identity", "gzip", "br", "zstd"];
-const ACCEPT: Record<Encoding, string> = { identity: "identity", gzip: "gzip", br: "gzip, deflate, br", zstd: "gzip, deflate, br, zstd" };
+type Encoding = "identity" | "gzip" | "br" | "zstd" | "dcz";
+const ENCODINGS: Encoding[] = ["identity", "gzip", "br", "zstd", "dcz"];
+const ACCEPT: Record<Encoding, string> = {
+  identity: "identity",
+  gzip: "gzip",
+  br: "gzip, deflate, br",
+  zstd: "gzip, deflate, br, zstd",
+  dcz: "gzip, deflate, br, zstd, dcb, dcz",
+};
 const SELF = fileURLToPath(import.meta.url);
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -105,19 +115,47 @@ interface ClientResult {
   body: number;
   ms: number;
   encodings: Record<string, number>;
+  /** Median request → response headers, µs. */
+  ttfb: number;
+  /** Wire bytes of the one dictionary fetch (dcz). */
+  dictionary?: number;
 }
+let dictionaryBytes: Buffer | undefined;
 const decodeBody = (encoding: string | undefined, body: Buffer): Buffer =>
-  encoding === "zstd"
-    ? zlib.zstdDecompressSync(body)
-    : encoding === "br"
-      ? zlib.brotliDecompressSync(body)
-      : encoding === "gzip"
-        ? zlib.gunzipSync(body)
-        : body;
+  encoding === "dcz"
+    ? zlib.zstdDecompressSync(body.subarray(40), { dictionary: dictionaryBytes! })
+    : encoding === "zstd"
+      ? zlib.zstdDecompressSync(body)
+      : encoding === "br"
+        ? zlib.brotliDecompressSync(body)
+        : encoding === "gzip"
+          ? zlib.gunzipSync(body)
+          : body;
 const sha = (bytes: Buffer | string) => createHash("sha256").update(bytes).digest("hex");
 
-async function clientMain(url: string, accept: string, n: number, steps: ClientStep[], expected: string[]): Promise<void> {
+async function clientMain(url: string, accept: string, n: number, steps: ClientStep[], expected: string[], dictionaryPath = ""): Promise<void> {
   const agent = new Agent({ keepAlive: true, maxSockets: 1 });
+  let available = "",
+    dictionaryWire: number | undefined;
+  if (dictionaryPath) {
+    // The browser's idle fetch of the linked dictionary (own connection: its bytes are reported apart).
+    const fetchAgent = new Agent({ keepAlive: false });
+    dictionaryWire = await new Promise<number>((done, fail) => {
+      const req = request(url + dictionaryPath, { agent: fetchAgent, headers: { "accept-encoding": "gzip, deflate, br, zstd" } }, (res) => {
+        const parts: Buffer[] = [];
+        res.on("data", (chunk: Buffer) => parts.push(chunk));
+        res.on("end", () => {
+          const raw = Buffer.concat(parts);
+          dictionaryBytes = decodeBody(res.headers["content-encoding"], raw);
+          available = ":" + createHash("sha256").update(dictionaryBytes).digest("base64") + ":";
+          done((req.socket as unknown as { bytesRead: number }).bytesRead);
+        });
+      });
+      req.on("error", fail);
+      req.end();
+    });
+  }
+  const ttfbs: number[] = [];
   // Keep-alive normally reuses one socket; `bytesRead` is cumulative per socket, so every socket seen is summed.
   const sockets = new Set<{ bytesRead: number }>();
   let body = 0;
@@ -131,10 +169,12 @@ async function clientMain(url: string, accept: string, n: number, steps: ClientS
           method: step.method ?? "GET",
           headers: {
             "accept-encoding": accept,
+            ...(available ? { "available-dictionary": available } : {}),
             ...(step.body ? { "content-type": "application/json", "content-length": String(Buffer.byteLength(step.body)) } : {}),
           },
         },
         (res) => {
+          ttfbs.push((performance.now() - sent) * 1000);
           const parts: Buffer[] = [];
           res.on("data", (chunk: Buffer) => parts.push(chunk));
           res.on("end", () => {
@@ -152,6 +192,7 @@ async function clientMain(url: string, accept: string, n: number, steps: ClientS
       );
       req.on("socket", (socket) => sockets.add(socket as unknown as { bytesRead: number }));
       req.on("error", fail);
+      const sent = performance.now();
       req.end(step.body);
     });
   const started = performance.now();
@@ -160,7 +201,15 @@ async function clientMain(url: string, accept: string, n: number, steps: ClientS
   let socketBytes = 0;
   for (const socket of sockets) socketBytes += socket.bytesRead;
   agent.destroy();
-  const out: ClientResult = { requests: n * steps.length, wire: socketBytes / n, body: body / n, ms, encodings };
+  const out: ClientResult = {
+    requests: n * steps.length,
+    wire: socketBytes / n,
+    body: body / n,
+    ms,
+    encodings,
+    ttfb: median(ttfbs),
+    ...(dictionaryWire !== undefined ? { dictionary: dictionaryWire } : {}),
+  };
   process.stdout.write(JSON.stringify(out));
 }
 
@@ -193,7 +242,11 @@ async function serverMain(): Promise<void> {
   const { Article } = await compileComponent<{ Article: (p: { article: unknown }) => unknown }>(ARTICLE_SOURCE, "article.tsx");
 
   const pages = { table100: makePage(100), table1000: makePage(1000) };
-  const articles = { 1: makeArticle(1), 2: makeArticle(2) };
+  const articles = new Map<number, ReturnType<typeof makeArticle>>();
+  const articleOf = (seed: string | null) => {
+    const n = Number(seed ?? "1") || 1;
+    return articles.get(n) ?? articles.set(n, makeArticle(n)).get(n)!;
+  };
   const tableDocument = (title: string) => () => ({
     start: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${PAGE_STYLE}</style></head><body>`,
     end: "<!--complete--></body></html>",
@@ -204,29 +257,46 @@ async function serverMain(): Promise<void> {
   });
   const input = (url: URL) => ({ head: undefined, nonce: undefined, url, status: 200, styles: [] });
   const html = { "content-type": "text/html; charset=utf-8" };
-  const serving = await serve({
-    port: 0,
-    onError: (error) => console.error(error),
-    handler: (req) => {
-      const url = new URL(req.url);
-      const init = { status: 200, headers: new Headers(html) };
-      if (url.pathname === "/table") {
-        const rows = url.searchParams.get("rows") === "1000" ? 1000 : 100;
-        const page = pages[rows === 1000 ? "table1000" : "table100"];
-        return renderDocument(() => Table({ page }), input(url), { document: tableDocument("Rivet bench &amp; &lt;page&gt;") }, init);
-      }
-      if (url.pathname === "/article") {
-        const article = articles[url.searchParams.get("seed") === "2" ? 2 : 1];
-        return renderDocument(() => Article({ article }), input(url), { document: articleDocument(article.title) }, init);
-      }
-      // The router's JSON answers of a client navigation (`_data`: loader data of the next page) and of an action.
-      if (url.pathname === "/_data/table") return Response.json({ data: pages[url.searchParams.get("rows") === "1000" ? "table1000" : "table100"] });
-      if (url.pathname === "/_data/article") return Response.json({ data: articles[url.searchParams.get("seed") === "2" ? 2 : 1] });
-      if (url.pathname === "/action" && req.method === "POST") return Response.json({ ok: true, id: 4711, message: "Saved" });
-      return new Response("not found", { status: 404 });
-    },
-  });
+  const handler = (req: Request) => {
+    const url = new URL(req.url);
+    const init = { status: 200, headers: new Headers(html) };
+    if (url.pathname === "/table") {
+      const rows = url.searchParams.get("rows") === "1000" ? 1000 : 100;
+      const page = pages[rows === 1000 ? "table1000" : "table100"];
+      return renderDocument(() => Table({ page }), input(url), { document: tableDocument("Rivet bench &amp; &lt;page&gt;") }, init);
+    }
+    if (url.pathname === "/article") {
+      const article = articleOf(url.searchParams.get("seed"));
+      return renderDocument(() => Article({ article }), input(url), { document: articleDocument(article.title) }, init);
+    }
+    // The router's JSON answers of a client navigation (`_data`: loader data of the next page) and of an action.
+    if (url.pathname === "/_data/table") return Response.json({ data: pages[url.searchParams.get("rows") === "1000" ? "table1000" : "table100"] });
+    if (url.pathname === "/_data/article") return Response.json({ data: articleOf(url.searchParams.get("seed")) });
+    if (url.pathname === "/action" && req.method === "POST") return Response.json({ ok: true, id: 4711, message: "Saved" });
+    return new Response("not found", { status: 404 });
+  };
+  const serving = await serve({ port: 0, onError: (error) => console.error(error), handler, dictionary: false });
   const url = serving.url;
+  // E3: the same app with a dictionary sampled from pages the measurement never requests (articles 3 and 4).
+  const dictServing = encodings.includes("dcz")
+    ? await serve({
+        port: 0,
+        onError: (error) => console.error(error),
+        handler,
+        dictionary: { samples: ["/article?seed=3", "/_data/article?seed=3", "/article?seed=4", "/_data/article?seed=4"] },
+      })
+    : null;
+  const dictionaryPath = dictServing
+    ? await new Promise<string>((done, fail) => {
+        const req = request(dictServing.url + "/article?seed=9", { headers: { "accept-encoding": "identity" } }, (res) => {
+          res.resume();
+          const link = /^<([^>]+)>; rel="compression-dictionary"$/.exec(String(res.headers.link ?? ""));
+          link ? done(link[1]!) : fail(new Error("no dictionary Link: " + res.headers.link));
+        });
+        req.on("error", fail);
+        req.end();
+      })
+    : "";
 
   /** Identity body of a step (the reference every encoded answer must decode to). */
   const identityOf = (step: ClientStep) =>
@@ -258,9 +328,10 @@ async function serverMain(): Promise<void> {
   const run = (steps: ClientStep[], accept: string, n: number, expected: string[]) =>
     new Promise<ClientResult & { cpu: number }>((done, fail) => {
       const before = process.cpuUsage();
+      const dcz = accept === ACCEPT.dcz;
       execFile(
         process.execPath,
-        [SELF, "--client", url, accept, String(n), JSON.stringify(steps), JSON.stringify(expected)],
+        [SELF, "--client", dcz ? dictServing!.url : url, accept, String(n), JSON.stringify(steps), JSON.stringify(expected), dcz ? dictionaryPath : ""],
         { maxBuffer: 1 << 20 },
         (error, stdout, stderr) => {
           const usage = process.cpuUsage(before);
@@ -280,6 +351,8 @@ async function serverMain(): Promise<void> {
     wire: number;
     body: number;
     cpu: number;
+    ttfb: number;
+    dictionary?: number;
   }
   const results: Record<string, Partial<Record<Encoding, Cell>>> = {};
   const identity: Record<string, { bytes: number; q5: { bytes: number; us: number } }> = {};
@@ -312,13 +385,18 @@ async function serverMain(): Promise<void> {
         const out = await run([step], ACCEPT[encoding], requests, expected);
         const got = Object.keys(out.encodings);
         if (got.length !== 1 || got[0] !== encoding) throw new Error(`${name} ${encoding}: answered ${JSON.stringify(out.encodings)}`);
-        (samples[encoding] ??= []).push({ wire: out.wire, body: out.body, cpu: out.cpu });
+        (samples[encoding] ??= []).push({ wire: out.wire, body: out.body, cpu: out.cpu, ttfb: out.ttfb });
       }
     }
     results[name] = {};
     for (const encoding of encodings) {
       const cells = samples[encoding]!;
-      results[name][encoding] = { wire: median(cells.map((c) => c.wire)), body: median(cells.map((c) => c.body)), cpu: median(cells.map((c) => c.cpu)) };
+      results[name][encoding] = {
+        wire: median(cells.map((c) => c.wire)),
+        body: median(cells.map((c) => c.body)),
+        cpu: median(cells.map((c) => c.cpu)),
+        ttfb: median(cells.map((c) => c.ttfb)),
+      };
     }
     console.error(`${name}: done`);
   }
@@ -339,20 +417,35 @@ async function serverMain(): Promise<void> {
     const order = [...encodings].sort(() => Math.random() - 0.5);
     for (const encoding of order) {
       const out = await run(SESSION, ACCEPT[encoding], sessions, sessionExpected);
-      (sessionSamples[encoding] ??= []).push({ wire: out.wire, body: out.body, cpu: out.cpu });
+      (sessionSamples[encoding] ??= []).push({
+        wire: out.wire,
+        body: out.body,
+        cpu: out.cpu,
+        ttfb: out.ttfb,
+        ...(out.dictionary !== undefined ? { dictionary: out.dictionary } : {}),
+      });
     }
   }
   for (const encoding of encodings) {
     const cells = sessionSamples[encoding]!;
-    session[encoding] = { wire: median(cells.map((c) => c.wire)), body: median(cells.map((c) => c.body)), cpu: median(cells.map((c) => c.cpu)) };
+    session[encoding] = {
+      wire: median(cells.map((c) => c.wire)),
+      body: median(cells.map((c) => c.body)),
+      cpu: median(cells.map((c) => c.cpu)),
+      ttfb: median(cells.map((c) => c.ttfb)),
+      ...(cells[0]!.dictionary !== undefined ? { dictionary: cells[0]!.dictionary } : {}),
+    };
   }
   await serving.close();
+  await dictServing?.close();
 
   // Report.
   const host = `Node ${process.version}, ${process.platform} ${process.arch}, ${new Date().toISOString().slice(0, 10)}`;
   console.log(`Host: ${host}; ${requests} requests × ${rounds} rounds per cell (median round), keep-alive, one client process.\n`);
-  console.log(`| page | encoding | body bytes | wire bytes / request | vs identity | server CPU µs / request | encode µs (− identity) | vs br q5 encode |`);
-  console.log(`| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |`);
+  console.log(
+    `| page | encoding | body bytes | wire bytes / request | vs identity | server CPU µs / request | encode µs (− identity) | vs br q5 encode | TTFB µs |`,
+  );
+  console.log(`| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |`);
   for (const name of pageNames) {
     const id = results[name]!.identity;
     const ref = identity[name]!;
@@ -360,28 +453,28 @@ async function serverMain(): Promise<void> {
       const cell = results[name]![encoding]!;
       const encode = id ? cell.cpu - id.cpu : NaN;
       console.log(
-        `| ${name} (${kb(ref.bytes)} KB) | ${encoding} | ${Math.round(cell.body)} | ${Math.round(cell.wire)} | ${id ? (cell.wire / id.wire).toFixed(3) : "—"} | ${cell.cpu.toFixed(0)} | ${id && encoding !== "identity" ? encode.toFixed(0) : "—"} | ${id && encoding !== "identity" ? (encode / ref.q5.us).toFixed(2) + "×" : "—"} |`,
+        `| ${name} (${kb(ref.bytes)} KB) | ${encoding} | ${Math.round(cell.body)} | ${Math.round(cell.wire)} | ${id ? (cell.wire / id.wire).toFixed(3) : "—"} | ${cell.cpu.toFixed(0)} | ${id && encoding !== "identity" ? encode.toFixed(0) : "—"} | ${id && encoding !== "identity" ? (encode / ref.q5.us).toFixed(2) + "×" : "—"} | ${cell.ttfb.toFixed(0)} |`,
       );
     }
-    console.log(`| ${name} | br q5 (in-process encode reference) | ${ref.q5.bytes} | — | — | — | ${ref.q5.us.toFixed(0)} | 1.00× |`);
+    console.log(`| ${name} | br q5 (in-process encode reference) | ${ref.q5.bytes} | — | — | — | ${ref.q5.us.toFixed(0)} | 1.00× | — |`);
   }
   console.log(
     `\nSession (article document → table-100 data JSON → article-2 data JSON → action JSON; identity bodies ${sessionIdentity.map((b) => b.length).join(" + ")} bytes):\n`,
   );
-  console.log(`| encoding | wire bytes / session | vs identity | server CPU µs / session |`);
-  console.log(`| --- | ---: | ---: | ---: |`);
+  console.log(`| encoding | wire bytes / session | vs identity | vs br q4 | server CPU µs / session | TTFB µs (median request) | dictionary fetch (once) |`);
+  console.log(`| --- | ---: | ---: | ---: | ---: | ---: | ---: |`);
   for (const encoding of encodings) {
     const cell = session[encoding]!;
     console.log(
-      `| ${encoding} | ${Math.round(cell.wire)} | ${session.identity ? (cell.wire / session.identity.wire).toFixed(3) : "—"} | ${cell.cpu.toFixed(0)} |`,
+      `| ${encoding} | ${Math.round(cell.wire)} | ${session.identity ? (cell.wire / session.identity.wire).toFixed(3) : "—"} | ${session.br ? (cell.wire / session.br.wire).toFixed(3) : "—"} | ${cell.cpu.toFixed(0)} | ${cell.ttfb.toFixed(0)} | ${cell.dictionary ?? "—"} |`,
     );
   }
   if (jsonOut) await writeFile(jsonOut, JSON.stringify({ host, requests, rounds, sessions, identity, results, session }, null, 2) + "\n");
 }
 
 if (process.argv[2] === "--client") {
-  const [, , , url, accept, n, steps, expected] = process.argv;
-  clientMain(url!, accept!, Number(n), JSON.parse(steps!) as ClientStep[], JSON.parse(expected!) as string[]).catch((error) => {
+  const [, , , url, accept, n, steps, expected, dictionaryPath] = process.argv;
+  clientMain(url!, accept!, Number(n), JSON.parse(steps!) as ClientStep[], JSON.parse(expected!) as string[], dictionaryPath).catch((error) => {
     console.error(error);
     process.exit(1);
   });

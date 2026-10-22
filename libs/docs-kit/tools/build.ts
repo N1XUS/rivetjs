@@ -5,7 +5,7 @@
 import { constants, existsSync } from "node:fs";
 import { cp, readFile, rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { prerender } from "@rivetjs/router/static";
+import { prerender, writeDictionaries } from "@rivetjs/router/static";
 // Deep import (no package subpath): the loader `prerenderBuild` uses, so one bundle instance serves both prerender paths.
 import { loadBuild, type LoadedBuild } from "../../router/adapters/build.ts";
 import { pagePreload } from "../frame-theme.ts";
@@ -153,6 +153,9 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   // Pages left render-blocking (full stylesheet links kept): no shell activation script, or no plain head link.
   for (const { file, why } of critical.skipped.slice(0, 10)) log(`critical css: kept stylesheet links of ${file} (${why})`);
   if (critical.skipped.length > 10) log(`critical css: … ${critical.skipped.length - 10} more pages kept their stylesheet links`);
+  // Compression dictionaries of the final pages (RFC 9842 `dcz`: docs-kit serve / the node adapter answer with them).
+  const dictionaries = writeDictionaries(client, build.entry.base ? { base: build.entry.base } : {}).dictionaries;
+  log(`dictionaries: ${dictionaries.length} (${dictionaries.map((d) => d.prefix).join(", ")})`);
   lap("critical");
   if (options.search === "reuse" && options.incremental && report.prerender === "incremental" && existsSync(resolve(options.incremental.previous, "pagefind")))
     await cp(resolve(options.incremental.previous, "pagefind"), resolve(client, "pagefind"), { recursive: true, mode: constants.COPYFILE_FICLONE });
@@ -188,6 +191,8 @@ async function fullPrerender(build: LoadedBuild, origin: string): Promise<Omit<S
     origin,
     ...(entry.base ? { base: entry.base } : {}),
     ...(entry.trailingSlash ? { trailingSlash: entry.trailingSlash } : {}),
+    // Written after critical CSS (below): the dictionaries hold the pages' final bytes.
+    dictionary: false,
   });
   return { pages: report.pages, prerender: "full", rendered: report.pages.length };
 }
