@@ -17,15 +17,17 @@ const switches = (name, names) => ({
 });
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const out = [];
-// `[lazyRows]` lines: the entries a `rivet({ resume: { lazyRows: true } })` build gets (the compiler plugin's switch
-// modules, `libs/compiler/vite.ts` `lazySwitch`); every other line is a build without it (LAZY-T5B: identical to before).
-const LAZY = [switches("lazy-rows-switch", LAZY_SWITCHES)];
-// `[domData]` lines: the resume entry and the resumable server of a `rivet({ resume: { domData: true } })` build (DOM-DATA,
-// `domDataSwitch`).
-const DOM_DATA = [switches("dom-data-switch", DOM_DATA_SWITCHES)];
+// Unbracketed lines: the entries a default resume build gets (`rivet({ resume })` / `rivetRouter()`: `resume.lazyRows` and
+// `resume.domData` default true since LAZY-FLIP 2026-10-22, so the compiler plugin serves the lazy rows + DOM data switch
+// modules to every module of both targets — `libs/compiler/vite.ts` `lazySwitch` / `domDataSwitch`).
+const DEFAULT = [switches("default-resume-switches", [...LAZY_SWITCHES, ...DOM_DATA_SWITCHES])];
+// `[opt-out]` lines (only where they differ from the default line): the switch files as written — a build with
+// `resume: { lazyRows: false, domData: false }`, and every build without `resume` (0 bytes of either feature).
+const OPT_OUT = [];
 // `[derived]` lines: the browser entries of a `rivet({ resume: { model: "derived" } })` build (M2 lane R: the derived switch
-// + the lazy rows switches its adopt run needs).
+// + the lazy rows switches its adopt run needs; the derived model ignores `lazyRows` / `domData`).
 const DERIVED = [switches("derived-switch", [...LAZY_SWITCHES, ...DERIVED_SWITCHES])];
+const DERIVED_ONLY = ["./server-derived", "./dom-derived"];
 const hash = async (input, plugins, lazy) => {
   const bundle = await rolldown({
     input: lazy ? [input, `${root}/libs/runtime/dom-resume-lazy.ts`] : input, platform: "node", logLevel: "silent", plugins,
@@ -33,9 +35,9 @@ const hash = async (input, plugins, lazy) => {
     transform: { define: { "process.env.NODE_ENV": '"production"' } },
   });
   const { output } = await bundle.generate({ format: "esm", minify: true });
-  // The entry's static import closure: one chunk, unless another entry splits shared modules off (`[lazyRows]` resume
-  // runtime: bundled with `dom-resume-lazy.ts`, the lazy rows runtime, an emitted chunk of those builds — LAZY-BLOCKERS —
-  // whose own chunk gets a `[lazyRows chunk]` line).
+  // The entry's static import closure: one chunk, unless another entry splits shared modules off (default `/dom-resume`:
+  // bundled with `dom-resume-lazy.ts`, the lazy rows runtime, an emitted chunk of those builds — LAZY-BLOCKERS — whose own
+  // chunk gets a `[lazyRows chunk]` line).
   const byName = new Map(output.map((chunk) => [chunk.fileName, chunk]));
   const closure = [];
   const walk = (chunk) => {
@@ -54,15 +56,17 @@ for (const pkg of ["libs/reactivity", "libs/runtime"]) {
   const json = JSON.parse(readFileSync(`${root}/${pkg}/package.json`, "utf8"));
   for (const [key, value] of Object.entries(json.exports)) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
-    out.push(`${json.name}${key.slice(1)} ${await hash(`${root}/${pkg}/${file}`, [])}`);
-    if (key === "./dom") out.push(`${json.name}${key.slice(1)} [lazyRows] ${await hash(`${root}/${pkg}/${file}`, LAZY)}`);
-    if (key === "./dom-resume") {
-      const chunks = [];
-      out.push(`${json.name}${key.slice(1)} [lazyRows] ${await hash(`${root}/${pkg}/${file}`, LAZY, chunks)}`);
-      for (const chunk of chunks) out.push(`${json.name}${key.slice(1)} [lazyRows chunk] ${chunk}`);
-    }
-    if (key === "./dom" || key === "./dom-derived") out.push(`${json.name}${key.slice(1)} [derived] ${await hash(`${root}/${pkg}/${file}`, DERIVED)}`);
-    if (key === "./dom-resume" || key === "./server-resume") out.push(`${json.name}${key.slice(1)} [domData] ${await hash(`${root}/${pkg}/${file}`, DOM_DATA)}`);
+    const name = json.name + key.slice(1);
+    const input = `${root}/${pkg}/${file}`;
+    const chunks = [];
+    // The derived model's own entries: only derived builds import them, and those flip neither switch set (their browser
+    // half: the `[derived]` line) — files as written.
+    const line = await hash(input, DERIVED_ONLY.includes(key) ? OPT_OUT : DEFAULT, key === "./dom-resume" ? chunks : undefined);
+    out.push(`${name} ${line}`);
+    for (const chunk of chunks) out.push(`${name} [lazyRows chunk] ${chunk}`);
+    const optOut = await hash(input, OPT_OUT);
+    if (optOut !== line) out.push(`${name} [opt-out] ${optOut}`);
+    if (key === "./dom" || key === "./dom-derived") out.push(`${name} [derived] ${await hash(input, DERIVED)}`);
   }
 }
 console.log(out.join("\n"));

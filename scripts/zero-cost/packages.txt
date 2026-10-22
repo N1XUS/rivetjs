@@ -2,8 +2,8 @@
 @rivetjs/router/server ef62ee3836f0 29463
 @rivetjs/router/route-cache f0f2f7eb8c37 18238
 @rivetjs/router/server-only 56e1b0c10087 9
-@rivetjs/router/client [dom] dce0741d9e10 24128
-@rivetjs/router/client [server] 85a0fcd001e9 23750
+@rivetjs/router/client [dom] b000f3610dbc 24174
+@rivetjs/router/client [server] 3f3d8305a3be 23796
 @rivetjs/router/route-context 17ece91a59f3 361
 @rivetjs/router/leave be0ed31d91a3 836
 @rivetjs/router/navigation 6a58e7ac4c4b 255

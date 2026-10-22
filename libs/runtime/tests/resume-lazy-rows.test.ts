@@ -115,14 +115,16 @@ const rowHtml = (html: string): string[] => [...html.matchAll(/<!--r\d*\[-->(.*?
 const entry = (state: ResumeState, k = 0): LazyRowsEntry => state.L![k]!;
 const table = (state: ResumeState, ref: number): unknown => state.t[ref];
 
-test("default (unset) and RIVET_LAZY_ROWS=off: no lazy records, recorded rows, the same page", async () => {
+test("default (unset) = RIVET_LAZY_ROWS=on on an opted-in build (LAZY-FLIP); RIVET_LAZY_ROWS=off: no lazy records, recorded rows", async () => {
   const unset = await render(() => mod.List({ rows }));
+  const on = await render(() => mod.List({ rows }), "on");
+  assert.equal(unset, on);
+  assert.equal(stateOf(unset).L?.length, 1);
   const off = await render(() => mod.List({ rows }), "off");
-  assert.equal(unset, off);
-  const state = stateOf(unset);
+  const state = stateOf(off);
   assert.equal(state.L, undefined);
   assert.equal(state.v, RESUME_VERSION);
-  assert.match(unset, /<li id="rv\d+" class="off" data-r="\d+">/);
+  assert.match(off, /<li id="rv\d+" class="off" data-r="\d+">/);
 });
 
 test("RIVET_LAZY_ROWS=on with a build that did not opt in (manifest without lazyRows): no lazy records, the off page (dev: one warning)", async () => {
@@ -138,7 +140,7 @@ test("RIVET_LAZY_ROWS=on with a build that did not opt in (manifest without lazy
     const hints = warn.mock.calls.filter(([m]) => String(m).includes("RIVET_LAZY_ROWS=on is ignored"));
     // Dev: once per process (two renders, one warning); production: none.
     assert.equal(hints.length, DEV ? 1 : 0);
-    if (DEV) assert.match(String(hints[0]![0]), /rivet\(\{ resume: \{ lazyRows: true \} \}\)/);
+    if (DEV) assert.match(String(hints[0]![0]), /rivet\(\{ resume: \{ lazyRows: false \} \}\)/);
   } finally {
     warn.mockRestore();
   }

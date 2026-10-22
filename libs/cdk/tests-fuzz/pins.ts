@@ -139,13 +139,7 @@ export const pins: FuzzPin[] = [
     note: 'scheduler: documented deviation (libs/cdk/scheduler/CLAUDE.md "Pass `timeZone` on SSR pages"): without `timeZone` the server lays out in UTC and the resumed page keeps UTC; the story omits `timeZone` on purpose, the client render uses the browser zone',
     design: true,
   },
-  {
-    route: "/scheduler",
-    kind: "resume-error",
-    match: "scheduler/month.tsx#SchedulerMonth$",
-    owner: "cdk",
-    note: "scheduler (T-lane): SchedulerMonth resumed symbols read fields of an undefined cell / week (`label`, `dayNumber`, `segments`, …) after month-grid keys (CDK-PINS fuzz 2026-10-12)",
-  },
+  // LAZY-FLIP 2026-10-21: the `/scheduler` SchedulerMonth resume-error pin left with lazy rows on by default (the month rows no longer re-create).
   {
     route: "/region-state-repro",
     kind: "recreated",
@@ -161,7 +155,6 @@ export const pins: FuzzPin[] = [
     owner: "runtime",
     note: "repro route of the region re-creation limit: " + NO_REGION,
   },
-  { route: "/selection-indicator-groups", kind: "recreated", match: "rv-SelectionIndicator", owner: "cdk", note: "SelectionIndicator " + NO_REGION },
   { route: "/slots", kind: "recreated", match: "input#d1-input", owner: "cdk", note: "slotted Input " + NO_REGION },
   {
     route: "/slots",
@@ -176,13 +169,6 @@ export const pins: FuzzPin[] = [
     match: 'resumed only [tabindex="0"]',
     owner: "cdk",
     note: "TabPanel: the server writes tabindex=0 (cannot see tabbable content), the client render drops it (RA useHasTabbableChild; needs a runtime post-children attribute, CDK-PINS request)",
-  },
-  {
-    route: "/tabs",
-    kind: "mismatch",
-    match: "num-tabpanel-2",
-    owner: "cdk",
-    note: "follows the server TabPanel tabindex=0 (the panel takes focus on the resumed page)",
   },
   { route: "/tag-group", kind: "recreated", match: "rv-Tag", owner: "cdk", note: "Tags " + NO_REGION },
   // COLDFIX 2026-10-19: the cold replay no longer re-creates the Tags before the remove button click (the replayed focus
@@ -200,6 +186,18 @@ export const pins: FuzzPin[] = [
     match: 'csr: <div aria-describedby="#5" aria-label="Gaming"',
     owner: "cdk",
     note: "follows the lost focus after a tag removal (above): ArrowDown moves nothing on the resumed page",
+  },
+  // LAZY-FLIP 2026-10-21 (lazy rows on by default; 3/3, 0/3 with `resume.lazyRows: false`). The `/selection-indicator-groups`
+  // recreated and `/tabs` `num-tabpanel-2` mismatch pins left: the rows no longer re-create. The SelectionIndicator
+  // first-transition finding is fixed (LAZY-BLOCKERS 2026-10-21: a `set` materialises the lazy rows it wakes before the
+  // value changes).
+  {
+    route: "/select-autofocus",
+    kind: "mismatch",
+    match: 'csr only [data-focused="true"]',
+    owner: "runtime",
+    design: true,
+    note: "timing: the autofocused trigger focuses before the state script / loader is parsed (lazy rows page: earlier render than the recorded one), so the loader never sees that focus and the Select's `isFocused` stays false until the next focus; the recorded page boots at load from the captured focus. Loader fix (replay a focused `autofocus` element at install) changes default loader bytes: follow-up",
   },
 ];
 

@@ -1,18 +1,15 @@
 // Resume fuzz over the cdk story app (Function Bridge T31, `@rivetjs/testing/fuzz`): every route resumed vs CSR, every
 // interactive element driven, DOM compared after each step. Own build output (`STORIES_DIST`, default `dist-fuzz`) so a
 // concurrent `cdk-components` run never races this build. Pins (known findings + owner): `./pins.ts`; the derived
-// resume model (`RIVET_RESUME_MODEL=derived`, own build `dist-fuzz-derived`) has its own set, `./pins-derived.ts`; the
-// lazy rows + DOM-DATA build (`RIVET_LAZY_ROWS=on RIVET_LAZY_ROWS_HARNESS=1 RIVET_DOM_DATA=1`, own build `dist-fuzz-flip`,
-// LAZY-FLIP) uses `./pins-flip.ts`.
+// resume model (`RIVET_RESUME_MODEL=derived`, own build `dist-fuzz-derived`) has its own set, `./pins-derived.ts`. The
+// default build has lazy rows + DOM-DATA on (LAZY-FLIP 2026-10-22: `resume.lazyRows` / `resume.domData` default true).
 import { fuzzSuite, storyRoutes } from "@rivetjs/testing/fuzz";
 import { pins as serialized, routeOptions } from "./pins.ts";
 import { pins as derived } from "./pins-derived.ts";
-import { pins as flip } from "./pins-flip.ts";
 
 const isDerived = process.env.RIVET_RESUME_MODEL === "derived";
-const isFlip = !isDerived && process.env.RIVET_LAZY_ROWS === "on";
-process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : isFlip ? "dist-fuzz-flip" : "dist-fuzz";
-const pins = isDerived ? derived : isFlip ? flip : serialized;
+process.env.STORIES_DIST ??= isDerived ? "dist-fuzz-derived" : "dist-fuzz";
+const pins = isDerived ? derived : serialized;
 const { stories } = await import("../tests-components/harness.ts");
 
 // Shell cache routes (rule `shell`): the store is primed before the run so their resumed document loads are hits
@@ -21,11 +18,12 @@ const { stories } = await import("../tests-components/harness.ts");
 // (a signal created in the shell: hits replay it), `/shell-provider` an eligible one that writes a signal an ancestor
 // provides (PPR-T57: the fill sees the write, hits replay); a `hit` run checks each answers its path once before the fuzz.
 // The derived model primes the same way (DERIVED-C3: the shell cache stores derived documents; same paths per route).
-// A flip build (lazy rows + DOM data) is not covered by the H-holes seal (`server-shell.ts` `covered`: no DOM data), so
-// `/shell-loader` hits replay there (LAZY-BLOCKERS).
+// The default serialized build (lazy rows + DOM data on since LAZY-FLIP) keeps the H-holes hit on `/shell-loader` too:
+// `server-shell.ts` `covered` seals a DOM-data render whose shell registered no row (the hole's rows stay out of the
+// shell state, LAZY-FLIP); a shell with DOM-data rows of its own would replay.
 const prime = process.env.RIVET_FUZZ_SHELL ?? "hit";
 const SHELL_ROUTES = {
-  "/shell-loader": isFlip ? "SHELL-HIT-REPLAY" : "SHELL-HIT",
+  "/shell-loader": "SHELL-HIT",
   "/shell-replay": "SHELL-HIT-REPLAY",
   "/shell-provider": "SHELL-HIT-REPLAY",
 };

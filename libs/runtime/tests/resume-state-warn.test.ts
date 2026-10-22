@@ -93,7 +93,7 @@ dev("a handler capturing a large array warns: component, site, capture name, sha
   assert.equal(total, Number((stateBytes(html) / 1024).toFixed(1)));
   assert.match(message!, /fix: 1\. do not capture it/);
   assert.match(message!, /2\. load it in the browser instead: serve it from an endpoint \(an onGet\(…\) export\)/);
-  assert.match(message!, /3\. a list: keyed <For each=\{…\} by=\{…\}> rows; today each row still ships its item .*lazyRows: true.*RIVET_LAZY_ROWS=on/);
+  assert.match(message!, /3\. a list: keyed <For each=\{…\} by=\{…\}> rows; lazy rows \(on by default: resume\.lazyRows\) ship each row as its key/);
   assert.match(message!, /4\. a library object .*reconstruct\(\(\) => …\)/);
   assert.match(message!, /docs: https:\/\/rivetjs\.severyn\.pro\/learn\/resuming#large-data-in-resume-state$/);
 });

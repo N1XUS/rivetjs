@@ -7,8 +7,7 @@ import { rivetRouter } from "@rivetjs/router/vite";
 const model = process.env.RIVET_RESUME_MODEL;
 if (model !== undefined && model !== "serialized" && model !== "derived")
   throw new Error(`RIVET_RESUME_MODEL must be "serialized" or "derived" (got ${model})`);
-// `RIVET_DOM_DATA=1` (DOM-DATA measurements): build with `resume: { domData: true }` — pair it with its own `STORIES_DIST`.
-const domData = process.env.RIVET_DOM_DATA === "1";
+// `resume.lazyRows` / `resume.domData` are on by default (LAZY-FLIP 2026-10-22): the story builds are lazy rows + DOM-DATA builds.
 export default defineConfig({
   plugins: [
     rivetRouter({
@@ -20,7 +19,7 @@ export default defineConfig({
         "/shell-replay": { shell: { maxAge: 3600 } },
         "/shell-provider": { shell: { maxAge: 3600 } },
       },
-      ...(model || domData ? { resume: { ...(model ? { model } : {}), ...(domData ? { domData } : {}) } } : {}),
+      ...(model ? { resume: { model } } : {}),
     }),
   ],
   logLevel: "warn",

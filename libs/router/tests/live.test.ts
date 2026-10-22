@@ -63,10 +63,10 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
   assert.doesNotMatch(app(plain, true), /_live|LIVE/);
   assert.match(out, /_serveLive, _live, _livePage, /);
   // Form intent warms the data readers' chunks (focusin through the intent handler, pointerdown).
-  assert.match(out, /    _liveIntent\(event, live, nest\);/);
+  assert.match(out, /    _liveIntent\(event, live, modules, nest\);/);
   assert.match(
     out,
-    /clientEvent\(document, "pointerdown", \(event: PointerEvent\) => _liveIntent\(event, live, nest\), \{ passive: true, preload: "intent", match: "form" \}\);/,
+    /clientEvent\(document, "pointerdown", \(event: PointerEvent\) => _liveIntent\(event, live, modules, nest\), \{ passive: true, preload: "intent", match: "form" \}\);/,
   );
   assert.match(out, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a,form" \}\);/);
   assert.match(out, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a,form" \}\);/);

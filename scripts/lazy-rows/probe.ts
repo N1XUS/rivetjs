@@ -15,10 +15,11 @@
 //
 // Usage: node scripts/lazy-rows/probe.ts [<app>:<id> | <id> …] [--app apps/ui-docs] [--json] [--runs 20] [--warmup 5]
 //          [--loads 5] [--cpu 1,4] [--no-build] [--dist <dir>] [--click <selector>]
-// Default pages: `DEFAULT_PAGES`. `RIVET_LAZY_ROWS=on` probes lazy rows (the build children get `resume.lazyRows`:
-// `@rivetjs/router` `lazyRowsBuild`, LAZY-T5B; pass `--dist` to keep it apart from the `off` build).
+// Default pages: `DEFAULT_PAGES`. Lazy rows are the default build (LAZY-FLIP 2026-10-22); `RIVET_LAZY_ROWS=off` probes
+// recorded rows (the build children get `resume.lazyRows: false` and the server records: `@rivetjs/router` `lazyRowsBuild`,
+// LAZY-T5B; pass `--dist` to keep the two builds apart), `on` forces lazy rows.
 // `RIVET_LAZY_ROWS=swap` probes the swap interim (`@rivetjs/router` `build/lazy-rows.ts`);
-// its default dist is `<app>/.artifacts/lazy-rows-probe-swap` (else `…/lazy-rows-probe`).
+// the default dist is `<app>/.artifacts/lazy-rows-probe-<value>` with the variable set (`-swap`, `-off`, `-on`), else `…/lazy-rows-probe`.
 import { readFile } from "node:fs/promises";
 import { cpus, loadavg, platform, release } from "node:os";
 import { resolve } from "node:path";
@@ -282,7 +283,7 @@ async function main(): Promise<void> {
       const dist = resolve(
         options.dist
           ? resolve(options.dist, app.replace(/\W+/g, "-"))
-          : resolve(root, `.artifacts/lazy-rows-probe${process.env.RIVET_LAZY_ROWS ? "-swap" : ""}`),
+          : resolve(root, `.artifacts/lazy-rows-probe${process.env.RIVET_LAZY_ROWS ? "-" + process.env.RIVET_LAZY_ROWS : ""}`),
       );
       let build: FramesBuild["build"];
       let origin: string;

@@ -1,5 +1,7 @@
 # Lazy rows vs derived model — client cost on the story harness (LAZY-VS-DERIVED / LVD-2, 2026-10-22)
 
+Applied 2026-10-22 (lane LAZY-FLIP-LAND): `resume.lazyRows` and `resume.domData` are on by default; `false` opts out, server `RIVET_LAZY_ROWS=off` records rows on a lazy build. The "default" column below = a build with both options `false` (recorded rows, state in `rivet/state`); "both" = the default build since then.
+
 Hand-written. Decision input for the held serialized flip (`resume.lazyRows` + `resume.domData`, `04-flip.patch`) under the user's rule "derived ≥ lazyRows on the collection pages → no serialized flip, all effort to M6; otherwise flip lazyRows + domData together". Base `831b5d5ee` (LAZY-BLOCKERS landed). DERIVED-C4 (domData on derived) has not landed, so there is no `derived+domData` build. Lane LAZY-VS-DERIVED wrote the harness and a preliminary n = 1 table, but the host slept during its run. Lane LVD-2 reran everything at n = 7 (2026-10-22 09:03–10:07, host on battery and awake).
 
 ## Builds

@@ -1,28 +1,15 @@
-// DOM-backed loader data (DOM-DATA) over cdk built-collection rows: a `resume: { domData: true }` build of the story app
-// (own dist, `RIVET_DOM_DATA=1`). A ListBox's rows iterate keys; `renderNodeAt` names each row's data object (`#server`
+// DOM-backed loader data (DOM-DATA) over cdk built-collection rows: the story app's default build (`resume.domData` is on
+// by default since LAZY-FLIP 2026-10-22). A ListBox's rows iterate keys; `renderNodeAt` names each row's data object (`#server`
 // `domRowItem`), so the item list travels as a `D` entry whose strings the browser reads back from the rows: a resumed
 // handler sees the server data (deep equal).
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
-
-// Before the harness loads: `serve.ts` reads `STORIES_DIST` at import, the Vite config reads `RIVET_DOM_DATA` at build.
-const env = { dist: process.env.STORIES_DIST, dd: process.env.RIVET_DOM_DATA };
-process.env.STORIES_DIST = "dist-domdata";
-process.env.RIVET_DOM_DATA = "1";
-const { stories, watch } = await import("./harness.ts");
+import { stories, watch } from "./harness.ts";
 type Stories = Awaited<ReturnType<typeof stories>>;
 
 let s: Stories;
 beforeAll(async () => {
-  try {
-    s = await stories();
-  } finally {
-    for (const [key, value] of [
-      ["STORIES_DIST", env.dist],
-      ["RIVET_DOM_DATA", env.dd],
-    ] as const)
-      value === undefined ? delete process.env[key] : (process.env[key] = value);
-  }
+  s = await stories();
 });
 afterAll(async () => s?.close());
 

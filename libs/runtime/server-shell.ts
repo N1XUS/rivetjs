@@ -273,8 +273,11 @@ export function shellHook(options: ShellHookOptions): ShellHook {
       const derived = recorder.derived;
       // The derived model's shell tail lives with its recorder (`server-derived.ts`: derived builds only carry it).
       if (derived) return derived.shell.tail(derived, options, recorder, kept, refused, () => ((kept = null), (refused = null)), frameSignals);
-      // Not covered (falls back to the default tail): no root state, DOM-backed data, bridge lean tails (the derived model: above).
-      const covered = recorder.used && recorder.stream !== null && !recorder.dom && !recorder.lean;
+      // Not covered (falls back to the default tail): no root state, DOM-backed data the shell registered, bridge lean tails
+      // (the derived model: above). A DOM-data build (the default since LAZY-FLIP 2026-10-22) whose shell registered no
+      // row is covered: the root encode reads no registry then (`resume-format.ts` `dom.items.size`), on the fill as on a
+      // hit; the holes register theirs after the cut, as on the fill.
+      const covered = recorder.used && recorder.stream !== null && !(recorder.dom !== null && recorder.dom.items.size !== 0) && !recorder.lean;
       const replay = options.replay;
       if (!replay) {
         let retain = false;
@@ -362,10 +365,16 @@ export function shellHook(options: ShellHookOptions): ShellHook {
         }
         const segments = recorder.stream!.segments;
         segments.push(PENDING);
+        // DOM data: the fill's root encode ran before any hole registered a row; rows the holes registered since stay
+        // out of this one (shared objects would encode as `D` trees, a numbering the seal does not have).
+        const dom = recorder.dom,
+          items = dom?.items;
+        if (dom) dom.items = new Map();
         try {
           encode(recorder, recorder);
         } finally {
           segments.pop();
+          if (dom) dom.items = items!;
         }
         const now = sealOf(recorder, recorder.enc!);
         if (now.t !== replay.t || now.c.join(" ") !== replay.c.join(" ") || now.s.join() !== replay.s.join() || now.e.join() !== replay.e.join()) {

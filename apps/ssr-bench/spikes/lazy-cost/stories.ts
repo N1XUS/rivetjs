@@ -1,6 +1,6 @@
 // LAZY-COST-2 harness: cdk story pages (`stories/`: the cdk stories `/list-data`, `/virtualized-collections`, `/dom-data` as is
 // + 1000-row `/list-data-1000`, `/dom-data-1000`) built once with `resume: { lazyRows: true }` (`--dom-data`: + `domData`)
-// and rendered in-process by the build's request handler: recorded rows (`resume`) vs lazy rows (`lazy`,
+// and rendered in-process by the build's request handler: recorded rows (`resume`, `RIVET_LAZY_ROWS=off`) vs lazy rows (`lazy`,
 // `RIVET_LAZY_ROWS=on`, read per render). Interleaved rounds; CPU (process.cpuUsage) + wall median per render.
 //
 //   node apps/ssr-bench/spikes/lazy-cost/stories.ts [--build] [--dom-data] [--dist <dir>] [--pages /list-data-1000,…]
@@ -40,8 +40,8 @@ const baseDist = arg("base", "");
 const baseHandler = baseDist ? (await loadBuild(resolve(baseDist))).handler : null;
 const baseHook = global[HOOK];
 const once = async (path: string, lane: string): Promise<string> => {
-  if (lane.endsWith("lazy")) process.env.RIVET_LAZY_ROWS = "on";
-  else delete process.env.RIVET_LAZY_ROWS;
+  // Lazy rows are the server default on a lazyRows build (LAZY-FLIP 2026-10-22): `off` records the rows.
+  process.env.RIVET_LAZY_ROWS = lane.endsWith("lazy") ? "on" : "off";
   global[HOOK] = lane.startsWith("base-") ? baseHook : hook;
   const response = await (lane.startsWith("base-") ? baseHandler! : handler)(new Request("http://localhost" + path));
   if (response.status !== 200) throw new Error(`${path}: ${response.status}`);

@@ -3,11 +3,11 @@
 // with no timer phase between them — the shape that exposed the selector fold timer holding whole renders).
 //
 //   node --expose-gc libs/cdk/tests-components/heap-probe.ts [--dist <dir>] [--build] [--routes /a,/b|all] [--n 20]
-//        [--yield] [--lazy]
+//        [--yield] [--recorded]
 //
 // --dist: story build (default `app/$STORIES_DIST` or `app/dist`); --build: build it first (`app/serve.ts`).
 // --routes: default every route of `app/src/routes/`. --yield: a 2 ms timer between renders (what a server's event loop
-// gives). --lazy: `RIVET_LAZY_ROWS=on` (a lazy-rows build: `RIVET_LAZY_ROWS=on` at build time).
+// gives). Lazy rows are the default (LAZY-FLIP 2026-10-22); --recorded: `RIVET_LAZY_ROWS=off` (the server records the rows).
 import { readdirSync } from "node:fs";
 import { loadavg } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -26,7 +26,7 @@ if (flag("build")) {
   await (await import("./app/serve.ts")).buildApp();
 }
 const dist = flag("dist") ? arg("dist", "") : appDir + (process.env.STORIES_DIST ?? "dist");
-if (flag("lazy")) process.env.RIVET_LAZY_ROWS = "on";
+if (flag("recorded")) process.env.RIVET_LAZY_ROWS = "off";
 const { handler } = await loadBuild(dist);
 const routesArg = arg("routes", "all");
 const routes =

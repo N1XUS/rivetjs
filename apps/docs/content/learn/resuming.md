@@ -180,15 +180,17 @@ What to change, in this order:
    }
    ```
 
-3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. By default each row still ships its item and its own handler and binding records; two experimental opt-ins shrink that: [lazy rows](#lazy-rows-experimental) cut a row to its key, and [data from the page](#data-from-the-page-experimental) leaves out the text the rows already show.
+3. **A list: keyed `For` rows.** Render the rows with [`<For each={…} by={…}>`](../guides/components/lists.md) so each row's handler captures its own item, instead of one handler capturing the whole list. Two build defaults keep that small: [lazy rows](#lazy-rows) cut a row to its key, and [data from the page](#data-from-the-page) leaves out the text the rows already show.
 4. **A library object** (a chart, an editor, an SDK client): build it with [`reconstruct`](#library-objects-reconstruct). The browser builds it on first use; nothing about it ships.
 
-### Lazy rows (experimental)
+### Lazy rows
 
-Lazy rows are off by default. With them on, a keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. Turning them on takes two switches:
+Lazy rows are on by default in resumable builds. A keyed `<For>` writes no resume records for its rows: the page ships the list's items once and each row as its key, and the browser rebuilds a row from the server HTML when it is first used (its first event, or the first change of a signal it reads). No node is replaced, so focus and typed values stay. The code that rebuilds rows (about 4.9 KB brotli) is a file of its own that only pages with lazy rows load, when the page starts its browser runtime; every page of the build carries about 0.9–2.8 KB brotli more for the hooks it calls into.
 
-1. **The build option** `resume: { lazyRows: true }` on `rivetRouter(…)` (or `rivet(…)`) in `vite.config.ts`. The code that rebuilds rows (about 4.9 KB brotli) is a file of its own that only pages with lazy rows load, when the page starts its browser runtime; every page of that build carries about 1.2–2.3 KB brotli more. Builds without it contain none of that code.
-2. **The server environment variable** `RIVET_LAZY_ROWS=on`, read on every render. Without the build option the variable does nothing (development prints a warning); with the option but without the variable, rows are recorded as usual. Build once with the option and switch the variable to compare.
+Two switches turn them off:
+
+1. **The build option** `resume: { lazyRows: false }` on `rivetRouter(…)` (or `rivet(…)`) in `vite.config.ts`. The build then contains none of the lazy rows code, and every row is recorded.
+2. **The server environment variable** `RIVET_LAZY_ROWS=off`, read on every render: rows are recorded as with the option off, and the browser code stays in the build. Use it to compare both on one build.
 
 ```ts
 // vite.config.ts
@@ -196,7 +198,7 @@ import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { lazyRows: true } })],
+  plugins: [rivetRouter({ resume: { lazyRows: false } })],
 });
 ```
 
@@ -205,11 +207,11 @@ export default defineConfig({
 - **Keep a list recorded** with `lazy={false}` on its `<For>` (or a function that returns `false` on the server), for example an outer list whose rows hold another list, so the inner list is the lazy one. The cdk collections do this for sections, tree children and table headers.
 - **Server time.** A row that is one element with plain attributes, text and handlers (no components inside) is written straight from its compiled template, as recorded rows are, and costs less server time than recording it: on the 1,000-row benchmark page about 0.6× the CPU per page (0.75× at 5,000 rows). A row that renders components is rendered to HTML in batches of rows, without a renderer per row; on a 1,000-item list box that is about 0.4× the CPU of recording the rows. A row whose content still has to run when it is written (a function child) is rendered on its own. `domData` does not change this. Numbers: [lazy rows cost report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-cost.md).
 - **A signal every row reads plainly** (`class={selected() === row().id ? "on" : ""}`) does not rebuild the rows when it changes: the bindings in the rows that read it run again over the server HTML. On the 1,000-row benchmark page the first click shows after 25 ms at 4× CPU slowdown, against 30 ms with recorded rows. Rows that render components are rebuilt instead.
-- **Why it is off by default.** In a virtualized list the rendered rows read the virtualizer's layout, so the first click or scroll rebuilds the visible window (about 6 ms slower than recorded rows at 4× CPU slowdown), and rows that read a signal load and run their code when the page starts (about 45 ms more script before the first input at 4×, off the click). Every page of the build pays the 1.2–2.3 KB brotli above. Numbers: [lazy rows client report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-flip.md).
+- **What it costs.** Lists that read selection through keyed selectors get faster: the first click on a 1,000-item list box shows after about 45 ms instead of 120 ms at 4× CPU slowdown, and its resume state shrinks by about three quarters. In a virtualized list the rendered rows read the virtualizer's layout, so the first click or scroll rebuilds the visible window (level with recorded rows, within a few ms), and rows that read a signal load and run their code when the page starts (about 40 ms more script before the first input at 4×, off the click). Every page of the build pays the 0.9–2.8 KB brotli above. Numbers: [lazy rows client report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-flip.md), [lazy rows against the derived model](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-vs-derived.md).
 
-### Data from the page (experimental)
+### Data from the page
 
-Off by default. With `resume: { domData: true }` on `rivetRouter(…)` (or `rivet(…)`), loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 4 KB.
+On by default in resumable builds: loader data that list rows already show is not written into the page a second time: a string (8 characters or more) or number that a `<For>` row renders as the whole text of an element (`<dd>{row().name}</dd>`) or as a plain attribute value (`data-id={row().id}`) is left out of the resume state, and the browser reads it back from the page on first use. On a 1,000-row text grid this cuts the state from about 500 KB to 4 KB. `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`) writes that data into the state again, and the build carries none of the code that reads it back:
 
 ```ts
 // vite.config.ts
@@ -217,15 +219,15 @@ import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { domData: true } })],
+  plugins: [rivetRouter({ resume: { domData: false } })],
 });
 ```
 
 - **What qualifies.** Only text that is alone in its element: `<i>Note: {row().note}</i>` stays in the state. Strings with a carriage return, URLs in `href` / `src`, boolean attributes and attributes that change later stay in the state too.
 - **Collections too.** Rows of `@rivetjs/cdk` / `@rivetjs/ui` lists such as `ListBox` that show an item's text count as list rows. Grid list rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
-- **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data. Without lazy rows that first idle read costs script time on long lists (1,000 rows: about 60 ms more before the first input at 4× CPU slowdown); with lazy rows only the rows that are rebuilt read their values, so use the two together.
+- **Read once.** The browser reads each value the first time code uses it, and every remaining one when the page is first idle. After that a change to the page text does not change the data. On recorded rows (`lazyRows: false`) that first idle read costs script time on long lists (1,000 rows: about 60 ms more before the first input at 4× CPU slowdown); with lazy rows (the default) only the rows that are rebuilt read their values, so turn the two off together or not at all.
 - **Do not edit the server markup before the page starts.** A script that rewrites row text at load would change the data the page reads back.
-- **Why it is off by default.** Server time is level with the same build without it, with or without lazy rows (a 1,000-item list box with lazy rows: 19.6 against 20.5 ms CPU per render, [lazy rows cost report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-cost.md)). It adds about 0.6 KB brotli to the browser runtime and about 9 KB to the server code; turning it on by default is not decided yet.
+- **What it costs.** Server time is level with the same build without it, with or without lazy rows (a 1,000-item list box with lazy rows: 19.6 against 20.5 ms CPU per render, [lazy rows cost report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-lazy-cost.md)). It adds about 0.6 KB brotli to the browser runtime and about 9 KB to the server code.
 
 ## Derived model (experimental)
 

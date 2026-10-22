@@ -27,13 +27,15 @@ export function lazyRowsMode(command: "serve" | "build", env: Readonly<Record<st
 }
 
 /**
- * Lazy rows proper (LAZY-ROWS T5, `on`): a build whose resume runtime materialises them needs
- * `rivetRouter({ resume: { lazyRows: true } })`. The measurement tools (docs-kit `check-examples`,
- * `scripts/lazy-rows/probe.ts`) build app configs they do not own: with `RIVET_LAZY_ROWS=on` AND `LAZY_ROWS_HARNESS_ENV`
- * (which only they set for their build children) `rivetRouter` turns the option on for that build (LAZY-T5B).
+ * Lazy rows proper (LAZY-ROWS T5): a build whose resume runtime materialises them has `resume.lazyRows` (the default since
+ * LAZY-FLIP 2026-10-22). The measurement tools (docs-kit `check-examples`, `scripts/lazy-rows/probe.ts`) build app configs
+ * they do not own: with `LAZY_ROWS_HARNESS_ENV` (which only they set for their build children) `RIVET_LAZY_ROWS=on` forces
+ * the option on and `off` forces it off for that build (LAZY-T5B); `undefined` leaves the app's option.
  */
-export function lazyRowsBuild(env: Readonly<Record<string, string | undefined>> = process.env): boolean {
-  return env[LAZY_ROWS_ENV] === "on" && env[LAZY_ROWS_HARNESS_ENV] === "1";
+export function lazyRowsBuild(env: Readonly<Record<string, string | undefined>> = process.env): boolean | undefined {
+  if (env[LAZY_ROWS_HARNESS_ENV] !== "1") return undefined;
+  const value = env[LAZY_ROWS_ENV];
+  return value === "on" ? true : value === "off" ? false : undefined;
 }
 
 /** The runtime module the server entry imports in swap mode (no package export: not public API). */

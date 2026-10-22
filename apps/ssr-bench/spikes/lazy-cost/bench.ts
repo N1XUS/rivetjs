@@ -1,6 +1,6 @@
 // LAZY-COST harness: the ssr-bench `/resume` page (standalone, shape of router-app `resume/`: nested layout with a signal +
 // handler, keyed <For> rows with a per-row handler + reactive attribute + link) rendered in-process by the resume server
-// target, recorded rows (`resume`) vs lazy rows (`lazy`: manifest `lazyRows` + `RIVET_LAZY_ROWS=on`). Interleaved rounds;
+// target, recorded rows (`resume`: `RIVET_LAZY_ROWS=off`) vs lazy rows (`lazy`: manifest `lazyRows` + `RIVET_LAZY_ROWS=on`). Interleaved rounds;
 // wall median + CPU (process.cpuUsage) per render. `--profile lazy|resume` renders one lane in a loop (run under
 // `node --cpu-prof`).
 //
@@ -97,8 +97,8 @@ const sink = {
   },
 };
 const run = async (data: Data, lazy: boolean): Promise<string> => {
-  if (lazy) process.env.RIVET_LAZY_ROWS = "on";
-  else delete process.env.RIVET_LAZY_ROWS;
+  // Lazy rows are the server default on a lazyRows manifest (LAZY-FLIP 2026-10-22): `off` records the rows.
+  process.env.RIVET_LAZY_ROWS = lazy ? "on" : "off";
   if (writerMode === "string") return resumableToString(() => withIdScope("rv", () => mod.App({ data }) as never), { manifest }) as Promise<string>;
   const writer = new NodeStreamWriter(sink as never);
   await withIdScope("rv", () => renderResumable(() => mod.App({ data }) as never, writer, { manifest }));

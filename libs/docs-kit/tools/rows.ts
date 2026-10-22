@@ -20,7 +20,7 @@
 // only, `{ saved: true }`) = brotli of the whole state minus brotli of the state without the share.
 // Lazy rows (`RIVET_LAZY_ROWS=swap` measurement builds, `libs/runtime/server-lazy-swap.ts`): a For whose rows render
 // unrecorded writes `<!--L-->` before its first row and `<!--l-->` before every row; it reports `lazy` with that count.
-// Lazy rows proper (LAZY-ROWS T4, server env `RIVET_LAZY_ROWS=on`): every state `L` entry (`LazyRowsEntry`
+// Lazy rows proper (LAZY-ROWS T4, default since LAZY-FLIP 2026-10-22; server env `RIVET_LAZY_ROWS=off` records): every state `L` entry (`LazyRowsEntry`
 // `[forId, region, rowFn, items, by, flags, chunks, reads?, state?]`) reports `lazy`: symbol = its region's symbol, rows =
 // the items list length (else the row markers `forId + 1 + k` under one parent), share = the entry's wire JSON.
 // Eligibility facts (compiler `forRows`, LAZY-ROWS T2): `facts(symbol)` = the verdicts of the keyed Fors in the group

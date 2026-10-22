@@ -913,7 +913,7 @@ export function Page(props: { stmt: { bind(x: number): { id: number } } }) {
   }
 });
 
-test("resume.lazyRows (LAZY-T5B): the build gets the lazy rows runtime (a chunk of its own, LAZY-BLOCKERS) + manifest lazyRows; without it neither", async () => {
+test("resume.lazyRows (LAZY-T5B, default on since LAZY-FLIP): the build gets the lazy rows runtime (a chunk of its own, LAZY-BLOCKERS) + manifest lazyRows; with `false` neither", async () => {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-lazy-rows-"));
   try {
@@ -951,27 +951,27 @@ export function List(props: { rows: { id: number; label: string }[] }) {
     const off = await built(undefined),
       no = await built(false),
       on = await built(true);
-    assert.equal(off.manifest.lazyRows, undefined);
     assert.equal(no.manifest.lazyRows, undefined);
     assert.match(String(on.manifest.lazyRows), /^\/assets\/dom-resume-lazy-[\w-]+\.js$/);
-    // The lazy rows runtime (`dom-resume-lazy.ts`: its error label; `dom-adopt-run.ts` `_adoptRow`) only when asked, and
+    assert.equal(off.manifest.lazyRows, on.manifest.lazyRows);
+    // The lazy rows runtime (`dom-resume-lazy.ts`: its error label; `dom-adopt-run.ts` `_adoptRow`) unless opted out, and
     // only in its chunk: the runtime's closure keeps the hooks, the resume entry waits for the chunk on pages with `L`
     // entries (a top-level await in the entry: the lazy chunk imports the runtime's chunks).
-    assert.doesNotMatch(off.code, /lazy row /);
+    assert.doesNotMatch(no.code, /lazy row /);
     assert.match(on.lazy, /lazy row /);
     assert.doesNotMatch(on.runtime, /lazy row /);
     assert.match(on.entry, /await /);
-    assert.doesNotMatch(off.entry, /await /);
+    assert.doesNotMatch(no.entry, /await /);
     // The chunk is a dynamic import of the entry (`lazyReady`): the modules it shares with the runtime stay where they
-    // were, so the runtime's closure is as many requests as without the option (as a second entry: +1 here).
-    assert.equal(on.requests, off.requests);
+    // were, so the runtime's closure is as many requests as with `lazyRows: false` (as a second entry: +1 here).
+    assert.equal(on.requests, no.requests);
     // Every other byte (runtime closure + page chunks): the hooks, the bundler's preload helper in the entry and
     // `@rivetjs/runtime/id` in the runtime's closure (+5.3 KB min here; the helper and id are shared with an app's other
     // dynamic imports / page code using ids).
-    assert.ok(on.code.length - on.lazy.length - off.code.length < 6000, `${on.code.length - on.lazy.length} vs ${off.code.length}`);
-    // Without the option the client output is the same bytes as with `lazyRows: false`.
-    assert.equal(off.code.length, no.code.length);
-    assert.ok(on.code.length > off.code.length + 4000, `${on.code.length} vs ${off.code.length}`);
+    assert.ok(on.code.length - on.lazy.length - no.code.length < 6000, `${on.code.length - on.lazy.length} vs ${no.code.length}`);
+    // Without the option (the default) the client output is the same bytes as with `lazyRows: true`.
+    assert.equal(off.code.length, on.code.length);
+    assert.ok(on.code.length > no.code.length + 4000, `${on.code.length} vs ${no.code.length}`);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -1098,7 +1098,7 @@ export function App() { return <Frame><R1 /><R2 /></Frame>; }
   }
 });
 
-test("resume.domData (DOM-DATA): the build's resume runtime gets the DOM data reader + manifest domData; without it neither", async () => {
+test("resume.domData (DOM-DATA, default on since LAZY-FLIP): the build's resume runtime gets the DOM data reader + manifest domData; with `false` neither", async () => {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-dom-data-"));
   try {
@@ -1131,14 +1131,14 @@ export function List(props: { rows: { id: number; label: string }[] }) {
     const off = await built(undefined),
       no = await built(false),
       on = await built(true);
-    assert.equal(off.manifest.domData, undefined);
+    assert.equal(off.manifest.domData, true);
     assert.equal(no.manifest.domData, undefined);
     assert.equal(on.manifest.domData, true);
-    // The reader (`dom-resume-data.ts`: its production error label) only when asked; otherwise the same bytes.
-    assert.doesNotMatch(off.code, /Missing resume DOM data/);
+    // The reader (`dom-resume-data.ts`: its production error label) unless opted out; the default = the same bytes as `true`.
+    assert.doesNotMatch(no.code, /Missing resume DOM data/);
     assert.match(on.code, /Missing resume DOM data/);
-    assert.equal(off.code.length, no.code.length);
-    assert.ok(on.code.length > off.code.length + 500, `${on.code.length} vs ${off.code.length}`);
+    assert.equal(off.code.length, on.code.length);
+    assert.ok(on.code.length > no.code.length + 500, `${on.code.length} vs ${no.code.length}`);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

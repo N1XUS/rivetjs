@@ -57,8 +57,6 @@ export const pins: FuzzPin[] = [
   { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },
   pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
   { ...pin("/visual/card", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER), step: 11 },
-  pin("/data-grid", "recreated", "data-grid__cell", "ui", "DataGrid rows " + NO_REGION),
-  pin("/data-grid", "missing", "resumed gone", "ui", "follows the DataGrid row re-creation (the bound element left the resumed page)"),
   pin(
     "/disclosure-group",
     "load",
@@ -96,6 +94,21 @@ export const pins: FuzzPin[] = [
     "cdk",
     "follows the lost focus after a tag removal (above): Enter selects nothing",
   ),
+  // LAZY-FLIP 2026-10-21 (lazy rows on by default; 3/3). The `/data-grid` recreated (`data-grid__cell`) + missing pins left: the rows no longer re-create.
+  {
+    route: "/data-grid",
+    kind: "recreated",
+    match: /^svg, path/,
+    owner: "ui",
+    note: "lazy rows: the first header click re-creates the sort indicator icon (its header region re-creates instead of the rows; `resume.lazyRows: false` builds re-create the rows, `data-grid__cell`)",
+  },
+  {
+    route: "/lightbox",
+    kind: "recreated",
+    match: "lightbox__image",
+    owner: "cdk",
+    note: "lazy rows: Lightbox slides re-created on the first change (component without its own region, root CLAUDE.md gotcha); the image goes first, before the slide the default pin names",
+  },
 ];
 
 /** Per-route fuzz options. */

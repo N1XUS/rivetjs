@@ -142,24 +142,25 @@ export interface RivetResumeOptions {
    */
   appModules?: boolean;
   /**
-   * Lazy collection rows (LAZY-ROWS, experimental; spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`):
+   * Lazy collection rows (LAZY-ROWS; spec `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`):
    * the browser runtime of this build can materialise lazy `<For>` rows (state `L`: rows rendered without resume
    * records, materialised on their first event / a read signal's first change). Adds the lazy rows runtime (about
    * a chunk of its own: `@rivetjs/runtime` `dom-resume-lazy.ts` + `dom-adopt-run.ts`, loaded only by pages whose state holds
    * `L` entries, preloaded by their lazy add-on — LAZY-BLOCKERS; plus the adopt-run hooks of the DOM runtime and the resume
    * runtime's lazy hooks in the entry, zero-cost `dom` + `dom-resume` `[lazyRows]` lines) to the build and the chunk's URL
-   * as `lazyRows` to the resume manifest (dev: `true`); builds without it carry none of it (0 bytes). The server writes lazy row records only when the manifest says so AND its environment has
-   * `RIVET_LAZY_ROWS=on` (read per render): build once with this option, toggle the variable to A/B. Default false.
+   * as `lazyRows` to the resume manifest (dev: `true`); builds with `false` carry none of it (0 bytes). The server writes lazy
+   * row records when the manifest says so, unless its environment has `RIVET_LAZY_ROWS=off` (read per render): build once,
+   * toggle the variable to A/B. Default true (LAZY-FLIP); `false` leaves the runtime and the manifest flag out.
    */
   lazyRows?: boolean;
   /**
-   * DOM-backed loader data (DOM-DATA, experimental; spec `docs/design/specs/2026-10-20-dom-backed-loader-data-design.md`):
+   * DOM-backed loader data (DOM-DATA; spec `docs/design/specs/2026-10-20-dom-backed-loader-data-design.md`):
    * plain JSON data the page renders as an element's whole text (`<dd>{row().name}</dd>`: loader rows, `<For>` items) is
    * not written into `rivet/state` again — the browser reads those strings back from the DOM on first access (at the latest
    * at the first idle after resume). Adds the reader (`@rivetjs/runtime` `dom-resume-data.ts`, about 1.8 KB min / 0.6 KB br)
    * to the build's resume runtime, the registry + `D` encoder (`server-dom-data.ts`, about 9.1 KB min) to its server and
-   * `domData: true` to the resume manifest; servers write `D` entries only then. Builds without it carry neither. Default
-   * false.
+   * `domData: true` to the resume manifest; servers write `D` entries only then. Default true (LAZY-FLIP); `false`
+   * builds carry neither.
    */
   domData?: boolean;
   /**
@@ -738,6 +739,10 @@ function rivetPlugin(
   // of every build environment: client and server walk the same graph, so both targets get the same boundaries / names /
   // keys); dev compiles without them (module-local closure, identical on both targets).
   const derivedModel = resume?.model === "derived";
+  // `resume.lazyRows` / `resume.domData`: on unless set to `false` (default flipped by LAZY-FLIP); the derived model
+  // serves its own runtime switches and ignores both.
+  const lazyRowsOn = (): boolean => !!resume && !derivedModel && resume.lazyRows !== false;
+  const domDataOn = (): boolean => !!resume && !derivedModel && resume.domData !== false;
   const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[] }>();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
@@ -837,8 +842,8 @@ function rivetPlugin(
     runtime: base + (resume?.entry ? posix(resume.entry).replace(/^\.?\//, "") : "@id/__x00__rivet-resume-entry"),
     ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
     ...(loaderId ? { loader: base + devUrl(loaderId) } : {}),
-    ...(resume?.lazyRows ? { lazyRows: lazyRowsId ? base + devUrl(lazyRowsId) : true } : {}),
-    ...(resume?.domData ? { domData: true } : {}),
+    ...(lazyRowsOn() ? { lazyRows: lazyRowsId ? base + devUrl(lazyRowsId) : true } : {}),
+    ...(domDataOn() ? { domData: true } : {}),
     symbols: new Proxy({} as Record<string, string>, {
       get: (_, id) => {
         const known = typeof id === "string" ? devSymbols.get(id) : undefined;
@@ -1349,7 +1354,7 @@ function rivetPlugin(
         const problem = runtime && runtimeAbiProblem(runtime);
         if (problem) this.error(problem);
       }
-      if (resume?.lazyRows && lazyRowsId === null) lazyRowsId = await runtimeSibling(this, join(root, "index.html"), "dom-resume-lazy");
+      if (lazyRowsOn() && lazyRowsId === null) lazyRowsId = await runtimeSibling(this, join(root, "index.html"), "dom-resume-lazy");
       if (resume && builtinsId === null) {
         const hit = await this.resolve("@rivetjs/runtime/resume-builtins", join(root, "index.html"), { skipSelf: true });
         builtinsId = hit && !hit.external ? hit.id.split("?")[0]! : "";
@@ -1701,7 +1706,7 @@ function rivetPlugin(
       if (id === DERIVED_SERVER)
         return 'export * from "@rivetjs/runtime/server-resume";\nexport { renderDerived as renderResumable, derivedToString as resumableToString } from "@rivetjs/runtime/server-derived";\n';
       // `resume.lazyRows`: the lazy rows runtime is in (`LAZY_ROWS`); the resume manifest says so when the switch loaded.
-      if (resume?.lazyRows) {
+      if (lazyRowsOn()) {
         const code = lazySwitch(clean);
         if (code !== null) {
           if (code.includes("_lazyRows") && this.environment?.config?.consumer !== "server") lazyRowsIn = true;
@@ -1709,7 +1714,7 @@ function rivetPlugin(
         }
       }
       // `resume.domData`: the DOM data reader is in (`DOM_DATA`); the resume manifest says so when the switch loaded.
-      if (resume?.domData) {
+      if (domDataOn()) {
         const code = domDataSwitch(clean);
         if (code !== null) {
           if (code.includes("_domData") && this.environment?.config?.consumer !== "server") domDataIn = true;
@@ -1746,7 +1751,7 @@ function rivetPlugin(
       if (id === ENTRY)
         return (
           'import { createResume } from "@rivetjs/runtime/dom-resume";\nexport default createResume({});\n' +
-          (resume?.lazyRows && this.environment?.config?.consumer !== "server" ? await lazyReady(this, join(root, "index.html")) : "")
+          (lazyRowsOn() && this.environment?.config?.consumer !== "server" ? await lazyReady(this, join(root, "index.html")) : "")
         );
       const part = parts.get(id);
       // Route mode parts register their symbols by module id (`_rSym`): a placed part's chunk exports are the bundler's.
@@ -1867,11 +1872,11 @@ function rivetPlugin(
         hintEagerCompile(bundle, (output) => output.isEntry);
         if (!resume) return;
         if (derivedModel) return derivedManifest.call(this, bundle);
-        if (resume.domData && !domDataIn)
+        if (resume.domData === true && !domDataIn)
           this.warn(
             "resume.domData: the build's resume runtime does not include the DOM data reader (@rivetjs/runtime dom-data-resume module not found): the manifest leaves domData out, servers write no DOM-backed entries",
           );
-        if (resume.lazyRows && !lazyRowsIn)
+        if (resume.lazyRows === true && !lazyRowsIn)
           this.warn(
             "resume.lazyRows: the build's resume runtime does not include the lazy rows runtime (@rivetjs/runtime lazy-rows-resume module not found): the manifest leaves lazyRows out, servers write no lazy row records",
           );
@@ -2084,7 +2089,7 @@ function rivetPlugin(
     transform(original, id, options) {
       const [filename = "", query = ""] = id.split("?", 2);
       // `resume.lazyRows`: an app resume entry (`resume.entry`, the router's `entry.resume.ts`) waits for the lazy rows chunk.
-      if (resume?.lazyRows && resume.entry && filename === resolve(root, resume.entry) && !ssrBuild && this.environment?.config?.consumer !== "server")
+      if (lazyRowsOn() && resume?.entry && filename === resolve(root, resume.entry) && !ssrBuild && this.environment?.config?.consumer !== "server")
         return lazyReady(this, filename).then((ready) => (ready ? { code: original + ready, map: null } : null));
       // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
       const facade = virtual(filename);

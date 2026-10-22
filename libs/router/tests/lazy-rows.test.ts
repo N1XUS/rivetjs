@@ -23,12 +23,14 @@ test("lazyRowsMode: off without the env var; swap in dev or a harness build; a p
   }
 });
 
-test("lazyRowsBuild (LAZY-T5B): resume.lazyRows forced on only for a lazy-rows tool build with RIVET_LAZY_ROWS=on", () => {
-  assert.equal(lazyRowsBuild({}), false);
-  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "on" }), false);
-  assert.equal(lazyRowsBuild({ [LAZY_ROWS_HARNESS_ENV]: "1" }), false);
-  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "swap", [LAZY_ROWS_HARNESS_ENV]: "1" }), false);
+test("lazyRowsBuild (LAZY-T5B, LAZY-FLIP): resume.lazyRows forced on / off only for a lazy-rows tool build with RIVET_LAZY_ROWS=on / off", () => {
+  assert.equal(lazyRowsBuild({}), undefined);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "on" }), undefined);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "off" }), undefined);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_HARNESS_ENV]: "1" }), undefined);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "swap", [LAZY_ROWS_HARNESS_ENV]: "1" }), undefined);
   assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "on", [LAZY_ROWS_HARNESS_ENV]: "1" }), true);
+  assert.equal(lazyRowsBuild({ [LAZY_ROWS_ENV]: "off", [LAZY_ROWS_HARNESS_ENV]: "1" }), false);
 });
 
 test("lazyRowsHarness: inert by default; in swap mode only the SSR server entry installs the row hook", () => {

@@ -487,8 +487,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     dev: options.dev?.resume !== false,
     // Every app component module a route imports resumes without being listed in `resume.modules`.
     appModules: options.resume?.appModules ?? true,
-    // Lazy rows measurement builds (`RIVET_LAZY_ROWS=on` + the harness flag of the lazy-rows tools): the option on.
-    ...(lazyRowsBuild() ? { lazyRows: true } : {}),
+    // Lazy rows measurement builds (`RIVET_LAZY_ROWS=on` / `off` + the harness flag of the lazy-rows tools): the option on / off.
+    ...(lazyRowsBuild() !== undefined ? { lazyRows: lazyRowsBuild() } : {}),
     // Derived model (M2 R5): `.rivet/app.tsx`'s default export (`Root`) is an independent root boundary (its props =
     // the route payload as data), like a route module's default export.
     ...(options.resume?.model === "derived" && mode !== "csr" ? { roots: [...(options.resume.roots ?? []), posix(join(outDir, "app.tsx"))] } : {}),

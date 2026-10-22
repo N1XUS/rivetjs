@@ -143,14 +143,14 @@ export interface ResumeManifest {
   /** Dev only: capture names per symbol id (compiler dev server, Function Bridge Q6), for capture errors. */
   captures?: Record<string, readonly string[]>;
   /**
-   * The build's browser runtime materialises lazy collection rows (`rivet({ resume: { lazyRows: true } })`, LAZY-T5B):
-   * with `RIVET_LAZY_ROWS=on` in the server env, `$lazy` Fors write lazy row records (state `L`). Absent: never. A URL: the
+   * The build's browser runtime materialises lazy collection rows (`rivet({ resume })` default since LAZY-FLIP; LAZY-T5B):
+   * unless the server env has `RIVET_LAZY_ROWS=off`, `$lazy` Fors write lazy row records (state `L`). Absent: never. A URL: the
    * lazy rows runtime's chunk (production builds, LAZY-BLOCKERS): the lazy add-on of a page with `L` entries preloads it
    * (`data-lz`) at the first event walk, with the runtime.
    */
   lazyRows?: boolean | string;
   /**
-   * The build's browser runtime reads DOM-backed loader data (`rivet({ resume: { domData: true } })`, DOM-DATA): plain
+   * The build's browser runtime reads DOM-backed loader data (`rivet({ resume })` default since LAZY-FLIP, DOM-DATA): plain
    * JSON trees whose strings the page rendered as an element's whole text encode as `D` entries (read back from the DOM).
    * Absent: never.
    */
@@ -980,8 +980,8 @@ _onForRows((list, items, keys, rows, render) => {
 // through the row hooks (dev: a warning naming the For). Client effects / clientEvent listeners inside a row are no reason
 // (R6, T5): they run when the row materialises. The entry also lists the event types the rows handle ([9]: the browser
 // materialises a row on one) and the identified providers around the For ([10]: re-provided around a materialised row).
-// Off unless the build opted in (`rivet({ resume: { lazyRows: true } })`: manifest `lazyRows`, its browser runtime
-// materialises the rows) AND the server env has `RIVET_LAZY_ROWS=on` (read per render; LAZY-T5B). The record type, the switch,
+// On when the build's manifest has `lazyRows` (`rivet({ resume })` default since LAZY-FLIP; its browser runtime
+// materialises the rows) unless the server env has `RIVET_LAZY_ROWS=off` (read per render; LAZY-T5B). The record type, the switch,
 // the read / `_regionState` helpers and the `L` encoder (`encodeLazy`) live in `server-resume-lazy.ts`.
 /** A lazy For's record in this module (`server-resume-lazy.ts` `LazyFor`, its scope / recorder types bound). */
 type LazyFor = LazyRecord<Scope, Recorder>;
@@ -2355,7 +2355,7 @@ class Recorder {
   declare stream: Stream | null;
   /** Derived model (`options.model === "derived"` + `server-derived.ts` loaded): the boundary recorder of this render. */
   declare derived: DerivedRender | null;
-  /** `RIVET_LAZY_ROWS=on` at the render's start + manifest `lazyRows`: `$lazy` Fors write lazy row records (LAZY-ROWS T4). */
+  /** Manifest `lazyRows` and no `RIVET_LAZY_ROWS=off` at the render's start: `$lazy` Fors write lazy row records (LAZY-ROWS T4). */
   declare lazyRows: boolean;
   /** Lazy Fors rendered while this recorder evaluated (state `L`). */
   declare lazy: LazyFor[];

@@ -55,16 +55,19 @@ export interface LazyFor<S = unknown, R = unknown> {
   effects: number[] | null;
 }
 
-/** `RIVET_LAZY_ROWS=on` (server env) and a build whose manifest has `lazyRows`: lazy row records for `$lazy` Fors. Read
- * once per render. Dev: the variable on with a build that did not opt in warns once (the rows stay recorded). */
+/** A build whose manifest has `lazyRows` (the default since LAZY-FLIP) and a server env without `RIVET_LAZY_ROWS=off`
+ * (`swap`: the measurement harness, not lazy rows proper): lazy row records for `$lazy` Fors. Read once per render. Dev:
+ * `RIVET_LAZY_ROWS=on` with a build that opted out (`lazyRows: false`) warns once (the rows stay recorded). */
 let lazyHinted = false;
 export function lazyRowsOn(manifest: { lazyRows?: boolean | string } | undefined): boolean {
-  if ((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS !== "on") return false;
+  const mode = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.RIVET_LAZY_ROWS;
+  if (mode === "off" || mode === "swap") return false;
   if (manifest?.lazyRows) return true;
+  if (mode !== "on") return false;
   if (DEV && !lazyHinted) {
     lazyHinted = true;
     console.warn(
-      "Rivet resume: RIVET_LAZY_ROWS=on is ignored: this build's browser runtime cannot materialise lazy rows (the resume manifest has no lazyRows). Build with rivet({ resume: { lazyRows: true } }) / rivetRouter({ resume: { lazyRows: true } }); rows stay recorded. docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.1",
+      "Rivet resume: RIVET_LAZY_ROWS=on is ignored: this build's browser runtime cannot materialise lazy rows (the resume manifest has no lazyRows: built with resume.lazyRows false, or without the compiler plugin). Build without rivet({ resume: { lazyRows: false } }); rows stay recorded. docs: docs/design/specs/2026-10-19-lazy-collection-rows-design.md §3.1",
     );
   }
   return false;

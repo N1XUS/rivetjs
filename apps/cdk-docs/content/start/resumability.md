@@ -97,10 +97,10 @@ Component props are live. A prop expression that reads a signal updates only the
 
 ## Large collections
 
-A collection with hundreds of items (`ListBox`, `GridList`, `Table`, `Tree`) sends each row's resume data with the page by default. Two experimental build options of the framework shrink that; both are off by default:
+A collection with hundreds of items (`ListBox`, `GridList`, `Table`, `Tree`) would send each row's resume data with the page. Two build defaults of the framework shrink that (`resume: { lazyRows: false }` / `{ domData: false }` turn them off):
 
-- **[Lazy rows](https://rivetjs.severyn.pro/learn/resuming#lazy-rows-experimental)** (`resume: { lazyRows: true }` plus `RIVET_LAZY_ROWS=on` on the server): rows are sent as their keys and rebuilt from the server HTML when first used. Selection and focus read keyed selectors, so selecting a row rebuilds that row and the one that lost the selection, not the whole list. Sections, tree children and table headers stay recorded, so the rows inside them are the lazy ones. Server time per page drops too: a 1,000-item `ListBox` renders in about 0.4× the CPU.
-- **[Data from the page](https://rivetjs.severyn.pro/learn/resuming#data-from-the-page-experimental)** (`resume: { domData: true }`): item text a `ListBox` row shows is read back from the page instead of being sent twice. `GridList` rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
+- **[Lazy rows](https://rivetjs.severyn.pro/learn/resuming#lazy-rows)** (`resume.lazyRows`; the server environment variable `RIVET_LAZY_ROWS=off` records the rows of a build that has it): rows are sent as their keys and rebuilt from the server HTML when first used. Selection and focus read keyed selectors, so selecting a row rebuilds that row and the one that lost the selection, not the whole list. Sections, tree children and table headers stay recorded, so the rows inside them are the lazy ones. Server time per page drops too: a 1,000-item `ListBox` renders in about 0.4× the CPU.
+- **[Data from the page](https://rivetjs.severyn.pro/learn/resuming#data-from-the-page)** (`resume.domData`): item text a `ListBox` row shows is read back from the page instead of being sent twice. `GridList` rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
 
 Under the experimental [derived model](https://rivetjs.severyn.pro/learn/resuming#derived-model-experimental) (`resume: { model: "derived" }`) the first press on a press-based control (button, toggle, menu trigger) before its code arrives can be lost, and `ListBox`, `Select` and `TagGroup` render again in the browser on their first interaction.
 

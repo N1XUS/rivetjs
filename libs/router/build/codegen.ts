@@ -660,7 +660,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           // Z1: the loader boots the router on link intent; the nested-layout / active-link effects arm then.
           ...(nested || active ? [`    arm();`] : []),
           // Live pages: focus in a form warms the chunks of the bindings reading the page / layout data.
-          ...(live.length ? [`    _liveIntent(event, live${useNest ? ", nest" : ""});`] : []),
+          ...(live.length ? [`    _liveIntent(event, live, modules${useNest ? ", nest" : ""});`] : []),
           `    const anchor = routableAnchor(event, modules);`,
           ...(transitions ? [`    if (anchor) transitions();`] : []),
           `    if (!anchor || anchor.getAttribute("data-rivet-prefetch") === "none") return;`,
@@ -672,7 +672,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `  clientEvent(document, "focusin", intent, { preload: "intent", match: "${live.length ? "a,form" : "a"}"${lone} });`,
           ...(live.length
             ? [
-                `  clientEvent(document, "pointerdown", (event: PointerEvent) => _liveIntent(event, live${useNest ? ", nest" : ""}), { passive: true, preload: "intent", match: "form"${lone} });`,
+                `  clientEvent(document, "pointerdown", (event: PointerEvent) => _liveIntent(event, live, modules${useNest ? ", nest" : ""}), { passive: true, preload: "intent", match: "form"${lone} });`,
               ]
             : []),
           `  clientEvent(window, "popstate", (event: PopStateEvent) => ${armed("notePopstate(event)")}, { preload: "intent"${lone} });`,

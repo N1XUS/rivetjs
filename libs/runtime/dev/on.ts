@@ -55,7 +55,7 @@ const STATE_DOCS = "https://rivetjs.severyn.pro/learn/resuming#large-data-in-res
 const STATE_FIX =
   "\n  fix: 1. do not capture it: read it on the server (route loader, component body) and capture only what the browser code needs (an id, a key, a count)" +
   '\n       2. load it in the browser instead: serve it from an endpoint (an onGet(…) export) and fetch it in the handler that needs it, or in clientEffect(() => …, { when: "visible" }) into a signal' +
-  "\n       3. a list: keyed <For each={…} by={…}> rows; today each row still ships its item and its own handler / binding records (experimental lazy rows — a build with resume: { lazyRows: true } and RIVET_LAZY_ROWS=on on the server — cut a row to its key and ship the items once)" +
+  "\n       3. a list: keyed <For each={…} by={…}> rows; lazy rows (on by default: resume.lazyRows) ship each row as its key and the items once — a For that cannot be lazy keeps per-row items and handler / binding records, and development warns with the reason" +
   "\n       4. a library object (a chart, an editor, an SDK client): reconstruct(() => …) builds it in the browser, nothing ships" +
   "\n  docs: " +
   STATE_DOCS;

@@ -94,15 +94,13 @@ test("masonry: measured mode places by measured heights after resume", async () 
   );
   await page.click("#more");
   await page.waitForFunction(() => document.querySelectorAll("#notes [data-rv-item]").length === 15);
-  // Known gap (pinned): on a resumed page the first items change re-creates the server rows (dom-adopt keeps a row whose
-  // render read signals, flags & 2, only while those signals hold their server values — RESUME-KEEP-ROWS — and masonry
-  // rows read the items themselves through `entries()`), so none of the 9 server nodes survive. Client-mounted grids keep them
-  // (masonry.browser "load more keeps the rendered rows"). Flip this to 9 when the runtime adopts such rows.
+  // Lazy rows (default since LAZY-FLIP 2026-10-22): the rows materialise over the server nodes, so all 9 survive the first
+  // items change (with `resume.lazyRows: false` the recorded rows are re-created: RESUME-KEEP-ROWS gap, none survive).
   assert.equal(
     await page.evaluate(
       () => [...document.querySelectorAll<HTMLElement>("#notes [data-rv-item]")].filter((el) => (el as { rvServer?: boolean } & HTMLElement).rvServer).length,
     ),
-    0,
+    9,
   );
   await page.waitForFunction(() =>
     [...document.querySelectorAll<HTMLElement>("#notes [data-rv-item]")].every((el) => getComputedStyle(el).visibility === "visible" && el.style.transform),
