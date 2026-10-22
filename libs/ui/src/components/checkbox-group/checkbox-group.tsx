@@ -24,7 +24,6 @@ import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-e
 import { LabelRoot } from "../label/label.tsx";
 import { CheckboxGroupContext, type CheckboxGroupContextValue } from "./context.ts";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * CheckboxGroup Context
@@ -50,7 +49,7 @@ interface CheckboxGroupProps extends CheckboxGroupPrimitiveProps, CheckboxGroupV
 
 const CheckboxGroup = (props: CheckboxGroupProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "items", "label", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("CheckboxGroup", local, ["label", "description", "errorMessage", "items"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("CheckboxGroup", local, ["label", "description", "errorMessage", "items"]);
   const contextValue: CheckboxGroupContextValue = hasLiveProp(local, ["variant"])
     ? {
         get variant() {

@@ -31,7 +31,6 @@ import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
 
@@ -65,7 +64,7 @@ interface SwitchRootProps extends SwitchFieldPrimitiveProps, SwitchVariants {
 
 const SwitchRoot = (props: SwitchRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "label", "size", "isSelected", "isDisabled"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("Switch", local, ["label", "description"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("Switch", local, ["label", "description"]);
   const live = hasLiveProp(local, ["class", "size"]);
   const classOf = (): string | ((values: SwitchFieldRenderProps) => string) => composeTwRenderProps(local.class as never, slotsFor(local.size).base());
   const cls = live ? (values: SwitchFieldRenderProps) => renderClass(classOf(), values) : classOf();

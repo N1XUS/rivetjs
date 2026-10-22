@@ -21,6 +21,7 @@
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { noteModality } from "../interactions/focus-visible.tsx";
+import { cachedIntl } from "../i18n/intl-cache.ts";
 import { disableTextSelection, read, restoreTextSelection } from "../interactions/utils.ts";
 import { Motion1D, type Motion1DType } from "../motion/index.ts";
 
@@ -124,11 +125,13 @@ export function isCompareDisabled(state: CompareState): boolean {
   return !!read(state.isDisabled);
 }
 
-/** Localized percent text of the value (`aria-valuetext`). Reads. */
+const PERCENT: Intl.NumberFormatOptions = { style: "percent", maximumFractionDigits: 0 };
+
+/** Localized percent text of the value (`aria-valuetext`). Reads. Formatter cached per locale (`i18n/intl-cache`). */
 export function compareValueText(state: CompareState): string {
   const value = Math.round(compareValue(state));
   try {
-    return new Intl.NumberFormat(state.locale, { style: "percent", maximumFractionDigits: 0 }).format(value / 100);
+    return cachedIntl(Intl.NumberFormat, state.locale, PERCENT).format(value / 100);
   } catch {
     return `${value}%`;
   }

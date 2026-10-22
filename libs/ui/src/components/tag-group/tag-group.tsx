@@ -25,7 +25,6 @@ import { ErrorMessageRoot } from "../error-message/error-message.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
-import { warnItemsIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * TagGroup Context
@@ -69,7 +68,7 @@ const TagGroupRoot = <T extends object = object>(props: TagGroupRootProps<T>): J
   const [local, rest] = splitLive(props as TagGroupRootProps, ["children", "class", "description", "errorMessage", "items", "label", "size", "variant"]);
   // `items` next to compound (slot) children: the children win, `items` is ignored (dev warning). Decided once.
   const compound = local.items !== undefined && isSlot(local.children);
-  if (DEV && compound) warnItemsIgnored("TagGroup");
+  if (DEV && compound) DEV.itemsIgnored("TagGroup");
   const auto = !compound && (local.label !== undefined || local.description !== undefined || local.errorMessage !== undefined || local.items !== undefined);
   const contextValue: TagGroupContext = hasLiveProp(local, ["size", "variant"])
     ? {

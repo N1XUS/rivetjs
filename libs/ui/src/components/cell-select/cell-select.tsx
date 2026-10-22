@@ -41,7 +41,6 @@ import { ListBoxItemWithIndicator, type ListBoxItemRootProps } from "../list-box
 import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
-import { warnItemsIgnored } from "../../utils/shorthand.ts";
 import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
@@ -96,7 +95,7 @@ function CellSelectRoot<M extends "single" | "multiple" = "single", T extends ob
   // A function: Rivet JSX builds nodes eagerly, so the select is created inside the provider.
   // `items` next to compound (slot) children: the children win, `items` is ignored (dev warning). Decided once.
   const compound = local.items !== undefined && isSlot(local.children);
-  if (DEV && compound) warnItemsIgnored("CellSelect");
+  if (DEV && compound) DEV.itemsIgnored("CellSelect");
   const auto = !compound && (local.label !== undefined || local.items !== undefined);
   const content = () => (
     <SelectPrimitive data-slot="cell-select" {...(rest as SelectPartsProps)} class={cls as never}>

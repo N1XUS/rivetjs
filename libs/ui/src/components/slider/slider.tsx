@@ -49,7 +49,6 @@ import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 type SliderSlots = ReturnType<typeof sliderVariants>;
 
@@ -70,7 +69,7 @@ interface SliderRootProps<T extends number | number[] = number | number[]> exten
 
 const SliderRoot = <T extends number | number[] = number | number[]>(props: SliderRootProps<T>): JSX.Element => {
   const [local, rest] = splitLive(props as unknown as SliderRootProps, ["class", "label", "orientation"]);
-  if (DEV && (rest as { children?: unknown }).children !== undefined) warnShorthandIgnored("Slider", local, ["label"]);
+  if (DEV && (rest as { children?: unknown }).children !== undefined) DEV.shorthandIgnored("Slider", local, ["label"]);
   const classOf = (): string | ((values: SliderRenderProps) => string) => composeTwRenderProps(local.class as never, slotsFor().base());
   const cls = hasLiveProp(local, ["class"]) ? (values: SliderRenderProps) => renderClass(classOf(), values) : classOf();
 

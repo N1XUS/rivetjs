@@ -41,7 +41,6 @@ import { stepperVariants } from "../../../styles/src/components/stepper/index.ts
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { hasLiveProp, splitLive } from "../../utils/live.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* ------------------------------------------------------------------------------------------------
  * Context
@@ -171,7 +170,7 @@ interface StepperStepProps {
 
 const StepperStep = (props: StepperStepProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "buttonClass", "aria-label", "title", "description"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("Stepper.Step", local, ["title", "description"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("Stepper.Step", local, ["title", "description"]);
   const stepper = useContext(StepperContext)!;
   const interactive = !stepper.readOnly;
   const status = (values: StepRenderProps) => statusOf(values.index(), stepperSelectedIndex(stepper));

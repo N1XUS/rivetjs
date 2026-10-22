@@ -41,7 +41,6 @@ import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
 
@@ -92,7 +91,7 @@ interface CheckboxButtonGroupRootProps extends CheckboxGroupPrimitiveProps, Chec
 
 const CheckboxButtonGroupRoot = (props: CheckboxButtonGroupRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "items", "label", "layout"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("CheckboxButtonGroup", local, ["label", "description", "errorMessage", "items"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("CheckboxButtonGroup", local, ["label", "description", "errorMessage", "items"]);
   const contextValue: CheckboxButtonGroupContext = hasLiveProp(local, ["layout"])
     ? {
         inGroup: true,

@@ -41,7 +41,6 @@ import { cellSliderVariants } from "../../../styles/src/components/cell-slider/i
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * CellSlider Context
@@ -71,7 +70,7 @@ interface CellSliderRootProps extends Omit<SliderPrimitiveProps<number>, "orient
 
 const CellSliderRoot = (props: CellSliderRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "label", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("CellSlider", local, ["label"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("CellSlider", local, ["label"]);
   const contextValue: CellSliderContext = hasLiveProp(local, ["variant"])
     ? {
         inCell: true,

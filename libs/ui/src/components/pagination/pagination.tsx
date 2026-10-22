@@ -36,7 +36,6 @@ import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Pagination Context
@@ -138,7 +137,7 @@ const PaginationRoot = <E extends keyof JSX.IntrinsicElements = "nav">(props: Pa
     "previousLabel",
     "nextLabel",
   ]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("Pagination", local, ["total"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("Pagination", local, ["total"]);
   const auto = local.children === undefined && local.total !== undefined;
   const contextValue: PaginationContext = hasLiveProp(local, ["size"])
     ? {

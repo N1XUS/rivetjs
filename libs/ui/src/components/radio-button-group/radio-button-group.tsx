@@ -35,7 +35,6 @@ import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
 
@@ -86,7 +85,7 @@ interface RadioButtonGroupRootProps extends RadioGroupPrimitiveProps, RadioButto
 
 const RadioButtonGroupRoot = (props: RadioButtonGroupRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "items", "label", "layout"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("RadioButtonGroup", local, ["label", "description", "errorMessage", "items"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("RadioButtonGroup", local, ["label", "description", "errorMessage", "items"]);
   const contextValue: RadioButtonGroupContext = hasLiveProp(local, ["layout"])
     ? {
         inGroup: true,

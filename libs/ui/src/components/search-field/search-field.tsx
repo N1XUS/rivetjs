@@ -38,7 +38,6 @@ import { LabelRoot } from "../label/label.tsx";
 import { CloseButtonRoot as CloseButton } from "../close-button/close-button.tsx";
 import type { CloseButtonRootProps } from "../close-button/close-button.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * SearchField Context
@@ -82,7 +81,7 @@ const ROOT_STYLE = ["class", "fullWidth", "variant"] as const;
 
 const SearchFieldRoot = (props: SearchFieldRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "fullWidth", "label", "placeholder", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("SearchField", local, ["label", "description", "errorMessage", "placeholder"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("SearchField", local, ["label", "description", "errorMessage", "placeholder"]);
   // Getters only when a field is live (readers then take the render-prop class path), plain data otherwise.
   const contextValue: SearchFieldContext = hasLiveProp(local, CONTEXT_KEYS)
     ? {

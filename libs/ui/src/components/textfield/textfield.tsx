@@ -29,7 +29,6 @@ import { LabelRoot } from "../label/label.tsx";
 import { FormFieldsContext } from "../../utils/form-fields.ts";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* ------------------------------------------------------------------------------------------------
  * TextField Context
@@ -63,7 +62,7 @@ const STYLE_PROPS = ["class", "fullWidth"] as const;
 
 const TextFieldRoot = (props: TextFieldRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "fullWidth", "label", "placeholder", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("TextField", local, ["label", "description", "errorMessage", "placeholder"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("TextField", local, ["label", "description", "errorMessage", "placeholder"]);
   // A body const (compiler-registered resumable symbol), see `../../../CLAUDE.md` Gotchas.
   const classOf = (): string | ((values: TextFieldRenderProps) => string) =>
     composeTwRenderProps(local.class as never, textFieldVariants({ fullWidth: local.fullWidth }));

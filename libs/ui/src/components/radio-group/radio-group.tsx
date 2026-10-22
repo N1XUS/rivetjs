@@ -22,7 +22,6 @@ import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-e
 import { LabelRoot } from "../label/label.tsx";
 import { RadioRoot } from "../radio/radio.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * Radio Group Root
@@ -48,7 +47,7 @@ interface RadioGroupRootProps extends RadioGroupPrimitiveProps, RadioGroupVarian
 
 const RadioGroupRoot = (props: RadioGroupRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "items", "label", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("RadioGroup", local, ["label", "description", "errorMessage", "items"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("RadioGroup", local, ["label", "description", "errorMessage", "items"]);
   const classOf = (): string | ((values: RadioGroupRenderProps) => string) =>
     composeTwRenderProps(local.class as never, radioGroupVariants({ variant: local.variant }));
   const cls = hasLiveProp(local, ["class", "variant"]) ? (values: RadioGroupRenderProps) => renderClass(classOf(), values) : classOf();

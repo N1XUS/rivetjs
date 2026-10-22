@@ -30,7 +30,6 @@ import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
 
@@ -66,7 +65,7 @@ interface RadioRootProps extends RadioFieldPrimitiveProps {
 
 const RadioRoot = (props: RadioRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "label"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("Radio", local, ["label", "description"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("Radio", local, ["label", "description"]);
   const live = hasLiveProp(local, ["class"]);
   const classOf = (): string | ((values: RadioFieldRenderProps) => string) => composeTwRenderProps(local.class as never, slotsFor().base());
   const cls = live ? (values: RadioFieldRenderProps) => renderClass(classOf(), values) : classOf();

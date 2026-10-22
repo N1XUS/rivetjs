@@ -41,7 +41,6 @@ import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * NativeSelect Context
@@ -92,7 +91,7 @@ const CONTEXT_PROPS = ["variant", "fullWidth"] as const;
 
 const NativeSelectRoot = (props: NativeSelectRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "items", "label", "variant", "fullWidth"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("NativeSelect", local, ["label", "description", "errorMessage", "items"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("NativeSelect", local, ["label", "description", "errorMessage", "items"]);
   const contextValue: NativeSelectContext = hasLiveProp(local, CONTEXT_PROPS)
     ? {
         inNativeSelect: true,

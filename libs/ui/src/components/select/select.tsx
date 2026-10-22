@@ -54,7 +54,6 @@ import { ListBoxItemWithIndicator, type ListBoxItemRootProps } from "../list-box
 import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
-import { warnItemsIgnored } from "../../utils/shorthand.ts";
 import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
@@ -131,7 +130,7 @@ function SelectRoot<M extends "single" | "multiple" = "single", T extends object
   const cls = hasLiveProp(local, ["class", "fullWidth", "variant"]) ? (values: SelectPartsRenderProps) => renderClass(classOf(), values) : classOf();
   // `items` next to compound (slot) children: the children win, `items` is ignored (dev warning). Decided once.
   const compound = local.items !== undefined && isSlot(local.children);
-  if (DEV && compound) warnItemsIgnored("Select");
+  if (DEV && compound) DEV.itemsIgnored("Select");
   const auto = !compound && (local.label !== undefined || local.items !== undefined);
   const content = () => (
     <SelectPrimitive data-slot="select" {...(rest as SelectPartsProps)} class={cls as never} isDisabled={local.isDisabled}>

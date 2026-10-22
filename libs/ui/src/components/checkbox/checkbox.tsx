@@ -40,7 +40,6 @@ import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { CheckboxGroupContext } from "../checkbox-group/context.ts";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
 
@@ -77,7 +76,7 @@ interface CheckboxRootProps extends CheckboxFieldPrimitiveProps, CheckboxVariant
 
 const CheckboxRoot = (props: CheckboxRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "label", "variant", "isSelected", "isIndeterminate", "isDisabled"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("Checkbox", local, ["label", "description"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("Checkbox", local, ["label", "description"]);
   const checkboxGroupContext = useContext(CheckboxGroupContext);
   const variantOf = () => local.variant ?? checkboxGroupContext.variant;
   const live = hasLiveProp(local, ["class", "variant"]) || hasLiveProp(checkboxGroupContext, ["variant"]);

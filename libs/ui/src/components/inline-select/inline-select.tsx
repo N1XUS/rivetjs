@@ -40,7 +40,6 @@ import { ListBoxItemWithIndicator, type ListBoxItemRootProps } from "../list-box
 import { SurfaceContext } from "../surface/index.ts";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { DEV } from "#dev";
-import { warnItemsIgnored } from "../../utils/shorthand.ts";
 import { portalTheme } from "../../utils/portal-theme.ts";
 
 /* -------------------------------------------------------------------------------------------------
@@ -84,7 +83,7 @@ function InlineSelectRoot<M extends "single" | "multiple" = "single", T extends 
   const cls = hasLiveProp(local, ["class"]) ? (values: SelectPartsRenderProps) => renderClass(classOf(), values) : classOf();
   // `items` next to compound (slot) children: the children win, `items` is ignored (dev warning). Decided once.
   const compound = local.items !== undefined && isSlot(local.children);
-  if (DEV && compound) warnItemsIgnored("InlineSelect");
+  if (DEV && compound) DEV.itemsIgnored("InlineSelect");
   const auto = !compound && local.items !== undefined;
   // A function: Rivet JSX builds nodes eagerly, so the select is created inside the provider.
   const content = () => (

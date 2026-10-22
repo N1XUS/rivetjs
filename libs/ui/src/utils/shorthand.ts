@@ -1,7 +1,8 @@
 // Rivet-only helper (no HeroUI counterpart). Apache-2.0 port tree (© 2025 NextUI Inc. for the ported files).
 // Shorthand precedence (identity spec §4.2): explicit `children` win over the shorthand props (`label` / `description` /
-// `errorMessage` / `placeholder` / `items`); the shorthand is ignored. Call sites guard on `DEV` (`#dev`), so the warning and
-// this module fold away in production builds.
+// `errorMessage` / `placeholder` / `items`); the shorthand is ignored. Reached only through the dev hooks object (`dev-on.ts`
+// `DEV.shorthandIgnored` / `DEV.itemsIgnored`, call sites `if (DEV && …)`): production builds (`dev-off.ts`, `DEV = false`) never
+// import this module.
 
 const warned = new Set<string>();
 

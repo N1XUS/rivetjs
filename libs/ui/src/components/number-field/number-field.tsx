@@ -37,7 +37,6 @@ import { DescriptionRoot } from "../description/description.tsx";
 import { FieldErrorRoot, type FieldErrorRootProps } from "../field-error/field-error.tsx";
 import { LabelRoot } from "../label/label.tsx";
 import { DEV } from "#dev";
-import { warnShorthandIgnored } from "../../utils/shorthand.ts";
 
 /* -------------------------------------------------------------------------------------------------
  * NumberField Context
@@ -79,7 +78,7 @@ interface NumberFieldRootProps extends NumberFieldPrimitiveProps, NumberFieldVar
 
 const NumberFieldRoot = (props: NumberFieldRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "description", "errorMessage", "fullWidth", "label", "placeholder", "variant"]);
-  if (DEV && local.children !== undefined) warnShorthandIgnored("NumberField", local, ["label", "description", "errorMessage", "placeholder"]);
+  if (DEV && local.children !== undefined) DEV.shorthandIgnored("NumberField", local, ["label", "description", "errorMessage", "placeholder"]);
   // Getters only when a field is live (readers then take the render-prop class path), plain data otherwise.
   const contextValue: NumberFieldContext = hasLiveProp(local, CONTEXT_KEYS)
     ? {
