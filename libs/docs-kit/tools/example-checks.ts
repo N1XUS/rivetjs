@@ -65,6 +65,11 @@ interface CacheEntry {
   measure: ExampleMeasure;
 }
 
+/** First line of a failure, plus the first console error when the message is a `console errors:` list (the summary lines keep the cause). */
+const firstLine = (error: Error) => {
+  const [head, next] = error.message.split("\n");
+  return head!.endsWith("console errors:") && next ? `${head} ${next.trim()}` : head!;
+};
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 const ASSET_URL = /\/assets\/[^"'\s)<>,]+/g;
 /** The cache key of a frame page: its HTML with every asset URL outside `requested` blanked (the App chunk of the docs router changes with every docs page; a frame never loads it), plus its steps. */
@@ -429,10 +434,10 @@ export async function checkExamples(
         } catch (error) {
           if (!final) return false;
           const held = quarantine[example.id];
-          if (held) log(`checks: quarantined ${example.id} (${held.reason}; step ${held.step}): ${(error as Error).message.split("\n")[0]}`);
+          if (held) log(`checks: quarantined ${example.id} (${held.reason}; step ${held.step}): ${firstLine(error as Error)}`);
           else {
             failed.push(error as Error);
-            log(`checks: FAILED ${(error as Error).message.split("\n")[0]}`);
+            log(`checks: FAILED ${firstLine(error as Error)}`);
           }
           return false;
         }
@@ -457,7 +462,7 @@ export async function checkExamples(
       if (persist) await writeAtomic(cacheFile, JSON.stringify({ format: FORMAT, entries: { ...previous, ...next } }) + "\n");
     }
     if (failed.length === 1) throw failed[0];
-    if (failed.length) throw new Error(`${failed.length} example checks failed:\n${failed.map((error) => "  " + error.message.split("\n")[0]).join("\n")}`);
+    if (failed.length) throw new Error(`${failed.length} example checks failed:\n${failed.map((error) => "  " + firstLine(error)).join("\n")}`);
   }
   if (persist) await writeAtomic(cacheFile, JSON.stringify({ format: FORMAT, entries: next }) + "\n");
   return measures;

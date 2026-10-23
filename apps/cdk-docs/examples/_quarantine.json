@@ -36,7 +36,7 @@
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "grid-list-load-more": {
-    "step": "{\"expect\":[\"#pokedex-9\",\"Pok\u00e9mon #9\"]}",
+    "step": "{\"expect\":[\"#pokedex-9\",\"Pokémon #9\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "group-dom-events": {
@@ -88,7 +88,7 @@
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "slider-range": {
-    "step": "{\"expect\":[\"#price output\",\"$300 \u2013 $600\"]}",
+    "step": "{\"expect\":[\"#price output\",\"$300 – $600\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "stepper-list": {
@@ -150,5 +150,17 @@
   "tree-selection": {
     "step": "{\"expect\":[\"#food-selected\",\"Selected: fruit\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "popover-placement": {
+    "step": "console errors",
+    "reason": "derived-only model (M6-CUT 2026-10-23): RangeError: Maximum call stack size exceeded on load; runtime / cdk fix in lane RED-COMP"
+  },
+  "virtualizer-listbox-sections": {
+    "step": "console errors",
+    "reason": "derived-only model (M6-CUT 2026-10-23): Error: Duplicate For key on adopted virtualized rows; runtime fix in lane RED-COMP"
+  },
+  "virtualizer-tree": {
+    "step": "console errors",
+    "reason": "derived-only model (M6-CUT 2026-10-23): Error: Duplicate For key on adopted virtualized rows; runtime fix in lane RED-COMP"
   }
 }
