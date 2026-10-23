@@ -26,6 +26,26 @@ async function onPage(body: (page: Page) => Promise<void>): Promise<void> {
 
 const attr = (page: Page, selector: string, name: string) => page.getAttribute(selector, name);
 
+for (const axis of ["x", "y"] as const) {
+  test(`popover: fixed trigger closes after real document ${axis} scrolling`, () =>
+    onPage(async (page) => {
+      const seen = watch(page);
+      await page.goto(s.origin + "/popover-fixed");
+      await page.evaluate(() => window.scrollTo(80, 90));
+      await page.click("#fixed-trigger");
+      await page.locator("#fixed-dialog").waitFor();
+      assert.equal(await page.locator(".popover").evaluate((el) => getComputedStyle(el).position), "absolute");
+      const before = await page.locator("#fixed-trigger").boundingBox();
+      const offset = await page.evaluate((axis) => (axis === "x" ? window.scrollX : window.scrollY), axis);
+      await page.evaluate((axis) => window.scrollBy(axis === "x" ? 40 : 0, axis === "y" ? 40 : 0), axis);
+      await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      assert.equal(await page.evaluate((axis) => (axis === "x" ? window.scrollX : window.scrollY), axis), offset + 40);
+      assert.deepEqual(await page.locator("#fixed-trigger").boundingBox(), before, "the fixed trigger remains at its opening viewport position");
+      await page.locator("#fixed-dialog").waitFor({ state: "detached", timeout: 1500 });
+      assert.deepEqual(seen.errors, []);
+    }));
+}
+
 test("popover: SSR closed markup (trigger only)", () =>
   onPage(async (page) => {
     const seen = watch(page);

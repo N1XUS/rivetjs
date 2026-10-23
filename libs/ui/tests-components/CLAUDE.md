@@ -1,6 +1,7 @@
 # libs/ui/tests-components
 - Scheduler docs integration (2026-10-23): `/scheduler-crud` mirrors the public docs CRUD/confirmation/range-menu consumer so the library regression remains independent of the docs app. `scheduler.test.ts` adds a permanent production regression: delete and confirm, queue focus/document scrolling and open a selected-range menu in the same task; the menu stays focused after the old scroll notification, then real anchor movement dismisses it. This caught the shared overlay position guard bug; no sleep, quarantine or exception hides it.
 
+- Overlay fixed-anchor review regression (2026-10-23): `/popover-fixed` uses a fixed generic `Popover.Trigger` and absolute nonmodal body-portal overlay. `popover.test.ts` proves real horizontal and vertical document scrolling preserves the trigger viewport rect and dismisses the overlay; no mocked geometry or animation wait hides movement. Scheduler queued post-confirmation menu coverage remains.
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 
 Browser tests for `@rivetjs/ui`: resumed story app (production build + node adapter + Chromium), Tailwind v4 + vendored `@heroui/styles`.

@@ -250,6 +250,30 @@ describe("useOverlayPosition", () => {
     assert.equal(onClose.calls.length, 1);
   });
 
+  for (const axis of ["scrollX", "scrollY"] as const) {
+    test(`closes a viewport-stable fixed trigger after actual document ${axis} changes`, () => {
+      const descriptor = Object.getOwnPropertyDescriptor(window, axis);
+      try {
+        Object.defineProperty(window, axis, { configurable: true, value: 40 });
+        const onClose = calls();
+        const { trigger } = render({ isOpen: true, onClose });
+        trigger.style.position = "fixed";
+        const opening = trigger.getBoundingClientRect();
+        // A queued event at the opening document offset is harmless even for a fixed trigger.
+        document.dispatchEvent(new Event("scroll"));
+        assert.equal(onClose.calls.length, 0);
+        Object.defineProperty(window, axis, { configurable: true, value: 80 });
+        assert.equal(trigger.getBoundingClientRect().left, opening.left);
+        assert.equal(trigger.getBoundingClientRect().top, opening.top);
+        document.dispatchEvent(new Event("scroll"));
+        assert.equal(onClose.calls.length, 1, "absolute overlay must close when document scroll moves it away from a fixed trigger");
+      } finally {
+        if (descriptor) Object.defineProperty(window, axis, descriptor);
+        else delete win[axis];
+      }
+    });
+  }
+
   test("arrow should be hidden when using assistive technologies", () => {
     const { arrow } = render();
     assert.equal(arrow.getAttribute("aria-hidden"), "true");

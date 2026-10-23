@@ -2,7 +2,7 @@
 // containerPadding, boundary element, maxHeight, arrow position, trigger anchor point) and
 // `useOverlayPosition` (as `overlayPosition()`: imperative, called when the overlay opens). It follows
 // window / visual viewport resizes and overlay / target size changes. Rivet closes on ancestor scroll
-// when the trigger moves, ignoring queued scroll notifications at its opening position. Styles use
+// when the trigger or document moves, ignoring queued notifications at their opening positions. Styles use
 // CSSOM (CSP-safe); overlay components (Popover, Menu, ComboBox, …) call it while open.
 //
 // Ported from @react-aria/overlays (calculatePosition.ts, useOverlayPosition.ts, useCloseOnScroll.ts),
@@ -750,7 +750,7 @@ function translateRTL(position: Placement, direction: Direction): Placement {
 /**
  * Position `overlay` relative to `target` now and keep it positioned until `dispose()`: window and
  * visual viewport resizes, overlay / target size changes (ResizeObserver), and the iOS virtual
- * keyboard. Scrolling a scroll parent of the target calls `onClose` when its viewport position moves.
+ * keyboard. Scrolling a scroll parent calls `onClose` when the target or document scroll offset moves.
  * Queued scroll notifications from before opening do not dismiss an already-positioned overlay.
  * Call when the overlay opens; dispose on close.
  */
@@ -913,9 +913,11 @@ export function overlayPosition(props: AriaPositionProps): PositionAria {
     };
     if (onClose !== null) {
       // Focus may scroll the trigger before opening but deliver its scroll event after the menu has focused.
-      // Snapshot the actual trigger (not a virtual pointer rect), so only subsequent movement dismisses it.
+      // Snapshot the actual trigger and document offset: fixed/sticky triggers keep their rect as the document moves.
       const openingTarget = read(props.target);
       const openingRect = openingTarget?.getBoundingClientRect();
+      const openingScrollX = window.scrollX,
+        openingScrollY = window.scrollY;
       listen(
         window,
         "scroll",
@@ -927,7 +929,8 @@ export function overlayPosition(props: AriaPositionProps): PositionAria {
           if (source instanceof HTMLInputElement || source instanceof HTMLTextAreaElement) return;
           if (target === openingTarget && openingRect) {
             const current = target.getBoundingClientRect();
-            if (current.left === openingRect.left && current.top === openingRect.top) return;
+            if (current.left === openingRect.left && current.top === openingRect.top && window.scrollX === openingScrollX && window.scrollY === openingScrollY)
+              return;
           }
           close();
         },
