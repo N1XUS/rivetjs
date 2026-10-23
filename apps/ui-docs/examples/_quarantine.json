@@ -14,5 +14,9 @@
   "table-tanstack-table": {
     "step": "{\"expect\":[\"tbody tr:nth-child(1)\",\"Davis Wilson\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): \"Duplicate For key\" on adopted table rows; runtime fix in lane RED-COMP"
+  },
+  "time-field-with-validation": {
+    "step": "{\"expect\":[\"[data-slot=field-error]\",\"Time must be between 9:00 AM and 5:00 PM\"]}",
+    "reason": "timing: segment typing misses the 5 s step timeout under host load (2026-10-23, load 12-17); passes alone; remove once stable"
   }
 }
