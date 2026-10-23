@@ -1,9 +1,9 @@
 // Benchmark charts of the docs site (`::chart{id=…}` in content) and the homepage numbers (`homeStrip`, `homeFacts`,
 // `editorialLoss`, rendered by src/routes/index.tsx).
 // Every number comes from a committed report — never type a value that is not in one. Every value is read at build time:
-// - SSR + resume: docs/benchmarks/2026-10-19-fair-comparison.json (written by apps/ssr-bench/fair-report.ts; path in each
-//   comment). apps/dom-bench/competitors.json stores the same SSR and resume competitor numbers
-//   (`fair-report.ts --store-competitors`).
+// - SSR: docs/benchmarks/2026-10-23-ssr-comparison.json; resume: 2026-10-19-fair-comparison.json (not re-measured).
+//   apps/dom-bench/competitors.json stores the matching SSR and resume competitor numbers.
+// - Krausest: docs/benchmarks/2026-10-23-krausest.json, local Rivet/vanilla only (Chrome 155 vs published Chrome 154).
 // - DOM (browser mount / update): docs/benchmarks/2026-10-21-dom-mount-2.json `runTs.baseline` — every lane re-measured
 //   interleaved in the same runs under the run.ts mount protocol rewarm-2026-10-21; apps/dom-bench/competitors.json
 //   `dom` stores the same competitor numbers (`fair-report.ts --dom … --store-competitors`).
@@ -12,12 +12,16 @@
 // ranges, apps/dom-bench/verdict.ts) behind every win / tie / loss the page and the homepage state.
 // Lanes are like-for-like within a group; where Rivet loses or ties, the chart shows it.
 import { advantage, formatValue, type BenchChartSpec, type ChartPoint } from "@rivetjs/docs-kit/components/chart-model.ts";
-import fair from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
+import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with { type: "json" };
+import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
+import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
 import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
 
 const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
-const FAIR = { label: "Fair comparison 2026-10-19 (full report)", href: REPO + "docs/benchmarks/2026-10-19-fair-comparison.md" };
+const FAIR = { label: "SSR comparison 2026-10-23 (full report)", href: REPO + "docs/benchmarks/2026-10-23-ssr-comparison.md" };
+const RESUME = { label: "Resume comparison 2026-10-20 (full report)", href: REPO + "docs/benchmarks/2026-10-19-fair-comparison.md" };
+const KRAUSEST = { label: "Krausest local run 2026-10-23 (full report)", href: REPO + "docs/benchmarks/2026-10-23-krausest.md" };
 const DOM = { label: "DOM mount report 2026-10-21 (full report)", href: REPO + "docs/benchmarks/2026-10-21-dom-mount-2.md" };
 
 interface Stat {
@@ -40,19 +44,19 @@ const ssr1000 = fair.ssr.tuned["1000"]["1"];
 const ssr5000 = fair.ssr.tuned["5000"]["1"];
 // fair.ssr["tuned+grid"]["1000"]["1"][lane].cpu_ms — "SSR — profile `tuned+grid`" › "CPU per page" (concurrency 1 only in this run).
 const grid1000 = fair.ssr["tuned+grid"]["1000"]["1"];
-// fair.resume["slow/<scenario>/<lane>"].<metric> — "Resume (apps/resume-bench, Slow 4G + 4x CPU)".
-const resume = fair.resume as unknown as Record<string, Record<string, Stat>>;
+// resumeRun.resume["slow/<scenario>/<lane>"].<metric> — "Resume (apps/resume-bench, Slow 4G + 4x CPU)".
+const resume = resumeRun.resume as unknown as Record<string, Record<string, Stat>>;
 const paint = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.paintLatency!;
 const firstChange = (scenario: string, lane: string): Stat => resume[`slow/${scenario}/${lane}`]!.latency!;
 // domRun.runTs.baseline[rows][lane].<metric> — 2026-10-21-dom-mount-2.md "Re-stored competitors".
 const dom = domRun.runTs.baseline;
 
 const SSR_CAPTION = {
-  // 2026-10-19-fair-comparison.md "Methodology" + notes "How this run was made".
+  // 2026-10-23-ssr-comparison.md "Methodology" + "Rerun methodology".
   machine: "Apple M4 Pro (14 cores), Docker Desktop; every lane 1 CPU / 512 MiB",
-  date: "2026-10-19",
+  date: "2026-10-23",
   method:
-    "ssr-bench, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); median, whiskers = min–max of repeats. The host was not quiet (an IDE, a VM and indexing ran alongside, 1-minute load 7–12).",
+    "ssr-bench, tuned GC, 3 interleaved repeats (10 s after 3 s warmup); median, whiskers = min–max. Six row/concurrency batches, each prewarmed for 10 s at its own row count. Ordinary desktop apps remained active; batch-end 1-minute load 4–8. Smaller-page peak memory is not directly comparable with the earlier largest-page prewarm protocol.",
   source: FAIR,
 };
 const RESUME_CAPTION = {
@@ -61,7 +65,7 @@ const RESUME_CAPTION = {
   date: "2026-10-20",
   method:
     "resume-bench, Slow 4G + 4× CPU throttling, 10 repeats; median, whiskers = min–max. Two test suites ran on the host at the same time (1-minute load 25–40).",
-  source: FAIR,
+  source: RESUME,
 };
 const DOM_CAPTION = {
   // 2026-10-21-dom-mount-2.md header + "Re-stored competitors".
@@ -70,6 +74,13 @@ const DOM_CAPTION = {
   method:
     "dom-bench run.ts, every lane interleaved, 3 runs × 3 trials × 5 samples; median of trial medians, whiskers = min–max. Other test suites shared the host (1-minute load 2–8).",
   source: DOM,
+};
+const KRAUSEST_CAPTION = {
+  machine: "Apple M4 Pro, headless Chrome " + krausest.environment.chrome,
+  date: "2026-10-23",
+  method:
+    `Local Rivet/vanilla trials, fresh context per sample, interleaved lanes; median, whiskers = min–max. Local Chrome ${krausest.environment.chrome}, published reference ${krausest.comparison.reference.chrome}: framework comparisons are not comparable across browser majors.`,
+  source: KRAUSEST,
 };
 const C1 = "Concurrency 1. ";
 
@@ -117,7 +128,7 @@ export const charts: Record<string, BenchChartSpec> = {
         points: [point("Rivet static", ssr1000["rivet-compiled"].cpu_ms, { rivet: true }), point("Razor (.NET 10)", ssr1000["dotnet"].cpu_ms)],
       },
     ],
-    caption: { ...SSR_CAPTION, method: "ssr-bench, concurrency 1, tuned GC profile, 3 interleaved repeats (10 s after 3 s warmup); medians. The host was not quiet (1-minute load 7–12)." },
+    caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
   },
   "ssr-static-cpu": {
     id: "ssr-static-cpu",
@@ -212,8 +223,8 @@ export const charts: Record<string, BenchChartSpec> = {
     ],
     caption: { ...SSR_CAPTION, method: C1 + SSR_CAPTION.method },
   },
-  // The remaining CPU loss of the resumable class: 100 rows, concurrency 10 (report "Rivet's remaining losses" 4–5;
-  // notes "Reading the SSR result"). rivet-router = the same page without handlers, for attribution.
+  // A remaining CPU loss of the resumable class: 100 rows, concurrency 10 against plain Solid 1.9.
+  // rivet-router = the page without row handlers, for attribution (level with plain Solid in this run).
   "ssr-resumable-cpu-100-c10": {
     id: "ssr-resumable-cpu-100-c10",
     kind: "bar",
@@ -240,7 +251,7 @@ export const charts: Record<string, BenchChartSpec> = {
     ],
     caption: { ...SSR_CAPTION, method: "Concurrency 10. " + SSR_CAPTION.method },
   },
-  // Peak working set of the resumable class (report "Peak working set" table; loss 1 of "Rivet's remaining losses").
+  // Peak working set of the resumable class (report "Peak working set" table).
   "ssr-resumable-memory": {
     id: "ssr-resumable-memory",
     kind: "bar",
@@ -289,7 +300,7 @@ export const charts: Record<string, BenchChartSpec> = {
     ],
     firstChange,
   ),
-  // fair.resume["slow/load/<lane>"].jsBytesBeforeInteraction (bytes; shown in KB = 1,000 B).
+  // resumeRun.resume["slow/load/<lane>"].jsBytesBeforeInteraction (bytes; shown in KB = 1,000 B).
   "resume-js-before-input": {
     id: "resume-js-before-input",
     kind: "bar",
@@ -355,6 +366,51 @@ export const charts: Record<string, BenchChartSpec> = {
       points: [point("Rivet", dom["1000"].rivet[metric], { rivet: true }), ...DOM_LANES.map(([lane, name]) => point(name, dom["1000"][lane][metric]))],
     })),
     caption: DOM_CAPTION,
+  },
+  "krausest-cpu": {
+    id: "krausest-cpu",
+    kind: "range",
+    title: "Keyed table: operations starting with 1,000 rows",
+    unit: "ms",
+    better: "lower",
+    digits: 1,
+    groups: ([
+      ["Create 1,000 rows", "01_run1k"],
+      ["Replace 1,000 rows", "02_replace1k"],
+      ["Update every tenth row", "03_update10th1k_x16"],
+      ["Select a row", "04_select1k"],
+      ["Swap rows", "05_swap1k"],
+      ["Remove one row", "06_remove-one-1k"],
+      ["Append 1,000 rows", "08_create1k-after1k_x2"],
+      ["Clear 1,000 rows", "09_clear1k_x8"],
+    ] as const).map(([label, id]) => ({
+      label,
+      points: [point("Rivet", krausest.cpu[id].rivet.total, { rivet: true }), point("Vanilla JS", krausest.cpu[id].vanilla.total)],
+    })),
+    caption: {
+      ...KRAUSEST_CAPTION,
+      method: "15 samples per lane (25 for selection). CPU slowdown: 4× for update/select/swap/clear, 2× for remove. " + KRAUSEST_CAPTION.method,
+    },
+  },
+  "krausest-memory": {
+    id: "krausest-memory",
+    kind: "bar",
+    title: "Keyed table: browser memory",
+    unit: "MiB",
+    better: "lower",
+    digits: 2,
+    groups: ([
+      ["Ready page", "21_ready-memory"],
+      ["1,000 rows", "22_run-memory"],
+      ["After five create/clear cycles", "25_run-clear-memory"],
+    ] as const).map(([label, id]) => ({
+      label,
+      points: [point("Rivet", krausest.memory[id].rivet, { rivet: true }), point("Vanilla JS", krausest.memory[id].vanilla)],
+    })),
+    caption: {
+      ...KRAUSEST_CAPTION,
+      method: "3 samples per lane, forced major GC, measureUserAgentSpecificMemory; MiB = bytes / 1,048,576. These snapshots are not a leak test. " + KRAUSEST_CAPTION.method,
+    },
   },
 };
 
@@ -451,7 +507,8 @@ const dynamic = relabel(pointsOf("ssr-dynamic-cpu-1000", 0), { "Rivet resumable"
 const small = relabel(pointsOf("ssr-resumable-cpu-100-c10", 1), { "Solid 1 hydratable": "Solid 1.9 plain" });
 const smallRivet = valueOf(pointsOf("ssr-resumable-cpu-100-c10", 0), "Rivet resumable");
 
-const FAIR_LINE = { text: "Fair comparison, 2026-10-19 · Apple M4 Pro", href: FAIR.href };
+const FAIR_LINE = { text: "SSR comparison, 2026-10-23 · Apple M4 Pro", href: FAIR.href };
+const RESUME_LINE = { text: "Resume comparison, 2026-10-20 · Apple M4 Pro", href: RESUME.href };
 const DOM_LINE = { text: "DOM mount report, 2026-10-21 · Apple M4 Pro", href: DOM.href };
 
 export const homeStrip: HomeChart[] = [
@@ -484,7 +541,7 @@ export const homeStrip: HomeChart[] = [
     points: rivetFirst(navigate),
     footnote: `Qwik also resumes and is level: ${ms(valueOf(navigate, "Qwik 1.20"), 1)} (Qwik 1.20) vs ${ms(valueOf(navigate, "Rivet"), 1)}. First click: level with Qwik (${ms(valueOf(click, "Rivet"), 1)} vs ${ms(fastest(click).value, 1)}). Slow 4G, 4× slower CPU.`,
     chart: "resume-input-paint",
-    source: FAIR_LINE,
+    source: RESUME_LINE,
   },
   {
     id: "update",
@@ -513,7 +570,7 @@ export const homeStrip: HomeChart[] = [
     digits: 2,
     points: rivetFirst(dynamic),
     footnote: "Dynamic rendering: every request renders the page with its handlers, links and resume data. 1,000 rows, one request at a time.",
-    loss: `On a 100-row page under 10 concurrent requests, plain hydratable Solid 1.9, without handlers, links or page data, needs ${times(valueOf(small, "Solid 1.9 plain"), smallRivet)} less CPU (${ms(valueOf(small, "Solid 1.9 plain"), 2)} vs ${ms(smallRivet, 2)}), and at 100 rows Rivet's interactive page uses more memory than every Solid lane. A cheaper state encoder landed after this run; its re-measure is open.`,
+    loss: `On a 100-row page under 10 concurrent requests, plain hydratable Solid 1.9, without handlers, links or page data, needs ${times(valueOf(small, "Solid 1.9 plain"), smallRivet)} less CPU (${ms(valueOf(small, "Solid 1.9 plain"), 2)} vs ${ms(smallRivet, 2)}). Plain Solid 1.9 also uses less CPU on the text-grid fixture. At 100 rows and one request at a time, Rivet uses more peak memory than both Solid 1.9 lanes and is level with Solid 2.`,
     chart: "ssr-dynamic-cpu-1000",
     source: FAIR_LINE,
   },

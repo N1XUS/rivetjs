@@ -108,9 +108,12 @@ test("home: numbers strip = content/_charts.ts homeStrip, each chart linked to i
     assert.ok(home.includes(`>vs ${chart.peer}</span>`), `${chart.id}: the big number names its peer`);
   }
   assert.equal(home.match(/class="lp-chart-source"/g)?.length, homeStrip.length);
-  assert.equal(home.match(/Fair comparison, 2026-10-19/g)?.length, 1, "one source line under the charts");
+  assert.equal(home.match(/class="lp-charts-source"/g)?.length, 1, "one source line under the charts");
   const sources = /<p class="lp-charts-source">([^]*?)<\/p>/.exec(home)?.[1] ?? "";
   for (const chart of homeStrip) assert.ok(sources.includes(chart.source.href) && sources.includes(chart.source.text), `${chart.id}: its report is linked in the source line`);
+  for (const source of new Set(homeStrip.map((chart) => chart.source.href))) {
+    assert.equal(sources.split(`href="${source}"`).length - 1, 1, `${source}: one link per distinct report`);
+  }
 });
 
 test("home: the resume demo's literal button class is ui buttonVariants({ variant: \"primary\" }) (literal = data-only call site = independent boundary)", () => {

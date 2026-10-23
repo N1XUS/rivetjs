@@ -5,17 +5,18 @@ template: page
 related: [about/roadmap, guides/performance/measuring]
 ---
 
-Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The latest runs (server 2026-10-19, browser 2026-10-21) show where that holds and where it does not:
+Rivet's goal is to render pages on the server faster than ASP.NET Razor, with less CPU and memory, and to beat Solid, React and Qwik in the browser. The latest server and local keyed-table runs are from 2026-10-23. The separate browser-mount and resume results remain dated 2026-10-21 and 2026-10-20; those suites were not rerun in this update:
 
-- **Static pages** use less CPU than Razor and Solid at 1,000 and 5,000 rows, and at 100 rows under ten concurrent requests. On the smallest page one request at a time the trial ranges overlap, so the report counts it as level.
+- **Static pages** use less CPU than Razor and static Solid in every measured integer-page case, including the smallest page one request at a time.
 - **Text-heavy pages** (1,000 rows of short strings, the case that favours Razor) are now a win too: less CPU, more pages per second and a faster median response than Razor. This run measured them at one request at a time only.
-- **Interactive (resumable) pages**, one request at a time, use less CPU than every Solid and Qwik lane at 1,000 and 5,000 rows, including plain hydratable Solid 1.9, which renders the rows without handlers, links or page data; at 1,000 rows under ten concurrent requests they are level with it. Two losses remain: on a 100-row page under ten concurrent requests plain hydratable Solid 1.9 needs less CPU, and the server process of an interactive page uses more memory than every Solid lane at 100 rows.
+- **Interactive (resumable) pages** use less CPU than the matching interactive Solid fixture in every measured case. Plain hydratable Solid 1.9 does less work: at 1,000 rows and one request at a time it is level with Rivet, while at 5,000 rows or 1,000 rows under ten concurrent requests Rivet uses less CPU. Plain Solid 1.9 still uses less CPU on the small page under load and on the text-grid fixture. Memory also has remaining losses, shown below.
 - **In the browser**, Rivet updates 1,000 rows faster than Solid and React and keeps less memory. Mounting 1,000 and 5,000 rows is level with Solid 1.9 and Solid 2 and faster than React.
 - **After resuming**, a click paints as fast as Qwik and faster than hydrated Solid, and navigation is faster than Solid and level with Qwik. Solid's handlers change the DOM sooner after a click or a filter input, and plain Solid 1.9 downloads less JavaScript before the first input.
+- **Local keyed tables** stay close to vanilla JavaScript on most operations, with more relative overhead for selection and swapping. Rivet uses more browser memory than vanilla. Published framework comparisons are not comparable here because the local and reference Chrome major versions differ.
 
-This page explains what was measured. Each chart reads its numbers from the report it names (the [server and resume report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) or the [browser mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md)) and links to it; the reports also list every loss.
+This page explains what was measured. Each chart reads its numbers from the report it names: the [server report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md), [local keyed-table report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md), [earlier resume report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md), or [browser mount report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md). The reports retain the conditions, trial ranges and remaining losses.
 
-All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64 for the servers). The host was not quiet during any of the runs: an IDE, a virtual machine and other test suites ran alongside, and each chart's caption gives the load. Treat small gaps as noise. The reports call a result a win or a loss only when the medians differ by at least three percent and the trial ranges do not overlap; everything else is level. These are exploratory numbers for one implementation, not a ranking of frameworks.
+All numbers come from short runs on one machine (an Apple M4 Pro Mac, Docker Linux ARM64 for the servers). Ordinary desktop applications remained active during the new runs; no benchmark builds or tests were started during their timed phases. Earlier mount and resume runs shared the host with other test suites. Each chart names its date and conditions. Treat small gaps as noise: the server and earlier browser comparisons require at least a three-percent median gap and non-overlapping trial ranges for a win or loss. The local keyed-table charts show the measured ranges without ranking published frameworks. These are exploratory numbers for one implementation.
 
 ## Latest results
 
@@ -35,17 +36,17 @@ A text grid is the case that favours Razor: every one of the 10 fields per row i
 
 ### Interactive pages
 
-`rivet-resume` renders a page the browser can resume: a click handler and a reactive attribute per row, links, nested layout state and page data. "Solid 1.9 interactive" does the same work with hydration. The plain hydratable Solid lanes render the same rows without handlers, links or page data, so they do less work. At 1,000 and 5,000 rows, one request at a time, Rivet still uses less CPU than all of them:
+`rivet-resume` renders a page the browser can resume: a click handler and a reactive attribute per row, links, nested layout state and page data. "Solid 1.9 interactive" does the same work with hydration. The plain hydratable Solid lanes render the same rows without handlers, links or page data, so they do less work. At 1,000 rows and one request at a time, Rivet uses less CPU than the matching interactive fixture and is level with plain Solid 1.9. At 5,000 rows it uses less CPU than both:
 
 ::chart{id=ssr-resumable-cpu-1000}
 
 ::chart{id=ssr-resumable-cpu-5000}
 
-The loss that remains is a small page under load. At 100 rows and ten concurrent requests, plain hydratable Solid 1.9 needs less CPU per page than Rivet's interactive page. `rivet-router`, the same page without handlers, needs less than Solid, so the cost is the per-row handler and the resume data written for it. A cheaper state encoder landed after this run; its Docker re-measure ran on a busy host, was inconclusive and is still open:
+A small page under load remains a loss against the less demanding plain Solid fixture. At 100 rows and ten concurrent requests, plain hydratable Solid 1.9 needs less CPU per page than Rivet's interactive page; `rivet-router`, the page without row handlers, is level with plain Solid. Rivet still needs less CPU than the matching interactive Solid fixture. Plain Solid 1.9 also needs less CPU than Rivet's interactive page on the text-grid case; the full report shows that loss:
 
 ::chart{id=ssr-resumable-cpu-100-c10}
 
-Memory is the other loss. The server process of an interactive Rivet page peaks higher than every Solid lane at 100 rows; at 1,000 rows it is below Solid 1.9 interactive and above the plain hydratable lanes. The report traces it to fixed costs (the router and resume runtime code, the row emitter's buffer) and to the benchmark measuring the 100-row page right after warming up on the largest one; nothing Rivet keeps grows with requests:
+Peak memory is another tradeoff. At 100 rows and one request at a time, interactive Rivet peaks higher than both Solid 1.9 lanes and is level with Solid 2. At 1,000 rows it is below interactive Solid 1.9, above plain Solid 1.9, and level with Solid 2. Each row/concurrency batch prewarmed at its own row count in this run. The earlier multi-row run prewarmed on its largest page, so its smaller-page memory values are not directly comparable with these. Peak working set is not a leak test:
 
 ::chart{id=ssr-resumable-memory}
 
@@ -83,14 +84,20 @@ The DOM benchmark's runtime bundle is also larger than Solid 1.9's (gzip), and s
 
 ### js-framework-benchmark
 
-The scoreboard also runs the [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) scenarios locally and compares Rivet's ratio to vanilla JavaScript with the published ratios of other frameworks. In this run every one of those rows is reported as not comparable: the published numbers come from Chrome 154 and this machine ran Chrome 155. The local Rivet-to-vanilla ratios are still listed in the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md).
+The new local run rebuilds Rivet and vanilla JavaScript and interleaves them through the [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) scenarios. The charts show the standard operations starting with a 1,000-row table and the ready/create/clear memory cases. The full report also contains 10,000-row creation, an extra append stress case, memory at 10,000 rows, startup and bundle sizes:
+
+::chart{id=krausest-cpu}
+
+::chart{id=krausest-memory}
+
+The local browser was Chrome 155; the pinned published framework results were measured in Chrome 154. Those framework comparisons are **not comparable** under the docs' browser-major guard. The charts therefore show only the fresh local Rivet/vanilla data, without turning the published ratios into a framework ranking. The [full local report](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md) records both exact browser versions; the older [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md) retains its own date and provenance.
 
 ## What the server benchmark measures
 
 The server benchmark (`apps/ssr-bench`) renders the same page in each framework:
 
 - Each request fetches data from the same gRPC service, then renders a list page. The page has a number of rows (100, 1,000 or 5,000), each with about 40 HTML elements.
-- Every response is checked: all rows, all field values, status 200, complete HTML.
+- Every response is checked for status, framing, body length and completion. Strict validation checks every row and field on the first two responses per connection, every thirty-second response, and whenever the body length or tail changes.
 - Every frontend container gets the same limit: 1 CPU and 512 MiB of memory.
 - Nothing is cached between requests.
 - Every Node lane runs on the same Node 26 image with the same gRPC data client; Razor runs on .NET 10.
@@ -111,7 +118,9 @@ The reports use these measures:
 
 | Report | What it compared |
 | --- | --- |
-| [Fair comparison 2026-10-19](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) | The latest server and resume run of every lane (static and resumable classes, text grid at concurrency 1, resume in Chrome 155), with the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md) of the same day. The charts above read it. |
+| [SSR comparison 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md) | The latest ten-lane Docker matrix: integer pages at concurrency 1 and 10, plus the text grid at concurrency 1. The server charts and homepage server numbers read it. |
+| [Krausest local run 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md) | Fresh local Rivet/vanilla CPU, memory, startup and size measurements. Published framework comparisons are not comparable because Chrome major versions differ. The keyed-table charts read this run. |
+| [Fair comparison 2026-10-19](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) | The earlier server comparison and the resume run in Chrome 155, with the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md). The resume charts still read it; its server data is superseded by the 2026-10-23 run. |
 | [DOM mount 2026-10-21](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-21-dom-mount-2.md) | The browser benchmark's mount protocol fix and every browser lane measured again under it, with how much memory each framework allocates per row. The browser charts above read it. |
 | [DOM mount 2026-10-20](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-20-dom-mount.md) | Every browser lane re-measured interleaved, plus the attribution of the 5,000-row mount gap to the benchmark's forced garbage collection. Superseded by the 2026-10-21 report. |
 | [Fair comparison 2026-10-09](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-09-fair-comparison.md) | The previous run of every lane, with the text grid at concurrency 10 and a 1,000-row browser re-measure. Superseded by the 2026-10-19 report. |

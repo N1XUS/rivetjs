@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 import { test } from "vitest";
 import { charts, editorialLoss, homeFacts, homeStrip } from "../content/_charts.ts";
 import { verdict, type Stat } from "../../dom-bench/verdict.ts";
-import fair from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
+import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with { type: "json" };
+import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
+import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
 import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
 import competitors from "../../dom-bench/competitors.json" with { type: "json" };
 import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
@@ -23,7 +25,7 @@ const point = (id: string, group: number, label: string) => {
 const ssrVerdict = (rows: number, concurrency: number, rivet: string, peer: string, metric = "cpu_ms", profile = "tuned") =>
   fair.comparisons.find((c) => c.profile === profile && c.rows === rows && c.concurrency === concurrency && c.metric === metric && c.rivet === rivet && c.peer === peer)
     ?.verdict;
-const resume = fair.resume as unknown as Record<string, Record<string, Stat>>;
+const resume = resumeRun.resume as unknown as Record<string, Record<string, Stat>>;
 const resumeVerdict = (scenario: string, metric: string, peer: string) =>
   verdict(resume[`slow/${scenario}/rivet`]![metric]!, resume[`slow/${scenario}/${peer}`]![metric]!, "lower");
 const dom = domRun.runTs.baseline;
@@ -50,21 +52,23 @@ test("every chart: id matches key, caption complete, source report exists, Rivet
   }
 });
 
-test("SSR charts equal the 2026-10-19 report; competitors.json stores the same numbers; page claims match its verdicts", () => {
+test("SSR charts equal the 2026-10-23 report; competitors.json stores the same numbers; page claims match its verdicts", () => {
   const ssr = fair.ssr.tuned["1000"]["1"];
   assert.equal(point("ssr-static-cpu", 0, "Rivet static").value, ssr["rivet-compiled"].cpu_ms.median);
   assert.equal(point("ssr-static-cpu", 0, "Razor (.NET 10)").max, ssr["dotnet"].cpu_ms.max);
   assert.equal(point("ssr-static-cpu", 0, "Solid 1.9 static").value, ssr["solid-stable-static"].cpu_ms.median);
   assert.equal(point("ssr-static-headline", 0, "Razor (.NET 10)").value, ssr["dotnet"].cpu_ms.median);
-  // Static pages: less CPU than Razor and Solid at 1,000 and 5,000 rows (both concurrencies at 1,000), TIE at 100 rows c1.
+  assert.equal(charts["ssr-static-cpu"]!.caption.date, "2026-10-23");
+  assert.ok(charts["ssr-static-cpu"]!.caption.source.href.endsWith("2026-10-23-ssr-comparison.md"));
+  // Static pages: less CPU than Razor and Solid in every measured integer-page case.
   for (const [rows, c] of [
     [1000, 1],
     [1000, 10],
     [5000, 1],
     [100, 10],
+    [100, 1],
   ] as const)
     for (const peer of ["dotnet", "solid-stable-static"]) assert.equal(ssrVerdict(rows, c, "rivet-compiled", peer), "WIN", `static ${rows} c${c} vs ${peer}`);
-  for (const peer of ["dotnet", "solid-stable-static"]) assert.equal(ssrVerdict(100, 1, "rivet-compiled", peer), "TIE", `static 100 c1 vs ${peer}: level (wide ranges)`);
   // Text grid (concurrency 1 only in this run): the 2026-10-09 loss to Razor is closed — CPU, throughput and p50 win.
   const grid = fair.ssr["tuned+grid"]["1000"];
   assert.deepEqual(Object.keys(grid), ["1"], "the grid ran at concurrency 1 only (the page says so)");
@@ -75,7 +79,7 @@ test("SSR charts equal the 2026-10-19 report; competitors.json stores the same n
   assert.equal(point("ssr-grid-cpu", 0, "Rivet static").value, grid["1"]["rivet-compiled"].cpu_ms.median);
   assert.equal(point("ssr-grid-cpu", 0, "Razor (.NET 10)").value, grid["1"]["dotnet"].cpu_ms.median);
   for (const metric of ["cpu_ms", "rps", "p50_ms"]) assert.equal(ssrVerdict(1000, 1, "rivet-compiled", "dotnet", metric, "tuned+grid"), "WIN", `grid ${metric}`);
-  // Interactive pages: wins at 1,000 / 5,000 rows against every lane, plain hydratable Solid included.
+  // Interactive pages beat the like-for-like peers; plain Solid 1.9 is level at 1,000 rows c1.
   for (const [id, rows] of [
     ["ssr-resumable-cpu-1000", "1000"],
     ["ssr-resumable-cpu-5000", "5000"],
@@ -86,28 +90,68 @@ test("SSR charts equal the 2026-10-19 report; competitors.json stores the same n
     assert.equal(point(id, 1, "Solid 2 hydratable").value, lanes["solid"].cpu_ms.median);
     assert.equal(point(id, 1, "Solid 1 hydratable").value, lanes["solid-stable"].cpu_ms.median);
     assert.equal(point(id, 0, "Solid 1.9 interactive").value, competitors.ssr.metrics[rows]["solid-stable-interactive"].cpu_ms.median);
-    for (const peer of ["solid-stable-interactive", "solid-stable", "solid", "qwik-stable", "qwik"]) assert.equal(ssrVerdict(Number(rows), 1, "rivet-resume", peer), "WIN", `${id} vs ${peer}`);
+    for (const peer of ["solid-stable-interactive", "solid", "qwik-stable", "qwik"]) assert.equal(ssrVerdict(Number(rows), 1, "rivet-resume", peer), "WIN", `${id} vs ${peer}`);
+    assert.equal(ssrVerdict(Number(rows), 1, "rivet-resume", "solid-stable"), rows === "1000" ? "TIE" : "WIN");
   }
-  assert.equal(ssrVerdict(1000, 10, "rivet-resume", "solid-stable"), "TIE", "1,000 rows c10: level with plain Solid 1.9");
+  assert.equal(ssrVerdict(1000, 10, "rivet-resume", "solid-stable"), "WIN", "1,000 rows c10: ahead of plain Solid 1.9");
   assert.equal(competitors.ssr.metrics["1000"]["dotnet"].cpu_ms.median, ssr["dotnet"].cpu_ms.median);
-  // The remaining CPU loss: 100 rows c10 against plain hydratable Solid 1.9; the router lane (no handlers) wins that cell.
+  // Plain Solid 1.9 needs less CPU for 100 rows c10 and the text grid; the router lane ties in the small-page case.
   const small = fair.ssr.tuned["100"]["10"];
   assert.equal(point("ssr-resumable-cpu-100-c10", 0, "Rivet resumable").value, small["rivet-resume"].cpu_ms.median);
   assert.equal(point("ssr-resumable-cpu-100-c10", 1, "Rivet router").value, small["rivet-router"].cpu_ms.median);
   assert.equal(point("ssr-resumable-cpu-100-c10", 1, "Solid 1 hydratable").value, small["solid-stable"].cpu_ms.median);
   assert.equal(ssrVerdict(100, 10, "rivet-resume", "solid-stable"), "LOSE");
   assert.equal(ssrVerdict(100, 10, "rivet-resume", "solid-stable-interactive"), "WIN");
-  assert.equal(ssrVerdict(100, 10, "rivet-router", "solid-stable"), "WIN");
-  // Memory: at 100 rows the interactive page uses more than every Solid lane (homepage loss line).
+  assert.equal(ssrVerdict(100, 10, "rivet-router", "solid-stable"), "TIE");
+  assert.equal(ssrVerdict(1000, 1, "rivet-resume", "solid-stable", "cpu_ms", "tuned+grid"), "LOSE");
+  assert.equal(ssrVerdict(1000, 1, "rivet-resume", "solid-stable-interactive", "cpu_ms", "tuned+grid"), "WIN");
+  // Memory: at 100 rows the interactive page uses more than both Solid 1.9 lanes, and is level with Solid 2.
   assert.equal(point("ssr-resumable-memory", 0, "Rivet resumable").value, fair.ssr.tuned["100"]["1"]["rivet-resume"].peak_mib.median);
   assert.equal(point("ssr-resumable-memory", 1, "Solid 1 hydratable").value, ssr["solid-stable"].peak_mib.median);
-  for (const peer of ["solid-stable-interactive", "solid-stable", "solid"]) assert.equal(ssrVerdict(100, 1, "rivet-resume", peer, "peak_mib"), "LOSE", `memory vs ${peer}`);
-  // At 1,000 rows: below Solid 1.9 interactive, above the plain hydratable lanes.
+  for (const peer of ["solid-stable-interactive", "solid-stable"]) assert.equal(ssrVerdict(100, 1, "rivet-resume", peer, "peak_mib"), "LOSE", `memory vs ${peer}`);
+  assert.equal(ssrVerdict(100, 1, "rivet-resume", "solid", "peak_mib"), "TIE");
+  // At 1,000 rows: below Solid 1.9 interactive, above plain Solid 1.9, level with Solid 2.
   assert.equal(ssrVerdict(1000, 1, "rivet-resume", "solid-stable-interactive", "peak_mib"), "WIN");
-  for (const peer of ["solid-stable", "solid"]) assert.equal(ssrVerdict(1000, 1, "rivet-resume", peer, "peak_mib"), "LOSE", `memory 1000 vs ${peer}`);
+  assert.equal(ssrVerdict(1000, 1, "rivet-resume", "solid-stable", "peak_mib"), "LOSE");
+  assert.equal(ssrVerdict(1000, 1, "rivet-resume", "solid", "peak_mib"), "TIE");
   // Dynamic rendering chart = the same 1,000-row lanes.
   assert.equal(point("ssr-dynamic-cpu-1000", 0, "Qwik 1.20").value, ssr["qwik-stable"].cpu_ms.median);
   assert.equal(point("ssr-dynamic-cpu-1000", 1, "Solid 1.9 plain").value, ssr["solid-stable"].cpu_ms.median);
+});
+
+test("krausest charts use the fresh local Rivet/vanilla trials and disclose the browser-major reference mismatch", () => {
+  const cpu = charts["krausest-cpu"];
+  const memory = charts["krausest-memory"];
+  assert.ok(cpu, "local CPU chart");
+  assert.ok(memory, "local memory chart");
+  for (const [chart, records] of [[cpu, krausest.cpu], [memory, krausest.memory]] as const) {
+    assert.equal(chart.caption.date, "2026-10-23");
+    assert.ok(chart.caption.source.href.endsWith("2026-10-23-krausest.md"));
+    assert.ok(chart.caption.method.includes(krausest.environment.chrome), "exact local Chrome version");
+    assert.ok(chart.caption.method.includes(krausest.comparison.reference.chrome), "exact published reference version");
+    const ids: Record<string, string> = {
+      "Create 1,000 rows": "01_run1k", "Replace 1,000 rows": "02_replace1k", "Update every tenth row": "03_update10th1k_x16",
+      "Select a row": "04_select1k", "Swap rows": "05_swap1k", "Remove one row": "06_remove-one-1k",
+      "Append 1,000 rows": "08_create1k-after1k_x2", "Clear 1,000 rows": "09_clear1k_x8",
+      "Ready page": "21_ready-memory", "1,000 rows": "22_run-memory", "After five create/clear cycles": "25_run-clear-memory",
+    };
+    for (const group of chart.groups) {
+      const record = (records as Record<string, { rivet: Stat | { total: Stat }; vanilla: Stat | { total: Stat } }>)[ids[group.label]!];
+      assert.ok(record, group.label);
+      assert.deepEqual(group.points.map((p) => p.label), ["Rivet", "Vanilla JS"]);
+      for (const p of group.points) {
+        const lane = p.rivet ? record.rivet : record.vanilla;
+        const stat = "total" in lane ? lane.total : lane;
+        assert.deepEqual([p.value, p.min, p.max], [stat.median, stat.min, stat.max]);
+      }
+    }
+  }
+  assert.equal(cpu.groups.length, 8, "all standard 1,000-row CPU scenarios");
+  assert.equal(memory.groups.length, 3, "ready, run and create/clear memory");
+  const page = readFileSync(new URL("../content/about/benchmarks.md", import.meta.url), "utf8");
+  assert.match(page, /Chrome 155/);
+  assert.match(page, /Chrome 154/);
+  assert.match(page, /not comparable/);
 });
 
 test("resume charts equal the report; competitors.json stores the same numbers; ties and losses as the page states them", () => {
@@ -213,7 +257,7 @@ test("benchmarks page: the findings carry no typed numbers (charts render them f
   assert.ok(findings.length > 1000);
   assert.doesNotMatch(findings, /\d+(\.\d+)?\s?(×|ms\b|MiB|KB\b|%)/, "no typed measurements above the method section");
   for (const chart of findings.matchAll(/::chart\{id=([\w-]+)\}/g)) assert.ok(charts[chart[1]!], `chart ${chart[1]} exists`);
-  for (const report of ["2026-10-19-fair-comparison.md", "2026-10-21-dom-mount-2.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
+  for (const report of ["2026-10-23-ssr-comparison.md", "2026-10-23-krausest.md", "2026-10-19-fair-comparison.md", "2026-10-21-dom-mount-2.md", "2026-10-20-dom-mount.md", "2026-10-09-fair-comparison.md", "perf-scoreboard.md"]) {
     assert.ok(page.includes(`docs/benchmarks/${report}`), `links ${report}`);
     assert.ok(existsSync(repo + "docs/benchmarks/" + report), `${report} exists`);
   }

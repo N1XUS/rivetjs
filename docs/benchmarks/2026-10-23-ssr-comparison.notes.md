@@ -1,0 +1,11 @@
+## Rerun methodology
+
+This run rebuilds Docker images from commit `8ab56bd8d` and repeats the October 19 comparison's ten lanes and workload matrix: integer pages at 100/1,000/5,000 rows with concurrency 1, integer pages at 100/1,000 rows with concurrency 10, and text-grid pages at 1,000 rows with concurrency 1. Every measured case uses a 10-second window, 3-second warm-up, three repeats, the tuned GC profile, and the shared Node load generator. Each frontend is limited to one CPU and 512 MiB; static and resumable peer classes are reported separately.
+
+The matrix is divided into six row/concurrency batches to release the machine-wide benchmark lock approximately every nine minutes. Every batch prewarms all lanes for ten seconds at its own row count. The earlier multi-row concurrency-1 run prewarmed at its largest row count, so cross-date peak-memory deltas for the smaller pages are not directly comparable. The report ranks peers measured within the current batches; it does not claim cross-date gains from those memory differences.
+
+Measurements run sequentially, with no benchmark builds or tests started during timed phases. Ordinary desktop applications remain active. The batch-end one-minute host load averages ranged from 4.06 to 7.34. All 180 recorded trials completed with zero validation errors and zero generator warnings. Raw request logs remain in the local artifact directories listed under Inputs; the committed JSON retains the chart statistics, trial ranges, generator settings and container commands.
+
+Krausest follows the Docker runs after their Compose project is stopped. Its locally built Rivet and vanilla lanes use the full CPU, memory, startup, and size suite. Framework comparisons use the repository's pinned published krausest data and the existing local-vanilla ratio method; published competitor frameworks are not rebuilt locally by this harness. Exact local and reference Chrome versions are recorded in the krausest result and comparison files.
+
+The krausest run used Chrome 155.0.8059.86 while the pinned published reference used Chrome 154.0.8037.98. The docs apply their existing browser-major guard: only the fresh local Rivet/vanilla measurements are charted. Published-framework ratios are reference calculations, not comparable framework rankings. See `2026-10-23-krausest.md` and its result JSON for the browser run.
