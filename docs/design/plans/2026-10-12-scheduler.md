@@ -10,6 +10,14 @@
 
 **Spec:** [`docs/design/specs/2026-10-12-scheduler-design.md`](../specs/2026-10-12-scheduler-design.md). Source (read only, never modify): `/Users/denisseverin/Projects/claude-test/angular-ui-lib/libs/scheduler` (+ `apps/docs/src/app/pages/scheduler`, `libs/i18n/*/src/lib/*.ts` scheduler sections).
 
+## Resumed implementation status — 2026-10-23
+
+T1–T12 are implemented and reviewed. T13 adds 15 UI demos, eight CDK demos and public API documentation; both full docs builds, all 23 changed production demo manifests, parent iframe/narrow-layout checks and content/API/AI gates pass. T14 records the completed integration gates and reviewed generated size/hash baselines; original performance limits remain explicit. The full UI production suite has 20 failures outside Scheduler; all 20 were reproduced in controlled comparisons without the runtime fix. The older UI component size baseline retains unrelated differences. The historical checklists below describe the original requirements; an unchecked performance target is not a passing gate.
+
+The current derived runtime adopts the ordinary Scheduler renderer on first interaction. Cold keyboard/click/menu/drag behavior passes, but the historical drag-only closure and obsolete `preload="intent"` design do not apply. The original byte targets remain unmet. Complete SSR of 1,000 visible week events is 11.072 ms against the unchanged < 6 ms target. Pure layout meets < 2 ms. See the [measured report](../../benchmarks/2026-10-23-scheduler.md) and [306-row mapping](../research/2026-10-23-scheduler-upstream-cases.md) for exact scope and limitations.
+
+The original private scratchpad and heavy-command wrapper no longer exist. Resumed work uses a private plan workspace, serial heavy jobs, one browser project at a time and `--maxWorkers=1`. The removed `resume-context.test.ts` registry and intent-preload planner are not recreated. Current production behavior is verified directly.
+
 ## Global Constraints
 
 - `S=/private/tmp/claude-501/-Users-denisseverin-Projects-claude-test-rivet/d5c17ad1-df18-48dc-b37c-7b09decaac8e/scratchpad`; read `$S/perf/IMPL-COMMON.md` (binding).
@@ -146,30 +154,30 @@ H="bash $S/heavy.sh"
 - [x] `renderEvent` (controls inside own their click / keys), `renderSlotMenu` / `renderEventMenu`: cdk Menu in a Popover anchored to the cell / chip; right-click + ContextMenu key / Shift+F10 claim rules; pending keyboard selection consumed + released on close; no render fn → no menu DOM, native `contextmenu` untouched; panel `aria-label` `eventMenu` / `slotMenu`; re-target on second right-click.
 - [x] Gates: G-CDKB, G-TYPE. Commit. As built: root file 14 cases (the state-level root cases already live in `scheduler-state.test.ts`, keyboard / delete / scroll ones in their view files), menu file 21 (malva 22: density → panel classes, axe → T12).
 
-> **Parked at T9 + fix round 1 (2026-10-12, user: scheduler work paused).** Done: T1–T9, T1–T6 review fixes, T7+T8 review fix round 1 (#1 measured + documented as known gap, #2, #3, #4, #8). Next T10, carrying: (1) review #1 cold-key closure — measured: first focus of a resumed month cell fetches ~74 scripts (state, intl, layout, menu, popover, toolbar) because `month.tsx` / `time-grid.tsx` handlers capture the root context (index.tsx arrows / computeds + user closures; resume decodes captures eagerly). Design: handler module on a small context of signals + server attributes (`data-rv-day`, row length, axis, readonly, handler / menu flags), roving tab stop written to the DOM, actions reached lazily (custom-event hop to a root handler or `import()`), `select.ts` imports state code only after the 5 px threshold; flip `scheduler-resume.test.ts` `test.fails` to `test`. (2) review #5 placeholder / month-cell drop. (3) review #6 five unported malva cases. Then T11–T14.
+> **Historical pause at T9 + fix round 1 (2026-10-12; resumed 2026-10-23).** Done: T1–T9, T1–T6 review fixes, T7+T8 review fix round 1 (#1 measured + documented as known gap, #2, #3, #4, #8). Next T10, carrying: (1) review #1 cold-key closure — measured: first focus of a resumed month cell fetches ~74 scripts (state, intl, layout, menu, popover, toolbar) because `month.tsx` / `time-grid.tsx` handlers capture the root context (index.tsx arrows / computeds + user closures; resume decodes captures eagerly). Design: handler module on a small context of signals + server attributes (`data-rv-day`, row length, axis, readonly, handler / menu flags), roving tab stop written to the DOM, actions reached lazily (custom-event hop to a root handler or `import()`), `select.ts` imports state code only after the 5 px threshold; flip `scheduler-resume.test.ts` `test.fails` to `test`. (2) review #5 placeholder / month-cell drop. (3) review #6 five unported malva cases. Then T11–T14.
 
 ### Task T10: Resume, chunk plan, live props
 
 **Files:** `tests-components/app` story `/scheduler` (resumed), `tests-components/scheduler-resume.test.ts`, `tests/scheduler-live-props.browser.test.tsx`, `tests-components/resume-context.test.ts` (id).
 
 - [ ] Resumed page: no `data-boot` at load (month); week view boots only the initial-scroll effect; cold keyboard move works; first pointer drag fetches only the drag chunk closure (network log); menu / popover chunks on first open; `preload="intent"` on view roots; measure with `cold-latency.ts`.
-- [ ] Live-update test for every live prop (spec §3.1 table); read-once list in CLAUDE.md + JSDoc.
+- [x] Live-update test for every live prop (spec §3.1 table); read-once list in CLAUDE.md + JSDoc.
 - [ ] Gates: G-CDKC, G-CDKB, G-ZERO. Commit (zero-cost `--update` delta named).
 
 ### Task T11: ui `Scheduler`
 
 **Files:** `libs/ui/src/components/scheduler/*`, `libs/ui/styles/components/scheduler.css`, `libs/ui/styles/src/components/scheduler/*`, `libs/ui/styles/{PATCHES.md|TWEAKS.md}` row, `libs/ui/package.json`, `libs/ui/tests/scheduler{,-styles}.test.ts` (6 ported style cases), ui story `/scheduler`, `libs/ui/src/components/CLAUDE.md` row.
 
-- [ ] tv slots (spec §3.4), `variant`, `density` (slot height / lane height / row min height / column min width / gutter tokens), event colors = HeroUI chip palette + `cssColor`, weekend tint, week-number column, now-line accent, dark mode tokens, concentric radii (ui-identity R3), focus rings not clipped by the scroller (inset form inside scroll containers), reduced-motion paths.
-- [ ] Toolbar from ui Button / ButtonGroup / Segment + lucide `ChevronLeft` / `ChevronRight` / `CalendarDays`; menu items from ui Dropdown styles.
-- [ ] Screenshots light / dark / compact / rtl in ui story; per-component CSS bytes recorded.
+- [x] tv slots (spec §3.4), `variant`, `density` (slot height / lane height / row min height / column min width / gutter tokens), event colors = HeroUI chip palette + `cssColor`, weekend tint, week-number column, now-line accent, dark mode tokens, concentric radii (ui-identity R3), focus rings not clipped by the scroller (inset form inside scroll containers), reduced-motion paths.
+- [x] Toolbar from ui Button / ButtonGroup / Segment + lucide `ChevronLeft` / `ChevronRight` / `CalendarDays`; menu items from ui Dropdown styles.
+- [x] Screenshots light / dark / compact / RTL and desktop/narrow docs; generated Scheduler CSS 18,374 minified / 2,596 Brotli bytes, with own-code and standalone-app scopes recorded in the performance report.
 - [ ] Gates: G-UI, G-UIC, G-TYPE, G-SIZE. Commit.
 
 ### Task T12: A11y, RTL, perf
 
 **Files:** `tests/scheduler-rtl.browser.test.tsx`, axe cases, `tests/scheduler-ssr.test.ts` (cost), `scripts/size-report` baseline row.
 
-- [ ] axe pass per view + popover open + menu open (cdk-browser + ui story); RTL duplicates of move / resize / keyboard cases.
+- [x] axe pass per view + popover open + menu open (cdk-browser + ui story); RTL duplicates of move / resize / keyboard cases.
 - [ ] Perf gates (spec §7): layout 1,000 events / week < 2 ms and month < 2 ms (median of 50 warm runs, logged), server render < 6 ms; drag frame ≤ 1 layout pass (trace), no forced reflow; client bytes per entry within budget. Regression = fix before T13.
 - [ ] Gates: G-CDKB, G-UIC, G-SIZE, G-ZERO. Commit.
 
@@ -177,12 +185,12 @@ H="bash $S/heavy.sh"
 
 **Files:** `apps/cdk-docs/content/components/scheduler.md` + `_nav` hunk + `examples/scheduler-*` (8 malva examples, headless Tailwind); `apps/ui-docs/content/components/scheduler.md` + `_nav` hunk + `examples/scheduler-*` (7 Pro sections + 8 malva, Rivet-authored headers); `api.config.ts` entries; regenerated api.json / llms / MCP data / AI files; `apps/*/CLAUDE.md` rows.
 
-- [ ] Pages per spec §10 (`:::note` on ui page: feature set inspired by HeroUI Pro Agenda public docs, independent implementation); DateValueString guidance + loader snippet for the initial range; keyboard table; resumability section.
-- [ ] Gates: G-DOCS, G-AI, G-FMT. Commit.
+- [x] Pages per spec §10 (UI independent-implementation note links licenses; named HeroUI Pro Agenda inspiration is attributed on the licenses page, consistent with the docs brand gate); DateValueString guidance + loader snippet for the initial range; keyboard table; resumability section.
+- [x] Gates: G-DOCS, G-AI, G-FMT for docs/source. Full docs builds use `--no-checks`; all 23 changed Scheduler production manifests run separately. Content/snippets/llms/MCP/AI and brand checks pass; no quarantine.
 
 ### Task T14: Final
 
-- [ ] Full gates: G-TYPE, G-UNIT, G-CDKB, G-CDKC, G-UI, G-UIC (one browser project at a time), G-ZERO, G-SIZE, G-DOCS, G-AI, G-FMT, `npx vitest run --project scripts` if scripts touched.
-- [ ] CLAUDE.md sweep: `libs/cdk/CLAUDE.md` (entry rows), `libs/cdk/scheduler/CLAUDE.md`, `libs/ui/src/components/CLAUDE.md`, `libs/ui/styles/CLAUDE.md`, `apps/{cdk,ui}-docs/CLAUDE.md`, root `CLAUDE.md` repo map if needed, `docs/CLAUDE.md` index; `HERO-AUDIT` agenda row → done.
-- [ ] Ported-case ledger: 302 malva cases → Rivet test titles, exceptions with reasons, in `libs/cdk/scheduler/CLAUDE.md`.
-- [ ] Report: bytes, perf numbers, deviations, open gaps.
+- [x] Execute and record full/scoped gates: types, Scheduler unit/browser/resume, full UI unit, full UI production, zero-cost, full app size, docs/API/AI, formatting and scripts. Scoped checks pass. Full UI production has 20 failures, all reproduced without the runtime correction; the older UI component exact-size report retains 107 unrelated differences. Neither is claimed green. Original whole-week SSR and cold-handler budgets remain unmet.
+- [x] CLAUDE.md sweep: `libs/cdk/CLAUDE.md` (entry rows), `libs/cdk/scheduler/CLAUDE.md`, `libs/ui/src/components/CLAUDE.md`, `libs/ui/styles/CLAUDE.md`, `apps/{cdk,ui}-docs/CLAUDE.md`, root `CLAUDE.md` repo map if needed, `docs/CLAUDE.md` index; `HERO-AUDIT` is absent from this checkout; no replacement audit was invented.
+- [x] Ported-case ledger: [306 expanded upstream cases](../research/2026-10-23-scheduler-upstream-cases.md), including 305 product cases. The original 302 counted ordinary product declarations before expanding `it.each`; title correspondences and composed equivalents are distinguished from deviations. This is not automated parity certification.
+- [x] [Report](../../benchmarks/2026-10-23-scheduler.md): measured bytes/performance, integration evidence, reviewed corrections, deviations and remaining limits.

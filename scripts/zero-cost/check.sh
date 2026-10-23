@@ -1,5 +1,5 @@
 #!/bin/sh
-# Zero-cost gate: runtime + package (router/forms/i18n/kit/ui/motion/bridge, cdk masonry + flip) bundle hashes and ssr-bench output must match
+# Zero-cost gate: runtime + package (router/forms/i18n/kit/ui/motion/bridge, cdk masonry/flip/scheduler) bundle hashes and ssr-bench output must match
 # the committed baselines, no production entry may bundle development code (dev-leaks.mjs), every conditional
 # export must expose the same value names under each condition (condition-parity.mjs), and the compiler
 # oracle must pass. `--update` rewrites the baselines (only for intended deltas).

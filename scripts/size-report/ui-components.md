@@ -147,3 +147,4 @@ CSS = the stylesheets the page links before first paint (app styles + the router
 | chat-attachment | 11.83 k / 4.05 k | 10.05 k / 3.42 k | 13.01 k / 1.79 k |
 | prompt-input | 15.01 k / 4.44 k | 13.12 k / 3.84 k | 16.13 k / 2.16 k |
 | theme | 23.44 k / 6.65 k |  | 6.75 k / 1.65 k |
+| scheduler | 12.28 k / 3.86 k | 11.14 k / 3.43 k | 18.37 k / 2.60 k |

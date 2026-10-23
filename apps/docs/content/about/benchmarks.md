@@ -118,6 +118,7 @@ The reports use these measures:
 
 | Report | What it compared |
 | --- | --- |
+| [Scheduler 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-scheduler.md) | Component layout, complete server rendering, cold input, drag and integration checks. Pure layout meets its target; full-week rendering and historical cold-download budgets remain unmet. |
 | [SSR comparison 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md) | The latest ten-lane Docker matrix: integer pages at concurrency 1 and 10, plus the text grid at concurrency 1. The server charts and homepage server numbers read it. |
 | [Krausest local run 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md) | Fresh local Rivet/vanilla CPU, memory, startup and size measurements. Published framework comparisons are not comparable because Chrome major versions differ. The keyed-table charts read this run. |
 | [Fair comparison 2026-10-19](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-19-fair-comparison.md) | The earlier server comparison and the resume run in Chrome 155, with the [scoreboard](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/perf-scoreboard.md). The resume charts still read it; its server data is superseded by the 2026-10-23 run. |

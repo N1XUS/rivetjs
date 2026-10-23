@@ -7,11 +7,13 @@
 // - Pages: client builds of `fixtures/ui-pages/<name>.tsx` (one route each, the starter-ui setup) → the CSS linked
 //   before first paint (app styles + route sheet) + every JS chunk.
 // Writes scripts/size-report/ui-components.json + ui-components.md; `--check` compares with them (exact) instead.
-// Usage: node scripts/size-report/ui-components.mjs [--check] [--no-pages] [--only=button,select]
+// Usage: node scripts/size-report/ui-components.mjs [--check] [--no-pages] [--only=button,select] [--update]
+// With --only, --update merges just measured rows; without it, a selected run only prints its report.
 import { createRequire } from "node:module";
 import { brotliCompressSync } from "node:zlib";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { baselineAfterUpdate } from "./baseline.mjs";
 
 const root = new URL("../../", import.meta.url).pathname.replace(/\/$/, "");
 const require = createRequire(root + "/package.json");
@@ -207,10 +209,11 @@ if (check) {
     process.exit(1);
   }
   console.log(`ui-components: identical (${Object.keys(result.components).length} subpaths, ${Object.keys(result.pages).length} pages)`);
-} else if (only) {
+} else if (only && !args.includes("--update")) {
   console.log(markdown(result));
 } else {
-  writeFileSync(outJson, JSON.stringify(result, null, 1) + "\n");
-  writeFileSync(outMd, markdown(result));
-  console.log(markdown(result).split("\n").slice(0, 14).join("\n"));
+  const updated = only ? baselineAfterUpdate(JSON.parse(readFileSync(outJson, "utf8")), result, true, ["components", "pages"]) : result;
+  writeFileSync(outJson, JSON.stringify(updated, null, 1) + "\n");
+  writeFileSync(outMd, markdown(updated));
+  console.log(markdown(updated).split("\n").slice(0, 14).join("\n"));
 }

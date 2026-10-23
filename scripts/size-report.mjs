@@ -6,6 +6,7 @@
 //   npm run size-report -- --check        also compare with scripts/size-report/baseline.json (exit 1 on growth)
 //   npm run size-report -- --update       rewrite scripts/size-report/baseline.{json,md}
 //   npm run size-report -- --apps=playground,example:counter --no-lanes   (cdk docs examples: cdk-example:<id>)
+//   --apps=... --update                   update only the selected apps, preserving other apps and lanes
 //
 // Per route: HTML (brotli), resume state bytes (`<script type="rivet/boundaries">` text), inline script
 // bytes, the stylesheets the HTML links (count + bytes: CSS before first paint, the router's route sheet incl.), module requests and JS before the first interaction (idle prefetch included), the static
@@ -19,6 +20,7 @@ import { dirname, join, posix, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { brotliCompressSync, constants } from "node:zlib";
 import { spawnSync } from "node:child_process";
+import { baselineAfterUpdate } from "./size-report/baseline.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const work = resolve(root, ".artifacts/size-report");
@@ -49,7 +51,7 @@ const EXAMPLES = [
 ];
 
 /** cdk docs examples measured (`apps/cdk-docs/examples`; `../assets/*` imports staged from its shared `_assets`). */
-const CDK_EXAMPLES = ["masonry-expand", "masonry-feed"];
+const CDK_EXAMPLES = ["masonry-expand", "masonry-feed", "scheduler-views-binding"];
 
 /** App definitions: where the source is, how to stage it, which routes to load, interactions. */
 function apps() {
@@ -369,9 +371,11 @@ await writeFile(resolve(work, "report.json"), JSON.stringify(report, null, 2) + 
 await writeFile(resolve(work, "report.md"), md);
 process.stdout.write(md);
 if (args.update) {
+  const previous = only ? JSON.parse(await readFile(resolve(baselineDir, "baseline.json"), "utf8")) : null;
+  const updated = baselineAfterUpdate(previous, report, Boolean(only));
   await mkdir(baselineDir, { recursive: true });
-  await writeFile(resolve(baselineDir, "baseline.json"), JSON.stringify(report, null, 2) + "\n");
-  await writeFile(resolve(baselineDir, "baseline.md"), md);
+  await writeFile(resolve(baselineDir, "baseline.json"), JSON.stringify(updated, null, 2) + "\n");
+  await writeFile(resolve(baselineDir, "baseline.md"), table(updated));
   console.error("size-report: baseline updated");
 }
 if (args.check) {

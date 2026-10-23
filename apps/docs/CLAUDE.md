@@ -70,3 +70,5 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 
 ## See also
 - [apps/cdk-docs/CLAUDE.md](../cdk-docs/CLAUDE.md), [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md), design spec [docs/design/specs/2026-10-03-docs-site-design.md](../../docs/design/specs/2026-10-03-docs-site-design.md).
+
+Scheduler component evidence (2026-10-23) is linked from `content/about/benchmarks.md`: the separate layout/render/cold-input report records original unmet SSR/download budgets and scoped versus broad validation; it does not supply comparative framework chart numbers.

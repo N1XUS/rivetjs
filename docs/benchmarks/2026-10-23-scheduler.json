@@ -162,17 +162,223 @@
       "/scheduler-zone load: resumed preserved server UTC09:00/top37.5% vs fresh CSR local12:00/top50%, plus CSR-only describedby"
     ]
   },
-  "pending": [
-    "T14 all-project gates",
-    "T14 zero-cost baseline reconciliation for intended runtime change",
-    "T14 full size and new Scheduler docs-example baseline after T13",
-    "T13 public docs and generated API/AI outputs"
-  ],
   "currentColdRequestedFiles": {
     "scripts": 87,
     "emittedMinifiedBytes": 533950,
     "sumPerFileBrotliBytes": 176920,
     "includesPageAndRuntime": true,
     "stateAndIntlIncluded": true
+  },
+  "integration": {
+    "schedulerUnit": {
+      "passed": 109,
+      "files": 7
+    },
+    "schedulerBrowser": {
+      "passed": 237,
+      "files": 10
+    },
+    "schedulerResume": {
+      "passed": 6
+    },
+    "uiUnit": {
+      "passed": 1220,
+      "files": 221
+    },
+    "schedulerUiProduction": {
+      "passed": 16
+    },
+    "overlayUnit": {
+      "passed": 35
+    },
+    "menuPopoverBrowser": {
+      "passed": 34,
+      "existingSkipped": 1
+    },
+    "scripts": {
+      "passed": 42,
+      "files": 8
+    },
+    "uiDocs": {
+      "pages": 4135,
+      "liveDemos": 1048,
+      "changedSchedulerManifestsPassed": 15
+    },
+    "cdkDocs": {
+      "pages": 4822,
+      "liveDemos": 649,
+      "changedSchedulerManifestsPassed": 8
+    },
+    "uiProduction": {
+      "passed": 430,
+      "failed": 20,
+      "files": 68,
+      "tests": 450,
+      "ranBeforeFinalOverlayFix": true,
+      "schedulerFailures": 0,
+      "matchingFailuresReproducedBeforeRuntimeFix": 20,
+      "otherFailuresBaselineUnclassified": 0,
+      "fullGatePassed": false,
+      "baselineSourceExactlyRestored": true
+    },
+    "externalDrop": {
+      "apps": [
+        "ui-docs",
+        "cdk-docs"
+      ],
+      "coldPassed": true,
+      "warmPassed": true,
+      "input": "real stepped Chromium CDP input; bypassed Playwright HTML-drag adapter waiting on a synthetic drag-start",
+      "assertions": [
+        "preview",
+        "event creation",
+        "backlog removal",
+        "exclusive 2026-10-20 to 2026-10-21 range"
+      ],
+      "dragLibrarySourceChange": false
+    },
+    "rssMiB": {
+      "budget": 3072,
+      "fullAppSize": 2141,
+      "scripts": 2654,
+      "uiDocs": 1573,
+      "cdkDocs": 1378,
+      "remainingBaselineComparison": 2702.9
+    },
+    "parentPreview": {
+      "widths": [
+        1280,
+        390
+      ],
+      "iframes": 15,
+      "idleMs": 2000,
+      "exampleMissing": 0,
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "pageHorizontalOverflow": false,
+      "screenshotsVisuallyReviewed": true
+    },
+    "docsStaticGates": {
+      "content": true,
+      "snippets": true,
+      "llms": true,
+      "mcp": true,
+      "aiSync": true,
+      "uiBrand": true
+    },
+    "schedulerPopoverProduction": {
+      "passed": 23,
+      "includesFixedTriggerScrollAxes": true,
+      "retainsQueuedScrollRegression": true
+    },
+    "crudDemoRegression": {
+      "apps": [
+        "ui-docs",
+        "cdk-docs"
+      ],
+      "productionPassed": true,
+      "cases": [
+        "duplicate-delete-duplicate",
+        "new-new-delete-new",
+        "independent rename/delete of retained siblings"
+      ],
+      "allocator": "per-instance serializable monotonic signal"
+    },
+    "zeroCost": {
+      "passed": true,
+      "developmentLeakEntries": 224,
+      "conditionalParityEntries": 18,
+      "compilerCorpusMatched": 176
+    },
+    "fullAppSizeCheck": {
+      "passed": true,
+      "apps": 25,
+      "priorRuntimeDeltaMinifiedBytes": 9,
+      "finalSchedulerOverlayDeltaMinifiedBytes": 74
+    },
+    "uiComponentSize": {
+      "schedulerCheckPassed": true,
+      "previousRowsPreserved": true,
+      "fullExactGatePassed": false,
+      "remainingDifferingRows": 107
+    },
+    "format": {
+      "passed": true
+    },
+    "mainDocs": {
+      "pages": 1028,
+      "contentPagesChecked": 198,
+      "snippetFencesChecked": 481,
+      "buildPassed": true,
+      "llmsMcpAiPassed": true
+    }
+  },
+  "remainingLimits": [
+    "Whole-week SSR 11.072 ms exceeds unchanged 6 ms target",
+    "Historical cold-handler/drag-only closure targets unmet",
+    "Full UI production gate has 20 failures reproduced without the runtime correction",
+    "Older full UI component size baseline retains 107 unrelated differing rows",
+    "Existing focused fuzz differences/pins retained"
+  ],
+  "bundles": {
+    "uiOwn": {
+      "dom": [
+        12284,
+        3861
+      ],
+      "server": [
+        11140,
+        3432
+      ],
+      "css": [
+        18374,
+        2596
+      ]
+    },
+    "cdkOwnMinified": {
+      "dom": 232812,
+      "server": 215611,
+      "layout": 23962
+    },
+    "standaloneHeadlessDemo": {
+      "totalJS": {
+        "files": 86,
+        "min": 493197,
+        "br": 162302
+      },
+      "serverJS": {
+        "min": 437005,
+        "br": 126882
+      },
+      "route": {
+        "status": 200,
+        "htmlBr": 4959,
+        "cssSheets": 1,
+        "css": {
+          "min": 43033,
+          "br": 7555
+        },
+        "stateBytes": 2221,
+        "inlineBytes": 2466,
+        "eagerRequests": 59,
+        "eagerJS": {
+          "min": 459820,
+          "br": 148299
+        },
+        "runtimeJS": {
+          "min": 77750,
+          "br": 25109
+        },
+        "pageJS": {
+          "min": 459820,
+          "br": 148299
+        },
+        "interactionRequests": 0,
+        "interactionJS": {
+          "min": 0,
+          "br": 0
+        }
+      }
+    }
   }
 }

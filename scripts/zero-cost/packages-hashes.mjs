@@ -1,5 +1,5 @@
 // Minified Rolldown hash per public runtime entry of @rivetjs/router, forms, i18n, kit, ui, motion, bridge, bridge-react and bridge-preact (production resolution),
-// plus the cdk entries listed in CDK_ENTRIES (the cdk has hundreds; masonry + flip are gated since 2026-10-12).
+// plus the cdk entries listed in CDK_ENTRIES (masonry, flip and scheduler).
 // Each entry is hashed as the package's own code: other `@rivetjs/*` packages, third-party packages and `node:*`
 // stay external (reactivity + runtime are gated by runtime-hashes.mjs; import specifiers still show in the hash).
 // `#` specifiers (the package's `imports` map) are own code: resolved with the production conditions and inlined.
@@ -23,6 +23,8 @@ const CDK_ENTRIES = [
   ["@rivetjs/cdk/masonry", "masonry/index.tsx"],
   ["@rivetjs/cdk/masonry/behaviour", "masonry/behaviour.ts"],
   ["@rivetjs/cdk/flip", "flip/index.ts"],
+  ["@rivetjs/cdk/scheduler", "scheduler/index.tsx"],
+  ["@rivetjs/cdk/scheduler/layout", "scheduler/layout-index.ts"],
 ];
 /** Build-time (Node/Vite) entries: never in a shipped bundle. */
 const BUILD_ONLY = new Set([
