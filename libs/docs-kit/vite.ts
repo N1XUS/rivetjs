@@ -37,7 +37,7 @@ const DEV_FRAME_STYLES = Symbol.for("rivet.docs.frameStyles");
  * `virtual:docs/*` → app files. Large generated data is never a module on the server: `examples` (examples.json: every
  * example's code) and `api` (api.json) are parsed from disk while pages render (bundling a 70 MB examples module /
  * 8 MB api.json cost the site build tens of GB, 2026-10-08). In a client build `examples` is an empty object (its
- * code is server-rendered; pages navigate with full loads) and `api` an empty model (API pages have no browser code:
+ * data reaches the browser through per-page route loaders) and `api` an empty model (API pages have no browser code:
  * bundled, api.json was a 4.9 / 7.2 MB client chunk (cdk-docs / ui-docs) the App chunk imported, and 0.1–0.3 GB of
  * the client build's memory, 2026-10-09); the dev client gets the files (a page renders in the browser after a hot update).
  * `api` is declared server-only (`api.rivetServerOnly`, SERVER-REACH): the router renders the API routes (their pages

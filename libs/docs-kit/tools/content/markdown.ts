@@ -59,6 +59,8 @@ export interface Rendered {
   headings: Heading[];
   /** Components and helpers the JSX uses (import names). */
   uses: Set<"Example" | "ApiCard" | "StarterButton" | "CopyButton" | "BenchChart">;
+  /** Examples embedded in this body: the page loader supplies only these records. */
+  examples: Set<string>;
   /** lucide icons the JSX renders through `<Icon icon={Name} />` (import names). */
   icons: Set<string>;
   /** First paragraph as plain text (glossary definitions). */
@@ -176,6 +178,7 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
   const slug = slugger();
   const headings: Heading[] = [];
   const uses: Rendered["uses"] = new Set();
+  const examples = new Set<string>();
   const icons = new Set<string>();
   const icon = (name: string, size: number, cls?: string) => {
     icons.add(name);
@@ -460,7 +463,8 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
           const id = attrs.id ?? "";
           if (!context.examples.has(id)) fail(node, `unknown example "${id}" (create apps/docs/examples/${id}/example.ts)`);
           uses.add("Example");
-          return `<Example id="${attr(id)}" />`;
+          examples.add(id);
+          return `<Example id="${attr(id)}" example={data.examples[${JSON.stringify(id)}]} />`;
         }
         if (node.name === "api") {
           const symbol = attrs.symbol ?? "";
@@ -496,5 +500,5 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
   };
 
   const jsx = blocks(tree.children).filter(Boolean).join("\n");
-  return { jsx, headings, uses, icons, links, localLinks, ...(firstParagraph !== undefined ? { firstParagraph } : {}) };
+  return { jsx, headings, uses, examples, icons, links, localLinks, ...(firstParagraph !== undefined ? { firstParagraph } : {}) };
 }

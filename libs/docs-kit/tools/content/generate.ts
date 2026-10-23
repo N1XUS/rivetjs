@@ -236,7 +236,12 @@ export async function generateContent(
     const components = "@rivetjs/docs-kit/components";
     const imports = [`import { DocPage } from "${components}/DocPage.tsx";`];
     if (rendered.uses.has("CopyButton")) imports.push(`import { CopyButton } from "${components}/CodeBlock.tsx";`);
-    if (rendered.uses.has("Example")) imports.push(`import { Example } from "${components}/Example.tsx";`);
+    if (rendered.examples.size)
+      imports.push(
+        `import { Example } from "${components}/Example.tsx";`,
+        `import { load, type PageProps } from "@rivetjs/router";`,
+        `import { examples } from "virtual:docs/examples";`,
+      );
     if (rendered.uses.has("ApiCard")) imports.push(`import { ApiCard } from "${components}/ApiCard.tsx";`);
     if (rendered.uses.has("BenchChart")) imports.push(`import { BenchChart } from "${components}/BenchChart.tsx";`);
     if (rendered.uses.has("StarterButton")) imports.push(`import { StarterButton } from "${components}/StarterButton.tsx";`);
@@ -276,7 +281,15 @@ export async function generateContent(
       "",
       `export const head = ${JSON.stringify(head)};`,
       "",
-      `export default function Page() {`,
+      // The browser adopts and client-renders pages too. Keep the full manifest on the server, and send only the
+      // examples this page embeds through the route payload (the client manifest is deliberately empty).
+      ...(rendered.examples.size
+        ? [
+            `export const loader = load(() => ({ examples: { ${[...rendered.examples].map((id) => `${JSON.stringify(id)}: examples[${JSON.stringify(id)}]`).join(", ")} } }));`,
+            "",
+            `export default function Page({ data }: PageProps<typeof loader>) {`,
+          ]
+        : [`export default function Page() {`]),
       `  return (`,
       `    <DocPage page={${JSON.stringify(props)}}>`,
       rendered.jsx
@@ -325,6 +338,7 @@ export async function generateContent(
       BenchChart: "BenchChart.tsx",
     } as Record<string, string>;
     const imports = [...rendered.uses].sort().map((use) => `import { ${use} } from "@rivetjs/docs-kit/components/${kit[use]}";`);
+    if (rendered.examples.size) imports.push(`import type { ExampleData } from "@rivetjs/docs-kit/components/types.ts";`);
     if (rendered.icons.size) imports.push(`import { Icon } from "@rivetjs/kit/icon";`, `import { ${[...rendered.icons].sort().join(", ")} } from "lucide";`);
     const file = resolve(fragmentsDir, id + ".tsx");
     fragmentFiles.add(file);
@@ -333,7 +347,9 @@ export async function generateContent(
       ...imports,
       "",
       `/** Markdown fragment \`${from}\`. */`,
-      `export default function Fragment() {`,
+      rendered.examples.size
+        ? `export default function Fragment({ data }: { data: { examples: Record<string, ExampleData> } }) {`
+        : `export default function Fragment() {`,
       `  return (`,
       `    <>`,
       rendered.jsx

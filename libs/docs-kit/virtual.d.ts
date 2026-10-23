@@ -16,7 +16,7 @@ declare module "virtual:docs/pages" {
   export const pages: import("./components/types.ts").PageIndexEntry[];
 }
 declare module "virtual:docs/examples" {
-  /** Every example (meta + shown code): `src/generated/examples.json`; server only (`{}` in a client build). */
+  /** Every example (meta + shown code): `src/generated/examples.json`; server only (`{}` in a client build); page loaders pass the needed records as route data. */
   export const examples: Record<string, import("./components/types.ts").ExampleData>;
 }
 declare module "virtual:docs/example-frames" {

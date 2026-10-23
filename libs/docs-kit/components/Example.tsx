@@ -1,9 +1,8 @@
-import { examples } from "virtual:docs/examples";
 import { TriangleAlert } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 import { CopyButton } from "./CodeBlock.tsx";
 import { framePath } from "../frame-theme.ts";
-import type { ExampleFile } from "./types.ts";
+import type { ExampleData, ExampleFile } from "./types.ts";
 
 const linesOf = (file: ExampleFile) => file.text.replace(/\n$/, "").split("\n");
 const langOfPath = (path: string) => path.match(/\.([a-z]+)$/)?.[1] ?? "txt";
@@ -70,8 +69,7 @@ function WhatLoaded({ id }: { id: string }) {
  * page posts (`frame-theme.ts`). Tabs are radio buttons styled with CSS, so the frame works without
  * JavaScript. Examples that need a server are shown as code only.
  */
-export function Example({ id, eager }: { id: string; eager?: boolean }) {
-  const example = examples[id];
+export function Example({ id, example, eager }: { id: string; example: ExampleData | undefined; eager?: boolean }) {
   if (!example) {
     return (
       <aside class="callout callout-warning" aria-label="Example missing">

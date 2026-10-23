@@ -1,6 +1,8 @@
 import { site } from "virtual:docs/site";
 import { logo } from "virtual:docs/brand";
 import { sections } from "virtual:docs/nav";
+import { examples } from "virtual:docs/examples";
+import { load, type PageProps } from "@rivetjs/router";
 import { Example } from "@rivetjs/docs-kit/components/Example.tsx";
 import { ArrowRight, Copy, Paintbrush, Zap } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
@@ -15,6 +17,8 @@ export const head = {
   ],
   links: [{ rel: "canonical", href: site.origin + "/" }],
 };
+
+export const loader = load(() => ({ example: examples["aria-menu"] }));
 
 const IDEAS = [
   {
@@ -38,7 +42,7 @@ const IDEAS = [
 ];
 
 /** Home: what @rivetjs/cdk is, a live component, three ideas, the sections. */
-export default function Home() {
+export default function Home({ data }: PageProps<typeof loader>) {
   return (
     <div class="home" data-pagefind-body="" data-pagefind-filter="section:Home">
       <section class="home-hero" aria-labelledby="home-title">
@@ -67,7 +71,7 @@ export default function Home() {
       <section class="home-demo" aria-labelledby="home-demo-title">
         <h2 id="home-demo-title">Try it</h2>
         <p>A menu button from {site.name}: the server sent its HTML, and the menu's code loads only when you reach for it.</p>
-        <Example id="aria-menu" eager />
+        <Example id="aria-menu" example={data.example} eager />
       </section>
 
       <section class="home-ideas" aria-labelledby="home-ideas-title">

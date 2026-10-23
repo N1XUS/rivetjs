@@ -1,4 +1,4 @@
-import { notFound, type PageProps, type RequestEvent, entries, guard } from "@rivetjs/router";
+import { notFound, type PageProps, type RequestEvent, entries, guard, load } from "@rivetjs/router";
 import { examples } from "virtual:docs/examples";
 import { Example } from "@rivetjs/docs-kit/components/Example.tsx";
 import { site } from "virtual:docs/site";
@@ -12,6 +12,12 @@ export const access = guard(({ params }: RequestEvent<Params>) => {
   if (!examples[params.id]) throw notFound();
 });
 
+export const loader = load(({ params }: RequestEvent<Params>) => {
+  const example = examples[params.id];
+  if (!example) throw notFound();
+  return example;
+});
+
 export const head = ({ params }: { params: Params }) => {
   const example = examples[params.id];
   return {
@@ -22,8 +28,7 @@ export const head = ({ params }: { params: Params }) => {
 };
 
 /** One example on its own page, with links to the pages that explain it. */
-export default function ExamplePage({ params }: PageProps<"examples/[id]">) {
-  const example = examples[params.id]!;
+export default function ExamplePage({ data: example }: PageProps<typeof loader>) {
   return (
     <div class="wide-page">
       <header class="doc-header">
@@ -36,7 +41,7 @@ export default function ExamplePage({ params }: PageProps<"examples/[id]">) {
         <p class="doc-lead">{example.summary}</p>
       </header>
       <div data-pagefind-body="" data-pagefind-filter="section:Examples">
-        <Example id={example.id} eager />
+        <Example id={example.id} example={example} eager />
         {example.usedOn.length ? (
           <section class="prose">
             <h2 id="explained-in">Explained in</h2>

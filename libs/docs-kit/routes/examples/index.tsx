@@ -1,4 +1,5 @@
 import { examples } from "virtual:docs/examples";
+import { load, type PageProps } from "@rivetjs/router";
 import { StatusBadge } from "@rivetjs/docs-kit/components/StatusBadge.tsx";
 import { site } from "virtual:docs/site";
 
@@ -8,9 +9,15 @@ export const head = {
   links: [{ rel: "canonical", href: site.origin + "/examples/" }],
 };
 
+// Gallery cards need metadata only: keep every example's source files out of this route's payload.
+export const loader = load(() =>
+  Object.values(examples)
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .map(({ id, title, summary, status, tags, codeOnly }) => ({ id, title, summary, status, tags, ...(codeOnly ? { codeOnly } : {}) })),
+);
+
 /** Gallery of every example, grouped by its first tag. */
-export default function Examples() {
-  const all = Object.values(examples).sort((a, b) => a.title.localeCompare(b.title));
+export default function Examples({ data: all }: PageProps<typeof loader>) {
   return (
     <div class="wide-page">
       <header class="doc-header">

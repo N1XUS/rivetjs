@@ -131,7 +131,7 @@ test("markdown: internal links get a trailing slash and full-load navigation; .m
 test("markdown: directives — callouts, examples, terms, starters; unknown references fail", () => {
   const { jsx, uses } = renderMarkdown(':::warning[Careful]\nText\n:::\n\n::example{id=counter}\n\nThe page :term[resumes]{id=resume}. Press :kbd[Esc]. A ratio 3:2 stays.\n\n::starter{template=starter-static}\n', context());
   assert.match(jsx, /<aside class="callout callout-warning" aria-label="Careful"><p class="callout-title"><Icon icon=\{TriangleAlert\} size=\{18\} \/>Careful<\/p><p>Text<\/p><\/aside>/);
-  assert.match(jsx, /<Example id="counter" \/>/);
+  assert.match(jsx, /<Example id="counter" example=\{data.examples\["counter"\]\} \/>/);
   assert.match(jsx, /<a class="term" href="\/reference\/glossary\/#resume" title="The browser continues from server HTML\." data-rivet-reload="">resumes<\/a>/);
   assert.match(jsx, /<kbd>Esc<\/kbd>/);
   assert.match(jsx, /3:2 stays/);

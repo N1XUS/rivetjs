@@ -4,6 +4,7 @@
 Docs site of `@rivetjs/cdk` (headless components + foundations), second site on `@rivetjs/docs-kit` (same engine as `apps/docs`). Engine internals: [libs/docs-kit/CLAUDE.md](../../libs/docs-kit/CLAUDE.md).
 
 ## Layout
+- Home (`src/routes/index.tsx`): the eager `aria-menu` preview receives its example record through a route loader, so idle adoption preserves its iframe and source.
 - Published alpha docs: version labels and StackBlitz package specs use `0.1.0-alpha.1`; installation guides use public npm packages. Production hosting is enabled at `cdk.rivetjs.severyn.pro`. No example check is quarantined (see below).
 - Quarantine: `examples/_quarantine.json` holds 41 derived-only-model reds since 2026-10-23 (CUT; cdk-components 38 red, Duplicate For key, popover stack overflow; lane RED-COMP removes them); before that it was empty (`{}`). `data-list` (2026-10-20, CDK-EX: resumed ListBox rows kept their server text after `createListData.update`) passes since ROW-RERENDER 2026-10-20 (`../../libs/cdk/collections/CLAUDE.md` "Resumed rows") and was removed. The 2026-10-16 deployment entries (`merge-props`, `radio-group-events`, `toggle-button-group-options`) pass since the cold-interaction fixes and were removed 2026-10-20 (CDK-EX); a new entry needs user approval and stays explicit in build output.
 - Modal example checks (`dialog-nested`, `dialog-trigger`, `modal-basic`) accept inert on the target or an ancestor: `ariaHideOutside` marks the outermost page/portal wrapper, not necessarily the trigger/dialog itself.
