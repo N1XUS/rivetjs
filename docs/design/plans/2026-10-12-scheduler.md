@@ -170,7 +170,7 @@ H="bash $S/heavy.sh"
 
 - [x] tv slots (spec §3.4), `variant`, `density` (slot height / lane height / row min height / column min width / gutter tokens), event colors = HeroUI chip palette + `cssColor`, weekend tint, week-number column, now-line accent, dark mode tokens, concentric radii (ui-identity R3), focus rings not clipped by the scroller (inset form inside scroll containers), reduced-motion paths.
 - [x] Toolbar from ui Button / ButtonGroup / Segment + lucide `ChevronLeft` / `ChevronRight` / `CalendarDays`; menu items from ui Dropdown styles.
-- [x] Screenshots light / dark / compact / RTL and desktop/narrow docs; generated Scheduler CSS 18,374 minified / 2,596 Brotli bytes, with own-code and standalone-app scopes recorded in the performance report.
+- [x] Screenshots light / dark / compact / RTL and desktop/narrow docs; generated Scheduler CSS 18,408 compiled / 2,601 Brotli bytes, with own-code and standalone-app scopes recorded in the performance report.
 - [ ] Gates: G-UI, G-UIC, G-TYPE, G-SIZE. Commit.
 
 ### Task T12: A11y, RTL, perf

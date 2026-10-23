@@ -220,7 +220,7 @@ Headless Scheduler ships state and geometry, so import `@rivetjs/cdk/theme.css` 
 | Event state | `data-color`, `data-all-day`, `data-timed`, `data-ghost`, `data-dragging`, `data-continues-before`, `data-continues-after`. |
 | Geometry | `--rv-scheduler-slot-height`, `--rv-scheduler-lane-height`, `--rv-scheduler-row-min-height`, `--rv-scheduler-column-min-width`, `--rv-scheduler-gutter`. |
 | Timed positioning | `--rv-scheduler-event-top`, `--rv-scheduler-event-height`, `--rv-scheduler-event-start`, `--rv-scheduler-event-width`. |
-| Lane positioning | `--rv-scheduler-lane`, `--rv-scheduler-span`. |
+| Lane positioning | `--rv-scheduler-lane`, `--rv-scheduler-span`, `--rv-scheduler-lane-shift` (start-resize preview offset). |
 
 ```css
 .rv-SchedulerTimeGrid-slot { height: var(--rv-scheduler-slot-height, 36px); }
@@ -229,6 +229,8 @@ Headless Scheduler ships state and geometry, so import `@rivetjs/cdk/theme.css` 
 ```
 
 ## Accessibility and keyboard
+
+Lane chips use `inset-inline-start: var(--rv-scheduler-lane-shift, 0px)` so a start-edge resize shifts the start while pinning the opposite end. Keep this on the lane-positioning rule; resize handles retain their own zero insets.
 
 Name the root group. Month uses a roving grid; week/day use a named group, an all-day grid and a daily listbox of option slots. Chip labels include dates/times and continuation details. Alternating polite live regions announce edits and navigation. Focus returns to the owning cell when a focused chip is removed. Horizontal navigation and lane resizing follow computed direction, including portaled menu/overflow content.
 

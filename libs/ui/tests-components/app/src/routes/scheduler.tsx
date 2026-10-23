@@ -71,6 +71,9 @@ export default function SchedulerStory() {
       </div>
       <output id="menu-actions">{String(menuActions())}</output>
       <output id="scheduler-event-count">{String(events().length)}</output>
+      <output id="scheduler-span-range">
+        {String(events().find((event) => event.id === "span")?.start)} to {String(events().find((event) => event.id === "span")?.end)}
+      </output>
       <Scheduler
         id="agenda"
         aria-label="Team schedule"

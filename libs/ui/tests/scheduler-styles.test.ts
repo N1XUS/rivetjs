@@ -109,3 +109,9 @@ test("scheduler port: event focus ring is inset only inside the time-grid scroll
   assert.equal(await rule(".scheduler__event:focus-visible", "outline-offset"), "2px");
   assert.equal(await rule(".scheduler .rv-SchedulerTimeGrid-scroller .scheduler__event:focus-visible", "outline-offset"), "-2px");
 });
+
+test("scheduler styles: shipped lane preview shift moves the chip, leaving handle insets local", async () => {
+  assert.equal(await rule(".scheduler .rv-SchedulerMonth-lanes > .scheduler__event", "inset-inline-start"), "var(--rv-scheduler-lane-shift, 0px)");
+  assert.equal(await rule(".scheduler .rv-SchedulerTimeGrid-all-day-lanes > .scheduler__event", "inset-inline-start"), "var(--rv-scheduler-lane-shift, 0px)");
+  assert.equal(await rule('.scheduler__event[data-all-day="true"] > .scheduler__handle[data-edge="start"]', "inset-inline-start"), "0");
+});

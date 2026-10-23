@@ -121,7 +121,7 @@ body {
 .rv-SchedulerMonth-more {
   position: absolute;
   inset-block-start: calc((var(--rv-scheduler-lane) - 1) * var(--rv-scheduler-lane-height));
-  inset-inline-start: 0;
+  inset-inline-start: var(--rv-scheduler-lane-shift, 0px);
   width: calc(var(--rv-scheduler-span, 1) * (100% + 7px) - 7px);
   height: calc(var(--rv-scheduler-lane-height) - 3px);
   z-index: 1;

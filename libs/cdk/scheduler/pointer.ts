@@ -136,7 +136,7 @@ export function startPointerDrag(
     doc.removeEventListener("pointermove", onMove);
     doc.removeEventListener("pointerup", onUp);
     doc.removeEventListener("pointercancel", onCancel);
-    doc.removeEventListener("keydown", onKeydown);
+    doc.removeEventListener("keydown", onKeydown, true);
   };
   // A second pointer must not steer a gesture it did not start (events without a pointerId are never filtered).
   const foreign = (event: Event): boolean => {
@@ -206,7 +206,8 @@ export function startPointerDrag(
   doc.addEventListener("pointermove", onMove);
   doc.addEventListener("pointerup", onUp);
   doc.addEventListener("pointercancel", onCancel);
-  doc.addEventListener("keydown", onKeydown);
+  // The focused chip/cell owns Escape in bubble phase; an active pointer session must cancel first.
+  doc.addEventListener("keydown", onKeydown, true);
   return stop;
 }
 

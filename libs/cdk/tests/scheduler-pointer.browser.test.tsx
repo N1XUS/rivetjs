@@ -81,14 +81,15 @@ describe("attachPointerDrag", () => {
     el.remove();
   });
 
-  it("cancels on Escape and on pointercancel without calling onEnd", () => {
+  it("cancels on focused Escape before a host stops bubbling, and on pointercancel without onEnd", () => {
     const el = document.body.appendChild(document.createElement("div"));
     const onCancel = vi.fn();
     const onEnd = vi.fn();
     const detach = attachPointerDrag(el, { onMove: vi.fn(), onEnd, onCancel });
     el.dispatchEvent(pointerEvent("pointerdown", 0, 0));
     el.dispatchEvent(pointerEvent("pointermove", 20, 0));
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    el.addEventListener("keydown", (event) => event.stopPropagation());
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(onCancel).toHaveBeenCalledTimes(1);
     el.dispatchEvent(pointerEvent("pointerup", 20, 0));
     expect(onEnd).not.toHaveBeenCalled();
@@ -525,9 +526,9 @@ describe("Scheduler range selection", () => {
     expect(clicks).toEqual([]);
   });
 
-  it("Escape on the focused pressed slot (the grid's key handler clears first) still swallows the trailing click", async () => {
-    // Review T7+T8 #2: the keydown reaches the sheet's handler (selection cleared) before the tracker's document
-    // listener; the tracker must swallow from its own started state, not from the (already cleared) selection.
+  it("Escape on the focused pressed slot cancels before the grid key handler and swallows the trailing click", async () => {
+    // The active tracker cancels in capture before a focused sheet/chip handler can consume Escape.
+    // Its own started state still controls swallowing the release click.
     const { root, ranges, clicks } = await setup();
     await select(slotOf(root, 1, 600), slotOf(root, 1, 690), false);
     slotOf(root, 1, 600).focus();

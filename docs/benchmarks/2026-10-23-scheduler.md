@@ -75,11 +75,11 @@ Final zero-cost, full app-size, selected Scheduler UI-size and changed-file form
 
 ## Generated bundle baselines
 
-| Measurement | Minified / Brotli bytes | Scope |
+| Measurement | Bytes / Brotli bytes | Scope |
 | --- | --- | --- |
-| UI Scheduler DOM | 12,284 / 3,861 | Own UI code; CDK and other packages external |
-| UI Scheduler server | 11,140 / 3,432 | Own UI code; CDK and other packages external |
-| Scheduler stylesheet | 18,374 / 2,596 | Generated per-component CSS |
+| UI Scheduler DOM (minified JS) | 12,284 / 3,861 | Own UI code; CDK and other packages external |
+| UI Scheduler server (minified JS) | 11,140 / 3,432 | Own UI code; CDK and other packages external |
+| Scheduler compiled stylesheet | 18,408 / 2,601 | Compiled CSS measured verbatim; generated per-component stylesheet |
 | CDK Scheduler DOM / server | 232,812 / 215,611 minified | Own CDK graph; not a cold network closure |
 | Pure CDK scheduler/layout | 23,962 minified | Independent server-safe layout/date/time entry |
 

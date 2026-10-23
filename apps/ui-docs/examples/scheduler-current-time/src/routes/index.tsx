@@ -12,7 +12,7 @@ export function PlannerDemo() {
   const show = signal(true);
   return (
     <section class="grid min-w-0 gap-3">
-      <p class="text-sm">Choose Today in the toolbar to show the current UTC date. The red line follows the minute clock.</p>
+      <p class="text-sm">Choose Today in the toolbar to show the current UTC date. The current-time line follows the minute clock.</p>
       <Button id="clock-toggle" class="planner-button" onPress={() => show.set(!show())}>
         Current time: {show() ? "on" : "off"}
       </Button>

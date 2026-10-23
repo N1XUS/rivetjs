@@ -7,10 +7,11 @@ import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import type { Page } from "playwright";
 import { stories, watch, type Stories } from "./harness.ts";
+import { verifyLaneStartResize } from "./scheduler-lane-geometry.ts";
 let s: Stories;
 beforeAll(async () => (s = await stories()));
 afterAll(async () => s?.close());
-const shots = resolve(".superpowers/sdd/2026-10-12-scheduler/screenshots");
+const shots = resolve(".artifacts/ui-components/scheduler");
 const axeSource = readFileSync(createRequire(import.meta.url).resolve("axe-core/axe.min.js"), "utf8");
 async function onPage(body: (page: Page) => Promise<void>, width = 1100, hasTouch = false) {
   const page = await s.browser.newPage({ viewport: { width, height: 1100 }, hasTouch });
@@ -183,6 +184,30 @@ test("scheduler UI: detached overflow and menus inherit the anchor direction ind
     }
   }));
 
+for (const view of ["month", "week"] as const) {
+  for (const rtl of [false, true]) {
+    test(`scheduler UI: ${view} ${rtl ? "RTL" : "LTR"} lane start resize pins opposite end and restores Escape`, () =>
+      onPage(async (page) => {
+        page.setDefaultTimeout(5000);
+        await page.locator("#rtl").click();
+        await page.waitForFunction(() => document.querySelector("#scheduler-story")?.getAttribute("dir") === "rtl");
+        if (!rtl) {
+          await page.locator("#rtl").click();
+          await page.waitForFunction(() => document.querySelector("#scheduler-story")?.getAttribute("dir") === "ltr");
+        }
+        // Exercise the real view controls first so this regression isolates the shipped lane presentation.
+        await page.getByRole("radio", { name: "Week", exact: true }).click();
+        if (view === "month") await page.getByRole("radio", { name: "Month", exact: true }).click();
+        const selector = `#agenda ${view === "month" ? ".rv-SchedulerMonth" : ".rv-SchedulerTimeGrid-scroller"} [data-rv-event-id="span"]`;
+        await verifyLaneStartResize(page, selector, rtl, async () => {
+          await page.waitForFunction(() => document.querySelector("#scheduler-span-range")?.textContent === "2031-03-04 to 2031-03-06", null, {
+            timeout: 5000,
+          });
+        });
+      }));
+  }
+}
+
 test("scheduler UI: warm drag frame layout cost (CDP trace)", () =>
   onPage(async (page) => {
     page.on("pageerror", (error) => console.info("[scheduler-drag-error]", error.stack));
@@ -246,7 +271,8 @@ test("scheduler UI: warm drag frame layout cost (CDP trace)", () =>
       synchronousLayoutWithStack: forced.length,
       layouts,
     };
-    writeFileSync(resolve(".superpowers/sdd/2026-10-12-scheduler/task-12-warm-drag-trace.json"), JSON.stringify(metrics, null, 2) + "\n");
+    mkdirSync(shots, { recursive: true });
+    writeFileSync(resolve(shots, "warm-drag-trace.json"), JSON.stringify(metrics, null, 2) + "\n");
     console.info("[scheduler-warm-drag]", JSON.stringify(metrics));
     await page.mouse.up();
     await page.locator("[data-rv-drag-clone]").waitFor({ state: "detached" });
