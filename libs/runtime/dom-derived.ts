@@ -790,13 +790,18 @@ function realFor(lazy: Lazy): () => Node[] {
   }
   const outer = _adoption.rows;
   if (!lazy.bad)
-    _adoption.rows = () => ({
-      items: lazy.items.slice(),
-      rows,
-      adopted: new Map<ForRow, number>(rows.map((row) => [row, -1])),
-      changed: null,
-      host: null,
-    });
+    _adoption.rows = () => {
+      // Only this list may take these rows. Its first reconcile can synchronously build a row
+      // containing another For; that child must create its own rows, not stamp this list's rows.
+      _adoption.rows = outer;
+      return {
+        items: lazy.items.slice(),
+        rows,
+        adopted: new Map<ForRow, number>(rows.map((row) => [row, -1])),
+        changed: null,
+        host: null,
+      };
+    };
   const unitOuter = cur;
   inner = true;
   cur = null;
