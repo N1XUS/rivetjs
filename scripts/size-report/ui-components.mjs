@@ -150,8 +150,11 @@ if (!args.includes("--no-pages")) {
     // CSS = the stylesheets the page links before first paint: the app entry's (router `styles`) + the route sheet
     // (`.vite/rivet-route-css.json`; the router merges a route's component stylesheets into one).
     const manifest = JSON.parse(readFileSync(`${client}/.vite/manifest.json`, "utf8"));
+    // App entries only: the compiler's entries (derived boundary modules, runtime, builtins) are in the resume manifest.
+    const resume = JSON.parse(readFileSync(`${client}/.vite/rivet-resume.json`, "utf8"));
+    const compiler = new Set([resume.runtime, resume.builtins, ...Object.values(resume.symbols ?? {})].filter(Boolean));
     const global = Object.values(manifest)
-      .filter((r) => r.isEntry && !r.src?.includes("rivet-resume-chunk:"))
+      .filter((r) => r.isEntry && !compiler.has("/" + r.file))
       .flatMap((r) => (r.file.endsWith(".css") ? [r.file] : (r.css ?? [])));
     const routeCss = existsSync(`${client}/.vite/rivet-route-css.json`) ? JSON.parse(readFileSync(`${client}/.vite/rivet-route-css.json`, "utf8")) : {};
     const linked = [...new Set([...global, ...(routeCss.index ?? []).map((href) => href.replace(/^\//, ""))])];

@@ -7,7 +7,7 @@ import { mount } from "@rivetjs/runtime/dom";
 import { dataURL, decodeData } from "@rivetjs/router/client";
 import { frames } from "virtual:docs/example-frames";
 import { frameIdOf } from "../frame-theme.ts";
-import { FrameRoot } from "./frame.tsx";
+import { FrameShell } from "./frame.tsx";
 
 let dispose = () => {};
 
@@ -31,7 +31,7 @@ export async function start(into: Element): Promise<void> {
   dispose();
   into.textContent = "";
   const data = body.data?.[body.data.length - 1];
-  dispose = mount(() => <FrameRoot data={data} params={params} url={url} />, into);
+  dispose = mount(() => <FrameShell data={data} params={params} url={url} />, into);
   // Stylesheets linked by the server (no flash) give way to Vite's injected <style>s.
   for (const link of document.querySelectorAll('link[rel="stylesheet"][href$="direct"]')) link.remove();
 }

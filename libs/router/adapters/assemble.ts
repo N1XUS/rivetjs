@@ -37,9 +37,11 @@ export function assemble(entry: GeneratedEntry, build: BuildManifests, config: B
   const { clients, locales, routeStyles, inlineStyles } = build;
   const { resolveLocale, ...app } = config;
   const first = clients[0]!;
+  // App entries only (router `styles`, CSR app): the compiler's chunks are entries too (derived boundary modules, a
+  // route page among them, the runtime, the builtins), their CSS is linked per route.
+  const resume = resumeChunks(first.manifest);
   const styles = Object.values(first.vite)
-    // App entries only (router `styles`, CSR app): resume chunks are entries too, their CSS is linked per route.
-    .filter((record) => record.isEntry && !record.src?.includes("rivet-resume-chunk:"))
+    .filter((record) => record.isEntry && !resume.has(first.base + record.file))
     .flatMap((record) => (record.file.endsWith(".css") ? [record.file] : (record.css ?? [])))
     .map((file) => first.base + file);
   const createApp = entry.createApp;
@@ -62,4 +64,12 @@ export function assemble(entry: GeneratedEntry, build: BuildManifests, config: B
     ...(inlineStyles ? { inlineStyles } : {}),
     ...i18n,
   });
+}
+
+/** URLs of the compiler's entry chunks in a client build (boundary chunks, runtime, builtins, island facades). */
+export function resumeChunks(manifest: ResumeManifest): Set<string> {
+  const urls = new Set<string>([...Object.values(manifest.symbols ?? {}), ...Object.values(manifest.islands ?? {})]);
+  if (manifest.runtime) urls.add(manifest.runtime);
+  if (manifest.builtins) urls.add(manifest.builtins);
+  return urls;
 }

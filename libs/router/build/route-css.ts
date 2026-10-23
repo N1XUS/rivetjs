@@ -10,24 +10,33 @@ import type { RouteTable } from "./routes.ts";
 /** Client build asset: route id → stylesheet URLs (written only when some route has CSS). */
 export const ROUTE_CSS = ".vite/rivet-route-css.json";
 
-/** An app entry (router `styles`, CSR app), not a compiler resume chunk. */
-const isStylesEntry = (chunk: Rollup.OutputChunk) => chunk.isEntry && !chunk.facadeModuleId?.includes("rivet-resume-chunk:");
-
 const routeFiles = (table: RouteTable, routesDir: string, id: string): string[] => {
   const route = table.routes.find((r) => r.id === id);
   if (!route?.page) return [];
   return [...route.layouts.flatMap((l) => (l.page ? [l.page] : [])), route.page].map((file) => resolve(routesDir, file));
 };
 
-/** Stylesheet URLs per route id from a client bundle (empty when no route module imports CSS). */
-export function bundleRouteCSS(bundle: Rollup.OutputBundle, table: RouteTable, routesDir: string, base: string): Record<string, string[]> {
+/**
+ * Stylesheet URLs per route id from a client bundle (empty when no route module imports CSS). `appEntries`: the module
+ * ids of the app's own build inputs (router `styles`, `build.rollupOptions.input`): their CSS is global. Every other
+ * entry is the compiler's (derived boundary modules, a route page among them, and the runtime): its CSS stays per route.
+ */
+export function bundleRouteCSS(
+  bundle: Rollup.OutputBundle,
+  table: RouteTable,
+  routesDir: string,
+  base: string,
+  appEntries: ReadonlySet<string>,
+): Record<string, string[]> {
   const chunks = Object.values(bundle).filter((o): o is Rollup.OutputChunk => o.type === "chunk");
   const byFile = new Map(chunks.map((c) => [c.fileName, c]));
   const owner = new Map<string, Rollup.OutputChunk>();
   for (const chunk of chunks) for (const id of chunk.moduleIds) owner.set(id.split("?")[0]!, chunk);
-  // Entry CSS (router `styles`) is linked on every page already. Resume chunks are entries too (compiler inputs,
-  // `\0rivet-resume-chunk:`) but their CSS is a component's: it stays per route.
-  const global = new Set(chunks.filter(isStylesEntry).flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]));
+  // App entry CSS (router `styles`) is linked on every page already. Boundary modules are entries too (the compiler
+  // emits one per derived boundary module, e.g. `src/routes/index.tsx`) but their CSS is a page's or a component's.
+  const global = new Set(
+    chunks.filter((c) => c.isEntry && c.facadeModuleId !== null && appEntries.has(c.facadeModuleId)).flatMap((c) => [...(c.viteMetadata?.importedCss ?? [])]),
+  );
   const out: Record<string, string[]> = {};
   for (const id of new Set(table.routes.map((r) => r.id))) {
     const css: string[] = [];

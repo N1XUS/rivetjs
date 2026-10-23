@@ -15,7 +15,7 @@ Think of a board game you pause. You do not replay every move to continue tomorr
 A Rivet page works the same way:
 
 - The **server** runs your components once and writes the HTML. For each component that can react to input (it has a handler, reads a signal in its markup, or uses an effect), it also writes a short record: where the component is in the page, the values of the signals it created, and, when its props are plain data, those props.
-- The **browser** gets the HTML, those records and a small loader script (about 1.1 KB compressed). When you use the page, it loads the code of the component you touched and runs it over the existing HTML, starting from the recorded values.
+- The **browser** gets the HTML, those records and a small loader script (about 1.1 KB compressed). When you use the page, it loads the code of the component you touched and of the components around it that have not run yet, and runs them over the existing HTML, starting from the recorded values.
 
 ## Why it matters
 
@@ -24,7 +24,7 @@ The common alternative is :term[hydration]{id=hydration}: the browser downloads 
 With resuming:
 
 - **The browser runs none of your component code on load.** A page that only shows content stays HTML and CSS, plus the loader. (With file routes, the router's code also loads after the page appears.)
-- **Work grows with what you use, not with page size.** A page with a hundred cards and one "Like" button runs the code of the button's component, not of the cards.
+- **Work grows with what you use, not with page size.** A component with plain-data props waits for its own first use: a card that nobody touches never runs. The first event still runs the components around the one you touched (their handlers may see the event bubble): with file routes, the router's root, the layouts and the page, together with the components that run with them.
 - **The first click is fast.** After the page has loaded, the loader fetches the page's code at low priority without running it, and it starts loading a component's code when you point at or focus it.
 
 ## How it works
@@ -41,7 +41,7 @@ Step by step:
 2. **HTML.** The page carries the markup, the component's markers and a `<script type="rivet/boundaries">` with the records: "component `ResumeDemo`, its signals are `"2026-…"` and `0`". The inline loader follows it.
 3. **Browser, on load.** The loader runs. It listens for events on the whole document. Your component code does not run.
 4. **Browser, on intent.** You move the pointer over the button. The loader starts fetching the file that contains `ResumeDemo`.
-5. **Browser, on click.** The runtime runs `ResumeDemo`'s compiled code over the existing nodes: it creates no element and moves none, it attaches the handler and the text binding, and each signal takes its recorded value. Then the click reaches the handler: `count.update((n) => n + 1)` updates the text. Nothing else on the page is touched.
+5. **Browser, on click.** The runtime runs `ResumeDemo`'s compiled code over the existing nodes: it creates no element and moves none, it attaches the handler and the text binding, and each signal takes its recorded value. The components around it that have not run yet run the same way first (here, only the example page). Then the click reaches the handler: `count.update((n) => n + 1)` updates the text.
 
 The "Server HTML" tab of the example shows the real markup.
 

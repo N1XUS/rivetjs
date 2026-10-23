@@ -1,10 +1,12 @@
 // Route CSS of a client bundle (`build/route-css.ts`) and the global stylesheets of a Vite manifest
-// (`adapters/assemble.ts`): app entries' CSS is global, a compiler resume chunk's CSS (also a Rollup entry,
-// `\0rivet-resume-chunk:`) stays on the routes that import it (per-component CSS, @rivetjs/ui).
+// (`adapters/assemble.ts`): app entries' CSS is global, the CSS of a compiler entry (a derived boundary module, a route
+// page among them: also Rollup entries) stays on the routes that import it (per-component CSS, @rivetjs/ui).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import type { Rollup } from "vite";
 import { bundleRouteCSS, dedupeTopLevel, inlineCSS, mergeRouteCSS } from "../build/route-css.ts";
+import { assemble } from "../adapters/assemble.ts";
+import type { GeneratedEntry } from "../server/app.ts";
 import { headTags } from "../shared/head.ts";
 import { cspPolicy } from "../shared/csp-directives.ts";
 import { hashCSP } from "../adapters/static.ts";
@@ -23,11 +25,16 @@ const chunk = (fileName: string, options: { entry?: string; modules?: string[]; 
     viteMetadata: { importedCss: new Set(options.css ?? []), importedAssets: new Set() },
   }) as unknown as Rollup.OutputChunk;
 
-test("route CSS: a resume chunk entry's stylesheet is linked per route, not globally", () => {
+test("route CSS: a boundary module entry's stylesheet (a route page's too) is linked per route, not globally", () => {
   const bundle = {
-    "entry.js": chunk("entry.js", { entry: "/app/entry.client.tsx", css: ["assets/styles.css"] }),
-    "resume-MenuRoot.js": chunk("resume-MenuRoot.js", { entry: "\0rivet-resume-chunk:/ui/menu.tsx?MenuRoot", css: ["assets/menu.css"] }),
-    "index.js": chunk("index.js", { modules: ["/app/src/routes/index.tsx"], imports: ["resume-MenuRoot.js"], css: ["assets/index.css"] }),
+    "styles.js": chunk("styles.js", { entry: "/app/src/styles.css", css: ["assets/styles.css"] }),
+    "menu.js": chunk("menu.js", { entry: "/ui/menu.tsx", css: ["assets/menu.css"] }),
+    "index.js": chunk("index.js", {
+      entry: "/app/src/routes/index.tsx",
+      modules: ["/app/src/routes/index.tsx"],
+      imports: ["menu.js"],
+      css: ["assets/index.css"],
+    }),
     "about.js": chunk("about.js", { modules: ["/app/src/routes/about.tsx"] }),
   } as unknown as Rollup.OutputBundle;
   const table = {
@@ -36,7 +43,20 @@ test("route CSS: a resume chunk entry's stylesheet is linked per route, not glob
       { id: "/about", page: "about.tsx", layouts: [] },
     ],
   } as unknown as RouteTable;
-  assert.deepEqual(bundleRouteCSS(bundle, table, "/app/src/routes", "/"), { "/": ["/assets/menu.css", "/assets/index.css"] });
+  assert.deepEqual(bundleRouteCSS(bundle, table, "/app/src/routes", "/", new Set(["/app/src/styles.css"])), { "/": ["/assets/menu.css", "/assets/index.css"] });
+});
+
+test("global stylesheets: app entries' CSS only, not the CSS of a boundary module entry (route page) in the resume manifest", () => {
+  let styles: readonly string[] | undefined;
+  const entry = { createApp: (config: { styles?: readonly string[] }) => ((styles = config.styles), {}) } as unknown as GeneratedEntry;
+  const vite = {
+    "src/styles.css": { file: "assets/styles.css", src: "src/styles.css", isEntry: true },
+    "src/routes/index.tsx": { file: "assets/routes.js", src: "src/routes/index.tsx", isEntry: true, css: ["assets/routes.css"] },
+    "rivet-derived-entry": { file: "assets/derived-runtime.js", src: "rivet-derived-entry", isEntry: true },
+  };
+  const manifest = { runtime: "/assets/derived-runtime.js", symbols: { "src/routes/index.tsx#default": "/assets/routes.js" } };
+  assemble(entry, { clients: [{ base: "/", manifest, vite }] });
+  assert.deepEqual(styles, ["/assets/styles.css"]);
 });
 
 const asset = (fileName: string, source: string) => ({ type: "asset", fileName, source }) as unknown as Rollup.OutputAsset;

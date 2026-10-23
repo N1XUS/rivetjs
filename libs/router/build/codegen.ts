@@ -237,6 +237,8 @@ function rootComponent(transitions: boolean, search: boolean): string[] {
     " * table decoders when the payload names their chunk (`x`: it holds RegExp / URLSearchParams / binary / error / registerClass",
     " * entries; a module script, as the data endpoint's `_decodeWire`: a failed load leaves the entries undecodable). */",
     "Root.ready = (props: { s?: RootData | EncodedRoot }): Promise<unknown> | undefined => {",
+    "  // `/a/index.html` (a static host's file URL) loads the page of `/a/`, as the router renders it.",
+    "  _indexURL();",
     "  const page = loadPage(new URL(globalThis.location.href));",
     '  const src = props.s && "t" in props.s ? props.s.x : undefined;',
     '  return src ? Promise.all([page, new Promise((onload) => globalThis.document.head.append(Object.assign(globalThis.document.createElement("script"), { type: "module", src, onload, onerror: onload })))]) : page;',
@@ -493,7 +495,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     ...(kit && mode === "csr" ? [`import { rankMerge } from "@rivetjs/router/head";`] : []),
     ...(derived
       ? [
-          `import { createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
+          `import { _indexURL, createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
           `import { createRouter as serverRouter } from "@rivetjs/runtime/router/server";`,
           `import { createDecoder, _useTableDecoder } from "@rivetjs/runtime/resume-format";`,
           `import { _rEager } from "@rivetjs/runtime/derived-eager";`,

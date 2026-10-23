@@ -11,8 +11,8 @@
 @rivetjs/runtime/async 82848baeb0de 866
 @rivetjs/runtime/lazy 3c11119c2312 697
 @rivetjs/runtime/router bd3c70cbcceb 2796
-@rivetjs/runtime/router/dom 16d6cc43f822 17505
-@rivetjs/runtime/router/dom [resumed] 69f871035351 17867
+@rivetjs/runtime/router/dom d8fa1b3955fa 17698
+@rivetjs/runtime/router/dom [resumed] 4105538e7e52 18060
 @rivetjs/runtime/router/server 0afca06eaf7d 8209
 @rivetjs/runtime/server-resume b2e412e1e671 42793
 @rivetjs/runtime/server-resume [domData] 7d446355152e 48330

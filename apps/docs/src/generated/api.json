@@ -24917,8 +24917,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/route-css.ts",
-    "line": 94,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L94"
+    "line": 103,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L103"
    },
    "href": "/api/rivetjs/router/vite/InlineStylesheets/"
   },
@@ -25301,8 +25301,8 @@
    "examples": [],
    "source": {
     "file": "libs/router/build/route-css.ts",
-    "line": 61,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L61"
+    "line": 70,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/router/build/route-css.ts#L70"
    },
    "href": "/api/rivetjs/router/vite/mergeRouteCSS/"
   },
@@ -28412,8 +28412,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom-router.ts",
-    "line": 98,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L98"
+    "line": 108,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L108"
    },
    "href": "/api/rivetjs/runtime/router/dom/Router/"
   },
@@ -28464,8 +28464,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom-router.ts",
-    "line": 29,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L29"
+    "line": 38,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L38"
    },
    "href": "/api/rivetjs/runtime/router/dom/createRouter/"
   },
@@ -28501,8 +28501,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom-router.ts",
-    "line": 139,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L139"
+    "line": 149,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom-router.ts#L149"
    },
    "href": "/api/rivetjs/runtime/router/dom/defineRoute/"
   },

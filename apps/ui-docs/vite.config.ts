@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
 
 /**
  * @rivetjs/ui docs: a static site on @rivetjs/docs-kit (same engine as apps/docs and apps/cdk-docs). `images`: examples
@@ -16,6 +16,8 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
+      // Example frame pages that take props resume under their own root boundary (docs-kit `FrameRoot`).
+      resume: { roots: [FRAME_ROOT] },
     }),
     tailwindcss(),
   ],

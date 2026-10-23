@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
 
 
 /**
@@ -14,7 +14,7 @@ import { docsSite } from "@rivetjs/docs-kit/vite.ts";
 export default defineConfig({
   plugins: [
     docsSite(),
-    rivetRouter({ mode: "static", styles: ["src/styles.css"], prefetch: "document", prefetchPaths: false }),
+    rivetRouter({ mode: "static", styles: ["src/styles.css"], prefetch: "document", prefetchPaths: false, resume: { roots: [FRAME_ROOT] } }),
     tailwindcss(),
   ],
   define: {

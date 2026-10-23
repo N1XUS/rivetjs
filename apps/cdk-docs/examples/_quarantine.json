@@ -1,1 +1,154 @@
-{}
+{
+  "autocomplete-menu": {
+    "step": "{\"attr\":[\"[role=menuitem][data-key=\\\"new\\\"]\",\"data-focused\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "carousel-class-names": {
+    "step": "{\"matches\":\"#classes-slide-0.is-snapped\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "checkbox-indeterminate": {
+    "step": "{\"matches\":\"#all:indeterminate\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "data-tree": {
+    "step": "{\"expect\":[\"#people-person-1\",\"Person 1\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "date-field-basic": {
+    "step": "{\"focused\":\"#appt-day\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "date-field-events": {
+    "step": "{\"expect\":[\"#log\",\"focus focusChange:true change:2026-10-15 keydown:ArrowUp keyup:ArrowUp\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "date-picker-controlled": {
+    "step": "{\"expect\":[\"#due-field\",\"10/5/2026\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "date-range-picker-controlled": {
+    "step": "{\"expect\":[\"#sprint-end\",\"10/23/2026\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "dialog-alert": {
+    "step": "{\"absent\":\"#delete\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "grid-list-load-more": {
+    "step": "{\"expect\":[\"#pokedex-9\",\"Pok\u00e9mon #9\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "group-dom-events": {
+    "step": "{\"expect\":[\"#dom-group-log\",\"hover:true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "group-focus": {
+    "step": "{\"attr\":[\"#search\",\"data-focus-within\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "group-hover": {
+    "step": "{\"attr\":[\"#zoom\",\"data-hovered\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "group-tailwind": {
+    "step": "{\"attr\":[\"#tw-price\",\"data-focus-within\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "navigation-tree-basic": {
+    "step": "{\"click\":\"#sidebar-shared [role=link]\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "popover-trigger-modes": {
+    "step": "{\"absent\":\"#long-card\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "radio-group-orientation": {
+    "step": "{\"matches\":\"#rtl input[value='b']:checked\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "select-css": {
+    "step": "{\"matches\":\"#city[data-focused][data-focus-visible]\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "select-disabled": {
+    "step": "{\"attr\":[\"#ship-listbox-option-express\",\"aria-disabled\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "select-events": {
+    "step": "{\"expect\":[\"#log\",\"focus focused:true open:true down:ArrowDown\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "select-sections": {
+    "step": "{\"matches\":\"#food-listbox section[role=group]:has(#food-listbox-option-apple)\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "select-placement": {
+    "step": "{\"matches\":\"#up-popover[data-placement^=top]\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "slider-range": {
+    "step": "{\"expect\":[\"#price output\",\"$300 \u2013 $600\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "stepper-list": {
+    "step": "{\"matches\":\"ol#timeline > li[aria-current=step]:nth-child(2)\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "table-basic": {
+    "step": "{\"matches\":\"#files thead [slot=selection][data-indeterminate]\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "table-dynamic": {
+    "step": "{\"expect\":[\"#invoices tfoot\",\"$2,600\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "table-expandable": {
+    "step": "{\"attr\":[\"#tree tr[data-key=photos]\",\"aria-expanded\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "table-load-more": {
+    "step": "{\"expect\":[\"#planets-11-name\",\"Planet 11\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tabs-css": {
+    "step": "{\"focused\":\"#plain-tab-js\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tabs-indicator-css": {
+    "step": "{\"attr\":[\"#underline-tab-javascript\",\"aria-selected\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tabs-rtl": {
+    "step": "{\"focused\":\"#rtl-tab-news\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tabs-tailwind": {
+    "step": "{\"attr\":[\"#tw-tab-team\",\"aria-selected\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "text-area-controlled": {
+    "step": "{\"expect\":[\"#poem\",\"Roses are red\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "time-field-events": {
+    "step": "{\"expect\":[\"#log\",\"focus focusChange:true change:09:31:00 keydown:ArrowUp keyup:ArrowUp\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tree-basic": {
+    "step": "{\"attr\":[\"#files-photos\",\"aria-expanded\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tree-disabled": {
+    "step": "{\"focused\":\"#all-music\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tree-load-more": {
+    "step": "{\"attr\":[\"#species-pokemon\",\"aria-expanded\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  },
+  "tree-selection": {
+    "step": "{\"expect\":[\"#food-selected\",\"Selected: fruit\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
+  }
+}

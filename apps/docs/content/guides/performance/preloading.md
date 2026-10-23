@@ -13,7 +13,7 @@ A Rivet page arrives as finished HTML. The JavaScript of a button is not needed 
 1. The page loads. The inline loader starts; no component code runs.
 2. After the load, the loader asks the browser to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. Nothing of it runs yet.
 3. When the pointer rests on an element, or it gets focus, the loader fetches that component's chunk right away if it has not arrived.
-4. On the event, the runtime runs the component and the handler. An event that comes before its code is held and replayed.
+4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root), then the handler. An event that comes before its code is held and replayed.
 
 With Save-Data on, or on a 2G connection, step 2 is skipped: code loads on intent.
 

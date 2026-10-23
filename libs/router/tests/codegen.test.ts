@@ -444,7 +444,7 @@ test("server / static modes (derived resume model): app.tsx default-exports Root
   assert.match(app, /if \(!import.meta.env.SSR\) _useTableDecoder\(\);/);
   assert.match(
     app,
-    /Root\.ready = \(props: \{ s\?: RootData \| EncodedRoot \}\): Promise<unknown> \| undefined => \{\n {2}const page = loadPage\(new URL\(globalThis\.location\.href\)\);/,
+    /Root\.ready = \(props: \{ s\?: RootData \| EncodedRoot \}\): Promise<unknown> \| undefined => \{\n {2}\/\/ [^\n]*\n {2}_indexURL\(\);\n {2}const page = loadPage\(new URL\(globalThis\.location\.href\)\);/,
   );
   assert.match(app, /const src = props\.s && "t" in props\.s \? props\.s\.x : undefined;/);
   assert.match(

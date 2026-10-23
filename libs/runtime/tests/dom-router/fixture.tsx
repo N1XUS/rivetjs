@@ -359,3 +359,20 @@ export async function hashOnly(host) {
   stop();
   return "passed";
 }
+
+// A directory index file URL (`/docs/index.html`, as static hosts serve it) routes as its directory.
+export async function indexFile(host) {
+  history.replaceState(null, "", "/docs/index.html?q=1#top");
+  let router;
+  const routes = [defineRoute("/docs", { render: () => <b>docs</b> })];
+  const stop = mount(() => {
+    router = createRouter();
+    return <Router router={router} routes={routes} />;
+  }, host);
+  await flush();
+  assert(location.pathname + location.search + location.hash === "/docs/?q=1#top", "address rewritten in place: " + location.href);
+  assert(router.location().pathname === "/docs/" && host.textContent === "docs", "the directory's route renders: " + host.textContent);
+  stop();
+  history.replaceState(null, "", "/");
+  return "passed";
+}

@@ -163,28 +163,30 @@ export default function Home() {
         <section data-css-defer="" class="lp-section lp-resume" aria-labelledby="lp-resume-title">
           <header class="lp-section-head">
             <p class="lp-kicker">Resumability</p>
-            <h2 id="lp-resume-title">Click it. That's the only code this page has loaded.</h2>
+            <h2 id="lp-resume-title">Click it. No component code ran before that.</h2>
           </header>
           <div class="lp-resume-body">
             <ol class="lp-rail" aria-label="One page, from request to first click">
               <li>
                 <Icon icon={Server} size={18} />
                 <strong>Server</strong>
-                <span>Your component runs once, on the server. The HTML arrives finished, with the state its handlers need.</span>
+                <span>Your components run on the server. The HTML arrives finished, with a list of its interactive components and their signal values.</span>
               </li>
               <li>
                 <Icon icon={FileCode} size={18} />
                 <strong>Page load</strong>
-                <span>No component code runs. No hydration. The browser waits for you.</span>
+                <span>No component code runs. No hydration. A small inline loader waits for your first interaction.</span>
               </li>
               <li>
                 <Icon icon={MousePointerClick} size={18} />
                 <strong>First click</strong>
-                <span>The one handler you touched loads and updates one text node.</span>
+                <span>The runtime and the components around what you touched load, run once over the server’s elements, then the handler updates the page.</span>
               </li>
             </ol>
             <div class="lp-resume-panel">
-              <ResumeDemo loaderBytes={homePerf.loader.bytes} loaderBrotli={homePerf.loader.brotli} buttonClass={buttonVariants({ variant: "primary" })} />
+              {/* Literal props only: a data-only call site keeps the demo an independent boundary (its props are recorded, not
+                  demoted); the class is `buttonVariants({ variant: "primary" })` (tests/site.test.ts). */}
+              <ResumeDemo buttonClass="button button--md button--primary" />
               <div class="lp-resume-code">
                 <Demo />
               </div>

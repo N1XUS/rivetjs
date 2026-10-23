@@ -13,16 +13,16 @@
 @rivetjs/router/prefetch 2dd2266b0574 3033
 @rivetjs/router/link [dom] 1cc41172ae12 2292
 @rivetjs/router/link [server] d4342bebcbab 1945
-@rivetjs/router/node 59369bafe0df 27010
-@rivetjs/router/fetch c67b5d3ece9d 2650
-@rivetjs/router/static 1427a1245efd 11132
+@rivetjs/router/node 4feb61242593 27188
+@rivetjs/router/fetch 4d3437375bce 2826
+@rivetjs/router/static 10dee203c8be 11132
 @rivetjs/router/csr bc5dafbcc9ff 407
-@rivetjs/router/vercel 96f577ce2ff8 23012
-@rivetjs/router/vercel-edge 882e54805645 2754
-@rivetjs/router/netlify 52849ef71173 2866
-@rivetjs/router/cloudflare 0c46bffb3883 2729
-@rivetjs/router/bun 47abf03b373c 6326
-@rivetjs/router/deno e3f147f5b0bd 6395
+@rivetjs/router/vercel 001d525e6186 23190
+@rivetjs/router/vercel-edge df109f78365f 2930
+@rivetjs/router/netlify 040b7e87cb11 3042
+@rivetjs/router/cloudflare 2551a61ab42a 2905
+@rivetjs/router/bun ff5e3a7b9343 6502
+@rivetjs/router/deno e7d0bac055c9 6571
 @rivetjs/router/head c13740e6a62b 6518
 @rivetjs/forms d3b09506e8b2 4979
 @rivetjs/forms/array cc6f125f16cd 3810

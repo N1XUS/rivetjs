@@ -751,7 +751,10 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         // Route modules' CSS (component stylesheets, css`` sheets), linked per route by the handler.
         // Several stylesheets of one route are merged into one route sheet (`mergeRouteCSS`).
         const base = this.environment?.config?.base ?? "/";
-        const { routes: css, assets } = mergeRouteCSS(bundle, bundleRouteCSS(bundle, table, resolve(root, routesDir), base), base);
+        // The app's own inputs (router `styles` by default): their CSS is global; the compiler's entries are not.
+        const input = this.environment?.config?.build.rollupOptions.input ?? [];
+        const apps = new Set((typeof input === "string" ? [input] : Array.isArray(input) ? input : Object.values(input)).map((file) => resolve(root, file)));
+        const { routes: css, assets } = mergeRouteCSS(bundle, bundleRouteCSS(bundle, table, resolve(root, routesDir), base, apps), base);
         for (const asset of assets) this.emitFile({ type: "asset", ...asset });
         if (Object.keys(css).length) this.emitFile({ type: "asset", fileName: ROUTE_CSS, source: JSON.stringify(css, null, 2) + "\n" });
         // Sheets the handler may write inline (`inlineStylesheets`; decided per page, `server/inline-styles.ts`).

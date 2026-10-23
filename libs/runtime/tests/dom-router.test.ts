@@ -55,7 +55,7 @@ test("owned browser router navigates history and cancels route work", async () =
       });
     });
     await page.goto("http://rivet.test/");
-    for (const name of ["navigation", "routes", "reentrant", "lateLazy", "holdSwap", "hashOnly"])
+    for (const name of ["navigation", "routes", "reentrant", "lateLazy", "holdSwap", "hashOnly", "indexFile"])
       assert.equal(
         await page.evaluate(async (name) => ((await import("/fixture.mjs" as string)) as Fixture)[name](document.querySelector("#host")!), name),
         "passed",

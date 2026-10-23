@@ -23,6 +23,15 @@ export type DOMRoute<T = any> = RouteDefinition<T, DOMValue>;
 /** A fresh match snapshot with immutable decoded parameters. */
 export type DOMRouteMatch<T = any> = RouteMatch<T, DOMValue>;
 
+/**
+ * A directory index file URL (`/a/index.html`: static hosts serve the prerendered file at it too) as its directory's
+ * (`/a/`), in place (`history.replaceState`): routes match directories, so the router would render not-found there.
+ */
+export function _indexURL(browser: Window = globalThis.window): void {
+  const { pathname, search, hash } = browser.location;
+  if (pathname.endsWith("/index.html")) browser.history.replaceState(browser.history.state, "", pathname.slice(0, -"index.html".length) + search + hash);
+}
+
 // Internal: a browser router's tracked read of its URL without the fragment (Router keys route work on it).
 const PAGE = Symbol();
 /** Create inside a live owner, usually mount. Observes popstate, not external pushState calls. */
@@ -35,6 +44,7 @@ export function createRouter(options: { window?: Window; href?: Signal<string> }
   if (!owner || (owner as unknown as { disposed: boolean }).disposed) throw Error("createRouter requires a live reactive owner");
   const browser = options.window ?? globalThis.window;
   if (!browser?.location || !browser.history) throw TypeError("createRouter requires a browser Window");
+  _indexURL(browser);
   const initial = new URL(browser.location.href);
   if (!["http:", "https:"].includes(initial.protocol)) throw TypeError("Router location must use HTTP(S)");
   // `href` holds the URL without its fragment, `hash` the fragment: a hash-only change leaves

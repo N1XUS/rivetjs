@@ -124,7 +124,7 @@ Generated code provides some router features only when the app uses them (`route
 
 | Feature | Detected by (in a file importing `@rivetjs/router`) | Generated when used |
 | --- | --- | --- |
-| `searchParams` | `useSearchParams` / `SearchParams` | server `SearchParams` provider, resume-entry context, `@rivetjs/router/search` chunk |
+| `searchParams` | `useSearchParams` / `SearchParams` | server `SearchParams` provider, the derived `Root`'s browser `SearchParams` provider, `@rivetjs/router/search` chunk |
 | `navigate` | `navigate` / `invalidate` / `revalidate` / `setSearchParams`; any `@rivetjs/forms` import | App `rivet:go` listener (+ its resume state), `data-rivet-go` marker, serving code (navigate.ts `perform`) |
 | `forms` | any `@rivetjs/forms` text, or `Form` in a file importing `@rivetjs/ui` (anywhere in the scanned sources; implies `navigate`) | `_brand` / `_go` imports + `_brand(_go)` first in the App's click / popstate / `rivet:go` / intent handlers: installs the `Symbol.for("rivet.router")` brand forms reach the router through (apps without forms carry neither) |
 | `params` | `useParams` | `RouteParamsContext` provider around pages and persisted layouts |

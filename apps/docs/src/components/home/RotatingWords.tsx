@@ -1,8 +1,9 @@
 // Homepage headline with a rotating last word. CSS only: the server renders every word stacked in one grid cell
 // (slot width = widest word, no layout shift); `home.css` cycles them with one shared keyframe offset per word, runs
-// two cycles and stops on the last word. No JS before or after input: pause is a visually hidden checkbox
+// two cycles and stops on the last word. No JS of its own: pause is a visually hidden checkbox
 // (`.rw-head:has(.rw-pause input:checked)`), hover / focus also pause, reduced motion shows the first word and the
-// full list as text. The accessible name is the full sentence (`label`); the animated words are aria-hidden.
+// full list as text. Known: the derived loader holds the first click on the checkbox (inside the router Root's range)
+// and replays its toggle once the runtime started (tests/home.test.ts "pause control"). The accessible name is the full sentence (`label`); the animated words are aria-hidden.
 import { Pause, Play } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 

@@ -12,6 +12,7 @@ import { chromium } from "playwright";
 import { editorialLoss, homeFacts, homeStrip } from "../content/_charts.ts";
 import { stale } from "../scripts/home-perf.ts";
 import { site } from "../site.config.ts";
+import { buttonVariants } from "../../../libs/ui/styles/src/components/button/index.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const client = resolve(root, "dist/client");
@@ -87,7 +88,8 @@ test("home: benchmarks with losses and their source, real compiler output, how t
 });
 
 test("home: numbers strip = content/_charts.ts homeStrip, each chart linked to its chart and report; the editorial loss row", () => {
-  const home = html("/");
+  // Hole markers (`<!--[-->…<!--]-->`, derived resume) split text runs: compared without comments.
+  const home = html("/").replace(/<!--[^]*?-->/g, "");
   for (const chart of homeStrip) {
     assert.ok(home.includes(`>${chart.big}</data>`), `${chart.id}: big number ${chart.big}`);
     assert.ok(home.includes(`href="/about/benchmarks/#chart-${chart.chart}"`), `${chart.id}: chart link`);
@@ -109,6 +111,12 @@ test("home: numbers strip = content/_charts.ts homeStrip, each chart linked to i
   assert.equal(home.match(/Fair comparison, 2026-10-19/g)?.length, 1, "one source line under the charts");
   const sources = /<p class="lp-charts-source">([^]*?)<\/p>/.exec(home)?.[1] ?? "";
   for (const chart of homeStrip) assert.ok(sources.includes(chart.source.href) && sources.includes(chart.source.text), `${chart.id}: its report is linked in the source line`);
+});
+
+test("home: the resume demo's literal button class is ui buttonVariants({ variant: \"primary\" }) (literal = data-only call site = independent boundary)", () => {
+  const source = readFileSync(resolve(root, "src/routes/index.tsx"), "utf8");
+  const literal = /<ResumeDemo buttonClass="([^"]+)" \/>/.exec(source)?.[1];
+  assert.equal(literal, buttonVariants({ variant: "primary" }));
 });
 
 test("home: every tab group has exactly one checked radio in the server HTML", () => {
@@ -176,7 +184,7 @@ test("home: _home-perf.json matches the built loader and the cdk tests, the comp
   for (const line of ["const likes = signal(0);", "likes.update((n) => n + 1)", '{likes()} {likes() === 1 ? "like" : "likes"}'])
     assert.ok(demo.includes(line) && fence.includes(line), `fence and ResumeDemo.tsx both contain: ${line}`);
   const page = html("/");
-  assert.match(page, /<span class="rd-where" data-where="">server<\/span>/);
+  assert.match(page, /<span class="rd-where" data-where="">the server only<\/span>/);
   assert.match(page, /class="code-block code-compiled"/);
 });
 

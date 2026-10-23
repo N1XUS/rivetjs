@@ -319,7 +319,9 @@ export async function generateExamples(root: string, options: { lenient?: (messa
         (inner, layout) => `<C${local(layout)} data={() => undefined} params={() => ({})} url={() => props.url}>${inner}</C${local(layout)}>`,
         `<C${page} data={props.data} params={{}} url={props.url} />`,
       );
-      return `  ${JSON.stringify(path)}: { module: M${page}, Page: (props: FrameProps) => ${wrapped} },`;
+      // `props`: the frame root carries the route payload only when something reads it (a layout, a page with a parameter).
+      const props = layouts.length ? "true" : `C${page}.length > 0`;
+      return `  ${JSON.stringify(path)}: { module: M${page}, Page: (props: FrameProps) => ${wrapped}, props: ${props} },`;
     });
     const source = [
       HEADER(`examples/${id}`).trimEnd(),

@@ -1,9 +1,14 @@
 {
-  "loader-data": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): docs-kit FrameRoot renders without the router Root, route data undefined at adopt; fix in lane RED-DOCS" },
-  "async-data": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
-  "nested-layouts": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
-  "analytics-page-views": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
-  "search-with-debounce": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
-  "motion-layout": { "step": "first interaction", "reason": "derived-only model (M6-CUT 2026-10-23): motion example red after CUT; lane RED-DOCS" },
-  "motion-presence": { "step": "first interaction", "reason": "derived-only model (M6-CUT 2026-10-23): motion example red after CUT; lane RED-DOCS" }
+  "async-data": {
+    "step": "{\"expect\":[\"#user\",\"Grace Hopper\"]}",
+    "reason": "RED-DOCS 2026-10-23: derived runtime \u2014 an adopted Async hole's live span (dom-derived.ts liveSpan proxy) is the insert's current list; the reconcile mutates the DOM while reading it (TypeError reading 'parentNode'), owner RED-COMP"
+  },
+  "motion-layout": {
+    "step": "{\"click\":\"#tab-2\"}",
+    "reason": "RED-DOCS 2026-10-23: derived \u2014 motion element.tsx mount() layout play reads its element ref (untrack(node)) before the ref is bound (TypeError reading 'isConnected'), owner runtime / motion"
+  },
+  "motion-presence": {
+    "step": "{\"absent\":\"#task-1\"}",
+    "reason": "RED-DOCS 2026-10-23: derived \u2014 a Presence exit in an adopted For row never removes the row, owner runtime / motion"
+  }
 }

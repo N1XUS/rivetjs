@@ -4,7 +4,10 @@
 // an example (`src/generated/example-frames/<id>.tsx`, tools/examples.ts) is loaded by the route's `load(…)` export, so
 // the page renders it synchronously; its stylesheets (the example's own CSS only) come from `virtual:docs/frame-styles`
 // and go into the head.
+/// <reference types="vite/client" />
+import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { lazyComponent } from "@rivetjs/runtime/dom";
+import { createDecoder } from "@rivetjs/runtime/resume-format";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import { notFound, type Head } from "@rivetjs/router";
 import { frames } from "virtual:docs/example-frames";
@@ -23,6 +26,8 @@ export type FrameComponent = (props: FrameProps) => JSX.Element;
 export interface FramePage {
   module: { head?: Head | ((input: never) => Head) } & Record<string, unknown>;
   Page: (props: FrameProps) => unknown;
+  /** The page or a layout takes props (data, params, URL): the frame renders it under the `FrameRoot` boundary. */
+  props: boolean;
 }
 /** A generated frame module. */
 export interface FrameModule {
@@ -64,6 +69,11 @@ export function frameHead(input: { params: FrameParams; data: unknown }): Head {
   return { ...head, title: head.title ?? "Example", links: [...styles, ...(head.links ?? [])] };
 }
 
+/** Server, after the route's loader: whether the frame page takes props (`FramePage.props`). */
+export function frameTakesProps(params: FrameParams): boolean {
+  return loaded.get(params.id)?.module.pages[params.path ?? ""]?.props ?? false;
+}
+
 // Browser fallback (the dev server client-renders a resumed page after a hot update): the frame module loads lazily.
 const lazy = new Map<string, (props: FrameProps) => unknown>();
 function lazyPage(id: string, path: string) {
@@ -79,21 +89,74 @@ function lazyPage(id: string, path: string) {
   return page;
 }
 
+// The example's page component of a frame (loaded on the server by the route's loader, in the browser by `FrameRoot.ready`;
+// a dev client render loads it lazily).
+const pageOf = (frames: typeof loaded, params: FrameParams) =>
+  frames.get(params.id)?.module.pages[params.path ?? ""]?.Page ?? lazyPage(params.id, params.path ?? "");
+
 /** The page of the frame routes: the example's page inside its layouts. */
 export function FramePageView(props: FrameProps) {
-  const { id, path = "" } = props.params as FrameParams;
-  const Page = loaded.get(id)?.module.pages[path]?.Page ?? lazyPage(id, path);
+  const Page = pageOf(loaded, props.params as FrameParams);
   return <Page {...props} />;
 }
 
 /**
- * A frame page's root without the router (`frame-page.tsx`): the page in an element, so the compiler makes it a
- * resumable region (as the router's `<div data-rivet-routes>` does for docs pages).
+ * A frame page's root without the router (`frame-page.tsx`) for pages that take no props: the page in an element. Not a
+ * boundary itself: the example's own boundaries are the page's top-level ones (a static example ships no JS).
  */
-export function FrameRoot(props: FrameProps) {
+export function FrameShell(props: FrameProps) {
   return (
     <div data-rivet-frame="">
       <FramePageView {...props} />
     </div>
   );
 }
+
+/** What a frame page's root carries (`FrameRoot`'s props, resume-format data): the loader result and the route params. */
+export interface FramePayload {
+  d: unknown;
+  p: FrameParams;
+}
+/** A payload that is not JSON data (a loader's Date, Map, …) as its resume table (server `_rData`, `@rivetjs/runtime/server-derived`). */
+interface EncodedFrame {
+  t: unknown[];
+  r: number;
+  x?: string;
+}
+/** Server: the request's page props, provided around `FrameRoot` by `frame-page.tsx` (never shipped: the browser has its own URL). */
+export const FrameServer = createContext<{ data: unknown; params: FrameParams; url: URL } | null>(null);
+const payloadOf = (s: FramePayload | EncodedFrame): FramePayload => ("t" in s ? (createDecoder(s.t).get(s.r) as FramePayload) : s);
+
+/**
+ * A frame page's root for pages that take props (loader data, params, URL; layouts): the page's independent root boundary,
+ * as the router's generated `Root` is for docs pages (`resume.roots`: `docsSite()` users list `FRAME_ROOT`). Its props are
+ * the route payload as data (`_rData`); the browser's adopt run decodes it, takes the URL from `location`, and renders the
+ * example's page over the server nodes (its dependent boundaries adopt with it). `ready` loads the frame module first.
+ */
+export default function FrameRoot(props: { s: FramePayload | EncodedFrame }) {
+  let page: { data: unknown; params: FrameParams; url: URL };
+  if (import.meta.env.SSR) page = useContext(FrameServer)!;
+  else {
+    const s = payloadOf(props.s);
+    page = { data: s.d, params: s.p, url: new URL(globalThis.location.href) };
+  }
+  // The page renders in a read site over module state (`loaded`: the frame modules this document loaded), which makes
+  // `FrameRoot` a boundary of its own (the compiler cannot see the example's boundaries through the dynamic tag);
+  // `untrack`: the page component's own reads stay its own.
+  return <div data-rivet-frame="">{untrack(() => pageOf(loaded, page.params)(page) as JSX.Element)}</div>;
+}
+/** Before the adopt run: the example's frame module (the page renders synchronously), and the table's built-in decoders. */
+FrameRoot.ready = (props: { s?: FramePayload | EncodedFrame }): Promise<unknown> | undefined => {
+  const s = props.s;
+  if (!s) return undefined;
+  const src = "t" in s ? s.x : undefined;
+  const id = payloadOf(s).p.id;
+  const frame = frames[id];
+  const page = loaded.has(id) || !frame ? undefined : frame.load().then((module) => void loaded.set(id, { module, styles: [] }));
+  const builtins = src
+    ? new Promise((onload) =>
+        globalThis.document.head.append(Object.assign(globalThis.document.createElement("script"), { type: "module", src, onload, onerror: onload })),
+      )
+    : undefined;
+  return page && builtins ? Promise.all([page, builtins]) : (page ?? builtins);
+};

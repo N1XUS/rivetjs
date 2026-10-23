@@ -1,8 +1,9 @@
 // Vite plugins for a docs site: content routes generated before the router scans `src/routes`, and
 // the `virtual:docs/*` modules the kit's components and routes import, mapped onto the app's files.
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Plugin, Rollup, ViteDevServer } from "vite";
 import { serverOnlyStub } from "@rivetjs/compiler/vite";
 import { docsContent } from "./tools/content/plugin.ts";
@@ -260,6 +261,12 @@ function docsWatch(): Plugin {
  * before the router scans; `docsBrand` resolves its module before `docsModules` rejects unknown names; `docsFrames`
  * links each frame page's stylesheets; `docsDevSearch` serves `/pagefind/*` on the dev server (in-memory index).
  */
+/**
+ * `components/frame.tsx`, whose default export (`FrameRoot`) is an example frame page's independent root boundary (frame
+ * pages that take props): list it in `rivetRouter({ resume: { roots: [FRAME_ROOT] } })` next to `docsSite()`.
+ */
+export const FRAME_ROOT = realpathSync(fileURLToPath(new URL("./components/frame.tsx", import.meta.url)));
+
 export function docsSite(): Plugin[] {
   return [docsWatch(), docsContent(), docsBrand(), docsModules(), docsFrames(), docsDevSearch()];
 }

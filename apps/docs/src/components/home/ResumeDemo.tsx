@@ -1,20 +1,19 @@
-// Home "Resumability" demo: a real resumable component. The server renders it once ("rendered on: server" is computed
-// in the component body: if the browser ever ran the component, the text would say "browser"). The
-// resumed code for this example is reported from Resource Timing (the runtime, its boundary chunk and their imports), split into
-// what the click fetched and what was already prefetched before it (hover / focus intent, an earlier interaction).
-// Other widgets and page prefetches are excluded. The component has its own intent chunk (vite.config.ts `HOME_RULES`).
-// Tests: tests/home.test.ts "resume demo".
+// Home "Resumability" demo: a real resumable component, an independent boundary (data-only call site on the home page:
+// literal props, recorded with the boundary). The server renders it; nothing runs in the browser before an interaction
+// (home = a lean page: no fetch-ahead). Its first click starts the runtime, which loads and adopts the boundaries around
+// the button (this one and its ancestors up to the router's Root: their handlers may see the click bubble), runs each
+// component once over the server's elements, then the handler. "Component code ran on" is evaluated in the body: the
+// server's text until that adopt run, then the browser's. The readout lists the JavaScript the click fetched, from
+// Resource Timing (the runtime, the boundaries' chunks and their imports), split into what the click fetched and what was
+// already fetched before it (hover / focus intent, an earlier interaction). Tests: tests/home.test.ts "resume demo".
 import { signal } from "@rivetjs/reactivity";
 import { Heart } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
+import homePerf from "../../../content/_home-perf.json" with { type: "json" };
 import { loadedFor } from "./resume-downloads.ts";
 
 export interface ResumeDemoProps {
-  /** Inline resume loader of the built home page, UTF-8 bytes (content/_home-perf.json). */
-  loaderBytes: number;
-  /** The same, brotli-compressed. */
-  loaderBrotli: number;
-  /** Button classes (ui `buttonVariants`, computed by the page: no ui code in the handler's chunk). */
+  /** Button classes (ui `buttonVariants({ variant: "primary" })` as a literal: no ui code in the boundary's chunk). */
   buttonClass: string;
 }
 
@@ -24,9 +23,10 @@ export function ResumeDemo(props: ResumeDemoProps) {
   const cost = signal("");
   const earlyFiles = signal("");
   const earlyCost = signal("");
-  const where = typeof document === "undefined" ? "server" : "browser";
-  // Read once while rendering (server): constants in the HTML, so no binding here reaches the page's props recipe.
-  const loader = `loader only (${kb(props.loaderBytes)} inline, ${kb(props.loaderBrotli)} compressed)`;
+  // Server: the HTML's text; browser: the adopt run of the first click (it keeps the elements, rewrites this text).
+  const where = typeof document === "undefined" ? "the server only" : "the server, then this tab (on your first click)";
+  // The inline loader of the built home page (content/_home-perf.json, measured): constants in the HTML.
+  const loader = `loader only (${kb(homePerf.loader.bytes)} inline, ${kb(homePerf.loader.brotli)} compressed)`;
   const buttonClass = props.buttonClass;
   return (
     <div class="rd" data-clicked={likes() > 0 ? "" : undefined}>
@@ -50,7 +50,7 @@ export function ResumeDemo(props: ResumeDemoProps) {
       </span>
       <dl class="rd-readout" aria-live="polite">
         <div>
-          <dt>Component rendered on</dt>
+          <dt>Component code ran on</dt>
           <dd>
             <span class="rd-where" data-where="">
               {where}
