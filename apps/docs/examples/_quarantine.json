@@ -1,0 +1,9 @@
+{
+  "loader-data": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): docs-kit FrameRoot renders without the router Root, route data undefined at adopt; fix in lane RED-DOCS" },
+  "async-data": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
+  "nested-layouts": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
+  "analytics-page-views": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
+  "search-with-debounce": { "step": "first click", "reason": "derived-only model (M6-CUT 2026-10-23): FrameRoot without router Root, data undefined at adopt; lane RED-DOCS" },
+  "motion-layout": { "step": "first interaction", "reason": "derived-only model (M6-CUT 2026-10-23): motion example red after CUT; lane RED-DOCS" },
+  "motion-presence": { "step": "first interaction", "reason": "derived-only model (M6-CUT 2026-10-23): motion example red after CUT; lane RED-DOCS" }
+}

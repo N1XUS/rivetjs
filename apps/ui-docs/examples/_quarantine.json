@@ -1,1 +1,18 @@
-{}
+{
+  "app-layout-aside-shortcut": {
+    "step": "keydown during the first-click adopt",
+    "reason": "derived-only model (M6-CUT 2026-10-23): a cold keydown during an in-flight first-click adopt is lost; runtime fix in lane RED-COMP"
+  },
+  "carousel-shadcn-spacing": {
+    "step": "{\"attr\":[\"#carousel-shadcn-spacing-slide-1\",\"data-snapped\",\"true\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): next does not move the slide after adopt; runtime fix in lane RED-COMP"
+  },
+  "table-expandable-rows": {
+    "step": "{\"matches\":\"tbody tr[data-key='2'][aria-expanded=true]\"}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): \"Duplicate For key\" on adopted table rows; runtime fix in lane RED-COMP"
+  },
+  "table-tanstack-table": {
+    "step": "{\"expect\":[\"tbody tr:nth-child(1)\",\"Davis Wilson\"]}",
+    "reason": "derived-only model (M6-CUT 2026-10-23): \"Duplicate For key\" on adopted table rows; runtime fix in lane RED-COMP"
+  }
+}
