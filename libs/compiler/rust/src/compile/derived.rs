@@ -6,7 +6,10 @@
 //!   tag, keyed state `signal(x)` → `_rSig("<h5>-<n>", x)` / `createStore(x)` → `_rSigStore(…)`, and `<!--[-->…<!--]-->`
 //!   around the dynamic slots of a native element the adopt walk needs delimited (a structural slot, or any dynamic slot
 //!   among other children); a list-mounted `<For>` (`$list`) calls `_rFor` instead of `For` (DERIVED-S: rows from the
-//!   list tape inside `<!--r[-->…<!--]-->`). ABI from `@rivetjs/runtime/server-derived`.
+//!   list tape inside `<!--r[-->…<!--]-->`); a conditional handler (`cond ? f : undefined`, `props.onX`) of a boundary body
+//!   records its value, `_rHandler(__rivetB, value[, "type"])`, and a conditional boundary's native spread passes its
+//!   attribute object through `_rHandlers(__rivetB, object)` (STATIC-ZERO T3: the instance is live only with a function).
+//!   ABI from `@rivetjs/runtime/server-derived`.
 //! - DOM: plain DOM output plus, per boundary, the body wrapped `return _b("<module>#Name", () => { … })` (a concise
 //!   arrow: `() => _b("…", () => value)`) and keyed state `_sig("<h5>-<n>", x)` / `_sigStore(…)`. ABI from
 //!   `@rivetjs/runtime/dom-derived` (the runtime adopts: no `_tpl` / `_insert` / `_for` change, §3.5 "As built").
@@ -21,8 +24,17 @@ use crate::ir::{Expr, quote};
 use crate::resume::{self, derived::Plan, derived::Verdicts};
 
 /// Server derived ABI: local suffix → export of `@rivetjs/runtime/server-derived`.
-const DERIVED_ABI: &[(&str, &str)] =
-    &[("b", "_rB"), ("bOut", "_rBOut"), ("bEnd", "_rBEnd"), ("bAttr", "_rBAttr"), ("sig", "_rSig"), ("sigStore", "_rSigStore"), ("for", "_rFor")];
+const DERIVED_ABI: &[(&str, &str)] = &[
+    ("b", "_rB"),
+    ("bOut", "_rBOut"),
+    ("bEnd", "_rBEnd"),
+    ("bAttr", "_rBAttr"),
+    ("sig", "_rSig"),
+    ("sigStore", "_rSigStore"),
+    ("for", "_rFor"),
+    ("handler", "_rHandler"),
+    ("handlers", "_rHandlers"),
+];
 /// DOM derived ABI: local suffix → export of `@rivetjs/runtime/dom-derived`.
 const DOM_DERIVED_ABI: &[(&str, &str)] = &[("b", "_b"), ("sig", "_sig"), ("sigStore", "_sigStore")];
 
@@ -209,6 +221,35 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
         }
         Some(Expr::Raw(self.render_sorted(tree.span(id), reps)))
+    }
+
+    /// STATIC-ZERO T3: a conditional handler of a boundary body (`plan.listen`, server target) → `_rHandler(__rivetB, value[,
+    /// "type"])`: the boundary instance is live (and a non-default type delegated) only when the value is a function.
+    pub(super) fn derived_on(&mut self, attr: Option<NodeId>, value: &Expr) -> Option<Expr> {
+        let attr = attr?;
+        if !self.server {
+            return None;
+        }
+        let event = self.derived.as_ref()?.plan.listen.get(&attr)?.clone();
+        let token = self.derived_token();
+        let on = self.derived_name("handler");
+        let mut args = vec![Expr::Ident(token), value.clone()];
+        if !event.is_empty() {
+            args.push(Expr::Str(event));
+        }
+        Some(Expr::call(&on, args))
+    }
+
+    /// STATIC-ZERO T3: a native spread element of a conditional boundary's own body (`plan.spreads`, server target) →
+    /// its attribute object wrapped `_rHandlers(__rivetB, object)`: a forwarded listener function makes the instance live.
+    pub(super) fn derived_spread(&mut self, el: Option<NodeId>, object: Expr) -> Expr {
+        let Some(el) = el else { return object };
+        if !self.server || !self.derived.as_ref().is_some_and(|d| d.plan.spreads.contains(&el)) {
+            return object;
+        }
+        let token = self.derived_token();
+        let handlers = self.derived_name("handlers");
+        Expr::call(&handlers, vec![Expr::Ident(token), object])
     }
 
     /// `_rBAttr(__rivetB)` for an ATTR boundary's root element (an attribute slot last in its start tag).

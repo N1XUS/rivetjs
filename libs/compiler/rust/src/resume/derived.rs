@@ -45,6 +45,11 @@ pub struct Component {
     pub source: bool,
     /// Renders a context provider (`<Provider>`, `<X.Provider>`).
     pub provides: bool,
+    /// STATIC-ZERO T3: an event handler whose value is not a function written in place (`cond ? f : undefined`,
+    /// `props.onX`, a destructured hook result): a change source only for an instance that installs a function. The
+    /// server target records the value (`_rHandler`); the build marks such a component conditional (`COND`) unless it has a
+    /// source of its own.
+    pub listens: bool,
     /// Per call (same order as `calls`): the call passes a function (an inline function or a function binding), the
     /// component elements enclosing it in this component's JSX (innermost first), and whether its attributes and
     /// expression children are data (element children are calls of their own, function children slots).
@@ -56,6 +61,95 @@ pub struct Component {
 /// caller / provider, whose liveness makes this component live).
 fn source_site(kind: SiteKind) -> bool {
     matches!(kind, SiteKind::Event | SiteKind::ClientEvent | SiteKind::Effect | SiteKind::Element | SiteKind::Model)
+}
+
+/// A handler value that is a function whatever the inputs (STATIC-ZERO T3): an arrow / function written in place, or a
+/// binding of a function declaration / a `const` arrow. Anything else (`cond ? f : undefined`, `props.onX`, a hook's
+/// destructured handler) is a function only for some instances: the server checks the value (`_rHandler`).
+fn unconditional_handler<'a>(tree: &Tree<'a>, e: &Expression<'a>) -> bool {
+    match unwrap(e) {
+        Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_) => true,
+        Expression::Identifier(ident) => tree.resolve(ident, false).is_some_and(|decl| match tree.kind(decl) {
+            AstKind::Function(_) => true,
+            AstKind::VariableDeclarator(d) => {
+                let constant = matches!(tree.raw_parent(decl).map(|p| tree.kind(p)), Some(AstKind::VariableDeclaration(v)) if v.kind == VariableDeclarationKind::Const);
+                constant && matches!(d.init.as_ref().map(unwrap), Some(Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)))
+            }
+            _ => false,
+        }),
+        _ => false,
+    }
+}
+
+/// An Event site whose handler value is not unconditional (`unconditional_handler`): its attribute node.
+fn conditional_event(tree: &Tree<'_>, site: &super::Site) -> Option<NodeId> {
+    if site.kind != SiteKind::Event {
+        return None;
+    }
+    let attr = site.attr?;
+    let AstKind::JSXAttribute(a) = tree.kind(attr) else { return None };
+    let Some(JSXAttributeValue::ExpressionContainer(c)) = &a.value else { return None };
+    let e = c.expression.as_expression()?;
+    (!unconditional_handler(tree, e)).then_some(attr)
+}
+
+/// An asset import (STATIC-ZERO T1): a query import (`./a.png?image`, `?url`, `?raw`, `?svg`) or a file of a data /
+/// media type. Its bindings are build-time values, never browser state.
+fn asset_import(source: &str) -> bool {
+    const EXTENSIONS: &[&str] = &[
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg", ".ico", ".bmp", ".json", ".css", ".md", ".txt", ".mp4", ".webm", ".mp3",
+        ".woff", ".woff2",
+    ];
+    source.contains('?') || EXTENSIONS.iter().any(|ext| source.ends_with(ext))
+}
+
+/// A module `const` initializer that evaluates to plain data once, at module load (STATIC-ZERO T1): a data literal, an
+/// object / array literal of such leaves, template literals, operators over them, member reads of asset imports
+/// (`icon.src`) and other such consts. Reading it in render is not reading browser state.
+fn data_tree<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
+    if depth > 12 {
+        return false;
+    }
+    match unwrap(e) {
+        Expression::StringLiteral(_) | Expression::NumericLiteral(_) | Expression::BooleanLiteral(_) | Expression::NullLiteral(_) => true,
+        Expression::TemplateLiteral(t) => t.expressions.iter().all(|x| data_tree(tree, x, depth + 1)),
+        Expression::UnaryExpression(u) => u.operator != UnaryOperator::Delete && data_tree(tree, &u.argument, depth + 1),
+        Expression::BinaryExpression(b) => data_tree(tree, &b.left, depth + 1) && data_tree(tree, &b.right, depth + 1),
+        Expression::ArrayExpression(a) => a.elements.iter().all(|el| el.as_expression().is_some_and(|e| data_tree(tree, e, depth + 1))),
+        Expression::ObjectExpression(o) => o.properties.iter().all(|p| match p {
+            ObjectPropertyKind::ObjectProperty(p) => {
+                p.kind == PropertyKind::Init && !p.method && !p.computed && data_tree(tree, &p.value, depth + 1)
+            }
+            ObjectPropertyKind::SpreadProperty(_) => false,
+        }),
+        Expression::StaticMemberExpression(m) => data_tree(tree, &m.object, depth + 1),
+        Expression::Identifier(ident) => {
+            if ident.name == "undefined" && tree.symbol_of_ref(ident).is_none() {
+                return true;
+            }
+            let Some(decl) = tree.resolve(ident, false) else { return false };
+            match tree.kind(decl) {
+                AstKind::ImportDefaultSpecifier(_) | AstKind::ImportSpecifier(_) | AstKind::ImportNamespaceSpecifier(_) => {
+                    import_source(tree, decl).is_some_and(asset_import)
+                }
+                AstKind::VariableDeclarator(d) => module_data_const(tree, decl, d, depth + 1),
+                _ => false,
+            }
+        }
+        _ => false,
+    }
+}
+
+/// A module-level `const` bound to a `data_tree` initializer.
+fn module_data_const<'a>(tree: &Tree<'a>, decl: NodeId, d: &VariableDeclarator<'a>, depth: u32) -> bool {
+    let Some(declaration) = tree.raw_parent(decl) else { return false };
+    let AstKind::VariableDeclaration(v) = tree.kind(declaration) else { return false };
+    let top = match tree.raw_parent(declaration).map(|p| (p, tree.kind(p))) {
+        Some((_, AstKind::Program(_))) => true,
+        Some((p, AstKind::ExportNamedDeclaration(_))) => matches!(tree.raw_parent(p).map(|g| tree.kind(g)), Some(AstKind::Program(_))),
+        _ => false,
+    };
+    top && v.kind == VariableDeclarationKind::Const && matches!(d.id.kind, BindingPatternKind::BindingIdentifier(_)) && d.init.as_ref().is_some_and(|init| data_tree(tree, init, depth))
 }
 
 /// A constant-looking name: PascalCase (components, classes, context objects) or SCREAMING_CASE (constants).
@@ -124,10 +218,11 @@ fn reads_module_state(tree: &Tree<'_>, closure: NodeId) -> bool {
                 match &d.init {
                     _ if !constant => true,
                     Some(init) if matches!(unwrap(init), Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)) => false,
-                    Some(init) if data_literal(tree, init, 0) || context_token(init) => false,
+                    Some(init) if data_literal(tree, init, 0) || context_token(init) || module_data_const(tree, decl, d, 0) => false,
                     _ => value_use(tree, n, false),
                 }
             }
+            _ if import_source(tree, decl).is_some_and(asset_import) => false,
             AstKind::ImportSpecifier(_) | AstKind::ImportDefaultSpecifier(_) => value_use(tree, n, false),
             AstKind::ImportNamespaceSpecifier(_) => value_use(tree, n, true),
             _ => false,
@@ -239,6 +334,13 @@ pub struct Plan {
     /// Boundary function → the event types of its own JSX handlers outside the loader's default list (space separated,
     /// `_rB`'s `events`: the loader's `data-events`, so a cold `scroll` / `pointerenter` / … wakes the boundary).
     pub events: FxHashMap<NodeId, String>,
+    /// STATIC-ZERO T3: event attributes of boundary bodies whose handler value is conditional → the event type when the
+    /// loader does not delegate it by default ("" otherwise). The server target writes `_rHandler(B, value[, type])` for them
+    /// (the instance is live — and its type delegated — only when the value is a function).
+    pub listen: FxHashMap<NodeId, String>,
+    /// STATIC-ZERO T3: native spread elements in the bodies of conditional boundaries (`COND`): the server target passes
+    /// their attribute object through `_rHandlers(B, object)` (a forwarded listener function makes the instance live).
+    pub spreads: FxHashSet<NodeId>,
 }
 
 /// The loader's default delegated types (`resume-loader-derived.ts`); `_rB` names only the others.
@@ -483,6 +585,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
     let index: FxHashMap<NodeId, usize> = list.iter().enumerate().map(|(i, (_, id))| (*id, i)).collect();
     let mut own = vec![false; list.len()];
     let mut source = vec![false; list.len()];
+    let mut listens = vec![false; list.len()];
     for (node, site) in resumed.map.iter() {
         let site = &resumed.sites[site];
         if matches!(site.kind, SiteKind::Region | SiteKind::Props) || (site.kind == SiteKind::Slot && site.lazy_children) {
@@ -490,14 +593,16 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
         }
         if let Some(&i) = outermost_function(tree, node).and_then(|f| index.get(&f)) {
             own[i] = true;
-            if source_site(site.kind) || site.closure.is_some_and(|closure| reads_module_state(tree, closure)) {
+            if conditional_event(tree, site).is_some() {
+                listens[i] = true;
+            } else if source_site(site.kind) || site.closure.is_some_and(|closure| reads_module_state(tree, closure)) {
                 source[i] = true;
             }
         }
     }
     list.into_iter()
-        .zip(own.into_iter().zip(source))
-        .map(|((name, function), (own, source))| {
+        .zip(own.into_iter().zip(source.into_iter().zip(listens)))
+        .map(|((name, function), (own, (source, listens)))| {
             let (params, props) = params(tree, function);
             let mut context = false;
             let mut source = source;
@@ -533,7 +638,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                 }
                 true
             });
-            Component { name, function, own, context, params, props, renders, calls, source, provides, call_info }
+            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info }
         })
         .collect()
 }
@@ -723,10 +828,17 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         }
         let props = if independent[i] { c.props.clone() } else { None };
         let name = export_name(tree, &c.name);
+        for s in resumed.sites.iter().filter(|s| s.component == c.name) {
+            if let Some(attr) = conditional_event(tree, s) {
+                let delegated = s.event_type.is_empty() || DEFAULT_EVENTS.contains(&s.event_type.as_str());
+                plan.listen.insert(attr, if delegated { String::new() } else { s.event_type.clone() });
+            }
+        }
         let mut events: Vec<&str> = resumed
             .sites
             .iter()
             .filter(|s| s.kind == SiteKind::Event && s.component == c.name && !DEFAULT_EVENTS.contains(&s.event_type.as_str()))
+            .filter(|s| conditional_event(tree, s).is_none())
             .map(|s| s.event_type.as_str())
             .filter(|t| !t.is_empty())
             .collect();
@@ -734,6 +846,16 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         events.dedup();
         if !events.is_empty() {
             plan.events.insert(c.function, events.join(" "));
+        }
+        if flags & COND != 0 {
+            tree.walk(c.function, &mut |n| {
+                if let AstKind::JSXElement(el) = tree.kind(n) {
+                    if is_native(tree, el) && el.opening_element.attributes.iter().any(|a| matches!(a, JSXAttributeItem::SpreadAttribute(_))) {
+                        plan.spreads.insert(n);
+                    }
+                }
+                true
+            });
         }
         plan.boundaries.insert(c.function, (name.clone(), flags, props));
         plan.names.push(name);
@@ -792,7 +914,7 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
     plan
 }
 
-/// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, context, params, renders, calls: [[tag,
+/// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, listens, context, params, renders, calls: [[tag,
 /// data, function, enclosing, data inputs]] }]]`.
 pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
     let list: Vec<serde_json::Value> = components(tree, resumed)
@@ -808,6 +930,7 @@ pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
                 "interactive": c.own,
                 "source": c.source,
                 "provides": c.provides,
+                "listens": c.listens,
                 "context": c.context,
                 "params": c.params,
                 "renders": c.renders,

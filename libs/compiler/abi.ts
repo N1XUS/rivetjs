@@ -12,9 +12,10 @@ import { dirname, join } from "node:path";
  * libs/runtime/package.json whenever compiled output and runtime helpers change in a way the other
  * side must match (new/removed/renamed helper, changed arguments, template/marker/resume format).
  */
+// 10: derived model `_rHandler` (STATIC-ZERO T3: conditional handlers of boundary bodies record their value on the server).
 // 9: derived model `_rFor` (DERIVED-S: list-mounted `<For>` rows from one tape on the derived server target).
 // 8: Function Bridge (_rMod, thunk captures, _rCell, _rBound, _rFn member, _rStorePaths, _rClass).
-export const RUNTIME_ABI = 9;
+export const RUNTIME_ABI = 10;
 
 /** The @rivetjs/runtime package owning `file` (any resolved runtime module). */
 export interface RuntimePackage {

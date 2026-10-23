@@ -287,6 +287,12 @@ export interface ComponentBoundaryFacts {
   source: boolean;
   /** It renders a context provider (`<Provider>`, `<X.Provider>`). */
   provides: boolean;
+  /**
+   * STATIC-ZERO T3: it has an event handler whose value is not a function written in place (`cond ? f : undefined`,
+   * `props.onX`, a hook's handler): a change source only for an instance that installs a function — the server checks
+   * the value (`_rHandler`); without a source of its own the build marks it conditional.
+   */
+  listens: boolean;
   /** It (or a nested function / hook of it) calls `useContext` / a `use…Context` helper: its inputs are not only props. */
   context: boolean;
   /** `object`: `function C(props)`; `destructured`: `function C({ a })`; `none`: no parameter. */
@@ -355,6 +361,7 @@ interface RawFacts {
     {
       interactive: boolean;
       source?: boolean;
+      listens?: boolean;
       provides?: boolean;
       context: boolean;
       params: "none" | "object" | "destructured";
@@ -400,6 +407,7 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
           // An older wasm (no `source`): every own site is a source (the pre-6b verdict).
           source: facts.source ?? facts.interactive,
           provides: facts.provides ?? false,
+          listens: facts.listens ?? false,
           renders: new Set(facts.renders),
           calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data]) => ({ tag, data, fn, around, inputs })),
         } satisfies ComponentBoundaryFacts,

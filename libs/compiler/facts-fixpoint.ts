@@ -9,7 +9,8 @@
 //
 // Interactivity = change sources (M6-PARITY 6b, user ruling 2026-10-22): a component is a boundary when it has a change
 // source of its own (`source`: handler, client effect / event, keyed state, resource, Async / clientOnly, a read of module
-// state), when live data flows into a component whose sites read its inputs (`interactive` own sites: a caller passes a
+// state; a handler whose value is conditional — `cond ? f : undefined`, `props.onX` — counts per instance: `listens`,
+// conditional, STATIC-ZERO T3), when live data flows into a component whose sites read its inputs (`interactive` own sites: a caller passes a
 // function, or passes non-data while its own data is live; or it reads a context whose provider's data is live), or when
 // it renders a boundary. Props are live when the caller passes a reactive value; literals are static: `<Meter value={40}>`
 // is no boundary, ships no chunk and is never adopted. Tags resolve through re-exports (`export … from`, `export *`) and
@@ -38,8 +39,9 @@ export interface BoundaryVerdict {
   conditional: boolean;
   /** Why it is not independent (first reason), for the interaction map / dev output. */
   dependentBecause?: "not-interactive" | "destructured-props" | "context" | "call-site" | "no-call-site";
-  /** Why it is a boundary (first reason, by priority): own source, live data in, live context, a boundary below. */
-  because?: "source" | "live-props" | "live-context" | "renders";
+  /** Why it is a boundary (first reason, by priority): own source, a conditional handler (`listens`: kept per instance
+   * that installs a function, STATIC-ZERO T3), live data in, live context, a boundary below. */
+  because?: "source" | "listener" | "live-props" | "live-context" | "renders";
 }
 
 /** `boundaryFacts()` result: file → component name → verdict, plus lookups by rendered tag. */
@@ -175,9 +177,9 @@ export function boundaryFacts(
     for (const [id, c] of info) {
       const inputs = liveIn.get(id) || inputsLive(id);
       const context = liveContext.get(id) || (c.context && contextLive(id));
-      const isLive = c.source || inputs || context;
+      const isLive = c.source || c.listens || inputs || context;
       const below = (renders.get(id) ?? []).some((t) => t !== null && interactive.get(t));
-      const isInteractive = c.source || ((inputs || context) && c.interactive) || below;
+      const isInteractive = c.source || c.listens || ((inputs || context) && c.interactive) || below;
       if (
         inputs !== (liveIn.get(id) ?? false) ||
         context !== (liveContext.get(id) ?? false) ||
@@ -209,11 +211,13 @@ export function boundaryFacts(
       if (isInteractive)
         verdict.because = c.source
           ? "source"
-          : c.interactive && liveIn.get(id)
-            ? "live-props"
-            : c.interactive && liveContext.get(id)
-              ? "live-context"
-              : "renders";
+          : c.listens
+            ? "listener"
+            : c.interactive && liveIn.get(id)
+              ? "live-props"
+              : c.interactive && liveContext.get(id)
+                ? "live-context"
+                : "renders";
       if (!isInteractive) verdict.dependentBecause = "not-interactive";
       else if (isRoot.has(id)) verdict.independent = true;
       else if (c.params === "destructured") verdict.dependentBecause = "destructured-props";

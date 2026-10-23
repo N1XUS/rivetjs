@@ -21,6 +21,7 @@ function module(
       // Pre-6b cases: every own site is a source unless the case says otherwise.
       source: c.source ?? c.interactive ?? false,
       provides: c.provides ?? false,
+      listens: c.listens ?? false,
       context: c.context ?? false,
       params: c.params ?? "object",
       renders: new Set(c.renders ?? []),
@@ -266,4 +267,23 @@ test("6b: tags resolve through re-export modules, export * and compound parts", 
   assert.deepEqual(out.boundaries("ui/meter/meter.tsx"), ["MeterRoot", "MeterOutput"]);
   assert.equal(out.verdicts.get("ui/meter/meter.tsx")!.get("MeterRoot")!.dependentBecause, "call-site");
   assert.equal(out.verdicts.get("ui/meter/meter.tsx")!.get("MeterOutput")!.dependentBecause, "call-site");
+});
+
+test("STATIC-ZERO T3: a component whose only source is a conditional handler is a conditional boundary (`listener`)", () => {
+  const facts = new Map<string, ModuleFacts>([
+    ["src/page.tsx", module({ Page: { renders: ["Chat"], calls: [{ tag: "Chat", data: true }] } }, { Chat: ["./chat", "Chat"] }, "Page")],
+    ["src/chat.tsx", module({ Chat: { interactive: true, source: false, listens: true }, Mixed: { interactive: true, source: true, listens: true } })],
+  ]);
+  const resolved = new Map([["src/page.tsx", new Map([["./chat", "src/chat.tsx"]])]]);
+  const out = boundaryFacts(facts, resolved, new Set(["src/page.tsx"]));
+  const chat = out.verdicts.get("src/chat.tsx")!.get("Chat")!;
+  assert.equal(chat.interactive, true);
+  assert.equal(chat.live, true);
+  assert.equal(chat.because, "listener");
+  assert.deepEqual(out.conditional("src/chat.tsx"), ["Chat"]);
+  // A source of its own wins: kept on every instance.
+  assert.equal(out.verdicts.get("src/chat.tsx")!.get("Mixed")!.because, "source");
+  // The route root renders it: a boundary, never conditional.
+  assert.deepEqual(out.boundaries("src/page.tsx"), ["Page"]);
+  assert.deepEqual(out.conditional("src/page.tsx"), []);
 });

@@ -105,6 +105,7 @@ export default function () { return <Page data={null} />; }
       interactive: false,
       source: false,
       provides: false,
+      listens: false,
       context: false,
       params: "destructured",
       renders: ["Shell", "Counter"],
@@ -168,6 +169,77 @@ export { x as y } from "./other.ts";
   assert.deepEqual(facts.reexports.get("y"), { from: "./other.ts", imported: "x" });
   assert.deepEqual([...facts.compounds.get("Meter")!.parts], [["Part", "Reads"]]);
   assert.equal(facts.compounds.get("Meter")!.root, "Root");
+});
+
+it("STATIC-ZERO T3: a conditional handler is a per-instance source (`listens`, `_rHandler`), an in-place one a source", () => {
+  const source = `
+import { signal } from "@rivetjs/reactivity";
+import { sync } from "./chat.ts";
+export function Root(props) { return <div onScroll={props.track ? (e) => sync(e.currentTarget) : undefined}>{props.children}</div>; }
+export function Forward(props) { return <button type="button" onClick={props.onClick}>{props.label}</button>; }
+function go() {}
+const run = () => 1;
+export function Literal() { return <p><a onClick={() => 1}>a</a><b onClick={go}>b</b><i onClick={run}>c</i></p>; }
+export function Mixed(props) { return <p onClick={() => 1} onPointerEnter={props.onEnter}>x</p>; }
+`;
+  const facts = moduleFacts(source, "m.tsx", { boundaries: true });
+  const b = (name: string) => facts.boundaries.get(name)!;
+  assert.deepEqual(
+    ["Root", "Forward", "Literal", "Mixed"].map((n) => [n, b(n).source, b(n).listens]),
+    [
+      ["Root", false, true],
+      ["Forward", false, true],
+      ["Literal", true, false],
+      ["Mixed", true, true],
+    ],
+  );
+  const out = server(source);
+  assert.deepEqual(out.diagnostics, []);
+  // The value is recorded under the boundary token; a type the loader does not delegate by default rides along and
+  // leaves the static `_rB` events list.
+  assert.ok(out.code.includes('__rivetR_handler(__rivetB, props.track ? (e) => sync(e.currentTarget) : undefined, "scroll")'), out.code);
+  assert.ok(out.code.includes('__rivetR_b("src/m.tsx#Root", 2)'), out.code);
+  assert.ok(out.code.includes("__rivetR_handler(__rivetB, props.onClick)"), out.code);
+  assert.ok(out.code.includes('__rivetR_handler(__rivetB, props.onEnter, "pointerenter")'), out.code);
+  assert.ok(!/__rivetR_handler\(__rivetB, (go|run)\b/.test(out.code), out.code);
+  assert.ok(
+    out.code.includes(
+      "import { _rB as __rivetR_b, _rBOut as __rivetR_bOut, _rBEnd as __rivetR_bEnd, _rBAttr as __rivetR_bAttr, _rHandler as __rivetR_handler }",
+    ),
+    out.code,
+  );
+  // DOM target: unchanged handlers.
+  const dom = compile(source, { target: "dom", filename: "m.tsx", resume });
+  assert.ok(!dom.code.includes("_rHandler"), dom.code);
+});
+
+it("STATIC-ZERO T1: module data (literal trees, asset imports) is not browser state", () => {
+  const facts = moduleFacts(
+    `
+import icon from "./bell.png?image";
+import data from "./rows.json";
+import { store } from "./state.ts";
+const items = [{ src: icon.src, title: "a" }, { src: \`/x/\${1 + 2}\`, title: "b" }];
+const live = [{ v: store }];
+let mode = "a";
+export function List() { return <ul>{items.map((i) => <li><img src={i.src} alt={i.title} /></li>)}</ul>; }
+export function Img() { return <img src={icon.src} alt={data.title} />; }
+export function Live() { return <p>{live.map((x) => x.v.n)}</p>; }
+export function Let() { return <p>{mode.toUpperCase()}</p>; }
+`,
+    "m.tsx",
+    { boundaries: true },
+  );
+  const b = (name: string) => facts.boundaries.get(name)!;
+  assert.deepEqual(
+    ["List", "Img", "Live", "Let"].map((n) => [n, b(n).source]),
+    [
+      ["List", false],
+      ["Img", false],
+      ["Live", true],
+      ["Let", true],
+    ],
+  );
 });
 
 it("RV2103 (non-deterministic render, error) and RV2104 (keyed state in a loop, warning); `check` reports them too", () => {

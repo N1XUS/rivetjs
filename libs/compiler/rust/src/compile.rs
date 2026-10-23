@@ -2223,7 +2223,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     self.diag(format!("Unknown native event: {name} (a DOM event like onClick / onInput, or on:my-event={{…}} for a custom event)"), attr_id);
                 } else {
                     let value = self.attr_value(attr);
-                    if !Self::function_value(attr, &value) {
+                    // exception: derived model (STATIC-ZERO T3) — a conditional handler records its value: `_rHandler(B, v)`.
+                    if let Some(on) = self.derived_on(attr_id, &value) {
+                        t.slot(on);
+                    } else if !Self::function_value(attr, &value) {
                         t.slot(Expr::call(&self.abi_name("omitted"), vec![value]));
                     }
                 }
@@ -2310,6 +2313,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if spread {
             let object = Expr::Object(self.spread_object(el, tag, namespace, groups.as_ref(), None));
             let object = self.spread_with_class(object, groups.as_ref());
+            // exception: derived model (STATIC-ZERO T3) — a conditional boundary's forwarded listeners make it live.
+            let object = self.derived_spread(el_id, object);
             self.used_abi.insert("spreadAttributes");
             let mut args = vec![object];
             args.extend(Self::spread_args(tag, namespace));

@@ -61,6 +61,7 @@ import { _onEager, _onIsland } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 import { _idScope } from "./id.ts";
+import { omitted } from "./omitted.ts";
 import { _trigger, EFFECT, ONLY as ONLY_KIND } from "./server-trigger.ts";
 import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
 
@@ -124,6 +125,8 @@ export interface Boundary {
   hot?: boolean;
   /** A boundary below it keeps its record (flush). */
   kept?: boolean;
+  /** STATIC-ZERO T3: its body installs a listener whose value was checked (`_rHandler` / `_rHandlers` saw a function). */
+  on?: boolean;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -614,6 +617,44 @@ _trigger.ev = (key) => {
   if (type === undefined) listenerTypes.set(key, (type = /^on(.+?)((?<!Pointer)Capture)?$/.exec(key)![1]!.toLowerCase()));
   if (!DEFAULT_TYPES.has(type)) useContext(DERIVED)?.events.add(type);
 };
+
+/**
+ * A handler of a boundary body whose value the compiler cannot tell is a function (STATIC-ZERO T3: `cond ? f : undefined`,
+ * `props.onX`, a hook's destructured handler), compiled in place of the server's evaluation slot: with a function the
+ * boundary installs a listener (a conditional boundary keeps its record; `type`, a type the loader does not delegate by
+ * default, joins `data-events`); without one nothing — a page whose only handlers are absent ships no tail.
+ */
+export function _rHandler(token: Boundary | null, value: unknown, type?: string): ServerValue {
+  if (token && typeof value === "function") {
+    token.on = true;
+    if (type) useContext(DERIVED)?.events.add(type);
+  }
+  return omitted(value) as unknown as ServerValue;
+}
+
+/**
+ * The attribute object of a native spread element written in a conditional boundary's own body (STATIC-ZERO T3, compiled
+ * around the object `spreadAttributes` takes): a listener prop holding a function (`<Box onClick={…}>` forwarded through
+ * `{...props}`) makes the instance live. Listeners spread by a component that is not a boundary (a cdk hook's handlers
+ * inside a static `Link`) do not: that component runs in the browser only when an ancestor adopts.
+ */
+export function _rHandlers<T extends object>(token: Boundary | null, attrs: T): T {
+  if (token && !token.on)
+    for (const key in attrs) {
+      const third = key.charCodeAt(2);
+      if (
+        key.charCodeAt(0) === 111 &&
+        key.charCodeAt(1) === 110 &&
+        third >= 65 &&
+        third <= 90 &&
+        typeof (attrs as Record<string, unknown>)[key] === "function"
+      ) {
+        token.on = true;
+        break;
+      }
+    }
+  return attrs;
+}
 
 /** Close a boundary body (compiled into the body's `finally`): the token leaves the stack, whatever is above it too. */
 export function _rBEnd(token: Boundary | null): void {
@@ -1416,7 +1457,8 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
 // only because some caller may feed them live data, a live context, or because they render an interactive child. Per
 // instance, the server keeps such a record when the instance turned out live: its unit read a source that can change
 // from outside its subtree (`changes`: a live prop getter, slot content reading the caller's signal, a context value over
-// a signal), a boundary below it was kept, it holds an `Async` / island trigger / keyed state, something it made escaped
+// a signal), a boundary below it was kept, its body installs a listener (`_rHandler` / `_rHandlers` saw a function,
+// STATIC-ZERO T3), it holds an `Async` / island trigger / keyed state, something it made escaped
 // or it wrote outside (`EAGER_MARK`), or the render holds a store (store reads are not tracked). Otherwise the record is
 // dropped: its markers stay on the page (inert: no record, the browser's adopt run of an ancestor keeps its server nodes
 // as a hole), and a page of static instances only (`<Meter value={40}>`) ships no tail, no runtime, no chunk.
@@ -1424,7 +1466,18 @@ function keep(ctx: DerivedRender, from: number): void {
   const all = ctx.stores || moduleStores;
   for (let i = ctx.boundaries.length - 1; i >= from; i--) {
     const x = ctx.boundaries[i]!;
-    if (!(x.flags & COND) || all || x.hot || x.kept || x.flags & TRIGGERS || x.an || x.signals.length || x.mark & EAGER_MARK || ctx.keys[x.id] !== undefined) {
+    if (
+      !(x.flags & COND) ||
+      all ||
+      x.hot ||
+      x.kept ||
+      x.on ||
+      x.flags & TRIGGERS ||
+      x.an ||
+      x.signals.length ||
+      x.mark & EAGER_MARK ||
+      ctx.keys[x.id] !== undefined
+    ) {
       x.kept = true;
       if (x.parent) x.parent.kept = true;
     }

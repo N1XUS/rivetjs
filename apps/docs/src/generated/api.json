@@ -1773,6 +1773,13 @@
      "optional": false
     },
     {
+     "name": "listens",
+     "kind": "property",
+     "signature": "listens: boolean",
+     "doc": "STATIC-ZERO T3: it has an event handler whose value is not a function written in place (`cond ? f : undefined`,\n`props.onX`, a hook's handler): a change source only for an instance that installs a function — the server checks\nthe value (`_rHandler`); without a source of its own the build marks it conditional.",
+     "optional": false
+    },
+    {
      "name": "params",
      "kind": "property",
      "signature": "params: \"object\" | \"none\" | \"destructured\"",
@@ -1864,8 +1871,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 413,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L413"
+    "line": 421,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L421"
    },
    "href": "/api/rivetjs/compiler/ComponentGroups/"
   },
@@ -2008,8 +2015,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 317,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L317"
+    "line": 323,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L323"
    },
    "href": "/api/rivetjs/compiler/HoleFacts/"
   },
@@ -2030,8 +2037,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 428,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L428"
+    "line": 436,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L436"
    },
    "href": "/api/rivetjs/compiler/MAIN_LATE_ROOT/"
   },
@@ -2052,8 +2059,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 426,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L426"
+    "line": 434,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L434"
    },
    "href": "/api/rivetjs/compiler/MAIN_ROOT/"
   },
@@ -2245,8 +2252,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 330,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L330"
+    "line": 336,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L336"
    },
    "href": "/api/rivetjs/compiler/ModuleFactsOptions/"
   },
@@ -2280,7 +2287,7 @@
    "summary": "Runtime helper contract the compiler emits for.",
    "remarks": "Runtime helper contract the compiler emits for. Bump it together with `rivet.abi` in\nlibs/runtime/package.json whenever compiled output and runtime helpers change in a way the other\nside must match (new/removed/renamed helper, changed arguments, template/marker/resume format).",
    "signatures": [
-    "const RUNTIME_ABI: 9"
+    "const RUNTIME_ABI: 10"
    ],
    "params": [],
    "members": [],
@@ -2289,8 +2296,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/abi.ts",
-    "line": 17,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L17"
+    "line": 18,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L18"
    },
    "href": "/api/rivetjs/compiler/RUNTIME_ABI/"
   },
@@ -2712,8 +2719,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 438,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L438"
+    "line": 446,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L446"
    },
    "href": "/api/rivetjs/compiler/groupComponents/"
   },
@@ -2777,8 +2784,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 377,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L377"
+    "line": 384,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L384"
    },
    "href": "/api/rivetjs/compiler/moduleFacts/"
   },
@@ -30411,8 +30418,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 330,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L330"
+    "line": 333,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L333"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumableOptions/"
   },
@@ -30490,8 +30497,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 309,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L309"
+    "line": 312,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L312"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumeManifest/"
   },
@@ -30562,8 +30569,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 345,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L345"
+    "line": 348,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L348"
    },
    "href": "/api/rivetjs/runtime/server-resume/StreamingResumableOptions/"
   },
@@ -30605,8 +30612,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 478,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L478"
+    "line": 481,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L481"
    },
    "href": "/api/rivetjs/runtime/server-resume/renderResumable/"
   },
@@ -30642,8 +30649,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 472,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L472"
+    "line": 475,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L475"
    },
    "href": "/api/rivetjs/runtime/server-resume/resumableToString/"
   },
