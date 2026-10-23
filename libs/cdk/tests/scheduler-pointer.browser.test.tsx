@@ -277,7 +277,7 @@ const css = `
 
 let sheet: HTMLStyleElement | null = null;
 
-async function setup(options: { view?: SchedulerView; selectable?: () => boolean; readOnly?: () => boolean; external?: boolean } = {}) {
+async function setup(options: { view?: SchedulerView; selectable?: () => boolean; readOnly?: () => boolean; external?: boolean; placeholder?: boolean } = {}) {
   sheet = document.createElement("style");
   sheet.textContent = css;
   document.head.append(sheet);
@@ -293,7 +293,7 @@ async function setup(options: { view?: SchedulerView; selectable?: () => boolean
         <DropList id="ext" class="ext" sortingDisabled connectedTo={["board"]}>
           <Drag data={{ task: 7 }} class="ext-item">
             Task
-            <DragPlaceholder>{() => <span />}</DragPlaceholder>
+            {options.placeholder !== false ? <DragPlaceholder>{() => <span />}</DragPlaceholder> : null}
           </Drag>
         </DropList>
       ) : null}
@@ -354,6 +354,56 @@ async function select(from: Element, to: Element, release = true) {
 }
 
 describe("Scheduler range selection", () => {
+  for (const view of ["month", "week"] as const) {
+    it(`${view}: extends a TOUCH drag past the pressed cell, which keeps the moves`, async () => {
+      const { root, ranges } = await setup({ view });
+      const from = view === "month" ? cellOf(root, 8) : slotOf(root, 1, 600);
+      const to = view === "month" ? cellOf(root, 10) : slotOf(root, 1, 690);
+      const a = rect(from),
+        b = rect(to);
+      const send = (type: string, box: DOMRect) =>
+        dispatchPointerEvent(from, type, box.left + box.width / 2, box.top + box.height / 2, undefined, undefined, {
+          isPrimary: true,
+          pointerType: "touch",
+          button: 0,
+          pointerId: 7,
+        });
+      send("pointerdown", a);
+      await sleep(250);
+      send("pointermove", b);
+      await flush();
+      expect(selected(root)).toHaveLength(view === "month" ? 3 : 4);
+      send("pointerup", b);
+      await settle();
+      expect(ranges).toEqual([
+        view === "month"
+          ? { start: "2031-03-04", end: "2031-03-07", allDay: true, source: "pointer" }
+          : { start: "2031-03-04T10:00:00", end: "2031-03-04T12:00:00", allDay: false, source: "pointer" },
+      ]);
+    });
+  }
+
+  it("keeps a pending selection when the press lands inside it", async () => {
+    const { root, ranges } = await setup({ view: "month" });
+    const from = cellOf(root, 7),
+      inside = cellOf(root, 8);
+    from.focus();
+    from.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", shiftKey: true, bubbles: true, cancelable: true }));
+    await settle();
+    expect(selected(root)).toHaveLength(2);
+    const b = rect(inside);
+    dispatchPointerEvent(inside, "pointerdown", b.left + 10, b.top + 40, undefined, undefined, {
+      isPrimary: true,
+      pointerType: "mouse",
+      button: 0,
+      pointerId: 1,
+    });
+    await settle();
+    expect(selected(root)).toHaveLength(2);
+    dispatchPointerEvent(inside, "pointercancel", b.left + 10, b.top + 40, undefined, undefined, { pointerId: 1 });
+    expect(ranges).toHaveLength(0);
+  });
+
   it("time grid: selects a range of slots by dragging, paints it, emits onRangeSelect on release and swallows the click", async () => {
     const { root, ranges, clicks } = await setup();
     await select(slotOf(root, 1, 600), slotOf(root, 1, 690), false);
@@ -468,7 +518,7 @@ describe("Scheduler range selection", () => {
 
 describe("Scheduler external drop", () => {
   /** Drags the external item onto `target`'s centre. */
-  async function dropOn(target: Element) {
+  async function dropOn(target: Element, during?: () => void) {
     const item = document.querySelector<HTMLElement>(".ext-item")!;
     const a = rect(item);
     const b = rect(target);
@@ -480,6 +530,7 @@ describe("Scheduler external drop", () => {
     await settle();
     for (let i = 1; i <= 12; i++) dispatchMouseEvent(document, "mousemove", x + ((tx - x) * i) / 12, y + ((ty - y) * i) / 12);
     await settle();
+    during?.();
     dispatchMouseEvent(document, "mouseup", tx, ty);
     await settle();
     await sleep(350);
@@ -500,6 +551,20 @@ describe("Scheduler external drop", () => {
     await dropOn(slotOf(root, 2, 600));
     expect(drops).toEqual([{ item: { task: 7 }, start: "2031-03-05T10:00:00", end: "2031-03-05T11:00:00", allDay: false }]);
     expect(document.querySelector(".ext .ext-item")).not.toBeNull();
+  });
+
+  it("a foreign item without a custom placeholder leaves the month geometry unchanged and returns to its list", async () => {
+    const { root, drops } = await setup({ external: true, view: "month", placeholder: false });
+    const body = root.querySelector<HTMLElement>(".rv-Scheduler-body")!;
+    const height = rect(body).height;
+    await dropOn(root.querySelector('.rv-SchedulerMonth-cell[data-rv-day-index="10"]')!, () => {
+      expect(body.querySelector(".cdk-drag-placeholder")).not.toBeNull();
+      expect(rect(body).height).toBe(height);
+      expect(rect(body.querySelector(".cdk-drag-placeholder")!).height).toBe(0);
+    });
+    expect(drops).toEqual([{ item: { task: 7 }, start: "2031-03-06", end: "2031-03-07", allDay: true }]);
+    expect(document.querySelector(".ext .ext-item")).not.toBeNull();
+    expect(root.querySelector(".cdk-drag-placeholder")).toBeNull();
   });
 
   it("an all-day drop (all-day row / month cell) covers that day; read-only refuses the item", async () => {

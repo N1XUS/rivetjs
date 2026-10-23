@@ -190,3 +190,6 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../tests-components/CLAUDE.md](../tests-components/CLAUDE.md)
 - `apps/cdk-docs/content/foundations/testing.md`, `docs/guides/resumability.md`
+
+## Scheduler T10 coverage
+`scheduler-live-props.browser.test.tsx` covers all live state options, controlled inputs and root DOM props after mount. Pointer cases now include captured touch selection in both views, preserving a pending selection on an inside press, and external default-placeholder geometry/month-cell drops. Resize coverage checks one owning-column measurement per gesture. Run the scheduler Chromium files serially with `--maxWorkers=1`; built resume checks are in `../tests-components/scheduler-resume.test.ts`.

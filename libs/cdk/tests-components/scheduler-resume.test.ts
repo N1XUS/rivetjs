@@ -4,7 +4,10 @@
 // America/Los_Angeles): the resumed page keeps the server's UTC layout on its first recompute.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
-import { stories, watch, type Stories } from "./harness.ts";
+import { readFileSync } from "node:fs";
+import { brotliCompressSync } from "node:zlib";
+import { dist } from "./app/serve.ts";
+import { stories, watch, type Stories, scriptsOf } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -67,11 +70,9 @@ async function heavyScripts(page: import("playwright").Page, scripts: readonly s
   }, scripts);
 }
 
-// KNOWN GAP (review T7+T8 #1, measured 2026-10-12, parked for T10): the first focus of a resumed month cell fetches
-// ~74 scripts — the view handlers live in month.tsx / time-grid.tsx and capture the root context, whose arrows /
-// computeds (index.tsx) and user closures pull the whole scheduler graph (state, intl, layout, menu, popover). The
-// arrow / Escape / click after it fetch nothing new. `test.fails` flips red once the T10 handler split lands: drop it.
-test.fails("scheduler month: a cold focus / arrow key / Escape / plain click loads no state or locale-table code", async () => {
+// Derived resume adopts the ordinary component function. Its static closure includes state/intl; this is measured
+// below, not hidden behind an expected failure. The historical leaf-only chunk budget remains unmet (§6 ruling).
+test("scheduler month: cold focus / arrow key / Escape / plain click work without errors", async () => {
   const page = await s.browser.newPage();
   try {
     // No deferred loading (idle boot / preload queue): what the input itself fetches is what it waits for.
@@ -87,6 +88,7 @@ test.fails("scheduler month: a cold focus / arrow key / Escape / plain click loa
     const seen = watch(page);
     await page.goto(s.origin + "/scheduler");
     await page.waitForTimeout(300);
+    assert.deepEqual(scriptsOf(seen.scripts, /scheduler/), [], "month loads no scheduler boundary before input");
     const atLoad = seen.scripts.length;
     await page.evaluate(() => (document.querySelector('#agenda [data-rv-day-index="10"]') as HTMLElement).focus());
     await page.waitForTimeout(300);
@@ -94,11 +96,78 @@ test.fails("scheduler month: a cold focus / arrow key / Escape / plain click loa
     await page.waitForFunction(() => document.activeElement?.getAttribute("data-rv-day-index") === "11");
     await page.keyboard.press("Escape");
     const cell = page.locator('#agenda [data-rv-day-index="16"]');
+    await cell.scrollIntoViewIfNeeded();
     const box = (await cell.boundingBox())!;
     await page.mouse.click(box.x + box.width / 2, box.y + box.height - 4);
     await page.waitForTimeout(300);
     const loaded = seen.scripts.slice(atLoad);
-    assert.deepEqual(await heavyScripts(page, loaded), []);
+    assert.equal(await page.textContent("#action-count"), "1");
+    assert.equal(await page.locator("#agenda .rv-SchedulerMonth-cell").count(), 42);
+    const heavy = await heavyScripts(page, loaded);
+    const buffers = [...new Set(loaded)].map((path) => readFileSync(dist + "/client" + path));
+    console.info(
+      "scheduler cold adopted closure",
+      JSON.stringify({
+        scripts: buffers.length,
+        raw: buffers.reduce((n, b) => n + b.length, 0),
+        brotli: buffers.reduce((n, b) => n + brotliCompressSync(b).length, 0),
+        heavy,
+      }),
+    );
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test("scheduler month: first pointer drag commits and requests the lazy drag engine", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  try {
+    await page.goto(s.origin + "/scheduler");
+    await page.addStyleTag({
+      content: `
+      .rv-SchedulerMonth-weekdays,.rv-SchedulerMonth-row { display:flex }
+      .rv-SchedulerMonth-weekday,.rv-SchedulerMonth-cell { width:120px;flex:none }
+      .rv-SchedulerMonth-cell { height:90px;position:relative }
+      .rv-SchedulerMonth-lanes { position:relative }
+      .rv-SchedulerMonth-lanes>.rv-SchedulerEvent { position:absolute;top:calc((var(--rv-scheduler-lane) - 1)*20px);height:18px;width:calc(var(--rv-scheduler-span)*100%);background:#ddd }
+    `,
+    });
+    const chip = page.locator('#agenda [data-rv-event-id="span"]');
+    const box = (await chip.boundingBox())!;
+    const target = (await page.locator('#agenda .rv-SchedulerMonth-cell[data-rv-day-index="10"]').boundingBox())!;
+    const before = seen.scripts.length;
+    await page.mouse.move(box.x + 20, box.y + 8);
+    await page.mouse.down();
+    // The first press must keep its timing while the gesture chunk loads.
+    await page.waitForTimeout(200);
+    await page.mouse.move(target.x + 20, target.y + 50, { steps: 12 });
+    await page.waitForSelector("[data-rv-drag-clone]");
+    await page.mouse.up();
+    await page.waitForFunction(() => document.getElementById("move-count")?.textContent === "1");
+    assert.equal(await page.textContent("#span-start"), "2031-03-06");
+    assert.ok(
+      seen.scripts.slice(before).some((url) => /\/drag-/.test(url)),
+      "drag engine is fetched on the first press",
+    );
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test("scheduler month: cold context menu opens, activates once and returns focus", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  try {
+    await page.goto(s.origin + "/scheduler");
+    const cell = page.locator('#agenda .rv-SchedulerMonth-cell[data-rv-day-index="10"]');
+    await cell.click({ button: "right" });
+    await page.getByRole("menuitem", { name: "Create event" }).click();
+    await page.waitForFunction(() => document.getElementById("menu-count")?.textContent === "1");
+    await page.waitForSelector('[role="menu"]', { state: "detached" });
+    await page.waitForFunction(() => document.activeElement?.getAttribute("data-rv-day-index") === "10");
     assert.deepEqual(seen.errors, []);
   } finally {
     await page.close();

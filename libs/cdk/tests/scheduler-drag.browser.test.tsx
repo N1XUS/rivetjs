@@ -6,7 +6,7 @@
 // per-list instances: one DragRef per press, disposed on release); "list destroyed mid-gesture" → the chip leaves the
 // DOM mid-gesture; jsdom geometry → a test stylesheet in Chromium (vitest iframe ≈ 414 px: every layout ≤ 392 px wide
 // so `elementFromPoint` reaches the targets). Week of Mon 3 – Sun 9 March 2031 (UTC), month March 2031 (Mon 24 Feb –).
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { signal } from "@rivetjs/reactivity";
 import { cleanup, flush, render } from "@rivetjs/runtime/testing";
 import { dispatchKeyboardEvent, dispatchMouseEvent, dispatchPointerEvent } from "@rivetjs/testing/fake-events";
@@ -536,6 +536,27 @@ describe("Scheduler drag-move (month)", () => {
 });
 
 describe("Scheduler resize", () => {
+  it("reads the owning column rect once per resize gesture", async () => {
+    const { root, resizes } = await setup();
+    const chip = chipOf(root, "a");
+    const slots = chip.closest(".rv-SchedulerTimeGrid-column")!.querySelector(".rv-SchedulerTimeGrid-slots")!;
+    const target = rect(slotOf(root, 1, 660));
+    const measure = vi.spyOn(slots, "getBoundingClientRect");
+    try {
+      await pointerDrag(chip.querySelector('[data-edge="end"]')!, target.left + 10, target.top + 2, false);
+      expect(measure).toHaveBeenCalledTimes(1);
+      dispatchPointerEvent(document, "pointermove", target.left + 10, target.top + 12);
+      dispatchPointerEvent(document, "pointermove", target.left + 10, target.top + 22);
+      await flush();
+      expect(measure).toHaveBeenCalledTimes(1);
+      dispatchPointerEvent(document, "pointerup", target.left + 10, target.top + 22);
+      await settle();
+      expect(resizes).toHaveLength(1);
+    } finally {
+      measure.mockRestore();
+    }
+  });
+
   it("renders one handle per resizable edge and drops the ones that continue", async () => {
     const { root } = await setup({
       events: [...weekEvents(), { id: "f", title: "F", start: "2031-03-03T09:00", end: "2031-03-03T10:00", isResizable: false }],

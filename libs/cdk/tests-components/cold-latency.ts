@@ -39,6 +39,12 @@ const listboxOpen = (trigger: string) =>
   `document.querySelector(${JSON.stringify(trigger)})?.getAttribute("aria-expanded") === "true" && !!document.querySelector('[role="listbox"]')`;
 
 const TARGETS: Record<string, Target> = {
+  "scheduler-more": {
+    path: "/scheduler",
+    sel: '#agenda [data-rv-day-index="8"] .rv-SchedulerMonth-more',
+    until: `document.getElementById("more-count")?.textContent === "1" && !!document.querySelector(".rv-SchedulerMonth-popover")`,
+    scenarios: ["click", "hoverClick", "keyClick", "tapClick"],
+  },
   sidebar: {
     path: "/sidebar",
     sel: "#inbox",

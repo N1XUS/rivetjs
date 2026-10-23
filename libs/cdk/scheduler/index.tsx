@@ -33,7 +33,7 @@ import {
 import { SchedulerMonth } from "./month.tsx";
 import { SchedulerTimeGrid } from "./time-grid.tsx";
 import { DropList } from "../drag-drop/drop-list.tsx";
-import { schedulerExternalDrop } from "./behaviour.ts";
+import { schedulerExternalDrop, schedulerExternalEnter, schedulerExternalExit } from "./behaviour.ts";
 import { addCalendarMonths, dayOf, dayOfWeek, fromLayout, todayDay } from "./dates.ts";
 import { schedulerString } from "./intl.ts";
 import { hiddenWeekdays, nextVisibleDate, type SchedulerMoreEvent } from "./layout.ts";
@@ -406,6 +406,8 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
           class="rv-Scheduler-body"
           sortingDisabled
           enterPredicate={() => schedulerEditable(state)}
+          onEntered={(event) => schedulerExternalEnter(event)}
+          onExited={(event) => schedulerExternalExit(event)}
           onDropped={(drop) => schedulerExternalDrop(drop, state)}
         >
           <Show when={() => state.view.value() === "month"} fallback={() => provide(SchedulerContext, ctx, () => <SchedulerTimeGrid />)}>

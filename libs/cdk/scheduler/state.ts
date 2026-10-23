@@ -128,21 +128,31 @@ export interface SchedulerOptions {
 export interface SchedulerStateProps<T = unknown> extends SchedulerOptions {
   /** Events: a Signal (two-way), a value or an accessor (controlled: use `onEventsChange`). */
   events?: readonly SchedulerEvent<T>[] | Signal<readonly SchedulerEvent<T>[]> | (() => readonly SchedulerEvent<T>[]);
+  /** Read once at mount. */
   defaultEvents?: readonly SchedulerEvent<T>[];
+  /** Read once at mount. */
   onEventsChange?: (events: readonly SchedulerEvent<T>[]) => void;
+  /** Live view value, accessor or two-way signal. */
   view?: SchedulerView | Signal<SchedulerView> | (() => SchedulerView);
+  /** Read once at mount. */
   defaultView?: SchedulerView;
+  /** Read once at mount. */
   onViewChange?: (view: SchedulerView) => void;
   /** Anchor date (any form; written back in the same form). Default: today in `timeZone`. */
   date?: SchedulerDate | Signal<SchedulerDate> | (() => SchedulerDate);
+  /** Read once at mount. */
   defaultDate?: SchedulerDate;
+  /** Read once at mount. */
   onDateChange?: (date: SchedulerDate) => void;
-  /** Move veto (read once). */
+  /** Move veto. Read once at mount. */
   canMove?: SchedulerCanChange<T>;
-  /** Resize veto (read once). */
+  /** Resize veto. Read once at mount. */
   canResize?: SchedulerCanChange<T>;
+  /** Read once at mount. */
   onEventMove?: (change: SchedulerEventChange<T>) => void;
+  /** Read once at mount. */
   onEventResize?: (change: SchedulerEventChange<T>) => void;
+  /** Read once at mount. */
   onVisibleRangeChange?: (range: SchedulerVisibleRange) => void;
   /** A pointer drag (or `Shift+Arrow` + `Enter`) over empty cells committed a range (malva `rangeSelect`). Read once at mount. */
   onRangeSelect?: (range: SchedulerRangeSelectEvent) => void;

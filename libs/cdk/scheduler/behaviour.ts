@@ -6,7 +6,7 @@
 // `schedulerPress` (T6): the delegated press of the views (no malva counterpart: malva binds SortableJS per list and
 // `attachPointerDrag` per handle at render); loads the drag chunk (`drag.ts`) on the first press of a chip / handle.
 import { untrack, type Signal } from "@rivetjs/reactivity";
-import type { DragDrop } from "../drag-drop/drag-events.ts";
+import type { DragDrop, DragEnter, DragExit } from "../drag-drop/drag-events.ts";
 import type { SchedulerDate } from "./dates.ts";
 import type { SchedulerEvent, SchedulerMoreEvent } from "./layout.ts";
 import { DEV } from "#dev";
@@ -234,8 +234,27 @@ function pressCell<T>(event: PointerEvent, state: SchedulerState<T>, target: Ele
     .catch(chunkFailed(release));
 }
 
+// External sources may use their default (full-size) placeholder. A scheduler is a hit area, not an insertion
+// list: keep that placeholder out of layout while it is here, restoring the caller's inline style on exit.
+const externalPlaceholders = new WeakMap<HTMLElement, { value: string; priority: string }>();
+export function schedulerExternalEnter(event: DragEnter): void {
+  const element = event.item.getPlaceholderElement();
+  if (!element || externalPlaceholders.has(element)) return;
+  externalPlaceholders.set(element, { value: element.style.getPropertyValue("display"), priority: element.style.getPropertyPriority("display") });
+  element.style.setProperty("display", "none", "important");
+}
+export function schedulerExternalExit(event: DragExit): void {
+  const element = event.item.getPlaceholderElement();
+  const saved = element && externalPlaceholders.get(element);
+  if (!saved) return;
+  if (saved.value) element.style.setProperty("display", saved.value, saved.priority);
+  else element.style.removeProperty("display");
+  externalPlaceholders.delete(element);
+}
+
 /** Hit-area `DropList` `onDropped` (external drop, T7): hands the drop to the drag chunk. */
 export function schedulerExternalDrop<T>(drop: DragDrop<any, any, any>, state: SchedulerState<T>): void {
+  schedulerExternalExit(drop);
   import("./drag.ts").then((drag) => drag.externalDrop(state, drop)).catch(chunkFailed());
 }
 
