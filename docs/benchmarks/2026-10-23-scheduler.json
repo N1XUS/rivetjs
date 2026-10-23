@@ -48,7 +48,8 @@
     "max": 1,
     "layoutEvents": 11,
     "layoutDurationMs": 3.181,
-    "synchronousLayoutWithStack": 0
+    "synchronousLayoutWithStack": 0,
+    "checkpoint": "T12 performance observation; final production warm-drag regression also passes"
   },
   "renderProfile": {
     "method": "V8 CPU500us samples; 50warmups then200whole-week renders, compiler/import outside profile",
@@ -167,7 +168,8 @@
     "emittedMinifiedBytes": 533950,
     "sumPerFileBrotliBytes": 176920,
     "includesPageAndRuntime": true,
-    "stateAndIntlIncluded": true
+    "stateAndIntlIncluded": true,
+    "checkpoint": "T12; before final CSS and pointer-session Escape fix"
   },
   "integration": {
     "schedulerUnit": {
@@ -186,7 +188,8 @@
       "files": 221
     },
     "schedulerUiProduction": {
-      "passed": 16
+      "passed": 20,
+      "includesRealLaneResizeCommitAndEscape": true
     },
     "overlayUnit": {
       "passed": 35
@@ -219,7 +222,8 @@
       "matchingFailuresReproducedBeforeRuntimeFix": 20,
       "otherFailuresBaselineUnclassified": 0,
       "fullGatePassed": false,
-      "baselineSourceExactlyRestored": true
+      "baselineSourceExactlyRestored": true,
+      "ranBeforeFinalResizeFix": true
     },
     "externalDrop": {
       "apps": [
@@ -294,7 +298,9 @@
       "passed": true,
       "apps": 25,
       "priorRuntimeDeltaMinifiedBytes": 9,
-      "finalSchedulerOverlayDeltaMinifiedBytes": 74
+      "finalSchedulerOverlayDeltaMinifiedBytes": 74,
+      "finalSchedulerResizeDeltaMinifiedBytes": 6,
+      "finalSchedulerDemoCssDeltaMinifiedBytes": 33
     },
     "uiComponentSize": {
       "schedulerCheckPassed": true,
@@ -311,6 +317,27 @@
       "snippetFencesChecked": 481,
       "buildPassed": true,
       "llmsMcpAiPassed": true
+    },
+    "finalResizeFix": {
+      "uiViewDirectionCasesPassed": 4,
+      "freshCdkDemoCasesPassed": 4,
+      "cdkDemoManifestPassed": 1,
+      "affectedPointerRangeDragPassed": 62,
+      "uiUnitStylePassed": 27,
+      "generatedCssFilesFresh": 127,
+      "assertions": [
+        "logical start follows pointer before release",
+        "opposite end stays pinned",
+        "model range and geometry commit",
+        "native Escape restores geometry and model",
+        "temporary shift removed"
+      ],
+      "focusedEscapeCapturedBeforeChipBubbleHandler": true
+    },
+    "permanentArtifacts": {
+      "root": ".artifacts/ui-components/scheduler",
+      "selectedWarmDragPassedWithDestinationInitiallyAbsent": true,
+      "recursiveParentCreationBeforeTraceWrite": true
     }
   },
   "remainingLimits": [
@@ -331,8 +358,8 @@
         3432
       ],
       "css": [
-        18374,
-        2596
+        18408,
+        2601
       ]
     },
     "cdkOwnMinified": {
@@ -343,20 +370,20 @@
     "standaloneHeadlessDemo": {
       "totalJS": {
         "files": 86,
-        "min": 493197,
-        "br": 162302
+        "min": 493203,
+        "br": 162294
       },
       "serverJS": {
-        "min": 437005,
-        "br": 126882
+        "min": 437011,
+        "br": 126889
       },
       "route": {
         "status": 200,
-        "htmlBr": 4959,
+        "htmlBr": 4954,
         "cssSheets": 1,
         "css": {
-          "min": 43033,
-          "br": 7555
+          "min": 43066,
+          "br": 7572
         },
         "stateBytes": 2221,
         "inlineBytes": 2466,
@@ -379,6 +406,11 @@
           "br": 0
         }
       }
+    },
+    "uiOwnMeasurement": {
+      "dom": "minified JavaScript / Brotli bytes",
+      "server": "minified JavaScript / Brotli bytes",
+      "css": "compiled CSS UTF-8 measured verbatim / Brotli bytes"
     }
   }
 }

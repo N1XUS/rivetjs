@@ -1452,21 +1452,21 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 86,
-        "min": 493197,
-        "br": 162302
+        "min": 493203,
+        "br": 162294
       },
       "serverJS": {
-        "min": 437005,
-        "br": 126882
+        "min": 437011,
+        "br": 126889
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4959,
+          "htmlBr": 4954,
           "cssSheets": 1,
           "css": {
-            "min": 43033,
-            "br": 7555
+            "min": 43066,
+            "br": 7572
           },
           "stateBytes": 2221,
           "inlineBytes": 2466,

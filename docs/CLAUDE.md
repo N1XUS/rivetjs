@@ -141,3 +141,5 @@ Root `CLAUDE.md` · `apps/docs/content/` (public guides) · `README.md`.
 
 - `design/research/2026-10-23-scheduler-upstream-cases.md` — 306 expanded upstream cases (305 product): portable pinned-source links, explicit engine/visual adaptations and 44 T11/T12 gap/partial/style/axe closures. Equivalence mapping, not automatic parity certification.
 - `benchmarks/2026-10-23-scheduler.md` — Scheduler layout/render/cold-input/warm-drag evidence and unchanged unmet byte/whole-week-render budgets; includes integration gates, known full-UI failures and generated size baseline scope (minified JS versus generated compiled CSS measured verbatim, each with Brotli); original performance targets remain unchanged.
+
+Scheduler final report records real LTR/RTL month/all-day resize preview, commit and Escape checks; final compiled CSS is 18,408 bytes / 2,601 Brotli. Original SSR/cold closure limits and broad UI reds remain explicit.

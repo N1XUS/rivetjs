@@ -86,3 +86,5 @@ Rules: an untouched feature costs 0 bytes — if an entry's hash changes for an 
 ## See also
 
 Root `CLAUDE.md` (gates) · `libs/compiler/CLAUDE.md` (oracle) · `apps/ssr-bench/CLAUDE.md` (lanes) · `templates/CLAUDE.md`.
+
+Scheduler final baselines: UI compiled CSS +34 bytes / +5 Brotli; standalone demo resize/Escape JS +6 minified bytes and CSS +33 minified bytes. Selected updates preserve all unmeasured apps/lanes and UI component/page/bundle rows; full app-size and zero-cost checks independently verify the intentional delta.
