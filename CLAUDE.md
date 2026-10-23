@@ -104,3 +104,5 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 ## See also
 
 `docs/CLAUDE.md` (docs index) · `scripts/CLAUDE.md` · `templates/CLAUDE.md` · `README.md` (human intro) · `CONTRIBUTING.md`.
+
+Scheduler T12 (2026-10-23): actual per-view/state axe and independent scoped RTL are covered in focused headless/production suites. Date-identity month row keys keep resumed cells aligned with next/previous/Today and controlled date writes; event/preview updates retain their owners. Full upstream equivalence mapping: `docs/design/research/2026-10-23-scheduler-upstream-cases.md` (306 expanded cases,305 product; not automated parity certification). Performance evidence/unchanged unmet targets: `docs/benchmarks/2026-10-23-scheduler.md`. T13 owns public docs; T14 owns broad gates and new docs-example size baseline.

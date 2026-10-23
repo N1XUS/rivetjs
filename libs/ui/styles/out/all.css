@@ -23944,7 +23944,7 @@
     height: calc(var(--spacing, .25rem) * 7);
     font-size: var(--text-xs, .75rem);
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
-    color: var(--muted);
+    color: var(--foreground);
     border-radius: 3.40282e38px;
     justify-content: center;
     align-items: center;
@@ -23953,7 +23953,7 @@
   }
 
   .scheduler .rv-SchedulerMonth-cell[data-outside="true"] .rv-SchedulerMonth-day-number {
-    opacity: .5;
+    color: var(--muted);
   }
 
   .scheduler .rv-SchedulerMonth-cell[data-today="true"] .rv-SchedulerMonth-day-number, .scheduler .rv-SchedulerTimeGrid-day-header[data-today="true"] .rv-SchedulerTimeGrid-day-number {
@@ -24201,7 +24201,12 @@
   }
 
   .scheduler__event[data-ghost="true"] {
-    opacity: .5;
+    border: 1px dashed var(--scheduler-event-bar);
+    opacity: .9;
+  }
+
+  .scheduler__event[data-dragging="true"] {
+    opacity: .4;
   }
 
   .scheduler__event-title {
@@ -24228,7 +24233,34 @@
 
   .scheduler__handle {
     z-index: 2;
+    justify-content: center;
+    align-items: center;
+    display: flex;
     position: absolute;
+  }
+
+  .scheduler__handle > .rv-SchedulerEvent-grip {
+    opacity: 0;
+    width: 2px;
+    height: 12px;
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+    background: currentColor;
+    border-radius: 2px;
+  }
+
+  .scheduler__event:hover .rv-SchedulerEvent-grip, .scheduler__event:focus-visible .rv-SchedulerEvent-grip {
+    opacity: 1;
+  }
+
+  .scheduler__event[data-timed="true"] .rv-SchedulerEvent-grip {
+    width: 12px;
+    height: 2px;
+  }
+
+  @media (hover: none) {
+    .scheduler__handle > .rv-SchedulerEvent-grip {
+      opacity: 1;
+    }
   }
 
   .scheduler__event[data-timed="true"] > .scheduler__handle {
@@ -24355,18 +24387,23 @@
 
   .scheduler__menu {
     --r-inner: max(var(--r-min), calc(min(32px, var(--radius-3xl)) - 4px));
+    color: var(--foreground);
   }
 
-  .scheduler:dir(rtl) .scheduler__navigation svg {
-    transform: scaleX(-1);
+  :where([dir="ltr"]) {
+    --rv-scheduler-navigation-direction: 1;
   }
 
-  .scheduler:dir(rtl) .scheduler__navigation .button:not([aria-label]) svg {
-    transform: none;
+  :where([dir="rtl"]) {
+    --rv-scheduler-navigation-direction: -1;
+  }
+
+  .scheduler__navigation .button[aria-label] svg {
+    transform: scaleX(var(--rv-scheduler-navigation-direction, 1));
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .scheduler__event, .scheduler__more {
+    .scheduler__event, .scheduler__more, .scheduler__handle > .rv-SchedulerEvent-grip {
       transition: none;
     }
   }

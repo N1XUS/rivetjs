@@ -45,6 +45,21 @@ test("scheduler styles: standalone portaled panel, concentric radius, RTL and re
   assert.match(source, /prefers-reduced-motion: reduce/);
 });
 
+test("scheduler port: resize grips appear on hover/focus and remain visible without hover", () => {
+  const source = css();
+  assert.match(source, /\.rv-SchedulerEvent-grip\s*\{[^}]*opacity:\s*0/);
+  assert.match(source, /:hover[^}]*rv-SchedulerEvent-grip[^}]*opacity:\s*1/);
+  assert.match(source, /:focus-visible[^}]*rv-SchedulerEvent-grip[^}]*opacity:\s*1/);
+  assert.match(source, /@media\s*\(hover:\s*none\)[\s\S]*rv-SchedulerEvent-grip[^}]*opacity:\s*1/);
+});
+
+test("scheduler port: drag preview keeps its tone with a readable dashed preview channel", () => {
+  const source = css();
+  assert.match(source, /\[data-ghost="true"\]\s*\{[^}]*border[^}]*dashed[^}]*var\(--scheduler-event-bar\)/);
+  assert.match(source, /\[data-ghost="true"\]\s*\{[^}]*opacity:\s*\.9/);
+  assert.match(source, /\[data-dragging="true"\]\s*\{[^}]*opacity:\s*\.4/);
+});
+
 // Ported from @malva-ui/scheduler (src/lib/scheduler/scheduler-styles.spec.ts), MIT, © 2026 Malva UI.
 // Sass's four sheets → one generated Tailwind sheet; density tight/spacious/airy → this spec's three values;
 // continuation SVGs → logical square segment edges (the CDK has no continuation icon).
@@ -65,7 +80,8 @@ test("scheduler port: uses logical inline properties only", () => {
   assert.deepEqual(compiled().match(/^\s*(margin|padding|border)-(left|right)\s*:|^\s*(left|right)\s*:|text-align\s*:\s*(left|right)/gm) ?? [], []);
 });
 test("scheduler port: mirrors navigation chevrons and continuation edges", () => {
-  assert.match(compiled(), /scheduler[^{}]*navigation[^{}]*svg[^{}]*\{[^}]*scaleX\(-1\)/);
+  assert.match(compiled(), /scheduler[^{}]*navigation[^{}]*svg[^{}]*\{[^}]*scaleX\(var\(--rv-scheduler-navigation-direction, 1\)\)/);
+  assert.match(compiled(), /\[dir="rtl"\][^{}]*\{[^}]*--rv-scheduler-navigation-direction: -1/);
   assert.match(compiled(), /data-continues-before[^{}]*\{[^}]*border-start-start-radius: 0/);
   assert.match(compiled(), /data-continues-after[^{}]*\{[^}]*border-start-end-radius: 0/);
 });

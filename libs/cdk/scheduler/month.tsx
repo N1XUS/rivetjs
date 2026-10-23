@@ -65,7 +65,15 @@ export function SchedulerMonth<T>(): DOMValue {
 
   const rows = computed((): SchedulerMonthRow<T>[] => schedulerMonthLayout(ctx.events() as never, ctx.days(), ctx.rowLength(), ctx.visibleLanes()));
   const selection = computed(() => schedulerSelectionBounds(state.selection(), ctx.days()));
-  const rowKeys = computed(() => rows().map((row) => row.index), { equals: sameNumbers });
+  // Rows own these rendered dates. Adopted numeric-index rows otherwise retain the old cells on a date change.
+  // Event edits and drag previews leave these keys unchanged.
+  const rowKeys = computed(
+    () => {
+      const days = ctx.days();
+      return rows().map((row) => `${row.index}/${days.slice(row.startIndex, row.endIndex + 1).join(",")}`);
+    },
+    { equals: (a, b) => a.length === b.length && a.every((key, i) => key === b[i]) },
+  );
   const cells = computed((): SchedulerMonthCell<T>[] => {
     const days = ctx.days();
     const locale = ctx.locale();
@@ -205,7 +213,7 @@ export function SchedulerMonth<T>(): DOMValue {
         <div class="rv-SchedulerMonth-rows" role="rowgroup">
           <For each={rowKeys} by={(k) => k}>
             {(rowKey) => {
-              const rowIndex = rowKey();
+              const rowIndex = Number(rowKey().split("/")[0]);
               const dayIndices = computed(
                 () => {
                   const row = rows()[rowIndex];
@@ -310,6 +318,7 @@ export function SchedulerMonth<T>(): DOMValue {
             role="group"
             id={popoverId}
             aria-label={panel()?.label}
+            dir={grid() ? (getComputedStyle(grid()!).direction as "ltr" | "rtl") : undefined}
             tabIndex={-1}
             data-dragging={state.dragging() ? "true" : undefined}
             style={{ visibility: state.dragging() ? "hidden" : undefined }}

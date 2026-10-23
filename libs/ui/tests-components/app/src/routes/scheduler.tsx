@@ -27,6 +27,7 @@ export default function SchedulerStory() {
   const locale = signal("en-US");
   const custom = signal("first-override");
   const menuActions = signal(0);
+  const hiddenDays = signal<number[]>([]);
   return (
     <section
       id="scheduler-story"
@@ -61,8 +62,15 @@ export default function SchedulerStory() {
         <Button id="classes" size="sm" onPress={() => custom.set("second-override")}>
           Classes
         </Button>
+        <Button id="hidden-days" size="sm" onPress={() => hiddenDays.set(hiddenDays().length ? [] : [0, 6])}>
+          Hide weekends
+        </Button>
+        <Button id="jump-date" size="sm" onPress={() => date.set(date().startsWith("2031-04") ? "2031-03-04" : "2031-04-04")}>
+          Jump date
+        </Button>
       </div>
       <output id="menu-actions">{String(menuActions())}</output>
+      <output id="scheduler-event-count">{String(events().length)}</output>
       <Scheduler
         id="agenda"
         aria-label="Team schedule"
@@ -79,6 +87,7 @@ export default function SchedulerStory() {
         maxTime="20:00"
         businessHours={{ start: "09:00", end: "17:00" }}
         showWeekNumbers
+        hiddenDays={hiddenDays()}
         classNames={{ cell: custom(), slot: custom(), event: custom(), morePanel: custom(), menu: custom() }}
         renderSlotMenu={() => (
           <Dropdown.Item id="create" onAction={() => menuActions.set(menuActions() + 1)}>

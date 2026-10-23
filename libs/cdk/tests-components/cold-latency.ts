@@ -4,12 +4,13 @@
 // 4x CPU (CDP Network.emulateNetworkConditions + Emulation.setCPUThrottlingRate), cache disabled.
 //
 //   node libs/cdk/tests-components/cold-latency.ts [--dist <dir>] [--build] [--repeats 3] [--conditions fast,slow]
-//        [--targets sidebar,carousel,scroll-area] [--scenarios click,hoverClick] [--wait <ms>] [--trace] [--app cdk|ui]
+//        [--targets sidebar,carousel,scroll-area] [--scenarios click,hoverClick] [--wait <ms>] [--trace] [--lean] [--app cdk|ui]
 //
 // --app ui: the @rivetjs/ui story app (`libs/ui/tests-components/app`, targets `ui-*`); default cdk.
 // --dist: story build (default `app/$STORIES_DIST` or `app/dist`); --build: build it first (`app/serve.ts`).
 // --wait: settle time after load before the input (default 2500 fast / 6000 slow: idle / visible preloads done).
 // --trace: print every script request that finished after the input (url, ms after input, bytes).
+// --lean: disable router fetch-ahead; default keeps the production preload plan (bytes may already be downloaded).
 // Scenarios a target does not list are skipped. Run under the bench lock when numbers are compared across lanes.
 import { fileURLToPath } from "node:url";
 import { chromium, type Page } from "playwright";
@@ -110,7 +111,7 @@ if (flag("build")) {
   await buildApp();
 }
 
-const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {} });
+const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: flag("lean") ? { lean: true } : undefined });
 const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
 const median = (xs: number[]) => {
   const s = xs.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);

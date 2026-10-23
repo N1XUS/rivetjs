@@ -98,3 +98,5 @@ Component tests for `@rivetjs/cdk`: resumed story app (production build + node a
 ## See also
 - [../CLAUDE.md](../CLAUDE.md), [../tests/CLAUDE.md](../tests/CLAUDE.md)
 - `apps/cdk-docs/content/foundations/testing.md`, `docs/guides/resumability.md`, `docs/guides/aria.md`
+
+Scheduler T12: `scheduler-resume.test.ts` now verifies adopted SSRweek and shared day-view next/previous/Today navigation through actual date-bearing header and slot labels. `cold-latency.ts --targets scheduler-more --lean` disables router fetch-ahead for cold-network measurements; without `--lean` it retains default production preload behavior, which can download the renderer before input. `--trace` reports input-time requests/errors; sampled timings/encoded network bytes are distinct from per-file min+Brotli closure size.

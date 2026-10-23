@@ -1,7 +1,7 @@
 // Server rendering (resume mode) of `@rivetjs/cdk/scheduler` (Rivet, spec §6): the month view's HTML is final — every
 // visible chip with its lane / span custom properties, `+N more` counts and names, labels, weekday headers — nothing
 // boots (`data-boot` absent), the whole tree serializes (render throws on a non-resumable capture), and a 1k-event
-// month renders within budget (cost log).
+// month cost is logged. The full1,000-visible-event week logs against the unchanged spec budget.
 import { describe, expect, it } from "vitest";
 import { importModule, renderHtml } from "./server.ts";
 
@@ -59,9 +59,17 @@ const thousand = Array.from({ length: 1000 }, (_, i) => {
 export function Thousand() {
   return <Scheduler events={thousand} defaultDate="2031-03-10" timeZone="UTC" locale="en-US" />;
 }
+const weekThousand = Array.from({ length: 1000 }, (_, i) => {
+  const d = "2031-03-" + String(3 + i % 7).padStart(2, "0");
+  const hour = String(8 + i % 10).padStart(2, "0");
+  return { id: "w" + i, title: "Week event " + i, start: d + "T" + hour + ":00", end: d + "T" + hour + ":45" };
+});
+export function ThousandWeek() {
+  return <Scheduler events={weekThousand} defaultView="week" defaultDate="2031-03-04" timeZone="UTC" locale="en-US" firstDayOfWeek="mon" showCurrentTime={false} />;
+}
 `;
 
-type Fixture = Record<"Month" | "Week" | "Thousand", () => unknown>;
+type Fixture = Record<"Month" | "Week" | "Thousand" | "ThousandWeek", () => unknown>;
 const load = () => importModule<Fixture>("scheduler-ssr-fixture.tsx", source);
 
 describe("Scheduler SSR", () => {
@@ -109,5 +117,25 @@ describe("Scheduler SSR", () => {
     console.info(`[scheduler-ssr] 1k-event month render ${ms.toFixed(1)} ms, ${(html.length / 1024).toFixed(0)} KB`);
     expect(html).toContain("+");
     expect(ms).toBeLessThan(200);
+  });
+
+  it("1,000 events distributed inside the visible week: whole render cost", async () => {
+    const { ThousandWeek } = await load();
+    for (let i = 0; i < 50; i++) await renderHtml(() => ThousandWeek());
+    const times: number[] = [];
+    let html = "";
+    for (let i = 0; i < 50; i++) {
+      const start = performance.now();
+      html = await renderHtml(() => ThousandWeek());
+      times.push(performance.now() - start);
+    }
+    times.sort((a, b) => a - b);
+    const median = (times[24]! + times[25]!) / 2;
+    console.info(
+      `[scheduler-ssr] 1k-event week whole render: median ${median.toFixed(3)} ms, min ${times[0]!.toFixed(3)}, max ${times[49]!.toFixed(3)}, ${new TextEncoder().encode(html).length} bytes; 50 warmups + 50 measured; budget <6 ms: ${median < 6 ? "PASS" : "UNMET"}`,
+    );
+    expect((html.match(/data-rv-event-id="w\d+"/g) ?? []).length).toBe(1000);
+    // Timing is reported against the unchanged spec budget; render completeness is portable across hosts.
+    expect(html).toContain('data-view="week"');
   });
 });

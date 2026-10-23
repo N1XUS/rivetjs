@@ -158,3 +158,5 @@ npx prettier --print-width 160 --write <files>
 - Root `../../CLAUDE.md`; `docs/guides/aria.md` (package guide), `docs/guides/resumability.md`, `docs/design/specs/2026-10-03-cdk-and-aria-design.md`, `2026-10-04-cdk-aria-implementation-design.md`.
 - Docs site: `apps/cdk-docs` (`content/components/*.md`, `content/foundations/*.md`, `examples/`, `api.config.ts` = TypeDoc entry → file map).
 - `libs/testing` (`@rivetjs/testing`, dev-only test helpers), `libs/kit/transition`.
+
+Scheduler T12: `tests/scheduler-a11y.browser.test.tsx` scans actual month/week/day, selected/hidden-day states and open menus/overflow; `scheduler-rtl.browser.test.tsx` checks independent language/direction and portaled chip keyboard behavior. Overflow/menu content stamps its anchor's computed direction. Date-identity month row keys refresh resumed calendar cells when the actual dates change, while event/drag updates retain keys. Mapping/limitations: `../../docs/design/research/2026-10-23-scheduler-upstream-cases.md`, `../../docs/benchmarks/2026-10-23-scheduler.md`.

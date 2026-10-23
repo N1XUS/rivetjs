@@ -303,6 +303,27 @@ describe("scheduler state: commitChange", () => {
   const normalized = (state: ReturnType<typeof createSchedulerState>, id: string) => schedulerNormalizedEvents(state).find((n) => n.event.id === id)!;
   const wall = (y: number, m: number, d: number, h = 0, min = 0) => day(y, m, d) * 1440 + h * 60 + min;
 
+  it("ignores a stale normalized event after its event is removed, before vetoes or notifications", () => {
+    const list = signal<readonly SchedulerEvent[]>(events());
+    const canMove = vi.fn(() => true);
+    const canResize = vi.fn(() => true);
+    const onEventsChange = vi.fn();
+    const onEventMove = vi.fn();
+    const onEventResize = vi.fn();
+    const state = createSchedulerState({ events: list, timeZone: "UTC", canMove, canResize, onEventsChange, onEventMove, onEventResize });
+    const stale = normalized(state, "a");
+    const remaining = list().filter((event) => event.id !== "a");
+    list.set(remaining);
+    for (const kind of ["move", "resize"] as const) {
+      expect(
+        commitChange(state, { kind, normalized: stale, next: { start: wall(2026, 9, 9, 14), end: wall(2026, 9, 9, 15), allDay: false }, source: "pointer" }),
+      ).toBe(false);
+    }
+    expect(list()).toBe(remaining);
+    for (const callback of [canMove, canResize, onEventsChange, onEventMove, onEventResize]) expect(callback).not.toHaveBeenCalled();
+    expect(state.announcement()).toEqual(["", ""]);
+  });
+
   it("move: new array, form kept, onEventsChange + onEventMove, announcement", () => {
     const initial = events();
     const onEventsChange = vi.fn();

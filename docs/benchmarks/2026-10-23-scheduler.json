@@ -1,0 +1,178 @@
+{
+  "date": "2026-10-23",
+  "environment": "M4 Pro desktop; Node26.5.1; ordinary desktop apps active, no quiet-host claim. Heavy commands serialized, maxWorkers1, one Chromium project at a time. Process-tree RSS not measured (sandbox ps restriction).",
+  "layout": {
+    "date": "2026-10-23T17:31:00.973Z",
+    "node": "v26.5.1",
+    "method": "1,000 DateValueString events; normalization + slicing + clustering/lanes, 50 warmups + 50 measured runs; no rendering. Same M4 Pro desktop with ordinary apps active.",
+    "week": {
+      "medianMs": 0.4128544999999946,
+      "minMs": 0.35712499999999636,
+      "maxMs": 0.5027919999999995,
+      "runs": 50
+    },
+    "month": {
+      "medianMs": 0.42799950000001274,
+      "minMs": 0.4172499999999957,
+      "maxMs": 0.5339170000000024,
+      "runs": 50
+    }
+  },
+  "wholeWeekRender": {
+    "events": 1000,
+    "warmups": 50,
+    "samples": 50,
+    "medianMs": 11.072,
+    "minMs": 9.77,
+    "maxMs": 16.459,
+    "htmlUtf8Bytes": 1067231,
+    "budgetMs": 6,
+    "budgetStatus": "UNMET"
+  },
+  "warmDrag": {
+    "samples": 12,
+    "layoutPassesPerInputFrame": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "max": 1,
+    "layoutEvents": 11,
+    "layoutDurationMs": 3.181,
+    "synchronousLayoutWithStack": 0
+  },
+  "renderProfile": {
+    "method": "V8 CPU500us samples; 50warmups then200whole-week renders, compiler/import outside profile",
+    "samples": 3010,
+    "groups": {
+      "server HTML": 972,
+      "GC": 267,
+      "other": 1296,
+      "Scheduler": 373,
+      "derived recording": 100,
+      "resume serialization": 2
+    },
+    "dateFormatterSelfSamples": 433
+  },
+  "coldDefaultFetchAhead": [
+    {
+      "condition": "fast",
+      "scenario": "click",
+      "latency": "p50 66.9 ms [52 67 67]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "fast",
+      "scenario": "hoverClick",
+      "latency": "p50 56.9 ms [56 57 57]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "fast",
+      "scenario": "keyClick",
+      "latency": "p50 21.5 ms [18 22 39]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "fast",
+      "scenario": "tapClick",
+      "latency": "p50 54.5 ms [55 58 53]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "slow",
+      "scenario": "click",
+      "latency": "p50 107.8 ms [107 120 108]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "slow",
+      "scenario": "hoverClick",
+      "latency": "p50 57.0 ms [57 58 57]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "slow",
+      "scenario": "keyClick",
+      "latency": "p50 64.4 ms [66 64 64]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    },
+    {
+      "condition": "slow",
+      "scenario": "tapClick",
+      "latency": "p50 91.3 ms [91 92 89]",
+      "beforeInput": "JS before 93 req 230.5 KB",
+      "afterInput": "after input 0 req",
+      "total": "total 230.5 KB"
+    }
+  ],
+  "coldLean": [
+    {
+      "condition": "fast",
+      "scenario": "click",
+      "latency": "p50 86.8 ms [97 87 83]",
+      "beforeInput": "JS before 0 req 0.0 KB",
+      "afterInput": "after input 85 req",
+      "total": "total 226.0 KB"
+    },
+    {
+      "condition": "slow",
+      "scenario": "click",
+      "latency": "p50 3583.4 ms [3603 3583 3572]",
+      "beforeInput": "JS before 0 req 0.0 KB",
+      "afterInput": "after input 85 req",
+      "total": "total 226.0 KB"
+    }
+  ],
+  "coldTimeouts": 0,
+  "coldPageErrors": 0,
+  "byteBudgetStatus": "UNMET; static renderer adoption includes state/intl; existing <=6KiB intent and <=14KiB first-drag-only targets are unchanged",
+  "fuzz": {
+    "routes": 2,
+    "steps": 78,
+    "findings": 3,
+    "existingPinsRetained": true,
+    "cleanParityClaim": false,
+    "detail": [
+      "/scheduler step1: CSR-only aria-describedby=#3",
+      "/scheduler step13 after context-menu Escape: resumed tabindex=0 vs CSR tabindex=-1",
+      "/scheduler-zone load: resumed preserved server UTC09:00/top37.5% vs fresh CSR local12:00/top50%, plus CSR-only describedby"
+    ]
+  },
+  "pending": [
+    "T14 all-project gates",
+    "T14 zero-cost baseline reconciliation for intended runtime change",
+    "T14 full size and new Scheduler docs-example baseline after T13",
+    "T13 public docs and generated API/AI outputs"
+  ],
+  "currentColdRequestedFiles": {
+    "scripts": 87,
+    "emittedMinifiedBytes": 533950,
+    "sumPerFileBrotliBytes": 176920,
+    "includesPageAndRuntime": true,
+    "stateAndIntlIncluded": true
+  }
+}

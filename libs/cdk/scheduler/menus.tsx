@@ -145,6 +145,7 @@ export function SchedulerMenu<T>(props: {
           <Menu
             class={schedulerPart("rv-SchedulerMenu", props.classNames?.(), "menu")}
             aria-label={open.label}
+            dir={getComputedStyle(open.anchor).direction as "ltr" | "rtl"}
             autoFocus={open.point ? true : "first"}
             onClose={() => close()}
           >

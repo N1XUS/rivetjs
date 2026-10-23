@@ -11,7 +11,7 @@
 //   scrollToCurrentTime … bare attribute" has no counterpart (no attribute coercion in JSX).
 // - "announces a period change once, from wherever the range moved" (a bound write announces): Rivet ruling —
 //   caller writes to its own `date` never fire `onVisibleRangeChange` nor announce; the case asserts that instead.
-// - axe sweeps → T12 (`scheduler-a11y`); RTL toolbar: `dir="rtl"` wrapper instead of `MlvRtlService`.
+// - actual axe sweeps → `scheduler-a11y.browser.test.tsx`; RTL toolbar: `dir="rtl"` wrapper instead of `MlvRtlService`.
 import { afterEach, describe, expect, it } from "vitest";
 import { signal } from "@rivetjs/reactivity";
 import { cleanup, flush, render } from "@rivetjs/runtime/testing";

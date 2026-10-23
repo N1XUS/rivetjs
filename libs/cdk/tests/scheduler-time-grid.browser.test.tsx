@@ -209,6 +209,10 @@ describe("SchedulerTimeGrid", () => {
     expect(segments.length).toBe(2);
     expect(segments[0]!.getAttribute("data-continues-after")).toBe("true");
     expect(segments[1]!.getAttribute("data-continues-before")).toBe("true");
+    for (const segment of segments) {
+      expect(segment.getAttribute("aria-label")).toBe("C, Mar 4, 10:00 PM to Mar 5, 2:00 AM");
+      expect(segment.querySelector(".rv-SchedulerEvent-time > bdi")).not.toBeNull();
+    }
     minTime.set("08:00");
     maxTime.set("18:00");
     await settle();
@@ -468,6 +472,17 @@ describe("SchedulerTimeGrid initial scroll", () => {
     schedulerScrollToTime(state(), "14:00");
     await settle();
     expect(scroller().scrollTop).toBe(1120);
+  });
+
+  it("an imperative setView and same-tick scroll request override initial centering", async () => {
+    const { scroller, state } = setup({ scrollToNow: true });
+    await settle();
+    schedulerSetView(state(), "day");
+    schedulerScrollToTime(state(), "14:00");
+    await settle();
+    expect(state().view.value()).toBe("day");
+    expect(scroller().scrollTop).toBe(1120);
+    expect(state().scrollRequest()).toBeNull();
   });
 
   it("does not let a past scrollToTime win over a later axis change", async () => {

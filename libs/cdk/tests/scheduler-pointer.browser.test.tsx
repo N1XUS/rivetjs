@@ -277,14 +277,24 @@ const css = `
 
 let sheet: HTMLStyleElement | null = null;
 
-async function setup(options: { view?: SchedulerView; selectable?: () => boolean; readOnly?: () => boolean; external?: boolean; placeholder?: boolean } = {}) {
+async function setup(
+  options: {
+    view?: SchedulerView;
+    selectable?: () => boolean;
+    readOnly?: () => boolean;
+    external?: boolean;
+    placeholder?: boolean;
+    events?: SchedulerEvent[];
+  } = {},
+) {
   sheet = document.createElement("style");
   sheet.textContent = css;
   document.head.append(sheet);
   const ranges: SchedulerRangeSelectEvent[] = [];
   const drops: SchedulerExternalDropEvent[] = [];
   const clicks: string[] = [];
-  const events = signal<readonly SchedulerEvent[]>([{ id: "a", title: "A", start: "2031-03-04T09:00", end: "2031-03-04T10:00" }]);
+  const slotClicks: string[] = [];
+  const events = signal<readonly SchedulerEvent[]>(options.events ?? [{ id: "a", title: "A", start: "2031-03-04T09:00", end: "2031-03-04T10:00" }]);
   const selectable = options.selectable ?? (() => true);
   const readOnly = options.readOnly ?? (() => false);
   const { container } = render(() => (
@@ -309,13 +319,14 @@ async function setup(options: { view?: SchedulerView; selectable?: () => boolean
         isReadOnly={readOnly()}
         dropGroup="board"
         onRangeSelect={(range) => ranges.push(range)}
+        onSlotAction={(slot) => slotClicks.push(String(slot.date))}
         onExternalDrop={options.external ? (drop) => drops.push(drop) : undefined}
       />
     </div>
   ));
   await settle();
   const root = container.querySelector<HTMLElement>("[data-rv-scheduler]")!;
-  return { root, ranges, drops, clicks };
+  return { root, ranges, drops, clicks, slotClicks };
 }
 
 afterEach(async () => {
@@ -354,6 +365,61 @@ async function select(from: Element, to: Element, release = true) {
 }
 
 describe("Scheduler range selection", () => {
+  it("a no-travel press on a real timed slot remains a single slot click", async () => {
+    const { root, ranges, slotClicks } = await setup();
+    const slot = slotOf(root, 1, 600);
+    const r = rect(slot);
+    const x = r.left + r.width / 2,
+      y = r.top + r.height / 2;
+    dispatchPointerEvent(slot, "pointerdown", x, y, undefined, undefined, { pointerId: 1, isPrimary: true, pointerType: "mouse", button: 0 });
+    await settle();
+    dispatchPointerEvent(slot, "pointerup", x, y, undefined, undefined, { pointerId: 1 });
+    dispatchMouseEvent(slot, "click", x, y);
+    await settle();
+    expect(slotClicks).toEqual(["2031-03-04T10:00:00"]);
+    expect(ranges).toEqual([]);
+    expect(selected(root)).toEqual([]);
+  });
+
+  it("month: selection off preserves the trailing click, and a later outside press abandons a pending selection", async () => {
+    const selectable = signal(false);
+    const { root, ranges, slotClicks } = await setup({ view: "month", selectable: () => selectable() });
+    await select(cellOf(root, 7), cellOf(root, 9));
+    expect(ranges).toEqual([]);
+    expect(slotClicks).toEqual(["2031-03-05"]);
+    expect(selected(root)).toEqual([]);
+    selectable.set(true);
+    await settle();
+    const from = cellOf(root, 7);
+    from.focus();
+    dispatchKeyboardEvent(from, "keydown", undefined, "ArrowRight", { shift: true });
+    await settle();
+    expect(selected(root)).toHaveLength(2);
+    const outside = cellOf(root, 10),
+      r = rect(outside);
+    dispatchPointerEvent(outside, "pointerdown", r.left + 10, r.top + 45, undefined, undefined, {
+      pointerId: 1,
+      isPrimary: true,
+      pointerType: "mouse",
+      button: 0,
+    });
+    await settle();
+    expect(selected(root)).toEqual([]);
+    dispatchPointerEvent(document, "pointercancel", r.left + 10, r.top + 45, undefined, undefined, { pointerId: 1 });
+    expect(ranges).toEqual([]);
+  });
+
+  it("month: pressing a chip or +N more never starts range selection", async () => {
+    const events = Array.from({ length: 5 }, (_, i) => ({ id: String(i), title: `E${i}`, start: "2031-03-04T09:00", end: "2031-03-04T10:00" }));
+    const { root, ranges } = await setup({ view: "month", events });
+    for (const target of [root.querySelector<HTMLElement>("[data-rv-event-id]")!, root.querySelector<HTMLElement>("[data-rv-more]")!]) {
+      await select(target, cellOf(root, 10), false);
+      expect(selected(root)).toEqual([]);
+      dispatchPointerEvent(document, "pointerup", 0, 0, undefined, undefined, { pointerId: 1 });
+      await settle();
+    }
+    expect(ranges).toEqual([]);
+  });
   for (const view of ["month", "week"] as const) {
     it(`${view}: extends a TOUCH drag past the pressed cell, which keeps the moves`, async () => {
       const { root, ranges } = await setup({ view });

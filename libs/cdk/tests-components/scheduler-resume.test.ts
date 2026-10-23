@@ -57,6 +57,55 @@ test("scheduler without timeZone: a resumed recompute keeps the server's zone (n
   await context.close();
 });
 
+test("scheduler adopted week/day: date navigation updates the actual headers and slot labels", async () => {
+  const page = await s.browser.newPage();
+  const seen = watch(page);
+  try {
+    await page.goto(s.origin + "/scheduler-zone");
+    await page.waitForLoadState("networkidle");
+    const header = page.locator("#zoned .rv-SchedulerTimeGrid-day-header").first();
+    const slot = page.locator("#zoned .rv-SchedulerTimeGrid-slot").first();
+    const originalHeader = await header.getAttribute("aria-label");
+    const originalSlot = await slot.getAttribute("aria-label");
+    const today = await page.locator('#zoned .rv-SchedulerTimeGrid-day-header[data-today="true"]').getAttribute("aria-label");
+    for (const view of ["week", "day"] as const) {
+      if (view === "day") {
+        await page.getByRole("radio", { name: "Day", exact: true }).click();
+        await page.waitForFunction(() => document.querySelector("#zoned")?.getAttribute("data-view") === "day");
+        assert.equal(await header.getAttribute("aria-label"), today);
+      }
+      const beforeHeader = await header.getAttribute("aria-label");
+      const beforeSlot = await slot.getAttribute("aria-label");
+      const title = await page.locator("#zoned .rv-SchedulerToolbar-title").textContent();
+      await page.getByRole("button", { name: `Next ${view}`, exact: true }).click();
+      await page.waitForFunction((before) => document.querySelector("#zoned .rv-SchedulerToolbar-title")?.textContent !== before, title);
+      assert.notEqual(await header.getAttribute("aria-label"), beforeHeader, `${view} header follows date`);
+      assert.notEqual(await slot.getAttribute("aria-label"), beforeSlot, `${view} slot follows date`);
+      await page.getByRole("button", { name: `Previous ${view}`, exact: true }).click();
+      await page.waitForFunction(
+        (before) => document.querySelector("#zoned .rv-SchedulerTimeGrid-day-header")?.getAttribute("aria-label") === before,
+        beforeHeader,
+      );
+      assert.equal(await slot.getAttribute("aria-label"), beforeSlot);
+      await page.getByRole("button", { name: `Next ${view}`, exact: true }).click();
+      await page.waitForFunction(
+        (before) => document.querySelector("#zoned .rv-SchedulerTimeGrid-day-header")?.getAttribute("aria-label") !== before,
+        beforeHeader,
+      );
+      await page.getByRole("button", { name: "Today", exact: true }).click();
+      await page.waitForFunction(
+        (before) => document.querySelector("#zoned .rv-SchedulerTimeGrid-day-header")?.getAttribute("aria-label") === before,
+        beforeHeader,
+      );
+      assert.equal(await slot.getAttribute("aria-label"), beforeSlot);
+    }
+    assert.ok(originalHeader && originalSlot);
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 /** Which loaded scripts carry the scheduler state (`state.ts`) / locale tables (`intl.ts`) code. */
 async function heavyScripts(page: import("playwright").Page, scripts: readonly string[]): Promise<string[]> {
   return page.evaluate(async (urls) => {

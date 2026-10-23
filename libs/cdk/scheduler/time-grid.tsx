@@ -242,9 +242,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                       data-today={column().today ? "true" : undefined}
                       data-weekend={column().weekend ? "true" : undefined}
                     >
-                      <span class="rv-SchedulerTimeGrid-weekday" aria-hidden="true">
-                        {column().weekday}
-                      </span>
+                      <span class="rv-SchedulerTimeGrid-weekday">{column().weekday}</span>
                       <span class="rv-SchedulerTimeGrid-day-number" aria-hidden="true">
                         {column().dayNumber}
                       </span>

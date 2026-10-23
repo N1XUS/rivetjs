@@ -1,6 +1,6 @@
 # Scheduler (agenda) — port spec
 
-Lane AGENDA, phase 1 (design only). Source: the user's own Angular library `@malva-ui/scheduler` (`angular-ui-lib/libs/scheduler`, MIT, © 2026 Malva UI; ~15.5 k lines incl. 302 spec cases). Targets: headless `@rivetjs/cdk/scheduler` + styled `@rivetjs/ui/scheduler` (`Scheduler`), covering every public HeroUI Pro **Agenda** demo section (clean-room: section names only, `HERO-AUDIT.md` §2 "L: agenda (7)") plus malva's eight docs examples.
+Lane AGENDA, phase 1 (design only). Source: the user's own Angular library `@malva-ui/scheduler` (`angular-ui-lib/libs/scheduler`, MIT, © 2026 Malva UI; ~15.5 k lines; 306 expanded runtime cases including one helper, 305 product cases). Targets: headless `@rivetjs/cdk/scheduler` + styled `@rivetjs/ui/scheduler` (`Scheduler`), covering every public HeroUI Pro **Agenda** demo section (clean-room: section names only, `HERO-AUDIT.md` §2 "L: agenda (7)") plus malva's eight docs examples.
 
 ## 0. Rulings / scope
 
@@ -118,7 +118,7 @@ Grid columns flip via `dir` (CSS logical properties only: `inset-inline-start`, 
 
 - Server output is final: range, days, layout (lanes, clusters, geometry custom properties), labels, business-hours bands, `+N more` counts. No layout read on the client before input; no `data-boot` at load except the time-grid initial-scroll effect (week / day only; month: none) and the now-line (`visible`). Story asserts: month view `data-boot` absent.
 - State serializes: events as given if strings; `DateValue` instances in a user signal are **refused by the resume format** → docs + dev error point to `DateValueString` (R2). Internal state stores strings / integers only.
-- Chunks: grid key / click / focus handlers (`behaviour.ts`) plan `intent`; `preload="intent"` on the view roots; `drag.ts` + `pointer.ts` are `import()`ed on the first pointerdown on a chip / handle / empty cell (press replayed with original timing, drag-drop `_pointerDownFromHost` pattern) → first drag loads only the drag chunk; menus / popover chunks on first open. **As built (T8, measured 2026-10-12):** the grid handlers sit in `month.tsx` / `time-grid.tsx` and capture the root context, so the first focus / key on a resumed month fetches the full graph (state, intl, layout, menu, popover); later input fetches nothing. T10 moves them onto a small signals + server-attribute context with lazily reached actions and imports `select.ts`' state code only after the 5 px threshold (`tests-components/scheduler-resume.test.ts` `test.fails` until then).
+- Current derived chunks: first focus/key/press adopts the ordinary renderer and its static state/intl/menu/popover closure; lazy `drag.ts`/`pointer.ts`/`select.ts` load on relevant gestures. Source leaves stay split by view, but a cold first drag does not have a drag-only renderer closure. The historical captured-context/`preload="intent"` plan is obsolete; see the T10 ruling and T12 measured limits below.
 - Render functions are resumable (RAC rule); menu / popover content = function children (closed-overlay rule).
 - Event handlers inline arrows over a `ctx` literal; `canMove` / `canResize` user functions must be inline or local consts (docs).
 
@@ -139,7 +139,7 @@ Rules from masonry apply: no `<style>` element, frozen style objects, geometry a
 
 `SchedulerMessageKey` = malva keys `scheduler`, `today`, `previous.{month,week,day}`, `next.{…}`, `month`, `week`, `day`, `viewSwitch`, `allDay`, `moreEvents.{one,other}`, `moreEventsLabel.{one,other}`, `gridLabel.{month,week,day}`, `slotLabel`, `dayLabelToday`, `eventLabel`, `eventLabelAllDay`, `dragHint`, `eventMoved`, `eventResized`, `moveRejected`, `rangeChanged`, `selectionHint`, `eventMenu`, `slotMenu` + Rivet `weekNumber`. 14 locales ported from malva packs, locale tags normalized to cdk form (`de-DE`, `zh-Hans` …; fallback through `getStringsForLocale`). App-level `@rivetjs/i18n` catalogs pass overrides through `strings`.
 
-## 9. Tests to port (malva 302 cases → vitest)
+## 9. Upstream test mapping (305 product runtime cases → vitest)
 
 | malva spec | cases | Rivet target (project) |
 | --- | --- | --- |
@@ -148,15 +148,17 @@ Rules from masonry apply: no `<style>` element, frozen style objects, geometry a
 | `layout/scheduler-focus.spec.ts` | 10 | `scheduler-focus.test.ts` (cdk) |
 | `drag/scheduler-pointer.spec.ts` | 12 | `scheduler-pointer.browser.test.tsx` (cdk-browser) |
 | `drag/scheduler-drag.service.spec.ts` | 20 | `scheduler-drag.browser.test.tsx` (cdk-browser; SortableJS specifics → DragRef equivalents, listed per case) |
-| `event/scheduler-event.spec.ts` | 50 | `scheduler-event.browser.test.tsx` |
+| `event/scheduler-event.spec.ts` | 50 | `scheduler-drag`, `scheduler-keyboard`, `scheduler-month`, `scheduler-time-grid`, `scheduler-rtl` browser suites plus UI style/production cases |
 | `month/scheduler-month.spec.ts` | 49 | `scheduler-month.browser.test.tsx` |
 | `time-grid/scheduler-time-grid.spec.ts` | 58 | `scheduler-time-grid.browser.test.tsx` |
-| `scheduler/scheduler.spec.ts` | 36 | `scheduler.browser.test.tsx` |
+| `scheduler/scheduler.spec.ts` | 39 | `scheduler-root.browser.test.tsx`, `scheduler-state.test.ts`, per-view `scheduler-a11y.browser.test.tsx`, `scheduler-rtl.browser.test.tsx` |
 | `scheduler/scheduler-context-menu.spec.ts` | 21 | `scheduler-menu.browser.test.tsx` |
 | `scheduler/scheduler-styles.spec.ts` | 6 | `libs/ui/tests/scheduler-styles.test.ts` (ui; pitch / token assertions on compiled CSS) |
 | `testing/*` | 1 | test helpers `tests/scheduler-fixtures.ts` |
 
-Plus Rivet-only: `scheduler-ssr.test.ts` (server HTML final, 1k-event cost log, no `data-boot` in month), `tests-components/scheduler-resume.test.ts` (resumed page: first drag loads only the drag chunk, keyboard move cold, menu open cold), RTL duplicates, ui story `/scheduler` (screenshots light / dark / compact / rtl). Every case keeps its malva title (traceability), exceptions listed in `libs/cdk/scheduler/CLAUDE.md`.
+The original 302 count counted ordinary product declarations only. The single `it.each` expands across three views: 306 total runtime cases including one helper, 305 product. The [full pinned-source ledger](../research/2026-10-23-scheduler-upstream-cases.md) distinguishes 185 title correspondences, 105 inspected/composed equivalents and 16 explicit deviations; it is not an automated parity certification.
+
+Rivet-only checks cover final SSR markup/1,000-visible-week output, real cold focus/key/click/menu/drag behavior, independent scoped RTL/language, production date navigation, styled contrast and real warm-drag layout traces. The derived adopted renderer loads its static closure; the old drag-only/no-state cold-key promises are explicitly unmet (T10 ruling below).
 
 ## 10. Docs
 
@@ -181,4 +183,9 @@ The current runtime adopts ordinary compiled DOM component functions, rather tha
 
 All SchedulerOptions fields, events/view/date and root DOM props now have post-mount tests. Read-once callbacks/defaults/renderers/id/dropGroup are documented in JSDoc. External drop accepts a default source placeholder: entering the hit area hides its layout box, exiting/dropping restores its exact display style. The source stays in its list; an actual month-cell drop emits an all-day range ending at the next midnight. Upstream parity additions cover both captured-touch selection paths, a press inside pending selection, and one owning-column geometry read per resize. The historical five missing case names were not preserved; existing ancestor-RTL and inclusive all-day announcement coverage is recorded rather than relabeled as new work.
 
-Built-story measurement: cold focus / ArrowRight / Escape / plain click requested 86 unique scripts (531,989 raw bytes; 176,254 bytes summed per-file Brotli), including the outer page/runtime closure. This is an actual network-request set, not the scheduler-only bundle size or input latency. Cold latency is deferred to T12 via `cold-latency.ts --targets scheduler-more`.
+Built-story measurement: cold focus / ArrowRight / Escape / plain click requested 86 unique scripts (531,989 raw bytes; 176,254 bytes summed per-file Brotli), including the outer page/runtime closure. This is an actual network-request set, not the scheduler-only bundle size or input latency. T12 records default fetch-ahead and `--lean` cold-input latency separately in the performance report.
+
+## T12 as built (2026-10-23)
+Real per-view/state axe scans run on headless fixtures and the styled production story (light and dark), including selected/hidden-day month, overflow and slot/event menus. Independent dir/lang and nested explicit direction scopes are tested separately, including portaled chip keyboard behavior. UI chevrons use a direction-preserving inherited namespaced custom property; CalendarDays is unchanged. Month rows are keyed by rendered date identities so resumed next/previous/Today and controlled date writes update actual cells/events; ghost/event edits do not change those keys. Adopted week/day date-bearing headers and slots are separately checked.
+
+Measured limits remain unchanged: layout week 0.413 ms/month 0.428 ms (normalization included, 50 warmups + 50 measured runs) passes < 2 ms, while 1,000-visible-event whole-week rendering median 11.072 ms/1,067,231 UTF-8 bytes misses < 6 ms. See [the performance report](../../benchmarks/2026-10-23-scheduler.md) for cold/fetch-ahead distinction, actual closure bytes, warm-frame traces, profiling and hardware caveats. The old byte/no-state budgets remain unmet; no target was ratcheted. Full all-project/zero-cost/size/docs gates and a Scheduler docs-example size baseline remain T14 after T13.

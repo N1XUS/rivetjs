@@ -264,6 +264,7 @@ describe("SchedulerMonth (Rivet)", () => {
     const t1 = cell(8).querySelector<HTMLElement>('[data-rv-event-id="t1"]')!;
     expect(t1.getAttribute("role")).toBe("button");
     expect(t1.querySelector(".rv-SchedulerEvent-time")?.textContent).toBe("9:00 AM");
+    expect(t1.querySelector(".rv-SchedulerEvent-time > bdi")?.textContent).toBe("9:00 AM");
     expect(t1.querySelector(".rv-SchedulerEvent-title")?.textContent).toBe("A");
     expect(t1.getAttribute("aria-label")).toBe("A, 9:00 AM to 10:00 AM");
     const span = cell(7).querySelector<HTMLElement>('[data-rv-event-id="span"]')!;

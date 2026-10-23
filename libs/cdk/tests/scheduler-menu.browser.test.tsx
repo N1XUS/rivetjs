@@ -7,7 +7,7 @@
 //   `settle()` waits for the close and the focus scope's restore.
 // - "forwards the resolved density to the detached panel" → the panel carries its own `rv-SchedulerMenu*` classes
 //   (cdk has no density; `@rivetjs/ui` styles the panel, T11).
-// - "passes axe with the menu open" → structural ARIA check (role / name / items) here; axe runs in T12.
+// - "passes axe with the menu open" → structural ARIA check (role / name / items) here; actual axe scans run in scheduler-a11y.browser.test.tsx and the production UI story suite.
 import { afterEach, describe, expect, it } from "vitest";
 import { signal } from "@rivetjs/reactivity";
 import { cleanup, flush, render } from "@rivetjs/runtime/testing";

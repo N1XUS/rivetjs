@@ -76,6 +76,8 @@ interface Setup {
   canMove?: (event: SchedulerEvent, next: unknown) => boolean;
   canResize?: (event: SchedulerEvent, next: unknown) => boolean;
   visibleLanes?: number;
+  projectedControl?: boolean;
+  eventsSource?: () => readonly SchedulerEvent[];
 }
 
 async function setup(options: Setup = {}) {
@@ -90,7 +92,8 @@ async function setup(options: Setup = {}) {
   const { container } = render(() => (
     <div dir={options.dir}>
       <Scheduler
-        events={events}
+        events={options.eventsSource ?? events}
+        onEventsChange={options.eventsSource ? () => {} : undefined}
         defaultView={options.view ?? "week"}
         defaultDate="2031-03-04"
         timeZone="UTC"
@@ -104,6 +107,16 @@ async function setup(options: Setup = {}) {
         onEventMove={(change) => moves.push(change)}
         onEventResize={(change) => resizes.push(change)}
         stateRef={stateRef}
+        renderEvent={
+          options.projectedControl
+            ? (event) => (
+                <>
+                  <span>{event.title}</span>
+                  <button type="button">Inspect</button>
+                </>
+              )
+            : undefined
+        }
       />
     </div>
   ));
@@ -230,6 +243,44 @@ describe("Scheduler drag-move (time grid)", () => {
     await mouseDrag(chip, from.left + 10, from.top + 5, from.left + 18, from.top + 5 + 2);
     expect(moves).toHaveLength(0);
     expect(eventById(events(), "a").start).toBe("2031-03-04T09:00");
+  });
+
+  it("inert preview ghosts prevent projected interactive controls from receiving focus", async () => {
+    const { root } = await setup({ projectedControl: true });
+    const chip = chipOf(root, "a"),
+      from = rect(chip),
+      target = rect(slotOf(root, 3, 660));
+    await mouseDrag(chip, from.left + 2, from.top + 2, target.left + 10, target.top + 5, false);
+    const ghost = chipOf(root, "a__rv-ghost");
+    const button = ghost.querySelector<HTMLButtonElement>("button")!;
+    expect(button).not.toBeNull();
+    expect(ghost.inert).toBe(true);
+    button.focus();
+    expect(document.activeElement).not.toBe(button);
+    expect(ghost.getAttribute("role")).toBeNull();
+    expect(ghost.getAttribute("aria-hidden")).toBe("true");
+    dispatchKeyboardEvent(document, "keydown", undefined, "Escape");
+    dispatchMouseEvent(document, "mouseup", target.left + 10, target.top + 5);
+    await settle();
+  });
+
+  it("release ignores an event removed from a controlled accessor while its chip remains connected", async () => {
+    let model = weekEvents();
+    const { root, moves, state } = await setup({ eventsSource: () => model });
+    const chip = chipOf(root, "a"),
+      from = rect(chip),
+      target = rect(slotOf(root, 3, 660));
+    await mouseDrag(chip, from.left + 10, from.top + 5, target.left + 10, target.top + 5, false);
+    // A controlled accessor can expose a replaced external model before another signal re-renders the chips.
+    model = model.filter((event) => event.id !== "a");
+    expect(chip.isConnected).toBe(true);
+    dispatchMouseEvent(document, "mouseup", target.left + 10, target.top + 5);
+    await settle();
+    expect(moves).toHaveLength(0);
+    expect(model.some((event) => event.id === "a")).toBe(false);
+    expect(clone()).toBeNull();
+    expect(state().dragPreview()).toBeNull();
+    expect(state().dragging()).toBe(false);
   });
 
   it("resolves the drop time from the clone's top edge, not the pointer", async () => {
@@ -477,7 +528,12 @@ describe("Scheduler drag-move (month)", () => {
     const barRect = rect(bar);
     const cellWidth = rect(cellOf(root, 8)).width;
     const cell = rect(cellOf(root, 16));
-    await mouseDrag(bar, barRect.right - cellWidth - 10, barRect.top + 5, cell.right - 10, cell.top + 50);
+    await mouseDrag(bar, barRect.right - cellWidth - 10, barRect.top + 5, cell.right - 10, cell.top + 50, false);
+    expect(document.documentElement.dir).not.toBe("rtl");
+    expect(clone()!.getAttribute("dir")).toBe("rtl");
+    expect(getComputedStyle(clone()!).direction).toBe("rtl");
+    dispatchMouseEvent(document, "mouseup", cell.right - 10, cell.top + 50);
+    await settle();
     expect(eventById(events(), "b")).toMatchObject({ start: "2031-03-11", end: "2031-03-14" });
     expect(document.querySelector("[data-rv-drag-clone]")).toBeNull();
   });
@@ -625,6 +681,26 @@ describe("Scheduler resize", () => {
     expect(bar.style.getPropertyValue("--rv-scheduler-span")).toBe("4");
     expect(bar.style.getPropertyValue("--rv-scheduler-lane-shift")).toBe(-width + "px");
     dispatchPointerEvent(document, "pointerup", h.left - width, h.top);
+    await settle();
+    expect(eventById(events(), "b")).toMatchObject({ start: "2031-03-03", end: "2031-03-07" });
+    expect(resizes[0]!.source).toBe("pointer");
+    expect(chipOf(root, "b").style.getPropertyValue("--rv-scheduler-lane-shift")).toBe("");
+  });
+
+  it("resizes the start edge of an ancestor-RTL lane bar, with positive physical travel and its end pinned", async () => {
+    const { root, events, resizes } = await setup({
+      view: "month",
+      dir: "rtl",
+      events: [{ id: "b", title: "B", start: "2031-03-04", end: "2031-03-07", allDay: true }],
+    });
+    const bar = chipOf(root, "b");
+    const handle = bar.querySelector<HTMLElement>('[data-edge="start"]')!;
+    const width = rect(cellOf(root, 8)).width;
+    const h = rect(handle);
+    await pointerDrag(handle, h.left + h.width / 2 + width, h.top + h.height / 2, false);
+    expect(bar.style.getPropertyValue("--rv-scheduler-span")).toBe("4");
+    expect(bar.style.getPropertyValue("--rv-scheduler-lane-shift")).toBe(-width + "px");
+    dispatchPointerEvent(document, "pointerup", h.left + width, h.top);
     await settle();
     expect(eventById(events(), "b")).toMatchObject({ start: "2031-03-03", end: "2031-03-07" });
     expect(resizes[0]!.source).toBe("pointer");

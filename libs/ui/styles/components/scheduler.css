@@ -80,9 +80,9 @@
 .scheduler .rv-SchedulerMonth-day-number {
   @apply m-1 flex size-7 items-center justify-center rounded-full text-xs;
   margin-inline-start: auto;
-  color: var(--muted);
+  color: var(--foreground);
 }
-.scheduler .rv-SchedulerMonth-cell[data-outside="true"] .rv-SchedulerMonth-day-number { opacity: .5; }
+.scheduler .rv-SchedulerMonth-cell[data-outside="true"] .rv-SchedulerMonth-day-number { color: var(--muted); }
 .scheduler .rv-SchedulerMonth-cell[data-today="true"] .rv-SchedulerMonth-day-number,
 .scheduler .rv-SchedulerTimeGrid-day-header[data-today="true"] .rv-SchedulerTimeGrid-day-number {
   background: var(--accent);
@@ -197,11 +197,17 @@
 .scheduler__event[data-timed="true"] { @apply flex-col items-start gap-1 py-1; }
 .scheduler__event[data-continues-before="true"] { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-color: transparent; }
 .scheduler__event[data-continues-after="true"] { border-start-end-radius: 0; border-end-end-radius: 0; }
-.scheduler__event[data-ghost="true"] { opacity: .5; }
+.scheduler__event[data-ghost="true"] { border: 1px dashed var(--scheduler-event-bar); opacity: .9; }
+.scheduler__event[data-dragging="true"] { opacity: .4; }
 .scheduler__event-title { @apply truncate font-medium; max-width: 100%; }
 .scheduler__event-time { @apply shrink-0 truncate; font-variant-numeric: tabular-nums; }
 .scheduler__event[data-timed="true"] .scheduler__event-time { max-width: 100%; overflow: hidden; }
-.scheduler__handle { position: absolute; z-index: 2; }
+.scheduler__handle { position: absolute; z-index: 2; display: flex; align-items: center; justify-content: center; }
+.scheduler__handle > .rv-SchedulerEvent-grip { width: 2px; height: 12px; border-radius: 2px; background: currentColor; opacity: 0; transition: opacity var(--duration-fast) var(--ease-smooth); }
+.scheduler__event:hover .rv-SchedulerEvent-grip,
+.scheduler__event:focus-visible .rv-SchedulerEvent-grip { opacity: 1; }
+.scheduler__event[data-timed="true"] .rv-SchedulerEvent-grip { width: 12px; height: 2px; }
+@media (hover: none) { .scheduler__handle > .rv-SchedulerEvent-grip { opacity: 1; } }
 .scheduler__event[data-timed="true"] > .scheduler__handle { inset-inline: 0; height: 6px; cursor: ns-resize; }
 .scheduler__event[data-timed="true"] > .scheduler__handle[data-edge="start"] { inset-block-start: 0; }
 .scheduler__event[data-timed="true"] > .scheduler__handle[data-edge="end"] { inset-block-end: 0; }
@@ -246,10 +252,13 @@
 .scheduler__menu-popover { min-width: 200px; }
 .scheduler__menu.scheduler--compact .menu-item { min-height: 32px; padding-block: 4px; }
 .scheduler__menu.scheduler--comfortable .menu-item { min-height: 40px; padding-block: 6px; }
-.scheduler__menu { --r-inner: max(var(--r-min), calc(min(32px, var(--radius-3xl)) - 4px)); }
-.scheduler:dir(rtl) .scheduler__navigation svg { transform: scaleX(-1); }
-.scheduler:dir(rtl) .scheduler__navigation .button:not([aria-label]) svg { transform: none; }
+.scheduler__menu { --r-inner: max(var(--r-min), calc(min(32px, var(--radius-3xl)) - 4px)); color: var(--foreground); }
+/* Inherit the nearest explicit dir scope. :dir() is lowered to :lang() by our CSS target transform. */
+:where([dir="ltr"]) { --rv-scheduler-navigation-direction: 1; }
+:where([dir="rtl"]) { --rv-scheduler-navigation-direction: -1; }
+.scheduler__navigation .button[aria-label] svg { transform: scaleX(var(--rv-scheduler-navigation-direction, 1)); }
 @media (prefers-reduced-motion: reduce) {
   .scheduler__event,
-  .scheduler__more { transition: none; }
+  .scheduler__more,
+  .scheduler__handle > .rv-SchedulerEvent-grip { transition: none; }
 }
