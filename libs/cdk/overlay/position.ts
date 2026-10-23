@@ -1,9 +1,9 @@
-// Overlay positioning: a 1:1 port of React Aria's `calculatePosition` (placement, flip, offset,
-// crossOffset, containerPadding, boundary element, maxHeight, arrow position, trigger anchor point)
-// and `useOverlayPosition` (as `overlayPosition()`: imperative, called when the overlay opens; it
-// follows window / visual viewport resizes and overlay / target size changes, and closes on scroll of
-// the trigger's scroll parents). Writes styles through CSSOM (CSP-safe). The overlay components
-// (Popover, Menu, ComboBox, …) call it while open.
+// Overlay positioning ports React Aria's `calculatePosition` (placement, flip, offset, crossOffset,
+// containerPadding, boundary element, maxHeight, arrow position, trigger anchor point) and
+// `useOverlayPosition` (as `overlayPosition()`: imperative, called when the overlay opens). It follows
+// window / visual viewport resizes and overlay / target size changes. Rivet closes on ancestor scroll
+// when the trigger moves, ignoring queued scroll notifications at its opening position. Styles use
+// CSSOM (CSP-safe); overlay components (Popover, Menu, ComboBox, …) call it while open.
 //
 // Ported from @react-aria/overlays (calculatePosition.ts, useOverlayPosition.ts, useCloseOnScroll.ts),
 // Apache-2.0, © Adobe.

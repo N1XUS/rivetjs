@@ -113,6 +113,7 @@ export const groups: NavGroup[] = [
     pages: [
       "components/calendar",
       "components/range-calendar",
+      "components/scheduler",
       "components/date-field",
       "components/time-field",
       "components/date-picker",

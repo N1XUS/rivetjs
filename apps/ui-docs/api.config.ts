@@ -4,6 +4,12 @@ import type { ApiEntryConfig, ApiPackage } from "@rivetjs/docs-kit/tools/app.ts"
 /** Documented entry points: import specifier → source file (relative to libs/) and where it runs. One per shipped component subpath. */
 export const entries: ApiEntryConfig[] = [
   {
+    entry: "@rivetjs/ui/scheduler",
+    file: "ui/src/components/scheduler/index.ts",
+    runsOn: "both",
+    summary: "Scheduler: month, week and day event layout, editing, range selection, custom headers and context menus.",
+  },
+  {
     entry: "@rivetjs/ui/surface",
     file: "ui/src/components/surface/index.ts",
     runsOn: "both",
@@ -82,7 +88,8 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/lightbox",
     file: "ui/src/components/lightbox/index.ts",
     runsOn: "both",
-    summary: "Lightbox: a full-screen viewer for images, video, embeds and PDF with zoom, captions, thumbnails and more (Rivet addition on @rivetjs/cdk/lightbox).",
+    summary:
+      "Lightbox: a full-screen viewer for images, video, embeds and PDF with zoom, captions, thumbnails and more (Rivet addition on @rivetjs/cdk/lightbox).",
   },
   {
     entry: "@rivetjs/ui/badge",
@@ -175,8 +182,7 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/scroll-area",
     file: "ui/src/components/scroll-area/index.ts",
     runsOn: "both",
-    summary:
-      "ScrollArea (Rivet addition): Radix ScrollArea behaviour from the cdk with overlay scrollbars, sizes, variants and a ScrollShadow fade.",
+    summary: "ScrollArea (Rivet addition): Radix ScrollArea behaviour from the cdk with overlay scrollbars, sizes, variants and a ScrollShadow fade.",
   },
   {
     entry: "@rivetjs/ui/scroll-shadow",
@@ -306,13 +312,15 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/masonry",
     file: "ui/src/components/masonry/index.ts",
     runsOn: "both",
-    summary: "Masonry + Bento (Rivet additions): masonry columns and span tiles on @rivetjs/cdk/masonry; server-exact placement, measured / virtualized modes, keys, selection.",
+    summary:
+      "Masonry + Bento (Rivet additions): masonry columns and span tiles on @rivetjs/cdk/masonry; server-exact placement, measured / virtualized modes, keys, selection.",
   },
   {
     entry: "@rivetjs/ui/compare",
     file: "ui/src/components/compare/index.ts",
     runsOn: "both",
-    summary: "Compare (Rivet addition): before / after layers with a draggable divider (round handle, labels) on @rivetjs/cdk/compare; keys, drag anywhere, vertical.",
+    summary:
+      "Compare (Rivet addition): before / after layers with a draggable divider (round handle, labels) on @rivetjs/cdk/compare; keys, drag anywhere, vertical.",
   },
   {
     entry: "@rivetjs/ui/stepper",
@@ -527,8 +535,7 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/date-range-picker",
     file: "ui/src/components/date-range-picker/index.ts",
     runsOn: "both",
-    summary:
-      "DateRangePicker: start / end date fields with a range calendar popover — root, trigger, indicator, range separator and popover parts.",
+    summary: "DateRangePicker: start / end date fields with a range calendar popover — root, trigger, indicator, range separator and popover parts.",
   },
   {
     entry: "@rivetjs/ui/select",

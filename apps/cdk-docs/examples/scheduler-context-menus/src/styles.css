@@ -1,0 +1,331 @@
+/* Headless Scheduler: application-owned Tailwind presentation and geometry. */
+@layer theme, base, rivet, components, utilities;
+@import "tailwindcss";
+@import "@rivetjs/cdk/theme.css";
+@source "./**/*.{ts,tsx}";
+@layer base {
+  body {
+    @apply m-0 bg-white font-sans text-slate-900 antialiased;
+  }
+}
+:root {
+  --planner-bg: #fff;
+  --planner-fg: #172033;
+  --planner-muted: #526077;
+  --planner-line: #cbd5e1;
+  --planner-soft: #eef2ff;
+  --planner-accent: #4338ca;
+}
+:root[data-theme="dark"] {
+  --planner-bg: #111827;
+  --planner-fg: #f1f5f9;
+  --planner-muted: #b8c2d2;
+  --planner-line: #475569;
+  --planner-soft: #27274c;
+  --planner-accent: #c7d2fe;
+  background: var(--planner-bg);
+  color: var(--planner-fg);
+}
+body {
+  background: var(--planner-bg);
+  color: var(--planner-fg);
+}
+.rv-Scheduler,
+.rv-SchedulerMonth-popover,
+.rv-SchedulerMenu-popover {
+  --rv-scheduler-slot-height: 36px;
+  --rv-scheduler-lane-height: 26px;
+  --rv-scheduler-row-min-height: 112px;
+  --rv-scheduler-column-min-width: 92px;
+  --rv-scheduler-gutter: 60px;
+  color: var(--planner-fg);
+  font-size: 13px;
+}
+.rv-Scheduler {
+  min-width: 0;
+  border: 1px solid var(--planner-line);
+  border-radius: 12px;
+  background: var(--planner-bg);
+}
+.planner-button {
+  @apply rounded-md border px-3 py-1.5 text-sm font-medium;
+  border-color: var(--planner-line);
+  color: var(--planner-fg);
+  background: var(--planner-bg);
+}
+.planner-button:focus-visible,
+.rv-Scheduler :focus-visible {
+  outline: 2px solid var(--planner-accent);
+  outline-offset: -2px;
+}
+.planner-button[aria-pressed="true"] {
+  background: var(--planner-soft);
+}
+.rv-SchedulerMonth {
+  overflow-x: auto;
+}
+.rv-SchedulerMonth-grid {
+  min-width: calc(var(--rv-scheduler-row-length) * var(--rv-scheduler-column-min-width));
+  --planner-columns: repeat(var(--rv-scheduler-row-length), minmax(0, 1fr));
+}
+.rv-SchedulerMonth[data-week-numbers="true"] .rv-SchedulerMonth-grid {
+  --planner-columns: 32px repeat(var(--rv-scheduler-row-length), minmax(0, 1fr));
+  min-width: calc(32px + var(--rv-scheduler-row-length) * var(--rv-scheduler-column-min-width));
+}
+.rv-SchedulerMonth-weekdays,
+.rv-SchedulerMonth-row {
+  display: grid;
+  grid-template-columns: var(--planner-columns);
+}
+.rv-SchedulerMonth-weekday,
+.rv-SchedulerMonth-week-number {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--planner-line);
+  color: var(--planner-muted);
+}
+.rv-SchedulerMonth-cell {
+  position: relative;
+  min-width: 0;
+  min-height: max(var(--rv-scheduler-row-min-height), calc(34px + var(--rv-scheduler-visible-lanes) * var(--rv-scheduler-lane-height)));
+  border-inline-end: 1px solid var(--planner-line);
+  border-bottom: 1px solid var(--planner-line);
+}
+.rv-SchedulerMonth-day-number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 3px;
+  margin-inline-start: auto;
+}
+[data-outside="true"] .rv-SchedulerMonth-day-number {
+  color: var(--planner-muted);
+}
+[data-today="true"] > .rv-SchedulerMonth-day-number,
+[data-today="true"] > .rv-SchedulerTimeGrid-day-number {
+  background: var(--planner-accent);
+  color: var(--planner-bg);
+  border-radius: 50%;
+}
+[data-weekend="true"] {
+  background: color-mix(in srgb, var(--planner-soft) 65%, var(--planner-bg));
+}
+.rv-SchedulerMonth-lanes,
+.rv-SchedulerTimeGrid-all-day-lanes {
+  position: relative;
+  margin-inline: 3px;
+}
+.rv-SchedulerMonth-lanes > .rv-SchedulerEvent,
+.rv-SchedulerTimeGrid-all-day-lanes > .rv-SchedulerEvent,
+.rv-SchedulerMonth-more {
+  position: absolute;
+  inset-block-start: calc((var(--rv-scheduler-lane) - 1) * var(--rv-scheduler-lane-height));
+  inset-inline-start: 0;
+  width: calc(var(--rv-scheduler-span, 1) * (100% + 7px) - 7px);
+  height: calc(var(--rv-scheduler-lane-height) - 3px);
+  z-index: 1;
+}
+.rv-SchedulerMonth-more {
+  border: 0;
+  background: transparent;
+  color: var(--planner-accent);
+  text-align: start;
+  padding-inline: 6px;
+  cursor: pointer;
+}
+.rv-SchedulerTimeGrid-scroller {
+  height: var(--rv-scheduler-height, 420px);
+}
+.rv-SchedulerTimeGrid-sheet {
+  min-width: calc(var(--rv-scheduler-gutter) + var(--rv-scheduler-day-count) * var(--rv-scheduler-column-min-width));
+}
+.rv-SchedulerTimeGrid-header,
+.rv-SchedulerTimeGrid-all-day,
+.rv-SchedulerTimeGrid-body {
+  display: grid;
+  grid-template-columns: var(--rv-scheduler-gutter) repeat(var(--rv-scheduler-day-count), minmax(0, 1fr));
+}
+.rv-SchedulerTimeGrid-top {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--planner-bg);
+  border-bottom: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 0;
+  border-inline-end: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-day-number {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+}
+.rv-SchedulerTimeGrid-all-day-cell {
+  position: relative;
+  min-width: 0;
+  min-height: calc(max(1, var(--rv-scheduler-all-day-lanes)) * var(--rv-scheduler-lane-height) + 8px);
+  padding-block: 4px;
+  border-inline-end: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-all-day-label {
+  padding: 8px 2px;
+  text-align: center;
+  color: var(--planner-muted);
+}
+.rv-SchedulerTimeGrid-column {
+  position: relative;
+  min-width: 0;
+  border-inline-end: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-slot {
+  height: var(--rv-scheduler-slot-height);
+  border-bottom: 1px solid color-mix(in srgb, var(--planner-line) 60%, transparent);
+}
+.rv-SchedulerTimeGrid-slot[data-hour="true"] {
+  border-top: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-slot[data-outside-business="true"] {
+  background: color-mix(in srgb, var(--planner-line) 20%, transparent);
+}
+.rv-SchedulerTimeGrid-gutter {
+  position: relative;
+  border-inline-end: 1px solid var(--planner-line);
+}
+.rv-SchedulerTimeGrid-hour {
+  position: absolute;
+  inset-block-start: var(--rv-scheduler-offset);
+  inset-inline: 0;
+  padding-inline: 5px;
+  text-align: end;
+  color: var(--planner-muted);
+  transform: translateY(-50%);
+  font-size: 11px;
+}
+.rv-SchedulerTimeGrid-hour:first-child {
+  transform: none;
+}
+.rv-SchedulerTimeGrid-events {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.rv-SchedulerTimeGrid-events > .rv-SchedulerEvent {
+  position: absolute;
+  pointer-events: auto;
+  inset-block-start: var(--rv-scheduler-event-top);
+  inset-inline-start: var(--rv-scheduler-event-start);
+  width: calc(var(--rv-scheduler-event-width) - 3px);
+  height: var(--rv-scheduler-event-height);
+  min-height: 18px;
+}
+.rv-SchedulerEvent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--planner-soft);
+  color: var(--planner-accent);
+  border-inline-start: 3px solid var(--rv-scheduler-event-color, var(--planner-accent));
+  font-size: 11px;
+  cursor: grab;
+}
+.rv-SchedulerEvent[data-timed="true"] {
+  align-items: start;
+  flex-direction: column;
+}
+.rv-SchedulerEvent[data-color="success"] {
+  border-inline-start-color: #15803d;
+}
+.rv-SchedulerEvent[data-color="warning"] {
+  border-inline-start-color: #a16207;
+}
+.rv-SchedulerEvent[data-color="danger"] {
+  border-inline-start-color: #be123c;
+}
+.rv-SchedulerEvent-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.rv-SchedulerEvent-time {
+  font-size: 10px;
+}
+.rv-SchedulerEvent[data-ghost="true"] {
+  opacity: 0.55;
+}
+.rv-SchedulerEvent-resize-handle {
+  position: absolute;
+  z-index: 2;
+  inset-block: 0;
+  width: 7px;
+  cursor: ew-resize;
+}
+.rv-SchedulerEvent-resize-handle[data-edge="start"] {
+  inset-inline-start: 0;
+}
+.rv-SchedulerEvent-resize-handle[data-edge="end"] {
+  inset-inline-end: 0;
+}
+.rv-SchedulerEvent[data-timed="true"] .rv-SchedulerEvent-resize-handle {
+  inset-inline: 0;
+  width: auto;
+  height: 7px;
+  cursor: ns-resize;
+}
+.rv-SchedulerEvent[data-timed="true"] .rv-SchedulerEvent-resize-handle[data-edge="start"] {
+  inset-block-start: 0;
+  inset-block-end: auto;
+}
+.rv-SchedulerEvent[data-timed="true"] .rv-SchedulerEvent-resize-handle[data-edge="end"] {
+  inset-block-end: 0;
+  inset-block-start: auto;
+}
+[data-selected="true"] {
+  box-shadow: inset 0 0 0 2px var(--planner-accent);
+  background: var(--planner-soft);
+}
+.rv-SchedulerMonth-popover,
+.rv-SchedulerMenu-popover {
+  padding: 12px;
+  border: 1px solid var(--planner-line);
+  border-radius: 10px;
+  background: var(--planner-bg);
+  box-shadow: 0 8px 24px #0002;
+}
+.rv-SchedulerMonth-popover {
+  display: grid;
+  gap: 5px;
+  max-width: 320px;
+}
+.rv-SchedulerMonth-popover-title {
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+.rv-SchedulerMenu [role="menuitem"] {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.rv-SchedulerMenu [role="menuitem"][data-focused] {
+  background: var(--planner-soft);
+}
+.rv-SchedulerTimeGrid-now {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: var(--rv-scheduler-offset);
+  border-top: 2px solid #dc2626;
+  pointer-events: none;
+  z-index: 2;
+}

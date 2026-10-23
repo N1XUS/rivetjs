@@ -19,6 +19,10 @@ related: [start/introduction]
 
 HeroUI is a trademark of its owner. Rivet UI is not affiliated with or endorsed by the HeroUI project.
 
+### Scheduler
+
+The Scheduler feature set and its seven showcase sections are inspired by the public HeroUI Pro Agenda documentation. The Rivet implementation and examples are independent; no HeroUI Pro source is included. Scheduler behavior is ported from the Rivet author's own MIT-licensed `@malva-ui/scheduler`, copyright 2026 Malva UI; its source notice and license text are included in `@rivetjs/cdk/NOTICE`.
+
 ### Other notices in @rivetjs/ui
 
 | Project                                                                                          | License    | Copyright               | Use                                                                     |

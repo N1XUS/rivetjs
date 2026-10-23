@@ -1,6 +1,41 @@
 {
  "entries": [
   {
+   "entry": "@rivetjs/ui/scheduler",
+   "summary": "Scheduler: month, week and day event layout, editing, range selection, custom headers and context menus.",
+   "runsOn": "both",
+   "href": "/api/rivetjs/ui/scheduler/",
+   "symbols": [
+    "Scheduler",
+    "SchedulerBusinessHours",
+    "SchedulerClassNames",
+    "SchedulerEvent",
+    "SchedulerEventChange",
+    "SchedulerEventInteraction",
+    "SchedulerEventMenuContext",
+    "SchedulerEventRenderState",
+    "SchedulerHeaderApi",
+    "SchedulerLayoutRange",
+    "SchedulerMoreEvent",
+    "SchedulerOptions",
+    "SchedulerProps",
+    "SchedulerRangeSelectEvent",
+    "SchedulerRenderEvent",
+    "SchedulerRenderEventMenu",
+    "SchedulerRenderHeader",
+    "SchedulerRenderSlotMenu",
+    "SchedulerSlotEvent",
+    "SchedulerSlotMenuContext",
+    "SchedulerState",
+    "SchedulerStrings",
+    "SchedulerToolbarLabels",
+    "SchedulerVariants",
+    "SchedulerView",
+    "SchedulerVisibleRange",
+    "schedulerVariants"
+   ]
+  },
+  {
    "entry": "@rivetjs/ui/surface",
    "summary": "Surface: the base surface (background + shadow tokens) other components sit on.",
    "runsOn": "both",
@@ -254053,6 +254088,2248 @@
    "href": "/api/rivetjs/ui/resizable/usePanelRef/"
   },
   {
+   "key": "@rivetjs/ui/scheduler#Scheduler",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "Scheduler",
+   "kind": "function",
+   "summary": "Thin typed wrapper: CDK owns the semantics; density changes both server lane packing and CSS geometry.",
+   "remarks": "Thin typed wrapper: CDK owns the semantics; density changes both server lane packing and CSS geometry.",
+   "signatures": [
+    "function Scheduler<T = unknown>(props: SchedulerProps<T>): CompiledElement"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "SchedulerProps<T>",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "CompiledElement",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/scheduler/scheduler.tsx",
+    "line": 31,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scheduler/scheduler.tsx#L31"
+   },
+   "href": "/api/rivetjs/ui/scheduler/Scheduler/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerBusinessHours",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerBusinessHours",
+   "kind": "interface",
+   "summary": "Working-hours shading for the time grid.",
+   "remarks": "Working-hours shading for the time grid.",
+   "signatures": [
+    "interface SchedulerBusinessHours"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "days",
+     "kind": "property",
+     "signature": "days?: readonly number[]",
+     "doc": "Weekdays (0 = Sunday). Default Monday–Friday.",
+     "optional": true
+    },
+    {
+     "name": "end",
+     "kind": "property",
+     "signature": "end: string",
+     "doc": "`'HH:mm'`; `'24:00'` allowed.",
+     "optional": false
+    },
+    {
+     "name": "start",
+     "kind": "property",
+     "signature": "start: string",
+     "doc": "`'HH:mm'`.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 139,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L139"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerBusinessHours/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerClassNames",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerClassNames",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type SchedulerClassNames = CdkClasses & { base?: string }"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/scheduler/scheduler.tsx",
+    "line": 19,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scheduler/scheduler.tsx#L19"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerClassNames/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerEvent",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerEvent",
+   "kind": "interface",
+   "summary": "One calendar event.",
+   "remarks": "One calendar event. Dates are `@rivetjs/cdk/date` values or their `DateValueString` (resumable state: strings).",
+   "signatures": [
+    "interface SchedulerEvent<T = unknown>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allDay",
+     "kind": "property",
+     "signature": "allDay?: boolean",
+     "doc": "Time parts are ignored; the event spans `startOfDay(start)` → `startOfDay(end)` (exclusive).",
+     "optional": true
+    },
+    {
+     "name": "color",
+     "kind": "property",
+     "signature": "color?: SchedulerEventColor",
+     "doc": "Semantic colour.",
+     "optional": true
+    },
+    {
+     "name": "cssColor",
+     "kind": "property",
+     "signature": "cssColor?: string",
+     "doc": "Any CSS colour; wins over `color`.",
+     "optional": true
+    },
+    {
+     "name": "data",
+     "kind": "property",
+     "signature": "data?: T",
+     "doc": "Consumer payload, passed through untouched.",
+     "optional": true
+    },
+    {
+     "name": "end",
+     "kind": "property",
+     "signature": "end: SchedulerDate",
+     "doc": "Exclusive end. `end <= start` is repaired to `start + defaultEventDuration` (timed) or one day (all-day).",
+     "optional": false
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id: string",
+     "doc": "Stable identity; used for keys, focus restoration and model updates.",
+     "optional": false
+    },
+    {
+     "name": "isDraggable",
+     "kind": "property",
+     "signature": "isDraggable?: boolean",
+     "doc": "Per-event override; the scheduler-level `isReadOnly` still wins. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "isResizable",
+     "kind": "property",
+     "signature": "isResizable?: boolean",
+     "doc": "Per-event override; the scheduler-level `isReadOnly` still wins. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "start",
+     "kind": "property",
+     "signature": "start: SchedulerDate",
+     "doc": "Inclusive start. Midnight of the first day when `allDay`.",
+     "optional": false
+    },
+    {
+     "name": "title",
+     "kind": "property",
+     "signature": "title: string",
+     "doc": "Visible title and the base of the accessible name.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L25"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerEvent/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerEventChange",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerEventChange",
+   "kind": "interface",
+   "summary": "Payload of `onEventMove` and `onEventResize`.",
+   "remarks": "Payload of `onEventMove` and `onEventResize`.",
+   "signatures": [
+    "interface SchedulerEventChange<T = unknown>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "event",
+     "kind": "property",
+     "signature": "event: SchedulerEvent<T>",
+     "doc": "The updated event — a new object with the same `id`, already written to `events`.",
+     "optional": false
+    },
+    {
+     "name": "previous",
+     "kind": "property",
+     "signature": "previous: SchedulerRange",
+     "doc": "The event's dates before the change.",
+     "optional": false
+    },
+    {
+     "name": "source",
+     "kind": "property",
+     "signature": "source: SchedulerChangeSource",
+     "doc": "Whether a pointer gesture or a keyboard shortcut produced the change.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 65,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L65"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerEventChange/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerEventInteraction",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerEventInteraction",
+   "kind": "interface",
+   "summary": "Payload of `onEventAction`, `onEventDoubleClick`, `onEventContextMenu` and `onEventDelete`.",
+   "remarks": "Payload of `onEventAction`, `onEventDoubleClick`, `onEventContextMenu` and `onEventDelete`.",
+   "signatures": [
+    "interface SchedulerEventInteraction<T = unknown>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "element",
+     "kind": "property",
+     "signature": "element: HTMLElement",
+     "doc": "The chip element — anchor for consumer menus and popovers.",
+     "optional": false
+    },
+    {
+     "name": "event",
+     "kind": "property",
+     "signature": "event: SchedulerEvent<T>",
+     "doc": "The event the chip renders, straight out of the `events` model.",
+     "optional": false
+    },
+    {
+     "name": "nativeEvent",
+     "kind": "property",
+     "signature": "nativeEvent: MouseEvent | KeyboardEvent",
+     "doc": "The originating DOM event: the `click` / `dblclick` / `contextmenu` `MouseEvent`, or the `KeyboardEvent` of\n`Enter` / `Space` (action), of the ContextMenu key / `Shift+F10` (context menu) or of `Delete` / `Backspace`\n(`onEventDelete`, always prevented). On a `contextmenu` `MouseEvent`, `defaultPrevented` is `true` only when\n`renderEventMenu` opened the built-in menu on it. A context-menu `KeyboardEvent` is always prevented.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 75,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L75"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerEventInteraction/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerEventMenuContext",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerEventMenuContext",
+   "kind": "interface",
+   "summary": "Second argument of `renderEventMenu` (malva `MlvSchedulerEventMenuContext` minus `$implicit`).",
+   "remarks": "Second argument of `renderEventMenu` (malva `MlvSchedulerEventMenuContext` minus `$implicit`).",
+   "signatures": [
+    "interface SchedulerEventMenuContext"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "close",
+     "kind": "property",
+     "signature": "readonly close: () => void",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "readonly view: SchedulerView",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/menus.tsx",
+    "line": 38,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/menus.tsx#L38"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerEventMenuContext/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerEventRenderState",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerEventRenderState",
+   "kind": "interface",
+   "summary": "State handed to `renderEvent` (accessor-free snapshot of the chip; the render function re-runs on change).",
+   "remarks": "State handed to `renderEvent` (accessor-free snapshot of the chip; the render function re-runs on change).",
+   "signatures": [
+    "interface SchedulerEventRenderState"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allDay",
+     "kind": "property",
+     "signature": "readonly allDay: boolean",
+     "doc": "Rendered in a lane (month grid, all-day band, `+N more` panel) instead of on the time axis.",
+     "optional": false
+    },
+    {
+     "name": "continuesAfter",
+     "kind": "property",
+     "signature": "readonly continuesAfter: boolean",
+     "doc": "The event ends after this segment.",
+     "optional": false
+    },
+    {
+     "name": "continuesBefore",
+     "kind": "property",
+     "signature": "readonly continuesBefore: boolean",
+     "doc": "The event started before this segment.",
+     "optional": false
+    },
+    {
+     "name": "isGhost",
+     "kind": "property",
+     "signature": "readonly isGhost: boolean",
+     "doc": "The drag-preview copy of an event being dragged.",
+     "optional": false
+    },
+    {
+     "name": "time",
+     "kind": "property",
+     "signature": "readonly time: string",
+     "doc": "Formatted time of the chip (`\"9:00 AM\"` in a lane, `\"9:00 AM – 9:30 AM\"` on the time axis; empty all-day).",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "readonly view: SchedulerView",
+     "doc": "The view the chip renders in.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/context.tsx",
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/context.tsx#L20"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerEventRenderState/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerHeaderApi",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerHeaderApi",
+   "kind": "interface",
+   "summary": "What `renderHeader` receives (malva `MlvSchedulerHeaderApi` + `goTo`): accessors and actions.",
+   "remarks": "What `renderHeader` receives (malva `MlvSchedulerHeaderApi` + `goTo`): accessors and actions.",
+   "signatures": [
+    "interface SchedulerHeaderApi"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "goTo",
+     "kind": "property",
+     "signature": "readonly goTo: (date: SchedulerDate) => void",
+     "doc": "Jumps to the period containing `date`.",
+     "optional": false
+    },
+    {
+     "name": "labels",
+     "kind": "property",
+     "signature": "readonly labels: SchedulerToolbarLabels",
+     "doc": "Live localized labels, including view-specific previous / next labels.",
+     "optional": false
+    },
+    {
+     "name": "next",
+     "kind": "property",
+     "signature": "readonly next: () => void",
+     "doc": "One period forward.",
+     "optional": false
+    },
+    {
+     "name": "previous",
+     "kind": "property",
+     "signature": "readonly previous: () => void",
+     "doc": "One period back.",
+     "optional": false
+    },
+    {
+     "name": "range",
+     "kind": "property",
+     "signature": "readonly range: () => SchedulerVisibleRange",
+     "doc": "The rendered period (dates in the anchor's form).",
+     "optional": false
+    },
+    {
+     "name": "setView",
+     "kind": "property",
+     "signature": "readonly setView: (view: SchedulerView) => void",
+     "doc": "Switches the view.",
+     "optional": false
+    },
+    {
+     "name": "title",
+     "kind": "property",
+     "signature": "readonly title: () => string",
+     "doc": "Localized title of the rendered period (\"September 2026\", \"Aug 31 – Sep 6, 2026\", the day label).",
+     "optional": false
+    },
+    {
+     "name": "today",
+     "kind": "property",
+     "signature": "readonly today: () => void",
+     "doc": "Jumps to today.",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "readonly view: () => SchedulerView",
+     "doc": "The active view.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/toolbar.tsx",
+    "line": 19,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/toolbar.tsx#L19"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerHeaderApi/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerLayoutRange",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerLayoutRange",
+   "kind": "type",
+   "summary": "A `SchedulerRange` on the layout axis (wall minutes).",
+   "remarks": "A `SchedulerRange` on the layout axis (wall minutes).",
+   "signatures": [
+    "type SchedulerLayoutRange = SchedulerRange<number>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 59,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L59"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerLayoutRange/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerMoreEvent",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerMoreEvent",
+   "kind": "interface",
+   "summary": "Payload of `onMoreAction` (malva `moreClick`).",
+   "remarks": "Payload of `onMoreAction` (malva `moreClick`).",
+   "signatures": [
+    "interface SchedulerMoreEvent<T = unknown, D = SchedulerDate>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "date",
+     "kind": "property",
+     "signature": "date: D",
+     "doc": "The day whose cell overflowed.",
+     "optional": false
+    },
+    {
+     "name": "events",
+     "kind": "property",
+     "signature": "events: readonly SchedulerEvent<T>[]",
+     "doc": "The day's hidden events (the ones behind the button), in render order. Deviation: malva's type doc says \"hidden and\nvisible alike\"; its implementation and spec emit the hidden ones — kept.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 152,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L152"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerMoreEvent/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerOptions",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerOptions",
+   "kind": "interface",
+   "summary": "Options read live (each a value or an accessor).",
+   "remarks": "Options read live (each a value or an accessor).",
+   "signatures": [
+    "interface SchedulerOptions"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allowsRangeSelection",
+     "kind": "property",
+     "signature": "allowsRangeSelection?: MaybeAccessor<boolean | undefined>",
+     "doc": "Pointer + keyboard range selection. malva `selectable`. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "businessHours",
+     "kind": "property",
+     "signature": "businessHours?: MaybeAccessor<SchedulerBusinessHours | null | undefined>",
+     "doc": "Working-hours shading; `null` = none.",
+     "optional": true
+    },
+    {
+     "name": "defaultEventDuration",
+     "kind": "property",
+     "signature": "defaultEventDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Minutes for all-day → timed drops, external drops and `end <= start` repair. Default `60`.",
+     "optional": true
+    },
+    {
+     "name": "firstDayOfWeek",
+     "kind": "property",
+     "signature": "firstDayOfWeek?: MaybeAccessor<DayOfWeek | undefined>",
+     "doc": "First day of the week. Default: locale.",
+     "optional": true
+    },
+    {
+     "name": "hiddenDays",
+     "kind": "property",
+     "signature": "hiddenDays?: MaybeAccessor<readonly number[] | undefined>",
+     "doc": "Weekdays (0 = Sunday) removed from every view.",
+     "optional": true
+    },
+    {
+     "name": "isReadOnly",
+     "kind": "property",
+     "signature": "isReadOnly?: MaybeAccessor<boolean | undefined>",
+     "doc": "Disables move / resize / delete (pointer and keyboard). malva `editable` inverse.",
+     "optional": true
+    },
+    {
+     "name": "locale",
+     "kind": "property",
+     "signature": "locale?: MaybeAccessor<string | undefined>",
+     "doc": "Locale of labels, strings, first day of week and weekend. Default `\"en-US\"` (components pass `useLocale()`).",
+     "optional": true
+    },
+    {
+     "name": "maxTime",
+     "kind": "property",
+     "signature": "maxTime?: MaybeAccessor<string | undefined>",
+     "doc": "End of the time grid (`\"HH:mm\"`, `\"24:00\"` allowed). Default `\"24:00\"`.",
+     "optional": true
+    },
+    {
+     "name": "minTime",
+     "kind": "property",
+     "signature": "minTime?: MaybeAccessor<string | undefined>",
+     "doc": "First visible time of the time grid (`\"HH:mm\"`). Default `\"00:00\"`.",
+     "optional": true
+    },
+    {
+     "name": "scrollToCurrentTime",
+     "kind": "property",
+     "signature": "scrollToCurrentTime?: MaybeAccessor<boolean | undefined>",
+     "doc": "Centre the current time on the initial time-grid scroll. Default `false`.",
+     "optional": true
+    },
+    {
+     "name": "showCurrentTime",
+     "kind": "property",
+     "signature": "showCurrentTime?: MaybeAccessor<boolean | undefined>",
+     "doc": "Now-line and today highlight. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "showWeekNumbers",
+     "kind": "property",
+     "signature": "showWeekNumbers?: MaybeAccessor<boolean | undefined>",
+     "doc": "Week-number column of the month grid. Default `false`.",
+     "optional": true
+    },
+    {
+     "name": "slotDuration",
+     "kind": "property",
+     "signature": "slotDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Slot height unit, positive minutes. Default `30`.",
+     "optional": true
+    },
+    {
+     "name": "snapDuration",
+     "kind": "property",
+     "signature": "snapDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Drag / resize / selection granularity, positive minutes. Default: `slotDuration`.",
+     "optional": true
+    },
+    {
+     "name": "strings",
+     "kind": "property",
+     "signature": "strings?: MaybeAccessor<Partial<SchedulerStrings> | undefined>",
+     "doc": "String overrides on top of the locale table.",
+     "optional": true
+    },
+    {
+     "name": "timeZone",
+     "kind": "property",
+     "signature": "timeZone?: MaybeAccessor<string | undefined>",
+     "doc": "Wall clock of the layout. Default: the zone resolved when the state is created — `\"UTC\"` on the server (kept by\nthe resumed page, dev warning), the local zone for a client-only render. Pass it for local time on SSR pages.",
+     "optional": true
+    },
+    {
+     "name": "visibleLanes",
+     "kind": "property",
+     "signature": "visibleLanes?: MaybeAccessor<number | \"auto\" | undefined>",
+     "doc": "Lane cap of month rows (the time grid's all-day band never collapses: it grows). `\"auto\"` = `DEFAULT_VISIBLE_LANES` (ui: density default).",
+     "optional": true
+    },
+    {
+     "name": "weekendDays",
+     "kind": "property",
+     "signature": "weekendDays?: MaybeAccessor<readonly number[] | undefined>",
+     "doc": "Weekdays (0 = Sunday) marked `data-weekend`. Default: locale weekend.",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/state.ts",
+    "line": 85,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L85"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerOptions/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerProps",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerProps",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface SchedulerProps<T = unknown> extends Omit<SchedulerPrimitiveProps<T>, \"classNames\">, SchedulerVariants"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allowsRangeSelection",
+     "kind": "property",
+     "signature": "allowsRangeSelection?: MaybeAccessor<boolean | undefined>",
+     "doc": "Pointer + keyboard range selection. malva `selectable`. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "aria-label",
+     "kind": "property",
+     "signature": "aria-label?: string",
+     "doc": "Accessible name of the root group. Default: the `scheduler` string.",
+     "optional": true
+    },
+    {
+     "name": "businessHours",
+     "kind": "property",
+     "signature": "businessHours?: MaybeAccessor<SchedulerBusinessHours | null | undefined>",
+     "doc": "Working-hours shading; `null` = none.",
+     "optional": true
+    },
+    {
+     "name": "canMove",
+     "kind": "property",
+     "signature": "canMove?: SchedulerCanChange<T>",
+     "doc": "Move veto. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "canResize",
+     "kind": "property",
+     "signature": "canResize?: SchedulerCanChange<T>",
+     "doc": "Resize veto. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "class",
+     "kind": "property",
+     "signature": "class?: string",
+     "doc": "Root class. Default `rv-Scheduler`.",
+     "optional": true
+    },
+    {
+     "name": "classNames",
+     "kind": "property",
+     "signature": "classNames?: SchedulerClassNames",
+     "doc": "Classes merged into the tv slots, including overflow and context-menu portals.",
+     "optional": true
+    },
+    {
+     "name": "date",
+     "kind": "property",
+     "signature": "date?: SchedulerDate | Signal<SchedulerDate> | (() => SchedulerDate)",
+     "doc": "Anchor date (any form; written back in the same form). Default: today in `timeZone`.",
+     "optional": true
+    },
+    {
+     "name": "defaultDate",
+     "kind": "property",
+     "signature": "defaultDate?: SchedulerDate",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "defaultEventDuration",
+     "kind": "property",
+     "signature": "defaultEventDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Minutes for all-day → timed drops, external drops and `end <= start` repair. Default `60`.",
+     "optional": true
+    },
+    {
+     "name": "defaultEvents",
+     "kind": "property",
+     "signature": "defaultEvents?: readonly SchedulerEvent<T>[]",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "defaultView",
+     "kind": "property",
+     "signature": "defaultView?: SchedulerView",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "density",
+     "kind": "property",
+     "signature": "density?: \"default\" | \"compact\" | \"comfortable\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "dir",
+     "kind": "property",
+     "signature": "dir?: \"auto\" | \"ltr\" | \"rtl\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "dropGroup",
+     "kind": "property",
+     "signature": "dropGroup?: string",
+     "doc": "Id of the scheduler's hit-area `DropList` (rendered only with `onExternalDrop`): external cdk `DropList`s list it\nin `connectedTo` (or share a `DropListGroup`). Default `\"rv-scheduler\"`. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "events",
+     "kind": "property",
+     "signature": "events?: readonly SchedulerEvent<T>[] | Signal<readonly SchedulerEvent<T>[]> | (() => readonly SchedulerEvent<T>[])",
+     "doc": "Events: a Signal (two-way), a value or an accessor (controlled: use `onEventsChange`).",
+     "optional": true
+    },
+    {
+     "name": "firstDayOfWeek",
+     "kind": "property",
+     "signature": "firstDayOfWeek?: MaybeAccessor<DayOfWeek | undefined>",
+     "doc": "First day of the week. Default: locale.",
+     "optional": true
+    },
+    {
+     "name": "hidden",
+     "kind": "property",
+     "signature": "hidden?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "hiddenDays",
+     "kind": "property",
+     "signature": "hiddenDays?: MaybeAccessor<readonly number[] | undefined>",
+     "doc": "Weekdays (0 = Sunday) removed from every view.",
+     "optional": true
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: string",
+     "doc": "Root id. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "inert",
+     "kind": "property",
+     "signature": "inert?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "isReadOnly",
+     "kind": "property",
+     "signature": "isReadOnly?: MaybeAccessor<boolean | undefined>",
+     "doc": "Disables move / resize / delete (pointer and keyboard). malva `editable` inverse.",
+     "optional": true
+    },
+    {
+     "name": "lang",
+     "kind": "property",
+     "signature": "lang?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "locale",
+     "kind": "property",
+     "signature": "locale?: MaybeAccessor<string | undefined>",
+     "doc": "Locale of labels, strings, first day of week and weekend. Default `\"en-US\"` (components pass `useLocale()`).",
+     "optional": true
+    },
+    {
+     "name": "maxTime",
+     "kind": "property",
+     "signature": "maxTime?: MaybeAccessor<string | undefined>",
+     "doc": "End of the time grid (`\"HH:mm\"`, `\"24:00\"` allowed). Default `\"24:00\"`.",
+     "optional": true
+    },
+    {
+     "name": "minTime",
+     "kind": "property",
+     "signature": "minTime?: MaybeAccessor<string | undefined>",
+     "doc": "First visible time of the time grid (`\"HH:mm\"`). Default `\"00:00\"`.",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEnd",
+     "kind": "property",
+     "signature": "onAnimationEnd?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEndCapture",
+     "kind": "property",
+     "signature": "onAnimationEndCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIteration",
+     "kind": "property",
+     "signature": "onAnimationIteration?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIterationCapture",
+     "kind": "property",
+     "signature": "onAnimationIterationCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStart",
+     "kind": "property",
+     "signature": "onAnimationStart?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStartCapture",
+     "kind": "property",
+     "signature": "onAnimationStartCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClick",
+     "kind": "property",
+     "signature": "onAuxClick?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClickCapture",
+     "kind": "property",
+     "signature": "onAuxClickCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClick",
+     "kind": "property",
+     "signature": "onClick?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClickCapture",
+     "kind": "property",
+     "signature": "onClickCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenu",
+     "kind": "property",
+     "signature": "onContextMenu?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenuCapture",
+     "kind": "property",
+     "signature": "onContextMenuCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDateChange",
+     "kind": "property",
+     "signature": "onDateChange?: (date: SchedulerDate) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onDblClick",
+     "kind": "property",
+     "signature": "onDblClick?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClickCapture",
+     "kind": "property",
+     "signature": "onDblClickCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onEventAction",
+     "kind": "property",
+     "signature": "onEventAction?: (interaction: SchedulerEventInteraction<T>) => void",
+     "doc": "Chip click / `Enter` / `Space` (malva `eventClick`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventContextMenu",
+     "kind": "property",
+     "signature": "onEventContextMenu?: (interaction: SchedulerEventInteraction<T>) => void",
+     "doc": "Chip right click, ContextMenu key / `Shift+F10` (malva `eventContextMenu`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventDelete",
+     "kind": "property",
+     "signature": "onEventDelete?: (interaction: SchedulerEventInteraction<T>) => void",
+     "doc": "`Delete` / `Backspace` on a focused chip while editable (prevented; the caller removes the event). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventDoubleClick",
+     "kind": "property",
+     "signature": "onEventDoubleClick?: (interaction: SchedulerEventInteraction<T>) => void",
+     "doc": "Chip double click (malva `eventDoubleClick`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventMove",
+     "kind": "property",
+     "signature": "onEventMove?: (change: SchedulerEventChange<T>) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventResize",
+     "kind": "property",
+     "signature": "onEventResize?: (change: SchedulerEventChange<T>) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onEventsChange",
+     "kind": "property",
+     "signature": "onEventsChange?: (events: readonly SchedulerEvent<T>[]) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onExternalDrop",
+     "kind": "property",
+     "signature": "onExternalDrop?: (drop: SchedulerExternalDropEvent) => void",
+     "doc": "A cdk drag-drop item from a connected list was dropped on a cell (malva `externalDrop`); nothing is written. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCapture",
+     "kind": "property",
+     "signature": "onGotPointerCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onGotPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCapture",
+     "kind": "property",
+     "signature": "onLostPointerCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onLostPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMoreAction",
+     "kind": "property",
+     "signature": "onMoreAction?: (event: SchedulerMoreEvent<T>) => void",
+     "doc": "A month cell's `+N more` opened its panel (malva `moreClick`): the day and its hidden events. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onMouseDown",
+     "kind": "property",
+     "signature": "onMouseDown?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDownCapture",
+     "kind": "property",
+     "signature": "onMouseDownCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnter",
+     "kind": "property",
+     "signature": "onMouseEnter?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnterCapture",
+     "kind": "property",
+     "signature": "onMouseEnterCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeave",
+     "kind": "property",
+     "signature": "onMouseLeave?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeaveCapture",
+     "kind": "property",
+     "signature": "onMouseLeaveCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMove",
+     "kind": "property",
+     "signature": "onMouseMove?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMoveCapture",
+     "kind": "property",
+     "signature": "onMouseMoveCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOut",
+     "kind": "property",
+     "signature": "onMouseOut?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOutCapture",
+     "kind": "property",
+     "signature": "onMouseOutCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOver",
+     "kind": "property",
+     "signature": "onMouseOver?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOverCapture",
+     "kind": "property",
+     "signature": "onMouseOverCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUp",
+     "kind": "property",
+     "signature": "onMouseUp?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUpCapture",
+     "kind": "property",
+     "signature": "onMouseUpCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancel",
+     "kind": "property",
+     "signature": "onPointerCancel?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancelCapture",
+     "kind": "property",
+     "signature": "onPointerCancelCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDown",
+     "kind": "property",
+     "signature": "onPointerDown?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDownCapture",
+     "kind": "property",
+     "signature": "onPointerDownCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnter",
+     "kind": "property",
+     "signature": "onPointerEnter?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnterCapture",
+     "kind": "property",
+     "signature": "onPointerEnterCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeave",
+     "kind": "property",
+     "signature": "onPointerLeave?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeaveCapture",
+     "kind": "property",
+     "signature": "onPointerLeaveCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMove",
+     "kind": "property",
+     "signature": "onPointerMove?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMoveCapture",
+     "kind": "property",
+     "signature": "onPointerMoveCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOut",
+     "kind": "property",
+     "signature": "onPointerOut?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOutCapture",
+     "kind": "property",
+     "signature": "onPointerOutCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOver",
+     "kind": "property",
+     "signature": "onPointerOver?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOverCapture",
+     "kind": "property",
+     "signature": "onPointerOverCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUp",
+     "kind": "property",
+     "signature": "onPointerUp?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUpCapture",
+     "kind": "property",
+     "signature": "onPointerUpCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onRangeSelect",
+     "kind": "property",
+     "signature": "onRangeSelect?: (range: SchedulerRangeSelectEvent) => void",
+     "doc": "A pointer drag (or `Shift+Arrow` + `Enter`) over empty cells committed a range (malva `rangeSelect`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onScroll",
+     "kind": "property",
+     "signature": "onScroll?: (event: Event & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollCapture",
+     "kind": "property",
+     "signature": "onScrollCapture?: (event: Event & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSlotAction",
+     "kind": "property",
+     "signature": "onSlotAction?: (slot: SchedulerSlotEvent) => void",
+     "doc": "Click / `Space` (or `Enter` without a chip) on a cell or slot (malva `slotClick`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onSlotContextMenu",
+     "kind": "property",
+     "signature": "onSlotContextMenu?: (slot: SchedulerSlotEvent) => void",
+     "doc": "Right click, ContextMenu key / `Shift+F10` on a cell or slot (malva `slotContextMenu`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onSlotDoubleClick",
+     "kind": "property",
+     "signature": "onSlotDoubleClick?: (slot: SchedulerSlotEvent) => void",
+     "doc": "Double click on a cell or slot (malva `slotDoubleClick`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancel",
+     "kind": "property",
+     "signature": "onTouchCancel?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancelCapture",
+     "kind": "property",
+     "signature": "onTouchCancelCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEnd",
+     "kind": "property",
+     "signature": "onTouchEnd?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEndCapture",
+     "kind": "property",
+     "signature": "onTouchEndCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMove",
+     "kind": "property",
+     "signature": "onTouchMove?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMoveCapture",
+     "kind": "property",
+     "signature": "onTouchMoveCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStart",
+     "kind": "property",
+     "signature": "onTouchStart?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStartCapture",
+     "kind": "property",
+     "signature": "onTouchStartCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancel",
+     "kind": "property",
+     "signature": "onTransitionCancel?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancelCapture",
+     "kind": "property",
+     "signature": "onTransitionCancelCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEnd",
+     "kind": "property",
+     "signature": "onTransitionEnd?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEndCapture",
+     "kind": "property",
+     "signature": "onTransitionEndCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRun",
+     "kind": "property",
+     "signature": "onTransitionRun?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRunCapture",
+     "kind": "property",
+     "signature": "onTransitionRunCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStart",
+     "kind": "property",
+     "signature": "onTransitionStart?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStartCapture",
+     "kind": "property",
+     "signature": "onTransitionStartCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onViewChange",
+     "kind": "property",
+     "signature": "onViewChange?: (view: SchedulerView) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onVisibleRangeChange",
+     "kind": "property",
+     "signature": "onVisibleRangeChange?: (range: SchedulerVisibleRange) => void",
+     "doc": "Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "onWheel",
+     "kind": "property",
+     "signature": "onWheel?: (event: WheelEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheelCapture",
+     "kind": "property",
+     "signature": "onWheelCapture?: (event: WheelEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "renderEvent",
+     "kind": "property",
+     "signature": "renderEvent?: SchedulerRenderEvent<T>",
+     "doc": "Chip content (default: time + title). Read once at mount (render functions are read once; their output is reactive).",
+     "optional": true
+    },
+    {
+     "name": "renderEventMenu",
+     "kind": "property",
+     "signature": "renderEventMenu?: SchedulerRenderEventMenu<T>",
+     "doc": "Items of the context menu over an event chip (same rules as `renderSlotMenu`). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "renderHeader",
+     "kind": "property",
+     "signature": "renderHeader?: SchedulerRenderHeader",
+     "doc": "Replaces the default toolbar (malva `MlvSchedulerHeaderDef`); receives the header api. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "renderSlotMenu",
+     "kind": "property",
+     "signature": "renderSlotMenu?: SchedulerRenderSlotMenu",
+     "doc": "Items of the context menu over an empty month cell, all-day cell or time slot (right-click, ContextMenu key,\n`Shift+F10`): cdk `MenuItem`s. `range` = the cell's day / the slot, or the pending keyboard selection the cell lies\nin (`selection: true`, cleared when the menu closes). Without it the native menu is left alone. Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "scrollToCurrentTime",
+     "kind": "property",
+     "signature": "scrollToCurrentTime?: MaybeAccessor<boolean | undefined>",
+     "doc": "Centre the current time on the initial time-grid scroll. Default `false`.",
+     "optional": true
+    },
+    {
+     "name": "showCurrentTime",
+     "kind": "property",
+     "signature": "showCurrentTime?: MaybeAccessor<boolean | undefined>",
+     "doc": "Now-line and today highlight. Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "showWeekNumbers",
+     "kind": "property",
+     "signature": "showWeekNumbers?: MaybeAccessor<boolean | undefined>",
+     "doc": "Week-number column of the month grid. Default `false`.",
+     "optional": true
+    },
+    {
+     "name": "slotDuration",
+     "kind": "property",
+     "signature": "slotDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Slot height unit, positive minutes. Default `30`.",
+     "optional": true
+    },
+    {
+     "name": "snapDuration",
+     "kind": "property",
+     "signature": "snapDuration?: MaybeAccessor<number | undefined>",
+     "doc": "Drag / resize / selection granularity, positive minutes. Default: `slotDuration`.",
+     "optional": true
+    },
+    {
+     "name": "stateRef",
+     "kind": "property",
+     "signature": "stateRef?: Signal<SchedulerState<T> | null> | ((state: SchedulerState<T>) => void)",
+     "doc": "Receives the scheduler state (free functions `schedulerNext(state)` …). Read once at mount.",
+     "optional": true
+    },
+    {
+     "name": "strings",
+     "kind": "property",
+     "signature": "strings?: MaybeAccessor<Partial<SchedulerStrings> | undefined>",
+     "doc": "String overrides on top of the locale table.",
+     "optional": true
+    },
+    {
+     "name": "style",
+     "kind": "property",
+     "signature": "style?: Record<string, string | number | undefined>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "timeZone",
+     "kind": "property",
+     "signature": "timeZone?: MaybeAccessor<string | undefined>",
+     "doc": "Wall clock of the layout. Default: the zone resolved when the state is created — `\"UTC\"` on the server (kept by\nthe resumed page, dev warning), the local zone for a client-only render. Pass it for local time on SSR pages.",
+     "optional": true
+    },
+    {
+     "name": "toolbar",
+     "kind": "property",
+     "signature": "toolbar?: boolean",
+     "doc": "`false` hides the default toolbar (no effect with `renderHeader`). Default `true`.",
+     "optional": true
+    },
+    {
+     "name": "translate",
+     "kind": "property",
+     "signature": "translate?: \"yes\" | \"no\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "variant",
+     "kind": "property",
+     "signature": "variant?: \"default\" | \"secondary\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "view?: SchedulerView | Signal<SchedulerView> | (() => SchedulerView)",
+     "doc": "Live view value, accessor or two-way signal.",
+     "optional": true
+    },
+    {
+     "name": "visibleLanes",
+     "kind": "property",
+     "signature": "visibleLanes?: MaybeAccessor<number | \"auto\" | undefined>",
+     "doc": "Lane cap of month rows (the time grid's all-day band never collapses: it grows). `\"auto\"` = `DEFAULT_VISIBLE_LANES` (ui: density default).",
+     "optional": true
+    },
+    {
+     "name": "weekendDays",
+     "kind": "property",
+     "signature": "weekendDays?: MaybeAccessor<readonly number[] | undefined>",
+     "doc": "Weekdays (0 = Sunday) marked `data-weekend`. Default: locale weekend.",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/scheduler/scheduler.tsx",
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scheduler/scheduler.tsx#L20"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerProps/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerRangeSelectEvent",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerRangeSelectEvent",
+   "kind": "interface",
+   "summary": "Payload of `onRangeSelect`.",
+   "remarks": "Payload of `onRangeSelect`.",
+   "signatures": [
+    "interface SchedulerRangeSelectEvent<D = SchedulerDate>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allDay",
+     "kind": "property",
+     "signature": "allDay: boolean",
+     "doc": "`true` when the selection ran over month cells or the all-day row.",
+     "optional": false
+    },
+    {
+     "name": "end",
+     "kind": "property",
+     "signature": "end: D",
+     "doc": "Exclusive: the end of the last selected slot, or midnight after the last selected day.",
+     "optional": false
+    },
+    {
+     "name": "source",
+     "kind": "property",
+     "signature": "source: SchedulerChangeSource",
+     "doc": "Whether a pointer drag or `Shift+Arrow` + `Enter` produced the selection.",
+     "optional": false
+    },
+    {
+     "name": "start",
+     "kind": "property",
+     "signature": "start: D",
+     "doc": "Inclusive start of the first selected slot or day.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 102,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L102"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerRangeSelectEvent/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerRenderEvent",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerRenderEvent",
+   "kind": "type",
+   "summary": "`renderEvent` (read once at mount): chip content.",
+   "remarks": "`renderEvent` (read once at mount): chip content.",
+   "signatures": [
+    "type SchedulerRenderEvent<T = unknown> = (event: SchedulerEvent<T>, state: SchedulerEventRenderState) => Content"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/context.tsx",
+    "line": 36,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/context.tsx#L36"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerRenderEvent/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerRenderEventMenu",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerRenderEventMenu",
+   "kind": "type",
+   "summary": "`renderEventMenu` (read once at mount): items of the menu over an event chip.",
+   "remarks": "`renderEventMenu` (read once at mount): items of the menu over an event chip.",
+   "signatures": [
+    "type SchedulerRenderEventMenu<T = unknown> = (event: SchedulerEvent<T>, context: SchedulerEventMenuContext) => Content"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/menus.tsx",
+    "line": 46,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/menus.tsx#L46"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerRenderEventMenu/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerRenderHeader",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerRenderHeader",
+   "kind": "type",
+   "summary": "`renderHeader` (read once at mount): replaces the default toolbar.",
+   "remarks": "`renderHeader` (read once at mount): replaces the default toolbar.",
+   "signatures": [
+    "type SchedulerRenderHeader = (api: SchedulerHeaderApi) => Content"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/toolbar.tsx",
+    "line": 41,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/toolbar.tsx#L41"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerRenderHeader/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerRenderSlotMenu",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerRenderSlotMenu",
+   "kind": "type",
+   "summary": "`renderSlotMenu` (read once at mount): items of the menu over an empty month cell, all-day cell or time slot.",
+   "remarks": "`renderSlotMenu` (read once at mount): items of the menu over an empty month cell, all-day cell or time slot.",
+   "signatures": [
+    "type SchedulerRenderSlotMenu = (range: SchedulerRange, context: SchedulerSlotMenuContext) => Content"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/menus.tsx",
+    "line": 44,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/menus.tsx#L44"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerRenderSlotMenu/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerSlotEvent",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerSlotEvent",
+   "kind": "interface",
+   "summary": "Payload of `onSlotAction`, `onSlotDoubleClick` and `onSlotContextMenu`.",
+   "remarks": "Payload of `onSlotAction`, `onSlotDoubleClick` and `onSlotContextMenu`.",
+   "signatures": [
+    "interface SchedulerSlotEvent<D = SchedulerDate>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allDay",
+     "kind": "property",
+     "signature": "allDay: boolean",
+     "doc": "`true` for a month cell or an all-day cell, `false` for a time slot.",
+     "optional": false
+    },
+    {
+     "name": "date",
+     "kind": "property",
+     "signature": "date: D",
+     "doc": "Slot start (time grid) or the day (month grid / all-day row).",
+     "optional": false
+    },
+    {
+     "name": "element",
+     "kind": "property",
+     "signature": "element: HTMLElement",
+     "doc": "The cell or slot element that was activated.",
+     "optional": false
+    },
+    {
+     "name": "nativeEvent",
+     "kind": "property",
+     "signature": "nativeEvent: MouseEvent | KeyboardEvent",
+     "doc": "The originating DOM event (see `SchedulerEventInteraction.nativeEvent`).",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 90,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L90"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerSlotEvent/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerSlotMenuContext",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerSlotMenuContext",
+   "kind": "interface",
+   "summary": "Second argument of `renderSlotMenu` (malva `MlvSchedulerSlotMenuContext` minus `$implicit`).",
+   "remarks": "Second argument of `renderSlotMenu` (malva `MlvSchedulerSlotMenuContext` minus `$implicit`).",
+   "signatures": [
+    "interface SchedulerSlotMenuContext"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "close",
+     "kind": "property",
+     "signature": "readonly close: () => void",
+     "doc": "Closes the menu.",
+     "optional": false
+    },
+    {
+     "name": "selection",
+     "kind": "property",
+     "signature": "readonly selection: boolean",
+     "doc": "The range is the pending keyboard selection the cell lies in (not the cell's own day / slot).",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "readonly view: SchedulerView",
+     "doc": "The view the menu opened in.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/menus.tsx",
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/menus.tsx#L28"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerSlotMenuContext/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerState",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerState",
+   "kind": "interface",
+   "summary": "Scheduler state (serializable: controllable values, the caller's option values / accessors, plain signals).",
+   "remarks": "Scheduler state (serializable: controllable values, the caller's option values / accessors, plain signals).",
+   "signatures": [
+    "interface SchedulerState<T = unknown>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "announcement",
+     "kind": "property",
+     "signature": "readonly announcement: Signal<readonly [string, string]>",
+     "doc": "The two polite live-region texts (exactly one non-empty after an announcement).",
+     "optional": false
+    },
+    {
+     "name": "canMove",
+     "kind": "property",
+     "signature": "readonly canMove: SchedulerCanChange<T> | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "canResize",
+     "kind": "property",
+     "signature": "readonly canResize: SchedulerCanChange<T> | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "date",
+     "kind": "property",
+     "signature": "readonly date: ControlledState<SchedulerDate>",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "dragging",
+     "kind": "property",
+     "signature": "readonly dragging: Signal<boolean>",
+     "doc": "`true` while a pointer gesture owns the pointer (root `user-select: none`).",
+     "optional": false
+    },
+    {
+     "name": "dragPreview",
+     "kind": "property",
+     "signature": "readonly dragPreview: Signal<SchedulerDragPreview | null>",
+     "doc": "Drag preview of the gesture in flight.",
+     "optional": false
+    },
+    {
+     "name": "events",
+     "kind": "property",
+     "signature": "readonly events: ControlledState<readonly SchedulerEvent<T>[]>",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventAction",
+     "kind": "property",
+     "signature": "readonly onEventAction: ((interaction: SchedulerEventInteraction<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventContextMenu",
+     "kind": "property",
+     "signature": "readonly onEventContextMenu: ((interaction: SchedulerEventInteraction<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventDelete",
+     "kind": "property",
+     "signature": "readonly onEventDelete: ((interaction: SchedulerEventInteraction<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventDoubleClick",
+     "kind": "property",
+     "signature": "readonly onEventDoubleClick: ((interaction: SchedulerEventInteraction<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventMove",
+     "kind": "property",
+     "signature": "readonly onEventMove: ((change: SchedulerEventChange<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onEventResize",
+     "kind": "property",
+     "signature": "readonly onEventResize: ((change: SchedulerEventChange<T>) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onExternalDrop",
+     "kind": "property",
+     "signature": "readonly onExternalDrop: ((drop: SchedulerExternalDropEvent) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onRangeSelect",
+     "kind": "property",
+     "signature": "readonly onRangeSelect: ((range: SchedulerRangeSelectEvent) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onSlotAction",
+     "kind": "property",
+     "signature": "readonly onSlotAction: ((slot: SchedulerSlotEvent) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onSlotContextMenu",
+     "kind": "property",
+     "signature": "readonly onSlotContextMenu: ((slot: SchedulerSlotEvent) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onSlotDoubleClick",
+     "kind": "property",
+     "signature": "readonly onSlotDoubleClick: ((slot: SchedulerSlotEvent) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "onVisibleRangeChange",
+     "kind": "property",
+     "signature": "readonly onVisibleRangeChange: ((range: SchedulerVisibleRange) => void) | undefined",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "options",
+     "kind": "property",
+     "signature": "readonly options: SchedulerOptions",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "pendingFocus",
+     "kind": "property",
+     "signature": "readonly pendingFocus: Signal<SchedulerFocusRequest | null>",
+     "doc": "Focus target after the next render (keyboard moves, removed chips).",
+     "optional": false
+    },
+    {
+     "name": "popoverDay",
+     "kind": "property",
+     "signature": "readonly popoverDay: Signal<number | null>",
+     "doc": "Day index of the open `+N more` popover.",
+     "optional": false
+    },
+    {
+     "name": "scrollRequest",
+     "kind": "property",
+     "signature": "readonly scrollRequest: Signal<SchedulerScrollRequest | null>",
+     "doc": "Latest `schedulerScrollToTime` request.",
+     "optional": false
+    },
+    {
+     "name": "selection",
+     "kind": "property",
+     "signature": "readonly selection: Signal<SchedulerSelection | null>",
+     "doc": "Pending range selection.",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "readonly view: ControlledState<SchedulerView>",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "zone",
+     "kind": "property",
+     "signature": "readonly zone: string",
+     "doc": "The zone resolved at creation when no `timeZone` is given (server: `\"UTC\"`, browser: the local zone). Region\nstate, so a resumed page keeps laying out in the zone the server rendered with (no chip jump, no `data-today`\nmove on the first recompute).",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/state.ts",
+    "line": 201,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/state.ts#L201"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerState/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerStrings",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerStrings",
+   "kind": "type",
+   "summary": "One locale's strings (`strings` prop: any subset overrides the locale table).",
+   "remarks": "One locale's strings (`strings` prop: any subset overrides the locale table).",
+   "signatures": [
+    "type SchedulerStrings = Record<SchedulerMessageKey, string> & Partial<Record<SchedulerPluralKey, string>>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/intl.ts",
+    "line": 57,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/intl.ts#L57"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerStrings/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerToolbarLabels",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerToolbarLabels",
+   "kind": "interface",
+   "summary": "Labels of the default toolbar (translated by the root).",
+   "remarks": "Labels of the default toolbar (translated by the root).",
+   "signatures": [
+    "interface SchedulerToolbarLabels"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "day",
+     "kind": "property",
+     "signature": "readonly day: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "month",
+     "kind": "property",
+     "signature": "readonly month: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "next",
+     "kind": "property",
+     "signature": "readonly next: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "previous",
+     "kind": "property",
+     "signature": "readonly previous: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "today",
+     "kind": "property",
+     "signature": "readonly today: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "viewSwitch",
+     "kind": "property",
+     "signature": "readonly viewSwitch: () => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "week",
+     "kind": "property",
+     "signature": "readonly week: () => string",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/toolbar.tsx",
+    "line": 44,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/toolbar.tsx#L44"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerToolbarLabels/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerVariants",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerVariants",
+   "kind": "type",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "type SchedulerVariants = VariantProps<typeof schedulerVariants>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/scheduler/scheduler.styles.ts",
+    "line": 39,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/scheduler/scheduler.styles.ts#L39"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerVariants-type/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerView",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerView",
+   "kind": "type",
+   "summary": "Views shipped in phase 1.",
+   "remarks": "Views shipped in phase 1.",
+   "signatures": [
+    "type SchedulerView = \"month\" | \"week\" | \"day\""
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 19,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L19"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerView/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#SchedulerVisibleRange",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "SchedulerVisibleRange",
+   "kind": "interface",
+   "summary": "The rendered period.",
+   "remarks": "The rendered period.",
+   "signatures": [
+    "interface SchedulerVisibleRange<D = SchedulerDate>"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "end",
+     "kind": "property",
+     "signature": "end: D",
+     "doc": "Exclusive: start of the day after the last rendered day.",
+     "optional": false
+    },
+    {
+     "name": "start",
+     "kind": "property",
+     "signature": "start: D",
+     "doc": "Inclusive start of the first rendered day.",
+     "optional": false
+    },
+    {
+     "name": "view",
+     "kind": "property",
+     "signature": "view: SchedulerView",
+     "doc": "The view the range was computed for.",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/cdk/scheduler/layout.ts",
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/scheduler/layout.ts#L126"
+   },
+   "href": "/api/rivetjs/ui/scheduler/SchedulerVisibleRange/"
+  },
+  {
+   "key": "@rivetjs/ui/scheduler#schedulerVariants",
+   "entry": "@rivetjs/ui/scheduler",
+   "name": "schedulerVariants",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const schedulerVariants: TVReturnType<{ density: { comfortable: { base: string; menu: string; menuPopover: string; morePanel: string }; compact: { base: string; menu: string; menuPopover: string; morePanel: string }; default: {} }; variant: { default: {}; secondary: { base: string } } }, { allDay: string; base: string; cell: string; event: string; eventTime: string; eventTitle: string; grid: string; handle: string; header: string; menu: string; menuPopover: string; more: string; moreOverlay: string; morePanel: string; nowLine: string; slot: string; title: string; toolbar: string }, undefined, { density: { comfortable: { base: string; menu: string; menuPopover: string; morePanel: string }; compact: { base: string; menu: string; menuPopover: string; morePanel: string }; default: {} }; variant: { default: {}; secondary: { base: string } } }, { allDay: string; base: string; cell: string; event: string; eventTime: string; eventTitle: string; grid: string; handle: string; header: string; menu: string; menuPopover: string; more: string; moreOverlay: string; morePanel: string; nowLine: string; slot: string; title: string; toolbar: string }, TVReturnTypeLike<{ density: { comfortable: { base: string; menu: string; menuPopover: string; morePanel: string }; compact: { base: string; menu: string; menuPopover: string; morePanel: string }; default: {} }; variant: { default: {}; secondary: { base: string } } }, { allDay: string; base: string; cell: string; event: string; eventTime: string; eventTitle: string; grid: string; handle: string; header: string; menu: string; menuPopover: string; more: string; moreOverlay: string; morePanel: string; nowLine: string; slot: string; title: string; toolbar: string }>>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/styles/src/components/scheduler/scheduler.styles.ts",
+    "line": 8,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/scheduler/scheduler.styles.ts#L8"
+   },
+   "href": "/api/rivetjs/ui/scheduler/schedulerVariants/"
+  },
+  {
    "key": "@rivetjs/ui/scroll-area#ScrollArea",
    "entry": "@rivetjs/ui/scroll-area",
    "name": "ScrollArea",
@@ -273052,7 +275329,7 @@
     {
      "name": "selectedKey",
      "kind": "property",
-     "signature": "selectedKey?: Key | Signal<Key | null> | Signal<string | null> | Signal<number | null> | null",
+     "signature": "selectedKey?: Key | Signal<number | null> | Signal<Key | null> | Signal<string | null> | null",
      "doc": "The selected item's key (controlled: a key or `null`, or a two-way `Signal<Key | null>`).",
      "optional": true
     },
@@ -339298,7 +341575,7 @@
     {
      "name": "selectedKey",
      "kind": "property",
-     "signature": "selectedKey?: Key | Signal<Key | null> | Signal<string | null> | Signal<number | null> | (() => Key | null) | null",
+     "signature": "selectedKey?: Key | Signal<number | null> | Signal<Key | null> | Signal<string | null> | (() => Key | null) | null",
      "doc": "Rivet extension: the selected key in single selection (controlled: a plain key or `null`, or a two-way `Signal<Key | null>`).\nIgnored when `selectedKeys` is given.",
      "optional": true
     },

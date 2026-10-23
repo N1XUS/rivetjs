@@ -1,0 +1,9 @@
+/* Tailwind v4 and the Rivet UI theme; Scheduler imports its component stylesheet. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+@layer base {
+  body {
+    @apply m-0 bg-background font-sans text-foreground antialiased;
+  }
+}

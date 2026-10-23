@@ -3,6 +3,18 @@ import type { ApiEntryConfig, ApiPackage } from "@rivetjs/docs-kit/tools/app.ts"
 
 /** Documented entry points: import specifier → source file (relative to libs/) and where it runs. */
 export const entries: ApiEntryConfig[] = [
+  {
+    entry: "@rivetjs/cdk/scheduler/layout",
+    file: "cdk/scheduler/layout-index.ts",
+    runsOn: "both",
+    summary: "Pure Scheduler date, range, lane, overlap, move and resize layout helpers; server-safe without components or DOM.",
+  },
+  {
+    entry: "@rivetjs/cdk/scheduler",
+    file: "cdk/scheduler/index.tsx",
+    runsOn: "both",
+    summary: "Scheduler: month, week and day event layout, editing, range selection, custom headers and context menus.",
+  },
   { entry: "@rivetjs/cdk/id", file: "cdk/utils/id.ts", runsOn: "both", summary: "SSR-stable unique ids." },
   { entry: "@rivetjs/cdk/platform", file: "cdk/platform/index.ts", runsOn: "both", summary: "Platform and feature detection." },
   { entry: "@rivetjs/cdk/bidi", file: "cdk/bidi/index.ts", runsOn: "both", summary: "Text direction." },
@@ -428,7 +440,8 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/cdk/compare",
     file: "cdk/compare/index.tsx",
     runsOn: "both",
-    summary: "Compare, CompareBefore, CompareAfter, CompareHandle (ARIA slider), CompareDivider: before / after comparison with a draggable divider (Rivet-authored).",
+    summary:
+      "Compare, CompareBefore, CompareAfter, CompareHandle (ARIA slider), CompareDivider: before / after comparison with a draggable divider (Rivet-authored).",
   },
   {
     entry: "@rivetjs/cdk/lightbox",
@@ -701,7 +714,8 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/cdk/morph/item",
     file: "cdk/morph/item.tsx",
     runsOn: "both",
-    summary: "Item morph (Rivet-authored): a list item lifts into a panel on a long press / right click / press / Shift+F10 and morphs back (iOS context-menu style).",
+    summary:
+      "Item morph (Rivet-authored): a list item lifts into a panel on a long press / right click / press / Shift+F10 and morphs back (iOS context-menu style).",
   },
   {
     entry: "@rivetjs/cdk/menu",
