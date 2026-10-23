@@ -16,6 +16,13 @@ export function PlannerDemo() {
     { id: "design", title: "Design review", start: "2026-10-20T10:00", end: "2026-10-20T11:00" },
     { id: "offsite", title: "Offsite", start: "2026-10-22", end: "2026-10-24", allDay: true, color: "success" },
   ]);
+  // This counter survives resume and removal; both creation paths share one monotonic allocator.
+  const nextId = signal(2);
+  function allocateId() {
+    const id = nextId();
+    nextId.set(id + 1);
+    return id;
+  }
   const log = signal("Right-click a cell or event, or press Shift+F10.");
   const pending = signal<string | null>(null);
   return (
@@ -29,7 +36,7 @@ export function PlannerDemo() {
           <Dropdown.Item
             id="new-event"
             onAction={() => {
-              const n = events().length + 1;
+              const n = allocateId();
               events.set([...events(), { id: `new-${n}`, title: `New event ${n}`, start: range.start, end: range.end, allDay: range.allDay }]);
               log.set(`Created ${context.selection ? "selected range" : "slot"}: ${String(range.start)} to ${String(range.end)} (exclusive)`);
               context.close();
@@ -53,7 +60,8 @@ export function PlannerDemo() {
             <Dropdown.Item
               id="duplicate-event"
               onAction={() => {
-                events.set([...events(), { ...event, id: `copy-${events().length}`, title: `${event.title} (copy)` }]);
+                const n = allocateId();
+                events.set([...events(), { ...event, id: `copy-${n}`, title: `${event.title} (copy)` }]);
                 log.set("Duplicated event");
                 context.close();
               }}
@@ -101,6 +109,7 @@ export function PlannerDemo() {
         )}
       </Show>
       <output id="menu-log">{log()}</output>
+      <output id="event-count">Events: {events().length}</output>
     </section>
   );
 }

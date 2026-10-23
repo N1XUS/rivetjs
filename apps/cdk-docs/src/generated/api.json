@@ -150740,8 +150740,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/overlay/position.ts",
-    "line": 969,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/overlay/position.ts#L969"
+    "line": 972,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/overlay/position.ts#L972"
    },
    "href": "/api/rivetjs/cdk/position/compute/"
   },
@@ -150787,7 +150787,7 @@
    "name": "overlayPosition",
    "kind": "function",
    "summary": "Position `overlay` relative to `target` now and keep it positioned until `dispose()`: window and visual viewport resizes, overlay / target size changes (ResizeObserver), and the iOS virtual keyboard.",
-   "remarks": "Position `overlay` relative to `target` now and keep it positioned until `dispose()`: window and\nvisual viewport resizes, overlay / target size changes (ResizeObserver), and the iOS virtual\nkeyboard. Scrolling a scroll parent of the target calls `onClose` when its viewport position moves.\nQueued scroll notifications from before opening do not dismiss an already-positioned overlay.\nCall when the overlay opens; dispose on close.",
+   "remarks": "Position `overlay` relative to `target` now and keep it positioned until `dispose()`: window and\nvisual viewport resizes, overlay / target size changes (ResizeObserver), and the iOS virtual\nkeyboard. Scrolling a scroll parent calls `onClose` when the target or document scroll offset moves.\nQueued scroll notifications from before opening do not dismiss an already-positioned overlay.\nCall when the overlay opens; dispose on close.",
    "signatures": [
     "function overlayPosition(props: AriaPositionProps): PositionAria"
    ],
@@ -150849,8 +150849,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/overlay/position.ts",
-    "line": 1004,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/overlay/position.ts#L1004"
+    "line": 1007,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/overlay/position.ts#L1007"
    },
    "href": "/api/rivetjs/cdk/position/position/"
   },
