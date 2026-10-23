@@ -20,12 +20,12 @@ This runs `vite`. With `rivetRouter()`, the dev server renders each page through
 
 ## Dev pages resume
 
-Like in production, the browser :term[resumes]{id=resumability} the server's HTML: no component runs in the browser, and a button's code loads when you use it (one file per component). Serialization errors show in the error overlay with the component, file and line.
+Like in production, the browser :term[resumes]{id=resumability} the server's HTML: no component runs in the browser on load, and a component's code runs when you use it (one file per module).
 
-Resumed parts of a page are not components the browser could swap, so on your **first edit** the page switches to rendering in the browser (state of the resumed page starts fresh once). From then on, hot reload works as described below. Reload the page to resume again.
+Resumed components are not components the browser could swap in place, so an **edit of a component file reloads the page**, which then resumes the new code (state of the page starts fresh). An edit that only changes a `css` block updates the styles without a reload. For hot reload that keeps state, turn dev resume off (below).
 
 - Code is not bundled or minified, so judge performance with a production build (`npm run build`, then `npm start` or `npm run preview`).
-- `rivetRouter({ dev: { resume: false } })`: pages render in the browser from the first load (state is kept from the first edit on).
+- `rivetRouter({ dev: { resume: false } })`: pages render in the browser from the first load, and hot reload keeps component state as described below.
 
 See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
 
@@ -97,8 +97,6 @@ Every warning or error Rivet prints in the terminal or the browser console says 
 - **How to fix it.** A `fix:` line with the remedy, and a `docs:` link to the page that explains it. Compile errors get their `fix:` line from `@rivetjs/language-core` (installed by the starters); without it they still link the docs.
 
 Messages from the browser reach the terminal through Vite (`[vite] (client) [console.warn] …`), with the same lines.
-
-The server also warns when a captured value takes 8 KB or more of the page's resume state, and once when the page's state passes 64 KB, with the sites that take the most (``Rivet resume: <Picker> onClick handler captures `products` …: array of 1,000 objects, 61.3 KB of rivet/state``). See [large data in resume state](../../learn/resuming.md#large-data-in-resume-state).
 
 `rivet-check` prints a code frame, `fix:` and `docs:` lines under each diagnostic. See [Language service](language-service.md).
 

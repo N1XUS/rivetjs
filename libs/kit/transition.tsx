@@ -13,7 +13,7 @@
 // Resumable at zero JS: all state is signals and refs, and the phase machine is driven from the
 // bindings that read `show`, so a server-rendered page loads this code only when `show` changes.
 import { computed, createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
-import { Dynamic, Provider, Show, _serverBranch, clientEffect, ref, type Ref } from "@rivetjs/runtime/dom";
+import { Dynamic, Provider, Show, clientEffect, ref, type Ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
 /** Transition phases. `hidden`: unmounted (or `hidden`); `shown`: settled open. */
@@ -139,12 +139,9 @@ export function createTransition(source: boolean | (() => boolean) | undefined, 
   const show = () => (source === undefined ? parent!.showing() : typeof source === "function" ? source() : source);
   const appear = options.appear ?? parent?.appear ?? false;
   const initial = untrack(show);
-  // Where to start: a resumed page re-creating the server-rendered region (on the first change of
-  // `show`) starts from the server state, so that change still transitions; a nested transition
-  // starts like its parent (rendered: shown, also while the parent leaves).
-  const server = _serverBranch();
-  const start = server !== undefined ? server === 0 : source === undefined && parent ? untrack(parent.rendered) : initial;
-  const phase = signal<TransitionPhase>(start && (server !== undefined || !appear) ? "shown" : "hidden");
+  // Where to start: a nested transition starts like its parent (rendered: shown, also while the parent leaves).
+  const start = source === undefined && parent ? untrack(parent.rendered) : initial;
+  const phase = signal<TransitionPhase>(start && !appear ? "shown" : "hidden");
   const leaving = signal(0);
   /** Whether this transition counts in the parent's `leaving`. */
   const holding = signal(false);

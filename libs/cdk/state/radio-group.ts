@@ -1,7 +1,7 @@
 // Ported from react-stately `useRadioGroupState` (packages/react-stately/src/radio/useRadioGroupState.ts), Apache-2.0, © Adobe.
 // Rivet: `value` is a two-way Signal, a plain value or an accessor (live prop `value={v()}`); plain / accessor values
 // are controlled as upstream (`state.fixed`: never written, a change only calls `onChange`).
-import { _regionState, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { createId } from "@rivetjs/cdk/id";
 import { commitValidation, createFormValidationState, displayValidation, type FormValidationOptions, type FormValidationState } from "./form-validation.ts";
 
@@ -55,7 +55,7 @@ export function createRadioGroupState(options: RadioGroupStateOptions = {}): Rad
       ? given
       : fixed
         ? signal<string | null>(given as string | null)
-        : _regionState(() => signal<string | null>(options.defaultValue ?? null))
+        : signal<string | null>(options.defaultValue ?? null)
   ) as Signal<string | null>;
   const name = options.name ?? createId();
   const disabled = typeof options.isDisabled === "function" ? options.isDisabled : undefined;

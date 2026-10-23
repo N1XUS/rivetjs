@@ -130,10 +130,10 @@ npm run preview
 Open the preview address and the browser's developer tools, on the Network tab:
 
 1. Reload the page. The text and the button are there right away: they are in the HTML.
-2. Look at the scripts. A small inline script and a few low-priority files (such as `resume-entry-….js` and `resume-route_main-….js`) are the resume runtime and the router's link handling. Nothing named `resume-index_tsx` has loaded: the counter's code is not needed yet.
-3. Move the mouse over the button. A small file named like `resume-index_tsx-….js` loads on hover: the browser code of the home page (`src/routes/index.tsx`), which holds the counter's click handler. Click the button: the count goes up.
+2. Look at the scripts. After the page has loaded, a few files arrive at low priority (such as `derived-runtime-….js` and the home page's own chunk): the resume runtime and the page's code are fetched ahead, but none of it runs yet.
+3. Click the button. The runtime starts, runs the home page's code (`src/routes/index.tsx`) over the HTML that is already there, and the click reaches the counter's handler: the count goes up.
 
-The `Counter` component did not run in the browser. Only its click handler did. [Resuming](../learn/resuming.md) explains how.
+Nothing ran in the browser until you used the page, and the click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.
 
 ## Starters
 

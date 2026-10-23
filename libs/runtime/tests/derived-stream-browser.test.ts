@@ -45,7 +45,7 @@ export function App(props: { data: PromiseLike<{ items: string[] }> }) {
   );
 }
 `;
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Inner"], independent: ["App"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["App", "Inner"], independent: ["App"] };
 const manifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#App": "/page.js", "src/page.tsx#Inner": "/page.js" } };
 const ITEMS = { items: ["Io", "Europa"] };
 
@@ -237,7 +237,7 @@ export function Page(props: { data: PromiseLike<{ items: string[] }> }) {
   );
 }
 `;
-const PROVIDED_RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["Page", "App"], independent: ["Page"] };
+const PROVIDED_RESUME = { module: "src/page.tsx", boundaries: ["Page", "App"], independent: ["Page"] };
 const providedManifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#Page": "/page.js", "src/page.tsx#App": "/page.js" } };
 async function buildProvided(): Promise<{ Page: (props: { data: PromiseLike<unknown> }) => ServerValue; dom: string }> {
   const server = compile(PROVIDED, { target: "server", filename: "page.tsx", resume: PROVIDED_RESUME } as never);
@@ -352,7 +352,7 @@ export function App(props: { n: number }) {
 }
 `;
 compiled("a unit holding a Suspense adopts the server's resource state (no load in the browser), then works", async () => {
-  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App"], independent: ["App"] };
+  const resume = { module: "src/page.tsx", boundaries: ["App"], independent: ["App"] };
   const server = compile(SUSPENDED, { target: "server", filename: "page.tsx", resume } as never);
   const dom = compile(SUSPENDED, { target: "dom", filename: "page.tsx", resume } as never);
   assert.deepEqual(server.diagnostics, []);
@@ -419,7 +419,7 @@ export function App() {
 }
 `;
 compiled("a discarded Suspense build leaves no records: the boundaries of the rendered build adopt", async () => {
-  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Inner"], independent: ["App"] };
+  const resume = { module: "src/page.tsx", boundaries: ["App", "Inner"], independent: ["App"] };
   const server = compile(REBUILT, { target: "server", filename: "page.tsx", resume } as never);
   const dom = compile(REBUILT, { target: "dom", filename: "page.tsx", resume } as never);
   assert.deepEqual(server.diagnostics, []);

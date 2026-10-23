@@ -41,7 +41,9 @@ async function diagnostics(files: Record<string, string>): Promise<string[]> {
     skipLibCheck: true,
   };
   const host = ts.createCompilerHost(options);
-  const read = host.readFile.bind(host), exists = host.fileExists.bind(host), source = host.getSourceFile.bind(host);
+  const read = host.readFile.bind(host),
+    exists = host.fileExists.bind(host),
+    source = host.getSourceFile.bind(host);
   const virtual = (name: string) => (name.startsWith(dir) ? files[name.slice(dir.length)] : undefined);
   host.readFile = (name) => virtual(name) ?? read(name);
   host.fileExists = (name) => virtual(name) !== undefined || exists(name);
@@ -49,8 +51,14 @@ async function diagnostics(files: Record<string, string>): Promise<string[]> {
     const text = virtual(name);
     return text !== undefined ? ts.createSourceFile(name, text, version, true) : source(name, version, onError, create);
   };
-  const program = ts.createProgram(Object.keys(files).map((name) => dir + name), options, host);
-  return ts.getPreEmitDiagnostics(program).map((d) => (d.file ? d.file.fileName.slice(dir.length) + ": " : "") + ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+  const program = ts.createProgram(
+    Object.keys(files).map((name) => dir + name),
+    options,
+    host,
+  );
+  return ts
+    .getPreEmitDiagnostics(program)
+    .map((d) => (d.file ? d.file.fileName.slice(dir.length) + ": " : "") + ts.flattenDiagnosticMessageText(d.messageText, "\n"));
 }
 
 test("Link to: generated RoutePath accepts app pages (+ query/hash) and rejects others", async () => {

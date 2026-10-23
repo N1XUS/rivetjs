@@ -1,18 +1,18 @@
 // @rivetjs/bridge/server — `_island` on the server: one framework island in the Rivet stream (spec §3.3–§3.5, §3.9).
 // The facade calls `_island(props, ISLAND, load)` per foreign component export; the adapter renders the framework
 // HTML with slot holes, the core writes it as trusted markup around the Rivet slot content (in place, resumable), and
-// records the hydration effect + chunk preload only when a `client` policy is set (or a live prop needs hydrate-on-change).
+// records the hydration effect only when a `client` policy is set (or a live prop needs hydrate-on-change).
 import { Async, type ServerValue } from "@rivetjs/runtime/server";
 import type { ClientWhen } from "@rivetjs/runtime/server";
 import { _markup } from "@rivetjs/runtime/server-markup";
-import { _rPreload, _renderNonce } from "@rivetjs/runtime/server-resume";
+import { _renderNonce } from "@rivetjs/runtime/server-resume";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { splitProps } from "@rivetjs/runtime/props";
 import { untrack } from "@rivetjs/reactivity";
 import { DEV, devWhere } from "#dev";
 import { _hydratedRoot, _staticRoot } from "./root.tsx";
 import { _renderIslands } from "./ids.ts";
-import { derivedLean, leanValues, offerLean } from "./lean.ts";
+import { derivedLean, leanValues } from "./lean.ts";
 import { _rIsland } from "@rivetjs/runtime/derived-eager";
 import { slotMark, splitSlots } from "./slots.ts";
 import type { ClientOn, ClientPolicy, IslandContext, IslandDef, IslandModule, IslandRender, PolicyOptions, PreloadStrategy, SlotMark } from "./adapter.ts";
@@ -31,12 +31,9 @@ const isContent = (value: unknown): boolean =>
     typeof value === "object" &&
     (TEMPLATE in value || COMPILED in value || (Array.isArray(value) && value.length > 0 && value.every(isContent))));
 
-// Policy → hydration trigger / chunk preload strategy (spec §3.5 table).
+// Policy → hydration trigger (spec §3.5 table; the derived model fetches island chunks ahead, `preload` has no effect).
 const WHEN: Record<string, ClientWhen> = { load: "load", idle: "idle", visible: "visible", interaction: "interaction", intent: "idle", only: "load" };
-const PRELOAD: Record<string, PreloadStrategy> = { load: "eager", idle: "idle", visible: "visible", interaction: "intent", intent: "intent", only: "eager" };
 const whenOf = (on: ClientOn): ClientWhen => (on.startsWith("media:") ? (on as ClientWhen) : WHEN[on]!);
-// `media:` islands fetch at match: listed as interaction chunks (`x`) until then.
-const strategyOf = (on: ClientOn): PreloadStrategy => (on.startsWith("media:") ? "interaction" : PRELOAD[on]!);
 
 const failure = (fw: string, id: string, cause: unknown, where: string): Error =>
   new Error("[rivet:bridge] RV2144 " + fw + " island " + id + " failed to render: " + (cause instanceof Error ? cause.message : String(cause)) + where, {
@@ -112,7 +109,6 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
         if (DEV) console.warn("[rivet:bridge] " + fw + " island " + def.id + ' has client="' + on + '" but no loader: it stays static' + devWhere());
         return _staticRoot(id, rf, rc, parts) as ServerValue;
       }
-      if (on !== undefined && def.chunk !== undefined) _rPreload(def.chunk, own.preload ?? strategyOf(on));
       const options: PolicyOptions = typeof client === "object" ? { ...client, id } : on !== undefined ? { id, on } : { id };
       const props = live();
       const blocked =
@@ -123,10 +119,8 @@ function render(props: Record<string, unknown>, def: IslandDef, load?: () => Pro
             : null;
       let answer: Record<string, unknown> | string | undefined;
       const values = () => (answer ??= leanValues(on, props, blocked));
-      // Derived model (M6-PARITY): plain JSON props → the lean boot; else the adopt run of the boundary rendering it.
-      if (!_rIsland({ id, key: def.id, on, values, props: null, tail: derivedLean }))
-        // Islands-only lean tail (T7b): the render decides at its end whether every resumable is a lean island.
-        offerLean(id, def.id, on, values, DEV);
+      // Plain JSON props → the lean boot; else the adopt run of the boundary rendering it (M6-PARITY).
+      _rIsland({ id, key: def.id, on, values, props: null, tail: derivedLean });
       return _hydratedRoot(id, rf, rc, parts, load, props, options, on !== undefined ? whenOf(on) : "idle") as ServerValue;
     }
     return _staticRoot(id, rf, rc, parts) as ServerValue;

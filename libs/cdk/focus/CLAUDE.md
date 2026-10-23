@@ -7,14 +7,14 @@ Focus management: Rivet helpers (Tab containment, save/restore, roving tabindex,
 - `./focus` -> `index.ts`: `focusFirst`, `focusLast`, `containFocus(scope, e)`, `saveFocus(within?)`, `roveFocus(items, item)`, `inertOutside(el)`; react-aria: `focusSafely`, `isElementInScope`, `getFocusableTreeWalker`, `createFocusManager(ref, opts)`; types `FocusManager`, `FocusManagerOptions` (`from`, `tabbable`, `wrap`, `accept`)
 - `./focus-scope` -> `focus-scope.tsx`: `<FocusScope contain restoreFocus autoFocus class>`, `useFocusManager()`, `scopeFocusNext/Previous/First/Last`, `isElementInChildOfActiveScope`, internals `scopeKeyDown`, `mountScope`
 - `./focus-ring` -> `focus-ring.tsx`: `useFocusRing({ within, isTextInput, autoFocus })` -> `{ isFocused, isFocusVisible, focusProps }`
-- `./focusable` -> `focusable.tsx`: `focusableProps(props, ref?)` (RA `useFocusable`: `focusProps` + `keyboardProps` bags, `FocusableContext` props merged, tabIndex `-1` when `excludeFromTabOrder` / disabled, autoFocus `clientEffect` + `focusSafely`, `ref`), `Focusable` (render-function child `{(p) => <span {...p} ref={p.ref} role="button" />}`; dev checks: forwarded ref, focusable, interactive role), `FocusableProvider`, `FocusableContext` (`rv-focusable`), types `FocusableOptions`, `FocusableContextValue`, `FocusableProviderProps`, `FocusableComponentProps`; tests `tests/pressable.browser.test.tsx`
+- `./focusable` -> `focusable.tsx`: `focusableProps(props, ref?)` (RA `useFocusable`: `focusProps` + `keyboardProps` bags, `FocusableContext` props merged, tabIndex `-1` when `excludeFromTabOrder` / disabled, autoFocus `clientEffect` + `focusSafely`, `ref`), `Focusable` (render-function child `{(p) => <span {...p} ref={p.ref} role="button" />}`; dev checks: forwarded ref, focusable, interactive role), `FocusableProvider`, `FocusableContext`, types `FocusableOptions`, `FocusableContextValue`, `FocusableProviderProps`, `FocusableComponentProps`; tests `tests/pressable.browser.test.tsx`
 
 ## Layout
 - `index.ts` - Rivet helpers (lines 1-106) + react-aria focus utilities section (`focusSafely`, tree walker, `createFocusManager`)
 - `focus-scope.tsx` - FocusScope component + scope tree + focus manager bound to the focused element
 - `focus-ring.tsx` - useFocusRing on top of `../interactions/focus.tsx` + `focus-visible.tsx`
 - deps: `../a11y/index.ts` (`tabbables`), `../interactions/utils.ts`, `../interactions/focus-visible.tsx`, `../utils/id.ts`
-- tests: `tests/portal-resume.test.ts` (rewrites `focus/index.ts` specifier); `tests-components/widgets.test.ts` "FocusScope: Tab wraps..." (story `tests-components/app/src/routes/focus-scope.tsx`); `tests/app/src/routes/{focus-scope,hover}.tsx` stories (hover uses `focus-ring`)
+- tests: `tests-components/widgets.test.ts` "FocusScope: Tab wraps..." (story `tests-components/app/src/routes/focus-scope.tsx`); `tests/app/src/routes/{focus-scope,hover}.tsx` stories (hover uses `focus-ring`)
 - docs examples: `apps/cdk-docs/examples/{focus-functions,focus-manager,focus-manager-create,focus-ring,focus-scope-contain,focus-scope-restore}/`
 
 ## Upstream
@@ -39,11 +39,9 @@ Focus management: Rivet helpers (Tab containment, save/restore, roving tabindex,
 
 ## Commands
 - `npx vitest run --project cdk-browser libs/cdk/tests/pressable.browser.test.tsx`
-- `npx vitest run --project cdk libs/cdk/tests/portal-resume.test.ts`
 - `npx vitest run --project cdk-components libs/cdk/tests-components/widgets.test.ts`
 
 ## Gotchas
-- `tests/portal-resume.test.ts` fails at file level: specifier rewrites expect `portal/index.tsx` to import `focus/index.ts`, it imports `focus/focus-scope.tsx` (see ../CLAUDE.md)
 - not ported: FocusRing component, useHasTabbableChild
 - `Focusable` / `Pressable` dev checks only when `globalThis.process.env.NODE_ENV === "development"` (browser tests set `globalThis.process`)
 - `index.ts` `tabbables()` ignores positive tabindex order (`../a11y/index.ts:97`)

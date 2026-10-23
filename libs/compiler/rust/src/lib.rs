@@ -51,10 +51,6 @@ struct CompileOptions {
     server_exports: Option<bool>,
     /// Resume: `@rivetjs/*` source packages whose components are user components.
     source_packages: Option<Vec<String>>,
-    /// Internal (`_compileSymbolModule`): a resume symbol module (`Options::symbols`).
-    symbols: Option<bool>,
-    /// Resume (Function Bridge T3): import specifier → resolved module id (`Options::resolved_imports`).
-    resolved_imports: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Deserialize)]
@@ -142,13 +138,9 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
         Err(message) => return invalid(message, &filename),
     };
     let filename = options.filename.clone().unwrap_or_else(|| "module.tsx".into());
-    // `resume`: `{ module? }` or `true` on; absent / `null` / `false` / `0` / `""` off.
-    let resume = match resume_module(&options.resume, &filename) {
+    // `resume`: `{ module?, boundaries?, independent?, conditional? }` or `true` on; absent / `null` / `false` / `0` / `""` off.
+    let (resume, verdicts) = match resume_option(&options.resume, &filename) {
         Ok(resume) => resume,
-        Err(message) => return invalid(message, &filename),
-    };
-    let derived = match resume_model(&options.resume) {
-        Ok(derived) => derived,
         Err(message) => return invalid(message, &filename),
     };
     let styles = match styles_option(&options.styles) {
@@ -174,16 +166,13 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
             styles,
             check: false,
             source_packages: options.source_packages.unwrap_or_default(),
-            symbols: options.symbols.unwrap_or(false),
-            resolved_imports: options.resolved_imports.unwrap_or_default().into_iter().collect(),
-            derived,
+            verdicts,
         },
     );
     if let Some(server) = &server {
         if server.diagnostics.iter().any(|d| !d.warning) {
             output.code = String::new();
             output.map = None;
-            output.resumed = None;
             output.diagnostics.splice(0..0, server.diagnostics.iter().cloned());
         }
     }
@@ -224,17 +213,8 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
         }
         result.insert("cssClasses".into(), Value::Object(classes));
     }
-    // LAZY-ROWS T2: per structural `<For>` lazy-rows verdict (resume mode; absent when the module has none).
-    if !output.for_rows.is_empty() {
-        let rows: Vec<Value> = output.for_rows.iter().map(|f| for_row_json(f, None)).collect();
-        result.insert("forRows".into(), Value::Array(rows));
-    }
     if !output.boundaries.is_empty() {
         result.insert("boundaries".into(), json!(output.boundaries));
-    }
-    if let Some((symbols, scope)) = output.resumed {
-        result.insert("symbols".into(), json!(symbols));
-        result.insert("scope".into(), json!(scope));
     }
     if let Some(server) = server {
         result.insert("serverExports".into(), json!(server.exports));
@@ -284,34 +264,25 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
     facts
 }
 
-/// Resume module id from a `resume` option: `{ module?: string }` or `true` turn resume mode on
-/// (`module` defaults to the filename); JS-falsy values (`null`, `false`, `0`, `""`) leave it off;
+/// The `resume` option: `{ module?, boundaries?, independent?, conditional? }` (string / string lists) or `true` turn
+/// resume on (the derived model; `module` defaults to the filename; the lists are the build's verdicts,
+/// `facts-fixpoint.ts`, absent = the module-local closure); JS-falsy values (`null`, `false`, `0`, `""`) leave it off;
 /// anything else is an error (P4: `0` / `""` used to turn it on).
-fn resume_module(resume: &Option<Value>, filename: &str) -> Result<Option<String>, String> {
-    match resume {
-        None | Some(Value::Null) | Some(Value::Bool(false)) => Ok(None),
-        Some(Value::Number(n)) if n.as_f64() == Some(0.0) => Ok(None),
-        Some(Value::String(s)) if s.is_empty() => Ok(None),
-        Some(Value::Bool(true)) => Ok(Some(filename.to_string())),
-        Some(Value::Object(map)) => match map.get("module") {
-            None | Some(Value::Null) => Ok(Some(filename.to_string())),
-            Some(Value::String(module)) => Ok(Some(module.clone())),
-            Some(_) => Err("Invalid compiler option `resume.module`: expected a string".into()),
-        },
-        Some(_) => Err("Invalid compiler option `resume`: expected `{ module?: string }`, true or false".into()),
-    }
-}
-
-/// Derived model options of a `resume` object: `model: "serialized" | "derived"` (absent = serialized), `boundaries` /
-/// `independent` / `conditional` string lists (the build's verdicts, `facts-fixpoint.ts`). `Some` only for `model: "derived"`.
-fn resume_model(resume: &Option<Value>) -> Result<Option<resume::derived::Verdicts>, String> {
-    let Some(Value::Object(map)) = resume else { return Ok(None) };
-    match map.get("model") {
-        None | Some(Value::Null) => return Ok(None),
-        Some(Value::String(m)) if m == "serialized" => return Ok(None),
-        Some(Value::String(m)) if m == "derived" => {}
-        Some(_) => return Err("Invalid compiler option `resume.model`: expected \"serialized\" or \"derived\"".into()),
-    }
+fn resume_option(resume: &Option<Value>, filename: &str) -> Result<(Option<String>, resume::derived::Verdicts), String> {
+    let off = Ok((None, resume::derived::Verdicts::default()));
+    let map = match resume {
+        None | Some(Value::Null) | Some(Value::Bool(false)) => return off,
+        Some(Value::Number(n)) if n.as_f64() == Some(0.0) => return off,
+        Some(Value::String(s)) if s.is_empty() => return off,
+        Some(Value::Bool(true)) => return Ok((Some(filename.to_string()), resume::derived::Verdicts::default())),
+        Some(Value::Object(map)) => map,
+        Some(_) => return Err("Invalid compiler option `resume`: expected `{ module?, boundaries?, independent?, conditional? }`, true or false".into()),
+    };
+    let module = match map.get("module") {
+        None | Some(Value::Null) => filename.to_string(),
+        Some(Value::String(module)) => module.clone(),
+        Some(_) => return Err("Invalid compiler option `resume.module`: expected a string".into()),
+    };
     let list = |key: &str| -> Result<Option<Vec<String>>, String> {
         match map.get(key) {
             None | Some(Value::Null) => Ok(None),
@@ -323,7 +294,7 @@ fn resume_model(resume: &Option<Value>) -> Result<Option<resume::derived::Verdic
             Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
         }
     };
-    Ok(Some(resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")? }))
+    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")? }))
 }
 
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)
@@ -340,12 +311,8 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
         Err(message) => return invalid(message, &filename),
     };
     let filename = options.filename.unwrap_or_else(|| "module.tsx".into());
-    let resume = match resume_module(&options.resume, &filename) {
+    let (resume, verdicts) = match resume_option(&options.resume, &filename) {
         Ok(resume) => resume,
-        Err(message) => return invalid(message, &filename),
-    };
-    let derived = match resume_model(&options.resume) {
-        Ok(derived) => derived,
         Err(message) => return invalid(message, &filename),
     };
     let targets = options.targets.unwrap_or_else(|| vec!["server".into(), "dom".into()]);
@@ -360,8 +327,6 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
     // (message, span) → entry index: merging stays linear in the diagnostic count.
     let mut seen: std::collections::HashMap<(String, Option<(u32, u32)>), usize> = std::collections::HashMap::new();
     let mut sites = Vec::new();
-    let mut classes: Vec<(String, bool)> = Vec::new();
-    let mut for_rows = Vec::new();
     for target in &targets {
         let output = compile(
             source,
@@ -379,19 +344,11 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
                 styles: None,
                 check: true,
                 source_packages: options.source_packages.clone().unwrap_or_default(),
-                symbols: false,
-                resolved_imports: Default::default(),
-                derived: derived.clone(),
+                verdicts: verdicts.clone(),
             },
         );
         if sites.is_empty() || target == "dom" {
             sites = output.sites;
-        }
-        if classes.is_empty() {
-            classes = output.classes;
-        }
-        if for_rows.is_empty() {
-            for_rows = output.for_rows;
         }
         for d in output.diagnostics {
             if let Some(&at) = seen.get(&(d.message.clone(), d.span)) {
@@ -420,42 +377,7 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
         }
     }
     let diagnostics: Vec<Value> = entries.into_iter().map(|(_, _, entry)| Value::Object(entry)).collect();
-    let classes: Vec<Value> = classes.into_iter().map(|(name, revive)| json!({ "name": name, "kind": if revive { "revive" } else { "data" } })).collect();
-    let mut result = json!({ "diagnostics": diagnostics, "sites": sites, "classes": classes });
-    if !for_rows.is_empty() {
-        let rows: Vec<Value> = for_rows.iter().map(|f| for_row_json(f, Some(&utf16 as &dyn Fn(u32) -> u32))).collect();
-        result["forRows"] = Value::Array(rows);
-    }
-    result
-}
-
-/// LAZY-ROWS T2: one `forRows` entry — `{ line, column, lazy, reason?, symbol?, key?, by?, index? }`; `check` adds the
-/// element's UTF-16 `start` / `end`.
-fn for_row_json(fact: &crate::resume::ForRowFact, utf16: Option<&dyn Fn(u32) -> u32>) -> Value {
-    let mut entry = Map::new();
-    if let Some(utf16) = utf16 {
-        entry.insert("start".into(), json!(utf16(fact.span.0)));
-        entry.insert("end".into(), json!(utf16(fact.span.1)));
-    }
-    entry.insert("line".into(), json!(fact.line));
-    entry.insert("column".into(), json!(fact.column));
-    entry.insert("lazy".into(), json!(fact.lazy));
-    if let Some(reason) = fact.reason {
-        entry.insert("reason".into(), json!(reason));
-    }
-    if let Some(symbol) = &fact.symbol {
-        entry.insert("symbol".into(), json!(symbol));
-    }
-    if let Some(key) = &fact.key {
-        entry.insert("key".into(), json!(key));
-    }
-    if fact.by_fn {
-        entry.insert("by".into(), json!(true));
-    }
-    if fact.index {
-        entry.insert("index".into(), json!(true));
-    }
-    Value::Object(entry)
+    json!({ "diagnostics": diagnostics, "sites": sites })
 }
 
 /// Handle one JSON request.
@@ -576,13 +498,14 @@ pub extern "C" fn source_hash_len() -> usize {
     SOURCE_HASH.len()
 }
 
-/// 1: this build carries the derived resume model (M2 C1 / C2: `moduleFacts` `boundaries`, `resume.model`; `hasDerivedModel()`).
-#[unsafe(no_mangle)]
-pub extern "C" fn has_derived_model() -> u32 {
-    1
-}
-
 #[unsafe(no_mangle)]
 pub extern "C" fn result_len() -> usize {
     RESULT.with(|cell| cell.borrow().len())
+}
+
+/// 1: this build carries the derived resume model (`moduleFacts` `boundaries`, `resume.boundaries` / `resume.independent`;
+/// `hasDerivedModel()`). Every build since M6 (the derived model is the only resume model).
+#[unsafe(no_mangle)]
+pub extern "C" fn has_derived_model() -> u32 {
+    1
 }

@@ -160,7 +160,7 @@ Dev pages resume like production pages: the browser does not run the components,
 DevTools measures first and inspects second:
 
 - While the page is resumed, the **Performance**, **Updates**, **HMR** and **Errors** panels work on the real resumed page. The Performance panel shows the resumed page's layout shifts, interactions and the chunks each interaction loaded.
-- Opening **Components**, **Signals**, **Contexts**, **Router** or **Forms** switches the page to rendering in the browser, the same way your first edit does. A line under the tabs says "Switched to client render for inspection" and up to when performance was measured on the resumed page.
+- Opening **Components**, **Signals**, **Contexts**, **Router** or **Forms** switches the page to rendering in the browser; from then on edits hot-replace components and keep their state. A line under the tabs says "Switched to client render for inspection" and up to when performance was measured on the resumed page.
 - DevTools remembers the last panel for the browser tab. Reopen it on **Performance** and reload to keep measuring the resumed page.
 
 To render in the browser from page load instead, set `rivetRouter({ dev: { resume: false } })`. See [Dev and production differ](../../gotchas/dev-and-production-differ.md).

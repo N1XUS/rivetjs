@@ -1,6 +1,6 @@
 // `check_code`: the Rivet compiler (both targets, resume mode by default) + language-core checks on one snippet, as
 // the editor and `rivet check` report them: RV diagnostics with line / column, the explanation's fix text, the quick
-// fixes that apply (with the fixed source), RV2101 / RV3101 when a TypeScript program can be built, and TypeScript's
+// fixes that apply (with the fixed source), RV3101 when a TypeScript program can be built, and TypeScript's
 // own errors when the `@rivetjs/*` packages resolve from the working directory.
 import { resolve } from "node:path";
 import ts from "typescript";
@@ -79,13 +79,12 @@ export function checkCode(code: string, options: { filename?: string; resume?: b
   const result: FileCheck = {
     diagnostics: checked.diagnostics,
     sites: checked.sites,
-    classes: checked.classes ?? [],
     resume,
     moduleId: resume ? filename : null,
     project: null,
   };
-  // Other files of the program (packages) are not checked here: no class verdicts for them.
-  const other: FileCheck = { diagnostics: [], sites: [], classes: [], resume: false, moduleId: null, project: null };
+  // Other files of the program (packages) are not checked here.
+  const other: FileCheck = { diagnostics: [], sites: [], resume: false, moduleId: null, project: null };
   const core: LanguageCore = {
     compiler: rivet,
     isRivetFile: (file) => /\.[jt]sx$/.test(file),

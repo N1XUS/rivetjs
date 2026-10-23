@@ -1,7 +1,7 @@
 // Ported from react-stately `useNumberFieldState` (packages/react-stately/src/numberfield/useNumberFieldState.ts), Apache-2.0, © Adobe.
 // Rivet:
 // - Serializable state (cdk `state/*` convention): `createNumberFieldState(options)` returns plain signals + JSON
-//   (region state, resumable); the upstream state members are free functions taking the state (`inputValue(state)`,
+//   (resumable); the upstream state members are free functions taking the state (`inputValue(state)`,
 //   `numberValue(state)`, `commit(state)`, `increment(state)`, `canIncrement(state)`, …).
 // - Controlled `value`: a two-way `Signal<number | null>`, a plain number (plain = fixed: changes only fire
 //   `onChange`, like an upstream controlled prop the parent does not update) or an accessor `() => number | null`
@@ -27,7 +27,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { _regionState, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clamp, snapValueToStep } from "@rivetjs/cdk/utils";
 import {
   commitValidation,
@@ -131,58 +131,56 @@ function snapValue(state: NumberFieldState, value: number): number {
  * number, and increment or decrement the value using stepper buttons.
  */
 export function createNumberFieldState(props: NumberFieldStateOptions): NumberFieldState {
-  return _regionState(() =>
-    untrack(() => {
-      const commitBehavior = props.commitBehavior ?? "snap";
-      const controlled = props.value !== undefined;
-      const fixed = controlled && !isSignal(props.value);
-      const partial = {
-        locale: props.locale,
-        formatOptions: props.formatOptions,
-        minValue: props.minValue,
-        maxValue: props.maxValue,
-        step: props.step,
-        isDisabled: props.isDisabled,
-        isReadOnly: props.isReadOnly,
-        commitBehavior,
-      } as NumberFieldState;
+  return untrack(() => {
+    const commitBehavior = props.commitBehavior ?? "snap";
+    const controlled = props.value !== undefined;
+    const fixed = controlled && !isSignal(props.value);
+    const partial = {
+      locale: props.locale,
+      formatOptions: props.formatOptions,
+      minValue: props.minValue,
+      maxValue: props.maxValue,
+      step: props.step,
+      isDisabled: props.isDisabled,
+      isReadOnly: props.isReadOnly,
+      commitBehavior,
+    } as NumberFieldState;
 
-      let defaultValue = props.defaultValue ?? NaN;
-      if (!isNaN(defaultValue) && commitBehavior === "snap") {
-        defaultValue = snapValue(partial, defaultValue);
-      }
+    let defaultValue = props.defaultValue ?? NaN;
+    if (!isNaN(defaultValue) && commitBehavior === "snap") {
+      defaultValue = snapValue(partial, defaultValue);
+    }
 
-      // useControlledState(value, defaultValue, onChange); an accessor (live prop) is kept as is: read, never written.
-      const value: Signal<number | null> =
-        isSignal(props.value) || typeof props.value === "function"
-          ? (props.value as Signal<number | null>)
-          : signal<number | null>(controlled ? (props.value as number | null) : isNaN(defaultValue) ? NaN : defaultValue);
-      const state: NumberFieldState = {
-        ...partial,
-        controlled,
-        fixed,
-        value,
-        input: signal(""),
-        prev: signal<NumberFieldSync>({ value: NaN, locale: "", formatOptions: undefined }),
-        defaultNumberValue: NaN,
-        onChange: props.onChange,
-        validation: null as unknown as FormValidationState,
-      };
-      // Upstream validates `numberValue` (null -> NaN, a controlled value snapped). The uncontrolled signal already
-      // holds exactly that; a controlled one needs the derived accessor (a resumable closure: this module is .tsx).
-      (state as { validation: FormValidationState }).validation = createFormValidationState<number>({
-        ...props,
-        value: controlled && props.validate ? validationValue(state) : (value as () => number),
-      });
-      const initialValue = committedValue(state);
-      const locale = read(state.locale);
-      const formatOptions = read(state.formatOptions);
-      state.input.set(isNaN(initialValue) ? "" : new NumberFormatter(locale, formatOptions).format(initialValue));
-      state.prev.set({ value: initialValue, locale, formatOptions });
-      (state as { defaultNumberValue: number }).defaultNumberValue = isNaN(defaultValue) ? initialValue : defaultValue;
-      return state;
-    }),
-  );
+    // useControlledState(value, defaultValue, onChange); an accessor (live prop) is kept as is: read, never written.
+    const value: Signal<number | null> =
+      isSignal(props.value) || typeof props.value === "function"
+        ? (props.value as Signal<number | null>)
+        : signal<number | null>(controlled ? (props.value as number | null) : isNaN(defaultValue) ? NaN : defaultValue);
+    const state: NumberFieldState = {
+      ...partial,
+      controlled,
+      fixed,
+      value,
+      input: signal(""),
+      prev: signal<NumberFieldSync>({ value: NaN, locale: "", formatOptions: undefined }),
+      defaultNumberValue: NaN,
+      onChange: props.onChange,
+      validation: null as unknown as FormValidationState,
+    };
+    // Upstream validates `numberValue` (null -> NaN, a controlled value snapped). The uncontrolled signal already
+    // holds exactly that; a controlled one needs the derived accessor (a resumable closure: this module is .tsx).
+    (state as { validation: FormValidationState }).validation = createFormValidationState<number>({
+      ...props,
+      value: controlled && props.validate ? validationValue(state) : (value as () => number),
+    });
+    const initialValue = committedValue(state);
+    const locale = read(state.locale);
+    const formatOptions = read(state.formatOptions);
+    state.input.set(isNaN(initialValue) ? "" : new NumberFormatter(locale, formatOptions).format(initialValue));
+    state.prev.set({ value: initialValue, locale, formatOptions });
+    (state as { defaultNumberValue: number }).defaultNumberValue = isNaN(defaultValue) ? initialValue : defaultValue;
+    return state;
+  });
 }
 
 /** The value custom `validate` receives (upstream `numberValue`): a resumable accessor (R2 return value). */

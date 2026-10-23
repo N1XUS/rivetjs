@@ -5,7 +5,7 @@ template: guide
 related: [learn/server-first, guides/components/events, gotchas/component-did-not-run-again]
 ---
 
-A component is a function that returns JSX. After reading this page you can write components, pass data and children to them, and know the one rule that makes Rivet components different from React or Vue components: they run once, on the server.
+A component is a function that returns JSX. After reading this page you can write components, pass data and children to them, and know the one rule that makes Rivet components different from React or Vue components: they run once per page: on the server, and in the browser only when they are first used, never when state changes.
 
 ## Write a component
 
@@ -33,13 +33,13 @@ Write HTML attributes as in HTML: `class`, `for`, `aria-label`. Rivet also accep
 
 ## A component runs once
 
-On a server-rendered page, the component function runs on the server to produce HTML. In the browser it never runs again. When you click a button, Rivet runs only the click handler and updates only the parts of the page that read a changed signal. This is what lets the browser skip most JavaScript until you interact. See [Server first](/learn/server-first.md).
+On a server-rendered page, the component function runs on the server to produce HTML. In the browser it runs once, the first time the component is used, over that HTML. When you click a button, Rivet runs only the click handler and updates only the parts of the page that read a changed signal. This is what lets the browser skip most JavaScript until you interact. See [Server first](/learn/server-first.md).
 
 What this means for your code:
 
 - Code at the top of a component is server code. A `console.log` there prints in the terminal, not in the browser console.
 - Browser globals like `window` and `document` are not available there. The compiler stops with ``Browser global `document` is read during server rendering``. See [browser-only code](./browser-only.md).
-- Values that a handler or a JSX binding uses must be :term[serializable]{id=serializable}, because Rivet writes them into the page. See [serializable captures](/best-practices/serializable-captures.md).
+- A component runs in the browser only when it is used, from the signal values and props the server wrote into the page. See [resuming](/learn/resuming.md).
 
 ## Props
 

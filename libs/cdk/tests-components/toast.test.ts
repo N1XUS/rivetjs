@@ -10,7 +10,7 @@ beforeAll(async () => (s = await stories()));
 afterAll(async () => s?.close());
 
 // Toast / landmark code: chunks holding their symbols + the shared code only they import (build manifest).
-const toastScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/^@rivetjs\/cdk\/(toast|landmark)\/|#Toast\w*\$/));
+const toastScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/^@rivetjs\/cdk\/(toast|landmark)\/|#Toast\w*$/));
 
 test("toast: no region on the server, region appears with the first toast after resume", async () => {
   const page = await s.browser.newPage();

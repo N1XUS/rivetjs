@@ -16,15 +16,7 @@ import { getStringsForLocale, useLocale } from "@rivetjs/cdk/i18n";
 import type { Key, Selection } from "../collections/types.ts";
 import { ColorSwatchContext } from "../color-swatch/index.tsx";
 import { ListBox, ListBoxItem, type ListBoxItemRenderProps, type ListBoxRenderProps } from "../listbox/index.tsx";
-import {
-  contextProps,
-  resumableContext,
-  type ChildrenOrFunction,
-  type ContextValue,
-  type RefValue,
-  type SlotProps,
-  type StyleRenderProps,
-} from "../slots/index.tsx";
+import { contextProps, type ChildrenOrFunction, type ContextValue, type RefValue, type SlotProps, type StyleRenderProps } from "../slots/index.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { HoverEvents, PressEvents } from "../utils/types.ts";
@@ -68,11 +60,9 @@ export interface ColorSwatchPickerProps
 }
 
 /** RAC `ColorSwatchPickerContext`. */
-export const ColorSwatchPickerContext = resumableContext(
-  createContext<ContextValue<ColorSwatchPickerProps, HTMLDivElement>>(null, { id: "rv-color-swatch-picker" }),
-);
+export const ColorSwatchPickerContext = createContext<ContextValue<ColorSwatchPickerProps, HTMLDivElement>>(null);
 /** RAC `ColorMapContext` (internal): `toString("hexa")` key → the item's color string. */
-const ColorMapContext = resumableContext(createContext<Record<string, string> | null>(null, { id: "rv-color-swatch-picker-map" }));
+const ColorMapContext = createContext<Record<string, string> | null>(null);
 
 /** A ColorSwatchPicker displays a list of color swatches and allows a user to select one of them. */
 export function ColorSwatchPicker(props: ColorSwatchPickerProps) {

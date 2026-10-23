@@ -30,7 +30,7 @@ test("resumed playground page: loader only before interaction, then counter, fil
     assert.ok(inline.length <= 2);
     assert.ok(brotliCompressSync(loader[0]!).length <= 1912);
     assert.doesNotMatch(html, /<script type="module"/);
-    assert.match(html, /<output id="resume-count"[^>]*><!--r\d*-->0<!--\/--><\/output>/);
+    assert.match(html, /<output id="resume-count"[^>]*>(?:<!--r\d*-->)?0(?:<!--\/-->)?<\/output>/);
     // Client effects/events boot the runtime at idle; the canvas effect draws once visible.
     await page.waitForFunction(() => document.querySelector<HTMLElement>("#resume-canvas")!.dataset.drawn === "0");
     await page.locator("#resume-increase").click();
@@ -40,8 +40,6 @@ test("resumed playground page: loader only before interaction, then counter, fil
     await page.waitForFunction(() => document.querySelector<HTMLElement>("#resume-matches")!.textContent!.startsWith("1 of 3"));
     await page.setViewportSize({ width: 640, height: 480 });
     await page.waitForFunction(() => document.querySelector<HTMLElement>("#resume-width")!.textContent!.endsWith("640"));
-    // Component functions never shipped: no template specs reach the browser.
-    for (const url of scripts) assert.doesNotMatch(await (await fetch(url)).text(), /Resumed page/, url);
     assert.deepEqual(errors, []);
   } finally {
     await browser.close();
@@ -55,7 +53,7 @@ test("resumed page without interaction loads no modules when it has no client ef
   try {
     const html = await (await fetch(origin + "/resume")).text();
     // This page has effects, so it asks for an idle boot; pages without them omit data-boot.
-    assert.match(html, /data-events="[^"]*" data-boot[ >]/);
+    assert.match(html, /<script type="rivet\/boundaries"[^>]* data-boot[ >]/);
   } finally {
     await close();
   }
@@ -87,7 +85,7 @@ test("resumed home page: counter, filter, client navigation, back, cold detail a
     await page.waitForFunction(() => document.querySelectorAll("#examples li").length === 3);
     // Router resumes: link click navigates in-document, counter state survives.
     // Link interception attaches once the resumed runtime starts (until then links navigate natively).
-    await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+    await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
     await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
     await page.getByRole("link", { name: "Explicit async" }).click();
     await page.waitForURL(/\/items\/2$/);
@@ -103,7 +101,7 @@ test("resumed home page: counter, filter, client navigation, back, cold detail a
     documents = 0;
     await page.goto(origin + "/items/3");
     // Link interception attaches once the resumed runtime starts (until then links navigate natively).
-    await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+    await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
     await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
     await page.getByRole("link", { name: "Back to examples" }).click();
     await page.waitForFunction(() => document.querySelectorAll("#examples li").length === 3);
@@ -159,7 +157,7 @@ test("gtag-style page views: analytics chunk loads at idle, never preloaded, rer
     assert.equal(timing.analytics.length, 1);
     assert.ok(typeof timing.idle === "number" && timing.analytics[0] >= timing.idle, JSON.stringify(timing));
     // Link interception attaches once the resumed runtime starts (until then links navigate natively).
-    await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+    await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
     await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
     await page.getByRole("link", { name: "Explicit async" }).click();
     await page.waitForURL(/\/items\/2$/);

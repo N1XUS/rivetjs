@@ -57,12 +57,16 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
         const late = /<script\b[^>]* src="\/late-hole\.js"[^>]*>/.exec(html)?.[0]; // the nonce is base64 (`+`): no RegExp from it
         assert.ok(late?.includes(`nonce="${nonce}"`), html);
         assert.match(html, /<link rel="prefetch" href="\/next\.json"/);
-        for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="(rivet\/state|application\/(ld\+)?json)"/.test(tag), tag);
+        for (const tag of html.match(/<script\b[^>]*>/g)!)
+          assert.ok(tag.includes(`nonce="${nonce}"`) || /type="(rivet\/boundaries|application\/(ld\+)?json)"/.test(tag), tag);
       }
       assert.notEqual(fill.nonce, hit.nonce);
       const unnonced = (html: string) => html.replace(/ nonce="[^"]*"/g, ' nonce=""');
       assert.equal(unnonced(hit.html), unnonced(fill.html));
-      assert.ok(warned.some((line) => line.includes("<Title> rendered after the shell")), warned.join("\n"));
+      assert.ok(
+        warned.some((line) => line.includes("<Title> rendered after the shell")),
+        warned.join("\n"),
+      );
     } finally {
       console.warn = warn;
     }
@@ -72,9 +76,18 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
     const nonce = /'nonce-([^']+)'/.exec(first.headers.get("content-security-policy") ?? "")![1]!;
     const head = /<head>([\s\S]*)<\/head>/.exec(html)![1]!;
     assert.match(head, /<title>Home \| Kit<\/title>/, head);
-    const order = ["<title>", /<link rel="stylesheet"|<style nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map((s) => (typeof s === "string" ? head.indexOf(s) : head.search(s)));
-    assert.ok(order.every((at) => at >= 0), head);
-    assert.deepEqual([...order].sort((a, b) => a - b), order, head);
+    const order = ["<title>", /<link rel="stylesheet"|<style nonce/, "rivet-scripts", 'name="description"', 'rel="icon"', "ld+json"].map((s) =>
+      typeof s === "string" ? head.indexOf(s) : head.search(s),
+    );
+    assert.ok(
+      order.every((at) => at >= 0),
+      head,
+    );
+    assert.deepEqual(
+      [...order].sort((a, b) => a - b),
+      order,
+      head,
+    );
     // The page's css`` sheet is written for this route only: linked, or inline with the nonce when small
     // (`rivetRouter({ inlineStylesheets })` default "auto").
     const sheetsOf = (text: string) =>
@@ -83,9 +96,13 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
       );
     const homeCSS = sheetsOf(head);
     assert.ok(homeCSS.length >= 1, head);
-    assert.ok(homeCSS.some((sheet) => sheet.nonce === nonce && sheet.css), "the small home sheet is inline, nonce'd: " + head);
+    assert.ok(
+      homeCSS.some((sheet) => sheet.nonce === nonce && sheet.css),
+      "the small home sheet is inline, nonce'd: " + head,
+    );
     assert.match(head, /"name":"Kit \\u003c\/script>"/);
-    for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="(rivet\/state|application\/(ld\+)?json)"/.test(tag), tag);
+    for (const tag of html.match(/<script\b[^>]*>/g)!)
+      assert.ok(tag.includes(`nonce="${nonce}"`) || /type="(rivet\/boundaries|application\/(ld\+)?json)"/.test(tag), tag);
     const aboutHTML = await (await fetch(app.url + "/about")).text();
     const aboutCSS = sheetsOf(/<head>([\s\S]*)<\/head>/.exec(aboutHTML)![1]!).map(({ href, css }) => ({ href, css }));
     assert.notDeepEqual(
@@ -93,13 +110,19 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
       homeCSS.map(({ href, css }) => ({ href, css })),
     );
     // `?font`: preload from the head, @font-face in the route's stylesheet.
-    const font = /<link rel="preload" href="(\/assets\/Probe-Regular-[^"]+\.woff2)" type="font\/woff2" as="font" crossorigin="anonymous" data-rh="">/.exec(aboutHTML);
+    const font = /<link rel="preload" href="(\/assets\/Probe-Regular-[^"]+\.woff2)" type="font\/woff2" as="font" crossorigin="anonymous" data-rh="">/.exec(
+      aboutHTML,
+    );
     assert.ok(font, aboutHTML);
     const sheets = await Promise.all(aboutCSS.map(async ({ href, css }) => css ?? (await fetch(app.url + href)).text()));
-    assert.ok(sheets.some((sheet) => /font-family:"?Probe"?;/.test(sheet) && sheet.includes(font[1]!) && /font-weight:100 900/.test(sheet)), sheets.join("\n"));
+    assert.ok(
+      sheets.some((sheet) => /font-family:"?Probe"?;/.test(sheet) && sheet.includes(font[1]!) && /font-weight:100 900/.test(sheet)),
+      sheets.join("\n"),
+    );
 
     const page = await browser.newPage();
-    const errors: string[] = [], documents: string[] = [];
+    const errors: string[] = [],
+      documents: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("console", (message) => message.text().startsWith("CSP ") && errors.push(message.text()));
     await page.addInitScript(() =>
@@ -121,15 +144,13 @@ test("production: head in capo order, per-route CSS, nonce'd scripts, client nav
     await page.getByRole("button", { name: "Clicks 0" }).click();
     await page.getByRole("button", { name: "Clicks 1" }).waitFor();
     assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector("button")!).outlineColor), "rgb(7, 8, 9)");
-    // Navigation is client-side once the router resumed.
-    await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
-    await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
-
+    // Navigation is client-side: a link click before the router's boundary adopted is held and replayed.
     await page.getByRole("link", { name: "About" }).click();
     await page.waitForSelector("#about");
     await page.waitForFunction(() => document.title === "About | Kit");
     const state = await page.evaluate(() => ({
-      description: document.querySelectorAll('meta[name="description"]').length + ":" + document.querySelector('meta[name="description"]')?.getAttribute("content"),
+      description:
+        document.querySelectorAll('meta[name="description"]').length + ":" + document.querySelector('meta[name="description"]')?.getAttribute("content"),
       theme: document.querySelectorAll('meta[name="theme-color"]').length,
       icon: document.querySelectorAll('link[rel="icon"]').length,
       jsonLd: document.querySelectorAll('script[type="application/ld+json"]').length,

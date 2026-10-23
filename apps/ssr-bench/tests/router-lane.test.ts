@@ -1,6 +1,5 @@
 // The router lane end to end: `dist/rivet-router.mjs` (production @rivetjs/router node adapter over the
-// file-routed build) and `dist/rivet-derived.mjs` (same app, `resume.model: "derived"`) against an in-process
-// gRPC Content service, checked with the bench's validator.
+// file-routed build, derived resume model) against an in-process gRPC Content service, checked with the bench's validator.
 import { afterAll, beforeAll, test } from "vitest";
 import assert from "node:assert/strict";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -12,7 +11,7 @@ import { Window } from "happy-dom";
 import { fieldText, validateResponse } from "../loadgen/validate.ts";
 
 const HOSTILE = '"><script>alert(1)</script>';
-let server: grpc.Server, child: ChildProcess, base: string, derivedChild: ChildProcess, derivedBase: string;
+let server: grpc.Server, child: ChildProcess, base: string;
 
 async function serve(bundle: string, port: number): Promise<[ChildProcess, string]> {
   const spawned = spawn(process.execPath, [fileURLToPath(new URL(`../dist/${bundle}`, import.meta.url))], {
@@ -48,11 +47,10 @@ beforeAll(async () => {
     server.bindAsync("127.0.0.1:0", grpc.ServerCredentials.createInsecure(), (error, bound) => (error ? reject(error) : resolve(bound))),
   );
   [child, base] = await serve("rivet-router.mjs", port);
-  [derivedChild, derivedBase] = await serve("rivet-derived.mjs", port);
 }, 30_000);
 
 afterAll(async () => {
-  for (const spawned of [child, derivedChild]) {
+  for (const spawned of [child]) {
     spawned?.kill("SIGTERM");
     if (spawned && spawned.exitCode === null) await once(spawned, "exit");
   }
@@ -84,21 +82,10 @@ test("rivet-resume renders a resumable page: For rows, handlers, links, nested l
   assert.ok(validateResponse(response.status, Buffer.from(html), 50, "trial-3"));
   assert.match(html, /data-layout="resume"/);
   assert.equal((html.match(/<a\b[^>]*href="\/resume\?rows=\d+"/g) ?? []).length, 51, "row links + layout link");
-  assert.match(html, /<script\b[^>]*>/, "resume state / loader script");
-  const plain = await (await fetch(`${base}/page?rows=50&token=trial-3`)).text();
-  assert.ok(html.length > plain.length, "resumable output carries more than the static page");
-});
-
-test("rivet-derived renders /resume with the derived model: boundary records, no state table, derived loader", async () => {
-  const response = await fetch(`${derivedBase}/resume?rows=50&token=trial-4`);
-  const html = await response.text();
-  assert.ok(validateResponse(response.status, Buffer.from(html), 50, "trial-4"));
-  assert.match(html, /data-layout="resume"/);
-  assert.equal((html.match(/<a\b[^>]*href="\/resume\?rows=\d+"/g) ?? []).length, 51, "row links + layout link");
   assert.match(html, /data-rt="/, "derived loader names the runtime chunk");
   assert.doesNotMatch(html, /rivet\/state/, "no serialized state table");
-  const escaped = await fetch(`${derivedBase}/resume?rows=20&token=trial-5&strings=1`);
-  assert.ok(validateResponse(escaped.status, Buffer.from(await escaped.arrayBuffer()), 20, "trial-5", false, true));
+  const plain = await (await fetch(`${base}/page?rows=50&token=trial-3`)).text();
+  assert.ok(html.length > plain.length, "resumable output carries more than the static page");
 });
 
 test("rivet-router preserves the hostile token attribute and escapes the title", async () => {

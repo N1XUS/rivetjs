@@ -23,7 +23,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ArrowUp, CircleAlert, CornerDownRight, Ellipsis, GripVertical, LoaderCircle, Square, X } from "lucide";
 
 import { promptInputVariants } from "../../../styles/src/components/prompt-input/index.ts";
@@ -48,7 +47,7 @@ interface PromptInputContext {
   stop?: () => void;
 }
 
-const PromptInputContext = resumableContext(createContext<PromptInputContext>({}, { id: "rv-ui-prompt-input" }));
+const PromptInputContext = createContext<PromptInputContext>({});
 
 const isRunning = (status: PromptInputStatus): boolean => status === "submitted" || status === "streaming";
 

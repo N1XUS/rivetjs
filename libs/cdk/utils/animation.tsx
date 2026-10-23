@@ -10,15 +10,14 @@
 //   (`(el) => props.onEnter?.(el)`) to always call the latest one.
 // - `flushSync(onEnd)` → a plain signal write (bindings update synchronously).
 // - `useExitAnimation`'s render-phase `setExitState` → a computed holding the state machine.
-// Deviation: an overlay rendered open by the server (or re-created by a resumed page from a branch the server
-// rendered shown, `_serverBranch() >= 0`) is not entering — React Aria never server-renders overlays, Rivet
-// does, and its HTML is the settled open state. Created in the browser (incl. the first open of a branch the
-// server rendered closed: key -1 / null) → entering.
+// Deviation: an overlay rendered open by the server is not entering — React Aria never server-renders overlays,
+// Rivet does, and its HTML is the settled open state. Created in the browser (incl. the first open after resume
+// of an overlay the server rendered closed) → entering.
 // Deviation: with no running animation and the element not yet carrying its `data-entering` / `data-exiting`
 // attribute (a resumed page commits that binding after the effect), the end waits a microtask for the CSS
 // animation the attribute starts; with the attribute present it ends at once (RA).
-import { _regionState, computed, signal, untrack } from "@rivetjs/reactivity";
-import { _serverBranch, clientEffect } from "@rivetjs/runtime/dom";
+import { computed, signal, untrack } from "@rivetjs/reactivity";
+import { clientEffect } from "@rivetjs/runtime/dom";
 import { chain } from "../interactions/merge-props.tsx";
 import { setStyle } from "./dom.ts";
 
@@ -27,15 +26,8 @@ export type AnimationRef = () => HTMLElement | null | undefined;
 type MaybeAccessor<T> = T | (() => T);
 const read = <T,>(value: MaybeAccessor<T>): T => (typeof value === "function" ? (value as () => T)() : value);
 
-/** Whether this element is being created in the browser (not server-rendered, not adopted from the server). */
-// Entering unless the server rendered this branch shown: `_serverBranch()` is the adopted Show key while a
-// resumed page re-creates a region (match index ≥ 0 = server rendered it shown; -1 fallback / null never
-// adopted = the server rendered it closed, so the first open after resume enters), `undefined` otherwise.
-const createdInBrowser = (): boolean => {
-  if (typeof document === "undefined") return false;
-  const key = _serverBranch();
-  return key === undefined || key === null || key < 0;
-};
+/** Whether this element is being created in the browser (not server-rendered). */
+const createdInBrowser = (): boolean => typeof document !== "undefined";
 
 /**
  * Entry animation state of `ref` (react-aria `useEnterAnimation`): true from creation until the element's
@@ -112,9 +104,7 @@ export interface ExitAnimationState {
  * tooltips does not boot the runtime at load.
  */
 export function createExitAnimationState(isOpen: MaybeAccessor<boolean>): ExitAnimationState {
-  // Deviation: whether it was open at creation is region state: a resumed page re-creating the region on the close
-  // (dismissing a server-open overlay first) gets the server's `true` back and exits, instead of unmounting at once.
-  let exitState: "closed" | "open" | "exiting" = _regionState(() => untrack(() => read(isOpen))) ? "open" : "closed";
+  let exitState: "closed" | "open" | "exiting" = untrack(() => read(isOpen)) ? "open" : "closed";
   // Each finished exit bumps `ended`; the state machine below closes on it.
   const ended = signal(0);
   let seen = 0;

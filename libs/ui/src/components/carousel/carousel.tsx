@@ -40,7 +40,6 @@ import { useId } from "@rivetjs/cdk/id";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pause, Play } from "lucide";
 
 import type { ButtonVariants } from "../../../styles/src/components/button/index.ts";
@@ -61,7 +60,7 @@ type CarouselContext = {
   placement?: CarouselVariants["placement"];
 };
 
-const CarouselContext = resumableContext(createContext<CarouselContext>({}, { id: "rv-ui-carousel" }));
+const CarouselContext = createContext<CarouselContext>({});
 
 type CarouselSlots = ReturnType<typeof carouselVariants>;
 const SLOTS: Record<string, CarouselSlots> = {};

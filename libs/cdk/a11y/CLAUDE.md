@@ -16,7 +16,7 @@ Accessibility services: Rivet helpers (`index.ts`) + Angular CDK a11y ports (foc
 ## Layout
 - `index.ts` - Rivet helpers; regions shared with `<Announcer/>` (`../announcer/index.tsx`)
 - one file per Angular CDK service (above)
-- tests: `tests/a11y-aria-describer.test.ts`, `a11y-focus-trap-node.test.ts` (+ InteractivityChecker), `a11y-high-contrast.test.ts`, `a11y-input-modality.test.ts`, `a11y-key-manager.test.ts`, `a11y-live-announcer.test.ts`; `tests/portal-resume.test.ts` (rewrites `a11y/index.ts`); `tests/browser/smoke.test.ts` (Announcer markup)
+- tests: `tests/a11y-aria-describer.test.ts`, `a11y-focus-trap-node.test.ts` (+ InteractivityChecker), `a11y-high-contrast.test.ts`, `a11y-input-modality.test.ts`, `a11y-key-manager.test.ts`, `a11y-live-announcer.test.ts`; `tests/browser/smoke.test.ts` (Announcer markup)
 - docs examples: `apps/cdk-docs/examples/{a11y-checks,announce-basic,focus-monitor,focus-trap*,interactivity-checker,key-manager-focus,keyboard-navigation-focus-key-manager,live-announcer-cdk}/`
 
 ## Upstream

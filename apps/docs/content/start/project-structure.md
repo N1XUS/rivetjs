@@ -146,7 +146,7 @@ After `npm run build`:
 - `dist/client`: what the browser gets. HTML files (one folder per page), `_data.json` files for client navigation (only when some page resumes), `404.html`, and `assets/` with scripts and styles. Deploy this folder to any static host.
 - `dist/server`: the server build. The static starter uses it only to render the HTML files.
 
-The `resume-…` script files in `dist/client/assets` hold the browser code of your components: one per route (for example `resume-index_tsx-….js` for `src/routes/index.tsx`), one for the layouts and the app (`resume-route_main-….js`), and shared chunks (`rivet-merge-….js`). The browser loads each one only when needed.
+The script files in `dist/client/assets` hold the browser code: the resume runtime (`derived-runtime-….js`), one chunk per component file that can wake up (for example `index-….js` for `src/routes/index.tsx`, `app-….js` for the generated app and its layouts) and the shared chunks they import. After a page loads, the browser fetches the ones it may need at low priority; it runs them only when you use the page.
 
 ## `prerender.js` and `serve.js`
 

@@ -57,8 +57,7 @@ test("card: resumed direct signal prop — the first change updates root + parts
     assert.deepEqual(seen.errors, []);
   }));
 
-// Live props (P1/P2 landed, fc7c7bc7): after the first change the Card is a client-created instance with getter props, so
-// every later change updates root + parts in place (no re-creation).
+// Live props: every later change updates root + parts in place (the derived adopt run keeps the server nodes).
 test("card: resumed direct signal prop — later changes update root + parts in place (live props)", () =>
   onPage(async (page) => {
     const seen = watch(page);
@@ -74,8 +73,7 @@ test("card: resumed direct signal prop — later changes update root + parts in 
     assert.deepEqual(seen.errors, []);
   }));
 
-// Live props P3 (server-resume `_rProps` recipes + member boxes): the server-rendered Card's props are recipes, so the
-// FIRST change updates the server-rendered root in place (no re-creation).
+// The FIRST change updates the server-rendered root in place (derived adopt: no re-creation).
 test("card: resumed direct signal prop — the first change keeps the server-rendered root (live-props P3)", () =>
   onPage(async (page) => {
     await page.goto(s.origin + "/card");

@@ -19,10 +19,9 @@ test("accordion (Disclosure + Angular extras): single expansion, events, disable
   const panel = (name: string) => `.item-${name} .rv-DisclosurePanel`;
   assert.equal(await page.getAttribute(button("one"), "aria-expanded"), "false");
   assert.notEqual(await page.getAttribute(panel("one"), "hidden"), null, "collapsed panel is hidden (RA: `hidden` on the server)");
-  const before = seen.scripts.length;
   await page.click(button("one"));
   await attr(page, button("one"), "aria-expanded", "true");
-  assert.ok(seen.scripts.length > before, "handler chunk loads on interaction");
+  // (The page's chunks may already be fetched: the derived loader prefetches them at low priority after `load`.)
   assert.equal(await page.getAttribute(panel("one"), "hidden"), null);
   assert.equal(await page.getAttribute(".item-one", "data-expanded"), "true");
   await page.click(button("two"));

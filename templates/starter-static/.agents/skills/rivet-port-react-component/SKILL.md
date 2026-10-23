@@ -30,7 +30,7 @@ Map each construct (full table: `get_doc("docs:/start/coming-from-other-framewor
 Then fix what resuming requires:
 
 1. Move browser reads (`window`, `document`, `localStorage`, `matchMedia`) out of the component body into handlers or `clientEffect` (RV2001).
-2. Handlers: inline arrows or local consts. Values they capture must serialize: create class instances (`Intl.*`, SDK clients) inside the handler or build them with `reconstruct(() => new X(…))` (`import { reconstruct } from "@rivetjs/runtime/dom"`; RV2003); wrap library callbacks: `onPress={() => track("save")}`.
+2. Handlers: plain functions (inline arrows, local consts, imported functions); nothing they use needs to serialize. Keep values that differ between server and browser (`Date.now()`, random ids) in a signal or a handler.
 3. Render props and item renderers stay functions (`{(item) => …}`).
 4. Third-party React UI → `@rivetjs/ui` / `@rivetjs/cdk` equivalents: `list_components`, `get_component(name)`; React Aria-style names carry over (`onPress`, `isOpen={signal}`).
 5. `check_code` the result, fix every RV code (`explain_diagnostic`), then `npm run check`.

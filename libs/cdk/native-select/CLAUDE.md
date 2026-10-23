@@ -4,7 +4,7 @@
 Rivet addition (no React Aria / Angular CDK counterpart; pro-forms lane 2026-10-08): a native `<select>` field part built like RAC `TextArea`. Used by `@rivetjs/ui/native-select` (feature set inspired by HeroUI Pro's public docs; independent implementation).
 
 ## Entry points
-- `@rivetjs/cdk/native-select` -> `index.tsx` (package `"./*"` pattern): `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `NativeSelectContext` (`rv-native-select`), `NativeSelectValueContext` (`rv-native-select-value`), prop types, re-exports `InputRenderProps`
+- `@rivetjs/cdk/native-select` -> `index.tsx` (package `"./*"` pattern): `NativeSelect`, `NativeSelectOption`, `NativeSelectOptGroup`, `NativeSelectContext`, `NativeSelectValueContext`, prop types, re-exports `InputRenderProps`
 
 ## Layout
 - `index.tsx` - parts + contexts

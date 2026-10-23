@@ -9,7 +9,6 @@
 //   the context only then. Rivet JSX has no element clone (`Children`): every `Button` under a `ButtonGroup` reads it;
 //   `{ [BUTTON_GROUP_CHILD]: false }` opts a `Button` out.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ButtonVariants } from "../../../styles/src/components/button/index.ts";
 
@@ -24,7 +23,7 @@ interface ButtonGroupContext {
   orientation?: "horizontal" | "vertical";
 }
 
-const ButtonGroupContext = resumableContext(createContext<ButtonGroupContext>({}, { id: "rv-ui-button-group" }));
+const ButtonGroupContext = createContext<ButtonGroupContext>({});
 
 // Property name to mark direct children of ButtonGroup
 const BUTTON_GROUP_CHILD = "__button_group_child";

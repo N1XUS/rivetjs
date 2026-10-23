@@ -18,10 +18,6 @@ The piece that connects a built app to where it runs: the Node adapter serves re
 
 One JavaScript file made by the build. The browser downloads a chunk only when the page needs the code inside it.
 
-## Chunk group
-
-Components whose browser code shares one chunk: the part of the page inside `<ChunkGroup>` (from `@rivetjs/runtime/dom`) when `resume.chunks` is `"group"`. Loading one of its chunks for a click also schedules the others. Not an island.
-
 ## Computed
 
 A value worked out from signals that updates itself when they change, for example a total from a list of prices.
@@ -80,7 +76,7 @@ Asking the browser to download code before it is needed, for example when the po
 
 ## Resumability
 
-The browser carries on from the state the server rendered instead of starting the app over. Components do not run again; only the code for what you touch loads.
+The browser carries on from the state the server rendered instead of starting the app over. Nothing runs on load; a component runs over the server's HTML the first time it is used.
 
 ## Route
 
@@ -88,7 +84,7 @@ A URL pattern and the page that answers it. In Rivet each file in `src/routes` i
 
 ## Serializable
 
-A value that can be written into the page as data and read back in the browser: strings, numbers, booleans, plain objects, arrays, dates and signals holding these, functions written in a component module or used there by name, and instances of a data class of a component module or of a class that rebuilds itself (`[serialize]` / `static [revive]`, `registerClass`). Package-class instances (a bson `ObjectId`, unless the class is registered with `registerClass`) and library objects are not; build them in the browser with `reconstruct(() => …)` (see [what the handler can use](../learn/resuming.md#what-the-handler-can-use)).
+A value that can be written into the page as data and read back in the browser: strings, numbers, booleans, `null`, `undefined`, plain objects, arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays, and instances of a class registered with `registerClass`. Functions, promises and other class instances are not; the browser builds them again when it runs the component (see [what reaches the browser](../learn/resuming.md#what-reaches-the-browser)).
 
 ## Server rendering
 

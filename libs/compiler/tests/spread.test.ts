@@ -74,31 +74,6 @@ test("zero cost: no spread, no helper import and unchanged output", () => {
   assert.doesNotMatch(resumed, /spread/i);
 });
 
-test("resume: a spread element is one spread site; its symbol rebuilds the merged object and binds the element", () => {
-  const source = `import { signal } from "@rivetjs/reactivity";\nexport function P(props: { attrs: object }) { const on = signal(true); return <div class="a" {...props.attrs} title={on() ? "y" : "n"} onClick={() => on.set(!on())}>x</div>; }`;
-  const server = compile(source, { target: "server", filename: "a.tsx", resume: { module: "m" } }) as unknown as {
-    code: string;
-    symbols: { id: string; kind: string; source: string; imports: unknown[]; captures: string[] }[];
-  };
-  assert.deepEqual(server.symbols.map((s) => s.kind).sort(), ["event", "spread"]);
-  const spread = server.symbols.find((s) => s.kind === "spread")!;
-  assert.deepEqual(spread.captures, ["props$attrs", "on"]);
-  assert.equal(
-    spread.source,
-    'export const P$t9z = (props$attrs, on) => { const props = __rivetMembers({ attrs: props$attrs }); return (__rivetEl, __rivetNames) => __rivetResumeSpread(__rivetEl, () => ({ "class": "a", ...(props.attrs), "title": (on() ? "y" : "n") }), 0, __rivetNames); };\n',
-  );
-  assert.deepEqual(spread.imports, [
-    { local: "__rivetResumeSpread", imported: "_spread", from: "@rivetjs/runtime/dom" },
-    { local: "__rivetMembers", imported: "_members", from: "@rivetjs/runtime/props" },
-  ]);
-  assert.match(
-    squash(server.code),
-    /__rivetR_spread\("m#P\$\w+", \(\) => \(\{ "class": "a", \.\.\.props\.attrs, "title": on\(\) \? "y" : "n" \}\), \[__rivetR_member\(props, "attrs"\), on\], "div"\), __rivetR_id\(\)/,
-  );
-  const sites = check(source, { filename: "a.tsx", resume: { module: "m" } }).sites;
-  assert.equal(sites.find((s) => s.kind === "spread")?.runsOn, "both");
-});
-
 test("spread children: a native element without JSX children renders the merged object's children (both targets)", () => {
   const { dom, server } = both(`export const f = (p: object, t: () => string) => <div class="a" {...p} title={t()} />;`);
   assert.match(server, /\[ "<div", ">", "<\/div>" \]/);
@@ -148,28 +123,6 @@ test("spread children: zero cost for elements without spreads and elements with 
   for (const source of [`export const f = (t: () => string) => <div title={t()} />;`, `export const f = (p: object) => <div {...p}>x</div>;`])
     for (const target of ["dom", "server"] as const)
       assert.doesNotMatch(compile(source, { target, filename: "a.tsx" }).code, /spreadChildren|\}\)?, 1\)/, target);
-});
-
-test("spread children, resume: the spread site's symbol renders the content; the server slot follows the element id", () => {
-  const source = `import { signal } from "@rivetjs/reactivity";\nexport function P() { const n = signal(1); return <div {...{ children: n() }} />; }`;
-  const server = compile(source, { target: "server", filename: "a.tsx", resume: { module: "m" } }) as unknown as {
-    code: string;
-    symbols: { kind: string; source: string }[];
-  };
-  assert.match(
-    squash(server.code),
-    /__rivetR_spread\("m#P\$\w+", \(\) => \(\{ \.\.\.\{ children: n\(\) \} \}\), \[n\], "div"\), __rivetR_id\(\), __rivetSpreadChildren\(\) \]/,
-  );
-  assert.equal(
-    server.symbols.find((s) => s.kind === "spread")!.source,
-    "export const P$4n1 = (n) => (__rivetEl, __rivetNames) => __rivetResumeSpread(__rivetEl, () => ({ ...({ children: n() }) }), 1, __rivetNames);\n",
-  );
-  const explicit = compile(source.replace("/>;", ">x</div>;"), { target: "server", filename: "a.tsx", resume: { module: "m" } }) as unknown as {
-    code: string;
-    symbols: { kind: string; source: string }[];
-  };
-  assert.doesNotMatch(explicit.code, /spreadChildren/);
-  assert.match(explicit.symbols.find((s) => s.kind === "spread")!.source, /__rivetNames\);\n$/);
 });
 
 test("live props: values reading `this` / `arguments` stay data properties (a getter would rebind them)", () => {

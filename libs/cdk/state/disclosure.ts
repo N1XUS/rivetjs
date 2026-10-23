@@ -11,7 +11,7 @@
 //   `allowsMultipleExpanded` may be a Signal (Angular `multi` input), `openAll` / `closeAll` skip
 //   disabled disclosures (`registerDisclosure(state, key, isDisabled)`, `unregisterDisclosure`).
 // Deviation: group keys compare as strings (`id` props / DOM ids are strings; `1` and `"1"` match).
-import { computed, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Key } from "@rivetjs/cdk/collections";
 import { constantCell } from "../interactions/controllable.ts";
 
@@ -32,7 +32,7 @@ const isSignal = <T>(value: unknown): value is Signal<T> => typeof value === "fu
 function cell<T>(value: T | Signal<T> | undefined, defaultValue: T): { value: Signal<T>; controlled: boolean } {
   if (isSignal<T>(value)) return { value, controlled: false };
   if (value !== undefined) return { value: constantCell<T>(value), controlled: true };
-  return { value: _regionState(() => signal(defaultValue)), controlled: false };
+  return { value: signal(defaultValue), controlled: false };
 }
 
 export interface DisclosureProps {

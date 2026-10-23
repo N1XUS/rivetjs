@@ -38,7 +38,7 @@ test("app.tsx: lazy pages, static layouts, nearest 404 by static folder (groups 
   const pageFiles = [.../const PAGES = \[(.*)\];/.exec(app)![1]!.matchAll(/import\("([^"]+)"\)/g)].map((m) => m[1]!);
   const userPage = pageFiles.indexOf("../src/routes/users/[id].tsx");
   assert.ok(userPage >= 0, pageFiles.join());
-  assert.match(app, /const page = \(i: number\): [^\n]* => \(views\[i\] \?\?= lazyComponent<PageProps>\(PAGES\[i\]!, undefined, \{ warm: false \}\)\);/);
+  assert.match(app, /const page = \(i: number\): [^\n]* => \(views\[i\] \?\?= lazyComponent<PageProps>\(PAGES\[i\]!\)\);/);
   assert.doesNotMatch(app, /const (loadPage|Page)\d+ =|LOADERS/);
   // Data-driven route table (RA1/RA2): one row per route (page = PAGES index), modules derived from both.
   const paths = JSON.parse(/const PATHS: readonly string\[\] = (\[[^\n]*\]);/.exec(app)![1]!) as string[];
@@ -59,7 +59,7 @@ test("app.tsx: lazy pages, static layouts, nearest 404 by static folder (groups 
   assert.doesNotMatch(app, /startsWith\("\/users/);
   assert.match(app, /routeData\(work, match, router, "server", _keepIds\(nest, NEST, match\.url\)\)/);
   // The root layout has a loader: server error renders skip it unless its data came along.
-  assert.match(app, /return server\?\.error && !server\.data\.length \? view : <Layout\d+ data=\{layoutData\}/);
+  assert.match(app, /return server\?\.error && !server\.data\.length \? view\(\) : <Layout\d+ data=\{layoutData\}/);
   // Endpoint-only routes have no client route.
   assert.doesNotMatch(app, /defineRoute\("\/api\/health"/);
   assert.match(
@@ -107,7 +107,7 @@ test("static mode reads _data.json; CSR mode emits a client entry and resumes no
   assert.deepEqual(csr.resumeModules, []);
   // A root layout without a loader always renders, error views included.
   const plain = generate(routeTable(["_layout.tsx", "index.tsx"]), { routesDir: "src/routes" }).files["app.tsx"]!;
-  assert.match(plain, /\n  return <Layout\d+ data=\{layoutData\} params=\{noParams\} url=\{layoutURL\}>\{view\}<\/Layout\d+>;/);
+  assert.match(plain, /\n  return <Layout\d+ data=\{layoutData\} params=\{noParams\} url=\{layoutURL\}>\{view\(\)\}<\/Layout\d+>;/);
 });
 
 test("mergeHeads: inner title wins; meta by name/property and links by rel+href, canonical once", () => {
@@ -220,17 +220,17 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
   const app = generate(table, { routesDir: "src/routes" }).files["app.tsx"]!;
   assert.match(
     app,
-    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\) \?\? Promise\.all\(\[routeData\(work, match, router, "server", _keepIds\(nest, NEST, match\.url\)\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\)\.then\(\(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\)/,
+    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\) \?\? revived\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\) \?\? Promise\.all\(\[routeData\(work, match, router, "server", _keepIds\(nest, NEST, match\.url\)\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\)\.then\(\(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\)/,
   );
   // Without layouts: the load chain as before (no layout state).
   const bare = generate(routeTable(["index.tsx", "about.tsx"]), { routesDir: "src/routes" }).files["app.tsx"]!;
   assert.match(
     bare,
-    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => result\) \?\? Promise\.all\(\[routeData\(work, match, router, "server"\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\),\n/,
+    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => result\) \?\? revived\(work, \(data\) => loaded\(data\), failed, \(result\) => result\) \?\? Promise\.all\(\[routeData\(work, match, router, "server"\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\),\n/,
   );
   assert.doesNotMatch(bare, /_layouts|_landed|_keepIds|NEST/);
   assert.doesNotMatch(app, /settle\(/);
-  assert.match(app, /<Router router=\{router\} routes=\{routes\} swap=\{swapRoute\} hold=\{heldRoutes\} notFound=/);
+  assert.match(app, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), router\)\} routes=\{routes\} swap=\{adoptSwap\} hold=\{heldRoutes\} notFound=/);
   assert.match(app, /if \(!anchor \|\| anchor\.getAttribute\("data-rivet-prefetch"\) === "none"\) return;/);
   // Z1: router listeners load on interaction (no eager chunk, no boot at idle); the nested App arms its
   // level sync from the first navigation entry point instead of a load effect.
@@ -263,8 +263,6 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
 test("transitions off: no transitions module or navigation context; on: lazy module, context, resume entry", () => {
   const off = generate(table, { routesDir: "src/routes" });
   assert.doesNotMatch(Object.values(off.files).join("\n"), /transitions|Navigation\b/);
-  // No transitions, no search params: no router contexts, so no generated resume entry.
-  assert.equal(off.files["entry.resume.ts"], undefined);
   const on = generate(table, { routesDir: "src/routes", transitions: { pending: { delay: 100 } } });
   const app = on.files["app.tsx"]!;
   assert.match(
@@ -273,16 +271,14 @@ test("transitions off: no transitions module or navigation context; on: lazy mod
   );
   assert.match(app, /const anchor = routableAnchor\(event, modules\);\n {4}if \(anchor\) transitions\(\);/);
   assert.match(app, /loadPage\(match\.url\), transitions\(\)\]\)\.then\(\(\[data, page\]\) => \(_routeModule\(page\), data\)\)/);
-  assert.match(on.files["entry.server.tsx"]!, /<Provider token=\{Navigation\} value=\{navigation\}>\n {8}<App router=\{createRouter\(input\.url\)\} \/>/);
-  assert.match(on.files["entry.resume.ts"]!, /export default createResume\(\{ contexts: \[\[Navigation, navigation\]\] \}\);/);
-  const both = generate(table, { routesDir: "src/routes", transitions: true, searchParams: true });
   assert.match(
-    both.files["entry.resume.ts"]!,
-    /export default createResume\(\{ contexts: \[\[Navigation, navigation\], \[SearchParams, searchParams\]\] \}\);/,
+    on.files["entry.server.tsx"]!,
+    /<Provider token=\{Navigation\} value=\{navigation\}>\n {8}<>\n {8}<Links \/>\n {8}<Root s=\{rootData\(input\)\} \/>/,
   );
-  // CSR: nothing resumes, no resume entry.
+  // No generated resume entry (derived model: the Root boundary provides the router contexts).
+  for (const files of [off.files, on.files, generate(table, { routesDir: "src/routes", transitions: true, searchParams: true }).files])
+    assert.equal(files["entry.resume.ts"], undefined);
   const csr = generate(routeTable(["index.tsx"]), { routesDir: "src/routes", mode: "csr", transitions: true, searchParams: true });
-  assert.equal(csr.files["entry.resume.ts"], undefined);
   assert.match(csr.files["app.tsx"]!, /m\.install\(\{\}\)/);
 });
 
@@ -305,7 +301,7 @@ test("app.tsx: route tables — paths compiled once, one definition per match, s
 test("app.tsx: a single static page route registers no client router events (Z1: the page boots no runtime)", () => {
   const one = generate(routeTable(["index.tsx"]), { routesDir: "src/routes" }).files["app.tsx"]!;
   assert.doesNotMatch(one, /clientEvent|interceptClick|notePopstate|prefetchData|routableAnchor/);
-  assert.match(one, /<Router router=\{router\} routes=\{routes\}/);
+  assert.match(one, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), router\)\} routes=\{routes\}/);
   // A param route, a second route, navigate() or search params keep the client router.
   for (const [files, options] of [
     [["[id].tsx"], {}],
@@ -432,13 +428,10 @@ test("codegen forms: router handlers install the router brand first; apps withou
   }
 });
 
-test("derived resume model: app.tsx default-exports Root (payload as data), levels answer their first load from it", () => {
-  const plain = generate(table, { routesDir: "src/routes" });
-  const { files } = generate(table, { routesDir: "src/routes", derived: true });
+test("server / static modes (derived resume model): app.tsx default-exports Root (payload as data), levels answer their first load from it", () => {
+  const { files } = generate(table, { routesDir: "src/routes" });
   const app = files["app.tsx"]!,
     entry = files["entry.server.tsx"]!;
-  assert.doesNotMatch(plain.files["app.tsx"]!, /export default function Root|revived\(/);
-  assert.match(plain.files["entry.server.tsx"]!, /<App router=\{createRouter\(input\.url\)\} \/>/);
   // Root: the server renders the request's router; the browser rebuilds the router and provides the payload as `Revived`.
   assert.match(
     app,
@@ -480,8 +473,8 @@ test("derived resume model: app.tsx default-exports Root (payload as data), leve
   assert.match(entry, /return _rData\(\{ d, /);
   assert.match(entry, /<Links \/>\n\s*<Root s=/);
   assert.doesNotMatch(entry, /createRouter/);
-  // CSR mode has no server payload: the option is ignored.
-  const csr = generate(routeTable(["_layout.tsx", "index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr", derived: true }).files["app.tsx"]!;
+  // CSR mode has no server payload: no Root.
+  const csr = generate(routeTable(["_layout.tsx", "index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr" }).files["app.tsx"]!;
   assert.doesNotMatch(csr, /export default function Root|revived\(/);
 });
 

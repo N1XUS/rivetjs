@@ -17,7 +17,6 @@ import {
   FRAME_THEME,
   frameIdOf,
   framePath,
-  framePreload,
   frameUpdate,
   pagePreload,
   PARENT_FRAME_HEIGHT,
@@ -247,15 +246,6 @@ test("pagePreload: lean pages load nothing before interaction, others keep the d
   const preload = pagePreload(["/"]);
   assert.equal(preload.lean(new URL("http://docs.test/")), true);
   for (const path of ["/themes/", "/examples/counter/frame/"]) assert.equal(preload.lean(new URL("http://docs.test" + path)), undefined, path);
-  assert.equal(preload.background(new URL("http://docs.test/examples/counter/frame/")), 0);
-  assert.equal(framePreload.lean(new URL("http://docs.test/")), undefined);
-});
-
-test("framePreload: example frames turn background prefetch off, docs pages keep the app default", () => {
-  assert.equal(framePreload.background(new URL("http://docs.test/examples/counter/frame/")), 0);
-  assert.equal(framePreload.background(new URL("http://docs.test/examples/menu-links/frame/help/")), 0);
-  for (const path of ["/", "/themes/", "/components/select/", "/examples/counter/"])
-    assert.equal(framePreload.background(new URL("http://docs.test" + path)), undefined, path);
 });
 
 test("frameUpdate: dev hot updates a frame takes (its example graph), not the docs app's", () => {

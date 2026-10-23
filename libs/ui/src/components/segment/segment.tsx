@@ -23,7 +23,6 @@ import type { Key } from "@rivetjs/cdk/collections/types";
 import { createContext, useContext, type Signal } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { SegmentVariants } from "../../../styles/src/components/segment/index.ts";
@@ -43,7 +42,7 @@ interface SegmentContext {
   variant?: SegmentVariants["variant"];
 }
 
-const SegmentContext = resumableContext(createContext<SegmentContext>({}, { id: "rv-ui-segment" }));
+const SegmentContext = createContext<SegmentContext>({});
 
 type SegmentSlots = ReturnType<typeof segmentVariants>;
 

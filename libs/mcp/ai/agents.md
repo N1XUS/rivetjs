@@ -4,7 +4,7 @@ Read this before editing this project. Rivet looks like React / Solid JSX but is
 
 ## 1. What Rivet is
 
-Rivet is a compiled, resumable JSX framework. A Rust compiler turns `.tsx` into server HTML (streamed) and DOM templates. A component function runs **once, on the server**; the browser never re-runs it. It **resumes** the page from the HTML plus serialized state: only event handlers, bindings that read signals, and client effects run in the browser, and their code loads on intent / visibility / idle. State is fine-grained signals (`@rivetjs/reactivity`). Routing is file-based (`@rivetjs/router`), i18n is compile-time (`@rivetjs/i18n`), forms are progressive (`@rivetjs/forms`), UI is `@rivetjs/ui` (styled compound components) on headless `@rivetjs/cdk`.
+Rivet is a compiled, resumable JSX framework. A Rust compiler turns `.tsx` into server HTML (streamed) and DOM templates. A component function runs **on the server**, and in the browser only when the user first interacts with it: the page **resumes** from the HTML plus the signal values of its interactive components; nothing runs on load, and a component's code loads on intent and runs once over the existing HTML on its first event. State is fine-grained signals (`@rivetjs/reactivity`). Routing is file-based (`@rivetjs/router`), i18n is compile-time (`@rivetjs/i18n`), forms are progressive (`@rivetjs/forms`), UI is `@rivetjs/ui` (styled compound components) on headless `@rivetjs/cdk`.
 
 ## 2. Differences from React / Solid
 
@@ -32,8 +32,6 @@ Rivet is a compiled, resumable JSX framework. A Rust compiler turns `.tsx` into 
 ```
 
 - Two-way form binding: `<input model:value={name} />`, `<input type="checkbox" model:checked={agree} />`, also `<select model:value={choice}>`. The value must be a signal name/property.
-- No JSX inside handlers, effects or computeds (RV2006): render JSX in the component, switch it with a signal.
-- No `this` in handlers (RV2007): use `event.currentTarget`.
 
 ### Signals (`@rivetjs/reactivity`)
 
@@ -56,7 +54,7 @@ untrack(count); // read without subscribing (there is no .peek())
 - In components use `clientEffect` from `@rivetjs/runtime/dom`: recorded on the server, runs only in the browser, re-runs when its signals change. Return a function for cleanup.
 - `effect` from `@rivetjs/reactivity` runs immediately where called — in a component that means on the server only. Use it in plain TS / tests.
 - `onCleanup(fn)` (reactivity) registers cleanup for the current effect / root; throws outside one.
-- Options: `clientEffect(fn, { when: "idle" | "load" | "visible" | "interaction" | "media:(…)" })`. Default `visible` if it uses a ref, else `idle`.
+- Options: `clientEffect(fn, { when: "idle" | "load" | "visible" | "interaction" | "media:(…)" })`. Default `idle`; `visible` = the component's first element near the screen; `interaction` / `media:` start it at its first use (plan M6).
 - Async `clientEffect`: only signals read before the first `await` are tracked; returned cleanup works only from non-async effects.
 
 ```tsx
@@ -74,7 +72,7 @@ clientEffect(() => {
 ### Props are live (Solid-style)
 
 - `<Badge count={count()} />` passes a getter; the child sees updates when it reads `props.count` where it is shown.
-- Destructuring reads once: on a resumed page a destructuring child is re-created on the first change (local signals reset). Read `props.x`.
+- Destructuring reads once: a destructuring child never sees later values. Read `props.x`.
 - Object spread `{ ...props }` / `Object.assign` reads every getter once; JSX spreads `<button {...props} />` stay live.
 - Defaults / forwarding: `mergeProps`, `splitProps` from `@rivetjs/runtime/props`.
 - `count={count}` passes the signal itself (child calls `props.count()` / writes it). Use for two-way props.
@@ -114,7 +112,7 @@ import { ref } from "@rivetjs/runtime/dom";
 const input = ref<HTMLInputElement>();
 <input ref={input} />; // input() → element | undefined (signal-backed)
 let el!: HTMLCanvasElement;
-<canvas ref={(e) => (el = e)} />; // callback must assign a local (RV2002)
+<canvas ref={(e) => (el = e)} />; // or a callback
 ```
 
 ### Context
@@ -132,31 +130,21 @@ import { Provider } from "@rivetjs/runtime/dom";
 const theme = useContext(ThemeContext); // import { useContext } from "@rivetjs/reactivity"
 ```
 
-- The provided value is read once: provide a signal for changing values. It must be serializable (data / signals, no service objects).
+- The provided value is read once: provide a signal for changing values.
 
 ## 3. Resumability rules
 
-Everything a handler, effect, computed or binding uses from its component (its **captures**) is written into the HTML. It must be serializable.
+The server writes the HTML plus a short record per interactive component (it has a handler, reads a signal in its markup, or uses an effect): where it is, its signal values, its props when they are plain data. The browser runs nothing on load; the first event, signal write or trigger inside a component runs its compiled code once over the existing HTML. Functions, class instances, library objects and JSX are never written into the page: the browser builds them again when the component runs.
 
-- OK: primitives, plain objects/arrays, `Date`, `URL`, `URLSearchParams`, `Map`, `Set`, `RegExp`, typed arrays, `ArrayBuffer`, `DataView`, `Error`, `bigint`, signals, `computed`, and functions Rivet compiled: inline arrows, local `const` functions, inline callback props, functions in object literals, returned functions, inline functions written into a value a handler uses (`api.inc = () => …`, `signal(() => …)`, `[() => …]`), local functions stored by name into such a value (`api.open = open`, `list.push(open)`), module-level or imported functions used by name inside a component (called by a handler, passed as a prop, kept in a local const, put in an object / array / call argument).
-- Not OK: class instances (`new Intl.NumberFormat()`, `new Api()` → RV2003; a data class declared in the component module resumes — no `#private` field, no base other than a data class of that module, no decorator, no `window` / `document` read while constructing, else RV2102; `reconstruct(() => new Api(…))` from `@rivetjs/runtime/dom` builds it in the browser on first read (no value in the page); a resource holder resumes with `[serialize]()` + `static [revive](data)`, a package class with `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`), `Promise`, `WeakMap`, `Symbol`, `.bind(...)` written inside an object literal (RV2014; inline in a prop / handler or a local `const inc = add.bind(null, 2)` of a compiled function used by name is OK; `.bind(ctx)` of a `this` function stays RV2007), methods / getters, functions using `this`, functions created at runtime by libraries (`memoize(fn)`), module-level / imported functions put into objects only outside a component (module level, hooks, helpers).
-
-```tsx
-// Avoid: captures a class instance
-const fmt = new Intl.NumberFormat("en", { style: "currency", currency: "EUR" });
-<button onClick={() => alert(fmt.format(n()))}>Pay</button>
-// Prefer: create it where it runs
-<button onClick={() => alert(new Intl.NumberFormat("en", { style: "currency", currency: "EUR" }).format(n()))}>Pay</button>
-```
-
-- Wrap foreign functions in an arrow: `onPress={() => analytics.track("save")}`.
-- Imports are not captures: import modules at the top, create objects inside the handler, keep browser objects (EventSource, chart instances) inside `clientEffect`.
-- Render props and item renderers take functions: `({ close }) => …` on Dialog / Modal / Popover, `{(item) => …}` on ListBox / Select / Tabs, Tabs `panel`. Plain JSX children are fine elsewhere: a closed overlay renders nothing on the server and creates its content when it opens.
-- Render a function child as `{props.children}` directly; a copy in a local (`const c = props.children`) is not tracked on resumed pages.
-- `For each={xs}` (accessor) keeps resumed rows and branches better than `xs().map(...)`.
+- Render the same thing on both sides: no `Date.now()` / `Math.random()` / `new Date()` / `crypto.randomUUID()` in a render (RV2103) — keep it in a signal (`signal(Date.now())`, the server value ships) or compute it in a handler / `clientEffect`. One signal per creation site: no `signal()` inside a loop (RV2104 warning). Browser globals only in handlers / `clientEffect` / `clientEvent` / `clientOnly` (RV2001).
+- Signal values reach the browser as data (primitives, plain objects / arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays); a signal holding a function or class instance starts again from its initial value in the browser.
+- Pass data, not services: a component whose props are plain data wakes up alone; one given a function, a service object or JSX with handlers runs together with its parent.
+- Route loader data must be encodable (RV2107 warning, the page then renders in the browser): no functions, symbols, promises, unregistered class instances. Classes: `registerClass(Cls, { id, serialize, revive })` from `@rivetjs/runtime/resume-format`, imported on server and browser.
+- Render a function child as `{props.children}` directly. `For each={xs}` with `by` for lists that change.
 - `.ts` files are not server-rewritten: import `@rivetjs/runtime/dom` (`For`, `Show`, `clientEffect`, …) only from `.tsx` files, else the DOM runtime is bundled into SSR.
 - Components outside `src/routes` need no registration: `rivetRouter` resumes every `.tsx` / `.jsx` file a route imports.
-- Errors: build/prerender prints `Cannot resume <file>#<Component>$<hash>: function is not serializable`. The dev server names the capture (``capture `<name>` ``); dev builds (`NODE_ENV=development vite build`) give its position (`capture #<i>`) and the value path. Fixes: build the object inside the component; a library object holding functions → `reconstruct(() => createChart(…))` (`@rivetjs/runtime/dom`; module level = one server instance per process, no request state in it); a class instance → `reconstruct(() => new X(…))`, `[serialize]()` + `static [revive](data)`, or for a package class `registerClass(X, { id, serialize, revive })` (`@rivetjs/runtime/resume-format`).
+- A component whose markup differs in the browser renders there instead of reusing the server nodes (dev prints a warning naming it).
+- Not yet on this model (plan M6): framework islands, `@rivetjs/forms` progressive enhancement, some `Suspense` cases.
 - Playwright tests: the first trusted mouse click per document flushes DOM updates one task later. After a page's first `page.click`, wait (`expect(...).toHaveText` retries / `waitForFunction`), don't read the DOM synchronously.
 
 ## 4. File routes
@@ -398,7 +386,7 @@ import { Select } from "@rivetjs/ui/select";
 
 ## 10. RV diagnostic codes
 
-- Format `RVnnnn`. Compiler errors fail the build; compiler warnings (RV2012–RV2014 on a `.bind` receiver that may be an object with its own `bind`, RV2015 on a returned accessor that cannot resume) print and the module still compiles; the language service adds type-aware warnings.
+- Format `RVnnnn`. Compiler errors fail the build; compiler warnings (RV2104: keyed state created in a loop) print and the module still compiles; the language service adds route-link warnings (RV3101).
 - Where: Vite (terminal + overlay) as `[RV1016] src/x.tsx:12:8: message`; `rivet-check` as `file:line:col - error RV1016: message`; editor via the TS plugin. The MCP tool `explain_diagnostic("RV1016")` gives the meaning, the mechanical fix and an Avoid / Prefer pair; `check_code` returns the fix and the fixed source for a whole file.
 - Ranges: 1xxx JSX / attributes, 2xxx resume, 3xxx imports / helpers / route modules, 4xxx i18n, 5xxx styles, 6xxx slots, 7xxx config, 9xxx internal.
 
@@ -412,18 +400,8 @@ import { Select } from "@rivetjs/ui/select";
 | RV1101          | Unsafe / unsupported attribute or URL (`innerHTML`, `javascript:`)                          | remove; build-time assets                               |
 | RV1102          | Invalid `preload` value                                                                     | `eager` / `idle` / `visible` / `intent` / `interaction` |
 | RV2001          | Browser global read during server rendering                                                 | handler / `clientEffect` / `clientEvent` / `clientOnly` |
-| RV2002          | Ref callback must assign a local                                                            | `ref={(el) => (local = el)}` or `ref()`                 |
-| RV2003          | Captured class instance                                                                     | pass data; inside handler; `reconstruct(…)`             |
-| RV2102          | Captured instance of a module class that is not a data class (`#private`, base, resource)   | inside handler; `reconstruct(…)`; plain fields          |
-| RV2006          | JSX inside handler / effect / computed                                                      | JSX in component + signal                               |
-| RV2007          | Resumable code captures `this`                                                              | `event.currentTarget`                                   |
-| RV2009          | Two module references share a browser name                                                  | rename one import                                       |
-| RV2011          | Mutually recursive functions split by an early exit                                         | move them together before the exit                      |
-| RV2012–RV2014   | (warning; error on a provable function) `.bind` that may not resume                         | `const g = f.bind(t, …)`; arrow for other callees       |
-| RV2015          | (warning) component returns a function that cannot resume (anon default / wrapper / `let`)  | `export function Name(props) { return () => …; }`       |
-| RV2016          | (warning) `resource()` that cannot resume (destructured, `let`, not a `const` initializer)  | one `const user = resource(…)`; quick fix               |
-| RV2101          | (warning) captured value not serializable (type-aware)                                      | as RV2003                                               |
-| RV2103 / RV2104 | `resume: { model: "derived" }` only: `Date.now()` / `Math.random()` while rendering / (warning) signal created in a loop | keyed `signal(Date.now())` or `clientEffect`; one signal outside the loop |
+| RV2103 / RV2104 | resume modules: `Date.now()` / `Math.random()` while rendering / (warning) signal created in a loop | keyed `signal(Date.now())` or `clientEffect`; one signal outside the loop |
+| RV2107          | (warning) Route data not encodable (function, symbol, promise, unregistered class)          | plain data; `registerClass`                             |
 | RV3003 / RV3004 | Structural helper namespace import / alias                                                  | `import { For } from "@rivetjs/runtime/dom"`            |
 | RV3006          | `clientOnly` erasure shape                                                                  | inline `() => import("…")`                              |
 | RV3007          | Route module server export shape (`export *` in a route)                                    | declare server exports directly                         |
@@ -436,7 +414,6 @@ import { Select } from "@rivetjs/ui/select";
 | RV7101 / RV7102 | `.rivet/editor.json` missing / stale                                                        | `rivet sync`                                            |
 | RV9000 / RV9001 | Unclassified / internal compiler error                                                      | report it                                               |
 
-- Not a code: render-time `… is not serializable` (see section 3).
 
 ## 11. Links
 
@@ -452,7 +429,7 @@ import { Select } from "@rivetjs/ui/select";
 
 ## Checklist before reporting done
 
-- `npm run check` exits 0; `npm run build` passes (prerender / SSR catches non-serializable captures).
+- `npm run check` exits 0; `npm run build` passes.
 - No destructured props in components that receive changing values; lists that change use `For` with `by`.
 - No browser globals outside handlers / `clientEffect` / `clientEvent` / `clientOnly`.
 - Icons only via `<Icon icon={…} />` + lucide.

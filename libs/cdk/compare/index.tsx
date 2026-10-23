@@ -16,7 +16,6 @@
 import { untrack } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { useLocale } from "../i18n/index.ts";
 import { dataBool, focusStateIn, hoverStateOver, type InteractionStateOptions } from "../utils/data-attrs.tsx";
@@ -60,7 +59,7 @@ export {
 } from "./behaviour.ts";
 
 /** The compare state of the nearest `Compare` (null outside one). */
-export const CompareContext = resumableContext(createContext<CompareState | null>(null, { id: "rv-compare" }));
+export const CompareContext = createContext<CompareState | null>(null);
 
 type Style = Record<string, string | number | undefined>;
 

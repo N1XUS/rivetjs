@@ -23,7 +23,6 @@ Locale resolution, RTL detection, cached date formatters, localized string table
 - Rivet differences (header): default locale = `<html lang>` then `navigator.language`, server `en-US` (upstream: `navigator.language`); locale resolved during server render and stored as string in widget state; `I18nProvider` in separate JSX subpath; strings are plain `{name}` templates (upstream compiles JSON to functions)
 
 ## Rules / invariants
-- `LocaleContext` registered as resumable context id `rv-locale` (region re-creation under `I18nProvider` keeps the locale; `tests-components/resume-context.test.ts`)
 - components never run in the browser on resumed pages: resolve the locale at render, store the string in state; `I18nProvider` matters for SSR + client-rendered subtrees only
 - `I18nProvider` children: plain JSX (lazy slot, `renderSlot`) or `{() => <Page/>}`
 - `getStringsForLocale` fallback order: exact, language-script, language, any region of the language, `defaultLocale`

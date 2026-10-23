@@ -21,8 +21,6 @@ export interface EditorManifest {
   version: 1;
   /** Root-relative modules compiled in resume mode (sorted). */
   resumeModules?: string[];
-  /** `resume.preload.rules` (RegExp as `{ regex, flags }`). */
-  preloadRules?: { match: string | { regex: string; flags: string }; strategy: string }[];
   /** Root-relative routes directory. */
   routesDir?: string;
   routes?: EditorRoute[];

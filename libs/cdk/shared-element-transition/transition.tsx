@@ -5,7 +5,6 @@
 import { createContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { renderSlot } from "@rivetjs/runtime/slot";
 
 export interface Snapshot {
@@ -17,7 +16,7 @@ export interface Snapshot {
 export type SharedElementScope = { [name: string]: Snapshot };
 
 /** RAC `SharedElementContext`. */
-export const SharedElementContext = resumableContext(createContext<SharedElementScope | null>(null, { id: "rv-shared-element" }));
+export const SharedElementContext = createContext<SharedElementScope | null>(null);
 
 export interface SharedElementTransitionProps {
   /** Plain JSX children are lazy (rendered inside the scope); a function `{() => …}` works too. */

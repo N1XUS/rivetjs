@@ -8,10 +8,12 @@ import { scope, scopePath } from "../scope.ts";
 import { fromBracketPath, fromPointer, issueRecord, mapIssues } from "../errors.ts";
 import { insert, insertIntent, keys, move, remove, removeIntent, rows, swap } from "../array.ts";
 import { runtime } from "../store.ts";
-import { encodeState } from "./fixtures.ts";
 
 const address = z.object({ city: z.string().min(1), zip: z.string() });
-const checkout = defineForm({ name: "checkout", schema: z.object({ billing: address, shipping: address, items: z.array(z.object({ sku: z.string(), qty: z.number() })) }) });
+const checkout = defineForm({
+  name: "checkout",
+  schema: z.object({ billing: address, shipping: address, items: z.array(z.object({ sku: z.string(), qty: z.number() })) }),
+});
 
 test("scope(): names, ids and issues relative to the path; one store", () => {
   const form = createForm(checkout);
@@ -26,10 +28,9 @@ test("scope(): names, ids and issues relative to the path; one store", () => {
   assert.equal(isInvalid(billing), true);
   assert.equal(isInvalid(shipping), undefined);
   assert.deepEqual(fieldIssues(billing), [["city", [{ key: "errors.required" }]]]);
-  // Views of views nest; the view serializes as a plain pair.
+  // Views of views nest.
   const row = scope(scope(form, "items"), "0" as never) as never;
   assert.equal(path(row, "sku" as never), "items.0.sku");
-  assert.doesNotThrow(() => encodeState({ form, billing }));
 });
 
 test("mapIssues(): unwrap → field issues, unknown paths → form-level; pointer and bracket helpers", () => {
@@ -42,7 +43,9 @@ test("mapIssues(): unwrap → field issues, unknown paths → form-level; pointe
       { pointer: "", code: "errors.global" },
     ],
   };
-  const mapped = mapIssues(reply, (r) => r.errors.map((e) => ({ path: fromPointer(e.pointer), key: e.code, message: e.detail })), { known: ["billing.city", "items.$.qty"] });
+  const mapped = mapIssues(reply, (r) => r.errors.map((e) => ({ path: fromPointer(e.pointer), key: e.code, message: e.detail })), {
+    known: ["billing.city", "items.$.qty"],
+  });
   assert.deepEqual(mapped, [
     { path: "billing.city", key: "errors.city" },
     { path: "items.1.qty", key: "errors.qty" },
@@ -55,7 +58,10 @@ test("mapIssues(): unwrap → field issues, unknown paths → form-level; pointe
   assert.equal(fromBracketPath('user["name"]'), "user.name");
   assert.equal(fromBracketPath("a[__proto__]"), "");
   // Prototype paths never become keys.
-  assert.deepEqual(mapIssues(null, () => [{ path: ["__proto__", "x"], key: "k" }]), [{ path: "", key: "k" }]);
+  assert.deepEqual(
+    mapIssues(null, () => [{ path: ["__proto__", "x"], key: "k" }]),
+    [{ path: "", key: "k" }],
+  );
   const form = createForm(checkout);
   setIssues(form, issueRecord(mapped) as never);
   assert.deepEqual(issue(form, "items.1.qty"), { key: "errors.qty" });
@@ -86,7 +92,9 @@ test("arrays: keys from initial/echo, records move with rows, intents", () => {
   assert.deepEqual(issue(form, "items.0.sku"), { key: "errors.b" });
   assert.equal(touched(form, "items.0.sku"), false);
   // Echo after a no-JS intent: the `#path` row count wins (empty rows are not in values).
-  const echoed = createForm(checkout, { result: { name: "checkout", result: { ok: false, intent: "insert:items", values: { "items.0.sku": "a" }, rows: { items: 2 } } } });
+  const echoed = createForm(checkout, {
+    result: { name: "checkout", result: { ok: false, intent: "insert:items", values: { "items.0.sku": "a" }, rows: { items: 2 } } },
+  });
   assert.equal(rows(echoed, "items"), 2);
   assert.equal(insertIntent("items"), "insert:items");
   assert.equal(removeIntent("items", 1), "remove:items:1");

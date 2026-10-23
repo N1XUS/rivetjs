@@ -6,15 +6,13 @@ import { readFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { prerender } from "@rivetjs/router/static";
 import { loadBuild } from "../../router/adapters/build.ts";
-import { framePath, framePreload } from "../frame-theme.ts";
+import { framePath } from "../frame-theme.ts";
 import type { ExampleData } from "../components/types.ts";
 import { FRAMES_ONLY_ENV } from "../vite.ts";
-import { LAZY_ROWS_HARNESS_ENV } from "../../router/build/lazy-rows.ts";
 import { loadApp } from "./app.ts";
 import { generateContent } from "./content/generate.ts";
 import { EXAMPLES_JSON, generateExamples } from "./examples.ts";
 import { mb, memoryBudget, watchMemory } from "./memory.ts";
-import { pageRows, rowFacts, rowsColumn } from "./rows.ts";
 import { viteBuild } from "./vite-build.ts";
 
 export const CHECK_EXAMPLES_DIST = ".artifacts/check-examples";
@@ -36,17 +34,9 @@ export interface FramesBuild {
   started: number;
   vite: number;
   rendered: number;
-  /** Time spent on the `rows:` column (ms; `checkExamplesOnly`). */
-  rows?: number;
 }
 
-/**
- * Build the frame pages of `ids` (one Vite build restricted to them, child processes) and prerender them. Env
- * `RIVET_LAZY_ROWS=swap` (measurement only, lazy collection rows T1) reaches the build children with
- * `LAZY_ROWS_HARNESS_ENV`: the router then renders eligible For rows unrecorded (`@rivetjs/runtime` `server-lazy-swap.ts`);
- * `RIVET_LAZY_ROWS=on` / `off` likewise forces the build's `resume.lazyRows` on / off (`@rivetjs/router` `lazyRowsBuild`,
- * LAZY-T5B; on is the default since LAZY-FLIP: its browser runtime materialises lazy rows, its manifest lets the server write them).
- */
+/** Build the frame pages of `ids` (one Vite build restricted to them, child processes) and prerender them. */
 export async function buildFrames(root: string, ids: readonly string[], options: CheckOnlyOptions = {}): Promise<FramesBuild> {
   const { site } = await loadApp(root);
   const log = options.log ?? ((message: string) => console.log(message));
@@ -61,12 +51,10 @@ export async function buildFrames(root: string, ids: readonly string[], options:
   // Lenient: a half-written page of another edit must not block example checks (the content is not built here).
   await generateContent(root, { lenient: (message) => log(`docs: ${message}`) });
   for (const dir of ["client", "server"]) await rm(resolve(dist, dir), { recursive: true, force: true });
-  const lazyRows = process.env.RIVET_LAZY_ROWS;
-  if (lazyRows) log(`check-examples: RIVET_LAZY_ROWS=${lazyRows} (measurement build, never shipped)`);
   // Child process (`vite-build.ts`): the build's memory is released before the Chromium checks.
-  await viteBuild(root, { dist, env: { [FRAMES_ONLY_ENV]: ids.join(","), ...(lazyRows ? { [LAZY_ROWS_HARNESS_ENV]: "1" } : {}) } });
+  await viteBuild(root, { dist, env: { [FRAMES_ONLY_ENV]: ids.join(",") } });
   const vite = performance.now();
-  const build = await loadBuild(dist, { preload: framePreload });
+  const build = await loadBuild(dist);
   const report = await prerender({
     handler: build.handler,
     routes: build.entry.routes,
@@ -93,23 +81,15 @@ export async function checkExamplesOnly(root: string, ids: readonly string[], op
     const all = JSON.parse(await readFile(resolve(root, EXAMPLES_JSON), "utf8")) as Record<string, ExampleData>;
     const measures = await checkExamples(root, build.client, all, { only: ids, cache: false, persist: false, log });
     const kb = (bytes: number) => (bytes / 1024).toFixed(1) + " KB";
-    const rowsStarted = performance.now();
-    const facts = await rowFacts(root);
-    for (const [id, m] of Object.entries(measures)) {
-      // Keyed For rows of the frame page (`rows.ts`): lazy / recorded, rows, per-row state share.
-      const html = await readFile(resolve(build.client, "." + framePath(id), "index.html"), "utf8");
-      log(
-        `measure ${id}: before ${m.requestsBefore} scripts / ${kb(m.bytesBefore)}, first input +${m.requestsAfter} / ${kb(m.bytesAfter)}; ${rowsColumn(pageRows(html, { facts }))}`,
-      );
-    }
-    frames.rows = performance.now() - rowsStarted;
+    for (const [id, m] of Object.entries(measures))
+      log(`measure ${id}: before ${m.requestsBefore} scripts / ${kb(m.bytesBefore)}, first input +${m.requestsAfter} / ${kb(m.bytesAfter)}`);
   } finally {
     const peak = await memory.stop();
     const budget = memoryBudget();
     if (frames)
       log(
         `check-examples: ${ids.length} example(s), ${frames.pages} page(s); vite ${seconds(frames.started, frames.vite)}, prerender ${seconds(frames.vite, frames.rendered)}, ` +
-          `checks ${seconds(frames.rendered, performance.now())}${frames.rows !== undefined ? ` (rows ${seconds(0, frames.rows)})` : ""}; peak tree RSS ${mb(peak)} (budget ${budget ? budget + " MB" : "off"})`,
+          `checks ${seconds(frames.rendered, performance.now())}; peak tree RSS ${mb(peak)} (budget ${budget ? budget + " MB" : "off"})`,
       );
     if (budget && peak > budget * 1024 * 1024) throw new Error(`check-examples: peak memory ${mb(peak)} is over the ${budget} MB budget (DOCS_KIT_MAX_RSS_MB)`);
   }

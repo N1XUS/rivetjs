@@ -13,7 +13,6 @@ import type { ValidationResult } from "../state/form-validation.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { slotChildren, type DOMRenderProps } from "../utils/render.ts";
 import {
-  resumableContext,
   contextProps,
   markSlotRendered,
   slottedContext,
@@ -54,7 +53,7 @@ export interface LabelProps extends HTMLProps<"label">, SlotProps, DOMRenderProp
   children?: Content | (() => Content);
 }
 
-export const LabelContext = resumableContext(createContext<ContextValue<LabelProps, HTMLLabelElement>>({}, { id: "rv-label" }));
+export const LabelContext = createContext<ContextValue<LabelProps, HTMLLabelElement>>({});
 
 export function Label(props: LabelProps) {
   // RAC createHideableComponent: nothing in the collection build pass (its context providers are absent).

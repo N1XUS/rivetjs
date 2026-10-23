@@ -50,7 +50,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, JSX, Ref } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { X } from "lucide";
 
 import type { AutocompleteVariants } from "../../../styles/src/components/autocomplete/index.ts";
@@ -82,7 +81,7 @@ type AutocompleteContext = {
   isDisabled?: boolean | undefined;
 };
 
-const AutocompleteContext = resumableContext(createContext<AutocompleteContext>({}, { id: "rv-ui-autocomplete" }));
+const AutocompleteContext = createContext<AutocompleteContext>({});
 
 type AutocompleteSlots = ReturnType<typeof autocompleteVariants>;
 const SLOTS = new Map<string, AutocompleteSlots>();

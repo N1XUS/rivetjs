@@ -5,9 +5,9 @@
 // Run: `npx vitest run --project router libs/router/tests/seeded-locals.test.ts`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { signal } from "@rivetjs/reactivity";
 import { _variants, _variantTemplate, _variantValue } from "@rivetjs/runtime/server";
-import { _rBind, type ResumeManifest } from "@rivetjs/runtime/server-resume";
+import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
+import { _rB, _rBEnd, _rBOut, _rSig } from "@rivetjs/runtime/server-derived";
 import { createDecoder } from "@rivetjs/runtime/resume-format";
 import { createHandler, type AppRoute, type RequestEvent, type ServerModule } from "../server/handler.ts";
 import { createApp, type GeneratedEntry } from "../server/app.ts";
@@ -143,7 +143,7 @@ test("concurrent requests with different seeds render their own data", async () 
 
 // createApp with a resumable page (resume manifest + a recorded binding of the loader's title).
 const SECRET = "seed-secret-4f1c";
-const manifest = (locale: string): ResumeManifest => ({ runtime: `/${locale}/assets/resume-entry.js`, symbols: { "page#s": `/${locale}/assets/page.js` } });
+const manifest = (locale: string): ResumeManifest => ({ runtime: `/${locale}/assets/resume-entry.js`, symbols: { Page: `/${locale}/assets/page.js` } });
 const fragments = _variants([
   ["<p>Hello ", "</p>"],
   ["<p>Hallo ", "</p>"],
@@ -161,9 +161,15 @@ function surveyEntry(): GeneratedEntry {
     ],
     universal: {},
     page: (input) => () => {
-      const n = signal(1);
       const { title } = (input.data[0] ?? { title: "?" }) as { title: string };
-      return _variantTemplate(fragments, [_rBind("page#s", () => _variantValue([title + " en" + n(), () => title + " de" + n()]), [title])]);
+      const B = _rB("Page", 0);
+      try {
+        const n = _rSig("n", 1);
+        const t = _rSig("t", title);
+        return _rBOut(B, _variantTemplate(fragments, [() => _variantValue([t() + " en" + n(), () => t() + " de" + n()])]));
+      } finally {
+        _rBEnd(B);
+      }
     },
     document: (input) => ({ start: `<!doctype html><html lang="${input.locale ?? "-"}"><head></head><body>`, end: "</body></html>" }),
   };
@@ -173,8 +179,8 @@ test("seeded values reach the browser only through what loaders return (HTML, re
   const locals = { viewModel: { title: "Survey" }, secret: SECRET };
   const app = createApp({ entry: surveyEntry(), manifest: manifest("en") });
   const html = await (await app(new Request("http://x/splash/survey"), { nonce: "n", locals })).text();
-  assert.match(html, /<p>Hello <!--r0-->Survey en1<!--\/--><\/p>/);
-  const state = /<script type="rivet\/state"[^>]*>(.*?)<\/script>/.exec(html)?.[1];
+  assert.match(html, /<p>Hello Survey en1<\/p>/);
+  const state = /<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/.exec(html)?.[1];
   assert.ok(state && state.includes("Survey"), html);
   assert.ok(!html.includes(SECRET), html);
   const answer = await app(new Request("http://x/splash/survey?_rivet=data"), { locals });
@@ -194,7 +200,7 @@ test("seeded locals.locale selects the locale variant and manifest (pages and er
   const locals = { viewModel: { title: "Umfrage" }, locale: "de" };
   const html = await (await app(new Request("http://x/splash/survey"), { nonce: "n", locals })).text();
   assert.match(html, /^<!doctype html><html lang="de">/);
-  assert.match(html, /<p>Hallo <!--r0-->Umfrage de1<!--\/--><\/p>/);
+  assert.match(html, /<p>Hallo Umfrage de1<\/p>/);
   assert.match(html, /\/de\/assets\/page\.js/);
   assert.doesNotMatch(html, /\/en\/assets\//);
   // Unmatched URL: the error page takes the seeded locale (no i18n.resolve, no locale prefix).
@@ -258,8 +264,8 @@ test("node adapter: serve({ handler }) forwarding { ...context, locals } renders
     });
     assert.equal(response.status, 200);
     const html = await response.text();
-    assert.match(html, /<p>Hello <!--r0-->From ASP\.NET en1<!--\/--><\/p>/);
-    assert.match(html, /<script type="rivet\/state"[^>]*>.*From ASP\.NET.*<\/script>/);
+    assert.match(html, /<p>Hello From ASP\.NET en1<\/p>/);
+    assert.match(html, /<script type="rivet\/boundaries"[^>]*>.*From ASP\.NET.*<\/script>/);
     assert.match(html, /\/en\/assets\/resume-entry\.js/);
     assert.match(response.headers.get("content-security-policy") ?? "", /'nonce-/);
     // The adapter's context carries nonce + address only: nothing from the request (headers, query, body) seeds locals.

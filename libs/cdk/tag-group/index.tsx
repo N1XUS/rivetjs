@@ -63,7 +63,6 @@ import {
   createSlotId,
   mergeRefValues,
   renderProps as resolveRenderProps,
-  resumableContext,
   slotIdRef,
   type ContextValue,
   type RefValue,
@@ -160,7 +159,7 @@ export interface TagGroupProps extends SlotProps, DOMRenderProps<"div", undefine
 }
 
 /** RAC `TagGroupContext`. */
-export const TagGroupContext = resumableContext(createContext<ContextValue<TagGroupProps, HTMLDivElement>>(null, { id: "rv-tag-group" }));
+export const TagGroupContext = createContext<ContextValue<TagGroupProps, HTMLDivElement>>(null);
 
 /** What a TagGroup provides its TagList / Tags (Rivet: RAC `ListStateContext` + `TagListContext` gridProps + `hookData`). */
 export interface TagGroupInternal {
@@ -179,7 +178,7 @@ export interface TagGroupInternal {
   filter?: ((textValue: string, node: Node<any>) => boolean) | undefined;
 }
 /** The TagGroup a TagList / Tag renders in (null outside one). */
-export const TagGroupInternalContext = resumableContext(createContext<TagGroupInternal | null>(null, { id: "rv-tag-group-internal" }));
+export const TagGroupInternalContext = createContext<TagGroupInternal | null>(null);
 
 /** A tag group is a focusable list of labels, categories, keywords, filters, or other items, with support for keyboard navigation, selection, and removal (RAC `TagGroup`). */
 export function TagGroup(inProps: TagGroupProps) {
@@ -298,7 +297,7 @@ export interface TagListProps<T = object>
 }
 
 /** RAC `TagListContext` (the TagList's own props; RAC also passes useTagGroup's gridProps through it). */
-export const TagListContext = resumableContext(createContext<ContextValue<TagListProps<any>, HTMLDivElement>>(null, { id: "rv-tag-list" }));
+export const TagListContext = createContext<ContextValue<TagListProps<any>, HTMLDivElement>>(null);
 
 /** A tag list is a container for tags within a TagGroup (RAC `TagList`). */
 export function TagList<T extends object>(inProps: TagListProps<T>) {

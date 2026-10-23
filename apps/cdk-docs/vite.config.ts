@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite, DOCS_LAZY_OWNED, DOCS_PRELOAD_RULES } from "@rivetjs/docs-kit/vite.ts";
+import { docsSite } from "@rivetjs/docs-kit/vite.ts";
 
 /** @rivetjs/cdk docs: a static site on @rivetjs/docs-kit (same engine as apps/docs). */
 export default defineConfig({
@@ -12,7 +12,6 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
-      resume: { preload: { rules: [...DOCS_PRELOAD_RULES] }, lazyOwned: [...DOCS_LAZY_OWNED] },
     }),
     tailwindcss(),
   ],

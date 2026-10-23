@@ -79,7 +79,6 @@ import {
   type SlotId,
   mergeRefValues,
   renderProps,
-  resumableContext,
   type ContextValue,
   type RefValue,
   type RenderProps,
@@ -196,15 +195,15 @@ export interface TreeProps<T>
 }
 
 /** RAC `TreeContext`: props for the Trees inside a component, optionally per `slot`. */
-export const TreeContext = resumableContext(createContext<ContextValue<TreeProps<any>, HTMLDivElement>>(null, { id: "rv-tree" }));
+export const TreeContext = createContext<ContextValue<TreeProps<any>, HTMLDivElement>>(null);
 /** RAC `TreeStateContext`: the state of the enclosing Tree. */
-export const TreeStateContext = resumableContext(createContext<TreeState<any> | null>(null, { id: "rv-tree-state" }));
+export const TreeStateContext = createContext<TreeState<any> | null>(null);
 
 /** Data the Tree shares with its rows (react-aria `listMap` value + grid options). */
 interface TreeInternal {
   shared: GridListShared;
 }
-const TreeInternalContext = resumableContext(createContext<TreeInternal | null>(null, { id: "rv-tree-internal" }));
+const TreeInternalContext = createContext<TreeInternal | null>(null);
 
 /** Global DOM events Tree handles itself; the user's run from its own handler. */
 const TREE_OWNED = ["onMouseDown", "onScroll", "style"] as const;
@@ -526,7 +525,7 @@ export interface TreeItemRenderProps {
 export interface TreeItemContentRenderProps extends TreeItemRenderProps {}
 
 /** RAC `TreeItemContentContext`: the render props of the enclosing TreeItem. */
-export const TreeItemContentContext = resumableContext(createContext<TreeItemContentRenderProps | null>(null, { id: "rv-tree-item-content" }));
+export const TreeItemContentContext = createContext<TreeItemContentRenderProps | null>(null);
 
 export interface TreeItemContentProps {
   /** The children of the component. A function may be provided to alter the children based on component state. */

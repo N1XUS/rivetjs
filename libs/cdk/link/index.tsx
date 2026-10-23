@@ -22,7 +22,6 @@ import {
   contextProps,
   mergeRefValues,
   renderProps as resolveRenderProps,
-  resumableContext,
   type ContextValue,
   type RefValue,
   type RenderProps,
@@ -93,7 +92,7 @@ export interface LinkProps
 }
 
 /** RAC `LinkContext` (Breadcrumb gives its Link `aria-current` / `isDisabled`). */
-export const LinkContext = resumableContext(createContext<ContextValue<LinkProps, HTMLAnchorElement>>(null, { id: "rv-link" }));
+export const LinkContext = createContext<ContextValue<LinkProps, HTMLAnchorElement>>(null);
 
 const isFn = (v: unknown): boolean => typeof v === "function";
 const isCurrentValue = (v: unknown): boolean => !!v && v !== "false";

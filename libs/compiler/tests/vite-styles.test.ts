@@ -100,7 +100,7 @@ test("dev: readable names, sheet served as CSS, CSS-only edits update only the s
   }
 });
 
-test("dev resume: a CSS-only edit of a resume module updates only the sheet (hotUpdate compiles like transform)", async () => {
+test("dev resume: a CSS-only edit of a resume module updates only the sheet (hotUpdate compiles like transform); a markup edit reloads", async () => {
   const root = await project();
   let server: ViteDevServer | undefined;
   try {
@@ -119,6 +119,8 @@ test("dev resume: a CSS-only edit of a resume module updates only the sheet (hot
       );
     const cssOnly = await call(CARD("blue"));
     assert.ok(cssOnly?.length && cssOnly.every((m) => m.id!.startsWith(card + _STYLE_SUFFIX)), JSON.stringify(cssOnly?.map((m) => m.id)));
+    // A markup edit of a resume module reloads the page (adopted boundaries are not hot-replaced).
+    assert.deepEqual(await call(CARD("blue", "<i>x</i>")), []);
   } finally {
     await server?.close();
     await rm(root, { recursive: true, force: true });

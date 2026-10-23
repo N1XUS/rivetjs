@@ -78,6 +78,9 @@ export function signal<T>(initial: T, options?: EqualsOptions<T>): Signal<T> {
   return created;
 }
 
+// Derived keyed signals (`dom-derived.ts` `_sig`: compiled app `signal()` calls) restore state the same way.
+_adoption.signal = signal;
+
 /** Register a component implementation; returns the stable wrapper for `id` (`file#export`). */
 export function hot<P>(impl: (props: P) => unknown, id: string, reset = false): (props: P) => unknown {
   const known = registry.get(id);
@@ -93,6 +96,8 @@ export function hot<P>(impl: (props: P) => unknown, id: string, reset = false): 
       updating = false;
     }
     if (orphans.size) expiry = setTimeout(() => orphans.clear(), 5000);
+    // The component's statics (`Root.ready`, the router's generated page-module hook of derived adopt runs) follow it.
+    Object.assign(known.wrapper, impl);
     return known.wrapper;
   }
   const record: Record = {
@@ -129,6 +134,8 @@ export function hot<P>(impl: (props: P) => unknown, id: string, reset = false): 
           mounted = false;
           record.live.delete(instance);
           if (updating) (orphans.get(id) ?? orphans.set(id, []).get(id)!).push(instance);
+          // Unmounted before a second render (an adopted page the dev server stops resuming): its first-render scope too.
+          if (eager !== null) (eager.dispose(), (eager = null));
         });
       const run = (render: (props: unknown) => unknown): unknown =>
         untrack(() => {
@@ -178,6 +185,7 @@ export function hot<P>(impl: (props: P) => unknown, id: string, reset = false): 
     },
   };
   registry.set(id, record);
+  Object.assign(record.wrapper, impl);
   if (DEV) {
     DEV.emit("sig.internal", { sig: record.impl });
     DEV.emit("hot.register", { id, wrapper: record.wrapper, impl });

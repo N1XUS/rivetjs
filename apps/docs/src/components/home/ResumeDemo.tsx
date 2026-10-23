@@ -1,6 +1,6 @@
 // Home "Resumability" demo: a real resumable component. The server renders it once ("rendered on: server" is computed
 // in the component body: if the browser ever ran the component, the text would say "browser"). The
-// resumed code for this example is reported from Resource Timing intersected with its compiled dependencies, split into
+// resumed code for this example is reported from Resource Timing (the runtime, its boundary chunk and their imports), split into
 // what the click fetched and what was already prefetched before it (hover / focus intent, an earlier interaction).
 // Other widgets and page prefetches are excluded. The component has its own intent chunk (vite.config.ts `HOME_RULES`).
 // Tests: tests/home.test.ts "resume demo".

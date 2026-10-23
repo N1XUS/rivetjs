@@ -2,8 +2,8 @@
 // an animated page switcher inside the sidebar — `SidebarPages` (value / defaultValue / onValueChange) holds the active
 // page, `SidebarPage value` is one page. Drill-in / back navigation: a menu button sets the value
 // (`useSidebarPages().setActiveValue("settings")`).
-// - State = `controllable(value, defaultValue, onValueChange)` in `_regionState`; without `defaultValue` the first
-//   page rendered is active (`first`, set while the pages render, serialized with the region).
+// - State = `controllable(value, defaultValue, onValueChange)`; without `defaultValue` the first page rendered is
+//   active (`first`, set while the pages render).
 // - Markup: `div[data-slot=sidebar-pages]` (inline `display: grid; overflow: hidden` — behaviour-critical: pages stack in
 //   one cell, the slide is clipped) > `div[data-slot=sidebar-page][data-value]` (inline `grid-area: 1 / 1`). Inactive
 //   pages: `hidden`, `inert`, `aria-hidden="true"`; the active one `data-active="true"`.
@@ -13,10 +13,9 @@
 //   (embla physics, the house motion); `reduceMotion` (pages → menu / group options → provider) or
 //   `prefers-reduced-motion` → instant switch. Focus inside the leaving page moves to the entering page's first
 //   focusable element.
-import { createContext, provide, signal, untrack, useContext, _regionState, type Signal } from "@rivetjs/reactivity";
+import { createContext, provide, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { Motion1D } from "../motion/index.ts";
 import { dataBool } from "../utils/data-attrs.tsx";
@@ -37,8 +36,8 @@ export interface SidebarPagesState {
   readonly container: () => HTMLElement | null | undefined;
 }
 
-/** The `SidebarPages` in scope (`rv-sidebar-pages`). */
-export const SidebarPagesContext = resumableContext(createContext<SidebarPagesState | null>(null, { id: "rv-sidebar-pages" }));
+/** The `SidebarPages` in scope. */
+export const SidebarPagesContext = createContext<SidebarPagesState | null>(null);
 
 /** The active page value. */
 export const sidebarPagesValue = (state: SidebarPagesState): string | undefined => state.control.value() ?? state.first();
@@ -112,12 +111,12 @@ export function SidebarPages(props: SidebarPagesProps) {
   const inheritedReduce = useContext(SidebarMenuOptionsContext)?.reduceMotion;
   const ariaLabel = props["aria-label"];
   const reduce = reduceMotion ?? inheritedReduce ?? sidebar?.reduceMotion ?? false;
-  const state: SidebarPagesState = _regionState(() => ({
+  const state: SidebarPagesState = {
     control: controllable<string | undefined>(value as never, defaultValue, onValueChange as never),
     first: signal<string | undefined>(undefined),
     reduceMotion: reduce,
     container: createRef<HTMLDivElement>(),
-  }));
+  };
   const rp = renderProps({ class: cls, children, values: NONE, defaultClassName: "rv-SidebarPages" });
   const refs = mergeRefValues(state.container as RefValue<HTMLDivElement>, ref);
   return (

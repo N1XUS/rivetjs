@@ -23,8 +23,18 @@ test("types: defaults first; link data-transition wins over the route; none / fa
 
 test("shared names: present once on both sides; duplicates (null) and one-sided names drop", () => {
   const element = {} as HTMLElement;
-  const before = new Map<string, HTMLElement | null>([["hero", element], ["dup", null], ["old-only", element], ["both-dup", element]]);
-  const after = new Map<string, HTMLElement | null>([["hero", element], ["dup", element], ["new-only", element], ["both-dup", null]]);
+  const before = new Map<string, HTMLElement | null>([
+    ["hero", element],
+    ["dup", null],
+    ["old-only", element],
+    ["both-dup", element],
+  ]);
+  const after = new Map<string, HTMLElement | null>([
+    ["hero", element],
+    ["dup", element],
+    ["new-only", element],
+    ["both-dup", null],
+  ]);
   assert.deepEqual(sharedNames(before, after), ["hero"]);
 });
 
@@ -49,7 +59,13 @@ test("indicator: shows after delay, held for minDuration, never for fast navigat
     now = until;
   };
   const log: string[] = [];
-  const timing = indicator(200, 300, () => log.push("show@" + now), () => log.push("hide@" + now), clock);
+  const timing = indicator(
+    200,
+    300,
+    () => log.push("show@" + now),
+    () => log.push("hide@" + now),
+    clock,
+  );
   // Fast navigation: finished before the delay, never shown.
   timing.start();
   advance(150);

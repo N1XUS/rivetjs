@@ -25,15 +25,23 @@
 // TTFB = time from the request (render call) to the first body byte handed out (handler: first `body` read; render: first
 // sink write). Estimates: H-replay ≈ hole + shell-null (+ prefix copy); H-holes ≈ hole (+ prefix copy).
 //
-//   [RIVET_RESUME_MODEL=derived] node apps/editorial-bench/spikes/ppr-shell/bench.ts [--build] [--rounds 5] [--requests 1500] [--rows 1000]
+//   node apps/editorial-bench/spikes/ppr-shell/bench.ts [--build] [--rounds 5] [--requests 1500] [--rows 1000]
 //        [--pages editorial,resume] [--lanes full,shell,floor] [--json out.json] [--dump <lane>]
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { loadavg } from "node:os";
 import { performance } from "node:perf_hooks";
 import { resolve } from "node:path";
-import { compileResume, importServer } from "../../../../libs/runtime/tests/resume/compile.ts";
+import { compile } from "@rivetjs/compiler";
+import { importServer } from "../../../../libs/runtime/tests/resume/compile.ts";
 import { makePage } from "../../../ssr-bench/spikes/splice/splice.ts";
+
+/** Resume-compile in-process (derived model; boundary chunks are not served: the manifest names none). */
+function compileResume(source: string, target: "server" | "dom", module: string) {
+  const result = compile(source, { target, filename: "fixture.tsx", resume: { module } });
+  if (result.diagnostics.length) throw new Error(result.diagnostics.map((d) => d.message).join("\n"));
+  return result;
+}
 
 function arg(name: string, def: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -41,8 +49,7 @@ function arg(name: string, def: string): string {
 }
 const here = import.meta.dirname;
 const root = resolve(here, "app");
-// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the app built with the derived resume model (own output directory).
-const dist = resolve(root, ".artifacts", process.env.RIVET_RESUME_MODEL === "derived" ? "dist-derived" : "dist");
+const dist = resolve(root, ".artifacts", "dist");
 const content = resolve(here, "../../fixture/content/n1000");
 process.env.EDITORIAL_CONTENT ??= content;
 if (process.argv.includes("--build")) {
@@ -384,8 +391,6 @@ export function Shell(props) {
 `;
   const module = "src/routes/resume/index.tsx";
   const server = compileResume(source, "server", module);
-  const dom = compileResume(source, "dom", module);
-  for (const s of dom.symbols) manifest.symbols[s.id] = "/c/" + s.component + ".js";
   const linkStub = "data:text/javascript," + encodeURIComponent("export const _linkHref = (to) => String(to);");
   const mod = await importServer<Record<string, (p: unknown) => unknown>>(server.code.replaceAll('"@rivetjs/router/link"', JSON.stringify(linkStub)));
   const page = makePage(rows);

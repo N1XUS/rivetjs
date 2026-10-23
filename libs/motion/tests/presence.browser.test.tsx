@@ -1,7 +1,7 @@
 // T10: `Presence` / `PresenceFor` on kit transitions: exits hold the unmount, reopen reverses, `initial={false}`,
 // keyed exits keep their index, re-adding a leaving key restores it; Motion `exit` inside a plain kit `Transition`.
 import { afterEach, expect, test } from "vitest";
-import { signal, _setRegionStateHook } from "@rivetjs/reactivity";
+import { signal } from "@rivetjs/reactivity";
 import { cleanup, render } from "@rivetjs/runtime/testing";
 import { Transition } from "@rivetjs/kit/transition";
 import { Motion } from "@rivetjs/motion";
@@ -102,37 +102,6 @@ test("cdk Modal (no Presence): a Motion exit in its content plays on close and h
   await until(() => opacity("p") < 1);
   await until(() => byId("p") === null);
   expect(performance.now() - started).toBeGreaterThanOrEqual(180);
-});
-
-// A server-open Modal dismissed as a resumed page's first interaction: the region re-created on the close renders the
-// modal closed, with the server's "was open" (`_regionState`): it exits, and its Motion content (created while leaving)
-// starts from the final state, not from `initial`.
-test("cdk Modal re-created closed after a server-open render: Motion content exits from its final state", async () => {
-  const open = signal(false);
-  // The resume adoption's hook, as for the server render's values: the exit state's "was open at creation" is true.
-  const previous = _setRegionStateHook(<T,>(create: () => T): T => {
-    const value = create();
-    return (value === false ? true : value) as T;
-  });
-  try {
-    render(() => (
-      <Modal isOpen={open} onOpenChange={(value) => open.set(value)}>
-        <Motion.div id="p" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: "linear" }} />
-      </Modal>
-    ));
-  } finally {
-    _setRegionStateHook(previous);
-  }
-  expect(byId("p")).not.toBeNull();
-  expect(byId("p")!.hasAttribute("data-mve")).toBe(false);
-  await until(() => byId("p")?.hasAttribute("data-exiting") === true);
-  // From the final state (1), not `initial` (0): the first value below 1 is still high (frames until the animation
-  // starts vary: CI's headless Linux Chromium needs more than one).
-  await until(() => opacity("p") < 1);
-  const mid = opacity("p");
-  expect(mid).toBeGreaterThan(0.2);
-  expect(mid).toBeLessThan(1);
-  await until(() => byId("p") === null);
 });
 
 test("PresenceFor: a removed row stays at its index with data-exiting until its exit ends; re-adding restores it", async () => {

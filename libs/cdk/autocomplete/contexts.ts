@@ -6,8 +6,6 @@
 // TagGroup / Table) merges `SelectableCollectionContext`.
 // Rivet:
 // - one tiny module (no component code): collections import it without pulling the Autocomplete in.
-// - `resumableContext` tokens (ids `rv-autocomplete`, `rv-autocomplete-state`, `rv-selectable-collection`,
-//   `rv-field-input`): values serialize (signals, `ref()`, strings, inline-arrow closures from `.tsx`).
 // - ACCESSOR RULE: state-dependent values are accessors read inside bindings / at event time:
 //   FieldInputContext `value`, `aria-activedescendant`, `aria-controls`; SelectableCollectionContext
 //   `shouldUseVirtualFocus`, `disallowTypeAhead`, `autoFocus`.
@@ -17,7 +15,6 @@
 //   `FieldInputContext.onBeforeInput` (the field puts it on its `<input>`), so they resume as delegated
 //   handlers without an effect.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { ContextValue, MergedId, SlottedContextValue } from "../slots/index.tsx";
 import type { Node } from "../collections/types.ts";
 import type { MaybeAccessor } from "../interactions/utils.ts";
@@ -68,17 +65,13 @@ export interface FieldInputContextValue {
 }
 
 /** Props for the nearest `<Autocomplete>` (slotted). */
-export const AutocompleteContext = resumableContext(
-  createContext<SlottedContextValue<Partial<AutocompleteProps<any>>> | null>(null, { id: "rv-autocomplete" }),
-);
+export const AutocompleteContext = createContext<SlottedContextValue<Partial<AutocompleteProps<any>>> | null>(null);
 
 /** The state of the nearest `<Autocomplete>`. */
-export const AutocompleteStateContext = resumableContext(createContext<AutocompleteState | null>(null, { id: "rv-autocomplete-state" }));
+export const AutocompleteStateContext = createContext<AutocompleteState | null>(null);
 
 /** Collection props from the nearest `<Autocomplete>` (ListBox, Menu, GridList, TagGroup, Table merge it with `contextProps`). */
-export const SelectableCollectionContext = resumableContext(
-  createContext<ContextValue<SelectableCollectionContextValue<any>, HTMLElement>>(null, { id: "rv-selectable-collection" }),
-);
+export const SelectableCollectionContext = createContext<ContextValue<SelectableCollectionContextValue<any>, HTMLElement>>(null);
 
 /** Input props from the nearest `<Autocomplete>` / `<ComboBox>` (SearchField, TextField merge it with `contextProps`). */
-export const FieldInputContext = resumableContext(createContext<ContextValue<FieldInputContextValue, HTMLInputElement>>(null, { id: "rv-field-input" }));
+export const FieldInputContext = createContext<ContextValue<FieldInputContextValue, HTMLInputElement>>(null);

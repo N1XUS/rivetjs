@@ -27,6 +27,10 @@
       "types": "./diagnostics-format.ts",
       "default": "./diagnostics-format.ts"
     },
+    "./switches": {
+      "types": "./switches.ts",
+      "default": "./switches.ts"
+    },
     "./images": {
       "types": "./images/index.ts",
       "default": "./images/index.ts"

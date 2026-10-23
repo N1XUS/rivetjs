@@ -4,9 +4,10 @@
 //! message so call sites stay unchanged. Registry (titles, severities, docs URLs, reserved ranges):
 //! `libs/compiler/codes.json` — `tests/codes.test.ts` fails when a code below is not registered.
 
-/// Severity of a compiler code's errors. A compile warning (T10 fix 2: `Diags::warn`, `Diagnostic.warning`; RV2012 /
-/// RV2013 / RV2014 when the receiver is not provably a function) never suppresses output: `compile` returns it under
-/// `warnings`, `check` with `severity: "warning"`. Language-service warnings: RV2101, RV3101.
+/// Severity of a compiler code's errors. A compile warning (T10 fix 2: `Diags::warn`, `Diagnostic.warning`; RV2104 keyed
+/// state in a loop) never suppresses output: `compile` returns it under `warnings`, `check` with `severity: "warning"`.
+/// Language-service warnings: RV3101. The resume analysis (`resume.rs`) still words its serialized-era findings
+/// (captures, refs, `.bind`, resources): the derived model runs it into scratch diagnostics only, so they stay unclassified.
 pub fn severity(_code: &str) -> &'static str {
     "error"
 }
@@ -31,28 +32,11 @@ pub fn classify(message: &str) -> &'static str {
         _ if starts("Unsupported global event attribute") => "RV1013",
         _ if starts("Unsafe or unsupported native attribute") || starts("Unsafe URL attribute") => "RV1101",
         _ if starts("preload must be one of") => "RV1102",
-        _ if starts("clientEvent target must be") => "RV1103",
         _ if starts("Event handler ") && contains(" must be a function") => "RV1015",
         _ if starts("Event handler ") && contains(" is evaluated once at render") => "RV1016",
         _ if starts("Browser global") => "RV2001",
-        _ if starts("Resumable ref callbacks must assign a local") => "RV2002",
-        _ if message.contains("class instances are not serializable") => "RV2003",
-        _ if starts("Ref-bound locals") => "RV2005",
-        _ if starts("JSX inside handlers") => "RV2006",
-        _ if starts("Resumable code cannot capture `this`") => "RV2007",
-        _ if starts("Cannot resume `") && contains(" or give ") && contains(" a static [revive]") => "RV2102",
-        _ if starts("Cannot resume ") && contains("exports a different binding as") => "RV2008",
-        _ if starts("Cannot resume ") && contains("share the browser name") => "RV2009",
-        _ if starts("Mutually recursive functions ") && contains("separated by an early exit") => "RV2011",
-        _ if starts("`.bind` with a spread first argument") => "RV2012",
-        _ if starts("`.bind` of `") && (contains("is not resumable") || contains("may not resume")) => "RV2013",
-        _ if starts("`.bind(…)` inside an object literal") => "RV2014",
-        _ if starts("Component returns a function that cannot resume") => "RV2015",
-        _ if starts("`resource()` cannot resume ") => "RV2016",
         _ if starts("Render is not deterministic") => "RV2103",
         _ if starts("Keyed state `") => "RV2104",
-        _ if starts("Keyed `For` row renders non-deterministically") => "RV2105",
-        _ if starts("Keyed `For` row holds ") => "RV2106",
         _ if starts("Target helper re-exports") => "RV3001",
         _ if starts("Import target helpers as named bindings") || starts("Target runtime namespaces") => "RV3002",
         _ if starts("Import structural helpers as named bindings") => "RV3003",

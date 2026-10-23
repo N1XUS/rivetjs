@@ -11,8 +11,7 @@ const both = (source: string, options: Record<string, unknown> = {}) => {
   assert.deepEqual(server.diagnostics, []);
   return { dom: squash(dom.code), server: squash(server.code) };
 };
-const messages = (source: string, target: "server" | "dom" = "server") =>
-  compile(source, { target, filename: "a.tsx" }).diagnostics.map((d) => d.message);
+const messages = (source: string, target: "server" | "dom" = "server") => compile(source, { target, filename: "a.tsx" }).diagnostics.map((d) => d.message);
 
 test("static class: / style: values fold into the server markup; DOM sets styles through CSSOM", () => {
   const { dom, server } = both(
@@ -26,7 +25,9 @@ test("static class: / style: values fold into the server markup; DOM sets styles
 });
 
 test("dynamic class: toggles: server merges into the class attribute, DOM toggles with classList", () => {
-  const { dom, server } = both(`export const A = (p: { on: boolean; big: () => boolean }) => <p id="x" class="a" class:on={p.on} class:is-big={p.big()}>t</p>;`);
+  const { dom, server } = both(
+    `export const A = (p: { on: boolean; big: () => boolean }) => <p id="x" class="a" class:on={p.on} class:is-big={p.big()}>t</p>;`,
+  );
   assert.match(server, /__rivetAttribute\("class", __rivetClass\("a", \{ "on": p\.on, "is-big": p\.big\(\) \}\)\)/);
   assert.match(server, /import \{ _class as __rivetClass \} from "@rivetjs\/runtime\/style"/);
   assert.match(dom, /__rivet_tpl\("<p id=x class=a>t"\)/);
@@ -51,7 +52,10 @@ test("class objects with static keys are toggles; arrays and other objects norma
   assert.match(objects.dom, /__rivetBindClass\(_el\$1, "active", \(\) => p\.on\); __rivetBindClass\(_el\$1, "is-big", \(\) => p\.big\);/);
   const arrays = both(`export const A = (p: { on: boolean; k: string }) => <p class={["a", p.on && "b", { [p.k]: p.on, "c d": p.on }]} />;`);
   assert.match(arrays.server, /__rivetAttribute\("class", __rivetClass\(\[ "a", p\.on && "b", \{ \[p\.k\]: p\.on, "c d": p\.on \} \]\)\)/);
-  assert.match(arrays.dom, /const __rivetFx0 = \(_el\$1, p\) => __rivet_cls\(_el\$1, __rivetClass\(\[ "a", p\.on && "b", \{ \[p\.k\]: p\.on, "c d": p\.on \} \]\)\);/);
+  assert.match(
+    arrays.dom,
+    /const __rivetFx0 = \(_el\$1, p\) => __rivet_cls\(_el\$1, __rivetClass\(\[ "a", p\.on && "b", \{ \[p\.k\]: p\.on, "c d": p\.on \} \]\)\);/,
+  );
   assert.match(arrays.dom, /__rivet_fx1\(__rivetFx0, _el\$1, p\);/);
   // Literal-only arrays / objects join at compile time.
   const statics = both(`export const A = () => <p class={["a", ["b", null], { c: true, d: false }, false]} />;`);
@@ -61,9 +65,7 @@ test("class objects with static keys are toggles; arrays and other objects norma
 });
 
 test("dynamic style: values and style objects", () => {
-  const { dom, server } = both(
-    `export const A = (p: { c: string; s: Record<string, string> }) => <p style:color={p.c} style={p.s} />;`,
-  );
+  const { dom, server } = both(`export const A = (p: { c: string; s: Record<string, string> }) => <p style:color={p.c} style={p.s} />;`);
   assert.match(server, /__rivetStyleAttr\("style", __rivetStyle\(\{ "color": p\.c \}, p\.s\)\)/);
   assert.match(server, /import \{[^}]*_styleAttr as __rivetStyleAttr[^}]*\} from "@rivetjs\/runtime\/style"/);
   assert.match(dom, /__rivetBindStyle\(_el\$1, "color", \(\) => p\.c\); __rivetBindStyle\(_el\$1, null, \(\) => p\.s\);/);
@@ -76,7 +78,9 @@ test("dynamic style: values and style objects", () => {
 });
 
 test("spread elements: class: toggles merge into the spread class; the style group joins the object (MATRIX-1)", () => {
-  const { dom, server } = both(`export const A = (p: { rest: object; on: boolean; c: string }) => <p {...p.rest} class:on={p.on} style:color={p.c} class={{ x: p.on }} />;`);
+  const { dom, server } = both(
+    `export const A = (p: { rest: object; on: boolean; c: string }) => <p {...p.rest} class:on={p.on} style:color={p.c} class={{ x: p.on }} />;`,
+  );
   const object = String.raw`__rivetSpreadClass\(\{ \.\.\.p\.rest, "style": \{ "color": p\.c \}, "class": __rivetClass\(\{ x: p\.on \}\) \}, \{ "on": p\.on \}\)`;
   assert.match(server, new RegExp(String.raw`__rivetSpreadAttributes\(` + object + String.raw`, "p"\)`));
   assert.doesNotMatch(server, /StyleAttr/);
@@ -85,7 +89,7 @@ test("spread elements: class: toggles merge into the spread class; the style gro
 });
 
 test("style strings stay rejected; unsafe static values and invalid properties are compile errors", () => {
-  const strings = "style strings are not supported: use a style object (style={{ color: c, \"--x\": v }}) or style:color={c}";
+  const strings = 'style strings are not supported: use a style object (style={{ color: c, "--x": v }}) or style:color={c}';
   assert.deepEqual(messages(`export const A = () => <p style="color: red" />;`), [strings]);
   assert.deepEqual(messages(`export const A = () => <p style={"color: red"} />;`, "dom"), [strings]);
   assert.deepEqual(messages("export const A = (c: string) => <p style={`color: ${c}`} />;"), [strings]);
@@ -102,52 +106,6 @@ test("style strings stay rejected; unsafe static values and invalid properties a
   assert.deepEqual(messages(`export const A = (c: string) => <p class:on={true} className={c} class="a" />;`), [
     "Use one class attribute (class or className) per element",
   ]);
-});
-
-test("resume: class: / style: are one element binding; the symbol binds classList and CSSOM in the browser", () => {
-  const source = `import { signal } from "@rivetjs/reactivity";
-export function A() {
-  const on = signal(true), c = signal("red");
-  return <p class="a" class:on={on()} style:color={c()} style:margin="0" onClick={() => on.set(!on())}>t</p>;
-}`;
-  const server = compile(source, { target: "server", filename: "src/a.tsx", resume: { module: "src/a.tsx" } });
-  assert.deepEqual(server.diagnostics, []);
-  const code = squash(server.code);
-  assert.match(code, /__rivetR_spread\("src\/a\.tsx#A\$\w+", \(\) => \(__rivetClassValue = __rivetClass\("a", \{ "on": on\(\) \}\), __rivetStyleValue = __rivetStyle\(\{ "color": c\(\), "margin": "0" \}\), null\), \[on, c\], "p"\)/);
-  assert.match(code, /__rivetAttribute\("class", __rivetClassValue\)/);
-  assert.match(code, /__rivetStyleAttr\("style", __rivetStyleValue\)/);
-  const symbol = server.symbols!.find((s) => s.source.includes("(__rivetEl) =>"))!;
-  assert.equal(
-    squash(symbol.source),
-    'export const ' + symbol.name + ' = (on, c) => (__rivetEl) => { __rivetResumeClass(__rivetEl, "on", () => (on())); __rivetResumeStyle(__rivetEl, "color", () => (c())); }; ',
-  );
-  assert.deepEqual(
-    symbol.imports.filter((i) => i.from.startsWith("@rivetjs/runtime/")).map((i) => [i.local, i.imported, i.from]),
-    [["__rivetResumeClass", "_bindClass", "@rivetjs/runtime/style"], ["__rivetResumeStyle", "_bindStyle", "@rivetjs/runtime/style"]],
-  );
-});
-
-test("resume: constant values need no site; a dynamic base merges in the symbol", () => {
-  const constant = squash(
-    compile(`export function A({ on }: { on: boolean }) { return <p class:on={on} style={{ color: "red" }} />; }`, { target: "server", filename: "src/a.tsx", resume: { module: "src/a.tsx" } }).code,
-  );
-  assert.doesNotMatch(constant, /__rivetR_spread/);
-  assert.match(constant, /__rivetAttribute\("class", __rivetClass\(null, \{ "on": on \}\)\)/);
-  // CORE-GAPS (c): a member read of a component's props object may be a live getter — a site (member capture).
-  const live = squash(
-    compile(`export function A(p: { on: boolean }) { return <p class:on={p.on} style={{ color: "red" }} />; }`, { target: "server", filename: "src/a.tsx", resume: { module: "src/a.tsx" } }).code,
-  );
-  assert.match(live, /__rivetR_spread\("src\/a\.tsx#A\$\w+", \(\) => \(__rivetClassValue = __rivetClass\(null, \{ "on": p\.on \}\), null\), \[__rivetR_member\(p, "on"\)\], "p"\)/);
-  const merged = compile(
-    `import { signal } from "@rivetjs/reactivity";\nexport function A() { const c = signal("x"), on = signal(true); return <p class={c()} class:on={on()} style={{ [c()]: "1" }} />; }`,
-    { target: "server", filename: "src/a.tsx", resume: { module: "src/a.tsx" } },
-  );
-  assert.deepEqual(merged.diagnostics, []);
-  const symbol = merged.symbols!.find((s) => s.source.includes("(__rivetEl) =>"))!;
-  assert.equal(
-    squash(symbol.source),
-    'export const ' + symbol.name + ' = (c, on) => (__rivetEl) => { __rivetResumeAttr(__rivetEl, "class", () => __rivetResumeCx((c()), { "on": (on()) })); __rivetResumeStyle(__rivetEl, null, () => ({ [c()]: "1" })); }; ',
-  );
 });
 
 test("zero cost: plain class / no directives keep their output and import no helper", () => {

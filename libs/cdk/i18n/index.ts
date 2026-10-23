@@ -11,7 +11,6 @@
 // - `I18nProvider` lives in `@rivetjs/cdk/i18n-provider` (JSX); this module is plain TypeScript.
 // - Localized strings are plain `{name}` templates (react-aria compiles its JSON to functions).
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { DateFormatter } from "../date/DateFormatter.ts";
 
 export type { Direction } from "../collections/types.ts";
@@ -120,7 +119,7 @@ let lastRequested: string | undefined,
   lastDirection: Direction = "ltr";
 
 /** Context carrying the current `Locale` (null: environment default). */
-export const LocaleContext = resumableContext(createContext<Locale | null>(null, { id: "rv-locale" }));
+export const LocaleContext = createContext<Locale | null>(null);
 
 /** Current locale: the nearest `I18nProvider`, else the environment default. */
 export function useLocale(): Locale {

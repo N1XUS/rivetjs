@@ -12,7 +12,7 @@
 //   measures and places every item in one read phase + one write phase, ResizeObserver → one relayout per frame;
 // - `virtualize`: the cdk `Virtualizer` with `MasonryLayout` (WaterfallLayout + exact ratios);
 // - rows are keyed (`For` by key): a resumed page adopts the server rows; handlers are delegated on the grid element.
-import { _regionState, computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { For, Show, clientEffect, ref as elementRef, type DOMValue } from "@rivetjs/runtime/dom";
 import { splitProps } from "@rivetjs/runtime/props";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
@@ -387,8 +387,8 @@ function Shell<T>(shell: ShellProps<T>): DOMValue {
   };
 
   const selection = controllable<Selection>(props.selectedKeys as never, props.defaultSelectedKeys ?? new Set<Key>(), props.onSelectionChange);
-  const anchor = _regionState(() => signal<Key | null>(null));
-  const focused = _regionState(() => signal<Key | null>(null));
+  const anchor = signal<Key | null>(null);
+  const focused = signal<Key | null>(null);
   const disabled = computed(() => new Set(read(live.disabledKeys) ?? []));
   const keys = computed(() => entries().keys);
   const loading = () => !!read(live.isLoading);

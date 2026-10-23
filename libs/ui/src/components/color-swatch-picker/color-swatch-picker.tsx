@@ -23,7 +23,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { Check } from "lucide";
 
@@ -46,7 +45,7 @@ interface ColorSwatchPickerContext {
   variant?: ColorSwatchPickerVariants["variant"];
 }
 
-const ColorSwatchPickerContext = resumableContext(createContext<ColorSwatchPickerContext>({}, { id: "rv-ui-color-swatch-picker" }));
+const ColorSwatchPickerContext = createContext<ColorSwatchPickerContext>({});
 
 type ColorSwatchPickerSlots = ReturnType<typeof colorSwatchPickerVariants>;
 
@@ -69,7 +68,7 @@ interface ColorSwatchPickerItemContext {
   state?: ColorSwatchPickerItemRenderProps;
 }
 
-const ColorSwatchPickerItemContext = resumableContext(createContext<ColorSwatchPickerItemContext>({}, { id: "rv-ui-color-swatch-picker-item" }));
+const ColorSwatchPickerItemContext = createContext<ColorSwatchPickerItemContext>({});
 
 /* -------------------------------------------------------------------------------------------------
  * ColorSwatchPicker Root

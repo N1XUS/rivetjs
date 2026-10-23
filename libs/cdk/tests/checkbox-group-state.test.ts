@@ -32,7 +32,6 @@ import {
   toggleValue,
 } from "../state/checkbox-group.ts";
 import { DEFAULT_VALIDATION_RESULT, displayValidation } from "../state/form-validation.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 const text = (state: ReturnType<typeof createCheckboxGroupState>) => state.value().join(", ");
 
@@ -231,12 +230,5 @@ describe("createCheckboxGroupState (Rivet)", () => {
     expect(displayValidation(state.validation).validationErrors).toEqual(["Bad"]);
     setInvalid(state, "a", DEFAULT_VALIDATION_RESULT);
     expect(isGroupInvalid(state)).toBe(false);
-  });
-
-  it("serializes (resume table round trip)", () => {
-    const state = createCheckboxGroupState({ defaultValue: ["a"], isRequired: true });
-    const copy = jsonRoundTrip(state);
-    expect(copy.value()).toEqual(["a"]);
-    expect(copy.required).toBe(true);
   });
 });

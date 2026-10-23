@@ -46,7 +46,6 @@ import { computed, createContext, effect, onCleanup, signal, untrack, useContext
 import { Provider, Show, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide";
 
@@ -90,7 +89,7 @@ type ToastContext = {
   onToastHeightRemove?: (key: string) => void;
 };
 
-const ToastContext = resumableContext(createContext<ToastContext>({}, { id: "rv-ui-toast" }));
+const ToastContext = createContext<ToastContext>({});
 
 type ToastSlots = ReturnType<typeof toastVariants>;
 const SLOTS = new Map<string, ToastSlots>();

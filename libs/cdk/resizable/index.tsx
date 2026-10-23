@@ -27,11 +27,10 @@
 // - `cookieStorage` (Rivet; upstream documents a cookie storage as an example): server-readable (`ssr: true`), so the
 //   stored layout is server-rendered and `useDefaultLayout` registers no client restore effect.
 // - Separator `tabindex` is a lowercase spread key (a resumed spread diffs server attribute names against the keys).
-import { _regionState, createContext, signal, untrack, useContext } from "@rivetjs/reactivity";
+import { createContext, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { splitProps } from "@rivetjs/runtime/props";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { createId } from "../utils/id.ts";
 import type { StyleObject } from "../utils/types.ts";
 import type { RefValue } from "../slots/index.tsx";
@@ -76,7 +75,7 @@ export type ImperativeRef<T> = { current: T | null } | ((handle: T | null) => vo
  * -----------------------------------------------------------------------------------------------*/
 
 /** The nearest Group's state (upstream `GroupContext`). */
-export const GroupContext = resumableContext(createContext<GroupState | null>(null, { id: "rv-resizable-group" }));
+export const GroupContext = createContext<GroupState | null>(null);
 
 function useGroupContext(): GroupState {
   const context = useContext(GroupContext);
@@ -195,7 +194,7 @@ export function Group(props: GroupProps): JSX.Element {
   const minimum = local.resizeTargetMinimumSize;
   const onLayoutChange = local.onLayoutChange;
   const onLayoutChanged = local.onLayoutChanged;
-  const state: GroupState = _regionState(() => ({
+  const state: GroupState = {
     id: idProp != null ? String(idProp) : createId(),
     orientation,
     disabled,
@@ -210,7 +209,7 @@ export function Group(props: GroupProps): JSX.Element {
     separators: {},
     overlay: undefined,
     memory: { lastExpandedPanelSizes: {}, layouts: {} },
-  }));
+  };
   const id = state.id;
   assignRef(local.groupRef, {
     getLayout: () => groupMethods(state).getLayout(),
@@ -378,7 +377,7 @@ export function Panel(props: PanelProps): JSX.Element {
   const idProp = local.id;
   const disabled = local.disabled;
   const defaultSize = local.defaultSize;
-  const record: PanelRecord = _regionState(() => ({
+  const record: PanelRecord = {
     id: idProp != null ? String(idProp) : createId(),
     idProp,
     idIsStable: idProp != null,
@@ -391,7 +390,7 @@ export function Panel(props: PanelProps): JSX.Element {
     maxSize: local.maxSize ?? "100%",
     minSize: local.minSize ?? "0%",
     onResize: local.onResize,
-  }));
+  };
   const id = record.id;
   group.panels[id] = record;
   assignRef(local.panelRef, {
@@ -516,7 +515,7 @@ export function Separator(props: SeparatorProps): JSX.Element {
   const group = useGroupContext();
   const idProp = local.id;
   const disabled = local.disabled;
-  const record: SeparatorRecord = _regionState(() => ({
+  const record: SeparatorRecord = {
     id: idProp != null ? String(idProp) : createId(),
     disabled,
     disableDoubleClick: local.disableDoubleClick,
@@ -524,7 +523,7 @@ export function Separator(props: SeparatorProps): JSX.Element {
     drag: signal<InteractionState["state"]>("inactive"),
     focused: signal(false),
     aria: signal<SeparatorAria>({}),
-  }));
+  };
   const id = record.id;
   group.separators[id] = record;
   if (isClient())
@@ -632,12 +631,12 @@ export function SeparatorOverlay(props: SeparatorOverlayProps): JSX.Element {
 
 /** Convenience hook to return a properly typed ref for the Group component. */
 export function useGroupRef(): { current: GroupImperativeHandle | null } {
-  return _regionState(() => ({ current: null as GroupImperativeHandle | null }));
+  return { current: null as GroupImperativeHandle | null };
 }
 
 /** Convenience hook to return a properly typed ref for the Panel component. */
 export function usePanelRef(): { current: PanelImperativeHandle | null } {
-  return _regionState(() => ({ current: null as PanelImperativeHandle | null }));
+  return { current: null as PanelImperativeHandle | null };
 }
 
 /**
@@ -645,7 +644,7 @@ export function usePanelRef(): { current: PanelImperativeHandle | null } {
  * `handle` is an accessor, upstream React state).
  */
 export function useGroupCallbackRef(): [() => GroupImperativeHandle | null, (handle: GroupImperativeHandle | null) => void] {
-  const handle = _regionState(() => signal<GroupImperativeHandle | null>(null));
+  const handle = signal<GroupImperativeHandle | null>(null);
   return [handle, (value: GroupImperativeHandle | null) => handle.set(value)];
 }
 
@@ -654,7 +653,7 @@ export function useGroupCallbackRef(): [() => GroupImperativeHandle | null, (han
  * `handle` is an accessor, upstream React state).
  */
 export function usePanelCallbackRef(): [() => PanelImperativeHandle | null, (handle: PanelImperativeHandle | null) => void] {
-  const handle = _regionState(() => signal<PanelImperativeHandle | null>(null));
+  const handle = signal<PanelImperativeHandle | null>(null);
   return [handle, (value: PanelImperativeHandle | null) => handle.set(value)];
 }
 
@@ -735,10 +734,10 @@ export function useDefaultLayout(options: UseDefaultLayoutOptions): {
   const storage = options.storage;
   const debounceSaveMs = options.debounceSaveMs ?? 100;
   const onlySaveAfterUserInteractions = !!options.onlySaveAfterUserInteractions;
-  const state = _regionState(() => ({
+  const state = {
     layout: signal<Layout | undefined>(readLayout(storage ?? defaultStorage(), id, panelIds)),
     timeout: { current: 0 as unknown },
-  }));
+  };
   // The server had no stored layout (browser-only storage, e.g. localStorage): restore it on the client once idle.
   // A server-readable storage (`cookieStorage`, `ssr: true`) already rendered the truth: nothing boots at load.
   if (!isClient() && state.layout() === undefined && !(storage as { ssr?: boolean } | undefined)?.ssr)

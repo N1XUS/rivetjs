@@ -27,7 +27,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { Check, Minus } from "lucide";
 
@@ -50,7 +49,7 @@ interface CheckboxContext {
   state?: CheckboxFieldRenderProps;
 }
 
-const CheckboxContext = resumableContext(createContext<CheckboxContext>({}, { id: "rv-ui-checkbox" }));
+const CheckboxContext = createContext<CheckboxContext>({});
 
 type CheckboxSlots = ReturnType<typeof checkboxVariants>;
 

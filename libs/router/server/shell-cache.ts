@@ -27,8 +27,6 @@ const RENDER_FAILED = Symbol.for("rivet.renderFailed");
  */
 const TEST = Symbol.for("rivet.shellTest");
 const DOCS = "https://rivetjs.severyn.pro/guides/routing/headers-and-caching#partial-prerendering-shell-cache";
-/** The root state script: the start of the shell's tail (`render.ts` `ROOT_STATE`). */
-const ROOT_STATE = '<script type="rivet/state" data-region="0"';
 /** The derived model's tail (DERIVED-C3): the boundaries script (the first one of the page; patches follow the shell). */
 const DERIVED_TAIL = '<script type="rivet/boundaries"';
 const END_SCRIPT = "</script>";
@@ -167,30 +165,15 @@ function differs(view: Uint8Array, prefix: Uint8Array, from: number, take: numbe
 }
 
 /**
- * Where the shell ends in `text` (latin1 view of the document so far): after the root state tail — the state script,
- * the loader script and (with pending boundaries, `data-stream`) the stream add-on. Derived model (`derived`, or a
- * boundaries script in `text`): after the boundaries script and (`data-rt`) the derived loader that follows it — the
- * last part of the root tail (any serialized-model state comes before it). -1: not yet (or never).
+ * Where the shell ends in `text` (latin1 view of the document so far): after the boundaries script and (`data-rt`) the
+ * loader that follows it — the last part of the root tail. -1: not yet (or never).
  */
-export function shellCut(text: string, derived?: boolean): number {
+export function shellCut(text: string): number {
   const d = text.indexOf(DERIVED_TAIL);
-  if (d >= 0 || derived) {
-    if (d < 0) return -1;
-    const open = text.indexOf(">", d);
-    if (open < 0) return -1;
-    let scripts = text.slice(d, open).includes(" data-rt=") ? 2 : 1;
-    for (let from = open; ;) {
-      const end = text.indexOf(END_SCRIPT, from);
-      if (end < 0) return -1;
-      from = end + END_SCRIPT.length;
-      if (--scripts === 0) return from;
-    }
-  }
-  const at = text.indexOf(ROOT_STATE);
-  if (at < 0) return -1;
-  const open = text.indexOf(">", at);
+  if (d < 0) return -1;
+  const open = text.indexOf(">", d);
   if (open < 0) return -1;
-  let scripts = text.slice(at, open).includes(' data-stream="') ? 3 : 2;
+  let scripts = text.slice(d, open).includes(" data-rt=") ? 2 : 1;
   for (let from = open; ;) {
     const end = text.indexOf(END_SCRIPT, from);
     if (end < 0) return -1;
@@ -394,8 +377,6 @@ class Run implements ShellRequest {
   // Fill: its body writer, where the root tail started, the root numbering, the stored entry.
   declare body: ShellBody | null;
   declare tailAt: number;
-  /** The render's tail is the derived model's (its shell hook said so at the cut). */
-  declare derived: boolean;
   declare seal: ShellSeal | null;
   declare stored: ShellEntry | null;
   // Fill: retained boundaries (H-holes) or why not; its deferred slots (stale once the fill's response ended).
@@ -420,7 +401,6 @@ class Run implements ShellRequest {
     this.phase = null;
     this.body = null;
     this.tailAt = -1;
-    this.derived = false;
     this.seal = null;
     this.stored = null;
     this.link = null;
@@ -495,7 +475,7 @@ class Run implements ShellRequest {
     // fill retained its boundaries): no shell render at all.
     const test = (globalThis as unknown as Record<symbol, { full?: boolean; replay?: boolean } | undefined>)[TEST];
     const muted = entry.seal !== null && entry.tail >= 0 && (entry.hits = (entry.hits + 1) % VERIFY) !== 0 && test?.full !== true;
-    const holes = muted && entry.holes !== null && (entry.seal!.fork !== undefined || entry.seal!.d === 1) && test?.replay !== true ? entry.holes : null;
+    const holes = muted && entry.holes !== null && test?.replay !== true ? entry.holes : null;
     headers.set("x-rivet-cache", holes ? state : state + "-REPLAY");
     const composer = new Composer(this, entry, muted);
     this.composer = composer;
@@ -565,7 +545,7 @@ class Run implements ShellRequest {
         ? HOLES
           ? {
               render: {
-                shell: shellHook({ cut: (derived) => void (this.derived = !!derived), holes: (holes: ShellHoles | null) => void (this.holes = holes) }),
+                shell: shellHook({ holes: (holes: ShellHoles | null) => void (this.holes = holes) }),
               },
             }
           : {}
@@ -573,8 +553,7 @@ class Run implements ShellRequest {
             render: {
               body: (enqueued: () => void) => (this.body = new ShellBody(enqueued, null)),
               shell: shellHook({
-                cut: (derived) => {
-                  this.derived = !!derived;
+                cut: () => {
                   const body = this.body;
                   if (body) this.tailAt = body.sent + body.offset - body.start;
                 },
@@ -779,7 +758,7 @@ class Run implements ShellRequest {
           done();
           held.push(copy);
           text += latin1(copy);
-          const at = shellCut(text, this.derived);
+          const at = shellCut(text);
           if (at < 0) return undefined;
           this.cut = true;
           this.release();
@@ -885,8 +864,8 @@ class Run implements ShellRequest {
       fresh: now + this.cache.maxAge * 1000,
       stale: now + (this.cache.maxAge + this.cache.swr) * 1000,
       used: false,
-      // H-holes: the retained boundaries, frames and the fill's encoder numbering (≈ 64 B per table entry).
-      size: bare.length + this.key.length * 2 + estimate + (this.holes ? 1024 * this.holes.holes.length + 64 * (this.seal?.t ?? 64) : 0),
+      // H-holes: the retained boundaries and frames.
+      size: bare.length + this.key.length * 2 + estimate + (this.holes ? 1024 * this.holes.holes.length : 0),
       failures: 0,
       retry: 0,
       charge: (bytes) => store.grow(entry, bytes),

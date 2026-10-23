@@ -23,7 +23,6 @@ import { LabelContext } from "@rivetjs/cdk/label";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { RadioButtonGroupVariants } from "../../../styles/src/components/radio-button-group/index.ts";
@@ -47,10 +46,10 @@ interface RadioButtonGroupContext {
   layout?: RadioButtonGroupVariants["layout"];
 }
 
-const RadioButtonGroupContext = resumableContext(createContext<RadioButtonGroupContext>({}, { id: "rv-ui-radio-button-group" }));
+const RadioButtonGroupContext = createContext<RadioButtonGroupContext>({});
 
 /** The enclosing item's render props (accessors), for Indicator function children. */
-const RadioButtonGroupItemContext = resumableContext(createContext<{ state?: RadioButtonRenderProps }>({}, { id: "rv-ui-radio-button-group-item" }));
+const RadioButtonGroupItemContext = createContext<{ state?: RadioButtonRenderProps }>({});
 
 type Slots = ReturnType<typeof radioButtonGroupVariants>;
 

@@ -27,7 +27,7 @@ Every component runs on the server first. The server is Node.js: it has no `wind
 
 In route files the compiler sees this before you run anything. It rejects browser globals in all code that runs during server rendering. That includes helper functions at module level that a component calls, and a `typeof window !== "undefined"` check: the check still reads `window`.
 
-In the browser, the component does not run again (see [Component did not run again](component-did-not-run-again.md)). So code at the top of a component never gets a second chance to read `window`.
+In the browser, the component runs again over the server's HTML, so its render must give the same result in both places (see [render the same thing twice](../learn/resuming.md#render-the-same-thing-twice)). Read `window` where it can differ: in a handler, a `clientEffect` or a `clientEvent`.
 
 ## Fix
 

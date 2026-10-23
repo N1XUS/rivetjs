@@ -4,7 +4,7 @@
 `<button type="button" aria-pressed>` toggled by presses; state in `state/toggle.ts` (shared with Checkbox, Switch).
 
 ## Entry points
-- `@rivetjs/cdk/toggle-button` -> `index.tsx`: `ToggleButton`, `ToggleButtonProps`, `ToggleButtonRenderProps`, `ToggleButtonContext` (RAC; resumable id `rv-toggle-button`)
+- `@rivetjs/cdk/toggle-button` -> `index.tsx`: `ToggleButton`, `ToggleButtonProps`, `ToggleButtonRenderProps`, `ToggleButtonContext` (RAC)
 - `@rivetjs/cdk/toggle-button/behaviour` -> `behaviour.ts`: `toggleButtonAttrs(state)`, `toggleButtonPress`, `toggleButtonPressOptions`, `toggleButtonPointerDown`, `toggleButtonKeyDown`, `toggleButtonClick`, `isToggleSelected`
 - `@rivetjs/cdk/state/toggle` -> `state/toggle.ts`: `createToggleState`, `setSelected`, `toggle`, `ToggleState`, `ToggleStateOptions`
 

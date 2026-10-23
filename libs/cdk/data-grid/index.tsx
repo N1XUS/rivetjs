@@ -15,7 +15,7 @@
 //   rows, resizer `touch-action`); looks are class names (`rv-DataGrid*` defaults, `*Class` props);
 // - resumable: the server renders the first window (virtualized) or every row; nothing runs before an interaction
 //   (`preload="visible"` on the root fetches the handler chunks when the grid shows up).
-import { _regionState, computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { For, Show, ref as elementRef } from "@rivetjs/runtime/dom";
 import { splitProps } from "@rivetjs/runtime/props";
 import type { DOMValue } from "@rivetjs/runtime/dom";
@@ -331,7 +331,7 @@ export function DataGrid<T>(props: DataGridProps<T>): DOMValue {
     drop: props.dropIndicatorClass ?? "rv-DataGrid-dropIndicator",
   };
 
-  // State (region state: a re-created region on a resumed page continues from the same values).
+  // State.
   const selection = controllable<Selection>(props.selectedKeys as never, props.defaultSelectedKeys ?? new Set<Key>(), props.onSelectionChange);
   const sort = controllable<SortDescriptor | null>(
     props.sortDescriptor as never,
@@ -345,13 +345,13 @@ export function DataGrid<T>(props: DataGridProps<T>): DOMValue {
     new Set(props.defaultExpandedKeys ?? []),
     props.onExpandedChange,
   );
-  const widths = _regionState(() => signal<Map<string, number> | null>(null));
-  const resizing = _regionState(() => signal<string | null>(null));
-  const focus = _regionState(() => signal<{ key: Key | null; col: string | null }>({ key: null, col: null }));
-  const anchor = _regionState(() => signal<Key | null>(null));
-  const drag = _regionState(() => signal<DragState | null>(null));
+  const widths = signal<Map<string, number> | null>(null);
+  const resizing = signal<string | null>(null);
+  const focus = signal<{ key: Key | null; col: string | null }>({ key: null, col: null });
+  const anchor = signal<Key | null>(null);
+  const drag = signal<DragState | null>(null);
   const initialRows = Math.ceil((typeof height === "number" ? height : 480) / rowHeight);
-  const win = _regionState(() => signal<VirtualWindow>({ start: 0, end: initialRows + overscan }));
+  const win = signal<VirtualWindow>({ start: 0, end: initialRows + overscan });
 
   const disabled = computed(() => new Set(read(live.disabledKeys) ?? []));
   const dataColumns = computed(() => read(live.columns));

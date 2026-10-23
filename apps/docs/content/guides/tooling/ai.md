@@ -108,7 +108,7 @@ The starters also ship rules for other editors and task skills:
 | `rivet-port-react-component` | Turning a React component into Rivet: state, effects, props, events, children |
 | `rivet-add-ui-page` | A page built from `@rivetjs/ui` components, with icons from `@rivetjs/kit/icon` |
 | `rivet-ui-design` | Design decisions for UI/CDK: colors, spacing, typography, page structure, app layouts, component composition, responsive behavior and interactions |
-| `rivet-fix-resumability-error` | Reading an `RV` error or a "not serializable" error and applying the fix |
+| `rivet-fix-resumability-error` | Reading an `RV` error or a resume warning and applying the fix |
 
 ### Install the design skill in an existing project
 

@@ -20,7 +20,7 @@ export type NotAsync<R, Ok> = 0 extends 1 & R ? Ok : [R] extends [never] ? Ok : 
 /** An idempotent synchronous cleanup function. */
 export type Disposer = () => void;
 /** An identity token used by synchronous owner context lookup. */
-export interface Context<T> { readonly defaultValue: T; readonly id?: string; }
+export interface Context<T> { readonly defaultValue: T; }
 /** Equality used to skip notifications: `true` means equal (no notify); `false` always notifies. */
 export interface EqualsOptions<T> { equals?: false | ((previous: T, next: T) => boolean); }
 declare const ownerBrand: unique symbol;
@@ -59,7 +59,6 @@ const COMPUTED = Symbol('rivet.computed');
 const OWNER = 0, COMPUTE = 1, EFFECT = 2, COLLECTOR = 3, SOURCE = 4;
 const CLEAN = 0, CHECK = 1, DIRTY = 2;
 const RUNNING = 1, FAILED = 2, READY = 4;
-let provideObserver: (<T>(token: Context<T>, value: T) => void) | null = null;
 let currentOwner: Owner | null = null;
 let currentObserver: Node | Collector | null = null;
 let batchDepth = 0;
@@ -227,7 +226,7 @@ function adopt<N extends Owner>(parent: Owner | null, node: N): N {
   return node;
 }
 const owner = (parent: Owner | null = currentOwner): Owner => adopt(parent, new Owner(parent));
-// `_wrapEffects` hook (server-resume): re-enter the creating request's async context on later runs.
+// `_wrapEffects` hook (server-derived): re-enter the creating request's async context on later runs.
 let wrapEffect: ((fn: () => unknown) => () => unknown) | null = null;
 const reactive = (fn: () => unknown): Node => adopt(currentOwner, new Node(EFFECT, currentOwner, wrapEffect === null ? fn : wrapEffect(fn)));
 
@@ -710,7 +709,7 @@ const sameKey = (a: unknown, b: unknown): boolean => a === b || (a !== a && b !=
 const pairKeys = (next: unknown, previous: unknown): Iterable<unknown> => [next, previous];
 // The fold runs in a timer task after the one that subscribed (not an idle callback: a selection change soon after
 // a mount would scan every pending source first — cdk ListBox first update 0.06 → 0.14 ms with idle callbacks).
-// `_scheduleFolds` (server-resume) replaces the timer: a Node timer keeps the async context it was created in, and a
+// `_scheduleFolds` (server-derived) replaces the timer: a Node timer keeps the async context it was created in, and a
 // fold scheduled inside a render kept that render (its resume recorder) alive until the timer phase (VIRT-LEAK).
 let schedule: ((fn: () => void) => void) | null = null;
 const later = (fn: () => void): void => {
@@ -962,7 +961,7 @@ export function _bindingEffect1<A, B, C>(fn: (a: A, b: B, c: C) => void, a: A, b
     dispose(node);
 }
 
-/** @internal Runtime ABI (server-resume): wrap the function of every effect created from now on (null
+/** @internal Runtime ABI (server-derived): wrap the function of every effect created from now on (null
  * clears) — e.g. bind it to the creating request's AsyncLocalStorage context, so a re-run triggered by
  * another request's write records into its own request. Returns the previous wrapper. */
 export function _wrapEffects(wrap: ((fn: () => unknown) => () => unknown) | null): ((fn: () => unknown) => () => unknown) | null {
@@ -971,8 +970,8 @@ export function _wrapEffects(wrap: ((fn: () => unknown) => () => unknown) | null
   return previous;
 }
 
-/** @internal Runtime ABI (server-resume): schedule the keyed selectors' index folds (`selector`) through `run` instead of
- * a plain `setTimeout(fn, 0)` (null restores it) — server-resume creates the timer outside the request's async context,
+/** @internal Runtime ABI (server-derived): schedule the keyed selectors' index folds (`selector`) through `run` instead of
+ * a plain `setTimeout(fn, 0)` (null restores it) — server-derived creates the timer outside the request's async context,
  * so a pending fold does not keep the render that subscribed alive. `run` must call `fn` in a later task. */
 export function _scheduleFolds(run: ((fn: () => void) => void) | null): void {
   schedule = run;
@@ -1190,14 +1189,13 @@ export function untrack<T>(fn: () => T): T {
   try { return fn(); } finally { currentObserver = previous; }
 }
 
-/** Create an identity token with a default value; `id` names it for resumable state. */
-export function createContext<T>(defaultValue: T, options?: { id?: string }): Context<T> {
-  return Object.freeze(options?.id === undefined ? { defaultValue } : { defaultValue, id: String(options.id) });
+/** Create an identity token with a default value. */
+export function createContext<T>(defaultValue: T): Context<T> {
+  return Object.freeze({ defaultValue });
 }
 
 /** Execute with a logical context provider inherited by its owned descendants. */
 export function provide<T, R>(token: Context<T>, value: T, fn: () => R): R {
-  if (provideObserver !== null && token.id !== undefined) provideObserver(token, value);
   const node = owner(); node.ctx = { token: token as Context<unknown>, value, up: node.ctx, owner: node, memo: null };
   const previous = currentOwner; currentOwner = node;
   try { return fn(); }
@@ -1273,25 +1271,13 @@ export function runWithOwner<T>(capturedOwner: OwnerHandle | null, fn: () => T):
 }
 
 // `_trackReads` lives in `track.ts` (`@rivetjs/reactivity/track`, DIET-CODE 2026-10-22): only resume code calls it, and its
-// own module lets a client build place it in the chunk of its caller (the lazy rows runtime) instead of the eager
+// own module lets a client build place it in the chunk of its caller (the derived runtime's lazy lists) instead of the eager
 // reactivity chunk. The hooks it needs from here:
 /** Resume ABI (`track.ts`): whether a `selector` read of `key` is recorded keyed by `keyed` (signal source, known change hint). */
 export function _keyedRead(keyed: KeyedRead, selector: Selector, key: unknown): boolean {
   const source = selector.source as Getter, kind = selector.keys === pairKeys ? 0 : selector.keys === memberKeys ? 1 : -1;
   return kind >= 0 && source[SIGNAL] !== undefined && source[SIGNAL].getter === source && keyed(source as Signal<unknown>, kind as 0 | 1, key);
 }
-/** `_trackReads`'s type (`track.ts`). */
-export type TrackReads = <T, A = undefined>(fn: (arg: A) => T, arg?: A, keyed?: KeyedRead | null) => { value: T; signals: Signal<unknown>[] };
-let tracker: TrackReads | null = null;
-/** Resume ABI: `_trackReads` once `@rivetjs/reactivity/track` is loaded (it installs itself; the server resume runtime
- * imports it), else null. For code shared by server and browser that tracks only on the server (cdk `serverRows`): a
- * static import of `track.ts` there would put it — and, through the merge planner, the shared component chunk — into
- * the browser's lazy rows chunk. */
-export const _tracker = (): TrackReads | null => tracker;
-/** `track.ts` installs `_trackReads` (`_tracker`). */
-export const _setTracker = (fn: TrackReads): void => {
-  tracker = fn;
-};
 /** Resume ABI (`track.ts`): set the current observer, returning the previous one. */
 export function _swapObserver(observer: Node | Collector | null): Node | Collector | null {
   const previous = currentObserver;
@@ -1300,30 +1286,6 @@ export function _swapObserver(observer: Node | Collector | null): Node | Collect
 }
 export { COLLECTOR as _COLLECTOR, SOURCE as _SOURCE };
 export type { Collector as _Collector, Tracked as _Tracked, Getter as _Getter, Node as _Node, Source as _Source, Selector as _Selector, KeySource as _KeySource };
-
-type RegionStateHook = <T>(create: () => T) => T;
-let regionStateHook: RegionStateHook | null = null;
-/**
- * Resume ABI: state a component creates for itself (`create()`), e.g. an uncontrolled value signal. A
- * resumable server render records it with the region whose read created it; when the resumed page
- * re-creates that region (on the first change of a signal the server read), the re-created component
- * gets the server's (revived, possibly since changed) value back instead of a fresh one.
- */
-export function _regionState<T>(create: () => T): T {
-  return regionStateHook === null ? create() : regionStateHook(create);
-}
-/**
- * Resume ABI: `start` (filled by `@rivetjs/motion/layout`, null otherwise) is called when dom-resume activates a
- * binding whose chunks are still loading (a region the first interaction re-creates); the returned function runs once
- * that activation ran or failed.
- */
-export const _activating: { start: (() => () => void) | null } = { start: null };
-/** Resume ABI: set the `_regionState` hook (server-resume records, dom-resume adopts); returns the previous one. */
-export function _setRegionStateHook(hook: RegionStateHook | null): RegionStateHook | null {
-  const previous = regionStateHook;
-  regionStateHook = hook;
-  return previous;
-}
 
 /** Resume ABI: classify a reactive getter without reading it; `equals` is Object.is by default, null for `equals: false`. */
 export function _inspect(fn: unknown):
@@ -1336,6 +1298,3 @@ export function _inspect(fn: unknown):
   if ((fn as Getter)[COMPUTED] !== undefined) return { kind: 'computed', equals: (fn as Getter)[COMPUTED]!.equals };
   return null;
 }
-
-/** Resume ABI: observe providers of identified context tokens (process-wide; null clears). */
-export function _observeProvide(fn: (<T>(token: Context<T>, value: T) => void) | null): void { provideObserver = fn; }

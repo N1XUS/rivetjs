@@ -72,7 +72,7 @@ export function checkKey(html: string, requested: ReadonlySet<string>, steps: re
   return sha(FORMAT + "\n" + JSON.stringify(steps ?? []) + "\n" + html.replace(ASSET_URL, (url) => (requested.has(url) ? url : "/assets/*")));
 }
 
-/** Serve the built client dir (folders → index.html) on a local port for the checks (and `scripts/lazy-rows/probe.ts`). */
+/** Serve the built client dir (folders → index.html) on a local port for the checks. */
 export async function serveClient(client: string): Promise<{ url: string; close(): Promise<void> }> {
   const { serve } = await import("@rivetjs/router/node");
   return serve({

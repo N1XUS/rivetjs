@@ -32,7 +32,7 @@ Preact 10.29+ / 11 adapter for `@rivetjs/bridge` (framework islands). Spec `docs
 - No island head: Preact has no hoistables, so a `<title>` / `<meta>` inside an island renders inline in the island's HTML (`ssr.test.ts` pins it). Page head = Rivet's (`@rivetjs/kit` head components / route `head`).
 - `@preact/preset-vite` aliases (`react` → `preact/compat`) are off: they would capture a React bridge's imports. The preset path is untested until the T16 matrix (the preset is not installed in the workspace): its global `oxc.jsx.importSource` is overridden per file by `jsxSource` in theory only, and its `include` strings resolve against `process.cwd()`, not the Vite root (run Vite from the app root).
 - Peer floor 10.29.0 = the version verified (`useId` / `_mask` exist since 10.11): preact 10.29.8 + preact-render-to-string 6.8.0 checked out of tree (ids, SSR, hydrate) and measured in `apps/island-bench` (`rivet-bridge-preact-p10`). CI tests only 11.0.1 until the T16 floor + latest matrix.
-- Derived resume model: nothing adapter-specific — `@rivetjs/bridge` routes islands to the lean boot or the enclosing boundary's adopt run (`libs/bridge/CLAUDE.md` "Derived model"); island-bench `RIVET_RESUME_MODEL=derived` builds the Preact lane on it.
+- Derived resume model: nothing adapter-specific — `@rivetjs/bridge` routes islands to the lean boot or the enclosing boundary's adopt run (`libs/bridge/CLAUDE.md` "Derived model"); island-bench builds the Preact lane on it.
 
 ## Commands
 

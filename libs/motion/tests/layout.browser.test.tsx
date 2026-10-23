@@ -1,7 +1,7 @@
 // T12: `@rivetjs/motion/layout` on the shared FLIP core: animateLayout (Motion's vanilla signature), layoutId shared
 // elements across a swap (tabs underline), layoutDriver for cdk Masonry, reduced motion.
 import { afterEach, expect, test, vi } from "vitest";
-import { signal, _activating } from "@rivetjs/reactivity";
+import { signal } from "@rivetjs/reactivity";
 import { cleanup, render } from "@rivetjs/runtime/testing";
 import { Motion } from "@rivetjs/motion";
 import { animateLayout, LayoutGroup, layoutDriver } from "@rivetjs/motion/layout";
@@ -127,118 +127,13 @@ test("reduced motion: animateLayout applies the update without animating", async
   await result.finished;
 });
 
-// A resumed page's first interaction: the handler's update re-creates its region once the region's chunks loaded
-// (dom-resume calls `_activating.start()`, filled by `/layout`), and the row (it read a signal) is a new element with the
-// server row's id.
-const pendingRecreation = () => _activating.start!();
-const flexRow = () => {
-  const row = document.createElement("div");
-  row.style.cssText = "display:flex;width:400px";
-  const make = (justify: string) => {
-    row.style.justifyContent = justify;
-    const box = document.createElement("div");
-    box.id = "late";
-    box.setAttribute("data-layout", "true");
-    box.style.cssText = "width:50px;height:50px";
-    row.replaceChildren(box);
-  };
-  make("flex-start");
-  document.body.append(row);
-  return { row, make };
-};
-
-test("resumed page: an update applied after its pending re-creation still animates, re-created elements by id", async () => {
-  const { row, make } = flexRow();
-  let ran!: () => void;
-  const result = await animateLayout(
-    row,
-    () => {
-      ran = pendingRecreation();
-      setTimeout(() => (make("flex-end"), ran()), 40);
-    },
-    { duration: 0.3, ease: "linear" },
-  );
-  await new Promise((resolve) => setTimeout(resolve, 140));
-  const mid = left("late") - row.getBoundingClientRect().left;
-  expect(mid).toBeGreaterThan(20);
-  expect(mid).toBeLessThan(330);
-  await result.finished;
-  expect(left("late") - row.getBoundingClientRect().left).toBe(350);
-  row.remove();
-});
-
-test("resumed page after the first re-creation: a no-move update settles at once", async () => {
-  (document as { $r?: unknown }).$r = {};
-  try {
-    const row = document.createElement("div");
-    row.innerHTML = '<div data-layout="true" style="width:50px;height:50px"></div>';
-    document.body.append(row);
-    const start = performance.now();
-    const result = await animateLayout(row, () => {});
-    await result.finished;
-    expect(performance.now() - start).toBeLessThan(50);
-    row.remove();
-  } finally {
-    delete (document as { $r?: unknown }).$r;
-  }
-});
-
-test("a later animateLayout on the same root cancels an earlier one still waiting for a re-creation", async () => {
-  const { row, make } = flexRow();
-  const ran = pendingRecreation();
-  try {
-    // Nothing reached the DOM yet: the first call waits for the pending activation.
-    const first = await animateLayout(row, () => {});
-    let settled = false;
-    void first.finished.then(() => (settled = true));
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(settled).toBe(false);
-    const second = await animateLayout(row, () => make("flex-end"), { duration: 0.3, ease: "linear" });
-    // The first settles without playing; the second (it moved the element) plays at once.
-    await first.finished;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const mid = left("late") - row.getBoundingClientRect().left;
-    expect(mid).toBeGreaterThan(20);
-    expect(mid).toBeLessThan(330);
-    await second.finished;
-    expect(left("late") - row.getBoundingClientRect().left).toBe(350);
-  } finally {
-    ran();
-  }
-  row.remove();
-});
-
-test("a pending unrelated activation does not delay an update that already moved elements", async () => {
-  const { row, make } = flexRow();
-  const ran = pendingRecreation();
-  try {
-    const result = await animateLayout(row, () => make("flex-end"), { duration: 0.3, ease: "linear" });
-    // `make` replaced the element (as a re-creation would) and moved it: it animates at once.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const mid = left("late") - row.getBoundingClientRect().left;
-    expect(mid).toBeGreaterThan(20);
-    expect(mid).toBeLessThan(330);
-    await result.finished;
-  } finally {
-    ran();
-  }
-  row.remove();
-});
-
-test("an activation that never ends caps the wait: a no-move update still settles", async () => {
+test("a no-move update settles at once", async () => {
   const row = document.createElement("div");
   row.innerHTML = '<div data-layout="true" style="width:50px;height:50px"></div>';
   document.body.append(row);
-  const ran = pendingRecreation();
-  try {
-    const start = performance.now();
-    const result = await animateLayout(row, () => {});
-    await result.finished;
-    const took = performance.now() - start;
-    expect(took).toBeGreaterThan(1900);
-    expect(took).toBeLessThan(2600);
-  } finally {
-    ran();
-  }
+  const start = performance.now();
+  const result = await animateLayout(row, () => {});
+  await result.finished;
+  expect(performance.now() - start).toBeLessThan(50);
   row.remove();
 });

@@ -24,7 +24,6 @@ import {
   contextProps,
   renderProps,
   renderPropsOf,
-  resumableContext,
   type ContextValue,
   type RefValue,
   type RenderProps,
@@ -80,9 +79,9 @@ export interface ColorWheelProps
 }
 
 /** RAC `ColorWheelContext`. */
-export const ColorWheelContext = resumableContext(createContext<ContextValue<Partial<ColorWheelProps>, HTMLDivElement>>(null, { id: "rv-color-wheel" }));
+export const ColorWheelContext = createContext<ContextValue<Partial<ColorWheelProps>, HTMLDivElement>>(null);
 /** RAC `ColorWheelStateContext`. */
-export const ColorWheelStateContext = resumableContext(createContext<ColorWheelState | null>(null, { id: "rv-color-wheel-state" }));
+export const ColorWheelStateContext = createContext<ColorWheelState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 
@@ -230,9 +229,7 @@ export interface ColorWheelTrackProps
 }
 
 /** RAC `ColorWheelTrackContext` (the wheel provides the track's handlers + style). */
-export const ColorWheelTrackContext = resumableContext(
-  createContext<ContextValue<Partial<ColorWheelTrackProps> & Record<string, unknown>, HTMLDivElement>>(null, { id: "rv-color-wheel-track" }),
-);
+export const ColorWheelTrackContext = createContext<ContextValue<Partial<ColorWheelTrackProps> & Record<string, unknown>, HTMLDivElement>>(null);
 
 /**
  * A color wheel track is a circular track within a color wheel which displays the hue gradient.

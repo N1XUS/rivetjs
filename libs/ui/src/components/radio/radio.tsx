@@ -20,7 +20,6 @@ import { LabelContext } from "@rivetjs/cdk/label";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import { radioVariants } from "../../../styles/src/components/radio/index.ts";
@@ -39,7 +38,7 @@ interface RadioContext {
   state?: RadioFieldRenderProps;
 }
 
-const RadioContext = resumableContext(createContext<RadioContext>({}, { id: "rv-ui-radio" }));
+const RadioContext = createContext<RadioContext>({});
 
 type RadioSlots = ReturnType<typeof radioVariants>;
 

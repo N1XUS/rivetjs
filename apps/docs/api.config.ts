@@ -9,7 +9,6 @@ export const entries: ApiEntryConfig[] = [
   { entry: "@rivetjs/runtime/dom", file: "runtime/dom.ts", runsOn: "both", summary: "Components for the browser build: For, Async, resource, lazy and client-only parts, mount. Server builds rewrite it to the server target." },
   { entry: "@rivetjs/runtime/server", file: "runtime/server.ts", runsOn: "server", summary: "Server rendering: render to a string or a writer, server versions of the control-flow components." },
   { entry: "@rivetjs/runtime/server-resume", file: "runtime/server-resume.ts", runsOn: "server", summary: "Render a page with the state the browser needs to resume it." },
-  { entry: "@rivetjs/runtime/dom-resume", file: "runtime/dom-resume.ts", runsOn: "browser", summary: "Browser side of resuming: the optional resume entry (createResume)." },
   { entry: "@rivetjs/runtime/image", file: "runtime/image.ts", runsOn: "both", summary: "Picture and ImagePreload for optimised `?image` imports." },
   { entry: "@rivetjs/runtime/router/dom", file: "runtime/dom-router.ts", runsOn: "browser", summary: "Browser router controller (createRouter)." },
   { entry: "@rivetjs/runtime/router/server", file: "runtime/server-router.ts", runsOn: "server", summary: "Server router controller for one request URL." },

@@ -4,10 +4,9 @@
 import { resolve } from "node:path";
 import type TS from "typescript";
 import { docsUrl } from "@rivetjs/compiler/codes";
-import type { CheckDiagnostic, CheckResult, CheckSite, Compiler } from "./compiler.ts";
+import type { CheckDiagnostic, CheckSite, Compiler } from "./compiler.ts";
 import { linkDiagnostics } from "./links.ts";
 import { ManifestCache, moduleId, type EditorRoute, type ProjectManifest } from "./manifest.ts";
-import { serializabilityDiagnostics, type ClassVerdict } from "./serializable.ts";
 import { isRouteModule, untaggedServerExports } from "./server-exports.ts";
 import { sourcePackagesOf } from "./sources.ts";
 
@@ -15,7 +14,6 @@ export * from "./compiler.ts";
 export * from "./manifest.ts";
 export * from "./routes.ts";
 export * from "./fixes.ts";
-export * from "./serializable.ts";
 export * from "./doctor.ts";
 export * from "./links.ts";
 export * from "./explain.ts";
@@ -25,11 +23,9 @@ export interface FileCheck {
   diagnostics: CheckDiagnostic[];
   /** Resume sites (resume-compiled files only). */
   sites: CheckSite[];
-  /** Resume-compiled files only: module classes the compiler registers for resume (data class / `static [revive]`). */
-  classes: NonNullable<CheckResult["classes"]>;
-  /** Compiled in resume mode (per manifest). */
+  /** Resume-compiled (per manifest). */
   resume: boolean;
-  /** Root-relative module id (resume symbol id prefix); null without a manifest. */
+  /** Root-relative module id (resume boundary name prefix); null without a manifest. */
   moduleId: string | null;
   project: ProjectManifest | null;
 }
@@ -67,16 +63,12 @@ export function createLanguageCore({ compiler, manifests = new ManifestCache() }
       const id = project ? moduleId(project.root, fileName) : null;
       const resume = Boolean(id && project!.manifest.resumeModules?.includes(id));
       const sourcePackages = resume ? sourcePackagesOf(fileName, text) : [];
-      const {
-        diagnostics,
-        sites,
-        classes = [],
-      } = compiler.check(text, {
+      const { diagnostics, sites } = compiler.check(text, {
         filename: fileName,
         ...(resume ? { resume: { module: id! } } : {}),
         ...(sourcePackages.length ? { sourcePackages } : {}),
       });
-      const result: FileCheck = { diagnostics, sites, classes, resume, moduleId: id, project };
+      const result: FileCheck = { diagnostics, sites, resume, moduleId: id, project };
       cache.set(fileName, { text, project, result });
       if (cache.size > CHECK_CACHE_SIZE) cache.delete(cache.keys().next().value!);
       return result;
@@ -88,13 +80,13 @@ export function createLanguageCore({ compiler, manifests = new ManifestCache() }
 }
 
 export interface AnalyzeOptions {
-  /** RV2101 type-aware capture warnings (default true). */
+  /** Type-aware checks: RV3101 route links (default true; false skips them). */
   typeAware?: boolean;
   /** Modules whose `Link` takes route paths (default the router's). */
   linkModules?: readonly string[];
 }
 
-/** Every Rivet diagnostic of a program file (compiler + RV2101 + RV3010 + RV3101), as the editor shows them. */
+/** Every Rivet diagnostic of a program file (compiler + RV3010 + RV3101), as the editor shows them. */
 export function analyzeFile(
   ts: typeof TS,
   core: LanguageCore,
@@ -106,26 +98,13 @@ export function analyzeFile(
   let diagnostics = result.diagnostics;
   // TypeScript reports syntax errors itself, with better recovery.
   if (program.getSyntacticDiagnostics(file).length) diagnostics = diagnostics.filter((d) => d.code !== "RV1000");
-  const checker = program.getTypeChecker();
-  if (result.resume && options.typeAware !== false) {
-    // The compiler's class verdicts (T28): the declaring module's own check (cached), when it is resume-compiled.
-    const verdict: ClassVerdict = (declaration) => {
-      if (!ts.isClassDeclaration(declaration) || !declaration.name || !ts.isSourceFile(declaration.parent)) return undefined;
-      const source = declaration.parent;
-      if (!core.isRivetFile(source.fileName)) return undefined;
-      const check = source === file ? result : core.check(source.fileName, source.text);
-      const name = declaration.name.text;
-      return check.resume ? check.classes.find((c) => c.name === name)?.kind : undefined;
-    };
-    diagnostics = [...diagnostics, ...serializabilityDiagnostics(ts, checker, file, result.sites, verdict)];
-  }
   const manifest = result.project?.manifest;
   // RV3010: route modules only (the build's `serverExports` compile pass; the editor compiles without it).
   if (manifest && isRouteModule(result.project!.root, manifest.routesDir, file.fileName)) diagnostics = [...diagnostics, ...untaggedServerExports(ts, file)];
-  if (manifest?.routes)
+  if (manifest?.routes && options.typeAware !== false)
     diagnostics = [
       ...diagnostics,
-      ...linkDiagnostics(ts, file, checker, manifest.routes, {
+      ...linkDiagnostics(ts, file, program.getTypeChecker(), manifest.routes, {
         ...(options.linkModules ? { modules: options.linkModules } : {}),
         routesDir: manifest.routesDir,
       }),

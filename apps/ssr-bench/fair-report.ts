@@ -33,7 +33,6 @@ const RIVET: Record<string, string[]> = {
   "rivet-compiled": STATIC_PEERS,
   "rivet-for": STATIC_PEERS,
   "rivet-resume": RESUMABLE_PEERS,
-  "rivet-derived": RESUMABLE_PEERS,
   "rivet-router": RESUMABLE_PEERS,
   "rivet-compiled-bun": STATIC_PEERS,
   "rivet-compiled-deno": STATIC_PEERS,
@@ -61,7 +60,6 @@ const LABEL: Record<string, string> = {
   "rivet-for": "Rivet static (<For>)",
   "rivet-router": "Rivet router (resumable, no handlers)",
   "rivet-resume": "Rivet resumable app",
-  "rivet-derived": "Rivet resumable app (derived model)",
   "rivet-compiled-bun": "Rivet static on Bun 1.4.2",
   "rivet-compiled-deno": "Rivet static on Deno 2.9.7",
   "rivet-router-bun": "Rivet router on Bun 1.4.2",
@@ -137,7 +135,8 @@ async function loadRun(path: string): Promise<Run> {
   return { file, ...(JSON.parse(await readFile(file, "utf8")) as Omit<Run, "file">) };
 }
 
-const profileKey = (p: Provenance | undefined) => (p ? `${p.gc}${p.strings === 2 ? "+grid" : p.strings ? "+strings" : ""}${p.rate ? `+open${p.rate}` : ""}` : "unknown");
+const profileKey = (p: Provenance | undefined) =>
+  p ? `${p.gc}${p.strings === 2 ? "+grid" : p.strings ? "+strings" : ""}${p.rate ? `+open${p.rate}` : ""}` : "unknown";
 const comparable = (a: Provenance, b: Provenance) =>
   (["generator", "generator_sha256", "duration", "warmup", "gc", "strings", "rate"] as const).every((k) => (a[k] ?? null) === (b[k] ?? null));
 
@@ -318,7 +317,7 @@ function markdown(
       out.push("");
     }
     out.push(`### Verdicts — profile \`${profile}\``, "", "Counts over all rows × concurrency cases: W/T/L for the Rivet lane against each peer.", "");
-    for (const rivet of PRIMARY.concat(["rivet-router", "rivet-for", "rivet-derived"])) {
+    for (const rivet of PRIMARY.concat(["rivet-router", "rivet-for"])) {
       const peers = RIVET[rivet]!;
       const mine = data.comparisons.filter((c) => c.profile === profile && c.rivet === rivet);
       if (!mine.length) continue;
@@ -406,7 +405,6 @@ const order = (lane: string) =>
     "rivet-for",
     "rivet-router",
     "rivet-resume",
-    "rivet-derived",
     "rivet-compiled-bun",
     "rivet-compiled-deno",
     "rivet-router-bun",
@@ -626,8 +624,7 @@ if (import.meta.main && !domOnly) {
     };
     if (dom) competitors.dom = { ...dom.competitors, gzip: (competitors.dom as { gzip?: unknown } | undefined)?.gzip };
     if (resume) competitors.resume = resume.competitors;
-    competitors.note =
-      `Competitor numbers with provenance. ssr${dom ? "/dom" : ""}${resume ? "/resume" : ""} re-measured by ${relative(repoRoot, out)}.md via apps/ssr-bench/fair-report.ts --store-competitors (other blocks: their own provenance); dom gzip = fixture+runtime bundle bytes (unchanged).`;
+    competitors.note = `Competitor numbers with provenance. ssr${dom ? "/dom" : ""}${resume ? "/resume" : ""} re-measured by ${relative(repoRoot, out)}.md via apps/ssr-bench/fair-report.ts --store-competitors (other blocks: their own provenance); dom gzip = fixture+runtime bundle bytes (unchanged).`;
     await writeFile(path, JSON.stringify(competitors, null, 2) + "\n");
     console.log(`Updated ${relative(repoRoot, path)}`);
   }

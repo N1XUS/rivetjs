@@ -35,7 +35,6 @@ import {
   Provider,
   contextProps,
   mergeRefValues,
-  resumableContext,
   type ClassNameOrFunction,
   type ContextValue,
   type RefValue,
@@ -144,13 +143,13 @@ export interface CarouselProps
 }
 
 /** Props for the Carousel from a parent (slots). */
-export const CarouselContext = resumableContext(createContext<ContextValue<Partial<CarouselProps>, HTMLDivElement>>(null, { id: "rv-carousel" }));
+export const CarouselContext = createContext<ContextValue<Partial<CarouselProps>, HTMLDivElement>>(null);
 /** The carousel state (`createCarouselState`). */
-export const CarouselStateContext = resumableContext(createContext<CarouselState | null>(null, { id: "rv-carousel-state" }));
+export const CarouselStateContext = createContext<CarouselState | null>(null);
 /** Viewport ref + tabbed flag for the parts. */
-export const CarouselPartsContext = resumableContext(createContext<{ viewport: Ref<HTMLElement>; tabs: boolean } | null>(null, { id: "rv-carousel-parts" }));
+export const CarouselPartsContext = createContext<{ viewport: Ref<HTMLElement>; tabs: boolean } | null>(null);
 /** Index of the slide rendered inside (`CarouselContainer items`). */
-export const CarouselSlideIndexContext = resumableContext(createContext<(() => number) | null>(null, { id: "rv-carousel-slide-index" }));
+export const CarouselSlideIndexContext = createContext<(() => number) | null>(null);
 
 const ENGINE_KEYS = [
   "align",
@@ -433,6 +432,7 @@ export function CarouselContainer<T>(props: CarouselContainerProps<T>) {
   const { items, by, children } = props;
   // Slide indexes follow render order (static children).
   state.refs.count = 0;
+  state.refs.seen = new WeakMap();
   const list = items === undefined ? undefined : typeof items === "function" ? items : () => items as readonly T[];
   if (list) {
     const count = untrack(list).length;
@@ -533,8 +533,13 @@ export interface CarouselSlideProps
 export function CarouselSlide(props: CarouselSlideProps) {
   const { state, parts } = useCarousel("CarouselSlide");
   const fromItems = useContext(CarouselSlideIndexContext);
-  const fixed = props.index ?? (fromItems ? undefined : state.refs.count);
-  if (props.index === undefined && !fromItems) state.refs.count++;
+  // Render order; the same props object (a resumed slide's probe + adopt runs) keeps its index.
+  const seen = state.refs.seen;
+  let fixed = props.index;
+  if (fixed === undefined && !fromItems) {
+    fixed = seen.get(props);
+    if (fixed === undefined) seen.set(props, (fixed = state.refs.count++));
+  }
   const slide = { index: () => (fixed !== undefined ? fixed : fromItems!()) };
   const values: CarouselSlideRenderProps = {
     ...renderValues(state),

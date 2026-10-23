@@ -18,7 +18,7 @@ test("every corpus case: identical code and diagnostics with maps on", () => {
     const mapped = compile(source, { ...options, sourceMap: true });
     assert.equal(mapped.code, plain.code, String(options.filename));
     assert.deepEqual(mapped.diagnostics, plain.diagnostics);
-    assert.deepEqual(mapped.symbols, plain.symbols);
+    assert.deepEqual(mapped.boundaries, plain.boundaries);
     if (!plain.diagnostics.length && plain.code) assert.ok(mapped.map, "map for " + options.filename);
   }
   assert.ok(corpus.length > 100);

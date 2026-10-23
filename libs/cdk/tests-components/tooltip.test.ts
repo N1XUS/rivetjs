@@ -40,7 +40,7 @@ test("closed tooltips render nothing at SSR; no tooltip code before interaction"
   assert.equal(await page.locator("[role=tooltip]").count(), 0);
   assert.equal(await describedBy(page, "#edit-button"), null);
   // Tooltip code: chunks holding its symbols + the shared code only they import (build manifest; route chunks by default).
-  assert.deepEqual(among(seen.scripts, codeOf(/^@rivetjs\/cdk\/tooltip\/|#Tooltip\w*\$/)), [], "no tooltip chunk at load: " + seen.scripts.join(","));
+  assert.deepEqual(among(seen.scripts, codeOf(/^@rivetjs\/cdk\/tooltip\/|#Tooltip\w*$/)), [], "no tooltip chunk at load: " + seen.scripts.join(","));
   assert.deepEqual(seen.errors, []);
   await page.close();
 });
@@ -128,7 +128,7 @@ test("a first mouse click on a resumed trigger keeps focus on it without a focus
 
 // Cold replay fidelity (COLDFIX 2026-10-19): the replayed `pointerenter` opens the `delay={0}` tooltip and installs its
 // close-on-press document capture listener; the replayed `pointerdown` (dispatched before that listener existed) must
-// reach it, as on a loaded page (dom-resume `late`; docs/guides/resumability.md "Cold press"). 862805e7 and the route
+// reach it, as on a loaded page (docs/guides/resumability.md "Cold press"). 862805e7 and the route
 // default before the fix failed it (`aria-describedby="styled"`).
 test("a first mouse click on a resumed trigger opens no tooltip", async () => {
   const { page } = await firstClick();

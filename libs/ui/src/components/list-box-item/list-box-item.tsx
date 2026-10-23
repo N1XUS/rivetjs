@@ -19,7 +19,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, slotText } from "@rivetjs/runtime/slot";
 import { Check } from "lucide";
 
@@ -39,7 +38,7 @@ interface ListBoxItemContext {
   state?: ListBoxItemRenderProps;
 }
 
-const ListBoxItemContext = resumableContext(createContext<ListBoxItemContext>({}, { id: "rv-ui-list-box-item" }));
+const ListBoxItemContext = createContext<ListBoxItemContext>({});
 
 type ListBoxItemSlots = ReturnType<typeof listboxItemVariants>;
 const SLOTS: Record<string, ListBoxItemSlots> = {};

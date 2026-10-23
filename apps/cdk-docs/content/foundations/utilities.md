@@ -27,5 +27,4 @@ Small modules for your own widgets. Each is its own import path; code you do not
 
 - **Nothing in markup that depends on the browser.** Platform checks, direction, breakpoints and viewport sizes are unknown (or default) on the server, and server HTML is cached. Read them in handlers or client effects and keep the result in a signal.
 - **Call browser work from handlers or `clientEffect`.** Return the cleanup the function gives you (observers, `useFormReset`, `useDescription`, subscriptions).
-- **Capture plain values.** A handler or client effect that captures an object holding library-created functions (a subscription, `breakpointState(…)`, `mergeProps(…)` output) cannot resume: the server reports "function is not serializable". Capture signals, refs and plain data; create the rest inside the handler or effect.
 - **Strings in state.** Date values, locales and directions go into signals as strings.

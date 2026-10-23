@@ -11,7 +11,7 @@ import { nodeEnv, withNodeEnv } from "./vite-env.ts";
 const root = new URL("./fixture-resume-app/", import.meta.url).pathname;
 const configFile = root + "vite.config.ts";
 const COUNTER = "src/components/counter.tsx#Counter";
-const has = (list: string[]) => list.some((id) => id.startsWith(COUNTER + "$"));
+const has = (list: string[]) => list.includes(COUNTER);
 
 const symbols = async (): Promise<string[]> => {
   const manifest = JSON.parse(await readFile(root + "dist/client/.vite/rivet-resume.json", "utf8")) as { symbols: Record<string, unknown> };
@@ -22,7 +22,7 @@ test("production build: an unlisted app component module imported by a route res
   await rm(root + "dist", { recursive: true, force: true });
   await withNodeEnv("production", () => build({ root, configFile, logLevel: "silent" }));
   await withNodeEnv("production", () => build({ root, configFile, logLevel: "silent", build: { ssr: true } }));
-  assert.ok(has(await symbols()), "Counter has resume symbol chunks");
+  assert.ok(has(await symbols()), "Counter is a boundary of the manifest (its module chunk)");
   const app = await start({ dist: root + "dist", port: 0, onError: () => {} });
   try {
     const res = await fetch(app.url + "/");
@@ -30,7 +30,7 @@ test("production build: an unlisted app component module imported by a route res
     const html = await res.text();
     assert.match(html.replace(/<!--.*?-->/g, ""), /<button id="counter"[^>]*>Count 0<\/button>/);
     assert.ok(!html.includes('document.dispatchEvent(new CustomEvent("rivet:resume-error"'), "no render-failure script");
-    assert.ok(html.includes(COUNTER), "resume state names the Counter symbol");
+    assert.ok(html.includes(COUNTER), "the boundaries tail names the Counter boundary");
   } finally {
     await app.close();
   }
@@ -50,7 +50,7 @@ test("dev server: the unlisted module's page renders and resumes", async () => {
     await server.listen();
     const html = await (await fetch(server.resolvedUrls!.local[0]!)).text();
     assert.ok(!html.includes('document.dispatchEvent(new CustomEvent("rivet:resume-error"'), "no render-failure script");
-    assert.ok(html.includes("counter.tsx#Counter"), "resume state names the Counter symbol");
+    assert.ok(html.includes("counter.tsx#Counter"), "the boundaries tail names the Counter boundary");
   } finally {
     await server.close();
     restoreEnv();

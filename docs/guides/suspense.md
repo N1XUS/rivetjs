@@ -19,12 +19,11 @@
 
 - Ordered renders: children in place, Asyncs below awaited, no fallback.
 - Server `Async` inside a Suspense: never claims its own stream segment; sets `p` when its load is pending.
-- Streaming resumable (`_onSuspense` in server-resume): claimable site (same rule as Async) + fallback + a pending Async below → site claimed (`scope.async`), fallback in `<!--rA[-->…<!--]-->`, content (already constructed) streamed as one segment; resume records it made are moved from the current recorder into the segment's prepared view. No pending → inline. Failure → ErrorBoundary fallback segment or continuation (status 2).
+- Resumable renders (derived model): `Suspense` is awaited in place (no own stream segment); a boundary whose probe run suspends renders in the browser on its first adopt (dev warning). Streamed `Async` holes: `docs/guides/resumability.md` "Mechanics".
 
 ## Resume
 
-- No `dom-resume` / loader change: one `a` entry per streamed Suspense; continuation re-creates the region, whose DOM Suspense loads in the browser.
-- `pending` signals serialize like any signal.
+- Awaited in place on resumable renders; `pending` signals ship like any keyed signal. Streamed Suspense segments on resumable pages: not yet on the derived model (plan M6).
 
 ## Router
 
@@ -33,7 +32,7 @@
 ## Limits
 
 - Transitions keep output only for in-place reloads (`load` reads the signal). Re-created subtrees (`{card(id())}`, new Show branch) show their fallback.
-- Resumed page: the first change of a server-rendered region re-creates it (fallback once).
+- Resumed page: a boundary whose own Suspense content waits for a load renders again in the browser the first time it is used (its loads run again).
 - SuspenseList (reveal order): deferred.
 
 ## Cost

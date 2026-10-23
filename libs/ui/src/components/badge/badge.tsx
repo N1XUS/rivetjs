@@ -13,7 +13,6 @@
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { cx } from "tailwind-variants/lite";
 
 import type { BadgeVariants } from "../../../styles/src/components/badge/index.ts";
@@ -34,7 +33,7 @@ interface BadgeContext {
   variant?: BadgeVariants["variant"];
 }
 
-const BadgeContext = resumableContext(createContext<BadgeContext>({}, { id: "rv-ui-badge" }));
+const BadgeContext = createContext<BadgeContext>({});
 
 type BadgeSlots = ReturnType<typeof badgeVariants>;
 

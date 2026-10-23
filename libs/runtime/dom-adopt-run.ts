@@ -1,4 +1,4 @@
-import { _dispose, _rootIn, _setRegionStateHook, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
+import { _dispose, _rootIn, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
 import type { Owner } from "@rivetjs/reactivity";
 import { _adoption, _insert } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";

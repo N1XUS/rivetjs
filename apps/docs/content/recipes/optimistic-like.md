@@ -82,7 +82,7 @@ Actions check that the request comes from your own site (the `Origin` header). A
 
 - **Use the server's count.** The response body holds the action result. If other people like the post at the same time, you can show the server's number after the request.
 - **Retry.** Instead of a message, offer a "Try again" button that sends the same request.
-- **Many items.** In a list, keep `liked` and `likes` per row. Each row's handler captures only its own signals.
+- **Many items.** In a list, keep `liked` and `likes` per row. A click then runs only that row's code.
 
 ## Watch out
 

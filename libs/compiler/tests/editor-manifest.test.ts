@@ -42,15 +42,8 @@ test("rivet({ resume }) records resume membership for editors; plain rivet() wri
     // An app with a vite.config: the manifest exists once its config was evaluated (T1: rivet-check RV7101).
     (rivet().configResolved as (config: unknown) => void)({ root, command: "build", configFile: resolve(root, "vite.config.ts"), build: {}, plugins: [] });
     assert.deepEqual(await read(root), { version: 1 });
-    configResolved(rivet({ resume: { modules: ["src/b.tsx", "src/a.tsx"], preload: { rules: [{ match: /Card/i, strategy: "idle" }, { match: "src/a.tsx", strategy: "eager" }] } } }));
-    assert.deepEqual(await read(root), {
-      version: 1,
-      resumeModules: ["src/a.tsx", "src/b.tsx"],
-      preloadRules: [
-        { match: { regex: "Card", flags: "i" }, strategy: "idle" },
-        { match: "src/a.tsx", strategy: "eager" },
-      ],
-    });
+    configResolved(rivet({ resume: { modules: ["src/b.tsx", "src/a.tsx"] } }));
+    assert.deepEqual(await read(root), { version: 1, resumeModules: ["src/a.tsx", "src/b.tsx"] });
   } finally {
     await rm(root, { recursive: true, force: true });
   }

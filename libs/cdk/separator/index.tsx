@@ -11,7 +11,7 @@ import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts"
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { CollectionNode, type BaseCollection } from "../collections/base.ts";
 import { createLeafComponent } from "../collections/components.tsx";
-import { resumableContext, contextProps, type ContextValue, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
+import { contextProps, type ContextValue, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
 import { separatorProps, type AriaSeparatorProps } from "./behaviour.ts";
 import { isLive, liveClass } from "../utils/live.tsx";
 
@@ -24,7 +24,7 @@ export interface SeparatorProps extends AriaSeparatorProps, SlotProps, GlobalDOM
   ref?: RefValue<HTMLElement>;
 }
 
-export const SeparatorContext = resumableContext(createContext<ContextValue<SeparatorProps, HTMLElement>>({}, { id: "rv-separator" }));
+export const SeparatorContext = createContext<ContextValue<SeparatorProps, HTMLElement>>({});
 
 /** RA `filterDOMProps(props, { global: true })`: global attributes / events, `id`, `data-*`. */
 function domPropsOf(props: Record<string, unknown>): Record<string, unknown> {

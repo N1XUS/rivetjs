@@ -12,7 +12,6 @@ import type { DisclosureGroupProps as DisclosureGroupPrimitiveProps, DisclosureG
 import { createContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { DisclosureGroupVariants } from "../../../styles/src/components/disclosure-group/index.ts";
 import { disclosureGroupVariants } from "../../../styles/src/components/disclosure-group/index.ts";
@@ -27,7 +26,7 @@ type DisclosureGroupContext = {
   inDisclosureGroup?: boolean;
 };
 
-const DisclosureGroupContext = resumableContext(createContext<DisclosureGroupContext>({}, { id: "rv-ui-disclosure-group" }));
+const DisclosureGroupContext = createContext<DisclosureGroupContext>({});
 
 let SLOTS: ReturnType<typeof disclosureGroupVariants> | undefined;
 const ROOT_CONTEXT: DisclosureGroupContext = { inDisclosureGroup: true };

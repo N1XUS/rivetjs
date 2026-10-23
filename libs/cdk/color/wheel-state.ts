@@ -2,7 +2,7 @@
 // Rivet: plain signals + JSON (serializable); methods are free functions taking the state first
 // (`state.setHue(v)` → `setHue(state, v)`; shared names dispatch on `state.kind` in `./index.ts`).
 // Color stored as a string (`./value.ts`); `valueRef` / `isDraggingRef` → `state.refs`.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { normalizeColor, parseColor, stringifyColor, type Color } from "./color.ts";
 import { colorCell, writeColor, type ColorCell, type ColorInput } from "./value.ts";
 
@@ -106,7 +106,7 @@ export function createColorWheelState(props: ColorWheelProps): ColorWheelState {
     kind: "wheel",
     cell,
     defaultValue: stringifyColor(propsValue !== undefined ? initialValue : normalizeColor(defaultValue!)),
-    dragging: _regionState(() => signal(false)),
+    dragging: signal(false),
     step,
     pageStep,
     isDisabled: disabled ? !!untrack(disabled) : props.isDisabled || false,

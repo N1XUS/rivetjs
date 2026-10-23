@@ -55,13 +55,9 @@ test("pro-forms: SSR markup + CSS, nothing boots at load", () =>
     assert.equal(await page.locator("#isel [data-slot=breadcrumbs-item]:nth-child(2) [data-slot=breadcrumbs-separator]").count(), 1);
     assert.equal(await page.locator("#isel [data-slot=breadcrumbs-item]:nth-child(2) a").count(), 0);
     await page.waitForLoadState("networkidle");
-    // Nothing boots at load: no component runs (chunks of hover / focus handlers may be prefetched while visible), and no
-    // client effect is recorded (the cdk TextField slot ids resolve during server rendering), so the runtime never starts at idle.
+    // Nothing boots at load: no component runs (chunks of hover / focus handlers may be prefetched while visible), so the
+    // runtime never starts at idle.
     assert.equal(await page.locator("script[data-boot]").count(), 0, "no idle boot");
-    assert.equal(
-      await page.evaluate(() => (JSON.parse(document.querySelector('script[type="rivet/state"]')!.textContent!) as { fx?: unknown[] }).fx?.length ?? 0),
-      0,
-    );
     assert.equal(await page.evaluate(() => (window as { __componentRuns?: unknown }).__componentRuns), undefined);
     assert.deepEqual(seen.errors, []);
   }));

@@ -327,8 +327,7 @@ Pointer: a mouse press opens on pointer down and an option selects on release. T
 
 - The server renders the trigger with the value text and the hidden select with every option; a closed popover renders nothing. The trigger's `data-rk` keys are held while the handler chunk loads, so the first key press is not lost. The first open creates only the popover.
 - State is signals plus JSON (`createSelectState`), so `value` / `isOpen` signals and number keys resume as they were.
-- Callbacks (`onChange`, `onOpenChange`, DOM events, item handlers) must be inline arrows or local functions; functions from other libraries are not serializable; `.bind(…)` of your own function resumes inline or as a local constant, not inside an object literal.
-- `children`, `renderValue` and a function `indicator` are slots: write them inline. Pass element content for `indicator` as a function (`indicator={() => <Icon />}`); a JSX element there is not serializable. `renderEmptyState` takes text.
+- `children`, `renderValue` and a function `indicator` are slots. Pass element content for `indicator` as a function (`indicator={() => <Icon />}`). `renderEmptyState` takes text.
 - A `children` slot that returns elements needs a starting value (`defaultValue` or `value`): when the server rendered the placeholder text, the resumed trigger cannot switch that text to elements. Use `renderValue` returning text, or start with a value.
 - `on…Capture` handlers do not resume yet.
 

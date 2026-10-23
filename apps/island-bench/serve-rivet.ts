@@ -1,8 +1,8 @@
 // HTTP server of the Rivet lanes (per-request streaming SSR + static assets). No compression by default — like every
 // lane of the bench (Astro's standalone server has none; Next runs with `compress: false`); `IB_GZIP=1` turns gzip on.
-// Usage: [IB_FULL_TAIL=1] node apps/island-bench/serve-rivet.ts <lane dist dir> <port>. Prints "ready" once listening.
+// Usage: node apps/island-bench/serve-rivet.ts <lane dist dir> <port>. Prints "ready" once listening.
 import { createServer } from "node:http";
-import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { constants, createGzip, gzipSync } from "node:zlib";
@@ -11,17 +11,7 @@ import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 const [dist, port] = [resolve(process.argv[2]!), Number(process.argv[3])];
 const GZIP = process.env.IB_GZIP === "1";
 const manifest = JSON.parse(readFileSync(join(dist, "client/.vite/rivet-resume.json"), "utf8")) as ResumeManifest;
-// `IB_FULL_TAIL=1` (lane rivet-bridge-react-full, the T7b baseline): a copy of the SSR bundle with `@rivetjs/bridge`'s
-// `offerLean` stubbed, so no island is offered to the lean tail and every page keeps the full resume driver (the
-// pre-T7b server work and tail) on the same build and manifest.
-let entry = join(dist, "server/server.js");
-if (process.env.IB_FULL_TAIL === "1") {
-  const code = readFileSync(entry, "utf8");
-  if (!code.includes("function offerLean(")) throw new Error("IB_FULL_TAIL: no offerLean in " + entry);
-  entry = join(dist, "server/server-full-tail.js");
-  writeFileSync(entry, code.replace("function offerLean(", "function offerLean() {}\nfunction offerLeanUnused("));
-}
-const { render } = (await import(pathToFileURL(entry).href)) as {
+const { render } = (await import(pathToFileURL(join(dist, "server/server.js")).href)) as {
   render(manifest: ResumeManifest, write: (chunk: string) => void): void | Promise<void>;
 };
 const TYPES: Record<string, string> = { ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".json": "application/json" };

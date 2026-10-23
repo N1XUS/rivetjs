@@ -7,7 +7,6 @@ import type { ViteDevServer } from "vite";
 import { compileRoutes } from "@rivetjs/runtime/router/server";
 import { escapeAttribute, escapeText } from "@rivetjs/runtime/escape";
 import { escapeJSON } from "@rivetjs/runtime/resume-format";
-import type { DevSymbolInfo } from "@rivetjs/compiler/vite";
 import type { RouteTable } from "./routes.ts";
 import type { AppHandler, ErrorInfo } from "../server/handler.ts";
 
@@ -18,11 +17,7 @@ interface Failure {
   readonly phase: string;
   readonly route: string | undefined;
   readonly id: string | undefined;
-  /** Source position for the overlay (the component of a resume symbol the error names). */
-  readonly loc?: { readonly file: string; readonly line: number; readonly column: number };
 }
-/** A resume symbol the compiler plugin compiled for dev SSR (`DevResume.describe`). */
-type Describe = (id: string) => DevSymbolInfo | undefined;
 const failures = new AsyncLocalStorage<Failure[]>();
 
 /** JSON for an inline `<script>` (no `</script>` / `<!--`, no raw U+2028/U+2029), as resume state. */
@@ -41,7 +36,7 @@ const codeOf = (error: unknown): string => {
  * Dev `onError`: source-map the stack, log it, send it to Vite's overlay (open pages, e.g. during
  * client navigation) and remember it for the request's dev error page.
  */
-export function devReport(server: ViteDevServer, table: () => RouteTable, routesPath: string, describe?: Describe) {
+export function devReport(server: ViteDevServer, table: () => RouteTable, routesPath: string) {
   return (error: unknown, _request: Request, info?: ErrorInfo): void => {
     if (error instanceof Error) server.ssrFixStacktrace(error);
     // Without info: a render failure reported by a custom renderer (app renders report `phase: "render"`).
@@ -49,13 +44,11 @@ export function devReport(server: ViteDevServer, table: () => RouteTable, routes
     const route = info?.route;
     const file = route === undefined ? undefined : table().routes.find((entry) => entry.id === route)?.page;
     const text = error instanceof Error ? error.message : String(error);
-    const symbol = describe && resumeSymbol(text, describe);
-    const id = symbol?.file ?? (file ? join(routesPath, file) : undefined);
-    const note = symbol ? symbolNote(text, symbol) : describe ? missingNote(text) : "";
-    const message = codeOf(error) + text + note;
+    const id = file ? join(routesPath, file) : undefined;
+    const message = codeOf(error) + text;
     const stack = error instanceof Error ? (error.stack ?? "") : "";
-    server.config.logger.error(`[rivet] ${phase} failed${route === undefined ? "" : ` (route "${route}")`}: ${note ? message + "\n" : ""}${stack || message}`);
-    const failure: Failure = { message, stack, phase, route, id, ...(symbol ? { loc: { file: symbol.file, line: symbol.line, column: symbol.column } } : {}) };
+    server.config.logger.error(`[rivet] ${phase} failed${route === undefined ? "" : ` (route "${route}")`}: ${stack || message}`);
+    const failure: Failure = { message, stack, phase, route, id };
     failures.getStore()?.push(failure);
     if (overlayOn(server)) server.ws.send({ type: "error", err: overlayError(failure) });
   };
@@ -66,48 +59,7 @@ const overlayError = (failure: Failure) => ({
   stack: failure.stack,
   plugin: "rivet",
   ...(failure.id ? { id: failure.id } : {}),
-  ...(failure.loc ? { loc: failure.loc } : {}),
 });
-
-// Symbol ids in resume recorder errors: `Cannot resume <id>: capture `<name>` …` (dev; `#<n>` without names), `… no chunk for <id>`.
-const SYMBOL_ID = /(?:^|[\s(])((?:[\w.@-]+\/)*[\w.@-]+\.[cm]?[jt]sx?#[\w$]+)/;
-/** The resume symbol a recorder error names, when the dev server compiled it. */
-function resumeSymbol(message: string, describe: Describe): DevSymbolInfo | undefined {
-  const id = SYMBOL_ID.exec(message)?.[1];
-  return id === undefined ? undefined : describe(id);
-}
-const KINDS: Record<string, string> = {
-  event: "event handler",
-  attr: "attribute binding",
-  bind: "text binding",
-  region: "child region",
-  model: "model:",
-  effect: "clientEffect",
-  clientEvent: "clientEvent",
-  computed: "computed",
-  equals: "equals comparator",
-  fn: "function",
-  slot: "slot",
-  spread: "spread",
-};
-/** `in <Component> (file:line:col), <kind>; capture `name` (file:line:col)` for an error naming a symbol. */
-function symbolNote(message: string, symbol: DevSymbolInfo): string {
-  const where = (line: number, column: number) => `${symbol.module}:${line}:${column}`;
-  let note = `\n  in <${symbol.component === "default" ? "default export" : symbol.component}> (${where(symbol.line, symbol.column)}), ${KINDS[symbol.kind] ?? symbol.kind} ${symbol.id}`;
-  // `capture `name`` (dev manifest names, Function Bridge T19) or `capture #<n>` (no names).
-  const named = /capture `([^`]+)`/.exec(message)?.[1];
-  const index = named === undefined ? /capture #(\d+)/.exec(message)?.[1] : undefined;
-  const capture = named !== undefined ? symbol.captures.find((c) => c.name === named) : index === undefined ? undefined : symbol.captures[Number(index)];
-  if (capture) note += `\n  capture \`${capture.name}\` (${where(capture.line, capture.column)})`;
-  return note;
-}
-/** Dev note for a symbol the dev manifest has no chunk for (no SSR compile defined it). */
-const missingNote = (message: string): string => {
-  const id = /no chunk for (\S+)/.exec(message)?.[1];
-  return id === undefined
-    ? ""
-    : `\n  dev: no module the dev server compiled in resume mode defines ${id.replace(/[.,;]$/, "")} (is ${id.slice(0, id.indexOf("#"))} in resume.modules?)`;
-};
 
 /** Browser errors forwarded by the dev entry (`import.meta.hot.send("rivet:client-error")`) open that page's overlay. */
 export function listenClientErrors(server: ViteDevServer): void {

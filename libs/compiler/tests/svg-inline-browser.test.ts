@@ -1,13 +1,12 @@
-// Inline `?svg` component in Chromium: client mount (DOM build of the component), server render +
-// resume (static instance adopted, a branch instance re-created on change) — SVG namespace, props on the root.
+// Inline `?svg` component: server render (sanitised markup, props on the root) and, in Chromium, the client mount (DOM
+// build of the component, SVG namespace, a re-created instance takes its new props). Derived resume end to end:
+// libs/runtime/tests/derived-*-browser.test.ts.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile } from "../index.ts";
 import { inlineSvg } from "../images/svg.ts";
-import { resumableToString } from "../../runtime/server-resume.ts";
-import type { ResumeManifest } from "../../runtime/server-resume.ts";
-import { compileResume, compileSymbolModule, importServer } from "../../runtime/tests/resume/compile.ts";
-import type { ResumeSymbol } from "../../runtime/tests/resume/compile.ts";
+import { renderToString, type ServerValue } from "../../runtime/server.ts";
+import { importServer } from "../../runtime/tests/resume/compile.ts";
 import { withPage, rewrite } from "../../runtime/tests/resume/harness.ts";
 import type { Served } from "../../runtime/tests/resume/harness.ts";
 import type { Page } from "playwright";
@@ -40,27 +39,19 @@ const at = (code: string, url: string) => code.replaceAll('"./logo.svg?svg"', JS
 const serverLogo =
   "data:text/javascript;base64," +
   Buffer.from(logo("server").replaceAll('"@rivetjs/runtime/server"', JSON.stringify(import.meta.resolve("../../runtime/server.ts")))).toString("base64");
-const server = await importServer<{ Page(): Parameters<typeof resumableToString>[0] extends () => infer R ? R : never }>(
-  at(compileResume(PAGE, "server", "src/page.tsx").code, serverLogo),
-);
-const dom = compileResume(PAGE, "dom", "src/page.tsx");
-const byComponent: Record<string, ResumeSymbol[]> = {};
-for (const symbol of dom.symbols) (byComponent["/c/" + symbol.component + ".js"] ??= []).push(symbol);
-const manifest: ResumeManifest = { hash: "svg", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
-const ssr = await resumableToString(() => server.Page(), { manifest });
+const page = compile(PAGE, { target: "server", filename: "src/page.tsx" });
+assert.deepEqual(page.diagnostics, []);
+const server = await importServer<{ Page(): ServerValue }>(at(page.code, serverLogo));
+const ssr = await renderToString(server.Page());
 const csr = (module: string) => `<!doctype html><html><body><div id="app"></div><script type="module">
     import { mount } from "/dom.ts"; import { Page } from "${module}";
     mount(() => Page(), document.getElementById("app"));
   </script></body></html>`;
 const files: Record<string, Served> = {
   "/logo.mjs": rewrite(logo("dom")),
-  "/fixture.mjs": at(rewrite(dom.code), "/logo.mjs"),
   "/csr.mjs": at(rewrite(compile(PAGE, { target: "dom", filename: "page.tsx" }).code), "/logo.mjs"),
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
   "/csr": csr("/csr.mjs"),
-  "/": "<!doctype html><html><head></head><body>" + ssr + "</body></html>",
 };
-for (const [path, symbols] of Object.entries(byComponent)) files[path] = at(rewrite(compileSymbolModule(symbols, "/fixture.mjs")), "/logo.mjs");
 
 const state = (page: Page) =>
   page.evaluate(() =>
@@ -89,19 +80,6 @@ test("client: inline SVG mounts in the SVG namespace; a re-created instance take
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("http://rivet.test/csr");
     await page.waitForFunction(() => document.querySelectorAll("main > svg").length === 2);
-    assert.deepEqual(await state(page), expected("off"));
-    await page.click("#t");
-    await page.waitForFunction(() => document.querySelector("svg.on"));
-    assert.deepEqual(await state(page), expected("on"));
-    assert.deepEqual(errors, []);
-  });
-});
-
-test("resume: server markup adopted; the branch instance re-created client-side on change", async () => {
-  await withPage(files, async (page) => {
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto("http://rivet.test/");
     assert.deepEqual(await state(page), expected("off"));
     await page.click("#t");
     await page.waitForFunction(() => document.querySelector("svg.on"));

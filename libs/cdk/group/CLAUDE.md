@@ -4,7 +4,7 @@
 RAC Group: `role="group"` container with hover / focus-within / focus-visible state for styling grouped controls (NumberField, ColorField, DatePicker, ComboBox provide props via `GroupContext`).
 
 ## Entry points
-- `@rivetjs/cdk/group` -> `index.tsx`: `Group`, `GroupContext` (id `rv-group`), types `GroupProps`, `GroupRenderProps`
+- `@rivetjs/cdk/group` -> `index.tsx`: `Group`, `GroupContext`, types `GroupProps`, `GroupRenderProps`
 - no `behaviour.ts`
 
 ## Layout

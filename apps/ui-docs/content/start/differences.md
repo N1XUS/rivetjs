@@ -20,7 +20,7 @@ If you have used a React component library built on React Aria, most of `@rivetj
 
 - **Live props.** `variant={variant()}`, `isDisabled={busy()}`, `value={progress()}` are passed as getters; the component updates its classes and attributes in place, also on a resumed page. A few props are read once: those that choose the element (`Separator orientation`, `Typography type` / `level`) and the options state is built from (`default*`, `selectionMode`). Attributes and ranges stay live (a password field's `type`, `placeholder`, NumberField `step`, Slider `minValue` / `maxValue` / `step`).
 - **Signals for two-way state.** `isSelected` (ToggleButton) and `selectedKeys` (ToggleButtonGroup) accept a signal and write changes back to it. A plain value such as `isSelected={on()}` is controlled: displayed, never written back, and updated in place when the expression changes. The same holds for controlled `value={qty()}` (NumberField, NumberStepper, RadioGroup, the color and date fields, …), `selectedKeys={keys()}`, `expandedKeys={keys()}` and `isOpen={open()}` ([cdk list](site:cdk/start/resumability/#props-update-in-place)).
-- **Resumable handlers.** Write event handlers as inline arrows or local consts, so a resumed page can run them ([serializable captures](site:docs/best-practices/serializable-captures/)).
+- **Resumable components.** Nothing runs on load; a component runs over the server HTML the first time it is used ([resuming](site:docs/learn/resuming/)).
 
 ```tsx
 import { signal } from "@rivetjs/reactivity";

@@ -9,7 +9,7 @@
 | File | What |
 | --- | --- |
 | `behaviour.ts` | State + handlers, no JSX. `createCompareState(options)` (`value` value / Signal / accessor via `controllable`, `defaultValue` 50, `onChange`, `onChangeEnd`, `orientation`, `isDisabled` bool / accessor, `step` 1, `pageStep` 10, `dragAnywhere`, `animation` bool / `{ duration, friction }` (defaults `COMPARE_DURATION` 20 / `COMPARE_FRICTION` 0.68; `false` → duration 0), `direction`, `locale`); readers `compareValue`, `comparePosition` (animated `position()` ?? value), `isCompareDisabled`, `compareValueText` (Intl percent via `cachedIntl`); inline styles `compareRootStyle` / `compareAfterStyle` (`clip-path: inset(…)` + `-webkit-`) / `compareHandleStyle`; `compareRootOf`, `compareValueAt(state, rect, x, y, raw?)`, `compareSetValue(state, v, "animate" \| "follow" \| "jump", el?)`, `comparePointerDown(event, state, fromSurface)`, `compareDragEnd`, `compareKeyDown`, `compareDispose`; `COMPARE_KEYS` (`data-rk`). |
-| `index.tsx` | Parts: `Compare` (root `div`, provides `CompareContext`, `preload="visible"`, surface `pointerdown`), `CompareBefore`, `CompareAfter`, `CompareHandle` (`role=slider`), `CompareDivider`; `CompareContext` (`resumableContext`, id `rv-compare`), `useComparePosition()`; re-exports the behaviour API. |
+| `index.tsx` | Parts: `Compare` (root `div`, provides `CompareContext`, `preload="visible"`, surface `pointerdown`), `CompareBefore`, `CompareAfter`, `CompareHandle` (`role=slider`), `CompareDivider`; `CompareContext`, `useComparePosition()`; re-exports the behaviour API. |
 
 ## Invariants
 

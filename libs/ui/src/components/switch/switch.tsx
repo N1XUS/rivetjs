@@ -20,7 +20,6 @@ import { LabelContext } from "@rivetjs/cdk/label";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { SwitchVariants } from "../../../styles/src/components/switch/index.ts";
@@ -41,7 +40,7 @@ interface SwitchContext {
   state?: SwitchFieldRenderProps;
 }
 
-const SwitchContext = resumableContext(createContext<SwitchContext>({}, { id: "rv-ui-switch" }));
+const SwitchContext = createContext<SwitchContext>({});
 
 type SwitchSlots = ReturnType<typeof switchVariants>;
 

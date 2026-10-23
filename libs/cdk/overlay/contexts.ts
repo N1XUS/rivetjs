@@ -5,14 +5,9 @@
 // Rivet:
 // - one tiny module (no component code): a trigger that provides `PopoverContext` does not pull the
 //   Popover component in (importing popover/index.tsx would register its own module state).
-// - every token is a `resumableContext` (ids `rv-overlay-trigger-state`, `rv-popover`,
-//   `rv-overlay-arrow`): a region re-created on a resumed page is re-provided with the value, so values
-//   must serialize — state objects (signals + JSON), `ref()` element refs, strings, numbers, booleans,
-//   inline-arrow closures.
 // - `OverlayArrowContext` carries the placement and RA's `arrowProps.style` offset as signals (they
 //   change after positioning); the arrow's own `style` wins over them, as in RAC.
 import { createContext, type Context, type Signal } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { Ref } from "@rivetjs/runtime/jsx-runtime";
 import type { ContextValue } from "../slots/index.tsx";
 import type { PlacementAxis } from "./position.ts";
@@ -20,7 +15,7 @@ import type { OverlayTriggerState } from "../state/overlays.ts";
 import type { PopoverProps } from "../popover/index.tsx";
 
 /** The overlay trigger state of the nearest DialogTrigger / MenuTrigger / Select / … (RAC `OverlayTriggerStateContext`). */
-export const OverlayTriggerStateContext = resumableContext(createContext<OverlayTriggerState | null>(null, { id: "rv-overlay-trigger-state" }));
+export const OverlayTriggerStateContext = createContext<OverlayTriggerState | null>(null);
 
 /** What a trigger component passes to its `<Popover>` (RAC `PopoverContextValue`). */
 export interface PopoverContextValue extends Omit<PopoverProps, "children" | "ref"> {
@@ -32,7 +27,7 @@ export interface PopoverContextValue extends Omit<PopoverProps, "children" | "re
 }
 
 /** Props from the nearest trigger component for its Popover (RAC `PopoverContext`). Popover clears it for its children. */
-export const PopoverContext = resumableContext(createContext<ContextValue<PopoverContextValue, HTMLElement>>(null, { id: "rv-popover" }));
+export const PopoverContext = createContext<ContextValue<PopoverContextValue, HTMLElement>>(null);
 
 /** What Popover / Tooltip pass to an `<OverlayArrow>` inside them (RAC `OverlayArrowContext`). */
 export interface OverlayArrowContextValue {
@@ -51,6 +46,4 @@ export interface ArrowOffset {
 }
 
 /** RAC `OverlayArrowContext` (default placement "bottom"). */
-export const OverlayArrowContext = resumableContext(
-  createContext<ContextValue<OverlayArrowContextValue, HTMLDivElement>>({ placement: "bottom" }, { id: "rv-overlay-arrow" }),
-);
+export const OverlayArrowContext = createContext<ContextValue<OverlayArrowContextValue, HTMLDivElement>>({ placement: "bottom" });

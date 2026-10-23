@@ -30,7 +30,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { ChevronRight } from "lucide";
 
@@ -58,7 +57,7 @@ type BreadcrumbsContext = {
   separator?: BreadcrumbsSeparator;
 };
 
-const BreadcrumbsContext = resumableContext(createContext<BreadcrumbsContext>({}, { id: "rv-ui-breadcrumbs" }));
+const BreadcrumbsContext = createContext<BreadcrumbsContext>({});
 
 type BreadcrumbsSlots = ReturnType<typeof breadcrumbsVariants>;
 let SLOTS: BreadcrumbsSlots | undefined;

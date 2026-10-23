@@ -18,7 +18,6 @@ import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { TagVariants } from "../../../styles/src/components/tag/index.ts";
@@ -40,7 +39,7 @@ type TagContext = {
   state?: TagRenderProps;
 };
 
-const TagContext = resumableContext(createContext<TagContext>({}, { id: "rv-ui-tag" }));
+const TagContext = createContext<TagContext>({});
 
 type TagSlots = ReturnType<typeof tagVariants>;
 const SLOTS: Record<string, TagSlots> = {};

@@ -8,7 +8,8 @@ import type { BrowserContext, Page } from "playwright";
 import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the "preloaded when visible" / cold-key checks expect the page's chunks fetched after load.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 const open = async (options: { cookie?: string; viewport?: { width: number; height: number } } = {}) => {
@@ -42,7 +43,7 @@ test("cold page: the first menu click needs no further chunk (preloaded when vis
   await page.waitForFunction(() => document.getElementById("pressed")?.textContent === "1");
   assert.deepEqual(
     // Sidebar / Button symbol chunks + the shared code only they import (build manifest; route chunks by default).
-    among(seen.scripts.slice(before), codeOf(/#(Sidebar\w*|Button)\$|^@rivetjs\/cdk\/sidebar\//)),
+    among(seen.scripts.slice(before), codeOf(/#(Sidebar\w*|Button)$|^@rivetjs\/cdk\/sidebar\//)),
     [],
     "sidebar chunks loaded by the first click",
   );

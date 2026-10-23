@@ -82,7 +82,7 @@ Supported names: every event of TypeScript's `HTMLElementEventMap` (lib.dom) as 
 - Legacy `webkit…` names are not included.
 
 - Other names, including lowercase `onclick` and wrong casing such as `onTransitionend`, fail with `Unknown native event: onclick`.
-- `onClickCapture` (any `…Capture`) listens in the capture phase; on resumed pages it records a capture entry (dispatched outermost-first).
+- `onClickCapture` (any `…Capture`) listens in the capture phase.
 - `window:onResize={fn}` and `document:onKeyDown={fn}` on any element listen on `window` or `document`.
 - `on:name={fn}`: custom events (custom elements, `dispatchEvent(new CustomEvent("name"))`); `name` is the exact event type, any case (`on:value-change`, `on:openChanged`); letters, digits, `-`, `_`. Never capture. Handler type: `CustomEvent`.
   - Server: not rendered. DOM: `addEventListener(name)` on the element.
@@ -92,14 +92,12 @@ Supported names: every event of TypeScript's `HTMLElementEventMap` (lib.dom) as 
 
 - `prop:name={value}` sets the element property `el.name = value` (custom element data, `scrollTop`, `indeterminate`…); updates when the value's signals change.
 - Server: not rendered, not evaluated in resumed modules (no attribute). DOM: set when the element is created.
-- Resume: compiled to a browser effect on the element (like `clientEffect`, runs at load/idle): the value expression runs in the browser and stays bound to the signals it reads. What it uses from the component must be :term[serializable]{id=serializable}, as for handlers. Inside components only.
+- Resume: set again when the component wakes up in the browser; the value expression then stays bound to the signals it reads. Inside components only.
 - Names: identifiers only. `prop:innerHTML`, `outerHTML`, `srcdoc`, `style`, `on…`, `__proto__` fail with `Unsafe or unsupported native attribute: prop:innerHTML`.
 - URL properties (`href`, `src`, `formAction`…) get the URL attribute rules: a literal unsafe value fails at build time (`Unsafe URL attribute`, RV1101); a dynamic one becomes `about:invalid#rivet`.
-- Pay per use: the helpers live in `@rivetjs/runtime/dom` and load with the page's symbol chunk; the resume runtime entry has no `prop:` or select-model code.
+- Pay per use: the helpers live in `@rivetjs/runtime/dom` and load with the component's chunk; the resume runtime entry has no `prop:` or select-model code.
 - Not inside spreads: write `prop:` and `on:` as explicit attributes.
-- Handlers never run on the server. Values they use from the component must be :term[serializable]{id=serializable}. See [Function is not serializable](../gotchas/function-is-not-serializable.md).
-- A handler must not create JSX: `JSX inside handlers, effects and computeds is not resumable`. Put the JSX in the component and switch it with a signal.
-- A handler cannot use `this`: ``Resumable code cannot capture `this` ``. Use `event.currentTarget` (the handler's element, also in resumed handlers) or `event.target`.
+- Handlers never run on the server. In the browser they run with the component's own values, built again when the component wakes up.
 
 ## model: bindings
 
@@ -187,7 +185,7 @@ Import these by name from `@rivetjs/runtime/dom` (the server build rewrites the 
 | `lazyComponent` | Component whose code loads on demand. |
 | `clientOnly` | Component that renders only in the browser, with an optional `fallback`. |
 
-`ChunkGroup` (`<ChunkGroup preload="visible">…</ChunkGroup>`) groups a part of the page into its own code chunk with `resume.chunks: "group"`.
+`ChunkGroup` renders its children; its grouping and `preload` have no effect: not yet on the derived model; tracked in plan M6.
 
 ## Compiler messages
 
@@ -196,10 +194,7 @@ Import these by name from `@rivetjs/runtime/dom` (the server build rewrites the 
 | Message | Cause |
 | --- | --- |
 | ``Browser global `window` is read during server rendering; move it into a handler, clientEffect or clientEvent`` | `window`, `document`, `localStorage`… in render code. See [Window is not defined](../gotchas/window-is-not-defined.md). |
-| ``Resumable code cannot capture `x`: class instances are not serializable`` | A handler uses an object created with `new` in the component (other than `Map`, `Set`, `Date`, `URL`, `URLSearchParams`, `RegExp`, typed arrays, `ArrayBuffer`, `DataView`, `Error`, or a data class declared in a component module). |
-| ``Cannot resume `x.field`: X instance holds a resource …`` (also "has a private field", "extends `Base`") | A handler uses an instance of a class from the component module that cannot resume as data: it reads `window` / `document` / `WebSocket` … while constructed, has a `#private` field, or extends a class that is not a data class of the same module. Create it inside the handler. |
 | `Spread children are not supported` | `{...items}` as children. |
-| `Cannot resume spread event handler onClick: …` | A function under an `onX` key in a spread, on a resumed page, that Rivet cannot rebuild in the browser (for example a `.bind(…)` result written inline in the object, or a function from a module that is not resume-compiled). Write it as an inline function in the object, a constant in the component, or pass it as `onClick={…}`. |
 | `Cannot resume two click handlers on one element …` | The same element gets `onClick` from a spread and from an attribute. Keep one. |
 | `Unsafe or unsupported native attribute: innerHTML` | `innerHTML`, `srcdoc`, `dangerouslySetInnerHTML`, or a `style` key in a spread. |
 | `style strings are not supported: use a style object …` | `style="…"` or a style string expression. |

@@ -54,10 +54,6 @@ export interface GeneratedEntry {
   readonly base?: string;
   /** `rivetRouter({ trailingSlash })` when `"never"` / `"always"` (the handler's 308s use the bundle's build-time constant; the static adapter reads this). */
   readonly trailingSlash?: Exclude<TrailingSlash, "ignore">;
-  /** `rivetRouter({ preload: { background } })`: the default `preload.background` of this app's pages. */
-  readonly preloadBackground?: number;
-  /** Document prefetch on (`rivetRouter({ prefetch })`): the default `preload.ahead` of this app's pages. */
-  readonly fetchAhead?: boolean;
   /** `rivetRouter({ routeRules })`: the app's route rules (JSON data; `createApp({ routeRules })` replaces them). */
   readonly routeRules?: RouteRules;
 }
@@ -103,22 +99,12 @@ export interface AppConfig {
   };
   readonly stream?: { deadline?: number };
   /**
-   * Preload planner. `background`: byte budget (minified) of `visible` chunks' static closures also prefetched at idle,
-   * in plan order (default 1 MiB, `0` off; Save-Data / 2G never). A function decides per page URL (`undefined`: default),
-   * e.g. `0` for embedded frames that a page shows many of. `lean` (per page URL when a function): nothing loads before
-   * the first interaction — no scheduled prefetch (eager / idle / visible / background) and no router fetch-ahead;
-   * handlers load on intent (pointer dwell, focus, touch) and interaction, as under Save-Data.
+   * Preload planner. `lean` (per page URL when a function): nothing loads before the first interaction — no runtime
+   * fetch-ahead (`data-fo` modulepreloads of the page's handler closures after `load`); handlers load on intent
+   * (pointer dwell, focus, touch) and interaction.
    */
   readonly preload?: {
-    readonly background?: number | ((url: URL) => number | undefined);
     readonly lean?: boolean | ((url: URL) => boolean | undefined);
-    /**
-     * Islands-only lean pages of a file-router app (bridge D-lean: the router's region + link listeners deferred until
-     * the first link intent / click) still fetch the runtime + router chunks ahead (low priority after `load`, fetched,
-     * never evaluated). On `resume.chunks: "route"` builds every page also fetches its own handler chunks ahead the
-     * same way. Default: the app's document prefetch (`rivetRouter({ prefetch })` on → true). Ignored with `lean`.
-     */
-    readonly ahead?: boolean;
   };
   /**
    * Content-Security-Policy for HTML pages, given the response's nonce (inline scripts carry it).
@@ -327,11 +313,8 @@ export function createApp(config: AppConfig): AppHandler {
     const exports = page.head ? (levels.get(page.head) ?? ranked([page.head], config.head)) : ranked([], config.head);
     // Root layout component entries stay in the browser (that layout never re-renders there).
     const persistent = new Set<object>();
-    const option = config.preload?.background ?? entry.preloadBackground;
-    const background = typeof option === "function" ? option(page.url) : option;
     const leanOption = config.preload?.lean;
     const lean = typeof leanOption === "function" ? leanOption(page.url) : leanOption;
-    const ahead = config.preload?.ahead ?? entry.fetchAhead;
     const run = () =>
       renderDocument(
         entry.page(page),
@@ -367,9 +350,7 @@ export function createApp(config: AppConfig): AppHandler {
           // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
           // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
           ...(config.stream ? { stream: config.stream } : page.deferred || page.shell ? { stream: {} } : {}),
-          ...(background !== undefined || lean || ahead
-            ? { preload: { ...(background !== undefined ? { background } : {}), ...(lean ? { lean } : {}), ...(ahead ? { ahead } : {}) } }
-            : {}),
+          ...(lean ? { preload: { lean } } : {}),
           signal,
           ...(nonce !== undefined ? { nonce } : {}),
           onError: (error: unknown) => {

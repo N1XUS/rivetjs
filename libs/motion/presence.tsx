@@ -7,7 +7,7 @@
 // `PresenceFor` keeps a derived row list (current rows ∪ exiting rows at their last index) over a plain `For` (no
 // runtime / `For` ABI change): one presence scope per row, a removed key's row leaves in place (after the row it
 // followed), then drops out; a key added back while its row leaves reverses it (same row, no duplicate).
-import { _regionState, computed, onCleanup, signal, untrack } from "@rivetjs/reactivity";
+import { computed, onCleanup, signal, untrack } from "@rivetjs/reactivity";
 import { For, Show } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { createTransition, TransitionScopeProvider, type TransitionScope } from "@rivetjs/kit/transition";
@@ -24,23 +24,17 @@ export interface PresenceProps {
   unmount?: boolean;
   /** After the exit finished and the content was removed. */
   onExitComplete?(): void;
-  /** @internal Shown before this instance was created (a resumed PresenceFor row): created hidden, it still exits. */
-  shown?: boolean;
   /** The content (a function: created while shown, inside the presence scope). */
   children: () => Content;
 }
 
 /** Content shown while `show`, kept until the exits of the Motion elements inside finished. */
 export function Presence(props: PresenceProps): JSX.Element {
-  // `shown` (PresenceFor on a resumed page re-creating its rows after a removal): the content was shown on the server;
-  // created already hidden, it starts shown and leaves a microtask later, so the exit still plays.
-  const leaving = signal(!!props.shown && !untrack(() => read(props.show)));
-  if (untrack(leaving)) queueMicrotask(() => leaving.set(false));
-  const show = () => leaving() || read(props.show);
+  const show = () => read(props.show);
   const t = createTransition(show, { unmount: props.unmount });
   const scope: TransitionScope = { ...t.scope, appear: untrack(() => props.initial !== false) };
   const children = props.children;
-  // Keyed per instance, like kit `TransitionPresence`: a resumed page re-creating this region builds new content.
+  // Keyed per instance, like kit `TransitionPresence`: each instance builds its own content.
   const instance = {};
   return (
     <Show when={() => t.mounted() && instance} keyed>
@@ -75,16 +69,7 @@ export function PresenceFor<T, K>(props: PresenceForProps<T, K>): JSX.Element {
   const done = signal(new Set<K>());
   // The rows are the items themselves (current + leaving), so `For`'s own item accessor reaches the children: it
   // resumes (a wrapper accessor would not be serializable in a resumed handler).
-  // `_regionState`: a resumed page re-creates this component on the first change (its root `For` has no region of
-  // its own); it continues from the server's rows, so a removed row still leaves in place.
-  const memory = _regionState(() => ({ rows: [] as { key: K; item: T }[] }));
-  // Re-created that way: the server's rows are on screen already (no entrance replay; only new keys enter), and the
-  // ones that are gone now still play their exit.
-  const server = new Set(memory.rows.map((row) => row.key));
-  const resumed = untrack(() => {
-    const now = keys();
-    return new Set(memory.rows.filter((row) => !now.has(row.key)).map((row) => row.key));
-  });
+  const memory = { rows: [] as { key: K; item: T }[] };
   const rows = computed(() => {
     const current = each();
     const gone = done();
@@ -122,8 +107,7 @@ export function PresenceFor<T, K>(props: PresenceForProps<T, K>): JSX.Element {
       {(item, index) => (
         <Presence
           show={() => keys().has(keyOf(item(), index()))}
-          initial={first.render ? (server.has(keyOf(item(), index())) ? false : initial) : true}
-          shown={first.render && resumed.has(keyOf(item(), index()))}
+          initial={first.render ? initial : true}
           onExitComplete={() => finished(keyOf(item(), index()))}
         >
           {() => props.children(item, index)}

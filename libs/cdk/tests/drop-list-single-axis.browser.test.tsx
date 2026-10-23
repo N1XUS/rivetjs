@@ -710,7 +710,7 @@ describe("Single-axis drop list", () => {
       const baseline = registered();
       const items = list.getSortedItems().length;
       const { row, element } = serverRow(listElement);
-      // The row's region died before the press replayed (its ref decoded reset, `dom-resume` `arm`).
+      // The row's region died before the press replayed.
       row.remove();
       element.set(undefined);
       const { x, y } = replayPress(row, element);

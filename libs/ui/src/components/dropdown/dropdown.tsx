@@ -29,7 +29,6 @@ import type { IconNode } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { DropdownVariants } from "../../../styles/src/components/dropdown/index.ts";
@@ -60,7 +59,7 @@ type DropdownContext = {
   inPopover?: boolean;
 };
 
-const DropdownContext = resumableContext(createContext<DropdownContext>({}, { id: "rv-ui-dropdown" }));
+const DropdownContext = createContext<DropdownContext>({});
 
 const ROOT_CONTEXT: DropdownContext = { inDropdown: true };
 const POPOVER_CONTEXT: DropdownContext = { inDropdown: true, inPopover: true };

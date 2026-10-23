@@ -2,8 +2,8 @@
 // (which provides `{ id }` to its pending ProgressBar) does not load the ProgressBar part, its behaviour and the
 // number formatter on pages without a ProgressBar.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext, type ContextValue } from "../slots/index.tsx";
+import { type ContextValue } from "../slots/index.tsx";
 import type { ProgressBarProps } from "./index.tsx";
 
 /** RAC `ProgressBarContext` (Button provides `{ id }` to its pending ProgressBar). */
-export const ProgressBarContext = resumableContext(createContext<ContextValue<ProgressBarProps, HTMLDivElement>>(null, { id: "rv-progress-bar" }));
+export const ProgressBarContext = createContext<ContextValue<ProgressBarProps, HTMLDivElement>>(null);

@@ -147,8 +147,13 @@ test("Performance tab: a layout shift and forced reflows name their components; 
 
     // Per-component table and interactions.
     await pane.locator('.perf-table tr[data-name="Gallery"] td.cls').filter({ hasNotText: "—" }).waitFor();
-    assert.equal(await pane.locator('.perf-table tr[data-name="Measure"] td.reflows').textContent(), "1");
-    await pane.locator('.interactions tbody tr[data-type="click"]', { has: panel.locator('.comp-link[data-comp="Measure"]') }).first().waitFor();
+    // Two Measure rows: the instance the resumed page adopted (its `clientEffect` booted it) and the client render's (the
+    // panel's Components tab switched the page); the handler's reflow counts on the live one.
+    await pane.locator('.perf-table tr[data-name="Measure"] td.reflows', { hasText: /^1$/ }).waitFor();
+    await pane
+      .locator('.interactions tbody tr[data-type="click"]', { has: panel.locator('.comp-link[data-comp="Measure"]') })
+      .first()
+      .waitFor();
     await page.screenshot({ path: ".artifacts/devtools-perf.png" });
 
     // Sorting by a column.
@@ -165,7 +170,9 @@ test("Performance tab: a layout shift and forced reflows name their components; 
     await panel.locator('.row[data-name="Measure"] .perf-badge').click();
     await pane.locator(".clear-focus", { hasText: "Only <Measure>" }).waitFor();
     // Only findings naming <Measure> (its reflow; also the shift that moved it, chunks after its click).
-    const named = await pane.locator("li.finding").evaluateAll((items) => items.map((li) => [li.getAttribute("data-kind"), !!li.querySelector('.comp-link[data-comp="Measure"]')]));
+    const named = await pane
+      .locator("li.finding")
+      .evaluateAll((items) => items.map((li) => [li.getAttribute("data-kind"), !!li.querySelector('.comp-link[data-comp="Measure"]')]));
     assert.ok(named.length > 0 && named.every(([, has]) => has), JSON.stringify(named));
     assert.ok(named.some(([kind]) => kind === "forced-reflow"));
 

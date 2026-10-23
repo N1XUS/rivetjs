@@ -21,7 +21,6 @@
 import { computed, createContext, onCleanup, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Provider, Show, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { Modal, ModalOverlay } from "../modal/index.tsx";
@@ -69,16 +68,16 @@ export * from "./behaviour.ts";
  * Contexts
  * ----------------------------------------------------------------------------------------------*/
 
-/** The lightbox state for the parts (id `rv-lightbox`). */
-export const LightboxContext = resumableContext(createContext<LightboxState | null>(null, { id: "rv-lightbox" }));
+/** The lightbox state for the parts. */
+export const LightboxContext = createContext<LightboxState | null>(null);
 
-/** One rendered slide (id `rv-lightbox-slide`): the slide, its index and its global position (offset = position − globalIndex). */
+/** One rendered slide: the slide, its index and its global position (offset = position − globalIndex). */
 export interface LightboxSlideContextValue {
   slide: LightboxSlide;
   index: number;
   position: number;
 }
-export const LightboxSlideContext = resumableContext(createContext<LightboxSlideContextValue | null>(null, { id: "rv-lightbox-slide" }));
+export const LightboxSlideContext = createContext<LightboxSlideContextValue | null>(null);
 
 /** The enclosing lightbox state (throws outside a lightbox). */
 export function useLightbox(): LightboxState {

@@ -408,7 +408,7 @@ export function start(): AgentHook {
   const page: PageMode = { resumed: false, switched: false };
   const detectPage = () => {
     page.resumed = document.querySelector('[data-rivet-dev="resume"]') !== null;
-    perf.resumed = page.resumed || document.querySelector('script[type="rivet/state"]') !== null;
+    perf.resumed = page.resumed || document.querySelector('script[type="rivet/boundaries"]') !== null;
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", detectPage, { once: true });
   else detectPage();
@@ -493,7 +493,13 @@ export function start(): AgentHook {
   };
 
   const handlers: Handlers = {
-    hello: () => ({ v: VERSION, mode: "serve", features: ["components", "signals", "updates", "hmr", "errors", "performance"], level: hook.level, session: session.id }),
+    hello: () => ({
+      v: VERSION,
+      mode: "serve",
+      features: ["components", "signals", "updates", "hmr", "errors", "performance"],
+      level: hook.level,
+      session: session.id,
+    }),
     "level.set": ({ level }) => {
       hook.level = level;
       return { level };
@@ -561,7 +567,9 @@ export function start(): AgentHook {
         // A stale prebuilt panel: it shows a banner from our `welcome`; say so in the page console too.
         if (v !== VERSION && !warnedVersion) {
           warnedVersion = true;
-          console.warn("Rivet DevTools: the panel speaks protocol v" + String(v) + ", this page agent v" + VERSION + ". Rebuild it: node libs/devtools/build.ts");
+          console.warn(
+            "Rivet DevTools: the panel speaks protocol v" + String(v) + ", this page agent v" + VERSION + ". Rebuild it: node libs/devtools/build.ts",
+          );
         }
         connect(from);
         if (from === popped) overlay.detach();

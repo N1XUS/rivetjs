@@ -119,7 +119,7 @@ describe("Breadcrumb DOM events (SSR)", () => {
     const html = await renderHtml(() => fixture.Handlers());
     const host = parse(html);
     assert.equal(host.querySelector("li")!.getAttribute("lang"), "en");
-    assert.match(html, /data-events="[^"]*pointerenter/);
+    assert.match(html, /<!--b\d+--><ol class="rv-Breadcrumbs"/, "the handler's component is a boundary");
   });
 });
 

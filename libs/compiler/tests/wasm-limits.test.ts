@@ -41,13 +41,13 @@ test("malformed compiler options are RV7001 diagnostics (P4)", () => {
   }
   const checked = check("export const A = () => <p/>;", { targets: ["edge" as never] });
   assert.equal(checked.diagnostics[0]!.code, "RV7001");
-  // JS-falsy `resume` leaves resume mode off.
+  // JS-falsy `resume` leaves resume off.
   for (const resume of [0, "", false, null]) {
     const result = compile("export const A = () => <button onClick={() => 1}/>;", { target: "server", resume: resume as never });
     assert.deepEqual(result.diagnostics, []);
-    assert.equal(result.symbols, undefined);
+    assert.equal(result.boundaries, undefined);
   }
-  assert.ok(compile("export const A = () => <button onClick={() => 1}/>;", { target: "server", resume: true as never }).symbols?.length);
+  assert.ok(compile("export const A = () => <button onClick={() => 1}/>;", { target: "server", resume: true as never }).boundaries?.length);
 });
 
 test("lone surrogates in the source compile (U+FFFD, same UTF-16 positions)", () => {

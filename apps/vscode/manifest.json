@@ -22,8 +22,12 @@
           "default": "client",
           "description": "Resume inlay hints: browser-only closures (client), every resume site (all), or none. Shown by the extension itself (independent of typescript.inlayHints.*); editor.inlayHints.enabled still applies."
         },
-        "rivet.typeAware": { "type": "boolean", "default": true, "description": "Warn when a resumable closure captures a value whose type resume state cannot carry (RV2101)." },
-        "rivet.regions": { "type": "boolean", "default": false, "description": "Tint code by where it runs on a resumed page: browser only vs server and browser." }
+        "rivet.typeAware": { "type": "boolean", "default": true, "description": "Type-aware checks: warn on internal links that match no route (RV3101)." },
+        "rivet.regions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Tint code by where it runs on a resumed page: browser only vs server and browser."
+        }
       }
     }
   }

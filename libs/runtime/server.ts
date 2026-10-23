@@ -22,6 +22,7 @@ import type { Owner } from "@rivetjs/reactivity";
 import { ROWS, SCOPED, _forListMount } from "./server-structural.ts";
 import type { ScopedRecord } from "./server-structural.ts";
 import { withRequestSignal } from "./server-async.ts";
+import { _trigger, EFFECT, EVENT } from "./server-trigger.ts";
 import { CAUGHT } from "./server-boundary.ts";
 import { ATTRIBUTE_UNIT_BYTES, INTEGER_BYTES, TEXT_UNIT_BYTES, putAttribute, putInt32, putSafeInteger, putText } from "./server-bytes.ts";
 import { TEXT_SPECIAL } from "./escape.ts";
@@ -33,6 +34,13 @@ export type { Ref, RefProp } from "./jsx-runtime.ts";
 export { Async, lazyComponent, clientOnly } from "./server-async.ts";
 export { Provider, For, Show, Switch, Match, Dynamic, Portal } from "./server-structural.ts";
 export { ErrorBoundary } from "./server-boundary.ts";
+/**
+ * `mount` (`@rivetjs/runtime/dom`) is browser-only: the server form exists so a resumable module that mounts from browser
+ * code (a handler's dynamic import, a module function) still links in a server build; calling it throws.
+ */
+export function mount(_factory: unknown, _container: unknown): never {
+  throw new Error("Rivet: mount() is browser-only; call it from a handler, clientEffect or clientEvent");
+}
 export { Suspense, startTransition, useTransition } from "./server-suspense.ts";
 export { resource } from "./server-resource.ts";
 export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource, ResourceState } from "./server-resource.ts";
@@ -150,42 +158,14 @@ export const ChunkGroup: (props: {
   children?: ServerValue;
 }) => ServerValue = (props) => props.children;
 /**
- * An element ref (see `@rivetjs/runtime/dom`). On the server no element exists: `r()` is undefined. In
- * resume renders `ref={r}` records the element (by its `data-r` id) for resumed captures of `r`.
+ * An element ref (see `@rivetjs/runtime/dom`). On the server no element exists: `r()` is undefined. The
+ * `rivet.ref` key marks it as a Rivet ref (cdk popover tells it from a callback ref by it).
  */
 const REF_CELL = Symbol.for("rivet.ref");
-type ServerRef = (() => undefined) & { id: number | null; region?: unknown; [REF_CELL]: unknown };
-// Captured, a ref encodes as a signal holding its element (resume `special` calls it with the ref first).
-// Shared, not a closure per ref: one function + two stores per `ref()` (motion SSR: refs were 8% of a row).
-const encodeRef = (r: ServerRef, encode: (value: unknown) => number) => ({
-  s: encode(r.id === null ? undefined : { [REF_CELL]: true, id: r.id, region: r.region }),
-});
 export function ref<T extends Element = HTMLElement>(): Ref<T> {
-  // Resume renders: `_rRef` attaches it (sets `id`).
-  const r = (() => undefined) as ServerRef;
-  r.id = null;
-  r[REF_CELL] = encodeRef;
+  const r = (() => undefined) as (() => undefined) & { [REF_CELL]?: true };
+  r[REF_CELL] = true;
   return r as unknown as Ref<T>;
-}
-/** Resume ABI (browser `_serverBranch`): never inside a resumed region re-creation on the server. */
-export function _serverBranch(): number | null | undefined {
-  return undefined;
-}
-/**
- * Compiler ABI (resume, `ref={expr}` that is not a local callback): a function that is not a `ref()`
- * would never run on the resumed page, so it becomes a cell that fails the render once its element
- * is recorded (`_rId`); anything else passes through to `_rRef`.
- */
-export function _refValue(value: unknown): unknown {
-  const CELL = Symbol.for("rivet.ref");
-  return typeof value === "function" && !(value as { [CELL]?: unknown })[CELL]
-    ? {
-        [CELL]: 1,
-        set id(_: number) {
-          throw new TypeError("Cannot resume a ref callback passed as a value; use ref()");
-        },
-      }
-    : value;
 }
 export { template, compiledTemplate, attribute } from "./template.ts";
 export { spreadAttributes, spreadChildren } from "./server-spread.ts";
@@ -1602,8 +1582,10 @@ export function reconstruct<T>(factory: () => T): () => T {
 }
 
 export function clientEffect(fn: () => void | (() => void) | Promise<unknown>, options?: { when?: ClientWhen }): void;
-/** Browser-only work never runs during server rendering. */
-export function clientEffect(): void {}
+/** Browser-only work never runs during server rendering; under a derived render it flags its boundary's client trigger. */
+export function clientEffect(_fn?: unknown, options?: { when?: ClientWhen }): void {
+  _trigger.on?.(options?.when, EFFECT);
+}
 /** Owned browser listener; never attaches on the server. `standalone: false`: alone it does not make the page resumable; `match`: target filter (`@rivetjs/runtime/dom`). */
 export function clientEvent<E extends Event = Event>(
   target: Window | Document | Element | `media:${string}`,
@@ -1619,8 +1601,10 @@ export function clientEvent<E extends Event = Event>(
     match?: string;
   },
 ): void;
-/** Browser-only listeners never attach during server rendering. */
-export function clientEvent(): void {}
+/** Browser-only listeners never attach during server rendering; under a derived render a standalone listener flags its boundary's client trigger. */
+export function clientEvent(_target?: unknown, _type?: unknown, _handler?: unknown, options?: { when?: ClientWhen; standalone?: boolean }): void {
+  if (options?.standalone !== false) _trigger.on?.(options?.when, EVENT);
+}
 /** Hand an element to a ref callback / `ref()` signal (see `@rivetjs/runtime/dom`). The server has no elements: only client
  * code paths (`clientEffect`, handlers) call it, so a server-compiled `.tsx` module importing it from `/dom` links. */
 export function bindRef(target: Element, fn: ((element: Element) => void) | null | undefined): void;

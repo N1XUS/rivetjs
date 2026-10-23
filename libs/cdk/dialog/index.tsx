@@ -5,7 +5,7 @@
 //   PopoverContext (`../overlay/contexts.ts`) and a `PressResponder` whose trigger props reach the user's
 //   `<Button>` (`aria-expanded` / `aria-controls` / `isPressed` as accessors, read in the button's bindings).
 //   State = `createMenuTriggerState` (react-stately useMenuTriggerState, so a menu inside the dialog can
-//   open submenus); the trigger ref is region state (`ref()`, serializable).
+//   open submenus); the trigger ref is a `ref()`.
 // - `Dialog`: useDialog = `dialogProps` (./behaviour.tsx) with slot ids (`createSlotId`): the Heading
 //   (`slot="title"`) and Text (`slot="description"`) mark them rendered (with their own `id` prop when set: RA
 //   mergeIds, the owner follows it). Server: the children are called inside the body Provider's slot, which runs
@@ -21,7 +21,7 @@
 // `render` (RAC DOMRenderProps, renderProps `undefined`) replaces the `<section>`. Deviations: an `[autofocus]` descendant is focused on mount (React's `autoFocus`); the iOS VoiceOver refocus and the focus-on-mount run from a client effect
 // (a server-rendered Dialog whose effect wakes after the user moved focus does not take it: `focusMovedByUser`);
 // in a collection's hidden build pass (`isHidden()`) DialogTrigger renders nothing (RAC `useIsHidden`).
-import { _regionState, untrack, useContext, type Signal } from "@rivetjs/reactivity";
+import { untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { createId, idSignal } from "../utils/id.ts";
@@ -114,7 +114,7 @@ export function DialogTrigger(props: DialogTriggerProps) {
   // This is needed to handle submenus.
   // Live props: a controlled `isOpen={open()}` stays live (accessor; `controllable` reads it, never writes it).
   const state = createMenuTriggerState({ isOpen: liveOptions(props, [], ["isOpen"]).isOpen, defaultOpen: props.defaultOpen, onOpenChange: props.onOpenChange });
-  const buttonRef = _regionState(() => createRef<HTMLButtonElement>());
+  const buttonRef = createRef<HTMLButtonElement>();
 
   // useOverlayTrigger({ type: "dialog" }): no aria-haspopup for dialogs; `aria-controls` while open.
   const overlayId = idSignal();

@@ -85,7 +85,6 @@ import {
   mergeRefValues,
   renderProps as resolveRenderProps,
   renderPropsOf,
-  resumableContext,
   type ClassNameOrFunction,
   type ContextValue,
   type RefValue,
@@ -186,9 +185,9 @@ export interface TabsProps
 }
 
 /** RAC `TabsContext`: props for a Tabs inside a component, optionally per slot. */
-export const TabsContext = resumableContext(createContext<ContextValue<Partial<TabsProps>, HTMLDivElement>>(null, { id: "rv-tabs" }));
+export const TabsContext = createContext<ContextValue<Partial<TabsProps>, HTMLDivElement>>(null);
 /** RAC `TabListStateContext`: the state of the enclosing Tabs (null outside one, and inside its panels). */
-export const TabListStateContext = resumableContext(createContext<TabListState | null>(null, { id: "rv-tab-list-state" }));
+export const TabListStateContext = createContext<TabListState | null>(null);
 
 /** Rivet (build pass): the node class of a Tab, told apart from other parts registering in the same pass. */
 class TabItemNode extends CollectionNode<unknown> {

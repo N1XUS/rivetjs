@@ -225,8 +225,8 @@ export function Drag<T = any>(props: DragProps<T>) {
     const el = element();
     if (el) dragMounted(el);
   });
-  if (!("id" in element)) {
-    // Client render (the server `ref()` carries an `id`). Angular creates the DragRef with the
+  if ((globalThis as { document?: unknown }).document !== undefined) {
+    // Browser (client render or a resumed page's adopt run; M6-CUT: the server `ref()` no longer carries an `id`). Angular creates the DragRef with the
     // directive, so an alternate root (`rootElementSelector`) starts a drag before the drag element
     // was ever pressed: presses on a watched root create the instance first (lazy-refs.ts).
     if (rootSelector !== undefined || config?.rootElementSelector !== undefined) watchRoot(element, () => read(rootSelector) ?? config?.rootElementSelector);

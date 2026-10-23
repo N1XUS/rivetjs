@@ -200,7 +200,7 @@ The scrolling stays the browser's. Keyboard scrolling (arrows, :kbd[PageDown], :
 - On a resumed page the area is inactive and runs no scroll-area code. It activates on the first `pointerenter`, `wheel` or `focusin` on the root, or `scroll` of the viewport. `auto` / `always` areas also activate when the root comes into view, because their first frame depends on measuring. On activation the scrollbars render, enable their axes, measure and show the thumbs. From then on the behaviour is Radix's.
 - The activating event is not lost. A `hover` area activated by the pointer shows its scrollbars at once. A `scroll` area activated by a scroll shows the scrolled axis.
 - The activation handlers resume with `preload="visible"`: their code is fetched when the area comes into view and runs only on the activating event. On a slow network (150 ms RTT, 4x CPU), the first hover shows the thumb in about 0.12 s; with nothing fetched before the event it took about 1.5 s. With `render` on the root or the viewport, put `preload="visible"` on your element to keep this.
-- Part state (visibility, measures, presence) is component-owned (`_regionState`), so a part that resume re-creates keeps it.
+- Part state (visibility, measures, presence) is component-owned, so it survives the part's first run in the browser.
 - Handlers you pass follow the usual rule: inline arrows or local consts.
 
 ## Upstream

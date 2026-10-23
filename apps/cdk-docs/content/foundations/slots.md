@@ -110,4 +110,3 @@ Parts keep RAC's default classes (`rv-Heading`, `rv-Text`, `rv-Label`, `rv-Separ
 
 - **Leaving `style` in a spread.** An element spread rejects `style`. Destructure it and bind `style={…}`.
 - **Storing JSX with a `Show` in a const and inserting it later.** On resumed pages that region stops updating. Render it inline.
-- **Passing an inline arrow as `createSlotId` deps.** It is not serializable. Pass the signal itself.

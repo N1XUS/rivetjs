@@ -14,17 +14,7 @@ import { createColorAreaState, getDisplayColor, isDragging, type ColorAreaState 
 import { useLocale } from "@rivetjs/cdk/i18n";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import {
-  Provider,
-  mergeRefValues,
-  resumableContext,
-  contextProps,
-  renderPropsOf,
-  type ContextValue,
-  type RefValue,
-  type RenderProps,
-  type SlotProps,
-} from "../slots/index.tsx";
+import { Provider, mergeRefValues, contextProps, renderPropsOf, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 import { InternalColorThumbContext } from "../color-thumb/index.tsx";
 import {
   colorAreaGroupLabels,
@@ -83,9 +73,9 @@ export interface ColorAreaProps
 }
 
 /** RAC `ColorAreaContext`. */
-export const ColorAreaContext = resumableContext(createContext<ContextValue<Partial<ColorAreaProps>, HTMLDivElement>>(null, { id: "rv-color-area" }));
+export const ColorAreaContext = createContext<ContextValue<Partial<ColorAreaProps>, HTMLDivElement>>(null);
 /** RAC `ColorAreaStateContext`. */
-export const ColorAreaStateContext = resumableContext(createContext<ColorAreaState | null>(null, { id: "rv-color-area-state" }));
+export const ColorAreaStateContext = createContext<ColorAreaState | null>(null);
 
 const OWNED = ["style", "id", "onPointerDown", "render"] as const;
 

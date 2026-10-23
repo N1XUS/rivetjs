@@ -15,7 +15,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ArrowUpRight } from "lucide";
 
 import type { LinkVariants } from "../../../styles/src/components/link/index.ts";
@@ -33,7 +32,7 @@ interface LinkContext {
   inLink?: boolean;
 }
 
-const LinkContext = resumableContext(createContext<LinkContext>({}, { id: "rv-ui-link" }));
+const LinkContext = createContext<LinkContext>({});
 
 const LINK_CONTEXT_VALUE: LinkContext = { inLink: true };
 

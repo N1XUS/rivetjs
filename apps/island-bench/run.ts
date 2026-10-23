@@ -33,7 +33,7 @@ const { values: args } = parseArgs({
     phases: { type: "string", default: "build,server,browser" },
     lanes: {
       type: "string",
-      default: "rivet-bridge-react,rivet-bridge-react-full,astro-react,next,rivet-native,rivet-bridge-preact,rivet-bridge-preact-p10,astro-preact",
+      default: "rivet-bridge-react,astro-react,next,rivet-native,rivet-bridge-preact,rivet-bridge-preact-p10,astro-preact",
     },
     seconds: { type: "string", default: "5" },
     rounds: { type: "string", default: "3" },
@@ -68,22 +68,6 @@ const LANES: Lane[] = [
     serve: { cmd: [node, "apps/island-bench/serve-rivet.ts", "apps/island-bench/dist/rivet-bridge-react", "4431"], cwd: repo, ready: /ready/ },
     installed: () => true,
     missing: "",
-  },
-  // T7b baseline: the bridge lane's build and manifest, served by an SSR bundle copy with `offerLean` stubbed
-  // (`serve-rivet.ts` `IB_FULL_TAIL=1`), so the server keeps the full resume driver (the pre-T7b server work and tail:
-  // state script + resume loader + runtime chunks) on the same client bundle.
-  {
-    name: "rivet-bridge-react-full",
-    port: 4435,
-    build: null,
-    serve: {
-      cmd: [node, "apps/island-bench/serve-rivet.ts", "apps/island-bench/dist/rivet-bridge-react", "4435"],
-      cwd: repo,
-      ready: /ready/,
-      env: { IB_FULL_TAIL: "1" },
-    },
-    installed: () => existsSync(resolve(here, "dist/rivet-bridge-react/client/.vite/rivet-resume.json")),
-    missing: "not built: build the rivet-bridge-react lane first (--phases build --lanes rivet-bridge-react)",
   },
   {
     name: "astro-react",

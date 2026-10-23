@@ -1,13 +1,11 @@
-// G10: class: / style: directives, class objects / arrays and style objects on server, DOM and
-// resumed pages (CSSOM writes, so a strict style-src CSP does not block DOM / resumed styles).
+// G10: class: / style: directives, class objects / arrays and style objects on server and DOM
+// (CSSOM writes, so a strict style-src CSP does not block DOM styles).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { compile } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
-import { resumableToString } from "@rivetjs/runtime/server-resume";
-import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileResume, compileSymbolModule, importServer, symbolChunks, symbolUrls } from "./resume/compile.ts";
+import { importServer } from "./resume/compile.ts";
 import { withPage, rewrite } from "./resume/harness.ts";
 import type { Served } from "./resume/harness.ts";
 
@@ -96,59 +94,15 @@ test("DOM: classList toggles, CSSOM properties (under a strict style-src CSP), m
     await page.waitForFunction(() => (window as { ready?: boolean }).ready);
     for (const name of names) await checks[name](page);
     // The policy is in force: a style attribute from markup is ignored.
-    assert.equal(await page.evaluate(() => ((document.body.insertAdjacentHTML("beforeend", '<b id="csp" style="color:red">x</b>'), (document.querySelector("#csp") as HTMLElement).style.color))), "");
+    assert.equal(
+      await page.evaluate(
+        () => (
+          document.body.insertAdjacentHTML("beforeend", '<b id="csp" style="color:red">x</b>'),
+          (document.querySelector("#csp") as HTMLElement).style.color
+        ),
+      ),
+      "",
+    );
     assert.deepEqual(errors, []);
   });
-});
-
-const resumeDom = compileResume(source, "dom", "src/style-class.tsx");
-const resumeServer = await importServer<Record<Name, Component>>(compileResume(source, "server", "src/style-class.tsx").code);
-const byComponent = symbolChunks(resumeDom.symbols);
-const resumeFiles: Record<string, Served> = {
-  "/fixture.mjs": rewrite(resumeDom.code),
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
-};
-for (const [path, symbols] of Object.entries(byComponent)) resumeFiles[path] = rewrite(compileSymbolModule(symbols, "/fixture.mjs"));
-const manifest: ResumeManifest = {
-  hash: "test",
-  runtime: "/rt.js",
-  symbols: symbolUrls(resumeDom.symbols),
-};
-for (const name of names)
-  resumeFiles["/" + name] = "<!doctype html><html><head></head><body>" + (await resumableToString(() => resumeServer[name]() as never, { manifest })) + "</body></html>";
-
-test("resume: the server markup carries the merged attributes; the element binding resumes classList / CSSOM", async () => {
-  assert.match(resumeFiles["/Toggles"] as string, /<p id="t" class="base on" style="color:red;--rv-x:1;margin-top:1px;background-image:none" data-r="\d+">t<\/p>/);
-  assert.match(resumeFiles["/Spread"] as string, /<div id="sp" class="s1" title="one" style="color:green" data-r="\d+">/);
-  await withPage(resumeFiles, async (page) => {
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    for (const name of names) {
-      await page.goto("http://rivet.test/" + name);
-      await checks[name](page);
-    }
-    assert.deepEqual(errors, []);
-  });
-});
-
-test("pay-per-use: the resume runtime entries carry no class / style directive code; only spread support carries the style encoder", async () => {
-  const { rolldown } = await import("rolldown");
-  const bundle = async (code: string): Promise<string> => {
-    const build = await rolldown({
-      input: "entry", platform: "node", logLevel: "silent",
-      external: [/^node:/], resolve: { conditionNames: ["import", "production", "default"] },
-      transform: { define: { "process.env.NODE_ENV": '"production"' } },
-      plugins: [{ name: "entry", resolveId: (id) => (id === "entry" ? id : null), load: (id) => (id === "entry" ? code : null) }],
-    });
-    const { output } = await build.generate({ format: "esm", minify: true });
-    return output.map((chunk) => ("code" in chunk ? chunk.code : "")).join("\n");
-  };
-  const at = (file: string) => JSON.stringify(new URL(file, import.meta.url).pathname);
-  // Whole dom-resume entry; server-resume without `_rSpread` (a spread's `style` key encodes through `_style`).
-  const entries = [`export * from ${at("../dom-resume.ts")};`, `export { resumableToString, renderResumable, _rBind, _rAttr, _rOn, _rFn } from ${at("../server-resume.ts")};`];
-  for (const entry of entries) {
-    const code = await bundle(entry);
-    for (const marker of ["classList", "setProperty", "Unsafe style property", "image-set"]) assert.ok(!code.includes(marker), `${entry} contains ${marker}`);
-  }
-  assert.ok((await bundle(`export { _rSpread } from ${at("../server-resume.ts")};`)).includes("image-set"), "_rSpread encodes style objects");
 });

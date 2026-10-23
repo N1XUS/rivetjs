@@ -30,10 +30,10 @@ test(
       page.on("request", (request) => request.resourceType() === "document" && documents.push(new URL(request.url()).pathname));
       const mark = () => page.evaluate(() => ((window as unknown as { mark?: number }).mark = 1));
       const marked = () => page.evaluate(() => (window as unknown as { mark?: number }).mark === 1);
-      // Warm: the runtime started and the link's handler chunk is live (intent on the link, then idle).
+      // Warm: the runtime started and the link's handler chunk is live (intent: focus on the link, then idle).
       const warm = async (target: Page, link: string) => {
-        await target.hover(link);
-        await target.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+        await target.focus(link);
+        await target.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
         // No new resource for 300 ms (the hinted chunks landed; `networkidle` never settles here).
         await target.waitForFunction(
           () => {
@@ -58,7 +58,7 @@ test(
         const source = await readFile(root + ".rivet/app.tsx", "utf8");
         assert.match(
           source,
-          /clientEvent\(document, "click", \(event: MouseEvent\) => event\.cancelBubble && .*\{ capture: true, preload: "intent", match: "a" \}\);/,
+          /clientEvent\(document, "click", \(event: MouseEvent\) => _onStopped\(event, \(\) => .*\), \{ capture: true, preload: "intent", match: "a" \}\);/,
         );
       });
 

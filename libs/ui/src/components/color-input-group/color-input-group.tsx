@@ -15,7 +15,6 @@ import type { InputProps as InputPrimitiveProps, InputRenderProps } from "@rivet
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ColorInputGroupVariants } from "../../../styles/src/components/color-input-group/index.ts";
 import { colorInputGroupVariants } from "../../../styles/src/components/color-input-group/index.ts";
@@ -34,7 +33,7 @@ type ColorInputGroupContext = {
   variant?: ColorInputGroupVariants["variant"];
 };
 
-const ColorInputGroupContext = resumableContext(createContext<ColorInputGroupContext>({}, { id: "rv-ui-color-input-group" }));
+const ColorInputGroupContext = createContext<ColorInputGroupContext>({});
 
 type ColorInputGroupSlots = ReturnType<typeof colorInputGroupVariants>;
 

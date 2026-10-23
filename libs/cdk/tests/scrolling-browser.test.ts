@@ -3,7 +3,7 @@
 // autosize in a <ul>, appendOnly, ancestor-element and window scrolling.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
-import { stories, watch, libraryScripts, type Stories } from "./harness.ts";
+import { stories, watch, libraryImports, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -16,17 +16,23 @@ test("viewport: server range, no library JS before scroll, scroll renders the wi
   const page = await s.browser.newPage();
   const seen = watch(page);
   await page.goto(s.origin + "/scrolling");
-  assert.deepEqual(await texts(page, "#fixed .row"), ["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7"], "200px + 200px buffer at 50px");
+  assert.deepEqual(
+    await texts(page, "#fixed .row"),
+    ["Item 0", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7"],
+    "200px + 200px buffer at 50px",
+  );
   assert.equal(await page.$eval("#fixed .cdk-virtual-scroll-spacer", (el) => (el as HTMLElement).style.height), "500000px");
   assert.equal(await page.getAttribute("#fixed", "class"), "cdk-virtual-scroll-viewport cdk-virtual-scrollable cdk-virtual-scroll-orientation-vertical vp");
-  assert.deepEqual(libraryScripts(seen), [], "no library code before interaction");
+  assert.deepEqual(await libraryImports(page), [], "no library code imported before interaction");
   // Scroll: the engine wakes, renders rows 98.. and translates the wrapper.
   await page.$eval("#fixed", (el) => (el.scrollTop = 5000));
   await page.waitForFunction(() => document.querySelector("#fixed .row")?.textContent?.trim() === "Item 98");
   assert.equal(await page.$eval("#fixed .cdk-virtual-scroll-content-wrapper", (el) => (el as HTMLElement).style.transform), "translateY(4900px)");
   await page.waitForFunction(() => document.querySelector("#fixed-index")?.textContent === "100");
   // Keyed reuse: a row that stays in range keeps its DOM node.
-  await page.evaluate(() => ((window as unknown as { kept: Element }).kept = [...document.querySelectorAll("#fixed .row")].find((el) => el.textContent!.trim() === "Item 105")!));
+  await page.evaluate(
+    () => ((window as unknown as { kept: Element }).kept = [...document.querySelectorAll("#fixed .row")].find((el) => el.textContent!.trim() === "Item 105")!),
+  );
   await page.$eval("#fixed", (el) => (el.scrollTop = 5150));
   await settle(page);
   assert.ok(await page.evaluate(() => (window as unknown as { kept: Element }).kept.isConnected), "row node reused");
@@ -49,7 +55,11 @@ test("viewport: scrollToIndex / scrollToOffset buttons, data shrink keeps a vali
   await page.waitForFunction(() => document.querySelector("#fixed")!.scrollTop === 1000);
   await page.waitForFunction(() => document.querySelector("#fixed-index")?.textContent === "20");
   await page.click("#shrink");
-  await page.waitForFunction(() => document.querySelector("#fixed .cdk-virtual-scroll-spacer") && (document.querySelector("#fixed .cdk-virtual-scroll-spacer") as HTMLElement).style.height === "1000px");
+  await page.waitForFunction(
+    () =>
+      document.querySelector("#fixed .cdk-virtual-scroll-spacer") &&
+      (document.querySelector("#fixed .cdk-virtual-scroll-spacer") as HTMLElement).style.height === "1000px",
+  );
   await settle(page);
   const rows = await texts(page, "#fixed .row");
   assert.ok(rows.length > 0 && rows.every((t) => Number(t.replace("Item ", "")) < 20), rows.join());

@@ -48,7 +48,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { ChevronUp } from "lucide";
 import { cx } from "tailwind-variants/lite";
@@ -69,7 +68,7 @@ interface TableContext {
   variant?: TableVariants["variant"];
 }
 
-const TableContext = resumableContext(createContext<TableContext>({}, { id: "rv-ui-table" }));
+const TableContext = createContext<TableContext>({});
 
 type TableSlots = ReturnType<typeof tableVariants>;
 const SLOTS: Record<string, TableSlots> = {};

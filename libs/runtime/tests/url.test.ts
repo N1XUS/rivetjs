@@ -8,11 +8,11 @@ import { build } from "esbuild";
 import { chromium } from "playwright";
 import { compile } from "@rivetjs/compiler";
 
-const UNSAFE_URL = "Unsafe URL attribute: javascript: / vbscript: URLs and data: URLs (except image / video / audio data on media elements) are rejected; use an http(s), relative or mailto: URL, or an event handler";
+const UNSAFE_URL =
+  "Unsafe URL attribute: javascript: / vbscript: URLs and data: URLs (except image / video / audio data on media elements) are rejected; use an http(s), relative or mailto: URL, or an event handler";
 import { renderToString, renderToWriter, template, attribute, Dynamic } from "../server.ts";
-import { resumableToString, type ResumeManifest } from "../server-resume.ts";
 import { unsafeUrl, INVALID_URL } from "../url.ts";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { importServer } from "./resume/compile.ts";
 
 const PNG = "data:image/png;base64,iVBORw0KGgo=";
 const SVG = "data:image/svg+xml,<svg onload=alert(1)>";
@@ -21,7 +21,8 @@ test("unsafeUrl: schemes, control characters, lists and media data: types", () =
   const unsafe = (name: string, value: string, media = false) => unsafeUrl(name, value, media);
   for (const value of ["javascript:x", " JAVASCRIPT:x", "java\nscript:x", "\u0000\tjavascript:x", "vbscript:x", "data:text/html,x", "\u007fdata:x"])
     assert.ok(unsafe("href", value), value);
-  for (const value of ["/ok", "https://x/javascript:", "javascript", "#data:x", "mailto:a@b", "about:blank"]) assert.equal(unsafe("href", value), undefined, value);
+  for (const value of ["/ok", "https://x/javascript:", "javascript", "#data:x", "mailto:a@b", "about:blank"])
+    assert.equal(unsafe("href", value), undefined, value);
   assert.equal(unsafe("href", " Javascript:x"), "Javascript");
   assert.equal(unsafe("title", "javascript:x"), undefined);
   // data: media types only in a media context, never svg.
@@ -40,14 +41,12 @@ test("unsafeUrl: schemes, control characters, lists and media data: types", () =
   assert.equal(unsafe("ping", "https://a/p https://b/p"), undefined);
   assert.equal(unsafe("values", "#a;javascript:alert(1)"), "javascript");
   assert.equal(unsafe("values", "0;10;20"), undefined);
-  for (const name of ["to", "from", "by", "data", "formaction", "xlink:href", "poster", "action"]) assert.equal(unsafe(name, "javascript:x"), "javascript", name);
+  for (const name of ["to", "from", "by", "data", "formaction", "xlink:href", "poster", "action"])
+    assert.equal(unsafe(name, "javascript:x"), "javascript", name);
 });
 
 test("server: unsafe dynamic URLs render as about:invalid#rivet (no rejection)", async () => {
-  assert.equal(
-    await renderToString(template(["<a", ">x</a>"], [attribute("href", " java\tscript:alert(1)")])),
-    `<a href="${INVALID_URL}">x</a>`,
-  );
+  assert.equal(await renderToString(template(["<a", ">x</a>"], [attribute("href", " java\tscript:alert(1)")])), `<a href="${INVALID_URL}">x</a>`);
   assert.equal(await renderToString(template(["<img", ">"], [attribute("src", PNG, "media")])), `<img src="${PNG}">`);
   assert.equal(await renderToString(template(["<img", ">"], [attribute("src", SVG, "media")])), `<img src="${INVALID_URL}">`);
   assert.equal(await renderToString(template(["<iframe", ">"], [attribute("src", PNG)])), `<iframe src="${INVALID_URL}">`);
@@ -132,27 +131,7 @@ test("server (compiled, list mounts on and off): every URL vector is neutralized
   }
 });
 
-test("server-resume: resumed attribute bindings are neutralized with the media rule", async () => {
-  const source = `
-    import { signal } from "@rivetjs/reactivity";
-    export function Pic({ start }) {
-      const u = signal(start);
-      return <p><img src={u()} onClick={() => u.set("/x.png")} /><a href={u()}>a</a></p>;
-    }`;
-  const manifest: ResumeManifest = {
-    hash: "h",
-    runtime: "/rt.js",
-    symbols: Object.fromEntries(compileResume(source, "dom").symbols.map((s) => [s.id, "/c.js"])),
-  };
-  const mod = await importServer<{ Pic: (props: { start: string }) => never }>(compileResume(source, "server").code);
-  const unsafe = await resumableToString(() => mod.Pic({ start: "javascript:x" }), { manifest });
-  assert.match(unsafe, /<img src="about:invalid#rivet" data-r="0"><a href="about:invalid#rivet"/);
-  const png = await resumableToString(() => mod.Pic({ start: PNG }), { manifest });
-  assert.match(png, /<img src="data:image\/png;base64,iVBORw0KGgo=" data-r="0"><a href="about:invalid#rivet"/);
-});
-
-const diagnostics = (source: string, target: "server" | "dom") =>
-  compile(source, { target, filename: "static.tsx" }).diagnostics.map((d) => d.message);
+const diagnostics = (source: string, target: "server" | "dom") => compile(source, { target, filename: "static.tsx" }).diagnostics.map((d) => d.message);
 test("static: unsafe literals are compile errors (both targets); media data: literals compile", () => {
   const rejected = [
     `<a href="javascript:alert(1)">x</a>`,
@@ -172,8 +151,7 @@ test("static: unsafe literals are compile errors (both targets); media data: lit
     `<link rel="preload" as="image" imagesrcset="data:image/png,x 1x" />`,
   ];
   for (const jsx of rejected)
-    for (const target of ["server", "dom"] as const)
-      assert.deepEqual(diagnostics(`export const v = ${jsx};`, target), [UNSAFE_URL], `${target} ${jsx}`);
+    for (const target of ["server", "dom"] as const) assert.deepEqual(diagnostics(`export const v = ${jsx};`, target), [UNSAFE_URL], `${target} ${jsx}`);
   const accepted = [
     `<img src="${PNG}" />`,
     `<img srcset="${PNG} 1x, b.png 2x" />`,
@@ -263,24 +241,22 @@ function checkDom(result: Record<string, unknown>) {
 }
 
 test(`DOM (production): unsafe URLs are neutralized without throwing, silently`, async () => {
-    const { result, warnings } = await run(await bundle(dom, []));
-    checkDom(result);
-    assert.deepEqual(warnings, []);
-  });
-
+  const { result, warnings } = await run(await bundle(dom, []));
+  checkDom(result);
+  assert.deepEqual(warnings, []);
+});
 
 test(`DOM (development): same neutralization; one warning per attribute and scheme naming the component`, async () => {
-    const { result, warnings: all } = await run(await bundle(dom, ["development"]));
-    checkDom(result);
-    // URL warnings only (the dev a11y audit also reports on this fixture's markup).
-    const warnings = all.filter((w) => !w.startsWith("Rivet a11y"));
-    const href = warnings.filter((w) => /unsafe javascript: URL in href in <Page>/.test(w));
-    assert.equal(href.length, 1, warnings.join("\n"));
-    assert.ok(warnings.some((w) => /unsafe vbscript: URL in href in <Page>/.test(w)));
-    assert.ok(warnings.some((w) => /unsafe data: URL in src in <Page>/.test(w)));
-    assert.equal(new Set(warnings).size, warnings.length);
-  });
-
+  const { result, warnings: all } = await run(await bundle(dom, ["development"]));
+  checkDom(result);
+  // URL warnings only (the dev a11y audit also reports on this fixture's markup).
+  const warnings = all.filter((w) => !w.startsWith("Rivet a11y"));
+  const href = warnings.filter((w) => /unsafe javascript: URL in href in <Page>/.test(w));
+  assert.equal(href.length, 1, warnings.join("\n"));
+  assert.ok(warnings.some((w) => /unsafe vbscript: URL in href in <Page>/.test(w)));
+  assert.ok(warnings.some((w) => /unsafe data: URL in src in <Page>/.test(w)));
+  assert.equal(new Set(warnings).size, warnings.length);
+});
 
 // Spread attributes (`{...x}`): the same neutralization, and the same `#dev` warning (once per
 // attribute and scheme); production stays silent.
@@ -369,19 +345,17 @@ const domSpreadExpected = [
 ];
 
 test(`DOM spread (production): unsafe URLs are neutralized, silently`, async () => {
-    const { result, warnings } = await run(await bundle(domSpread, []));
-    assert.deepEqual(result.out, domSpreadExpected);
-    assert.deepEqual(warnings, []);
-  });
-
+  const { result, warnings } = await run(await bundle(domSpread, []));
+  assert.deepEqual(result.out, domSpreadExpected);
+  assert.deepEqual(warnings, []);
+});
 
 test(`DOM spread (development): same neutralization; one warning per attribute and scheme naming the component`, async () => {
-    const { result, warnings } = await run(await bundle(domSpread, ["development"]));
-    assert.deepEqual(result.out, domSpreadExpected);
-    assert.deepEqual(
-      // The dev a11y checks also warn here (the test <img> has no alt); only URL warnings count.
-      warnings.filter((w) => !w.startsWith("Rivet a11y")).map((w) => /unsafe (\w+): URL in (\S+ in <\w+>)/.exec(w)?.slice(1).join(" ")),
-      ["javascript href in <Spread>", "data href in <Spread>", "vbscript ping in <Spread>", "data src in <Img>"],
-    );
-  });
-
+  const { result, warnings } = await run(await bundle(domSpread, ["development"]));
+  assert.deepEqual(result.out, domSpreadExpected);
+  assert.deepEqual(
+    // The dev a11y checks also warn here (the test <img> has no alt); only URL warnings count.
+    warnings.filter((w) => !w.startsWith("Rivet a11y")).map((w) => /unsafe (\w+): URL in (\S+ in <\w+>)/.exec(w)?.slice(1).join(" ")),
+    ["javascript href in <Spread>", "data href in <Spread>", "vbscript ping in <Spread>", "data src in <Img>"],
+  );
+});

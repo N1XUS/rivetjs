@@ -31,7 +31,6 @@ import type {
 } from "@rivetjs/cdk/scroll-area";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ScrollAreaVariants } from "../../../styles/src/components/scroll-area/index.ts";
 import { scrollAreaVariants } from "../../../styles/src/components/scroll-area/index.ts";
@@ -61,7 +60,7 @@ interface ScrollAreaContext {
 }
 
 /** The root's viewport options (plain data, resumable). */
-const ScrollAreaContext = resumableContext(createContext<ScrollAreaContext>({}, { id: "rv-ui-scroll-area" }));
+const ScrollAreaContext = createContext<ScrollAreaContext>({});
 
 /* -------------------------------------------------------------------------------------------------
  * ScrollArea Root

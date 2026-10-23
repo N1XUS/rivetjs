@@ -126,7 +126,6 @@ export function Other(props) {
       resume: { module: "src/Counter.react.tsx.island" },
     } as never) as unknown as {
       diagnostics: unknown[];
-      symbols?: { id: string }[];
       code: string;
     };
     assert.deepEqual(result.diagnostics, []);
@@ -134,11 +133,10 @@ export function Other(props) {
   };
   const server = ids("server"),
     dom = ids("dom");
-  // The loaders resume by reference (`_rMod`), with the same ids on both targets.
+  // Both targets keep the module-level loaders (the derived adopt run calls the facade's own code: nothing to serialize).
   for (const name of ["load_Counter", "load_Other"]) {
-    const id = (dom.symbols ?? []).find((symbol) => symbol.id.includes("#" + name))?.id;
-    assert.ok(id, name + ": " + JSON.stringify(dom.symbols?.map((s) => s.id)));
-    assert.ok(server.code.includes(JSON.stringify(id)), name + " id on the server: " + id);
+    assert.ok(dom.code.includes(name), name + " on the DOM target");
+    assert.ok(server.code.includes(name), name + " on the server target");
   }
 });
 

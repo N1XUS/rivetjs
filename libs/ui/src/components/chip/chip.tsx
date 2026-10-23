@@ -13,7 +13,6 @@
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ChipVariants } from "../../../styles/src/components/chip/index.ts";
 import { chipVariants } from "../../../styles/src/components/chip/index.ts";
@@ -33,7 +32,7 @@ interface ChipContext {
   variant?: ChipVariants["variant"];
 }
 
-const ChipContext = resumableContext(createContext<ChipContext>({}, { id: "rv-ui-chip" }));
+const ChipContext = createContext<ChipContext>({});
 
 type ChipSlots = ReturnType<typeof chipVariants>;
 

@@ -1107,29 +1107,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         Some(Expr::call(&self.v2("_scoped"), vec![value]))
     }
 
-    /// TERNARY-MEMO on resumed pages: in a resume symbol module (`Options::symbols`), a binding symbol
-    /// `export const S = (captures) => () => (cond)` (resume.rs Bind / Region bodies) whose conditional has a JSX
-    /// operand becomes `(captures) => _cond(() => test, mode, (v) => …)`: the symbol returns the memo's accessor, which
-    /// the resumed region (`dom-resume.ts` → `_region`) runs as its read — so after activation the region re-creates its
-    /// content only when the rendered branch changes, as on a client mount. Only the outer arrow initializing a
-    /// declarator, the inner arrow without parameters and with a concise body; anything else is unchanged.
-    pub(super) fn symbol_cond_v2(&mut self, id: NodeId, outer: &'a ArrowFunctionExpression<'a>) -> Option<Expr> {
-        if self.server || !outer.expression || !matches!(self.tree.parent_kind(id), Some(AstKind::VariableDeclarator(_))) {
-            return None;
-        }
-        let Some(Statement::ExpressionStatement(body)) = outer.body.statements.first() else { return None };
-        let Expression::ArrowFunctionExpression(inner) = strip_parens(&body.expression) else { return None };
-        if !inner.expression || inner.r#async || !inner.params.items.is_empty() || inner.params.rest.is_some() {
-            return None;
-        }
-        let Some(Statement::ExpressionStatement(read)) = inner.body.statements.first() else { return None };
-        let value = self.cond_v2(&read.expression)?;
-        let span = outer.span;
-        let head = self.tree.text_of(Span::new(span.start, inner.span.start)).to_string();
-        let tail = self.tree.text_of(Span::new(inner.span.end, span.end)).to_string();
-        Some(Expr::Func(format!("{head}{}{tail}", value.print())))
-    }
-
     fn cond_call(&mut self, test: Expr, mode: usize, v: String, body: String) -> Expr {
         let cond = self.v2("_cond");
         Expr::call(&cond, vec![Expr::thunk(test), Expr::Num(mode), Expr::Arrow(vec![v], Box::new(Expr::Raw(body)))])
@@ -1400,11 +1377,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
     /// F3: `local.name` (a static, non-optional member of a never-reassigned enclosing-function local, declared
     /// before the expression: the `_fx1` capture rule) → `(local, name)`; the object is captured at the call.
     fn member_prop(&self, e: &'a Expression<'a>) -> Option<(String, String)> {
-        // Not on resumed pages: passing `local` whole to the factory would turn the resume site's narrow member
-        // capture (`local.name`) into a whole-object capture (unserializable functions, wider `needs`).
-        if self.resume_mode || self.symbols {
-            return None;
-        }
         let Expression::StaticMemberExpression(m) = strip_parens(e) else { return None };
         if m.optional {
             return None;

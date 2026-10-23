@@ -1,109 +1,20 @@
-// Regenerate resume-loader.min.ts (and resume-loader-derived.min.ts from resume-loader-derived.ts) from resume-loader.ts, resume-stream.ts, resume-rows.ts, resume-lazy.ts, resume-expand.ts and resume-repeat.ts: node libs/runtime/build-loader.ts
+// Regenerate resume-loader-derived.min.ts from resume-loader-derived.ts: node libs/runtime/build-loader.ts
 // Sources are serialized with Function#toString: Node's type stripping leaves whitespace where
 // annotations were, and esbuild's minifier normalizes it, so the output is independent of types.
 // The resume-loader test fails when the generated file is stale.
-// Two loaders from one build: `LOADER_KEYS` (with the cold-key branch, `RIVET_KEYS` defined true) and
-// `LOADER`, the same code with that branch cut out, so the generated module stores one loader plus the
-// branch and its offset (the server picks one per page).
 import { writeFile } from "node:fs/promises";
 import { transform } from "esbuild";
-import { loader } from "./resume-loader.ts";
-import { stream } from "./resume-stream.ts";
-import { rows } from "./resume-rows.ts";
-import { lazy, lazyPreload } from "./resume-lazy.ts";
-import { expand, strided } from "./resume-expand.ts";
-import { repeat } from "./resume-repeat.ts";
 import { derivedLoader, derivedStream } from "./resume-loader-derived.ts";
 
-const minify = async (fn: () => void): Promise<string> =>
-  (await transform("(" + fn + ")()", { minify: true, target: "es2020", define: { RIVET_KEYS: "true" } })).code.trim();
-
-/** The minified loader with the cold-key branch, and the branch's offset and text (`else if(…=="keydown"){…}`). */
-export async function minifiedLoaders(): Promise<{ keys: string; plain: string; at: number; branch: string }> {
-  const keys = await minify(loader);
-  const head = /else if\(\w+=="keydown"\)\{/.exec(keys);
-  if (!head) throw new Error("build-loader: cold-key branch not found in the minified loader");
-  let depth = 0,
-    end = head.index + head[0].length - 1;
-  for (; end < keys.length; end++) {
-    if (keys[end] === "{") depth++;
-    else if (keys[end] === "}" && --depth === 0) break;
-  }
-  const at = head.index,
-    branch = keys.slice(at, end + 1);
-  return { keys, plain: keys.slice(0, at) + keys.slice(end + 1), at, branch };
-}
-/** Minified inline loader source (`keys`: with the cold-key hold, for pages with keydown handlers). */
-export const minifiedLoader = async (keys = false): Promise<string> => (await minifiedLoaders())[keys ? "keys" : "plain"];
-/** Minified stream add-on, shipped after the loader on pages with streamed boundaries. */
-export const minifiedStream = async (): Promise<string> => (await transform("(" + stream + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified expand add-on, shipped before the state script on pages with compact row templates. */
-export const minifiedExpand = async (): Promise<string> => (await transform("(" + expand + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified strided refs part of the DOM-DATA builds' expand add-on (`EXPAND_DOM` = expand add-on + this). */
-export const minifiedStrided = async (): Promise<string> => (await transform("(" + strided + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified repeat add-on, shipped before the state script on pages with repeated handler / binding entries. */
-export const minifiedRepeat = async (): Promise<string> => (await transform("(" + repeat + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified rows add-on, shipped before the state script on pages with path-addressed rows (state `w`). */
-export const minifiedRows = async (): Promise<string> => (await transform("(" + rows + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified derived-model loader (`resume: { model: "derived" }`), shipped after the boundaries tail. */
-export const minifiedDerived = async (): Promise<string> => (await transform("(" + derivedLoader + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified derived-model stream add-on (`$rD`), shipped once before a derived page's first streamed segment. */
-export const minifiedDerivedStream = async (): Promise<string> =>
-  (await transform("(" + derivedStream + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified lazy rows add-on, shipped before the state script (after the rows add-on) on pages with lazy rows (state `L`). */
-export const minifiedLazy = async (): Promise<string> => (await transform("(" + lazy + ")()", { minify: true, target: "es2020" })).code.trim();
-/** Minified lazy rows runtime preload (`data-lz`), appended to the lazy add-on by `resume.lazyRows` servers (LAZY-BLOCKERS). */
-export const minifiedLazyPreload = async (): Promise<string> => (await transform("(" + lazyPreload + ")()", { minify: true, target: "es2020" })).code.trim();
+const minify = async (fn: () => void): Promise<string> => (await transform("(" + fn + ")()", { minify: true, target: "es2020" })).code.trim();
+/** Minified inline loader, shipped after the boundaries tail. */
+export const minifiedDerived = (): Promise<string> => minify(derivedLoader);
+/** Minified stream add-on (`$rD`), shipped once before a page's first streamed segment. */
+export const minifiedDerivedStream = (): Promise<string> => minify(derivedStream);
 
 if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
-  const { plain, keys, at, branch } = await minifiedLoaders(),
-    add = await minifiedStream(),
-    addRows = await minifiedRows(),
-    addLazy = await minifiedLazy(),
-    addLazyPreload = await minifiedLazyPreload(),
-    addExpand = await minifiedExpand(),
-    addStrided = await minifiedStrided(),
-    addRepeat = await minifiedRepeat(),
-    derived = await minifiedDerived(),
+  const derived = await minifiedDerived(),
     derivedAdd = await minifiedDerivedStream();
-  await writeFile(
-    new URL("./resume-loader.min.ts", import.meta.url),
-    "// Generated by build-loader.ts from resume-loader.ts, resume-stream.ts, resume-rows.ts, resume-lazy.ts, resume-expand.ts and resume-repeat.ts. Do not edit.\n" +
-      "export const LOADER = " +
-      JSON.stringify(plain) +
-      ";\n" +
-      "/** LOADER plus the cold-key branch (`data-rk`), for pages with keydown handlers. */\n" +
-      "export const LOADER_KEYS = LOADER.slice(0, " +
-      at +
-      ") + " +
-      JSON.stringify(branch) +
-      " + LOADER.slice(" +
-      at +
-      ");\n" +
-      "export const STREAM = " +
-      JSON.stringify(add) +
-      ";\n" +
-      "export const ROWS = " +
-      JSON.stringify(addRows) +
-      ";\n" +
-      "export const LAZY = " +
-      JSON.stringify(addLazy) +
-      ";\n" +
-      "/** The lazy rows runtime chunk's preload (`data-lz`), after LAZY in `resume.lazyRows` builds. */\n" +
-      "export const LAZY_PRELOAD = " +
-      JSON.stringify(addLazyPreload) +
-      ";\n" +
-      "export const EXPAND = " +
-      JSON.stringify(addExpand) +
-      ";\n" +
-      "/** EXPAND plus the strided item refs part (`rs`), for DOM-DATA builds (`resume.domData`). */\n" +
-      "export const EXPAND_DOM = EXPAND + " +
-      JSON.stringify(addStrided) +
-      ";\n" +
-      "export const REPEAT = " +
-      JSON.stringify(addRepeat) +
-      ";\n",
-  );
   await writeFile(
     new URL("./resume-loader-derived.min.ts", import.meta.url),
     "// Generated by build-loader.ts from resume-loader-derived.ts. Do not edit.\n" +
@@ -115,25 +26,4 @@ if (import.meta.url === new URL(process.argv[1]!, "file://").href) {
       ";\n",
   );
   console.log("derived " + derived.length + " chars (+ stream " + derivedAdd.length + ")");
-  console.log(
-    plain.length +
-      " (keys " +
-      keys.length +
-      ") + " +
-      add.length +
-      " + rows " +
-      addRows.length +
-      " + lazy " +
-      addLazy.length +
-      " (+ preload " +
-      addLazyPreload.length +
-      ")" +
-      " + expand " +
-      addExpand.length +
-      " (+ strided " +
-      addStrided.length +
-      ") + repeat " +
-      addRepeat.length +
-      " chars",
-  );
 }

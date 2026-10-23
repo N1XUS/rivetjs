@@ -33,34 +33,34 @@ Codes are never reused. A retired code keeps its page.
 | [RV1016](RV1016.md) | error | Event handler reads state when it binds (handlers bind once; wrap it in an arrow) |
 | [RV1101](RV1101.md) | error | Unsafe or unsupported native attribute / URL |
 | [RV1102](RV1102.md) | error | Invalid preload directive value |
-| [RV1103](RV1103.md) | error | Invalid clientEvent target |
+| [RV1103](RV1103.md) | retired | Invalid clientEvent target (retired: derived resume model) |
 
 ## RV2xxx: Resume
 
 | Code | Severity | Title |
 | --- | --- | --- |
 | [RV2001](RV2001.md) | error | Browser global read during server rendering (resume) |
-| [RV2002](RV2002.md) | error | Resumable ref callback must assign a local |
-| [RV2003](RV2003.md) | error | Captured class instance is not serializable |
+| [RV2002](RV2002.md) | retired | Resumable ref callback must assign a local (retired: derived resume model) |
+| [RV2003](RV2003.md) | retired | Captured class instance is not serializable (retired: derived resume model) |
 | [RV2004](RV2004.md) | retired | Capture-phase handlers are not resumable (retired: onXCapture resumes) |
-| [RV2005](RV2005.md) | error | Ref-bound local assigned outside ref callbacks |
-| [RV2006](RV2006.md) | error | JSX inside handlers, effects and computeds |
-| [RV2007](RV2007.md) | error | Resumable code captures `this` |
-| [RV2008](RV2008.md) | error | Resumed module exports a different binding under a captured name |
-| [RV2009](RV2009.md) | error | Two module references share a browser name |
-| [RV2010](RV2010.md) | error | One module reference id resolves to two installed copies (Vite build) |
-| [RV2011](RV2011.md) | error | Mutually recursive functions separated by an early exit (resume) |
-| [RV2012](RV2012.md) | error | `.bind` with a spread first argument (resume; a warning when the receiver may be an object with its own `bind`) |
-| [RV2013](RV2013.md) | warning | `.bind` of a value Rivet cannot resume (resume; an error when it is provably a function) |
-| [RV2014](RV2014.md) | warning | `.bind(…)` inside an object literal a resumable closure reaches (resume) |
-| [RV2015](RV2015.md) | warning | Component returns a function that cannot resume: anonymous default export or wrapper call (resume) |
-| [RV2016](RV2016.md) | warning | `resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume) |
-| [RV2101](RV2101.md) | warning | Captured value not serializable (type-aware, language service) |
-| [RV2102](RV2102.md) | error | Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive] |
+| [RV2005](RV2005.md) | retired | Ref-bound local assigned outside ref callbacks (retired: derived resume model) |
+| [RV2006](RV2006.md) | retired | JSX inside handlers, effects and computeds (retired: derived resume model) |
+| [RV2007](RV2007.md) | retired | Resumable code captures `this` (retired: derived resume model) |
+| [RV2008](RV2008.md) | retired | Resumed module exports a different binding under a captured name (retired: derived resume model) |
+| [RV2009](RV2009.md) | retired | Two module references share a browser name (retired: derived resume model) |
+| [RV2010](RV2010.md) | retired | One module reference id resolves to two installed copies (Vite build) (retired: derived resume model) |
+| [RV2011](RV2011.md) | retired | Mutually recursive functions separated by an early exit (resume) (retired: derived resume model) |
+| [RV2012](RV2012.md) | retired | `.bind` with a spread first argument (resume; a warning when the receiver may be an object with its own `bind`) (retired: derived resume model) |
+| [RV2013](RV2013.md) | retired | `.bind` of a value Rivet cannot resume (resume; an error when it is provably a function) (retired: derived resume model) |
+| [RV2014](RV2014.md) | retired | `.bind(…)` inside an object literal a resumable closure reaches (resume) (retired: derived resume model) |
+| [RV2015](RV2015.md) | retired | Component returns a function that cannot resume: anonymous default export or wrapper call (resume) (retired: derived resume model) |
+| [RV2016](RV2016.md) | retired | `resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume) (retired: derived resume model) |
+| [RV2101](RV2101.md) | retired | Captured value not serializable (type-aware, language service) (retired: derived resume model) |
+| [RV2102](RV2102.md) | retired | Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static \[revive] (retired: derived resume model) |
 | [RV2103](RV2103.md) | error | Render is not deterministic under the derived resume model (Date.now / Math.random / performance.now / crypto.randomUUID / new `Date()` while rendering a boundary) |
 | [RV2104](RV2104.md) | warning | Keyed state (signal / createStore) created in a loop under the derived resume model |
-| [RV2105](RV2105.md) | warning | Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / `Date()` / new `Date()`): its rows stay recorded instead of lazy (resume) |
-| [RV2106](RV2106.md) | warning | Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) |
+| [RV2105](RV2105.md) | retired | Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / `Date()` / new `Date()`): its rows stay recorded instead of lazy (resume) (retired: derived resume model) |
+| [RV2106](RV2106.md) | retired | Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) (retired: derived resume model) |
 | [RV2107](RV2107.md) | warning | Route data cannot resume under the derived model: a loader / action / error value the resume table cannot encode (function, symbol, promise, unregistered class instance); the page renders but does not resume (server) |
 | [RV2145](RV2145.md) | error | A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build) |
 | [RV2146](RV2146.md) | warning | Non-component export of a framework module used in browser code of a Rivet module (Vite build) |

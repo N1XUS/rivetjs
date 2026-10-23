@@ -22,9 +22,10 @@ export interface DragPreviewProps<T = any> {
 export function DragPreview<T = any>(props: DragPreviewProps<T>) {
   const matchSize = props.matchSize ? "" : undefined;
   const children = props.children;
-  // The server `ref()` is a cell with an `id` (records the element); the DOM one a signal. `getOwner()`
-  // is set on the server as well, so the ref shape is what tells the render target apart.
-  if (!("id" in (ref() as object))) {
+  // Server: the content renders inside the `<template>` (inert); browser (client render or a resumed page's adopt run):
+  // mounted into the template's fragment (`globalThis.document`: bare browser globals are rejected in a server-rendered
+  // `.tsx` module, RV2001; the ref shape told the targets apart on the serialized model, M6-CUT).
+  if ((globalThis as { document?: unknown }).document !== undefined) {
     // Client render: a `<template>` cannot hold dynamic children in a DOM template, so the content is
     // mounted into the fragment of a static one once it exists.
     const template = ref<HTMLTemplateElement>();

@@ -64,87 +64,27 @@ test("dev: a loader throw sends the overlay error and renders the dev error page
   }
 });
 
-test("dev: the resume recorder runs; a non-serializable capture names its component, source and capture in the overlay", async () => {
+test("dev: the resume recorder runs; a class instance captured by a handler is rebuilt in the browser, no failure", async () => {
   const restoreEnv = nodeEnv("development");
   const { server, origin, sent } = await devServer(root, configFile);
   try {
-    // Recorded like production: ids and markers in the HTML.
+    // Recorded like production: boundary markers and the boundaries tail in the HTML.
     const home = await (await fetch(origin + "/")).text();
-    assert.match(home, /<div data-rivet-routes=""><!--r0\[--><h1 id="home">Home<\/h1><!--\]--><\/div>/);
+    assert.match(home, /<div data-rivet-routes=""><!--\[--><h1 id="home">Home<\/h1><!--\]--><\/div>/);
+    assert.match(home, /<script type="rivet\/boundaries"/);
 
-    // The state encodes after the shell (status sent): the body ends with the hint and the overlay script.
+    // Derived model: captures are not serialized (the browser re-runs the component), so a class instance is no error.
     const response = await fetch(origin + "/unserializable");
     assert.equal(response.status, 200);
     const html = await response.text();
-    // Symbol ids are content hashes (`Greeter$<6 base-36>`): read the handler's id from the hint.
-    const id = /src\/routes\/unserializable\.tsx#Greeter\$[0-9a-z]{3,13}/.exec(html)?.[0] ?? "<no symbol id>";
-    const where = "in <Greeter> (src/routes/unserializable.tsx:8:1), event handler " + id;
-    const capture = "capture `session` (src/routes/unserializable.tsx:10:9)";
-    assert.match(
-      html,
-      /<!-- rivet dev: render failed in route "unserializable": Cannot resume src\/routes\/unserializable\.tsx#Greeter\$[0-9a-z]{3,13}: capture `session` Session instance is not serializable/,
-    );
-    // The document closed cleanly before the hint: the failure marker for the page's own listeners.
-    assert.match(html, /<script nonce="[^"]+">document\.dispatchEvent\(new CustomEvent\("rivet:resume-error",\{detail:\{"phase":"render","digest":"[\da-f]+"/);
-    assert.ok(html.includes(where) && html.includes(capture), html);
-    assert.match(html, /import \{ ErrorOverlay \} from "\/@vite\/client";/);
-    assert.match(html, /hot\.on\("vite:beforeUpdate", \(\) => location\.reload\(\)\)/);
-    assert.ok(!html.includes('type="rivet/state"'), "no state after the failure");
-
-    const errors = sent.filter((payload) => payload.type === "error");
-    assert.equal(errors.length, 1);
-    const err = errors[0]!.err! as { message: string; id?: string; loc?: { file: string; line: number; column: number } };
-    assert.ok(err.message.startsWith('render failed in route "unserializable": Cannot resume ' + id), err.message);
-    assert.ok(err.message.includes(where) && err.message.includes(capture), err.message);
-    assert.equal(err.id, join(root, "src/routes/unserializable.tsx"));
-    assert.deepEqual(err.loc, { file: join(root, "src/routes/unserializable.tsx"), line: 8, column: 1 });
+    assert.match(html, /<button id="greet"[^>]*>Hi <!--\[-->0<!--\]--><\/button>/);
+    assert.match(html, /<script type="rivet\/boundaries"/);
+    assert.ok(!html.includes("rivet dev: render failed"), html);
+    assert.equal(sent.filter((payload) => payload.type === "error").length, 0);
   } finally {
     await server.close();
     restoreEnv();
   }
-});
-
-test("dev: a member-narrowed capture is named as written (`o.a`) in the message and the overlay", async () => {
-  const restoreEnv = nodeEnv("development");
-  const { server, origin, sent } = await devServer(root, configFile);
-  try {
-    const html = await (await fetch(origin + "/unserializable-member")).text();
-    const id = /src\/routes\/unserializable-member\.tsx#Panel\$[0-9a-z]{3,13}/.exec(html)?.[0] ?? "<no symbol id>";
-    // The internal parameter name (`o$a`) never shows; the overlay locates the capture at its object's declaration.
-    assert.match(html, /Cannot resume src\/routes\/unserializable-member\.tsx#Panel\$[0-9a-z]{3,13}: capture `o\.a` Session instance is not serializable/);
-    assert.ok(!html.includes("o$a"), html);
-    const capture = "capture `o.a` (src/routes/unserializable-member.tsx:10:9)";
-    assert.ok(html.includes("in <Panel> (src/routes/unserializable-member.tsx:8:1), event handler " + id) && html.includes(capture), html);
-    const errors = sent.filter((payload) => payload.type === "error");
-    assert.equal(errors.length, 1);
-    assert.ok((errors[0]!.err! as { message: string }).message.includes(capture));
-  } finally {
-    await server.close();
-    restoreEnv();
-  }
-});
-
-test("dev report: a symbol the dev manifest has no chunk for gets a dev note", () => {
-  const sent: Payload[] = [],
-    logged: string[] = [];
-  const fake = {
-    ssrFixStacktrace() {},
-    config: { logger: { error: (text: string) => logged.push(text) }, server: { hmr: true } },
-    ws: { send: (payload: Payload) => sent.push(payload) },
-  } as unknown as ViteDevServer;
-  const report = devReport(
-    fake,
-    () => ({ routes: [] }),
-    "/app/src/routes",
-    () => undefined,
-  );
-  report(new Error("Resume manifest has no chunk for src/widget.tsx#Widget$0 — the client build's …"), new Request("http://x/"));
-  assert.match(
-    sent[0]!.err!.message,
-    /no chunk for src\/widget\.tsx#Widget\$0[^\n]*\n  dev: no module the dev server compiled in resume mode defines src\/widget\.tsx#Widget\$0 \(is src\/widget\.tsx in resume\.modules\?\)/,
-  );
-  assert.equal(sent[0]!.err!.id, undefined);
-  assert.match(logged[0]!, /dev: no module/);
 });
 
 test("dev: an app with an `_error` view renders it, with the overlay and a hint comment on top", async () => {
@@ -163,7 +103,7 @@ test("dev: an app with an `_error` view renders it, with the overlay and a hint 
     const missing = await fetch(origin + "/missing");
     assert.equal(missing.status, 404);
     const page = await missing.text();
-    assert.match(page, /<h1 id="not-found">Nothing at \/missing<\/h1>/);
+    assert.match(page.replace(/<!--\[-->|<!--\]-->/g, ""), /<h1 id="not-found">Nothing at \/missing<\/h1>/);
     assert.match(page, /<!-- rivet dev: no route matches \/missing\. Routes: .*\/items\/:id.* \/ -->/);
   } finally {
     await server.close();
@@ -207,13 +147,6 @@ test("dev: browser render errors and failed route loads open the overlay", async
     // Full page load of a failing route: the page opens the overlay itself.
     await page.goto(origin + "/crash");
     assert.match(await waitOverlay("loader <exploded>"), /loader failed in route "crash"/);
-
-    // A serialization failure after the response started: the truncated page opens it too, with the source location.
-    await page.goto(origin + "/unserializable");
-    const text = await waitOverlay("Session instance is not serializable");
-    assert.match(text, /in <Greeter> \(src\/routes\/unserializable\.tsx:8:1\)/);
-    assert.match(text, /capture `session` \(src\/routes\/unserializable\.tsx:10:9\)/);
-    assert.match(text, /unserializable\.tsx:8:1/);
 
     // Render error during client navigation (no ErrorBoundary): forwarded through the dev entry.
     await page.goto(origin + "/");

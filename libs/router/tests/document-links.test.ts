@@ -40,7 +40,7 @@ test(
       const boot = async (target: Page) => {
         // Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router.
         await target.dispatchEvent("#home", "pointerdown");
-        await target.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+        await target.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
         await target.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
       };
       const home = async () => {

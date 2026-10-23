@@ -60,7 +60,7 @@ test("zero-JS sites: no _data.json when no page resumes and no CSR shell route n
     assert.deepEqual((await readdir(dir)).sort(), ["404.html", "about", "index.html"]);
     assert.deepEqual(await readdir(join(dir, "about")), ["index.html"]);
     // A page with resume state: its router may navigate anywhere, so every page gets its data file.
-    const state = (path: string) => (path === "/about" ? '<script type="rivet/state" data-region="0">{}</script>' : "");
+    const state = (path: string) => (path === "/about" ? '<script type="rivet/boundaries">{}</script>' : "");
     const resumed = createHandler({
       routes,
       render: (input) => new Response(`<p>${input.url.pathname}</p>${state(input.url.pathname)}`, { headers: { "content-type": "text/html" } }),
@@ -82,7 +82,7 @@ test("prune: a zero-JS site keeps only the referenced scripts' import closure; d
       createHandler({
         routes,
         render: () =>
-          new Response(`<script type="module" src="/assets/a.js"></script>${state ? '<script type="rivet/state" data-region="0">{}</script>' : ""}`, {
+          new Response(`<script type="module" src="/assets/a.js"></script>${state ? '<script type="rivet/boundaries">{}</script>' : ""}`, {
             headers: { "content-type": "text/html" },
           }),
         renderError: ({ status }) => new Response(`<p>error ${status}</p>`, { status }),
@@ -113,6 +113,49 @@ test("prune: a zero-JS site keeps only the referenced scripts' import closure; d
   }
 });
 
+test("prune: a derived page (boundaries tail naming its chunks, no module script tags) keeps every chunk the tail references", async () => {
+  // Shape of a prerendered derived page (templates/starter-static): the runtime, fetch-ahead and boundary chunks are
+  // named only by the tail (`data-rt`, `data-fo`, `m`), never by a `<script src>`; an inline loader imports them on input.
+  const dir = await mkdtemp(join(tmpdir(), "rivet-static-"));
+  try {
+    const routes: AppRoute[] = [{ id: "index", pattern: "/", page: true, layouts: [] }];
+    const tail = JSON.stringify({
+      v: 1,
+      b: [
+        [1, 0, 1, "app.tsx#default", []],
+        [2, 1, 10, "Counter.tsx#Counter", ["s-0", 0]],
+      ],
+      m: { "app.tsx#default": "/assets/app.js", "Counter.tsx#Counter": "/assets/counter.js" },
+    });
+    const handler = createHandler({
+      routes,
+      render: () =>
+        new Response(
+          `<button data-b="2">0</button><script type="rivet/boundaries" data-rt="/assets/runtime.js" data-g="a[href]" data-fo="/assets/runtime.js /assets/app.js /assets/counter.js">${tail}</script><script>(function(){})()</script>`,
+          { headers: { "content-type": "text/html" } },
+        ),
+      renderError: ({ status }) => new Response(`<p>error ${status}</p>`, { status }),
+    });
+    const files = ["assets/runtime.js", "assets/dom-derived.js", "assets/app.js", "assets/counter.js"];
+    await mkdir(join(dir, ".vite"), { recursive: true });
+    await mkdir(join(dir, "assets"), { recursive: true });
+    const manifest = {
+      "runtime.ts": { file: "assets/runtime.js", dynamicImports: ["dom-derived.ts"] },
+      "dom-derived.ts": { file: "assets/dom-derived.js" },
+      "app.tsx": { file: "assets/app.js" },
+      "Counter.tsx": { file: "assets/counter.js" },
+    };
+    await writeFile(join(dir, ".vite/manifest.json"), JSON.stringify(manifest));
+    for (const file of files) await writeFile(join(dir, file), "");
+    const report = await prerender({ handler, routes, outDir: dir, prune: true });
+    assert.equal(report.resumes, true);
+    assert.equal(report.pruned, undefined);
+    assert.deepEqual((await readdir(join(dir, "assets"))).sort(), ["app.js", "counter.js", "dom-derived.js", "runtime.js"]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("origin: unset, state or data holding the placeholder http://localhost is an error; a configured origin is used", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rivet-static-"));
   try {
@@ -120,7 +163,7 @@ test("origin: unset, state or data holding the placeholder http://localhost is a
     const baked = createHandler({
       routes,
       render: (input) =>
-        new Response(`<link rel="canonical" href="${input.url.href}"><script type="rivet/state" data-region="0">${JSON.stringify(input.data)}</script>`, {
+        new Response(`<link rel="canonical" href="${input.url.href}"><script type="rivet/boundaries">${JSON.stringify(input.data)}</script>`, {
           headers: { "content-type": "text/html" },
         }),
       renderError: ({ status }) => new Response(`<p>error ${status}</p>`, { status }),
@@ -186,7 +229,7 @@ test("hashCSP: inline scripts allowed by hash, data and module-src scripts left 
   const { hashCSP } = await import("../adapters/static.ts");
   const { createHash } = await import("node:crypto");
   const loader = "document.$r=1;";
-  const html = `<!doctype html><html><head><title>x</title></head><body><script type="rivet/state">{"a":1}</script><script>${loader}</script><script type="module" src="/a.js"></script></body></html>`;
+  const html = `<!doctype html><html><head><title>x</title></head><body><script type="rivet/boundaries">{"a":1}</script><script>${loader}</script><script type="module" src="/a.js"></script></body></html>`;
   const out = hashCSP(html);
   const hash = createHash("sha256").update(loader).digest("base64");
   assert.equal(

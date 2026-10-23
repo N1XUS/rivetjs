@@ -1,14 +1,13 @@
-// LAZY-FLIP harness: client cost of lazy rows / DOM-DATA on the `stories/` app built several ways (e.g. default,
-// `lazyRows`, `domData`, both: `stories.ts --build [--dom-data] --dist <d>`, `RIVET_LAZY_BUILD=0` for no lazyRows).
-// One server child per build (`@rivetjs/router/node` `start()`, compression on, `RIVET_LAZY_ROWS=on`: lazy builds write
-// lazy rows, others ignore it). Headless Chromium (playwright), fresh context per load, cold (the resume runtime boots
+// Client cost harness (LAZY-FLIP, derived since M6): the `stories/` app built several ways (e.g. default vs `domData`:
+// `stories.ts --build [--dom-data] --dist <d>`). One server child per build (`@rivetjs/router/node` `start()`,
+// compression on). Headless Chromium (playwright), fresh context per load, cold (the resume runtime boots
 // at the first input). Per page and build:
 //   - `row`: first click on a row → its handler's DOM effect (`until`), `ctl`: first click on the layout's `#bench-ctl`
 //     (no row), `move`: a keyed update moving 50 rows (`#ld-move`, `/list-data-1000` only);
 //     paint ms = pointerdown timeStamp → the task after the rAF after the DOM change; dom ms = → the mutation.
 //   - JS before input: script / modulepreload bytes (encoded, resource timing) + CDP `ScriptDuration` at the click.
-//   - idle load (fast ×1, 3 s settle): heap used after GC, JS bytes + script ms, document raw / br, `rivet/state`
-//     raw / br, keyed For modes (docs-kit `pageRows`).
+//   - idle load (fast ×1, 3 s settle): heap used after GC, JS bytes + script ms, document raw / br, `rivet/boundaries`
+//     raw / br.
 // Conditions: `fast1` (no throttling), `fast4` (4× CPU), `slow4` (Slow 4G 150 ms / 1.6 Mbps / 750 kbps + 4× CPU).
 // Trials interleave builds (rotated order per trial); before each trial the 1-min load average must be ≤ `--max-load`
 // (waits up to `--max-wait` s, default 120, then runs; the load is recorded with every sample). Median over `--loads` trials.
@@ -88,7 +87,7 @@ const children: ChildProcess[] = [];
 const origins = new Map<string, string>();
 for (const b of builds) {
   const child = spawn(process.execPath, [import.meta.filename, "--serve", b.dist], {
-    env: { ...process.env, RIVET_LAZY_ROWS: "on" },
+    env: process.env,
     stdio: ["ignore", "pipe", "inherit"],
   });
   children.push(child);
@@ -200,27 +199,14 @@ async function idleOnce(url: string) {
 
 async function docFacts(origin: string, path: string) {
   const html = await (await fetch(origin + path, { headers: { "accept-encoding": "identity" } })).text();
-  // Serialized: the `rivet/state` table; derived model: the `rivet/boundaries` tail (+ streamed `data-patch` tails), summed.
-  const state = [...html.matchAll(/<script type="rivet\/(?:state|boundaries)"[^>]*>(.*?)<\/script>/gs)].map((m) => m[1]).join("");
-  const { pageRows } = await import("../../../../libs/docs-kit/tools/rows.ts");
-  let fors = "-";
-  try {
-    const rows = pageRows(html);
-    if (rows) {
-      const lazy = rows.fors.filter((f) => f.mode === "lazy");
-      const rec = rows.fors.filter((f) => f.mode === "recorded");
-      fors = `${lazy.length} lazy (${lazy.reduce((s, f) => s + f.rows, 0)} rows) / ${rec.length} rec (${rec.reduce((s, f) => s + f.rows, 0)} rows)`;
-    }
-  } catch (e) {
-    fors = "? " + (e as Error).message.slice(0, 40);
-  }
+  // The `rivet/boundaries` tail (+ streamed `data-patch` tails), summed.
+  const state = [...html.matchAll(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/gs)].map((m) => m[1]).join("");
   return {
     docRaw: Buffer.byteLength(html),
     docBr: brotliCompressSync(Buffer.from(html)).length,
     stateRaw: Buffer.byteLength(state),
     stateBr: state ? brotliCompressSync(Buffer.from(state)).length : 0,
     domEntries: (/"D":/.test(state) ? 1 : 0) as number,
-    fors,
   };
 }
 
@@ -309,7 +295,6 @@ for (const path of pages) {
   }
   row("state raw / br B", (b) => `${facts[path]![b]!.stateRaw} / ${facts[path]![b]!.stateBr}`);
   row("document raw / br B", (b) => `${facts[path]![b]!.docRaw} / ${facts[path]![b]!.docBr}`);
-  row("keyed Fors", (b) => facts[path]![b]!.fors);
 }
 console.log(out.join("\n"));
 if (jsonOut) writeFileSync(jsonOut, JSON.stringify({ date: new Date().toISOString(), builds, pages, loads, conditions, results, facts }, null, 1));

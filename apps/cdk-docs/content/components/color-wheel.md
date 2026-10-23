@@ -78,7 +78,7 @@ import { ColorThumb } from "@rivetjs/cdk/color-thumb";
 
 - Server-rendered: gradients, thumb position, hidden inputs and labels are in the HTML; no component code runs until the first interaction.
 - Keys and drags work on a resumed page (handlers are resumable free functions over plain signal state; drag state is JSON).
-- Pass a two-way `Signal` for `value` and keep **strings** in it (`signal<string | Color>("#3366cc")`): a `Color` instance in a signal is not serializable. Callbacks (`onChange`, `onChangeEnd`) must be inline arrows or local consts.
+- Pass a two-way `Signal` for `value` and keep **strings** in it (`signal<string | Color>("#3366cc")`): a `Color` instance in a signal is not written into the page, so the browser starts that signal again from its initial value.
 
 ## Upstream
 

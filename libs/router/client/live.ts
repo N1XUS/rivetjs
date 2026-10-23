@@ -7,18 +7,7 @@
 // layout levels: `_sync` leaves every level key as it is, `_liveLevels`).
 // Used by the generated `App` only when some page is live (pay-per-use: apps without one never import it).
 import { batch, effect, signal, untrack, type Signal } from "@rivetjs/reactivity";
-import {
-  _clearPrefetch,
-  _current,
-  _dropPrefetch,
-  _inPlace,
-  _perform,
-  loadModule,
-  routeData,
-  type DataSource,
-  type ModuleTable,
-  type Navigator,
-} from "./index.ts";
+import { _clearPrefetch, _current, _dropPrefetch, _inPlace, _perform, routeData, type DataSource, type Navigator } from "./index.ts";
 import { _bump, _depsLoaded, _invalidating, _keepIds, _plan, _refreshed, _stale, _sync, type LayoutTable, type Layouts } from "./layouts.ts";
 import { _take, type FreshData, type NavigateRequest } from "./navigate.ts";
 
@@ -41,8 +30,6 @@ export interface LivePage {
   h?: string;
   /** `k` follows the location (effect started by the first navigation entry point). */
   a?: true;
-  /** The data signal whose reader chunks were warmed (`_liveIntent`: once per page render). */
-  w?: Signal<unknown>;
 }
 
 type Located = { location(): URL };
@@ -53,22 +40,6 @@ export function _live(m: DataSource, router?: Located): LivePage {
   if (!router) return { m };
   const h = pageOf(untrack(router.location));
   return { m, k: signal(h, { equals: false }), h };
-}
-
-/**
- * @internal Generated `App` intent listeners (focusin, pointerdown): an interaction inside a form of the shown live
- * page warms the chunks of the resumed bindings that read its data (and the layouts' data), so a submit's in-place
- * refresh needs no round trip after the answer. Resumed pages only (the resume runtime's `rivet.warm` hook). The page
- * module loads too: a refresh that re-creates the page imports it, and a build may give it a facade chunk of its own
- * that no resume deps list names (lazy rows: its exports span the page's shared chunks).
- */
-export function _liveIntent(event: Event, live: LivePage, modules: ModuleTable, state?: Layouts): void {
-  const warm = (globalThis as Record<symbol, ((source: Signal<unknown>) => void) | undefined>)[Symbol.for("rivet.warm")];
-  if (!warm || !live.s || live.w === live.s || !(event.target as Element | null)?.closest?.("form")) return;
-  live.w = live.s;
-  loadModule(new URL(location.href), modules)?.catch(() => {});
-  warm(live.s);
-  if (state) for (const layout of state.l) if (layout) warm(layout.d);
 }
 
 /** @internal Generated `App`: the top Router's navigator — route work keyed on the slot's `k`. */

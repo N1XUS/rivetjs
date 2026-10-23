@@ -5,10 +5,10 @@
 //   functions (resumable, `.tsx` so the arrows are R2 symbols); `items` is an accessor of the root
 //   nodes (`tree.items()`), `selectedKeys` a two-way `Signal<Set<Key>>`.
 // - State = one signal of `{ items, nodeMap }` (plain objects + a Map: serializable) + the selection
-//   signal; region state (`_regionState`).
+//   signal.
 // - react-stately's methods read the tree of the current render (`nodeMap`, `items`, `selectedKeys`
 //   closures); here they read the signals when called, which is the same between renders.
-import { batch, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { batch, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Key } from "../collections/types.ts";
 
 export interface TreeOptions<T extends object> {
@@ -227,155 +227,153 @@ const treeChildren = (item: any): any[] => item.children;
  * the data over time (react-stately `useTreeData`).
  */
 export function createTreeData<T extends object>(options: TreeOptions<T> = {}): TreeData<T> {
-  return _regionState(() => {
-    const { initialItems = [], initialSelectedKeys } = options;
-    // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
-    const userKey = options.getKey,
-      userChildren = options.getChildren;
-    const fns = {
-      key: (item: T): Key => (userKey ? userKey(item) : treeKey(item)),
-      children: (item: T) => (userChildren ? userChildren(item) : treeChildren(item)),
-    };
-    const getKey = fns.key;
-    const getChildren = fns.children;
-    // We only want to compute this once.
-    const tree = signal<TreeDataState<T>>(buildTree(getKey, getChildren, initialItems, new Map()));
-    const selectedKeys = signal(new Set<Key>(initialSelectedKeys || []));
-    const setItems = (fn: (state: TreeDataState<T>) => TreeDataState<T>) => tree.set(fn(untrack(tree)));
-    const current = () => untrack(tree);
+  const { initialItems = [], initialSelectedKeys } = options;
+  // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
+  const userKey = options.getKey,
+    userChildren = options.getChildren;
+  const fns = {
+    key: (item: T): Key => (userKey ? userKey(item) : treeKey(item)),
+    children: (item: T) => (userChildren ? userChildren(item) : treeChildren(item)),
+  };
+  const getKey = fns.key;
+  const getChildren = fns.children;
+  // We only want to compute this once.
+  const tree = signal<TreeDataState<T>>(buildTree(getKey, getChildren, initialItems, new Map()));
+  const selectedKeys = signal(new Set<Key>(initialSelectedKeys || []));
+  const setItems = (fn: (state: TreeDataState<T>) => TreeDataState<T>) => tree.set(fn(untrack(tree)));
+  const current = () => untrack(tree);
 
-    const insert = (parentKey: Key | null, index: number, ...values: T[]) =>
+  const insert = (parentKey: Key | null, index: number, ...values: T[]) =>
+    setItems(({ items, nodeMap: originalMap }) => {
+      const { items: newNodes, nodeMap: newMap } = buildTree(getKey, getChildren, values, new Map(originalMap), parentKey);
+      // If parentKey is null, insert into the root.
+      if (parentKey == null) return { items: [...items.slice(0, index), ...newNodes, ...items.slice(index)], nodeMap: newMap };
+      // Otherwise, update the parent node and its ancestors.
+      return updateTree(
+        items,
+        parentKey,
+        (parentNode) => ({
+          key: parentNode.key,
+          parentKey: parentNode.parentKey,
+          value: parentNode.value,
+          children: [...parentNode.children!.slice(0, index), ...newNodes, ...parentNode.children!.slice(index)],
+        }),
+        newMap,
+      );
+    });
+
+  const remove = (...keys: Key[]) => {
+    if (keys.length === 0) return;
+    const { items, nodeMap } = current();
+    let newItems = items;
+    let prevMap = nodeMap;
+    let newTree!: TreeDataState<T>;
+    for (const key of keys) {
+      newTree = updateTree(newItems, key, () => null, prevMap);
+      prevMap = newTree.nodeMap;
+      newItems = newTree.items;
+    }
+    const previous = untrack(selectedKeys);
+    batch(() => {
+      tree.set(newTree);
+      const selection = new Set(previous);
+      for (const key of previous) if (!newTree.nodeMap.has(key)) selection.delete(key);
+      selectedKeys.set(selection);
+    });
+  };
+
+  const siblingIndex = (key: Key): { parentKey: Key | null; index: number } | null => {
+    const { items, nodeMap } = current();
+    const node = nodeMap.get(key);
+    if (!node) return null;
+    const parentNode = nodeMap.get(node.parentKey!);
+    const nodes = parentNode ? parentNode.children : items;
+    return { parentKey: parentNode?.key ?? null, index: nodes!.indexOf(node) };
+  };
+
+  const moveRelative = (key: Key, keys: Iterable<Key>, after: boolean) =>
+    setItems((prevState) => {
+      const { items, nodeMap } = prevState;
+      const node = nodeMap.get(key);
+      if (!node) return prevState;
+      const toParentKey = node.parentKey ?? null;
+      let parent: TreeNode<T> | null = null;
+      if (toParentKey != null) parent = nodeMap.get(toParentKey) ?? null;
+      let toIndex = parent?.children ? parent.children.indexOf(node) : items.indexOf(node);
+      if (after) toIndex++;
+      return moveItems(prevState, keys, parent, toIndex, updateTree, addNode);
+    });
+
+  return {
+    items: () => tree().items,
+    selectedKeys,
+    setSelectedKeys: (keys: Set<Key>) => selectedKeys.set(keys),
+    getItem: (key: Key) => tree().nodeMap.get(key),
+    insert,
+    insertBefore: (key: Key, ...values: T[]) => {
+      const at = siblingIndex(key);
+      if (at) insert(at.parentKey, at.index, ...values);
+    },
+    insertAfter: (key: Key, ...values: T[]) => {
+      const at = siblingIndex(key);
+      if (at) insert(at.parentKey, at.index + 1, ...values);
+    },
+    prepend: (parentKey: Key | null, ...values: T[]) => insert(parentKey, 0, ...values),
+    append: (parentKey: Key | null, ...values: T[]) => {
+      const { items, nodeMap } = current();
+      if (parentKey == null) insert(null, items.length, ...values);
+      else {
+        const parentNode = nodeMap.get(parentKey);
+        if (!parentNode) return;
+        insert(parentKey, parentNode.children!.length, ...values);
+      }
+    },
+    remove,
+    removeSelectedItems: () => remove(...untrack(selectedKeys)),
+    move: (key: Key, toParentKey: Key | null, index: number) =>
       setItems(({ items, nodeMap: originalMap }) => {
-        const { items: newNodes, nodeMap: newMap } = buildTree(getKey, getChildren, values, new Map(originalMap), parentKey);
+        let walk = toParentKey;
+        while (walk != null) {
+          if (walk === key) throw new Error("Cannot move an item to be a child of itself.");
+          walk = originalMap.get(walk)?.parentKey ?? null;
+        }
+        const node = originalMap.get(key);
+        if (!node) return { items, nodeMap: originalMap };
+        const { items: newItems, nodeMap: newMap } = updateTree(items, key, () => null, originalMap);
+        const movedNode = { ...node, parentKey: toParentKey };
         // If parentKey is null, insert into the root.
-        if (parentKey == null) return { items: [...items.slice(0, index), ...newNodes, ...items.slice(index)], nodeMap: newMap };
+        if (toParentKey == null) {
+          addNode(movedNode, newMap);
+          return { items: [...newItems.slice(0, index), movedNode, ...newItems.slice(index)], nodeMap: newMap };
+        }
         // Otherwise, update the parent node and its ancestors.
         return updateTree(
-          items,
-          parentKey,
+          newItems,
+          toParentKey,
           (parentNode) => ({
             key: parentNode.key,
             parentKey: parentNode.parentKey,
             value: parentNode.value,
-            children: [...parentNode.children!.slice(0, index), ...newNodes, ...parentNode.children!.slice(index)],
+            children: [...parentNode.children!.slice(0, index), movedNode, ...parentNode.children!.slice(index)],
           }),
           newMap,
         );
-      });
-
-    const remove = (...keys: Key[]) => {
-      if (keys.length === 0) return;
-      const { items, nodeMap } = current();
-      let newItems = items;
-      let prevMap = nodeMap;
-      let newTree!: TreeDataState<T>;
-      for (const key of keys) {
-        newTree = updateTree(newItems, key, () => null, prevMap);
-        prevMap = newTree.nodeMap;
-        newItems = newTree.items;
-      }
-      const previous = untrack(selectedKeys);
-      batch(() => {
-        tree.set(newTree);
-        const selection = new Set(previous);
-        for (const key of previous) if (!newTree.nodeMap.has(key)) selection.delete(key);
-        selectedKeys.set(selection);
-      });
-    };
-
-    const siblingIndex = (key: Key): { parentKey: Key | null; index: number } | null => {
-      const { items, nodeMap } = current();
-      const node = nodeMap.get(key);
-      if (!node) return null;
-      const parentNode = nodeMap.get(node.parentKey!);
-      const nodes = parentNode ? parentNode.children : items;
-      return { parentKey: parentNode?.key ?? null, index: nodes!.indexOf(node) };
-    };
-
-    const moveRelative = (key: Key, keys: Iterable<Key>, after: boolean) =>
-      setItems((prevState) => {
-        const { items, nodeMap } = prevState;
-        const node = nodeMap.get(key);
-        if (!node) return prevState;
-        const toParentKey = node.parentKey ?? null;
-        let parent: TreeNode<T> | null = null;
-        if (toParentKey != null) parent = nodeMap.get(toParentKey) ?? null;
-        let toIndex = parent?.children ? parent.children.indexOf(node) : items.indexOf(node);
-        if (after) toIndex++;
-        return moveItems(prevState, keys, parent, toIndex, updateTree, addNode);
-      });
-
-    return {
-      items: () => tree().items,
-      selectedKeys,
-      setSelectedKeys: (keys: Set<Key>) => selectedKeys.set(keys),
-      getItem: (key: Key) => tree().nodeMap.get(key),
-      insert,
-      insertBefore: (key: Key, ...values: T[]) => {
-        const at = siblingIndex(key);
-        if (at) insert(at.parentKey, at.index, ...values);
-      },
-      insertAfter: (key: Key, ...values: T[]) => {
-        const at = siblingIndex(key);
-        if (at) insert(at.parentKey, at.index + 1, ...values);
-      },
-      prepend: (parentKey: Key | null, ...values: T[]) => insert(parentKey, 0, ...values),
-      append: (parentKey: Key | null, ...values: T[]) => {
-        const { items, nodeMap } = current();
-        if (parentKey == null) insert(null, items.length, ...values);
-        else {
-          const parentNode = nodeMap.get(parentKey);
-          if (!parentNode) return;
-          insert(parentKey, parentNode.children!.length, ...values);
-        }
-      },
-      remove,
-      removeSelectedItems: () => remove(...untrack(selectedKeys)),
-      move: (key: Key, toParentKey: Key | null, index: number) =>
-        setItems(({ items, nodeMap: originalMap }) => {
-          let walk = toParentKey;
-          while (walk != null) {
-            if (walk === key) throw new Error("Cannot move an item to be a child of itself.");
-            walk = originalMap.get(walk)?.parentKey ?? null;
-          }
-          const node = originalMap.get(key);
-          if (!node) return { items, nodeMap: originalMap };
-          const { items: newItems, nodeMap: newMap } = updateTree(items, key, () => null, originalMap);
-          const movedNode = { ...node, parentKey: toParentKey };
-          // If parentKey is null, insert into the root.
-          if (toParentKey == null) {
-            addNode(movedNode, newMap);
-            return { items: [...newItems.slice(0, index), movedNode, ...newItems.slice(index)], nodeMap: newMap };
-          }
-          // Otherwise, update the parent node and its ancestors.
-          return updateTree(
-            newItems,
-            toParentKey,
-            (parentNode) => ({
-              key: parentNode.key,
-              parentKey: parentNode.parentKey,
-              value: parentNode.value,
-              children: [...parentNode.children!.slice(0, index), movedNode, ...parentNode.children!.slice(index)],
-            }),
-            newMap,
-          );
-        }),
-      moveBefore: (key: Key, keys: Iterable<Key>) => moveRelative(key, keys, false),
-      moveAfter: (key: Key, keys: Iterable<Key>) => moveRelative(key, keys, true),
-      update: (oldKey: Key, newValue: T) =>
-        setItems(({ items, nodeMap: originalMap }) =>
-          updateTree(
-            items,
-            oldKey,
-            (oldNode) => {
-              const node: TreeNode<T> = { key: oldNode.key, parentKey: oldNode.parentKey, value: newValue, children: null };
-              const built = buildTree(getKey, getChildren, getChildren(newValue), originalMap, node.key);
-              node.children = built.items;
-              return node;
-            },
-            originalMap,
-          ),
+      }),
+    moveBefore: (key: Key, keys: Iterable<Key>) => moveRelative(key, keys, false),
+    moveAfter: (key: Key, keys: Iterable<Key>) => moveRelative(key, keys, true),
+    update: (oldKey: Key, newValue: T) =>
+      setItems(({ items, nodeMap: originalMap }) =>
+        updateTree(
+          items,
+          oldKey,
+          (oldNode) => {
+            const node: TreeNode<T> = { key: oldNode.key, parentKey: oldNode.parentKey, value: newValue, children: null };
+            const built = buildTree(getKey, getChildren, getChildren(newValue), originalMap, node.key);
+            node.children = built.items;
+            return node;
+          },
+          originalMap,
         ),
-    };
-  });
+      ),
+  };
 }

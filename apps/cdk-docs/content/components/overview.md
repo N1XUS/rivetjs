@@ -57,7 +57,7 @@ Each component has its own import path, such as `@rivetjs/cdk/tabs`. Components 
 
 ## Callbacks
 
-For a callback such as a menu's `onAction`, pass a function written in the component: inline, or as a constant. The browser can resume it, so the callback works before the page loads any component code:
+For a callback such as a menu's `onAction`, pass any function. The browser runs the component's code on the first interaction, so the callback receives the same function it had on the server:
 
 ```tsx title="src/routes/editor.tsx"
 import { signal } from "@rivetjs/reactivity";
@@ -84,7 +84,7 @@ export default function Editor() {
 }
 ```
 
-A function that comes from somewhere Rivet did not compile (another library) cannot be resumed; the server then reports that the function is not serializable. `.bind(…)` of your own function resumes, inline in the prop or kept in a local constant (`const inc = add.bind(null, 2)`, usable by name anywhere); written inside an object literal it does not (a compile warning). See [function is not serializable](site:docs/gotchas/function-is-not-serializable/).
+Any function works: inline arrows, local functions, imported functions and functions from other libraries. A component given a function runs together with its parent in the browser (it is not written into the page).
 
 ## Components
 

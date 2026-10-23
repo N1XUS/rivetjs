@@ -9,8 +9,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { renderResumable, resumableToString } from "@rivetjs/runtime/server-resume";
-import { _rB, _rBEnd, _rBOut, _rFor, _setDerivedRows } from "@rivetjs/runtime/server-derived";
+import { _rB, _rBEnd, _rBOut, _rFor, _setDerivedRows, derivedToString, renderDerived } from "@rivetjs/runtime/server-derived";
 import { _listPlan, attribute, compiledTemplate, renderToString } from "@rivetjs/runtime/server";
 import { NodeStreamWriter } from "@rivetjs/runtime/node";
 import { Writable } from "node:stream";
@@ -70,7 +69,7 @@ const ids = (html: string): string => html.replace(/<!--r\d*\[-->/g, "<!--r[-->"
 const derived = hasDerivedModel();
 type AppModule = { App: (p: { data: Data }) => ServerValue };
 async function app(): Promise<AppModule["App"]> {
-  const out = compile(source, { target: "server", filename: "page.tsx", resume: { module: "src/page.tsx", model: "derived" } });
+  const out = compile(source, { target: "server", filename: "page.tsx", resume: { module: "src/page.tsx" } });
   assert.deepEqual(out.diagnostics, []);
   assert.match(out.code, /_rFor as /, "list-mounted Fors call the derived For");
   return (await importServer<AppModule>(out.code)).App;
@@ -84,13 +83,13 @@ async function bytes(factory: () => ServerValue): Promise<string> {
     },
   });
   const writer = new NodeStreamWriter(sink);
-  await renderResumable(factory, writer, { manifest, model: "derived" });
+  await renderDerived(factory, writer, { manifest });
   await writer.finish();
   return Buffer.concat(parts).toString();
 }
 async function both(App: AppModule["App"], data: Data): Promise<{ tape: [string, string]; rows: [string, string] }> {
   const render = async (): Promise<[string, string]> => [
-    (await resumableToString(() => App({ data }), { manifest, model: "derived" })) as string,
+    (await derivedToString(() => App({ data }), { manifest })) as string,
     await bytes(() => App({ data })),
   ];
   const tape = await render();
@@ -117,7 +116,7 @@ async function both(App: AppModule["App"], data: Data): Promise<{ tape: [string,
     assert.equal((tape[0].match(/<!--r\[--><section /g) ?? []).length, groups.length);
   }
   // The cross-boundary read (App's `theme` read in Page's rows) still wakes Page.
-  const html = (await resumableToString(() => App({ data: { rows: rows(2), groups } }), { manifest, model: "derived" })) as string;
+  const html = (await derivedToString(() => App({ data: { rows: rows(2), groups } }), { manifest })) as string;
   const tail = JSON.parse(html.match(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s)![1]!) as { w?: Record<string, number[]> };
   assert.deepEqual(Object.values(tail.w ?? {}), [[2]]);
 });
@@ -143,9 +142,9 @@ test("holes and array subclasses: row by row, same markers and content as the ro
   };
   class Sub extends Array<unknown> {}
   for (const items of [[1, , 3], Sub.from(["a", "b"]), ["x<", "y"]]) {
-    const tape = (await resumableToString(page(items), { manifest, model: "derived" })) as string;
+    const tape = (await derivedToString(page(items), { manifest })) as string;
     _setDerivedRows(false);
-    const perRow = (await resumableToString(page(items), { manifest, model: "derived" })) as string;
+    const perRow = (await derivedToString(page(items), { manifest })) as string;
     _setDerivedRows(true);
     assert.equal(ids(tape), ids(perRow));
     assert.equal((tape.match(/<!--r\[-->/g) ?? []).length, items.length);

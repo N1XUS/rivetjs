@@ -307,7 +307,7 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
       const result = compile(source, { target, filename });
       const errors = result.diagnostics.filter((d) => d.severity === "error");
       if (errors.length) return fail(node, `compiled fence does not compile (${target}): ${errors.map((d) => `${d.code} ${d.message}`).join("; ")}`);
-      // Compiler warnings (RV2012–RV2015) of an example: printed once per fence and message, never dropped.
+      // Compiler warnings (RV2104) of an example: printed once per fence and message, never dropped.
       for (const w of result.warnings ?? []) {
         const key = `${filename}\0${source}\0${w.line ?? 0}:${w.column ?? 0}\0${w.message}`;
         if (fenceWarnings.has(key)) continue;

@@ -23,19 +23,11 @@ export const framePath = (id: string): string => `/examples/${id}/frame/`;
 /** The example id of a frame page path (`/examples/<id>/frame/…`), else undefined. */
 export const frameIdOf = (pathname: string): string | undefined => /^\/examples\/([^/]+)\/frame(?:\/|$)/.exec(pathname)?.[1];
 /**
- * Server app `preload` config: example frames skip idle-time background prefetch (`background: 0`). A docs page
- * embeds many frames and each plans its own document, so per-frame budgets would add up; the page keeps the default.
+ * Server app `preload` config for the site's lean pages (`DocsSite.leanPages`): `preload.lean` there — nothing is
+ * prefetched before the first interaction (no runtime fetch-ahead); handlers load on intent.
  */
-export const framePreload = pagePreload();
-/**
- * `framePreload` plus the site's lean pages (`DocsSite.leanPages`): `preload.lean` there — nothing is prefetched
- * before the first interaction (no schedule, no router fetch-ahead); handlers load on intent.
- */
-export function pagePreload(lean: readonly string[] = []): { background: (url: URL) => number | undefined; lean: (url: URL) => boolean | undefined } {
-  return {
-    background: (url) => (frameIdOf(url.pathname) === undefined ? undefined : 0),
-    lean: (url) => lean.includes(url.pathname) || undefined,
-  };
+export function pagePreload(lean: readonly string[] = []): { lean: (url: URL) => boolean | undefined } {
+  return { lean: (url) => lean.includes(url.pathname) || undefined };
 }
 
 /** Message a frame posts to its parent to ask for the theme. */

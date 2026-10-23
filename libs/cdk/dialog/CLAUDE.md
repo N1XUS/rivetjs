@@ -6,7 +6,7 @@ RAC `DialogTrigger` + `Dialog` (React Aria useDialog / useOverlayTrigger). Compo
 ## Entry points
 - `@rivetjs/cdk/dialog` → `index.tsx`: `DialogTrigger`, `Dialog`, `DialogContext`, `OverlayTriggerStateContext`, types `DialogTriggerProps`, `DialogProps`, `DialogRenderProps` (`{close}`)
 - `@rivetjs/cdk/dialog/behaviour` → `behaviour.tsx` (explicit export): `dialogProps(props, slots)` (useDialog bag), `dialogFocus(element, isEntering?)`, `dialogBlur`, `dialogTitleWarning`, types `AriaDialogProps`, `DialogSlots`, `DialogAria`
-- `contexts.ts`: `DialogContext` (resumable id `rv-dialog`), `DialogContextValue` (`aria-labelledby` string | accessor, `idRef` signal)
+- `contexts.ts`: `DialogContext`, `DialogContextValue` (`aria-labelledby` string | accessor, `idRef` signal)
 
 ## Layout
 - `DialogTrigger`: renders no element. Provides OverlayTriggerStateContext (state = `createMenuTriggerState`), DialogContext (`id`, `aria-labelledby` = trigger id accessor, `idRef`), PopoverContext (`trigger: "DialogTrigger"`, `triggerRef`), and a `PressResponder` with `aria-expanded` / `aria-controls` accessors for the user's `<Button>`

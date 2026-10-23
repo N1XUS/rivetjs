@@ -3,7 +3,6 @@
 //   rivet vs next                         — headline (idiomatic island policies, each framework's default prefetch)
 //   rivet-all-load vs next                — fairness control (every island `load`, like Next's client components)
 //   rivet-no-prefetch vs next-no-prefetch — no prefetch in either lane
-//   rivet vs rivet-full                   — D-lean vs the full resume driver on the same app (a LOSE = regression)
 // Hand-written findings live in a notes file appended verbatim (`--notes`); edit it and regenerate, never the output.
 //
 // Usage: node apps/bridge-demo/report.ts --in results/x.json --out docs/benchmarks/<name> [--notes file.md]
@@ -21,11 +20,10 @@ const PAIRS: [subject: string, reference: string, label: string][] = [
   ["rivet", "next", "headline"],
   ["rivet-all-load", "next", "all `load` (fairness control)"],
   ["rivet-no-prefetch", "next-no-prefetch", "no prefetch"],
-  ["rivet", "rivet-full", "D-lean vs full driver"],
 ];
 const ROUTES = ["/", "/orders", "/orders/new"];
 /** Column order of every lane table (run.ts `LANES`); unknown lanes last. */
-const ORDER = ["rivet", "rivet-all-load", "rivet-no-prefetch", "rivet-full", "next", "next-no-prefetch"];
+const ORDER = ["rivet", "rivet-all-load", "rivet-no-prefetch", "next", "next-no-prefetch"];
 const ordered = (lanes: string[]) => [...lanes].sort((a, b) => (ORDER.indexOf(a) >>> 0) - (ORDER.indexOf(b) >>> 0));
 type Verdict = "WIN" | "LOSE" | "TIE" | "n/a";
 /** Lower is better unless `higher`; `floor` = absolute noise floor in the metric's unit. */
@@ -94,7 +92,7 @@ push(
   "Script resources fetched before the first input, after load + idle — fetched, not necessarily executed (next section). Inline scripts (Rivet boot + records ≈ 7 KB, Next RSC payload up to 83 KB) are page bytes, listed in the server rows, not here. Each chunk is counted once under the first category it matches (`run.ts` `CATEGORIES`: a chunk bundles a component with its libraries in both lanes).",
   "",
 );
-const BREAKDOWN_LANES = ["rivet", "rivet-full", "next"].filter((lane) => results.chunks?.[lane]);
+const BREAKDOWN_LANES = ["rivet", "next"].filter((lane) => results.chunks?.[lane]);
 for (const route of ROUTES) {
   const categories = [...new Set(BREAKDOWN_LANES.flatMap((lane) => Object.keys(results.chunks[lane]?.[route] ?? {})))].sort((a, b) =>
     a === "framework" ? 1 : b === "framework" ? -1 : a.localeCompare(b),
@@ -108,11 +106,7 @@ for (const route of ROUTES) {
     );
   const total = (lane: string) => Object.values(results.chunks[lane]?.[route] ?? {}).reduce((sum, n) => sum + n, 0);
   push(`| **total fetched** | ${BREAKDOWN_LANES.map((lane) => "**" + kb(total(lane)) + "**").join(" | ")} |`);
-  if (results.chunks.next?.[route] && results.chunks.rivet?.[route])
-    push(
-      "",
-      `Total vs next: rivet ${(total("rivet") / total("next")).toFixed(2)}×${results.chunks["rivet-full"]?.[route] ? `, rivet-full ${(total("rivet-full") / total("next")).toFixed(2)}×` : ""}.`,
-    );
+  if (results.chunks.next?.[route] && results.chunks.rivet?.[route]) push("", `Total vs next: rivet ${(total("rivet") / total("next")).toFixed(2)}×.`);
   push("");
 }
 

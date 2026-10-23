@@ -8,15 +8,12 @@
 //   element on `isVisible` plus a per-scope microtask that runs snapshots, then consumers, then the
 //   "was my snapshot consumed?" checks. Bindings update synchronously, so that order holds whichever
 //   element's effect ran first; React gets it from running every cleanup before every setup.
-// - Resumed pages: nothing runs before the first change of `isVisible`. Then the resumed regions re-create
-//   their elements: `_serverBranch()` tells a re-created element whether the server rendered it, so the
-//   previously visible one still snapshots (from its own re-created element, at the server one's place)
-//   and the newly visible one animates from it.
+// - Resumed pages: nothing runs before the first change of `isVisible`.
 // - Render props are accessors (`isEntering()`, `isExiting()`), read inside bindings (Rivet convention);
 //   `class` / `style` / `children` may be functions of them. No `render` prop (RAC DOMRenderProps).
 // - Server: no effect; the element renders without `data-entering` / `data-exiting`.
 import { effect, onCleanup, signal, untrack, useContext } from "@rivetjs/reactivity";
-import { Show, _serverBranch, ref } from "@rivetjs/runtime/dom";
+import { Show, ref } from "@rivetjs/runtime/dom";
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
@@ -103,10 +100,7 @@ export function SharedElement(props: SharedElementProps) {
   const idProp = props.id;
   const visible = typeof isVisible === "function" ? isVisible : () => isVisible;
   const client = typeof requestAnimationFrame === "function";
-  // A resumed page re-creating the server-rendered region starts from what the server rendered.
-  const server = _serverBranch();
-  const wasVisible = server !== undefined ? server === 0 : undefined;
-  const state = signal<State>((wasVisible ?? untrack(visible)) ? "visible" : "hidden");
+  const state = signal<State>(untrack(visible) ? "visible" : "hidden");
   const element = ref<HTMLDivElement>();
   const values: SharedElementRenderProps = {
     isEntering: () => client && state() === "entering",
@@ -114,7 +108,7 @@ export function SharedElement(props: SharedElementProps) {
   };
 
   if (client) {
-    let previous = wasVisible;
+    let previous: boolean | undefined;
     let frame: number | null = null;
     // Runs of the effect: a task queued by an earlier run (React: its captured element) does nothing.
     let run = 0;
@@ -125,8 +119,6 @@ export function SharedElement(props: SharedElementProps) {
         const before = previous;
         previous = isShown;
         if (frame != null) (cancelAnimationFrame(frame), (frame = null));
-        // Re-created on a resumed page with the visibility the server rendered: nothing changed.
-        if (before === isShown) return;
         const rendered = state() !== "hidden";
         if (isShown && !rendered) state.set("visible");
         // The previous run's cleanup: snapshot the element it rendered (none while hidden).

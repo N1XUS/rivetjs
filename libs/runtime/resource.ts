@@ -43,8 +43,7 @@ export interface Resource<T> {
   mutate(value: T | ((previous: T | undefined) => T)): T;
 }
 
-// Accessor ops: the resource function is `(op?, arg?)` (a resumed one `(seed, op?, arg?)`: dom-resume binds the server
-// seed as its first argument). Methods live on a shared prototype so a bound copy (`Function.prototype.bind` keeps the
+// Accessor ops: the resource function is `(op?, arg?)`. Methods live on a shared prototype so a bound copy (`Function.prototype.bind` keeps the
 // target's prototype) still has them; each calls its receiver with the op.
 const LOADING = 1,
   ERROR = 2,
@@ -72,7 +71,7 @@ export const _PROTO: object = Object.create(Function.prototype, {
 /** @internal Op codes shared with server-resource.ts. */
 export const _OPS = { LOADING, ERROR, LATEST, STATE, REFETCH, MUTATE } as const;
 
-/** @internal A server resource's state as the browser receives it (server-resource.ts encodes it; dom-resume binds it). */
+/** @internal A server resource's state as the browser receives it (server-resource.ts encodes it; the derived adopt run hands it to `resource()` through `_adoption.resource`). */
 export interface ResourceSeed {
   /** The server's change counter: what the server bindings read, so writing it here re-runs them. */
   n: Signal<number>;

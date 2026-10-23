@@ -17,7 +17,6 @@ import type { IconNode } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { File as FileIcon, FileArchive, FileCode, FileImage, FileMusic, FileSpreadsheet, FileText, FileVideoCamera, Paperclip } from "lucide";
 
 import { chatAttachmentVariants } from "../../../styles/src/components/chat-attachment/index.ts";
@@ -103,7 +102,7 @@ interface ChatAttachmentContext {
   src?: string;
 }
 
-const ChatAttachmentContext = resumableContext(createContext<ChatAttachmentContext>({}, { id: "rv-ui-chat-attachment" }));
+const ChatAttachmentContext = createContext<ChatAttachmentContext>({});
 
 interface ChatAttachmentRootProps extends Omit<JSX.IntrinsicElements["div"], "class" | "children"> {
   /** @default inferred from `mimeType` / `name` */

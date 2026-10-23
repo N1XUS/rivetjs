@@ -81,7 +81,7 @@ test("starter-ui prerenders @rivetjs/ui markup with the component styles", () =>
   const dir = resolve(repo, "templates/starter-ui");
   const html = readFileSync(resolve(dir, "dist/client/index.html"), "utf8");
   for (const slot of ['data-slot="card"', 'data-slot="avatar-fallback"', 'data-slot="chip"', 'data-slot="button"']) assert.ok(html.includes(slot), slot);
-  assert.match(html, /<script type="rivet\/state"/);
+  assert.match(html, /<script type="rivet\/boundaries"/);
   // Two render-blocking sheets: the app stylesheet (tokens, base, utilities), then the route sheet: the stylesheets of
   // the components the page imports — one Vite asset of the route chunk (`routes-<hash>.css`, route chunks since
   // 8b748656 put the page's components into one chunk) or, when the closure still has several files, the router's merged

@@ -21,7 +21,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronDown } from "lucide";
 
 import type { DisclosureVariants } from "../../../styles/src/components/disclosure/index.ts";
@@ -39,7 +38,7 @@ type DisclosureContext = {
   inDisclosure?: boolean;
 };
 
-const DisclosureContext = resumableContext(createContext<DisclosureContext>({}, { id: "rv-ui-disclosure" }));
+const DisclosureContext = createContext<DisclosureContext>({});
 
 type DisclosureSlots = ReturnType<typeof disclosureVariants>;
 let SLOTS: DisclosureSlots | undefined;

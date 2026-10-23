@@ -16,8 +16,7 @@
  */
 
 import { describe, expect, it, jest } from "@rivetjs/testing/jest";
-import { _inspect, computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
-import { createDecoder, createEncoder } from "@rivetjs/runtime/resume-format";
+import { computed, signal } from "@rivetjs/reactivity";
 import {
   canDecrement,
   canIncrement,
@@ -277,29 +276,6 @@ describe("useNumberFieldState", () => {
       commit(state, "9");
       expect(onChange).toHaveBeenLastCalledWith(9);
       expect(inputValue(state)).toBe("5");
-    });
-
-    it("resume shape: the state is signals + JSON and survives an encode / decode round trip", () => {
-      let state = createNumberFieldState({ defaultValue: 2, minValue: 0, maxValue: 10, formatOptions: { style: "percent" }, locale: "de-DE" });
-      setInputValue(state, "40 %");
-      // Resume table encoding: signals by value (server-resume `special`), everything else plain; functions throw.
-      let { ref, table } = createEncoder({
-        special: (value, ref) => {
-          let reactive = _inspect(value);
-          return reactive?.kind === "signal" ? { s: ref(reactive.value) } : undefined;
-        },
-      });
-      let root = ref(state);
-      let decoded = createDecoder(JSON.parse(JSON.stringify(table)), { signal: () => signal<unknown>(undefined) as Signal<unknown> }).get(root) as typeof state;
-      expect(untrack(decoded.value)).toBe(2);
-      expect(inputValue(decoded)).toBe("40 %");
-      expect(numberValue(decoded)).toBe(0.4);
-      commit(decoded);
-      expect(untrack(decoded.value)).toBe(0.4);
-      expect(inputValue(decoded)).toBe("40\u00a0%");
-      increment(decoded);
-      expect(inputValue(decoded)).toBe("41\u00a0%");
-      expect(decoded.defaultNumberValue).toBe(2);
     });
   });
 });

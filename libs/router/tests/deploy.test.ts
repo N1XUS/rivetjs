@@ -166,7 +166,7 @@ test(
       assert.ok(!statics.some((file) => file.startsWith(".vite")), "no build manifests in static/");
       assert.ok(!statics.includes("404.html"), "server mode: the function answers misses");
       const about = await readFile(out + "static/about/index.html", "utf8");
-      assert.match(about, /<h1 id="about">About at build time<\/h1>/);
+      assert.match(about.replace(/<!--[^>]*-->/g, ""), /<h1 id="about">About at build time<\/h1>/);
       assert.match(about, /<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-/);
       const fn = out + "functions/_render.func/";
       const vcConfig = await readJSON(fn + ".vc-config.json");
@@ -246,7 +246,7 @@ test(
       try {
         const page = await fetch(server.url + "/_isr/about?__rivet_path=%2Fabout", { headers: { host: "a.vercel.app", "x-forwarded-proto": "https" } });
         assert.equal(page.status, 200);
-        assert.match(await page.text(), /About at build time/);
+        assert.match((await page.text()).replace(/<!--[^>]*-->/g, ""), /About at build time/);
       } finally {
         await server.close();
       }

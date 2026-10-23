@@ -3,9 +3,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { compile } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
-import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { compileResume, importServer, symbolUrls, symbolChunks } from "./resume/compile.ts";
-import { withPage, rewrite, symbolModules } from "./resume/harness.ts";
+import { importServer } from "./resume/compile.ts";
+import { withPage, rewrite } from "./resume/harness.ts";
 
 /** Server build of ./control-flow/fixture.tsx. */
 type View = (props: never) => unknown;
@@ -230,104 +229,4 @@ test("strict authoring types accept Show / Switch / Match / Dynamic", async () =
     ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, "\n")),
     [],
   );
-});
-
-test("resume: Show / Switch adopt the server branch; state inside survives condition changes", async () => {
-  const resumeSource = await readFile(new URL("./control-flow/resume.tsx", import.meta.url), "utf8");
-  const resumeDom = compileResume(resumeSource, "dom");
-  const resumeServer = await importServer<{ Page(): never }>(compileResume(resumeSource, "server").code);
-  const chunks = symbolChunks(resumeDom.symbols);
-  const files: Record<string, string> = {
-    "/fixture.mjs": rewrite(resumeDom.code),
-    "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume();',
-  };
-  Object.assign(files, symbolModules(chunks));
-  const manifest = { hash: "test", runtime: "/rt.js", symbols: symbolUrls(resumeDom.symbols) };
-  files["/"] = "<!doctype html><html><head></head><body>" + (await resumableToString(() => resumeServer.Page(), { manifest })) + "</body></html>";
-  await withPage(files, async (page) => {
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
-    await page.goto("http://rivet.test/");
-    type Tagged = Element & { __server?: boolean };
-    await page.evaluate(() => document.querySelectorAll<Element & { __server?: boolean }>("span").forEach((el) => (el.__server = true)));
-    const text = (selector: string) => page.evaluate((s) => document.querySelector(s)?.textContent ?? null, selector);
-    const server = (selector: string) => page.evaluate((s) => !!document.querySelector<Element & { __server?: boolean }>(s)?.__server, selector);
-    // Resumed state inside the branch: counter and typed input.
-    await page.fill("#shown .text", "typed");
-    await page.click("#shown .inc");
-    await page.click("#shown .inc");
-    await page.waitForFunction(() => document.querySelector("#shown .count")!.textContent === "2");
-    // Condition value changes while truthy: the region activates, the browser Show adopts the server branch.
-    await page.click("#up");
-    await page.waitForFunction(() => document.querySelector("#n")!.textContent === "7");
-    await page.click("#up");
-    await page.waitForFunction(() => document.querySelector("#n")!.textContent === "8");
-    assert.equal(await server("#shown"), true);
-    assert.equal(await text("#shown .count"), "2");
-    assert.equal(await page.inputValue("#shown .text"), "typed");
-    await page.click("#shown .inc");
-    await page.waitForFunction(() => document.querySelector("#shown .count")!.textContent === "3");
-    // false → true → false after resume.
-    await page.click("#low");
-    await page.waitForFunction(() => document.querySelector("#fallback") && !document.querySelector("#shown"));
-    await page.click("#high");
-    await page.waitForFunction(() => document.querySelector("#shown .count")?.textContent === "0");
-    assert.equal(await server("#shown"), false);
-    await page.evaluate(() => ((document.querySelector("#shown") as Element & { __client?: boolean }).__client = true));
-    await page.click("#shown .inc");
-    await page.click("#up");
-    await page.waitForFunction(() => document.querySelector("#n")!.textContent === "10");
-    assert.equal(await page.evaluate(() => !!(document.querySelector("#shown") as Element & { __client?: boolean }).__client), true);
-    assert.equal(await text("#shown .count"), "1");
-    await page.click("#low");
-    await page.waitForFunction(() => document.querySelector("#fallback"));
-    // A branch that read its value accessor is re-created when the value changes.
-    await page.click("#rename");
-    await page.waitForFunction(() => document.querySelector("#name")?.textContent === "zed");
-    // Switch: same matched index keeps the server branch; another index re-creates.
-    await page.click("#small .inc");
-    await page.waitForFunction(() => document.querySelector("#small .count")!.textContent === "1");
-    await page.click("#next");
-    await page.waitForFunction(() => !!document.querySelector("#small"));
-    await page.evaluate(() => new Promise((done) => setTimeout(done, 50)));
-    assert.equal(await server("#small"), true);
-    assert.equal(await text("#small .count"), "1");
-    await page.click("#next");
-    await page.waitForFunction(() => !!document.querySelector("#large"));
-    assert.equal(await page.evaluate(() => !document.querySelector("#small")), true);
-    assert.equal(await page.evaluate(() => (globalThis as { __componentRuns?: number }).__componentRuns ?? 0), 2);
-    assert.deepEqual(errors, []);
-    void (null as unknown as Tagged);
-  });
-});
-
-test("resume server: branch regions only where the browser can keep them", async () => {
-  const render = async (body: string): Promise<{ html: string; regions: unknown[][] }> => {
-    const code = `import { signal } from "@rivetjs/reactivity";
-      import { Show, For } from "@rivetjs/runtime/server";
-      export function Page() { const n = signal(1), a = signal(true), items = signal(["x", "y"]); return <main>${body}</main>; }`;
-    const dom = compileResume(code, "dom");
-    const mod = await importServer<{ Page(): never }>(compileResume(code, "server").code);
-    const manifest = { runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c.js"])) };
-    const out = await resumableToString(() => mod.Page(), { manifest });
-    const script = /<script type="rivet\/state"[^>]*>(.*?)<\/script>/.exec(out);
-    const state = (script ? JSON.parse(script[1]!) : { b: [] }) as { b: unknown[][] };
-    return { html: script ? out.slice(0, out.indexOf("<script")) : out, regions: state.b.filter((entry) => entry[1] === "#") };
-  };
-  // Adoptable: the condition reads a signal, the branch reads none outside its bindings.
-  let r = await render(`<Show when={() => n() > 0}>{() => <b>{n()}</b>}</Show>`);
-  // r0 continues the stride of r2, r1 (−1): its id is left out.
-  assert.equal(r.html, "<main><!--r2[--><!--r1[--><b><!--r-->1<!--/--></b><!--]--><!--]--></main>");
-  assert.deepEqual(r.regions[0]!.slice(8), [{ w: 1, k: 0 }]);
-  // A constant condition: no region, no branch markers.
-  r = await render(`<Show when={() => true}>{() => <b>x</b>}</Show>`);
-  assert.equal(r.html, "<main><b>x</b></main>");
-  // The branch reads signals itself (a For's each): plain branch; its rows belong to the region.
-  r = await render(`<Show when={() => n() > 0}>{() => <For each={items} by={(x: string) => x}>{(x: () => string) => <i>{x()}</i>}</For>}</Show>`);
-  assert.equal(r.html, "<main><!--r2[--><!--r0[--><i>x</i><!--]--><!--r1[--><i>y</i><!--]--><!--]--></main>");
-  assert.deepEqual(r.regions[0]!.slice(8), [[0, 4, 0, 1, 5, 0]]);
-  // The region read another signal before reaching the Show: the branch is never adopted (still disposed with it).
-  r = await render(`{a() ? <Show when={() => n() > 0}>{() => <b>x</b>}</Show> : null}`);
-  assert.deepEqual(r.regions[0]!.slice(8), [{ w: 0, k: null }]);
 });

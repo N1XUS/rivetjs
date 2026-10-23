@@ -14,7 +14,6 @@ import type { TagGroupProps as TagGroupPrimitiveProps, TagListProps as TagListPr
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { TagVariants } from "../../../styles/src/components/tag/index.ts";
 import { tagGroupVariants } from "../../../styles/src/components/tag-group/index.ts";
@@ -36,7 +35,7 @@ type TagGroupContext = {
   variant?: TagVariants["variant"];
 };
 
-const TagGroupContext = resumableContext(createContext<TagGroupContext>({}, { id: "rv-ui-tag-group" }));
+const TagGroupContext = createContext<TagGroupContext>({});
 
 type TagGroupSlots = ReturnType<typeof tagGroupVariants>;
 let SLOTS: TagGroupSlots | undefined;

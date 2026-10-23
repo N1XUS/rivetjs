@@ -112,7 +112,7 @@ export default function Page() {
 ```
 
 - On the server, the compiler removes the import. The server renders the `fallback` with the same props.
-- In the browser, the module loads when the component renders. On a server-rendered page that is when it comes near the screen (`when: "visible"`, the default; also `"load"`, `"idle"`, `"interaction"`, `"media:(query)"`). Rendered later, for example after a click as in the example above, it loads right then. The fallback shows until it arrives.
+- In the browser, the module loads when the component renders. On a server-rendered page that is when it comes near the screen (`when: "visible"`, the default; also `"load"` and `"idle"`). Rendered later, for example after a click as in the example above, it loads right then. The fallback shows until it arrives.
 - The module may read browser globals anywhere, even at its top level, because the server never loads it.
 
 Write the import inline, as above. The compiler needs to see `() => import("…")` and a selector that is inline or `undefined`; otherwise it reports `Server clientOnly erasure requires an inline importer and inline selector or undefined`.
@@ -130,7 +130,7 @@ Write the import inline, as above. The compiler needs to see `() => import("…"
 
 ## Common mistakes
 
-- **`typeof window !== "undefined"` checks in component code.** The component runs once, on the server, so the browser branch never runs. Use one of the four tools above.
+- **`typeof window !== "undefined"` checks in component code.** The component renders on the server and again over the server's HTML in the browser, so the two branches give different markup and the component renders in the browser instead of reusing the server nodes. Use one of the four tools above.
 - **Reading a browser value into a signal at the top of the component.** Read it in a `clientEffect` and `set` the signal there.
 - **Forgetting the fallback.** Without it, `clientOnly` renders nothing on the server, and the layout jumps when the component appears. Give the fallback the same size.
 

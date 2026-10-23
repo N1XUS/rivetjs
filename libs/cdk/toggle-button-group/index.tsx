@@ -2,7 +2,7 @@
 // A group of `ToggleButton`s (each with an `id`) with single (`role="radiogroup"`) or multiple (`role="toolbar"`)
 // selection; arrow keys move focus between the buttons (useToolbar).
 // Rivet:
-// - state = `createToggleGroupState` (`../state/toggle-group.ts`, region state); `selectedKeys` is a plain
+// - state = `createToggleGroupState` (`../state/toggle-group.ts`); `selectedKeys` is a plain
 //   iterable (controlled) or a two-way `Signal` (decision 2).
 // - render props are accessors (`class={({ isDisabled }) => (isDisabled() ? … : …)}`); `state` is the state object.
 // - toolbar keyboard handling = `../toolbar/behaviour.ts` (bubbling keydown / focusin / focusout, see its header).

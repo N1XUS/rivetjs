@@ -6,12 +6,11 @@ import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
-import { buildApp, dist } from "./app/serve.ts";
+import { buildApp } from "./app/serve.ts";
 
-// `RIVET_RESUME_MODEL=derived` (M6-PARITY): the same flows over a derived-model build. Derived pages fetch the page's
-// chunks ahead at low priority after `load` (`data-fo` modulepreloads: fetched, never evaluated before an event), so "no
-// form code before interaction" is checked as "only modulepreloads, nothing ran" (the router brand is not installed yet).
-const derived = process.env.RIVET_RESUME_MODEL === "derived";
+// Resumed pages fetch the page's chunks ahead at low priority after `load` (`data-fo` modulepreloads: fetched, never
+// evaluated before an event), so "no form code before interaction" is checked as "only modulepreloads, nothing ran" (the
+// router brand is not installed yet).
 
 const root = new URL("./app/", import.meta.url).pathname;
 let origin = "";
@@ -20,7 +19,7 @@ let browser: Browser;
 
 beforeAll(async () => {
   await buildApp();
-  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {} });
+  const app = await start({ dist: root + "dist", port: 0, host: "127.0.0.1", onError: () => {} });
   origin = app.url;
   close = () => app.close();
   browser = await chromium.launch({ headless: true });
@@ -41,10 +40,9 @@ function watch(page: Page) {
   return seen;
 }
 
-/** The form modules requested before any interaction: none — on derived, only the page's modulepreloads (nothing ran). */
+/** The form modules requested before any interaction: only the page's modulepreloads (nothing ran). */
 async function untouched(page: Page, scripts: string[], pattern: RegExp): Promise<void> {
   const early = scripts.filter((url) => pattern.test(url));
-  if (!derived) return assert.deepEqual(early, [], "no form modules before interaction");
   const { preloads, ran } = await page.evaluate(() => ({
     preloads: [...document.querySelectorAll<HTMLLinkElement>("link[rel=modulepreload]")].map((link) => link.href),
     // No router handler ran (they install the forms brand first) and no form field was touched.
@@ -58,11 +56,10 @@ async function untouched(page: Page, scripts: string[], pattern: RegExp): Promis
   assert.equal(ran, false, "nothing ran before interaction");
 }
 
-/** Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router (intent). Derived: the
- * press loads chunks only (the router adopts on the first event that needs it). */
+/** Z1: a resumed router app boots nothing at idle; a press on a link loads chunks only (the router adopts on the first
+ * event that needs it). */
 async function intent(page: Page): Promise<void> {
   await page.dispatchEvent("a[href^='/']", "pointerdown");
-  if (!derived) await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
   await page.waitForLoadState("networkidle");
 }
 
@@ -73,15 +70,13 @@ test("signup (JS): no form modules before interaction, issues on blur, async che
   await page.waitForTimeout(200);
   // Only the router's idle boot (client navigation); no form code before interaction.
   await untouched(page, seen.scripts, /definitions|Signup|enhance|transport|signup/);
-  const before = seen.scripts.length;
   // Blur an invalid email: the handler chunk loads, the issue shows, the input is marked invalid.
   await page.fill("#signup-email", "nope");
   await page.locator("#signup-email").blur();
   await page.waitForFunction(() => document.querySelector("#signup-email-error")?.textContent?.includes("Enter an email address"));
   assert.equal(await page.getAttribute("#signup-email", "aria-invalid"), "true");
   assert.equal(await page.getAttribute("#signup-email", "aria-describedby"), "signup-email-error");
-  // (Derived: the chunks were fetched ahead; the issue above shows the blur adopted the form.)
-  if (!derived) assert.ok(seen.scripts.length > before);
+  // (The chunks were fetched ahead; the issue above shows the blur adopted the form.)
   // Fixing it clears the issue as you type (revalidate on input); the async check then runs.
   await page.fill("#signup-email", "taken@example.com");
   await page.waitForFunction(() => document.querySelector("#signup-email-error")?.textContent?.includes("already registered"));
@@ -287,14 +282,7 @@ test("contact (custom submit, SSR): native form posting to the third-party endpo
   const html = await (await fetch(origin + "/contact")).text();
   assert.match(html, /<form[^>]*method="post"[^>]*action="https:\/\/forms\.example\.test\/contact"/);
   assert.match(html, /enctype="multipart\/form-data"/);
-  // (Serialized: the button's resume record `data-r` + its text site marker; derived: plain markup.)
-  assert.match(
-    html,
-    derived
-      ? /<button id="contact-send" type="submit" class="button">Send/
-      : /<button id="contact-send" type="submit" class="button" data-r="\d+">(<!--r\d*-->)?Send/,
-    "enabled, not submitting",
-  );
+  assert.match(html, /<button id="contact-send" type="submit" class="button">Send/, "enabled, not submitting");
 });
 
 test("contact (JS, resumed): defineForm submit posts to the external endpoint; submitting, issues, focus, success, errors", async () => {

@@ -12,7 +12,6 @@ import type { IconNode } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { CircleCheck, CircleX, LoaderCircle, ShieldAlert, Wrench } from "lucide";
 
 import { chatToolVariants } from "../../../styles/src/components/chat-tool/index.ts";
@@ -32,7 +31,7 @@ interface ChatToolContext {
   toolName?: string;
 }
 
-const ChatToolContext = resumableContext(createContext<ChatToolContext>({}, { id: "rv-ui-chat-tool" }));
+const ChatToolContext = createContext<ChatToolContext>({});
 
 const STATE_LABELS: Record<ChatToolState, string> = {
   "input-streaming": "Running",

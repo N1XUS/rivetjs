@@ -5,7 +5,7 @@ import { createContext, untrack } from "@rivetjs/reactivity";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { slotChildren, type DOMRenderProps } from "../utils/render.ts";
-import { resumableContext, contextProps, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
+import { contextProps, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
 import { hasLive } from "../utils/live.tsx";
 import { liveElement } from "../utils/live-element.tsx";
 
@@ -24,7 +24,7 @@ export interface HeadingProps extends HTMLProps<"h3">, SlotProps, DOMRenderProps
   children?: Content | (() => Content);
 }
 
-export const HeadingContext = resumableContext(createContext<ContextValue<HeadingProps, HTMLHeadingElement>>({}, { id: "rv-heading" }));
+export const HeadingContext = createContext<ContextValue<HeadingProps, HTMLHeadingElement>>({});
 
 export function Heading(props: HeadingProps) {
   const [merged, ref] = contextProps(props, props.ref, HeadingContext);

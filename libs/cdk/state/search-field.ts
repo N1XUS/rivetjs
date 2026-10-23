@@ -3,7 +3,7 @@
 // Rivet:
 // - `value` plain = controlled (only reported through `onChange`), Signal = two-way, accessor (`() => text`,
 //   e.g. an Autocomplete's `FieldInputContext` value) = controlled and read live; else uncontrolled
-//   (all via `controllable`; uncontrolled = region state). Read with `searchFieldValue(state)`, write with `setSearchFieldValue`.
+//   (all via `controllable`; uncontrolled = an own signal). Read with `searchFieldValue(state)`, write with `setSearchFieldValue`.
 // - state = signals + JSON + the caller's `onChange`: serializes on resumed pages.
 import type { Signal } from "@rivetjs/reactivity";
 import { controllable, setControlledValue, type ControlledState } from "../interactions/controllable.ts";

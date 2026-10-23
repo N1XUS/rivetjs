@@ -17,7 +17,7 @@ import {
 } from "../index.ts";
 import { send } from "../submit.ts";
 import { runtime } from "../store.ts";
-import { encodeState, fakeElement, fd, schema, tick } from "./fixtures.ts";
+import { fakeElement, fd, schema, tick } from "./fixtures.ts";
 
 type Contact = { email: string; message: string };
 const contactSchema = schema<Contact>(() => []);
@@ -66,8 +66,6 @@ test("success: submitting() while the handler runs, typed value + FormData + sig
     untrack(() => lastResult(other)),
     "sent",
   );
-  // The store stays resume-serializable after a custom submit.
-  assert.doesNotThrow(() => encodeState(other));
 });
 
 test("returned failure: field + form issues shown (IssueLike accepted), fields armed, stale issues cleared", async () => {

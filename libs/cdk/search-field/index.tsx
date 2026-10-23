@@ -32,7 +32,6 @@ import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
   Provider,
-  resumableContext,
   contextProps,
   createSlot,
   createSlotId,
@@ -110,7 +109,7 @@ export interface SearchFieldProps
 }
 
 /** RAC `SearchFieldContext`. */
-export const SearchFieldContext = resumableContext(createContext<ContextValue<SearchFieldProps, HTMLDivElement>>(null, { id: "rv-search-field" }));
+export const SearchFieldContext = createContext<ContextValue<SearchFieldProps, HTMLDivElement>>(null);
 
 const OWNED = ["style", "render"] as const;
 

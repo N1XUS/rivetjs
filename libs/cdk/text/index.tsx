@@ -8,16 +8,7 @@ import { Dynamic } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { slotChildren, type DOMRenderProps } from "../utils/render.ts";
-import {
-  resumableContext,
-  contextProps,
-  probeSlot,
-  type ContextValue,
-  type HTMLProps,
-  type RefValue,
-  type SlotProps,
-  type StyleObject,
-} from "../slots/index.tsx";
+import { contextProps, probeSlot, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
 import { isHiddenPart } from "../collections/hidden.ts";
 import { slotProbing } from "#server";
 import { hasLive } from "../utils/live.tsx";
@@ -34,7 +25,7 @@ export interface TextProps extends HTMLProps<"span">, SlotProps, DOMRenderProps<
   children?: Content | (() => Content);
 }
 
-export const TextContext = resumableContext(createContext<ContextValue<TextProps, HTMLElement>>({}, { id: "rv-text" }));
+export const TextContext = createContext<ContextValue<TextProps, HTMLElement>>({});
 
 export function Text(props: TextProps) {
   // A field's server slot probe (`probeSlots`; browser: the constant `false`): mark the description / errorMessage slot id

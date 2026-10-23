@@ -5,16 +5,7 @@ import { createContext } from "@rivetjs/reactivity";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { slotChildren, type DOMRenderProps } from "../utils/render.ts";
-import {
-  resumableContext,
-  contextProps,
-  probeSlot,
-  type ContextValue,
-  type HTMLProps,
-  type RefValue,
-  type SlotProps,
-  type StyleObject,
-} from "../slots/index.tsx";
+import { contextProps, probeSlot, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
 import { isHiddenPart } from "../collections/hidden.ts";
 import { slotProbing } from "#server";
 
@@ -26,7 +17,7 @@ export interface KeyboardProps extends HTMLProps<"kbd">, SlotProps, DOMRenderPro
   children?: Content | (() => Content);
 }
 
-export const KeyboardContext = resumableContext(createContext<ContextValue<KeyboardProps, HTMLElement>>({}, { id: "rv-keyboard" }));
+export const KeyboardContext = createContext<ContextValue<KeyboardProps, HTMLElement>>({});
 
 export function Keyboard(props: KeyboardProps) {
   // A menu item's server slot probe (`probeSlots`): mark the shortcut slot id this part takes, render nothing.

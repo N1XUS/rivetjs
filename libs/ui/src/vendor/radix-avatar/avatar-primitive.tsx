@@ -20,7 +20,7 @@
 // - Live props: props are read lazily (`splitLive` = runtime `splitProps`), so a live `src={s()}` / `crossOrigin` /
 //   `referrerPolicy` (read inside the probe effect) re-probes and a live `class` updates in place (React re-renders). They also
 //   accept an accessor (`() => value`; cdk accessor rule).
-// - the status signal lives in a resumable context (`rv-ui-radix-avatar`): the server renders the fallback (status `idle`,
+// - the status signal lives in a context: the server renders the fallback (status `idle`,
 //   no `<img>`); the probe runs in a `clientEffect`, which a resumed page starts without a user event; `Show` bindings add
 //   the `<img>` and drop the fallback. An `Image` outside a `Root` (upstream: throws) keeps a status of its own.
 // - `useLayoutEffect` / `useEffect` → `clientEffect`; `useCallbackRef` not needed (the callback is read when called).
@@ -28,7 +28,6 @@ import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider, Show, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { DEV } from "#dev";
 
 import { splitLive } from "../../utils/live.tsx";
@@ -47,7 +46,7 @@ interface AvatarContextValue {
   images?: { count: number; warned: boolean };
 }
 
-const AvatarContext = resumableContext(createContext<AvatarContextValue>({}, { id: "rv-ui-radix-avatar" }));
+const AvatarContext = createContext<AvatarContextValue>({});
 
 /** Upstream `useImageCount` warning text. */
 const IMAGE_COUNT_MESSAGE =

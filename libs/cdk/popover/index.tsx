@@ -25,7 +25,6 @@ import { read as readAccessor, type MaybeAccessor } from "../interactions/utils.
 import { createContext, effect, signal, untrack, useContext, type Context, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, Ref } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import {
   Provider,
   contextProps,
@@ -116,7 +115,7 @@ export interface PopoverProps
 }
 
 /** Stores a ref for the portal container for a group of popovers (e.g. submenus). */
-const PopoverGroupContext = resumableContext(createContext<Ref<HTMLDivElement> | null>(null, { id: "rv-popover-group" }));
+const PopoverGroupContext = createContext<Ref<HTMLDivElement> | null>(null);
 
 const readBool = (value: boolean | (() => boolean) | undefined): boolean => (typeof value === "function" ? value() : !!value);
 /** Context values may be accessors (e.g. DialogTrigger's `aria-labelledby`): read inside the binding. */

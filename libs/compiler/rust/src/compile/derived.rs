@@ -45,14 +45,17 @@ pub(super) fn is_function_child(e: &Expression<'_>) -> bool {
 }
 
 impl<'t, 'a> Compiler<'t, 'a> {
-    /// Run the resume analysis for its sites only (its capture / serializability diagnostics are dropped: nothing
-    /// serializes), keep RV2001, plan boundaries / keyed state (RV2103 / RV2104), allocate the ABI locals.
+    /// Run the resume analysis for its sites only (its own diagnostics are dropped: nothing serializes), keep RV2001,
+    /// plan boundaries / keyed state (RV2103 / RV2104), allocate the ABI locals; `check` also keeps the sites.
     /// DOM target: the same analysis and plan (identical boundaries / keys); every diagnostic of it is the server
     /// target's (RV2001 / RV2103 / RV2104 are reported once, by the server compile and `check`'s server pass).
     pub(super) fn derived_setup(&mut self, module: &str, verdicts: &Verdicts, options: &Options) {
         let tree = self.tree;
         let mut scratch = Diags { tree: Some(tree), filename: self.diags.filename.clone(), list: Vec::new() };
-        let resumed = resume::analyze(tree, module, &mut scratch, &self.static_decls, &options.source_packages, &options.resolved_imports);
+        let resumed = resume::analyze(tree, module, &mut scratch, &self.static_decls, &options.source_packages);
+        if options.check {
+            self.sites = resume::site_infos(tree, &resumed);
+        }
         let plan = if self.server {
             resume::browser_global_reads(tree, &resumed, &mut self.diags);
             resume::derived::plan(tree, &resumed, module, verdicts, &mut self.diags)
@@ -118,7 +121,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let token = self.derived_token();
         let b = self.derived_name("b");
         let end = self.derived_name("bEnd");
-        let props = props.map(|p| format!(", {p}")).unwrap_or_default();
+        let events = self.derived.as_ref().and_then(|d| d.plan.events.get(&id).cloned());
+        let props = match (props, events) {
+            (props, Some(events)) => format!(", {}, {}", props.unwrap_or("undefined"), quote(&events)),
+            (Some(p), None) => format!(", {p}"),
+            (None, None) => String::new(),
+        };
         let open = format!("const {token} = {b}({}, {flags}{props});", quote(name));
         let close = format!(" finally {{ {end}({token}); }}");
         let (body, concise) = match tree.kind(id) {

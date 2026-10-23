@@ -27,7 +27,7 @@ const counter = (page: Page) => page.textContent(`${root} .lightbox__counter`);
 test("lightbox: SSR — closed modal renders no slides; inline markup with classes", async () => {
   const html = await (await fetch(s.origin + "/lightbox")).text();
   assert.doesNotMatch(html, /<div[^>]*data-lightbox-overlay/);
-  assert.match(html, /id="lb-inline"><section class="lightbox__inline"/);
+  assert.match(html, /id="lb-inline">(<!--[^>]*-->)*<section class="lightbox__inline"/);
   assert.match(html, /class="lightbox__container"/);
   assert.match(html, /class="button button--icon-only button--md button--tertiary lightbox__button lightbox__next"/);
   assert.doesNotMatch(html, /<script[^>]*data-boot/);

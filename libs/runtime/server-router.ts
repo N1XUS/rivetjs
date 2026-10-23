@@ -1,4 +1,3 @@
-import { signal } from "@rivetjs/reactivity";
 import { Async } from "./server-async.ts";
 import type { AsyncWork } from "./async.ts";
 import type { RouteDefinition, RouteMatch, Routes } from "./router.ts";
@@ -10,10 +9,6 @@ export interface ServerRouter {
   location(): URL;
 }
 
-/** Resume ABI: a server router's location signal (serialized as the client router's href). */
-export const ROUTER: unique symbol = Symbol.for("rivet.router");
-/** Resume ABI: server routers' location signals (their same-origin href ships relative, see `ResumableOptions.origin`). */
-export const _hrefs: WeakSet<object> = new WeakSet();
 import { compileRoutes as compileLinear, routeMatcher, renderRoute } from "./router.ts";
 import { _bucketPaths } from "./router-buckets.ts";
 
@@ -30,9 +25,8 @@ export function compileRoutes<T, V>(routes: readonly RouteDefinition<T, V>[]): (
 export function createRouter(input: URL | string): ServerRouter {
   const url = new URL(input);
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new TypeError("Server router requires an absolute HTTP(S) URL");
-  const href = signal(url.href);
-  _hrefs.add(href);
-  return Object.freeze({ location: () => new URL(href()), [ROUTER]: href });
+  const href = url.href;
+  return Object.freeze({ location: () => new URL(href) });
 }
 
 /** Define a loaded route while preserving inferred loader data in render. */

@@ -66,7 +66,6 @@ export default function Todos() {
 | `each` | The array, or a function that returns it. `each={todos()}` and `each={todos}` both follow the signal: props are live, and a signal is a function. |
 | `by` | A function that returns a unique key for an item, like its `id`. Required. |
 | children | A function that renders one row. It gets `item` and `index` as **functions**: call `todo()` and `index()`. |
-| `lazy` | Optional. Only matters with [lazy rows](../../learn/resuming.md#lazy-rows) on (the default in resumable builds): `false`, or a function that returns `false` on the server, keeps this list's rows fully resumable instead of lazy. Use it on an outer list whose rows hold another list, so the inner list is the lazy one. |
 
 ::api{symbol="@rivetjs/runtime/dom#For"}
 
@@ -130,7 +129,7 @@ A row handler can use the row's `item` and `index`:
 </For>
 ```
 
-On a resumed page, the items go into the page data, so they must be :term[serializable]{id=serializable}: plain objects, arrays, strings, numbers.
+On a resumed page, the items go into the page data (as the component's props or route data), so they must be :term[serializable]{id=serializable}: plain objects, arrays, strings, numbers.
 
 ## Animate rows in and out
 

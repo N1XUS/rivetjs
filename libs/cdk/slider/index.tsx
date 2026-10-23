@@ -52,7 +52,6 @@ import {
   createSlot,
   mergeRefValues,
   renderProps,
-  resumableContext,
   slottedContext,
   type ContextValue,
   type ProviderValue,
@@ -144,19 +143,15 @@ export interface SliderProps<T = number | number[]>
 }
 
 /** RAC `SliderContext`. */
-export const SliderContext = resumableContext(createContext<ContextValue<Partial<SliderProps>, HTMLDivElement>>(null, { id: "rv-slider" }));
+export const SliderContext = createContext<ContextValue<Partial<SliderProps>, HTMLDivElement>>(null);
 /** RAC `SliderStateContext`. */
-export const SliderStateContext = resumableContext(createContext<SliderState | null>(null, { id: "rv-slider-state" }));
+export const SliderStateContext = createContext<SliderState | null>(null);
 /** RAC `SliderTrackContext`. */
-export const SliderTrackContext = resumableContext(
-  createContext<ContextValue<Partial<SliderTrackProps> & Bag, HTMLDivElement>>(null, { id: "rv-slider-track" }),
-);
+export const SliderTrackContext = createContext<ContextValue<Partial<SliderTrackProps> & Bag, HTMLDivElement>>(null);
 /** RAC `SliderFillContext`. */
-export const SliderFillContext = resumableContext(createContext<ContextValue<Partial<SliderFillProps>, HTMLDivElement>>(null, { id: "rv-slider-fill" }));
+export const SliderFillContext = createContext<ContextValue<Partial<SliderFillProps>, HTMLDivElement>>(null);
 /** RAC `SliderOutputContext`. */
-export const SliderOutputContext = resumableContext(
-  createContext<ContextValue<Partial<SliderOutputProps> & Bag, HTMLOutputElement>>(null, { id: "rv-slider-output" }),
-);
+export const SliderOutputContext = createContext<ContextValue<Partial<SliderOutputProps> & Bag, HTMLOutputElement>>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 

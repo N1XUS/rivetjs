@@ -32,7 +32,7 @@ export interface PluginConfig {
   linkModules?: string[];
   /** Resume inlay hints: `client` (browser-only closures, default), `all`, or off. */
   inlayHints?: "client" | "all" | false;
-  /** Type-aware serializability warnings (RV2101, default on). */
+  /** Type-aware checks: RV3101 route-link warnings (default on). */
   typeAware?: boolean;
   /** Absolute path of a `rivet_compiler.wasm` to use instead of the workspace's / bundled one. */
   compilerWasm?: string;
@@ -136,7 +136,7 @@ function init({ typescript: ts }: { typescript: typeof TS }): TS.server.PluginMo
         return match && { project: manifest, ...match };
       };
 
-      /** Every Rivet diagnostic for a file (compiler + RV2101 + RV3101), TS duplicates dropped. */
+      /** Every Rivet diagnostic for a file (compiler + RV3010 + RV3101), TS duplicates dropped. */
       const rivetDiagnostics = (fileName: string): { file: TS.SourceFile; diagnostics: CheckDiagnostic[]; result: FileCheck } | null => {
         const ctx = context(fileName);
         if (!ctx) return null;
@@ -234,8 +234,7 @@ function init({ typescript: ts }: { typescript: typeof TS }): TS.server.PluginMo
             const by = ctx.result.sites.filter((site) =>
               site.captures.some((c) => c.name === node.text && (c.start === node.getStart(ctx.file) || (position >= site.start && position < site.end))),
             );
-            if (by.length)
-              docs.push(`**Rivet** · \`${node.text}\` is serialized into resume state (captured by ${by.map((s) => `\`${s.name || s.kind}\``).join(", ")}).`);
+            if (by.length) docs.push(`**Rivet** · \`${node.text}\` is captured by resumable code (${by.map((s) => `\`${s.name || s.kind}\``).join(", ")}).`);
           }
           const [link] = links(ctx.file, ctx.program.getTypeChecker(), position);
           if (link) {

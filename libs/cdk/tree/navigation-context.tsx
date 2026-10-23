@@ -11,7 +11,6 @@
 import { createContext, type Signal } from "@rivetjs/reactivity";
 import type { Collection, Key, Node } from "../collections/types.ts";
 import type { RouterOptions } from "../utils/links.tsx";
-import { resumableContext } from "../slots/index.tsx";
 
 /** NavigationTree → its items: the current route and the focus-sync bookkeeping. */
 export interface InternalNavigationTreeContextValue {
@@ -20,7 +19,7 @@ export interface InternalNavigationTreeContextValue {
   /** The last route the focused key was synced to; dedupes the focus sync across items. */
   syncedRoute: { current: string | undefined };
 }
-export const InternalNavigationTreeContext = resumableContext(createContext<InternalNavigationTreeContextValue | null>(null, { id: "rv-navigation-tree" }));
+export const InternalNavigationTreeContext = createContext<InternalNavigationTreeContextValue | null>(null);
 
 /** The link props a NavigationTreeItem hands its NavigationTreeItemContent's `Link`. */
 export interface NavigationTreeItemLinkContextValue {
@@ -36,14 +35,10 @@ export interface NavigationTreeItemLinkContextValue {
   /** Whether the item's link (as opposed to another focusable child such as a button) is focused. */
   isLinkFocused: Signal<boolean>;
 }
-export const NavigationTreeItemLinkContext = resumableContext(
-  createContext<NavigationTreeItemLinkContextValue | null>(null, { id: "rv-navigation-tree-item-link" }),
-);
+export const NavigationTreeItemLinkContext = createContext<NavigationTreeItemLinkContextValue | null>(null);
 
 /** RAC `NavigationTreeItemStateContext` (Rivet: `isCurrentAncestor` is an accessor). */
-export const NavigationTreeItemStateContext = resumableContext(
-  createContext<{ isCurrentAncestor: () => boolean }>({ isCurrentAncestor: () => false }, { id: "rv-navigation-tree-item-state" }),
-);
+export const NavigationTreeItemStateContext = createContext<{ isCurrentAncestor: () => boolean }>({ isCurrentAncestor: () => false });
 
 /** The collection key of the item whose href matches `route`, or null. */
 export function findKeyForRoute(collection: Collection<Node<unknown>>, route: string): Key | null {

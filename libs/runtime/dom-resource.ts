@@ -174,12 +174,7 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
       if (current) current();
       current = null;
     });
-  const resourceFn = function (op?: unknown, arg?: unknown, extra?: unknown): unknown {
-    if (typeof op === "object" && op !== null) {
-      adopt(op as ResourceSeed);
-      op = arg;
-      arg = extra;
-    }
+  const resourceFn = function (op?: unknown, arg?: unknown): unknown {
     if (op === REFETCH) {
       if (!started) return start(arg === undefined ? true : arg);
       if (!disposed) runWithOwner(owner, () => untrack(() => load(read(), arg === undefined ? true : arg, false)));

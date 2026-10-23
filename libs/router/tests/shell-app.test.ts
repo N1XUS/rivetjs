@@ -26,9 +26,9 @@ import { nodeEnv } from "./vite-env.ts";
 
 const root = new URL("./fixture-shell/", import.meta.url).pathname;
 const configFile = root + "vite.config.ts";
-// `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the same steps over a derived-model build of the fixture.
-const derived = process.env.RIVET_RESUME_MODEL === "derived";
-const dist = root + (derived ? "dist/derived" : "dist");
+// Derived resume model (the only one since M6): the `derived` branches below are the live ones.
+const derived = true;
+const dist = root + "dist";
 const ORIGIN = "http://localhost";
 const TEST = Symbol.for("rivet.shellTest");
 const revalidate = (target: { path?: string; tag?: string }): number =>

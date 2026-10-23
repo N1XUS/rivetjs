@@ -39,9 +39,9 @@ test("render with data from another server: loadBuild + serve({ handler }) + see
     const html = await response.text();
     assert.match(html, /<h1>Survey 7<\/h1>/);
     assert.match(html, /<li>First question<\/li>/);
-    assert.match(html, /<script type="rivet\/state"/);
+    assert.match(html, /<script type="rivet\/boundaries"/);
     // The page's own scripts load from the build the custom server serves.
-    const script = /"rt":"(\/assets\/[^"]+\.js)"/.exec(html)?.[1];
+    const script = / data-rt="(\/assets\/[^"]+\.js)"/.exec(html)?.[1];
     assert.ok(script, html);
     assert.equal((await fetch(serving.url + script)).status, 200);
     // Other requests reach the app as they are.

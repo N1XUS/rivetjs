@@ -20,7 +20,6 @@ import type { GroupProps as GroupPrimitiveProps, GroupRenderProps } from "@rivet
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { DateInputGroupVariants } from "../../../styles/src/components/date-input-group/index.ts";
 import { dateInputGroupVariants } from "../../../styles/src/components/date-input-group/index.ts";
@@ -39,7 +38,7 @@ type DateInputGroupContext = {
   variant?: DateInputGroupVariants["variant"];
 };
 
-const DateInputGroupContext = resumableContext(createContext<DateInputGroupContext>({}, { id: "rv-ui-date-input-group" }));
+const DateInputGroupContext = createContext<DateInputGroupContext>({});
 
 type DateInputGroupSlots = ReturnType<typeof dateInputGroupVariants>;
 

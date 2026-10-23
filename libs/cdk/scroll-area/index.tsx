@@ -10,7 +10,7 @@
 // interacting, state machine) / `auto` (when the content overflows) / `always`.
 // Rivet:
 // - fine-grained: element refs (`ref()` signals), sizes, visibility states and corner sizes are signals in the
-//   resumable contexts `rv-scroll-area` / `rv-scroll-area-scrollbar`; nothing re-renders, bindings update the `style`
+//   contexts `ScrollAreaContext` / `ScrollbarContext`; nothing re-renders, bindings update the `style`
 //   (CSS variables) / `data-state`; Radix `useEffect` / `useLayoutEffect` → `clientEffect` (ResizeObserver, listeners).
 // - SSR renders the Root, Viewport and Content; scrollbars only for `type="always"` (or `forceMount`), as static markup
 //   (no thumb), thumbs / corner once measured on the client.
@@ -29,9 +29,8 @@
 //   `rv-ScrollAreaContent`, `rv-ScrollAreaScrollbar`, `rv-ScrollAreaThumb`, `rv-ScrollAreaCorner` when `class` is omitted.
 // - `type`, `dir`, `scrollHideDelay`, `orientation`, `forceMount`, `nonce` are read when the part is created.
 // - user handlers run first and a `preventDefault()` skips the part's own (Radix `composeEventHandlers`).
-// - component-owned state (visibility, machine, sizes, presence, timers) is `_regionState`: a part re-created on a
-//   resumed page (first signal change) continues from the same values; Scrollbar mount flags (`scrollbarXMounted` /
-//   `YMounted`, set from a `clientEffect`) drive the Corner — revived `ref()` signals already hold the server element.
+// - component-owned state (visibility, machine, sizes, presence, timers) is plain signals / objects created with the part;
+//   Scrollbar mount flags (`scrollbarXMounted` / `YMounted`, set from a `clientEffect`) drive the Corner.
 // Deviations (documented in scroll-area/CLAUDE.md):
 // - names `--radix-scroll-area-*` → `--rv-scroll-area-thumb-width` / `-thumb-height` / `-corner-width` / `-corner-height`,
 //   `data-radix-scroll-area-viewport` → `data-rv-scroll-area-viewport`;
@@ -43,11 +42,10 @@
 //   (`./dom.ts`, client, once per document, nonce'd; JSX has no `<style>` content);
 // - `type="scroll"`: the scroll-end debounce timer is not cleared on unmount (a re-created part keeps the timer);
 // - before activation both viewport axes are `overflow: scroll` (Radix: `hidden` until the scrollbars mount).
-import { _regionState, computed, createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
+import { computed, createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Provider, Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { splitProps } from "@rivetjs/runtime/props";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { getNonce } from "../utils/dom.ts";
 import { addUnlinkedScrollListener, insertViewportStyle, observeResize } from "./dom.ts";
@@ -108,7 +106,7 @@ export interface ScrollAreaContextValue {
 }
 
 /** The Root's state (Radix `ScrollAreaProvider`). */
-export const ScrollAreaContext = resumableContext(createContext<ScrollAreaContextValue | null>(null, { id: "rv-scroll-area" }));
+export const ScrollAreaContext = createContext<ScrollAreaContextValue | null>(null);
 
 interface ScrollbarContextValue {
   isHorizontal: boolean;
@@ -120,7 +118,7 @@ interface ScrollbarContextValue {
 }
 
 /** A Scrollbar's state (Radix `ScrollbarProvider`). */
-const ScrollbarContext = resumableContext(createContext<ScrollbarContextValue | null>(null, { id: "rv-scroll-area-scrollbar" }));
+const ScrollbarContext = createContext<ScrollbarContextValue | null>(null);
 
 /** Radix `createContext` consumer: throws outside the provider. */
 function useScrollAreaContext(consumerName: string): ScrollAreaContextValue {
@@ -162,8 +160,7 @@ export function ScrollArea(props: ScrollAreaProps) {
   const [local, rest] = splitProps(props as Record<string, unknown>, ROOT_KEYS) as unknown as [ScrollAreaProps, DivAttributes];
   const directionality = useContext(DirectionalityContext);
   const direction: ScrollAreaDirection = local.dir || (directionality ? untrack(directionality.valueSignal) : undefined) || "ltr";
-  // Component-owned (`_regionState`): a Root re-created on a resumed page continues from the server's state.
-  const value: ScrollAreaContextValue = _regionState(() => ({
+  const value: ScrollAreaContextValue = {
     type: local.type ?? "hover",
     dir: direction,
     scrollHideDelay: local.scrollHideDelay ?? 600,
@@ -180,7 +177,7 @@ export function ScrollArea(props: ScrollAreaProps) {
     cornerHeight: signal(0),
     // Server render: inactive until the first interaction (resumed pages load no scroll-area code before it).
     active: signal(typeof document !== "undefined"),
-  }));
+  };
   const ref = mergeRefValues(value.scrollArea, local.ref) as never;
   const cls = local.class ?? "rv-ScrollArea";
   const userStyle = local.style;
@@ -404,10 +401,10 @@ export interface ScrollAreaScrollbarProps extends PartProps {
 export function ScrollAreaScrollbar(props: ScrollAreaScrollbarProps) {
   const context = useScrollAreaContext("ScrollAreaScrollbar");
   const active = context.active;
-  // Rendered by the server before activation (a resumed re-creation keeps `true`; a client render: `false`). The
+  // Rendered by the server before activation (`true` on a resumed page; a client render: `false`). The
   // activating event already happened when the scrollbar code runs: `hover` / `scroll` catch up on it.
-  const server = _regionState(() => ({ value: !untrack(active) }));
-  // Server: enable the axis now (serialized with the context), so the Viewport keeps `overflow: scroll` on it through
+  const server = { value: !untrack(active) };
+  // Server: enable the axis now (its keyed state resumes), so the Viewport keeps `overflow: scroll` on it through
   // activation while this scrollbar's code may still be loading (no `hidden` window under a running scroll).
   if (!untrack(active)) (props.orientation === "horizontal" ? context.scrollbarXEnabled : context.scrollbarYEnabled).set(true);
   const type = context.type;
@@ -466,7 +463,7 @@ function ScrollbarHover(props: { p: ScrollAreaScrollbarProps; server: boolean })
   const p = props.p;
   const server = props.server;
   const context = useScrollAreaContext("ScrollAreaScrollbar");
-  const visible = _regionState(() => signal(false));
+  const visible = signal(false);
   const forceMount = p.forceMount;
   clientEffect(() => {
     const scrollArea = context.scrollArea();
@@ -523,11 +520,11 @@ function ScrollbarScroll(props: { p: ScrollAreaScrollbarProps; server: boolean }
   const context = useScrollAreaContext("ScrollAreaScrollbar");
   const isHorizontal = p.orientation === "horizontal";
   const forceMount = p.forceMount;
-  const state = _regionState(() => signal<ScrollState>("hidden"));
+  const state = signal<ScrollState>("hidden");
   // Radix `useDebounceCallback(() => send('SCROLL_END'), 100)`: one timer for the part's lifetime. Not cleared on
   // unmount (Radix clears it): a part re-created on a resumed page (first state change) continues the same timer and
   // state signal; a late `SCROLL_END` on an unmounted part changes nothing.
-  const scrollEnd = _regionState(() => ({ timer: 0 }));
+  const scrollEnd = { timer: 0 };
   clientEffect(() => {
     if (state() !== "idle") return;
     const delay = context.scrollHideDelay;
@@ -568,7 +565,7 @@ function ScrollbarAuto(props: { p: ScrollAreaScrollbarProps; forceMount: true | 
   const context = useScrollAreaContext("ScrollAreaScrollbar");
   const isHorizontal = p.orientation === "horizontal";
   const forceMount = props.forceMount;
-  const visible = _regionState(() => signal(false));
+  const visible = signal(false);
   clientEffect(() => {
     const viewport = context.viewport();
     const content = context.content();
@@ -626,12 +623,11 @@ function ScrollbarVisible(props: { p: ScrollAreaScrollbarProps; dataState: DataS
   const orientation: ScrollAreaOrientation = local.orientation === "horizontal" ? "horizontal" : "vertical";
   const isHorizontal = orientation === "horizontal";
   const element = isHorizontal ? context.scrollbarX : context.scrollbarY;
-  // Component-owned (`_regionState`): a scrollbar re-created on a resumed page keeps its measures and thumb.
-  const sizes = _regionState(() => signal<Sizes>(EMPTY_SIZES));
-  const thumb = _regionState(() => createRef<HTMLDivElement>());
-  const pointerOffset = _regionState(() => ({ current: 0 }));
+  const sizes = signal<Sizes>(EMPTY_SIZES);
+  const thumb = createRef<HTMLDivElement>();
+  const pointerOffset = { current: 0 };
   // Radix `rectRef` / `prevWebkitUserSelectRef` (pointer drag on the track / thumb).
-  const drag = _regionState(() => ({ rect: null as DOMRect | null, prevWebkitUserSelect: "" }));
+  const drag = { rect: null as DOMRect | null, prevWebkitUserSelect: "" };
   const hasThumb = computed(() => {
     const s = sizes();
     const ratio = getThumbRatio(s.viewport, s.content);
@@ -1006,8 +1002,8 @@ const CORNER_KEYS = ["children", "class", "style", "ref", "render"] as const;
 function CornerImpl(props: { p: ScrollAreaCornerProps }) {
   const [local, rest] = splitProps(props.p as Record<string, unknown>, CORNER_KEYS) as unknown as [ScrollAreaCornerProps, DivAttributes];
   const context = useScrollAreaContext("ScrollAreaCorner");
-  const width = _regionState(() => signal(0));
-  const height = _regionState(() => signal(0));
+  const width = signal(0);
+  const height = signal(0);
   clientEffect(() => {
     const scrollbarX = context.scrollbarX();
     return observeResize(scrollbarX, () => {

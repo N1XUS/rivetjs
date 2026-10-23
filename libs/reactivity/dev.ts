@@ -59,7 +59,7 @@ if (installed !== undefined && installed.edit) {
 // A flush with several failures rethrows the first; development reports one AggregateError listing all.
 base._flush.report = (errors) => {
   if (errors.length < 2) return;
-  const lines = errors.map((error, i) => `  ${i + 1}. ${error instanceof Error ? error.stack ?? error.message : String(error)}`);
+  const lines = errors.map((error, i) => `  ${i + 1}. ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
   const aggregate = new AggregateError(errors, `${errors.length} errors in one flush, run or dispose (the first is rethrown):\n${lines.join("\n")}`);
   if (typeof reportError === "function") reportError(aggregate);
   else console.error(aggregate);
@@ -80,9 +80,12 @@ function stack(hook: DevtoolsHook): { stack?: Error } {
 function timed<T>(hook: DevtoolsHook, fn: () => T): () => T {
   return () => {
     if (hook.level < 2) return fn();
-    const node = base.getOwner(), start = performance.now(), outer = hook.current;
+    const node = base.getOwner(),
+      start = performance.now(),
+      outer = hook.current;
     hook.current = node;
-    let error: unknown, failed = false;
+    let error: unknown,
+      failed = false;
     try {
       return fn();
     } catch (cause) {
@@ -99,7 +102,9 @@ function timed<T>(hook: DevtoolsHook, fn: () => T): () => T {
 // Unbound `set` / `update` (`const { set } = count; set(1)`) fail in production with an opaque
 // TypeError (`this` is undefined); development fails the same way, with a readable message. The
 // checked methods are shared (no per-signal closures) and installed on every development signal.
-const probe = base.signal<unknown>(0), baseSet = probe.set, baseUpdate = probe.update;
+const probe = base.signal<unknown>(0),
+  baseSet = probe.set,
+  baseUpdate = probe.update;
 function unbound(method: "set" | "update", self: unknown): TypeError {
   return new TypeError(
     `Rivet: signal.${method}() was called without its signal (this = ${self === undefined ? "undefined" : typeof self}). ` +
@@ -132,7 +137,12 @@ export function signal<T>(initial?: T, options?: EqualsOptions<T>): Signal<T> {
     if (this !== created || hook.level < 2) return checkedSet.call(this as Signal<any>, value) as T;
     const prev = (base._inspect(created) as { value: unknown }).value;
     // Reported before the flush it causes, so the effects it triggers follow it.
-    const data: { sig: Signal<T>; prev: unknown; next: T; by?: "devtools"; skipped?: true; stack?: Error } = { sig: created, prev, next: value, ...stack(hook) };
+    const data: { sig: Signal<T>; prev: unknown; next: T; by?: "devtools"; skipped?: true; stack?: Error } = {
+      sig: created,
+      prev,
+      next: value,
+      ...stack(hook),
+    };
     if (hook.writing) data.by = "devtools";
     hook.emit("sig.write", data);
     const result = baseSet.call(created as Signal<unknown>, value) as T;
@@ -192,8 +202,8 @@ export function computed<T>(fn: () => T, options?: EqualsOptions<T>): () => T {
 }
 
 /** `createContext`, reported (`ctx.create`) so the devtools can name and list its providers. */
-export function createContext<T>(defaultValue: T, options?: { id?: string }): Context<T> {
-  const token = base.createContext(defaultValue, options);
+export function createContext<T>(defaultValue: T): Context<T> {
+  const token = base.createContext(defaultValue);
   const hook = devtoolsHook();
   if (hook !== undefined && hook.level >= 1) hook.emit("ctx.create", { token, ...stack(hook) });
   return token;
@@ -241,7 +251,8 @@ export function effect(fn: () => void): Disposer {
 function tracked(fn: () => void): Disposer {
   const hook = devtoolsHook();
   if (hook === undefined || hook.level < 1) return base.effect(fn);
-  const owner = base.getOwner(), run = timed(hook, fn);
+  const owner = base.getOwner(),
+    run = timed(hook, fn);
   let first = hook.level >= 2;
   return base.effect(() => {
     if (first) {
@@ -279,7 +290,8 @@ export function batch<T>(fn: () => T): T {
 /** `_dispatch`; while recording, a trusted mouse click first emits `event.defer` (its flush may run one task
  * later: the devtools agent keeps that task's writes as causes until then). */
 export function _dispatch(...args: Parameters<typeof base._dispatch>): void {
-  const hook = devtoolsHook(), event = args[3];
+  const hook = devtoolsHook(),
+    event = args[3];
   if (hook !== undefined && hook.level >= 2 && event.isTrusted && event.type === "click" && (event as PointerEvent).pointerType === "mouse")
     hook.emit("event.defer", {});
   base._dispatch(...args);
@@ -290,6 +302,8 @@ export function _dispatch(...args: Parameters<typeof base._dispatch>): void {
 export function catchError<T>(fn: () => T, handler: (error: unknown) => void): T | undefined {
   const value = base.catchError(fn, handler);
   if (value !== null && (typeof value === "object" || typeof value === "function") && typeof (value as { then?: unknown }).then === "function")
-    console.warn("Rivet: catchError(fn) returned a promise; its rejection does not reach the handler (catchError is synchronous). Use .catch() on it." + where());
+    console.warn(
+      "Rivet: catchError(fn) returned a promise; its rejection does not reach the handler (catchError is synchronous). Use .catch() on it." + where(),
+    );
   return value;
 }

@@ -85,7 +85,6 @@ import {
   mergeRefValues,
   isSlotId,
   renderProps as resolveRenderProps,
-  resumableContext,
   type ContextValue,
   type RefValue,
   type SlotId,
@@ -224,7 +223,7 @@ export interface GridListProps<T = object>
 }
 
 /** RAC `GridListContext`. */
-export const GridListContext = resumableContext(createContext<ContextValue<GridListProps<any>, HTMLDivElement>>(null, { id: "rv-gridlist" }));
+export const GridListContext = createContext<ContextValue<GridListProps<any>, HTMLDivElement>>(null);
 
 /** What a GridList provides its parts (Rivet: RAC passes `ListStateContext` + `useGridList`'s `listMap`). */
 export interface GridListInternal {
@@ -242,7 +241,7 @@ export interface GridListInternal {
   collection?: (() => ICollection<Node<any>>) | undefined;
 }
 /** The GridList a part renders in (null outside a GridList, and inside a row's content). */
-export const GridListInternalContext = resumableContext(createContext<GridListInternal | null>(null, { id: "rv-gridlist-internal" }));
+export const GridListInternalContext = createContext<GridListInternal | null>(null);
 
 const GRID_OWNED = ["onMouseDown", "onScroll", "style"] as const;
 
@@ -1057,11 +1056,9 @@ export interface GridListHeaderProps extends DOMRenderProps<"div", undefined>, O
 }
 
 /** RAC `GridListHeaderContext`: the header row's props (role row) provided by the section. */
-export const GridListHeaderContext = resumableContext(createContext<ContextValue<GridListHeaderProps, HTMLDivElement>>({}, { id: "rv-gridlist-header" }));
+export const GridListHeaderContext = createContext<ContextValue<GridListHeaderProps, HTMLDivElement>>({});
 /** RAC `GridListHeaderInnerContext`: the row header cell's props (`id`, role rowheader). */
-export const GridListHeaderInnerContext = resumableContext(
-  createContext<{ id?: string | SlotId; role?: string } | null>(null, { id: "rv-gridlist-header-inner" }),
-);
+export const GridListHeaderInnerContext = createContext<{ id?: string | SlotId; role?: string } | null>(null);
 
 /** A GridListSection represents a section within a GridList (RAC `GridListSection`). */
 export const GridListSection = /*#__PURE__*/ createBranchComponent(

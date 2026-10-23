@@ -20,16 +20,7 @@ import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts"
 import { type DOMRenderProps } from "../utils/render.ts";
 import { dataBool } from "../utils/data-attrs.tsx";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
-import {
-  contextProps,
-  resumableContext,
-  slottedContext,
-  type ContextValue,
-  type RefValue,
-  type RenderProps,
-  type SlotProps,
-  type StyleProps,
-} from "../slots/index.tsx";
+import { contextProps, slottedContext, type ContextValue, type RefValue, type RenderProps, type SlotProps, type StyleProps } from "../slots/index.tsx";
 import {
   Collection,
   CollectionRendererContext,
@@ -98,10 +89,10 @@ export interface BreadcrumbsOverflowItem {
 }
 
 /** RAC `BreadcrumbsContext` (slot props for the list; the Breadcrumbs re-provides `{ isDisabled, onAction }` to its items). */
-export const BreadcrumbsContext = resumableContext(createContext<ContextValue<BreadcrumbsProps<any>, HTMLOListElement>>(null, { id: "rv-breadcrumbs" }));
+export const BreadcrumbsContext = createContext<ContextValue<BreadcrumbsProps<any>, HTMLOListElement>>(null);
 
 /** Rivet: the built collection of the enclosing Breadcrumbs (a Breadcrumb's `isCurrent` reads it). */
-const BreadcrumbsCollectionContext = resumableContext(createContext<(() => ICollection<Node<unknown>>) | null>(null, { id: "rv-breadcrumbs-collection" }));
+const BreadcrumbsCollectionContext = createContext<(() => ICollection<Node<unknown>>) | null>(null);
 
 /** Breadcrumbs display a hierarchy of links to the current page or resource in an application (RAC `Breadcrumbs`). */
 export function Breadcrumbs<T>(inProps: BreadcrumbsProps<T>) {

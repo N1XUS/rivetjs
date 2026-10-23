@@ -34,8 +34,6 @@ use crate::tree::Tree;
 
 /// One keyed `<For>` of the module and its lazy-rows verdict.
 pub struct ForRow {
-    /// The `<For>` element.
-    pub element: NodeId,
     /// The row function literal (None when the row child is not one).
     pub row: Option<NodeId>,
     /// `by` key path (`"id"`, `"a.b"`, `""` = the item itself); None for a function `by` or no `by`.
@@ -49,24 +47,6 @@ pub struct ForRow {
     pub reason: Option<&'static str>,
     /// Node a diagnostic points at, and its text (`Date.now()`, `clientOnly(…)`, the ref target).
     pub at: Option<(NodeId, String)>,
-}
-
-/// Facts of one `For` for the compiler's JSON output (`forRows`).
-pub struct ForRowFact {
-    /// Byte span of the `<For>` element.
-    pub span: (u32, u32),
-    /// 1-based line and UTF-16 column of its start.
-    pub line: u32,
-    pub column: u32,
-    pub lazy: bool,
-    pub reason: Option<&'static str>,
-    /// The row function's symbol id (lazy only).
-    pub symbol: Option<String>,
-    /// `by` key path (lazy only).
-    pub key: Option<String>,
-    /// `by` is a function with a recipe (lazy only).
-    pub by_fn: bool,
-    pub index: bool,
 }
 
 /// Calls whose function arguments run in the browser only (never while rendering on the server).
@@ -131,8 +111,10 @@ impl<'t, 'a> Analysis<'t, 'a> {
     /// LAZY-ROWS T2: the lazy-rows verdict of one structural `<For>` (pass 1, before `scan_component`'s framework return).
     pub(super) fn scan_for_rows(&mut self, el: &'a JSXElement<'a>) {
         let tree = self.tree;
-        let Some(element) = self.id(el) else { return };
-        let mut entry = ForRow { element, row: None, key: None, by: None, index: false, reason: None, at: None };
+        if self.id(el).is_none() {
+            return;
+        }
+        let mut entry = ForRow { row: None, key: None, by: None, index: false, reason: None, at: None };
         let mut row: Option<&'a Expression<'a>> = None;
         let mut by: Option<&'a Expression<'a>> = None;
         for item in &el.opening_element.attributes {
@@ -413,48 +395,3 @@ pub(super) fn nondeterministic_call<'a>(tree: &Tree<'a>, callee: &Expression<'a>
     }
 }
 
-/// LAZY-ROWS T2: the `forRows` facts of the module (source order).
-pub fn for_row_facts(tree: &Tree<'_>, resumed: &super::Resumed) -> Vec<ForRowFact> {
-    resumed
-        .for_rows
-        .iter()
-        .map(|entry| {
-            let lazy = entry.reason.is_none();
-            let symbol = if lazy { entry.row.and_then(|r| resumed.site_at(r)).map(|s| resumed.sites[s].id.clone()) } else { None };
-            let start = tree.start(entry.element);
-            let (line, column) = tree.line_col(start);
-            ForRowFact {
-                span: (start, tree.span(entry.element).end),
-                line,
-                column,
-                lazy,
-                reason: entry.reason,
-                symbol,
-                key: entry.key.clone(),
-                by_fn: lazy && entry.by.is_some(),
-                index: entry.index,
-            }
-        })
-        .collect()
-}
-
-/// LAZY-ROWS T2: RV2105 (non-deterministic row render) / RV2106 (a site a lazy row cannot replay) warnings, server target
-/// only (one report per module; the For compiles recorded).
-pub fn for_row_warnings(resumed: &super::Resumed, diags: &mut crate::compile::Diags) {
-    for entry in &resumed.for_rows {
-        let Some((node, text)) = &entry.at else { continue };
-        let message = match entry.reason {
-            Some("nondeterministic") => format!(
-                "Keyed `For` row renders non-deterministically: `{text}` runs while rendering the row; a lazy row renders again in the browser, so read it outside the row (loader data, a prop, a signal) or in a handler / clientEffect (the For's rows stay recorded)"
-            ),
-            Some("clientOnly" | "async" | "portal") => {
-                format!("Keyed `For` row holds {text}, which a lazy row cannot replay: move it out of the row or into a component the row renders lazily (the For's rows stay recorded)")
-            }
-            Some("ref") => format!(
-                "Keyed `For` row holds a `ref` into `{text}`, declared outside the row, which a lazy row cannot replay: keep the ref local to the row or read the element through the event (the For's rows stay recorded)"
-            ),
-            _ => continue,
-        };
-        diags.warn(message, Some(*node));
-    }
-}

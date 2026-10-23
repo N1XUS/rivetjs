@@ -15,7 +15,7 @@
 //   steps; on release the thumb animates to the stepped position on `@rivetjs/cdk/motion` `Motion1D` (embla's
 //   ease-out; `dragPercents` carries the animated position, `snappings` / `isThumbSnapping` flag it; no CSS transition).
 //   `snap: "drag"` = upstream behaviour (no free position).
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clamp, snapValueToStep } from "@rivetjs/cdk/utils";
 import { Motion1D, type Motion1DType } from "../motion/Motion1D.ts";
 import { NumberFormatter } from "../number/NumberFormatter.ts";
@@ -187,14 +187,14 @@ export function createSliderState<T extends number | number[]>(props: SliderStat
   let value: Signal<number | number[]> | (() => number | number[]);
   let writable = true;
   const input = props.value;
-  if (input === undefined) value = _regionState(() => signal<number | number[]>(defaultValue));
+  if (input === undefined) value = signal<number | number[]>(defaultValue);
   else if (isSignal<number | number[]>(input)) value = input;
   else if (typeof input === "function") {
     // Rivet (live props): a controlled accessor — read live, changes reported through onChange only.
     value = input as () => number | number[];
     writable = false;
   } else {
-    value = _regionState(() => signal<number | number[]>(input as number | number[]));
+    value = signal<number | number[]>(input as number | number[]);
     writable = false;
   }
 
@@ -212,11 +212,11 @@ export function createSliderState<T extends number | number[]>(props: SliderStat
     orientation,
     isDisabled: typeof disabledInput === "function" ? !!untrack(disabledInput) : disabledInput,
     ...(typeof disabledInput === "function" ? { disabled: disabledInput } : {}),
-    draggings: _regionState(() => signal<boolean[]>(new Array(count).fill(false))),
-    focusedThumb: _regionState(() => signal<number | undefined>(undefined)),
+    draggings: signal<boolean[]>(new Array(count).fill(false)),
+    focusedThumb: signal<number | undefined>(undefined),
     snap: props.snap ?? "release",
-    dragPercents: _regionState(() => signal<(number | null)[]>(new Array(count).fill(null))),
-    snappings: _regionState(() => signal<boolean[]>(new Array(count).fill(false))),
+    dragPercents: signal<(number | null)[]>(new Array(count).fill(null)),
+    snappings: signal<boolean[]>(new Array(count).fill(false)),
     onChange: props.onChange,
     onChangeEnd: props.onChangeEnd,
     locale: props.locale ?? "en-US",

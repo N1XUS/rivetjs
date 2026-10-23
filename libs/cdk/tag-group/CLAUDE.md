@@ -6,12 +6,12 @@ RAC TagGroup / TagList / Tag + RA useTagGroup / useTag on the `grid-list/behavio
 ## Files
 | File | What |
 | --- | --- |
-| `index.tsx` | TagGroup (TagGroupContext `rv-tag-group`), TagGroupInternalContext (state, labelledBy / describedBy, onRemove), TagList (TagListContext), Tag (leaf ItemNode; ButtonContext slot `remove`). |
+| `index.tsx` | TagGroup (TagGroupContext), TagGroupInternalContext (state, labelledBy / describedBy, onRemove), TagList (TagListContext), Tag (leaf ItemNode; ButtonContext slot `remove`). |
 | `behaviour.ts` | `tagGroupOptions`, `tagGroupKeyboardDelegate` (horizontal), `tagGroupProps`, `tagProps`, `tagKeyDown` (Delete / Backspace), `tagRemove`, `tagFocus` / `tagBlur` (remove description). |
 | `intl.ts` | RA intl/tag strings. |
 
 ## Invariants / gotchas
-- Remove-button slot props must be plain values / inline arrows: an accessor (`isDisabled: () => …`) in the ButtonContext slot made the provider entry unserializable → remove button dead after resume. Use `untrack(...)` snapshot.
+- Remove-button slot props: plain values / inline arrows, no accessor (`isDisabled: () => …`) in the ButtonContext slot; use an `untrack(...)` snapshot (rule from the serialized model, where the accessor made the provider unserializable; kept until a derived test covers accessor slot props).
 - TagList calls `gridListItemsChanged` in a clientEffect + microtask: focus moves to the next tag (or the grid) after removal.
 - `tagProps` roving `tabIndex` reads focus keyed (`../selection/keyed.ts` `isFocusedKey` + `hasFocusedKey`): a focus move re-runs the two tags involved, not every tag. Remaining focus-move cost is the handlers' DOM collection scan (`listStateView` → `domCollection`, O(tags) per event).
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on TagGroup / TagList / Tag

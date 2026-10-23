@@ -12,7 +12,6 @@ import type { Key } from "@rivetjs/cdk/listbox";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ItemMorphVariants } from "../../../styles/src/components/item-morph/index.ts";
 import { itemMorphVariants } from "../../../styles/src/components/item-morph/index.ts";
@@ -30,7 +29,7 @@ interface ItemMorphContext {
   backdrop?: ItemMorphVariants["backdrop"];
 }
 
-const ItemMorphContext = resumableContext(createContext<ItemMorphContext>({}, { id: "rv-ui-item-morph" }));
+const ItemMorphContext = createContext<ItemMorphContext>({});
 
 type ItemMorphSlots = ReturnType<typeof itemMorphVariants>;
 const SLOTS: Record<string, ItemMorphSlots> = {};

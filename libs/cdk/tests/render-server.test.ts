@@ -42,13 +42,13 @@ export function Page() {
 }
 `;
   test(`${name}: render path SSR HTML equals the default`, async () => {
-    // Markup only (the resume manifest differs: the render closure adds a symbol); ids, resume record numbers and markers masked.
+    // Markup only (the resume manifest differs: the render closure adds a symbol); ids, boundary numbers and comment markers masked.
     const mask = (s: string) =>
       s
         .split("<script")[0]!
         .replace(/\brv[a-z0-9]{1,4}\b/g, "<id>")
-        .replace(/ data-r="\d+"/g, "")
-        .replace(/<!--r?\d*\[?-->|<!--\/?\]?-->/g, "<!--m-->");
+        .replace(/ data-b="\d+"/g, "")
+        .replace(/<!--[^>]*-->/g, "");
     const def = await importModule<{ Page(): never }>(`render-parity-${name}-def.tsx`, mk(""));
     const rnd = await importModule<{ Page(): never }>(`render-parity-${name}-render.tsx`, mk("render={(p) => <div {...p} />}"));
     const a = mask(await renderHtml(rnd.Page as never));

@@ -21,7 +21,7 @@
 //! Consumed callbacks stay plain (the call runs or schedules them, its result does not hold them): the arguments of
 //! member calls named in `CONSUMED_METHODS` (`xs.map(f)`, `Array.from(xs, f)`, `p.then(f)`, `el.addEventListener(t, f)`),
 //! of the globals in `CONSUMED_GLOBALS` (`setTimeout(f)`, `requestAnimationFrame(f)`) and of the `@rivetjs/reactivity`
-//! imports in `CONSUMED_REACTIVITY` (`untrack`, `batch`, `runWithOwner`, `_regionState`, `effect`, `createRoot`,
+//! imports in `CONSUMED_REACTIVITY` (`untrack`, `batch`, `runWithOwner`, `effect`, `createRoot`,
 //! `onCleanup`); nothing below such a call is searched. Object literal values are R2 sites already (`escaping`). Holder sites are
 //! opportunistic (no compile-time capture diagnostics: they are analysed in the quiet phase of the fixpoint).
 
@@ -82,7 +82,7 @@ pub(super) struct Stored {
 }
 
 /// `@rivetjs/reactivity` calls whose result does not hold their callback (run once in place, or kept by the owner).
-const CONSUMED_REACTIVITY: &[&str] = &["untrack", "batch", "runWithOwner", "_regionState", "effect", "createRoot", "onCleanup"];
+const CONSUMED_REACTIVITY: &[&str] = &["untrack", "batch", "runWithOwner", "effect", "createRoot", "onCleanup"];
 
 /// The identifier a member chain (`a.b[c].#d`, parentheses / TS wrappers unwrapped) is rooted at.
 fn member_root<'b, 'a>(e: &'b Expression<'a>) -> Option<&'b IdentifierReference<'a>> {

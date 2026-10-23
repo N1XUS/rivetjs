@@ -4,7 +4,7 @@
 // `isDragging` / `setDragging` / `getThumbPosition` dispatch on `state.kind` in `./index.ts`). Values that
 // upstream recomputes per render (`value`, `channels`, `xValue`, steps) are accessors. Color stored as a
 // string (`./value.ts`); `valueRef` / `isDraggingRef` → `state.refs`.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clamp, snapValueToStep } from "@rivetjs/cdk/utils";
 import { normalizeColor, parseColor, stringifyColor, type Color, type ColorAxes, type ColorChannel, type ColorSpace } from "./color.ts";
 import { colorCell, writeColor, type ColorCell, type ColorInput } from "./value.ts";
@@ -78,7 +78,7 @@ export function createColorAreaState(props: ColorAreaProps): ColorAreaState {
     isDisabled: disabled ? !!untrack(disabled) : (props.isDisabled ?? false),
     ...(disabled ? { disabled } : {}),
     defaultValue: stringifyColor(value !== undefined ? initialValue : normalizeColor(defaultValue!)),
-    dragging: _regionState(() => signal(false)),
+    dragging: signal(false),
     onChange,
     onChangeEnd,
     refs: { value: stringifyColor(colorSpace ? initialValue.toFormat(colorSpace) : initialValue), dragging: false },

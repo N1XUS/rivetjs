@@ -22,7 +22,6 @@ import type { MorphDirection, MorphMotionOptions, MorphState, MorphStateProps } 
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { MorphVariants } from "../../../styles/src/components/morph/index.ts";
 import { morphVariants } from "../../../styles/src/components/morph/index.ts";
@@ -42,7 +41,7 @@ interface MorphContext {
   motion?: MorphMotionOptions;
 }
 
-const MorphContext = resumableContext(createContext<MorphContext>({}, { id: "rv-ui-morph" }));
+const MorphContext = createContext<MorphContext>({});
 
 type MorphSlots = ReturnType<typeof morphVariants>;
 

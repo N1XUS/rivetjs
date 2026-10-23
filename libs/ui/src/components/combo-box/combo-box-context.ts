@@ -5,7 +5,6 @@
 //   on resume); parts look their slots up from `fullWidth` (module-level memo). Resumable token `rv-ui-combo-box`, default `{}`.
 //   Fields are getters over the root's props when one of them is live.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ComboBoxVariants } from "../../../styles/src/components/combo-box/index.ts";
 
@@ -19,7 +18,7 @@ type ComboBoxContext = {
   variant?: "primary" | "secondary";
 };
 
-const ComboBoxContext = resumableContext(createContext<ComboBoxContext>({}, { id: "rv-ui-combo-box" }));
+const ComboBoxContext = createContext<ComboBoxContext>({});
 
 export { ComboBoxContext };
 export type { ComboBoxContext as ComboBoxContextValue };

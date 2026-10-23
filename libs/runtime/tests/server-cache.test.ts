@@ -2,10 +2,9 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import * as compiler from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
-import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { createRenderCache, withRenderCache, cached, shell, _cached } from "@rivetjs/runtime/server-cache";
+import { createRenderCache, withRenderCache, cached, shell } from "@rivetjs/runtime/server-cache";
 import type { RenderCacheScope } from "@rivetjs/runtime/server-cache";
-import { compileResume, importServer } from "./resume/compile.ts";
+import { importServer } from "./resume/compile.ts";
 
 type Render = Parameters<typeof renderToString>[0];
 type Component = (props: Record<string, unknown>) => Render;
@@ -245,34 +244,6 @@ export function App(props) {
   return <main>{props.top}<p>{n()}</p><button onClick={() => n.set(n() + 1)}>+</button>{props.bottom}</main>;
 }
 `;
-
-test("resumable renders: inert fragments cache, ids stay unique, resume-active fragments never store", async () => {
-  const m = await importServer<Record<string, Component>>(compileResume(resumeSource, "server").code);
-  const manifest = { runtime: "/rt.js", symbols: new Proxy({}, { get: () => "/c.js" }) as Record<string, string> };
-  const cache = createRenderCache({ admit: "first", verify: false });
-  const Static = _cached(m.Static!, "fixture#Static");
-  const Clicky = cached(m.Clicky!, { id: "Clicky", inert: true }); // wrongly asserted inert: markers caught
-  const NotInert = cached(m.Static!);
-  const page = () =>
-    withRenderCache({ cache, resumable: true }, () =>
-      resumableToString(
-        () => m.App!({ top: Static({ href: "/x", label: "X" }), bottom: [Clicky({ label: "c" }), NotInert({ href: "/y", label: "Y" })] }) as never,
-        {
-          manifest,
-        },
-      ),
-    ) as string;
-  const reference = resumableToString(
-    () => m.App!({ top: m.Static!({ href: "/x", label: "X" }), bottom: [m.Clicky!({ label: "c" }), m.Static!({ href: "/y", label: "Y" })] }) as never,
-    { manifest },
-  ) as string;
-  const pages = [page(), page(), page()];
-  for (const out of pages) assert.equal(out, reference);
-  const ids = [...pages[2]!.matchAll(/data-r="(\d+)"/g)].map((match) => match[1]);
-  assert.equal(new Set(ids).size, ids.length, "unique ids");
-  assert.equal(cache.stats.entries, 1, "only the inert Static entry");
-  assert.ok(cache.stats.hits >= 2);
-});
 
 test("a re-created wrapper (HMR, redeploy in process) never sees an old wrapper's entries", async () => {
   const m = await serverModule(source);

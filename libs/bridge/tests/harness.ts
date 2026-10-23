@@ -1,21 +1,17 @@
-// Bridge server test harness: the core's `.tsx` modules compiled in resume mode as the Vite plugin compiles a
-// `rivet.source` package (module ids `@rivetjs/bridge/<file>`), linked through data URLs; fixture pages (facades + Rivet
-// components) compiled the same way. Runtime specifiers resolve to the workspace files, so every module shares one
+// Bridge server test harness: the core's `.tsx` modules compiled in resume mode (derived model) as the Vite plugin
+// compiles a `rivet.source` package (module ids `@rivetjs/bridge/<file>`), linked through data URLs; fixture pages
+// (facades + Rivet components) compiled the same way. Runtime specifiers resolve to the workspace files, so every module shares one
 // runtime instance with the test.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { compile } from "@rivetjs/compiler";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 
-interface Symbol_ {
-  id: string;
-  component: string;
-  kind: string;
-}
 interface Compiled {
   code: string;
   diagnostics: { message: string }[];
-  symbols?: Symbol_[];
+  /** Derived boundary names (`<module>#<export>`). */
+  boundaries?: string[];
 }
 const compileResume = (source: string, target: "server" | "dom", module: string): Compiled =>
   (compile as unknown as (s: string, o: object) => Compiled)(source, { target, filename: module, resume: { module } });
@@ -34,8 +30,6 @@ const resolve = (code: string) =>
 
 const rootSource = readFileSync(lib("root.tsx"), "utf8");
 const root = data(resolve(run(rootSource, "server", "@rivetjs/bridge/root.tsx").code));
-/** Resume symbols of the core (the root's hydration effect). */
-export const coreSymbols = run(rootSource, "dom", "@rivetjs/bridge/root.tsx").symbols!;
 const serverModule = (dev: boolean) => {
   let code = run(readFileSync(lib("server.tsx"), "utf8"), "server", "@rivetjs/bridge/server.tsx").code;
   code = code.replaceAll('"./root.tsx"', JSON.stringify(root));
@@ -56,26 +50,28 @@ export async function page<T>(
   code = code.replaceAll('"./fake-adapter.ts"', JSON.stringify(new URL("./fake-adapter.ts", import.meta.url).href));
   // Other relative specifiers of the fixture (data URLs cannot resolve them): `links` maps them to file URLs.
   for (const [specifier, url] of Object.entries(links)) code = code.replaceAll(JSON.stringify(specifier), JSON.stringify(url));
-  const symbols = [...run(source, "dom", module).symbols!, ...coreSymbols];
-  const manifest: ResumeManifest = { hash: "h", runtime: "/rt.js", symbols: Object.fromEntries(symbols.map((s) => [s.id, "/c/" + s.component + ".js"])) };
+  const boundaries = run(source, "dom", module).boundaries ?? [];
+  const manifest: ResumeManifest = {
+    hash: "h",
+    runtime: "/rt.js",
+    symbols: Object.fromEntries(boundaries.map((name) => [name, "/c/" + name.split("#")[1] + ".js"])),
+  };
   return { mod: (await import(data(resolve(code)))) as T, manifest };
 }
 
-/** Table entry / state shapes the assertions read. */
-export interface State {
-  c: string[];
-  t: unknown[];
-  e: Record<string, Record<string, unknown[]>>;
-  fx: [string, number[], string][];
-  ce: unknown[];
-  b: unknown[];
-  s?: unknown[];
+/** The derived boundaries tail (`<script type="rivet/boundaries">`) of a page, parsed. */
+export interface Tail {
+  b: [id: number, parent: number, flags: number, name: string, values: unknown[], ...rest: unknown[]][];
+  i?: unknown;
+  m?: Record<string, string>;
+  [key: string]: unknown;
 }
-export const stateOf = (html: string): State | null => {
-  const json = /<script type="rivet\/state"[^>]*>(.*?)<\/script>/s.exec(html)?.[1];
-  return json ? (JSON.parse(json) as State) : null;
+export const tailOf = (html: string): Tail | null => {
+  const json = /<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)?.[1];
+  return json ? (JSON.parse(json) as Tail) : null;
 };
-export const scheduleOf = (html: string): [string, string, number[]?][] | null => {
-  const attr = /data-preload="([^"]*)"/.exec(html)?.[1];
-  return attr ? JSON.parse(attr.replace(/&quot;/g, '"').replace(/&amp;/g, "&")) : null;
+/** The lean islands records (`<script type="rivet/islands">`) of a page. */
+export const islandsOf = (html: string): unknown[][] | null => {
+  const json = /<script type="rivet\/islands"[^>]*>(.*?)<\/script>/s.exec(html)?.[1];
+  return json ? (JSON.parse(json) as unknown[][]) : null;
 };

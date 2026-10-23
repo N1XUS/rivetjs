@@ -2,7 +2,6 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile } from "../index.ts";
 import { renderToString } from "../../runtime/server.ts";
-import { readable } from "../../runtime/tests/resume/wire.ts";
 
 async function server(source: string) {
   const result = compile(source, { target: "server", filename: "fixture.tsx" });
@@ -105,7 +104,10 @@ test("DOM target lowers slots to props reads and thunks", () => {
 });
 
 test("DOM target: a <slot> over a props member is an accessor (conditional r:slot content updates); destructured stays a value", () => {
-  const r = compile(card + `export const view = (p: any) => <Card>{p.on() && <h2 r:slot="header">T</h2>}Body</Card>;`, { target: "dom", filename: "fixture.tsx" });
+  const r = compile(card + `export const view = (p: any) => <Card>{p.on() && <h2 r:slot="header">T</h2>}Body</Card>;`, {
+    target: "dom",
+    filename: "fixture.tsx",
+  });
   assert.deepEqual(r.diagnostics, []);
   assert.match(r.code, /__rivet_textValue\(_el\$\d+, \(\) => props\.header \?\? __rivetTpl\d+\(\)\);/);
   assert.match(r.code, /__rivet_insert\(_el\$\d+, \(\) => props\.children, _el\$\d+\);/);
@@ -129,85 +131,11 @@ test("slot diagnostics", () => {
 });
 
 test("modules without slot syntax compile unchanged by the slot pass", () => {
-  // Function props passed to components are ordinary values outside resume mode.
+  // Function props passed to components are ordinary values.
   const source = `function C(p: any) { return <div>{p.header}</div>; } export const v = <C header={() => <b/>}><i/></C>;`;
   for (const target of ["server", "dom"] as const) {
     const r = compile(source, { target, filename: "fixture.tsx" });
     assert.deepEqual(r.diagnostics, []);
     assert.match(r.code, /"?header"?: \(\) =>/);
   }
-});
-
-// ---- resume mode ----
-const resume = (source: string, target: "server" | "dom") => {
-  const r = compile(source, { target, filename: "fixture.tsx", resume: { module: "m.tsx" } }) as ReturnType<typeof compile> & {
-    symbols: { id: string; kind: string; captures: string[]; source: string }[];
-  };
-  assert.deepEqual(r.diagnostics, []);
-  return r;
-};
-const resumeSource = `
-import { signal } from "@rivetjs/reactivity";
-import { Router } from "@rivetjs/runtime/server";
-function Card({ header, footer, children }: any) {
-  const open = signal(false);
-  return <article><button onClick={() => open.update((v) => !v)}>t</button>{open() ? <div><slot r:name="footer">none</slot><slot /></div> : <p />}</article>;
-}
-export function Page({ router }: any) {
-  const n = signal(1);
-  return (
-    <main>
-      <Card header={() => <h2>{n()}</h2>}>
-        <small r:slot="footer">{n()} items</small>
-        <small r:slot="footer">more</small>
-        {() => <b>lazy</b>}
-      </Card>
-      <div><Router router={router} routes={[]} notFound={() => <p>none</p>} /></div>
-    </main>
-  );
-}`;
-
-test("resume: slot content becomes symbols with the same ids in both targets; framework components are left alone", () => {
-  const server = resume(resumeSource, "server");
-  const dom = resume(resumeSource, "dom");
-  const slots = dom.symbols.filter((s) => s.kind === "slot");
-  assert.equal(slots.length, 3);
-  assert.deepEqual(
-    slots.map((s) => s.captures),
-    [["n"], ["n"], []],
-  );
-  for (const s of slots) assert.ok(server.code.includes(`__rivetR_fn("${s.id}"`), s.id);
-  // r:slot group: one thunk returning both elements, r:slot removed.
-  assert.ok(slots[1]!.source.includes("=> () => [<small >{n()} items</small>, <small >more</small>]"), slots[1]!.source);
-  // <slot> inside a region is lowered in the symbol text and captures its prop.
-  const region = dom.symbols.find((s) => s.source.includes("footer ??"))!;
-  assert.deepEqual(region.captures, ["open", "footer", "children"]);
-  assert.ok(region.source.includes("{footer ?? (<>none</>)}{children}"), region.source);
-  assert.doesNotMatch(server.code, /notFound: __rivetR_fn/);
-});
-
-test("resume: a captured slot serializes as its symbol; captured eager content fails with a fix hint", async () => {
-  const { resumableToString } = await import("../../runtime/server-resume.ts");
-  const { importServer } = await import("../../runtime/tests/resume/compile.ts");
-  const ok = `import { signal } from "@rivetjs/reactivity";
-    function Card({ footer }: any) { const open = signal(true); return <div>{open() ? <slot r:name="footer" /> : <p />}</div>; }
-    export function Page() { const n = signal(1); return <Card><i r:slot="footer">{n()}</i></Card>; }`;
-  const bad = ok.replace('<i r:slot="footer">{n()}</i>', "").replace("<Card>", "<Card footer={<i>eager</i>}>");
-  const run = async (source: string) => {
-    const dom = resume(source, "dom");
-    const module = await importServer<{ Page(): never }>(resume(source, "server").code);
-    const manifest = { hash: "t", runtime: "/rt.js", symbols: Object.fromEntries(dom.symbols.map((s) => [s.id, "/c.js"])) };
-    return resumableToString(() => module.Page(), { manifest });
-  };
-  const html = await run(ok);
-  // Wire state read back in full form (symbol indexes → ids, compact entries expanded).
-  const state = readable(JSON.parse(/<script type="rivet\/state"[^>]*>(.*?)<\/script>/s.exec(html)![1]!)) as { t: unknown[] };
-  assert.ok(
-    state.t.some((e) => {
-      const r = e as { f?: unknown; a?: unknown[] } | null;
-      return typeof r?.f === "string" && /^m\.tsx#Page\$\w+$/.test(r.f) && r.a?.length === 1 && typeof r.a[0] === "number";
-    }),
-    JSON.stringify(state.t),
-  );
-  await assert.rejects(run(bad), /rendered content is not serializable/);
 });

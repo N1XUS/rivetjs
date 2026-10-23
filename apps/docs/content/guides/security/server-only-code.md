@@ -84,7 +84,7 @@ Removal does not make a value private by itself: a module-level constant that bo
 Server-only files keep code private. They do not make data private. These things are sent to the browser:
 
 - **Loader results.** Everything `load(…)` returns is written into the page, and sent again as JSON on client navigation. Return only the fields the page shows. Do not return a whole database row with password hashes or internal notes.
-- **Values captured by handlers.** When an event handler uses a value, that value is written into the page state. See [Serializable captures](../../best-practices/serializable-captures.md).
+- **Values written into the page.** Route data, signal values and plain-data props of interactive components are written into the page. See [what reaches the browser](../../learn/resuming.md#what-reaches-the-browser).
 - **The HTML.** Anything you render is visible in the page source.
 
 ```ts

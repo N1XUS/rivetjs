@@ -4,7 +4,7 @@
 RAC Toast family (`UNSTABLE_*`, Toast.tsx) + @react-aria/toast (useToastRegion, useToast): notifications in a portalled landmark region over a `ToastQueue` (../state/toast.ts).
 
 ## Entry points
-- `@rivetjs/cdk/toast` → `index.tsx`: `UNSTABLE_ToastRegion`, `UNSTABLE_ToastList`, `UNSTABLE_Toast`, `UNSTABLE_ToastContent`, `UNSTABLE_ToastStateContext` (id `rv-toast-state`), `UNSTABLE_ToastQueue`; plain `ToastContent`, `ToastContentContext` (id `rv-toast-content`); re-exports `toastProps`, `toastRegionProps`; types `ToastRegionProps`, `ToastRegionRenderProps`, `ToastListProps`, `ToastProps`, `ToastRenderProps`, `ToastContentProps`, `ToastOptions`, `QueuedToast`, `ToastState`
+- `@rivetjs/cdk/toast` → `index.tsx`: `UNSTABLE_ToastRegion`, `UNSTABLE_ToastList`, `UNSTABLE_Toast`, `UNSTABLE_ToastContent`, `UNSTABLE_ToastStateContext`, `UNSTABLE_ToastQueue`; plain `ToastContent`, `ToastContentContext`; re-exports `toastProps`, `toastRegionProps`; types `ToastRegionProps`, `ToastRegionRenderProps`, `ToastListProps`, `ToastProps`, `ToastRenderProps`, `ToastContentProps`, `ToastOptions`, `QueuedToast`, `ToastState`
 - `@rivetjs/cdk/toast/behaviour` → `behaviour.tsx`: `toastRegionProps(props & {locale?}, state, ref)` (RA `regionProps` bag), `toastProps(props, state)` → `{toastProps, contentProps, titleProps, descriptionProps, closeButtonProps}`; types `AriaToastRegionProps`, `AriaToastProps`, `ToastAria`
 - `intl.ts` — generated from react-aria `intl/toast/*.json` (`close`, `notifications` plural); regenerate with scratchpad `gen-intl.mjs`-style script, never hand-edit
 

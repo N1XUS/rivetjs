@@ -1,11 +1,10 @@
 import { renderResumable, type ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { renderDerived } from "@rivetjs/runtime/server-derived";
 import { Page } from "./page.tsx";
 
-/** Stream `/` (document head first, then the resumable body; a derived build's manifest → the derived renderer). */
+/** Stream `/` (document head first, then the resumable body). */
 export function render(manifest: ResumeManifest, write: (chunk: string) => void): void | Promise<void> {
   write(HEAD);
-  const done = ((manifest as { model?: string }).model === "derived" ? renderDerived : renderResumable)(() => <Page />, { write }, { manifest } as never);
+  const done = renderResumable(() => <Page />, { write }, { manifest });
   return done instanceof Promise ? done.then(() => write(TAIL)) : write(TAIL);
 }
 const HEAD =

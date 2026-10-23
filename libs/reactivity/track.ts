@@ -1,6 +1,6 @@
 // `_trackReads` (resume ABI): the reads of a function, through computeds. Its own module (DIET-CODE 2026-10-22) so a
-// client build puts it next to its only callers (lazy rows runtime, dev tools) instead of the eager reactivity chunk.
-import { _COLLECTOR, _SOURCE, _keyedRead, _setTracker, _swapObserver } from "./index.ts";
+// client build puts it next to its only callers (derived runtime lazy lists, server derived recording, dev tools) instead of the eager reactivity chunk.
+import { _COLLECTOR, _SOURCE, _keyedRead, _swapObserver } from "./index.ts";
 import type { _Collector, _Getter, _KeySource, _Node, _Selector, _Source, _Tracked, KeyedRead, Signal } from "./index.ts";
 
 // Dedupe by linear scan up to this many entries, then by a Set (most bindings read 1–3 signals).
@@ -105,5 +105,18 @@ export function _trackReads<T, A = undefined>(fn: (arg: A) => T, arg?: A, keyed?
   return { value, signals: state.signals.length ? state.signals : EMPTY };
 }
 
-// Installed on import: `_tracker()` (cdk `serverRows`) sees it wherever a resume runtime loaded this module.
-_setTracker(_trackReads);
+/** Resume ABI: the signals the reactive nodes owned under `owner` (effects, computeds, at any depth) read, through
+ * computeds — a derived lazy list's sample row: reads of bindings the row writers do not see (spread / attribute
+ * effects of child components) wake the list too. */
+export function _ownedReads(owner: unknown): Signal<unknown>[] {
+  if (owner === null || typeof owner !== "object") return EMPTY;
+  const state: Walk = { signals: [], index: null, visited: [], vindex: null, keyed: null };
+  const visit = (o: { first: unknown }): void => {
+    for (let c = o.first as { first: unknown; next: unknown; sources?: unknown } | null; c !== null; c = c.next as typeof c) {
+      if (c.sources !== undefined) walk(state, c as unknown as _Node);
+      visit(c);
+    }
+  };
+  visit(owner as { first: unknown });
+  return state.signals.length ? state.signals : EMPTY;
+}

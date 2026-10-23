@@ -19,7 +19,6 @@
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { visuallyHidden } from "@rivetjs/cdk/a11y";
 
 import type { ActionBarVariants } from "../../../styles/src/components/action-bar/index.ts";
@@ -41,7 +40,7 @@ interface ActionBarContext {
   orientation?: ActionBarOrientation;
 }
 
-const ActionBarContext = resumableContext(createContext<ActionBarContext>({}, { id: "rv-ui-action-bar" }));
+const ActionBarContext = createContext<ActionBarContext>({});
 
 type ActionBarSlots = ReturnType<typeof actionBarVariants>;
 

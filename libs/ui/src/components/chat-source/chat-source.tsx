@@ -13,7 +13,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { FileText } from "lucide";
 
 import { chatSourceVariants } from "../../../styles/src/components/chat-source/index.ts";
@@ -36,7 +35,7 @@ interface ChatSourceContext {
   sourceType?: ChatSourceType;
 }
 
-const ChatSourceContext = resumableContext(createContext<ChatSourceContext>({}, { id: "rv-ui-chat-source" }));
+const ChatSourceContext = createContext<ChatSourceContext>({});
 
 /** Host of `href` without `www.` (`undefined` for relative / invalid URLs). */
 const domainOf = (href: string | undefined): string | undefined => {

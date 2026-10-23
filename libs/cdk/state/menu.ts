@@ -9,7 +9,7 @@
 // - the menu's collection is the rendered DOM (items need no serialized model): MenuItem / MenuSection /
 //   SubmenuTrigger register their callbacks, disabled flags, section selection and submenu states into
 //   the menu state at render (`registerMenuItem`, `registerMenuSection`, `registerSubmenu`).
-import { computed, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { createId } from "@rivetjs/cdk/id";
 import { createMultipleSelectionState, type FocusStrategy, type MultipleSelectionState } from "../_adapters/collections.ts";
 import type { PressEvent } from "../interactions/press.tsx";
@@ -81,17 +81,15 @@ export interface MenuTriggerState extends OverlayTriggerState {
 /** react-stately `useMenuTriggerState`. */
 export function createMenuTriggerState(props: MenuTriggerStateProps & { id?: string } = {}): MenuTriggerState {
   // Region state: a resumed page re-creating the menu's region (its first open) keeps it.
-  return _regionState(() => {
-    const menuId = props.id ?? createId();
-    return {
-      ...createOverlayTriggerState(props),
-      triggerId: menuId + "-trigger",
-      menuId,
-      trigger: props.trigger ?? "press",
-      focusStrategy: signal<FocusStrategy | null>(null),
-      expandedKeysStack: signal<readonly Key[]>([]),
-    };
-  });
+  const menuId = props.id ?? createId();
+  return {
+    ...createOverlayTriggerState(props),
+    triggerId: menuId + "-trigger",
+    menuId,
+    trigger: props.trigger ?? "press",
+    focusStrategy: signal<FocusStrategy | null>(null),
+    expandedKeysStack: signal<readonly Key[]>([]),
+  };
 }
 
 /** `open(focusStrategy = null)`. */
@@ -144,18 +142,16 @@ export interface SubmenuTriggerState {
 
 /** react-stately `useSubmenuTriggerState({ triggerKey }, rootState)`; `level` defaults to the current stack length. */
 export function createSubmenuTriggerState(props: { triggerKey: Key }, root: MenuTriggerState, level?: number): SubmenuTriggerState {
-  return _regionState(() => {
-    const submenuLevel = level ?? untrack(root.expandedKeysStack).length;
-    const sub: SubmenuTriggerState = {
-      root,
-      triggerKey: props.triggerKey,
-      submenuLevel,
-      // Reads `triggerKey` at evaluation: the trigger item may bind its own key after creation.
-      isOpen: computed(() => String(root.expandedKeysStack()[submenuLevel]) === String(sub.triggerKey)),
-      focusStrategy: signal<FocusStrategy | null>(null),
-    };
-    return sub;
-  });
+  const submenuLevel = level ?? untrack(root.expandedKeysStack).length;
+  const sub: SubmenuTriggerState = {
+    root,
+    triggerKey: props.triggerKey,
+    submenuLevel,
+    // Reads `triggerKey` at evaluation: the trigger item may bind its own key after creation.
+    isOpen: computed(() => String(root.expandedKeysStack()[submenuLevel]) === String(sub.triggerKey)),
+    focusStrategy: signal<FocusStrategy | null>(null),
+  };
+  return sub;
 }
 
 /** Rivet: the trigger item of a SubmenuTrigger renders with its own key: bind it (before anything opens). */
@@ -246,40 +242,38 @@ export function createMenuState(
   } = {},
 ): MenuState {
   // Region state: a resumed page re-creating the menu's region (its first open) keeps it.
-  return _regionState((): MenuState => {
-    const { onAction, selectedKeys, ...listProps } = props;
-    const list = createListState({
-      ...listProps,
-      ...(selectedKeys !== undefined ? { selectedKeys: toSelectionSignal(selectedKeys) } : {}),
-      ...(context.id ? { id: context.id } : {}),
-      selectionMode: props.selectionMode ?? "none",
-      // useMenu: wrap focus; useMenuItem: select on press up, from a press that started elsewhere (the
-      // trigger); links are handled by the menu item (linkBehavior "none").
-      shouldFocusWrap: props.shouldFocusWrap ?? true,
-      linkBehavior: "none",
-      shouldSelectOnPressUp: true,
-      allowsDifferentPressOrigin: true,
-      // Menus open with focus on the menu (or the strategy's item): no server tab stop.
-      focusedKey: props.focusedKey ?? null,
-    });
-    return {
-      ...list,
-      level: context.level ?? 0,
-      root: context.root ?? createMenuTriggerState({ id: list.id }),
-      submenuTrigger: context.submenuTrigger,
-      parentId: context.parentId,
-      menuAction: onAction,
-      onClose: props.onClose,
-      shouldCloseOnSelect: props.shouldCloseOnSelect,
-      items: {},
-      sections: {},
-      submenus: {},
-      delays: {},
-      groups: {},
-      itemCount: signal(0),
-      ...(context.virtual ? { virtual: context.virtual } : {}),
-    };
+  const { onAction, selectedKeys, ...listProps } = props;
+  const list = createListState({
+    ...listProps,
+    ...(selectedKeys !== undefined ? { selectedKeys: toSelectionSignal(selectedKeys) } : {}),
+    ...(context.id ? { id: context.id } : {}),
+    selectionMode: props.selectionMode ?? "none",
+    // useMenu: wrap focus; useMenuItem: select on press up, from a press that started elsewhere (the
+    // trigger); links are handled by the menu item (linkBehavior "none").
+    shouldFocusWrap: props.shouldFocusWrap ?? true,
+    linkBehavior: "none",
+    shouldSelectOnPressUp: true,
+    allowsDifferentPressOrigin: true,
+    // Menus open with focus on the menu (or the strategy's item): no server tab stop.
+    focusedKey: props.focusedKey ?? null,
   });
+  return {
+    ...list,
+    level: context.level ?? 0,
+    root: context.root ?? createMenuTriggerState({ id: list.id }),
+    submenuTrigger: context.submenuTrigger,
+    parentId: context.parentId,
+    menuAction: onAction,
+    onClose: props.onClose,
+    shouldCloseOnSelect: props.shouldCloseOnSelect,
+    items: {},
+    sections: {},
+    submenus: {},
+    delays: {},
+    groups: {},
+    itemCount: signal(0),
+    ...(context.virtual ? { virtual: context.virtual } : {}),
+  };
 }
 
 /** Register a rendered MenuItem's callbacks / disabled flag (RAC: the collection node's props). */

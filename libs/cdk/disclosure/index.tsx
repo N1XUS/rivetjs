@@ -18,11 +18,10 @@
 // `render` (RAC DOMRenderProps) on DisclosureGroup / Disclosure / DisclosurePanel (their `<div>`): given, the attributes object goes to `render(attrs, renderProps)`.
 // Deviations: DOM ids derive from one generated id per disclosure (`<id>-trigger`,
 //   `<id>-panel`) instead of two `useId`s.
-import { _regionState, createContext, getOwner, onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
+import { createContext, getOwner, onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import {
   DEFAULT_SLOT,
   Provider,
@@ -110,7 +109,7 @@ export interface DisclosureGroupProps
 }
 
 /** RAC `DisclosureGroupStateContext`. */
-export const DisclosureGroupStateContext = resumableContext(createContext<DisclosureGroupState | null>(null, { id: "rv-disclosure-group-state" }));
+export const DisclosureGroupStateContext = createContext<DisclosureGroupState | null>(null);
 
 const GROUP_OWNED = ["style"] as const;
 
@@ -193,16 +192,16 @@ export interface DisclosureProps extends SlotProps, DOMRenderProps<"div", Disclo
 }
 
 /** RAC `DisclosureContext`. */
-export const DisclosureContext = resumableContext(createContext<ContextValue<DisclosureProps, HTMLDivElement>>(null, { id: "rv-disclosure" }));
+export const DisclosureContext = createContext<ContextValue<DisclosureProps, HTMLDivElement>>(null);
 /** RAC `DisclosureStateContext`. */
-export const DisclosureStateContext = resumableContext(createContext<DisclosureState | null>(null, { id: "rv-disclosure-state" }));
+export const DisclosureStateContext = createContext<DisclosureState | null>(null);
 
 interface InternalDisclosureContextValue {
   panelProps: DisclosureAria["panelProps"];
   panelRef: Ref<HTMLElement>;
   state: DisclosureState;
 }
-const InternalDisclosureContext = resumableContext(createContext<InternalDisclosureContextValue | null>(null, { id: "rv-disclosure-internal" }));
+const InternalDisclosureContext = createContext<InternalDisclosureContextValue | null>(null);
 
 const DISCLOSURE_OWNED = ["style", "onFocusIn", "onFocusOut"] as const;
 
@@ -245,7 +244,7 @@ function disclosure(inProps: DisclosureProps) {
   if (onOpened || onClosed) {
     // The last reported state is a region signal (serialized): a resumed page's effect, which first runs
     // after the first change, still compares against the server-rendered state.
-    const reported = _regionState(() => signal(untrack(state.isExpanded)));
+    const reported = signal(untrack(state.isExpanded));
     clientEffect(() => {
       const now = state.isExpanded();
       if (now === untrack(reported)) return;

@@ -39,7 +39,6 @@
 import { createContext, provide, signal, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, clientEvent, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { visuallyHidden } from "../a11y/index.ts";
 import { Button, type ButtonProps } from "../button/index.tsx";
 import { Link, type LinkProps } from "../link/index.tsx";
@@ -134,8 +133,8 @@ export interface SidebarContextValue {
   toggleSidebar: () => void;
 }
 
-/** Rivet: whether the nearest menu item is an expandable tree item (its SidebarMenuSub is the panel; `rv-sidebar-item`). */
-const SidebarItemContext = resumableContext(createContext<boolean>(false, { id: "rv-sidebar-item" }));
+/** Rivet: whether the nearest menu item is an expandable tree item (its SidebarMenuSub is the panel). */
+const SidebarItemContext = createContext<boolean>(false);
 
 function sidebarState(): SidebarState {
   const state = useContext(SidebarContext);
@@ -209,7 +208,7 @@ export function SidebarProvider(props: SidebarProviderProps) {
   });
   const reduce = dataBool(!!reduceMotion);
   // use-mobile.ts: every media query change, once the runtime runs (no boot at load; toggles re-read the width).
-  // A literal (compiler RV1103): `media:` + MOBILE_QUERY.
+  // A literal: `media:` + MOBILE_QUERY.
   clientEvent("media:(max-width: 767px)", "change", () => updateSidebarIsMobile(state), { preload: "interaction" });
   // Adds a keyboard shortcut to toggle the sidebar: window-wide once the runtime runs; cold, the wrapper's
   // delegated keydown below (an event is handled once).

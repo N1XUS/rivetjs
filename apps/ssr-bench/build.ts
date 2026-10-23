@@ -48,57 +48,67 @@ for (const ssr of [false, true])
     configFile: resolve(routerApp, "vite.config.ts"),
     build: { ssr, outDir: resolve(root, `dist/rivet-router/${ssr ? "server" : "client"}`), emptyOutDir: true },
   });
-// rivet-derived lane: the same app resumed with the derived model (`vite.derived.config.ts`,
-// `resume.model: "derived"`) into `dist/rivet-derived/`; `rivet-derived.mjs` serves it.
-for (const ssr of [false, true])
-  await viteBuild({
-    root: routerApp,
-    configFile: resolve(routerApp, "vite.derived.config.ts"),
-    build: { ssr, outDir: resolve(root, `dist/rivet-derived/${ssr ? "server" : "client"}`), emptyOutDir: true },
-  });
 const compiledJSX = new Set(["rivet-compiled", "rivet-for"]);
-for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "rivet-compiled", "rivet-for", "rivet-router", "rivet-derived"]) {
+for (const name of [
+  "rivet",
+  "solid",
+  "qwik",
+  "solid-stable",
+  "qwik-stable",
+  "solid-stable-string",
+  "solid-stable-static",
+  "solid-stable-interactive",
+  "rivet-compiled",
+  "rivet-for",
+  "rivet-router",
+]) {
   const plugins: Plugin[] =
-    name === "solid-stable-static" ? [stableResolver, stableSolidStaticCompiler]
-      : name.startsWith("solid-stable") ? [stableResolver, stableSolidCompiler]
-      : name === "qwik-stable" ? [stableResolver]
-      : compiledJSX.has(name)
-      ? [{ name: "rivet-reviewed-server-compiler", setup(builder) {
-          builder.onLoad({ filter: /\.jsx$/ }, async args => {
-            const result = compile(await readFile(args.path, "utf8"), { target: "server", filename: args.path });
-            if (result.diagnostics.length) throw new Error(JSON.stringify(result.diagnostics));
-            return { contents: result.code, loader: "js", resolveDir: dirname(args.path) };
-          });
-        } }]
-      : name !== "solid"
-      ? []
-      : [
-          {
-            name: `${name}-production-ssr`,
-            setup(builder) {
-              builder.onLoad({ filter: /\.jsx$/ }, async (args) => {
-                const code = await readFile(args.path, "utf8");
-                let contents: string;
-                contents = transform(code, {
-                  filename: args.path,
-                  generate: "ssr",
-                  hydratable: true,
-                  dev: false,
-                  sourceNames: false,
-                }).code;
-                return { contents, loader: "js", resolveDir: dirname(args.path) };
-              });
-            },
-          },
-        ];
+    name === "solid-stable-static"
+      ? [stableResolver, stableSolidStaticCompiler]
+      : name.startsWith("solid-stable")
+        ? [stableResolver, stableSolidCompiler]
+        : name === "qwik-stable"
+          ? [stableResolver]
+          : compiledJSX.has(name)
+            ? [
+                {
+                  name: "rivet-reviewed-server-compiler",
+                  setup(builder) {
+                    builder.onLoad({ filter: /\.jsx$/ }, async (args) => {
+                      const result = compile(await readFile(args.path, "utf8"), { target: "server", filename: args.path });
+                      if (result.diagnostics.length) throw new Error(JSON.stringify(result.diagnostics));
+                      return { contents: result.code, loader: "js", resolveDir: dirname(args.path) };
+                    });
+                  },
+                },
+              ]
+            : name !== "solid"
+              ? []
+              : [
+                  {
+                    name: `${name}-production-ssr`,
+                    setup(builder) {
+                      builder.onLoad({ filter: /\.jsx$/ }, async (args) => {
+                        const code = await readFile(args.path, "utf8");
+                        let contents: string;
+                        contents = transform(code, {
+                          filename: args.path,
+                          generate: "ssr",
+                          hydratable: true,
+                          dev: false,
+                          sourceNames: false,
+                        }).code;
+                        return { contents, loader: "js", resolveDir: dirname(args.path) };
+                      });
+                    },
+                  },
+                ];
   const outfile = resolve(root, `dist/${name}.mjs`);
   const entry =
     name === "qwik" || name === "qwik-stable"
       ? resolve(root, `dist/${name}-server/${name}.js`)
       : name === "rivet-router"
         ? resolve(routerApp, "server.ts")
-        : name === "rivet-derived"
-          ? resolve(routerApp, "server-derived.ts")
         : resolve(root, `adapters/${name}.${name === "rivet" ? "ts" : "jsx"}`);
   const result = await build({
     entryPoints: [entry],
@@ -116,7 +126,13 @@ for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "so
     define: { "process.env.NODE_ENV": '"production"' },
   });
   const bytes = await readFile(outfile);
-  const packageName = name.startsWith("rivet") ? "@rivetjs/runtime" : name.startsWith("solid") ? "solid-js" : name === "qwik-stable" ? "@builder.io/qwik" : "@qwik.dev/core";
+  const packageName = name.startsWith("rivet")
+    ? "@rivetjs/runtime"
+    : name.startsWith("solid")
+      ? "solid-js"
+      : name === "qwik-stable"
+        ? "@builder.io/qwik"
+        : "@qwik.dev/core";
   let version: string | undefined;
   if (name.startsWith("rivet")) version = "0.0.0-experimental";
   else if (name.startsWith("solid-stable") || name === "qwik-stable") version = (await stablePackage(packageName)).version;
@@ -137,8 +153,32 @@ for (const name of ["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "so
   }
   artifacts.push({
     framework: name,
-    implementation: name === "rivet-compiled" ? "JSX -> reviewed Rivet server compiler/runtime" : name === "rivet-for" ? "JSX + keyed <For> -> Rivet server compiler/runtime" : name === "rivet-router" ? "@rivetjs/router file routes (layout + loaders + head) on the node adapter" : name === "rivet-derived" ? "@rivetjs/router file routes, resume.model derived (boundary records + keyed signals), node adapter" : name === "solid-stable-string" ? "Solid stable production SSR (babel-preset-solid, renderToString)" : name === "solid-stable-static" ? "Solid stable static SSR (babel-preset-solid hydratable:false, renderToString)" : name === "solid-stable" ? "Solid stable production SSR (babel-preset-solid)" : name === "solid-stable-interactive" ? "Solid stable production SSR (babel-preset-solid), interactive rows + serialized page data" : name === "qwik-stable" ? "Qwik stable production SSR (Qwik optimizer + Vite 7)" : name,
-    outputMode: name === "solid-stable-string" ? "buffered-renderToString" : name === "solid-stable-static" ? "buffered-static-renderToString" : name === "rivet-router" || name === "rivet-derived" ? "streaming-router" : "streaming-adapter",
+    implementation:
+      name === "rivet-compiled"
+        ? "JSX -> reviewed Rivet server compiler/runtime"
+        : name === "rivet-for"
+          ? "JSX + keyed <For> -> Rivet server compiler/runtime"
+          : name === "rivet-router"
+            ? "@rivetjs/router file routes (layout + loaders + head) on the node adapter"
+            : name === "solid-stable-string"
+              ? "Solid stable production SSR (babel-preset-solid, renderToString)"
+              : name === "solid-stable-static"
+                ? "Solid stable static SSR (babel-preset-solid hydratable:false, renderToString)"
+                : name === "solid-stable"
+                  ? "Solid stable production SSR (babel-preset-solid)"
+                  : name === "solid-stable-interactive"
+                    ? "Solid stable production SSR (babel-preset-solid), interactive rows + serialized page data"
+                    : name === "qwik-stable"
+                      ? "Qwik stable production SSR (Qwik optimizer + Vite 7)"
+                      : name,
+    outputMode:
+      name === "solid-stable-string"
+        ? "buffered-renderToString"
+        : name === "solid-stable-static"
+          ? "buffered-static-renderToString"
+          : name === "rivet-router"
+            ? "streaming-router"
+            : "streaming-adapter",
     version: version!,
     sha256: createHash("sha256").update(bytes).digest("hex"),
     raw: bytes.length,
@@ -178,10 +218,7 @@ for (const [entry, out] of [
     define: { "process.env.NODE_ENV": '"production"' },
   });
 }
-await writeFile(
-  resolve(root, "dist/builds.json"),
-  JSON.stringify({ mode: "production-static-ssr", artifacts }, null, 2) + "\n",
-);
+await writeFile(resolve(root, "dist/builds.json"), JSON.stringify({ mode: "production-static-ssr", artifacts }, null, 2) + "\n");
 console.log(artifacts.map((a) => `${a.framework} ${a.version}: ${a.raw} server bytes (${a.gzip} gzip)`).join("\n"));
 // The optimizer's native worker pool can keep Node alive after awaited build completion.
 process.exit(0);

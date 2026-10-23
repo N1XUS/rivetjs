@@ -35,7 +35,6 @@ RAC Popover (`<DialogTrigger><Button/><Popover><Dialog/></Popover></DialogTrigge
 - `overlay(groupElement ?? element, { keyTarget: element })`: Escape is handled on the popover itself, not the shared group (see `../overlay/CLAUDE.md`)
 - `popover.browser` "should not leak PopoverContext to nested popovers" passes on the Select parts form (2026-10-08); its nested popover uses a callback ref (the Select's build pass renders Popover children inside a computed: `ref()` signal writes throw there)
 - `overlays.test` standalone / isNonModal cases pass (tabindex before focus)
-- `PortalProvider` ignored by Popover on resumed pages (region re-creation loses context; Tooltip resolves PortalContext outside the presence)
 - Context ref (`PopoverContext.ref`, e.g. ComboBox `popoverRef`) is used as the element ref directly when it is a Rivet ref (signal or server ref `Symbol.for("rivet.ref")`), not via `contextProps` mergeRefValues: that copy is a clientEffect and on resumed pages runs only at idle, so a press during boot saw `popoverRef()` unset and the combobox's first blur closed the popover (RA mergeRefs set at commit)
 
 ## See also

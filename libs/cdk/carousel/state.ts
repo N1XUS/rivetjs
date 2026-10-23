@@ -4,7 +4,7 @@
 // Server values (no layout yet): one snap per `slidesToScroll` group of the known slides, `startIndex` selected,
 // `canScrollPrev` / `canScrollNext` from the index (always with `loop`), every slide of the selected group
 // "snapped", none "in view"; `isPlaying` = autoplay / auto scroll with `playOnInit` (default) on.
-import { signal, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, type Signal } from "@rivetjs/reactivity";
 import type { EmblaOptionsType } from "./engine/Options.ts";
 import type { EmblaCarouselType } from "./engine/EmblaCarousel.ts";
 import type { EmblaPluginType } from "./engine/Plugins.ts";
@@ -70,8 +70,11 @@ export interface CarouselState {
   isRotationStopped: Signal<boolean>;
   /** The engine runs (layout measured). */
   isReady: Signal<boolean>;
-  /** Render-time slide counter (server / client render order → slide index). */
-  refs: { count: number };
+  /**
+   * Render-time slide counter (server / client render order → slide index). `seen`: the index each slide's props object
+   * got — a resumed slide's body runs twice over the same props (the derived probe run, then the adopt run), one index.
+   */
+  refs: { count: number; seen: WeakMap<object, number> };
 }
 
 const groupsOf = (count: number, size: number): number[][] => {
@@ -101,20 +104,20 @@ export function createCarouselState(options: CarouselStateOptions): CarouselStat
     onApi,
     onSelect,
     onSettle,
-    selectedIndex: _regionState(() => signal(start)),
-    previousIndex: _regionState(() => signal(start)),
-    snapCount: _regionState(() => signal(snaps)),
-    slideCount: _regionState(() => signal(slideCount)),
-    slideRegistry: _regionState(() => signal(registry)),
-    canScrollPrev: _regionState(() => signal(snaps > 1 && (loop || start > 0))),
-    canScrollNext: _regionState(() => signal(snaps > 1 && (loop || start < snaps - 1))),
-    slidesInView: _regionState(() => signal<number[]>([])),
-    scrollProgress: _regionState(() => signal(0)),
-    isDragging: _regionState(() => signal(false)),
-    isPlaying: _regionState(() => signal(playOnInit(autoplay) || playOnInit(autoScroll))),
-    isRotationStopped: _regionState(() => signal(!!(autoplay || autoScroll) && !playOnInit(autoplay) && !playOnInit(autoScroll))),
-    isReady: _regionState(() => signal(false)),
-    refs: { count: 0 },
+    selectedIndex: signal(start),
+    previousIndex: signal(start),
+    snapCount: signal(snaps),
+    slideCount: signal(slideCount),
+    slideRegistry: signal(registry),
+    canScrollPrev: signal(snaps > 1 && (loop || start > 0)),
+    canScrollNext: signal(snaps > 1 && (loop || start < snaps - 1)),
+    slidesInView: signal<number[]>([]),
+    scrollProgress: signal(0),
+    isDragging: signal(false),
+    isPlaying: signal(playOnInit(autoplay) || playOnInit(autoScroll)),
+    isRotationStopped: signal(!!(autoplay || autoScroll) && !playOnInit(autoplay) && !playOnInit(autoScroll)),
+    isReady: signal(false),
+    refs: { count: 0, seen: new WeakMap() },
   };
 }
 

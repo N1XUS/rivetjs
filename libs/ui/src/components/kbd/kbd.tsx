@@ -11,7 +11,6 @@
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { KbdVariants } from "../../../styles/src/components/kbd/index.ts";
 import { kbdVariants } from "../../../styles/src/components/kbd/index.ts";
@@ -33,7 +32,7 @@ interface KbdContext {
   variant?: KbdVariant | null;
 }
 
-const KbdContext = resumableContext(createContext<KbdContext>({}, { id: "rv-ui-kbd" }));
+const KbdContext = createContext<KbdContext>({});
 
 type KbdSlots = ReturnType<typeof kbdVariants>;
 

@@ -8,7 +8,7 @@ RAC `OverlayArrow`: arrow element of a Popover / Tooltip, aligned with the trigg
 
 ## Layout
 - `div.rv-OverlayArrow[data-placement]`; style = `position:absolute`, placement side `100%`, translate −50%, RA `arrowProps.style` offset (context `offset` signal), then user `style` (wins); `aria-hidden` / `role=presentation` set by the positioning engine
-- Context (`../overlay/contexts.ts`, id `rv-overlay-arrow`): `{placement, ref, offset}` from Popover / Tooltip
+- Context (`../overlay/contexts.ts`): `{placement, ref, offset}` from Popover / Tooltip
 
 ## Upstream / deviations
 - RAC OverlayArrow.tsx — Apache-2.0; `render` prop (renderProps `placement`); `class` not `className`

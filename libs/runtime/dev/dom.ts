@@ -68,6 +68,8 @@ function guard(value: unknown, owner: unknown): unknown {
   if (Array.isArray(value)) return value.map((child) => guard(child, owner));
   if (value == null || ["string", "number", "bigint", "boolean"].includes(typeof value) || typeof (value as PromiseLike<unknown>).then === "function")
     return value;
+  // A lazily adopted `<For>`'s keep token (`dom-derived.ts`: the slot keeps its server rows).
+  if (_adoption.keep?.has(value as object)) return value;
   if (typeof (value as Node).nodeType === "number" && typeof (value as Node).nodeName === "string") {
     if ((value as Node).nodeType === 11) fragments.set(value as Node, Array.from((value as Node).childNodes));
     // Which component rendered it (a11y warnings, `where.ts`): the first owner to check a node is the innermost one.
@@ -359,7 +361,8 @@ export function _listen(el: Element, type: string, handler: ((event: Event) => u
 function component2<P>(fn: Component<P>, input: P | (() => P), thunk: boolean): unknown {
   startA11y();
   const hook = devtoolsHook(),
-    report = hook !== undefined && hook.level >= 1,
+    // A derived adopt run's probe (discarded) reports nothing.
+    report = hook !== undefined && hook.level >= 1 && !_adoption.probe?.(),
     parent = getOwner(),
     holder: { owner: unknown } = { owner: null };
   let props: unknown;
@@ -518,21 +521,20 @@ export function _spread(
   el: Element,
   value: object | (() => object | null | undefined) | null | undefined,
   flags?: number,
-  rendered?: string | null,
+  _rendered?: null,
   exclude?: string,
 ): void {
   const check = urlKeys(el, getOwner());
   // `flags & 2` (an uncopied object that may hold live getters): checked when read, like a thunk's result.
-  // `rendered` (resumed spread: the server's names / class baseline) passes through.
   if (typeof value === "function" || (flags ?? 0) & 2)
     dom._spread(
       el,
       () => check(typeof value === "function" ? (value as () => object | null | undefined)() : value) as object | null | undefined,
       flags,
-      rendered,
+      null,
       exclude,
     );
-  else dom._spread(el, check(value) as object | null | undefined, flags, rendered, exclude);
+  else dom._spread(el, check(value) as object | null | undefined, flags, null, exclude);
 }
 /** Compiler ABI `_attrs` (explicit attributes after a spread): URL values warn like `_attrWrite`, accessors checked when read. */
 export function _attrs(el: Element, value: unknown[] | (() => unknown[]), names: string): void {

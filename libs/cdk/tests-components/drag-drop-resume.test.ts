@@ -2,28 +2,26 @@
 // server markup, nothing loaded before the lists scroll into view (`preload = "visible"`), the first
 // drag after the visible preload runs synchronously, a cold press is replayed after its chunks load
 // (and dropped when it was released meanwhile), handles never scroll on a cold touch; a drop reorders
-// the `For` rows by adoption (known gap, `test.fails`). The server runs with `preload.background: 0`: these
-// tests time the viewport trigger and cold presses; with the default budget the lists' chunks also prefetch at
-// idle (planner `P` entries, `libs/runtime/tests/resume-preload.test.ts`).
+// the `For` rows by adoption (known gap, `test.fails`). These tests time the viewport trigger and cold presses.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page, Route } from "playwright";
 import { among, chunksOf, codeOf, stories, watch, type Stories, type Watch } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories({ preload: { background: 0 } })));
+beforeAll(async () => (s = await stories()));
 afterAll(async () => s?.close());
 
 /**
  * Drag-drop handler chunks: the chunks holding the component symbols, from the build manifest (`resume-Drag-…` etc. with
  * `chunks: "component"`, the story route's chunk by default). `DRAG` is the one holding `Drag`'s own handlers.
  */
-const dragChunks = () => chunksOf(/#(Drag|DragHandle|DropList|DropListGroup)\$/);
+const dragChunks = () => chunksOf(/#(Drag|DragHandle|DropList|DropListGroup)$/);
 const dragScripts = (seen: Watch) => among(seen.scripts, dragChunks());
 const dragLoaded = (page: Page, options?: { timeout: number }) =>
   page.waitForFunction(
     (chunks) => performance.getEntriesByType("resource").some((entry) => chunks.includes(new URL(entry.name).pathname)),
-    [...chunksOf(/#Drag\$/)],
+    [...chunksOf(/#Drag$/)],
     options,
   );
 const text = (page: Page, id: string) => page.evaluate((id) => document.getElementById(id)?.textContent ?? null, id);
@@ -39,7 +37,7 @@ async function holdScripts(page: Page) {
   const held: Route[] = [];
   let open = false;
   // The drag-drop symbol chunks + the shared code only they import (`drag-…` module chunks with component chunks).
-  const code = codeOf(/#(Drag|DragHandle|DropList|DropListGroup|DragDropStory)\$/);
+  const code = codeOf(/#(Drag|DragHandle|DropList|DropListGroup|DragDropStory)$/);
   await page.route(/\/assets\/.*\.js$/, (route) => {
     if (open || !code.has(new URL(route.request().url()).pathname.replace(/\.deps\.js$/, ".js"))) return route.continue();
     held.push(route);
@@ -81,7 +79,7 @@ test("nothing drag-drop related loads before the lists are visible; scrolling th
   assert.deepEqual(dragScripts(seen), []);
   await page.evaluate(() => document.getElementById("list")!.scrollIntoView());
   await dragLoaded(page, { timeout: 5000 });
-  assert.ok(among(seen.scripts, chunksOf(/#Drag\$/)).length > 0);
+  assert.ok(among(seen.scripts, chunksOf(/#Drag$/)).length > 0);
   assert.deepEqual(seen.errors, []);
   await page.close();
 });

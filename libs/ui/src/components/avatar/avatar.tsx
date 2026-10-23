@@ -17,7 +17,6 @@
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider, Show } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { AvatarVariants } from "../../../styles/src/components/avatar/index.ts";
 import { avatarVariants } from "../../../styles/src/components/avatar/index.ts";
@@ -37,7 +36,7 @@ interface AvatarContext {
   variant?: AvatarVariants["variant"] | null;
 }
 
-const AvatarContext = resumableContext(createContext<AvatarContext>({}, { id: "rv-ui-avatar" }));
+const AvatarContext = createContext<AvatarContext>({});
 
 type AvatarSlots = ReturnType<typeof avatarVariants>;
 

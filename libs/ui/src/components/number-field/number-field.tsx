@@ -26,7 +26,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { Minus, Plus } from "lucide";
 
 import type { NumberFieldVariants } from "../../../styles/src/components/number-field/index.ts";
@@ -48,7 +47,7 @@ type NumberFieldContext = {
   variant?: NumberFieldVariants["variant"];
 };
 
-const NumberFieldContext = resumableContext(createContext<NumberFieldContext>({}, { id: "rv-ui-number-field" }));
+const NumberFieldContext = createContext<NumberFieldContext>({});
 
 type NumberFieldSlots = ReturnType<typeof numberFieldVariants>;
 

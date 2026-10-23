@@ -6,7 +6,7 @@ Headless media lightbox: port of yet-another-react-lightbox (YARL) 3.32.2 (MIT, 
 ## Subpaths (pattern `./*` → `<dir>/index.tsx`; no explicit exports)
 | Subpath | File | Exports |
 | --- | --- | --- |
-| `lightbox` | `index.tsx` (+ `state.ts`, `behaviour.ts` re-exported) | `Lightbox` (modal root), `LightboxView` (container, shared with inline), `LightboxCarousel`, `LightboxImage`, `LightboxToolbar`, `LightboxButton`, `LightboxClose` / `Previous` / `Next`, contexts `LightboxContext` (`rv-lightbox`) / `LightboxSlideContext` (`rv-lightbox-slide`), `useLightbox`, `useLightboxSlide`, `useLightboxIndex`, `lightboxToggleContent`; state: `createLightboxState`, slide types, defaults, `lightboxWindow`, labels; behaviour: `lightboxNavigate` / `Prev` / `Next` / `GoTo`, pointer / key handlers, `ensureLightbox`, `syncLightboxMedia`, `lightboxHandled` |
+| `lightbox` | `index.tsx` (+ `state.ts`, `behaviour.ts` re-exported) | `Lightbox` (modal root), `LightboxView` (container, shared with inline), `LightboxCarousel`, `LightboxImage`, `LightboxToolbar`, `LightboxButton`, `LightboxClose` / `Previous` / `Next`, contexts `LightboxContext` / `LightboxSlideContext`, `useLightbox`, `useLightboxSlide`, `useLightboxIndex`, `lightboxToggleContent`; state: `createLightboxState`, slide types, defaults, `lightboxWindow`, labels; behaviour: `lightboxNavigate` / `Prev` / `Next` / `GoTo`, pointer / key handlers, `ensureLightbox`, `syncLightboxMedia`, `lightboxHandled` |
 | `lightbox/zoom` | `zoom/index.tsx` | `LightboxZoom` (behaviour, renders null), `LightboxZoomIn` / `LightboxZoomOut`, `lightboxZoomIn` / `Out` / `ChangeZoom` / `ZoomState` |
 | `lightbox/video` | `video/index.tsx` | `LightboxVideo`, `LIGHTBOX_VIDEO_DEFAULTS` |
 | `lightbox/embed` | `embed/index.tsx` | `LightboxEmbed`, `lightboxEmbedUrl` (Rivet-authored) |
@@ -50,7 +50,7 @@ No children = default parts (carousel, Close, Previous, Next). Styled layer: `@r
 - Media controls: pointer down in the bottom 40 px of `<video controls>` never swipes (all browsers; YARL WebKit only).
 - Server-rendered images (inline) start `complete`; the inline view installs browser listeners on first pointerenter / focusin.
 - Share / Fullscreen hide when unsupported — evaluated client-side; an inline server render shows them until a binding re-runs (gap).
-- State = plain data + signals (`zoom`, `maxZoom`, `playing`, `captions`, `thumbnails`, `fullscreen`, `gesture`) so plugin parts on resumed / re-created regions share it; runtime controllers (motions, timers) in WeakMaps.
+- State = plain data + signals (`zoom`, `maxZoom`, `playing`, `captions`, `thumbnails`, `fullscreen`, `gesture`) so plugin parts share it; runtime controllers (motions, timers) in WeakMaps.
 
 ## Tests
 - `../tests/lightbox.browser.test.tsx` (core, 21), `../tests/lightbox-plugins.browser.test.tsx` (plugins, 30) — project `cdk-browser`.
@@ -64,5 +64,5 @@ No children = default parts (carousel, Close, Previous, Next). Styled layer: `@r
 - State attributes (`data-current`, `data-autoplay`, `data-cover`, …) via `dataBool` (`"true"` / absent; `tests/data-attrs.test.ts` lint); presence markers (`data-lightbox-*`) are `""`. Selectors use presence (`[data-current]`).
 - `Lightbox` / `LightboxInline` `containerClass` styles the container (`role="dialog"` gesture surface); default `rv-LightboxContainer`.
 - Parts take no `id` / rest DOM props: select them by `data-action` (`close`, `prev`, `next`, `zoom-in`, `captions`, …) / `data-lightbox-*` (docs example steps do).
-- Server-rendered `LightboxImage` (inline) binds no `onLoad` / `onError` (status starts `complete`): a cold `load` would boot the resumed page per image, and the runtime's cold-replay form-state restore (`dom-resume.ts` `show`) read `selectionStart` of the replayed `load` event's `null` target (console TypeError; reported to the runtime owner 2026-10-08). No loading / error placeholder on server-rendered images.
+- Server-rendered `LightboxImage` (inline) binds no `onLoad` / `onError` (status starts `complete`): a cold `load` would boot the resumed page per image, and the runtime's cold-replay form-state restore read `selectionStart` of the replayed `load` event's `null` target (console TypeError; reported to the runtime owner 2026-10-08). No loading / error placeholder on server-rendered images.
 - Keyboard navigation is throttled to half the navigation duration (YARL): a second arrow key < 250 ms after the first is ignored (example steps click `[data-action=prev]` instead).

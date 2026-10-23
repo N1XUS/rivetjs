@@ -29,7 +29,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { Minus, Plus } from "lucide";
 
@@ -47,7 +46,7 @@ interface NumberStepperContext {
   size?: NumberStepperVariants["size"];
 }
 
-const NumberStepperContext = resumableContext(createContext<NumberStepperContext>({}, { id: "rv-ui-number-stepper" }));
+const NumberStepperContext = createContext<NumberStepperContext>({});
 
 type Slots = ReturnType<typeof numberStepperVariants>;
 

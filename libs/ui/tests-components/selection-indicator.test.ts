@@ -1,9 +1,8 @@
 // UI-POLISH (2026-10-08): the FIRST selection change of Tabs / Segment animates the indicator from the previous item
 // (cdk SharedElement: snapshot of the old indicator, the new one starts at its place and transitions `translate`), on the
 // resumed page (server-rendered indicator) and on a client-created pair (`#si-mount`), in the production story build and on
-// the dev server (`vite serve`, development condition). Was (dev only): the dev runtime gives every component its own
-// owner, so `_serverBranch()` (dom-adopt `direct`) saw no server branch under the ui `Tabs.Indicator` wrapper → the old
-// indicator was dropped without a snapshot and the new one "entered" (no movement).
+// the dev server (`vite serve`, development condition). Was (dev only): the old indicator was dropped without a snapshot
+// and the new one "entered" (no movement).
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { createServer } from "vite";

@@ -13,9 +13,8 @@
 //   point upstream documents for server components (`cookies().get("sidebar_state")`).
 // - Rivet extensions (feature set inspired by HeroUI Pro's public Sidebar docs; independent implementation):
 //   `toggleShortcut` (a `mod+b`-style string, `false` / `null` off; parsed at event time), `reduceMotion`,
-//   `closeMobileOnAction` — plain data in the region state.
-import { createContext, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
+//   `closeMobileOnAction` — plain data in the state.
+import { createContext, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 
 export const SIDEBAR_COOKIE_NAME = "sidebar_state";
@@ -80,24 +79,22 @@ export interface SidebarState {
   readonly collapsible: "offcanvas" | "icon" | "none" | undefined;
 }
 
-/** Creates the sidebar state (region state: a re-created region of a resumed page keeps it). */
+/** Creates the sidebar state. */
 export function createSidebarState(props: SidebarStateProps = {}): SidebarState {
-  return _regionState(() => {
-    const control = controllable<boolean>(props.open, props.defaultOpen ?? true, props.onOpenChange);
-    const shortcut = props.toggleShortcut === undefined ? SIDEBAR_TOGGLE_SHORTCUT : props.toggleShortcut || null;
-    return {
-      open: control.value,
-      control,
-      openMobile: signal(false),
-      isMobile: signal(false),
-      shortcut,
-      reduceMotion: !!props.reduceMotion,
-      closeMobileOnAction: props.closeMobileOnAction ?? false,
-      side: props.side,
-      variant: props.variant,
-      collapsible: props.collapsible,
-    };
-  });
+  const control = controllable<boolean>(props.open, props.defaultOpen ?? true, props.onOpenChange);
+  const shortcut = props.toggleShortcut === undefined ? SIDEBAR_TOGGLE_SHORTCUT : props.toggleShortcut || null;
+  return {
+    open: control.value,
+    control,
+    openMobile: signal(false),
+    isMobile: signal(false),
+    shortcut,
+    reduceMotion: !!props.reduceMotion,
+    closeMobileOnAction: props.closeMobileOnAction ?? false,
+    side: props.side,
+    variant: props.variant,
+    collapsible: props.collapsible,
+  };
 }
 
 /** `"expanded"` / `"collapsed"` (upstream `state`; `data-state`). */
@@ -251,7 +248,7 @@ export function sidebarCookieOpen(source: string | { get(name: string): string |
 // Contexts (here, not in index.tsx: ./pages.tsx reads them without index.tsx importing the pages code — a page without
 // SidebarPages fetches no pages chunk, and no extra chunk either).
 /** The sidebar state of the nearest SidebarProvider (serializable). */
-export const SidebarContext = resumableContext(createContext<SidebarState | null>(null, { id: "rv-sidebar" }));
+export const SidebarContext = createContext<SidebarState | null>(null);
 
 /** Rivet: options a SidebarGroup / SidebarMenu passes down (`closeMobileOnAction`, `reduceMotion`; plain data). */
 export interface SidebarMenuOptions {
@@ -259,5 +256,5 @@ export interface SidebarMenuOptions {
   reduceMotion?: boolean;
 }
 
-/** Rivet: the nearest group / menu options (`rv-sidebar-options`). */
-export const SidebarMenuOptionsContext = resumableContext(createContext<SidebarMenuOptions | null>(null, { id: "rv-sidebar-options" }));
+/** Rivet: the nearest group / menu options. */
+export const SidebarMenuOptionsContext = createContext<SidebarMenuOptions | null>(null);

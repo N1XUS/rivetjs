@@ -10,7 +10,7 @@ interface Exports {
   panic_len?(): number;
   source_hash_ptr?(): number;
   source_hash_len?(): number;
-  /** M2 lane A: the build understands `resume.model: "derived"` + `moduleFacts` `boundaries` (absent on older builds). */
+  /** The build implements the derived resume model (`resume.boundaries` / `independent`, `moduleFacts` `boundaries`); every build since M6. */
   has_derived_model?(): number;
 }
 
@@ -115,8 +115,8 @@ export function wasmSourceHash(): string {
 }
 
 /**
- * Whether the loaded module implements the derived resume model (M2 lane A: `resume.model: "derived"`, `resume.boundaries`
- * / `resume.independent`, `moduleFacts` `boundaries`; export `has_derived_model`). Tests of that model skip without it.
+ * Whether the loaded module implements the derived resume model (`resume.boundaries` / `resume.independent`, `moduleFacts`
+ * `boundaries`; export `has_derived_model`). Every build since M6 (the derived model is the only resume model) returns true.
  */
 export function hasDerivedModel(): boolean {
   return (instance().has_derived_model?.() ?? 0) === 1;

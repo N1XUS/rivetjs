@@ -4,7 +4,7 @@
 RAC `NumberField` + RA `useNumberField`: locale-formatted text input with steppers, keys, wheel, snapping, validation, hidden form input.
 
 ## Entry points
-- `index.tsx` (`@rivetjs/cdk/number-field`): `NumberField`, `NumberFieldContext` (`rv-number-field`), `NumberFieldStateContext` (`rv-number-field-state`), `NumberFieldProps`, `NumberFieldRenderProps` (accessors + `state`). Provides `GroupContext`, `InputContext`, `LabelContext`, `ButtonContext` (slots `increment` / `decrement`), `TextContext` (slots `description` / `errorMessage`), `FieldErrorContext`.
+- `index.tsx` (`@rivetjs/cdk/number-field`): `NumberField`, `NumberFieldContext`, `NumberFieldStateContext`, `NumberFieldProps`, `NumberFieldRenderProps` (accessors + `state`). Provides `GroupContext`, `InputContext`, `LabelContext`, `ButtonContext` (slots `increment` / `decrement`), `TextContext` (slots `description` / `errorMessage`), `FieldErrorContext`.
 - `behaviour.tsx` (`@rivetjs/cdk/number-field/behaviour`, explicit export): `numberFieldProps(props, state)` → bags (`labelProps`, `groupProps`, `inputProps`, `incrementButtonProps`, `decrementButtonProps`, `descriptionProps`, `errorMessageProps`, accessors `isInvalid` / `validationErrors` / `validationDetails`, `spin` + `edit` JSON) + free handlers `numberField<Event>(event, props, state, aria)` (input, change, invalid, focus, blur, keydown/up, paste, beforeinput, composition*, group focusin/out, increment/decrement press start/up/end, button focus/blur, scroll, dispose).
 - `intl.ts`: generated strings (Increase / Decrease / Number field).
 - State: `../number` `createNumberFieldState` (react-stately useNumberFieldState).

@@ -62,8 +62,6 @@ export interface CodegenOptions {
   prefetchPaths?: boolean;
   /** `"never"` / `"always"`: the server entry exports the policy (page requests in the other form answer 308). */
   trailingSlash?: TrailingSlash;
-  /** `rivetRouter({ preload: { background } })`: the server entry exports it (the app's default background budget). */
-  preloadBackground?: number;
   /** `rivetRouter({ routeRules })`: the server entry exports them (JSON data). */
   routeRules?: Readonly<Record<string, unknown>>;
   /**
@@ -77,13 +75,6 @@ export interface CodegenOptions {
    * chunk prefetch) and document prefetch takes them. Absent / empty: output unchanged.
    */
   documents?: readonly string[];
-  /**
-   * `rivetRouter({ resume: { model: "derived" } })` (M2 R5, server / static modes): `app.tsx` default-exports `Root`, the
-   * page's independent root boundary — props = the route payload as data (`s`), from which the browser's adopt run
-   * rebuilds the router (browser history) and the first load of each level (`revived`, no data request); the server entry
-   * renders `<Root s={…} />`. Absent: output unchanged.
-   */
-  derived?: boolean;
 }
 export interface Generated {
   /** File name (relative to outDir) → contents. */
@@ -211,7 +202,7 @@ function wrap(providers: readonly (readonly [string, string])[], inner: string, 
 }
 
 /**
- * Derived resume model (`CodegenOptions.derived`): `app.tsx`'s default export, the page's independent root boundary. Server:
+ * Derived resume model (server / static modes): `app.tsx`'s default export, the page's independent root boundary. Server:
  * the App with the request's router (`ServerData` comes from the server entry). Browser (its adopt run): the browser
  * router, the payload as `Revived`, and the contexts the server entry provides (navigation state, search params) as the
  * browser's; `ready` loads the page modules of the URL first, so the adopt run renders the route synchronously.
@@ -234,6 +225,8 @@ function rootComponent(transitions: boolean, search: boolean): string[] {
     "    data = s.d.slice();",
     "  for (const i of s.n ?? []) data[i] = undefined;",
     "  const server = { data, url: untrack(router.location), ...(s.e ? { error: s.e } : {}), ...(s.a ? { action: s.a } : {}), ...(s.x ? { byURL: s.x } : {}), ...(s.k ? { deps: s.k } : {}) } as ServerRoutePayload;",
+    "  // Spent after the adopt task even when no Router level loaded from it (a no-match 404 page): the next load fetches.",
+    "  queueMicrotask(() => spent.set(server, true));",
     "  return (",
     "    <Provider token={Revived} value={server}>",
     ...wrap(providers, "<App router={router} />", "      "),
@@ -282,7 +275,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const active = options.activeLinks === true;
   const slash = options.trailingSlash === "never" || options.trailingSlash === "always" ? options.trailingSlash : null;
   const swap = options.announce === false ? "swapRouteQuiet" : "swapRoute";
-  const derived = options.derived === true && mode !== "csr";
+  // Server / static modes: the derived resume model (the only one).
+  const derived = mode !== "csr";
   // Derived model: the Routers swap through `adoptSwap` (the adopt task's route renders are the page load, not a navigation).
   const swapProp = derived ? "adoptSwap" : swap;
   // Derived model: the boundary a Router level renders in (and its ancestors) adopts with its parent, never deferred to
@@ -507,7 +501,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
       : [`import type { BrowserRouter } from "@rivetjs/runtime/router/dom";`]),
-    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${go ? (live.length ? "_serveLive, _live, _livePage, _liveIntent, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
+    `import { routeData, ${mode === "csr" ? "" : "_ssrLevel, "}${swap}, heldRoutes, preloadPage, ${single ? "" : "interceptClick, notePopstate, "}${single || mode === "csr" ? "" : "_onStopped, "}${go ? (live.length ? "_serveLive, _live, _livePage, " + (liveTop ? "_liveRouter, _armLive, " : nested ? "_liveLevels, " : "") : "_serve, ") : ""}${pageRoutes.length && params ? "RouteParamsContext, " : ""}${mode === "csr" || single ? "" : "prefetchData, "}${single ? "" : "prefetchModule, "}loadModule${single ? "" : ", routableAnchor"}${useNest || derived ? ", ServerData" : ""}${derived ? ", type ServerRoutePayload" : ""}${useNest ? ", _layouts, _landed" + (keeps ? ", _keepIds" : "") + (nested ? ", _level, _enter, _take, _sync" : "") + ", type LayoutTable" : ""}${transitions ? ", _routeModule" : ""}${active ? ", onNavigate, _markActive" : ""}${nested || active ? ", _arm" : ""}${shadowed.length || documentRows.length ? ", _endpoint" : ""}${forms && !single ? ", _brand, _go" : ""}${mode === "csr" ? ", _csrHead" : ""} } from "@rivetjs/router/client";`,
     `import { ${derived ? "HttpError, " : ""}isHttpError } from "@rivetjs/router";`,
     "",
     "// Route modules as this file renders them (strict-safe whatever props they declare): data comes",
@@ -529,7 +523,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     // Untyped table: each importer keeps its module's own type (checked against PageProps at `lazyComponent`).
     `const PAGES = [${[...pages.keys()].map((file) => `() => import(${str(spec(file))})`).join(", ")}];`,
     "const views: ((props: PageProps) => unknown)[] = [];",
-    "const page = (i: number): ((props: PageProps) => unknown) => (views[i] ??= lazyComponent<PageProps>(PAGES[i]!, undefined, { warm: false }));",
+    "const page = (i: number): ((props: PageProps) => unknown) => (views[i] ??= lazyComponent<PageProps>(PAGES[i]!));",
     ...(useNest ? [`const NEST: LayoutTable = ${str(layoutTable)};`] : []),
     ...(live.length
       ? [
@@ -666,21 +660,19 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           // ROUTER-LAZY: `match` — clicks / intent outside links (a signal handler's button, plain text) never load
           // this chunk; live pages also watch forms (hover / focus / press inside one warms the page data readers).
           `  clientEvent(document, "click", (event: MouseEvent) => ${armed("interceptClick(event, router, modules)")}, { preload: "intent", match: "a"${lone} });`,
-          // A resumed page runs a link's own handlers from the resume loader's document capture listener: one that stops
-          // propagation there (a cdk Link's press) would hide the click from the bubbling listener above, which a client
-          // render's delegated dispatch (registered after it) never does. This capture listener (attached after the
-          // loader's) takes exactly those clicks: same-page `#hash` focus, client navigation (resume fuzz T31 /links).
+          // A link's own handler that stops propagation (a cdk Link's press) hides the click from the bubbling listener
+          // above on a resumed page (a cold click's replay runs it first; a live one runs in the derived runtime's delegated
+          // listener). This capture listener takes exactly those clicks (`_onStopped`: stopped already, or once a later
+          // handler stops it): same-page `#hash` focus, client navigation (resume fuzz T31 /links).
           ...(mode === "csr"
             ? []
             : [
-                `  clientEvent(document, "click", (event: MouseEvent) => event.cancelBubble && ${armed("interceptClick(event, router, modules)")}, { capture: true, preload: "intent", match: "a"${lone} });`,
+                `  clientEvent(document, "click", (event: MouseEvent) => _onStopped(event, () => ${armed("interceptClick(event, router, modules)")}), { capture: true, preload: "intent", match: "a"${lone} });`,
               ]),
           `  const intent = (event: Event) => {`,
           ...(forms ? [`    _brand(_go);`] : []),
           // Z1: the loader boots the router on link intent; the nested-layout / active-link effects arm then.
           ...(nested || active ? [`    arm();`] : []),
-          // Live pages: focus in a form warms the chunks of the bindings reading the page / layout data.
-          ...(live.length ? [`    _liveIntent(event, live, modules${useNest ? ", nest" : ""});`] : []),
           `    const anchor = routableAnchor(event, modules);`,
           ...(transitions ? [`    if (anchor) transitions();`] : []),
           `    if (!anchor || anchor.getAttribute("data-rivet-prefetch") === "none") return;`,
@@ -688,13 +680,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `    prefetchModule(url, modules);`,
           ...(mode === "csr" ? [] : [`    prefetchData(url, ${source}${keeps ? ", _keepIds(nest, NEST, url)" : ""});`]),
           `  };`,
-          `  clientEvent(document, "pointerover", intent, { passive: true, preload: "intent", match: "${live.length ? "a,form" : "a"}"${lone} });`,
-          `  clientEvent(document, "focusin", intent, { preload: "intent", match: "${live.length ? "a,form" : "a"}"${lone} });`,
-          ...(live.length
-            ? [
-                `  clientEvent(document, "pointerdown", (event: PointerEvent) => _liveIntent(event, live, modules${useNest ? ", nest" : ""}), { passive: true, preload: "intent", match: "form"${lone} });`,
-              ]
-            : []),
+          `  clientEvent(document, "pointerover", intent, { passive: true, preload: "intent", match: "a"${lone} });`,
+          `  clientEvent(document, "focusin", intent, { preload: "intent", match: "a"${lone} });`,
           `  clientEvent(window, "popstate", (event: PopStateEvent) => ${armed("notePopstate(event)")}, { preload: "intent"${lone} });`,
         ]),
     ...(go
@@ -846,18 +833,6 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       ? [
           "/** Trailing-slash policy: page requests in the other form answer 308; the static adapter lays files out for it. */",
           `export const trailingSlash = ${str(slash)};`,
-        ]
-      : []),
-    ...(options.document && options.prefetch
-      ? [
-          "/** Document prefetch on (`rivetRouter({ prefetch })`): islands-only lean pages (bridge D-lean) keep the runtime fetch-ahead. */",
-          "export const fetchAhead = true;",
-        ]
-      : []),
-    ...(options.preloadBackground !== undefined
-      ? [
-          "/** Preload planner background budget (bytes; `rivetRouter({ preload })`): the app's default, adapter options override it. */",
-          `export const preloadBackground = ${options.preloadBackground};`,
         ]
       : []),
     ...(options.routeRules
@@ -1043,16 +1018,13 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "  // The page's modules load at idle (no component runs): edits to them then reach this page.",
     `  const idle = (fn: () => void) => ("requestIdleCallback" in window ? requestIdleCallback(fn) : setTimeout(fn, 200));`,
     "  idle(() => void mounter().then((module) => module.preload()));",
-    "  // Resumed regions run symbols, not hot-replaceable components: the first code update stops resuming",
-    "  // (disposes the resume runtime) and client-renders the app; from then on components hot-replace in place.",
+    "  // `rivet:devtools-inspect` stops resuming (disposes the resume runtime) and client-renders the app; from then on",
+    "  // components hot-replace in place.",
     "  const fallback = async () => {",
     "    if (!resumed) return;",
     "    resumed = false;",
     `    document.dispatchEvent(new CustomEvent("rivet:dev-client-render", { detail: { phase: "start" } }));`,
-    `    const state = document.querySelector('script[type="rivet/state"]');`,
-    "    const runtime = state ? (JSON.parse(state.textContent!) as { rt?: string | null }).rt : null;",
-    "    // The loader stops booting the resumed router on link clicks (Z1): the client-rendered app routes them.",
-    "    delete (document as { $r?: { p(): { n?: number[] } } }).$r?.p().n;",
+    `    const runtime = document.querySelector<HTMLScriptElement>('script[type="rivet/boundaries"]')?.dataset.rt;`,
     "    // The loader's instance: an absolute URL (Vite adds `?import` to a relative one, a second instance).",
     "    if (runtime) ((await import(/* @vite-ignore */ new URL(runtime, location.href).href)).default as { dispose?(): void }).dispose?.();",
     "    await (await mounter()).start(container);",
@@ -1061,25 +1033,13 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "  // DevTools asks for the same switch when its inspection tabs need live components (`rivet:devtools-inspect`).",
     `  document.addEventListener("rivet:devtools-inspect", () => void fallback());`,
     `  hot.on("vite:beforeUpdate", (payload) => {`,
-    `    if (payload.updates.some((update) => update.type === "js-update" && !/\\.css(?:$|\\?)/.test(update.path))) void fallback();`,
+    "    // Adopted boundaries are not hot-replaced: a code update reloads a page that is still resumed.",
+    `    if (resumed && payload.updates.some((update) => update.type === "js-update" && !/\\.css(?:$|\\?)/.test(update.path))) location.reload();`,
     "  });",
     "  // Server-only edits: a fresh server render (resumed again).",
     `  hot.on("rivet:data", () => resumed && location.reload());`,
     "}",
     "export {};",
-    "",
-  ].join("\n");
-
-  // --- entry.resume.ts: resume runtime with the router's identified contexts (navigation state with
-  // transitions; search params when read). Neither: the compiler's default resume entry.
-  const contexts = [...(transitions ? ["[Navigation, navigation]"] : []), ...(search ? ["[SearchParams, searchParams]"] : [])];
-  const resumeEntry = [
-    HEADER,
-    `import { createResume } from "@rivetjs/runtime/dom-resume";`,
-    ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
-    ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
-    "",
-    `export default createResume({ contexts: [${contexts.join(", ")}] });`,
     "",
   ].join("\n");
 
@@ -1182,7 +1142,6 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             "entry.dev.tsx": dev,
             "dev-mount.tsx": devMount,
             "routes.d.ts": types,
-            ...(contexts.length ? { "entry.resume.ts": resumeEntry } : {}),
           },
     resumeModules,
   };

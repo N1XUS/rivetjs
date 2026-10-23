@@ -22,7 +22,7 @@ import {
   signal,
   untrack,
 } from "@rivetjs/reactivity";
-import type { Owner, Signal } from "@rivetjs/reactivity";
+import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { INVALID_URL, MEDIA_URLS, unsafeUrl } from "./url.ts";
 
 import { _booleans, _constructionDoc, _parseHTML, _writeDefault, bindRef } from "./dom.ts";
@@ -427,9 +427,8 @@ type Slot = InsertSlot;
  * Compiler ABI: insert a child value before `marker` (null: append). A function is an accessor:
  * the insertion re-runs when it changes. Arrays reconcile by node identity.
  */
-export function _insert(parent: Parent | null, value: unknown, marker: Node | null = null, seed: Node[] | null = null): void {
-  // `seed` (resume, `dom-adopt.ts` `_region`): the server nodes already in place; the first write reconciles them.
-  const slot: Slot = { current: seed };
+export function _insert(parent: Parent | null, value: unknown, marker: Node | null = null): void {
+  const slot: Slot = { current: null };
   if (LAZY_ROWS && _adoption.slot) _adoption.slot(slot);
   // Arrays holding accessors (fragments with dynamic children) track like an accessor.
   if (typeof value !== "function" && !(Array.isArray(value) && hasAccessor(value))) {
@@ -759,13 +758,11 @@ function reconcile(parent: Parent, a: Node[], b: Node[], marker: Node | null): v
 
 // ---- resume adoption ----
 /**
- * @internal Resume hooks, installed by `dom-adopt.ts` (resume runtime only; null on every other page): a `_for`
- * takes the server rows, a `_show` / `_switch` the server branch its re-created region recorded (null: none).
+ * @internal Resume hooks, installed by the derived adopt run (`dom-derived.ts`, `dom-adopt-run.ts`; resumed pages only,
+ * null on every other page): a `_for` takes the server rows.
  */
 export const _adoption: {
   rows: ((owner: Owner | null, by: (item: never, index: number) => unknown, indexed: boolean) => AdoptedList | null) | null;
-  branch: ((owner: Owner | null) => AdoptedBranch | null) | null;
-  key: (() => number | null | undefined) | null;
   /** Server item vs a fresh item of the same key: equal data (an adopted row keeps its nodes and resumed bindings). */
   same: ((server: unknown, fresh: unknown) => boolean) | null;
   /** Dev runtime only (`dev/dom.ts`): its per-component owners (production components own nothing), transparent to adoption. */
@@ -782,8 +779,6 @@ export const _adoption: {
   slot?: ((slot: InsertSlot) => void) | null;
   /** True during an adopt run: element content is never wiped (`_spread` children, `_rcdata`), it is the server's. */
   live?: boolean;
-  /** Resume runtime (`dom-resume.ts`): materialise the lazy row holding `node` (`_materialise`). */
-  materialise?: ((node: Node) => boolean) | null;
   /**
    * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only): called first by every `_for` with its props; a
    * returned accessor replaces the list (probe run: a hole the alignment pairs with the server rows; adopt run: the list
@@ -812,34 +807,18 @@ export const _adoption: {
   suspense?: (() => void) | null;
   /** Derived builds (`dom-derived.ts`, M6-PARITY task 3): in an adopt run, the server's seed of the next `resource()`. */
   resource?: (() => unknown) | null;
-} = { rows: null, branch: null, key: null, same: null, dev: null };
+  /** Dev server only (`hot.ts`): the state-restoring `signal` hot replacement gives app code; the derived keyed signals
+   * (`dom-derived.ts` `_sig`, compiled from app `signal()` calls) make theirs with it (dev names, state kept on edits). */
+  signal?: (<T>(initial: T, options?: EqualsOptions<T>) => Signal<T>) | null;
+  /** Dev runtime only (`dom-derived.ts` sets it, `dev/dom.ts` reads it): a probe run is rendering — its components are
+   * discarded, so they report no mount to DevTools. */
+  probe?: (() => boolean) | null;
+} = { rows: null, same: null, dev: null };
 /**
  * An empty text node bounding a row or list insertion; an adopt run (LAZY-ROWS T5) gets the server's anchor in its place
  * (`_adoption.node` kind 2). Builds without lazy rows fold it to `doc.createTextNode("")`.
  */
 export const _anchor = (doc: Document): Text => (LAZY_ROWS && _adoption.node ? _adoption.node(doc.createTextNode(""), 2) : doc.createTextNode(""));
-/**
- * Resume ABI (LAZY-ROWS T5; cdk collections, contract for lane T3): materialise the lazy `<For>` row (spec
- * `docs/design/specs/2026-10-19-lazy-collection-rows-design.md`) holding `node` before code outside the row hands it
- * focus or points `aria-activedescendant` at it, so its handlers, bindings and effects exist when the next event
- * arrives. Synchronous when the row's chunk is loaded (true); false when `node` is in no lazy row, the page did not
- * resume, or the row is already materialised / its chunk still loads (it materialises when the chunk lands). Never
- * moves or replaces `node`. Always false in builds without `resume: { lazyRows: true }` (`LAZY_ROWS`).
- */
-export function _materialise(node: Node): boolean {
-  return LAZY_ROWS && _adoption.materialise ? _adoption.materialise(node) : false;
-}
-/**
- * Resume ABI: while a resumed page re-creates a region (its read re-runs on the first change of a signal the
- * server render read), the server branch key (match index, -1 fallback; null: never adopted) of the next
- * Show/Switch that read creates directly; `undefined` in any other creation (or when that one has no server
- * branch). Lets a stateful component start from the state the server rendered (e.g. a transition that was shown).
- * Reads `dom-adopt.ts` through `_adoption.key`: a component chunk importing it never pulls the adoption code (or a
- * `dom-adopt` chunk split off the resume entry) in.
- */
-export function _serverBranch(): number | null | undefined {
-  return _adoption.key === null ? undefined : _adoption.key();
-}
 /** @internal Adopted server rows: their items, rows (server nodes between their markers) and server indexes (-1: index not read). */
 export interface AdoptedList {
   items: unknown[];
@@ -850,15 +829,6 @@ export interface AdoptedList {
   /** Lazy rows (LAZY-ROWS T5): called once with the For's row function and item reader (kept rows materialise through them). */
   host?: ((children: (item: () => unknown, index: () => number) => unknown, read: (this: ForRow) => unknown) => void) | null;
 }
-/** @internal An adopted server branch as a `branches` pick: match index (-1 fallback), its value (`valued`: the server read it), owner and nodes. */
-export interface AdoptedBranch {
-  i: number;
-  v: unknown;
-  valued: boolean;
-  owner: Owner | null;
-  value: Node[];
-}
-
 // ---- lists ----
 /** @internal A `_for` row (exported for `dom-adopt.ts`). */
 export interface ForRow {
@@ -1111,14 +1081,11 @@ interface Pick {
 function branches(select: () => Pick, keyed: (i: number) => boolean, content: (i: number) => unknown, live: (i: number) => () => unknown): () => unknown {
   const owner = getOwner(),
     eager = new Map<number, unknown>();
-  // Resume: the server branch is current (kept while its match holds; while the server read its value, that too).
-  let current: { i: number; v: unknown; owner: Owner | null; value: unknown } | null = _adoption.branch && _adoption.branch(owner),
-    valued = current !== null && (current as AdoptedBranch).valued;
-  const pick = computed(select, { equals: (a, c) => a.i === c.i && (!(valued || keyed(a.i)) || Object.is(a.v, c.v)) });
+  let current: { i: number; v: unknown; owner: Owner | null; value: unknown } | null = null;
+  const pick = computed(select, { equals: (a, c) => a.i === c.i && (!keyed(a.i) || Object.is(a.v, c.v)) });
   const update = ({ i, v }: Pick): unknown => {
     if (current !== null) {
-      if (current.i === i && !((valued || keyed(i)) && !Object.is(current.v, v))) return current.value;
-      valued = false;
+      if (current.i === i && !(keyed(i) && !Object.is(current.v, v))) return current.value;
       _dispose(current.owner);
     }
     const next = { i, v, owner: null as Owner | null, value: undefined as unknown };

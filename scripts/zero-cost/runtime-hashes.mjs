@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 const root = process.argv[2];
 // The switch modules' opted-in content: the compiler plugin's own table (`libs/compiler/switches.ts`).
-const { DERIVED_SWITCHES, DOM_DATA_SWITCHES, LAZY_SWITCHES, switchContent } = await import(pathToFileURL(`${root}/libs/compiler/switches.ts`).href);
+const { DERIVED_SWITCHES, DOM_DATA_SWITCHES, switchContent } = await import(pathToFileURL(`${root}/libs/compiler/switches.ts`).href);
 /** A plugin loading the opted-in content of the runtime switch modules `names`. */
 const switches = (name, names) => ({
   name,
@@ -17,27 +17,21 @@ const switches = (name, names) => ({
 });
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const out = [];
-// Unbracketed lines: the entries a default resume build gets (`rivet({ resume })` / `rivetRouter()`: `resume.lazyRows` and
-// `resume.domData` default true since LAZY-FLIP 2026-10-22, so the compiler plugin serves the lazy rows + DOM data switch
-// modules to every module of both targets — `libs/compiler/vite.ts` `lazySwitch` / `domDataSwitch`).
-const DEFAULT = [switches("default-resume-switches", [...LAZY_SWITCHES, ...DOM_DATA_SWITCHES])];
-// `[opt-out]` lines (only where they differ from the default line): the switch files as written — a build with
-// `resume: { lazyRows: false, domData: false }`, and every build without `resume` (0 bytes of either feature).
-const OPT_OUT = [];
-// `[derived]` lines: the browser entries of a `rivet({ resume: { model: "derived" } })` build (M2 lane R: the derived switch
-// + the lazy rows switches its adopt run needs; the derived model ignores `lazyRows` / `domData`).
-const DERIVED = [switches("derived-switch", [...LAZY_SWITCHES, ...DERIVED_SWITCHES])];
-const DERIVED_ONLY = ["./server-derived", "./dom-derived"];
-const hash = async (input, plugins, lazy) => {
+// Unbracketed lines: the files as written — what server builds and builds without `resume` get (0 bytes of the adopt run).
+const PLAIN = [];
+// `[resumed]` lines: the browser entries of a resume build (`rivet({ resume })` / `rivetRouter()`: the compiler plugin serves
+// the adopt run's switches, `DERIVED` + `LAZY_ROWS`, to every browser module — `libs/compiler/vite.ts` `derivedSwitch`).
+const RESUMED = [switches("resumed-switches", [...DERIVED_SWITCHES])];
+// `[domData]` lines (where they differ from the `[resumed]` one): a `resume: { domData: true }` build (browser: the adopt switches + `DOM_DATA`; server: `dom-data-derived`).
+const DOM_DATA = [switches("dom-data-switches", [...DERIVED_SWITCHES, ...DOM_DATA_SWITCHES])];
+const hash = async (input, plugins) => {
   const bundle = await rolldown({
-    input: lazy ? [input, `${root}/libs/runtime/dom-resume-lazy.ts`] : input, platform: "node", logLevel: "silent", plugins,
+    input, platform: "node", logLevel: "silent", plugins,
     external: [/^node:/, /^@rivetjs\/compiler/], resolve: { conditionNames: ["import", "production", "default"] },
     transform: { define: { "process.env.NODE_ENV": '"production"' } },
   });
   const { output } = await bundle.generate({ format: "esm", minify: true });
-  // The entry's static import closure: one chunk, unless another entry splits shared modules off (default `/dom-resume`:
-  // bundled with `dom-resume-lazy.ts`, the lazy rows runtime, an emitted chunk of those builds — LAZY-BLOCKERS — whose own
-  // chunk gets a `[lazyRows chunk]` line).
+  // The entry's static import closure.
   const byName = new Map(output.map((chunk) => [chunk.fileName, chunk]));
   const closure = [];
   const walk = (chunk) => {
@@ -49,7 +43,6 @@ const hash = async (input, plugins, lazy) => {
   walk(main);
   const code = closure.map((chunk) => chunk.code).join("\n");
   const line = `${createHash("sha256").update(code).digest("hex").slice(0, 12)} ${closure.reduce((n, chunk) => n + chunk.code.length, 0)}`;
-  if (lazy) for (const chunk of output) if (chunk.type === "chunk" && chunk.isEntry && chunk !== main) lazy.push(`${createHash("sha256").update(chunk.code).digest("hex").slice(0, 12)} ${chunk.code.length}`);
   return line;
 };
 for (const pkg of ["libs/reactivity", "libs/runtime"]) {
@@ -58,15 +51,12 @@ for (const pkg of ["libs/reactivity", "libs/runtime"]) {
     const file = typeof value === "string" ? value : value.default ?? value.import;
     const name = json.name + key.slice(1);
     const input = `${root}/${pkg}/${file}`;
-    const chunks = [];
-    // The derived model's own entries: only derived builds import them, and those flip neither switch set (their browser
-    // half: the `[derived]` line) — files as written.
-    const line = await hash(input, DERIVED_ONLY.includes(key) ? OPT_OUT : DEFAULT, key === "./dom-resume" ? chunks : undefined);
+    const line = await hash(input, PLAIN);
     out.push(`${name} ${line}`);
-    for (const chunk of chunks) out.push(`${name} [lazyRows chunk] ${chunk}`);
-    const optOut = await hash(input, OPT_OUT);
-    if (optOut !== line) out.push(`${name} [opt-out] ${optOut}`);
-    if (key === "./dom" || key === "./dom-derived") out.push(`${name} [derived] ${await hash(input, DERIVED)}`);
+    const resumed = await hash(input, RESUMED);
+    if (resumed !== line) out.push(`${name} [resumed] ${resumed}`);
+    const domData = await hash(input, DOM_DATA);
+    if (domData !== resumed) out.push(`${name} [domData] ${domData}`);
   }
 }
 console.log(out.join("\n"));

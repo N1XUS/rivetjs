@@ -1,12 +1,12 @@
 ---
 title: Resumability
-description: How @rivetjs/cdk components resume - what the server HTML holds, lazy children and render props, callbacks that resume, props that read signals, current limits.
+description: How @rivetjs/cdk components resume - what the server HTML holds, lazy children and render props, callbacks, props that read signals, current limits.
 template: guide
 status: experimental
 related: [start/introduction, start/styling, components/overview, foundations/overview, foundations/overlays]
 ---
 
-A Rivet page is rendered on the server and **resumed** in the browser: no component re-runs on load, and a component's browser code loads only when it is needed. cdk components are built for this. After this page you know what the visitor gets before any code loads, and the few rules your code must follow so callbacks and overlay content keep working. Background: [Resuming](site:docs/learn/resuming/) and [Loading code](site:docs/learn/loading-code/) in the main docs.
+A Rivet page is rendered on the server and **resumed** in the browser: no component runs on load, and a component runs over the server's HTML the first time it is used. cdk components are built for this. After this page you know what the visitor gets before any code runs, and how callbacks, overlay content and state behave. Background: [Resuming](site:docs/learn/resuming/) and [Loading code](site:docs/learn/loading-code/) in the main docs.
 
 ## What ships before interaction
 
@@ -24,24 +24,22 @@ The server HTML of a ToggleButton and a ListBox (from the example below, runtime
 
 - **Full ARIA state.** Roles, names, `aria-selected`, `aria-pressed`, `aria-expanded`, the roving tab stop, hidden tab panels: screen readers and Tab work before any JavaScript.
 - **Native behaviour.** Buttons are `<button>`, fields are inputs, Disclosure is `<details>`, Select and ComboBox submit through hidden form fields: forms post without JavaScript.
-- **No component code on the critical path.** The page carries a small inline loader and a preload plan. The chunk holding a component's handlers and bindings (by default the route's chunk) is fetched on intent (hover, focus, touch), when the element is visible, or when idle; with document prefetch on, a page also downloads its own chunks after it loaded, without running them. The first event waits for its chunk and then runs as usual.
+- **No component code on the critical path.** The page carries a small inline loader and a record per interactive component. After the page has loaded, the loader fetches the components' code at low priority without running it (on intent, hover or focus, at once). The first event runs the component over the server HTML and then its handler; an event that comes before the code is held and replayed.
 - **`data-rk` holds cold keys.** Composite widgets (ListBox, Menu, Tabs, Select, ComboBox, Toolbar, Calendar) list the keys they handle. While their code loads, the loader prevents the default action of those keys, so a first :kbd[ArrowDown] does not scroll the page; the widget's handler then runs for that key.
 - **Closed overlays render nothing.** A closed Dialog, Popover, Menu or Tooltip has no markup on the server; its content is created when it opens.
 
 ## Callbacks: inline arrows or local constants
 
-Callbacks such as `onPress`, `onChange`, `onSelectionChange`, `onAction`, `onOpenChange` are serialized into the page as references to compiled functions. Write them in your component, inline or as a local constant:
+Callbacks such as `onPress`, `onChange`, `onSelectionChange`, `onAction`, `onOpenChange` are not sent with the page: the browser builds them again when it runs your component. Write them inline or as a local constant, or pass any function you like:
 
 ::example{id=resumability-callbacks}
 
 ```tsx title="src/routes/index.tsx"
 export default function Log() {
   const log = signal("nothing yet");
-  // A local constant: resumes.
   const onChange = (isSelected: boolean) => log.set(`onChange(${isSelected})`);
   return (
     <>
-      {/* An inline arrow: resumes. */}
       <Button onPress={(event) => log.set(`onPress(${event.pointerType})`)}>Ping</Button>
       <ToggleButton onChange={onChange}>Mute</ToggleButton>
       <output>{log()}</output>
@@ -50,9 +48,7 @@ export default function Log() {
 }
 ```
 
-- **Do not resume:** a function from a library Rivet did not compile, a `.bind(…)` written inside an object literal (keep it in a local constant and store that), a function built at run time and passed on. The server reports [function is not serializable](site:docs/gotchas/function-is-not-serializable/).
-- Wrap foreign functions in an arrow: `onPress={() => analytics.track("save")}`.
-- Values the callback captures must be serializable too: signals, plain objects, arrays, `Set`, `Map`, state from `create*State`. A callback that captures a DOM node or a class instance does not resume.
+- A component that gets a callback runs together with the component that passes it: a press on `Button` runs `Log` too, which builds `log` and the callback. Components whose props are plain data wake up on their own.
 
 ## Lazy children and render props
 
@@ -77,7 +73,7 @@ Plain JSX children of a component are compiled to a lazy slot that the component
 ## State: signals and create*State
 
 - Two-way props take a signal: `selectedKeys={selected}`, `isSelected={pressed}`, `isOpen={open}`, `value={text}`. The component writes it, your bindings read it.
-- State objects from `create*State` (`createOverlayTriggerState`, `createListState`, `createToggleState`, …) held in a `const` in your component are plain signals and JSON: they resume, and you can pass them to several components (`state={…}`).
+- State objects from `create*State` (`createOverlayTriggerState`, `createListState`, `createToggleState`, …) held in a `const` in your component are plain signals: their values travel with the component, and you can pass them to several components (`state={…}`).
 - `default*` props (`defaultSelectedKeys`, `defaultOpen`, `defaultSelected`) for state only the component needs.
 
 ## Props update in place
@@ -97,22 +93,16 @@ Component props are live. A prop expression that reads a signal updates only the
 
 ## Large collections
 
-A collection with hundreds of items (`ListBox`, `GridList`, `Table`, `Tree`) would send each row's resume data with the page. Two build defaults of the framework shrink that (`resume: { lazyRows: false }` / `{ domData: false }` turn them off):
-
-- **[Lazy rows](https://rivetjs.severyn.pro/learn/resuming#lazy-rows)** (`resume.lazyRows`; the server environment variable `RIVET_LAZY_ROWS=off` records the rows of a build that has it): rows are sent as their keys and rebuilt from the server HTML when first used. Selection and focus read keyed selectors, so selecting a row rebuilds that row and the one that lost the selection, not the whole list. Sections, tree children and table headers stay recorded, so the rows inside them are the lazy ones. Server time per page drops too: a 1,000-item `ListBox` renders in about 0.4× the CPU.
-- **[Data from the page](https://rivetjs.severyn.pro/learn/resuming#data-from-the-page)** (`resume.domData`): item text a `ListBox` row shows is read back from the page instead of being sent twice. `GridList` rows, the options of a closed `Select` or `ComboBox` and rows a virtualizer does not render stay in the state.
-
-Under the experimental [derived model](https://rivetjs.severyn.pro/learn/resuming#derived-model-experimental) (`resume: { model: "derived" }`) the first press on a press-based control (button, toggle, menu trigger) before its code arrives can be lost, and `ListBox`, `Select` and `TagGroup` render again in the browser on their first interaction.
+A keyed collection (`ListBox`, `GridList`, `Table`, `Tree`) sends its items once, with the component's data, and no record per row; the browser runs a row's code when the row is used. With `resume: { domData: true }`, the items of a `<For>` over a component's data props are read back from the page instead ([data from the page](site:docs/learn/resuming/#data-from-the-page)). Some collection components (`ListBox`, `Select`, `TagGroup`, grid list, tree) still render again in the browser on their first interaction.
 
 ## Known limits
 
-- **`on*Capture` handlers resume.** Capture-phase props (`onPointerDownCapture`, `onWheelCapture`, …) record a capture entry on the server-rendered page and are dispatched outermost-first before the bubbling handlers, whether written as JSX attributes or spread from a props bag.
-- **Chained handlers from a spread bag.** `mergeProps` (`@rivetjs/cdk/utils`, implemented in `@rivetjs/cdk/interactions/merge-props`) creates its chained handlers inside a resume-compiled module, so a merged bag resumes when spread on a native element — provided the merged handlers are themselves resumable (inline arrows, local functions, hook bags), not module-level or imported functions.
-- **Client-only callbacks.** `Dir`'s `onDirChange` runs only in client-rendered trees: on a resumed page no component code runs, so read `injectDirectionality().valueSignal` in a binding instead. Likewise `clientEffect` / ref callbacks run only after the component's code loads.
+- **A replayed press and hover state.** A press held while its code loads is replayed with the focus a loaded page would have seen; the hover state of the pressed element (`data-hovered`) can differ from a loaded page until the pointer moves.
+- **Client-only callbacks.** `Dir`'s `onDirChange` runs once the component has woken up; read `injectDirectionality().valueSignal` in a binding for the server's value.
 - **Bare `document` in component modules.** The compiler rejects a `document` it cannot prove runs only in the browser; reach it through an element (`event.currentTarget.ownerDocument`).
 
 ## Checks
 
-- `npm run build && npm run preview`, then watch the network panel: the HTML renders and works for reading and Tab before any script runs; handler chunks arrive afterwards, in the background (lists in view when visible or idle, buttons on intent). The docs examples print the count ("N script(s) before interaction").
-- The server prints "not serializable" with the file and the capture: fix the callback or the slot, not the component.
+- `npm run build && npm run preview`, then watch the network panel: the HTML renders and works for reading and Tab before any script runs; component chunks arrive afterwards, in the background. The docs examples print the count ("N script(s) before interaction").
+- Route data the page cannot carry prints a warning ([RV2107](site:docs/errors/RV2107/)): return plain data from loaders.
 - In development, Rivet logs accessibility warnings for markup it renders (missing names, unreachable click targets, duplicate ids); `data-rivet-a11y="off"` on `<html>` turns them off.

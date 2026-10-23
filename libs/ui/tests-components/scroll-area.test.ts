@@ -8,7 +8,8 @@ import type { Page } from "playwright";
 import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the checks below measure what it preloads.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 async function onPage(body: (page: Page) => Promise<void>): Promise<void> {

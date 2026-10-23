@@ -2,8 +2,6 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compiledTemplate, attribute } from "../template.ts";
 import { _variants, _variantTemplate, _variantValue, renderToWriter, type ServerValue } from "../server.ts";
-import { _rBind, resumableToString } from "../server-resume.ts";
-import { signal } from "@rivetjs/reactivity";
 
 async function render(value: unknown, variant?: number, bytes = false): Promise<string> {
   let out = "";
@@ -82,16 +80,4 @@ test("each variant set is encoded once (byte writer)", async () => {
 });
 test("String(variantValue) throws with guidance", () => {
   assert.throws(() => String(_variantValue(["a", "b"])), /use t\.in\(locale/);
-});
-test("resumable text binding of a translated value renders the variant's text", async () => {
-  const n = signal(1);
-  const manifest = { runtime: "/r.js", symbols: { "m#s": "/c.js" } };
-  const html = await resumableToString(
-    () =>
-      compiledTemplate(Object.freeze(["<p>", "</p>"]), [
-        _rBind("m#s", () => _variantValue(["en" + n(), () => "de" + n()]), []),
-      ]),
-    { manifest, variant: 1 },
-  );
-  assert.match(html, /^<p><!--r0-->de1<!--\/--><\/p>/);
 });

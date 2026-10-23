@@ -94,7 +94,6 @@ const FIRST_INPUT: Record<string, [string, string]> = {
   filterKey: ["input", "rows"],
   filterSettled: ["input", "rows"],
 };
-const STRATEGIES: Record<string, string> = { e: "eager", i: "idle", v: "visible" };
 
 // In-page probes: long tasks, LoAF, event timing, rAF gaps, DOM-change timestamps.
 function probe(options?: { sync: boolean }) {
@@ -398,10 +397,11 @@ const unescapeAttr = (value: string) =>
 // (plan URL → its strategy; plan runtime → runtime; static/dynamic import → its importer's strategy;
 // anything else → intent), with use from coverage (see FIXTURE.md "Prefetch waste").
 function prefetchWaste(html: string, js: Loaded[], sent: Map<string, Sent>, before: Loaded[], covBefore: CoverageMap | null, covAfter: CoverageMap | null) {
-  const match = html.match(/<script[^>]*type="rivet\/state"[^>]*>/)?.[0].match(/data-preload="([^"]*)"/);
-  const plan = (match ? JSON.parse(unescapeAttr(match[1]!)) : []) as [string?, ...[string, string][]];
-  const byPath = new Map<string | null, string>((plan.slice(1) as [string, string][]).map(([url, strategy]) => [url, STRATEGIES[strategy] ?? strategy]));
-  const runtime = plan[0] ?? html.match(/"rt":"([^"]+)"/)?.[1];
+  // Derived tail: no preload plan; the runtime (`data-rt`) and the fetch-ahead list (`data-fo`, low priority after load).
+  const tail = html.match(/<script[^>]*type="rivet\/boundaries"[^>]*>/)?.[0];
+  const ahead = tail?.match(/data-fo="([^"]*)"/)?.[1];
+  const byPath = new Map<string | null, string>((ahead ? unescapeAttr(ahead).split(" ") : []).map((url) => [url, "fetch-ahead"]));
+  const runtime = tail?.match(/data-rt="([^"]+)"/)?.[1];
   const path = (url: string | undefined) => (/^https?:/.test(url ?? "") ? new URL(url!).pathname : null);
   const strategyOf = new Map<string | null, string | undefined>();
   for (const r of [...js].sort((a, b) => (sent.get(a.id)?.at ?? 0) - (sent.get(b.id)?.at ?? 0))) {
@@ -524,10 +524,9 @@ async function measure(browser: Browser, url: string, condition: string, scenari
   const toPage = (at: number) => (doc ? (at - doc.at) * 1000 + docEnd : 0);
   const js = loaded.filter(isJS);
   const before = js.filter((r) => toPage(r.at) < interacted);
-  const inline = [...html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="(?:rivet\/state|qwik\/json|application\/json)")[^>]*>([\s\S]*?)<\/script>/g)].reduce(
-    (sum, m) => sum + m[1].length,
-    0,
-  );
+  const inline = [
+    ...html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="(?:rivet\/boundaries|qwik\/json|application\/json)")[^>]*>([\s\S]*?)<\/script>/g),
+  ].reduce((sum, m) => sum + m[1].length, 0);
   const windowEnd = Number.isFinite(interacted) ? interacted : Infinity;
   const loadTasks = marks.tasks.filter(([s]) => s < windowEnd);
   const out: Record<string, unknown> & { scenario: string; errors: string[] } = {

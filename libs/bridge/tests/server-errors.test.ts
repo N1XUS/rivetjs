@@ -35,7 +35,9 @@ for (const late of [false, true]) {
     const html = await render(mod.Bounded!, late);
     assert.match(
       html,
-      new RegExp(`<p>caught: \\[rivet:bridge\\] RV2144 fake island src/(Broken|Later)\\.fake#default failed to render: ${late ? "late boom" : "boom"}</p>`),
+      new RegExp(
+        `<p>caught: (<!--\\[-->)?\\[rivet:bridge\\] RV2144 fake island src/(Broken|Later)\\.fake#default failed to render: ${late ? "late boom" : "boom"}(<!--\\]-->)?</p>`,
+      ),
     );
     assert.doesNotMatch(html, /rivet-island/);
   });

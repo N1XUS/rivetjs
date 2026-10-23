@@ -1,6 +1,5 @@
 // `@rivetjs/cdk/stepper/state` (port of Angular CDK `CdkStepper` / `CdkStep` logic, MIT, © Google LLC) without a DOM:
-// the state machine (linear checks, editable, optional, completed / error overrides, indicator types, reset) and its
-// serializability (resume-table JSON round trip: plain data + signals only).
+// the state machine (linear checks, editable, optional, completed / error overrides, indicator types, reset).
 import { describe, expect, it } from "vitest";
 import { signal } from "@rivetjs/reactivity";
 import {
@@ -21,7 +20,6 @@ import {
   unregisterStep,
   type StepStateProps,
 } from "../stepper/state.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 function setup(props: Parameters<typeof createStepperState>[1] = {}, steps: StepStateProps[] = [{}, {}, {}]) {
   const state = createStepperState("s", props);
@@ -113,15 +111,5 @@ describe("stepper state", () => {
     const { state } = setup({ defaultSelectedIndex: 1 });
     expect([0, 1, 2].map((i) => stepContentPosition(state, i))).toEqual(["previous", "current", "next"]);
     expect([0, 1, 2].map((i) => stepContentPosition(state, i, "rtl"))).toEqual(["next", "current", "previous"]);
-  });
-
-  it("is serializable (resume-table round trip)", () => {
-    const { state } = setup({ linear: true, defaultSelectedIndex: 1 }, [{ label: "A", completed: true }, { label: "B", optional: true }, {}]);
-    const decoded = jsonRoundTrip(state);
-    expect(decoded.id).toBe("s");
-    expect(decoded.selected.value()).toBe(1);
-    expect(decoded.steps()).toHaveLength(3);
-    expect(decoded.steps()[0]!.label).toBe("A");
-    expect(stepCompleted(decoded.steps()[0]!)).toBe(true);
   });
 });

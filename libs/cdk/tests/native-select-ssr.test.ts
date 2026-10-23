@@ -42,6 +42,6 @@ describe("NativeSelect SSR", () => {
     expect(select).toMatch(/aria-describedby="[^"]+"/);
     expect(html).toMatch(/<option value="de" selected[^>]*>Germany<\/option>/);
     expect(html).toMatch(/<option value="fr"(?! selected)[^>]*>France<\/option>/);
-    expect(html).toMatch(/<optgroup label="Europe">/);
+    expect(html).toMatch(/<optgroup label="Europe"( data-b="\d+")?>/);
   });
 });

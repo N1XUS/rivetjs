@@ -23,7 +23,6 @@ import { type DOMRenderProps } from "../utils/render.ts";
 import type { InputRenderProps } from "../input/index.tsx";
 import { TextAreaContext } from "../text-area/index.tsx";
 import {
-  resumableContext,
   contextProps,
   renderProps,
   type ClassNameOrFunction,
@@ -58,10 +57,10 @@ export interface NativeSelectProps
 }
 
 /** Props for the selects inside a component, optionally per `slot` (none provide it in the cdk: fields use `TextAreaContext`). */
-export const NativeSelectContext = resumableContext(createContext<ContextValue<NativeSelectProps, HTMLSelectElement>>({}, { id: "rv-native-select" }));
+export const NativeSelectContext = createContext<ContextValue<NativeSelectProps, HTMLSelectElement>>({});
 
 /** The select's current value for its options (`selected`). */
-export const NativeSelectValueContext = resumableContext(createContext<{ value?: () => string | undefined }>({}, { id: "rv-native-select-value" }));
+export const NativeSelectValueContext = createContext<{ value?: () => string | undefined }>({});
 
 /** A native `<select>` field part with hover / focus / validation state. */
 export function NativeSelect(props: NativeSelectProps) {

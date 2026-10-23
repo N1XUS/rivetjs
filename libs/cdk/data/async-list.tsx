@@ -16,7 +16,7 @@
 //   Rivet keeps that: `rendered()` snapshots the state on first read and drops the snapshot in a
 //   microtask, so e.g. three `loadMore()` calls in one handler each start (and the reducer aborts
 //   the duplicates), as upstream.
-import { batch, computed, getOwner, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { batch, computed, getOwner, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clientEffect } from "@rivetjs/runtime/dom";
 import type { Key, LoadingState, Selection, SortDescriptor } from "../collections/types.ts";
 import { createListActions, type ListActions, type ListState } from "./list-data.tsx";
@@ -251,101 +251,99 @@ const defaultAsyncKey = (item: any): Key => item.id || item.key;
  * (react-stately `useAsyncList`).
  */
 export function createAsyncList<T, C = string>(options: AsyncListOptions<T, C>): AsyncListData<T> {
-  return _regionState(() => {
-    const { load, sort, initialSelectedKeys, initialSortDescriptor, initialFilterText = "" } = options;
-    // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
-    const userKey = options.getKey;
-    const keys = { get: (item: T): Key => (userKey ? userKey(item) : defaultAsyncKey(item)) };
-    const getKey = keys.get;
-    const data = signal<AsyncListState<T, C>>({
-      state: "idle",
-      error: undefined,
-      items: [],
-      selectedKeys: initialSelectedKeys === "all" ? "all" : new Set(initialSelectedKeys),
-      sortDescriptor: initialSortDescriptor,
-      filterText: initialFilterText,
-    });
-    // `selectedKeys` is its own signal (two-way, like createListData); the reducer state mirrors it.
-    const selectedKeys = signal<Selection>(untrack(data).selectedKeys);
-    const read = (): AsyncListState<T, C> => ({ ...untrack(data), selectedKeys: untrack(selectedKeys) });
-    // The "current render" state (see header): one snapshot per synchronous task.
-    let snapshot: AsyncListState<T, C> | undefined;
-    const rendered = (): AsyncListState<T, C> => {
-      if (!snapshot) {
-        snapshot = read();
-        queueMicrotask(() => (snapshot = undefined));
-      }
-      return snapshot;
-    };
-    const dispatch = (action: Action<T, C>) =>
-      batch(() => {
-        const prev = read();
-        const next = reducer(data, prev, action);
-        if (next === prev) return;
-        data.set(next);
-        if (next.selectedKeys !== prev.selectedKeys) selectedKeys.set(next.selectedKeys);
-      });
-
-    const dispatchFetch = async (action: Action<T, C>, fn: AsyncListLoadFunction<T, C>): Promise<void> => {
-      const abortController = new AbortController();
-      const request = ++requests.next;
-      let map = controllers.get(data);
-      if (!map) controllers.set(data, (map = new Map()));
-      map.set(request, abortController);
-      const current = rendered();
-      try {
-        dispatch({ ...action, request });
-        const previousFilterText = action.filterText ?? current.filterText;
-        const response = await fn({
-          items: current.items.slice(),
-          selectedKeys: current.selectedKeys,
-          sortDescriptor: action.sortDescriptor ?? current.sortDescriptor,
-          signal: abortController.signal,
-          cursor: action.type === "loadingMore" ? current.cursor : undefined,
-          filterText: previousFilterText,
-          loadingState: current.state,
-        });
-        const filterText = response.filterText ?? previousFilterText;
-        dispatch({ type: "success", ...response, request });
-        // Fetch a new filtered list if filterText was updated by the `load` response rather than
-        // setFilterText — only when not aborted (another filter action may have started meanwhile).
-        if (filterText && filterText !== previousFilterText && !abortController.signal.aborted) void dispatchFetch({ type: "filtering", filterText }, load);
-      } catch (e) {
-        dispatch({ type: "error", error: e as Error, request });
-      } finally {
-        map.delete(request);
-      }
-    };
-
-    // Resumable: the actions' dispatch is an object-literal arrow (a bare argument arrow is not a resume symbol).
-    const io = { update: (fn: (state: ListState<T>) => ListState<T>) => dispatch({ type: "update", updater: fn }) };
-    const isLoading = computed(() => {
-      const state = data().state;
-      return state === "loading" || state === "loadingMore" || state === "sorting" || state === "filtering";
-    });
-    const initial = () => void dispatchFetch({ type: "loading" }, load);
-    if (getOwner()) clientEffect(() => untrack(initial));
-    else initial();
-
-    return {
-      items: () => data().items,
-      selectedKeys,
-      sortDescriptor: () => data().sortDescriptor,
-      isLoading,
-      loadingState: () => data().state,
-      error: () => data().error,
-      filterText: () => data().filterText,
-      getItem: (key: Key) => data().items.find((item) => getKey(item) === key),
-      reload: () => void dispatchFetch({ type: "loading" }, load),
-      loadMore: () => {
-        const current = rendered();
-        // Ignore if already loading more or if performing server side filtering.
-        if (current.state === "loading" || current.state === "loadingMore" || current.state === "filtering" || current.cursor == null) return;
-        void dispatchFetch({ type: "loadingMore" }, load);
-      },
-      sort: (sortDescriptor: SortDescriptor) => void dispatchFetch({ type: "sorting", sortDescriptor }, (sort || load) as AsyncListLoadFunction<T, C>),
-      ...createListActions<T, C>({ ...options, getKey, cursor: () => untrack(data).cursor }, io.update),
-      setFilterText: (filterText: string) => void dispatchFetch({ type: "filtering", filterText }, load),
-    };
+  const { load, sort, initialSelectedKeys, initialSortDescriptor, initialFilterText = "" } = options;
+  // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
+  const userKey = options.getKey;
+  const keys = { get: (item: T): Key => (userKey ? userKey(item) : defaultAsyncKey(item)) };
+  const getKey = keys.get;
+  const data = signal<AsyncListState<T, C>>({
+    state: "idle",
+    error: undefined,
+    items: [],
+    selectedKeys: initialSelectedKeys === "all" ? "all" : new Set(initialSelectedKeys),
+    sortDescriptor: initialSortDescriptor,
+    filterText: initialFilterText,
   });
+  // `selectedKeys` is its own signal (two-way, like createListData); the reducer state mirrors it.
+  const selectedKeys = signal<Selection>(untrack(data).selectedKeys);
+  const read = (): AsyncListState<T, C> => ({ ...untrack(data), selectedKeys: untrack(selectedKeys) });
+  // The "current render" state (see header): one snapshot per synchronous task.
+  let snapshot: AsyncListState<T, C> | undefined;
+  const rendered = (): AsyncListState<T, C> => {
+    if (!snapshot) {
+      snapshot = read();
+      queueMicrotask(() => (snapshot = undefined));
+    }
+    return snapshot;
+  };
+  const dispatch = (action: Action<T, C>) =>
+    batch(() => {
+      const prev = read();
+      const next = reducer(data, prev, action);
+      if (next === prev) return;
+      data.set(next);
+      if (next.selectedKeys !== prev.selectedKeys) selectedKeys.set(next.selectedKeys);
+    });
+
+  const dispatchFetch = async (action: Action<T, C>, fn: AsyncListLoadFunction<T, C>): Promise<void> => {
+    const abortController = new AbortController();
+    const request = ++requests.next;
+    let map = controllers.get(data);
+    if (!map) controllers.set(data, (map = new Map()));
+    map.set(request, abortController);
+    const current = rendered();
+    try {
+      dispatch({ ...action, request });
+      const previousFilterText = action.filterText ?? current.filterText;
+      const response = await fn({
+        items: current.items.slice(),
+        selectedKeys: current.selectedKeys,
+        sortDescriptor: action.sortDescriptor ?? current.sortDescriptor,
+        signal: abortController.signal,
+        cursor: action.type === "loadingMore" ? current.cursor : undefined,
+        filterText: previousFilterText,
+        loadingState: current.state,
+      });
+      const filterText = response.filterText ?? previousFilterText;
+      dispatch({ type: "success", ...response, request });
+      // Fetch a new filtered list if filterText was updated by the `load` response rather than
+      // setFilterText — only when not aborted (another filter action may have started meanwhile).
+      if (filterText && filterText !== previousFilterText && !abortController.signal.aborted) void dispatchFetch({ type: "filtering", filterText }, load);
+    } catch (e) {
+      dispatch({ type: "error", error: e as Error, request });
+    } finally {
+      map.delete(request);
+    }
+  };
+
+  // Resumable: the actions' dispatch is an object-literal arrow (a bare argument arrow is not a resume symbol).
+  const io = { update: (fn: (state: ListState<T>) => ListState<T>) => dispatch({ type: "update", updater: fn }) };
+  const isLoading = computed(() => {
+    const state = data().state;
+    return state === "loading" || state === "loadingMore" || state === "sorting" || state === "filtering";
+  });
+  const initial = () => void dispatchFetch({ type: "loading" }, load);
+  if (getOwner()) clientEffect(() => untrack(initial));
+  else initial();
+
+  return {
+    items: () => data().items,
+    selectedKeys,
+    sortDescriptor: () => data().sortDescriptor,
+    isLoading,
+    loadingState: () => data().state,
+    error: () => data().error,
+    filterText: () => data().filterText,
+    getItem: (key: Key) => data().items.find((item) => getKey(item) === key),
+    reload: () => void dispatchFetch({ type: "loading" }, load),
+    loadMore: () => {
+      const current = rendered();
+      // Ignore if already loading more or if performing server side filtering.
+      if (current.state === "loading" || current.state === "loadingMore" || current.state === "filtering" || current.cursor == null) return;
+      void dispatchFetch({ type: "loadingMore" }, load);
+    },
+    sort: (sortDescriptor: SortDescriptor) => void dispatchFetch({ type: "sorting", sortDescriptor }, (sort || load) as AsyncListLoadFunction<T, C>),
+    ...createListActions<T, C>({ ...options, getKey, cursor: () => untrack(data).cursor }, io.update),
+    setFilterText: (filterText: string) => void dispatchFetch({ type: "filtering", filterText }, load),
+  };
 }

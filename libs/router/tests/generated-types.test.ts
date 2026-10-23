@@ -26,7 +26,9 @@ async function diagnostics(fixture: string, options: Omit<CodegenOptions, "route
     skipLibCheck: true,
   };
   const host = ts.createCompilerHost(compilerOptions);
-  const read = host.readFile.bind(host), exists = host.fileExists.bind(host), source = host.getSourceFile.bind(host);
+  const read = host.readFile.bind(host),
+    exists = host.fileExists.bind(host),
+    source = host.getSourceFile.bind(host);
   const virtual = (name: string) => (name.startsWith(dir) ? files[name.slice(dir.length)] : undefined);
   host.readFile = (name) => virtual(name) ?? read(name);
   host.fileExists = (name) => virtual(name) !== undefined || exists(name);
@@ -35,11 +37,24 @@ async function diagnostics(fixture: string, options: Omit<CodegenOptions, "route
     const text = virtual(name);
     return text !== undefined ? ts.createSourceFile(name, text, version, true) : source(name, version, onError, create);
   };
-  const program = ts.createProgram(Object.keys(files).filter((name) => /\.tsx?$/.test(name)).map((name) => dir + name), compilerOptions, host);
+  const program = ts.createProgram(
+    Object.keys(files)
+      .filter((name) => /\.tsx?$/.test(name))
+      .map((name) => dir + name),
+    compilerOptions,
+    host,
+  );
   return ts
     .getPreEmitDiagnostics(program)
     .filter((d) => d.file?.fileName.startsWith(dir))
-    .map((d) => d.file!.fileName.slice(dir.length) + ":" + (d.file!.getLineAndCharacterOfPosition(d.start ?? 0).line + 1) + ": " + ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+    .map(
+      (d) =>
+        d.file!.fileName.slice(dir.length) +
+        ":" +
+        (d.file!.getLineAndCharacterOfPosition(d.start ?? 0).line + 1) +
+        ": " +
+        ts.flattenDiagnosticMessageText(d.messageText, "\n"),
+    );
 }
 
 const cases: [string, string, Omit<CodegenOptions, "routesDir" | "outDir">][] = [
@@ -51,9 +66,6 @@ const cases: [string, string, Omit<CodegenOptions, "routesDir" | "outDir">][] = 
   ["in-file server code", "fixture-inline", {}],
   ["nested layouts (levels, kept loaders)", "fixture-nested", {}],
   ["nested layouts with component head and transitions", "fixture-nested", { head: "components", transitions: true }],
-  ["derived resume model (Root + revived loads)", "fixture", { derived: true }],
-  ["derived resume model, nested layouts with transitions", "fixture-nested", { derived: true, transitions: true }],
-  ["derived resume model, static mode", "fixture-static", { mode: "static", derived: true }],
 ];
 for (const [name, fixture, options] of cases)
   test(`generated code type-checks under strict: ${name}`, async () => {

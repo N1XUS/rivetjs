@@ -11,13 +11,12 @@
 // - Live `isDisabled` (React re-creates the state with the new prop each render): `state.isDisabled` is the value at creation
 //   (plain data, so the state encodes by value on resume: a getter would make the resume encoder rebuild it from its recipe,
 //   with a fresh selection signal the server bindings do not track); `live` (2nd argument, a compiler-registered getter
-//   object of the component) is read by `isGroupDisabled(state)`, which every in-cdk reader uses. Only the selection signal
-//   is region state (`_regionState`): a re-created region gets the server's selection back, the rest from its fresh props.
+//   object of the component) is read by `isGroupDisabled(state)`, which every in-cdk reader uses.
 // - Rivet extension (no RAC counterpart; RAC Tabs / Select / RadioGroup shape): `selectedKey` / `defaultSelectedKey` for single
 //   selection. A `Signal<Key | null>` is two-way (`keySource`, written with the first key of the new set or `null`); a plain key is
 //   controlled (= `selectedKeys: [key]`); `defaultSelectedKey` = `defaultSelectedKeys: [key]`. `selectedKeys` wins when both are given.
 //   Used by `@rivetjs/ui/segment` (feature set inspired by HeroUI Pro's public docs).
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Key } from "../collections/types.ts";
 
 export interface ToggleGroupProps {
@@ -88,7 +87,7 @@ export function createToggleGroupState(props: ToggleGroupProps = {}, live?: Togg
   const controlled = (prop != null && !isSignal(prop)) || (keySource !== undefined && !isSignal(keySource));
   const defaults = props.defaultSelectedKeys ?? (props.defaultSelectedKey !== undefined ? [props.defaultSelectedKey] : []);
   // Region state: a resumed page re-creating the group's region keeps the selection.
-  const selectedKeys = _regionState(() => signal(new Set<Key>(source || keySource ? [] : controlled ? (prop as Iterable<Key>) : defaults)));
+  const selectedKeys = signal(new Set<Key>(source || keySource ? [] : controlled ? (prop as Iterable<Key>) : defaults));
   return {
     selectionMode,
     isDisabled: !!props.isDisabled,

@@ -31,8 +31,8 @@ test("closed previews render nothing at SSR; no preview code before interaction"
   // and the popover are separate files; with the default route chunks the popover code the story route alone uses
   // shares the trigger's route chunk (prefetched with it, not run), so only popover code outside the trigger's chunk and
   // its imports is checked.
-  const trigger = closureOf(chunksOf(/#PreviewTrigger\$/));
-  const popover = [...codeOf(/#Popover\w*\$/)].filter((chunk) => !trigger.has(chunk));
+  const trigger = closureOf(chunksOf(/#PreviewTrigger$/));
+  const popover = [...codeOf(/#Popover\w*$/)].filter((chunk) => !trigger.has(chunk));
   const early = among(seen.scripts, new Set(popover));
   assert.deepEqual(early, [], "no preview chunk at load: " + seen.scripts.join(","));
   assert.deepEqual(seen.errors, []);

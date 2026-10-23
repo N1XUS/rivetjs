@@ -3,6 +3,7 @@
 import { _attributeName, _attributeRecord, SPREAD } from "./template.ts";
 import type { AttributeNamespace, AttributeRecord } from "./template.ts";
 import { MEDIA_URLS } from "./url.ts";
+import { _trigger } from "./server-trigger.ts";
 import { _style, _styleAttr } from "./style.ts";
 
 /**
@@ -43,7 +44,11 @@ export function spreadAttributes(value: object | null | undefined, tag: string, 
     if (key === "ref") continue;
     // `on[A-Z]` (char codes: a regex test per key was a top self-time line of cdk part SSR).
     const third = key.charCodeAt(2);
-    if (key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && third >= 65 && third <= 90 && (item == null || typeof item === "function")) continue;
+    if (key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && third >= 65 && third <= 90 && (item == null || typeof item === "function")) {
+      // A listener: its type joins the derived loader's delegated types (a cold `pointerenter` / `scroll` wakes the page).
+      if (item != null) _trigger.ev?.(key);
+      continue;
+    }
     // Absent: validate the name (unsafe names throw), then a placeholder (the name), dropped below: it clears an earlier
     // same-name key and keeps the position for a later alias (`class` after an absent `className`). cdk parts pass ~30
     // keys, most undefined: each was a record admitted, visited and encoded as "" (TRANSFORM-AUDIT X1).
@@ -93,10 +98,6 @@ export function spreadAttributes(value: object | null | undefined, tag: string, 
   return records;
 }
 let content: unknown;
-/** Resume: run the pending content's function children inside the caller's tracked read (their reads count for the site). */
-export function resolveSpreadContent(resolve: (value: unknown) => unknown): void {
-  if (typeof content === "function" || Array.isArray(content)) content = resolve(content);
-}
 /**
  * Compiler ABI: the content of a spread element without JSX children — the `children` of the object
  * the preceding `spreadAttributes` call (same element, evaluated just before) read.

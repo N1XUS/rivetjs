@@ -34,7 +34,6 @@ import {
   contextProps,
   renderProps,
   renderPropsOf,
-  resumableContext,
   type ClassNameOrFunction,
   type ContextValue,
   type RefValue,
@@ -144,12 +143,10 @@ export interface RangeCalendarProps<T extends DateValue = DateValue>
   commitBehavior?: "select" | "clear" | "reset";
 }
 
-export const CalendarContext = resumableContext(createContext<ContextValue<Partial<CalendarProps<any, any>>, HTMLDivElement>>({}, { id: "rv-calendar" }));
-export const RangeCalendarContext = resumableContext(
-  createContext<ContextValue<Partial<RangeCalendarProps<any>>, HTMLDivElement>>({}, { id: "rv-range-calendar" }),
-);
-export const CalendarStateContext = resumableContext(createContext<CalendarState | null>(null, { id: "rv-calendar-state" }));
-export const RangeCalendarStateContext = resumableContext(createContext<RangeCalendarState | null>(null, { id: "rv-range-calendar-state" }));
+export const CalendarContext = createContext<ContextValue<Partial<CalendarProps<any, any>>, HTMLDivElement>>({});
+export const RangeCalendarContext = createContext<ContextValue<Partial<RangeCalendarProps<any>>, HTMLDivElement>>({});
+export const CalendarStateContext = createContext<CalendarState | null>(null);
+export const RangeCalendarStateContext = createContext<RangeCalendarState | null>(null);
 
 /** Handlers the Calendar root / CalendarGrid own (the user's run after them). */
 const ROOT_OWNED = ["onFocusOut", "style", "render"] as const;
@@ -482,7 +479,7 @@ interface InternalCalendarGridContextValue {
   weeksInMonth: () => number;
 }
 
-const InternalCalendarGridContext = resumableContext(createContext<InternalCalendarGridContextValue | null>(null, { id: "rv-calendar-grid" }));
+const InternalCalendarGridContext = createContext<InternalCalendarGridContextValue | null>(null);
 
 /** A render function (not lazy JSX children, which are functions too). */
 const isRenderFunction = (children: unknown): children is (date: CalendarDate) => Content => typeof children === "function" && !isSlot(children);

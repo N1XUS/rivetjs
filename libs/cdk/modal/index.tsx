@@ -45,7 +45,6 @@ import {
   contextProps,
   mergeRefValues,
   renderProps,
-  resumableContext,
   type ClassNameOrFunction,
   type ContextValue,
   type RefValue,
@@ -117,9 +116,9 @@ interface InternalModalContextValue {
 }
 
 /** Props for the nearest `<ModalOverlay>` / `<Modal>` from a parent (RAC `ModalContext`). */
-export const ModalContext = resumableContext(createContext<ContextValue<ModalOverlayProps, HTMLDivElement>>(null, { id: "rv-modal-props" }));
+export const ModalContext = createContext<ContextValue<ModalOverlayProps, HTMLDivElement>>(null);
 /** @private What a ModalOverlay passes to its Modal (RAC `InternalModalContext`). */
-export const InternalModalContext = resumableContext(createContext<InternalModalContextValue | null>(null, { id: "rv-modal-internal" }));
+export const InternalModalContext = createContext<InternalModalContextValue | null>(null);
 
 /** Props the outer components hand to the overlay body (resolved contexts, serializable). */
 interface ResolvedOverlayProps {

@@ -7,7 +7,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { _rB, _rBEnd, _rBOut, _rData, derivedToString } from "@rivetjs/runtime/server-derived";
-import { createDecoder, registerClass, revive, serialize } from "@rivetjs/runtime/resume-format";
+import { createDecoder, registerClass, serialize } from "@rivetjs/runtime/resume-format";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
 
 const INDEPENDENT = 1,
@@ -27,9 +27,6 @@ class Own {
   }
   [serialize]() {
     return this.v;
-  }
-  static [revive](v: unknown) {
-    return new Own(v as number);
   }
 }
 class Plain {

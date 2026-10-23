@@ -25,7 +25,7 @@ What it means:
 - **`object-src 'none'`**: no plugins (`<object>`, `<embed>`).
 - **`base-uri 'none'`**: no `<base>` tag that could redirect relative URLs.
 
-The page state script (`<script type="rivet/state">`) is data, not code, so it needs no nonce. JSON data responses for client navigation get no CSP header; they are not pages.
+The page state script (`<script type="rivet/boundaries">`) is data, not code, so it needs no nonce. JSON data responses for client navigation get no CSP header; they are not pages.
 
 The Node adapter creates the nonce. If you write your own handler with `serve()`, the handler receives it as `context.nonce`:
 

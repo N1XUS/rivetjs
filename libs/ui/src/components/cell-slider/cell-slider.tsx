@@ -34,7 +34,6 @@ import type {
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { CellSliderVariants } from "../../../styles/src/components/cell-slider/index.ts";
 import { cellSliderVariants } from "../../../styles/src/components/cell-slider/index.ts";
@@ -51,7 +50,7 @@ interface CellSliderContext {
   variant?: CellSliderVariants["variant"];
 }
 
-const CellSliderContext = resumableContext(createContext<CellSliderContext>({}, { id: "rv-ui-cell-slider" }));
+const CellSliderContext = createContext<CellSliderContext>({});
 
 type Slots = ReturnType<typeof cellSliderVariants>;
 

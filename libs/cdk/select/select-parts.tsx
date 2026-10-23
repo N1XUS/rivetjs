@@ -194,7 +194,7 @@ function selectParts<M extends SelectionMode>(props: SelectPartsProps<M>, ref: R
     requiredProp = props.isRequired as MaybeAccessor<boolean | undefined>;
   const staticInvalid = typeof props.isInvalid === "function" ? false : props.isInvalid || false;
   // RAC `useMemo(children(...))` + CollectionBuilder: the ListBox registers its items. Object-literal function value
-  // (a resumable symbol: the region state keeps the collection accessor).
+  // (a resumable symbol).
   const build = {
     content: () =>
       typeof children === "function" && !isSlot(children)

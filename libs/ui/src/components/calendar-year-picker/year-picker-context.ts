@@ -1,13 +1,11 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/calendar-year-picker/year-picker-context.ts (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet:
-// - `createContext` → `resumableContext(createContext(null, { id: "rv-ui-year-picker" }))` (re-created regions on a resumed page are
-//   re-provided).
+// - `createContext` → `createContext(null)`.
 // - The value is a getter object built by Calendar / RangeCalendar: `isYearPickerOpen` reads the controllable state (readers see a
 //   boolean, as upstream); `setIsYearPickerOpen` is an inline arrow over that state (resumable). `calendarRef` is a `ref()` signal
 //   (accessor `() => element`) instead of a React `RefObject`. Rivet-only `isOpen` accessor: parts bind it (`data-open={() => …}`) so the
 //   binding re-runs on change without re-creating the part.
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 /* -------------------------------------------------------------------------------------------------
  * YearPickerContext
@@ -26,7 +24,7 @@ interface YearPickerContextValue {
   isOpen: () => boolean;
 }
 
-const YearPickerContext = resumableContext(createContext<YearPickerContextValue | null>(null, { id: "rv-ui-year-picker" }));
+const YearPickerContext = createContext<YearPickerContextValue | null>(null);
 
 /**
  * Hook to consume YearPickerContext.

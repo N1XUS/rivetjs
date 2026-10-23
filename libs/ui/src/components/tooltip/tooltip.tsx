@@ -23,7 +23,6 @@ import type { TooltipProps as TooltipPrimitiveProps, TooltipRenderProps, Tooltip
 import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { renderSlot } from "@rivetjs/runtime/slot";
 
 import type { TooltipVariants } from "../../../styles/src/components/tooltip/index.ts";
@@ -44,7 +43,7 @@ type TooltipContext = {
   inTooltip?: boolean;
 };
 
-const TooltipContext = resumableContext(createContext<TooltipContext>({}, { id: "rv-ui-tooltip" }));
+const TooltipContext = createContext<TooltipContext>({});
 
 type TooltipSlots = ReturnType<typeof tooltipVariants>;
 let SLOTS: TooltipSlots | undefined;

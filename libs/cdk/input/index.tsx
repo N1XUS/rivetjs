@@ -20,7 +20,6 @@ import { mergeInto } from "../interactions/merge-props.tsx";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import {
-  resumableContext,
   contextProps,
   renderProps,
   type ClassNameOrFunction,
@@ -84,7 +83,7 @@ export interface InputProps extends AccessorProps<HTMLProps<"input">, "autoFocus
   ref?: RefValue<HTMLInputElement>;
 }
 
-export const InputContext = resumableContext(createContext<ContextValue<InputProps, HTMLInputElement>>({}, { id: "rv-input" }));
+export const InputContext = createContext<ContextValue<InputProps, HTMLInputElement>>({});
 
 /** An input allows a user to input text. */
 export function Input(props: InputProps) {

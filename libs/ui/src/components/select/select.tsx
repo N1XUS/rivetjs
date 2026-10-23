@@ -39,7 +39,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { X } from "lucide";
 
 import type { SelectVariants } from "../../../styles/src/components/select/index.ts";
@@ -69,7 +68,7 @@ type SelectContext = {
   isDisabled?: boolean | undefined;
 };
 
-const SelectContext = resumableContext(createContext<SelectContext>({}, { id: "rv-ui-select" }));
+const SelectContext = createContext<SelectContext>({});
 
 type SelectSlots = ReturnType<typeof selectVariants>;
 const SLOTS = new Map<string, SelectSlots>();

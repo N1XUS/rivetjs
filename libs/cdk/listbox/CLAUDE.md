@@ -11,7 +11,7 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 ## Layout
 - `index.tsx` - RAC parts; root `<div role="listbox">`, option `<div role="option">` / `<a role="option" href>`, section `<section role="group">`, header `<header>`, load-more sentinel
 - `behaviour.tsx` - option data, attribute bags, delegated handlers
-- tests: `tests/listbox.browser.test.tsx` (RAC ListBox.test.js port, Chromium), `tests/listbox-ssr.test.ts`, `tests/collection-components.test.ts` (fixtures `tests/fixtures/collection-parts.tsx`); stories `tests-components/listbox.test.ts` (route `app/src/routes/listbox.tsx`), `dom-events-collections.test.ts`, `dev-resume.test.ts` (`ListBoxInner$` chunk), `axe.test.ts`
+- tests: `tests/listbox.browser.test.tsx` (RAC ListBox.test.js port, Chromium), `tests/listbox-ssr.test.ts`, `tests/collection-components.test.ts` (fixtures `tests/fixtures/collection-parts.tsx`); stories `tests-components/listbox.test.ts` (route `app/src/routes/listbox.tsx`), `dom-events-collections.test.ts`, `axe.test.ts`
 - docs: `apps/cdk-docs/content/components/listbox.md`; examples `apps/cdk-docs/examples/listbox-{basic,behaviour,controlled,css,disabled,dom-events,events,keyboard,layout,links,sections,selection-behavior,selection-modes,slots,tailwind}/`
 
 ## Upstream
@@ -40,7 +40,7 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 ## Commands
 - `npx vitest run --project cdk-browser libs/cdk/tests/listbox.browser.test.tsx` (77 tests)
 - `npx vitest run --project cdk libs/cdk/tests/listbox-ssr.test.ts libs/cdk/tests/collection-components.test.ts`
-- `STORIES_DIST=dist-<lane> npx vitest run --project cdk-components libs/cdk/tests-components/listbox.test.ts libs/cdk/tests-components/dom-events-collections.test.ts libs/cdk/tests-components/dev-resume.test.ts`
+- `STORIES_DIST=dist-<lane> npx vitest run --project cdk-components libs/cdk/tests-components/listbox.test.ts libs/cdk/tests-components/dom-events-collections.test.ts`
 - `node libs/docs-kit/cli.ts check-examples apps/cdk-docs listbox-basic …`
 
 ## Gotchas
@@ -49,7 +49,7 @@ RAC ListBox re-port (collections pilot): `ListBox`, `ListBoxItem`, `ListBoxSecti
 - `aria-labelledby` from the context may be an accessor (Select's `menuProps`: trigger label ids): ListBoxInner reads it inside the binding (COMBOBOX-DEV 2026-10-08; was the stringified function source in the attribute)
 - OPEN: component bodies run untracked — a signal read inside a nested component during a build pass, or a dynamic `{() => cond() ? <ListBoxItem/> : null}` child, does not update; derive `items` at the host (see `../collections/CLAUDE.md`)
 - Rows render inside a compiled `<Provider values=[ListState, ListBoxData, Separator, Section, SharedElement]>` child (default + `render` path; CDK-EX 2026-10-20): the renderer's keyed `For` must be created in that child region, never in the component body (an eager `provide()` chain did): its `each` reads (collection: `items`, Autocomplete / ComboBox `filter`) then re-run only that region on a resumed page. In the body they belonged to the ListBox's enclosing region, so the first filter change re-created the whole ListBox with a fresh list state while the adopted options kept resumed bindings to the server state — `data-focused` never followed the virtual focus (cdk-docs `autocomplete-basic`; pin `tests-components/autocomplete.test.ts` "virtual focus after a resumed filter")
-- Resumed option rows follow node changes (ROW-RERENDER 2026-10-20; was OPEN since CDK-EX): `createListData.update` on a resumed page re-creates exactly the changed adopted row (cdk-docs `data-list`, un-quarantined; `tests-components/list-data.test.ts`). Mechanism: `../collections/CLAUDE.md` "Resumed rows" (server row stamps in `_regionState` + browser re-check `resumedKeys`). A `ListBoxSection` creates its rows' `For` in its body (no region of its own): a changed item re-creates the whole section row
+- Resumed option rows follow node changes: `createListData.update` on a resumed page updates the changed row (cdk-docs `data-list`; `tests-components/list-data.test.ts`). A `ListBoxSection` creates its rows' `For` in its body (no region of its own): a changed item re-creates the whole section row
 - Keeping a children thunk as a region breaks the synchronous `provide()` context ("ListBoxItem cannot be rendered outside a collection") - don't
 - Built collection (every standalone ListBox): dynamic `{() => …}` children keep document order (build marks, `../collections/CLAUDE.md` "Build-pass order"); a `<Show>` child does not update a resumed page — write `{cond() && <ListBoxItem/>}` (same file, open gap)
 - Real `mouse.wheel` doesn't reach a section `onWheel` on a resumed page (`dispatchEvent` does): runtime issue (Lane R)

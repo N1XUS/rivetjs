@@ -65,7 +65,7 @@ Object.assign(globalThis, { window, document: window.document });
 - `./steps`: `steps(t => …)` — sequential named sub-steps in one test, failures aggregated.
 - `./user`: `@react-aria/test-utils` port (`User` + pattern testers); real `@testing-library/user-event` / `@testing-library/dom` / `@testing-library/jest-dom` (`./jest-dom` registers matchers on Vitest `expect`).
 - `./jest`, `./jasmine`: Jest / Jasmine globals over Vitest for ported upstream suites (`jest.mock` / `jest.unmock` throw: write hoisted `vi.mock`; Jasmine spies stub until `.and.callThrough()`); `./fake-events`: Angular CDK fake events.
-- `./vite` `rivetTest()`: also registers `./cleanup` (auto `cleanup()` after each test; `cleanup: false` opts out) and `./serializer` (`rivetSerializer`: DOM snapshots without marker comments; `serializer: false`).
+- `./vite` `rivetTest()`: serves the runtime switch modules like a default resumable build (`derived` + `lazy-rows` on, `domData` off; `resume: { domData: true }` opts in; Vite-loaded modules only — an externalized runtime and the node register hook keep the switch files as written); also registers `./cleanup` (auto `cleanup()` after each test; `cleanup: false` opts out) and `./serializer` (`rivetSerializer`: DOM snapshots without marker comments; `serializer: false`).
 - Details: `libs/testing/CLAUDE.md`.
 
 ## DOM helpers (`@rivetjs/runtime/testing`)

@@ -42,7 +42,10 @@ test("carousel: SSR markup — classes, APG roles, controls, counter", async () 
   assert.match(html, /aria-label="Choose slide to display"/);
   assert.match(html, /id="ca-prev"[^>]*disabled[^>]*class="button button--icon-only button--md button--tertiary carousel__control carousel__previous"/);
   assert.match(html, /id="ca-next"[^>]*class="button button--icon-only button--md button--tertiary carousel__control carousel__next"/);
-  assert.match(html, /id="ca-counter" class="carousel__counter" data-slot="carousel-counter">(<!--[^>]*-->)*1(<!--[^>]*-->)* \/ (<!--[^>]*-->)*5/);
+  assert.match(
+    html,
+    /id="ca-counter" class="carousel__counter" data-slot="carousel-counter"(?: data-b="\d+")?>(<!--[^>]*-->)*1(<!--[^>]*-->)* \/ (<!--[^>]*-->)*5/,
+  );
   assert.match(html, /class="carousel carousel--horizontal carousel--outside carousel--md w-96"/);
   assert.equal((html.match(/class="carousel__thumbnail"/g) ?? []).length, 5);
   const rotation = /<button[^>]*id="ca-rotation"[^>]*>/.exec(html)?.[0] ?? "";

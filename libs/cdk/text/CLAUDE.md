@@ -4,7 +4,7 @@
 RAC `Text`: description / free text part reading `TextContext` (fields provide `{ slots: { description, errorMessage } }` with ids; SlotId ids supported).
 
 ## Entry points
-- `@rivetjs/cdk/text` -> `index.tsx`: `Text`, `TextContext` (`rv-text`), `TextProps`; also re-exported by `@rivetjs/cdk/label`
+- `@rivetjs/cdk/text` -> `index.tsx`: `Text`, `TextContext`, `TextProps`; also re-exported by `@rivetjs/cdk/label`
 
 ## Layout
 - `index.tsx` - component + context

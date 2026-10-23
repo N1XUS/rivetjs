@@ -130,7 +130,6 @@ import {
   contextProps,
   mergeRefValues,
   renderProps,
-  resumableContext,
   type ContextValue,
   type LiveRenderProps,
   type RefValue,
@@ -178,13 +177,11 @@ type Px = Record<string, string | number | undefined>;
 // ---------------------------------------------------------------------------------------------
 
 /** RAC `TableContext`: props for the Tables inside a component, optionally per `slot`. */
-export const TableContext = resumableContext(createContext<ContextValue<TableProps, HTMLTableElement>>(null, { id: "rv-table" }));
+export const TableContext = createContext<ContextValue<TableProps, HTMLTableElement>>(null);
 /** RAC `TableStateContext` (Rivet: an accessor of the state view of the enclosing Table). */
-export const TableStateContext = resumableContext(createContext<(() => TableState<any>) | null>(null, { id: "rv-table-state" }));
+export const TableStateContext = createContext<(() => TableState<any>) | null>(null);
 /** RAC `TableColumnResizeStateContext` (Rivet: an accessor; null outside a ResizableTableContainer). */
-export const TableColumnResizeStateContext = resumableContext(
-  createContext<(() => TableColumnResizeState<unknown>) | null>(null, { id: "rv-table-column-resize-state" }),
-);
+export const TableColumnResizeStateContext = createContext<(() => TableColumnResizeState<unknown>) | null>(null);
 
 export interface TableOptionsContextValue {
   /** The type of selection that is allowed in the table. */
@@ -197,7 +194,7 @@ export interface TableOptionsContextValue {
   allowsDragging: boolean;
 }
 
-const TableOptionsContext = resumableContext(createContext<TableOptionsContextValue | null>(null, { id: "rv-table-options" }));
+const TableOptionsContext = createContext<TableOptionsContextValue | null>(null);
 
 /** Returns options from the parent `<Table>` component (RAC `useTableOptions`). */
 export function tableOptions(): TableOptionsContextValue {
@@ -210,7 +207,7 @@ export interface RowFocusContextValue {
 }
 
 /** RAC `RowFocusContext` (Rivet: `isFocusVisibleWithinRow` is an accessor). */
-export const RowFocusContext = resumableContext(createContext<RowFocusContextValue>({ isFocusVisibleWithinRow: () => false }, { id: "rv-row-focus" }));
+export const RowFocusContext = createContext<RowFocusContextValue>({ isFocusVisibleWithinRow: () => false });
 
 /** What the Table shares with its parts (plain data + accessors). */
 interface TableInternal {
@@ -225,7 +222,7 @@ interface TableInternal {
   sortableDescriptionId: string;
   resizerDescriptionId: string;
 }
-const TableInternalContext = resumableContext(createContext<TableInternal | null>(null, { id: "rv-table-internal" }));
+const TableInternalContext = createContext<TableInternal | null>(null);
 
 interface ResizableTableContainerContextValue {
   /** The measured width of the scrollable element (react-aria `tableWidth`). */
@@ -236,16 +233,14 @@ interface ResizableTableContainerContextValue {
   onResize?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
   onResizeEnd?: ((widths: Map<Key, ColumnSize>) => void) | undefined;
 }
-const ResizableTableContainerContext = resumableContext(
-  createContext<ResizableTableContainerContextValue | null>(null, { id: "rv-resizable-table-container" }),
-);
+const ResizableTableContainerContext = createContext<ResizableTableContainerContextValue | null>(null);
 
 interface ColumnResizerContextValue {
   columnKey: Key;
   /** The column header element. */
   triggerRef: () => Element | null | undefined;
 }
-const ColumnResizerContext = resumableContext(createContext<ColumnResizerContextValue | null>(null, { id: "rv-column-resizer" }));
+const ColumnResizerContext = createContext<ColumnResizerContextValue | null>(null);
 
 const columnOf = (c: TableCollection<unknown>, key: Key): GridNode<unknown> | undefined => (c.getItem(key) ?? undefined) as GridNode<unknown> | undefined;
 
@@ -773,9 +768,7 @@ export const TableHeader = /* @__PURE__ */ createBranchComponent(
             onPointerLeave?.(e as never);
           }}
         >
-          {/* Not lazy (LAZY-T6): a header row holds the virtualizer's column views (a nested collection); a lazy
-              header row materialised mid-layout lost them. Header rows are few: nothing to save. */}
-          <For each={rowKeys} by={(k: Key) => k} lazy={false}>
+          <For each={rowKeys} by={(k: Key) => k}>
             {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
           </For>
         </div>
@@ -797,8 +790,7 @@ export const TableHeader = /* @__PURE__ */ createBranchComponent(
           onPointerLeave?.(e as never);
         }}
       >
-        {/* Not lazy (LAZY-T6): header rows hold the column cells (a nested collection) and are few. */}
-        <For each={rowKeys} by={(k: Key) => k} lazy={false}>
+        <For each={rowKeys} by={(k: Key) => k}>
           {(k: () => Key) => <TableHeaderRow rowKey={untrack(k)} />}
         </For>
       </thead>

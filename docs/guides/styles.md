@@ -49,7 +49,7 @@ export const Card = (props: { active: boolean }) => <div class={cx(styles.card, 
 
 ### Pay-per-use
 
-- Helpers in `@rivetjs/runtime/style` (`_class`, `_style`, `_styleValue`, `_bindClass`, `_bindStyle`, `_applyStyle`, `_spreadClass`, …), imported only by modules that use directives / objects — and by the spread helpers (`server-spread.ts`, `_spread` in `dom-v2-spread.ts`), so a bundle pays for them only with spreads. `/dom-resume` unchanged; ssr-bench lanes identical.
+- Helpers in `@rivetjs/runtime/style` (`_class`, `_style`, `_styleValue`, `_bindClass`, `_bindStyle`, `_applyStyle`, `_spreadClass`, …), imported only by modules that use directives / objects — and by the spread helpers (`server-spread.ts`, `_spread` in `dom-v2-spread.ts`), so a bundle pays for them only with spreads. ssr-bench lanes identical.
 - Public: `classNames(value)`, `unsafeStyle(value)`, types `ClassValue`, `StyleObject` (also re-exported from `/css`).
 
 ## Stylesheet files

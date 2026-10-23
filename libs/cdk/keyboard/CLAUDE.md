@@ -4,7 +4,7 @@
 RAC `Keyboard`: shortcut text `<kbd dir="ltr">` reading `KeyboardContext` (menu items provide slot `keyboard`).
 
 ## Entry points
-- `@rivetjs/cdk/keyboard` -> `index.tsx`: `Keyboard`, `KeyboardContext` (`rv-keyboard`), `KeyboardProps`
+- `@rivetjs/cdk/keyboard` -> `index.tsx`: `Keyboard`, `KeyboardContext`, `KeyboardProps`
 
 ## Layout
 - `index.tsx` - component + context

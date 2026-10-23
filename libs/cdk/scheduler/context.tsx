@@ -1,8 +1,7 @@
 // Ported from @malva-ui/scheduler (src/lib/scheduler/scheduler-context.ts `MLV_SCHEDULER_CONTEXT`), MIT, © 2026 Malva UI.
-// Rivet: the root → views contract as one resumable context (`rv-scheduler`). The root builds every accessor as an
+// Rivet: the root → views contract as one context (`SchedulerContext`). The root builds every accessor as an
 // inline arrow / `computed` in its own `.tsx` render (resumable); views read them, never the root's props.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type {
   SchedulerEvent,
@@ -117,5 +116,5 @@ export interface SchedulerContextValue<T = unknown> {
   readonly onMoreAction: ((event: SchedulerMoreEvent<T>) => void) | undefined;
 }
 
-/** The scheduler's root context (resume id `rv-scheduler`). */
-export const SchedulerContext = resumableContext(createContext<SchedulerContextValue<any> | null>(null, { id: "rv-scheduler" }));
+/** The scheduler's root context. */
+export const SchedulerContext = createContext<SchedulerContextValue<any> | null>(null);

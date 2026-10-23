@@ -99,7 +99,7 @@ The handler runs inside a [batch](../state/batching.md), so several writes cause
 
 ## What a handler can use
 
-A handler can use anything in the component: signals, props, local constants and local functions. Rivet writes these values into the page so the browser can run the handler later. That only works for :term[serializable]{id=serializable} values: data, signals and local functions, but not class instances or functions from outside (like a service object passed in as a prop).
+A handler can use anything in the component: signals, props, local constants, local functions, class instances. The browser runs the component's code again when it wakes up, so it has the real values.
 
 ```tsx
 export function Cart({ items }: { items: { id: string; cents: number }[] }) {
@@ -117,7 +117,6 @@ export function Cart({ items }: { items: { id: string; cents: number }[] }) {
 }
 ```
 
-If a value cannot be saved, the server render fails with an error such as `function is not serializable`. See [function is not serializable](/gotchas/function-is-not-serializable.md).
 
 ## Handlers bind once
 

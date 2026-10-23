@@ -26,7 +26,6 @@ import { read as readAccessor, type MaybeAccessor } from "../interactions/utils.
 import { createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, Ref } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { Provider, contextProps, type ClassNameOrFunction, type ContextValue, type RefValue, type RenderProps, type StyleOrFunction } from "../slots/index.tsx";
 import { createEnterAnimation, createExitAnimationState, watchExitAnimation, type ExitAnimationState } from "../utils/animation.tsx";
@@ -108,10 +107,10 @@ export interface TooltipProps
 }
 
 /** RAC `TooltipTriggerStateContext`: the state of the nearest TooltipTrigger. */
-export const TooltipTriggerStateContext = resumableContext(createContext<TooltipTriggerState | null>(null, { id: "rv-tooltip-trigger-state" }));
+export const TooltipTriggerStateContext = createContext<TooltipTriggerState | null>(null);
 
 /** RAC `TooltipContext`: props for the Tooltip inside a TooltipTrigger (`triggerRef`, the tooltip `id`). */
-export const TooltipContext = resumableContext(createContext<ContextValue<TooltipProps, HTMLDivElement>>(null, { id: "rv-tooltip" }));
+export const TooltipContext = createContext<ContextValue<TooltipProps, HTMLDivElement>>(null);
 
 /**
  * TooltipTrigger wraps around a trigger element and a Tooltip. It handles opening and closing the

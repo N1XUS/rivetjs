@@ -269,7 +269,6 @@ There is no typeahead (React Aria's `TabsKeyboardDelegate` has none). Pointer: a
 - The server renders the tablist, the tab stop and the selected panel. Before the first interaction the page runs no tabs code; the tablist's `data-rk` keys are held while the handler chunk loads.
 - State is signals plus JSON (`createTabListState`), so a `selectedKey` signal, number keys and the focused key resume as they were.
 - A `TabPanel` whose tab is not selected on the server is created later, in the browser: give it render-function children (`<TabPanel id="b">{() => <p>…</p>}</TabPanel>`), plain JSX children do not resume there. `Tab` children and the selected panel may be plain JSX.
-- Callbacks (`onSelectionChange`, DOM events, a `RouterProvider` `navigate`) must be inline arrows or local functions; functions from other libraries are not serializable; `.bind(…)` of your own function resumes inline or as a local constant, not inside an object literal.
 - `on…Capture` handlers do not resume yet.
 
 ## Testing

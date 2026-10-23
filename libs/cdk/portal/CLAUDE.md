@@ -12,7 +12,7 @@ Server-rendered portals (`<Portal>`, `<Overlay>`, `PortalProvider`) = the div ov
 - `index.tsx` — `<Portal>` renders `<div data-rivet-portal>` in place (server HTML), a `clientEffect({when: "load"})` moves it to its mount, then calls `onPlaced` (synchronously, inside the move effect; content effects can run before the move, e.g. one re-run by a ref set in a lazy binding: measure layout only once placed, CELLSELECT-DEV 2026-10-08); owner cleanup removes it. `<Overlay>` = Portal + `ClearPressResponder` (RA: trigger press props stop at the overlay) + `FocusScope restoreFocus contain=…` (../focus/focus-scope.tsx); `isExiting` accepts an accessor, read once at mount (FocusScope `contain` is not reactive — gap)
 - `portal-mount.ts` — mount resolution, browser only, kept out of the component module
 - `portal-outlet.ts` — Angular CDK portals; `DomPortalOutlet` renders with the runtime's `mount`; browser only
-- Tests: `tests/portal-resume.test.ts` (server + resumed page, fixture `tests/fixtures/portal-fixture.tsx`); outlets via `tests/angular-overlay.test.ts` (`DomPortal`); component use in `tests-components/overlays.test.ts`, `tests-components/dom-events-overlays.test.ts`
+- Tests: outlets via `tests/angular-overlay.test.ts` (`DomPortal`); component use in `tests-components/overlays.test.ts`, `tests-components/dom-events-overlays.test.ts`
 - Consumers: `../modal`, `../popover`, `../tooltip` (`Portal` directly), `../modal/provider.tsx` (`OverlayContainer`), `../overlay-service/overlay-ref.ts` (outlets)
 
 ## Upstream
@@ -21,7 +21,6 @@ Server-rendered portals (`<Portal>`, `<Overlay>`, `PortalProvider`) = the div ov
 - `Portal` component itself is Rivet (server-visible content, moved at load); `TemplatePortal` = render fn + context (Angular TemplateRef)
 
 ## Rules / invariants
-- `PortalContext` = `resumableContext(…, { id: "rv-portal" })`: a region re-created under a `PortalProvider` keeps its container when it serializes — selector string or `ref()` element ref (both covered by `tests-components/resume-context.test.ts`); a raw Element / plain function container is dropped from the region record (re-created portals fall back to `document.body`)
 - `portalHooks.place` (UI-THEME-PORTAL 2026-10-20): called only on an actual move (never on an effect re-run), with the still-connected in-place parent (server HTML position on resumed pages, the trigger's subtree for browser-created overlays); headless: cdk names no attribute, a styled layer decides what to copy (cdk `modalHooks.open` pattern; cdk alone pays one property read per move)
 - The overlay layer is plain divs (`data-rivet-portal` hosts at end of mount) — never native `<dialog>` / `popover` top layer (user decision)
 - Content is in the server HTML (visible without JS, indexable); server markers inside the host stay balanced, so the move does not affect resumption
@@ -32,12 +31,9 @@ Server-rendered portals (`<Portal>`, `<Overlay>`, `PortalProvider`) = the div ov
 - `portal-outlet.ts` is browser only; for server-visible content use `<Portal>`
 
 ## Commands
-- `npx vitest run --project cdk libs/cdk/tests/portal-resume.test.ts`
 - `npx vitest run --project cdk-components libs/cdk/tests-components/overlays.test.ts`
 
 ## Gotchas
-- `tests/portal-resume.test.ts`: follows the fixture's import graph (server via `tests/server.ts`, browser `.tsx` compiled / `.ts` stripped under `/cdk/`), so new imports in `portal/index.tsx` need no harness change.
-- `PortalProvider` ignored by Popover / Modal on resumed pages (region re-creation loses context); Tooltip resolves it itself (`useContext(PortalContext)` in TooltipTrigger, ../tooltip/index.tsx:120)
 - Modal Popover with in-page `portalContainer`: `ariaHideOutside` runs before the host move, so the container ends up inert
 
 ## See also

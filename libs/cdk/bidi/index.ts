@@ -9,7 +9,6 @@
 // to the document. The `change` EventEmitter is the signal: read `valueSignal()` in a binding /
 // effect, or pass `onDirChange` to `<Dir>`.
 import { computed, createContext, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 export type { Direction } from "../collections/types.ts";
 import type { Direction } from "../collections/types.ts";
@@ -84,7 +83,7 @@ export function setDir(state: DirState, value: Direction | "auto" | string): boo
 }
 
 /** Context through which `<Dir>` provides itself as the `Directionality` of its subtree. */
-export const DirectionalityContext = resumableContext(createContext<Directionality | null>(null, { id: "rv-directionality" }));
+export const DirectionalityContext = createContext<Directionality | null>(null);
 
 /** Angular `inject(Directionality)`: the closest `<Dir>`, else the document's direction. */
 export function injectDirectionality(): Directionality {

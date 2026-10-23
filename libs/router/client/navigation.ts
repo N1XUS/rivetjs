@@ -20,11 +20,8 @@ export const IDLE: NavigationState = Object.freeze({ state: "idle", location: nu
 
 /** Browser navigation state (the transitions module writes it; idle on the server and without transitions). */
 export const navigation: Signal<NavigationState> = signal<NavigationState>(IDLE);
-/**
- * Resumable navigation context: the server entry provides `navigation` under this id, so resumed
- * regions that read it revive to the browser signal (`createResume({ contexts })`).
- */
-export const Navigation: Context<() => NavigationState> = createContext<() => NavigationState>(navigation, { id: "rivet:navigation" });
+/** Navigation context: the server entry provides the request's idle state; in the browser its default is `navigation`. */
+export const Navigation: Context<() => NavigationState> = createContext<() => NavigationState>(navigation);
 
 /** @internal Route commits record the shown search and run `search` (set by search.ts when loaded). */
 export const _searchSync: { shown?: string; search?: () => void } = {};

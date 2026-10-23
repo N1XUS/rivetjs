@@ -90,7 +90,7 @@ test("inline icons compile to one static template: no component call, no resume 
   assert.match(dom.code, /_tpl\("<div><svg xmlns=http:\/\/www.w3.org\/2000\/svg width=16 height=16 /);
   const resumed = compile(source, { target: "server", filename: "page.tsx", resume: { module: "src/page.tsx" } });
   assert.deepEqual(resumed.diagnostics, []);
-  assert.deepEqual(resumed.symbols ?? [], []);
+  assert.equal(resumed.boundaries, undefined);
 });
 
 test("Vite plugin: both targets inline icons (lucide from the importer's resolution); `staticIcons: false` keeps the call", async () => {

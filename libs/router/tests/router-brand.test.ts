@@ -1,7 +1,7 @@
 // The router brand `@rivetjs/forms` reaches the router through (`Symbol.for("rivet.router")`, index.ts `_brand`,
-// navigate.ts `_go`) and `navigate()`'s event-first wait for a resumed App (`rivet:attach`, one timeout), without a
+// navigate.ts `_go`) and `navigate()`'s ask (`rivet:go`: served by a listening App, else a document load), without a
 // browser: document / location stubbed; base path `/app` and `trailingSlash: "always"` mocked in.
-import { afterEach, beforeEach, test, vi } from "vitest";
+import { beforeEach, test, vi } from "vitest";
 import assert from "node:assert/strict";
 
 vi.mock("../shared/base.ts", async (original) => {
@@ -13,11 +13,7 @@ vi.mock("../shared/slash.ts", async (original) => ({ ...(await original<typeof i
 const g = globalThis as Record<string | symbol, unknown>;
 const assigned: string[] = [];
 let asks = 0;
-let marker = true;
-const doc = Object.assign(new EventTarget(), {
-  querySelector: (selector: string) => (selector === "[data-rivet-go]" && marker ? {} : null),
-  $r: undefined as { b?(): void; r?(): unknown } | undefined,
-});
+const doc = new EventTarget();
 doc.addEventListener("rivet:go", () => asks++);
 g.document = doc;
 g.location = { href: "http://x.test/app/start", origin: "http://x.test", pathname: "/app/start", assign: (href: string) => assigned.push(href) };
@@ -29,11 +25,8 @@ const { _brand, _clearPrefetch } = await import("../client/index.ts");
 beforeEach(() => {
   assigned.length = 0;
   asks = 0;
-  marker = true;
-  doc.$r = undefined;
   _take();
 });
-afterEach(() => vi.useRealTimers());
 
 test("_go: in-base navigations queue in canonical form and ask the App; outside the base loads the document", async () => {
   void _go(new URL("http://x.test/app/items/1?q=1"));
@@ -71,39 +64,18 @@ test("_brand: installs clear + go, announces the first install once, replaces th
   assert.equal(announced, 1);
 });
 
-test("navigate() before a resumed App listens: asks again on rivet:attach, served without polling", async () => {
-  vi.useFakeTimers();
-  let booted = 0;
-  doc.$r = { b: () => booted++, r: () => null };
+test("navigate(): an App listening serves the request; none listening loads the document at once", async () => {
   let served = false;
-  const done = navigate("/items/7").then(() => (served = true));
-  assert.equal(asks, 1);
-  assert.equal(booted, 1, "boots the runtime");
-  await vi.advanceTimersByTimeAsync(5_000);
-  assert.equal(asks, 1, "no retry timer");
-  // The runtime attached the App's listener: one more ask, the App serves the queue.
-  doc.dispatchEvent(new Event("rivet:attach"));
-  assert.equal(asks, 2);
-  const [request] = _take();
-  assert.equal(request!.url.pathname, "/app/items/7/");
-  request!.done();
-  await done;
+  const serve = () => {
+    const [request] = _take();
+    request!.done();
+  };
+  doc.addEventListener("rivet:go", serve);
+  await navigate("/items/7").then(() => (served = true));
+  doc.removeEventListener("rivet:go", serve);
   assert.ok(served);
-  doc.dispatchEvent(new Event("rivet:attach"));
-  assert.equal(asks, 2, "listener removed once served");
   assert.deepEqual(assigned, []);
-});
-
-test("navigate(): no answer within 10 s loads the document; no App marker loads it at once", async () => {
-  vi.useFakeTimers();
-  doc.$r = { b() {}, r: () => ({}) };
   void navigate("/items/8");
-  await vi.advanceTimersByTimeAsync(9_999);
-  assert.deepEqual(assigned, []);
-  await vi.advanceTimersByTimeAsync(1);
-  assert.deepEqual(assigned, ["http://x.test/app/items/8/"]);
+  assert.deepEqual(assigned, ["http://x.test/app/items/8/"], "no App listening: a document load");
   assert.equal(_take().length, 0, "dropped from the queue");
-  marker = false;
-  void navigate("/items/9");
-  assert.deepEqual(assigned, ["http://x.test/app/items/8/", "http://x.test/app/items/9/"]);
 });

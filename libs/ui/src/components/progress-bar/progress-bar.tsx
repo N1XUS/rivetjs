@@ -19,7 +19,6 @@ import { ProgressBar as ProgressBarPrimitive } from "@rivetjs/cdk/progress-bar";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { ProgressBarVariants } from "../../../styles/src/components/progress-bar/index.ts";
@@ -39,7 +38,7 @@ interface ProgressBarContext {
   state?: ProgressBarRenderProps;
 }
 
-const ProgressBarContext = resumableContext(createContext<ProgressBarContext>({}, { id: "rv-ui-progress-bar" }));
+const ProgressBarContext = createContext<ProgressBarContext>({});
 
 type ProgressBarSlots = ReturnType<typeof progressBarVariants>;
 

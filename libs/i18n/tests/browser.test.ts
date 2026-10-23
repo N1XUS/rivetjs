@@ -41,20 +41,18 @@ test("de page: html lang, inlined text, only de chunks, no message state, resume
   assert.equal(await page.getAttribute("html", "lang"), "de");
   assert.equal(await page.textContent("h1"), "Warenkorb");
   const html = await response!.text();
-  const state = html.match(/<script type="rivet\/state"[^>]*>([^<]*)<\/script>/)?.[1] ?? "";
+  const state = html.match(/<script type="rivet\/boundaries"[^>]*>([^<]*)<\/script>/)?.[1] ?? "";
   assert.ok(state, "page carries resume state");
   assert.doesNotMatch(state, /Warenkorb|Artikel|cart\./);
   // Tags inside plural cases: server markup, then the resumed binding re-renders it in German.
   assert.match(html, /<p><!--[^>]*--><b>1<\/b> Artikel<!--[^>]*--><\/p>|<p><b>1<\/b> Artikel<\/p>/);
   // Rich messages (top-level tags) passed as props: server markup, then the resumed binding.
-  assert.match(html.replace(/<!--.*?-->/g, ""), /<small>Fragen\? <a href="\/help">Kontakt<\/a><\/small>/);
-  assert.match(html.replace(/<!--.*?-->/g, ""), /<aside>Siehe <a href="\/terms">AGB<\/a> für 1 Artikel<\/aside>/);
+  assert.match(html.replace(/<!--.*?-->/g, ""), /<small[^>]*>Fragen\? <a href="\/help">Kontakt<\/a><\/small>/);
+  assert.match(html.replace(/<!--.*?-->/g, ""), /<aside[^>]*>Siehe <a href="\/terms">AGB<\/a> für 1 Artikel<\/aside>/);
   await page.click("button");
   await page.waitForFunction(() => document.querySelector("button")?.textContent?.trim() === "2 Artikel");
   await page.waitForFunction(() => document.querySelector("p")?.innerHTML.replace(/<!--.*?-->/g, "") === "<b>2</b> Artikel im Korb");
-  await page.waitForFunction(
-    () => document.querySelector("aside")?.innerHTML.replace(/<!--.*?-->/g, "") === 'Siehe <a href="/terms">AGB</a> für 2 Artikel',
-  );
+  await page.waitForFunction(() => document.querySelector("aside")?.innerHTML.replace(/<!--.*?-->/g, "") === 'Siehe <a href="/terms">AGB</a> für 2 Artikel');
   assert.ok(scripts.length > 0 && scripts.every((p) => p.startsWith("/de/")), scripts.join(","));
 });
 
@@ -108,10 +106,7 @@ test("switching to the default locale by a link sticks: the guard sets the local
 
 test("hreflang alternates present", async () => {
   const html = await (await fetch(app!.url + "/de")).text();
-  const hreflangs = [...html.matchAll(/<link rel="alternate" href="([^"]+)" hreflang="([^"]+)">/g)].map((m) => [
-    m[2],
-    m[1],
-  ]);
+  const hreflangs = [...html.matchAll(/<link rel="alternate" href="([^"]+)" hreflang="([^"]+)">/g)].map((m) => [m[2], m[1]]);
   assert.deepEqual(hreflangs, [
     ["en", "https://shop.test/"],
     ["de", "https://shop.test/de"],
@@ -135,9 +130,7 @@ test("dev server: the client renders and updates in the page's locale", async ()
     await page.waitForFunction(() => document.querySelector("p")?.innerHTML.replace(/<!--.*?-->/g, "") === "<b>2</b> Artikel im Korb");
     // The client-rendered (DOM) rich message props.
     assert.equal((await page.innerHTML("small")).replace(/<!--.*?-->/g, ""), 'Fragen? <a href="/help">Kontakt</a>');
-    await page.waitForFunction(
-      () => document.querySelector("aside")?.innerHTML.replace(/<!--.*?-->/g, "") === 'Siehe <a href="/terms">AGB</a> für 2 Artikel',
-    );
+    await page.waitForFunction(() => document.querySelector("aside")?.innerHTML.replace(/<!--.*?-->/g, "") === 'Siehe <a href="/terms">AGB</a> für 2 Artikel');
     assert.equal(await page.textContent("h1"), "Warenkorb");
     assert.deepEqual(errors, []);
     const en = await (await fetch(`http://localhost:${address.port}/`, { headers: { "accept-language": "en" } })).text();

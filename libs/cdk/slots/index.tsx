@@ -5,9 +5,7 @@
 // Rivet:
 // - names follow the cdk convention (no `use*`): `useContextProps` → `contextProps`, `useSlottedContext` →
 //   `slottedContext`, `useRenderProps` → `renderProps`, `useSlot` → `createSlot`, RA `useSlotId` → `createSlotId`.
-// - contexts are `createContext` tokens; parts register theirs with `resumableContext(createContext(null,
-//   { id: "rv-<name>" }))`, so a re-created region on a resumed page reads the same provision. Context
-//   values must be serializable (plain data, signals, R2 functions: inline arrows / local consts).
+// - contexts are plain `createContext` tokens (`createContext(null)`, no id / registration).
 // - `DEFAULT_SLOT` is a string, not a Symbol (symbol keys do not survive resume serialization).
 // - refs are Rivet refs (`ref()` signal objects or callbacks; `{ current }` objects too). `contextProps`
 //   returns the props' own ref when the context has none (and vice versa); when both exist it returns a
@@ -667,6 +665,3 @@ export interface RACValidation {
  * part handles itself (`children`, `ref`, `slot`, `class`, `style`).
  */
 export type HTMLProps<K extends keyof JSX.IntrinsicElements> = Omit<JSX.IntrinsicElements[K], "children" | "ref" | "slot" | "class" | "className" | "style">;
-
-/** Registers a part context for resume (`resumableContext(createContext(v, { id: "rv-<name>" }))`). */
-export { resumableContext } from "@rivetjs/runtime/resume-format";

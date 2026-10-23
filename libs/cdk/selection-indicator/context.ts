@@ -2,7 +2,6 @@
 // Its own module: Tabs / RadioGroup / ToggleButton provide it on every page, so their chunks carry this
 // token only, never the SelectionIndicator / SharedElement code.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { SharedElementRenderProps } from "../shared-element-transition/index.tsx";
 
 /** What an item provides (RAC `ContextValue<SelectionIndicatorProps>`); a SelectionIndicator's own props win. */
@@ -14,6 +13,4 @@ export interface SelectionIndicatorContextValue {
 }
 
 /** RAC `SelectionIndicatorContext`: items provide `{ isSelected }`. */
-export const SelectionIndicatorContext = resumableContext(
-  createContext<SelectionIndicatorContextValue>({ isSelected: false }, { id: "rv-selection-indicator" }),
-);
+export const SelectionIndicatorContext = createContext<SelectionIndicatorContextValue>({ isSelected: false });

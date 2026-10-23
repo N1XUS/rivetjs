@@ -156,9 +156,8 @@ Pass the arguments as functions (`() => value`), like the `item` and `index` of 
 
 ## Slots on a resumed page
 
-Content you pass in a slot can have its own handlers and signals. In the example above, the footer button updates a signal of the page, not of the card. When the page resumes, Rivet loads only the code for the slot content that changes. The component itself does not run again.
+Content you pass in a slot can have its own handlers and signals. In the example above, the footer button updates a signal of the page, not of the card. When the page resumes, a click on the slot content runs the code of the component that wrote it; the card runs with it only when the content is passed through its props.
 
-Content that is rendered right away and then kept by a part of the component that changes later cannot be saved into the page. The server render fails with `rendered content is not serializable`. Pass that content as a named slot or a function child instead.
 
 ## Rules
 

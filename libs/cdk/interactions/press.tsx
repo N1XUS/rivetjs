@@ -22,7 +22,6 @@
 // pointerup, RA's 80 ms "no click → cancel" fallback waits (≤ 10 s) for a click the document saw but this press's
 // own click handler has not (held by the loader behind an earlier cold event, replayed in order).
 import { createContext, signal, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { mergeProps } from "./merge-props.tsx";
 import {
   disableTextSelection,
@@ -179,7 +178,7 @@ export function createPressState(): PressState {
 export const pressState = (press: Press): PressState => (press.state ??= createPressState());
 
 /** Context through which a parent (e.g. a trigger wrapper) passes press props to a child's usePress. */
-export const PressResponderContext = resumableContext(createContext<(PressProps & { register?: () => void }) | null>(null, { id: "rv-press-responder" }));
+export const PressResponderContext = createContext<(PressProps & { register?: () => void }) | null>(null);
 
 const LINK_CLICKED = "__rvLinkClicked";
 /** Longest wait (ms) for a click the resume loader holds behind earlier cold events before the press is cancelled. */

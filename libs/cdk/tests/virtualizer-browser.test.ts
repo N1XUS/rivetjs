@@ -4,7 +4,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, libraryScripts, type Stories } from "./harness.ts";
+import { stories, watch, libraryImports, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -33,14 +33,13 @@ test("list: server window, no library JS before scroll, new window on scroll, ke
   assert.deepEqual(first[1], { key: 1, top: "32px", right: "", height: "32px" });
   assert.equal(await page.$eval("#list .rv-Virtualizer-content", (el) => (el as HTMLElement).style.height), "320000px");
   assert.equal(await page.getAttribute("#list", "role"), "list");
-  assert.deepEqual(libraryScripts(seen), [], "no library code before the first scroll");
+  assert.deepEqual(await libraryImports(page), [], "no library code imported before the first scroll");
   // First scroll resumes the engine; server rows that stay in view are adopted (same DOM nodes).
   await page.evaluate(() => ((window as unknown as W).kept = document.querySelector('#list [data-rv-view="5"]')!));
   await page.$eval("#list", (el) => (el.scrollTop = 20));
   await page.waitForFunction(() => (document.querySelector('#list [data-rv-view="1"]') as HTMLElement | null)?.style.top === "64px");
   await settle(page);
   assert.ok(await page.evaluate(() => (window as unknown as W).kept === document.querySelector('#list [data-rv-view="5"]')), "server row adopted");
-  assert.ok(libraryScripts(seen).length > 0, "engine loaded on scroll");
   // Measured: row 0 (a 64px row) was estimated at 32px; row 1 now starts at 64px (awaited above).
   // Far scroll: a new window, only the window in the DOM.
   await page.$eval("#list", (el) => (el.scrollTop = 3000));

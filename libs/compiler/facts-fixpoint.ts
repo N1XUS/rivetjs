@@ -5,7 +5,7 @@
 // interactive too, and a component is independent only when every call site in the program passes data.
 //
 // The Vite plugin (`vite.ts`, wired by the orchestrator) runs it once per build in `buildStart` over the resumable modules
-// and passes each module's verdicts to its server compile as `resume: { model: "derived", boundaries, independent }`.
+// and passes each module's verdicts to its server compile as `resume: { module, boundaries, independent, conditional }`.
 //
 // Interactivity = change sources (M6-PARITY 6b, user ruling 2026-10-22): a component is a boundary when it has a change
 // source of its own (`source`: handler, client effect / event, keyed state, resource, Async / clientOnly, a read of module

@@ -4,7 +4,7 @@
 `TooltipTrigger` + `Tooltip` (RAC Tooltip.tsx): hover / focus tooltips with global warmup / cooldown, positioned in the div overlay layer.
 
 ## Entry points
-- `@rivetjs/cdk/tooltip` → `index.tsx`: `TooltipTrigger`, `Tooltip`, `TooltipTriggerStateContext` (`rv-tooltip-trigger-state`), `TooltipContext` (`rv-tooltip`), re-exports `createTooltipTriggerState`, `openTooltip`, `closeTooltip`; types `TooltipProps`, `TooltipTriggerComponentProps`, `TooltipRenderProps` (`{placement(), isEntering(), isExiting(), state}`)
+- `@rivetjs/cdk/tooltip` → `index.tsx`: `TooltipTrigger`, `Tooltip`, `TooltipTriggerStateContext`, `TooltipContext`, re-exports `createTooltipTriggerState`, `openTooltip`, `closeTooltip`; types `TooltipProps`, `TooltipTriggerComponentProps`, `TooltipRenderProps` (`{placement(), isEntering(), isExiting(), state}`)
 - `@rivetjs/cdk/tooltip/behaviour` → `behaviour.tsx`: `tooltipTriggerProps(props, state)`, `tooltipProps(props, state)`, handlers `tooltipTriggerPointerEnter` / `Leave` / `Focus` / `Blur`, `tooltipTriggerHoverStart` / `HoverEnd` / `PressStart`, `tooltipPointerEnter` / `Leave`, `attachTooltip(element, state, options)` (position, Escape, `aria-describedby`; `arrowOffset$` → OverlayArrow applies the offset)
 - `@rivetjs/cdk/state/tooltip`: `createTooltipTriggerState` (`delay` 1500, `closeDelay` 500), `openTooltip`, `closeTooltip`, `_resetTooltips` (tests)
 

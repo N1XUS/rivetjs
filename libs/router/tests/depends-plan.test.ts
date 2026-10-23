@@ -12,7 +12,16 @@ import type { LayoutTable, Layouts } from "../client/layouts.ts";
 
 const url = (path: string) => new URL("http://x.test" + path);
 const is = (key: string) => (k: string) => k === key;
-const table: LayoutTable = { ids: ["/", "/shop"], params: [[], []], kind: [3, 3], root: 0, routes: [["/shop/:p", [0, 1]], ["/plain", [0]]] };
+const table: LayoutTable = {
+  ids: ["/", "/shop"],
+  params: [[], []],
+  kind: [3, 3],
+  root: 0,
+  routes: [
+    ["/shop/:p", [0, 1]],
+    ["/plain", [0]],
+  ],
+};
 
 test("keys unknown (no record, or kept loaders never seen): no plan", () => {
   assert.equal(_plan(undefined, table, url("/shop/a"), is("cart")), undefined);
@@ -29,13 +38,19 @@ test("resumed layout state seeds the keys of the server render", () => {
 test("layout and page matches; kept loaders keep their keys across navigation", () => {
   _depsLoaded(url("/shop/a"), 3, [["session"], ["cart"], ["/api/a"]]);
   assert.deepEqual(_plan(undefined, table, url("/shop/a"), is("cart")), { any: true, page: false, drop: new Set(["/shop"]) });
-  assert.deepEqual(_plan(undefined, table, url("/shop/a"), (k) => k.startsWith("/api/")), { any: true, page: true, drop: new Set() });
+  assert.deepEqual(
+    _plan(undefined, table, url("/shop/a"), (k) => k.startsWith("/api/")),
+    { any: true, page: true, drop: new Set() },
+  );
   assert.deepEqual(_plan(undefined, table, url("/shop/a"), is("none")), { any: false, page: false, drop: new Set() });
   // Another URL than the recorded one: unknown.
   assert.equal(_plan(undefined, table, url("/shop/b"), is("cart")), undefined);
   // /shop/b kept both layouts: their keys carry over, the page's are the new ones.
   _depsLoaded(url("/shop/b"), 3, [undefined, undefined, ["/api/b"]], [0, 1]);
-  assert.deepEqual(_plan(undefined, table, url("/shop/b"), (k) => k === "session" || k === "/api/b"), { any: true, page: true, drop: new Set(["/"]) });
+  assert.deepEqual(
+    _plan(undefined, table, url("/shop/b"), (k) => k === "session" || k === "/api/b"),
+    { any: true, page: true, drop: new Set(["/"]) },
+  );
 });
 
 test("no layout table: any match reruns everything", () => {

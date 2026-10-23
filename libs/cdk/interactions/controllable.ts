@@ -11,14 +11,13 @@
 //   it), never written — setting only calls `onChange`; the caller's state moves the value. Ambiguity: when `T`
 //   itself is a function type, pass it wrapped (`value={() => fn}`) or as a Signal.
 // - state = plain data (signals + JSON + the caller's `onChange`), so it serializes on resumed pages;
-//   setters are free functions (`setControlledValue`). The uncontrolled signal is region state
-//   (`_regionState`): a re-created region keeps it.
+//   setters are free functions (`setControlledValue`).
 // - upstream `valueRef` (the latest value set during the current render, so several setState calls in one
 //   event chain) = `pending`, reset after the current task (microtask) instead of after the next render.
 // - controlled ⇄ uncontrolled switches cannot happen (a changed prop re-creates the component), so the
 //   upstream switch warning has no trigger; instead DEV warns once for a plain controlled `value` without
 //   `onChange` (read-only, like React's `<input value>` warning).
-import { signal, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, type Signal } from "@rivetjs/reactivity";
 import { DEV, devWhere } from "#dev";
 
 /** Controlled state of one value (serializable: signals + plain data + the caller's `onChange`). */
@@ -64,7 +63,7 @@ export function controllable<T, C = T>(
   onChange?: ((value: C, ...args: any[]) => void) | undefined,
 ): Signal<T> | ControlledState<T, C> {
   // eslint-disable-next-line prefer-rest-params
-  if (arguments.length < 3) return (value as Signal<T> | undefined) ?? _regionState(() => signal(defaultValue));
+  if (arguments.length < 3) return (value as Signal<T> | undefined) ?? signal(defaultValue);
   const isControlled = value !== undefined;
   const sig = isSignal<T>(value);
   const accessor = !sig && typeof value === "function";
@@ -75,7 +74,7 @@ export function controllable<T, C = T>(
     );
   return {
     // Upstream: `useState(value || defaultValue)` — a falsy controlled value still shows (controlled wins).
-    value: sig || accessor ? (value as Signal<T>) : isControlled ? constantCell(value as T) : _regionState(() => signal(defaultValue)),
+    value: sig || accessor ? (value as Signal<T>) : isControlled ? constantCell(value as T) : signal(defaultValue),
     isControlled,
     isSignal: sig,
     isAccessor: accessor,

@@ -6,8 +6,7 @@
 // - `useFocusable(props, ref)` → `focusableProps(props, ref?)` returning RA's `focusableProps` bag
 //   (naming convention); handlers are resumable (focusProps / keyboardProps bags).
 // - autoFocus: a `clientEffect` focuses the ref'd element once (`focusSafely`), only when `autoFocus`.
-// - `FocusableContext` is registered for resume (id `rv-focusable`); its `ref` is a Rivet ref that the
-//   consumer's ref is synced to (RA `useSyncRef`) through `mergeRefValues`.
+// - `FocusableContext`'s `ref` is a Rivet ref that the consumer's ref is synced to (RA `useSyncRef`) through `mergeRefValues`.
 // - Deviation: `<Focusable>` cannot clone its child (compiled templates): the child is a render
 //   function receiving the merged props, which it spreads on its element and whose `ref` it passes
 //   (`{(p) => <span {...p} ref={p.ref} role="button">…</span>}`: a spread never sets `ref`). Dev checks (child focusable / interactive
@@ -16,7 +15,6 @@ import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider as ContextProvider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { focusProps } from "../interactions/focus.tsx";
 import { keyboardProps } from "../interactions/keyboard.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
@@ -43,7 +41,7 @@ export interface FocusableContextValue {
 }
 
 /** DOM props for the nearest focusable child (RA `FocusableContext`, exported for collections). */
-export const FocusableContext = resumableContext(createContext<FocusableContextValue | null>(null, { id: "rv-focusable" }));
+export const FocusableContext = createContext<FocusableContextValue | null>(null);
 
 /** Provides DOM props to the nearest focusable child (RA `FocusableProvider`). */
 export function FocusableProvider(props: FocusableProviderProps) {

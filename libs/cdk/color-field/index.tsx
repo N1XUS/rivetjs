@@ -56,7 +56,6 @@ import {
   contextProps,
   createSlot,
   createSlotId,
-  resumableContext,
   renderPropsOf,
   slotIdRef,
   type ContextValue,
@@ -154,9 +153,9 @@ export interface ColorFieldProps
 }
 
 /** RAC `ColorFieldContext`. */
-export const ColorFieldContext = resumableContext(createContext<ContextValue<Partial<ColorFieldProps>, HTMLDivElement>>(null, { id: "rv-color-field" }));
+export const ColorFieldContext = createContext<ContextValue<Partial<ColorFieldProps>, HTMLDivElement>>(null);
 /** RAC `ColorFieldStateContext`. */
-export const ColorFieldStateContext = resumableContext(createContext<ColorFieldState | ColorChannelFieldState | null>(null, { id: "rv-color-field-state" }));
+export const ColorFieldStateContext = createContext<ColorFieldState | ColorChannelFieldState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 

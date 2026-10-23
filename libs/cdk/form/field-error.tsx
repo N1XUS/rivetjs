@@ -13,7 +13,7 @@ import { createContext, useContext } from "@rivetjs/reactivity";
 import { Show } from "@rivetjs/runtime/dom";
 import { read, type MaybeAccessor, type ValidationResult } from "../state/form-validation.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { resumableContext, type RefValue, type ClassNameOrFunction, type RenderProps } from "../slots/index.tsx";
+import { type RefValue, type ClassNameOrFunction, type RenderProps } from "../slots/index.tsx";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { Text } from "../text/index.tsx";
@@ -21,7 +21,7 @@ import { renderPropsOf } from "../slots/index.tsx";
 import { slotProbing } from "#server";
 
 /** RAC `FieldErrorContext`: the validation of the enclosing field (`null` outside a field). */
-export const FieldErrorContext = resumableContext(createContext<MaybeAccessor<ValidationResult | null> | null>(null, { id: "rv-field-error" }));
+export const FieldErrorContext = createContext<MaybeAccessor<ValidationResult | null> | null>(null);
 
 /** RAC `FieldErrorRenderProps` (= `ValidationResult`), as accessors. */
 export interface FieldErrorRenderProps {

@@ -31,7 +31,6 @@ import type { PopoverProps as PopoverPrimitiveProps, PopoverRenderProps } from "
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import type { DialogRenderProps } from "@rivetjs/cdk/dialog";
 
@@ -53,7 +52,7 @@ type PopoverContext = {
   inPopover?: boolean;
 };
 
-const PopoverContext = resumableContext(createContext<PopoverContext>({}, { id: "rv-ui-popover" }));
+const PopoverContext = createContext<PopoverContext>({});
 
 type PopoverSlots = ReturnType<typeof popoverVariants>;
 let SLOTS: PopoverSlots | undefined;

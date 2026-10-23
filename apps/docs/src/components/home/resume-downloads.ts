@@ -1,11 +1,20 @@
-import type { HandlerEntry, ResumeState } from "@rivetjs/runtime/resume-format";
+import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
 
-// A raw state's handlers of an element: a repeated map (`RepeatedHandlers`, `[back, …relocation]`) copies the chunk lists
-// of element `id - back` verbatim (only its capture refs differ, unused here).
-const handlersOf = (e: Record<string, unknown>, id: string): Record<string, HandlerEntry> | undefined => {
-  let value = e[id];
-  while (Array.isArray(value)) value = e[(id = String(+id - (value[0] as number)))];
-  return value as Record<string, HandlerEntry> | undefined;
+// The boundaries holding a node, innermost first: an element root's `data-b`, else the `<!--b<id>-->` … `<!--/b-->`
+// comment pair around it (the derived loader's walk).
+const boundaryIds = (node: Node | null): string[] => {
+  const ids: string[] = [];
+  for (let at = node; at && at.nodeType !== 9; at = at.parentNode) {
+    const own = (at as Element).getAttribute?.("data-b");
+    if (own) ids.push(own);
+    for (let prev = at.previousSibling, depth = 0; prev; prev = prev.previousSibling)
+      if (prev.nodeType === 8) {
+        const data = (prev as Comment).data;
+        if (data === "/b") depth++;
+        else if (/^b\d+$/.test(data)) depth ? depth-- : ids.push(data.slice(1));
+      }
+  }
+  return ids;
 };
 
 /** The readout of the demo's first click: what was fetched for the click, and what was already prefetched before it. */
@@ -23,39 +32,30 @@ export interface Downloads {
 const unmeasured = (why: string): Downloads => ({ files: "not measured", cost: why, earlyFiles: "", earlyCost: "" });
 
 /**
- * Intersect actual downloads with this button's compiled handler/runtime dependency graph, never the whole page. Requests
- * that started before the click's `timeStamp` are reported apart from the ones the click itself made.
+ * Actual downloads for this button: the scripts the click fetched (the runtime, its boundary's chunk and their imports),
+ * never the whole page. Its roots requested before the click's `timeStamp` are reported apart from the ones the click made.
  */
 export async function loadedFor(event: Event): Promise<Downloads> {
   const resources = performance.getEntriesByType("resource") as PerformanceResourceTiming[];
-  const id = (event.target as Element).closest("button")?.getAttribute("data-r");
-  if (!id) return unmeasured("the example's handler was not found");
-  const script = [...document.querySelectorAll<HTMLScriptElement>('script[type="rivet/state"]')].find((node) => {
-    const state = JSON.parse(node.textContent!) as ResumeState;
-    return handlersOf(state.e, id)?.click;
-  });
-  if (!script?.hasAttribute("data-deps")) return unmeasured("dependency information is available in a production build");
-  const state = JSON.parse(script.textContent!) as ResumeState;
-  const handler = handlersOf(state.e, id)!.click!;
-  const roots = new Set([state.rt!, ...handler[2].concat(handler[3] ?? []).map((index) => state.c[index]!)]);
+  const ids = new Set(boundaryIds((event.target as Element).closest("button")));
+  if (!ids.size) return unmeasured("the example's boundary was not found");
+  const tails = [...document.querySelectorAll<HTMLScriptElement>('script[type="rivet/boundaries"]')];
+  const runtime = tails.find((node) => node.dataset.rt)?.dataset.rt;
+  if (!runtime) return unmeasured("chunk information is available in a production build");
+  // The click's roots: the runtime + the chunks of the button's boundaries (tail `m`, boundary name → chunk URL).
+  const roots = new Set([runtime]);
+  for (const node of tails) {
+    const tail = JSON.parse(node.textContent!) as BoundaryTail;
+    for (const [id, , , name] of tail.b) if (ids.has(String(id)) && tail.m?.[name]) roots.add(tail.m[name]!);
+  }
   const path = (url: string) => {
     const resolved = new URL(url, location.href);
     return resolved.origin + resolved.pathname;
   };
   const needed = new Set([...roots].map(path));
-  if (script.dataset.ld) needed.add(path(script.dataset.ld));
-  try {
-    await Promise.all(
-      [...roots].map(async (root) => {
-        const url = new URL(root.replace(/\.js$/, ".deps.js"), location.href).href;
-        const deps = (await import(/* @vite-ignore */ url)).default as string[];
-        needed.add(path(url));
-        for (const dependency of deps) needed.add(path(dependency));
-      }),
-    );
-  } catch {
-    return unmeasured("the example's dependency information could not be loaded");
-  }
+  // Their static imports: every script the page fetched from the click on (nothing else loads then), plus the roots when
+  // an intent (hover / focus) prefetched them before it.
+  for (const entry of resources) if (entry.startTime >= event.timeStamp && /\.m?js$/.test(path(entry.name))) needed.add(path(entry.name));
   // One entry per file: the earliest request (a prefetch, then the import served from it).
   const first = new Map<string, PerformanceResourceTiming>();
   for (const entry of resources) {

@@ -7,11 +7,8 @@ import { _searchSync } from "./navigation.ts";
 let shown = _searchSync.shown ?? (typeof location === "undefined" ? "" : location.search);
 /** Browser search params of the shown page (route commits update it; a fresh object per change). */
 export const searchParams: Signal<URLSearchParams> = signal(new URLSearchParams(shown));
-/**
- * Resumable search params context (`useSearchParams()`): the server entry provides the request's,
- * resumed regions revive to `searchParams`.
- */
-export const SearchParams: Context<() => URLSearchParams> = createContext<() => URLSearchParams>(searchParams, { id: "rivet:search" });
+/** Search params context (`useSearchParams()`): the server entry provides the request's; in the browser its default is `searchParams`. */
+export const SearchParams: Context<() => URLSearchParams> = createContext<() => URLSearchParams>(searchParams);
 _searchSync.search = () => {
   if (_searchSync.shown !== shown) searchParams.set(new URLSearchParams((shown = _searchSync.shown!)));
 };

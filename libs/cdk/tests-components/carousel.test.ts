@@ -6,7 +6,8 @@ import assert from "node:assert/strict";
 import { among, chunksOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the "preloaded when visible" / cold-key checks expect the page's chunks fetched after load.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 type Page = import("playwright").Page;
@@ -103,8 +104,8 @@ test("carousel: the first press needs no further chunk (root + viewport handler 
 test("carousel: a cold press whose click is held behind a loading chunk still selects", async () => {
   const page = await s.browser.newPage();
   const seen = watch(page);
-  const root = chunksOf(/#Carousel\$/);
-  const nextOnly = [...chunksOf(/#CarouselNext\$/)].filter((chunk) => !root.has(chunk));
+  const root = chunksOf(/#Carousel$/);
+  const nextOnly = [...chunksOf(/#CarouselNext$/)].filter((chunk) => !root.has(chunk));
   assert.ok(root.size > 0, "the Carousel root has resume symbols");
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));

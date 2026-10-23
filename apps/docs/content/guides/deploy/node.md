@@ -114,7 +114,7 @@ In a container with a CPU limit, set `workers` to that limit: `"auto"` may count
 | `origin` | | Fixed public origin, such as `"https://shop.example"`. Set it behind a proxy (see below) |
 | `trustProxy` | `false` | `true` (one proxy), a number of proxies, or `(address, hop) => boolean`: take the origin from `X-Forwarded-Proto` / `X-Forwarded-Host` and the client address from `X-Forwarded-For`, at the outermost trusted proxy |
 | `idleMemory` | `true` | Return heap memory to the OS when the server is idle after traffic. `false` turns it off. See [Memory when idle](#memory-when-idle) |
-| `preload` | `{ background: 1 MiB }` | `{ background }`: bytes of below-the-fold code each page downloads when the browser is idle; `0` turns it off, a function gets the request URL. See [Preloading](../performance/preloading.md#background-budget) |
+| `preload` | none | `{ lean }`: `true` downloads no component code before the first interaction; a function gets the request URL. See [Preloading](../performance/preloading.md#lean-pages) |
 | `maxBody` | 1 MiB, multipart 10 MiB | Request body limit for `POST`/`PUT`/`PATCH`/`DELETE`: bytes, or `{ default, multipart }`. Larger bodies get `413` |
 | `earlyHints` | off | `true` or `{ runtime, links }`: `103 Early Hints` for pages. See [Early hints](../routing/headers-and-caching.md#early-hints) |
 | `routeRules` | from the build | Headers and page caching per path. See [Route rules and page caching](../routing/headers-and-caching.md#route-rules-and-page-caching) |

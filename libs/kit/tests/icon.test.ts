@@ -1,5 +1,5 @@
 // `@rivetjs/kit/icon`: lucide icon data → inline SVG. Server markup (lucide defaults, size / strokeWidth /
-// absoluteStrokeWidth / color, aria), client mounts and resume in Chromium, tree-shaking.
+// absoluteStrokeWidth / color, aria), client mounts in Chromium, tree-shaking.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -7,17 +7,14 @@ import { build } from "esbuild";
 import { Check, CircleAlert, Search } from "lucide";
 import { compile } from "@rivetjs/compiler";
 import { renderToString, type ServerValue } from "@rivetjs/runtime/server";
-import { resumableToString } from "@rivetjs/runtime/server-resume";
-import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
-import { compileSymbolModule, importServer } from "../../runtime/tests/resume/compile.ts";
-import type { ResumeSymbol } from "../../runtime/tests/resume/compile.ts";
+import { importServer } from "../../runtime/tests/resume/compile.ts";
 import { withPage, rewrite } from "../../runtime/tests/resume/harness.ts";
 import type { Served } from "../../runtime/tests/resume/harness.ts";
 import type { Page } from "playwright";
 import type { IconProps } from "../icon.tsx";
 
 const source = await readFile(new URL("../icon.tsx", import.meta.url), "utf8");
-type Compiled = { code: string; diagnostics: { message: string }[]; symbols?: ResumeSymbol[] };
+type Compiled = { code: string; diagnostics: { message: string }[] };
 const run = (src: string, options: object): Compiled => {
   const result = (compile as unknown as (s: string, o: object) => Compiled)(src, options);
   assert.deepEqual(result.diagnostics, []);
@@ -73,8 +70,8 @@ test("tree-shaking: one lucide icon import bundles that icon's data only", async
   assert.doesNotMatch(code, /createElement|m21 21-4.34-4.34/);
 });
 
-// Browser: the icon module compiled per target like the Vite plugin does (resume mode on the server and in
-// resume chunks); icon data passed from the page.
+// Browser: the icon module compiled for the DOM (client render); the server render of the same page is the markup
+// reference. Icon data passed from the page.
 const PAGE = `import { signal } from "@rivetjs/reactivity";
 import { Icon } from "./icon.tsx";
 const CHECK = ${JSON.stringify(Check)};
@@ -108,15 +105,13 @@ export function Page() {
     </main>
   );
 }`;
-const resume = (src: string, target: string, module: string) => run(src, { target, filename: module, resume: { module } });
-const iconServer = resume(source, "server", "@rivetjs/kit/icon.tsx").code;
-const iconDom = resume(source, "dom", "@rivetjs/kit/icon.tsx");
 const iconUrl =
   "data:text/javascript;base64," +
   Buffer.from(
-    iconServer
-      .replaceAll('"@rivetjs/runtime/server-resume"', JSON.stringify(import.meta.resolve("@rivetjs/runtime/server-resume")))
-      .replaceAll('"@rivetjs/runtime/server"', JSON.stringify(import.meta.resolve("@rivetjs/runtime/server"))),
+    run(source, { target: "server", filename: "icon.tsx" }).code.replaceAll(
+      '"@rivetjs/runtime/server"',
+      JSON.stringify(import.meta.resolve("@rivetjs/runtime/server")),
+    ),
   ).toString("base64");
 const at = (code: string, url: string) => rewrite(code).replaceAll('"./icon.tsx"', JSON.stringify(url));
 const csr = (module: string) => `<!doctype html><html><body><div id="app"></div><script type="module">
@@ -125,28 +120,18 @@ const csr = (module: string) => `<!doctype html><html><body><div id="app"></div>
   </script></body></html>`;
 const files: Record<string, Served> = {
   "/icon-csr.mjs": rewrite(run(source, { target: "dom", filename: "icon.tsx" }).code),
-  "/icon-resume.mjs": rewrite(iconDom.code),
-  "/rt.js": 'import { createResume } from "/dom-resume.ts"; export default createResume({});',
 };
-/** Serve `src` at `path` (resumed: server render + symbol chunks) and `path + "csr"` (client render). */
-async function site(src: string, path: string, module: string): Promise<string> {
-  const pageDom = resume(src, "dom", module);
-  const symbols = [...(iconDom.symbols ?? []), ...(pageDom.symbols ?? [])];
-  const server = await importServer<{ Page(): never }>(resume(src, "server", module).code.replaceAll('"./icon.tsx"', JSON.stringify(iconUrl)));
-  const chunk = (component: string) => path + "c/" + component + ".js";
-  const manifest: ResumeManifest = { hash: "icon", runtime: "/rt.js", symbols: Object.fromEntries(symbols.map((s) => [s.id, chunk(s.component)])) };
-  const ssr = await resumableToString(() => server.Page(), { manifest });
-  files[path + "page-resume.mjs"] = at(pageDom.code, "/icon-resume.mjs");
+/** Serve `src` at `path` (server render, no client code) and `path + "csr"` (client render). */
+async function site(src: string, path: string, module: string): Promise<void> {
+  const server = await importServer<{ Page(): ServerValue }>(
+    run(src, { target: "server", filename: module }).code.replaceAll('"./icon.tsx"', JSON.stringify(iconUrl)),
+  );
+  const ssr = await renderToString(() => server.Page());
   files[path + "csr.mjs"] = at(run(src, { target: "dom", filename: "page.tsx" }).code, "/icon-csr.mjs");
   files[path + "csr"] = csr(path + "csr.mjs");
   files[path] = "<!doctype html><html><head></head><body>" + ssr + "</body></html>";
-  const byComponent: Record<string, ResumeSymbol[]> = {};
-  for (const symbol of symbols) (byComponent[chunk(symbol.component)] ??= []).push(symbol);
-  for (const [file, list] of Object.entries(byComponent))
-    files[file] = at(compileSymbolModule(list, list[0]!.id.startsWith("@rivetjs/kit") ? "/icon-resume.mjs" : path + "page-resume.mjs"), "/icon-resume.mjs");
-  return ssr;
 }
-const ssr = await site(PAGE, "/", "src/page.tsx");
+await site(PAGE, "/", "src/page.tsx");
 await site(LIVE, "/live/", "src/live.tsx");
 
 const state = (page: Page) =>
@@ -179,20 +164,6 @@ for (const path of ["/csr"]) {
   });
 }
 
-test("resume: static icons cost no state; the branch icon re-creates client-side", async () => {
-  assert.doesNotMatch(ssr.split('<script type="rivet/state"')[1]!.split("</script>")[0]!, /M20 6/);
-  await withPage(files, async (page) => {
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto("http://rivet.test/");
-    assert.deepEqual(await state(page), before);
-    await page.click("#t");
-    await page.waitForFunction(() => document.querySelector("svg.on"));
-    assert.deepEqual(await state(page), after);
-    assert.deepEqual(errors, []);
-  });
-});
-
 // Canonical markup per root svg (attributes sorted: client writes them in another order than the server).
 const canonical = (page: Page) =>
   page.evaluate(() => {
@@ -212,8 +183,8 @@ const canonical = (page: Page) =>
     return [...document.querySelectorAll("main > svg")].map(walk);
   });
 
-for (const path of ["/live/csr", "/live/"]) {
-  test(`${path === "/live/" ? "resume" : "client"} ${path}: every root mode renders the server markup and follows live props`, async () => {
+for (const path of ["/live/csr"]) {
+  test(`client ${path}: every root mode renders the server markup and follows live props`, async () => {
     await withPage(files, async (page) => {
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));

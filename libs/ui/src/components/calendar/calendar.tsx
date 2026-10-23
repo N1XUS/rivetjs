@@ -5,7 +5,7 @@
 //   `Button` → `@rivetjs/cdk/button`, `useLocale` → `@rivetjs/cdk/i18n`, `@internationalized/date` → `@rivetjs/cdk/date`,
 //   `useControlledState` → cdk `controllable` (`isYearPickerOpen`: a value, a Signal (two-way) or a live prop); `@heroui/styles` → vendored.
 // - `CalendarContext` carries plain data `{ inCalendar, dayView? }` instead of `{ slots, dayView }` (`calendarVariants()` has no
-//   variants → one module-level slots object; `resumableContext` id `rv-ui-calendar`). `dayView` = `{ days, firstDayOfWeek,
+//   variants → one module-level slots object). `dayView` = `{ days, firstDayOfWeek,
 //   weekdayStyle? }`: the day view parts read the visible range / time zone from the cdk calendar state (upstream copies them into the
 //   context from the RAC render prop). It is provided around the cdk `Calendar` (upstream: inside its render function; same readers).
 // - The day-view grid header / body (upstream `CalendarDayViewGridHeader` / `CalendarDayViewGridBody`, `React.cloneElement` for
@@ -53,7 +53,6 @@ import { computed, createContext, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider, ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronLeft, ChevronRight } from "lucide";
 import { cx } from "tailwind-variants/lite";
 
@@ -85,7 +84,7 @@ interface CalendarContext {
   inCalendar?: boolean;
 }
 
-const CalendarContext = resumableContext(createContext<CalendarContext>({}, { id: "rv-ui-calendar" }));
+const CalendarContext = createContext<CalendarContext>({});
 
 type CalendarSlots = ReturnType<typeof calendarVariants>;
 let SLOTS: CalendarSlots | undefined;

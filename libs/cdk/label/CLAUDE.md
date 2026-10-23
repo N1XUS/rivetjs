@@ -4,7 +4,7 @@
 RAC `Label` (reads `LabelContext`) + legacy `FieldError` + label/field id wiring (`fieldProps`) shared by every form field component; `Text` lives in `../text/` (re-exported).
 
 ## Entry points
-- `@rivetjs/cdk/label` -> `index.tsx`: `Label`, `LabelContext` (`rv-label`), `FieldError` (+ `LabelProps`, `FieldErrorProps`); re-exports `Text`, `TextContext`, `TextProps` (`../text`), `labelProps`, `fieldProps`, `labelsProps`, `describedBy`, deprecated shims `labelAria` / `fieldAria` / `labelsAttrs`, types `FieldIds`, `FieldAriaProps`, `LabelAria`, `LabelAriaProps`
+- `@rivetjs/cdk/label` -> `index.tsx`: `Label`, `LabelContext`, `FieldError` (+ `LabelProps`, `FieldErrorProps`); re-exports `Text`, `TextContext`, `TextProps` (`../text`), `labelProps`, `fieldProps`, `labelsProps`, `describedBy`, deprecated shims `labelAria` / `fieldAria` / `labelsAttrs`, types `FieldIds`, `FieldAriaProps`, `LabelAria`, `LabelAriaProps`
 - `@rivetjs/cdk/label/behaviour` -> `behaviour.ts`: same id helpers
 
 ## Layout

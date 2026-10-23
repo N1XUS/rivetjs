@@ -3,7 +3,7 @@
 // two-way Signal, or a read-only accessor `() => boolean`, `defaultOpen`, `onOpenChange`); the methods are free functions (`setOpen(state, v)`, …)
 // so state stays JSON (signals + plain data) and handlers resume. `state.isOpen` is the shown value's
 // signal (read it in bindings: `state.isOpen()`); never `.set` it — use `setOpen` / `openOverlay` / …
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 
 export interface OverlayTriggerProps {
@@ -32,10 +32,8 @@ export interface OverlayTriggerState {
 /** Manages state for an overlay trigger (react-stately `useOverlayTriggerState`). Region state: a
  * resumed page re-creating the overlay's region (its first open) keeps it. */
 export function createOverlayTriggerState(props: OverlayTriggerProps = {}): OverlayTriggerState {
-  return _regionState(() => {
-    const open = controllable<boolean>(props.isOpen, props.defaultOpen || false, props.onOpenChange);
-    return { isOpen: open.value, point: signal<Point | null>(null), open };
-  });
+  const open = controllable<boolean>(props.isOpen, props.defaultOpen || false, props.onOpenChange);
+  return { isOpen: open.value, point: signal<Point | null>(null), open };
 }
 
 /** Sets whether the overlay is open (calls `onOpenChange` when the value changes). */

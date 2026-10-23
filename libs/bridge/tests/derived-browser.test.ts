@@ -1,5 +1,5 @@
 // Framework islands on the derived resume model (M6-PARITY), end to end in Chromium over a real Vite build of the fixture
-// app (`rivet({ resume: { model: "derived" }, bridges })`): a page whose only interactive parts are lean islands (JSON
+// app (`rivet({ resume, bridges })`): a page whose only interactive parts are lean islands (JSON
 // props) ships the bridge's islands boot and no Rivet runtime; a page with a live prop + a callback marks its boundary
 // with the island's policy (`client="load"` → LOAD), the boundaries tail names the island (`i`), the derived runtime
 // adopts the boundary and the adopt run hydrates the island (`_island` hole over `<rivet-island data-ri>`); the callback
@@ -46,7 +46,7 @@ export const islands = (manifest: never) => derivedToString(() => <Islands />, {
 export const mixed = (manifest: never) => derivedToString(() => <Page />, { manifest });
 `,
 );
-const plugins = () => [rivet({ resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx"], model: "derived" }, bridges: [app.fake()] })];
+const plugins = () => [rivet({ resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx"] }, bridges: [app.fake()] })];
 await build({ configFile: false, root: app.root, logLevel: "silent", plugins: plugins(), build: { outDir: "dist", minify: false } });
 await build({
   configFile: false,

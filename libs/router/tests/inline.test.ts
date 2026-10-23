@@ -39,7 +39,7 @@ test("production build: no server code in the client output; server exports answ
     const home = await fetch(app.url + "/");
     const html = (await home.text()).replace(/<!--.*?-->/g, "");
     assert.match(html, /<p id="site">Inline true<\/p>/);
-    assert.match(html, /<h1 id="count">2 items<\/h1>/);
+    assert.match(html.replace(/<!--\[-->|<!--\]-->/g, ""), /<h1 id="count">2 items<\/h1>/);
     assert.equal(await (await fetch(app.url + "/?ping")).text(), "pong");
     assert.equal(await (await fetch(app.url + "/", { method: "PUT" })).text(), "put ok");
     assert.equal((await fetch(app.url + "/", { method: "OPTIONS" })).headers.get("x-inline-options"), "options ok");
@@ -100,7 +100,7 @@ test("dev server: in-file exports run on the server; browser modules are strippe
   await server.listen();
   const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, "");
   try {
-    assert.match(await (await fetch(origin + "/")).text(), /<h1 id="count">2 items<\/h1>/);
+    assert.match((await (await fetch(origin + "/")).text()).replace(/<!--\[-->|<!--\]-->/g, ""), /<h1 id="count">2 items<\/h1>/);
     assert.equal(await (await fetch(origin + "/?ping")).text(), "pong");
     assert.deepEqual(await (await fetch(origin + "/api/ping?q=dev")).json(), { pong: "dev" });
     // The browser's copy of the page module: no loader, no server import.

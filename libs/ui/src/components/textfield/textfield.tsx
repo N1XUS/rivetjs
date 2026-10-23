@@ -16,7 +16,6 @@ import type { TextFieldProps as TextFieldPrimitiveProps, TextFieldRenderProps } 
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { TextFieldVariants } from "../../../styles/src/components/textfield/index.ts";
@@ -37,7 +36,7 @@ type TextFieldContext = {
   variant?: "primary" | "secondary";
 };
 
-const TextFieldContext = resumableContext(createContext<TextFieldContext>({}, { id: "rv-ui-textfield" }));
+const TextFieldContext = createContext<TextFieldContext>({});
 
 /* -------------------------------------------------------------------------------------------------
  * TextField Root

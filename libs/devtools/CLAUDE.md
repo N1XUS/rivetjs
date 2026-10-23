@@ -18,7 +18,7 @@ Not exported: `build.ts`, `names.ts` (reached via `./server`), `ui/`.
 
 - `build.ts` — builds the panel (`ui/`, a Rivet app) with Vite + `rivet()` into `dist/ui/` (gitignored; production mode, relative `base: "./"`, minified, no sourcemaps; `define __RIVET_DEVTOOLS_BUILD__` = `sourceHash()`). `node libs/devtools/build.ts` or `nx run devtools:build`. Exports `buildUI()`, `_uiDir` (re-exported from `server.ts`).
 - `server.ts` — see table. Imports only `protocol.ts` + `names.ts` (+ node builtins); never reaches a build.
-- `names.ts` — dev transform `nameSignals(code, map, lang)`: `signal`/`computed`/`createContext` imported from `@rivetjs/*` and assigned to a binding → `__rivetName(call, "name")` + appended helper emitting `name` to the hook. Same-line edits; `shiftMappings` shifts source-map columns. Also `namedCalls`.
+- `names.ts` — dev transform `nameSignals(code, map, lang)`: `signal`/`computed`/`createContext`/`_sig` (derived keyed signals compiled from app `signal()`) imported from `@rivetjs/*` and assigned to a binding → `__rivetName(call, "name")` + appended helper emitting `name` to the hook. Same-line edits; `shiftMappings` shifts source-map columns. Also `namedCalls`.
 - `protocol.ts` — single source of wire shapes; change both sides together.
 - `agent/` — in-page agent (hook, model, overlay, previews, edits, perf, sources). [agent/CLAUDE.md](agent/CLAUDE.md)
 - `ui/` — panel app (own realm: iframe or pop-out). [ui/CLAUDE.md](ui/CLAUDE.md)
@@ -48,7 +48,7 @@ npx vitest run --project devtools                                               
 ## Gotchas
 
 - e2e suites need `dist/ui` built and Playwright Chromium; the docked panel can cover page controls (CI fonts: the forms fixture's submit button) — submit / act through the keyboard where the target may sit under it (`e2e-framework` Forms pane: Enter in a field); stale `dist/ui` = panel tests against old UI → rebuild after `protocol.ts` / `ui/` edits (`tests/server.test.ts` fails on a stale build; the panel shows a rebuild banner). Router/playground/cdk-docs tests opening the panel depend on it too.
-- Resumed router dev pages have no component instances: tabs needing them trigger `rivet:devtools-inspect` → client render switch (see docs/guides/devtools.md "Use").
+- Resumed router dev pages: adopted units report their components (a derived probe run reports none: `_adoption.probe`), but inspection tabs still trigger `rivet:devtools-inspect` → client render switch (derived runtime DEV `dispose()`; see docs/guides/devtools.md "Use"). After the switch the perf table keeps the adopted instances' rows beside the client ones.
 - Panel icons go through `ui/icon.tsx` (lucide `createElement`, real SVG namespace). A JSX `<svg>{icon.map(([tag, attrs]) => <path {...attrs} />)}</svg>` (docs-kit `Icon`) renders `<path>` in the HTML namespace on client renders (runtime bug, `libs/runtime/dom.ts` `parsed()` `"inherit"` context) → invisible icons; SSR output is fine.
 - `libs/docs-kit/tools/tsconfig.api.json` excludes `libs/devtools/ui/**` by path — moving `ui/` breaks API docs extraction.
 

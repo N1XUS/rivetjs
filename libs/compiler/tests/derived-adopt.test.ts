@@ -1,5 +1,5 @@
 // Derived model, DOM target (M2 C3, plan docs/design/plans/2026-10-18-derived-client.md, spec
-// docs/design/specs/2026-10-18-structural-resume-design.md §3.5 "As built"): under `resume: { model: "derived" }` the DOM
+// docs/design/specs/2026-10-18-structural-resume-design.md §3.5 "As built"): under `resume` (the derived model) the DOM
 // target is plain DOM output plus, per boundary (the server target's plan: same set, same names), the body wrapped
 // `return _b("<module>#Name", () => …)` and keyed state `_sig` / `_sigStore` with the server's keys; nothing else — the
 // runtime (`@rivetjs/runtime/dom-derived`) adopts by walking the same templates (no `_adoptRoot` / `_fxLazy` / `_defer`).
@@ -13,7 +13,7 @@ import { check, compile, hasDerivedModel, type CompileResult } from "../index.ts
 const it = (name: string, fn: () => void) => (hasDerivedModel() ? test(name, fn) : test.skip(name + " — wasm without the derived model", fn));
 const fixture = (name: string) => readFileSync(new URL("../../runtime/tests/derived/" + name, import.meta.url), "utf8");
 const PAGE = fixture("page.tsx");
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
 const derived = (source: string, target: "dom" | "server", resume: object = RESUME): CompileResult =>
   compile(source, { target, filename: "page.tsx", resume } as never);
 const plain = (source: string): CompileResult => compile(source, { target: "dom", filename: "page.tsx" });
@@ -34,9 +34,7 @@ it("adopt mode: one DOM function per component — the body wrapped in _b, the t
   assert.deepEqual(out.diagnostics, []);
   assert.match(out.code, /export function Header\(\) \{\n\s*return __rivetR_b\("src\/page\.tsx#Header", \(\) => \{\n\s*const open = /);
   assert.match(out.code, /import \{ _b as __rivetR_b, _sig as __rivetR_sig \} from "@rivetjs\/runtime\/dom-derived";/);
-  // No second compile output: no symbols, no symbol-module exports, the same `_tpl` templates as a plain DOM compile.
-  assert.equal(out.symbols, undefined);
-  assert.equal(out.scope, undefined);
+  // No second compile output: the same `_tpl` templates as a plain DOM compile.
   assert.deepEqual(out.boundaries, ["src/page.tsx#Header", "src/page.tsx#Counter", "src/page.tsx#App"]);
   assert.deepEqual(walk(out.code), walk(plain(PAGE).code));
   // The hand-lowered fixture (`page.dom.tsx`, plain DOM target) is the expected shape, modulo names, keys and formatting.
@@ -56,7 +54,7 @@ export function Strict() { "use strict"; const n = signal(0); return <b onClick=
 export async function Later() { const n = signal(1); return <u onClick={() => n.set(2)}>{n()}</u>; }
 `,
     "dom",
-    { module: "src/s.tsx", model: "derived" },
+    { module: "src/s.tsx" },
   );
   assert.deepEqual(shapes.diagnostics, []);
   assert.match(shapes.code, /export const Arrow = \(\) => __rivetR_b\("src\/s\.tsx#Arrow", \(\) => \{/);
@@ -77,7 +75,7 @@ export function Panel(props) {
   return <section onClick={() => { const local = signal(1); open.set(!open()); }}>{n()}{items.list.length}{shared()}</section>;
 }
 `;
-  const resume = { module: "src/panel.tsx", model: "derived" };
+  const resume = { module: "src/panel.tsx" };
   const dom = derived(source, "dom", resume),
     server = derived(source, "server", resume);
   assert.deepEqual(dom.diagnostics, []);
@@ -139,7 +137,7 @@ import { signal } from "@rivetjs/reactivity";
 import { Switch, Match } from "@rivetjs/runtime/dom";
 export function Tabs() { const tab = signal(0); return <div onClick={() => tab.set(1)}><Switch><Match when={() => tab() === 0}><p>a</p></Match><Match when={() => tab() === 1}><p>b</p></Match></Switch></div>; }
 `;
-  const switched = derived(TABS, "dom", { module: "src/tabs.tsx", model: "derived" });
+  const switched = derived(TABS, "dom", { module: "src/tabs.tsx" });
   assert.deepEqual(switched.diagnostics, []);
   assert.match(switched.code, /__rivetR_b\("src\/tabs\.tsx#Tabs", \(\) => \{/);
   // Everything inside the wrapper (Switch / Match calls included) is the plain DOM target's text.
@@ -163,20 +161,18 @@ it("component calls: dependent and independent children are both plain _c(Child,
   assert.ok(!dom.code.includes("_defer"));
 });
 
-it("serialized model and plain DOM compiles stay byte-identical (parity, zero-cost); diagnostics are the server pass's", () => {
-  const resume = { module: "src/page.tsx" };
-  assert.deepEqual(derived(PAGE, "dom", { ...resume, model: "serialized" }), derived(PAGE, "dom", resume));
+it("a module without boundaries is the plain DOM output (zero-cost); diagnostics are the server pass's", () => {
   // A derived module without boundaries is the plain DOM target's output.
   const STATIC = `export function Card() { return <article><h2>Static</h2></article>; }\n`;
-  const none = derived(STATIC, "dom", { module: "src/card.tsx", model: "derived" });
+  const none = derived(STATIC, "dom", { module: "src/card.tsx" });
   assert.deepEqual(none, plain(STATIC));
-  // RV2103 / RV2104 come from the server target only (`check` merges both; DOM adds none, and no serialized-resume code).
+  // RV2103 / RV2104 come from the server target only (`check` merges both; DOM adds none).
   const source = `
 import { signal } from "@rivetjs/reactivity";
 export function C(props) { const n = props.a ? signal(1) : null; for (const v of props.list) signal(v); const t = Date.now(); return <b onClick={() => n?.set(1)}>{t}</b>; }
 `;
-  assert.deepEqual(derived(source, "dom", { module: "src/c.tsx", model: "derived" }).diagnostics, []);
-  const checked = check(source, { filename: "c.tsx", resume: { module: "src/c.tsx", model: "derived" } } as never);
+  assert.deepEqual(derived(source, "dom", { module: "src/c.tsx" }).diagnostics, []);
+  const checked = check(source, { filename: "c.tsx", resume: { module: "src/c.tsx" } } as never);
   assert.deepEqual(
     checked.diagnostics.map((d) => [d.code, d.targets]),
     [

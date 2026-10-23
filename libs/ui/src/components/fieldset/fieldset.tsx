@@ -20,7 +20,6 @@ import { ToggleButtonGroupContext } from "@rivetjs/cdk/toggle-button-group";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import { fieldsetVariants } from "../../../styles/src/components/fieldset/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
@@ -36,7 +35,7 @@ type FieldsetContext = {
   inFieldset?: true;
 };
 
-const FieldsetContext = resumableContext(createContext<FieldsetContext>({}, { id: "rv-ui-fieldset" }));
+const FieldsetContext = createContext<FieldsetContext>({});
 
 type FieldsetSlots = ReturnType<typeof fieldsetVariants>;
 

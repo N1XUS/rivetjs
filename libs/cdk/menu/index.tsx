@@ -31,11 +31,10 @@
 // `render` (RAC DOMRenderProps) on Menu (`<div>`), MenuSection (`<section>`) and MenuItem (`<div>` / `<a>`): given, the attributes object goes to `render(attrs, renderProps)`. Deviations: no FocusScope around the menu (the popover's focus scope contains focus;
 //   a standalone menu has no FocusManager); `isEmpty` counts rendered (visible) items (live collection; a
 //   virtualized menu: its rendered window); live-mode filtering keeps empty sections (RAC drops them); no `--trigger-width` on the popover.
-import { _regionState, onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
+import { onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { createContext } from "@rivetjs/reactivity";
 import {
   DEFAULT_SLOT,
@@ -151,15 +150,15 @@ export type { Key, Selection, SelectionMode, MenuTriggerType, MenuState, MenuTri
 // =================================================================================================
 
 /** RAC `MenuContext`: props for the Menu inside a MenuTrigger / SubmenuTrigger. */
-export const MenuContext = resumableContext(createContext<ContextValue<MenuProps<any>, HTMLDivElement>>(null, { id: "rv-menu" }));
+export const MenuContext = createContext<ContextValue<MenuProps<any>, HTMLDivElement>>(null);
 /** RAC `MenuStateContext`: the state of the nearest Menu (Rivet: `MenuState`, the menu's tree / list state). */
-export const MenuStateContext = resumableContext(createContext<MenuState | null>(null, { id: "rv-menu-state" }));
+export const MenuStateContext = createContext<MenuState | null>(null);
 /** RAC `RootMenuTriggerStateContext`: the root menu trigger state (open submenus stack). */
-export const RootMenuTriggerStateContext = resumableContext(createContext<MenuTriggerState | null>(null, { id: "rv-root-menu-trigger-state" }));
+export const RootMenuTriggerStateContext = createContext<MenuTriggerState | null>(null);
 /** RAC `MenuItemContext` (not exported upstream; Rivet exports it for custom containers). */
-export const MenuItemContext = resumableContext(createContext<ContextValue<MenuItemProps<any>, HTMLElement>>(null, { id: "rv-menu-item" }));
+export const MenuItemContext = createContext<ContextValue<MenuItemProps<any>, HTMLElement>>(null);
 /** Rivet: the key of the MenuSection an item renders in (RAC `SelectionManagerContext` → the section's selection). */
-const MenuSectionKeyContext = resumableContext(createContext<Key | null>(null, { id: "rv-menu-section-key" }));
+const MenuSectionKeyContext = createContext<Key | null>(null);
 /** Rivet: SubmenuTrigger → its trigger MenuItem (binds the key) and its Menu (level, parent). */
 interface SubmenuScope {
   sub: SubmenuTriggerState;
@@ -171,13 +170,13 @@ interface SubmenuScope {
   /** The trigger item element (the submenu popover's `triggerRef`). */
   itemRef: Ref<HTMLElement>;
 }
-const SubmenuScopeContext = resumableContext(createContext<SubmenuScope | null>(null, { id: "rv-submenu-scope" }));
+const SubmenuScopeContext = createContext<SubmenuScope | null>(null);
 /** Rivet: the nearest Menu's SelectableCollectionContext `filter` + virtual focus accessor, for its items. */
 interface MenuCollectionScope {
   filter: ((textValue: string, node: Node<unknown>) => boolean) | undefined;
   virtualFocus: () => boolean;
 }
-const MenuCollectionScopeContext = resumableContext(createContext<MenuCollectionScope | null>(null, { id: "rv-menu-collection-scope" }));
+const MenuCollectionScopeContext = createContext<MenuCollectionScope | null>(null);
 
 const isFn = (v: unknown): boolean => typeof v === "function" && !isSlot(v);
 const read = <T,>(v: T | (() => T)): T => (typeof v === "function" ? (v as () => T)() : v);
@@ -197,7 +196,7 @@ export interface MenuTriggerProps extends OverlayTriggerProps {
 export function MenuTrigger(props: MenuTriggerProps) {
   // Live props: a controlled `isOpen={open()}` stays live (accessor; `controllable` reads it, never writes it).
   const state = createMenuTriggerState(liveOptions(props, [], ["isOpen"]));
-  const triggerRef = _regionState(() => createRef<HTMLButtonElement>());
+  const triggerRef = createRef<HTMLButtonElement>();
   // If within a collection (e.g. Tabs), render nothing.
   if (isHidden()) return null;
   const trigger = props.trigger;

@@ -46,7 +46,6 @@ import {
   createSlotId,
   removeDataAttributes,
   renderPropsOf,
-  resumableContext,
   slotIdRef,
   type ContextValue,
   type ProviderValue,
@@ -149,9 +148,9 @@ export interface NumberFieldProps
 }
 
 /** RAC `NumberFieldContext`. */
-export const NumberFieldContext = resumableContext(createContext<ContextValue<Partial<NumberFieldProps>, HTMLDivElement>>(null, { id: "rv-number-field" }));
+export const NumberFieldContext = createContext<ContextValue<Partial<NumberFieldProps>, HTMLDivElement>>(null);
 /** RAC `NumberFieldStateContext`. */
-export const NumberFieldStateContext = resumableContext(createContext<NumberFieldState | null>(null, { id: "rv-number-field-state" }));
+export const NumberFieldStateContext = createContext<NumberFieldState | null>(null);
 
 const OWNED = [
   "render",

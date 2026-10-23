@@ -145,7 +145,7 @@ test("static trailingSlash: `never` writes a.html, `always` / ignore a/index.htm
       const state = async (request: Request) => {
         const response = await resumed(request);
         if (!response.headers.get("content-type")?.startsWith("text/html")) return response;
-        return new Response((await response.text()) + '<script type="rivet/state" data-region="0">{}</script>', response);
+        return new Response((await response.text()) + '<script type="rivet/boundaries">{}</script>', response);
       };
       const report = await prerender({ handler: state, routes: pages, outDir: dir, trailingSlash: policy });
       const files = (await readdir(dir, { recursive: true })).filter((f) => !f.endsWith("404.html")).sort();
@@ -162,7 +162,7 @@ test("static trailingSlash: `never` writes a.html, `always` / ignore a/index.htm
           "blog/one/_data.json",
           "index.html",
         ]);
-        assert.equal(await readFile(join(dir, "blog/one.html"), "utf8"), '<p>/blog/one ["one"]</p><script type="rivet/state" data-region="0">{}</script>');
+        assert.equal(await readFile(join(dir, "blog/one.html"), "utf8"), '<p>/blog/one ["one"]</p><script type="rivet/boundaries">{}</script>');
       } else {
         assert.deepEqual(report.pages, policy === "always" ? ["/", "/about/", "/blog/one/"] : ["/", "/about", "/blog/one"]);
         assert.deepEqual(files, [
@@ -178,7 +178,7 @@ test("static trailingSlash: `never` writes a.html, `always` / ignore a/index.htm
         ]);
         assert.equal(
           await readFile(join(dir, "blog/one/index.html"), "utf8"),
-          `<p>/blog/one${policy === "always" ? "/" : ""} ["one"]</p><script type="rivet/state" data-region="0">{}</script>`,
+          `<p>/blog/one${policy === "always" ? "/" : ""} ["one"]</p><script type="rivet/boundaries">{}</script>`,
         );
       }
       assert.match(await readFile(join(dir, "blog/one/_data.json"), "utf8"), /"one"/);
@@ -216,7 +216,7 @@ test(
       await page.goto(app.url + "/");
       // Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router (intent).
       await page.dispatchEvent("a[href^='/']", "pointerdown");
-      await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+      await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
 
       await t.test("<Link> hrefs are canonical in the server render (query and hash kept)", async () => {
         assert.equal(await page.getAttribute("#about", "href"), "/about/");

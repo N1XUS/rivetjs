@@ -28,10 +28,10 @@ test("compiler diagnostics appear with code, range and category", () => {
 test("resume mode follows the manifest: browser globals only in resume modules", () => {
   assert.deepEqual(rivet(fx.file("src/plain.tsx")), []);
   const counter = rivet(fx.file("src/counter.tsx"));
-  // RV2101: `store` is a class instance the compiler cannot see (made by a call); `#items` keeps Store from resuming as a data class.
+  // Captured values are not serialized (derived model): no type-aware capture warning for `store`.
   assert.deepEqual(
     counter.map((d) => [d.code, d.category, text(d)]),
-    [[72101, ts.DiagnosticCategory.Warning, "store"]],
+    [],
   );
 });
 
@@ -78,12 +78,12 @@ test("inlay hints mark browser-only closures and their captures", () => {
   );
 });
 
-test("hover: resume symbol on the handler, serialization on captured variables", () => {
+test("hover: resume symbol on the handler, captures on captured variables", () => {
   const file = fx.file("src/counter.tsx");
   const source = sources["src/counter.tsx"];
   const doc = (position: number) => ts.displayPartsToString(fx.service.getQuickInfoAtPosition(file, position)?.documentation ?? []);
   assert.match(doc(at(source, "on") + 1), /Rivet resume.*event handler `src\/counter\.tsx#Counter\$\w+`.*browser.*captures `count`, `step`/);
-  assert.match(doc(at(source, "count") + 1), /`count` is serialized into resume state \(captured by `Counter\$\w+`, `Counter\$\w+`\)/);
+  assert.match(doc(at(source, "count") + 1), /`count` is captured by resumable code \(`Counter\$\w+`, `Counter\$\w+`\)/);
 });
 
 test("links: unknown routes warn when `to` is a plain string; nothing extra when TS narrows it", () => {

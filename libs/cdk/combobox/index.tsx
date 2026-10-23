@@ -10,7 +10,7 @@
 // - the collection is built from the children (B5 `collectionOf`: RAC `CollectionBuilder`): the closed popover's
 //   ListBox registers its items in a build pass; `items` / `defaultItems` reach it through `ListBoxContext`
 //   (a ListBox without children renders them: the `items` preset).
-// - state = `createComboBoxCore` (serializable region state) + a selection view built here with an inline arrow
+// - state = `createComboBoxCore` + a selection view built here with an inline arrow
 //   (`{ ...core, selectionState }`); the ListBox reads a list-state view over it (`ListStateContext`):
 //   displayed (filtered / frozen) collection + the combobox's selection.
 // - `selectedKey` / `value` / `inputValue`: plain = controlled, Signal = two-way. `isInvalid` may be an accessor.
@@ -58,7 +58,6 @@ import {
   probeSlot,
   removeDataAttributes,
   renderProps,
-  resumableContext,
   slotIdRef,
   type ClassNameOrFunction,
   type ContextValue,
@@ -163,9 +162,9 @@ export interface ComboBoxProps<T = object, M extends SelectionMode = "single">
 }
 
 /** RAC `ComboBoxContext`. */
-export const ComboBoxContext = resumableContext(createContext<ContextValue<ComboBoxProps<any, SelectionMode>, HTMLDivElement>>(null, { id: "rv-combobox" }));
+export const ComboBoxContext = createContext<ContextValue<ComboBoxProps<any, SelectionMode>, HTMLDivElement>>(null);
 /** RAC `ComboBoxStateContext`. */
-export const ComboBoxStateContext = resumableContext(createContext<ComboBoxState<any, SelectionMode> | null>(null, { id: "rv-combobox-state" }));
+export const ComboBoxStateContext = createContext<ComboBoxState<any, SelectionMode> | null>(null);
 
 // Contexts to clear inside the popover.
 const CLEAR_CONTEXTS = [LabelContext, ButtonContext, InputContext, FieldInputContext, GroupContext, TextContext];
@@ -197,7 +196,7 @@ function comboBox<T, M extends SelectionMode>(inProps: ComboBoxProps<T, M>) {
   const itemsProp = props.items,
     defaultItems = props.defaultItems;
   // The collection content (RAC `useMemo` + CollectionBuilder): the ListBox registers its items.
-  // Object-literal function value: a resumable symbol (the region state keeps the collection accessor).
+  // Object-literal function value: a resumable symbol.
   const build = {
     // `provide` (not <Provider>): the build pass evaluates the content synchronously under the context.
     content: () => {
@@ -518,7 +517,7 @@ export interface ComboBoxValueProps<T = object>
 }
 
 /** RAC `ComboBoxValueContext`. */
-export const ComboBoxValueContext = resumableContext(createContext<ContextValue<ComboBoxValueProps<any>, HTMLDivElement>>(null, { id: "rv-combobox-value" }));
+export const ComboBoxValueContext = createContext<ContextValue<ComboBoxValueProps<any>, HTMLDivElement>>(null);
 
 /** ComboBoxValue renders the current value of a ComboBox (e.g. the selected items of a multiple combobox). */
 export function ComboBoxValue<T = object>(inProps: ComboBoxValueProps<T>) {

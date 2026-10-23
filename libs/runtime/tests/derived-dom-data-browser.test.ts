@@ -1,4 +1,4 @@
-// DOM data on derived (DERIVED-C5): with `manifest.domData` (builds with `resume: { model: "derived", domData: true }`),
+// DOM data on derived (DERIVED-C5): with `manifest.domData` (builds with `resume: { domData: true }`),
 // a list written from one tape whose rows show item values as an element's whole text (or a plain attribute) leaves the
 // items array out of its record's props: the tail's `d` entry carries the item skeleton + the literals, the first row is
 // anchored `<!--r0<n>[-->`, and the browser (`DOM_DATA` switch on) rebuilds the items from the page's rows. Values the
@@ -15,7 +15,7 @@ import { _derivedDom } from "../server-derived-dom.ts";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
 
-// The server half of a `{ model: "derived", domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
+// The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
 const PAGE = `
 import { signal } from "@rivetjs/reactivity";
@@ -62,7 +62,7 @@ export function App(props) {
   );
 }
 `;
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "List"], independent: ["App"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["App", "List"], independent: ["App"] };
 const symbols = Object.fromEntries(RESUME.boundaries.map((name) => ["src/page.tsx#" + name, "/page.js"]));
 type Tail = { b: [number, number, number, string, unknown, Record<string, unknown>?][]; d?: unknown[][] };
 
@@ -116,7 +116,7 @@ async function files(): Promise<Record<string, string>> {
   assert.deepEqual(dom.diagnostics, []);
   return {
     ...DERIVED_BUILD,
-    "/dom-data.ts": switchContent("dom-data", (module) => "/" + module + ".ts", true)!,
+    "/dom-data.ts": switchContent("dom-data", (module) => "/" + module + ".ts")!,
     "/": '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + "</body></html>",
     "/rt.js": 'export { default } from "/dom-derived.ts";',
     "/page.js": rewrite(dom.code),

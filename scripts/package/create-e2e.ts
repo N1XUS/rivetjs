@@ -196,14 +196,14 @@ export async function checkPage(base: string): Promise<string> {
   const html = await response.text();
   if (response.status !== 200) throw new Error(`GET / → ${response.status}`);
   if (!/^<!doctype html><html/i.test(html)) throw new Error(`GET / is not an HTML document: ${html.slice(0, 200)}`);
-  const state = /<script type="rivet\/state"[^>]*>(\{.*?\})<\/script><script(?: nonce="[^"]+")?>\(function\(\)\{/.exec(html);
-  if (!state) throw new Error("GET /: no resume state script + inline resume bootstrap");
-  const { rt } = JSON.parse(state[1]!) as { rt?: string };
-  if (!rt) throw new Error("resume state names no runtime (`rt`)");
+  const tail = /<script type="rivet\/boundaries"([^>]*)>(\{.*?\})<\/script><script(?: nonce="[^"]+")?>\(function\(\)\{/.exec(html);
+  if (!tail) throw new Error("GET /: no resume boundaries script + inline resume bootstrap");
+  const rt = / data-rt="([^"]+)"/.exec(tail[1]!)?.[1];
+  if (!rt) throw new Error("resume boundaries script names no runtime (`data-rt`)");
   const runtime = await fetch(new URL(rt, base));
   if (runtime.status !== 200 || !/javascript/.test(runtime.headers.get("content-type") ?? ""))
     throw new Error(`GET ${rt} → ${runtime.status} ${runtime.headers.get("content-type")}`);
-  return `GET / 200 (${(html.length / 1024).toFixed(1)} KB, resume state + bootstrap), GET ${rt} 200`;
+  return `GET / 200 (${(html.length / 1024).toFixed(1)} KB, resume boundaries + bootstrap), GET ${rt} 200`;
 }
 
 /**

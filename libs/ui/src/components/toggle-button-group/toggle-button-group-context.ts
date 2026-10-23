@@ -6,7 +6,6 @@
 //   inside a `ToggleButtonGroup`; module-level memo). Resumable token `rv-ui-toggle-button-group`, default `{}`. Fields are
 //   getters over the group's props when one of them is live.
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ToggleButtonVariants } from "../../../styles/src/components/toggle-button/index.ts";
 
@@ -21,7 +20,7 @@ interface ToggleButtonGroupContext {
   orientation?: "horizontal" | "vertical";
 }
 
-const ToggleButtonGroupContext = resumableContext(createContext<ToggleButtonGroupContext>({}, { id: "rv-ui-toggle-button-group" }));
+const ToggleButtonGroupContext = createContext<ToggleButtonGroupContext>({});
 
 // Property name to mark direct children of ToggleButtonGroup
 const TOGGLE_BUTTON_GROUP_CHILD = "__toggle_button_group_child";

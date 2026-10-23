@@ -10,7 +10,8 @@ import type { Page } from "playwright";
 import { among, codeOf, stories, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the "preloaded when visible" / cold-key checks expect the page's chunks fetched after load.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 const open = async () => {
@@ -50,7 +51,7 @@ test("server markup: root, viewport, content; always-scrollbars without thumbs; 
   assert.doesNotMatch(html, /id="always-thumb-y"/);
   assert.doesNotMatch(html, /id="always-corner"/);
   assert.doesNotMatch(html, /id="hover-y"|id="scroll-y"|id="auto-y"/);
-  assert.match(html, /hover row 40/);
+  assert.match(html.replace(/<!--[^>]*-->/g, ""), /hover row 40/);
 });
 
 test("resumed: an area with no horizontal Scrollbar stops scrolling horizontally once active", async () => {
@@ -193,7 +194,7 @@ test("resumed: the thumb re-measures when the content grows", async () => {
 });
 
 // Scroll-area / presence code: chunks holding their symbols + the shared code only they import (build manifest).
-const scrollAreaScripts = (scripts: string[]) => among(scripts, codeOf(/^@rivetjs\/cdk\/(scroll-area|presence)\/|#ScrollArea\w*\$/));
+const scrollAreaScripts = (scripts: string[]) => among(scripts, codeOf(/^@rivetjs\/cdk\/(scroll-area|presence)\/|#ScrollArea\w*$/));
 const openCold = async () => {
   const page = await s.browser.newPage({ viewport: { width: 900, height: 1000 } });
   const seen = watch(page);

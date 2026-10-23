@@ -1,12 +1,12 @@
 ---
 title: What is Rivet
-description: Rivet is a JSX framework that renders pages on the server and lets them keep working in the browser without running your components again.
+description: Rivet is a JSX framework that renders pages on the server and lets them keep working in the browser without running your components on load.
 template: concept
 status: experimental
 related: [learn/server-first, learn/resuming, start/quick-start, start/tutorial/index]
 ---
 
-Rivet is a framework for building websites with JSX and TypeScript. You write components the way you know from React or Solid. Rivet turns them into HTML on the server. In the browser, the page keeps working, but your components do not run a second time.
+Rivet is a framework for building websites with JSX and TypeScript. You write components the way you know from React or Solid. Rivet turns them into HTML on the server. In the browser, the page keeps working without running your components on load: a component runs there only when you use it.
 
 :::warning[Experimental]
 Rivet is experimental. The packages are available on npm as `0.1.0-alpha.1`, and APIs can still change. The [quick start](quick-start.md) shows how to try it today.
@@ -39,7 +39,7 @@ Three parts work together:
 
 Most JSX frameworks send the page as HTML and then run all the components again in the browser to make the page interactive. This second run is called :term[hydration]{id=hydration}. It downloads and runs code for every component on the page, even for parts that never change.
 
-Rivet skips that second run. The server writes the HTML and a small amount of data next to it. The browser reads that data and picks up where the server left off. This is called :term[resuming]{id=resumability}.
+Rivet skips that second run on load. The server writes the HTML and a small amount of data next to it. The browser picks up where the server left off, and runs a component's code only when you use it. This is called :term[resuming]{id=resumability}.
 
 What you get:
 
@@ -52,17 +52,17 @@ What you get:
 For the counter above, the flow looks like this:
 
 1. **On the server**, `Home()` runs once. It creates the signal, writes `<button>Clicked 0 times</button>` and remembers two things: the button has a click handler, and the text depends on `count`.
-2. **In the HTML**, Rivet adds a small inline script (the loader) and the saved state, for example "count is 0".
-3. **In the browser**, only the loader runs at first. (With file routes, the router's link handling also loads right after the page appears: about 15 KB compressed, in 4 files.) When you point at the button, the loader fetches the click handler's code. When you click, the handler runs, `count` becomes 1, and Rivet updates only the text inside the button.
+2. **In the HTML**, Rivet adds a small inline script (the loader) and a record of the component: where it is in the page and its state, for example "count is 0".
+3. **In the browser**, only the loader runs at first. After the page has loaded, it fetches the code of `Home` at low priority without running it. When you click, the browser runs `Home()` once over the existing HTML (no element is created; `count` starts at the saved 0), attaches the handler, and the click runs it: `count` becomes 1, and Rivet updates only the text inside the button.
 
-`Home()` never runs in the browser. Only the handler `() => count.update(...)` and the text update run there.
+`Home()` runs in the browser once, on the first click, and never on load. After that, only the handler `() => count.update(...)` and the text update run.
 
 ## What it means for your code
 
-Writing for Rivet feels like writing for other JSX frameworks, with a few rules that follow from "components run once, on the server":
+Writing for Rivet feels like writing for other JSX frameworks, with a few rules that follow from "components run on the server, and in the browser only when used":
 
 - Code at the top of a component runs on the server only. Put browser work in event handlers or in `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
-- Values that a handler uses are written into the page as data: plain data (numbers, strings, arrays, objects, dates, signals), functions written in your components, and instances of simple data classes. Package-class instances and library objects are built in the browser with `reconstruct(() => …)` (or a package class is registered with `registerClass`). See [what the handler can use](../learn/resuming.md#what-the-handler-can-use) and [function is not serializable](../gotchas/function-is-not-serializable.md).
+- Handlers are not sent as data: the browser runs a component's code again when it wakes up, so a handler can use any value of its component. What is written into the page is data: signal values, plain-data props and route data. See [what reaches the browser](../learn/resuming.md#what-reaches-the-browser) and [function is not serializable](../gotchas/function-is-not-serializable.md).
 - Browser globals such as `window` and `document` are only available inside handlers and client effects. The compiler stops the build if you read them during server rendering.
 - The dev server resumes pages like production until you edit a file; then the page renders in the browser so hot reload can keep state. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 

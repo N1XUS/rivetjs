@@ -1,6 +1,5 @@
-// Derived model (M2 C1 / C2): the server resume target under `resume: { model: "derived" }` — boundary / keyed-state calls
-// and nothing else — plus `moduleFacts` boundaries and the RV2103 / RV2104 diagnostics. Needs the wasm build that carries
-// the derived model (`hasDerivedModel()`); on an older build every case skips with the reason.
+// Derived model (M2 C1 / C2; the only resume model since M6): the server resume target under `resume` — boundary /
+// keyed-state calls and nothing else — plus `moduleFacts` boundaries and the RV2103 / RV2104 diagnostics.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { check, compile, hasDerivedModel, moduleFacts } from "../index.ts";
@@ -22,8 +21,8 @@ export function Static() { return <p>hi</p>; }
 const resume = { module: "src/m.tsx" };
 const server = (source: string, options: object = {}) => compile(source, { target: "server", filename: "m.tsx", resume: { ...resume, ...options } });
 
-it("server derived target: boundary + keyed state calls, no site records; serialized model byte-identical", () => {
-  const out = server(COUNTER, { model: "derived" });
+it("server derived target: boundary + keyed state calls, no site records", () => {
+  const out = server(COUNTER);
   assert.deepEqual(out.diagnostics, []);
   assert.match(out.code, /const __rivetB = __rivetR_b\("src\/m\.tsx#Counter", 2\);\n\s*try \{/);
   assert.match(out.code, /__rivetR_sig\("[0-9a-z]{5}-0", 0\)/);
@@ -33,14 +32,8 @@ it("server derived target: boundary + keyed state calls, no site records; serial
   for (const name of ["__rivetR_on(", "__rivetR_bind(", "__rivetR_attr(", "__rivetR_id(", "__rivetR_fn(", "__rivetR_props("])
     assert.ok(!out.code.includes(name), name);
   assert.match(out.code, /export function Static\(\) \{\n\s*return __rivetTemplate\(__rivetFragments1, \[\]\);\n\}/);
-  // The derived server output carries no symbols: nothing to chunk for the serialized runtime.
-  assert.equal(out.symbols, undefined);
-  // Serialized (default) model: the option spelled out changes nothing.
-  assert.deepEqual(server(COUNTER, { model: "serialized" }), server(COUNTER));
-  assert.ok(server(COUNTER).code.includes("__rivetR_on("));
-  // The DOM target's derived lowering (C3) is pinned by derived-adopt.test.ts; its serialized output ignores the spelled-out model.
-  const dom = (options: object) => compile(COUNTER, { target: "dom", filename: "m.tsx", resume: { ...resume, ...options } });
-  assert.deepEqual(dom({ model: "serialized" }), dom({}));
+  // `resume: true` = the filename as the module.
+  assert.deepEqual(compile(COUNTER, { target: "server", filename: "src/m.tsx", resume: true } as never).code, out.code);
   // Boundary names, module-qualified (`<resume module>#<Name>`): the manifest `symbols` keys.
   assert.deepEqual(out.boundaries, ["src/m.tsx#Counter"]);
 });
@@ -57,7 +50,6 @@ export function Switcher(props) {
 }
 export const Arrow = (props) => <i onClick={() => props.go()}>go</i>;
 `,
-    { model: "derived" },
   );
   assert.deepEqual(out.diagnostics, []);
   // Two returns, both through `_rBOut`; the nested function's `return 1` is untouched; fragment root → flags 0.
@@ -78,18 +70,18 @@ export function Page() { return <main><Counter start={1} /><Shell title="x" /></
 export function Counter(props) { const n = signal(props.start); return <button onClick={() => n.set(2)}>{n()}</button>; }
 export function Shell({ title }) { const n = signal(0); return <b onClick={() => n.set(1)}>{title}</b>; }
 `;
-  const local = server(source, { model: "derived" });
+  const local = server(source);
   assert.deepEqual(local.diagnostics, []);
   assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Counter", 3, props)'), local.code);
   assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Shell", 2)'), local.code);
   assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Page", 2)'), local.code);
   // The build's verdicts win over the module-local closure.
-  const build = server(source, { model: "derived", boundaries: ["Counter"], independent: [] });
+  const build = server(source, { boundaries: ["Counter"], independent: [] });
   assert.ok(build.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Page"'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Shell"'), build.code);
   // M6-PARITY 6b: a `conditional` verdict (no change source of its own) sets COND (1024) on its `_rB`.
-  const cond = server(source, { model: "derived", boundaries: ["Counter", "Page"], independent: [], conditional: ["Page"] });
+  const cond = server(source, { boundaries: ["Counter", "Page"], independent: [], conditional: ["Page"] });
   assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Page", 1026)'), cond.code);
   assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), cond.code);
 });
@@ -190,7 +182,7 @@ export function C(props) {
   return <b onClick={() => n?.set(Date.now())}>{t}{ok()}</b>;
 }
 `;
-  const out = server(source, { model: "derived" });
+  const out = server(source);
   assert.deepEqual(
     out.diagnostics.map((d) => [d.code, d.line]),
     [["RV2103", 7]],
@@ -203,7 +195,7 @@ export function C(props) {
   // Keys are per site: the conditional `signal(1)` is fine (a render that skips it skips its key); the loop's repeats pair by order.
   assert.match(out.warnings![0]!.message, /^Keyed state `signal\(\)` is created inside a loop/);
   assert.equal(out.warnings![0]!.line, 6);
-  const checked = check(source, { filename: "m.tsx", resume: { ...resume, model: "derived" } });
+  const checked = check(source, { filename: "m.tsx", resume });
   assert.deepEqual(
     checked.diagnostics.map((d) => [d.code, d.severity, d.targets]),
     [
@@ -211,17 +203,17 @@ export function C(props) {
       ["RV2104", "warning", ["server"]],
     ],
   );
-  // The serialized model knows neither.
-  assert.deepEqual(server(source).diagnostics, []);
+  // Without resume neither applies.
+  assert.deepEqual(compile(source, { target: "server", filename: "m.tsx" }).diagnostics, []);
 });
 
-it("option validation: RV7001 for an unknown model / non-string verdict lists", () => {
+it("option validation: RV7001 for a malformed resume option / non-string verdict lists", () => {
   assert.deepEqual(
-    server(COUNTER, { model: "adopted" }).diagnostics.map((d) => [d.code, d.message]),
-    [["RV7001", 'Invalid compiler option `resume.model`: expected "serialized" or "derived"']],
+    compile(COUNTER, { target: "server", filename: "m.tsx", resume: 1 as never }).diagnostics.map((d) => [d.code, d.message]),
+    [["RV7001", "Invalid compiler option `resume`: expected `{ module?, boundaries?, independent?, conditional? }`, true or false"]],
   );
   assert.deepEqual(
-    server(COUNTER, { model: "derived", boundaries: [1] }).diagnostics.map((d) => d.code),
+    server(COUNTER, { boundaries: [1] }).diagnostics.map((d) => d.code),
     ["RV7001"],
   );
 });
@@ -251,7 +243,7 @@ export function Mixed(props) {
   return <i onClick={() => on.set(true)}>{on() ? 1 : 0}</i>;
 }
 `;
-  const out = server(source, { model: "derived" });
+  const out = server(source);
   assert.deepEqual(out.diagnostics, []);
   // The factories render nothing themselves: no boundary, their objects / functions returned as they are.
   assert.deepEqual(out.boundaries, ["src/m.tsx#Root", "src/m.tsx#Accessor", "src/m.tsx#Mixed"]);

@@ -22,7 +22,7 @@ RAC Disclosure port: `DisclosureGroup`, `Disclosure`, `DisclosurePanel` (+ `<But
 - `render` prop (RAC DOMRenderProps; `(attrs, renderProps)` → spread attrs; early return before the compiled element; `tests/render-collections.browser.test.tsx`) on DisclosureGroup / Disclosure / DisclosurePanel (panel `beforematch` = `onBeforeMatch` key)
 - Inside a group, `isExpanded` = `expandedKeys.has(id)`; Disclosure registers with its disabled flag, unregisters on cleanup when it has an owner (client-rendered)
 - `openAll` only with multiple expansion; `openAll` / `closeAll` skip disabled members
-- `onOpened` / `onClosed` compare with the server-rendered state (`_regionState`) → correct first change on a resumed page; `onDestroyed` on client unmount
+- `onOpened` / `onClosed` on expanded changes; `onDestroyed` on client unmount
 - Root renders `id` (String(props.id)); ids `<id>-trigger`, `<id>-panel`
 - Group keys compare as strings (DOM ids are strings)
 - DisclosurePanel attribute order: `hidden` before `style` (JSX + render attrs). The panel is one spread binding, so `hidden` (`disclosurePanelHidden`) writes the size variables first and the `style` accessor keeps the panel's current CSSOM `--disclosure-panel-*` values (server `disclosurePanelStyle` only before the element exists). Before (2026-10-08) the re-applied server style clobbered the px sizes: a resumed panel never animated on its first change

@@ -1,8 +1,7 @@
-// Derived model end to end through the real Vite plugin (M2 C3): `rivet({ resume: { model: "derived" } })` builds a
+// Derived model end to end through the real Vite plugin (M2 C3): `rivet({ resume })` builds a
 // two-module app (client + SSR builds), the server renders it through the router (`createApp`, which the plugin points at `renderDerived`) and the manifest, Chromium
 // loads the page — nothing before input — and a cold click (independent boundary of another module) and a keyed write
-// (the page boundary's own signal) adopt the server nodes in place. The same app on the serialized model is the byte
-// baseline (`RIVET_DERIVED_BYTES=1` prints both). Needs the wasm with the derived model.
+// (the page boundary's own signal) adopt the server nodes in place (`RIVET_DERIVED_BYTES=1` prints the page / JS bytes).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { createServer as createHttp } from "node:http";
@@ -61,7 +60,7 @@ export default function Page(props) {
 }
 `;
 // The server entry renders through the router (`createApp`): on a derived build the plugin resolves the router's
-// `@rivetjs/runtime/server-resume` import to the derived renderer, so the same entry serves both models.
+// `@rivetjs/runtime/server-resume` import to the derived renderer.
 const SERVER = `import { createApp } from "@rivetjs/router/server";
 import Page from "./page.tsx";
 const data = { title: "Records", rows: Array.from({ length: 50 }, (_, i) => ({ id: i + 1, name: "row " + (i + 1) })) };
@@ -78,11 +77,11 @@ const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javas
 interface Built {
   root: string;
   html: string;
-  manifest: { model?: string; runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]>; domData?: boolean };
+  manifest: { runtime: string; symbols: Record<string, string>; builtins?: string; deps?: Record<string, string[]>; domData?: boolean };
 }
-async function buildApp(model: "derived" | "serialized", rows: "static" | "interactive", roots: string[], domData = false): Promise<Built> {
+async function buildApp(rows: "static" | "interactive", roots: string[], domData = false): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
-  const root = await mkdtemp(resolve(".artifacts/vite-derived-" + model + "-" + rows + "-"));
+  const root = await mkdtemp(resolve(".artifacts/vite-derived-" + rows + "-"));
   roots.push(root);
   await mkdir(resolve(root, "src"));
   await writeFile(resolve(root, "src/counter.tsx"), COUNTER);
@@ -94,7 +93,7 @@ async function buildApp(model: "derived" | "serialized", rows: "static" | "inter
   const plugin = () =>
     rivet({
       serverExports: { modules: ["src/page.tsx"] },
-      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(model === "derived" ? { model } : {}), ...(domData ? { domData } : {}) },
+      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(domData ? { domData } : {}) },
     });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true } });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "server-dist", ssr: "src/server.tsx" } });
@@ -149,114 +148,91 @@ function pageBytes(html: string) {
 const jsAfterPage = (requests: { path: string; bytes: number }[]) => requests.slice(1).reduce((sum, r) => sum + (r.path.endsWith(".js") ? r.bytes : 0), 0);
 const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3)"];
 
-(hasDerivedModel() ? test : test.skip)(
-  "rivet({ resume: { model: 'derived' } }): build, derived tail, boot from the inline loader, cold click + keyed write adopt",
-  async () => {
-    const browser = await chromium.launch({ headless: true });
-    const roots: string[] = [];
-    const bytes: Record<string, unknown> = {};
-    try {
-      for (const rows of ["interactive", "static"] as const) {
-        const derived = await buildApp("derived", rows, roots);
-        // Manifest: model, the derived runtime entry, boundary names (`<module>#<export>`) → the chunk of their module.
-        assert.equal(derived.manifest.model, "derived");
-        assert.match(derived.manifest.runtime, /^\/assets\/derived-runtime-.*\.js$/);
-        // The built-in decoders' chunk (DERIVED-S): route payloads with RegExp / binary / errors / registered classes name it.
-        assert.match(derived.manifest.builtins!, /^\/assets\/resume-builtins-.*\.js$/);
-        assert.deepEqual(Object.keys(derived.manifest.symbols).sort(), ["src/counter.tsx#Counter", "src/counter.tsx#Other", "src/page.tsx#default"]);
-        assert.equal(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/counter.tsx#Other"]);
-        assert.notEqual(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/page.tsx#default"]);
-        const counterChunk = await readFile(resolve(derived.root, "client-dist" + derived.manifest.symbols["src/counter.tsx#Counter"]!), "utf8");
-        assert.match(counterChunk, /src\/counter\.tsx#Counter/);
-        // Server: the derived tail (module-qualified names, `m` from the manifest; the route root and both counters are
-        // independent ATTR boundaries), no serialized state.
-        const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(derived.html)![1]!);
-        assert.deepEqual(
-          tail.b.map((r: unknown[]) => [r[3], r[2]]),
-          [
-            ["src/page.tsx#default", 3],
-            ["src/counter.tsx#Counter", 3],
-            ["src/counter.tsx#Other", 3],
-          ],
-        );
-        assert.equal(tail.m["src/page.tsx#default"], derived.manifest.symbols["src/page.tsx#default"]);
-        assert.ok(!derived.html.includes('type="rivet/state"'));
-        // Fetch-ahead (DERIVED-C): the tail lists the runtime + the page's boundary chunks + their static closures
-        // (manifest `deps`); the loader modulepreloads them after `load`, nothing evaluates before input.
-        const ahead = /data-fo="([^"]*)"/.exec(derived.html)![1]!.split(" ");
-        assert.equal(ahead[0], derived.manifest.runtime);
-        for (const url of Object.values(tail.m as Record<string, string>)) assert.ok(ahead.includes(url), url);
-        for (const url of [derived.manifest.runtime, ...Object.values(tail.m as Record<string, string>)])
-          for (const dep of derived.manifest.deps?.[url] ?? []) assert.ok(ahead.includes(dep), dep);
-        let derivedInput = 0,
-          derivedBefore = 0;
-        await serve(derived, browser, async (page, requests) => {
-          await page.waitForLoadState("networkidle");
-          assert.deepEqual(requests.map((r) => r.path).sort(), ["/", ...ahead].sort(), "only the fetch-ahead list loads before input");
-          assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "nothing evaluated before input");
-          derivedBefore = jsAfterPage(requests);
-          const fetched = requests.length;
-          await page.evaluate((list) => list.forEach((s, i) => ((document.querySelector(s) as any).__t = i + 1)), TAGGED);
-          // Cold click on an independent boundary of another module: the loader boots the runtime, Counter adopts alone.
-          await page.click("#inc");
-          await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
-          // Keyed write on the page boundary's own signal: Page adopts (Counter is live already, Other stays deferred).
-          await page.click("#dark");
-          await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
-          await page.click("#inc");
-          await page.waitForFunction(() => document.querySelector("#count")!.textContent === "7");
-          if (rows === "interactive") {
-            // A row event materialises its row over the server nodes; the keyed write updates every row's class.
-            await page.click("ul li:nth-child(3)");
-            await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.className === "on");
-            assert.equal(await page.evaluate(() => document.querySelectorAll("ul li.on").length), 1);
-          }
-          const kept = await page.evaluate((list) => list.map((s, i) => (document.querySelector(s) as any)?.__t === i + 1), TAGGED);
-          assert.deepEqual(kept, [true, true, true, true, true, true], "server nodes adopted in place");
-          assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "Other never ran in the browser");
-          derivedInput = jsAfterPage(requests.slice(fetched - 1));
-          assert.equal(requests.length, fetched, "the first input fetches nothing more");
-        });
-        // Baseline: the same app on the serialized model (same interactions).
-        const serialized = await buildApp("serialized", rows, roots);
-        let serializedInput = 0;
-        await serve(serialized, browser, async (page, requests) => {
-          assert.deepEqual(
-            requests.map((r) => r.path),
-            ["/"],
-          );
-          await page.click("#inc");
-          await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
-          await page.click("#dark");
-          await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
-          if (rows === "interactive") {
-            await page.click("ul li:nth-child(3)");
-            await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.className === "on");
-          }
-          serializedInput = jsAfterPage(requests);
-        });
-        bytes[rows] = {
-          derived: { ...pageBytes(derived.html), jsBeforeInput: derivedBefore, jsOnInput: derivedInput },
-          serialized: { ...pageBytes(serialized.html), jsBeforeInput: 0, jsOnInput: serializedInput },
-        };
-      }
-      if (process.env.RIVET_DERIVED_BYTES) console.info(JSON.stringify(bytes));
-    } finally {
-      await browser.close();
-      for (const root of roots) await rm(root, { recursive: true, force: true });
+(hasDerivedModel() ? test : test.skip)("rivet({ resume }): build, derived tail, boot from the inline loader, cold click + keyed write adopt", async () => {
+  const browser = await chromium.launch({ headless: true });
+  const roots: string[] = [];
+  const bytes: Record<string, unknown> = {};
+  try {
+    for (const rows of ["interactive", "static"] as const) {
+      const derived = await buildApp(rows, roots);
+      // Manifest: the derived runtime entry, boundary names (`<module>#<export>`) → the chunk of their module.
+      assert.match(derived.manifest.runtime, /^\/assets\/derived-runtime-.*\.js$/);
+      // The built-in decoders' chunk (DERIVED-S): route payloads with RegExp / binary / errors / registered classes name it.
+      assert.match(derived.manifest.builtins!, /^\/assets\/resume-builtins-.*\.js$/);
+      assert.deepEqual(Object.keys(derived.manifest.symbols).sort(), ["src/counter.tsx#Counter", "src/counter.tsx#Other", "src/page.tsx#default"]);
+      assert.equal(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/counter.tsx#Other"]);
+      assert.notEqual(derived.manifest.symbols["src/counter.tsx#Counter"], derived.manifest.symbols["src/page.tsx#default"]);
+      const counterChunk = await readFile(resolve(derived.root, "client-dist" + derived.manifest.symbols["src/counter.tsx#Counter"]!), "utf8");
+      assert.match(counterChunk, /src\/counter\.tsx#Counter/);
+      // Server: the derived tail (module-qualified names, `m` from the manifest; the route root and both counters are
+      // independent ATTR boundaries), no serialized state.
+      const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(derived.html)![1]!);
+      assert.deepEqual(
+        tail.b.map((r: unknown[]) => [r[3], r[2]]),
+        [
+          ["src/page.tsx#default", 3],
+          ["src/counter.tsx#Counter", 3],
+          ["src/counter.tsx#Other", 3],
+        ],
+      );
+      assert.equal(tail.m["src/page.tsx#default"], derived.manifest.symbols["src/page.tsx#default"]);
+      assert.ok(!derived.html.includes('type="rivet/state"'));
+      // Fetch-ahead (DERIVED-C): the tail lists the runtime + the page's boundary chunks + their static closures
+      // (manifest `deps`); the loader modulepreloads them after `load`, nothing evaluates before input.
+      const ahead = /data-fo="([^"]*)"/.exec(derived.html)![1]!.split(" ");
+      assert.equal(ahead[0], derived.manifest.runtime);
+      for (const url of Object.values(tail.m as Record<string, string>)) assert.ok(ahead.includes(url), url);
+      for (const url of [derived.manifest.runtime, ...Object.values(tail.m as Record<string, string>)])
+        for (const dep of derived.manifest.deps?.[url] ?? []) assert.ok(ahead.includes(dep), dep);
+      let derivedInput = 0,
+        derivedBefore = 0;
+      await serve(derived, browser, async (page, requests) => {
+        await page.waitForLoadState("networkidle");
+        assert.deepEqual(requests.map((r) => r.path).sort(), ["/", ...ahead].sort(), "only the fetch-ahead list loads before input");
+        assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "nothing evaluated before input");
+        derivedBefore = jsAfterPage(requests);
+        const fetched = requests.length;
+        await page.evaluate((list) => list.forEach((s, i) => ((document.querySelector(s) as any).__t = i + 1)), TAGGED);
+        // Cold click on an independent boundary of another module: the loader boots the runtime, Counter adopts alone.
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+        // Keyed write on the page boundary's own signal: Page adopts (Counter is live already, Other stays deferred).
+        await page.click("#dark");
+        await page.waitForFunction(() => document.querySelector("#theme")!.textContent === "dark");
+        await page.click("#inc");
+        await page.waitForFunction(() => document.querySelector("#count")!.textContent === "7");
+        if (rows === "interactive") {
+          // A row event materialises its row over the server nodes; the keyed write updates every row's class.
+          await page.click("ul li:nth-child(3)");
+          await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.className === "on");
+          assert.equal(await page.evaluate(() => document.querySelectorAll("ul li.on").length), 1);
+        }
+        const kept = await page.evaluate((list) => list.map((s, i) => (document.querySelector(s) as any)?.__t === i + 1), TAGGED);
+        assert.deepEqual(kept, [true, true, true, true, true, true], "server nodes adopted in place");
+        assert.equal(await page.evaluate(() => (window as { __componentRuns?: number }).__componentRuns), undefined, "Other never ran in the browser");
+        derivedInput = jsAfterPage(requests.slice(fetched - 1));
+        assert.equal(requests.length, fetched, "the first input fetches nothing more");
+      });
+      bytes[rows] = {
+        derived: { ...pageBytes(derived.html), jsBeforeInput: derivedBefore, jsOnInput: derivedInput },
+      };
     }
-  },
-);
+    if (process.env.RIVET_DERIVED_BYTES) console.info(JSON.stringify(bytes));
+  } finally {
+    await browser.close();
+    for (const root of roots) await rm(root, { recursive: true, force: true });
+  }
+});
 
 (hasDerivedModel() ? test : test.skip)(
-  "rivet({ resume: { model: 'derived', domData: true } }): manifest domData, rows left out of the route payload, read back from the page",
+  "rivet({ resume: { domData: true } }): manifest domData, rows left out of the route payload, read back from the page",
   async () => {
     const browser = await chromium.launch({ headless: true });
     const roots: string[] = [];
     try {
-      const plain = await buildApp("derived", "interactive", roots);
+      const plain = await buildApp("interactive", roots);
       assert.equal(plain.manifest.domData, undefined);
-      const built = await buildApp("derived", "interactive", roots, true);
+      const built = await buildApp("interactive", roots, true);
       assert.equal(built.manifest.domData, true);
       const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(built.html)![1]!);
       assert.equal(tail.d?.length, 1, "one d entry: the 50 rows");

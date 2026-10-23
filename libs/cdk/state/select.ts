@@ -6,7 +6,7 @@
 // keys, the hidden `<select>` for its options, SelectValue for the selected items' text. RAC parts mode (no
 // `items`): `collection` = the Select's built collection (react-stately `useSelectState({ collection })`); its
 // item nodes are read as data entries (`selectEntries`), `value` = the node's object value, `content` = its children.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { createId } from "@rivetjs/cdk/id";
 import { buildNodes, ListCollection, type FocusStrategy } from "../_adapters/collections.ts";
@@ -35,7 +35,7 @@ export interface SelectStateProps<M extends SelectionMode = "single"> extends Ov
   items?: readonly CollectionEntry[] | (() => readonly CollectionEntry[]) | undefined;
   /**
    * RAC parts mode: the collection built from the Select's children (`collectionOf`, the ListBox items), as an
-   * accessor (an inline arrow: region state keeps it). Items are read from it when `items` is not given.
+   * accessor (an inline arrow). Items are read from it when `items` is not given.
    */
   collection?: (() => BuiltCollection<BuiltNode<unknown>>) | undefined;
   /** Whether single or multiple selection is enabled. @default 'single'. Read once at mount (picks the value shape). */
@@ -121,53 +121,51 @@ export interface SelectState<M extends SelectionMode = "single"> extends Overlay
  * re-creating the select's region keeps it.
  */
 export function createSelectState<M extends SelectionMode = "single">(props: SelectStateProps<M>): SelectState<M> {
-  return _regionState(() => {
-    const selectionMode = (props.selectionMode ?? "single") as M;
-    const single = selectionMode === "single";
-    // Rivet (live props): the parts pass a live `isDisabled` accessor (the public type stays boolean).
-    const givenDisabled = props.isDisabled as boolean | (() => boolean | undefined) | undefined;
-    const givenRequired = props.isRequired as boolean | (() => boolean | undefined) | undefined;
-    const read = (v: boolean | (() => boolean | undefined) | undefined) => (typeof v === "function" ? v() : v);
-    const defaultValue = (props.defaultValue !== undefined ? props.defaultValue : single ? (props.defaultSelectedKey ?? null) : []) as ValueType<M>;
-    // useSelectState: `value` wins over the deprecated `selectedKey` (single only); undefined = uncontrolled.
-    const controlled = (props.value !== undefined ? props.value : single ? props.selectedKey : undefined) as
-      Key | null | readonly Key[] | Signal<Key | null | readonly Key[]> | undefined;
-    const control = controllable<Key | null | readonly Key[], any>(controlled, defaultValue, props.onChange as ((value: any) => void) | undefined);
-    const value = control.value;
-    const initial = untrack(value);
-    return {
-      ...createOverlayTriggerState(props),
-      id: props.id ?? createId(),
-      selectionMode,
+  const selectionMode = (props.selectionMode ?? "single") as M;
+  const single = selectionMode === "single";
+  // Rivet (live props): the parts pass a live `isDisabled` accessor (the public type stays boolean).
+  const givenDisabled = props.isDisabled as boolean | (() => boolean | undefined) | undefined;
+  const givenRequired = props.isRequired as boolean | (() => boolean | undefined) | undefined;
+  const read = (v: boolean | (() => boolean | undefined) | undefined) => (typeof v === "function" ? v() : v);
+  const defaultValue = (props.defaultValue !== undefined ? props.defaultValue : single ? (props.defaultSelectedKey ?? null) : []) as ValueType<M>;
+  // useSelectState: `value` wins over the deprecated `selectedKey` (single only); undefined = uncontrolled.
+  const controlled = (props.value !== undefined ? props.value : single ? props.selectedKey : undefined) as
+    Key | null | readonly Key[] | Signal<Key | null | readonly Key[]> | undefined;
+  const control = controllable<Key | null | readonly Key[], any>(controlled, defaultValue, props.onChange as ((value: any) => void) | undefined);
+  const value = control.value;
+  const initial = untrack(value);
+  return {
+    ...createOverlayTriggerState(props),
+    id: props.id ?? createId(),
+    selectionMode,
+    value,
+    control,
+    defaultValue: (defaultValue ?? initial) as ValueType<M>,
+    items: props.items,
+    ...(props.collection ? { collection: props.collection } : {}),
+    disabledKeys: [...(props.disabledKeys ?? [])],
+    shouldCloseOnSelect: props.shouldCloseOnSelect ?? single,
+    allowsEmptyCollection: !!props.allowsEmptyCollection,
+    isDisabled: !!untrack(() => read(givenDisabled)),
+    ...(typeof givenDisabled === "function" ? { disabled: givenDisabled } : {}),
+    isRequired: !!untrack(() => read(givenRequired)),
+    ...(typeof givenRequired === "function" ? { required: givenRequired } : {}),
+    ...(props.name !== undefined ? { name: props.name } : {}),
+    ...(props.form !== undefined ? { form: props.form } : {}),
+    focusStrategy: signal<FocusStrategy | null>(null),
+    isFocused: signal(false),
+    isFocusVisible: signal(false),
+    focusedKey: signal<Key | null>(null),
+    validation: createFormValidationState<unknown>({
+      isInvalid: props.isInvalid,
+      validate: props.validate as ValidationFunction<unknown> | undefined,
+      validationBehavior: props.validationBehavior ?? "aria",
+      name: props.name,
+      validationErrors: props.validationErrors,
       value,
-      control,
-      defaultValue: (defaultValue ?? initial) as ValueType<M>,
-      items: props.items,
-      ...(props.collection ? { collection: props.collection } : {}),
-      disabledKeys: [...(props.disabledKeys ?? [])],
-      shouldCloseOnSelect: props.shouldCloseOnSelect ?? single,
-      allowsEmptyCollection: !!props.allowsEmptyCollection,
-      isDisabled: !!untrack(() => read(givenDisabled)),
-      ...(typeof givenDisabled === "function" ? { disabled: givenDisabled } : {}),
-      isRequired: !!untrack(() => read(givenRequired)),
-      ...(typeof givenRequired === "function" ? { required: givenRequired } : {}),
-      ...(props.name !== undefined ? { name: props.name } : {}),
-      ...(props.form !== undefined ? { form: props.form } : {}),
-      focusStrategy: signal<FocusStrategy | null>(null),
-      isFocused: signal(false),
-      isFocusVisible: signal(false),
-      focusedKey: signal<Key | null>(null),
-      validation: createFormValidationState<unknown>({
-        isInvalid: props.isInvalid,
-        validate: props.validate as ValidationFunction<unknown> | undefined,
-        validationBehavior: props.validationBehavior ?? "aria",
-        name: props.name,
-        validationErrors: props.validationErrors,
-        value,
-      }),
-      ...(props.onSelectionChange ? { onSelectionChange: props.onSelectionChange } : {}),
-    };
-  });
+    }),
+    ...(props.onSelectionChange ? { onSelectionChange: props.onSelectionChange } : {}),
+  };
 }
 
 /** Whether the select is disabled now (its live `isDisabled` accessor, else the creation value). */

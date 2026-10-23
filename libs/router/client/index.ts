@@ -35,7 +35,7 @@ export { currentOf, _markActive, type ActiveMode } from "./active.ts";
 export { navigate, invalidate, revalidate, setSearchParams, _go, type NavigateOptions, type FreshData, type InvalidateTarget } from "./navigate.ts";
 export { useParams, useSearchParams, RouteParamsContext } from "./params.ts";
 export { SearchParams } from "./search.ts";
-export { _live, _livePage, _liveRouter, _armLive, _liveIntent, _liveLevels, _serveLive, type LivePage } from "./live.ts";
+export { _live, _livePage, _liveRouter, _armLive, _liveLevels, _serveLive, type LivePage } from "./live.ts";
 // Server render input and action results (no `.tsx` imports: Node loads it in tests).
 import { ServerData, type ServerRoutePayload } from "./route-context.ts";
 export { ServerData, actionResult, type ServerRoutePayload } from "./route-context.ts";
@@ -345,6 +345,27 @@ function go(router: Navigator, url: URL, replace: boolean): void {
   router.navigate!(url, { replace });
   if (!replace) index++;
   enter(index);
+}
+
+/**
+ * Stopped link clicks (document capture listener of resumed Apps): `run` routes the click once something stops its
+ * propagation — now when it already was stopped (a resumed handler run from the loader's capture listener, a replayed
+ * cold click), else when a later handler stops it (the derived runtime's delegated listener runs a link's own handlers
+ * after this capture listener; a stopped handler hides the click from the router's bubbling listener).
+ */
+export function _onStopped(event: Event, run: () => void): void {
+  if (event.cancelBubble) return run();
+  let once = false;
+  for (const key of ["stopPropagation", "stopImmediatePropagation"] as const) {
+    const stop = event[key];
+    Object.defineProperty(event, key, {
+      configurable: true,
+      value() {
+        stop.call(event);
+        if (!once) ((once = true), run());
+      },
+    });
+  }
 }
 
 /** Delegated click handler: route same-origin links through the router (`modules`: only URLs a page route matches). */

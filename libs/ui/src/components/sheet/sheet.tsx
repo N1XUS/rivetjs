@@ -1,7 +1,7 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set (parts, props, defaults, data attributes)
 // inspired by HeroUI Pro's public Sheet docs; independent implementation. Structure follows `../drawer/drawer.tsx`:
 // - Root = cdk `DialogTrigger` in a `SheetContext` provider; the context carries the sheet state (`./sheet-state.ts`,
-//   region state: plain data + signals + the caller's callbacks → resumes). Parts read slots from a module memo.
+//   state: plain data + signals + the caller's callbacks → resumes). Parts read slots from a module memo.
 // - Backdrop = cdk `ModalOverlay` (div overlay layer: inert outside, focus trap, scroll lock; never native dialog /
 //   popover), Content = cdk `Modal`; both re-provide the context through render-function children. `isModal={false}`:
 //   no backdrop, Content = own presence (portal `Overlay` without focus containment, enter / exit animation, Escape via
@@ -30,7 +30,6 @@ import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider, Show, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { SheetVariants } from "../../../styles/src/components/sheet/index.ts";
@@ -60,7 +59,7 @@ type SheetContext = {
   state?: SheetState;
 };
 
-const SheetContext = resumableContext(createContext<SheetContext>({}, { id: "rv-ui-sheet" }));
+const SheetContext = createContext<SheetContext>({});
 
 type SheetSlots = ReturnType<typeof sheetVariants>;
 const SLOTS = new Map<string, SheetSlots>();

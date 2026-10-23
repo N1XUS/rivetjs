@@ -14,11 +14,15 @@ export interface Stories {
   close(): Promise<void>;
 }
 
-/** Build (once per run via `global-setup.ts`, else once per process), start the server and a browser. */
-export async function stories(): Promise<Stories> {
+/**
+ * Build (once per run via `global-setup.ts`, else once per process), start the server and a browser. `preload`: the
+ * server's preload option; default `{ lean: true }` (no fetch-ahead `data-fo`: its `modulepreload` requests after `load`
+ * broke the request-based "only runtime entry chunks before interaction" checks, M6-CUT); fetch-ahead stories pass `{}`.
+ */
+export async function stories(options: { preload?: NonNullable<Parameters<typeof start>[0]>["preload"] } = {}): Promise<Stories> {
   // `ui-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here.
   await (built ??= inject("uiStoriesDist") === dist ? Promise.resolve() : buildApp());
-  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {} });
+  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: options.preload ?? { lean: true } });
   const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
   return {
     origin: app.url,

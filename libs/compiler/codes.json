@@ -1,5 +1,5 @@
 {
-  "$comment": "Rivet diagnostic code registry. Compiler codes are assigned in rust/src/diagnostics.rs (tests/codes.test.ts keeps both in sync); language-service codes (RV2101, RV3101, RV7101, RV7102) in libs/language-core. Codes are never reused; retired codes stay listed. `docs` per code = the docs base + code (placeholder origin until the docs site is published).",
+  "$comment": "Rivet diagnostic code registry. Compiler codes are assigned in rust/src/diagnostics.rs (tests/codes.test.ts keeps both in sync); language-service codes (RV3101, RV7101, RV7102) in libs/language-core. Codes are never reused; retired codes stay listed. `docs` per code = the docs base + code (placeholder origin until the docs site is published).",
   "docs": "https://rivetjs.severyn.pro/errors/",
   "ranges": {
     "RV1": "syntax / JSX / attributes",
@@ -146,7 +146,8 @@
     {
       "code": "RV1103",
       "severity": "error",
-      "title": "Invalid clientEvent target",
+      "title": "Invalid clientEvent target (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV1103"
     },
     {
@@ -158,13 +159,15 @@
     {
       "code": "RV2002",
       "severity": "error",
-      "title": "Resumable ref callback must assign a local",
+      "title": "Resumable ref callback must assign a local (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2002"
     },
     {
       "code": "RV2003",
       "severity": "error",
-      "title": "Captured class instance is not serializable",
+      "title": "Captured class instance is not serializable (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2003"
     },
     {
@@ -177,85 +180,99 @@
     {
       "code": "RV2005",
       "severity": "error",
-      "title": "Ref-bound local assigned outside ref callbacks",
+      "title": "Ref-bound local assigned outside ref callbacks (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2005"
     },
     {
       "code": "RV2006",
       "severity": "error",
-      "title": "JSX inside handlers, effects and computeds",
+      "title": "JSX inside handlers, effects and computeds (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2006"
     },
     {
       "code": "RV2007",
       "severity": "error",
-      "title": "Resumable code captures `this`",
+      "title": "Resumable code captures `this` (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2007"
     },
     {
       "code": "RV2008",
       "severity": "error",
-      "title": "Resumed module exports a different binding under a captured name",
+      "title": "Resumed module exports a different binding under a captured name (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2008"
     },
     {
       "code": "RV2009",
       "severity": "error",
-      "title": "Two module references share a browser name",
+      "title": "Two module references share a browser name (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2009"
     },
     {
       "code": "RV2010",
       "severity": "error",
-      "title": "One module reference id resolves to two installed copies (Vite build)",
+      "title": "One module reference id resolves to two installed copies (Vite build) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2010"
     },
     {
       "code": "RV2011",
       "severity": "error",
-      "title": "Mutually recursive functions separated by an early exit (resume)",
+      "title": "Mutually recursive functions separated by an early exit (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2011"
     },
     {
       "code": "RV2012",
       "severity": "error",
-      "title": "`.bind` with a spread first argument (resume; a warning when the receiver may be an object with its own `bind`)",
+      "title": "`.bind` with a spread first argument (resume; a warning when the receiver may be an object with its own `bind`) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2012"
     },
     {
       "code": "RV2013",
       "severity": "warning",
-      "title": "`.bind` of a value Rivet cannot resume (resume; an error when it is provably a function)",
+      "title": "`.bind` of a value Rivet cannot resume (resume; an error when it is provably a function) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2013"
     },
     {
       "code": "RV2014",
       "severity": "warning",
-      "title": "`.bind(…)` inside an object literal a resumable closure reaches (resume)",
+      "title": "`.bind(…)` inside an object literal a resumable closure reaches (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2014"
     },
     {
       "code": "RV2015",
       "severity": "warning",
-      "title": "Component returns a function that cannot resume: anonymous default export or wrapper call (resume)",
+      "title": "Component returns a function that cannot resume: anonymous default export or wrapper call (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2015"
     },
     {
       "code": "RV2016",
       "severity": "warning",
-      "title": "`resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume)",
+      "title": "`resource()` in a form that cannot resume: destructured, a `let`, not a `const` initializer, or inside a hook (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2016"
     },
     {
       "code": "RV2101",
       "severity": "warning",
-      "title": "Captured value not serializable (type-aware, language service)",
+      "title": "Captured value not serializable (type-aware, language service) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2101"
     },
     {
       "code": "RV2102",
       "severity": "error",
-      "title": "Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive]",
+      "title": "Captured class instance cannot resume as data (private field, decorator, non-data base or resource); at render: [serialize] without static [revive] (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2102"
     },
     {
@@ -273,13 +290,15 @@
     {
       "code": "RV2105",
       "severity": "warning",
-      "title": "Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / Date() / new Date()): its rows stay recorded instead of lazy (resume)",
+      "title": "Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / Date() / new Date()): its rows stay recorded instead of lazy (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2105"
     },
     {
       "code": "RV2106",
       "severity": "warning",
-      "title": "Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume)",
+      "title": "Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) (retired: derived resume model)",
+      "retired": true,
       "docs": "https://rivetjs.severyn.pro/errors/RV2106"
     },
     {

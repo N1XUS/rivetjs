@@ -32,7 +32,6 @@ import { liveRenderProps, renderPropsOf, type LiveRenderProps } from "../slots/i
 import {
   DEFAULT_SLOT,
   Provider,
-  resumableContext,
   contextProps,
   renderProps,
   type ContextValue,
@@ -53,7 +52,7 @@ export type { QueuedToast, ToastOptions, ToastState, ToastStateProps };
 const OWNED = ["style"] as const;
 
 /** RAC `ToastStateContext`: the region's toast state (browser-only value). */
-const ToastStateContext = resumableContext(createContext<ToastState<any> | null>(null, { id: "rv-toast-state" }));
+const ToastStateContext = createContext<ToastState<any> | null>(null);
 
 export interface ToastRegionRenderProps<T> {
   /** A list of all currently visible toasts. */
@@ -386,7 +385,7 @@ export interface ToastContentProps extends DOMRenderProps<"div", undefined>, Glo
 }
 
 /** RAC `ToastContentContext` (Toast provides the alert's props). */
-export const ToastContentContext = resumableContext(createContext<ContextValue<ToastContentProps, HTMLDivElement>>({}, { id: "rv-toast-content" }));
+export const ToastContentContext = createContext<ContextValue<ToastContentProps, HTMLDivElement>>({});
 
 /** ToastContent wraps the main content of a toast notification. */
 export function ToastContent(props: ToastContentProps) {

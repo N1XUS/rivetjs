@@ -26,7 +26,6 @@ import {
   contextProps,
   createSlot,
   renderPropsOf,
-  resumableContext,
   type ContextValue,
   type ProviderValue,
   type RefValue,
@@ -90,9 +89,9 @@ export interface ColorSliderProps
 }
 
 /** RAC `ColorSliderContext`. */
-export const ColorSliderContext = resumableContext(createContext<ContextValue<Partial<ColorSliderProps>, HTMLDivElement>>(null, { id: "rv-color-slider" }));
+export const ColorSliderContext = createContext<ContextValue<Partial<ColorSliderProps>, HTMLDivElement>>(null);
 /** RAC `ColorSliderStateContext`. */
-export const ColorSliderStateContext = resumableContext(createContext<ColorSliderState | null>(null, { id: "rv-color-slider-state" }));
+export const ColorSliderStateContext = createContext<ColorSliderState | null>(null);
 
 const OWNED = ["style", "id", "render"] as const;
 

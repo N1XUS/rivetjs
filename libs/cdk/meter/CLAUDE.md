@@ -4,7 +4,7 @@
 RAC `Meter`: `<div role="meter">` — a quantity within a known range; same mechanics as `../progress-bar` (no indeterminate state).
 
 ## Entry points
-- `@rivetjs/cdk/meter` -> `index.tsx`: `Meter`, `MeterProps`, `MeterRenderProps`, `MeterContext` (`rv-meter`), re-exports `meterProps`
+- `@rivetjs/cdk/meter` -> `index.tsx`: `Meter`, `MeterProps`, `MeterRenderProps`, `MeterContext`, re-exports `meterProps`
 - `@rivetjs/cdk/meter/behaviour` -> `behaviour.tsx` (explicit package.json entry): `meterProps(props, locale?)` → `{ meterProps, labelProps }`, `percentageOf`, `percentageOfProps`
 
 ## Layout

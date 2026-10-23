@@ -207,10 +207,10 @@ async function measure(app: string, dir: string, loop = requests): Promise<Resul
     alloc += (getHeapStatistics().total_allocated_bytes - a0) / (loop / 5);
   }
   runs.sort((a, b) => a - b);
-  const state = /<script type="rivet\/state"([^>]*)>([^<]*)/.exec(html);
+  const state = /<script type="rivet\/boundaries"([^>]*)>([^<]*)/.exec(html);
   const json = state ? JSON.parse(state[2]!.replace(/\\u003c/g, "<")) : {};
   // Eager JS: the generated App's chunk (route-count driven) and, when the page boots, the chunks
-  // named in its data-preload `e` list (runtime + eager symbol chunks).
+  // the runtime when the page boots (`data-boot`).
   const client = resolve(dir, "dist/client");
   const manifest = JSON.parse(await readFile(resolve(client, ".vite/rivet-resume.json"), "utf8")) as { symbols: Record<string, string>; runtime: string };
   const appChunk = Object.entries(manifest.symbols).find(([id]) => id.startsWith(".rivet/app.tsx#App"))?.[1];
@@ -224,9 +224,8 @@ async function measure(app: string, dir: string, loop = requests): Promise<Resul
   let eagerMin = 0,
     eagerBr = 0;
   if (boot) {
-    // data-preload = [runtime, [url, code]…] ("e" eager, "i" idle); closure over the Vite manifest's static imports.
-    const preload = /data-preload="([^"]*)"/.exec(state![1]!);
-    const plan = preload ? (JSON.parse(preload[1]!.replace(/&quot;/g, '"').replace(/&amp;/g, "&")) as unknown[]) : [];
+    // A booting page (`data-boot`) loads the runtime (`data-rt`) at load; closure over the Vite manifest's static imports.
+    const rt = / data-rt="([^"]*)"/.exec(state![1]!)?.[1];
     const vite = JSON.parse(await readFile(resolve(client, ".vite/manifest.json"), "utf8")) as Record<string, { file: string; imports?: string[] }>;
     const importsOf = new Map(Object.values(vite).map((record) => ["/" + record.file, (record.imports ?? []).map((key) => "/" + vite[key]!.file)]));
     const files = new Set<string>();
@@ -235,8 +234,7 @@ async function measure(app: string, dir: string, loop = requests): Promise<Resul
       files.add(file);
       for (const next of importsOf.get(file) ?? []) add(next);
     };
-    add(String(plan[0] ?? manifest.runtime));
-    for (const step of plan.slice(1) as [string, string][]) if (step[1] === "e" || step[1] === "i") add(step[0]);
+    add(rt ?? manifest.runtime);
     for (const file of files) {
       const [m, b] = await size(file);
       eagerMin += m!;
@@ -249,7 +247,7 @@ async function measure(app: string, dir: string, loop = requests): Promise<Resul
     allocKB: alloc / 5 / 1024,
     bodyKB: Buffer.byteLength(html) / 1024,
     stateKB: state ? Buffer.byteLength(state[2]!) / 1024 : 0,
-    lazyKB: json.l ? JSON.stringify(json.l).length / 1024 : 0,
+    lazyKB: json.d ? JSON.stringify(json.d).length / 1024 : 0,
     boot,
     appMinKB: appMin!,
     appBrKB: appBr!,
@@ -314,7 +312,7 @@ for (const app of apps) {
   }
 }
 const f = (n: number, d = 1) => n.toFixed(d);
-console.log("\n| app | µs/req | alloc KB | body KB | state KB | state.l KB | boot | App chunk min/br KB | eager JS min/br KB |");
+console.log("\n| app | µs/req | alloc KB | body KB | state KB | state.d KB | boot | App chunk min/br KB | eager JS min/br KB |");
 console.log("|---|---|---|---|---|---|---|---|---|");
 for (const r of results)
   console.log(

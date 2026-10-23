@@ -30,7 +30,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronDown } from "lucide";
 
 import type { AccordionVariants } from "../../../styles/src/components/accordion/index.ts";
@@ -50,7 +49,7 @@ type AccordionContext = {
   hideSeparator?: boolean;
 };
 
-const AccordionContext = resumableContext(createContext<AccordionContext>({}, { id: "rv-ui-accordion" }));
+const AccordionContext = createContext<AccordionContext>({});
 
 type AccordionSlots = ReturnType<typeof accordionVariants>;
 /** Module-level memo per variant (upstream `useMemo([variant])`): tv slot functions are pure, one slots object per variant. */

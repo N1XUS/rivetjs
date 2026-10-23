@@ -4,12 +4,12 @@
 RAC Breadcrumbs: `<ol>` collection of `<Breadcrumb>` parts; each provides `LinkContext` (`aria-current="page"` + disabled on the last, `onPress` → `onAction(id)`) to the Link inside it.
 
 ## Entry points
-- `@rivetjs/cdk/breadcrumbs` -> `index.tsx`: `Breadcrumbs`, `Breadcrumb`, `BreadcrumbsContext` (id `rv-breadcrumbs`, default null), types `BreadcrumbsProps<T>`, `BreadcrumbProps`, `BreadcrumbRenderProps`, `BreadcrumbsOverflowItem`, `Key`; re-exports `breadcrumbsProps`, `AriaBreadcrumbsProps`
+- `@rivetjs/cdk/breadcrumbs` -> `index.tsx`: `Breadcrumbs`, `Breadcrumb`, `BreadcrumbsContext` (default null), types `BreadcrumbsProps<T>`, `BreadcrumbProps`, `BreadcrumbRenderProps`, `BreadcrumbsOverflowItem`, `Key`; re-exports `breadcrumbsProps`, `AriaBreadcrumbsProps`
 - `@rivetjs/cdk/breadcrumbs/behaviour` -> `behaviour.ts`: `breadcrumbsProps(props)` (RA useBreadcrumbs: list attrs, localized default aria-label)
 - `intl.ts`: generated from react-aria `intl/breadcrumbs` (all locales)
 
 ## Layout
-- `index.tsx` - `Breadcrumbs<T>` (contextProps + `collectionOf` build, `CollectionRoot`), `Breadcrumb` = `createLeafComponent(BreadcrumbNode)`; internal `BreadcrumbsCollectionContext` (id `rv-breadcrumbs-collection`)
+- `index.tsx` - `Breadcrumbs<T>` (contextProps + `collectionOf` build, `CollectionRoot`), `Breadcrumb` = `createLeafComponent(BreadcrumbNode)`; internal `BreadcrumbsCollectionContext`
 - `collapsingBreadcrumbs` (same file): `overflowMode="collapse"` path — `createOverflow({ collapse: "start" })` over the collection keys, one keyed `For` over `overflow.items()` (`OVERFLOW` → `<li class={overflowClass} data-overflow="true">{renderOverflow(hiddenItems())}</li>`, else `renderNodeAt`), `render` variant duplicated like the default path
 - deps: `../collections/components.tsx` (B5 builder, `renderNodeAt`), `../link/index.tsx` (`LinkContext`), `../overflow/index.tsx`, `../interactions/merge-props.tsx` (`mergeRefs`), `../slots`, `../utils/data-attrs.tsx`
 - tests: `tests/breadcrumbs.browser.test.tsx` (RAC Breadcrumbs.test.js port + Rivet), `tests/overflow.browser.test.tsx` (Spectrum Breadcrumbs collapsing port), `tests/overflow-ssr.test.ts`, `tests/pilots-ssr.test.ts` (RAC Breadcrumbs.ssr port, signal-driven items, Breadcrumb on* handler), `tests-components/links.test.ts`, `tests-components/dom-events-forms.test.ts`

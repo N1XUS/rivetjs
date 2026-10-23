@@ -2,7 +2,7 @@
 // polite live regions), MIT, © 2026 Malva UI.
 // Rivet:
 // - `<mlv-scheduler>` inputs / models / outputs → props (live unless listed as read once in `CLAUDE.md`): the root
-//   turns live props into accessors (`liveOptions`), builds the region state (`createSchedulerState`) and memoizes the
+//   turns live props into accessors (`liveOptions`), builds the state (`createSchedulerState`) and memoizes the
 //   derived values in its own `computed`s (resumable), handed to the views through `SchedulerContext` (`rv-scheduler`).
 // - Server output is final (range, days, layout, labels); the month view boots nothing.
 // - External drop (T7, malva `externalDrop` over SortableJS groups): with `onExternalDrop` the body is a cdk
@@ -157,7 +157,7 @@ const OPTION_KEYS = [
 ] as const;
 const CONTROLLED_KEYS = ["events", "view", "date"] as const;
 /**
- * Everything `createSchedulerState` keeps (region state): options, controlled values and state handlers — never the
+ * Everything `createSchedulerState` keeps: options, controlled values and state handlers — never the
  * whole props bag (`renderEvent`, `stateRef`, DOM props would serialize with the state; one non-serializable value
  * there would break the scheduler's resume).
  */

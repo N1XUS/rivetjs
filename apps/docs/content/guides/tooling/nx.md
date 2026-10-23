@@ -149,7 +149,7 @@ npx nx g @rivetjs/nx:c Disclosure --project=web --kind=overlay --story
 | `--story` | off | Apps only: a page at `/stories/<name>` that shows the component's states. |
 | `--export` | on for libraries | Adds the component to the library's `src/index.ts`. |
 
-The generated code follows the rules that keep a page [resumable](../../learn/resuming.md): event handlers are inline arrow functions, and the overlay's content is a render function (`{() => <p>…</p>}`), so a closed panel's content is created only when it opens. See [function is not serializable](../../gotchas/function-is-not-serializable.md) for why.
+The generated code follows the rules that keep a page [resumable](../../learn/resuming.md): event handlers are inline arrow functions, and the overlay's content is a render function (`{() => <p>…</p>}`), so a closed panel's content is created only when it opens.
 
 ### route
 

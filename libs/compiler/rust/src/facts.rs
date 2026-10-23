@@ -331,7 +331,7 @@ pub fn boundary_facts(source: &str, filename: &str) -> Value {
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
     let tree = Tree::new(source, program, semantic);
     let mut scratch = crate::compile::Diags { tree: Some(&tree), filename: filename.to_string(), list: Vec::new() };
-    let resumed = crate::resume::analyze(&tree, filename, &mut scratch, &Default::default(), &[], &Default::default());
+    let resumed = crate::resume::analyze(&tree, filename, &mut scratch, &Default::default(), &[]);
     crate::resume::derived::facts_json(&tree, &resumed)
 }
 

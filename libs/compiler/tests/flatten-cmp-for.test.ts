@@ -94,14 +94,4 @@ test("3: ineligible For shapes keep the generic rows", () => {
     );
     assert.doesNotMatch(r.code, /\$list/, body);
   }
-  // Resume mode: rows render through the recorder's row hook.
-  const r = compile(
-    `import { For } from "@rivetjs/runtime/server";\nexport const Page = (p: any) => <ul><For each={() => p.rows} by={(r: any) => r}>{(row) => <li>{row()}</li>}</For></ul>;`,
-    {
-      target: "server",
-      filename: "for.tsx",
-      resume: { module: "for.tsx" },
-    },
-  );
-  assert.doesNotMatch(r.code, /\$list/);
 });

@@ -42,7 +42,7 @@ export default function Page() {
 }
 ```
 
-When `count` changes, only the text `{count()}` and the `class` attribute update. The component function does not run again. On a server-rendered page it never runs in the browser at all: see [Server first](/learn/server-first.md).
+When `count` changes, only the text `{count()}` and the `class` attribute update. The component function does not run again. On a server-rendered page it runs in the browser only once, when the component is first used: see [Server first](/learn/server-first.md).
 
 ## Update it
 
@@ -150,7 +150,7 @@ You can change this comparison with the `equals` option. See [equality](./equali
 
 ## Values in a resumed page
 
-On a server-rendered page, Rivet writes the value of each signal that the browser needs into the HTML. The browser reads it back when you first interact. So the value must be :term[serializable]{id=serializable}: Rivet must be able to turn it into text and back.
+On a server-rendered page, Rivet writes the value of each signal of an interactive component into the HTML. The browser reads it back when the component wakes up. So the value should be :term[serializable]{id=serializable}: Rivet must be able to turn it into text and back. A signal holding something else starts again from its initial value in the browser.
 
 These values work: strings, numbers, booleans, `null`, `undefined`, plain objects and arrays, `Date`, `URL`, `Map`, `Set` and `bigint`. These do not: functions, class instances, symbols, promises and `WeakMap`. The server render fails with an error that names the type.
 

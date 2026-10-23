@@ -2,22 +2,19 @@
 // once, at creation. A read while it loads inside a `Suspense` makes that Suspense wait: it drops what its content
 // recorded, awaits the loads its content read (through an `Async`, so ordered and streamed renders treat it like a
 // pending Async below that Suspense) and builds the content again; resources created during a discarded build are reused
-// by creation order. A read while loading outside any Suspense renders the loading state and marks the reading region
-// for re-creation once the page resumed (the browser loads it then). Resumable renders encode a resource function as a
-// `bind` of the recipe the compiler gave its `const` with the server state (`ResourceSeed`); dom-resume rebuilds it from
-// that recipe and binds the seed (dom-resource.ts `adopt`), so the browser does not load the value again.
-// Derived renders ship the seed as the making boundary's keyed value `$r` instead (`seedOf`, `server-derived.ts`).
+// by creation order. A read while loading outside any Suspense renders the loading state (the browser loads it).
+// The state ships as the making boundary's keyed value `$r` (`seedOf`, `server-derived.ts`); the browser's adopt run
+// hands it to `resource()` (dom-resource.ts `adopt`), so the browser does not load the value again.
 import { createRoot, getOwner, onCleanup, provide, runWithOwner, signal, untrack, useContext } from "@rivetjs/reactivity";
 import type { Context, Owner, Signal } from "@rivetjs/reactivity";
 import { DEV } from "#dev";
 import { captureAsyncContext } from "./async.ts";
 import { Async, clientOnly } from "./server-async.ts";
 import { _onBuild } from "./server-suspense.ts";
-import { _derivedResource, _resourceResume } from "./server-resource-slot.ts";
+import { _derivedResource } from "./server-resource-slot.ts";
 import { _OPS, _PROTO, _STATES, _sameKey } from "./resource.ts";
 import type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource } from "./resource.ts";
 import type { AsyncContext } from "./async.ts";
-import type { EntryRecord } from "./resume-format.ts";
 import type { ServerValue } from "./server.ts";
 export type { Resource, ResourceFetcher, ResourceInfo, ResourceOptions, ResourceSource, ResourceState } from "./resource.ts";
 
@@ -49,8 +46,7 @@ interface Builds {
   /** Where resources created in a build register their abort: outlives the discarded builds. */
   owner: Owner | null;
 }
-const states = new WeakMap<object, State>(),
-  aliases = new WeakMap<object, () => void>();
+const states = new WeakMap<object, State>();
 
 // Suspense content builds (installed with the context token they provide: kept exactly when `resource` is used).
 const BUILDS = _onBuild(suspend, { defaultValue: null } as Context<Builds | null>);
@@ -68,9 +64,7 @@ function suspend(content: () => unknown): unknown {
 function build(content: () => unknown, builds: Builds): unknown {
   builds.i = 0;
   builds.wait = [];
-  const hooks = _resourceResume(),
-    mark = hooks && hooks.mark(),
-    dh = _derivedResource(),
+  const dh = _derivedResource(),
     dmark = dh && dh.mark();
   let root: { value: unknown; dispose: () => void } | undefined, failure: [unknown] | undefined;
   try {
@@ -84,7 +78,6 @@ function build(content: () => unknown, builds: Builds): unknown {
     return root!.value;
   }
   if (root) root.dispose();
-  if (mark != null) hooks!.cut(mark);
   if (dmark != null) dh!.cut(dmark);
   const wait = Promise.all(builds.wait);
   return Async({ load: () => wait, children: () => build(content, builds) as ServerValue, $i: 1 } as never);
@@ -92,33 +85,7 @@ function build(content: () => unknown, builds: Builds): unknown {
 
 // Marks the reading region for re-creation once the page resumed (`clientOnly`'s hook; nothing outside resumable renders).
 const browserLoads = clientOnly(null as never, undefined, { when: "load" }) as (props: object) => unknown;
-const NOT_RESUMABLE =
-  "resource is not resumable here (compiler warning RV2016): create it in the component as one const, e.g. " +
-  "`const user = resource(() => id(), loadUser)`, so the browser can rebuild it from its recipe";
 
-let encoding = false;
-// A resource function → `{k:"bind", a:[recipe stand-in, undefined, seed]}` (dom-resume binds the seed as first argument).
-function encode(value: object, ref: (value: unknown) => number): EntryRecord | undefined {
-  const st = states.get(value);
-  if (st === undefined) return undefined;
-  let alias = aliases.get(value);
-  if (alias === undefined) aliases.set(value, (alias = function resource() {}));
-  if (!_resourceResume()!.alias(value, alias)) throw new TypeError(NOT_RESUMABLE);
-  const seed: Record<string, unknown> = { n: st.n, s: st.status };
-  let shipped = true;
-  if (st.status === 1) seed.x = 1;
-  else if (st.status === 4) shipped = data(st.error) && ((seed.e = st.error), true);
-  else if (st.value !== undefined) shipped = data(st.value) && ((seed.v = st.value), true);
-  if (!shipped) {
-    seed.x = 1;
-    if (DEV && !st.noted) {
-      st.noted = true;
-      console.warn("Rivet: a resource's " + (st.status === 4 ? "error" : "value") + " is not serializable data: the browser loads it again after resume.");
-    }
-  }
-  if (st.key !== undefined && data(st.key)) seed.k = st.key;
-  return { k: "bind", a: [ref(alias), ref(undefined), ref(seed)] };
-}
 // The derived model's seed (`dom-resource.ts` `adopt`, without the change counter: the browser makes its own): what the
 // server settled; pending → `x` (the browser loads on first use). The recorder ships it when it is JSON data, else `x`.
 function seedOf(st: State): unknown {
@@ -129,26 +96,6 @@ function seedOf(st: State): unknown {
   if (st.key !== undefined && st.key !== true) seed.k = st.key;
   return seed;
 }
-// Data the resume encoder ships by value (else the browser loads again rather than fail the render).
-function data(value: unknown, seen = new Set<object>()): boolean {
-  if (value === null || (typeof value !== "object" && typeof value !== "function")) return typeof value !== "symbol";
-  if (typeof value === "function" || seen.has(value)) return typeof value !== "function";
-  seen.add(value);
-  const proto = Object.getPrototypeOf(value);
-  if (value instanceof Date || value instanceof RegExp || value instanceof URL) return true;
-  if (value instanceof Map) {
-    for (const [k, v] of value) if (!data(k, seen) || !data(v, seen)) return false;
-    return true;
-  }
-  if (value instanceof Set) {
-    for (const v of value) if (!data(v, seen)) return false;
-    return true;
-  }
-  if (!Array.isArray(value) && proto !== Object.prototype && proto !== null && !(value instanceof Error)) return false;
-  for (const key of Object.keys(value)) if (!data((value as Record<string, unknown>)[key], seen)) return false;
-  return true;
-}
-
 // A resource function over `st` (server reads: the value, tracked through the change counter and the source).
 function make<T>(st: State): Resource<T> {
   const fn = function (op?: unknown, arg?: unknown): unknown {
@@ -195,10 +142,6 @@ export function resource<T>(fetcher: ResourceFetcher<true, T>, options?: Resourc
 export function resource<T, S>(source: ResourceSource<S>, fetcher: ResourceFetcher<S, T>, options?: ResourceOptions<T>): Resource<T>;
 /** Server twin: loads once at creation (not with `{ ssr: false }`); see the DOM `resource`. */
 export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T> {
-  if (!encoding) {
-    const hooks = _resourceResume();
-    if (hooks !== null) ((encoding = true), hooks.encode(encode));
-  }
   const sourced = typeof b === "function",
     source = (sourced ? a : true) as ResourceSource<S>,
     fetcher = (sourced ? b : a) as ResourceFetcher<S, T>,
@@ -226,7 +169,7 @@ export function resource<T, S>(a: unknown, b?: unknown, c?: unknown): Resource<T
   };
   const fn = make<T>(st);
   if (builds) builds.list[at] = st;
-  // Derived model: the state ships on the boundary whose body made it (read at the flush: settled by then when awaited).
+  // The state ships on the boundary whose body made it (read at the flush: settled by then when awaited).
   _derivedResource()?.seed(() => seedOf(st));
   if (key === false || key == null) return fn;
   if (options?.ssr === false) {

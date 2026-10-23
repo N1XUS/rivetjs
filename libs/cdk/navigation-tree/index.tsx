@@ -16,16 +16,7 @@ import { clientEffect } from "@rivetjs/runtime/dom";
 import type { Key } from "../collections/types.ts";
 import { toggleTreeKey, treeCollection, treeSelectionManager, type TreeState } from "../collections/tree-state.ts";
 import { LinkContext } from "../link/index.tsx";
-import {
-  Provider,
-  contextProps,
-  renderProps,
-  resumableContext,
-  type ContextValue,
-  type RefValue,
-  type RenderProps,
-  type StyleRenderProps,
-} from "../slots/index.tsx";
+import { Provider, contextProps, renderProps, type ContextValue, type RefValue, type RenderProps, type StyleRenderProps } from "../slots/index.tsx";
 import {
   Tree,
   TreeHeader,
@@ -53,9 +44,7 @@ export { NavigationTreeItemStateContext };
 type MaybeAccessor<T> = T | (() => T);
 
 /** RAC `NavigationTreeContext`: props for the NavigationTrees inside a component. */
-export const NavigationTreeContext = resumableContext(
-  createContext<ContextValue<NavigationTreeProps<any>, HTMLDivElement>>(null, { id: "rv-navigation-tree-props" }),
-);
+export const NavigationTreeContext = createContext<ContextValue<NavigationTreeProps<any>, HTMLDivElement>>(null);
 
 export interface NavigationTreeRenderProps extends Pick<TreeRenderProps, "isEmpty" | "isFocused" | "isFocusVisible" | "state"> {}
 

@@ -37,15 +37,15 @@ test("compileRules: shell defaults, own times, keys; shell wins over cache; vali
     assert.throws(() => compileRules(rules as unknown as RouteRules)("/s"), message);
 });
 
-const STATE = '<script type="rivet/state" data-region="0" data-events="click"';
-test("shellCut: after the root state tail (state, loader, stream add-on with pending boundaries)", () => {
+const TAIL = '<script type="rivet/boundaries" data-rt="/rt.js"';
+test("shellCut: after the root boundaries tail (boundaries script + the derived loader with a runtime)", () => {
   const head = "<!doctype html><body><p>shell</p>";
-  const streamed = head + STATE + ' data-stream="4,5,3">{"t":[]}</script><script nonce="n">L</script><script nonce="n">S</script>';
-  assert.equal(shellCut(streamed + '<template data-a="4">x</template>'), streamed.length);
-  assert.equal(shellCut(streamed.slice(0, -3)), -1, "incomplete tail");
-  const plain = head + STATE + '>{"t":[]}</script><script nonce="n">L</script>';
-  assert.equal(shellCut(plain + "</body>"), plain.length, "no pending boundary: state + loader");
-  assert.equal(shellCut(head + "<script>x</script>"), -1, "no resume state");
+  const loaded = head + TAIL + '>{"v":1,"b":[]}</script><script nonce="n">L</script>';
+  assert.equal(shellCut(loaded + '<template data-a="4">x</template>'), loaded.length);
+  assert.equal(shellCut(loaded.slice(0, -3)), -1, "incomplete tail");
+  const bare = head + '<script type="rivet/boundaries">{"v":1,"b":[]}</script>';
+  assert.equal(shellCut(bare + "</body>"), bare.length, "no runtime: the boundaries script only");
+  assert.equal(shellCut(head + "<script>x</script>"), -1, "no resume tail");
 });
 
 // A synthetic app: the page streams `shell` + root state tail + one hole (a deferred value) + document end.
@@ -71,7 +71,7 @@ function app(options: { read?: (event: Parameters<NonNullable<ServerModule["load
     const locale = String(input.locals.locale ?? "");
     const shell =
       `<!doctype html><html><head><script${nonce} src="/a.js"></script></head><body><h1>${data.title} ${locale}</h1>` +
-      `${STATE} data-stream="4,5,3">{}</script><script${nonce}>L</script><script${nonce}>S</script>`;
+      `${TAIL}>{}</script><script${nonce}>L</script>`;
     const handle = input.data[0] as PromiseLike<string>;
     const encoder = new TextEncoder();
     const body = new ReadableStream<Uint8Array>({

@@ -7,7 +7,7 @@ related: [learn/resuming, guides/state/computed, guides/state/signals]
 
 ## What you see
 
-You change a signal. The button shows the new count, but another value on the page stays the same. A `console.log` at the top of the component never prints in the browser.
+You change a signal. The button shows the new count, but another value on the page stays the same. A `console.log` at the top of the component prints once in the browser, at the first click, and never again.
 
 ```tsx
 import { signal } from "@rivetjs/reactivity";
@@ -15,7 +15,7 @@ import { signal } from "@rivetjs/reactivity";
 export default function Counter() {
   const count = signal(0);
   const doubled = count() * 2; // read once
-  console.log("render", count()); // prints on the server only
+  console.log("render", count()); // on the server, then once in the browser when the component wakes up
 
   return (
     <div>
@@ -30,15 +30,13 @@ export default function Counter() {
 
 In React, a component function runs again on every state change. In Rivet it does not.
 
-A component runs **once**, on the server, to make the HTML. In the browser the page :term[resumes]{id=resumability}: it carries on from the server's state and does not run your components again. After that, only three kinds of code run:
+A component runs on the server to make the HTML. In the browser the page :term[resumes]{id=resumability}: nothing runs on load, and the first time you use the component, the browser runs it once over the server's HTML, starting from the server's signal values. After that, only three kinds of code run:
 
 - event handlers, like `onClick`,
 - effects (`effect`, `clientEffect`),
 - the JSX expressions that read a signal that changed.
 
-`const doubled = count() * 2` is plain JavaScript at the top of the component. It ran once, on the server, and saved the number `0`. Nothing reads `count` there again.
-
-The same holds for values built by calling a function in the component (`const columns = buildColumns()`): the browser receives the value as data and does not call `buildColumns` again. If the call does something the browser needs, such as registering a listener, move it into `clientEffect`.
+`const doubled = count() * 2` is plain JavaScript at the top of the component. It ran on the server, and once more in the browser with the same `count`, and saved the number `0` both times. Nothing reads `count` there again.
 
 When a visitor goes to another page through a link, the new page's component runs once in the browser to build that page. It still does not run again when its signals change.
 
@@ -68,5 +66,5 @@ export default function Counter() {
 - To run code when a signal changes (logging, the document title, a timer), use an effect. See [effects](../guides/state/effects.md).
 
 :::note
-In development, after your first edit the browser builds the page itself, so a top-level `console.log` prints in the browser too. Production pages, and dev pages before an edit, do not do this. See [Dev and production differ](dev-and-production-differ.md).
+In development, an edit of a component file reloads the page. See [Dev and production differ](dev-and-production-differ.md).
 :::

@@ -75,7 +75,7 @@ When a computed value computes again and gets an equal result, the things that r
 
 ## Computed values in a resumed page
 
-On a server-rendered page, a computed value does not go into the page data as a value. Rivet records which function made it and what it read. The browser rebuilds it when it is first needed. This means the values it reads must be :term[serializable]{id=serializable}, like any value a handler uses. See [serializable captures](/best-practices/serializable-captures.md).
+On a server-rendered page, a computed value does not go into the page data. The browser computes it again when the component that created it wakes up.
 
 ## Common mistakes
 

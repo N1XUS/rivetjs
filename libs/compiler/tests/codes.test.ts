@@ -20,15 +20,40 @@ test("every code the compiler or language service emits is registered", () => {
   const compiler = emitted(sources(join(here, "rust/src"), /\.rs$/));
   const language = emitted(sources(join(here, "../language-core"), /\.ts$/));
   assert.ok(compiler.size > 40, `found ${compiler.size} compiler codes`);
-  // The Vite plugin's own build errors (`pluginCode: "RV2010"`, `[RV2010] …` message prefixes).
+  // The Vite plugin's own build errors (`pluginCode: "RV2145"`, `[RV2145] …` message prefixes).
   const viteText = readFileSync(join(here, "vite.ts"), "utf8");
   const vite = new Set([...emitted([viteText]), ...[...viteText.matchAll(/\[(RV\d{4})\]/g)].map((m) => m[1]!)]);
-  assert.ok(vite.has("RV2010"), "vite.ts emits RV2010");
+  assert.ok(vite.has("RV2145"), "vite.ts emits RV2145");
   for (const code of [...compiler, ...language, ...vite]) assert.ok(codeInfo(code), `${code} is emitted but not registered in codes.json`);
   // Compiler diagnostics fail the build, except the compile warnings (T10 fix 2: `warnings`, never suppressing code).
-  const warnings = new Set(["RV2013", "RV2014", "RV2015", "RV2016", "RV2104", "RV2105", "RV2106"]);
+  const warnings = new Set(["RV2104"]);
   for (const code of compiler) assert.equal(codeInfo(code)!.severity, warnings.has(code) ? "warning" : "error", code);
-  assert.equal(codeInfo("RV2101")!.severity, "warning");
+  // M6: the serialized model's codes are retired (registered, never reused) and nothing emits them any more.
+  const m6 = [
+    "RV1103",
+    "RV2002",
+    "RV2003",
+    "RV2005",
+    "RV2006",
+    "RV2007",
+    "RV2008",
+    "RV2009",
+    "RV2010",
+    "RV2011",
+    "RV2012",
+    "RV2013",
+    "RV2014",
+    "RV2015",
+    "RV2016",
+    "RV2101",
+    "RV2102",
+    "RV2105",
+    "RV2106",
+  ];
+  for (const code of m6) {
+    assert.ok(codeInfo(code)!.retired, `${code} is retired`);
+    assert.ok(!compiler.has(code) && !language.has(code) && !vite.has(code), `${code} is retired but still emitted`);
+  }
   assert.equal(codeInfo("RV3101")!.severity, "warning");
 });
 

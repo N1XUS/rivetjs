@@ -1,4 +1,5 @@
-// Resume recorder failure the compiler cannot prove: a handler captures a class instance received as a prop (`#token`: not a data class, T24).
+// A handler captures a class instance received as a prop (`#token`: not a data class): derived resume re-runs the
+// component in the browser, so the capture is rebuilt there (serialized resume failed here; M6-CUT 2026-10-22).
 import { signal } from "@rivetjs/reactivity";
 
 class Session {

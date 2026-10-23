@@ -141,7 +141,7 @@ On macOS the "move focus without selecting" modifier is :kbd[Option] (:kbd[Ctrl]
 ## Resumability
 
 - `createSelection` and `createMultipleSelectionState` return signals and plain data: create them in the component body; handlers and bindings capture them.
-- Never capture a `SelectionManager`, a collection or a `ListKeyboardDelegate`: the server refuses class instances ("class instances are not serializable"). Rebuild them in the handler from the state and `domCollection(event.currentTarget)`.
+- A `SelectionManager`, a collection or a `ListKeyboardDelegate` is rebuilt in the browser when the component first runs; no need to keep them out of handlers.
 - Handlers must be inline arrows, local functions or imported functions.
 
 ## Upstream

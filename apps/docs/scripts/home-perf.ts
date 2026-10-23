@@ -13,7 +13,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const file = resolve(root, "content/_home-perf.json");
 
 export interface HomePerf {
-  /** Inline resume loader of `/` (the script right after the `rivet/state` script): UTF-8 bytes, brotli quality 11 bytes. */
+  /** Inline resume loader of `/` (the script right after the `rivet/boundaries` script): UTF-8 bytes, brotli quality 11 bytes. */
   loader: { bytes: number; brotli: number };
   /** `@rivetjs/cdk` test cases (`it(` / `test(` calls in libs/cdk/tests*); `a11y` = those whose title names ARIA, keyboard,
    * focus, labels, roles, screen readers or announcements. The home quotes them rounded down ("4,800+"), so new tests
@@ -54,10 +54,10 @@ export function countCdkTests(repo: string): HomePerf["cdk"] {
   return { tests, a11y };
 }
 
-/** The inline loader script of a built page: the first `<script>` after its `type="rivet/state"` script. */
+/** The inline loader script of a built page: the first `<script>` after its `type="rivet/boundaries"` script. */
 export function inlineLoader(html: string): string {
-  const match = /<script type="rivet\/state"[^>]*>[\s\S]*?<\/script><script>([\s\S]*?)<\/script>/.exec(html);
-  if (!match) throw new Error("home-perf: no inline resume loader after the rivet/state script");
+  const match = /<script type="rivet\/boundaries"[^>]*>[\s\S]*?<\/script><script[^>]*>([\s\S]*?)<\/script>/.exec(html);
+  if (!match) throw new Error("home-perf: no inline resume loader after the rivet/boundaries script");
   return match[1]!;
 }
 

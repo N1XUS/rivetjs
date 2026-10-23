@@ -26,7 +26,7 @@ import {
 } from "../utils/data-attrs.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
-import { contextProps, renderPropsOf, resumableContext, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
+import { contextProps, renderPropsOf, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 import type { AriaLabelingProps, DOMProps, HoverEvents } from "../utils/types.ts";
 import { hasLive, liveOptions } from "../utils/live.tsx";
 
@@ -83,7 +83,7 @@ export interface GroupProps
 }
 
 /** RAC `GroupContext` (NumberField, ColorField, DatePicker, ComboBox provide the group's props). */
-export const GroupContext = resumableContext(createContext<ContextValue<GroupProps, HTMLDivElement>>({}, { id: "rv-group" }));
+export const GroupContext = createContext<ContextValue<GroupProps, HTMLDivElement>>({});
 
 const isFn = (v: unknown): boolean => typeof v === "function";
 const truthy = (v: unknown): boolean => !!v && v !== "false";

@@ -1,7 +1,7 @@
 // createEnterAnimation / createExitAnimation (react-aria utils/animation port) in Chromium: real CSS
 // animations, promise-returning callbacks, interruption by reopening; a portaled ModalOverlay's transition backdrop.
 import { afterEach, expect, onTestFinished, test, vi } from "vitest";
-import { signal, _setRegionStateHook } from "@rivetjs/reactivity";
+import { signal } from "@rivetjs/reactivity";
 import { Show, ref } from "@rivetjs/runtime/dom";
 import { cleanup, flush, render } from "@rivetjs/runtime/testing";
 import { createEnterAnimation, createExitAnimation } from "../utils/animation.tsx";
@@ -153,27 +153,6 @@ test("a rejected onExit promise unmounts and reports the error", async () => {
   await new Promise((r) => setTimeout(r, 0));
   expect(document.getElementById("box")).toBeNull();
   expect(errors.map((e) => (e as Error).message)).toEqual(["exit failed"]);
-});
-
-// Dismissing a server-open overlay as a resumed page's first interaction: the region re-created on the close gets the
-// server's "was open" back (`_regionState`) and exits, instead of unmounting at once (no exit at all).
-test("re-created closed by a resumed region that the server rendered open: plays the exit, then unmounts", async () => {
-  const open = signal(false);
-  const style = document.head.appendChild(document.createElement("style"));
-  style.textContent = "@keyframes rv-out3 { from { opacity: 1 } to { opacity: 0 } } #box[data-exiting] { animation: rv-out3 80ms linear }";
-  // The resume adoption's hook: the region read's `_regionState` calls get the server render's values (open: true).
-  let served = false;
-  const previous = _setRegionStateHook(<T,>(create: () => T): T => (served ? create() : ((served = true), true as T)));
-  try {
-    render(() => <Box open={open} />);
-  } finally {
-    _setRegionStateHook(previous);
-  }
-  const box = document.getElementById("box")!;
-  expect(box?.getAttribute("data-exiting")).toBe("true");
-  await new Promise((r) => setTimeout(r, 200));
-  expect(document.getElementById("box")).toBeNull();
-  style.remove();
 });
 
 test("reopening interrupts the exit", async () => {

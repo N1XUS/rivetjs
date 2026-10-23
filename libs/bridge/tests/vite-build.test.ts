@@ -1,7 +1,7 @@
 // T5 build: `rivet({ bridges })` on the fixture app (fake framework, two islands). Facades replace the framework
-// modules for Rivet importers and resume-compile (server + client symbol ids agree), island chunks share one runtime
-// chunk and appear in the manifest (`islands` + `sizes` / `deps` / `lazy`) so the server's `_rPreload` plans them,
-// the per-page bytes line is logged, and RV2146 warns for a framework hook used in browser code.
+// modules for Rivet importers and resume-compile (server + client boundary names agree), island chunks share one
+// runtime chunk and appear in the manifest (`islands` + `sizes` / `deps`: lean records and fetch-ahead name them), the
+// per-page bytes line is logged, and RV2146 warns for a framework hook used in browser code.
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFile, readdir, writeFile } from "node:fs/promises";
@@ -15,7 +15,6 @@ interface Manifest {
   symbols: Record<string, string>;
   sizes: Record<string, number>;
   deps?: Record<string, string[]>;
-  lazy?: Record<string, string[]>;
   islands?: Record<string, string>;
 }
 
@@ -48,15 +47,6 @@ test("two islands: facades, one runtime chunk, manifest islands + closures, serv
       const closure = manifest.deps?.[url] ?? [];
       assert.ok(closure.some((dep) => dep.endsWith(runtimes[0]!)) || url.endsWith(runtimes[0]!), url + " closure: " + closure.join(" "));
     }
-    // The facade's loader chunk lists the island chunk as a lazy import of the app.
-    const lazies = Object.values(manifest.lazy ?? {}).flat();
-    for (const url of Object.values(manifest.islands!)) assert.ok(lazies.includes(url), url + " in lazy: " + lazies.join(" "));
-    // No facade text or framework module in the Rivet entry graph: the islands' chunks only.
-    const symbolsOf = Object.keys(manifest.symbols);
-    assert.ok(
-      symbolsOf.some((id) => id.startsWith("src/Counter.fake.js.island#")),
-      symbolsOf.join(" "),
-    );
     // Bytes report, one line per page (resumed-only pages: per island module).
     const report = client.lines.filter((line) => line.startsWith("[rivet:bridge] "));
     assert.ok(report.length >= 1, client.lines.join("\n"));
@@ -76,12 +66,15 @@ test("two islands: facades, one runtime chunk, manifest islands + closures, serv
     const html = await render(manifest);
     assert.match(
       html,
-      /<rivet-island data-ri="i0" style="display:contents" data-r="\d+"><div class="counter"><span class="count">1<\/span><button>\+<\/button><\/div><\/rivet-island>/,
+      /<rivet-island data-ri="i0" style="display:contents"><div class="counter"><span class="count">1<\/span><button>\+<\/button><\/div><\/rivet-island>/,
     );
     assert.match(html, /<rivet-island data-ri="i1"[^>]*><b class="badge">badge<\/b><\/rivet-island>/);
-    // Every symbol id the server recorded exists in the client manifest (same facade text both sides).
-    for (const [, id] of html.matchAll(/"((?:src|@rivetjs)\/[^"#]+#[\w$]+)"/g)) assert.ok(id! in manifest.symbols, id + " not in client manifest");
-    // The `load` island's chunk is preloaded (state / modulepreload names its URL).
+    // Every boundary the server recorded exists in the client manifest (same facade text both sides).
+    const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)?.[1] ?? '{"b":[]}') as {
+      b: [number, number, number, string][];
+    };
+    for (const [, , , name] of tail.b) assert.ok(name in manifest.symbols, name + " not in client manifest");
+    // The `load` island's chunk is named (its lean record or the fetch-ahead list).
     assert.ok(html.includes(manifest.islands!["src/Counter.fake.js#Counter"]!.slice(1)), "island chunk planned: " + html);
   } finally {
     await app.remove();
@@ -165,7 +158,7 @@ export function Page() {
   }
 });
 
-test("T7b islands-only route: lean tail from the build manifest — island chunk + vendor only, no resume runtime; mixed route keeps the full tail", async () => {
+test("T7b islands-only route: lean tail from the build manifest — island chunk + vendor only, no resume runtime; mixed route adopts its live island", async () => {
   const app = await fixtureApp("lean");
   try {
     await writeFile(
@@ -201,7 +194,7 @@ export const mixed = (manifest: never) => resumableToString(() => <Page />, { ma
       (m: Manifest) => Promise<string>
     >;
     const lean = await entry.islands(manifest);
-    assert.ok(!lean.includes('type="rivet/state"') && lean.includes('type="rivet/islands"'), lean);
+    assert.ok(!lean.includes('type="rivet/boundaries"') && lean.includes('type="rivet/islands"'), lean);
     // Every script URL the page preloads before input: the `load` island record's closure (chunk + its static imports,
     // the fake vendor), preloaded by the boot after the first paint entry (no link tags).
     assert.ok(!lean.includes("<link"), lean);
@@ -215,31 +208,25 @@ export const mixed = (manifest: never) => resumableToString(() => <Page />, { ma
     for (const url of urls) assert.ok(!runtime.has(url), url + " is resume runtime");
     for (const url of urls) {
       const code = await readFile(resolve(app.root, "dist", url.slice(1)), "utf8");
-      assert.ok(!/rivet\/state|data-region/.test(code), url + " carries resume runtime code");
+      assert.ok(!/rivet\/boundaries|\$rdp/.test(code), url + " carries resume runtime code");
     }
     assert.ok(!lean.includes(manifest.runtime) && (!manifest.loader || !lean.includes(manifest.loader)), lean);
-    // Bytes the lean path adds to the HTML: records + the inline boot (< 2,304 B), no state script / loader.
+    // Bytes the lean path adds to the HTML: records + the inline boot (< 2,304 B), no boundaries tail / loader.
     const tail = lean.slice(lean.indexOf("</main>") + 7);
     // Records (two islands, each with its chunk + merged shared chunk URLs: 2026-10-18 `merge` default 65536 names the
     // shared chunk `rivet-merge-…`, +8 B of URL) + the inline boot.
     assert.ok(tail.length < 2304, tail.length + " B tail");
     // The visible island is a record, loaded only when visible (not preloaded).
     assert.ok(lean.includes(JSON.stringify(manifest.islands!["src/Hooks.fake.js#Badge"])), lean);
-    // Mixed route (live prop + callback writing a Rivet signal + a text binding): the full tail, as before T7b.
+    // Mixed route (live prop + callback writing a Rivet signal + a text binding): the page's boundary adopts and
+    // hydrates the Counter island (no lean record for it); the static-props Badge stays a lean record.
     const mixed = await entry.mixed(manifest);
-    assert.ok(mixed.includes('type="rivet/state"') && !mixed.includes('type="rivet/islands"'), mixed);
-    // The pre-T7b path from the same build: a copy of the SSR bundle with `offerLean` a no-op (the island-bench
-    // baseline lane does the same). Same render order → same island ids.
-    const code = await readFile(resolve(app.root, "dist-server/entry-islands.js"), "utf8");
-    assert.ok(code.includes("function offerLean("), "SSR bundle inlines offerLean");
-    await writeFile(resolve(app.root, "dist-server/entry-full.js"), code.replace("function offerLean(", "function offerLean() {}\nfunction offerLeanUnused("));
-    const full = (await import(pathToFileURL(resolve(app.root, "dist-server/entry-full.js")).href)) as typeof entry;
-    // Both tails for the islands route: the lean one above, the full one here (state script + loader, no records).
-    const islandsFull = await full.islands(manifest);
-    assert.ok(islandsFull.includes('type="rivet/state"') && !islandsFull.includes('type="rivet/islands"'), islandsFull);
-    assert.equal(islandsFull.slice(0, islandsFull.indexOf("</main>")), lean.slice(0, lean.indexOf("</main>")), "same page markup before the tail");
-    // Mixed route: byte-identical to the pre-T7b output (HTML, state, preload list).
-    assert.equal(await full.mixed(manifest), mixed);
+    assert.ok(mixed.includes('type="rivet/boundaries"'), mixed);
+    const mixedRecords = JSON.parse(/<script type="rivet\/islands">([^<]*)<\/script>/.exec(mixed)?.[1] ?? "[]") as unknown[][];
+    assert.deepEqual(
+      mixedRecords.map((r) => r[1]),
+      [manifest.islands!["src/Hooks.fake.js#Badge"]],
+    );
   } finally {
     await app.remove();
   }

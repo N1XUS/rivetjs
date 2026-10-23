@@ -32,7 +32,7 @@ const repo = resolve(here, "../..");
 const { values: args } = parseArgs({
   options: {
     phases: { type: "string", default: "build,server,browser,lighthouse" },
-    lanes: { type: "string", default: "rivet,rivet-all-load,rivet-no-prefetch,rivet-full,next,next-no-prefetch" },
+    lanes: { type: "string", default: "rivet,rivet-all-load,rivet-no-prefetch,next,next-no-prefetch" },
     routes: { type: "string", default: "/,/orders,/orders/new" },
     seconds: { type: "string", default: "5" },
     rounds: { type: "string", default: "3" },
@@ -90,10 +90,6 @@ export const LANES: Lane[] = [
   // Fairness control: every island `client="load"` (what Next does with client components).
   rivetLane("rivet-all-load", 4452, "dist-all-load", { BD_ALL_LOAD: "1" }),
   rivetLane("rivet-no-prefetch", 4453, "dist-no-prefetch", { BD_PREFETCH: "off" }),
-  // Pre-D-lean baseline: same app, `offerLean` stubbed → full resume driver on every page (the runtime's cost).
-  rivetLane("rivet-full", 4456, "dist-full", { BD_FULL_TAIL: "1" }),
-  // Derived resume model (M6): same app and policies, `resume: { model: "derived" }` (not in the default lanes yet).
-  rivetLane("rivet-derived", 4457, "dist-derived", { RIVET_RESUME_MODEL: "derived" }),
   // Next: <Link> prefetch on (default); the no-prefetch row = same build, `prefetch={false}` via the server env.
   nextLane("next", 4454, {}, true),
   nextLane("next-no-prefetch", 4455, { BD_PREFETCH: "off" }, false),

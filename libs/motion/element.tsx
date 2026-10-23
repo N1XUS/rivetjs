@@ -13,9 +13,8 @@
 // Every function handed to the tag is a local arrow returned in an object literal: the compiler registers it (`_rFn`),
 // so the tag's bindings and handlers resume with their captures.
 import { createContext, onCleanup, signal, untrack, useContext } from "@rivetjs/reactivity";
-import { _serverBranch, clientEffect, Provider, ref as elementRef, type Ref } from "@rivetjs/runtime/dom";
+import { clientEffect, Provider, ref as elementRef, type Ref } from "@rivetjs/runtime/dom";
 import { overlayPresence, TransitionScopeProvider, useTransitionScope, type OverlayPresence, type TransitionScope } from "@rivetjs/kit/transition";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { _restProps, _spreadProps } from "@rivetjs/runtime/props";
@@ -158,7 +157,7 @@ interface Config {
   transition(): Transition | undefined;
   reducedMotion(): ReducedPolicy | undefined;
 }
-const ConfigContext = /*#__PURE__*/ resumableContext(createContext<Config | null>(null, { id: "rv-motion-config" }));
+const ConfigContext = /*#__PURE__*/ createContext<Config | null>(null);
 
 /** Defaults for the Motion elements inside: `transition` (under each element's own), `reducedMotion`. */
 export function MotionConfig(props: { transition?: Transition; reducedMotion?: ReducedPolicy; children?: JSX.Element }): JSX.Element {
@@ -184,9 +183,9 @@ interface Scope {
   claim(): number;
 }
 /** `LayoutGroup` id (`@rivetjs/motion/layout`): prefixes the `layoutId`s inside it. */
-export const LayoutGroupContext = /*#__PURE__*/ resumableContext(createContext<string | null>(null, { id: "rv-motion-layout" }));
+export const LayoutGroupContext = /*#__PURE__*/ createContext<string | null>(null);
 
-const VariantContext = /*#__PURE__*/ resumableContext(createContext<Scope | null>(null, { id: "rv-motion" }));
+const VariantContext = /*#__PURE__*/ createContext<Scope | null>(null);
 
 /** Child `i` of `total`'s delay (ms) from a parent's orchestration. */
 function childDelay(t: Transition | undefined, i: number, total: number): number {
@@ -261,13 +260,10 @@ export function motionElement(props: Record<string, unknown>, tag: string, entra
   const transitionOf = (target: Target | undefined) => mergeTransition(config?.transition(), own.transition, target?.transition as Transition | undefined);
   const reducedOf = (): ReducedPolicy => own.reducedMotion ?? config?.reducedMotion() ?? "user";
   // Presence: the enclosing kit transition scope. No entrance when it was already rendered at creation without
-  // `appear` (`Presence initial={false}`, a kit Transition's first render), nor in a region a resumed page re-creates
-  // from server-rendered content (it shows what the server rendered), nor when created while its scope is leaving (a
-  // resumed page re-creating a server-open overlay's region on the close: it exits from the final state).
+  // `appear` (`Presence initial={false}`, a kit Transition's first render), nor when created while its scope is leaving
+  // (it exits from the final state).
   const presence = useTransitionScope();
-  const key = _serverBranch() as unknown;
-  const adopted = key !== undefined && key !== null && !((key as number) < 0);
-  const quiet = adopted || (!!presence && ((!presence.appear && untrack(presence.rendered)) || !untrack(presence.showing)));
+  const quiet = !!presence && ((!presence.appear && untrack(presence.rendered)) || !untrack(presence.showing));
   // Captured by the live binding only with `exit` (a scope without exits never reaches the resume state).
   const exits = untrack(() => own.exit !== undefined) ? presence : null;
   exits?.register?.();

@@ -15,7 +15,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide";
 
 import type { AlertVariants } from "../../../styles/src/components/alert/index.ts";
@@ -34,7 +33,7 @@ interface AlertContext {
   status?: "default" | "accent" | "success" | "warning" | "danger";
 }
 
-const AlertContext = resumableContext(createContext<AlertContext>({}, { id: "rv-ui-alert" }));
+const AlertContext = createContext<AlertContext>({});
 
 type AlertSlots = ReturnType<typeof alertVariants>;
 type AlertStatus = NonNullable<AlertVariants["status"]>;

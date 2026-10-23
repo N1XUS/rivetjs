@@ -2,9 +2,9 @@
 // manifest and the document's `lang`/`dir`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { signal } from "@rivetjs/reactivity";
 import { _variants, _variantTemplate, _variantValue } from "@rivetjs/runtime/server";
-import { _rBind, type ResumeManifest } from "@rivetjs/runtime/server-resume";
+import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
+import { _rB, _rBEnd, _rBOut, _rSig } from "@rivetjs/runtime/server-derived";
 import { createApp, mergeHeads, type GeneratedEntry } from "../server/app.ts";
 import type { DocumentInput } from "../server/render.ts";
 import type { ServerModule } from "../server/handler.ts";
@@ -17,7 +17,7 @@ const fragments = _variants([
 ]);
 const manifest = (locale: string): ResumeManifest => ({
   runtime: `/${locale}/assets/resume-entry.js`,
-  symbols: { "page#s": `/${locale}/assets/page.js` },
+  symbols: { Page: `/${locale}/assets/page.js` },
 });
 
 function app(guard: ServerModule["guard"]) {
@@ -26,8 +26,13 @@ function app(guard: ServerModule["guard"]) {
     routes: [{ id: "index", pattern: "/", layouts: [], server: () => Promise.resolve({ guard }), page: true }],
     universal: {},
     page: () => () => {
-      const n = signal(1);
-      return _variantTemplate(fragments, [_rBind("page#s", () => _variantValue(["en" + n(), () => "de" + n()]), [])]);
+      const B = _rB("Page", 0);
+      try {
+        const n = _rSig("n", 1);
+        return _rBOut(B, _variantTemplate(fragments, [() => _variantValue(["en" + n(), () => "de" + n()])]));
+      } finally {
+        _rBEnd(B);
+      }
     },
   };
   const handler = createApp({
@@ -48,7 +53,7 @@ test("locals.locale selects variant, manifest and document lang/dir", async () =
     event.locals.dir = "rtl";
   });
   const html = await get();
-  assert.match(html, /^<html lang="de" dir="rtl"><body><p>Hallo <!--r0-->de1<!--\/--><\/p>/);
+  assert.match(html, /^<html lang="de" dir="rtl"><body><!--b1--><p>Hallo de1<\/p>/);
   assert.match(html, /\/de\/assets\/page\.js/);
   assert.doesNotMatch(html, /\/en\/assets\//);
   assert.equal(inputs[0]!.locale, "de");
@@ -68,7 +73,7 @@ test("without a known locale the first locale renders and the document gets no l
       if (locale) event.locals.locale = locale;
     });
     const html = await get();
-    assert.match(html, /^<html lang="-" dir="-"><body><p>Hello <!--r0-->en1<!--\/--><\/p>/);
+    assert.match(html, /^<html lang="-" dir="-"><body><!--b1--><p>Hello en1<\/p>/);
     assert.match(html, /\/en\/assets\/page\.js/);
     assert.doesNotMatch(html, /\/de\/assets\//);
   }

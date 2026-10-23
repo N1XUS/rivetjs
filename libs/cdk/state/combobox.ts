@@ -4,7 +4,7 @@
 // selection (`value` / deprecated `selectedKey`), the input text, the menu's open state with the
 // action that opened it, the frozen collection shown while the menu closes, and form validation.
 // Rivet:
-// - React state / refs → signals + JSON (serializable, region state); methods → free functions
+// - React state / refs → signals + JSON; methods → free functions
 //   taking the state (`openCombo(state, …)` = `state.open(…)`, `commitCombo` = `state.commit()` …).
 // - The per-render `useEffect` body of useComboBoxState is `comboUpdate(state)`. Every exported
 //   action runs it (until stable, like React's render → effect → render loop) once the action's
@@ -29,7 +29,7 @@
 //   else `filterLocale` (Rivet: what RAC ComboBox passes as `useFilter({sensitivity: "base"}).contains`)
 //   builds a locale `contains` filter on use; with neither, no filtering (upstream hook semantics).
 // - The validation value (`{ inputValue, value, selectedKey }` or null) is a signal kept in sync too.
-import { batch, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { batch, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { createId } from "@rivetjs/cdk/id";
 import { CollectionBuilder, createCollection } from "@rivetjs/cdk/collections/builder";
 import { ListCollection } from "@rivetjs/cdk/collections/list";
@@ -227,96 +227,94 @@ const readItems = <T>(items: readonly T[] | (() => readonly T[]) | null | undefi
  * view). Region state: a resumed page re-creating the combobox's region keeps it.
  */
 export function createComboBoxCore<T = any, M extends SelectionMode = "single">(props: ComboBoxStateProps<T, M>): ComboBoxCore<T, M> {
-  return _regionState(() => {
-    const selectionMode = (props.selectionMode ?? "single") as M;
-    const single = selectionMode === "single";
-    const defaultValue = (props.defaultValue !== undefined ? props.defaultValue : single ? (props.defaultSelectedKey ?? null) : []) as ValueType<M>;
-    const valueProp = (props.value !== undefined ? props.value : single ? props.selectedKey : undefined) as Controllable<AnyValue> | undefined;
-    // A Signal is two-way; an accessor (live prop) is read as is and never written (`valueFixed`).
-    const value: Signal<AnyValue> =
-      typeof valueProp === "function" ? (valueProp as Signal<AnyValue>) : signal<AnyValue>(valueProp !== undefined ? valueProp : defaultValue);
-    const initialValue = untrack(value);
-    const initialDisplay = single && Array.isArray(initialValue) ? (initialValue[0] ?? null) : initialValue;
-    const core = {
-      // The listbox id (RA useMenuTrigger `menuId` = useId()); `props.id` is the input's id.
-      id: createId(),
-      selectionMode,
-      menuTrigger: props.menuTrigger ?? "input",
-      allowsEmptyCollection: !!props.allowsEmptyCollection,
-      allowsCustomValue: !!props.allowsCustomValue,
-      shouldCloseOnBlur: props.shouldCloseOnBlur ?? true,
-      isDisabled: !!untrack(() => readFlag(props.isDisabled)),
-      isReadOnly: !!untrack(() => readFlag(props.isReadOnly)),
-      isRequired: !!untrack(() => readFlag(props.isRequired)),
-      ...(typeof props.isReadOnly === "function" ? { readOnly: props.isReadOnly as () => boolean | undefined } : {}),
-      ...(props.name !== undefined ? { name: props.name } : {}),
-      ...(props.form !== undefined ? { form: props.form } : {}),
-      items: props.items,
-      defaultItems: props.defaultItems,
-      children: props.children,
-      collection: props.collection,
-      defaultFilter: props.defaultFilter,
-      filterLocale: props.filterLocale,
-      disabledKeys: [...(props.disabledKeys ?? [])],
-      value,
-      valueControlled: valueProp !== undefined,
-      valueFixed: valueProp !== undefined && !isSignal(valueProp),
-      defaultValue: (defaultValue ?? initialDisplay) as ValueType<M>,
-      defaultSelectedKey: props.defaultSelectedKey ?? (single ? (initialDisplay as Key | null) : null) ?? null,
-      inputValue: signal(""),
-      inputControlled: props.inputValue !== undefined,
-      inputFixed: props.inputValue !== undefined && !isSignal(props.inputValue),
-      defaultInputValue: "",
-      isOpen: signal(false),
-      point: signal<Point | null>(null),
-      focusStrategy: signal<FocusStrategy | null>(null),
-      isFocused: signal(false),
-      showAllItems: signal(false),
-      closedDueToEmpty: signal(false),
-      menuOpenTrigger: signal<MenuTriggerAction | null>("focus"),
-      lastValue: signal(""),
-      lastDisplayValue: signal<AnyValue>(initialDisplay),
-      lastSelectedKeyText: signal(""),
-      valueOnFocus: signal<[string, AnyValue]>(["", initialDisplay]),
-      selectedKeys: signal<Selection>(new Set(convertValue(initialDisplay))),
-      listFocused: signal(false),
-      focusedKey: signal<Key | null>(null),
-      childFocusStrategy: signal<FocusStrategy | null>(null),
-      selectionBehavior: signal<"toggle" | "replace">("toggle"),
-      anchorKey: signal<Key | null>(null),
-      currentKey: signal<Key | null>(null),
-      validationValue: signal<ComboBoxValidationValue<M> | null>(null),
-      ...(props.onChange ? { onChange: props.onChange as (value: never) => void } : {}),
-      ...(props.onSelectionChange ? { onSelectionChange: props.onSelectionChange } : {}),
-      ...(props.onInputChange ? { onInputChange: props.onInputChange } : {}),
-      ...(props.onOpenChange ? { onOpenChange: props.onOpenChange } : {}),
-    } as unknown as Mutable<ComboBoxCore<T, M>>;
-    // validation: its value accessor is the synced validation-value signal.
-    core.validation = createFormValidationState<unknown>({
-      isInvalid: props.isInvalid,
-      validate: props.validate as ValidationFunction<unknown> | undefined,
-      validationBehavior: props.validationBehavior ?? "aria",
-      name: props.name,
-      validationErrors: props.validationErrors,
-      value: core.validationValue,
-    });
-    // useControlledState(props.inputValue, getDefaultInputValue(defaultInputValue, selectedKey, collection) || '').
-    const selectedKey = single ? ((initialDisplay as Key | null) ?? null) : null;
-    const startInput = untrack(() => getDefaultInputValue(props.defaultInputValue, selectedKey, comboCollection(core))) || "";
-    const inputProp = props.inputValue;
-    if (typeof inputProp === "function") core.inputValue = inputProp as Signal<string>;
-    else core.inputValue.set(inputProp !== undefined ? inputProp : startInput);
-    const initialInput = untrack(core.inputValue);
-    core.lastValue.set(initialInput);
-    core.valueOnFocus.set([initialInput, initialDisplay]);
-    // RAC ComboBox builds its collection after the first render (CollectionBuilder): the selected item's text is
-    // "" on that render, so the first update writes it into the input (over `defaultInputValue`). A
-    // `collection` prop (the component's built collection) reproduces that; data `items` keep useComboBoxState's.
-    core.lastSelectedKeyText.set(selectedKey != null && !props.collection ? untrack(() => itemText(core, selectedKey)) : "");
-    core.defaultInputValue = untrack(() => getDefaultInputValue(props.defaultInputValue, core.defaultSelectedKey, comboCollection(core))) ?? initialInput;
-    core.validationValue.set(untrack(() => validationValueOf(core)));
-    return core as ComboBoxCore<T, M>;
+  const selectionMode = (props.selectionMode ?? "single") as M;
+  const single = selectionMode === "single";
+  const defaultValue = (props.defaultValue !== undefined ? props.defaultValue : single ? (props.defaultSelectedKey ?? null) : []) as ValueType<M>;
+  const valueProp = (props.value !== undefined ? props.value : single ? props.selectedKey : undefined) as Controllable<AnyValue> | undefined;
+  // A Signal is two-way; an accessor (live prop) is read as is and never written (`valueFixed`).
+  const value: Signal<AnyValue> =
+    typeof valueProp === "function" ? (valueProp as Signal<AnyValue>) : signal<AnyValue>(valueProp !== undefined ? valueProp : defaultValue);
+  const initialValue = untrack(value);
+  const initialDisplay = single && Array.isArray(initialValue) ? (initialValue[0] ?? null) : initialValue;
+  const core = {
+    // The listbox id (RA useMenuTrigger `menuId` = useId()); `props.id` is the input's id.
+    id: createId(),
+    selectionMode,
+    menuTrigger: props.menuTrigger ?? "input",
+    allowsEmptyCollection: !!props.allowsEmptyCollection,
+    allowsCustomValue: !!props.allowsCustomValue,
+    shouldCloseOnBlur: props.shouldCloseOnBlur ?? true,
+    isDisabled: !!untrack(() => readFlag(props.isDisabled)),
+    isReadOnly: !!untrack(() => readFlag(props.isReadOnly)),
+    isRequired: !!untrack(() => readFlag(props.isRequired)),
+    ...(typeof props.isReadOnly === "function" ? { readOnly: props.isReadOnly as () => boolean | undefined } : {}),
+    ...(props.name !== undefined ? { name: props.name } : {}),
+    ...(props.form !== undefined ? { form: props.form } : {}),
+    items: props.items,
+    defaultItems: props.defaultItems,
+    children: props.children,
+    collection: props.collection,
+    defaultFilter: props.defaultFilter,
+    filterLocale: props.filterLocale,
+    disabledKeys: [...(props.disabledKeys ?? [])],
+    value,
+    valueControlled: valueProp !== undefined,
+    valueFixed: valueProp !== undefined && !isSignal(valueProp),
+    defaultValue: (defaultValue ?? initialDisplay) as ValueType<M>,
+    defaultSelectedKey: props.defaultSelectedKey ?? (single ? (initialDisplay as Key | null) : null) ?? null,
+    inputValue: signal(""),
+    inputControlled: props.inputValue !== undefined,
+    inputFixed: props.inputValue !== undefined && !isSignal(props.inputValue),
+    defaultInputValue: "",
+    isOpen: signal(false),
+    point: signal<Point | null>(null),
+    focusStrategy: signal<FocusStrategy | null>(null),
+    isFocused: signal(false),
+    showAllItems: signal(false),
+    closedDueToEmpty: signal(false),
+    menuOpenTrigger: signal<MenuTriggerAction | null>("focus"),
+    lastValue: signal(""),
+    lastDisplayValue: signal<AnyValue>(initialDisplay),
+    lastSelectedKeyText: signal(""),
+    valueOnFocus: signal<[string, AnyValue]>(["", initialDisplay]),
+    selectedKeys: signal<Selection>(new Set(convertValue(initialDisplay))),
+    listFocused: signal(false),
+    focusedKey: signal<Key | null>(null),
+    childFocusStrategy: signal<FocusStrategy | null>(null),
+    selectionBehavior: signal<"toggle" | "replace">("toggle"),
+    anchorKey: signal<Key | null>(null),
+    currentKey: signal<Key | null>(null),
+    validationValue: signal<ComboBoxValidationValue<M> | null>(null),
+    ...(props.onChange ? { onChange: props.onChange as (value: never) => void } : {}),
+    ...(props.onSelectionChange ? { onSelectionChange: props.onSelectionChange } : {}),
+    ...(props.onInputChange ? { onInputChange: props.onInputChange } : {}),
+    ...(props.onOpenChange ? { onOpenChange: props.onOpenChange } : {}),
+  } as unknown as Mutable<ComboBoxCore<T, M>>;
+  // validation: its value accessor is the synced validation-value signal.
+  core.validation = createFormValidationState<unknown>({
+    isInvalid: props.isInvalid,
+    validate: props.validate as ValidationFunction<unknown> | undefined,
+    validationBehavior: props.validationBehavior ?? "aria",
+    name: props.name,
+    validationErrors: props.validationErrors,
+    value: core.validationValue,
   });
+  // useControlledState(props.inputValue, getDefaultInputValue(defaultInputValue, selectedKey, collection) || '').
+  const selectedKey = single ? ((initialDisplay as Key | null) ?? null) : null;
+  const startInput = untrack(() => getDefaultInputValue(props.defaultInputValue, selectedKey, comboCollection(core))) || "";
+  const inputProp = props.inputValue;
+  if (typeof inputProp === "function") core.inputValue = inputProp as Signal<string>;
+  else core.inputValue.set(inputProp !== undefined ? inputProp : startInput);
+  const initialInput = untrack(core.inputValue);
+  core.lastValue.set(initialInput);
+  core.valueOnFocus.set([initialInput, initialDisplay]);
+  // RAC ComboBox builds its collection after the first render (CollectionBuilder): the selected item's text is
+  // "" on that render, so the first update writes it into the input (over `defaultInputValue`). A
+  // `collection` prop (the component's built collection) reproduces that; data `items` keep useComboBoxState's.
+  core.lastSelectedKeyText.set(selectedKey != null && !props.collection ? untrack(() => itemText(core, selectedKey)) : "");
+  core.defaultInputValue = untrack(() => getDefaultInputValue(props.defaultInputValue, core.defaultSelectedKey, comboCollection(core))) ?? initialInput;
+  core.validationValue.set(untrack(() => validationValueOf(core)));
+  return core as ComboBoxCore<T, M>;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };

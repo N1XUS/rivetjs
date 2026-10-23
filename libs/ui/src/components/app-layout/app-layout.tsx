@@ -24,7 +24,6 @@ import { createId } from "@rivetjs/cdk/id";
 import { createContext, useContext, type Signal } from "@rivetjs/reactivity";
 import { Provider, clientEffect, clientEvent } from "@rivetjs/runtime/dom";
 import type { Content, JSX, Slot } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { Menu, PanelRight } from "lucide";
 
@@ -67,7 +66,7 @@ interface AppLayoutContextValue {
   inSheet?: boolean;
 }
 
-const AppLayoutContext = resumableContext(createContext<AppLayoutContextValue | null>(null, { id: "rv-ui-app-layout" }));
+const AppLayoutContext = createContext<AppLayoutContextValue | null>(null);
 
 type AppLayoutSlots = ReturnType<typeof appLayoutVariants>;
 let SLOTS: AppLayoutSlots | undefined;

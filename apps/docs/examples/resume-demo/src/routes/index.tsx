@@ -4,16 +4,16 @@ export const head = { title: "Resume demo" };
 
 // #region demo
 export default function ResumeDemo() {
-  // This line runs once, while the HTML is made (here: at build time).
-  // It never runs in the browser, so the time below never changes.
-  const renderedAt = new Date().toISOString().slice(0, 19).replace("T", " ");
+  // The time is taken while the HTML is made (here: at build time) and kept in a signal: its value is written into
+  // the page, so when the browser picks this component up on the first click it reads that value, not a new time.
+  const renderedAt = signal(new Date().toISOString().slice(0, 19).replace("T", " "));
   const count = signal(0);
 
-  // Only the click handler runs in the browser, when you click.
+  // Nothing runs in the browser until you click; then the click handler runs.
   return (
     <div class="m-4 space-y-3">
       <p id="rendered" class="text-sm text-slate-600">
-        Component ran at {renderedAt} UTC
+        Component rendered at {renderedAt()} UTC
       </p>
       <button
         id="add"

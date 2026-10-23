@@ -2,8 +2,7 @@
 // useColorWheelState, useColorChannelFieldState, useColorPickerState). react-stately has no direct tests for
 // these hooks (only Color / useColor / useColorFieldState, see color-model.test.ts, color-field-state.test.ts);
 // the cases follow the hook implementations and the keyboard / pointer expectations of react-aria
-// test/color/{useColorArea,useColorSlider,useColorWheel,useColorField}.test.tsx. Each state also has a
-// resume-table round trip (serializable region state).
+// test/color/{useColorArea,useColorSlider,useColorWheel,useColorField}.test.tsx.
 import { describe, expect, it, jest } from "@rivetjs/testing/jest";
 import { signal, untrack } from "@rivetjs/reactivity";
 import {
@@ -45,9 +44,8 @@ import {
   setXValue,
   sliderView,
 } from "../color/index.ts";
-import { decrementThumb, getThumbValue, incrementThumb, setThumbDragging, setThumbPercent, setThumbValue } from "../slider/state.ts";
+import { decrementThumb, getThumbValue, setThumbDragging, setThumbPercent, setThumbValue } from "../slider/state.ts";
 import { commit, increment as incrementNumber, inputValue, setInputValue } from "../number/index.tsx";
-import { jsonRoundTrip } from "./state-json.ts";
 
 describe("createColorAreaState", () => {
   it("defaults to white in rgb with red / green axes", () => {
@@ -105,16 +103,6 @@ describe("createColorAreaState", () => {
     expect(getYValue(state)).toBe(255);
     expect(getDefaultValue(state).toString("hex")).toBe("#000000");
   });
-
-  it("resume-table round trip", () => {
-    let state = createColorAreaState({ defaultValue: "#336699", colorSpace: "hsl" });
-    setDragging(state, true);
-    let decoded = jsonRoundTrip(state);
-    expect(getValue(decoded).toString("hsl")).toBe(getValue(state).toString("hsl"));
-    expect(isDragging(decoded)).toBe(true);
-    incrementX(decoded);
-    expect(getXValue(decoded)).toBe(getXValue(state) + 1);
-  });
 });
 
 function setAlpha<T extends Parameters<typeof setValue>[0]>(state: T): T {
@@ -159,17 +147,6 @@ describe("createColorSliderState", () => {
     decrementThumb(sliderView(saturation), 0, 5);
     expect(getValue(saturation).getChannelValue("saturation")).toBe(95);
   });
-
-  it("resume-table round trip", () => {
-    let state = createColorSliderState({ defaultValue: "#ff0000", channel: "red", locale: "en-US" });
-    setThumbValue(sliderView(state), 0, 100);
-    setThumbDragging(sliderView(state), 0, true);
-    let decoded = jsonRoundTrip(state);
-    expect(getValue(decoded).toString("hex")).toBe("#640000");
-    expect(isDragging(decoded)).toBe(true);
-    incrementThumb(sliderView(decoded), 0);
-    expect(getValue(decoded).toString("hex")).toBe("#650000");
-  });
 });
 
 describe("createColorWheelState", () => {
@@ -210,16 +187,6 @@ describe("createColorWheelState", () => {
     expect(getDisplayColor(state).toString("hsla")).toBe("hsla(90, 100%, 50%, 1)");
     expect(state.isDisabled).toBe(false);
   });
-
-  it("resume-table round trip", () => {
-    let state = createColorWheelState({ defaultValue: "hsb(200, 50%, 50%)" });
-    setHue(state, 210);
-    let decoded = jsonRoundTrip(state);
-    expect(getValue(decoded).toString("hsb")).toBe("hsb(210, 50%, 50%)");
-    increment(decoded, 15);
-    expect(getHue(decoded)).toBe(225);
-    expect(getDefaultValue(decoded).toString("hsb")).toBe("hsb(200, 50%, 50%)");
-  });
 });
 
 describe("createColorChannelFieldState", () => {
@@ -251,15 +218,6 @@ describe("createColorChannelFieldState", () => {
     setColorValue(state, parseColor("hsb(240, 100%, 100%)"));
     expect(untrack(value)).toBe("hsba(240, 100%, 100%, 1)");
   });
-
-  it("resume-table round trip", () => {
-    let state = createColorChannelFieldState({ defaultValue: "#336699", channel: "green", locale: "en-US" });
-    setInputValue(numberFieldView(state), "12");
-    let decoded = jsonRoundTrip(state);
-    expect(inputValue(numberFieldView(decoded))).toBe("12");
-    commit(numberFieldView(decoded));
-    expect(colorValue(decoded).toString("hex")).toBe("#330C99");
-  });
 });
 
 describe("createColorPickerState", () => {
@@ -274,14 +232,5 @@ describe("createColorPickerState", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     let invalid = createColorPickerState({ value: "nope", defaultValue: "#123456" });
     expect(getColor(invalid).toString("hex")).toBe("#123456");
-  });
-
-  it("resume-table round trip", () => {
-    let state = createColorPickerState({ defaultValue: "#123456" });
-    setColor(state, parseColor("hsl(10, 20%, 30%)"));
-    let decoded = jsonRoundTrip(state);
-    expect(getColor(decoded).toString("hsl")).toBe("hsl(10, 20%, 30%)");
-    setColor(decoded, parseColor("#fff"));
-    expect(getColor(decoded).toString("hex")).toBe("#FFFFFF");
   });
 });

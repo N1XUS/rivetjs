@@ -116,7 +116,7 @@ export function ThemeSwitcher() {
 }
 ```
 
-It stores the choice under the same key `<ThemeScript>` reads, so the next page load starts in the right theme. Because `set` is a local const, the compiler captures it and the buttons work on a resumed page without hydration ([serializable captures](site:docs/best-practices/serializable-captures/)).
+It stores the choice under the same key `<ThemeScript>` reads, so the next page load starts in the right theme. The buttons work on a resumed page without hydration: the first press runs the component over the server HTML ([resuming](site:docs/learn/resuming/)).
 
 :::warning
 Keep a single theme controller per app: your own switcher or the one your site shell ships, not both. On this site the top bar sets `data-theme` on `<html>`, and the examples follow it.

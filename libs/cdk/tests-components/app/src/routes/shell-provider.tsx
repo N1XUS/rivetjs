@@ -1,6 +1,5 @@
 import { load, type PageProps } from "@rivetjs/router";
 import { Async, Provider, type DOMValue } from "@rivetjs/runtime/dom";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { createContext, signal, useContext, type Signal } from "@rivetjs/reactivity";
 
 // Shell cache, PPR-T57: an ancestor component (`Board`) provides signals through context and the hole writes one during
@@ -9,7 +8,7 @@ import { createContext, signal, useContext, type Signal } from "@rivetjs/reactiv
 // the write, so the entry replays (`x-rivet-cache: SHELL-HIT-REPLAY`). Primed like `shell-loader.tsx` (`RIVET_FUZZ_SHELL`).
 // `seen` is never shown (its server value is written after the shell's state: a resumed page and a CSR render disagree on
 // it by design); `picked` is the interactive state the fuzz drives.
-const Board = resumableContext(createContext<{ seen: Signal<number>; picked: Signal<string> } | null>(null, { id: "stories:shell-board" }));
+const Board = createContext<{ seen: Signal<number>; picked: Signal<string> } | null>(null);
 
 export const loader = load(
   async () => {

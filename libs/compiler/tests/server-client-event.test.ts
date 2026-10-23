@@ -23,3 +23,20 @@ export function A() { clientEvent(1); return <div />; }`;
   const { code } = await compile(source, { filename: "a.tsx", target: "server" });
   assert.match(code, /clientEvent\(1\)/);
 });
+
+// Derived server modules keep `clientEffect` as `clientEffect(void 0, options)`: the closure (and the browser-only imports
+// it reaches) leaves the SSR bundle, the call still flags the open boundary's client trigger (`when`).
+test("derived server build keeps clientEffect's options, drops its closure", async () => {
+  const source = `import { signal } from "@rivetjs/reactivity";
+import { clientEffect } from "@rivetjs/runtime/dom";
+export default function Home() {
+  const ticks = signal(0);
+  clientEffect(() => { const t = setInterval(() => ticks.set(ticks() + 1), 1000); return () => clearInterval(t); }, { when: "load" });
+  return <button onClick={() => ticks.set(0)}>{ticks()}</button>;
+}`;
+  const resume = { module: "src/home.tsx", boundaries: ["default"], independent: ["default"] };
+  const { code, diagnostics } = await compile(source, { filename: "home.tsx", target: "server", resume } as never);
+  assert.deepEqual(diagnostics, []);
+  assert.match(code, /clientEffect\(void 0, \{\s*when: "load"\s*\}\)/);
+  assert.doesNotMatch(code, /setInterval/);
+});

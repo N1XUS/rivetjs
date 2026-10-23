@@ -9,7 +9,6 @@ import type { ButtonProps as ButtonPrimitiveProps } from "@rivetjs/cdk/button";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { PromptSuggestionVariants } from "../../../styles/src/components/prompt-suggestion/index.ts";
 import { promptSuggestionVariants } from "../../../styles/src/components/prompt-suggestion/index.ts";
@@ -18,7 +17,7 @@ import { splitLive } from "../../utils/live.tsx";
 
 type PromptSuggestionVariant = NonNullable<PromptSuggestionVariants["variant"]>;
 
-const PromptSuggestionContext = resumableContext(createContext<{ variant?: PromptSuggestionVariant }>({}, { id: "rv-ui-prompt-suggestion" }));
+const PromptSuggestionContext = createContext<{ variant?: PromptSuggestionVariant }>({});
 
 const SLOTS: Partial<Record<PromptSuggestionVariant, ReturnType<typeof promptSuggestionVariants>>> = {};
 const slotsFor = (variant: PromptSuggestionVariant = "pill") => (SLOTS[variant] ??= promptSuggestionVariants({ variant }));

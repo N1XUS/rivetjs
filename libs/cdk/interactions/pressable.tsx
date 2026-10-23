@@ -1,7 +1,7 @@
 // Ported from react-aria Pressable, PressResponder, ClearPressResponder
 // (packages/react-aria/src/interactions/Pressable.tsx, PressResponder.tsx, context.ts), Apache-2.0, © Adobe.
 // Rivet:
-// - `PressResponder` provides `PressResponderContext` (press.tsx, resumable id `rv-press-responder`):
+// - `PressResponder` provides `PressResponderContext` (press.tsx):
 //   the nearest `pressProps` below merges those props (handlers chain, parent first) and calls `register`.
 //   Its children render into a const before the provider returns, so the dev warning "rendered without
 //   a pressable child" is a synchronous check after them on client renders (no effect). Server renders

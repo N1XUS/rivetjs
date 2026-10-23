@@ -19,7 +19,7 @@ Text direction: Angular CDK `Directionality` as resumable signal state, `<Dir>` 
 - Rivet shape (header): `Directionality` = plain state (`valueSignal` + raw accessor) so it resumes; DI lookup = `injectDirectionality()` reading `DirectionalityContext`, fallback document; `change` EventEmitter = the signal (or `onDirChange` on `<Dir>`)
 
 ## Rules / invariants
-- `DirectionalityContext` registered as resumable context id `rv-directionality`; the provided `Directionality` is `{ valueSignal: computed, rawDir: inline arrow }` (bidi-dir.tsx) so it serializes for re-created regions — keep it free of module functions
+- The provided `Directionality` is `{ valueSignal: computed, rawDir: inline arrow }` (bidi-dir.tsx)
 - markup uses `dir` attribute + CSS logical properties (RTL needs no JS); handlers call `direction(element)` only when a key maps to a visual side; `logicalKey` swaps ArrowLeft/Right in RTL
 - `<Dir>` renders `dir` exactly as given (`auto` stays `auto`); `valueSignal` = normalized; `"auto"` resolves from `navigator.language`
 - `<Dir>` children: plain JSX (lazy slot, `renderSlot`) or `{() => <Child/>}`; both render inside the provider (`bidi-dir.tsx`)

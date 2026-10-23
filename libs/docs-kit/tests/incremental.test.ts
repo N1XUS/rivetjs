@@ -36,7 +36,7 @@ test("rewritePage: asset names replaced everywhere, CSP recomputed for the new i
   const map = new Map([["assets/a-AAAAAAAA.js", "assets/a-aaaaaaaa.js"]]);
   const render = (asset: string) =>
     hashCSP(
-      `<html><head><title>x</title><script>import("/${asset}")</script></head><body><script type="rivet/state" data-preload="[&quot;/${asset}&quot;]">{"l":["/${asset}"]}</script></body></html>`,
+      `<html><head><title>x</title><script>import("/${asset}")</script></head><body><script type="rivet/boundaries" data-fo="/${asset}">{"m":{"A":"/${asset}"}}</script></body></html>`,
     );
   const before = render("assets/a-AAAAAAAA.js");
   const after = rewritePage(before, map, true);

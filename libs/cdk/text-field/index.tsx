@@ -32,7 +32,6 @@ import { idSignal } from "../utils/id.ts";
 import { FieldInputContext } from "../autocomplete/contexts.ts";
 import {
   Provider,
-  resumableContext,
   contextProps,
   createSlot,
   createSlotId,
@@ -97,7 +96,7 @@ export interface TextFieldProps
 }
 
 /** RAC `TextFieldContext`. */
-export const TextFieldContext = resumableContext(createContext<ContextValue<TextFieldProps, HTMLDivElement>>(null, { id: "rv-text-field" }));
+export const TextFieldContext = createContext<ContextValue<TextFieldProps, HTMLDivElement>>(null);
 
 const OWNED = ["style", "render"] as const;
 const INPUT_ONLY = ["type", "pattern"] as const;

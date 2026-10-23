@@ -34,15 +34,7 @@ import { toggleButtonGroupItemClick, toggleButtonGroupItemKeyDown, toggleButtonG
 import { focusStateIn, hoverStateOver, type InteractionStateOptions } from "../utils/data-attrs.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { HoverEvents } from "../utils/types.ts";
-import {
-  contextProps,
-  renderProps as resolveRenderProps,
-  resumableContext,
-  type ContextValue,
-  type RefValue,
-  type RenderProps,
-  type SlotProps,
-} from "../slots/index.tsx";
+import { contextProps, renderProps as resolveRenderProps, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 
 /** Global DOM events ToggleButton handles itself (the user's run from its own handler) + the `style` render prop. */
 const OWNED = ["render", "onPointerDown", "onClick", "onPointerEnter", "onPointerLeave", "onPointerOver", "style"] as const;
@@ -119,7 +111,7 @@ export interface ToggleButtonProps
 }
 
 /** RAC `ToggleButtonContext`: props for the ToggleButtons inside a component, optionally per `slot`. */
-export const ToggleButtonContext = resumableContext(createContext<ContextValue<ToggleButtonProps, HTMLButtonElement>>({}, { id: "rv-toggle-button" }));
+export const ToggleButtonContext = createContext<ContextValue<ToggleButtonProps, HTMLButtonElement>>({});
 
 type BE<T extends Event> = T & { currentTarget: HTMLButtonElement };
 

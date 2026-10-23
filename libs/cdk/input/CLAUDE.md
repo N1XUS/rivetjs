@@ -4,7 +4,7 @@
 RAC `Input`: native `<input>` with hover / focus / focus-visible state (`data-hovered`, `data-focused`, `data-focus-visible`, `data-disabled`, `data-invalid`); fields provide `InputContext`.
 
 ## Entry points
-- `@rivetjs/cdk/input` -> `index.tsx`: `Input`, `InputContext` (`rv-input`), `InputProps`, `InputRenderProps`
+- `@rivetjs/cdk/input` -> `index.tsx`: `Input`, `InputContext`, `InputProps`, `InputRenderProps`
 
 ## Layout
 - `index.tsx` - component + context

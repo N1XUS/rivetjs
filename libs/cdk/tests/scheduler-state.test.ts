@@ -1,7 +1,7 @@
 // `@rivetjs/cdk/scheduler` state + intl (`scheduler/state.ts`, `scheduler/intl.ts`; port of the @malva-ui/scheduler
 // `MlvScheduler` models / computeds / public methods and the malva i18n `scheduler` sections, MIT, © 2026 Malva UI):
 // controllable values, derived functions, navigation, `onVisibleRangeChange` on bound changes only, `commitChange`
-// (new array, veto, announcements, write-back form), resume-table round trip, 14-locale tables + plural selection.
+// (new array, veto, announcements, write-back form), 14-locale tables + plural selection.
 import { describe, expect, it, vi } from "vitest";
 import { signal } from "@rivetjs/reactivity";
 import { CalendarDateTime } from "../date/CalendarDate.ts";
@@ -38,7 +38,6 @@ import {
   schedulerWithPreview,
   GHOST_SUFFIX,
 } from "../scheduler/state.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 const day = (y: number, m: number, d: number) => dayFromCivil(y, m, d);
 const events = (): SchedulerEvent[] => [
@@ -109,28 +108,10 @@ describe("scheduler state: values", () => {
     expect(schedulerWeekendDays(createSchedulerState({ weekendDays: [5] }))).toEqual([5]);
   });
 
-  it("serializes: every signal value survives a resume-table round trip", () => {
-    const state = createSchedulerState({ timeZone: "UTC", defaultDate: "2026-09-08", defaultEvents: [events()[0]!, events()[1]!], locale: "en-US" });
-    state.selection.set({ anchor: { dayIndex: 1, minutes: 540 }, head: { dayIndex: 2, minutes: 600 }, key: "7:20000" });
-    state.dragPreview.set({ id: "a", start: 100, end: 160, allDay: false });
-    schedulerScrollToTime(state, "08:00");
-    state.pendingFocus.set({ eventId: "a", day: 20_000, minutes: null });
-    schedulerAnnounce(state, "hello");
-    const copy = jsonRoundTrip(state);
-    for (const key of ["selection", "dragPreview", "dragging", "scrollRequest", "pendingFocus", "popoverDay", "announcement"] as const)
-      expect(copy[key]()).toEqual(JSON.parse(JSON.stringify(state[key]())));
-    expect(copy.date.value()).toBe("2026-09-08");
-    expect(copy.view.value()).toBe("month");
-    expect(copy.events.value()).toEqual(state.events.value());
-    expect(copy.zone).toBe("UTC");
-  });
-
-  it("keeps the zone resolved at creation as region state (server: UTC); a timeZone option wins", () => {
-    // Node = the server: no `timeZone` lays out in UTC and the resumed page keeps that zone (`state.zone`), instead of
-    // re-reading the browser's local zone on its first recompute.
+  it("resolves the zone at creation (server: UTC); a timeZone option wins", () => {
+    // Node = the server: no `timeZone` lays out in UTC.
     const state = createSchedulerState({ defaultEvents: [events()[0]!] });
     expect(state.zone).toBe("UTC");
-    expect(jsonRoundTrip(state).zone).toBe("UTC");
     const zone = signal<string | undefined>(undefined);
     const live = createSchedulerState({ timeZone: () => zone() });
     expect(schedulerTimeZone(live)).toBe("UTC");

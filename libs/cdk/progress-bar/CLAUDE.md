@@ -4,7 +4,7 @@
 RAC `ProgressBar`: `<div role="progressbar">` with determinate / indeterminate progress, formatted `aria-valuetext`, render props for the fill.
 
 ## Entry points
-- `@rivetjs/cdk/progress-bar` -> `index.tsx`: `ProgressBar`, `ProgressBarProps`, `ProgressBarRenderProps`, `ProgressBarContext` (`rv-progress-bar`, defined in `context.ts`: Button imports it from there without the ProgressBar + NumberFormatter graph), re-exports `progressBarProps`, `percentageOf`
+- `@rivetjs/cdk/progress-bar` -> `index.tsx`: `ProgressBar`, `ProgressBarProps`, `ProgressBarRenderProps`, `ProgressBarContext` (defined in `context.ts`: Button imports it from there without the ProgressBar + NumberFormatter graph), re-exports `progressBarProps`, `percentageOf`
 - `@rivetjs/cdk/progress-bar/behaviour` -> `behaviour.tsx` (explicit package.json entry): `progressBarProps(props, locale?)` → `{ progressBarProps, labelProps }`, `percentageOf`, `percentageOfProps`, types
 
 ## Layout

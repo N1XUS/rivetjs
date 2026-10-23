@@ -14,13 +14,13 @@ const colors = [
 // #region demo
 export default function Log() {
   const log = signal("nothing yet");
-  // A local constant: compiled with the component, so the browser resumes it.
+  // A local constant: built again when the browser runs the component.
   const onChange = (isSelected: boolean) => log.set(`ToggleButton onChange(${isSelected})`);
   const onSelectionChange = (keys: Selection) => log.set(`ListBox onSelectionChange(${[...(keys as Set<string>)].join(", ")})`);
   return (
     <section class="m-4 grid max-w-xs gap-3 text-sm">
       <div class="flex gap-2">
-        {/* An inline arrow: also compiled with the component. */}
+        {/* An inline arrow: built with the component too. */}
         <Button id="ping" class="rounded-md border border-slate-300 px-3 py-1.5" onPress={(event) => log.set(`Button onPress(${event.pointerType})`)}>
           Ping
         </Button>

@@ -106,7 +106,7 @@ export function hashCSP(html: string, options?: CSPOptions): string {
 
 /** Synthetic request origin when `origin` is unset. */
 const PLACEHOLDER = "http://localhost";
-const STATE = /<script type="rivet\/state"[^>]*>[^<]*/g;
+const STATE = /<script type="rivet\/boundaries"[^>]*>[^<]*/g;
 // The placeholder origin as JSON / HTML text holds it (`http://localhost/…`, `http://localhost"`; `:port` is another origin).
 const PLACEHELD = /http:(?:\\?\/){2}localhost(?![\w.:-])/;
 const placeholder = (text: string): boolean => PLACEHELD.test(text);
@@ -174,7 +174,7 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
   const base = normalizeBase(options.base);
   // Output paths: the URL path below the base.
   const local = (path: string) => (base && (path === base || path.startsWith(base + "/")) ? path.slice(base.length) || "/" : path);
-  // Some prerendered page resumes (state script): client navigation may run, so pages get `_data.json` files.
+  // Some prerendered page resumes (boundaries script): client navigation may run, so pages get `_data.json` files.
   let resumes = false;
   const html = async (response: Response, url: string): Promise<string> => {
     const text = await response.text();
@@ -273,7 +273,7 @@ export async function prerenderBuild(
     origin?: string;
     shell?: PrerenderOptions["shell"];
     csp?: PrerenderOptions["csp"];
-    /** Preload planner (`AppConfig.preload`): background prefetch byte budget, `lean` pages (nothing before an interaction). */
+    /** Preload planner (`AppConfig.preload`): `lean` pages (nothing before an interaction). */
     preload?: AppConfig["preload"];
     /** i18n: per-locale client builds (see `loadBuild`). */
     locales?: readonly string[];

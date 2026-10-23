@@ -20,7 +20,6 @@ import type { TextAreaProps as TextAreaPrimitiveProps } from "@rivetjs/cdk/text-
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { InputGroupVariants } from "../../../styles/src/components/input-group/index.ts";
 import { inputGroupVariants } from "../../../styles/src/components/input-group/index.ts";
@@ -40,7 +39,7 @@ type InputGroupContext = {
   variant?: InputGroupVariants["variant"];
 };
 
-const InputGroupContext = resumableContext(createContext<InputGroupContext>({}, { id: "rv-ui-input-group" }));
+const InputGroupContext = createContext<InputGroupContext>({});
 
 type InputGroupSlots = ReturnType<typeof inputGroupVariants>;
 

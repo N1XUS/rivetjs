@@ -62,7 +62,6 @@ import {
   mergedIdOf,
   createSlotId,
   renderProps as resolveRenderProps,
-  resumableContext,
   slotIdRef,
 } from "../slots/index.tsx";
 import type { ContextValue, RefValue, RenderProps, SlotId, SlotProps, StyleObject, StyleRenderProps } from "../slots/index.tsx";
@@ -151,11 +150,11 @@ export interface ListBoxProps<T = object>
 }
 
 /** RAC `ListBoxContext`: props for the ListBox inside a component (Select, ComboBox, Autocomplete…), optionally per slot. */
-export const ListBoxContext = resumableContext(createContext<ContextValue<ListBoxProps<any>, HTMLDivElement>>(null, { id: "rv-listbox" }));
+export const ListBoxContext = createContext<ContextValue<ListBoxProps<any>, HTMLDivElement>>(null);
 /** RAC `ListStateContext`: a parent's list state (Select, ComboBox); ListBox renders it instead of creating one. */
-export const ListStateContext = resumableContext(createContext<ListState<any> | null>(null, { id: "rv-list-state" }));
+export const ListStateContext = createContext<ListState<any> | null>(null);
 /** Rivet: the listbox's shared option data (react-aria `listData`). */
-export const ListBoxDataContext = resumableContext(createContext<ListData | null>(null, { id: "rv-listbox-data" }));
+export const ListBoxDataContext = createContext<ListData | null>(null);
 
 /** Global DOM events the listbox element handles itself; the user's run after its own. */
 const OWNED = [

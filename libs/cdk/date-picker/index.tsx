@@ -39,7 +39,6 @@ import {
   contextProps,
   createSlot,
   renderProps,
-  resumableContext,
   type ClassNameOrFunction,
   type ContextValue,
   type ProviderValue,
@@ -140,12 +139,10 @@ export interface DateRangePickerProps<T extends DateValue = DateValue>
   class?: ClassNameOrFunction<DateRangePickerRenderProps>;
 }
 
-export const DatePickerContext = resumableContext(createContext<ContextValue<Partial<DatePickerProps<any>>, HTMLDivElement>>(null, { id: "rv-date-picker" }));
-export const DateRangePickerContext = resumableContext(
-  createContext<ContextValue<Partial<DateRangePickerProps<any>>, HTMLDivElement>>(null, { id: "rv-date-range-picker" }),
-);
-export const DatePickerStateContext = resumableContext(createContext<DatePickerState | null>(null, { id: "rv-date-picker-state" }));
-export const DateRangePickerStateContext = resumableContext(createContext<DateRangePickerState | null>(null, { id: "rv-date-range-picker-state" }));
+export const DatePickerContext = createContext<ContextValue<Partial<DatePickerProps<any>>, HTMLDivElement>>(null);
+export const DateRangePickerContext = createContext<ContextValue<Partial<DateRangePickerProps<any>>, HTMLDivElement>>(null);
+export const DatePickerStateContext = createContext<DatePickerState | null>(null);
+export const DateRangePickerStateContext = createContext<DateRangePickerState | null>(null);
 
 const ROOT_OWNED = ["style", "render"] as const;
 

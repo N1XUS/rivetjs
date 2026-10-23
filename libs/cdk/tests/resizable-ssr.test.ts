@@ -1,7 +1,7 @@
 // Server rendering of `@rivetjs/cdk/resizable` (port of react-resizable-panels 4.14.3, MIT, © Brian Vaughn): the
 // upstream markup + inline flex styles from the first byte — `defaultLayout` (e.g. a cookie-stored layout) as
 // `flex-grow`, else panel `defaultSize` as `flex-basis` (no layout shift), separators with role / orientation /
-// tabindex / `data-separator`, ids + `data-testid`; the resume state serializes (callbacks, refs, records).
+// tabindex / `data-separator`, ids + `data-testid`.
 import { describe, expect, it } from "vitest";
 import { importModule, renderHtml } from "./server.ts";
 
@@ -76,7 +76,7 @@ describe("Resizable SSR", () => {
     expect(tag(html, 'id="right"')).toMatch(/flex-grow:\s*75/);
   });
 
-  it("renders a cookie-stored layout (no layout shift) and serializes callbacks + refs", async () => {
+  it("renders a cookie-stored layout (no layout shift)", async () => {
     const { Persisted } = await load();
     const cookie = "theme=dark; " + encodeURIComponent("react-resizable-panels:mail") + "=" + encodeURIComponent(JSON.stringify({ a: 20, b: 80 }));
     const html = await renderHtml(() => Persisted({ cookie }));
@@ -86,6 +86,5 @@ describe("Resizable SSR", () => {
     expect(separator).toMatch(/data-separator="disabled"/);
     expect(separator).toMatch(/aria-disabled="true"/);
     expect(separator).not.toMatch(/tabindex/);
-    expect(html).toContain('type="rivet/state"');
   });
 });

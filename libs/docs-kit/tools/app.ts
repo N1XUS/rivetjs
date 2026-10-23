@@ -26,7 +26,7 @@ export interface DocsSite {
   /**
    * Lean pages (URL paths, e.g. `["/"]`): no code runs before the first interaction — no idle code highlighter
    * (their code is coloured at build time: fragments), no `/` / Ctrl+K search shortcut listener (the search button
-   * still works), no idle background prefetch (`preload.background: 0`). Only the resume loader ships up front.
+   * still works), no runtime fetch-ahead (`preload.lean`). Only the resume loader ships up front.
    */
   leanPages?: readonly string[];
   /**

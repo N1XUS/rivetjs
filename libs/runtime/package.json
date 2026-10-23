@@ -94,10 +94,6 @@
       "types": "./props.ts",
       "default": "./props.ts"
     },
-    "./dom-resume": {
-      "types": "./dom-resume.ts",
-      "default": "./dom-resume.ts"
-    },
     "./dom-derived": {
       "types": "./dom-derived.ts",
       "default": "./dom-derived.ts"
@@ -125,14 +121,6 @@
     "./resume-builtins": {
       "types": "./resume-builtins.ts",
       "default": "./resume-builtins.ts"
-    },
-    "./resume-loader-module": {
-      "types": "./resume-loader-module.ts",
-      "default": "./resume-loader-module.ts"
-    },
-    "./resume-symbols": {
-      "types": "./resume-symbols.ts",
-      "default": "./resume-symbols.ts"
     },
     "./image": {
       "types": "./image.ts",
@@ -178,10 +166,6 @@
     "./testing/register": {
       "types": "./testing-register.ts",
       "default": "./testing-register.ts"
-    },
-    "./testing/resume": {
-      "types": "./testing-resume.ts",
-      "default": "./testing-resume.ts"
     }
   },
   "dependencies": {

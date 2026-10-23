@@ -389,9 +389,9 @@ describe("SchedulerTimeGrid", () => {
     expect(scroller().scrollTop).toBe(720);
   });
 
-  it("keeps only the scheduler options in the region state (no stateRef / handlers / DOM props)", () => {
+  it("keeps only the scheduler options in the state (no stateRef / handlers / DOM props)", () => {
     const { state } = setup({ layout: false });
-    // As given by `setup` — never stateRef / events / view / date / class / handlers (region state = options only).
+    // As given by `setup` — never stateRef / events / view / date / class / handlers (state = options only).
     expect(Object.keys(state().options).sort()).toEqual(
       [
         "allowsRangeSelection",

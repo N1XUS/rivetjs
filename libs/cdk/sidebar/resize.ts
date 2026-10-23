@@ -3,13 +3,13 @@
 // `@rivetjs/cdk/resizable` (react-resizable-panels 4.14.3: pointer capture drag, arrows / Home / End / Enter, double-click
 // reset, collapse below the minimum), on the fixed shadcn panel: the width is the `--sidebar-width` CSS variable on the
 // Sidebar root (gap + container read it), not a flex panel of a Group (`libs/ui/CLAUDE.md` AppLayout ruling 2026-10-08).
-// - state = plain data in the region state (`controllable` width, bounds, the caller's handlers): handlers resume;
+// - state = plain data (`controllable` width, bounds, the caller's handlers): handlers resume;
 //   per-drag data lives in a module WeakMap keyed by the handle (browser only, never serialized).
 // - dragging below half the minimum collapses the sidebar (`setSidebarOpen(false)`: `onOpenChange` + cookie; the
 //   `collapsible` mode picks offcanvas / icon) and dragging back out re-opens it; the open / close snap is the
 //   sidebar's own CSS collapse transition (200 ms ease-out-quad), off for the plain width changes of a drag
 //   (`data-resizing` on the root).
-import { untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { setSidebarOpen, type SidebarState } from "./state.ts";
 
@@ -57,7 +57,7 @@ export interface SidebarResizeState {
 }
 
 export function createSidebarResizeState(props: SidebarResizeProps): SidebarResizeState {
-  return _regionState(() => ({
+  return {
     control: controllable<SidebarWidth | undefined, number>(props.width as never, props.defaultWidth, props.onWidthChange),
     defaultWidth: props.defaultWidth,
     min: props.minWidth ?? SIDEBAR_MIN_WIDTH,
@@ -65,7 +65,7 @@ export function createSidebarResizeState(props: SidebarResizeProps): SidebarResi
     collapseBelowMin: props.collapseBelowMin ?? true,
     step: props.resizeStep ?? SIDEBAR_RESIZE_STEP,
     onWidthChangeEnd: props.onWidthChangeEnd,
-  }));
+  };
 }
 
 /** The width as CSS (`undefined`: no override). */

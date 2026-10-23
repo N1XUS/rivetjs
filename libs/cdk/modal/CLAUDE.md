@@ -4,8 +4,8 @@
 RAC `ModalOverlay` + `Modal` (separate elements, RAC DOM) on the div overlay layer, plus React Aria modal providers.
 
 ## Entry points
-- `@rivetjs/cdk/modal` → `index.tsx`: `ModalOverlay`, `Modal`, `ModalContext` (props context, id `rv-modal-props`), `InternalModalContext` (id `rv-modal-internal`), `setOpen`, types `ModalOverlayProps`, `ModalProps`, `ModalRenderProps` (`isEntering` / `isExiting` accessors, `state`), `OverlayTriggerState`; re-exports `./provider.tsx`
-- `@rivetjs/cdk/modal/provider` → `provider.tsx`: `ModalProvider`, `OverlayProvider`, `OverlayContainer`, `ModalProviderContext` (id `rv-modal`), `modalProviderProps`, `modalProps` (`data-ismodal`), `modal(element, options)` (useModal), types `ProviderChildren`, `AriaModalOptions`
+- `@rivetjs/cdk/modal` → `index.tsx`: `ModalOverlay`, `Modal`, `ModalContext` (props context), `InternalModalContext`, `setOpen`, types `ModalOverlayProps`, `ModalProps`, `ModalRenderProps` (`isEntering` / `isExiting` accessors, `state`), `OverlayTriggerState`; re-exports `./provider.tsx`
+- `@rivetjs/cdk/modal/provider` → `provider.tsx`: `ModalProvider`, `OverlayProvider`, `OverlayContainer`, `ModalProviderContext`, `modalProviderProps`, `modalProps` (`data-ismodal`), `modal(element, options)` (useModal), types `ProviderChildren`, `AriaModalOptions`
 - `@rivetjs/cdk/modal/behaviour` deleted (legacy `attachModal` / `closeEnclosing` / `overlayCloseEvent`)
 
 ## Layout

@@ -16,7 +16,9 @@ g.fetch = async () => new Response(encodeData(answer), { headers: { "content-typ
 // `<Link>` is JSX (compiled by the build); routeData does not need it.
 registerHooks({
   resolve: (specifier, context, next) =>
-    specifier === "./link.tsx" && context.parentURL?.endsWith("/client/index.ts") ? { url: "data:text/javascript,export const Link = () => null;", shortCircuit: true } : next(specifier, context),
+    specifier === "./link.tsx" && context.parentURL?.endsWith("/client/index.ts")
+      ? { url: "data:text/javascript,export const Link = () => null;", shortCircuit: true }
+      : next(specifier, context),
 });
 const { routeData } = await import("../client/index.ts");
 
@@ -38,6 +40,9 @@ test("{ redirect } same origin: in-app replace navigation; other origin: locatio
 test("{ reload } loads the target document with location.assign", async () => {
   assigned.length = 0;
   answer = { reload: true };
-  assert.equal(await settled(routeData(work, { url: new URL("http://x.test/report?id=1") }, { navigate: () => assert.fail("no in-app navigation") })), "pending");
+  assert.equal(
+    await settled(routeData(work, { url: new URL("http://x.test/report?id=1") }, { navigate: () => assert.fail("no in-app navigation") })),
+    "pending",
+  );
   assert.deepEqual(assigned, ["http://x.test/report?id=1"]);
 });

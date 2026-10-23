@@ -25,7 +25,7 @@ RAC `DatePicker` / `DateRangePicker` parts port; react-aria useDatePicker / useD
 - Picker fields get the picker's labelling as an accessor (`fieldProps["aria-labelledby"] = base.labelledBy`, CDK-PINS 2026-10-12): a call froze the client value before the picker `Label` mounted (`createSlot` is `false` until then), so a client render named segments `month` while the server (RAC first render: label `true`) wrote `month, ` + `aria-labelledby="<segment> <id>-label"` (RA useDateSegment); both renders now match RA.
 
 ## Gotchas
-- `calendarProps.isDateUnavailable` is the user's function as is (RA): a wrapping arrow in a ternary does not serialize, which dropped the whole CalendarContext entry on resumed pages (popover calendar lost firstDayOfWeek / min / max / unavailable / value) — `tests/date-picker-calendar-props.test.ts`
+- `calendarProps.isDateUnavailable` is the user's function as is (RA) — `tests/date-picker-calendar-props.test.ts`
 - SSR "nothing loads before interaction" fails: repeated handler symbols (9 pickers) are preloaded as "visible" by the runtime planner
 - Popover drops a user `id` (Popover lane)
 - A conditional child's `onCleanup` did not run on close on a resumed page (hence the effect-based PickerCommit) — runtime question

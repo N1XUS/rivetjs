@@ -4,11 +4,11 @@
 Angular CDK stepper port (v22.2.2): wizard-like workflow split into steps, linear validation, indicator types, keyboard navigation; accessible markup of Angular Material's stepper. Headless (default `rv-*` classes + `data-*` state). Consumer: `@rivetjs/ui/stepper` (HeroUI-look Stepper, feature set inspired by HeroUI Pro's public docs).
 
 ## Entry points
-- `@rivetjs/cdk/stepper` -> `index.tsx`: `Stepper`, `StepList`, `Step`, `StepHeader`, `StepLabel`, `StepPanel`, `StepperNext`, `StepperPrevious`, `useStepper`, `useStep`, `StepperContext` (`rv-stepper`), `StepContext` (`rv-step`), `*Props` / render-prop types; re-exports `./state.ts`.
+- `@rivetjs/cdk/stepper` -> `index.tsx`: `Stepper`, `StepList`, `Step`, `StepHeader`, `StepLabel`, `StepPanel`, `StepperNext`, `StepperPrevious`, `useStepper`, `useStep`, `StepperContext`, `StepContext`, `*Props` / render-prop types; re-exports `./state.ts`.
 - `@rivetjs/cdk/stepper/state` -> `state.ts` (package.json export): `createStepperState(id, props)`, `createStepState`, `registerStep` / `unregisterStep`, readers (`stepperSelectedIndex`, `stepCount`, `stepIndex`, `stepIsSelected`, `stepIsLast`, `stepCompleted`, `stepHasError`, `stepShowError`, `stepEditable`, `stepOptional`, `stepIndicatorType`, `stepIsNavigable`, `stepContentPosition`, `stepperFocusIndex`, `stepLabelId`, `stepContentId`), actions (`selectStep`, `stepperNext`, `stepperPrevious`, `stepReset`, `stepperReset`, `markStepInteracted`, `markVisitedSteps`), keyboard (`stepperHeaders`, `stepperKeys`, `stepperHeaderKeyDown`), types (`StepControl`, `StepState`, `STEP_STATE`, `StepperSelectionEvent`, `StepperSemantics`, `StepperOrientation`).
 
 ## Layout
-- `state.ts` — plain signals + free functions (`_regionState`, serializable): selection via cdk `controllable` (value / Signal / accessor), steps list signal, per-step `interacted` / overrides; linear gating = upstream `_anyControlsInvalidOrPending` + `_isValidIndex`.
+- `state.ts` — plain signals + free functions: selection via cdk `controllable` (value / Signal / accessor), steps list signal, per-step `interacted` / overrides; linear gating = upstream `_anyControlsInvalidOrPending` + `_isValidIndex`.
 - `index.tsx` — parts; `Step` registers itself (creation order = index; `onCleanup` unregisters); `StepHeader` owns click / keydown / pointer hover / focus-visible; `StepPanel` `index` or the enclosing `Step`.
 - tests: `../tests/stepper-state.test.ts`, `../tests/stepper-ssr.test.ts`, `../tests/stepper.browser.test.tsx` (Chromium).
 - docs: `apps/cdk-docs/content/components/stepper.md`, examples `apps/cdk-docs/examples/stepper-{basic,linear,vertical,list}`.

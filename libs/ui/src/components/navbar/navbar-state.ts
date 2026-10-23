@@ -1,8 +1,8 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no navbar). Feature set (props, defaults) inspired by HeroUI Pro's
 // public Navbar docs; independent implementation. Serializable navbar state (plain data + signals + the caller's
-// callbacks), region state so a re-created region of a resumed page keeps it; free functions take the state first.
+// callbacks); free functions take the state first.
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";
-import { _regionState, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 
 export interface NavbarOptions {
   /** Hides the bar while scrolling down, reveals it on scroll up. @default false */
@@ -34,7 +34,7 @@ export interface NavbarState {
 }
 
 export function createNavbarState(options: NavbarOptions, menuId: string): NavbarState {
-  return _regionState(() => ({
+  return {
     menu: controllable<boolean>(options.isMenuOpen, !!options.defaultMenuOpen, options.onMenuOpenChange),
     hidden: signal<boolean | null>(null),
     lastY: signal(0),
@@ -43,7 +43,7 @@ export function createNavbarState(options: NavbarOptions, menuId: string): Navba
     height: options.height ?? "4rem",
     menuId,
     parentRef: options.parentRef,
-  }));
+  };
 }
 
 export function setNavbarMenuOpen(state: NavbarState, open: boolean): void {

@@ -217,8 +217,9 @@ describe("Masonry SSR", () => {
     expect(a).toMatch(/aria-selected="false"/);
     expect(a).toMatch(/tabindex="-1"/);
     expect(html).toMatch(/role="gridcell"/);
-    expect(html).toMatch(/b:(<!--r\d*-->)?on/);
-    expect(html).toMatch(/a:(<!--r\d*-->)?off/);
+    const text = html.replace(/<!--[^>]*-->/g, "");
+    expect(text).toMatch(/>b:on</);
+    expect(text).toMatch(/>a:off</);
   });
 
   it("emits masked max() terms per breakpoint (default columns) and caption extra height", async () => {

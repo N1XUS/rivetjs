@@ -12,7 +12,7 @@ import { derivedDom } from "../dom-data-derived.ts";
 import { _derivedDom } from "../server-derived-dom.ts";
 import { importServer } from "./resume/compile.ts";
 
-// The server half of a `{ model: "derived", domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
+// The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
 const source = `
 import { For } from "@rivetjs/runtime/dom";
@@ -36,7 +36,7 @@ export function App(props) {
   );
 }
 `;
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App"], independent: ["App"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["App"], independent: ["App"] };
 const manifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#App": "/page.js" } };
 type Props = { rows: { id: number; label: string; n: number }[]; blank: { id: number }[] };
 const props = (n: number): Props => ({

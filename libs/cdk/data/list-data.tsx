@@ -11,8 +11,7 @@
 // - `.tsx` without JSX: resume-compiled so the arrow functions of the returned object are R2 symbols
 //   (a `.ts` module's closures would not serialize). `filter` / `getKey` options must be inline
 //   arrows or local functions (they are captured).
-// - The state is region state (`_regionState`): a re-created region keeps its list.
-import { batch, computed, signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { batch, computed, signal, untrack, type Signal } from "@rivetjs/reactivity";
 import type { Key, Selection } from "../collections/types.ts";
 
 export interface ListOptions<T> {
@@ -246,35 +245,33 @@ export const defaultGetKey = (item: any): Key => item.id ?? item.key;
  * the data over time (react-stately `useListData`).
  */
 export function createListData<T>(options: ListOptions<T> = {}): ListData<T> {
-  return _regionState(() => {
-    const { initialItems = [], initialSelectedKeys, filter, initialFilterText = "" } = options;
-    // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
-    const userKey = options.getKey;
-    const keys = { get: (item: T): Key => (userKey ? userKey(item) : defaultGetKey(item)) };
-    const getKey = keys.get;
-    // Store both items and filteredItems so we can go back to the unfiltered list.
-    const store: ListStore<T> = {
-      rawItems: signal<T[]>(initialItems),
-      selectedKeys: signal<Selection>(initialSelectedKeys === "all" ? "all" : new Set(initialSelectedKeys || [])),
-      filterTextSignal: signal(initialFilterText),
-    };
-    const items = computed(() => {
-      const all = store.rawItems();
-      if (!filter) return all;
-      const text = store.filterTextSignal();
-      return all.filter((item) => filter(item, text));
-    });
-    // Resumable: an arrow only passed as an argument is not a resume symbol, so it lives in an object literal
-    // (whose arrow properties are) — the actions capture it.
-    const io = { dispatch: (updater: (state: ListState<T>) => ListState<T>) => dispatchList(store, updater) };
-    return {
-      items,
-      selectedKeys: store.selectedKeys,
-      filterText: store.filterTextSignal,
-      ...createListActions({ getKey }, io.dispatch),
-      getItem: (key: Key) => store.rawItems().find((item) => getKey(item) === key),
-    };
+  const { initialItems = [], initialSelectedKeys, filter, initialFilterText = "" } = options;
+  // Resumable: a module-level default is not a serializable capture; the fallback is an object-literal arrow (a resume symbol).
+  const userKey = options.getKey;
+  const keys = { get: (item: T): Key => (userKey ? userKey(item) : defaultGetKey(item)) };
+  const getKey = keys.get;
+  // Store both items and filteredItems so we can go back to the unfiltered list.
+  const store: ListStore<T> = {
+    rawItems: signal<T[]>(initialItems),
+    selectedKeys: signal<Selection>(initialSelectedKeys === "all" ? "all" : new Set(initialSelectedKeys || [])),
+    filterTextSignal: signal(initialFilterText),
+  };
+  const items = computed(() => {
+    const all = store.rawItems();
+    if (!filter) return all;
+    const text = store.filterTextSignal();
+    return all.filter((item) => filter(item, text));
   });
+  // Resumable: an arrow only passed as an argument is not a resume symbol, so it lives in an object literal
+  // (whose arrow properties are) — the actions capture it.
+  const io = { dispatch: (updater: (state: ListState<T>) => ListState<T>) => dispatchList(store, updater) };
+  return {
+    items,
+    selectedKeys: store.selectedKeys,
+    filterText: store.filterTextSignal,
+    ...createListActions({ getKey }, io.dispatch),
+    getItem: (key: Key) => store.rawItems().find((item) => getKey(item) === key),
+  };
 }
 
 /** react-stately's `{...state}` snapshot of a list (items filtered). Reads state. */

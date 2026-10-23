@@ -62,21 +62,15 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
   const out = app(live, true);
   assert.doesNotMatch(app(plain, true), /_live|LIVE/);
   assert.match(out, /_serveLive, _live, _livePage, /);
-  // Form intent warms the data readers' chunks (focusin through the intent handler, pointerdown).
-  assert.match(out, /    _liveIntent\(event, live, modules, nest\);/);
-  assert.match(
-    out,
-    /clientEvent\(document, "pointerdown", \(event: PointerEvent\) => _liveIntent\(event, live, modules, nest\), \{ passive: true, preload: "intent", match: "form", standalone: false \}\);/,
-  );
-  assert.match(out, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a,form", standalone: false \}\);/);
-  assert.match(out, /clientEvent\(document, "pointerover", intent, \{ passive: true, preload: "intent", match: "a,form", standalone: false \}\);/);
+  assert.doesNotMatch(out, /_liveIntent/);
+  assert.match(out, /clientEvent\(document, "focusin", intent, \{ preload: "intent", match: "a", standalone: false \}\);/);
   assert.doesNotMatch(out, /\b_serve\b/);
   assert.match(out, /const LIVE: readonly number\[\] = \[\d\];/);
   // Single-level app: the top Router keys on the slot; the navigation entry points start its location sync.
   assert.match(out, /const live = _live\("server", router\);/);
   assert.match(out, /clientEvent\(document, "rivet:go", \(\) => \(_armLive\(router, live, nest, NEST\), _serveLive\(router, live, nest, NEST\)\)/);
   assert.match(out, /clientEvent\(document, "click", \(event: MouseEvent\) => \(_armLive\(router, live, nest, NEST\), interceptClick\(/);
-  assert.match(out, /<Router router=\{_liveRouter\(router, live\)\}/);
+  assert.match(out, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), _liveRouter\(router, live\)\)\}/);
   // The slot is declared before the listeners that capture it.
   assert.ok(out.indexOf("const live = ") < out.indexOf('clientEvent(document, "click"'));
   assert.match(out, /const data = LIVE\.includes\(row\[2\]\) \? _livePage\(live, result\.data\[depth\], match\.url, depth\) : result\.data\[depth\];/);

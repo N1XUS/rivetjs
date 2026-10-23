@@ -42,9 +42,9 @@ What to look at:
 
 ### Read the page state
 
-In the **Elements** panel, find `<script type="rivet/state">` near the end of `<body>`. It holds the values the browser needs to continue where the server stopped (signals, captured values, the list of chunks). If it is large, look for big data captured by handlers. Pass only what the handler needs; see [Serializable captures](../../best-practices/serializable-captures.md). In development the server names the largest captures for you, and long lists have their own options: see [large data in resume state](../../learn/resuming.md#large-data-in-resume-state). A page built with the experimental [derived model](../../learn/resuming.md#derived-model-experimental) has a `<script type="rivet/boundaries">` instead, with the state values of its interactive components only.
+In the **Elements** panel, find `<script type="rivet/boundaries">` near the end of `<body>`. It holds what the browser needs to continue where the server stopped: one record per interactive component (its place in the page, its signal values and its plain-data props) and the chunk of each component. If it is large, look for big props or signals: pass only what a component shows, and keep large lists in route data, where [data from the page](../../learn/resuming.md#data-from-the-page) can leave them out.
 
-The `data-preload` attribute on the same script lists the chunks the loader will fetch without waiting for the user, with their strategy: `"e"` (eager), `"i"` (idle) or `"v"` (visible). Chunks with the `intent` strategy are not listed; they load when the user is about to interact. See [Preloading](preloading.md).
+The `data-fo` attribute on the same script lists the files the loader fetches after the page loads (the runtime and the page's component chunks), and `data-rt` names the runtime. See [Preloading](preloading.md).
 
 If the page has client effects or client events, `data-boot` is set, and the runtime loads at idle.
 

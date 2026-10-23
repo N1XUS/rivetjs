@@ -2,7 +2,7 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "Resume demo",
-  summary: "The component runs once to make the HTML. In the browser only the click handler runs, so the render time stays the same.",
+  summary: "Nothing runs in the browser before the first click. The render time is kept in a signal, so it stays the server's value when the browser picks the component up.",
   tags: ["resume", "signals"],
   frame: { height: "sm" },
   show: ["src/routes/index.tsx"],
@@ -12,6 +12,6 @@ export default defineExample({
     { expect: ["#count", "Count: 1"] },
     { click: "#add" },
     { expect: ["#count", "Count: 2"] },
-    { expect: ["#rendered", "Component ran at"] },
+    { expect: ["#rendered", "Component rendered at"] },
   ],
 });

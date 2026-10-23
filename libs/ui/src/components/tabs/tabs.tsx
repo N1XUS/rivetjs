@@ -5,7 +5,7 @@
 // - `TabsContext` carries plain data `{ orientation, align, variant }` (getters over the root's live props) instead of the tv
 //   `slots` object: resumable token `rv-ui-tabs`, slots = module-level memo per `align|variant`; default `{}` → parts outside
 //   a `Tabs` get only the caller's `class` (= upstream `slots?.x`).
-// - `createCollectionSlot("tabs.listContainer")` → a resumable context `rv-ui-tabs-list-container` (Rivet children are lazy
+// - `createCollectionSlot("tabs.listContainer")` → a context `ListContainerContext` (Rivet children are lazy
 //   slots rendered inside the provider, so no `cloneElement` channel is needed); `Tabs.List` reads it like `useSlot`. The
 //   children render synchronously inside the provider (`renderSlot`): the cdk Tabs default-selection build pass must see
 //   the tabs (a slot left for the server serializer registers nothing).
@@ -42,7 +42,6 @@ import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide";
 
@@ -69,7 +68,7 @@ type TabsContext = {
   indicator?: boolean;
 };
 
-const TabsContext = resumableContext(createContext<TabsContext>({}, { id: "rv-ui-tabs" }));
+const TabsContext = createContext<TabsContext>({});
 
 type TabsSlots = ReturnType<typeof tabsVariants>;
 /** Module-level memo per variant combination (upstream `useMemo([align, variant])`): tv slot functions are pure. */
@@ -88,7 +87,7 @@ type ListContainerInjectedProps = {
 } & Record<string, unknown>;
 
 /** Upstream `createCollectionSlot("tabs.listContainer")`: the `Tabs.ListContainer` props for the `Tabs.List` inside it. */
-const ListContainerContext = resumableContext(createContext<ListContainerInjectedProps | null>(null, { id: "rv-ui-tabs-list-container" }));
+const ListContainerContext = createContext<ListContainerInjectedProps | null>(null);
 
 /* -------------------------------------------------------------------------------------------------
  * Tabs Root
@@ -266,7 +265,7 @@ interface TabProps extends TabPrimitiveProps {
  *  set by one that mounts after the automatic one was created (lazy children: `<Show>`, render function), which hides it. */
 type IndicatorFlag = { explicit: boolean; late: Signal<boolean> | null };
 // Resumable: an explicit indicator a resumed page mounts later (`<Show>`) reads the same flag (its `late` signal hides the automatic one).
-const IndicatorFlagContext = resumableContext(createContext<IndicatorFlag | null>(null, { id: "rv-ui-tabs-indicator-flag" }));
+const IndicatorFlagContext = createContext<IndicatorFlag | null>(null);
 
 const Tab = (props: TabProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class", "indicator"]);

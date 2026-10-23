@@ -4,7 +4,7 @@
 RAC `Heading`: `h1`…`h6` (`level`, default 3) reading `HeadingContext` (dialog / popover titles provide `slot="title"` props).
 
 ## Entry points
-- `@rivetjs/cdk/heading` -> `index.tsx`: `Heading`, `HeadingContext` (`rv-heading`), `HeadingProps`
+- `@rivetjs/cdk/heading` -> `index.tsx`: `Heading`, `HeadingContext`, `HeadingProps`
 
 ## Layout
 - `index.tsx` - component + context

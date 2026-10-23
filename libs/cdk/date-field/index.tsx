@@ -34,7 +34,6 @@ import {
   contextProps,
   createSlot,
   renderProps,
-  resumableContext,
   slottedContext,
   type ClassNameOrFunction,
   type ContextValue,
@@ -139,12 +138,10 @@ export interface PickerFieldContextValue extends AriaDateFieldOptions {
   pickerField?: DateFieldState;
 }
 
-export const DateFieldContext = resumableContext(
-  createContext<ContextValue<Partial<DateFieldProps<any>> & PickerFieldContextValue, HTMLDivElement>>(null, { id: "rv-date-field" }),
-);
-export const TimeFieldContext = resumableContext(createContext<ContextValue<Partial<TimeFieldProps<any>>, HTMLDivElement>>(null, { id: "rv-time-field" }));
-export const DateFieldStateContext = resumableContext(createContext<DateFieldState | null>(null, { id: "rv-date-field-state" }));
-export const TimeFieldStateContext = resumableContext(createContext<TimeFieldState | null>(null, { id: "rv-time-field-state" }));
+export const DateFieldContext = createContext<ContextValue<Partial<DateFieldProps<any>> & PickerFieldContextValue, HTMLDivElement>>(null);
+export const TimeFieldContext = createContext<ContextValue<Partial<TimeFieldProps<any>>, HTMLDivElement>>(null);
+export const DateFieldStateContext = createContext<DateFieldState | null>(null);
+export const TimeFieldStateContext = createContext<TimeFieldState | null>(null);
 
 const ROOT_OWNED = ["style", "render"] as const;
 

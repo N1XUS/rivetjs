@@ -40,7 +40,6 @@ import {
   setThumbValue,
   sliderValues,
 } from "../slider/state.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 describe("useSliderState", () => {
   it("should allow setting and reading values, percentages, and labels", () => {
@@ -242,21 +241,6 @@ describe("Rivet additions", () => {
     expect(disabled.pageSize).toBe(10);
   });
 
-  it("resume-table round trip keeps values, drag and editable flags", () => {
-    let result = createSliderState({ defaultValue: [10, 40], minValue: 0, maxValue: 50, step: 5, locale: "de-DE", formatOptions: { style: "percent" } });
-    setThumbDragging(result, 1, true);
-    setThumbValue(result, 1, 42);
-    setThumbEditable(result, 0, false);
-    let decoded = jsonRoundTrip(result);
-    expect(sliderValues(decoded)).toEqual([10, 40]);
-    expect(isThumbDragging(decoded, 1)).toBe(true);
-    setThumbValue(decoded, 0, 20);
-    expect(getThumbValue(decoded, 0)).toBe(10);
-    setThumbValue(decoded, 1, 46);
-    expect(sliderValues(decoded)).toEqual([10, 45]);
-    expect(getThumbValueLabel(decoded, 1)).toBe("4.500\u00a0%");
-  });
-
   it("format override (RA ColorSliderState getThumbValueLabel / getFormattedValue): default value param only", () => {
     let base = createSliderState({ defaultValue: [10, 20], locale: "en-US" });
     let result = { ...base, format: { formattedValue: () => "custom", thumbValueLabel: (index: number) => `thumb ${index}` } };
@@ -268,7 +252,7 @@ describe("Rivet additions", () => {
 });
 
 describe('Rivet: snap="release" free drag position', () => {
-  it("free position during a drag, stepped value; snap on release; resume round trip", () => {
+  it("free position during a drag, stepped value; snap on release", () => {
     let result = createSliderState({ defaultValue: [20, 50], step: 10 });
     expect(result.snap).toBe("release");
     expect(getThumbPositionPercent(result, 1)).toBe(0.5);
@@ -281,9 +265,6 @@ describe('Rivet: snap="release" free drag position', () => {
     setThumbDragPercent(result, 1, 0.05);
     expect(getThumbPositionPercent(result, 1)).toBe(0.2);
     setThumbDragPercent(result, 1, 0.37);
-
-    let decoded = jsonRoundTrip(result);
-    expect(getThumbPositionPercent(decoded, 1)).toBe(0.37);
 
     // No requestAnimationFrame (node): release jumps to the step.
     setThumbDragging(result, 1, false);

@@ -8,7 +8,7 @@ RAC `Switch`, `SwitchField` + `SwitchButton`: visually hidden `<input type=check
 - `@rivetjs/cdk/switch/behaviour` -> `behaviour.tsx` (explicit entry): `switchProps(props, state, inputRef?)` = `toggleProps` + `role="switch"` (RA useSwitch), `AriaSwitchProps`, `SwitchAria`
 
 ## Layout
-- `index.tsx` components; internal context `rv-switch-internal`
+- `index.tsx` components; internal context
 - tests: `tests/switch.browser.test.tsx` (RAC Switch.test.js, 43); stories `tests-components/checkbox.test.ts` "switch:" (route `checkbox.tsx`), `widgets` "form fields" + `axe` (route `forms.tsx`)
 - docs examples: `apps/cdk-docs/examples/switch-*/` (`Switch` with a drawn track; `SwitchField` + `SwitchButton` for validation / `isInvalid`)
 

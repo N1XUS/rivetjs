@@ -8,7 +8,7 @@
 
 - `engine/**` — upstream `lib/global/**` (non-test) + helpers (`utils/`, `vendor/stacking-order.ts` = upstream fork of stacking-order 2.0.0, `components/group/*` sort / storage-key helpers, `components/{group,panel}/types.ts` framework-free types). Kept as upstream (framework-free); only `.ts` import specifiers, React / csstype types removed (`global/types.ts`, `global/cursor/getCursorStyle.ts`), `utils/parseNumericStyleValue.ts` dropped (React-only). Do not edit for Rivet reasons — adapt in `mount.ts`.
 - `mount.ts` — effect bodies of upstream Group / Panel / ResizeSeparator / useResizePreviews / ResizePreview / SeparatorClone / SeparatorOverlayRenderer: `GroupState` / `PanelRecord` / `SeparatorRecord` (serializable records the components push during render), `ensureGroup` (mount / re-mount when DOM members changed, `MutationObserver` childList → `requestMount`), `activateGroup` / `groupPointerDown` / `separatorKeyDown` (resumed boot + replay), `panelMethods` / `groupMethods` (imperative handles), DOM-built resize previews.
-- `index.tsx` — public API: `Group`, `Panel`, `Separator`, `SeparatorOverlay`, `GroupContext` (`rv-resizable-group`), `useGroupRef`, `usePanelRef`, `useGroupCallbackRef`, `usePanelCallbackRef`, `useDefaultLayout`, `cookieStorage` (Rivet), `isCoarsePointer`, types.
+- `index.tsx` — public API: `Group`, `Panel`, `Separator`, `SeparatorOverlay`, `GroupContext`, `useGroupRef`, `usePanelRef`, `useGroupCallbackRef`, `usePanelCallbackRef`, `useDefaultLayout`, `cookieStorage` (Rivet), `isCoarsePointer`, types.
 
 ## API (upstream v4 names)
 

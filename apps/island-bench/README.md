@@ -20,7 +20,6 @@ The Preact pair uses `components/*.preact.tsx`: the same four components (same m
 | lane | stack | server |
 | --- | --- | --- |
 | `rivet-bridge-react` | Rivet + `@rivetjs/bridge-react` (React 19.3.0) | `serve-rivet.ts` (hand-written node:http: streaming `renderResumable`, writes batched per `setImmediate`, static assets from memory with `cache-control: no-store`; not a framework server) |
-| `rivet-bridge-react-full` | the `rivet-bridge-react` build with the full resume driver (T7b baseline: no lean islands-only tail) | `serve-rivet.ts` with `IB_FULL_TAIL=1` (SSR bundle copy with `offerLean` stubbed) |
 | `astro-react` | Astro 7.3.8, `@astrojs/react` 7.0.1, `@astrojs/node` 11.1.7 standalone, React 19.3.0 | `dist/server/entry.mjs` |
 | `next` | Next.js 16.4.0 App Router (Turbopack build), React 19.3.0, `force-dynamic` | `next start` |
 | `rivet-native` | Rivet only | `serve-rivet.ts` |

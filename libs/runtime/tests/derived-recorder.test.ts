@@ -1,17 +1,16 @@
 // Derived model, boundary recorder (M2 lane A, R1): `_rB` / `_rBOut` / `_rBEnd` / `_rBAttr` / `_rSig` under
-// `resumableToString(…, { model: "derived" })` — boundary records, keyed values, wake lists, markers, the values-only
-// tail vs today's state script on the ssr-bench `/resume` page shape (spike S1's page). The fixture is hand-lowered to
+// `derivedToString` — boundary records, keyed values, wake lists, markers and the values-only tail on the ssr-bench
+// `/resume` page shape (spike S1's page). The fixture is hand-lowered to
 // the ABI (as the compiler emits it) and compiled with the plain server target, so the suite runs on today's wasm; the
-// last case compiles the un-lowered page with `resume: { model: "derived" }` and skips until the wasm carries the model.
+// last case compiles the un-lowered page with `resume: { module }` .
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { resumableToString } from "@rivetjs/runtime/server-resume";
-import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore } from "@rivetjs/runtime/server-derived";
+import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore, derivedToString } from "@rivetjs/runtime/server-derived";
 import { isData } from "../server-derived.ts";
-import { compileResume, importServer, symbolUrls } from "./resume/compile.ts";
+import { importServer } from "./resume/compile.ts";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
 
 type Row = { id: number; values: number[] };
@@ -69,7 +68,7 @@ export function App(props) {
 const data: Data = { title: "Records", rows: Array.from({ length: 200 }, (_, i) => ({ id: i + 1, values: [i * 3] })) };
 
 const tailOf = (html: string): { script: string; tail: BoundaryTail } => {
-  const match = html.match(/<script type="rivet\/boundaries">(.*?)<\/script>/s);
+  const match = html.match(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s);
   assert.ok(match, "boundaries tail present:\n" + html.slice(-400));
   return { script: match[0], tail: JSON.parse(match[1]!) as BoundaryTail };
 };
@@ -83,7 +82,7 @@ async function loweredApp(): Promise<AppModule["App"]> {
 
 test("hand-lowered page: boundary records, keyed values, wake lists, markers; nothing of the serialized state", async () => {
   const App = await loweredApp();
-  const html = (await resumableToString(() => App({ data }), { manifest, model: "derived" })) as string;
+  const html = (await derivedToString(() => App({ data }), { manifest })) as string;
   const { tail } = tailOf(html);
   // Records in creation (parent-first) order: App (page root) → Layout → Page (Layout's lazy child renders under it).
   assert.deepEqual(tail.b, [
@@ -106,40 +105,12 @@ test("hand-lowered page: boundary records, keyed values, wake lists, markers; no
   assert.match(html, /<!--b1--><!--b2--><div data-layout="resume">/);
 });
 
-test("values-only tail is a fraction of today's state script for the same page", async () => {
-  const App = await loweredApp();
-  const derivedHtml = (await resumableToString(() => App({ data }), { manifest, model: "derived" })) as string;
-  const { script } = tailOf(derivedHtml);
-  const serverCode = compileResume(page(false), "server", "src/page.tsx");
-  const dom = compileResume(page(false), "dom", "src/page.tsx");
-  const symbols = symbolUrls(dom.symbols);
-  const serialized = await importServer<AppModule>(serverCode.code);
-  const todayHtml = (await resumableToString(() => serialized.App({ data }), { manifest: { ...manifest, symbols } })) as string;
-  const state = todayHtml.match(/<script type="rivet\/state"[^>]*>.*?<\/script>/s)![0];
-  // 200 rows: today's state (row plans + packed rows already) is a few KB; the boundaries tail ~150 B, rows or not.
-  assert.ok(state.length > 1200, "today's state script: " + state.length);
-  assert.ok(script.length < 200, "boundaries tail: " + script.length + "\n" + script);
-  assert.ok(script.length * 8 < state.length, `${script.length} B vs ${state.length} B`);
-  console.info(`derived boundaries tail ${script.length} B vs serialized state script ${state.length} B (200 rows)`);
-  // Same rendered markup apart from the resume attributes / markers / scripts.
-  const strip = (html: string) =>
-    html
-      .replace(/<script.*?<\/script>/gs, "")
-      .replace(/<!--[^>]*-->/g, "")
-      .replace(/ data-r="\d+"/g, "");
-  assert.equal(strip(derivedHtml), strip(todayHtml));
-});
-
 test("ABI outside a derived render: null tokens, plain signals, plain values", async () => {
   const App = await loweredApp();
   const plain = renderToString(() => App({ data })) as string;
   assert.ok(!plain.includes("<!--b"));
   assert.ok(!plain.includes("rivet/boundaries"));
   assert.ok(plain.includes("<!--r") === false, "no row markers without a recorder");
-  // Serialized model (default): the boundary ABI is inert, no tail (nothing recorded).
-  const serialized = (await resumableToString(() => App({ data }), { manifest })) as string;
-  assert.ok(!serialized.includes("rivet/boundaries"));
-  assert.ok(!serialized.includes('type="rivet/state"'));
   assert.equal(_rB("X", 3, { a: 1 }), null);
   assert.equal(_rBOut(null, "v"), "v");
   assert.equal(_rBAttr(null), null);
@@ -154,7 +125,7 @@ test("flags: independent props kept, demoted on non-data props, UNKEYED for non-
   const held = { items: [1, 2], label: "x", nested: { ok: true, n: null } };
   const bad = { onPick: () => 1 };
   const render = () =>
-    resumableToString(
+    derivedToString(
       () => {
         const A = _rB("A", 1 | 2, held);
         try {
@@ -171,7 +142,7 @@ test("flags: independent props kept, demoted on non-data props, UNKEYED for non-
           _rBEnd(A);
         }
       },
-      { manifest, model: "derived" },
+      { manifest },
     ) as string;
   const html = render();
   const { tail } = tailOf(html);
@@ -196,10 +167,10 @@ test("isData: JSON data only", () => {
 
 const derived = hasDerivedModel();
 (derived ? test : test.skip)("compiled page under resume.model derived: the same tail shape, data-b roots, no state script", async () => {
-  const out = compile(page(false), { target: "server", filename: "page.tsx", resume: { module: "src/page.tsx", model: "derived" } });
+  const out = compile(page(false), { target: "server", filename: "page.tsx", resume: { module: "src/page.tsx" } });
   assert.deepEqual(out.diagnostics, []);
   const { App } = await importServer<AppModule>(out.code);
-  const html = (await resumableToString(() => App({ data }), { manifest, model: "derived" })) as string;
+  const html = (await derivedToString(() => App({ data }), { manifest })) as string;
   const { tail } = tailOf(html);
   // Boundary names are module-qualified (`<resume module>#<Name>`, the same in the DOM target's `_b`).
   assert.deepEqual(

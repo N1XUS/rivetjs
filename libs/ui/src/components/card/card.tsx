@@ -2,7 +2,7 @@
 // Rivet:
 // - `"use client"` dropped (resume, no hydration pass); `className` → `class`; React types → Rivet JSX types.
 // - `CardContext` carries plain data `{ variant }` instead of the tv `slots` object (functions do not serialize on
-//   resume; spec §2): a resumable token (`resumableContext`, id `rv-ui-card`, same `{}` default) + `Provider`. Each
+//   resume; spec §2): a context token (same `{}` default) + `Provider`. Each
 //   part looks up the slots for the context variant (`slotsFor` memo, never from context); outside a `Card` the
 //   context is `{}` → slots `undefined` → the part gets only the caller's `class` (= upstream). `React.useMemo` →
 //   context values whose `variant` is a getter over the live prop (props are live getters, spec
@@ -17,7 +17,6 @@
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { CardVariants } from "../../../styles/src/components/card/index.ts";
 import { cardVariants } from "../../../styles/src/components/card/index.ts";
@@ -35,7 +34,7 @@ interface CardContext {
   variant?: CardVariants["variant"];
 }
 
-const CardContext = resumableContext(createContext<CardContext>({}, { id: "rv-ui-card" }));
+const CardContext = createContext<CardContext>({});
 
 /** The tv slot functions of one `cardVariants` variant (`base`, `header`, `title`, …). */
 type CardSlots = ReturnType<typeof cardVariants>;

@@ -9,14 +9,15 @@ import type { Page } from "playwright";
 import { scriptsOf, stories, watch, type Stories, type Watch, hinted } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the "preloaded when visible" / cold-key checks expect the page's chunks fetched after load.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 const cell = (root: string, date: string) => `#${root} [data-date="${date}"]:not([data-outside-month])`;
 const activeDate = (page: Page) => page.evaluate(() => document.activeElement?.getAttribute("data-date") ?? document.activeElement?.tagName ?? "");
 const waitActive = (page: Page, date: string) => page.waitForFunction((d) => document.activeElement?.getAttribute("data-date") === d, date, { timeout: 5000 });
 // Calendar symbol chunks (build manifest: `resume-Calendar…` with component chunks, the route's chunk by default).
-const dateScripts = (seen: Watch) => scriptsOf(seen.scripts, /^@rivetjs\/cdk\/calendar\/|#Calendar\w*\$/);
+const dateScripts = (seen: Watch) => scriptsOf(seen.scripts, /^@rivetjs\/cdk\/calendar\/|#Calendar\w*$/);
 
 test("calendar: server ARIA, visible preload only (nothing boots, no handler runs) before interaction, cold arrow key held", async () => {
   const page = await s.browser.newPage();

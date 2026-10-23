@@ -17,7 +17,7 @@
 //   cells paint `state.selection` continuously (malva).
 // - Keyboard, clicks, focus hand-off (T8): delegated on the sheet (`keys-time-grid.ts` / `keys.ts`, leaf chunks);
 //   timed chips carry their owning slot (`data-rv-slot`) so `Enter` / `Escape` / the hand-off are DOM lookups.
-import { _regionState, computed, signal, untrack, useContext } from "@rivetjs/reactivity";
+import { computed, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Show, ref as elementRef, type DOMValue } from "@rivetjs/runtime/dom";
 import { SchedulerContext } from "./context.tsx";
 import { SchedulerEventChip } from "./event.tsx";
@@ -82,8 +82,8 @@ export function SchedulerTimeGrid<T>(): DOMValue {
   const ctx = useContext(SchedulerContext)!;
   const state = ctx.state;
   const scroller = elementRef<HTMLDivElement>();
-  const now = _regionState(() => signal<number | null>(null));
-  const focus = _regionState(() => signal<TimeGridFocus | null>(null));
+  const now = signal<number | null>(null);
+  const focus = signal<TimeGridFocus | null>(null);
 
   // Today follows the minute clock once it ticks (past midnight the header, `data-today` and the default tab stop move
   // with the now-line); before the first tick (server, resumed page) it is the root's.

@@ -43,7 +43,7 @@ export function App() {
 }
 `;
 const compiled = hasDerivedModel() ? test : test.skip;
-const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App"], independent: ["App"] };
+const resume = { module: "src/page.tsx", boundaries: ["App"], independent: ["App"] };
 
 async function served(): Promise<Record<string, string>> {
   const server = compile(SOURCE, { target: "server", filename: "page.tsx", resume } as never);
@@ -53,8 +53,8 @@ async function served(): Promise<Record<string, string>> {
   const { App } = await importServer<{ App: () => ServerValue }>(server.code);
   const manifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#App": "/page.js" } };
   const html = (await derivedToString(() => App(), { manifest })) as string;
-  // The default delegated types: no `data-events`, the loader holds pointer / mouse / focus events.
-  assert.ok(!html.includes("data-events"), html.slice(-400));
+  // The default delegated types (pointer / mouse / focus events) + the hover button's own: `data-events` lists both.
+  assert.match(html, / data-events="click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout pointerenter pointerleave"/);
   return {
     ...DERIVED_BUILD,
     "/": "<!doctype html><html><body>" + html + "</body></html>",

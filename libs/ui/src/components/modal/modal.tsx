@@ -33,7 +33,6 @@ import type { ModalOverlayProps, ModalRenderProps } from "@rivetjs/cdk/modal";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 
 import type { ModalVariants } from "../../../styles/src/components/modal/index.ts";
@@ -64,7 +63,7 @@ type ModalContext = {
   placement?: ModalPlacement;
 };
 
-const ModalContext = resumableContext(createContext<ModalContext>({}, { id: "rv-ui-modal" }));
+const ModalContext = createContext<ModalContext>({});
 
 type ModalSlots = ReturnType<typeof modalVariants>;
 const SLOTS = new Map<string, ModalSlots>();

@@ -270,7 +270,6 @@ The group owns `onPointerDown` / `onPointerUp` (a press on the group focuses a s
 
 - Server HTML: every segment with its text, ARIA and `data-rk` (the spin, navigation and digit keys, plus the day period letters). Rivet holds those keys while the field's code loads, so the first key typed into a cold field is not lost or inserted as text.
 - The state is plain signals plus strings; the value, the partial input and the validation resume without re-rendering. Segments are rows keyed by type + occurrence, so the nodes (and focus) stay while values change.
-- `onChange`, `validate`, `isDateUnavailable`, render-prop functions and the event handlers: inline arrows or local functions (module-level functions are not serializable).
 - The `DateInput` children function is a slot: write it inline.
 - `on…Capture` handlers do not resume yet.
 

@@ -96,7 +96,7 @@ export function Count() {
 }
 ```
 
-Code in the component body runs once, on the server. A value read there is a snapshot. Read signals inside JSX, `computed`, handlers or effects to see changes.
+Code in the component body runs on the server, and once in the browser when the component wakes up. A value read there is a snapshot. Read signals inside JSX, `computed`, handlers or effects to see changes.
 
 ## Equality
 
@@ -115,7 +115,7 @@ Return a new array or object instead: `list.update((items) => [...items, 3])`. Y
 ## What it means for your code
 
 - **All changing state is a signal.** A plain `let` variable changed in a handler does not update the page.
-- **Signal values are saved into the page.** A signal used by the browser must hold :term[serializable]{id=serializable} data: strings, numbers, plain objects and arrays, dates, maps, sets. Not class instances or functions.
+- **Signal values are saved into the page.** A signal of a component that wakes up in the browser is written into the page when it holds :term[serializable]{id=serializable} data: strings, numbers, plain objects and arrays, dates, maps, sets. A signal holding a class instance or a function starts again from its initial value in the browser.
 - **Update immutably.** Create new arrays and objects when you change them.
 - **Handlers run in a batch.** Several `set` calls in one handler cause one update of the page, not one per call. Outside handlers, wrap them in `batch(() => …)`. See [batching](../guides/state/batching.md).
 - **Use `clientEffect` for browser side effects.** `effect` runs where its code runs, and a component body runs on the server. `clientEffect(fn)` runs only in the browser, at a time you choose (`load`, `idle`, `visible`, …). See [effects](../guides/state/effects.md).

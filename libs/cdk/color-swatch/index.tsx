@@ -14,7 +14,6 @@ import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts"
 import {
   contextProps,
   renderProps,
-  resumableContext,
   type ChildrenOrFunction,
   type ContextValue,
   type RefValue,
@@ -54,7 +53,7 @@ export interface ColorSwatchProps
 }
 
 /** RAC `ColorSwatchContext`. */
-export const ColorSwatchContext = resumableContext(createContext<ContextValue<ColorSwatchProps, HTMLDivElement>>(null, { id: "rv-color-swatch" }));
+export const ColorSwatchContext = createContext<ContextValue<ColorSwatchProps, HTMLDivElement>>(null);
 
 const OWNED = ["style", "id", "children", "render"] as const;
 

@@ -2,13 +2,13 @@
 
 This project uses Rivet, a compiled, resumable JSX framework. It is NOT React and NOT Solid. Full instructions: `AGENTS.md` at the project root (read it before editing). Docs: the Rivet MCP server (`npx -y @rivetjs/mcp`: `search_docs`, `get_doc`, `get_component`, `check_code`, `explain_diagnostic`) or each docs site's `/llms.txt`.
 
-- Components run once, on the server; the browser resumes the page and never re-runs them. No hooks, no re-renders, no dependency arrays.
+- Components run on the server; the browser resumes the page and runs a component once, over the server HTML, when it is first used. No hooks, no re-renders, no dependency arrays.
 - Component body = server code: no `window` / `document` / `localStorage` there (RV2001). Browser code goes in handlers, `clientEffect` / `clientEvent` / `clientOnly` from `@rivetjs/runtime/dom`.
 - Signals (`@rivetjs/reactivity`): `const n = signal(0)`; read `n()`; write `n.set(1)` / `n.update((v) => v + 1)`; `computed(() => n() * 2)`; `untrack(n)` (no `.peek`).
 - JSX: `class` (not `className`), `for`, events `onClick` / `onInput` (PascalCase; not `onclick`, not React's `onChange` for text), `model:value={signal}` for two-way inputs, style objects (no style strings).
 - Props are live: read `props.x` where it is shown; destructuring reads once. `mergeProps` / `splitProps` from `@rivetjs/runtime/props`.
 - Lists: `<For each={items} by={(i) => i.id}>{(item, index) => … item() … index()}</For>`; `Show`, `Switch` / `Match`, `ref()` from `@rivetjs/runtime/dom` (named imports).
-- Captures must serialize: handlers are inline arrows or local consts. Functions stored by name in objects / arrays and imported functions (npm exports too) resume by reference; functions in objects built at module level or returned by library code / hooks do not. Class instances: data classes of the module, classes with `[serialize]` / `static [revive]`, package classes registered with `registerClass`. Library objects (`new Intl.NumberFormat`, SDK clients, charts) → create them in the handler or `reconstruct(() => new Intl.NumberFormat())` (`import { reconstruct } from "@rivetjs/runtime/dom"`). No `.bind` inside an object literal (inline in a prop or a local `const` of it is fine).
+- Resume: render the same thing on both sides (no `Date.now()` / `Math.random()` in a render, RV2103: keep it in a signal); no `signal()` in a loop (RV2104); route loader data must be encodable (RV2107; classes via `registerClass`). Pass plain data as props: a component given functions / services runs with its parent.
 - Render props and item renderers are functions (`{(item) => …}`, `({ close }) => …`).
 - Import `@rivetjs/runtime/dom` only from `.tsx` files, never from `.ts`.
 - Routes: `src/routes/**.tsx`; `_layout.tsx`, `[param]`, `_404.tsx`; page exports `load(…)`, `actions(…)`, `head`, `live`; page `data` is a value, layout `data()` / `params()` / `url()` are accessors; `export const live = true` makes page `data` an accessor updated in place (forms in drawers).

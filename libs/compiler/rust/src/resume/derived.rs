@@ -236,7 +236,13 @@ pub struct Plan {
     pub keyed: FxHashMap<NodeId, (String, bool)>,
     /// Boundary names (export names) in source order.
     pub names: Vec<String>,
+    /// Boundary function → the event types of its own JSX handlers outside the loader's default list (space separated,
+    /// `_rB`'s `events`: the loader's `data-events`, so a cold `scroll` / `pointerenter` / … wakes the boundary).
+    pub events: FxHashMap<NodeId, String>,
 }
+
+/// The loader's default delegated types (`resume-loader-derived.ts`); `_rB` names only the others.
+const DEFAULT_EVENTS: &[&str] = &["click", "input", "change", "submit", "keydown", "pointerdown", "pointerup", "mousedown", "mouseup", "focusin", "focusout"];
 
 fn pascal(name: &str) -> bool {
     name.starts_with(|c: char| c.is_ascii_uppercase())
@@ -717,6 +723,18 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         }
         let props = if independent[i] { c.props.clone() } else { None };
         let name = export_name(tree, &c.name);
+        let mut events: Vec<&str> = resumed
+            .sites
+            .iter()
+            .filter(|s| s.kind == SiteKind::Event && s.component == c.name && !DEFAULT_EVENTS.contains(&s.event_type.as_str()))
+            .map(|s| s.event_type.as_str())
+            .filter(|t| !t.is_empty())
+            .collect();
+        events.sort_unstable();
+        events.dedup();
+        if !events.is_empty() {
+            plan.events.insert(c.function, events.join(" "));
+        }
         plan.boundaries.insert(c.function, (name.clone(), flags, props));
         plan.names.push(name);
         boundary_of.insert(c.function, i);

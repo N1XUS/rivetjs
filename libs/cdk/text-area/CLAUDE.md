@@ -4,7 +4,7 @@
 RAC `TextArea`: native `<textarea>` with the same state attributes as `Input`; fields provide `TextAreaContext`.
 
 ## Entry points
-- `@rivetjs/cdk/text-area` -> `index.tsx`: `TextArea`, `TextAreaContext` (`rv-text-area`), `TextAreaProps`, re-exports `InputRenderProps`
+- `@rivetjs/cdk/text-area` -> `index.tsx`: `TextArea`, `TextAreaContext`, `TextAreaProps`, re-exports `InputRenderProps`
 
 ## Layout
 - `index.tsx` - component + context

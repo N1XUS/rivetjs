@@ -12,7 +12,6 @@
 // `selection/*` and `_adapters/*` call `openLink` / `isOpeningLink` from here.
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
 import { createContext, provide, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isIPad, isMac, isWebKit } from "../platform/index.ts";
 import { renderSlot } from "@rivetjs/runtime/slot";
 import { linkState } from "./link-state.ts";
@@ -113,7 +112,7 @@ export function openSyntheticLink(target: Element, modifiers: Modifiers): void {
 const nativeRouter: Router = { isNative: true };
 
 /** Context `RouterProvider` sets; default: the native router. */
-export const RouterContext = resumableContext(createContext<Router>(nativeRouter, { id: "rv-router" }));
+export const RouterContext = createContext<Router>(nativeRouter);
 
 /** The router links should use (closest `RouterProvider`, else native). Call while rendering; capture the result in handlers. */
 export function useRouter(): Router {

@@ -19,7 +19,6 @@ import { Meter as MeterPrimitive } from "@rivetjs/cdk/meter";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { MeterVariants } from "../../../styles/src/components/meter/index.ts";
@@ -39,7 +38,7 @@ interface MeterContext {
   state?: MeterRenderProps;
 }
 
-const MeterContext = resumableContext(createContext<MeterContext>({}, { id: "rv-ui-meter" }));
+const MeterContext = createContext<MeterContext>({});
 
 type MeterSlots = ReturnType<typeof meterVariants>;
 

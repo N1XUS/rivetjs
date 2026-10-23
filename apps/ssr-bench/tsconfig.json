@@ -13,5 +13,5 @@
     "router-app/src/**/*.tsx",
     "cache-bench/*.ts"
   ],
-  "exclude": ["node_modules", "dist", "router-app/.rivet", "router-app/.rivet-derived", ".build", "results", "adapters/*.jsx", "dotnet"]
+  "exclude": ["node_modules", "dist", "router-app/.rivet", ".build", "results", "adapters/*.jsx", "dotnet"]
 }

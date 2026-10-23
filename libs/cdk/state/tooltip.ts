@@ -5,7 +5,7 @@
 // timers live in a browser-side WeakMap keyed by the state object (never serialized); the global
 // warmup / cooldown state is module state, as in the original (one per page, created on first use),
 // held in one mutable object (resume-extracted symbols import module bindings read-only).
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { createOverlayTriggerState, setOpen, type OverlayTriggerProps, type OverlayTriggerState } from "./overlays.ts";
 
 export interface TooltipTriggerProps extends OverlayTriggerProps {
@@ -70,7 +70,7 @@ export function createTooltipTriggerState(props: TooltipTriggerProps = {}): Tool
   const delay: number = (liveDelay ? untrack(liveDelay) : (delayProp as number | undefined)) ?? TOOLTIP_DELAY;
   const closeDelay: number = (liveCloseDelay ? untrack(liveCloseDelay) : (closeDelayProp as number | undefined)) ?? TOOLTIP_COOLDOWN;
   const live = liveDelay || liveCloseDelay ? { delay: liveDelay, closeDelay: liveCloseDelay } : undefined;
-  return _regionState(() => ({ ...createOverlayTriggerState(props), shouldSkipAnimation: signal(false), delay, closeDelay, ...(live ? { live } : {}) }));
+  return { ...createOverlayTriggerState(props), shouldSkipAnimation: signal(false), delay, closeDelay, ...(live ? { live } : {}) };
 }
 
 const ensureTooltipEntry = (state: TooltipTriggerState): void => {

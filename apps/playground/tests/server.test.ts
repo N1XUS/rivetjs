@@ -15,9 +15,9 @@ test("production playground: resumable file-routed pages, endpoints, legacy redi
     assert.match(html, /href="\/items\/1"/);
     // Shared-element transition: the list title and the item page heading carry the same name.
     assert.match(html, /<span data-vt-name="item-1">Owned rendering<\/span>/);
-    // Resumable: state + one inline loader, no module script before interaction.
-    assert.match(html, /<script type="rivet\/state"/);
-    assert.equal(html.match(/<script\b[^>]*>/g)!.filter((tag) => !/type="rivet\/state"/.test(tag)).length, 1);
+    // Resumable: boundaries tail + one inline loader, no module script before interaction.
+    assert.match(html, /<script type="rivet\/boundaries"/);
+    assert.equal(html.match(/<script\b[^>]*>/g)!.filter((tag) => !/type="rivet\/boundaries"/.test(tag)).length, 1);
     assert.doesNotMatch(html, /<script type="module"/);
     assert.match(html, /<title>Rivet playground<\/title>/);
     assert.match(html, /<meta name="description" content="Rivet compiled JSX framework example">/);
@@ -37,7 +37,7 @@ test("production playground: resumable file-routed pages, endpoints, legacy redi
     const body = await detail.text();
     assert.match(body, /<title>Owned rendering · Rivet playground<\/title>/);
     assert.match(body, /<meta name="description" content="Each request and mounted region owns its work and cleanup.">/);
-    assert.match(body, /<script type="rivet\/state"/);
+    assert.match(body, /<script type="rivet\/boundaries"/);
     assert.match(body, /<h1[^>]* data-vt-name="item-1"[^>]*>/);
     // Route data for client navigation (guards and loaders run on the server).
     const data = await fetch(app.url + "/items/2?_rivet=data");
@@ -98,8 +98,8 @@ test("production playground: resumable file-routed pages, endpoints, legacy redi
     const method = await fetch(app.url + "/api/items", { method: "POST" });
     assert.equal(method.status, 405);
     assert.equal(method.headers.get("allow"), "GET, HEAD");
-    // The resume runtime (state `rt`; pages without scheduled prefetches carry no `data-preload`).
-    const runtime = html.match(/"rt":"([^"]+\.js)"/)![1]!;
+    // The resume runtime (the boundaries tail's `data-rt`).
+    const runtime = html.match(/data-rt="([^"]+\.js)"/)![1]!;
     const js = await fetch(app.url + runtime);
     assert.equal(js.status, 200);
     assert.match(js.headers.get("content-type")!, /javascript/);
@@ -137,8 +137,8 @@ test("development server: Vite with the router middleware, styles and endpoints"
     assert.match(html, /Owned rendering/);
     // Dev serves pages resumable, like production; the first hot update switches to client rendering.
     assert.match(html, /<div data-rivet-dev="resume" style="display:contents">/);
-    assert.match(html, /type="rivet\/state"/);
-    assert.match(html, /"rt":"\/\.rivet\/entry\.resume\.ts"/);
+    assert.match(html, /type="rivet\/boundaries"/);
+    assert.match(html, /data-rt="\/@id\/__x00__rivet-derived-entry"/);
     assert.match(html, /src="\/\.rivet\/entry\.dev\.tsx"/);
     assert.match(html, /<script type="module" src="\/@vite\/client"/);
     assert.match(html, /<link rel="stylesheet" href="\/src\/styles.css">/);

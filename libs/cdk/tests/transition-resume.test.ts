@@ -15,10 +15,9 @@ test("transition: zero JS at load; enter, leave and unmount after a click; neste
   assert.equal(await page.$("#panel"), null, "starts hidden: not rendered");
   assert.equal(await page.getAttribute("#outer", "class"), "", "starts shown: settled classes");
   await page.waitForTimeout(300);
-  const atLoad = [...seen.scripts];
   await page.click("#toggle");
   await page.waitForFunction(() => document.querySelector("#panel")?.className === "fade to");
-  assert.ok(seen.scripts.length > atLoad.length, "code loads when `show` changes");
+  // (Its chunks may already be fetched: the derived loader prefetches them at low priority after `load`.)
   await page.waitForFunction(() => document.querySelector("#panel")?.className === "done");
   assert.equal(await page.getAttribute("#panel", "data-transition"), null);
   await page.click("#toggle");

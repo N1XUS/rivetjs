@@ -74,7 +74,7 @@ async function open(browser: Browser, url: string, context: BrowserContextOption
   // Resumed runtime started and its idle listeners attached.
   // Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router (intent).
   await page.dispatchEvent("a[href^='/']", "pointerdown");
-  await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+  await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
   await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
   return { page, errors, scripts, documents, close: () => ctx.close() };
 }

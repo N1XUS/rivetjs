@@ -1,11 +1,11 @@
-// T3 slots: hole markup + split, Rivet slot content written in place inside the holes (resumable: `data-r` ids and
-// handler entries in stream order), a missing / duplicated hole fails the island in every build (fallback, else RV2144 naming the island and the slot).
+// T3 slots: hole markup + split, Rivet slot content written in place inside the holes (resumable: the slot content is
+// part of the enclosing boundary), a missing / duplicated hole fails the island in every build (fallback, else RV2144 naming the island and the slot).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { resumableToString } from "@rivetjs/runtime/server-resume";
 import { slotMark, splitSlots } from "../slots.ts";
 import { calls } from "./fake-adapter.ts";
-import { page, stateOf } from "./harness.ts";
+import { page, tailOf } from "./harness.ts";
 
 type ServerValue = ReturnType<Parameters<typeof resumableToString>[0]>;
 type Page = () => ServerValue;
@@ -56,7 +56,7 @@ export function Duplicated() { return <main><Two><i>once</i></Two></main>; }
 const prod = await page<Record<string, Page>>(source);
 const dev = await page<Record<string, Page>>(source, { dev: true });
 
-test("slot content renders in place inside the holes, resumable (element ids + handler entries, the text binding inside)", async () => {
+test("slot content renders in place inside the holes, resumable (the page's boundary holds the buttons and their text)", async () => {
   calls.length = 0;
   const html = (await resumableToString(() => prod.mod.Page!(), { manifest: prod.manifest })) as string;
   assert.deepEqual(calls[0]!.slots.sort(), ["default", "title"]);
@@ -64,12 +64,13 @@ test("slot content renders in place inside the holes, resumable (element ids + h
   assert.deepEqual(calls[0]!.props, { label: "L" });
   assert.match(
     html,
-    /<button data-r="0">before<\/button><rivet-island data-ri="i\d+" style="display:contents"><article id="i\d+-card"><h2><rivet-slot name="title" style="display:contents"><b>Title <!--r\d*-->0<!--\/--><\/b><\/rivet-slot><\/h2><rivet-slot style="display:contents"><button data-r="(\d+)"><!--r\d*-->0<!--\/--><\/button><\/rivet-slot><i>L<\/i><\/article><\/rivet-island><button data-r="\d+">after<\/button>/,
+    /<button>before<\/button><!--\[--><rivet-island data-ri="i\d+" style="display:contents"><article id="i\d+-card"><h2><rivet-slot name="title" style="display:contents"><b>Title (<!--\[-->)?0(<!--\]-->)?<\/b><\/rivet-slot><\/h2><rivet-slot style="display:contents"><button>0<\/button><\/rivet-slot><i>L<\/i><\/article><\/rivet-island><!--\]--><button>after<\/button>/,
   );
-  // Every button inside and around the island resumes: one handler entry per element id written in the HTML.
-  const ids = [...html.matchAll(/<button data-r="(\d+)"/g)].map((m) => m[1]!).sort();
-  assert.deepEqual(Object.keys(stateOf(html)!.e).sort(), ids);
-  assert.equal(ids.length, 3);
+  // One boundary (the page): the island is no boundary of its own; its slot content adopts with the page.
+  assert.deepEqual(
+    tailOf(html)!.b.map((record) => record[3]),
+    ["src/page.tsx#Page"],
+  );
 });
 
 for (const [build, x] of [
@@ -87,6 +88,6 @@ for (const [build, x] of [
     );
     assert.match(
       (await resumableToString(() => x.mod.MissingFallback!(), { manifest: x.manifest })) as string,
-      /^<main><rivet-island data-ri="i\d+"[^>]*><b>fallback<\/b><\/rivet-island><\/main>$/,
+      /^<main>(<!--\[-->)?<rivet-island data-ri="i\d+"[^>]*><b>fallback<\/b><\/rivet-island>(<!--\]-->)?<\/main>/,
     );
   });

@@ -5,6 +5,7 @@ import { _scopedRecord } from "./server-structural.ts";
 import type { Context, Disposer, Owner } from "@rivetjs/reactivity";
 import type { AsyncWork } from "./async.ts";
 import type { ClientWhen, ServerScope, ServerValue } from "./server.ts";
+import { _trigger, ONLY } from "./server-trigger.ts";
 
 /** Async boundary callbacks. The server awaits children and never emits fallback, except in a
  * streaming resumable render (`renderResumable(..., { stream })`): a pending boundary with a
@@ -243,12 +244,6 @@ export function lazyComponent<M, P>(
     } as AsyncProps<(props: P) => ServerValue>);
 }
 
-let clientOnlyHook: ((when: string) => void) | null = null;
-/** Resume ABI: observe client-only mounts during resumable renders. */
-export function _onClientOnly(fn: (when: string) => void): void {
-  clientOnlyHook = fn;
-}
-
 /** Render fallback only; browser importer/default component is never evaluated. */
 export function clientOnly<P>(
   importer: () => { default: (props: P) => unknown } | PromiseLike<{ default: (props: P) => unknown }>,
@@ -264,7 +259,7 @@ export function clientOnly<M, P>(
 /** Render only fallback on the server; importer and selector are never called. */
 export function clientOnly<P>(_importer: unknown, _select?: unknown, { fallback, when }: ClientOnlyOptions<P> = {}): (props: P) => ServerValue {
   return (props: P) => {
-    if (clientOnlyHook !== null) clientOnlyHook(when ?? "visible");
+    _trigger.on?.(when, ONLY);
     return fallback ? fallback(props) : null;
   };
 }

@@ -81,7 +81,6 @@ export function App() {
 `;
 const RESUME = {
   module: "src/page.tsx",
-  model: "derived",
   boundaries: ["App", "List", "Other", "Leaky", "Writer"],
   independent: ["App"],
 };
@@ -249,7 +248,7 @@ export function Page() {
   );
 }
 `;
-const FORM_RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["Page", "Field"], independent: ["Page"] };
+const FORM_RESUME = { module: "src/page.tsx", boundaries: ["Page", "Field"], independent: ["Page"] };
 
 compiled("browser: a submit adopts the deferred units inside its form first (their invalid listeners run)", async () => {
   const reactivity = serverAlias;

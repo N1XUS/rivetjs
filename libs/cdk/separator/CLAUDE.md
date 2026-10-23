@@ -4,7 +4,7 @@
 RAC `Separator` + RA `useSeparator`: `<hr>` (horizontal) or `<div role="separator" aria-orientation="vertical">`; reads `SeparatorContext`; collection leaf (`SeparatorNode`).
 
 ## Entry points
-- `@rivetjs/cdk/separator` -> `index.tsx`: `Separator`, `SeparatorContext` (`rv-separator`), `SeparatorNode`, `SeparatorProps`, re-exports `separatorProps`, `AriaSeparatorProps`
+- `@rivetjs/cdk/separator` -> `index.tsx`: `Separator`, `SeparatorContext`, `SeparatorNode`, `SeparatorProps`, re-exports `separatorProps`, `AriaSeparatorProps`
 - `@rivetjs/cdk/separator/behaviour` -> `behaviour.ts`: `separatorProps(props)` → `{ separatorProps }` (RA `useSeparator` result), type `SeparatorAria`
 
 ## Layout

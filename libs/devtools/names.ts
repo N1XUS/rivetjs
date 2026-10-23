@@ -6,8 +6,9 @@
 // source-mapped stacks keep working.
 import { parseAst } from "vite";
 
-/** Creators named by the transform (imported from `@rivetjs/*`): signals, computeds, context tokens. */
-const CREATORS = new Set(["signal", "computed", "createContext"]);
+/** Creators named by the transform (imported from `@rivetjs/*`): signals, computeds, context tokens, and the keyed signals
+ * resumable components compile `signal()` to (`_sig` of `@rivetjs/runtime/dom-derived`). */
+const CREATORS = new Set(["signal", "computed", "createContext", "_sig"]);
 const HELPER = "__rivetName";
 const HELPER_SOURCE = `function ${HELPER}(value, name) { const hook = globalThis[Symbol.for("rivet.devtools")]; if (hook) hook.emit("name", { value, name }); return value; }\n`;
 
@@ -54,7 +55,8 @@ export function namedCalls(code: string, lang: "js" | "ts" = "js"): { start: num
     return [];
   }
   // Local names of the creators, and namespace imports (`r.signal(…)`).
-  const locals = new Set<string>(), namespaces = new Set<string>();
+  const locals = new Set<string>(),
+    namespaces = new Set<string>();
   for (const statement of program.body as AstNode[]) {
     if (statement.type !== "ImportDeclaration" || !/^@rivetjs\//.test((statement.source as { value: string }).value)) continue;
     for (const spec of statement.specifiers as AstNode[]) {
@@ -72,7 +74,8 @@ export function namedCalls(code: string, lang: "js" | "ts" = "js"): { start: num
     if (!isNode(callee)) return false;
     if (callee.type === "Identifier") return locals.has(callee.name as string);
     if (callee.type !== "MemberExpression" || callee.computed) return false;
-    const object = callee.object as AstNode, property = callee.property as AstNode;
+    const object = callee.object as AstNode,
+      property = callee.property as AstNode;
     return object.type === "Identifier" && namespaces.has(object.name as string) && property.type === "Identifier" && CREATORS.has(property.name as string);
   };
   const found: { start: number; end: number; name: string }[] = [];
@@ -96,7 +99,9 @@ export function namedCalls(code: string, lang: "js" | "ts" = "js"): { start: num
 // Source map VLQ (base64): only each segment's first field (generated column) is rewritten.
 const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 function decodeFirst(segment: string): [value: number, rest: string] {
-  let value = 0, shift = 0, i = 0;
+  let value = 0,
+    shift = 0,
+    i = 0;
   for (;;) {
     const digit = B64.indexOf(segment[i++]!);
     value += (digit & 31) << shift;
@@ -106,7 +111,8 @@ function decodeFirst(segment: string): [value: number, rest: string] {
   return [value & 1 ? -(value >>> 1) : value >>> 1, segment.slice(i)];
 }
 function encode(value: number): string {
-  let rest = value < 0 ? (-value << 1) | 1 : value << 1, out = "";
+  let rest = value < 0 ? (-value << 1) | 1 : value << 1,
+    out = "";
   do {
     let digit = rest & 31;
     rest >>>= 5;
@@ -120,7 +126,8 @@ export function shiftMappings(mappings: string, lines: Map<number, [number, numb
   const out = mappings.split(";");
   for (const [line, inserts] of lines) {
     if (line >= out.length || !out[line]) continue;
-    let column = 0, previous = 0;
+    let column = 0,
+      previous = 0;
     out[line] = out[line]!.split(",")
       .map((segment) => {
         if (!segment) return segment;
@@ -151,7 +158,9 @@ export function nameSignals(code: string, map?: string | null, lang: "js" | "ts"
   const lineStarts = [0];
   for (let i = code.indexOf("\n"); i !== -1; i = code.indexOf("\n", i + 1)) lineStarts.push(i + 1);
   const lines = new Map<number, [number, number][]>();
-  let out = "", last = 0, line = 0;
+  let out = "",
+    last = 0,
+    line = 0;
   for (const { at, text } of inserts) {
     out += code.slice(last, at) + text;
     last = at;

@@ -25,7 +25,6 @@
 //   synchronous on slow networks).
 import { createContext, onCleanup, provide, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { Button, type ButtonProps } from "../button/index.tsx";
 import { useLocale } from "../i18n/index.ts";
 import { dataBool, focusStateBlur, focusStateFocus, hoverStateEnter, hoverStateLeave } from "../utils/data-attrs.tsx";
@@ -78,14 +77,14 @@ export * from "./state.ts";
 // =================================================================================================
 
 /** The state of the nearest `Stepper` (`null` outside one). */
-export const StepperContext = resumableContext(createContext<StepperState | null>(null, { id: "rv-stepper" }));
+export const StepperContext = createContext<StepperState | null>(null);
 
 /** The nearest `Step`: its stepper + state (`null` outside one). */
 export interface StepContextValue {
   stepper: StepperState;
   step: StepItemState;
 }
-export const StepContext = resumableContext(createContext<StepContextValue | null>(null, { id: "rv-step" }));
+export const StepContext = createContext<StepContextValue | null>(null);
 
 /** The nearest stepper's API (throws outside a `Stepper`): accessors + actions (upstream `CdkStepper` methods). */
 export interface StepperApi {

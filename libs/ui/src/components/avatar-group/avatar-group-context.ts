@@ -1,6 +1,6 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/avatar-group/avatar-group-context.ts (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet:
-// - `"use client"` dropped; React context → `resumableContext(createContext(…, { id: "rv-ui-avatar-group" }))`, default `{}`.
+// - `"use client"` dropped; React context → `createContext(…)`, default `{}`.
 // - Data `{ size, color, variant }` + Rivet-only `isGrid` / `overlap` (the `Count` slot class from a module-level memo) instead of the
 //   tv `slots` (functions do not serialize on resume); fields are getters over the group's live props.
 // - Child registration (Rivet-only, replaces upstream's `Children.toArray` partition + `cloneElement`): every Avatar under the
@@ -8,7 +8,6 @@
 //   `AvatarGroup.Count` calls `registerCount()` (suppresses the automatic `+N`). Compiler-registered inline functions of the group
 //   body (resumable: their captures are the group's signals and live props).
 import { createContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { AvatarVariants } from "../../../styles/src/components/avatar/index.ts";
 import type { AvatarGroupVariants } from "../../../styles/src/components/avatar-group/index.ts";
@@ -30,7 +29,7 @@ type AvatarGroupContextValue = {
   registerCount?: () => void;
 };
 
-const AvatarGroupContext = resumableContext(createContext<AvatarGroupContextValue>({}, { id: "rv-ui-avatar-group" }));
+const AvatarGroupContext = createContext<AvatarGroupContextValue>({});
 
 /** Marks direct children of AvatarGroup so nested Avatars do not inherit group props. */
 const AVATAR_GROUP_CHILD = "__avatar_group_child";

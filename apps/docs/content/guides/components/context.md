@@ -57,7 +57,7 @@ export function Sidebar() {
 }
 ```
 
-Call `useContext` at the top of the component, while it renders. That is when Rivet knows where in the tree the component is. The component runs once, on the server, so this is where the lookup happens.
+Call `useContext` at the top of the component, while it renders. That is when Rivet knows where in the tree the component is. The component runs on the server, and again in the browser when it wakes up; each run looks the value up there.
 
 ::api{symbol="@rivetjs/reactivity#useContext"}
 
@@ -101,7 +101,7 @@ Any component can also write the signal it got from context, for example a theme
 
 ## Context in a resumed page
 
-The lookup happens on the server. In the browser, handlers and bindings use the value that the component got. That value goes into the page data, so it must be :term[serializable]{id=serializable}: data or signals, not class instances or service objects. See [pass data, not services](/best-practices/pass-data-not-services.md).
+The lookup happens where the component runs. In the browser, a component that wakes up looks the value up again from its providers, which run with it when they are needed. See [pass data, not services](/best-practices/pass-data-not-services.md).
 
 `createContext` also takes an `id` option: `createContext(defaultValue, { id: "theme" })`. It names the context in the resumed page data, so a custom resume entry can supply its value in the browser. This is an advanced setup; most apps do not need it.
 

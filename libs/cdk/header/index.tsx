@@ -8,7 +8,7 @@ import { renderSlot } from "@rivetjs/runtime/slot";
 import { slotChildren, type DOMRenderProps } from "../utils/render.ts";
 import { HeaderNode } from "../collections/base.ts";
 import { createLeafComponent } from "../collections/components.tsx";
-import { resumableContext, contextProps, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
+import { contextProps, type ContextValue, type HTMLProps, type RefValue, type SlotProps, type StyleObject } from "../slots/index.tsx";
 import { hasLive } from "../utils/live.tsx";
 import { liveElement } from "../utils/live-element.tsx";
 
@@ -21,7 +21,7 @@ export interface HeaderProps extends HTMLProps<"header">, SlotProps, DOMRenderPr
   children?: Content | (() => Content);
 }
 
-export const HeaderContext = resumableContext(createContext<ContextValue<HeaderProps, HTMLElement>>({}, { id: "rv-header" }));
+export const HeaderContext = createContext<ContextValue<HeaderProps, HTMLElement>>({});
 
 export const Header = /*#__PURE__*/ createLeafComponent<HeaderProps>(HeaderNode, function Header(props: HeaderProps, forwardedRef: unknown) {
   const [merged, ref] = contextProps(props, forwardedRef as RefValue<HTMLElement> | undefined, HeaderContext);

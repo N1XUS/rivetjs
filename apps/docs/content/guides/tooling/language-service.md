@@ -3,7 +3,7 @@ title: Language service
 description: Get Rivet compiler errors, quick fixes and hints about where code runs directly in your editor, and run the same checks in CI with rivet-check.
 template: guide
 status: experimental
-related: [start/editor-setup, guides/tooling/vite, gotchas/window-is-not-defined, best-practices/serializable-captures]
+related: [start/editor-setup, guides/tooling/vite, gotchas/window-is-not-defined, learn/resuming]
 ---
 
 Rivet files are normal TypeScript JSX, so your editor already gives you types, completion, rename and go to definition. The Rivet language service adds what only the Rivet compiler knows: its errors while you type, quick fixes, and hints that show which code runs in the browser.
@@ -65,29 +65,15 @@ export default function Page() {
 - An invalid `preload` value ([RV1102](../../errors/RV1102.md)): replace it with the closest valid one.
 - Children inside a void element like `<input>` ([RV1008](../../errors/RV1008.md)) or a `<textarea>` with `model:value` ([RV1009](../../errors/RV1009.md)): make it self-closing.
 - A handler expression that reads state when it binds ([RV1016](../../errors/RV1016.md)): wrap it in an arrow.
-- A ref callback in the wrong form ([RV2002](../../errors/RV2002.md)): use `const el = ref<…>()` or rewrite it to `ref={(el) => (local = el)}`.
-- A captured class instance that cannot be sent ([RV2003](../../errors/RV2003.md), [RV2102](../../errors/RV2102.md)): build it in the browser with `const m = reconstruct(() => new WeakMap())` and read it as `m()` (adds the import).
-- A `resource(…)` the server cannot hand to the browser ([RV2016](../../errors/RV2016.md)): keep the handle in one `const` — `const { refetch } = resource(loadUser)` becomes `const user = resource(loadUser)` with `user.refetch()`, a `let` becomes `const`, and a resource written straight into JSX moves into a `const` of the component.
 - A namespace import of a target helper ([RV3002](../../errors/RV3002.md)): import the helper as a named binding.
 
 ### Where code runs
 
 On a resumed page, only some code runs in the browser. The language service shows it:
 
-- An inlay hint at each browser-only function, for example `client · count, step`. The names after the dot are the values it captures; they are written into the page.
-- Hover over `onClick` or `clientEffect` to see the symbol id, where it runs and what it captures.
-- Hover over a captured variable to see that it is :term[serializable]{id=serializable} state sent to the browser.
-
-### Values that cannot be sent
-
-`RV2101` is a warning that uses types. It appears when a handler captures a value the page state cannot carry: a class instance, a `Promise`, a DOM node, a `WeakMap`, a symbol. It also catches cases the compiler cannot see from syntax alone:
-
-```tsx
-const store = makeStore(); // returns a class instance
-return <button onClick={() => store.add()}>Add</button>; // RV2101
-```
-
-Functions are not reported, because signals and other compiled functions work at runtime. Instances of classes the compiler resumes as data (a data class or a class with `static [revive]` in a resumed module) are not reported either. See [Serializable captures](../../best-practices/serializable-captures.md).
+- An inlay hint at each browser-only function, for example `client · count, step`. The names after the dot are the component values it uses.
+- Hover over `onClick` or `clientEffect` to see where it runs and which component values it uses.
+- Hover over a variable to see which browser code uses it.
 
 ### Preload values
 
@@ -108,7 +94,7 @@ Options go into the plugin entry in `tsconfig.json`:
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `inlayHints` | `"client"` | `"client"`: hints at browser-only functions. `"all"`: more hints. `false`: none. |
-| `typeAware` | `true` | Type-based warnings (`RV2101`) |
+| `typeAware` | `true` | Type-based warnings: route links (`RV3101`) |
 | `linkModules` | the router's | Modules whose `Link` takes a route path |
 
 ## VS Code extension
@@ -130,13 +116,13 @@ rivet-check -p tsconfig.json
 ```
 
 - `-p` takes a tsconfig; repeat it for several projects.
-- `--no-types` turns off the type-based warnings.
+- `--no-types` turns off the type-based warnings (route links, `RV3101`).
 
 Each diagnostic starts with a line like `src/routes/index.tsx:4:17 - error RV2001: …`, followed by a code frame, a `fix:` line and a `docs:` link (`--format json` adds a `fix` field). The command exits with code 1 when there are errors; warnings do not fail it.
 
 ## Error codes
 
-Every code has its own page with the message, the fix, a before / after pair and the quick fix, if there is one: [Diagnostic codes](../../errors/index.md) lists them all, and the `docs:` link of each diagnostic opens its page. Most codes come from the compiler; the language service adds [RV2101](../../errors/RV2101.md) and [RV3101](../../errors/RV3101.md), and `rivet-check` adds [RV7101](../../errors/RV7101.md) and [RV7102](../../errors/RV7102.md).
+Every code has its own page with the message, the fix, a before / after pair and the quick fix, if there is one: [Diagnostic codes](../../errors/index.md) lists them all, and the `docs:` link of each diagnostic opens its page. Most codes come from the compiler; the language service adds [RV3101](../../errors/RV3101.md), and `rivet-check` adds [RV7101](../../errors/RV7101.md) and [RV7102](../../errors/RV7102.md).
 
 For any code, `explain_diagnostic` in the [Rivet MCP server](ai.md) returns the same explanation.
 

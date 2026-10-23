@@ -37,9 +37,9 @@ function instrument() {
 
 test("codegen: `announce: false` swaps routes without the announcer", () => {
   const table = routeTable(["index.tsx"]);
-  assert.match(generate(table, { routesDir: "src/routes" }).files["app.tsx"]!, /swap=\{swapRoute\}/);
+  assert.match(generate(table, { routesDir: "src/routes" }).files["app.tsx"]!, /adopting \? apply\(\) : swapRoute\(apply, next\)/);
   const quiet = generate(table, { routesDir: "src/routes", announce: false }).files["app.tsx"]!;
-  assert.match(quiet, /swap=\{swapRouteQuiet\}/);
+  assert.match(quiet, /adopting \? apply\(\) : swapRouteQuiet\(apply, next\)/);
   assert.match(quiet, /import \{[^}]*\bswapRouteQuiet\b[^}]*\} from "@rivetjs\/router\/client"/);
 });
 
@@ -74,7 +74,7 @@ test(
       const ready = async () => {
         // Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router (intent).
         await page.dispatchEvent("a[href^='/']", "pointerdown");
-        await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+        await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
         await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
       };
       await page.goto(app.url + "/");
@@ -93,7 +93,7 @@ test(
 
       await t.test("no search params read: the client build has no search module or router resume entry", async () => {
         for (const file of await readdir(root + "dist/client/assets"))
-          if (file.endsWith(".js")) assert.ok(!(await readFile(root + "dist/client/assets/" + file, "utf8")).includes("rivet:search"), file);
+          if (file.endsWith(".js")) assert.ok(!/\.search=\(\)=>/.test(await readFile(root + "dist/client/assets/" + file, "utf8")), file);
         const manifest = await readFile(root + "dist/client/.vite/manifest.json", "utf8");
         assert.doesNotMatch(manifest, /entry\.resume\.ts|client\/search\.ts/);
       });

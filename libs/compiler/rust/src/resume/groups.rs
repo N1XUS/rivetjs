@@ -184,7 +184,7 @@ impl<'t, 'a> Analysis<'t, 'a> {
 }
 
 /// RV2011 text: a group whose registration point lies after an early exit (`groups.rs`, compile `pending_group` fallback).
-pub(crate) fn split_group_message(names: &[String]) -> String {
+fn split_group_message(names: &[String]) -> String {
     let names: Vec<String> = names.iter().map(|n| format!("`{n}`")).collect();
     format!(
         "Mutually recursive functions {} are separated by an early exit (return / throw / break / continue): their group registers after the last one, so a render leaving early cannot resume them; move the group's functions together before the early exit",
@@ -194,7 +194,7 @@ pub(crate) fn split_group_message(names: &[String]) -> String {
 
 /// The first `return` / `throw` / `break` / `continue` (not inside a nested function; `break` / `continue` without a
 /// label only when not inside a nested loop / switch) in the statements of `container` lying within `[from, to)`.
-pub(crate) fn early_exit(tree: &crate::tree::Tree, container: NodeId, from: u32, to: u32) -> Option<NodeId> {
+fn early_exit(tree: &crate::tree::Tree, container: NodeId, from: u32, to: u32) -> Option<NodeId> {
     {
         let mut stack: Vec<(NodeId, bool)> = tree
             .children(container)

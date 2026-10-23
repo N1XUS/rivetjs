@@ -90,10 +90,9 @@ export function Outer(props: any) {
   const kept = dom(`function Inner(p: any) { return <i>{p.a}</i>; }
 export function Outer(props: any) { let o = props; o = { ...o }; return <Inner a={o.a} b={props?.b} />; }`);
   assert.doesNotMatch(kept.code, /__rivetPropsMember/);
-  // Resume mode (both targets): `local` would become a whole-object capture of the resume site; getters stay.
+  // Resume (derived model): nothing is captured, the DOM target static-resolves the member like a plain compile.
   const source = `import { splitProps } from "@rivetjs/runtime/props";
 function Inner(p: any) { return <i>{p.slot}</i>; }
 export function Outer(props: any) { const [local] = splitProps(props, ["slot"]); return <Inner slot={local.slot} />; }`;
-  for (const target of ["dom", "server"] as const)
-    assert.doesNotMatch(compile(source, { target, filename: "m.tsx", resume: { module: "m.tsx" } }).code, /__rivetPropsMember/);
+  assert.match(compile(source, { target: "dom", filename: "m.tsx", resume: { module: "m.tsx" } }).code, /__rivetPropsMember/);
 });

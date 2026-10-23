@@ -29,31 +29,6 @@ const API_CLIENT = "\0virtual:docs/api-client";
 const FRAME_STYLES = "\0virtual:docs/frame-styles";
 /** Client build asset: example id → its frame page's stylesheet URLs (`docsFrames`). */
 export const FRAME_STYLES_FILE = ".vite/docs-frame-styles.json";
-/**
- * `rivetRouter({ resume: { lazyOwned } })` for a docs app: the example-frame registry (`virtual:docs/example-frames` →
- * `src/generated/example-frames.tsx`, one `import()` per example) is imported by the frame route; its targets load
- * through the route's own loader, never by prefetch — listed as chunk lazies they made a route-mode frame page
- * prefetch every example (ROUTE-CHUNKS placed parts, 2026-10-18).
- */
-export const DOCS_LAZY_OWNED: readonly string[] = [FRAMES_INDEX];
-/**
- * `rivetRouter({ resume: { preload: { rules } } })` for a docs app: the frame controls (theme menu, mobile drawer) and the
- * cdk components they (and the search dialog) are built on load on intent (pointer / focus). Hover handlers of cdk
- * components would otherwise make the planner prefetch ~39 cdk modules once visible. With `chunks: "route"` these modules
- * also leave the eager main chunk (its intent sibling, `route:main:intent`) and the page fetch-ahead (`data-fo`): a docs
- * page boots and fetches ~150 KB instead of ~500 KB with cdk collections (DOCS-JS, 2026-10-20).
- * The router's generated App (`.rivet/app.tsx`: route tables of every page, link interception, router client) is only
- * used from a link intent / click (docs pages navigate with full loads): its own intent chunk `route:main:intent:router`
- * (`resume-route_main-router`), out of the eager shell (−37 KB route tables + ~25 KB router client per page) and apart
- * from the frame menus (DOCS-COLD, 2026-10-20).
- */
-export const DOCS_PRELOAD_RULES: readonly { match: string; strategy: "intent"; chunk?: string }[] = [
-  { match: ".rivet/app.tsx#", strategy: "intent", chunk: "router" },
-  { match: "@rivetjs/cdk/", strategy: "intent" },
-  { match: "@rivetjs/docs-kit/components/ThemeMenu.tsx#", strategy: "intent" },
-  { match: "@rivetjs/docs-kit/components/MobileMenu.tsx#", strategy: "intent" },
-  { match: "@rivetjs/docs-kit/components/SiteFrame.tsx#", strategy: "intent" },
-];
 /** Dev server: the frame stylesheet lookup the SSR module calls (`docsFrames` installs it). */
 const DEV_FRAME_STYLES = Symbol.for("rivet.docs.frameStyles");
 

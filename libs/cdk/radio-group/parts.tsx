@@ -46,7 +46,6 @@ import { SharedElementTransition } from "../shared-element-transition/transition
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
 import {
   Provider,
-  resumableContext,
   contextProps,
   createSlot,
   createSlotId,
@@ -271,13 +270,13 @@ export interface RadioRenderProps extends RadioFieldRenderProps {
 export interface RadioButtonRenderProps extends RadioRenderProps {}
 
 /** RAC `RadioGroupContext`. */
-export const RadioGroupContext = resumableContext(createContext<ContextValue<Partial<RadioGroupPartsProps>, HTMLDivElement>>(null, { id: "rv-radio-group" }));
+export const RadioGroupContext = createContext<ContextValue<Partial<RadioGroupPartsProps>, HTMLDivElement>>(null);
 /** RAC `RadioContext`. */
-export const RadioContext = resumableContext(createContext<ContextValue<Partial<RadioProps>, HTMLLabelElement>>(null, { id: "rv-radio" }));
+export const RadioContext = createContext<ContextValue<Partial<RadioProps>, HTMLLabelElement>>(null);
 /** RAC `RadioFieldContext`. */
-export const RadioFieldContext = resumableContext(createContext<ContextValue<Partial<RadioFieldProps>, HTMLDivElement>>(null, { id: "rv-radio-field" }));
+export const RadioFieldContext = createContext<ContextValue<Partial<RadioFieldProps>, HTMLDivElement>>(null);
 /** RAC `RadioGroupStateContext`. */
-export const RadioGroupStateContext = resumableContext(createContext<RadioGroupState | null>(null, { id: "rv-radio-group-state" }));
+export const RadioGroupStateContext = createContext<RadioGroupState | null>(null);
 
 /** RA `radioGroupData` entry: kept on the group state (`state.data`). */
 export interface RadioGroupData {
@@ -555,7 +554,7 @@ interface InternalRadioContextValue extends RadioAria {
   defaultClassName: string;
 }
 
-const InternalRadioContext = resumableContext(createContext<InternalRadioContextValue | null>(null, { id: "rv-radio-internal" }));
+const InternalRadioContext = createContext<InternalRadioContextValue | null>(null);
 
 /**
  * A RadioField represents an individual option within a radio group, containing a RadioButton and optional description.

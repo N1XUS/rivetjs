@@ -31,7 +31,6 @@ import {
   type ColorFieldProps,
   type ColorFieldState,
 } from "../color/index.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 const actions: Record<string, (state: ColorFieldState) => void> = { increment, decrement, incrementToMax, decrementToMin };
 
@@ -238,17 +237,5 @@ describe("Rivet additions", function () {
     setInputValue(result, "12");
     value.set("#00ff00");
     expect(inputValue(result)).toBe("#00FF00");
-  });
-
-  it("resume-table round trip keeps value and typed input", function () {
-    let result = createColorFieldState({ defaultValue: "#abc" });
-    setInputValue(result, "#12");
-    let decoded = jsonRoundTrip(result);
-    expect(inputValue(decoded)).toBe("#12");
-    expect(colorValue(decoded)!.toString("hex")).toBe("#AABBCC");
-    setInputValue(decoded, "#123456");
-    commit(decoded);
-    expect(colorValue(decoded)!.toString("hex")).toBe("#123456");
-    expect(inputValue(decoded)).toBe("#123456");
   });
 });

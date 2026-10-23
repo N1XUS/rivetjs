@@ -297,7 +297,6 @@ The root owns `onFocusIn` / `onFocusOut`; the group owns `onKeyDown`, `onPointer
 
 - Server HTML: the group, both fields with every segment, the two form inputs, the button and the value description. The popover and its calendar render on the first open (nothing calendar-related ships before it).
 - The state is plain signals plus strings (region state): the value, the partial input, the open state and the validation resume without re-rendering.
-- `onChange`, `onOpenChange`, `validate`, `isDateUnavailable`, render-prop functions and event handlers: inline arrows or local functions (module-level functions are not serializable). The `DateInput` and `CalendarGrid` children functions are slots: write them inline.
 - Parts may come from your own components (`<RangeFields />`, `<RangePopover />` in the examples): they read the picker's contexts.
 - `on…Capture` handlers do not resume yet.
 

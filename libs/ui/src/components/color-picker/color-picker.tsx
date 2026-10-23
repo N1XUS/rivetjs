@@ -17,7 +17,6 @@ import type { PopoverProps as PopoverPrimitiveProps, PopoverRenderProps } from "
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ColorPickerVariants } from "../../../styles/src/components/color-picker/index.ts";
 import { colorPickerVariants } from "../../../styles/src/components/color-picker/index.ts";
@@ -36,7 +35,7 @@ type ColorPickerContext = {
   inPicker?: boolean;
 };
 
-const ColorPickerContext = resumableContext(createContext<ColorPickerContext>({}, { id: "rv-ui-color-picker" }));
+const ColorPickerContext = createContext<ColorPickerContext>({});
 
 type ColorPickerSlots = ReturnType<typeof colorPickerVariants>;
 let SLOTS: ColorPickerSlots | undefined;

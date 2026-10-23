@@ -192,8 +192,8 @@ The live example on this page is a static app: its `load(…)` ran when the docs
 
 ## Common mistakes
 
-- **Fetching in the page component.** The component runs once, on the server, during rendering. Fetch in `load(…)` and pass the result through `data`. For data that changes while the page is open, see [async data](/guides/components/async.md).
-- **Returning a class instance or a function.** The page fails to render with a "not serializable" error. Return plain objects. See [function is not serializable](/gotchas/function-is-not-serializable.md).
+- **Fetching in the page component.** The component runs during rendering, on the server, and again in the browser when it wakes up. Fetch in `load(…)` and pass the result through `data`. For data that changes while the page is open, see [async data](/guides/components/async.md).
+- **Returning a class instance or a function.** The page renders but does not resume ([RV2107](/errors/RV2107.md)). Return plain objects, or register your class with `registerClass`. See [function is not serializable](/gotchas/function-is-not-serializable.md).
 - **Ignoring `signal`.** Without it, a cancelled navigation keeps the database busy. Pass `signal` on.
 - **Importing a service into the page to call it from a handler.** Services hold functions and connections that cannot travel to the browser. Load data on the server; send changes through an [action](./actions-and-forms.md) or an [endpoint](./endpoints.md). See [pass data, not services](/best-practices/pass-data-not-services.md).
 

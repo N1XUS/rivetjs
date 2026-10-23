@@ -8,7 +8,6 @@
 //
 // Ported from @react-aria/overlays (useModal.tsx), Apache-2.0, © Adobe.
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { createId } from "../utils/id.ts";
@@ -23,7 +22,7 @@ export type ProviderChildren = Content | (() => Content);
 const content = (children: ProviderChildren | undefined): Content => renderSlot(children) as Content;
 
 /** Id of the enclosing modal provider element (render time). */
-export const ModalProviderContext = resumableContext(createContext<string | null>(null, { id: "rv-modal" }));
+export const ModalProviderContext = createContext<string | null>(null);
 
 /** Attributes of a modal provider element: `data-overlay-container`, its id, its parent provider. */
 export function modalProviderProps(id: string, parent: string | null = null): Record<string, string | undefined> {

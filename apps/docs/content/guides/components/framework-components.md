@@ -109,7 +109,7 @@ React renders the chart on the server (`renderToString`, or its streaming API wh
 | `"media:(max-width: 600px)"` | when the media query matches |
 | `"only"` | not rendered on the server: the `fallback` shows until the component mounts in the browser |
 
-Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` or `client={{ on: "idle", timeout: 500 }}`. `preload` fetches the code earlier than it runs, with the same values as Rivet's [preload strategies](../performance/preloading.md): `client="visible" preload="idle"` downloads at idle and hydrates when visible.
+Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` or `client={{ on: "idle", timeout: 500 }}`. `preload` has no effect: Rivet fetches island code ahead of its trigger on its own. A per-island `preload` is not yet on the derived resume model; it is tracked in plan M6.
 
 If you know Astro: `client="visible"` is `client:visible`, written as a normal prop so it is typed and can take options.
 
@@ -161,9 +161,9 @@ Render props (a slot that React calls with arguments) are not supported. Use a c
 
 ## Pages with only islands
 
-When a page's only browser code is islands with plain JSON props, Rivet skips its own resume state and loader. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. Rivet content in a slot, `client="intent"`, callbacks and live props need Rivet's full runtime, and then it loads as usual. On file-router pages the router waits until the first link hover, focus or click.
+When a page's only browser code is islands with plain JSON props, Rivet skips its own loader and runtime. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. On file-router pages the router waits until the first link hover, focus or click.
 
-On the [derived resume model](../../learn/resuming.md#derived-model-experimental) every island with plain JSON props starts through that inline script, whatever else the page holds. An island that needs Rivet (live props, callbacks, Rivet content in a slot) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; its handlers work from then on. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it).
+On other pages, too, every island with plain JSON props starts through that inline script. An island that needs Rivet (live props, callbacks, Rivet content in a slot, `client="intent"`) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; its handlers work from then on. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it). See [Resuming](../../learn/resuming.md).
 
 ## Common mistakes
 

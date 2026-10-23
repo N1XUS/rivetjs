@@ -70,7 +70,7 @@ const waitDescription = (page: Page, selector: string, pattern: RegExp) =>
     [selector, pattern.source, pattern.flags] as const,
   );
 // Date code: chunks holding the date components' symbols + the shared code only they import (build manifest).
-const libraryScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/#(DatePicker|DateRangePicker|DateInput|DateField|Calendar)\w*\$/));
+const libraryScripts = (seen: { scripts: string[] }) => among(seen.scripts, codeOf(/#(DatePicker|DateRangePicker|DateInput|DateField|Calendar)\w*$/));
 
 test("datepicker: SSR markup — parts, labels, placeholder segments, closed popover renders nothing (RAC 'provides slots')", async () => {
   const page = await s.browser.newPage();

@@ -14,7 +14,6 @@ import { Provider } from "@rivetjs/runtime/dom";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
-  resumableContext,
   contextProps,
   createSlot,
   renderPropsOf,
@@ -59,7 +58,7 @@ export interface MeterProps
 }
 
 /** RAC `MeterContext`. */
-export const MeterContext = resumableContext(createContext<ContextValue<MeterProps, HTMLDivElement>>(null, { id: "rv-meter" }));
+export const MeterContext = createContext<ContextValue<MeterProps, HTMLDivElement>>(null);
 
 /**
  * A meter represents a quantity within a known range, or a fractional value.

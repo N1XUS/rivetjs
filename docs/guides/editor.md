@@ -25,9 +25,8 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 ## Features
 
 - Compiler diagnostics while typing: same text as the build, exact range, both targets (server + DOM), resume mode per manifest. tsserver code = `70000 + n` for `RVn` (source `rivet`); TypeScript's own syntax errors win over compiler parse errors.
-- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); ref callback → `const xRef = ref<…>()` + `ref={xRef}` (+ import; first), or `ref={(el) => (local = el)}` + `let local!: …`; `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`; captured class instance (RV2003 / RV2102) → `const x = reconstruct(() => <init>)` + reads `x()` (+ import from `@rivetjs/runtime/dom`; `rivetReconstruct`); `resource()` that cannot resume (RV2016) → `rivetResourceConst`: destructured → `const user = resource(…)` + reads `user.loading` / `user.refetch` / `user` (Solid `[data, { refetch }]` too), never-reassigned `let` / `var` → `const`, call outside a `const` initializer → hoisted `const user = resource(…);` before its statement (no fix: hooks, rest / default / nested patterns, nested functions).
-- Resume boundary: inlay hint at each browser-only closure (`client · count, step`; VS Code: native provider from `_rivet:sites` labels, other editors: tsserver `provideInlayHints`); hover on `onClick` / `clientEffect` / a local function shows symbol id, where it runs and its captures; hover on a captured variable says it is serialized into resume state.
-- RV2101 (warning, type-aware): a captured value whose type resume state cannot carry (class instance, Promise, symbol, DOM node, WeakMap…), including ones the syntax-only compiler cannot see (`const store = makeStore()`). Callables are skipped (signals and symbol functions are fine at runtime). Instances of classes the compiler registers in a resume module (data class / `static [revive]`, check op `classes`; T28) are not flagged.
+- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`.
+- Resume boundary: inlay hint at each browser-only closure (`client · count, step`; VS Code: native provider from `_rivet:sites` labels, other editors: tsserver `provideInlayHints`); hover on `onClick` / `clientEffect` / a local function shows the site id, where it runs and its captures; hover on a captured variable names the resumable code capturing it.
 - Links: `<Link to="…">` from `@rivetjs/router` / `@rivetjs/router/client` / `@rivetjs/router/link` (plugin option `linkModules`).
   - `to` typed as a route union (generated): TypeScript checks and completes; the plugin adds go-to-route-file and hover only.
   - `to` typed `string`: plugin completes route paths, warns RV3101 for literal internal paths that match no route, plus go-to-route-file and hover (route id, file, params).
@@ -58,22 +57,10 @@ Public reference: one page per code at `/errors/RVxxxx` on the framework docs si
 | RV1014 | Retired (live props, 2026-10-07): `<For each={xs()}>` / `<Show when={c()}>` / `<Match when={c()}>` are getters and update |
 | RV1015 | Event handler is a literal (`onClick="go()"`, `onClick={1}`): never callable — pass a function |
 | RV1016 | Event handler reads state when it binds (`onClick={s() ? a : b}`, `onClick={getHandler()}`): handlers bind once (`f.bind(…)`, function literals, identifiers, member reads, call-free conditionals compile); quick fix wraps it as `(event) => (…)?.(event)` |
-| RV1101 / RV1102 / RV1103 | Unsafe attribute / `preload` value / `clientEvent` target |
+| RV1101 / RV1102 | Unsafe attribute / `preload` value |
 | RV2001 | Browser global read during server rendering (resume) |
-| RV2002 / RV2005 | Ref callback (function literal / local bound to a function) must assign a local / ref-bound local assigned elsewhere; `ref={r}` with `ref()` or any other expression: neither |
-| RV2003 / RV2007 | Capturing `new …` / `this` |
-| RV2008 | Resumed module exports a different binding under a captured name |
-| RV2009 | Two module references share a browser name |
-| RV2010 | One module reference id resolves to two installed copies of a package (Vite client build; `npm dedupe` / `pnpm dedupe` / `resolve.dedupe`) |
-| RV2011 | Mutually recursive functions separated by an early exit (resume group registers after it) |
-| RV2012 | `.bind` with a spread first argument (error on a provable function, else a compile warning) |
-| RV2013 | `.bind` of a value Rivet cannot resume (compile warning; error on a provable function) |
-| RV2014 | `.bind(…)` inside an object literal a resumable closure reaches (compile warning) |
-| RV2015 | A component's returned accessor cannot resume: anonymous default export / wrapper call / returned `let` (compile warning) |
-| RV2006 | JSX inside handlers (RV2004, capture-phase handlers, retired: `onXCapture` resumes) |
-| RV2101 | Captured value not serializable (type-aware, warning) |
-| RV2103 / RV2104 | Derived resume model (`resume: { model: "derived" }`, M2): a boundary's render reads `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `new Date()` (error) / keyed state (`signal()` / `createStore()`) created inside a loop (warning; keys are per site, so conditional creation is fine) |
-| RV2105 / RV2106 | Keyed `For` row cannot render lazily (resume server target, warning; the For's rows stay recorded): the row reads `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `crypto.getRandomValues()` / `new Date()` while rendering / holds a `clientOnly` component, `<Async>`, a `Portal` or a `ref` into a local declared outside the row |
+| RV1103, RV2002, RV2003, RV2005–RV2016, RV2101, RV2102, RV2105, RV2106 | Retired (M6, 2026-10-22): serialized resume model deleted (captures, refs, `.bind`, module references, resources, lazy rows); RV2004 retired earlier (`onXCapture` resumes) |
+| RV2103 / RV2104 | Resume modules (derived model, M2): a boundary's render reads `Date.now()` / `Math.random()` / `performance.now()` / `crypto.randomUUID()` / `new Date()` (error) / keyed state (`signal()` / `createStore()`) created inside a loop (warning; keys are per site, so conditional creation is fine) |
 | RV3001–RV3006 | Helper import shape (re-exports, namespaces, aliases, `clientOnly`) |
 | RV3007 / RV3008 / RV3009 | Route module server exports shape (`export *`, declarations) / server-only code reaching the browser / server-only code rendering JSX |
 | RV3101 | Link matches no route (warning) |

@@ -5,7 +5,7 @@
 // wrap, Home / End, vertical orientation for vertical steppers, RTL).
 // Rivet:
 // - serializable state (signals + plain data + the caller's callbacks) instead of directive instances: `CdkStepper`
-//   → `createStepperState` (region state), `CdkStep` → `createStepState`; methods → free functions (`selectStep`,
+//   → `createStepperState`, `CdkStep` → `createStepState`; methods → free functions (`selectStep`,
 //   `stepperNext`, `stepperPrevious`, `stepperReset`, `stepCompleted`, `stepIndicatorType`, …). No closures are created
 //   here (a `.ts` module is not resumable); read the functions inside bindings / handlers of the `.tsx` parts.
 // - `ContentChildren(CdkStep)` → steps register in creation order (`registerStep`; server render order = DOM order)
@@ -23,7 +23,7 @@
 // Deviations: a step's `completed` / `hasError` / `editable` given as an accessor is read live and never overridden by
 //   `reset()` (upstream writes the override; Rivet cannot write a caller's accessor) — pass a Signal or a value to let
 //   `reset()` clear it.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { nextIndex } from "../keys/index.ts";
 import type { Direction } from "../bidi/index.ts";
@@ -172,9 +172,9 @@ const write = <T>(target: Signal<T> | (() => T), value: T): void => {
   if (isSignal<T>(target)) target.set(value);
 };
 
-/** Creates the stepper state (region state: a re-created region of a resumed page keeps it). */
+/** Creates the stepper state. */
 export function createStepperState(id: string, props: StepperStateProps = {}): StepperState {
-  return _regionState(() => ({
+  return {
     id,
     selected: controllable<number>(props.selectedIndex, props.defaultSelectedIndex ?? 0, props.onSelectedIndexChange),
     steps: signal<StepItemState[]>([]),
@@ -186,12 +186,12 @@ export function createStepperState(id: string, props: StepperStateProps = {}): S
     semantics: props.semantics ?? "tabs",
     readOnly: (props.semantics ?? "tabs") === "list" && !!props.isReadOnly,
     onSelectionChange: props.onSelectionChange,
-  }));
+  };
 }
 
-/** Creates one step's state (region state). Register it with `registerStep`. */
+/** Creates one step's state. Register it with `registerStep`. */
 export function createStepState(props: StepStateProps = {}): StepItemState {
-  return _regionState(() => ({
+  return {
     interacted: signal(false),
     completedOverride: own<boolean | null>(props.completed, null),
     customError: own<boolean | null>(props.hasError, null),
@@ -202,7 +202,7 @@ export function createStepState(props: StepStateProps = {}): StepItemState {
     label: props.label,
     errorMessage: props.errorMessage,
     onInteracted: props.onInteracted,
-  }));
+  };
 }
 
 /** Adds `step` to the stepper (once; creation order). */

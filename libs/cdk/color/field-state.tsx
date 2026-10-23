@@ -9,7 +9,7 @@
 //   here by `colorKey` (same space + channels).
 // - Validation = `createFormValidationState` (`state.validation`, functions from
 //   `@rivetjs/cdk/state/form-validation`); a user `validate` receives the parsed Color | null.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { commitValidation, createFormValidationState, type FormValidationOptions, type FormValidationState } from "@rivetjs/cdk/state/form-validation";
 import { colorKey, parseColor, stringifyColor, toColor, type Color } from "./color.ts";
 import { colorCell, isColorSource, writeColor, type ColorCell, type ColorInput } from "./value.ts";
@@ -72,7 +72,7 @@ export function createColorFieldState(props: ColorFieldProps): ColorFieldState {
     kind: "field",
     cell,
     controlled: value !== undefined,
-    input: _regionState(() => signal({ text: (value || defaultValue) && initial ? hex(initial) : "", key: colorKey(initial) })),
+    input: signal({ text: (value || defaultValue) && initial ? hex(initial) : "", key: colorKey(initial) }),
     defaultColorValue: initialDefaultValue ? stringifyColor(initialDefaultValue) : initial ? stringifyColor(initial) : initial,
     validation,
     onChange,

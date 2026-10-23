@@ -14,7 +14,6 @@ import { read, type MaybeAccessor } from "../interactions/utils.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import type { InputRenderProps } from "../input/index.tsx";
 import {
-  resumableContext,
   contextProps,
   renderProps,
   type ClassNameOrFunction,
@@ -44,7 +43,7 @@ export interface TextAreaProps extends AccessorProps<HTMLProps<"textarea">, "aut
   ref?: RefValue<HTMLTextAreaElement>;
 }
 
-export const TextAreaContext = resumableContext(createContext<ContextValue<TextAreaProps, HTMLTextAreaElement>>({}, { id: "rv-text-area" }));
+export const TextAreaContext = createContext<ContextValue<TextAreaProps, HTMLTextAreaElement>>({});
 
 /** A textarea allows a user to input multi-line text. */
 export function TextArea(props: TextAreaProps) {

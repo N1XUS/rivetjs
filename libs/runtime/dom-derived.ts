@@ -27,6 +27,7 @@
 // or through the client For (reconcile). Show / Switch branches adopt by node identity. A structural mismatch renders
 // the unit in the browser instead (dev: the adopt verifier warns first, naming the boundary).
 import { _bindingEffect1, _dispose, _rootIn, _tracking, getOwner, runWithOwner, signal, untrack } from "@rivetjs/reactivity";
+import { _ownedReads, _trackReads } from "@rivetjs/reactivity/track";
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
@@ -160,6 +161,8 @@ interface Unit {
    * 0 — its `Async` holes take their ids from the server markers they claim instead.
    */
   row: boolean;
+  /** A lazy list's sample run (`sampleRow`): child boundaries run inline (no holes), their `Async`s / islands stay holes. */
+  all: boolean;
   /** A load suspended a `Suspense` during the probe (DERIVED-C3): the unit renders in the browser. */
   sus: boolean;
   /** Plain signals made so far (DERIVED-C4: numbered as the server did, `_dsignal`). */
@@ -260,6 +263,9 @@ export interface DerivedRuntime {
   w(target: EventTarget | null): void;
   /** Materialise boundary `id` (and what it needs first). */
   m(id: number): Promise<void>;
+  /** Dev only: stop resuming — dispose every adopted unit; later events are left to the page (the dev server's client-render
+   * fallback, `entry.dev.tsx`, on the first code update or `rivet:devtools-inspect`). */
+  dispose?(): void;
 }
 
 let cur: Unit | null = null,
@@ -271,6 +277,8 @@ let cur: Unit | null = null,
   inner = false,
   // A row sample run (`sample`): keyed signals read.
   collector: Set<Keyed> | null = null,
+  // A row sample run (`sample`): the `each` of every list its row renders (read through computeds after the run).
+  sampled: unknown[] | null = null,
   doc: Document | null = null,
   api: DerivedLoaderApi | null = null,
   tail: BoundaryTail | null = null,
@@ -283,6 +291,8 @@ const recs = new Map<number, Rec>(),
   listsIn = new WeakMap<Node, Lazy>(),
   // `_sig` getters: the only non-row captures a keyed row writer may take (they are the same in every row).
   keyedGetters = new WeakSet<object>(),
+  // `_sig`'s underlying signal → its keyed entry (a sample's reads through computeds reach the signal, not `get`).
+  keyedOf = new WeakMap<object, Keyed>(),
   pending: HeldEvent[] = [],
   // Streamed / awaited `Async`s (tail + patches `a`): entry by id, id by unit key (record id, `-id` of an Async) and
   // place, holes adopted before their value arrived.
@@ -312,6 +322,7 @@ const unit = (mode: number, rec: Rec | null, self: boolean, holes: Hole[] = []):
   an: 0,
   aid: 0,
   row: false,
+  all: false,
   sus: false,
   made: 0,
 });
@@ -336,7 +347,7 @@ export function _b<T>(name: string, body: () => T): T {
       cur = u;
     }
   }
-  if (u.depth) return body();
+  if (u.depth || u.all) return body();
   const k = u.n++;
   if (u.inline?.has(k)) {
     u.depth++;
@@ -361,18 +372,20 @@ export function _b<T>(name: string, body: () => T): T {
 /** Compiler ABI (derived DOM target): keyed `signal(init)`; in an adopt run, the record's value. */
 export function _sig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
   const u = cur,
-    rec = u?.rec;
-  if (!u || !rec) return signal(init as T, options);
+    rec = u?.rec,
+    make = (DEV && _adoption.signal) || signal;
+  if (!u || !rec) return make(init as T, options);
   const n = (u.counts.get(key) ?? 0) + 1;
   u.counts.set(key, n);
   const k = n > 1 ? key + "#" + n : key;
-  const s = signal((rec.values.has(k) ? rec.values.get(k) : init) as T, options);
+  const s = make((rec.values.has(k) ? rec.values.get(k) : init) as T, options);
   const e: Keyed = { fors: null, wake: tail?.w?.[rec.id + "." + k], rows: null };
   const get = function () {
     collector?.add(e);
     return s();
   } as Signal<T>;
   keyedGetters.add(get);
+  keyedOf.set(s, e);
   get.set = (value) => {
     before(e);
     const was = e.rows && untrack(s),
@@ -481,6 +494,7 @@ function forHook(props: { each: unknown; by: unknown; children: (item: () => nev
     return ((typeof each === "function" ? (each as () => unknown)() : each) ?? []) as unknown[];
   });
   if (u.mode === PROBE) {
+    sampled?.push(props.each);
     const hole: FHole = { kind: 1, n: items.length, nodes: pair(), groups: null, sole: null, span: null };
     u.holes.push(hole);
     return () => hole.nodes;
@@ -1174,7 +1188,8 @@ function client(parent: Owner | null, run: () => unknown, start: Node, end: Node
 // the browser instead of adopting is replayed on the node at the same place in the browser's render — the element path
 // from the unit's top-level elements (comments and text differ: markers, split text), a text target by its element.
 const retargets = new WeakMap<Node, Node>();
-let live: Event | null = null;
+let live: Event | null = null,
+  pressTo: HTMLInputElement | null = null;
 function addresses(old: Node[]): [Node, number[]][] | null {
   let out: [Node, number[]][] | null = null;
   const tops = old.filter((n) => n.nodeType === 1);
@@ -1233,7 +1248,10 @@ function runHole(r: Rec): void {
   const hole = r.hole!;
   r.done = true;
   loose?.delete(r);
-  if (hole.start) r.owner = adoptUnit(hole.owner, hole.body!, hole.start, hole.end!, r, false, r.name);
+  // The unit that claimed the hole is gone (a revalidation / navigation re-rendered the page before its idle / visible /
+  // event trigger fired): its range left the page too, nothing to adopt (forms drawer: "Cannot run with a disposed owner").
+  if (hole.start && !(hole.owner as { disposed?: boolean } | null)?.disposed)
+    r.owner = adoptUnit(hole.owner, hole.body!, hole.start, hole.end!, r, false, r.name);
 }
 
 /** One detached sample run of a row: the keyed signals it read outside / inside `_fx1` bindings and those bindings. */
@@ -1243,20 +1261,26 @@ interface Sampled {
   index: () => number;
   outside: Set<Keyed>;
   fxs: [fn: Writer["fn"], args: unknown[], reads: Set<Keyed>][];
+  /** Plain (unkeyed) signals it read, through computeds too: their first write wakes the list. */
+  plain: Set<Signal<unknown>>;
 }
 function sampleRow(lazy: Lazy, k: number): Sampled | null {
   const value = lazy.items[k],
     frag = document.createDocumentFragment(),
     anchor = document.createTextNode(""),
-    out: Sampled = { frag, item: () => value, index: () => k, outside: new Set(), fxs: [] },
+    out: Sampled = { frag, item: () => value, index: () => k, outside: new Set(), fxs: [], plain: new Set() },
     previous = cur,
     outer = collector,
+    outerSampled = sampled,
     hook = _adoption.fx,
     holder = { owner: null as Owner | null };
   frag.append(anchor);
   cur = unit(PROBE, lazy.rec, false);
   cur.row = true;
+  // Child boundaries in the row run inline (a probe makes them holes): their bindings' reads are the row's too.
+  cur.all = true;
   collector = out.outside;
+  sampled = [];
   // Each hoisted binding: created as usual, the keyed reads of its first run kept apart (DERIVED-C row writers).
   _adoption.fx = (fn, a, b, c) => {
     const reads = new Set<Keyed>(),
@@ -1267,10 +1291,35 @@ function sampleRow(lazy: Lazy, k: number): Sampled | null {
     } finally {
       collector = at;
     }
+    // Keyed state the binding reads through computeds only (a selector, `page() === n` behind a memo): it wakes the
+    // whole list (rows adopt before the write), the row writers only rerun bindings that read keyed signals directly.
+    collector = null;
+    try {
+      for (const sig of _trackReads(() => fn(a, b, c)).signals) {
+        const e = keyedOf.get(sig);
+        if (!e) out.plain.add(sig);
+        else if (!reads.has(e)) out.outside.add(e);
+      }
+    } finally {
+      collector = at;
+    }
     out.fxs.push([fn, [a, b, c], reads]);
   };
   try {
     untrack(() => _rootIn(lazy.owner, () => _insert(null, lazy.children!(out.item, out.index), anchor), holder));
+    // Plain signals read by any effect the row made (a child component's spread / attribute bindings — `CarouselDot`'s
+    // `aria-selected` — run no row writer): their first write wakes the list (M6-CUT: resumed carousel dots stayed stale).
+    for (const sig of _ownedReads(holder.owner)) if (!keyedOf.has(sig)) out.plain.add(sig);
+    // A nested list's items read keyed state through computeds the row did not run (cached: a collection built from a
+    // sorted / filtered computed): those keyed signals wake this list too, so its rows — and the nested list — adopt
+    // over the server's items before the write (M6-CUT: a resumed table's sort kept the server row order).
+    for (const each of sampled)
+      if (typeof each === "function")
+        for (const sig of _trackReads(each as () => unknown).signals) {
+          const e = keyedOf.get(sig);
+          if (e) out.outside.add(e);
+          else out.plain.add(sig);
+        }
     return out;
   } catch {
     // A sample that throws reads nothing we can know: the list wakes on reconcile / events only.
@@ -1278,6 +1327,7 @@ function sampleRow(lazy: Lazy, k: number): Sampled | null {
   } finally {
     cur = previous;
     collector = outer;
+    sampled = outerSampled;
     _adoption.fx = hook;
     _dispose(holder.owner);
   }
@@ -1310,6 +1360,8 @@ function sample(lazy: Lazy): void {
     last = n > 1 ? sampleRow(lazy, n - 1) : first;
   if (!first || !last) return;
   const reads = new Set<Keyed>([...first.outside, ...last.outside]);
+  for (const sig of first.plain) wakeOnWrite(sig, lazy);
+  for (const sig of last.plain) wakeOnWrite(sig, lazy);
   const writers: (Writer | null)[] = [];
   const same = first.fxs.length === last.fxs.length;
   for (let i = 0; i < first.fxs.length; i++) {
@@ -1343,6 +1395,25 @@ function sample(lazy: Lazy): void {
     if (mine?.length) (e.rows ??= new Map()).set(lazy, mine);
     else (e.fors ??= new Set()).add(lazy);
   }
+}
+// Plain signals a lazy list's rows read (a `.ts` helper's state, `createCarouselState`: not keyed, no wake list): the
+// first write materialises those lists' rows before it notifies, like a keyed signal's `fors` (M6-CUT: a resumed
+// carousel's dots kept the server's selected dot).
+const plainFors = new WeakMap<Signal<unknown>, Set<Lazy>>();
+function wakeOnWrite(sig: Signal<unknown>, lazy: Lazy): void {
+  let fors = plainFors.get(sig);
+  if (fors) return void fors.add(lazy);
+  plainFors.set(sig, (fors = new Set([lazy])));
+  const set = sig.set;
+  sig.set = function (this: Signal<unknown>, value: unknown) {
+    const waiting = plainFors.get(sig);
+    if (waiting) {
+      plainFors.delete(sig);
+      sig.set = set;
+      for (const l of waiting) wakeFor(l);
+    }
+    return set.call(this, value);
+  } as Signal<unknown>["set"];
 }
 // A write to a keyed signal (`get`, its value before: `was`) with row writers: rerun them over the lazy rows still on
 // the page (materialised rows have their own bindings). While the items are the server's, only the rows whose output
@@ -1528,7 +1599,11 @@ function standalone(r: Rec, module: Record<string, unknown>): void {
     return;
   }
   r.owner = adoptUnit(null, () => fn(r.props ?? {}), range[0]!, range[range.length - 1]!, r, true, r.name);
+  if (DEV && r.owner) roots.push(r.owner);
 }
+/** Dev (`dispose`): the standalone units' owners, the roots of everything adopted. */
+const roots: Owner[] = [];
+let disposed = false;
 const load = (name: string): Promise<void> => {
   let p = loads.get(name);
   if (!p) {
@@ -1573,7 +1648,7 @@ function need(r: Rec): true | Promise<void> {
   standalone(r, module);
   return true;
 }
-// ---- DOM data (DERIVED-C5, `resume: { model: "derived", domData: true }` builds only: `DOM_DATA`) ----
+// ---- DOM data (DERIVED-C5, `resume: { domData: true }` builds only: `DOM_DATA`) ----
 // A tail `d` entry stands for a list items array of a record's props that the server left out: its rows are the page's
 // rows after the list's anchor (`<!--r0<n>[-->`), each item rebuilt from the entry's skeleton. Each top-level key holding a
 // page value is an accessor that reads its value from the row's DOM the first time (then a plain data property); the
@@ -1858,6 +1933,11 @@ function formOf(event: Event, target: Element | null): HTMLFormElement | null {
 }
 // Document click listeners (tail `g`, server `_rListen`: the router's link clicks): materialise the boundaries listening
 // for a click wherever its target is, before the units around the target. True when done now, a promise while a chunk loads.
+const gAdopts = (target: Element | null): boolean =>
+  (tail?.g ?? []).some(([id, match]) => {
+    const r = recs.get(id);
+    return !!r && !r.done && !!target?.closest?.(match);
+  });
 function listeners(event: Event): true | Promise<void> {
   const target = event.target as Element | null;
   const form = formOf(event, target);
@@ -1916,8 +1996,11 @@ const captures = (o: unknown): boolean => !!(typeof o == "object" ? (o as AddEve
 const sameAdded = (r: Added, t: EventTarget, type: string, fn: unknown, o: unknown) => r[0] === t && r[1] === type && r[2] === fn && r[3] === captures(o);
 function addRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | AddEventListenerOptions): void {
   nativeAdd.call(this, type, fn, o);
-  if (replayed !== undefined && fn && !added.some((r) => sameAdded(r, this, type, fn, o)))
-    added.push([this, type, fn, captures(o), performance.now(), replayed, o]);
+  // During a replay, and while events are held: an adopt run (a chunk's `load` resolving outside any replay) adds a
+  // `model:value` input listener, a ref's library listener — the held events dispatched before it reach it too (ai-eval
+  // filter-list: the cold input that adopted the field updates its signal).
+  if ((replayed !== undefined || pending.length) && fn && !added.some((r) => sameAdded(r, this, type, fn, o)))
+    added.push([this, type, fn, captures(o), performance.now(), replayed ?? null, o]);
 }
 function removeRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
   nativeRemove.call(this, type, fn, o);
@@ -2032,7 +2115,10 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     } else to = null;
     if (type == "click") start = undefined;
   }
-  const control = target && "value" in target && target.localName !== "button",
+  // The control's value / checked at the event's dispatch, for its handlers (an input / change / click replayed after
+  // later typing). Not for focus events: their handlers read no value, and writing a date input's value while focus is
+  // in its fields focuses it (a trusted focusin) — each replayed focusin queued two more (cdk /date-picker autofill hung).
+  const control = target && "value" in target && target.localName !== "button" && !/^(focus|blur)/.test(type),
     now = control ? [target.value, target.checked] : null;
   Object.defineProperty(event, "composedPath", { configurable: true, value: () => path });
   Object.defineProperty(event, "defaultPrevented", { configurable: true, get: () => canceled });
@@ -2109,6 +2195,8 @@ async function drain(): Promise<void> {
 
 const runtime: DerivedRuntime = {
   start(t, d, loader) {
+    // Dev: disposed before the loader booted it (DevTools inspection, then a first event): held events act natively.
+    if (DEV && disposed) return void loader.q.splice(0).forEach((item) => item[2]?.());
     tail = t;
     doc = d;
     api = loader;
@@ -2149,6 +2237,7 @@ const runtime: DerivedRuntime = {
     // after the router's).
     const probe = d.createElement("i");
     for (const type of DELEGATED) _on(probe, type, null);
+    if (DEV) _adoption.probe = () => cur !== null && cur.mode === PROBE;
     records(t, false);
     // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
     const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
@@ -2159,7 +2248,12 @@ const runtime: DerivedRuntime = {
     for (const item of loader.q.splice(0)) runtime.cold(item);
   },
   on(event) {
+    if (DEV && disposed) return true;
     if (pending.length && !replaying) return false;
+    // A click that adopts a document click listener's boundary (tail `g`, the router's `App`) is held: listeners
+    // added to the document while the click is at the document are skipped natively (the router's capture listener
+    // that routes a link whose own handler stopped propagation); its replay reaches them (`late`).
+    if (event.type === "click" && !replaying && gAdopts(event.target as Element | null)) return false;
     const listening = listeners(event);
     if (listening !== true) return (listening.catch(() => {}), false);
     live = event;
@@ -2173,14 +2267,33 @@ const runtime: DerivedRuntime = {
     if (step === true && target && !target.isConnected && retargets.has(target)) {
       // Its unit rendered in the browser while adopting: the native dispatch would reach the removed server nodes only.
       event.stopImmediatePropagation();
+      if (/^(pointer|mouse)down$/.test(event.type)) pressTo = retargets.get(target) as HTMLInputElement;
       runtime.cold([event, event.composedPath(), undefined, [target.value, target.checked, doc!.activeElement]]);
       return true;
     }
+    // The press that adopted it started on a removed server node (its pointerdown retargeted): Chrome then sends the
+    // compatibility mousedown to the nearest connected ancestor and fires no click — the mousedown (and a click a browser
+    // does send to that ancestor) is replayed on the browser's node the press was retargeted to, and its release clicks
+    // that node when no click follows (`click()`: handlers + default action).
+    const to = pressTo;
+    if (step === true && to && to.isConnected && target) {
+      if (/^(mousedown|click)$/.test(event.type) && target !== to && target.contains(to)) {
+        if (event.type === "click") pressTo = null;
+        event.stopImmediatePropagation();
+        Object.defineProperty(event, "target", { configurable: true, value: to });
+        runtime.cold([event, pathOf(to), undefined, [to.value, to.checked, doc!.activeElement]]);
+        return true;
+      }
+      if (event.type === "mouseup" && (target === to || to.contains(target)))
+        setTimeout(() => pressTo === to && ((pressTo = null), to.isConnected && to.click()));
+    }
+    if (event.type === "click" || event.type === "pointerdown") pressTo = null;
     if (step === true) return (enter(event, event.composedPath()), true);
     step.catch(() => {});
     return false;
   },
   cold(item) {
+    if (DEV && disposed) return;
     queued(item);
     record(1);
     if (pending.push(item) === 1) void drain();
@@ -2201,4 +2314,12 @@ const runtime: DerivedRuntime = {
     return p === true ? Promise.resolve() : p;
   },
 };
+if (DEV)
+  runtime.dispose = () => {
+    disposed = true;
+    pending.length = 0;
+    // The loader then leaves links outside every boundary to the page (the client-rendered router's listener).
+    globalThis.document.querySelector('script[type="rivet/boundaries"]')?.removeAttribute("data-g");
+    for (const owner of roots.splice(0)) _dispose(owner);
+  };
 export default runtime;

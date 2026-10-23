@@ -11,7 +11,7 @@ import { createContext, provide, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { contextProps, resumableContext, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
+import { contextProps, type ContextValue, type RefValue, type RenderProps, type SlotProps } from "../slots/index.tsx";
 import type { Orientation } from "../utils/types.ts";
 import { useLocale } from "../i18n/index.ts";
 import { toolbarBlur, toolbarFocus, toolbarKeyDown, toolbarKeys, toolbarProps, type AriaToolbarProps } from "./behaviour.ts";
@@ -33,10 +33,10 @@ export interface ToolbarProps
 }
 
 /** RAC `ToolbarContext`. */
-export const ToolbarContext = resumableContext(createContext<ContextValue<ToolbarProps, HTMLDivElement>>({}, { id: "rv-toolbar" }));
+export const ToolbarContext = createContext<ContextValue<ToolbarProps, HTMLDivElement>>({});
 
 /** Rivet: set inside a toolbar, so a nested one renders `role="group"` (RA `isInToolbar`). */
-const InToolbarContext = resumableContext(createContext<boolean>(false, { id: "rv-in-toolbar" }));
+const InToolbarContext = createContext<boolean>(false);
 
 /** A toolbar is a container for a set of interactive controls with arrow key navigation (RAC `Toolbar`). */
 export function Toolbar(inProps: ToolbarProps) {

@@ -1,17 +1,7 @@
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { rivetRouter } from "@rivetjs/router/vite";
-import { docsSite, DOCS_LAZY_OWNED, DOCS_PRELOAD_RULES } from "@rivetjs/docs-kit/vite.ts";
-
-/**
- * Chunk-policy experiments (derived-client plan M1, `docs/design/plans/2026-10-18-derived-client.md`): the measurement
- * builds set `RIVET_RESUME_CHUNKS` (`component` | `group` | `route`) and `RIVET_RESUME_MERGE` (bytes, or `off`) + `RIVET_RESUME_CAP`; unset =
- * the compiler defaults (what the site ships). `RIVET_RESUME_MODEL=derived`: the derived resume model (M6 measurement builds).
- */
-const CHUNKS = process.env.RIVET_RESUME_CHUNKS as "component" | "group" | "route" | undefined;
-const MERGE = process.env.RIVET_RESUME_MERGE === "off" ? false : process.env.RIVET_RESUME_MERGE ? Number(process.env.RIVET_RESUME_MERGE) : undefined;
-const CAP = process.env.RIVET_RESUME_CAP ? Number(process.env.RIVET_RESUME_CAP) : undefined;
-const DERIVED = process.env.RIVET_RESUME_MODEL === "derived";
+import { docsSite } from "@rivetjs/docs-kit/vite.ts";
 
 /**
  * @rivetjs/ui docs: a static site on @rivetjs/docs-kit (same engine as apps/docs and apps/cdk-docs). `images`: examples
@@ -26,14 +16,6 @@ export default defineConfig({
       styles: ["src/styles.css"],
       prefetch: "document",
       prefetchPaths: false,
-      resume: {
-        preload: { rules: [...DOCS_PRELOAD_RULES] },
-        lazyOwned: [...DOCS_LAZY_OWNED],
-        ...(CHUNKS ? { chunks: CHUNKS } : {}),
-        ...(MERGE !== undefined ? { merge: MERGE } : {}),
-        ...(CAP !== undefined ? { cap: CAP } : {}),
-        ...(DERIVED ? { model: "derived" as const } : {}),
-      },
     }),
     tailwindcss(),
   ],

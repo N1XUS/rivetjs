@@ -84,7 +84,7 @@ test(
         await page.goto(app.url + "/app/");
         // Z1: a resumed router app boots nothing at idle; a press on a link starts the runtime + router (intent).
         await page.dispatchEvent("a[href^='/']", "pointerdown");
-        await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+        await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
         await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
         const heading = (value: string) => page.waitForFunction((value) => document.querySelector("h1")?.textContent === value, value);
         await page.hover('nav a[href="/app/about"]');

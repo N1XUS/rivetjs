@@ -21,7 +21,6 @@ import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
   Provider,
-  resumableContext,
   contextProps,
   renderProps,
   type ContextValue,
@@ -188,18 +187,18 @@ export interface SwitchButtonRenderProps extends SwitchRenderProps {
 }
 
 /** RAC `SwitchContext`. */
-export const SwitchContext = resumableContext(createContext<ContextValue<SwitchProps, HTMLLabelElement>>(null, { id: "rv-switch" }));
+export const SwitchContext = createContext<ContextValue<SwitchProps, HTMLLabelElement>>(null);
 /** RAC `SwitchFieldContext`. */
-export const SwitchFieldContext = resumableContext(createContext<ContextValue<SwitchFieldProps, HTMLDivElement>>(null, { id: "rv-switch-field" }));
+export const SwitchFieldContext = createContext<ContextValue<SwitchFieldProps, HTMLDivElement>>(null);
 /** RAC `ToggleStateContext`. */
-export const ToggleStateContext = resumableContext(createContext<ToggleState | null>(null, { id: "rv-toggle-state" }));
+export const ToggleStateContext = createContext<ToggleState | null>(null);
 
 interface InternalSwitchContextValue extends SwitchAria {
   defaultClassName: string;
   isRequired?: MaybeAccessor<boolean | undefined>;
 }
 
-const InternalSwitchContext = resumableContext(createContext<InternalSwitchContextValue | null>(null, { id: "rv-switch-internal" }));
+const InternalSwitchContext = createContext<InternalSwitchContextValue | null>(null);
 
 const DOM_OWNED = ["style", "onClick", "render"] as const;
 /** State keys made accessors at the part boundary when live (live props P5; `isSelected` = controlled). */

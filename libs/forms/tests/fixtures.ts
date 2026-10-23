@@ -1,6 +1,4 @@
-// Test helpers: a tiny Standard Schema, FormData from pairs, a serializability probe.
-import { _inspect } from "@rivetjs/reactivity";
-import { createEncoder } from "@rivetjs/runtime/resume-format";
+// Test helpers: a tiny Standard Schema, FormData from pairs.
 import type { StandardSchemaV1 } from "../standard-schema.ts";
 
 type Rule<T> = (input: T) => { path?: (string | number)[]; message: string }[];
@@ -17,18 +15,6 @@ export const fd = (pairs: [string, string | File][]): FormData => {
   for (const [name, value] of pairs) data.append(name, value);
   return data;
 };
-/** Encode like the resume state does (signals as `{s}`); throws on functions/class instances. */
-export function encodeState(value: unknown): string {
-  const encoder = createEncoder({
-    special: (object, ref) => {
-      if (typeof object !== "function") return undefined;
-      const reactive = _inspect(object);
-      return reactive?.kind === "signal" ? { s: ref(reactive.value) } : undefined;
-    },
-  });
-  const root = encoder.ref(value);
-  return JSON.stringify({ t: encoder.table, r: root });
-}
 export const tick = (ms = 0): Promise<void> => new Promise((done) => setTimeout(done, ms));
 /** Stand-in for the `<form>` element: the engine only hands it to remote checks. */
 export const fakeElement = {} as HTMLFormElement;

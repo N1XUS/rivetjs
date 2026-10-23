@@ -28,13 +28,6 @@ test("spread + style: style merges into the spread object (server, dom) — no s
     /__rivet_spread\(_el\$1, \(\) => \(\{ \.\.\.p\.a \}\), 0, null, "style"\); __rivet_attrs\(_el\$1, \(\) => \[\{ color: p\.c \}\], "style"\)/,
   );
   assert.doesNotMatch(dom, /_bindStyle/);
-  // Resume: the spread site captures the style expression too; no styled site.
-  const resumed = squash(build(styled, { target: "server", resume: { module: "m" } }));
-  assert.match(
-    resumed,
-    /__rivetR_spread\("m#A\$\w+", \(\) => \(\{ \.\.\.p\.a, "style": \{ color: p\.c \} \}\), \[__rivetR_member\(p, "a"\), __rivetR_member\(p, "c"\)\], "p"\)/,
-  );
-  assert.doesNotMatch(resumed, /StyleAttr|R_styled/);
 });
 
 test("spread + style renders one style attribute, later source position wins", async () => {
@@ -83,8 +76,6 @@ export const none = () => <textarea {...{ id: "z" }} />;`,
   assert.equal(await renderToString(module.initial!), `<textarea name="n">\nd</textarea>`);
   assert.equal(await renderToString(module.explicit!), `<textarea id="e">\nv</textarea>`);
   assert.equal(await renderToString(module.none!), `<textarea id="z">\n</textarea>`);
-  // Resume mode: the slot follows the element id; the DOM target has no spread-children slot (`_spread` writes the value). A trailing `_rReset()` restarts the id-less marker chain after the RCDATA content.
-  const resumed = squash(build(`export const T = (p: object) => <textarea {...p} />;`, { target: "server", resume: { module: "m" } }));
-  assert.match(resumed, /__rivetR_id\(\), __rivetSpreadChildren\(\), __rivetR_reset\(\) ?\]/);
+  // The DOM target has no spread-children slot (`_spread` writes the value).
   assert.doesNotMatch(build(`export const T = (p: object) => <textarea {...p} />;`, { target: "dom" }), /spreadChildren/);
 });

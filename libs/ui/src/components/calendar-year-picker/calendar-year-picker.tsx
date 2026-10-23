@@ -6,8 +6,7 @@
 // - Slots: `calendarYearPickerVariants()` has no variants → one module-level object (upstream `useMemo` per part).
 // - Render-prop values (`{ isOpen, monthYear, toggle }`, cell `{ year, formattedYear, isSelected, isCurrentYear, isOpen, selectYear }`) are
 //   getter objects: a function child reads them inside its bindings and updates in place (React: a new snapshot per render).
-// - The trigger / grid contexts are getter objects over signals (`resumableContext` ids `rv-ui-calendar-year-picker-trigger` /
-//   `rv-ui-calendar-year-picker-grid`); upstream memoized snapshot objects.
+// - The trigger / grid contexts are getter objects over signals; upstream memoized snapshot objects.
 // - Grid effects (`useEffect` position + focus on open) → one `clientEffect` (runs on interaction on a resumed page; at load when the
 //   picker is server-rendered open): positions the grid over the day grid and focuses the active year when the picker opens.
 // - `CalendarYearPickerGridBody` renders a keyed `For` over the years (React `Fragment key={year}`).
@@ -25,7 +24,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { computed, createContext, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Provider, clientEffect, ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { ChevronRight } from "lucide";
 
@@ -85,9 +83,7 @@ type CalendarYearPickerTriggerIndicatorSpanProps = CalendarYearPickerTriggerIndi
 /** Rivet: `{ isOpen, monthYear, toggle }` getters (upstream adds `slots`: one module-level object here). */
 type CalendarYearPickerTriggerContextValue = CalendarYearPickerTriggerRenderProps;
 
-const CalendarYearPickerTriggerContext = resumableContext(
-  createContext<CalendarYearPickerTriggerContextValue | null>(null, { id: "rv-ui-calendar-year-picker-trigger" }),
-);
+const CalendarYearPickerTriggerContext = createContext<CalendarYearPickerTriggerContextValue | null>(null);
 
 function useCalendarYearPickerTriggerContext(): CalendarYearPickerTriggerContextValue {
   const context = useContext(CalendarYearPickerTriggerContext);
@@ -251,9 +247,7 @@ interface CalendarYearPickerGridContextValue {
   setActiveYear: (year: number) => void;
 }
 
-const CalendarYearPickerGridContext = resumableContext(
-  createContext<CalendarYearPickerGridContextValue | null>(null, { id: "rv-ui-calendar-year-picker-grid" }),
-);
+const CalendarYearPickerGridContext = createContext<CalendarYearPickerGridContextValue | null>(null);
 
 function useCalendarYearPickerGridContext(): CalendarYearPickerGridContextValue {
   const context = useContext(CalendarYearPickerGridContext);

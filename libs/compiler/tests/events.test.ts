@@ -22,7 +22,19 @@ test("compiler and JSX types carry the same event names", () => {
 });
 
 test("lib.dom events compile on both targets with their DOM type names", () => {
-  const names = { onTransitionEnd: "transitionend", onPaste: "paste", onToggle: "toggle", onBeforeToggle: "beforetoggle", onAnimationStart: "animationstart", onLoadedMetadata: "loadedmetadata", onDblClick: "dblclick", onPointerOver: "pointerover", onInvalid: "invalid", onClose: "close", onCancel: "cancel" };
+  const names = {
+    onTransitionEnd: "transitionend",
+    onPaste: "paste",
+    onToggle: "toggle",
+    onBeforeToggle: "beforetoggle",
+    onAnimationStart: "animationstart",
+    onLoadedMetadata: "loadedmetadata",
+    onDblClick: "dblclick",
+    onPointerOver: "pointerover",
+    onInvalid: "invalid",
+    onClose: "close",
+    onCancel: "cancel",
+  };
   for (const [name, type] of Object.entries(names)) {
     const source = `export const A = (p: { f: () => void }) => <div ${name}={p.f} />;`;
     const server = compile(source, { target: "server", filename: "a.tsx" });
@@ -36,7 +48,11 @@ test("lib.dom events compile on both targets with their DOM type names", () => {
 test("unknown camelCase and lowercase on-names still fail", () => {
   for (const name of ["onMystery", "onclick", "onTransitionend", "onWebkitAnimationEnd"]) {
     const { diagnostics } = compile(`export const A = (p: { f: () => void }) => <div ${name}={p.f} />;`, { target: "dom", filename: "a.tsx" });
-    assert.deepEqual(diagnostics.map((d) => d.message), [`Unknown native event: ${name} (a DOM event like onClick / onInput, or on:my-event={…} for a custom event)`], name);
+    assert.deepEqual(
+      diagnostics.map((d) => d.message),
+      [`Unknown native event: ${name} (a DOM event like onClick / onInput, or on:my-event={…} for a custom event)`],
+      name,
+    );
   }
 });
 
@@ -66,7 +82,11 @@ test("unsafe prop: names fail on both targets", () => {
   ]) {
     for (const target of ["server", "dom"] as const) {
       const { diagnostics } = compile(`export const A = (p: { v: string }) => <div ${attr}={p.v} />;`, { target, filename: "a.tsx" });
-      assert.deepEqual(diagnostics.map((d) => d.message), [message], `${target} ${attr}`);
+      assert.deepEqual(
+        diagnostics.map((d) => d.message),
+        [message],
+        `${target} ${attr}`,
+      );
     }
   }
 });
@@ -83,7 +103,7 @@ test("static unsafe URL literals on prop: fail like URL attributes (RV1101); dyn
   assert.deepEqual(ok.diagnostics, []);
 });
 
-test("prop:indeterminate on a checkbox: DOM binding, omitted on the server, element effect when resumed", () => {
+test("prop:indeterminate on a checkbox: DOM binding, omitted on the server (resumed too)", () => {
   const source = `import { signal } from "@rivetjs/reactivity"; export function A() { const m = signal(true); return <input type="checkbox" prop:indeterminate={m()} />; }`;
   const dom = compile(source, { target: "dom", filename: "a.tsx" });
   assert.deepEqual(dom.diagnostics, []);
@@ -93,9 +113,7 @@ test("prop:indeterminate on a checkbox: DOM binding, omitted on the server, elem
   assert.doesNotMatch(server.code, /indeterminate/);
   const resumed = compile(source, { target: "server", filename: "a.tsx", resume: { module: "src/a.tsx" } });
   assert.deepEqual(resumed.diagnostics, []);
-  assert.match(resumed.code, /__rivetR_effect\("src\/a\.tsx#A\$\w+", \[__rivetCell, m\], \{ when: "load" \}\)/);
-  const symbols = compile(source, { target: "dom", filename: "a.tsx", resume: { module: "src/a.tsx" } }).symbols!;
-  assert.match(symbols[0]!.source, /\(__rivetEl, m\) => \(\) => __rivetResumeElement\(__rivetEl, "indeterminate", \(m\(\)\)\)/);
+  assert.doesNotMatch(resumed.code, /indeterminate/);
 });
 
 // Handler expressions are evaluated once (Solid semantics, DOM v2 spec decision Q4): no handler-selection effect.
@@ -107,7 +125,11 @@ test("event handler expressions are passed as written: delegated `_on`, capture 
       assert.deepEqual(result.diagnostics, [], `${name}: ${expression}`);
       assert.match(
         result.code,
-        name === "onClick" ? /__rivet_on\(_el\$1, "click", / : name === "onClickCapture" ? /__rivet_listen\(_el\$1, "click", [^]*, \{ capture: true \}\);/ : /__rivet_listen\(_el\$1, "custom", /,
+        name === "onClick"
+          ? /__rivet_on\(_el\$1, "click", /
+          : name === "onClickCapture"
+            ? /__rivet_listen\(_el\$1, "click", [^]*, \{ capture: true \}\);/
+            : /__rivet_listen\(_el\$1, "custom", /,
         expression,
       );
       assert.doesNotMatch(result.code, /__rivet_fx/, expression);
@@ -160,7 +182,12 @@ const source = (name: string, expression: string) =>
 test("RV1016: handler values that read state when they bind are errors on every target (decision Q4)", () => {
   for (const expression of frozen)
     for (const name of ["onClick", "onClickCapture", "on:custom", "window:onKeyDown", "document:onClick"])
-      for (const options of [{ target: "dom" }, { target: "server" }, { target: "dom", resume: { module: "m" } }, { target: "server", resume: { module: "m" } }] as const) {
+      for (const options of [
+        { target: "dom" },
+        { target: "server" },
+        { target: "dom", resume: { module: "m" } },
+        { target: "server", resume: { module: "m" } },
+      ] as const) {
         const text = source(name, expression);
         const result = compile(text, { ...options, filename: "frozen.tsx" });
         const label = `${name}={${expression}} ${JSON.stringify(options)}`;
@@ -195,8 +222,8 @@ test("RV1016 allows function literals, references, `f.bind(…)` and call-free c
 
 test("inline event options cannot capture a shadowed undefined binding", () => {
   for (const source of [
-    'export function A(undefined) { return <button onClick={() => {}} />; }',
-    'export function A() { const button = <button onClick={() => {}} />; let undefined; return button; }',
+    "export function A(undefined) { return <button onClick={() => {}} />; }",
+    "export function A() { const button = <button onClick={() => {}} />; let undefined; return button; }",
   ]) {
     const result = compile(source, { target: "dom", filename: "shadow.tsx" });
     assert.deepEqual(result.diagnostics, []);

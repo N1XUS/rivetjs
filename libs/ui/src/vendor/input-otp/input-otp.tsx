@@ -44,7 +44,6 @@ import { computed, createContext, signal, untrack } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider, bindRef, clientEffect, ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import { splitLive } from "../../utils/live.tsx";
 import { PWM_BADGE_SPACE_WIDTH, PWM_BADGE_SPACE_WIDTH_PX, availableBadgeSpace, injectStyles, trackPWMBadge } from "./dom.ts";
@@ -101,7 +100,7 @@ export const REGEXP_ONLY_DIGITS_AND_CHARS = "^[a-zA-Z0-9]+$";
 /* -------------------------------------------------------------------------------------------------
  * Context
  * -----------------------------------------------------------------------------------------------*/
-export const OTPInputContext = resumableContext(createContext<RenderProps>({} as RenderProps, { id: "rv-ui-input-otp-primitive" }));
+export const OTPInputContext = createContext<RenderProps>({} as RenderProps);
 
 /* -------------------------------------------------------------------------------------------------
  * Helpers

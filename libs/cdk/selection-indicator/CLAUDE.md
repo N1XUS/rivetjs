@@ -7,7 +7,7 @@ RAC `SelectionIndicator`: a `SharedElement` named "SelectionIndicator", visible 
 - `@rivetjs/cdk/selection-indicator` -> `index.tsx`: `SelectionIndicator`, `SelectionIndicatorProps`; re-exports `SelectionIndicatorContext`, `SelectionIndicatorContextValue`, type `SharedElementRenderProps`
 
 ## Layout
-- `context.ts` - `SelectionIndicatorContext` (`resumableContext`, id `rv-selection-indicator`, default `{ isSelected: false }`). Imported by tabs / radio-group / toggle-button: only this token lands in their chunks
+- `context.ts` - `SelectionIndicatorContext` (default `{ isSelected: false }`). Imported by tabs / radio-group / toggle-button: only this token lands in their chunks
 - `index.tsx` - component; calls `SharedElement(...)` as a plain function (reads stay on the user's `<SelectionIndicator />` site, render-function children pass through)
 - tests: `../tests/shared-element.browser.test.tsx` "SelectionIndicator", `../tests-components/selection-indicator.test.ts`
 

@@ -63,7 +63,7 @@ export function Rows(props: { load: (id: number) => PromiseLike<string>; fallbac
   );
 }
 `;
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["Plain", "Rows"], independent: ["Plain", "Rows"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["Plain", "Rows"], independent: ["Plain", "Rows"] };
 const manifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#Plain": "/page.js", "src/page.tsx#Rows": "/page.js" } };
 const ITEMS = { items: ["Io", "Europa"] };
 type Mod = {

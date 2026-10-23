@@ -91,7 +91,6 @@ Files named `*.server.*`, modules that `import "@rivetjs/router/server-only"`, a
 | `routes.ts` | server, static | Route table for the server. |
 | `entry.server.tsx` | server, static | Server build entry. |
 | `entry.dev.tsx` | server, static | Dev-only browser entry (dev pages render in the browser). |
-| `entry.resume.ts` | server, static | Only with `transitions`: resume entry with the navigation context. |
 | `entry.client.tsx` | csr | Browser entry that mounts the app. |
 | `routes.d.ts` | all | Route ids, parameters and typed paths for `Link`. |
 

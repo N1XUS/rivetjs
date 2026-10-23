@@ -72,7 +72,7 @@ export function Pager() {
 - `startTransition` returns a promise that resolves after the switch.
 - A transition started while another is pending joins it.
 
-`useTransition()` returns `[pending, start]` for the same thing. It suits pages rendered in the browser only: on a resumed page a handler cannot capture `start`, so use `startTransition(fn, pendingSignal)` there.
+`useTransition()` returns `[pending, start]` for the same thing.
 
 ::api{symbol="@rivetjs/runtime/dom#startTransition"}
 ::api{symbol="@rivetjs/runtime/dom#useTransition"}

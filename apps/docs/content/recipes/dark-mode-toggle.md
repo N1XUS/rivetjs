@@ -51,7 +51,7 @@ Browser code goes in three places, never at the top of the component:
 - `clientEvent("media:(prefers-color-scheme: dark)", "change", …)` listens for operating system changes. While the choice is "system", it updates `data-theme`.
 - The `onClick` handler moves to the next choice, writes `data-theme` and saves (or removes) the value in `localStorage`.
 
-Remember that a component runs once, on the server. Code at the top level of the component never runs in the browser. That is why `localStorage`, `matchMedia` and `document` only appear inside the effect, the client event and the handler. See [window is not defined](/gotchas/window-is-not-defined.md) for the error you get otherwise.
+Remember that a component renders on the server, and in the browser only once it is used, over the server's HTML. Code at the top level of the component must give the same result in both places. That is why `localStorage`, `matchMedia` and `document` only appear inside the effect, the client event and the handler. See [window is not defined](/gotchas/window-is-not-defined.md) for the error you get otherwise.
 
 ### 4. What loads, and when
 

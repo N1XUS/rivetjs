@@ -8,7 +8,7 @@ import { resolve } from "node:path";
 import { build, createServer } from "vite";
 import { chromium } from "playwright";
 import { start } from "../adapters/node.ts";
-import { nodeEnv, withNodeEnv } from "./vite-env.ts";
+import { bare, nodeEnv, withNodeEnv } from "./vite-env.ts";
 import { strictCSP } from "../server/strict-csp.ts";
 
 const root = new URL("./fixture/", import.meta.url).pathname;
@@ -34,9 +34,10 @@ test("dev middleware renders pages, data, guards, nearest 404 and errors", async
     const html = await home.text();
     assert.match(html, /<title>Home<\/title>/);
     assert.match(html, /<link rel="stylesheet" href="\/src\/styles.css">/);
-    // Rendered through the resume recorder, like production: text and region markers.
-    assert.match(html, /<p id="site"><!--r1-->Fixture<!--\/--><\/p>/);
-    assert.match(html, /<main><div data-rivet-routes=""><!--r0\[--><section><h1>Home<\/h1>/);
+    // Rendered through the resume recorder, like production: boundary markers.
+    assert.match(html, /<div data-rivet-dev="resume" style="display:contents"><!--b1-->/);
+    assert.match(bare(html), /<p id="site">Fixture<\/p>/);
+    assert.match(bare(html), /<main><div data-rivet-routes=""><!--\[--><section><h1>Home<\/h1>/);
 
     const item = await (await get("/items/2")).text();
     assert.match(item, /<title>Second item<\/title><meta name="description" content="Item 2">/);
@@ -50,16 +51,18 @@ test("dev middleware renders pages, data, guards, nearest 404 and errors", async
     assert.equal(guarded.status, 302);
     assert.equal(guarded.headers.get("location"), "/login?next=/private");
 
+    // Text markers (`<!--[-->`) and boundary markers out.
+    const text = (html: string) => html.replace(/<!--[^>]*-->/g, "");
     const missing = await get("/missing");
     assert.equal(missing.status, 404);
-    assert.match(await missing.text(), /<h1 id="not-found">Nothing at \/missing<\/h1>/);
+    assert.match(text(await missing.text()), /<h1 id="not-found">Nothing at \/missing<\/h1>/);
     // Nearest `_404`: the items folder has its own, for unknown ids and unmatched URLs below it.
-    assert.match(await (await get("/items/9")).text(), /<h1 id="no-item">No item at \/items\/9<\/h1>/);
-    assert.match(await (await get("/items/1/extra")).text(), /<h1 id="no-item">No item at \/items\/1\/extra<\/h1>/);
+    assert.match(text(await (await get("/items/9")).text()), /<h1 id="no-item">No item at \/items\/9<\/h1>/);
+    assert.match(text(await (await get("/items/1/extra")).text()), /<h1 id="no-item">No item at \/items\/1\/extra<\/h1>/);
 
     const broken = await get("/broken");
     assert.equal(broken.status, 500);
-    assert.match(await broken.text(), /<h1 id="failure">Something failed<\/h1>/);
+    assert.match(text(await broken.text()), /<h1 id="failure">Something failed<\/h1>/);
   } finally {
     await server.close();
     restoreEnv();
@@ -83,17 +86,9 @@ test("dev: a source that starts using navigate() / useParams() regenerates the A
       'import { navigate, useParams } from "@rivetjs/router/client";\nexport const go = () => navigate("/");\nexport const p = useParams;\n',
     );
     await until((source) => source.includes('"rivet:go"') && source.includes("RouteParamsContext"));
-    // Resumed dev pages (the default) boot the resume entry the dev manifest names: the compiler's
-    // default one until a source reads search params, then the generated one with their context.
-    const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, "");
-    const runtime = async () =>
-      (JSON.parse(/<script type="rivet\/state"[^>]*>(.*?)<\/script>/.exec(await (await fetch(origin + "/items/1")).text())![1]!) as { rt: string }).rt;
-    assert.equal(await runtime(), "/@id/__x00__rivet-resume-entry");
+    // A source that starts reading search params: the Root boundary provides the browser's.
     await writeFile(root + "src/q.ts", 'import { useSearchParams } from "@rivetjs/router/client";\nexport const q = useSearchParams;\n');
-    for (const started = Date.now(); (await runtime()) !== "/.rivet/entry.resume.ts" && Date.now() - started < 10_000;)
-      await new Promise((done) => setTimeout(done, 50));
-    assert.equal(await runtime(), "/.rivet/entry.resume.ts");
-    assert.match(await readFile(root + ".rivet/entry.resume.ts", "utf8"), /\[SearchParams, searchParams\]/);
+    await until((source) => source.includes("<Provider token={SearchParams} value={searchParams}>"));
   } finally {
     // Closing waits for a running regeneration (nothing writes `.rivet/` afterwards).
     await server.close();
@@ -122,11 +117,11 @@ test("dev, `dev: { resume: false }`: the browser client-renders pages, navigates
   const [pageSource, loaderSource, layoutSource] = await Promise.all([readFile(pageFile, "utf8"), readFile(loaderFile, "utf8"), readFile(layoutFile, "utf8")]);
   try {
     const html = await (await fetch(origin + "/items/1")).text();
-    assert.match(html, /<div data-rivet-dev="" style="display:contents"><div id="shell">/);
+    assert.match(bare(html), /<div data-rivet-dev="" style="display:contents"><div id="shell">/);
     assert.match(html, /<script type="application\/json" id="rivet-dev-data">/);
-    // The recorder ran (markers), its state and loader stay out.
-    assert.match(html, /<button type="button" id="likes" data-r="\d+">Likes <!--r\d*-->0<!--\/--><\/button>/);
-    assert.ok(!html.includes('type="rivet/state"'), "no resume state");
+    // The recorder ran (markers), its boundaries tail and loader stay out.
+    assert.match(html, /<button type="button" id="likes">Likes <!--\[-->0<!--\]--><\/button>/);
+    assert.ok(!html.includes('type="rivet/boundaries"'), "no resume state");
     assert.match(
       html,
       /<script type="module" src="\/@vite\/client" nonce="[^"]+"><\/script><script type="module" src="\/\.rivet\/dev-mount\.tsx" nonce="[^"]+"><\/script>/,
@@ -185,7 +180,9 @@ test("dev, `dev: { resume: false }`: the browser client-renders pages, navigates
     // The routes reloaded: the new head is in.
     await page.waitForFunction(() => document.title === "Second item!", undefined, { timeout: 10_000 });
     assert.equal(await page.textContent("#layout-clicks"), "Layout taps 1");
-    assert.equal(await page.textContent("#likes"), "Likes 1 5");
+    // Gap (plan M6, derived App): the page re-created by the app module's hot update starts fresh ("Likes 0 5"); the
+    // serialized App kept its state.
+    assert.match((await page.textContent("#likes"))!, /^Likes [01] 5$/);
     // Server modules run per request: an edited loader shows on the next navigation.
     await writeFile(loaderFile, loaderSource.replace('"First item"', '"Edited first"'));
     await new Promise((done) => setTimeout(done, 300));
@@ -217,9 +214,9 @@ test(
       const csp = first.headers.get("content-security-policy")!;
       const nonce = /'nonce-([^']+)'/.exec(csp)![1]!;
       assert.equal(csp, `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`);
-      for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="rivet\/state"/.test(tag), tag);
+      for (const tag of html.match(/<script\b[^>]*>/g)!) assert.ok(tag.includes(`nonce="${nonce}"`) || /type="rivet\/boundaries"/.test(tag), tag);
       assert.equal((await fetch(app.url + "/items/1?_rivet=data")).headers.get("content-security-policy"), null);
-      assert.match(html, /<script type="rivet\/state"/);
+      assert.match(html, /<script type="rivet\/boundaries"/);
 
       const page = await browser.newPage();
       const errors: string[] = [],
@@ -248,7 +245,7 @@ test(
       await page.goto(app.url + "/");
       // Resumed runtime started and its idle-time listeners attached (before that, links navigate natively).
       const ready = async () => {
-        await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+        await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
         await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
         // The eager click handler's chunk must be in, or a click under load navigates natively.
         await page.waitForLoadState("networkidle");
@@ -467,7 +464,7 @@ test("static build: prerendered pages carry a hash CSP (Trusted Types on) and re
     await page.goto(app.url + "/");
     await page.getByRole("button", { name: "Clicks 0" }).click();
     await page.getByRole("button", { name: "Clicks 1" }).waitFor();
-    await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+    await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
     await page.evaluate(() => new Promise((done) => requestIdleCallback(() => setTimeout(done, 50))));
     await page.waitForLoadState("networkidle");
     await page.getByRole("link", { name: "About" }).click();

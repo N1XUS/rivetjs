@@ -46,7 +46,7 @@ test(
 
       await page.goto(app.url + "/shop?q=a");
       await page.dispatchEvent("a[href^='/']", "pointerdown");
-      await page.waitForFunction(() => (document as unknown as { $r?: { r(): unknown } }).$r?.r());
+      await page.waitForFunction(() => typeof (document as unknown as { $rdp?: unknown }).$rdp === "function");
 
       await t.test("link to another search: data in place, page and layout kept", async () => {
         await page.click("#clicks");

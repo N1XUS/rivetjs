@@ -5,8 +5,7 @@ import { closeOnSignals, start } from "../../../../libs/router/adapters/node.ts"
 
 process.env.EDITORIAL_CONTENT ??= resolve(import.meta.dirname, "../../fixture/content/n1000");
 const serving = await start({
-  // `RIVET_RESUME_MODEL=derived` (DERIVED-C3): the derived build.
-  dist: resolve(import.meta.dirname, process.env.RIVET_RESUME_MODEL === "derived" ? "app/.artifacts/dist-derived" : "app/.artifacts/dist"),
+  dist: resolve(import.meta.dirname, "app/.artifacts/dist"),
   port: Number(process.env.PORT ?? 4413),
   host: "127.0.0.1",
   onError: (error) => console.error(error),

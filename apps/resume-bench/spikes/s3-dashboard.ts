@@ -76,7 +76,9 @@ async function run(): Promise<Sample> {
   await page.goto(frame, { waitUntil: "load" });
   step("loaded");
   await page.waitForTimeout(3000); // before input: idle preloads done
-  const stateBytes = await page.evaluate(() => [...document.querySelectorAll('script[type="rivet/state"]')].reduce((n, s) => n + s.textContent!.length, 0));
+  const stateBytes = await page.evaluate(() =>
+    [...document.querySelectorAll('script[type="rivet/boundaries"]')].reduce((n, s) => n + s.textContent!.length, 0),
+  );
   const jsEvaluatedBefore = await page.evaluate(() => performance.getEntriesByType("resource").filter((e) => /\.js(\?|$)/.test(e.name)).length);
   const before = js.length;
   const jsBytesBefore = js.reduce((n, j) => n + j.bytes, 0);

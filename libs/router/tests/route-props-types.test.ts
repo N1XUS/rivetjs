@@ -143,7 +143,9 @@ async function diagnostics(files: Record<string, string>): Promise<string[]> {
     skipLibCheck: true,
   };
   const host = ts.createCompilerHost(options);
-  const read = host.readFile.bind(host), exists = host.fileExists.bind(host), source = host.getSourceFile.bind(host);
+  const read = host.readFile.bind(host),
+    exists = host.fileExists.bind(host),
+    source = host.getSourceFile.bind(host);
   const virtual = (name: string) => (name.startsWith(dir) ? files[name.slice(dir.length)] : undefined);
   host.readFile = (name) => virtual(name) ?? read(name);
   host.fileExists = (name) => virtual(name) !== undefined || exists(name);
@@ -152,10 +154,18 @@ async function diagnostics(files: Record<string, string>): Promise<string[]> {
     const text = virtual(name);
     return text !== undefined ? ts.createSourceFile(name, text, version, true) : source(name, version, onError, create);
   };
-  const program = ts.createProgram(Object.keys(files).map((name) => dir + name), options, host);
+  const program = ts.createProgram(
+    Object.keys(files).map((name) => dir + name),
+    options,
+    host,
+  );
   return ts
     .getPreEmitDiagnostics(program)
-    .map((d) => (d.file ? d.file.fileName.replace(dir, "") + ":" + (d.file.getLineAndCharacterOfPosition(d.start ?? 0).line + 1) + ": " : "") + ts.flattenDiagnosticMessageText(d.messageText, "\n"));
+    .map(
+      (d) =>
+        (d.file ? d.file.fileName.replace(dir, "") + ":" + (d.file.getLineAndCharacterOfPosition(d.start ?? 0).line + 1) + ": " : "") +
+        ts.flattenDiagnosticMessageText(d.messageText, "\n"),
+    );
 }
 
 function routesTypes(): string {
@@ -182,5 +192,8 @@ test("PageProps/LayoutProps by id and typed actionResult: positives check, negat
 
 test("without routes.d.ts a route id is unknown (no silent any)", async () => {
   const errors = await diagnostics({ "src/routes/items/[id].tsx": modules["src/routes/items/[id].tsx"]! });
-  assert.ok(errors.some((e) => /not a route or layout id/.test(e) || /does not satisfy the constraint/.test(e)), errors.join("\n"));
+  assert.ok(
+    errors.some((e) => /not a route or layout id/.test(e) || /does not satisfy the constraint/.test(e)),
+    errors.join("\n"),
+  );
 });

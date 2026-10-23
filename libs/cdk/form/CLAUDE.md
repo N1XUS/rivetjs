@@ -23,7 +23,6 @@ Native `<form>` with RAC validation contexts (`validationBehavior`, server `vali
 - Rivet (state header): "realtime" / "display" validation are read functions called by bindings, not per-render values
 
 ## Rules / invariants
-- `FormContext` / `FormValidationContext` registered as resumable context ids `rv-form` / `rv-form-validation` (`@rivetjs/runtime/resume-format` `resumableContext`); `FormContext` value is plain data, `FormValidationContext` value must be plain data or an inline-arrow accessor (a module function value drops the provider for re-created regions)
 - `validationBehavior` default `"native"` (constraint validation blocks submit); `"aria"` -> `noValidate` on the form; field resolution: own prop, else Form's, else `"native"`
 - `validationErrors`: object, signal or accessor keyed by field `name`; shown until the field is edited; Provider value defaults to `{}`
 - every field renders `data-rv-error={validityError(state)}`; `formSubmit` applies it as custom validity, cancels + `stopImmediatePropagation` if invalid; user `onSubmit` only runs when not `defaultPrevented`

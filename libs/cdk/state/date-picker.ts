@@ -4,10 +4,9 @@
 // Rivet shape: plain signals + JSON (resumable); React Stately's methods are functions taking the
 // state first (`state.setDateValue(d)` → `setDateValue(state, d)`); DatePicker and DateRangePicker
 // share `setOpen` / `isInvalid` / `formatValue` (dispatch on `kind`). Dates are strings in the
-// signals. The overlay state is `createOverlayTriggerState`'s (the popover's open signal); the
-// whole state is region state, so a resumed page re-creating the picker's region keeps it.
+// signals. The overlay state is `createOverlayTriggerState`'s (the popover's open signal).
 // The fields (`createPickerFieldState`, ./date-field.ts) read and write these values.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import {
   DateFormatter,
   stringifyDateValue,
@@ -152,39 +151,37 @@ const pickerBase = (options: DatePickerBaseOptions): Omit<PickerStateBase, keyof
  * select a date and time value).
  */
 export function createDatePickerState<T extends DateValue = DateValue>(options: DatePickerStateOptions<T> = {}): DatePickerState {
-  return _regionState((): DatePickerState => {
-    const locale = resolveLocale(options.locale);
-    const value = dateValueSignal(options.value, options.defaultValue);
-    const initial = untrack(value);
-    const v = parseValue(initial) || parseInput(options.placeholderValue);
-    // props.granularity must actually exist in the value if one is provided.
-    const [granularity] = defaultProps(v, options.granularity, { granularity: "day", timeZone: null });
-    if (v && !(granularity in v)) throw new Error("Invalid granularity " + granularity + " for value " + v.toString());
-    const base = ownerBase(options, v, locale);
-    const state: DatePickerState = {
-      ...pickerBase(options),
-      ...base,
-      kind: "picker",
+  const locale = resolveLocale(options.locale);
+  const value = dateValueSignal(options.value, options.defaultValue);
+  const initial = untrack(value);
+  const v = parseValue(initial) || parseInput(options.placeholderValue);
+  // props.granularity must actually exist in the value if one is provided.
+  const [granularity] = defaultProps(v, options.granularity, { granularity: "day", timeZone: null });
+  if (v && !(granularity in v)) throw new Error("Invalid granularity " + granularity + " for value " + v.toString());
+  const base = ownerBase(options, v, locale);
+  const state: DatePickerState = {
+    ...pickerBase(options),
+    ...base,
+    kind: "picker",
+    value,
+    defaultValue: toDateValueString(options.defaultValue) ?? initial,
+    ...(options.onChange ? { onChange: options.onChange as (value: never) => void } : {}),
+    ...(options.isDateUnavailable ? { isDateUnavailable: options.isDateUnavailable } : {}),
+    ...(options.validate ? { validate: options.validate as ValidationFunction<never> } : {}),
+    selectedDate: signal<DateValueString | null>(null),
+    selectedTime: signal<DateValueString | null>(null),
+    validation: createFormValidationState({
+      isInvalid: options.isInvalid,
+      validationState: options.validationState,
+      validationBehavior: options.validationBehavior ?? "aria",
+      name: options.name,
+      validationErrors: options.validationErrors,
+      builtinValidation: base.builtin,
       value,
-      defaultValue: toDateValueString(options.defaultValue) ?? initial,
-      ...(options.onChange ? { onChange: options.onChange as (value: never) => void } : {}),
-      ...(options.isDateUnavailable ? { isDateUnavailable: options.isDateUnavailable } : {}),
-      ...(options.validate ? { validate: options.validate as ValidationFunction<never> } : {}),
-      selectedDate: signal<DateValueString | null>(null),
-      selectedTime: signal<DateValueString | null>(null),
-      validation: createFormValidationState({
-        isInvalid: options.isInvalid,
-        validationState: options.validationState,
-        validationBehavior: options.validationBehavior ?? "aria",
-        name: options.name,
-        validationErrors: options.validationErrors,
-        builtinValidation: base.builtin,
-        value,
-      }),
-    };
-    state.builtin.set(untrack(() => builtinValidation(state)));
-    return state;
-  });
+    }),
+  };
+  state.builtin.set(untrack(() => builtinValidation(state)));
+  return state;
 }
 
 /**
@@ -192,51 +189,49 @@ export function createDatePickerState<T extends DateValue = DateValue>(options: 
  * popover to enter or select a date and time range).
  */
 export function createDateRangePickerState<T extends DateValue = DateValue>(options: DateRangePickerStateOptions<T> = {}): DateRangePickerState {
-  return _regionState((): DateRangePickerState => {
-    const locale = resolveLocale(options.locale);
-    const toText = (range: RangeValue<T | DateValueString> | null | undefined) =>
-      range ? { start: toDateValueString(range.start)!, end: toDateValueString(range.end)! } : null;
-    const defaultText = toText(options.defaultValue);
-    const valueProp = options.value;
-    // A plain controlled value is the state's starting value (Rivet: the signal form is two-way).
-    const value =
-      typeof valueProp === "function" ? controllable(valueProp, null) : controllable(undefined, valueProp !== undefined ? toText(valueProp) : defaultText);
-    const initial = untrack(value);
-    const partial = signal<RangeValue<DateValueString | null>>(initial || { start: null, end: null });
-    const v = parseValue(initial?.start) || parseValue(initial?.end) || parseInput(options.placeholderValue);
-    const [granularity] = defaultProps(v, options.granularity, { granularity: "day", timeZone: null });
-    if (v && !(granularity in v)) throw new Error("Invalid granularity " + granularity + " for value " + v.toString());
-    const base = ownerBase(options, v, locale);
-    const names = [options.startName, options.endName].filter((n): n is string => n != null);
-    const state: DateRangePickerState = {
-      ...pickerBase(options),
-      ...base,
-      kind: "range",
+  const locale = resolveLocale(options.locale);
+  const toText = (range: RangeValue<T | DateValueString> | null | undefined) =>
+    range ? { start: toDateValueString(range.start)!, end: toDateValueString(range.end)! } : null;
+  const defaultText = toText(options.defaultValue);
+  const valueProp = options.value;
+  // A plain controlled value is the state's starting value (Rivet: the signal form is two-way).
+  const value =
+    typeof valueProp === "function" ? controllable(valueProp, null) : controllable(undefined, valueProp !== undefined ? toText(valueProp) : defaultText);
+  const initial = untrack(value);
+  const partial = signal<RangeValue<DateValueString | null>>(initial || { start: null, end: null });
+  const v = parseValue(initial?.start) || parseValue(initial?.end) || parseInput(options.placeholderValue);
+  const [granularity] = defaultProps(v, options.granularity, { granularity: "day", timeZone: null });
+  if (v && !(granularity in v)) throw new Error("Invalid granularity " + granularity + " for value " + v.toString());
+  const base = ownerBase(options, v, locale);
+  const names = [options.startName, options.endName].filter((n): n is string => n != null);
+  const state: DateRangePickerState = {
+    ...pickerBase(options),
+    ...base,
+    kind: "range",
+    value,
+    partial,
+    defaultValue: defaultText ?? initial,
+    ...(options.onChange ? { onChange: options.onChange as DateRangeOwner["onChange"] } : {}),
+    ...(options.isDateUnavailable ? { isDateUnavailable: options.isDateUnavailable } : {}),
+    ...(options.validate ? { validate: options.validate as ValidationFunction<never> } : {}),
+    allowsNonContiguousRanges: options.allowsNonContiguousRanges ?? false,
+    ...(options.startName != null ? { startName: options.startName } : {}),
+    ...(options.endName != null ? { endName: options.endName } : {}),
+    selectedDateRange: signal<RangeValue<DateValueString | null> | null>(null),
+    selectedTimeRange: signal<RangeValue<DateValueString | null> | null>(null),
+    partValidity: signal({ start: DEFAULT_VALIDATION_RESULT, end: DEFAULT_VALIDATION_RESULT }),
+    validation: createFormValidationState({
+      isInvalid: options.isInvalid,
+      validationState: options.validationState,
+      validationBehavior: options.validationBehavior ?? "aria",
+      name: names,
+      validationErrors: options.validationErrors,
+      builtinValidation: base.builtin,
       value,
-      partial,
-      defaultValue: defaultText ?? initial,
-      ...(options.onChange ? { onChange: options.onChange as DateRangeOwner["onChange"] } : {}),
-      ...(options.isDateUnavailable ? { isDateUnavailable: options.isDateUnavailable } : {}),
-      ...(options.validate ? { validate: options.validate as ValidationFunction<never> } : {}),
-      allowsNonContiguousRanges: options.allowsNonContiguousRanges ?? false,
-      ...(options.startName != null ? { startName: options.startName } : {}),
-      ...(options.endName != null ? { endName: options.endName } : {}),
-      selectedDateRange: signal<RangeValue<DateValueString | null> | null>(null),
-      selectedTimeRange: signal<RangeValue<DateValueString | null> | null>(null),
-      partValidity: signal({ start: DEFAULT_VALIDATION_RESULT, end: DEFAULT_VALIDATION_RESULT }),
-      validation: createFormValidationState({
-        isInvalid: options.isInvalid,
-        validationState: options.validationState,
-        validationBehavior: options.validationBehavior ?? "aria",
-        name: names,
-        validationErrors: options.validationErrors,
-        builtinValidation: base.builtin,
-        value,
-      }),
-    };
-    state.builtin.set(untrack(() => builtinValidation(state)));
-    return state;
-  });
+    }),
+  };
+  state.builtin.set(untrack(() => builtinValidation(state)));
+  return state;
 }
 
 // ---------------------------------------------------------------------------------------------

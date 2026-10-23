@@ -12,15 +12,6 @@ type Key = string | symbol;
 type Props = Record<Key, unknown>;
 type Source = Props | (() => Props | null | undefined) | null | undefined | false;
 
-// Resume hook (server-resume installs it; null elsewhere: one null check per forwarded getter): every getter a
-// helper defines that forwards to source props — `target[key]` reads the last of `sources` (source order) whose
-// `key` is not `undefined` — so a split / merged props object encodes as forwards to its sources, not as values.
-type Forward = (target: Props, key: Key, sources: readonly Props[]) => void;
-let forwarded: Forward | null = null;
-/** Resume ABI (server-resume): observe forwarded getters (`splitProps`, `mergeProps`, `_spreadProps`, `_restProps`). */
-export const _onForward = (hook: Forward): void => {
-  forwarded = hook;
-};
 /** Resume ABI (compiler, live props recipes): the symbol of a component call's props returns `_c(_propsOf, props)`. */
 export const _propsOf = <P>(props: P): P => props;
 
@@ -272,15 +263,7 @@ export function mergeProps<T extends unknown[]>(...sources: [...T]): MergeProps<
         }
       }
       if (!getter) target[key] = value;
-      else {
-        defineGetter.call(target, key, Slot.defined(key));
-        if (forwarded !== null)
-          forwarded(
-            target,
-            key,
-            (list as Props[]).filter((s) => s && Object.hasOwn(s, key)),
-          );
-      }
+      else defineGetter.call(target, key, Slot.defined(key));
     }
   }
   return target as MergeProps<T>;
@@ -326,7 +309,6 @@ export function splitProps<T extends Props, const K extends readonly (readonly (
 const forward = (to: Props, from: Props, key: Key, desc: PropertyDescriptor): void => {
   if (desc.get) {
     defineGetter.call(to, key, Slot.key(key));
-    if (forwarded !== null) forwarded(to, key, [from]);
   } else to[key as string] = desc.value;
 };
 
@@ -392,17 +374,6 @@ export function _spreadProps(...sources: Source[]): Props {
       else out[key] = desc.value;
     }
   }
-  // Resume: a key that ended as a getter forwards to the last source having it.
-  if (forwarded !== null)
-    for (const key of Object.keys(out))
-      if (Object.getOwnPropertyDescriptor(out, key)!.get)
-        for (let i = sources.length - 1; i >= 0; i--) {
-          const source = sources[i] as Props | null | undefined | false;
-          if (source && Object.hasOwn(source, key)) {
-            forwarded(out, key, [source]);
-            break;
-          }
-        }
   return out;
 }
 

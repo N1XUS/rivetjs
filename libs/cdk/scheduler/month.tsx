@@ -14,7 +14,7 @@
 //   paint `state.selection` (`aria-selected` / `data-selected`).
 // - Keyboard, clicks, focus hand-off (T8): delegated on the grid + the panel (`keys-month.ts` / `keys.ts`, leaf
 //   chunks); `data-rk` holds the navigation keys while a cold handler chunk loads.
-import { _regionState, computed, signal, useContext } from "@rivetjs/reactivity";
+import { computed, signal, useContext } from "@rivetjs/reactivity";
 import { For, ref as elementRef, type DOMValue } from "@rivetjs/runtime/dom";
 import { Popover } from "../popover/index.tsx";
 import { SchedulerContext } from "./context.tsx";
@@ -60,7 +60,7 @@ export function SchedulerMonth<T>(): DOMValue {
   const popoverId = ctx.popoverId;
   const onMoreAction = ctx.onMoreAction;
   const grid = elementRef<HTMLDivElement>();
-  const focusDay = _regionState(() => signal<number | null>(null));
+  const focusDay = signal<number | null>(null);
 
   const rows = computed((): SchedulerMonthRow<T>[] => schedulerMonthLayout(ctx.events() as never, ctx.days(), ctx.rowLength(), ctx.visibleLanes()));
   const selection = computed(() => schedulerSelectionBounds(state.selection(), ctx.days()));

@@ -1,6 +1,5 @@
 // Shared build of the Rivet lanes: Vite client build (resume mode; `react()` / `preact()` bridge for the islands lanes) + SSR
 // build of `server.tsx`. Output: <outDir>/client (static assets + .vite manifests), <outDir>/server/server.js.
-// `RIVET_RESUME_MODEL=derived`: the derived resume model (lane servers pick `renderDerived` from the manifest's `model`).
 // `preactFrom` (the same-version Preact lane): `preact` / `preact-render-to-string` resolve from that node_modules
 // folder in both builds (aliased, and bundled into the SSR output so Node never resolves the workspace's Preact).
 import { build as vite, type InlineConfig, type PluginOption } from "vite";
@@ -15,10 +14,7 @@ export async function buildRivetLane(dir: URL, outDir: string, bridge: "react" |
   const root = fileURLToPath(dir);
   await rm(outDir, { recursive: true, force: true });
   const plugins = (): PluginOption[] => [
-    rivet({
-      resume: { modules: ["page.tsx"], ...(process.env.RIVET_RESUME_MODEL === "derived" ? { model: "derived" as const } : {}) },
-      ...(bridge ? { bridges: [bridge === "react" ? react() : preact()] } : {}),
-    }),
+    rivet({ resume: { modules: ["page.tsx"] }, ...(bridge ? { bridges: [bridge === "react" ? react() : preact()] } : {}) }),
   ];
   const pinned = preactFrom
     ? {

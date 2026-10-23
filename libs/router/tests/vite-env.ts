@@ -23,3 +23,7 @@ export async function withNodeEnv<T>(env: "development" | "production", fn: () =
     restore();
   }
 }
+
+/** Server HTML without the derived resume boundary markup (`<!--bN-->` / `<!--/b-->` comments, `data-b="N"`): asserts on
+ *  the page's own markup stay independent of which components are boundaries. Text / region markers stay. */
+export const bare = (html: string): string => html.replace(/<!--\/?b\d*-->/g, "").replace(/ data-b="\d+"/g, "");

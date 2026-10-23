@@ -1,6 +1,6 @@
 // LAZY-VS-DERIVED: server CPU per request of several story-app builds (`stories.ts --build … --dist <d>`, e.g. default /
-// lazyRows / lazyRows + domData / `RIVET_RESUME_MODEL=derived`). One worker process per build (`--worker <dist>`: its own
-// server bundle and runtime instance, so process-global hooks never mix), `RIVET_LAZY_ROWS=on` like `client.ts --serve`.
+// domData). One worker process per build (`--worker <dist>`: its own server bundle and runtime instance, so
+// process-global hooks never mix).
 // Rounds interleave the builds (rotated order per round); per round and build: `--warm` renders, then `--samples` renders
 // timed in the worker (process.cpuUsage user + system, wall). Median over rounds; the 1-min load is recorded per round.
 //
@@ -18,7 +18,6 @@ function arg(name: string, def: string): string {
 }
 
 if (process.argv.includes("--worker")) {
-  process.env.RIVET_LAZY_ROWS = "on";
   const { loadBuild } = await import("../../../../libs/router/adapters/build.ts");
   const { handler } = await loadBuild(resolve(arg("worker", "")));
   const once = async (path: string) => {

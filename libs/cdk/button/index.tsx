@@ -31,7 +31,6 @@ import {
   contextProps,
   mergeRefValues,
   renderProps as resolveRenderProps,
-  resumableContext,
   type ContextValue,
   type RefValue,
   type RenderProps,
@@ -99,7 +98,7 @@ export interface ButtonContextValue extends ButtonProps {
 }
 
 /** RAC `ButtonContext`: props for the Buttons inside a component, optionally per `slot`. */
-export const ButtonContext = resumableContext(createContext<ContextValue<ButtonContextValue, HTMLButtonElement>>({}, { id: "rv-button" }));
+export const ButtonContext = createContext<ContextValue<ButtonContextValue, HTMLButtonElement>>({});
 
 /** Global DOM events Button handles itself (the user's run from its own handler) + the `style` render prop. */
 const OWNED = ["render", "onPointerDown", "onPointerUp", "onMouseDown", "onClick", "onPointerEnter", "onPointerLeave", "onPointerOver", "style"] as const;

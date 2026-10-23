@@ -33,7 +33,7 @@ service's type-aware checks for every Rivet file (.tsx / .jsx) of the given tsco
 a stale one a warning (RV7102): run \`rivet sync\` first.
 
   -p, --project <path>      tsconfig file or directory (repeatable; default tsconfig.json)
-  --no-types                skip type-aware checks (RV2101 serializability, RV3101 links)
+  --no-types                skip type-aware checks (RV3101 route links)
   --no-manifest             skip the .rivet/editor.json checks (RV7101 / RV7102)
   --format text|json        output format (default text)
   -h, --help                show this help
@@ -89,7 +89,7 @@ export function checkProjects(
   const visited = new Set<string>();
   let files = 0;
   const pending = configs.map((config) => ({ config, path: configPath(cwd, config) }));
-  for (let next; (next = pending.shift()); ) {
+  for (let next; (next = pending.shift());) {
     const { config, path } = next;
     if (visited.has(path)) continue;
     visited.add(path);

@@ -226,6 +226,10 @@ interface Driver {
   scrollView: ScrollView;
   loadingMore: boolean;
   lastItems: unknown;
+  /** The model it projects into (a later render of the same element with another model replaces the driver). */
+  model: object;
+  /** Stops the engine, the scroll view and the projection effect. */
+  stop(): void;
 }
 
 let drivers: WeakMap<Element, Driver> | undefined;
@@ -248,7 +252,10 @@ export function driverOf<T, O>(model: VirtualizerModel<T, O>, element?: Element 
   if (!el || !el.isConnected) return null;
   drivers ??= new WeakMap();
   const existing = drivers.get(el);
-  if (existing) return existing;
+  if (existing?.model === model) return existing;
+  // Another render of this element (a resumed page's discarded probe run, a re-created component) made the driver with
+  // its own model: projecting into that one left the rendered rows on the server window (M6-CUT, derived adopt runs).
+  existing?.stop();
   // Detached from the caller's owner: `createRoot` attaches to the current owner, and the first caller may be the
   // rows' `For` binding (`visibleViews` on a resumed page's first projection), which disposes its children on its
   // next run — the cached driver then kept dead effects and an items change no longer reached the engine
@@ -286,7 +293,21 @@ function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Dri
     layoutOptions: model.layoutOptions,
     initialVisibleRect: new Rect(getScrollLeft(el, dir()), el.scrollTop, el.clientWidth, el.clientHeight),
   });
-  const driver: Driver = { state, scrollView, loadingMore: false, lastItems: undefined };
+  let stopProjection = (): void => {};
+  const driver: Driver = {
+    state,
+    scrollView,
+    loadingMore: false,
+    lastItems: undefined,
+    model,
+    stop() {
+      stopProjection();
+      observer?.disconnect();
+      state!.dispose();
+      scrollView.dispose();
+      if (drivers!.get(el) === driver) drivers!.delete(el);
+    },
+  };
   drivers!.set(el, driver);
   scrollView.updateSize();
 
@@ -319,7 +340,7 @@ function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Dri
       }
     });
   }
-  computedEffect(() => {
+  stopProjection = computedEffect(() => {
     const views = state!.visibleViews();
     const contentSize = state!.contentSize();
     untrack(() => {
@@ -349,8 +370,8 @@ function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Dri
 }
 
 // The driver's projection effect: its own root (created under the detached driver, so it outlives region re-creation).
-function computedEffect(fn: () => void): void {
-  createRoot(() => effect(fn));
+function computedEffect(fn: () => void): () => void {
+  return createRoot(() => effect(fn)).dispose;
 }
 
 /** Rows of the model: the server window, or (browser) the driver's projection; reads `items` for reactivity. */
@@ -361,15 +382,25 @@ export function visibleViews<T, O>(model: VirtualizerModel<T, O>): VirtualView<T
     model.focus?.();
   } else if (typeof model.items === "function") (model.items as () => readonly T[])();
   if (typeof model.isLoading === "function") model.isLoading();
-  if (typeof document !== "undefined") untrack(() => driverOf(model) ?? (model.source && startWhenMounted(model)));
+  // The engine starts after the render pass, never inside it: on a resumed page this render is an adopt run, whose
+  // `For` must read the server window to claim the server rows (a driver projecting the current scroll offset at once
+  // gave it other keys; its probe run's driver then kept the rows on the server window).
+  if (typeof document !== "undefined") untrack(() => started(model) ?? startWhenMounted(model));
   return model.views();
 }
 
 let mounting: WeakSet<object> | undefined;
 
+/** The running driver of `model` (none started: null). */
+function started<T, O>(model: VirtualizerModel<T, O>): Driver | null {
+  const el = scrollerOf(model);
+  const existing = el && drivers?.get(el);
+  return existing && existing.model === model ? existing : null;
+}
+
 /**
- * Collection mode, client render: the host element exists but is not in the document during its first pass. Start
- * the engine once it is (RAC measures the scroll view on mount); the server window stays until then.
+ * Start the engine after the current render pass (RAC measures the scroll view on mount): a resumed page's adopt run, or
+ * a client render whose host element is not in the document during its first pass. The server window stays until then.
  */
 function startWhenMounted<T, O>(model: VirtualizerModel<T, O>): null {
   if ((mounting ??= new WeakSet()).has(model) || !scrollerOf(model)) return null;

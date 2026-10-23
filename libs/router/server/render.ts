@@ -39,10 +39,9 @@ export interface RenderPageOptions {
   /** Out-of-order streaming for pending `Async` boundaries; `deadline` ms hands the rest to the browser. */
   stream?: { deadline?: number };
   /**
-   * Preload planner (`renderResumable` `preload`): `background` byte budget of idle-time visible prefetch; `lean`: nothing
-   * before an interaction; `ahead`: bridge D-lean pages keep the runtime fetch-ahead.
+   * Preload planner (`renderResumable` `preload`): `lean`: nothing before an interaction (no runtime fetch-ahead).
    */
-  preload?: { background?: number; lean?: boolean; ahead?: boolean };
+  preload?: { lean?: boolean };
   signal?: AbortSignal;
   nonce?: string;
   /**
@@ -339,9 +338,9 @@ export class BodyWriter extends SlabWriter {
   }
 }
 
-/** Root state script: the start of the recorder's tail (state, loader), the last thing it writes. */
-const ROOT_STATE = '<script type="rivet/state" data-region="0"';
-/** A writer that drops everything from the root state script on. */
+/** Root boundaries script: the start of the recorder's tail (boundaries, loader), the last thing it writes. */
+const ROOT_STATE = '<script type="rivet/boundaries"';
+/** A writer that drops everything from the root boundaries script on. */
 const stateless = (writer: { write(chunk: string): void | Promise<void> }) => {
   let cut = false;
   return {

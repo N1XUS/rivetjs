@@ -126,11 +126,17 @@ test("DevTools panel: tree, named live signals, value tree, editing, update high
     await row("ItemPage").waitFor();
     const all = await panel.locator(".row").count();
     await panel.locator(".tree-filter").fill("itempage");
-    await panel.locator(".tree-rows .branch[data-rows]").and(panel.locator(":not([data-rows='" + all + "'])")).waitFor();
+    await panel
+      .locator(".tree-rows .branch[data-rows]")
+      .and(panel.locator(":not([data-rows='" + all + "'])"))
+      .waitFor();
     assert.ok((await panel.locator(".row").count()) < all);
     await row("App").waitFor();
     await row("ItemPage").waitFor();
-    assert.equal(await row("Layout").count(), 0);
+    // The page renders inside the layout (its Router level is the layout's children): kept as an ancestor; the layout's
+    // other child is not.
+    assert.equal(await row("Layout").count(), 1);
+    assert.equal(await row("Note").count(), 0);
     await panel.locator(".tree-filter").fill("");
     await panel.locator(".tree-rows .branch[data-rows='" + all + "']").waitFor();
 

@@ -20,7 +20,6 @@ import { FieldErrorContext } from "@rivetjs/cdk/form";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider, Show } from "@rivetjs/runtime/dom";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { InputOTPVariants } from "../../../styles/src/components/input-otp/index.ts";
 import { inputOTPVariants } from "../../../styles/src/components/input-otp/index.ts";
@@ -42,7 +41,7 @@ interface InputOTPContext {
   isInvalid?: boolean;
 }
 
-const InputOTPContext = resumableContext(createContext<InputOTPContext>({ isDisabled: false, isInvalid: false }, { id: "rv-ui-input-otp" }));
+const InputOTPContext = createContext<InputOTPContext>({ isDisabled: false, isInvalid: false });
 
 type InputOTPSlots = ReturnType<typeof inputOTPVariants>;
 

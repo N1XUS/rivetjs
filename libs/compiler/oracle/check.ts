@@ -15,8 +15,7 @@ interface Case {
 
 const tag = (_key: string, value: unknown) =>
   value instanceof Map ? { $map: [...value] } : value instanceof Set ? { $set: [...value] } : value === undefined ? { $undefined: 1 } : value;
-const untag = (_key: string, value: unknown) =>
-  value && typeof value === "object" && "$undefined" in value ? undefined : value;
+const untag = (_key: string, value: unknown) => (value && typeof value === "object" && "$undefined" in value ? undefined : value);
 
 const normalize = (code: unknown, loader: Loader): string => {
   if (typeof code !== "string" || code === "") return String(code);
@@ -27,21 +26,16 @@ const normalize = (code: unknown, loader: Loader): string => {
   }
 };
 
-/** Normalize emitted code strings: `code` (JS) and symbol `source` (TSX). */
+/** Normalize the emitted `code` (JS). */
 function comparable(result: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = { ...result, code: normalize(result.code, "js") };
-  if (Array.isArray(result.symbols))
-    out.symbols = result.symbols.map((symbol: Record<string, unknown>) => ({ ...symbol, source: normalize(symbol.source, "tsx") }));
-  return out;
+  return { ...result, code: normalize(result.code, "js") };
 }
 
 function diff(expected: unknown, actual: unknown, path = "result"): string[] {
   if (isDeepStrictEqual(expected, actual)) return [];
   if (expected && actual && typeof expected === "object" && typeof actual === "object" && !Array.isArray(expected) === !Array.isArray(actual)) {
     const keys = new Set([...Object.keys(expected), ...Object.keys(actual)]);
-    return [...keys].flatMap((key) =>
-      diff((expected as Record<string, unknown>)[key], (actual as Record<string, unknown>)[key], `${path}.${key}`),
-    );
+    return [...keys].flatMap((key) => diff((expected as Record<string, unknown>)[key], (actual as Record<string, unknown>)[key], `${path}.${key}`));
   }
   return [`  ${path}\n    expected: ${JSON.stringify(expected)}\n    actual:   ${JSON.stringify(actual)}`];
 }

@@ -1,5 +1,5 @@
 // DOM data on derived (DERIVED-C5, 2026-10-22), server half: only servers of builds with
-// `rivet({ resume: { model: "derived", domData: true } })` reach this module — the compiler plugin serves
+// `rivet({ resume: { domData: true } })` reach this module — the compiler plugin serves
 // `dom-data-derived.ts` with `_derivedDom` from here (default: null), so other derived servers carry none of it.
 import type { DerivedDom } from "./resume-format.ts";
 import { rowTexts } from "./server-resume-paths.ts";

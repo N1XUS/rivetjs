@@ -3,7 +3,7 @@ title: Testing
 description: Test components with Vitest and happy-dom, check the server HTML, and test resumed pages end to end with Playwright on a production build.
 template: guide
 status: experimental
-related: [guides/tooling/vite, guides/tooling/testing-resumability, guides/state/batching, gotchas/dev-and-production-differ]
+related: [guides/tooling/vite, learn/resuming, guides/state/batching, gotchas/dev-and-production-differ]
 ---
 
 Rivet code is tested at three levels: components rendered in a DOM (fast, many tests), the HTML the server writes, and whole pages that resume in a real browser. After reading this page you have a Vitest setup for the first two and know what to watch for in end-to-end tests.
@@ -19,7 +19,6 @@ Rivet code is tested at three levels: components rendered in a DOM (fast, many t
 | `@rivetjs/testing/vite` | `rivetTest()`: a Vite plugin that compiles `.tsx` and `.jsx` through the Rivet compiler for tests. DOM output by default; server output for `*.server.test.tsx` files and the `.tsx` modules they import. Also registers auto-cleanup and a snapshot serializer. |
 | `@rivetjs/runtime/testing` | `render(() => <App />)` returns `container`, `find(selector)`, `html()` (markup without Rivet's marker comments) and `unmount()`. `fire(element, type, init?)` dispatches a real event with the browser's defaults for that type. `flush()` lets effects and async work settle. `cleanup()` unmounts everything. |
 | `@rivetjs/runtime/testing/server` | `renderToString(() => <App />)`: the server HTML, as a promise. |
-| `@rivetjs/runtime/testing/resume` | `serializeAndRevive(() => value)`: a value written like a page render and read back like the browser, in Node. See [testing resumability](testing-resumability.md). |
 | `@rivetjs/testing/jest-dom` | `@testing-library/jest-dom` matchers on Vitest's `expect` (`toHaveAttribute`, `toHaveTextContent`, …). Import it once as a setup file. |
 | `@rivetjs/testing/user` | Testers for accessible widgets (listbox, menu, select, tabs, …), ported from React Aria. Used mostly with [@rivetjs/cdk](site:cdk/start/testing/). |
 
@@ -50,6 +49,7 @@ export default defineConfig({
 - `rivetTest()` runs `cleanup()` after every test: each `render` is unmounted and the id counter starts again, so ids do not depend on test order. `rivetTest({ cleanup: false })` turns it off.
 - Snapshots of elements leave out Rivet's marker comments. `rivetTest({ serializer: false })` turns that off.
 - `rivetTest({ target: "server" })` compiles every module for the server.
+- Runtime modules that Vite loads (workspace packages, browser mode) run with the same build switches a resumable app build ships: the adopt run on, DOM-backed data off. `rivetTest({ resume: { domData: true } })` matches an app that sets `resume.domData`. A runtime that Vitest hands to Node unchanged, and the `@rivetjs/runtime/testing/register` hook under `node --test`, keep every switch off.
 - For layout, focus and pointer behaviour, run the DOM project in Vitest browser mode with Playwright instead of happy-dom. The [cdk testing page](site:cdk/start/testing/) shows that config.
 
 ## Test a component
@@ -144,11 +144,11 @@ On the first real mouse click of a page, Rivet applies the DOM update one task a
 Useful checks in such tests:
 
 - No component code before the first interaction: count script requests with `page.on("request")` until the first click.
-- Errors: collect `page.on("pageerror")` and console errors and expect none. `function is not serializable` and similar fail the server render, so check the response status too.
+- Errors: collect `page.on("pageerror")` and console errors and expect none. Check the response status of the server render too.
 
 ## Common mistakes
 
-- **Testing resume with `render`.** `render` builds the page in the browser way. Resume-only problems (captures that are not serializable, handlers that do nothing) show only in a server render plus a real page, or in [`serializeAndRevive`](testing-resumability.md) for the captured values.
+- **Testing resume with `render`.** `render` builds the page in the browser way. Resume-only problems (a render that differs between server and browser, handlers that do nothing) show only in a server render plus a real page.
 - **Reading the DOM before `flush()`.** Effects, `Async` results and promise callbacks land later. `await flush()` first.
 - **Mixing server and DOM tests in one file.** The file name picks the compile target. Keep `*.server.test.tsx` separate.
 

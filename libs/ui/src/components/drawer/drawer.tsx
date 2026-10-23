@@ -33,7 +33,6 @@ import type { OverlayTriggerState } from "@rivetjs/cdk/state/overlays";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 
 import type { DrawerVariants } from "../../../styles/src/components/drawer/index.ts";
@@ -64,7 +63,7 @@ type DrawerContext = {
   isDismissable?: boolean;
 };
 
-const DrawerContext = resumableContext(createContext<DrawerContext>({}, { id: "rv-ui-drawer" }));
+const DrawerContext = createContext<DrawerContext>({});
 
 type DrawerSlots = ReturnType<typeof drawerVariants>;
 const SLOTS = new Map<string, DrawerSlots>();

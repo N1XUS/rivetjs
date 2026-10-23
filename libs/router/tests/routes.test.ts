@@ -8,14 +8,7 @@ import { routeTable, scanRoutes } from "../build/routes.ts";
 const patterns = (files: string[]) => routeTable(files).routes.map((r) => r.pattern);
 
 test("file names map to router patterns", () => {
-  const table = routeTable([
-    "index.tsx",
-    "about.tsx",
-    "blog/index.tsx",
-    "blog/[slug].tsx",
-    "docs/[...path].tsx",
-    "(marketing)/pricing.tsx",
-  ]);
+  const table = routeTable(["index.tsx", "about.tsx", "blog/index.tsx", "blog/[slug].tsx", "docs/[...path].tsx", "(marketing)/pricing.tsx"]);
   const byId = Object.fromEntries(table.routes.map((r) => [r.id, r.pattern]));
   assert.deepEqual(byId, {
     index: "/",
@@ -29,14 +22,7 @@ test("file names map to router patterns", () => {
 });
 
 test("static segments win over params, params over splats, deterministic order", () => {
-  assert.deepEqual(patterns(["[...all].tsx", "[id].tsx", "new.tsx", "index.tsx", "a/[b].tsx", "a/b.tsx"]), [
-    "/a/b",
-    "/a/:b",
-    "/new",
-    "/:id",
-    "/",
-    "/*all",
-  ]);
+  assert.deepEqual(patterns(["[...all].tsx", "[id].tsx", "new.tsx", "index.tsx", "a/[b].tsx", "a/b.tsx"]), ["/a/b", "/a/:b", "/new", "/:id", "/", "/*all"]);
   assert.deepEqual(patterns(["docs/[...p].tsx", "docs/index.tsx"]), ["/docs", "/docs/*p"]);
 });
 
@@ -76,9 +62,7 @@ test("layouts nest outer to inner; nearest 404/error win; server siblings attach
 });
 
 test("ignored files and folders", () => {
-  assert.deepEqual(patterns(["a.test.tsx", "b.spec.tsx", "types.d.ts", "_private/x.tsx", "_helper.tsx", ".hidden/x.tsx", "util.ts", "ok.tsx"]), [
-    "/ok",
-  ]);
+  assert.deepEqual(patterns(["a.test.tsx", "b.spec.tsx", "types.d.ts", "_private/x.tsx", "_helper.tsx", ".hidden/x.tsx", "util.ts", "ok.tsx"]), ["/ok"]);
 });
 
 test("conflicts and invalid names are errors naming the files", () => {

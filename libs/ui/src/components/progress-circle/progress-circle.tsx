@@ -17,7 +17,6 @@ import { ProgressBar as ProgressBarPrimitive } from "@rivetjs/cdk/progress-bar";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { ProgressCircleVariants } from "../../../styles/src/components/progress-circle/index.ts";
@@ -45,7 +44,7 @@ interface ProgressCircleContext {
   state?: ProgressBarRenderProps;
 }
 
-const ProgressCircleContext = resumableContext(createContext<ProgressCircleContext>({}, { id: "rv-ui-progress-circle" }));
+const ProgressCircleContext = createContext<ProgressCircleContext>({});
 
 type ProgressCircleSlots = ReturnType<typeof progressCircleVariants>;
 

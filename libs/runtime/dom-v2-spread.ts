@@ -7,7 +7,6 @@ import { _adoption, _attrWrite, _cls, _insert, _on } from "./dom-v2.ts";
 import { bindRef } from "./dom.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { _applyStyle } from "./style.ts";
-import { _setTakeover, type Takeover } from "./dom-v2-takeover.ts";
 
 const HTML = "http://www.w3.org/1999/xhtml";
 // Bubbling events delegated through `_on` (the compiler's list, `compile/dom_v2.rs`).
@@ -27,44 +26,6 @@ const isOn = (name: string): boolean => {
 const CHECKED: Record<string, true> = Object.create(null);
 let checkedCount = 0;
 const NONE: ReadonlySet<string> = new Set();
-// A server-rendered attribute name (resume baseline): every present key applies on the first run.
-const RENDERED = {};
-// Resumed `flags & 1` spread before its first run: the content is the server's.
-const SERVER = {},
-  SLOT = Symbol.for("rivet.slot");
-// Resume hook (pay-per-use: installed by a resumed `_spread` into `dom-v2-takeover.ts`, so pages without resumed
-// spreads ship none of it): event types an activated spread took over per element (its own handler replaces the
-// element's resumed entry), and the deferral of an ancestor's resumed bubbling handler behind such a descendant.
-let taken: WeakMap<Element, Set<string>> | undefined;
-const TAKEOVER: Takeover = {
-  add(el, type) {
-    let types = (taken ??= new WeakMap()).get(el);
-    if (!types) taken.set(el, (types = new Set()));
-    types.add(type);
-  },
-  defer(event, ancestor, type, call) {
-    let taker: Element | undefined, below: Element | undefined;
-    if (taken)
-      for (const node of event.composedPath() as Element[]) {
-        if (node === ancestor) {
-          taker = below;
-          break;
-        }
-        if (taken.get(node)?.has(type)) below = node;
-      }
-    if (!taker) return false;
-    // A delegated handler runs in the document's bubble listener (registered before this one); a direct one on the element.
-    const at: EventTarget = DELEGATED.test(type) ? taker.ownerDocument : taker;
-    const later = (e: Event) => {
-      if (e !== event) return;
-      at.removeEventListener(type, later);
-      if (!event.cancelBubble) call();
-    };
-    at.addEventListener(type, later);
-    setTimeout(() => at.removeEventListener(type, later));
-    return true;
-  },
-};
 interface SpreadState {
   /** Last applied value per normalized name (attribute value, handler, or class). */
   prev: Record<string, unknown>;
@@ -87,16 +48,9 @@ interface SpreadState {
  * `for`, other names go through the full attribute writer (name validation). `children` is not an
  * attribute and `ref` is bound once (first run, like `ref={…}`); with `flags & 1` (no JSX children) `children` is the element's content. Accessor values
  * are read inside the one spread effect (whole-object re-diff on change). `flags & 2`: `value` is the spread argument itself (no copy), read inside
- * the effect so live getters stay live. `rendered` (resume: a spread binding
- * over server markup, `"..." + names`): the attribute names the server rendered from the spread, removed unless
- * present (a ` =class` token carries the rendered string class: an equal first-run class is not rewritten); HTML names compare lowercased (`tabIndex` is the server's `tabindex`: never removed then re-added),
- * and the first run keeps live form state (`value` / `checked` / `selected` the user changed before the binding
- * activated) while the new value still is the server's (`default*` property).
+ * the effect so live getters stay live. The 4th argument is unused (the retired serialized model's server-rendered
+ * names; kept so `exclude` stays the 5th, compiler ABI).
  */
-// Still the server-rendered state: `next` equals the control's `default*` property (what the server wrote).
-const keepLive = (el: Element, name: string, v: unknown): boolean =>
-  (name === "value" ? (v == null ? "" : String(v)) : Boolean(v)) ===
-  (el as unknown as Record<string, unknown>)["default" + name[0]!.toUpperCase() + name.slice(1)];
 // Listener keys (`onKeyDownCapture` → type, capture, delegated, store key) parsed once per name, module-wide and
 // bounded like `CHECKED`: a regex exec + lowercase + delegation test per key per element was the top self-time
 // line of cdk form-control mounts (HOTPATH 2026-10-09). `key` = the `_on` expando (`$$type`, delegated) or the
@@ -126,7 +80,7 @@ export function _spread(
   el: Element,
   value: object | (() => object | null | undefined) | null | undefined,
   flags = 0,
-  rendered?: string | null,
+  _rendered?: null,
   exclude?: string,
 ): void {
   let skip: ReadonlySet<string> | undefined;
@@ -138,30 +92,11 @@ export function _spread(
     // `own` / `direct` / `handlers` / `names` are created on first use (most spreads bind no direct listener and never
     // pass the validated-name cap): 4 objects less per spread element.
     state: SpreadState = { prev: {}, own: undefined, direct: undefined, handlers: undefined, names: undefined, style: NONE };
-  let resumed = rendered != null,
-    // Resumed: the server content stays until `children` changes, unless the server's spread object read
-    // signals itself (`#c`, `_rSpread`): then its `children` may already differ from what the server rendered.
-    keep = resumed,
-    // Resumed, function `children` rendered as its own site (`#r`): never written here (it binds / re-creates itself).
-    site = false;
-  if (resumed) {
-    _setTakeover(TAKEOVER);
-    for (const name of rendered!.slice(3).split(" "))
-      if (name === "#c") keep = false;
-      else if (name === "#r") site = true;
-      // ` =class`: the string class the server rendered (spaces as newlines): an equal first-run class is not rewritten, so
-      // classes client code added since (DOM plugins: embla ClassNames `is-snapped`) stay.
-      else if (name[0] === "=") state.prev.class = name.slice(1).replace(/\n/g, " ");
-      else if (name) state.prev[name] = RENDERED;
-  }
-  const html = el.namespaceURI === HTML,
-    lower = resumed && html;
+  const html = el.namespaceURI === HTML;
   // `flags & 1`: the content slot, written only when the `children` value changes (identity): an
-  // attribute-only re-run keeps the child nodes (focus, input values, nested state). `held` = the
-  // children the content currently shows while no slot exists yet (`SERVER`: the resumed server content).
-  let kids: Signal<unknown> | null = null,
-    held: unknown = SERVER;
-  if (flags & 1 && !keep) {
+  // attribute-only re-run keeps the child nodes (focus, input values, nested state).
+  let kids: Signal<unknown> | null = null;
+  if (flags & 1) {
     // An adopt run (LAZY-ROWS T5 builds) keeps the server's content: the slot below adopts it.
     if (!LAZY_ROWS || !_adoption.live) el.textContent = "";
     kids = signal<unknown>(undefined);
@@ -225,21 +160,15 @@ export function _spread(
       }
       let v = next[key];
       let name = key === "className" ? "class" : key === "htmlFor" ? "for" : key;
-      if (lower && !isOn(name)) name = name.toLowerCase();
       if (typeof v === "function" && !isOn(name)) {
         v = (v as () => unknown)();
         if (name === "checked" || name === "value") live = live === null ? name : live + " " + name;
       }
       present[name] = v;
     }
-    if (resumed && lower)
-      // The server rendered `defaultValue` / `defaultChecked` as `value` / `checked`: not a removed key.
-      for (const key of ["value", "checked"]) if ("default" + key in present && !(key in present)) delete state.prev[key];
     for (const name in state.prev) if (!(name in present)) apply(name, undefined);
     for (const name in present) {
       const v = present[name];
-      // Resumed, first run: live form state the server value still matches stays (what the user typed or toggled).
-      if (resumed && (name === "value" || name === "checked" || name === "selected") && name in el && keepLive(el, name, v)) continue;
       if (!(name in state.prev)) {
         // A new null / undefined attribute key the element does not carry (a fresh clone: cdk parts spread 15–20
         // unset aria / data keys) writes nothing: removing an absent attribute is a no-op. The name is still validated
@@ -256,27 +185,13 @@ export function _spread(
       }
     }
     state.prev = present;
-    resumed = false;
     if (kids) kids.set(next.children);
-    else if (flags & 1 && !site) {
-      const children = next.children;
-      // Slot children (compiled JSX children, branded) rendered with their own resumable bindings; a plain
-      // accessor or an array (which may hold one) did not: it re-renders.
-      if (held === SERVER && !(Array.isArray(children) || (typeof children === "function" && !(SLOT in children)))) held = children;
-      else if (!Object.is(held, children)) {
-        // The resumed content's first change: replace the server nodes with a slot under the spread's owner
-        // (not this run's effect, which would dispose it on its next run).
-        el.textContent = "";
-        kids = signal<unknown>(children);
-        runWithOwner(owner, () => _insert(el, kids, null));
-      }
-    }
   };
   if (typeof value === "function") _bindingEffect(() => run(((value as () => object | null | undefined)() ?? {}) as Record<string, unknown>));
   // `flags & 2`: an uncopied object (compiler: `<el {...rest}>`, a lone identifier spread) that may hold live getters
   // (props helpers' / compiled props objects): read inside the effect, which reactivity releases at once when the run
-  // read no signal (a plain object retains no effect). No brand check: importing `props.ts` here would put it in the
-  // graph of every chunk that spreads (and, while `dom-resume` imported `_takeover` from here, the resume runtime's).
+  // read no signal (a plain object retains no effect). No brand check: importing `props.ts` here would put it in every
+  // spread user's chunk graph.
   else if (flags & 2) _bindingEffect(() => run((value ?? {}) as Record<string, unknown>));
   else {
     const object = (value ?? {}) as Record<string, unknown>;
@@ -285,7 +200,7 @@ export function _spread(
     if (accessor) _bindingEffect(() => run(object));
     else run(object);
   }
-  if (kids && !keep) _insert(el, kids, null);
+  if (kids) _insert(el, kids, null);
 }
 // `_attrs` name lists (compiler literals) → their arrays, split once per distinct string.
 let shapes: Map<string, readonly string[]> | undefined;

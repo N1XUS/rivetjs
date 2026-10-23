@@ -28,7 +28,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { Calendar } from "lucide";
 
 import type { DateRangePickerVariants } from "../../../styles/src/components/date-range-picker/index.ts";
@@ -53,7 +52,7 @@ type DateRangePickerContext = {
   inRangePicker?: boolean;
 };
 
-const DateRangePickerContext = resumableContext(createContext<DateRangePickerContext>({}, { id: "rv-ui-date-range-picker" }));
+const DateRangePickerContext = createContext<DateRangePickerContext>({});
 
 type DateRangePickerSlots = ReturnType<typeof dateRangePickerVariants>;
 let SLOTS: DateRangePickerSlots | undefined;

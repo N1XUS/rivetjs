@@ -15,13 +15,15 @@ export interface Stories {
 }
 
 /**
- * Build (once per run via `global-setup.ts`, else once per process), start the server and a browser. `preload`: the server's preload planner option
- * (e.g. `{ background: 0 }` for viewport-only `visible` timing; default: the router's 1 MiB background budget).
+ * Build (once per run via `global-setup.ts`, else once per process), start the server and a browser. `preload`: the server's preload option;
+ * default `{ lean: true }` (no fetch-ahead `data-fo`): a fetched-ahead chunk is requested after `load` and evaluated later from the
+ * module map without a request, so the request-based "no library code before interaction" / "chunk loads on press" checks
+ * need lean pages (M6-CUT: derived is the only model; fetch-ahead has its own tests in `libs/runtime`).
  */
 export async function stories(options: { preload?: NonNullable<Parameters<typeof start>[0]>["preload"] } = {}): Promise<Stories> {
   // `cdk-components` builds once in `global-setup.ts`; other callers (fuzz, own `STORIES_DIST`) build here.
   await (built ??= inject("cdkStoriesDist") === dist ? Promise.resolve() : buildApp());
-  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, ...(options.preload ? { preload: options.preload } : {}) });
+  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {}, preload: options.preload ?? { lean: true } });
   const browser = await chromium.launch({ headless: true });
   return {
     origin: app.url,
@@ -90,10 +92,9 @@ const path = (url: string) => new URL(url, "http://x").pathname;
 const resumeManifest = (): ResumeManifest => (manifest ??= JSON.parse(readFileSync(dist + "/client/.vite/rivet-resume.json", "utf8")) as ResumeManifest);
 
 /**
- * Paths of the chunks holding the resume symbols whose id (`<module>#<Component>$<hash>`, cdk modules as
- * `@rivetjs/cdk/<path>`) matches, read from the build's `.vite/rivet-resume.json`. Chunk file names depend on
- * `resume.chunks` (route chunks by default: `resume-<route file>-…`, placed shared code in `rivet-merge-…`), the
- * symbol → chunk map does not.
+ * Paths of the chunks holding the boundaries whose name (`<module>#<Component>`, cdk modules as `@rivetjs/cdk/<path>`;
+ * match the end with `$`) matches, read from the build's `.vite/rivet-resume.json` `symbols` (one chunk per module
+ * holding boundaries). Chunk file names are not matched.
  */
 export const chunksOf = (match: RegExp): Set<string> =>
   new Set(Object.entries(resumeManifest().symbols).flatMap(([id, url]) => (match.test(id) ? [path(url)] : [])));
@@ -132,31 +133,23 @@ export const codeOf = (match: RegExp): Set<string> => {
  * every component of the page, so a hint for one component brings the others' code along — a "no X code before
  * interaction" check compares against these, not against an empty list. Includes the hinted chunks' static import
  * closure (manifest `deps`: a preloaded route chunk pulls its shared `rivet-merge-…` imports). A `.deps.js` list counts
- * as its chunk.
+ * as its chunk. A `data-boot` page adds the runtime and the chunks of its client-trigger boundaries (derived boot).
  */
 export const hinted = async (page: Page): Promise<Set<string>> => {
   const urls = await page.evaluate(() => {
     const plan = document.querySelector<HTMLElement>("script[data-preload]")?.dataset.preload;
     const planned = plan ? (JSON.parse(plan) as unknown[]).slice(1).map((entry) => (entry as [string])[0]) : [];
     const ahead = (document.querySelector<HTMLElement>("script[data-fo]")?.dataset.fo ?? "").split(" ").filter(Boolean);
-    return [...planned, ...ahead];
-  });
-  return closureOf(urls.map((url) => path(url).replace(/\.deps\.js$/, ".js")));
-};
-
-/**
- * Chunk paths the page's client effects need (state `fx` entries, chunk indexes into `c`; the loader runs them at load /
- * idle / when visible, fetching these chunks without any interaction) plus their static import closure. VIRT-LEAK
- * 2026-10-21: a lazy-rows render of `/table` fetches the same 15 chunks (504 KB) as a recorded one: the effect runner asks for resume-table + column-resize +
- * components (their imports follow),
- * but has no row handler entries, so the preload plan (`hinted`) no longer lists the rows' chunk that happened to cover them.
- */
-export const effectChunks = async (page: Page): Promise<Set<string>> => {
-  const urls = await page.evaluate(() => {
-    const text = document.querySelector<HTMLScriptElement>('script[type="rivet/state"]')?.textContent;
-    if (!text) return [];
-    const state = JSON.parse(text) as { c?: string[]; fx?: [unknown, unknown, unknown, number[]][] };
-    return (state.fx ?? []).flatMap((entry) => entry[3].map((i) => state.c![i]!));
+    // A `data-boot` page starts the derived runtime at load: the boundaries with a client trigger (`clientEffect` /
+    // `clientOnly` / an island: flags LOAD | IDLE | VISIBLE = 224) load their module chunks without any interaction.
+    const tail = document.querySelector<HTMLElement>('script[type="rivet/boundaries"]');
+    const booted: string[] = [];
+    if (tail?.hasAttribute("data-boot")) {
+      const t = JSON.parse(tail.textContent!) as { b: [number, number, number, string][]; m?: Record<string, string> };
+      booted.push(tail.dataset.rt!);
+      for (const b of t.b) if (b[2] & 224 && t.m?.[b[3]]) booted.push(t.m[b[3]]!);
+    }
+    return [...planned, ...ahead, ...booted];
   });
   return closureOf(urls.map((url) => path(url).replace(/\.deps\.js$/, ".js")));
 };

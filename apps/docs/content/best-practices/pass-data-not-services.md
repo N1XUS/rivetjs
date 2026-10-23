@@ -2,18 +2,18 @@
 title: Pass data, not services
 description: Load data in server code and pass plain values to components, instead of passing database clients or API objects into the component tree.
 template: best-practice
-related: [guides/routing/loading-data, best-practices/serializable-captures, best-practices/secrets-in-server-files, guides/security/server-only-code]
+related: [guides/routing/loading-data, learn/resuming, best-practices/secrets-in-server-files, guides/security/server-only-code]
 ---
 
 **Fetch data in a `load(…)` loader and give components plain values. Do not pass database clients, API clients or other objects with methods to components.**
 
 ## Why
 
-A component runs once, on the server. Its handlers run later, in the browser. Everything a handler uses must travel from the server to the browser inside the page, as data. This is called being **serializable**: it can be written as text and read back.
+A component runs on the server, and again in the browser when it is used. What travels from the server to the browser inside the page is data: the route's loader data, signal values, and the props of components that wake up on their own. Data that can be written as text and read back is **serializable**.
 
 - Plain objects, arrays, strings, numbers, dates, `Map` and `Set` travel fine.
-- A database client or an API client is a class instance with methods and open connections. It cannot travel. Rivet stops with "class instances are not serializable" or "function is not serializable". A client that belongs in the browser (an analytics or socket client) can be built there with [`reconstruct(() => …)`](../learn/resuming.md#library-objects-reconstruct); a server-side service stays behind a loader.
-- Even when nothing captures it, a service imported by a page module drags its code (and maybe its secrets) toward the browser. The build keeps `.server.ts` modules out of browser code (a component that uses one fails the build, RV3011), but an ordinary module has no such guard.
+- A database client or an API client is a class instance with methods and open connections. It cannot travel. Returned from a loader, the page renders but does not resume ([RV2107](../errors/RV2107.md)). Passed as a prop, it makes the child run together with its parent in the browser, so both components' code loads and the parent builds the client again there.
+- A service imported by a page module drags its code (and maybe its secrets) toward the browser. The build keeps `.server.ts` modules out of browser code (a component that uses one fails the build, RV3011), but an ordinary module has no such guard.
 
 Loaders also make the data flow visible: what the page receives is exactly what `load(…)` returns.
 
@@ -58,9 +58,9 @@ export default function Products() {
 }
 ```
 
-The handler captures `api`, and the compiler stops: `api` is a class instance and cannot be written into the page.
+`ProductApi` and its dependencies now load in the browser, and the browser builds its own client the first time the button is used. On the server, nothing keeps the connection from being opened for every render.
 
 ## When to break it
 
-- **Browser-only helpers.** A module that only uses browser APIs (a formatter, a small fetch wrapper) can be imported by handlers directly. The handler imports it; it is not captured.
+- **Browser-only helpers.** A module that only uses browser APIs (a formatter, a small fetch wrapper) can be imported by handlers directly. The browser builds it again when the component runs there.
 - **Context with an id.** Some values (a theme, a locale) are provided to many components. Use context created with an `id` so the browser can provide the same value. See [context](/guides/components/context.md).

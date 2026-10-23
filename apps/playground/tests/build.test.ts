@@ -22,21 +22,13 @@ test("example authoring passes strict JSX TypeScript checks", () => {
 test("production build emits Tailwind CSS and excludes compiler/server code from browser scripts", async () => {
   const files = await readdir(new URL("../dist/client/assets/", import.meta.url));
   const css = (
-    await Promise.all(
-      files
-        .filter((f) => f.endsWith(".css"))
-        .map((f) => readFile(new URL("../dist/client/assets/" + f, import.meta.url), "utf8")),
-    )
+    await Promise.all(files.filter((f) => f.endsWith(".css")).map((f) => readFile(new URL("../dist/client/assets/" + f, import.meta.url), "utf8")))
   ).join("");
   assert.match(css, /tailwindcss/);
   assert.match(css, /\.text-/);
   assert.doesNotMatch(css, /@import\s+["']tailwindcss/);
   const js = (
-    await Promise.all(
-      files
-        .filter((f) => f.endsWith(".js"))
-        .map((f) => readFile(new URL("../dist/client/assets/" + f, import.meta.url), "utf8")),
-    )
+    await Promise.all(files.filter((f) => f.endsWith(".js")).map((f) => readFile(new URL("../dist/client/assets/" + f, import.meta.url), "utf8")))
   ).join("");
   assert.doesNotMatch(js, /createSourceFile|renderToWriter|node:http|createServerServices/);
 });

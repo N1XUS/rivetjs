@@ -8,7 +8,7 @@ export function formatHTML(html: string): string {
   // The docs frame's theme script is not part of the example (its CSP hash stays in the meta).
   const elided = html
     .replace(FRAME_SCRIPT, "")
-    .replace(/(<script\b(?![^>]*\btype="rivet\/state")[^>]*>)([\s\S]*?)(<\/script>)/g, (all, open: string, body: string, close: string) =>
+    .replace(/(<script\b(?![^>]*\btype="rivet\/boundaries")[^>]*>)([\s\S]*?)(<\/script>)/g, (all, open: string, body: string, close: string) =>
       body.length > 160 ? `${open}/* ${body.length} bytes of inline script (resume loader) */${close}` : all,
     );
   const LEAF = /<([a-z][a-z0-9-]*)\b[^>]*>[^<]{0,100}<\/\1>/gi;

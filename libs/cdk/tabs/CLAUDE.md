@@ -4,7 +4,7 @@
 RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, render props, `data-*` states, `render`, slot contexts, SelectionIndicator) + Rivet `items` preset over the same parts.
 
 ## Entry points
-- `@rivetjs/cdk/tabs` -> `index.tsx`: `Tabs`, `TabList`, `Tab`, `TabPanels`, `TabPanel`, `TabsContext` (`rv-tabs`), `TabListStateContext` (`rv-tab-list-state`); types `TabsProps`, `TabsRenderProps`, `TabItem` (preset item), `TabListProps`, `TabListRenderProps`, `TabProps`, `TabRenderProps`, `TabPanelsProps`, `TabPanelProps`, `TabPanelRenderProps`, `KeyboardActivation`, `TabListState`, `Key`, `Orientation`
+- `@rivetjs/cdk/tabs` -> `index.tsx`: `Tabs`, `TabList`, `Tab`, `TabPanels`, `TabPanel`, `TabsContext`, `TabListStateContext`; types `TabsProps`, `TabsRenderProps`, `TabItem` (preset item), `TabListProps`, `TabListRenderProps`, `TabProps`, `TabRenderProps`, `TabPanelsProps`, `TabPanelProps`, `TabPanelRenderProps`, `KeyboardActivation`, `TabListState`, `Key`, `Orientation`
 - `@rivetjs/cdk/tabs/behaviour` -> `behaviour.ts`: tablist handlers `tabListKeyDown(state, e, router)`, `tabListPointerDown(e)`, `tabListFocusIn` / `tabListFocusOut`; per-tab press callbacks `tabPressStart` / `tabPressUp` / `tabPress(state, e: PressEvent, router)`, `tabClick(state, e, router)`; readers `isTabSelected`, `tabSelected`, `isTabDisabled`, `tabTabIndex`, `tabsKeys`; ids `tabId`, `tabPanelId`; `syncPanelTabIndex`; `TAB`; re-export `TabsKeyboardDelegate`
 - state: `@rivetjs/cdk/state/tabs` -> `createTabListState`, `findDefaultSelectedKey`, `selectTab`, `setTabFocusedKey`, `effectiveFocusedKey`, `tabsSelectionState`, `TabListState`, `TabListStateOptions`, `TabKey`
 
@@ -12,7 +12,7 @@ RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, rend
 - `index.tsx` - parts. `Tabs` root `<div>` (state + `TabListStateContext`); `TabList` `<div role=tablist>` = `SharedElementTransition` scope + live `CollectionRoot`; `Tab` = `createLeafComponent(TabItemNode)` `<div|a role=tab>`; `TabPanels` hideable `<div>` + `Collection`; `TabPanel` hideable, `Show` of `TabPanelInner` (or force-mounted)
 - `behaviour.ts` - react-aria useTabList / useTab / useTabPanel: tablist handlers delegated on the tablist over `../_adapters/selectable.ts` + `DOMCollection`; tab press callbacks run `selectableItemPress*` with `pressOptions` (tab → closest tablist)
 - `keyboard-delegate.ts` - `TabsKeyboardDelegate`
-- `../state/tabs.ts` - selected / focused key signals (+ `focusedSelection`), not region state
+- `../state/tabs.ts` - selected / focused key signals (+ `focusedSelection`)
 - tests: `../tests/tabs.browser.test.tsx` (RAC Tabs.test.js port, 42 cases, project `cdk-browser`), `../tests/shared-element.browser.test.tsx` (SelectionIndicator), `../tests-components/tabs.test.ts` (route `app/src/routes/tabs.tsx`: preset `#product` / `#manual` / `#keys` / RTL / nested + parts `#parts`), `tabs-state.test.ts`, `dom-events-collections.test.ts` (`#d-tabs` parts, `#j-tabs` preset), `selection-indicator.test.ts`, `axe.test.ts` (`/tabs`)
 - docs: `apps/cdk-docs/content/components/tabs.md`; examples `apps/cdk-docs/examples/tabs-{basic,controlled,css,custom (render),disabled (items renderers),dom-events,events,indicator,indicator-css,links,manual,nested,orientation,rtl,slots (items preset),tailwind}/`, `dom-props-forward`, `styling-theme`
 

@@ -163,7 +163,6 @@ The button handles `onPointerDown`, `onPointerUp`, `onMouseDown`, `onClick` and 
 ## Resumability
 
 - The server renders the final `<button>`; no Button code runs before the first interaction. The press handlers load on the first pointer or key event and still see that event.
-- Callbacks must be inline arrows or local functions (the browser resumes them by reference). A function from another library is not serializable. `.bind(…)` of your own function resumes inline in the prop or as a local constant, but not written inside an object literal.
 - `isPending` as a signal stays live; render-prop children re-render when it flips.
 - Press state lives in a per-element `WeakMap`, never serialized. A keyboard press on a native button ends at the native `click` (fired by :kbd[Enter] keydown or :kbd[Space] keyup) instead of a synthetic click on keyup.
 

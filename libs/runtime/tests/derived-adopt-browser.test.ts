@@ -55,10 +55,7 @@ const handled = (page: Page, selector: string): Promise<boolean> =>
 
 test("server: tail with chunk names, held keys, runtime URL and the derived loader", async () => {
   const html = await serverHtml(3);
-  const match =
-    /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown" data-fo="\/rt.js \/page.js">(.*?)<\/script><script>\(function\(\)\{/s.exec(
-      html,
-    );
+  const match = /<script type="rivet\/boundaries" data-rt="\/rt.js" data-fo="\/rt.js \/page.js">(.*?)<\/script><script>\(function\(\)\{/s.exec(html);
   assert.ok(match, html.slice(-600));
   const tail = JSON.parse(match[1]!);
   assert.deepEqual(tail.m, { App: "/page.js", Header: "/page.js", Counter: "/page.js" });
@@ -214,7 +211,7 @@ test("lazy rows: a keyed read outside a row writer (a text binding) wakes the wh
 test("triggers: a load / idle / visible boundary materialises without input (data-boot)", async () => {
   for (const flag of [32, 64, 128]) {
     const served = await files(4, { server: (s) => s.replace('_rB("Counter", 1,', '_rB("Counter", ' + (1 | flag) + ",") });
-    assert.match(served["/"]!, /<script type="rivet\/boundaries" data-rt="\/rt.js" data-events="click keydown" data-boot data-fo="\/rt.js \/page.js">/);
+    assert.match(served["/"]!, /<script type="rivet\/boundaries" data-rt="\/rt.js" data-boot data-fo="\/rt.js \/page.js">/);
     await withPage(served, async (page, requests) => {
       await page.goto("http://rivet.test/");
       await page.waitForFunction(() => (document.querySelector("#inc") as unknown as Record<string, unknown>).$$click !== undefined);
@@ -300,7 +297,7 @@ test("document click listeners (`_rListen`, M2-R5) + `ready`: a link outside eve
   const html = (await derivedToString(() => (_rListen("a.nav"), App({ data: data(4) })), { manifest })) as string;
   const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
   assert.deepEqual(tail.g, [[1, "a.nav"]]);
-  assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-events="click keydown" data-g="a\.nav" data-fo="\/rt\.js \/page\.js">/);
+  assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-g="a\.nav" data-fo="\/rt\.js \/page\.js">/);
   // Browser: App's chunk exports `ready` (the router's `Root.ready`: page modules), awaited once before its adopt run.
   const page = await domModule();
   const ready = page + "\nApp.ready = () => new Promise((done) => setTimeout(() => ((window.__ready = (window.__ready || 0) + 1), done()), 30));\n";
@@ -332,7 +329,7 @@ test("document click listeners (`_rListen`, M2-R5) + `ready`: a link outside eve
 });
 
 const compiled = hasDerivedModel() ? test : test.skip;
-const RESUME = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
+const RESUME = { module: "src/page.tsx", boundaries: ["App", "Header", "Counter"], independent: ["App", "Counter"] };
 const qualified = { "src/page.tsx#App": "/page.js", "src/page.tsx#Header": "/page.js", "src/page.tsx#Counter": "/page.js" };
 compiled("compiled derived server + DOM targets (C3: `_b` / `_sig` with the server's names and keys) adopt end to end", async () => {
   const source = await fixture("page.tsx");
@@ -401,7 +398,7 @@ export function App() {
 }
 `;
 compiled("discarded child boundary (build pass): runs inline, the unit adopts instead of rendering in the browser", async () => {
-  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Item"], independent: ["App"] };
+  const resume = { module: "src/page.tsx", boundaries: ["App", "Item"], independent: ["App"] };
   const server = compile(BUILD_PASS, { target: "server", filename: "page.tsx", resume } as never);
   const dom = compile(BUILD_PASS, { target: "dom", filename: "page.tsx", resume } as never);
   assert.deepEqual(server.diagnostics, []);
@@ -457,7 +454,7 @@ export function App() {
 }
 `;
 compiled("UNKEYED boundary (non-data keyed state) adopts over the server nodes; a build pass runs outside the unit", async () => {
-  const resume = { module: "src/page.tsx", model: "derived", boundaries: ["App", "Item"], independent: ["App"] };
+  const resume = { module: "src/page.tsx", boundaries: ["App", "Item"], independent: ["App"] };
   const server = compile(UNKEYED_PAGE, { target: "server", filename: "page.tsx", resume } as never);
   const dom = compile(UNKEYED_PAGE, { target: "dom", filename: "page.tsx", resume } as never);
   assert.deepEqual(server.diagnostics, []);

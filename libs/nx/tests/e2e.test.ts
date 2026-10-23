@@ -100,7 +100,7 @@ describe("nx workspace with @rivetjs/nx", () => {
     const out = nx("build", "build", "demo", "--output-style=static");
     expect(out).toContain("Prerendered 2 page(s)");
     for (const page of ["index.html", "about/index.html", "404.html"]) expect(existsSync(join(WS, "apps/demo/dist/client", page)), page).toBe(true);
-    expect(file("apps/demo/dist/client/index.html")).toContain('type="rivet/state"');
+    expect(file("apps/demo/dist/client/index.html")).toContain('type="rivet/boundaries"');
     expect(nx("test", "test", "demo", "--output-style=static")).toMatch(/Tests\s+1 passed/);
     expect(nx("check", "check", "demo", "--output-style=static")).toMatch(/0 errors/);
     nx("typecheck", "typecheck", "demo", "--output-style=static");

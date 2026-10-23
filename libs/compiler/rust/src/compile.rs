@@ -19,7 +19,7 @@ use crate::entities::decode_html;
 use crate::html::{AttrValue, attribute_namespace, encode_attribute};
 use crate::i18n::{self, Part, Usage};
 use crate::ir::{Expr, Key, quote};
-use crate::resume::{self, Resumed, SiteKind};
+use crate::resume;
 use crate::map;
 use crate::slots;
 use crate::events_data::EVENTS;
@@ -29,31 +29,11 @@ use crate::styling;
 use crate::tree::Tree;
 
 mod dom_v2;
-mod exports;
-mod server_rows;
 // exception: lane V2-Q4 (2026-10-07) — bind-once handlers (RV1016).
 mod handlers;
 mod lazy_binds;
-// exception: lane LIVE-PROPS P3 (2026-10-08) — server resume: live props recipes (`_rProps`).
-mod resume_props;
-// exception: lane RT-PRELOAD (2026-10-08) — server resume: `For each` / `Show|Match when` getters.
-mod resume_structural;
-// exception: lane IMPL-RESUME (2026-10-09) — server resume: R-PLAN row plans for resumable `<For>` rows.
-mod resume_rows;
 // exception: lane IMPL-RESUME (2026-10-09) — server target: a bare router `<Link>` child is native `<a>` markup.
 mod server_link;
-// exception: Function Bridge C3 (2026-10-09) — module references: the server `_rMod` epilogue (ids + symbols:
-// `resume/refs.rs`).
-mod resume_refs;
-// exception: Function Bridge C5 / T6 (2026-10-11) — server resume: function-declaration registrations at the top of
-// their statement list (thunk captures).
-mod resume_hoist;
-// Function Bridge C6 / T8 (2026-10-11) — server resume: boxed `let` declarations (`const x = _rCell(init)`; which
-// `let`s and their references: `resume/cells.rs`).
-mod resume_cells;
-// exception: lane LAZY-T2 (2026-10-19) — server resume: compiler-private `$lazy` on lazy-eligible keyed `<For>`s (verdict:
-// `resume/rows.rs`).
-mod lazy_rows;
 // exception: derived model (M2 C2 / C3, 2026-10-20) — server + DOM target boundary / keyed-state lowering.
 mod derived;
 use derived::{Derived, is_function_child};
@@ -71,14 +51,12 @@ const MATH_TAGS: &[&str] = &[
 const VOID_TAGS: &[&str] =
     &["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"];
 const PRELOAD_STRATEGIES: &[&str] = &["eager", "idle", "visible", "intent", "interaction"];
-/// Runtime ABI names besides the template callee: server `omitted` / spreads / `_refValue`, DOM
+/// Runtime ABI names besides the template callee: server `omitted` / spreads, DOM
 /// `clientEvent` (`window:` / `document:` events); the DOM lowering's own names are `dom_v2::V2_ABI`.
-const ABI: &[&str] = &["omitted", "clientEvent", "spreadAttributes", "spreadChildren", "_refValue"];
+const ABI: &[&str] = &["omitted", "clientEvent", "spreadAttributes", "spreadChildren"];
 // exception: user ruling 2026-10-06 (round-2 C5) — RV1005 for statically visible rows directly in <table>.
 const IMPLIED_TBODY: &str =
     "Unsupported parser-repaired native nesting: rows directly in <table> get an implied <tbody> (wrap the For / Show / .map in <tbody>)";
-const RESUME_ABI: &[&str] =
-    &["on", "bind", "attr", "model", "id", "ref", "refCell", "fn", "computed", "effect", "clientEvent", "spread", "props", "member", "child", "reset", "rowPlan", "mod", "cell", "group", "bound", "storePaths", "class"];
 /// HTML elements whose content the browser parses as text (or into an inert template fragment): resume
 /// markers written inside are never comment nodes the resumed page can see.
 const OPAQUE_CONTENT: &[&str] = &["textarea", "title", "noscript", "template", "iframe", "noembed", "noframes", "xmp", "plaintext"];
@@ -87,7 +65,7 @@ pub struct Options {
     pub target: String,
     pub filename: String,
     pub server_list_mounts: bool,
-    /// `resume.module` (defaults to the filename) when resume mode is on.
+    /// `resume.module` (defaults to the filename) when resume is on (the derived model: `compile/derived.rs`).
     pub resume: Option<String>,
     /// Return a source map (`Output::map`) of the emitted code to `source`.
     pub source_map: bool,
@@ -104,21 +82,15 @@ pub struct Options {
     /// css`` blocks (`css` imported from `@rivetjs/runtime/css`); `None` leaves them untouched.
     pub styles: Option<Styles>,
     /// Editor check: analysis and JSX lowering only (no rendering, type stripping or code); the
-    /// output carries diagnostics and resume sites, even when there are diagnostics.
+    /// output carries diagnostics and resume sites (`check` `sites`), even when there are diagnostics.
     pub check: bool,
-    /// Resume: `@rivetjs/*` packages compiled like application code (source packages); their
-    /// components get symbol callback / slot props like local components.
+    /// Resume: `@rivetjs/*` packages compiled like application code (source packages): their components count as
+    /// local components in the resume analysis.
     pub source_packages: Vec<String>,
-    /// Resume (Function Bridge T3): import specifier → resolved module id (`resolvedImports`), the unit of module
-    /// reference ids; unlisted specifiers keep their spelling.
-    pub resolved_imports: FxHashMap<String, String>,
-    /// A resume symbol module (`_compileSymbolModule`, DOM): binding closures `(captures) => () => (cond)` whose
-    /// conditional has a JSX operand lower to the `_cond` accessor itself (TERNARY-MEMO, `dom_v2.rs` `symbol_cond_v2`).
-    pub symbols: bool,
-    /// Derived resume model (`resume.model: "derived"`, M2 C2): the build's verdicts (`resume.boundaries` /
-    /// `resume.independent`). Both targets lower plain plus boundary / keyed-state calls from one plan
-    /// (`compile/derived.rs`: server `_rB` / `_rSig`, M2 C2; DOM `_b` / `_sig`, M2 C3).
-    pub derived: Option<resume::derived::Verdicts>,
+    /// Resume (derived model, M2 C2): the build's verdicts (`resume.boundaries` / `resume.independent`). Both targets
+    /// lower plain plus boundary / keyed-state calls from one plan (`compile/derived.rs`: server `_rB` / `_rSig`; DOM
+    /// `_b` / `_sig`). Read only when `resume` is set.
+    pub verdicts: resume::derived::Verdicts,
 }
 
 /// Scoped styles options: class names hash `scope` (root-relative module id) with the local name.
@@ -186,19 +158,13 @@ pub struct Diagnostic {
 pub struct Output {
     pub code: String,
     pub diagnostics: Vec<Diagnostic>,
-    pub resumed: Option<(Vec<resume::Symbol>, Vec<String>)>,
     /// Source map v3 JSON when `Options::source_map` is set.
     pub map: Option<String>,
     /// css`` blocks of the module (styles option on and at least one block).
     pub css: Option<StylesOutput>,
-    /// `Options::check`: resume sites (empty outside resume mode).
+    /// `Options::check`: resume sites (empty without resume).
     pub sites: Vec<resume::SiteInfo>,
-    /// `Options::check`, resume mode: the module classes registered for resume (name, `static [revive]` class) — the
-    /// compiler's data-class verdict, for the language service's type-aware RV2101 (Function Bridge T28).
-    pub classes: Vec<(String, bool)>,
-    /// LAZY-ROWS T2, resume mode: every structural `<For>` with its lazy-rows verdict (`compile` / `check` JSON `forRows`).
-    pub for_rows: Vec<resume::ForRowFact>,
-    /// Derived model (`resume.model: "derived"`): the module's boundary names (`<module>#<Name>`, source order), the
+    /// Resume: the module's boundary names (`<module>#<Name>`, source order), the
     /// keys of the build manifest's `symbols` (`compile` JSON `boundaries`).
     pub boundaries: Vec<String>,
 }
@@ -523,14 +489,11 @@ struct ServerTemplate {
     sets: Vec<(Vec<String>, Vec<usize>)>,
     slots: Vec<Expr>,
     model_temps: Vec<String>,
-    /// SRV-ROWFN: `(slot, argument index, site)` of every capture list written into this template's own
-    /// `_rOn` / `_rAttr` slots (`server_rows.rs` shares equal lists).
-    caps: Vec<(usize, usize, usize)>,
 }
 
 impl ServerTemplate {
     fn new(variants: usize) -> Self {
-        Self { sets: vec![(vec![String::new()], Vec::new()); variants.max(1)], slots: Vec::new(), model_temps: Vec::new(), caps: Vec::new() }
+        Self { sets: vec![(vec![String::new()], Vec::new()); variants.max(1)], slots: Vec::new(), model_temps: Vec::new() }
     }
     fn append(&mut self, text: &str) {
         for (fragments, _) in &mut self.sets {
@@ -576,8 +539,6 @@ pub struct Compiler<'t, 'a> {
     derived: Option<Derived>,
     target: &'static str,
     list_mounts: bool,
-    // exception: user ruling 2026-10-06 (FLATTEN-CMP-3) — `<For>` list mounts only without resume.
-    resume_mode: bool,
     has_checker: bool,
     diags: Diags<'t, 'a>,
     names: FxHashSet<String>,
@@ -589,19 +550,14 @@ pub struct Compiler<'t, 'a> {
     structural: FxHashMap<NodeId, &'static str>,
     structural_namespaces: FxHashSet<NodeId>,
     /// Import bindings from `@rivetjs/runtime/{dom,server}` whose plain JSX children are thunked:
-    /// `ErrorBoundary` / `Suspense` always, `Show` / `Match` in resume modules.
+    /// `ErrorBoundary` / `Suspense` always (`Show` / `Match` / `Switch` are recorded for their eager rules).
     thunked: FxHashMap<NodeId, &'static str>,
     template_name: String,
     attribute_name: String,
     abi: Vec<(&'static str, String)>,
     used_abi: FxHashSet<&'static str>,
-    resume_names: Vec<(&'static str, String)>,
-    used_resume: Vec<&'static str>,
-    resumed: Option<Resumed>,
-    /// Function Bridge T6: statement list → hoisted function-declaration Fn sites registered at its top (server resume).
-    hoisted_at: FxHashMap<NodeId, Vec<usize>>,
-    /// LAZY-ROWS T2: `forRows` facts of the module (resume mode).
-    for_rows: Vec<resume::ForRowFact>,
+    /// `Options::check`, resume: the resume sites (`compile/derived.rs` `derived_setup`).
+    sites: Vec<resume::SiteInfo>,
     twins: FxHashMap<NodeId, Twin>,
     twin_order: Vec<NodeId>,
     /// Shell cache H-holes (PPR-T6, `crate::holes`): source offsets of eligible `<Async>` elements (server resume target:
@@ -660,18 +616,9 @@ pub struct Compiler<'t, 'a> {
     select_stack: Vec<Option<String>>,
     /// Server: the hoisted option-match helper, once used.
     select_helper: Option<String>,
-    // exception: lane SRV-ROWFN (2026-10-07) — server row captures shared per template evaluation.
-    /// Server resume: the returned / concise-body element whose template shares equal capture lists.
-    share_caps: Option<NodeId>,
-    /// Server resume: `const __rivetCaps… = [...];` declarations for the statement being lowered.
-    shared_caps: Vec<String>,
-    /// `Options::symbols`: a resume symbol module.
-    symbols: bool,
 }
 
 pub fn compile(source: &str, options: Options) -> Output {
-    // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — resume mode keeps list mounts for rows without
-    // resume sites (`resume_list_ok`); rows with recorder slots keep generic records.
     let list_mounts = options.server_list_mounts;
     let filename = options.filename.clone();
     let mut early = Diags { tree: None, filename: filename.clone(), list: Vec::new() };
@@ -680,7 +627,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         "dom" => "dom",
         _ => {
             early.add("Unknown compilation target", None);
-            return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
+            return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
         }
     };
     let allocator = Allocator::default();
@@ -694,7 +641,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         early.add_parse_error(error.message.to_string(), span, source);
     }
     if parsed.panicked {
-        return Output { code: String::new(), diagnostics: early.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
+        return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
@@ -706,7 +653,6 @@ pub fn compile(source: &str, options: Options) -> Output {
         derived: None,
         target,
         list_mounts,
-        resume_mode: options.resume.is_some() && options.derived.is_none(),
         has_checker: false,
         diags: Diags { tree: Some(&tree), filename: filename.clone(), list: std::mem::take(&mut diags.list) },
         names: FxHashSet::default(),
@@ -720,11 +666,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         attribute_name: String::new(),
         abi: Vec::new(),
         used_abi: FxHashSet::default(),
-        resume_names: Vec::new(),
-        used_resume: Vec::new(),
-        resumed: None,
-        hoisted_at: FxHashMap::default(),
-        for_rows: Vec::new(),
+        sites: Vec::new(),
         twins: FxHashMap::default(),
         twin_order: Vec::new(),
         holes: if target == "server" && options.resume.is_some() { crate::holes::eligible(&tree) } else { FxHashSet::default() },
@@ -745,7 +687,6 @@ pub fn compile(source: &str, options: Options) -> Output {
         variant: options.variant,
         time_zone: options.time_zone.clone(),
         dev: options.dev,
-        symbols: options.symbols && target != "server",
         v2_names: Vec::new(),
         used_v2: FxHashSet::default(),
         v2_vars: 0,
@@ -766,8 +707,6 @@ pub fn compile(source: &str, options: Options) -> Output {
         slot_children: FxHashSet::default(),
         select_stack: Vec::new(),
         select_helper: None,
-        share_caps: None,
-        shared_caps: Vec::new(),
     };
     compiler.run(source, &options, &filename)
 }
@@ -794,15 +733,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
 
     fn abi_name(&self, name: &str) -> String {
         self.abi.iter().find(|(n, _)| *n == name).map(|(_, local)| local.clone()).unwrap_or_default()
-    }
-
-    /// `r(name, args)`: a resume ABI call (records first use for the import list).
-    fn r(&mut self, name: &'static str, args: Vec<Expr>) -> Expr {
-        if !self.used_resume.contains(&name) {
-            self.used_resume.push(name);
-        }
-        let local = self.resume_names.iter().find(|(n, _)| *n == name).map(|(_, l)| l.clone()).unwrap_or_default();
-        Expr::call(&local, args)
     }
 
     fn id<T>(&self, node: &T) -> Option<NodeId> {
@@ -884,11 +814,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if self.styles.is_some() {
             self.styles_setup();
         }
-        // Derived model (both targets): lowered as plain server / DOM output (no resume names, symbols or sites) plus the
-        // boundary / keyed-state calls (`compile/derived.rs`).
-        let derived_model = options.resume.is_some() && options.derived.is_some();
-        self.has_checker = (options.resume.is_some() && !derived_model)
-            || !self.structural.is_empty()
+        self.has_checker = !self.structural.is_empty()
             || !self.structural_namespaces.is_empty()
             || self.thunked.values().any(|name| *name != "Switch")
             || (self.server && self.list_mounts && source.contains(".map("));
@@ -905,30 +831,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let local = self.unique(&local);
             self.abi.push((name, local));
         }
-        if options.resume.is_some() && !derived_model {
-            for name in RESUME_ABI {
-                let local = self.unique(&format!("__rivetR_{name}"));
-                self.resume_names.push((name, local));
-            }
-        }
         self.list_name = self.unique("__rivetList");
         self.list_plan_name = self.unique("__rivetListPlan");
-        if let (true, Some(module), Some(verdicts)) = (derived_model, &options.resume, &options.derived) {
-            self.derived_setup(module, verdicts, options);
-        } else if let Some(module) = &options.resume {
-            let resumed = resume::analyze(tree, module, &mut self.diags, &self.static_decls, &options.source_packages, &options.resolved_imports);
-            if self.server {
-                resume::browser_global_reads(tree, &resumed, &mut self.diags);
-                // exception: lane LAZY-T2 (2026-10-19) — RV2105 / RV2106 on keyed `For` rows (server target only).
-                resume::for_row_warnings(&resumed, &mut self.diags);
-            }
-            self.for_rows = resume::for_row_facts(tree, &resumed);
-            self.resumed = Some(resumed);
-            if self.server {
-                self.hoisted_at = self.hoisted_containers();
-            }
+        // Resume (derived model, both targets): lowered as plain server / DOM output plus the boundary / keyed-state
+        // calls (`compile/derived.rs`).
+        if let Some(module) = &options.resume {
+            self.derived_setup(module, &options.verdicts, options);
         }
-        // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — after resume analysis: twins skip site-bearing bodies.
         if self.server && self.list_mounts && self.has_checker {
             self.discover_twins();
         }
@@ -939,10 +848,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             self.visit(child);
         }
         if options.check {
-            let sites = self.resumed.as_ref().map(|r| resume::site_infos(tree, r)).unwrap_or_default();
-            let classes = self.resumed.as_ref().map(|r| r.classes.iter().map(|c| (c.name.clone(), c.revive)).collect()).unwrap_or_default();
-            let for_rows = std::mem::take(&mut self.for_rows);
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites, classes, css: None, for_rows, boundaries: Vec::new() };
+            let sites = std::mem::take(&mut self.sites);
+            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites, css: None, boundaries: Vec::new() };
         }
         let top = self.reps.pop().unwrap_or_default();
         let mut body = self.render(program.span, &top);
@@ -960,11 +867,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 body = body[text.len()..].to_string();
             }
             hashbang = text + "\n";
-        }
-        // exception: Function Bridge C3 (2026-10-09) — server resume: `_rMod(() => value, id[, 1])` per module reference after the
-        // module's last statement (module load, never per render).
-        if self.server {
-            body.push_str(&self.module_refs_epilogue());
         }
 
         // Child plans first: a parent plan splices its flattened children's fragments at module load.
@@ -984,9 +886,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
             if self.used_abi.contains("spreadChildren") {
                 specifiers.push(("spreadChildren".into(), self.abi_name("spreadChildren")));
-            }
-            if self.used_abi.contains("_refValue") {
-                specifiers.push(("_refValue".into(), self.abi_name("_refValue")));
             }
             if self.list_used || !self.twins.is_empty() {
                 specifiers.push(("_list".into(), self.list_name.clone()));
@@ -1045,76 +944,24 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 .collect();
             imports.push_str(&format!("import {{ {} }} from {};\n", named(&list), quote(module)));
         }
-        let resume_imports = if self.used_resume.is_empty() {
-            String::new()
-        } else {
-            let list: Vec<(String, String)> = self
-                .used_resume
-                .iter()
-                .map(|name| {
-                    let imported = format!("_r{}{}", name[..1].to_uppercase(), &name[1..]);
-                    let local = self.resume_names.iter().find(|(n, _)| n == name).map(|(_, l)| l.clone()).unwrap_or_default();
-                    (imported, local)
-                })
-                .collect();
-            format!("import {{ {} }} from \"@rivetjs/runtime/server-resume\";\n", named(&list))
-        };
-        let resume_imports = resume_imports + &self.derived_imports();
+        let resume_imports = self.derived_imports();
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
         let text = format!("{hashbang}{imports}{resume_imports}{hoists}{body}");
         if self.diags.has_errors() {
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
+            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
         }
         let (clean, segments) = if self.mapping { map::extract(&text) } else { (text, Vec::new()) };
         let mapped = self.mapping.then_some((source, segments.as_slice()));
-        let (mut code, source_map) = match strip_types(&clean, filename, is_js_filename(filename), mapped) {
+        let (code, source_map) = match strip_types(&clean, filename, is_js_filename(filename), mapped) {
             Ok(output) => output,
             Err(message) => {
                 self.diag(format!("Internal error: emitted code failed to parse: {message}"), None);
-                return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
+                return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
             }
         };
-        let Some(resumed) = self.resumed.take() else {
-            let css = self.styles_output();
-            let boundaries = self.derived_boundaries();
-            return Output { code, diagnostics: self.diags.list, resumed: None, map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows: Vec::new(), boundaries };
-        };
-        // DOM resume output: the module stays a CSR module and also exposes the module-scope values its
-        // symbols reference, so per-component symbol modules can import them.
-        let (exported, clashing) = exports::covered(program);
-        let mut scope: Vec<String> = resumed.scope.clone();
-        scope.sort_by(|a, b| a.encode_utf16().cmp(b.encode_utf16()));
-        if let Some(name) = scope.iter().find(|name| clashing.contains(name.as_str())) {
-            let component = resumed.symbols.first().map(|s| s.component.clone()).unwrap_or_default();
-            self.diag(
-                format!("Cannot resume {component}: the module exports a different binding as `{name}` than the `{name}` its symbols reference; rename the local or the export"),
-                None,
-            );
-            return Output { code: String::new(), diagnostics: self.diags.list, resumed: None, map: None, sites: Vec::new(), classes: Vec::new(), css: None, for_rows: Vec::new(), boundaries: Vec::new() };
-        }
-        // Static-call bindings are compiled away (their import is elided); symbols re-import them.
-        let statics: Vec<&str> = self
-            .static_decls
-            .iter()
-            .filter_map(|&decl| match self.tree.kind(decl) {
-                AstKind::ImportSpecifier(s) => Some(s.local.name.as_str()),
-                _ => None,
-            })
-            .collect();
-        let packages = exports::package_imports(program);
-        let missing: Vec<&String> = scope
-            .iter()
-            .filter(|name| !exported.contains(name.as_str()) && !statics.contains(&name.as_str()) && !packages.contains(name.as_str()))
-            .collect();
-        if !self.server && !missing.is_empty() {
-            code.push_str(&format!(
-                "export {{ {} }};\n",
-                missing.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
-            ));
-        }
         let css = self.styles_output();
-        let for_rows = std::mem::take(&mut self.for_rows);
-        Output { code, diagnostics: self.diags.list, resumed: Some((resumed.symbols, scope)), map: source_map, sites: Vec::new(), classes: Vec::new(), css, for_rows, boundaries: Vec::new() }
+        let boundaries = self.derived_boundaries();
+        Output { code, diagnostics: self.diags.list, map: source_map, sites: Vec::new(), css, boundaries }
     }
 
     fn emit_plan(&mut self, plans: &[Plan], n: usize, emitted: &mut FxHashSet<String>) {
@@ -1276,23 +1123,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 return Some(replaced);
             }
         }
-        if self.server && self.resumed.is_some() {
-            if let Some(replaced) = self.resume_node(id) {
-                return Some(replaced);
-            }
-        }
-        // DIET-STATE 1c: the DOM resume output hoists the same literals (its symbol modules import them).
-        if !self.server && self.resumed.as_ref().is_some_and(|r| !r.local_data.is_empty()) {
-            if let Some(out) = self.local_data_node(id) {
-                return Some(out);
-            }
-        }
-        // Plain server builds (no resume): `clientEvent(…)` never attaches on the server, but its target argument
-        // (`window` / `document`) would still be evaluated and throw where those globals do not exist; the call lowers
-        // to `undefined` (resume builds record it as a site instead, `resume_node`). The derived server target lowers
-        // `clientEffect(…)` the same way (M6-PARITY): a server no-op whose closure would keep browser-only imports
-        // (`import("./dialog.tsx")`) in the SSR bundle.
-        if self.server && self.resumed.is_none() {
+        // Server: `clientEvent(…)` never attaches on the server, but its target argument (`window` / `document`) would
+        // still be evaluated and throw where those globals do not exist; the call lowers to `undefined`. The derived
+        // server target drops `clientEffect(…)`'s closure the same way (M6-PARITY): a server no-op whose closure would keep
+        // browser-only imports (`import("./dialog.tsx")`) in the SSR bundle. The call itself stays as
+        // `clientEffect(void 0, options)` (M6-CUT): the server's `clientEffect` flags the open boundary's client trigger
+        // (`when`), without which a `clientEffect` page never boots.
+        if self.server {
             if let AstKind::CallExpression(call) = kind {
                 if let Expression::Identifier(ident) = &call.callee {
                     if let Some(decl) = tree.resolve(ident, false) {
@@ -1301,6 +1138,17 @@ impl<'t, 'a> Compiler<'t, 'a> {
                             if (name == "clientEvent" || (name == "clientEffect" && self.derived.is_some()))
                                 && resume::import_source(tree, decl).is_some_and(|from| from.starts_with("@rivetjs/runtime"))
                             {
+                                if name == "clientEffect" && !call.arguments.iter().any(|a| matches!(a, Argument::SpreadElement(_))) {
+                                    let mut args = vec![Expr::VoidZero];
+                                    if let Some(options) = call.arguments.get(1) {
+                                        args.push(self.arg_expr(options));
+                                    }
+                                    let mut callee = tree.text_of(call.callee.span()).to_string();
+                                    if call.optional {
+                                        callee.push_str("?.");
+                                    }
+                                    return Some(Expr::Call(Box::new(Expr::Raw(callee)), args));
+                                }
                                 return Some(Expr::ident("undefined"));
                             }
                         }
@@ -1318,20 +1166,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 }
             }
         }
-        if self.symbols {
-            if let AstKind::ArrowFunctionExpression(arrow) = kind {
-                if let Some(out) = self.symbol_cond_v2(id, arrow) {
-                    return Some(out);
-                }
-            }
-        }
         // exception: user ruling 2026-10-07 (CTX-1) — a v2 template returned / as a concise body lowers to a block.
         if matches!(kind, AstKind::ExpressionStatement(_) | AstKind::ReturnStatement(_)) {
             if let Some(block) = self.v2_block_statement(id) {
-                return Some(block);
-            }
-            // exception: lane SRV-ROWFN (2026-10-07) — server resume: one capture array per row (`server_rows.rs`).
-            if let Some(block) = self.server_block_statement(id) {
                 return Some(block);
             }
         }
@@ -1600,7 +1437,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let is_provider =
                 matches!(tag, JSXElementName::IdentifierReference(i) if self.imported_structural(i) == Some("Provider"));
             // `ErrorBoundary` / `Suspense` children render inside the boundary: plain JSX children become a
-            // thunk. In resume modules `Show` / `Match` children too (eager content would record hidden branches).
+            // thunk.
             // `Switch` collects its `Match` markers from `children` eagerly: never lazy.
             let mut eager_switch = false;
             let thunk_children = match tag {
@@ -1611,8 +1448,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                             eager_switch = true;
                             false
                         }
-                        Some(_) => self.resumed.is_some(),
-                        None => false,
+                        Some(_) | None => false,
                     }
                 }
                 _ => false,
@@ -1639,8 +1475,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 } else {
                     value
                 };
-                // exception: lane SRV-ROWFN (2026-10-07) — a closed `<For by>` key function is module-level (server resume).
-                let value = if name == "by" { self.hoisted_key(el, attr, value) } else { value };
                 props.push((Key::Str(name.to_string()), value));
             }
             // `r:slot="x"` children become lazy props; the rest stays the (eager) default slot.
@@ -1700,14 +1534,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             for (name, elements) in groups {
                 let mut values: Vec<Expr> = elements.iter().map(|c| self.lower(Jsx::Element(c))).collect();
                 let body = if values.len() == 1 { values.remove(0) } else { Expr::Array(values) };
-                let mut value = Expr::thunk(body);
-                if self.server {
-                    let site = self.site_index(self.id(elements[0]));
-                    if let (Some(SiteKind::Slot), Some(site)) = (self.site_kind(site), site) {
-                        let args = vec![self.site_str(site), value, self.capture_list(site)];
-                        value = self.r("fn", args);
-                    }
-                }
+                let value = Expr::thunk(body);
                 props.push((Key::Str(name.to_string()), value));
             }
             for (n, (name, usage)) in conditional.iter().enumerate() {
@@ -1719,17 +1546,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 let test = self.expr(usage.test);
                 let [a, b] = usage.branches.map(|branch| match branch {
                     None => Expr::VoidZero,
-                    Some(c) => {
-                        let mut value = Expr::thunk(self.lower(Jsx::Element(c)));
-                        if self.server {
-                            let site = self.site_index(self.id(c));
-                            if let (Some(SiteKind::Slot), Some(site)) = (self.site_kind(site), site) {
-                                let args = vec![self.site_str(site), value, self.capture_list(site)];
-                                value = self.r("fn", args);
-                            }
-                        }
-                        value
-                    }
+                    Some(c) => Expr::thunk(self.lower(Jsx::Element(c))),
                 });
                 let mut text = String::new();
                 for (part, value) in [("", &test), (" ? ", &a), (" : ", &b)] {
@@ -1753,19 +1570,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 props.push((Key::Str("$list".into()), list));
                 rest.clear();
             }
-            // exception: lane IMPL-RESUME (2026-10-09) — resumable keyed `<For>` rows (resume server target): the
-            // row function lowered once + compiler-private `$rows: [plan, write, env]` (`compile/resume_rows.rs`).
-            if let Some((children, rows)) = self.resume_rows(el, &rest) {
-                props.push((Key::Ident("children".into()), children));
-                if let Some(rows) = rows {
-                    props.push((Key::Str("$rows".into()), rows));
-                }
-                rest.clear();
-            }
-            // exception: lane LAZY-T2 (2026-10-19) — a lazy-eligible keyed `<For>` (server resume): `$lazy: [flags, key?]`.
-            if let Some(lazy) = self.lazy_rows(el) {
-                props.push((Key::Str("$lazy".into()), lazy));
-            }
             // Plain children with elements / expressions are lazy: a thunk the component calls where
             // it renders them (after its providers). Text-only children stay a string.
             let lazy = if eager_switch { Vec::new() } else { resume::lazy_children(self.tree, el) };
@@ -1780,28 +1584,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     let slot = self.slot_helper();
                     value = Expr::call(&slot, vec![value]);
                 }
-                if self.server && !lazy.is_empty() {
-                    let site = self.site_index(self.id(&*el.opening_element));
-                    if let (Some(SiteKind::Slot), Some(site)) = (self.site_kind(site), site) {
-                        let args = vec![self.site_str(site), value, self.capture_list(site)];
-                        value = self.r("fn", args);
-                    }
-                }
                 props.push((Key::Ident("children".into()), value));
             }
             let callee = self.tag_expr(&el.opening_element.name);
             if !self.server {
                 return self.component_v2(el, callee, props);
-            }
-            // exception: lane LIVE-PROPS P3 (2026-10-08) — a Props site's call passes live props (`compile/resume_props.rs`).
-            if let Some(site) = self.props_site(el) {
-                return self.resume_props_call(el, callee, props, site);
-            }
-            let mut props = props;
-            self.structural_getters(el, &mut props);
-            // exception: lane RESUME-BUGS #2 (2026-10-09) — a lone `{...p}` on the resume server target passes `p` itself (`compile/resume_props.rs`).
-            if let Some(call) = self.lone_spread_call(el, &callee, &props) {
-                return call;
             }
             // exception: derived model (DERIVED-S 2026-10-21) — a list-mounted `<For>` (`$list`) calls the derived For
             // (`_rFor`, `@rivetjs/runtime/server-derived`): a derived render writes its rows from the list tape.
@@ -1814,18 +1601,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
             return if self.v2_supported(el, &mut Vec::new()) { self.lower_dom_v2(el) } else { self.report_dom(el) };
         }
         let mut t = ServerTemplate::new(if self.i18n { self.variants.len() } else { 1 });
-        // exception: lane SRV-ROWFN (2026-10-07) — only the statement's own root template shares captures.
-        let share = self.share_caps.is_some() && self.share_caps == self.id(el);
-        if share {
-            self.share_caps = None;
-        }
         // exception: user ruling 2026-10-06 (round-2 C6) — each server template starts a fresh ancestor chain.
         let ancestors = std::mem::take(&mut self.server_ancestors);
         self.walk_server(el, "html", &mut t);
         self.server_ancestors = ancestors;
-        if share {
-            self.share_captures(&mut t);
-        }
         let name = self.unique(&format!("__rivetFragments{}", self.hoists.len()));
         let list = |fragments: &[String]| fragments.iter().map(|s| quote(s)).collect::<Vec<_>>().join(", ");
         let callee = if t.plain() {
@@ -1898,19 +1677,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     let id = self.id(&**s);
                     self.diag("Spread children are not supported: render the array as one child ({items}) or map it ({items.map((x) => <li>{x}</li>)} / <For each={items} by={…}>)", id);
                 }
-                JSXChild::Element(el) => {
-                    // A component among lazy children with its own region (resume.rs `scan_component`).
-                    let site = self.site_index(self.id(&**el));
-                    let lowered = self.lower(Jsx::Element(el));
-                    values.push(match (self.server, self.site_kind(site), site) {
-                        (true, Some(SiteKind::Region), Some(site)) => {
-                            let id = self.site_str(site);
-                            let captures = self.capture_list(site);
-                            self.r("bind", vec![id, Expr::thunk(lowered), captures])
-                        }
-                        _ => lowered,
-                    });
-                }
+                JSXChild::Element(el) => values.push(self.lower(Jsx::Element(el))),
                 JSXChild::Fragment(f) => values.push(self.lower(Jsx::Fragment(f))),
             }
         }
@@ -2148,99 +1915,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
     }
 
-    /// Server, resumed element site (`prop:`, select `model:value`): a ref cell on the element and a
-    /// browser effect (at load) whose symbol receives the element first.
-    fn element_effect(&mut self, site: usize, t: &mut ServerTemplate) {
-        let cell = self.unique("__rivetCell");
-        t.model_temps.push(cell.clone());
-        let make = self.r("refCell", Vec::new());
-        let attach = self.r("ref", vec![Expr::Assign(Box::new(Expr::Ident(cell.clone())), Box::new(make))]);
-        t.slot(attach);
-        let mut captures = vec![Expr::Ident(cell)];
-        if let Expr::Array(list) = self.capture_list(site) {
-            captures.extend(list);
-        }
-        let when = Expr::Object(vec![(Key::Ident("when".into()), Expr::str("load"))]);
-        let effect = self.r("effect", vec![self.site_str(site), Expr::Array(captures), when]);
-        t.slot(Expr::call(&self.abi_name("omitted"), vec![effect]));
-    }
-
-    fn handler_flags(directive: Option<&str>, navigates: bool, capture: bool) -> Vec<Expr> {
-        let mut props = Vec::new();
-        if let Some(directive) = directive {
-            props.push((Key::Ident("preload".into()), Expr::str(directive)));
-        }
-        if navigates {
-            props.push((Key::Ident("nav".into()), Expr::True));
-        }
-        if capture {
-            props.push((Key::Ident("capture".into()), Expr::Num(1)));
-        }
-        if props.is_empty() { Vec::new() } else { vec![Expr::Object(props)] }
-    }
-
-    fn site_index(&self, node: Option<NodeId>) -> Option<usize> {
-        let node = node?;
-        self.resumed.as_ref()?.site_at(node)
-    }
-
-    fn site_kind(&self, site: Option<usize>) -> Option<SiteKind> {
-        site.and_then(|s| self.resumed.as_ref().map(|r| r.sites[s].kind))
-    }
-
-    fn site_str(&self, site: usize) -> Expr {
-        Expr::Str(self.resumed.as_ref().map(|r| r.sites[site].id.clone()).unwrap_or_default())
-    }
-
-    /// The site's capture list; registers `_rMember` when a capture is a member read (Function Bridge C7 / T11: any
-    /// site kind, not only spreads).
-    fn capture_list(&mut self, site: usize) -> Expr {
-        if self.resumed.as_ref().is_some_and(|r| r.sites[site].members.iter().any(Option::is_some)) && !self.used_resume.contains(&"member") {
-            self.used_resume.push("member");
-        }
-        self.capture_list_of(site)
-    }
-
-    fn capture_list_of(&self, site: usize) -> Expr {
-        let Some(resumed) = self.resumed.as_ref() else { return Expr::Array(Vec::new()) };
-        let site = &resumed.sites[site];
-        // LIVE-PROPS P3: a member-read capture is `_rMember(object, key)` (a live prop's forward box).
-        let member = |i: usize, c: &String| match site.members.get(i).and_then(Option::as_ref) {
-            Some((object, key)) => {
-                let local = self.resume_names.iter().find(|(n, _)| *n == "member").map(|(_, l)| l.as_str()).unwrap_or_default();
-                format!("{local}({object}, {key})")
-            }
-            // Function Bridge T8 review M1: a boxed `let` captured by value (an eager handler expression) passes `x.v`.
-            None if site.capture_kinds().get(i) == Some(&"value") && site.capture_decls().get(i).is_some_and(|d| resumed.cells.contains(d)) => {
-                format!("{c}.v")
-            }
-            None => c.clone(),
-        };
-        Expr::Array(
-            site.captures
-                .iter()
-                .enumerate()
-                .map(|(i, c)| (i, member(i, c)))
-                .map(|(i, c)| match site.capture_span(i).filter(|_| self.mapping) {
-                    // exception: user ruling 2026-10-06 (round-2 T9) — source maps: a capture maps to its binding, not the enclosing node.
-                    Some(span) => {
-                        let mut out = String::new();
-                        let exact = self.tree.text_of(span) == c.as_str();
-                        map::mark(&mut out, span.start, if exact { span.end - span.start } else { 0 });
-                        out.push_str(&c);
-                        Expr::Raw(out)
-                    }
-                    None => Expr::ident(&c),
-                })
-                .collect(),
-        )
-    }
-
-    /// The captures of a spread / styled site; registers `_rMember` when a member-read capture uses it.
-    fn spread_captures(&mut self, site: usize) -> Expr {
-        self.capture_list(site)
-    }
-
     // ---- class / style groups (G10) ----
     // `class:` toggles, class objects / arrays, `style:` properties and style objects. Helpers are
     // imported from the target runtime only when used.
@@ -2299,23 +1973,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
 
     /// First attribute of the element's resumable class / style binding (spread elements: none; their
     /// class toggles and style group merge into the spread binding). Same rule as resume analysis.
-    fn styled_first(groups: &styling::Groups<'a>, spread: bool) -> Option<usize> {
-        let class = groups.class.as_ref().filter(|_| !spread).map(|g| g.first);
-        // exception: user ruling 2026-10-06 (MATRIX-1) — a spread element's style group is in the spread object.
-        let style = groups.style.as_ref().filter(|_| !spread).map(|g| g.first);
-        match (class, style) {
-            (Some(a), Some(b)) => Some(a.min(b)),
-            (a, b) => a.or(b),
-        }
-    }
-
-    fn attr_at(el: &'a JSXElement<'a>, index: usize) -> Option<&'a JSXAttribute<'a>> {
-        match el.opening_element.attributes.get(index)? {
-            JSXAttributeItem::Attribute(attr) => Some(&**attr),
-            JSXAttributeItem::SpreadAttribute(_) => None,
-        }
-    }
-
     fn style_val(&mut self, value: &styling::Val<'a>) -> Expr {
         match value {
             styling::Val::Bool(true) => Expr::True,
@@ -2399,34 +2056,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         t.slot(Expr::Attr { callee, name: "style".into(), value: Box::new(value), namespace: None });
     }
 
-    /// Server, resumed element: one element binding (`_rSpread` recording the reads, nothing
-    /// rendered) evaluates the dynamic group values into temps the attribute slots then render.
-    fn server_styled(&mut self, groups: &styling::Groups<'a>, site: usize, spread: bool, tag: &str, t: &mut ServerTemplate) -> (Option<Expr>, Option<Expr>) {
-        let mut assigns = Vec::new();
-        let mut class = None;
-        if let Some(group) = groups.class.as_ref().filter(|g| !spread && styling::static_class_value(g).is_none()) {
-            let temp = self.unique("__rivetClassValue");
-            t.model_temps.push(temp.clone());
-            let value = self.class_value(group);
-            assigns.push(Expr::Assign(Box::new(Expr::Ident(temp.clone())), Box::new(value)).print());
-            class = Some(Expr::Ident(temp));
-        }
-        let mut style = None;
-        if let Some(group) = groups.style.as_ref().filter(|g| !spread && styling::static_style_value(g).is_none()) {
-            let temp = self.unique("__rivetStyleValue");
-            t.model_temps.push(temp.clone());
-            let value = self.style_value(group);
-            assigns.push(Expr::Assign(Box::new(Expr::Ident(temp.clone())), Box::new(value)).print());
-            style = Some(Expr::Ident(temp));
-        }
-        assigns.push("null".into());
-        let read = Expr::Raw(format!("({})", assigns.join(", ")));
-        let captures = self.spread_captures(site);
-        let call = self.r("spread", vec![self.site_str(site), Expr::thunk(read), captures, Expr::str(tag)]);
-        t.slot(call);
-        (class, style)
-    }
-
     /// Spread element: its merged object with the `class:` toggles applied (`_spreadClass`).
     fn spread_with_class(&mut self, object: Expr, groups: Option<&styling::Groups<'a>>) -> Expr {
         match groups.and_then(|g| g.class.as_ref()) {
@@ -2443,10 +2072,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let mut textarea_body: Option<Expr> = None;
         let tag = self.tag_of(el);
         let el_id = self.id(el);
-        // Element preload directive and navigation path: recorded with the element's handlers.
-        let directive = self.preload_directive(el, tag);
-        let navigates =
-            (tag == "a" && self.has_attribute(el, "href")) || (tag == "form" && self.has_attribute(el, "action"));
+        // Element preload directive: validated only (RV1102; nothing to preload on the server).
+        self.preload_directive(el, tag);
         if !native_tag_name(tag) {
             self.diag(
                 format!("Unsupported native tag <{tag}>: use an HTML / SVG / MathML tag, a custom element with a hyphen (<my-el>) or a capitalized component (<MyEl />)"),
@@ -2481,10 +2108,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
             namespace = "mathml";
         }
         t.append(&format!("<{tag}"));
-        let mut resumable = false;
         let spread = Self::has_spread(el);
         // `<select value>` / `model:value`: the value goes to a temp the options compare with; the
-        // ignored `value` attribute is not rendered (resumed bindings keep theirs).
+        // ignored `value` attribute is not rendered.
         let select_temp = (tag == "select"
             && !spread
             && (self.has_attribute(el, "value") || self.has_attribute(el, "model:value")))
@@ -2501,12 +2127,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         };
         let mut option_value: Option<Expr> = None;
         let groups = self.style_groups(el, spread);
-        let styled_first = groups.as_ref().and_then(|g| Self::styled_first(g, spread));
-        let styled = styled_first.and_then(|first| {
-            let site = self.site_index(Self::attr_at(el, first).and_then(|a| self.id(a)))?;
-            (self.site_kind(Some(site)) == Some(SiteKind::Styled)).then_some(site)
-        });
-        let mut styled_values: (Option<Expr>, Option<Expr>) = (None, None);
         for (index, item) in el.opening_element.attributes.iter().enumerate() {
             let attr = match item {
                 JSXAttributeItem::SpreadAttribute(_) => continue,
@@ -2516,15 +2136,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 continue;
             }
             if let Some(groups) = groups.as_ref().filter(|g| g.members.contains(&index)) {
-                if let Some(site) = styled.filter(|_| styled_first == Some(index)) {
-                    resumable = true;
-                    styled_values = self.server_styled(groups, site, spread, tag, t);
-                }
                 if let Some(group) = groups.class.as_ref().filter(|g| !spread && g.first == index) {
-                    self.server_class(group, styled_values.0.take(), t);
+                    self.server_class(group, None, t);
                 }
                 if let Some(group) = groups.style.as_ref().filter(|g| !spread && g.first == index) {
-                    self.server_style(group, styled_values.1.take(), t);
+                    self.server_style(group, None, t);
                 }
                 continue;
             }
@@ -2543,31 +2159,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
             // exception: lane V2-Q4 (2026-10-07) — handlers bind once: RV1016 for bind-time state reads.
             self.bind_once_handler(name, attr, attr_id);
             let global = global_event(name);
-            let site = self.site_index(attr_id);
-            let kind = self.site_kind(site);
-            if let (Some(SiteKind::Event), Some(site)) = (kind, site) {
-                resumable = true;
-                let (event_type, capture, present) = self
-                    .resumed
-                    .as_ref()
-                    .map(|r| (r.sites[site].event_type.clone(), r.sites[site].capture, r.sites[site].present.clone()))
-                    .unwrap_or_default();
-                let mut args = vec![Expr::Str(event_type), self.site_str(site), self.capture_list(site)];
-                let flags = Self::handler_flags(directive, navigates, capture);
-                // `present` (5th argument): a compiler-proven absent handler records nothing.
-                match present {
-                    Some(test) => {
-                        args.push(flags.into_iter().next().unwrap_or_else(|| Expr::Raw("undefined".into())));
-                        args.push(Expr::Raw(test));
-                    }
-                    None => args.extend(flags),
-                }
-                let call = self.r("on", args);
-                t.slot(call);
-                // exception: lane SRV-ROWFN (2026-10-07) — capture list position, for `share_captures`.
-                t.caps.push((t.slots.len() - 1, 2, site));
-                continue;
-            }
             if self.is_preload_directive(attr, tag) {
                 continue;
             }
@@ -2593,12 +2184,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 if select_temp.is_none() {
                     option_value = Some(Expr::Ident(temp));
                 }
-                if let (Some(SiteKind::Attr), Some(site)) = (kind, site) {
-                    resumable = true;
-                    let args = vec![Expr::str(name), self.site_str(site), Expr::thunk(assign), self.capture_list(site)];
-                    let call = self.r("attr", args);
-                    t.slot(call);
-                } else if select_temp.is_some() {
+                if select_temp.is_some() {
                     t.slot(Expr::call(&self.abi_name("omitted"), vec![assign]));
                 } else {
                     t.slot(Expr::Attr { callee: self.attribute_name.clone(), name: name.to_string(), value: Box::new(assign), namespace: None });
@@ -2606,7 +2192,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 continue;
             }
             // exception: user ruling 2026-10-06 (round-2 C3) — a textarea's `value` / `defaultValue` is its
-            // content (the attribute is ignored by browsers); a resumed `value` keeps its binding, markup-less.
+            // content (the attribute is ignored by browsers).
             if tag == "textarea" && namespace == "html" && !spread && (name == "value" || name == "defaultValue") {
                 let value = match &attr.value {
                     None => Expr::Str(String::new()),
@@ -2617,41 +2203,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 t.model_temps.push(temp.clone());
                 textarea_body = Some(Expr::Ident(temp.clone()));
                 let assign = Expr::Assign(Box::new(Expr::Ident(temp)), Box::new(value));
-                if let (Some(SiteKind::Attr), Some(site)) = (kind, site) {
-                    resumable = true;
-                    let args = vec![Expr::str(name), self.site_str(site), Expr::thunk(assign), self.capture_list(site)];
-                    let call = self.r("attr", args);
-                    t.slot(Expr::call(&self.abi_name("omitted"), vec![call]));
-                } else {
-                    t.slot(Expr::call(&self.abi_name("omitted"), vec![assign]));
-                }
-                continue;
-            }
-            if let (Some(SiteKind::Ref), Some(site)) = (kind, site) {
-                resumable = true;
-                let (local, object) =
-                    self.resumed.as_ref().map(|r| (r.sites[site].ref_name.clone(), r.sites[site].ref_object)).unwrap_or_default();
-                let value = if object {
-                    // Not provably a ref() object: a function value fails the render (`_refValue`).
-                    self.used_abi.insert("_refValue");
-                    let value = self.attr_value(attr);
-                    Expr::call(&self.abi_name("_refValue"), vec![value])
-                } else {
-                    Expr::Ident(local)
-                };
-                let call = self.r("ref", vec![value]);
-                t.slot(call);
-                continue;
-            }
-            if let (Some(SiteKind::ClientEvent), Some(site)) = (kind, site) {
-                let (target, event_type) = self
-                    .resumed
-                    .as_ref()
-                    .map(|r| (r.sites[site].target.clone(), r.sites[site].event_type.clone()))
-                    .unwrap_or_default();
-                let args = vec![self.site_str(site), self.capture_list(site), Expr::Str(target), Expr::Str(event_type)];
-                let inner = self.r("clientEvent", args);
-                t.slot(Expr::call(&self.abi_name("omitted"), vec![inner]));
+                t.slot(Expr::call(&self.abi_name("omitted"), vec![assign]));
                 continue;
             }
             if name == "ref" || matches!(global, Some(Some(_))) {
@@ -2685,38 +2237,20 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 if !self.prop_literal_ok(attr, prop, tag, namespace) {
                     continue;
                 }
-                // Not rendered. Resumed pages: an element effect sets it in the browser (value evaluated there).
-                if let (Some(SiteKind::Element), Some(site)) = (kind, site) {
-                    resumable = true;
-                    self.element_effect(site, t);
-                } else {
-                    let value = self.attr_value(attr);
-                    t.slot(Expr::call(&self.abi_name("omitted"), vec![value]));
-                }
+                // Not rendered (the DOM target sets it in the browser).
+                let value = self.attr_value(attr);
+                t.slot(Expr::call(&self.abi_name("omitted"), vec![value]));
                 continue;
             }
             if name.starts_with("model:") {
                 if let Some(model) = self.validate_model(el, attr) {
-                    if kind == Some(SiteKind::Model) {
-                        resumable = true;
-                    }
-                    let state = if kind == Some(SiteKind::Model) {
-                        let value = self.attr_value(attr);
-                        self.r("model", vec![Expr::str(model), value])
-                    } else {
-                        self.attr_value(attr)
-                    };
+                    let state = self.attr_value(attr);
                     let read = Expr::Call(Box::new(state), Vec::new());
                     if let Some(temp) = select_temp.as_ref().filter(|_| tag == "select") {
                         t.slot(Expr::call(
                             &self.abi_name("omitted"),
                             vec![Expr::Assign(Box::new(Expr::Ident(temp.clone())), Box::new(read))],
                         ));
-                        // Resumed: an element effect binds the select in the browser.
-                        if let (Some(SiteKind::Element), Some(site)) = (kind, site) {
-                            resumable = true;
-                            self.element_effect(site, t);
-                        }
                     } else if tag == "textarea" {
                         let temp = self.unique("__rivetModelValue");
                         t.model_temps.push(temp.clone());
@@ -2745,30 +2279,16 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 Some(JSXAttributeValue::StringLiteral(_)) => None,
                 _ => {
                     // dynamic
-                    if kind.is_none() && self.static_attribute(attr, name, namespace, AttrSink::Server(&mut *t)) {
+                    if self.static_attribute(attr, name, namespace, AttrSink::Server(&mut *t)) {
                         continue;
                     }
-                    if let (Some(SiteKind::Attr), Some(site)) = (kind, site) {
-                        resumable = true;
-                        let value = self.attr_value(attr);
-                        // exception: lane SRV-ROWFN (2026-10-07) — module-level read over the captures.
-                        let read = self.lifted_read(site, value);
-                        let mut args = vec![Expr::str(name), self.site_str(site), read, self.capture_list(site)];
-                        if namespace != "html" {
-                            args.push(Expr::str(namespace));
-                        }
-                        let call = self.r("attr", args);
-                        t.slot(call);
-                        t.caps.push((t.slots.len() - 1, 3, site));
-                    } else {
-                        let value = self.attr_value(attr);
-                        t.slot(Expr::Attr {
-                            callee: self.attribute_name.clone(),
-                            name: name.to_string(),
-                            value: Box::new(value),
-                            namespace: (namespace != "html").then(|| namespace.to_string()),
-                        });
-                    }
+                    let value = self.attr_value(attr);
+                    t.slot(Expr::Attr {
+                        callee: self.attribute_name.clone(),
+                        name: name.to_string(),
+                        value: Box::new(value),
+                        namespace: (namespace != "html").then(|| namespace.to_string()),
+                    });
                     continue;
                 }
             };
@@ -2790,24 +2310,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if spread {
             let object = Expr::Object(self.spread_object(el, tag, namespace, groups.as_ref(), None));
             let object = self.spread_with_class(object, groups.as_ref());
-            let first = el.opening_element.attributes.iter().find_map(|a| match a {
-                JSXAttributeItem::SpreadAttribute(s) => self.id(&**s),
-                _ => None,
-            });
-            let site = self.site_index(first);
-            if let (Some(SiteKind::Spread), Some(site)) = (self.site_kind(site), site) {
-                resumable = true;
-                let captures = self.spread_captures(site);
-                let mut args = vec![self.site_str(site), Expr::thunk(object), captures];
-                args.extend(Self::spread_args(tag, namespace));
-                let call = self.r("spread", args);
-                t.slot(call);
-            } else {
-                self.used_abi.insert("spreadAttributes");
-                let mut args = vec![object];
-                args.extend(Self::spread_args(tag, namespace));
-                t.slot(Expr::call(&self.abi_name("spreadAttributes"), args));
-            }
+            self.used_abi.insert("spreadAttributes");
+            let mut args = vec![object];
+            args.extend(Self::spread_args(tag, namespace));
+            t.slot(Expr::call(&self.abi_name("spreadAttributes"), args));
         }
         if let Some(select) = option_of {
             let value = option_value.or_else(|| {
@@ -2839,10 +2345,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     namespace: None,
                 });
             }
-        }
-        if resumable {
-            let call = self.r("id", Vec::new());
-            t.slot(call);
         }
         // exception: derived model (M2 C2) — `_rBAttr(B)` last in a boundary root's start tag.
         if let Some(call) = self.derived_attr(el_id) {
@@ -2907,36 +2409,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 }
                 JSXChild::ExpressionContainer(c) => {
                     let Some(e) = c.expression.as_expression() else { continue };
-                    let site = self.site_index(self.id(&**c));
-                    if site.is_none() && self.static_child_server(e, t) {
+                    if self.static_child_server(e, t) {
                         continue;
                     }
-                    let value = if let (Some(SiteKind::Bind), Some(site)) = (self.site_kind(site), site) {
-                        let id = self.site_str(site);
-                        // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — a site-free `.map` inside a bind is a list mount.
-                        let value = match self.list_slot(e) {
-                            Some(value) => value,
-                            None => self.expr(e),
-                        };
-                        let captures = self.capture_list(site);
-                        let mut args = vec![id, Expr::thunk(value), captures];
-                        // A branch can render JSX: the server keeps a region even for a null/false value.
-                        if may_render_jsx(e) {
-                            args.push(Expr::Num(1));
-                        }
-                        self.r("bind", args)
-                    } else {
-                        match self.list_slot(e) {
-                            Some(value) => value,
-                            // A `children` reference child (`{props.children}`, `{children}`) may hold a slot function (a component's lone
-                            // function child): `_rChild` renders an `_rFn` symbol as its own child site, so reads in its body
-                            // re-run it after resume (the traversal would call it outside every site).
-                            None if !self.resume_names.is_empty() && is_reference_child(e) => {
-                                let value = self.expr(e);
-                                self.r("child", vec![value])
-                            }
-                            None => self.expr(e),
-                        }
+                    let value = match self.list_slot(e) {
+                        Some(value) => value,
+                        None => self.expr(e),
                     };
                     Self::marked_slot(t, value, marks.is_some_and(|sole| (!sole || may_render_jsx(e)) && !is_function_child(e)));
                 }
@@ -2951,19 +2429,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                             continue;
                         }
                     }
-                    let site = self.site_index(self.child_id(child));
-                    let lowered_child = |this: &mut Self| match child {
-                        JSXChild::Element(c) => this.lower(Jsx::Element(c)),
-                        JSXChild::Fragment(f) => this.lower(Jsx::Fragment(f)),
+                    let value = match child {
+                        JSXChild::Element(c) => self.lower(Jsx::Element(c)),
+                        JSXChild::Fragment(f) => self.lower(Jsx::Fragment(f)),
                         _ => Expr::Null,
-                    };
-                    let value = if let (Some(SiteKind::Region), Some(site)) = (self.site_kind(site), site) {
-                        let id = self.site_str(site);
-                        let lowered = lowered_child(self);
-                        let captures = self.capture_list(site);
-                        self.r("bind", vec![id, Expr::thunk(lowered), captures])
-                    } else {
-                        lowered_child(self)
                     };
                     Self::marked_slot(t, value, marks.is_some());
                 }
@@ -2971,16 +2440,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         if tag == "select" {
             self.select_stack.pop();
-        }
-        // Resume marker ids continue a stride in document order (the server leaves them out); markers inside
-        // opaque content are invisible to the browser, so the chain restarts after it (`_rReset`).
-        if !self.resume_names.is_empty()
-            && namespace == "html"
-            && OPAQUE_CONTENT.contains(&tag)
-            && (spread || el.children.iter().any(|c| !matches!(c, JSXChild::Text(_))))
-        {
-            let call = self.r("reset", Vec::new());
-            t.slot(call);
         }
         t.append(&format!("</{tag}>"));
     }
@@ -3952,8 +3411,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 receiver_ok(self, pid, &mut ok);
             }
         }
-        // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — resume mode: a body with resume sites keeps records.
-        if !ok || !self.has_checker || !self.resume_list_ok(decl) {
+        if !ok || !self.has_checker {
             return false;
         }
         // A reassigned binding could make call sites reach a different function.
@@ -3972,12 +3430,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
             !reassigned
         });
         !reassigned
-    }
-
-    // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — a list-mount row / twin body in resume mode
-    // records nothing: no resume site (handlers, bindings, regions, refs, R2 functions) inside `node`.
-    fn resume_list_ok(&self, node: NodeId) -> bool {
-        self.resumed.as_ref().is_none_or(|r| !r.has_site_within(self.tree, self.tree.span(node)))
     }
 
     /// `items.map(item => <jsx/>)` with a plain arrow callback.
@@ -4002,8 +3454,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         let body = as_element(strip_parens(callback.get_expression()?))?;
         let body_id = self.id(body)?;
-        // exception: user ruling 2026-10-06 (FLATTEN-CMP-2) — resume mode: rows with resume sites keep records.
-        if self.has_model(body_id) || !self.tree.id_of(&**callback).is_some_and(|c| self.resume_list_ok(c)) {
+        if self.has_model(body_id) {
             return None;
         }
         if self.native(body) {
@@ -4392,7 +3843,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
     // sole child is a concise arrow (1–2 identifier params) returning a native element (no `model:`) or a
     // twin component without spread props.
     fn for_shape(&self, el: &'a JSXElement<'a>) -> Option<(&'a ArrowFunctionExpression<'a>, &'a JSXElement<'a>)> {
-        if !self.server || !self.list_mounts || self.resume_mode {
+        if !self.server || !self.list_mounts {
             return None;
         }
         let JSXElementName::IdentifierReference(tag) = &el.opening_element.name else { return None };
@@ -4547,310 +3998,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
             parameters.join(", "),
             statements.join("\n")
         ))
-    }
-
-    // ---- server resume rewrites ----
-
-    fn client_target(&mut self, target: &'a Argument<'a>) -> Expr {
-        let unshadowed = |this: &Self, e: &Expression<'a>, names: &[&str]| {
-            matches!(e, Expression::Identifier(i) if names.contains(&i.name.as_str()) && this.tree.resolve(i, false).is_none())
-        };
-        let Some(e) = target.as_expression() else {
-            let id = self.id(target);
-            self.diag(r#"clientEvent target must be window, document, a ref-bound element or "media:(query)""#, id);
-            return Expr::Null;
-        };
-        if unshadowed(self, e, &["window", "globalThis", "self"]) {
-            return Expr::str("w");
-        }
-        if unshadowed(self, e, &["document"]) {
-            return Expr::str("d");
-        }
-        if let Expression::StaticMemberExpression(m) = e {
-            if unshadowed(self, &m.object, &["window", "globalThis", "self"]) && m.property.name == "document" {
-                return Expr::str("d");
-            }
-        }
-        if let Expression::StringLiteral(s) = e {
-            if s.value.starts_with("media:") {
-                return Expr::str(&s.value);
-            }
-        }
-        if let Expression::Identifier(i) = e {
-            if let Some(decl) = self.tree.resolve(i, false) {
-                if self.resumed.as_ref().is_some_and(|r| r.ref_cells.contains(&decl)) {
-                    return Expr::ident(&i.name);
-                }
-            }
-        }
-        let id = self.tree.expr_id(e);
-        self.diag(r#"clientEvent target must be window, document, a ref-bound element or "media:(query)""#, id);
-        Expr::Null
-    }
-
-    /// Server-target resume rewrites outside JSX: browser-only calls are recorded, never run.
-    /// DIET-STATE 1c (`resume/refs.rs` `local_data`): a captured pure-literal component `const` → module hoist
-    /// `const __rivetData<n>_x = <literal>;` + `x = __rivetData<n>_x` in place (server and DOM resume targets).
-    fn local_data_node(&mut self, id: NodeId) -> Option<Expr> {
-        let tree = self.tree;
-        let hoisted = self.resumed.as_ref()?.local_data.get(&id)?.clone();
-        let AstKind::VariableDeclarator(d) = tree.kind(id) else { return None };
-        let init = d.init.as_ref()?;
-        let span = tree.span(id);
-        let head = tree.text_of(Span::new(span.start, init.span().start)).trim_end().trim_end_matches('=').trim_end().to_string();
-        let value = self.expr(init);
-        self.hoists.push(format!("const {hoisted} = {};", value.print()));
-        Some(Expr::Stmts(format!("{head} = {hoisted}")))
-    }
-
-    fn resume_node(&mut self, id: NodeId) -> Option<Expr> {
-        let tree = self.tree;
-        // Function Bridge C12 / T24: a registered data class's field arrow captures the instance (`_rFn(id, arrow, [this])`).
-        if let Some(symbol) = self.resumed.as_ref().and_then(|r| if r.class_arrows.is_empty() { None } else { r.class_arrows.get(&id).cloned() }) {
-            let reps = self.visit_children(id);
-            let value = self.raw(id, &reps);
-            return Some(self.r("fn", vec![Expr::str(&symbol), value, Expr::Raw("[this]".into())]));
-        }
-        // Function Bridge T6 (C5): a statement list holding hoisted function declarations registers them at its top.
-        // T6 review M1 (T8): taken out of the map, so a declaration whose list was not rendered here stamps after itself.
-        if let Some(sites) = self.hoisted_at.remove(&id) {
-            return Some(self.hoisted_body(id, &sites));
-        }
-        // RESUME-ACCESSOR-ROW: a component returning an accessor (`return () => …`, `return c ? () => a : () => b`,
-        // `return view` of a local const arrow, concise `(p) => () => …`): the returned value goes through `_rChild`, so a
-        // symbol function renders as its own child site where the component renders (reads re-run it after resume).
-        if self.resumed.as_ref().is_some_and(|r| r.child_returns.contains(&id)) {
-            let value = match tree.kind(id) {
-                AstKind::ReturnStatement(r) => r.argument.as_ref(),
-                AstKind::ExpressionStatement(s) => Some(&s.expression),
-                _ => None,
-            };
-            if let Some(value_id) = value.and_then(|v| tree.expr_id(v)) {
-                let inner = self.expr_node(value_id);
-                let wrapped = self.r("child", vec![inner]);
-                return Some(Expr::Raw(self.render(tree.span(id), &[(tree.span(value_id), wrapped)])));
-            }
-        }
-        // Function Bridge C8 / T10: a group with a `const` member registers after that member's declaration statement.
-        if let Some(groups) = self.resumed.as_ref().and_then(|r| if r.group_after.is_empty() { None } else { r.group_after.get(&id).cloned() }) {
-            let reps = self.visit_children(id);
-            let mut text = self.render(tree.span(id), &reps);
-            for group in groups {
-                let call = self.group_call(group);
-                text.push_str(&format!("\n{};", call.print()));
-            }
-            return Some(Expr::Stmts(text));
-        }
-        // Function Bridge C9 / T10: `f.bind(t, ...args)` of a resumable function → `_rBound(f, t, [args])`.
-        if let AstKind::CallExpression(call) = tree.kind(id) {
-            if self.resumed.as_ref().is_some_and(|r| r.bound.contains(&id)) {
-                // T10 fix 1 (F6): the analysis' unwrapping (TS casts, parentheses).
-                if let Expression::StaticMemberExpression(m) = crate::resume::unwrap(&call.callee) {
-                    let object = self.expr(&m.object);
-                    let this = call.arguments.first().map_or_else(|| Expr::ident("undefined"), |a| self.arg_expr(a));
-                    // A later spread argument stays a spread element (`[2, ...xs]`); `Expr::Array` would parenthesize it.
-                    let rest: Vec<String> = call.arguments.iter().skip(1).map(|a| self.arg_expr(a).print()).collect();
-                    return Some(self.r("bound", vec![object, this, Expr::Raw(format!("[{}]", rest.join(", ")))]));
-                }
-            }
-        }
-        // Function Bridge C6 / T8: references of boxed `let`s (`resume/cells.rs`) read / write the cell.
-        if let Some(text) = self.resumed.as_ref().and_then(|r| if r.cell_refs.is_empty() { None } else { r.cell_refs.get(&id) }) {
-            return Some(Expr::Raw(text.clone()));
-        }
-        if let AstKind::VariableDeclaration(v) = tree.kind(id) {
-            if let Some(out) = self.cell_declaration(id, v) {
-                return Some(out);
-            }
-        }
-        let site = self.site_index(Some(id));
-        let kind = self.site_kind(site);
-        if let AstKind::CallExpression(call) = tree.kind(id) {
-            if let Some(site) = site {
-                match kind {
-                    Some(SiteKind::Effect) => {
-                        let mut args = vec![self.site_str(site), self.capture_list(site)];
-                        for arg in call.arguments.iter().skip(1) {
-                            args.push(self.arg_expr(arg));
-                        }
-                        return Some(self.r("effect", args));
-                    }
-                    Some(SiteKind::ClientEvent) => {
-                        let mut args = vec![self.site_str(site), self.capture_list(site)];
-                        let target = match call.arguments.first() {
-                            Some(t) => self.client_target(t),
-                            None => Expr::Null,
-                        };
-                        args.push(target);
-                        if let Some(handler) = call.arguments.get(1) {
-                            args.push(self.arg_expr(handler));
-                        }
-                        for arg in call.arguments.iter().skip(3) {
-                            args.push(self.arg_expr(arg));
-                        }
-                        return Some(self.r("clientEvent", args));
-                    }
-                    Some(SiteKind::Computed) => {
-                        let mut args = vec![self.site_str(site)];
-                        if let Some(first) = call.arguments.first() {
-                            args.push(self.arg_expr(first));
-                        }
-                        args.push(self.capture_list(site));
-                        // Function Bridge T27: `reconstruct(f)` = `computed(f, { equals: false })` (no further arguments).
-                        if self.resumed.as_ref().is_some_and(|r| r.sites[site].reconstruct) {
-                            args.push(Expr::Raw("{ equals: false }".into()));
-                        } else {
-                            for arg in call.arguments.iter().skip(1) {
-                                args.push(self.arg_expr(arg));
-                            }
-                        }
-                        return Some(self.r("computed", args));
-                    }
-                    _ => {}
-                }
-            }
-        }
-        if let (Some(SiteKind::Equals), Some(site)) = (kind, site) {
-            let reps = self.visit_children(id);
-            let value = self.raw(id, &reps);
-            let args = vec![self.site_str(site), value, self.capture_list(site)];
-            return Some(self.r("fn", args));
-        }
-        // R2 method shorthand (`{ onPress(e) {…} }`): the property becomes `onPress: _rFn(id, function (e) {…}, captures)`.
-        if let AstKind::ObjectProperty(p) = tree.kind(id) {
-            if let Some(prefix) = tree.expr_id(&p.value).and_then(|f| resume::method_prefix(tree, f)) {
-                let function = tree.expr_id(&p.value).unwrap();
-                let fsite = self.site_index(Some(function));
-                if let (Some(SiteKind::Fn), Some(fsite)) = (self.site_kind(fsite), fsite) {
-                    let reps = self.visit_children(function);
-                    let text = self.render(tree.span(function), &reps);
-                    let args = vec![self.site_str(fsite), Expr::Func(format!("{prefix}{text}")), self.capture_list(fsite)];
-                    let call = self.r("fn", args);
-                    let key = tree.text_of(p.key.span());
-                    let key = if p.computed { format!("[{key}]") } else { key.to_string() };
-                    return Some(Expr::Raw(format!("{key}: {}", call.print())));
-                }
-            }
-        }
-        // Slot content, and R2 function expressions (object literal / returned / component prop values).
-        if let (Some(SiteKind::Slot | SiteKind::Fn), Some(site)) = (kind, site) {
-            let expression = match tree.kind(id) {
-                AstKind::ArrowFunctionExpression(_) => true,
-                AstKind::Function(f) => f.r#type != FunctionType::FunctionDeclaration || kind == Some(SiteKind::Slot),
-                _ => false,
-            };
-            if expression {
-                let reps = self.visit_children(id);
-                let value = self.raw(id, &reps);
-                let args = vec![self.site_str(site), value, self.capture_list(site)];
-                return Some(self.r("fn", args));
-            }
-        }
-        // CORE-GAPS (d): a module-level function / import passed as a component prop value (`resume.rs` `prop_value`).
-        if let (Some(SiteKind::Fn), Some(site), AstKind::IdentifierReference(ident)) = (kind, site, tree.kind(id)) {
-            let args = vec![self.site_str(site), Expr::Ident(ident.name.to_string()), self.capture_list(site)];
-            return Some(self.r("fn", args));
-        }
-        if let AstKind::VariableDeclarator(d) = tree.kind(id) {
-            let span = tree.span(id);
-            let head_end = d.init.as_ref().map_or(span.end, |init| init.span().start);
-            let mut head = tree.text_of(Span::new(span.start, head_end)).trim_end().trim_end_matches('=').trim_end().to_string();
-            if let BindingPatternKind::BindingIdentifier(name) = &d.id.kind {
-                // `let x!: T` gains an initializer; the definite assignment assertion must go.
-                let name_end = (name.span.start - span.start) as usize + name.name.len();
-                let rest = head.get(name_end..).unwrap_or_default();
-                if rest.trim_start().starts_with('!') {
-                    let bang = name_end + (rest.len() - rest.trim_start().len());
-                    head.remove(bang);
-                }
-            }
-            if self.resumed.as_ref().is_some_and(|r| r.ref_cells.contains(&id)) {
-                let call = self.r("refCell", Vec::new());
-                return Some(Expr::Stmts(format!("{head} = {}", call.print())));
-            }
-            // DIET-STATE 1c: a captured pure-literal local → hoisted module static data (`x = __rivetData0_x`), both targets.
-            if let Some(out) = self.local_data_node(id) {
-                return Some(out);
-            }
-            // Function Bridge C11 / T13: a captured store with literal paths → `s = _rStorePaths(createStore(…), [paths])`.
-            if self.server {
-                if let (Some(paths), Some(init)) = (self.resumed.as_ref().and_then(|r| r.store_paths.get(&id)).cloned(), &d.init) {
-                    let list = paths.iter().map(|p| quote(p)).collect::<Vec<_>>().join(", ");
-                    let args = vec![self.expr(init), Expr::Raw(format!("[{list}]"))];
-                    let call = self.r("storePaths", args);
-                    return Some(Expr::Stmts(format!("{head} = {}", call.print())));
-                }
-            }
-            // Function Bridge T8: a boxed `let` → `x = _rCell(init)` (its declaration becomes `const`, `cell_declaration`).
-            if self.resumed.as_ref().is_some_and(|r| r.cells.contains(&id)) {
-                if let BindingPatternKind::BindingIdentifier(name) = &d.id.kind {
-                    let args = d.init.as_ref().map(|init| vec![self.expr(init)]).unwrap_or_default();
-                    let call = self.r("cell", args);
-                    return Some(Expr::Stmts(format!("{} = {}", name.name, call.print())));
-                }
-            }
-            if let (Some(SiteKind::Fn), Some(site), Some(init)) = (kind, site, &d.init) {
-                let value = self.expr(init);
-                let args = vec![self.site_str(site), value, self.capture_list(site)];
-                let call = self.r("fn", args);
-                return Some(Expr::Stmts(format!("{head} = {}", call.print())));
-            }
-        }
-        // A declaration outside a statement list (`resume::hoist_container`: none) keeps its registration after itself;
-        // hoisted ones register at the top of their list (`hoisted_body`, Function Bridge T6).
-        if let AstKind::Function(f) = tree.kind(id) {
-            let hoisted = site.is_some_and(|s| self.resumed.as_ref().is_some_and(|r| r.sites[s].hoisted));
-            // T6 review M1 (T8): a hoisted site whose statement list was not rendered by `resume_node` (still pending in
-            // `hoisted_at`) falls back to the after-declaration stamp, with thunk captures — never dropped silently.
-            let pending = hoisted
-                && site.is_some_and(|s| {
-                    resume::hoist_container(tree, id).is_some_and(|c| self.hoisted_at.get(&c).is_some_and(|sites| sites.contains(&s)))
-                });
-            // T10: the first member of a hoisted group whose statement list was not rendered here registers the group
-            // after itself (same fallback; fix 2 F8: the first member, and RV2011 when an early exit comes before it).
-            if f.r#type == FunctionType::FunctionDeclaration && site.is_none() {
-                if let Some(group) = self.pending_group(id) {
-                    let reps = self.visit_children(id);
-                    let text = self.render(tree.span(id), &reps);
-                    let container = self.resumed.as_ref().and_then(|r| r.sites[group].group_container);
-                    if let Some(exit) = container.and_then(|c| crate::resume::early_exit(tree, c, tree.span(c).start, tree.span(id).start)) {
-                        let names = self.resumed.as_ref().map(|r| r.sites[group].group_names.clone()).unwrap_or_default();
-                        self.diag(crate::resume::split_group_message(&names), Some(exit));
-                        return Some(Expr::Stmts(text));
-                    }
-                    let call = self.group_call(group);
-                    return Some(Expr::Stmts(format!("{text}\n{};", call.print())));
-                }
-            }
-            if f.r#type == FunctionType::FunctionDeclaration && (!hoisted || pending) {
-                if let (Some(SiteKind::Fn), Some(site)) = (kind, site) {
-                    let reps = self.visit_children(id);
-                    let text = self.render(tree.span(id), &reps);
-                    let name = f.id.as_ref().map(|i| i.name.to_string()).unwrap_or_default();
-                    let captures = if pending { Expr::thunk(self.capture_list(site)) } else { self.capture_list(site) };
-                    let args = vec![self.site_str(site), Expr::Ident(name), captures];
-                    let call = self.r("fn", args);
-                    return Some(Expr::Stmts(format!("{text}\n{};", call.print())));
-                }
-            }
-        }
-        None
-    }
-}
-
-/// A `children` reference child (`{children}`, `{props.children}`, `{p.x.children}`; parens / TS wrappers unwrapped):
-/// the only place a component's slot function renders. Other references (`{item.name}` in list rows: the SSR hot
-/// path) stay plain, so components without resumable code compile as they do without resume.
-fn is_reference_child(e: &Expression) -> bool {
-    match e {
-        Expression::ParenthesizedExpression(p) => is_reference_child(&p.expression),
-        Expression::TSAsExpression(x) => is_reference_child(&x.expression),
-        Expression::TSNonNullExpression(x) => is_reference_child(&x.expression),
-        Expression::Identifier(i) => i.name == "children",
-        Expression::StaticMemberExpression(m) => {
-            m.property.name == "children" && matches!(m.object, Expression::Identifier(_) | Expression::StaticMemberExpression(_) | Expression::ThisExpression(_))
-        }
-        _ => false,
     }
 }
 

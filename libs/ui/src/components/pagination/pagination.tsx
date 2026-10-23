@@ -26,7 +26,6 @@ import { createContext, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronLeft, ChevronRight } from "lucide";
 
 import type { PaginationVariants } from "../../../styles/src/components/pagination/index.ts";
@@ -46,7 +45,7 @@ interface PaginationContext {
   inPagination?: boolean;
 }
 
-const PaginationContext = resumableContext(createContext<PaginationContext>({}, { id: "rv-ui-pagination" }));
+const PaginationContext = createContext<PaginationContext>({});
 
 type PaginationSlots = ReturnType<typeof paginationVariants>;
 type PaginationSize = NonNullable<PaginationVariants["size"]>;

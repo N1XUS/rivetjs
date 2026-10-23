@@ -54,8 +54,6 @@ export interface AsyncWork extends AsyncContext {
   readonly signal: AbortSignal;
 }
 export interface LazyComponentOptions {
-  /** Resumed pages load declared lazy components at idle; `false` leaves loading to first render. */
-  warm?: boolean;
   fallback?: () => DOMValue;
   error?: (error: unknown) => DOMValue;
 }
@@ -439,18 +437,6 @@ export function ErrorBoundary(props: { fallback: (error: unknown, reset: () => v
   });
 }
 
-// Lazy components declared so far; the resume runtime warms them at idle (_warmLazy) so a later
-// render (e.g. client navigation) finds them loaded and renders synchronously.
-let warming: ((fn: () => void) => void) | null = null;
-const lazies = new Set<LazyFunction<[unknown], DOMValue>>();
-const warmOne = (reference: LazyFunction<[unknown], DOMValue>): void => warming!(() => reference.load().catch(() => {}));
-/** Resume ABI: load every declared lazy component (and later ones) through `schedule(fn)`. */
-export function _warmLazy(schedule: (fn: () => void) => void): void {
-  warming = schedule;
-  for (const reference of lazies) warmOne(reference);
-  lazies.clear();
-}
-
 /** Load module.default only when mounted; cache functions, never rendered output or props. */
 export function lazyComponent<P>(
   importer: () => { default: Component<P> } | PromiseLike<{ default: Component<P> }>,
@@ -465,10 +451,6 @@ export function lazyComponent<M, P>(
   options: LazyComponentOptions = {},
 ): Component<P> {
   const reference = lazyFunction(importer, select!);
-  if (options.warm !== false) {
-    if (warming) warmOne(reference as LazyFunction<[unknown], DOMValue>);
-    else lazies.add(reference as LazyFunction<[unknown], DOMValue>);
-  }
   const lazy = (props: P) => {
     const loaded = reference.peek();
     if (loaded) return _c(loaded, props) as DOMValue;
@@ -543,9 +525,6 @@ export const For: <T, K>(props: {
   each: readonly T[] | (() => readonly T[]);
   by: (item: T, index: number) => K;
   children: (item: () => T, index: () => number) => DOMValue;
-  /** Resumable server renders with lazy rows (`resume.lazyRows`): `false` / an accessor returning false keeps this For's
-   * rows out of lazy rows (a container loop whose rows hold the collection's own row `For`). No effect in the browser. */
-  lazy?: boolean | (() => boolean);
 }) => DOMValue = _for as never;
 /** Branch content: a function (lazy; gets the value accessor) or eager content (created once, kept). */
 type BranchContent<T> = Exclude<DOMValue, () => DOMValue> | ((value: () => NonNullable<T>) => DOMValue);
@@ -630,9 +609,6 @@ export function Portal(props: { mount?: Element | null; children?: DOMValue }): 
 }
 
 export { Router, defineRoute } from "./dom-router.ts";
-// Resume (v2 adoption through the `_adoption.key` hook): the server branch key of a re-created region's first direct Show/Switch;
-// `_materialise` (LAZY-ROWS T5): materialise the lazy row holding a node before focusing it (cdk collections).
-export { _serverBranch, _materialise } from "./dom-v2.ts";
 /** @internal Static SVG shapes (`[tag, attrs][]`, kit `Icon`) cloned from a per-data template; twin of `/server` `_svgShapes`. */
 export { _svgShapes } from "./dom-svg.ts";
 export {
@@ -710,12 +686,12 @@ export function clientEffect(fn: () => void | (() => void) | Promise<unknown>, _
   });
 }
 /** @internal `clientEvent` `match`: the event's target is inside an element matching `selector`. */
-export const _matches = (event: Event, selector: string): boolean => !!(event.target as Element | null)?.closest?.(selector);
+const _matches = (event: Event, selector: string): boolean => !!(event.target as Element | null)?.closest?.(selector);
 /**
  * Owned listener on window, document, an element or a "media:(query)" match; handler runs in a batch.
  * `standalone: false` (resumed pages): the listener alone does not make a server-rendered page resumable — a page
- * with nothing else to resume ships no JavaScript and the listener never attaches (the router's link listeners in
- * static builds, `rivetRouter({ clientRouter })`).
+ * with nothing else to resume ships no JavaScript and the listener never attaches (the router's link listeners unless
+ * `rivetRouter({ clientRouter: true })`).
  * `match` (a CSS selector): the handler runs only for events whose target is inside a matching element
  * (`target.closest(match)`); on resumed pages its chunk loads only then — the router's document link listeners
  * (`"a"`) load no router code for a click or hover elsewhere. With `once`, the first matching event removes the

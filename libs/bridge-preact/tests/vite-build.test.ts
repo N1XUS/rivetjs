@@ -120,9 +120,9 @@ export const render = (manifest: never) => resumableToString(() => <Page />, { m
     });
     const { render } = (await import(pathToFileURL(resolve(root, "dist-server/entry-server.js")).href)) as { render(m: Manifest): Promise<string> };
     const html = await render(manifest);
-    assert.match(html, /<rivet-island data-ri="(i\d+)" style="display:contents" data-r="\d+"><button id="P\1-0" class="p">1<\/button><\/rivet-island>/);
-    assert.match(html, /<rivet-island data-ri="i\d+" style="display:contents" data-r="\d+"><time>0<\/time><\/rivet-island>/);
-    assert.match(html, /<rivet-island data-ri="i\d+" style="display:contents" data-r="\d+"><i class="r">hi<\/i><\/rivet-island>/);
+    assert.match(html, /<rivet-island data-ri="(i\d+)" style="display:contents"><button id="P\1-0" class="p">1<\/button><\/rivet-island>/);
+    assert.match(html, /<rivet-island data-ri="i\d+" style="display:contents"><time>0<\/time><\/rivet-island>/);
+    assert.match(html, /<rivet-island data-ri="i\d+" style="display:contents"><i class="r">hi<\/i><\/rivet-island>/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -38,7 +38,7 @@ export default function About() {
 
 This file answers `/about`. The optional `head` export sets the page title (see [head and SEO](./head-and-seo.md)).
 
-Rivet renders the component on the server. In the browser the component does not run again; only its event handlers and changed values do. See [resuming](/learn/resuming.md) if this is new to you.
+Rivet renders the component on the server. In the browser it runs only when it is first used, over the server's HTML; after that, only its event handlers and changed values run. See [resuming](/learn/resuming.md) if this is new to you.
 
 ## How paths map to URLs
 

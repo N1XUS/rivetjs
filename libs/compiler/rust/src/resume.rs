@@ -17,7 +17,7 @@ use crate::slots;
 use crate::styling;
 use crate::tree::{DeclKind, Tree};
 
-// Function Bridge C3 / T3: module references (`_rMod` stamps + `$ref` symbols).
+// Function Bridge C3 / T3: module references used as values (they cover prop values / captures).
 mod refs;
 // List eligibility: O(log n) subtree containment over site / ref-cell spans.
 mod bounds;
@@ -27,19 +27,13 @@ mod escape;
 mod cells;
 // Function Bridge C8 / T10: mutually recursive local functions become one group symbol (`_rGroup`).
 mod groups;
-// Function Bridge C11 / T13: captured stores marked with their literal paths (`_rStorePaths`).
-mod stores;
-// Function Bridge C12 / T24: module data classes register (`_rClass`); class-field arrows capture `this`; RV2102.
-mod classes;
-pub use classes::ClassReg;
 // LAZY-ROWS T2 (2026-10-19): per keyed `<For>` lazy-rows eligibility; eligible row functions become symbols.
 mod rows;
 // RESOURCE-COMPILER (2026-10-20): every captured `const r = resource(…)` is a recipe; RV2016 for the forms that are not.
 mod resources;
 // Derived model (M2 C1 / C2): boundary facts, the derived server target's plan, RV2103 / RV2104.
 pub mod derived;
-pub use rows::{ForRow, ForRowFact, for_row_facts, for_row_warnings};
-pub(crate) use groups::{early_exit, split_group_message};
+use rows::ForRow;
 
 /// Local module components (function components whose bodies read nothing outside their own sites)
 /// as site-less static component elements. Off: it changes symbol ids of existing resume modules
@@ -134,9 +128,6 @@ pub struct Site {
     self_ref: bool,
     /// Computed sites of `reconstruct(() => …)` (Function Bridge T27, C14): the server call gets `{ equals: false }`.
     pub reconstruct: bool,
-    /// Function Bridge T6 (C5): Fn sites of a function declaration (`hoist_container` found): the server registers them at
-    /// the top of the declaration's statement list with thunk captures (`_rFn(id, f, () => [caps])`), not after it.
-    pub hoisted: bool,
     pub target: String,
     /// Ref sites: the bound local's name.
     pub ref_name: String,
@@ -201,20 +192,6 @@ pub struct Site {
 }
 
 impl Site {
-    /// Binding span of capture `index` (its declaration, or the member read), for source maps (T9).
-    pub fn capture_span(&self, index: usize) -> Option<Span> {
-        self.capture_spans.get(index).copied()
-    }
-
-    /// Declarations of `captures` (same order).
-    pub fn capture_decls(&self) -> &[NodeId] {
-        &self.capture_decls
-    }
-    /// Capture kinds (same order as `captures`; Function Bridge T8: `"value"` for a boxed `let` captured by value).
-    pub fn capture_kinds(&self) -> &[&'static str] {
-        &self.capture_kinds
-    }
-
     fn new(kind: SiteKind) -> Site {
         Site {
             kind,
@@ -230,7 +207,6 @@ impl Site {
             present: None,
             self_ref: false,
             reconstruct: false,
-            hoisted: false,
             target: String::new(),
             ref_name: String::new(),
             ref_object: false,
@@ -337,60 +313,16 @@ impl SiteMap {
 
 pub struct Resumed {
     pub sites: Vec<Site>,
-    /// RESUME-ACCESSOR-ROW: `return` / concise-body statements of components returning an accessor: the server wraps the
-    /// returned value in `_rChild` (a symbol function → its own child site).
-    pub child_returns: FxHashSet<NodeId>,
     map: SiteMap,
     /// Lazy containment index for `has_site_within` (`bounds.rs`); `Resumed` is immutable after `analyze`.
     bounds: OnceCell<Vec<(u32, u32)>>,
     pub ref_cells: FxHashSet<NodeId>,
-    pub symbols: Vec<Symbol>,
-    /// Module-scope value names referenced by symbols, in first-use order.
-    pub scope: Vec<String>,
-    /// Function Bridge C3: module references the server stamps at module load (`_rMod`), first use first.
-    pub module_refs: Vec<ModuleRef>,
-    /// Function Bridge C6 / T8: boxed `let` declarators (server `const x = _rCell(init)`, `cells.rs`).
-    pub cells: FxHashSet<NodeId>,
-    /// Function Bridge T8: every reference of a boxed `let` → its server text (`x.v`, `(0, x.v)`, `x: x.v`).
-    pub cell_refs: FxHashMap<NodeId, String>,
-    /// Function Bridge C9 / T10: `f.bind(t, ...args)` calls (bound `const` initializers a site captures, through
-    /// bound-of-bound chains) the server rewrites to `_rBound(f, t, [args])`.
-    pub bound: FxHashSet<NodeId>,
-    /// Function Bridge C8 / T10: group sites registered after a `const` member's declaration statement (statement → sites,
-    /// source order; fix 1 F5: two groups may end in one multi-declarator statement).
-    pub group_after: FxHashMap<NodeId, Vec<usize>>,
     /// Function Bridge C8 / T10: member declaration → its group site.
     pub group_of: FxHashMap<NodeId, usize>,
-    /// Function Bridge C11 / T13: captured store declarators → their literal paths (server
-    /// `const s = _rStorePaths(createStore(…), [paths])`, `stores.rs`).
-    pub store_paths: FxHashMap<NodeId, Vec<String>>,
-    /// DIET-STATE 1c: captured pure-literal component `const`s → their hoisted module name (`const x = __rivetData0_x`,
-    /// hoist `const __rivetData0_x = <literal>;`, both targets; `refs.rs` `local_data`).
-    pub local_data: FxHashMap<NodeId, String>,
-    /// Function Bridge C12 / T24: data classes the server registers at module end (`_rClass(Cls, id)`, `classes.rs`).
-    pub classes: Vec<ClassReg>,
-    /// Function Bridge C12 / T24: class-field arrows of registered classes → symbol id (server `_rFn(id, arrow, [this])`).
-    pub class_arrows: FxHashMap<NodeId, String>,
-    /// LAZY-ROWS T2: every structural `<For>` (source order) with its lazy-rows verdict (`rows.rs`).
-    pub for_rows: Vec<ForRow>,
-}
-
-/// Function Bridge C3: a module reference stamped by the server epilogue: `_rMod(() => value, "id"[, 1])` (1 = an import).
-pub struct ModuleRef {
-    /// Server expression of the value (`inc`, `ns.member`).
-    pub value: String,
-    pub id: String,
-    pub imported: bool,
-    /// DIET-STATE 1: module static data (stamp flag `2`: nested objects stamped with their key paths).
-    pub data: bool,
 }
 
 
 impl Resumed {
-    pub fn site_at(&self, node: NodeId) -> Option<usize> {
-        self.map.get(node)
-    }
-
     /// Any site (or ref cell) keyed inside `span` (FLATTEN-CMP-2: list-mount rows must record nothing).
     /// Props sites do not count (LIVE-PROPS P3): `_rProps` records nothing, it only registers its recipe.
     pub fn has_site_within(&self, tree: &Tree, span: Span) -> bool {
@@ -427,8 +359,6 @@ struct Analysis<'t, 'a> {
     accessors: FxHashSet<NodeId>,
     /// Function Bridge C3: value uses of module references, first use per binding (+ member).
     refs: Vec<refs::RefUse>,
-    /// Function Bridge T3: import specifier → resolved module id (`resolvedImports`), the unit of import reference ids.
-    resolved: &'t FxHashMap<String, String>,
     /// Function Bridge T4: right sides of assignments into a local binding or a member chain rooted at it (`escape.rs`).
     holder_writes: FxHashMap<NodeId, Vec<&'a Expression<'a>>>,
     /// T4b review L2 (T8): declarations / function literals `named_site` / `holder_site` rejected once (never re-analysed).
@@ -3060,7 +2990,6 @@ pub fn analyze(
     diags: &mut Diags,
     statics: &FxHashSet<NodeId>,
     source_packages: &[String],
-    resolved: &FxHashMap<String, String>,
 ) -> Resumed {
     let mut a = Analysis {
         child_returns: FxHashSet::default(),
@@ -3077,7 +3006,6 @@ pub fn analyze(
         seeds: Vec::new(),
         accessors: for_accessors(tree),
         refs: Vec::new(),
-        resolved,
         holder_writes: FxHashMap::default(),
         rejected: FxHashSet::default(),
         closures: FxHashSet::default(),
@@ -3086,8 +3014,6 @@ pub fn analyze(
     };
     // Pass 1: candidate sites, outermost only. Ref-binding callbacks mark their target locals.
     a.scan(tree.root(), false, diags);
-    // Function Bridge C12 / T24: which module classes are data classes (`classes.rs`).
-    let class_verdicts = classes::verdicts(tree);
     let mut ref_cells = FxHashSet::default();
     for (decl, count) in &a.ref_assignments {
         if a.all_assignments.get(decl) == Some(count) {
@@ -3251,7 +3177,7 @@ pub fn analyze(
                 Some(closure),
             );
         }
-        for (name, decl) in captures {
+        for (_, decl) in captures {
             if ref_cells.contains(&decl) || fn_sites.contains(&decl) {
                 continue;
             }
@@ -3267,28 +3193,6 @@ pub fn analyze(
                 fn_sites.insert(decl);
                 queue.push(a.sites.len() - 1);
             } else {
-                // `new X(…)` of a built-in the resume encoder serializes (`serializable_builtin`) is plain data; of a module
-                // data class (or a relative import: its module registers it) too; of an ineligible class RV2102 (T24).
-                let class = if quiet { None } else { classes::class_capture(tree, &class_verdicts, resolved, decl) };
-                if let Some(Some(message)) = &class {
-                    diags.add(message.clone(), Some(closure));
-                }
-                if !quiet
-                    && class.is_none()
-                    && matches!(tree.kind(decl), AstKind::VariableDeclarator(d)
-                        if match &d.init {
-                            Some(Expression::NewExpression(n)) => !serializable_builtin(tree, &n.callee),
-                            Some(Expression::ClassExpression(_)) => true,
-                            _ => false,
-                        })
-                {
-                    diags.add(
-                        format!(
-                            "Resumable code cannot capture `{name}`: class instances are not serializable; create it inside the handler / clientEffect, build it with reconstruct(() => …), or capture plain data or signals"
-                        ),
-                        Some(closure),
-                    );
-                }
                 // A destructured binding with a function-literal default (`{ f = () => x } = o`) may hold it: the
                 // default becomes a symbol so the captured value serializes (else the server throws "function is not
                 // serializable", or a region silently drops the value).
@@ -3354,8 +3258,6 @@ pub fn analyze(
     }
     // Function Bridge C6 / T8: captured `let`s with any write box into shared cells (snapshot captures: `cells.rs`).
     let cells = a.boxed_lets(&queue, &ref_cells, &fn_sites);
-    // Function Bridge C11 / T13: captured stores whose every reference has a literal path (`stores.rs`).
-    let store_paths = a.store_paths(&queue);
     for &index in &queue {
         let site = &mut a.sites[index];
         let members = std::mem::take(&mut site.members);
@@ -3621,101 +3523,14 @@ pub fn analyze(
         symbol.name = name;
         symbol.id = id;
     }
-    // Function Bridge C3: one `() => (g)` symbol per module reference (`refs.rs`), after the closure symbols.
-    let mut module_refs = a.module_ref_symbols(module, &mut symbols, &mut scope, diags);
-    // DIET-STATE 1c: captured pure-literal component locals hoisted to module scope as module static data.
-    let (local_data, local_refs) = a.local_data(module, &queue, &mut symbols, &mut scope);
-    module_refs.extend(local_refs);
-    // Function Bridge C12 / T24: data class registrations + class symbols + class-field arrow symbols.
-    let (class_regs, class_arrows) = a.class_symbols(module, &class_verdicts, &mut symbols, &mut scope);
-    // Function Bridge T6 (C5): function declarations register at the top of their statement list (hoisted, thunk captures).
-    for site in a.sites.iter_mut() {
-        site.hoisted = site.kind == SiteKind::Fn
-            && site.closure.is_some_and(|c| tree.decl_kind(c) == DeclKind::FunctionDeclaration && hoist_container(tree, c).is_some());
-        // T10: a group with a `const` member registers after that declaration instead.
-        if site.group_container.is_some() {
-            site.hoisted = site.group_after.is_none();
-        }
-    }
-    let mut group_after: FxHashMap<NodeId, Vec<usize>> = FxHashMap::default();
+    // Function Bridge C8 / T10: member declaration → its group site (containment, `bounds.rs`).
     let mut group_of = FxHashMap::default();
     for (site, decls) in groups {
-        if let Some(statement) = a.sites[site].group_after {
-            group_after.entry(statement).or_default().push(site);
-        }
         for decl in decls {
             group_of.insert(decl, site);
         }
     }
-    let cell_refs = cells.uses.values().flatten().map(|(node, _, text)| (*node, text.clone())).collect();
-    // LAZY-ROWS T2: a row (or `by`) site that did not survive pass 2 leaves its For recorded.
-    let mut for_rows = std::mem::take(&mut a.for_rows);
-    for entry in for_rows.iter_mut() {
-        if entry.reason.is_none() && (entry.row.is_none_or(|r| a.map.get(r).is_none()) || entry.by.is_some_and(|b| a.map.get(b).is_none())) {
-            entry.reason = Some("row");
-        }
-    }
-    Resumed {
-        child_returns: a.child_returns,
-        sites: a.sites,
-        map: a.map,
-        bounds: OnceCell::new(),
-        ref_cells,
-        symbols,
-        scope,
-        module_refs,
-        cells: cells.decls,
-        cell_refs,
-        bound,
-        group_after,
-        group_of,
-        store_paths,
-        local_data,
-        classes: class_regs,
-        class_arrows,
-        for_rows,
-    }
-}
-
-/// Global constructors whose instances the resume encoder serializes (`libs/runtime/resume-format.ts` `build`: Date `d`,
-/// URL `h`, Map `m`, Set `e`, URLSearchParams `U`, RegExp `t`, binary `b`, errors `E`). Keep in sync with the encoder.
-const SERIALIZABLE_BUILTINS: &[&str] = &[
-    "Map",
-    "Set",
-    "Date",
-    "URL",
-    "URLSearchParams",
-    "RegExp",
-    "ArrayBuffer",
-    "DataView",
-    "Int8Array",
-    "Uint8Array",
-    "Uint8ClampedArray",
-    "Int16Array",
-    "Uint16Array",
-    "Int32Array",
-    "Uint32Array",
-    "Float16Array",
-    "Float32Array",
-    "Float64Array",
-    "BigInt64Array",
-    "BigUint64Array",
-    "Error",
-    "EvalError",
-    "RangeError",
-    "ReferenceError",
-    "SyntaxError",
-    "TypeError",
-    "URIError",
-    "AggregateError",
-];
-
-/// `new X(…)` where `X` is an unshadowed global in `SERIALIZABLE_BUILTINS` (Function Bridge C1): its instance is data.
-fn serializable_builtin<'a>(tree: &Tree<'a>, callee: &Expression<'a>) -> bool {
-    match callee.without_parentheses() {
-        Expression::Identifier(ident) => tree.symbol_of_ref(ident).is_none() && SERIALIZABLE_BUILTINS.contains(&ident.name.as_str()),
-        _ => false,
-    }
+    Resumed { sites: a.sites, map: a.map, bounds: OnceCell::new(), ref_cells, group_of }
 }
 
 /// An identifier / `this` / static member chain of one (`dom_v2.rs` `member_chain`: a spread source read as an object).

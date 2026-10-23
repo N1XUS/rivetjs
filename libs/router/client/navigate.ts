@@ -46,10 +46,6 @@ export function _go(url: URL, invalidate?: true | FreshData): Promise<void> {
   });
 }
 
-type Loader = { b?(): void; r?(): unknown };
-// Unserved requests wait this long for the router, then load the document.
-const WAIT = 10_000;
-
 /** Route data in the data-endpoint shape (an enhanced action's single-flight answer). */
 export interface FreshData {
   readonly data?: readonly unknown[];
@@ -65,26 +61,12 @@ export type InvalidateTarget = string | URL | readonly (string | URL)[] | ((key:
 
 function serve(url: URL, options: NavigateOptions & { invalidate?: NavigateRequest["invalidate"] }, fallback: () => void): Promise<void> {
   return new Promise<void>((resolve) => {
-    const d = document;
-    const ask = () => pending() && d.dispatchEvent(new CustomEvent("rivet:go"));
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    // Only the resumed-page wait (below) listens.
-    const settle = () => timer && (clearTimeout(timer), d.removeEventListener("rivet:attach", ask));
-    const request: NavigateRequest = { ...options, url, done: () => (settle(), resolve()) };
-    const pending = () => queue.includes(request);
-    const drop = () => (settle(), queue.splice(queue.indexOf(request), 1), fallback());
+    const request: NavigateRequest = { ...options, url, done: resolve };
     queue.push(request);
-    ask();
-    if (!pending()) return;
-    // No App listening (the app was built without navigate() detected) or no resume loader: a document load.
-    const loader = (d as Document & { $r?: Loader }).$r;
-    if (!loader || !d.querySelector("[data-rivet-go]")) return drop();
-    // Resumed page: the App's listener attaches when the resume runtime drains its pending listeners (at idle, or
-    // before the first delegated handler runs) and says so (`rivet:attach`): ask again then; its chunk loads on the
-    // first `rivet:go`. Boot the runtime now; no answer within WAIT: a document load.
-    d.addEventListener("rivet:attach", ask);
-    timer = setTimeout(() => pending() && drop(), WAIT);
-    if (!loader.r?.()) loader.b?.();
+    document.dispatchEvent(new CustomEvent("rivet:go"));
+    // No App listening (built without navigate() detected, or its boundary has not run yet on a resumed page): a
+    // document load.
+    if (queue.includes(request)) (queue.splice(queue.indexOf(request), 1), fallback());
   });
 }
 

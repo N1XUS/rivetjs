@@ -62,25 +62,20 @@ export default defineConfig({ plugins: [rivet()] });
 
 ## Resume options
 
-Pages from the server :term[resume]{id=resumability} in the browser: the browser picks up where the server left off, without running your components again. With `rivetRouter`, route files and every app `.tsx`/`.jsx` component file a route imports are compiled this way (`appModules`, default `true`; `appModules: false` opts out and leaves only `modules`). With plain `rivet({ resume })`, only the files in `resume.modules` are. Other options:
+Pages from the server :term[resume]{id=resumability} in the browser: the browser picks up where the server left off, without running your components on load. With `rivetRouter`, route files and every app `.tsx`/`.jsx` component file a route imports are compiled this way (`appModules`, default `true`; `appModules: false` opts out and leaves only `modules`). With plain `rivet({ resume })`, only the files in `resume.modules` are. Other options:
 
 ```ts
 rivetRouter({
-  resume: {
-    chunks: "component",
-    preload: { rules: [{ match: "src/components/Search.tsx", strategy: "idle" }] },
-  },
+  resume: { domData: true },
 });
 ```
 
 | Option | Meaning |
 | --- | --- |
 | `modules` | Root-relative source files compiled in resume mode |
-| `entry` | Optional module whose default export is `createResume({ contexts })`, for context values the browser needs |
-| `chunks` | `"route"` (default), `"component"` or `"group"`; see [Chunks](../performance/chunks.md) |
-| `merge` / `cap` | Shared-chunk merge budget (default `65536` bytes, `false` keeps the bundler's split) and the most shared chunks one chunk may load; see [Fewer shared chunks](../performance/chunks.md#fewer-shared-chunks) |
-| `lazy` | When lazy imports prefetch: `"idle"` or `"intent"` (the router sets `"intent"`) |
-| `preload.rules` | Preload overrides; see [Preloading](../performance/preloading.md) |
+| `appModules` | Every app `.tsx`/`.jsx` module a resume module imports resumes too (default `true` with `rivetRouter`) |
+| `domData` | `<For>` items over data props are read back from the page; see [data from the page](../../learn/resuming.md#data-from-the-page) |
+| `roots` | Files whose default export is the page's root component (its props are sent as data) |
 
 The full list, with types and defaults, is in [Config](../../reference/config.md#rivetresumeoptions).
 

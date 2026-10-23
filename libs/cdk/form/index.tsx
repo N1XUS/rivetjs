@@ -4,9 +4,8 @@
 // Rivet:
 // - plain JSX children are lazy (the compiler compiles them to a slot evaluated inside the parent,
 //   `renderSlot`), so the fields see the Form contexts; a function child `{() => …}` works too.
-// - `FormContext` (`rv-form`) and `FormValidationContext` (`rv-form-validation`) are resumable. The form
-//   provides `{ validationBehavior }` in `FormContext` (RAC: all of its props): provided values must
-//   serialize, and fields only read `validationBehavior`.
+// - The form provides `{ validationBehavior }` in `FormContext` (RAC: all of its props); fields only read
+//   `validationBehavior`.
 // - `onInvalid` is bound in the capture phase (`invalid` does not bubble): it sees each field's `invalid`
 //   event before the field's own handler, like React's form `onInvalid`, so `preventDefault()` there
 //   keeps the field from focusing itself (RA `useFormValidation`).
@@ -19,7 +18,7 @@ import { renderSlot } from "@rivetjs/runtime/slot";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { MaybeAccessor, ValidationBehavior, ValidationErrors } from "../state/form-validation.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { resumableContext, contextProps, mergeRefValues, slottedContext, type ContextValue, type RefValue, type SlotProps } from "../slots/index.tsx";
+import { contextProps, mergeRefValues, slottedContext, type ContextValue, type RefValue, type SlotProps } from "../slots/index.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { applyPendingValidity, formSubmit } from "./behaviour.ts";
 import { isLive, liveAssign, liveClass } from "../utils/live.tsx";
@@ -82,12 +81,10 @@ export interface FormProps extends GlobalDOMAttributes<HTMLFormElement>, SlotPro
 }
 
 /** RAC `FormContext`: props for a `<Form>` inside; the `<Form>` provides `{ validationBehavior }` to its fields. */
-export const FormContext = resumableContext(createContext<ContextValue<FormProps, HTMLFormElement>>(null, { id: "rv-form" }));
+export const FormContext = createContext<ContextValue<FormProps, HTMLFormElement>>(null);
 
 /** RAC `FormValidationContext` (react-stately): server errors per field name. */
-export const FormValidationContext = resumableContext(
-  createContext<MaybeAccessor<ValidationErrors | undefined> | undefined>(undefined, { id: "rv-form-validation" }),
-);
+export const FormValidationContext = createContext<MaybeAccessor<ValidationErrors | undefined> | undefined>(undefined);
 
 /** Validation behaviour of a field: its own prop, else the enclosing `<Form>`'s, else "native" (RAC fields). */
 export function formValidationBehavior(own: ValidationBehavior | undefined): ValidationBehavior {

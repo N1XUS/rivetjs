@@ -32,7 +32,6 @@ import type { StepProps as CdkStepProps, StepRenderProps, StepperOrientation, St
 import { createContext, useContext, type Signal } from "@rivetjs/reactivity";
 import { Provider, Show } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { Check } from "lucide";
 
@@ -50,7 +49,7 @@ type StepperUiContext = {
   inStepper?: boolean;
 };
 
-const StepperUiContext = resumableContext(createContext<StepperUiContext>({}, { id: "rv-ui-stepper" }));
+const StepperUiContext = createContext<StepperUiContext>({});
 
 type StepperSlots = ReturnType<typeof stepperVariants>;
 let SLOTS: StepperSlots | undefined;

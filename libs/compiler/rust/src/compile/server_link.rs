@@ -21,10 +21,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
         {
             return false;
         }
-        // A resume site on the element (a props recipe) keeps the component call.
-        if self.site_index(self.id(el)).is_some() || self.site_index(self.id(&*el.opening_element)).is_some() {
-            return false;
-        }
         let mut to = None;
         let mut class = None;
         for item in &el.opening_element.attributes {
@@ -33,9 +29,6 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 "to" if to.is_none() && attr.value.is_some() => to = Some(&**attr),
                 "class" if class.is_none() && matches!(attr.value, Some(JSXAttributeValue::StringLiteral(_))) => class = Some(&**attr),
                 _ => return false,
-            }
-            if self.site_index(self.id(&**attr)).is_some() {
-                return false;
             }
         }
         let Some(to) = to else { return false };

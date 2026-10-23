@@ -27,7 +27,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { ChevronsUpDown } from "lucide";
 
 import { inlineSelectVariants } from "../../../styles/src/components/inline-select/index.ts";
@@ -50,7 +49,7 @@ interface InlineSelectContext {
   inInline?: true;
 }
 
-const InlineSelectContext = resumableContext(createContext<InlineSelectContext>({}, { id: "rv-ui-inline-select" }));
+const InlineSelectContext = createContext<InlineSelectContext>({});
 
 type Slots = ReturnType<typeof inlineSelectVariants>;
 

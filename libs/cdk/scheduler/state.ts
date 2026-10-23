@@ -2,7 +2,7 @@
 // src/lib/scheduler/scheduler-context.ts `commitChange` / `announce`), MIT, © 2026 Malva UI.
 // Rivet:
 // - Angular `model()` / `input()` / `computed()` on a component class → `createSchedulerState(props)`: plain data
-//   (region state) of `controllable` values (`events`, `view`, `date`), the caller's option values / accessors as
+//   of `controllable` values (`events`, `view`, `date`), the caller's option values / accessors as
 //   given (never wrapped: closures built in a `.ts` module do not resume) and interaction signals holding strings /
 //   numbers only. Derived values are pure free functions over the state (`schedulerVisibleRange(state)`,
 //   `schedulerTitle(state)`, `schedulerMonthLayout(…)`, …); components memoize them in `computed`s of their own
@@ -17,7 +17,7 @@
 // Deviation: `onVisibleRangeChange` fires when a state function moves the range bounds (toolbar, keys, API) — not on
 // init (the initial range belongs to the route loader: no client work at load) and not for writes the caller makes
 // to its own `date` / `view` signal (the caller made that change).
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { DEV, devWhere } from "#dev";
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "../interactions/controllable.ts";
 import { CalendarDate } from "../date/CalendarDate.ts";
@@ -231,75 +231,73 @@ export interface SchedulerState<T = unknown> {
 
 const isServer = (): boolean => typeof document === "undefined";
 
-/** Creates the scheduler state (region state: a re-created region of a resumed page keeps it). */
+/** Creates the scheduler state. */
 export function createSchedulerState<T = unknown>(props: SchedulerStateProps<T> = {}): SchedulerState<T> {
-  return _regionState(() => {
-    const {
-      events,
-      defaultEvents,
-      onEventsChange,
-      view,
-      defaultView,
-      onViewChange,
-      date,
-      defaultDate,
-      onDateChange,
-      canMove,
-      canResize,
-      onEventMove,
-      onEventResize,
-      onVisibleRangeChange,
-      onRangeSelect,
-      onExternalDrop,
-      onEventAction,
-      onEventDoubleClick,
-      onEventContextMenu,
-      onEventDelete,
-      onSlotAction,
-      onSlotDoubleClick,
-      onSlotContextMenu,
-      ...options
-    } = props;
-    const given = untrack(() => read(options.timeZone));
-    const zone = defaultTimeZone();
-    if (DEV && given === undefined && isServer() && !warnedZone) {
-      warnedZone = true;
-      console.warn(
-        '[rivet:cdk] scheduler: no `timeZone` on a server-rendered Scheduler: the page lays out in "UTC" (the server\'s ' +
-          "default, kept on the resumed page). Pass `timeZone` (e.g. the user's zone from a cookie) for local time." +
-          devWhere(),
-      );
-    }
-    const timeZone = given ?? zone;
-    return {
-      events: controllable<readonly SchedulerEvent<T>[]>(events, defaultEvents ?? [], onEventsChange),
-      view: controllable<SchedulerView>(view, defaultView ?? "month", onViewChange),
-      date: controllable<SchedulerDate>(date, defaultDate ?? todayString(timeZone), onDateChange),
-      options,
-      zone,
-      canMove,
-      canResize,
-      onEventMove,
-      onEventResize,
-      onVisibleRangeChange,
-      onRangeSelect,
-      onExternalDrop,
-      onEventAction,
-      onEventDoubleClick,
-      onEventContextMenu,
-      onEventDelete,
-      onSlotAction,
-      onSlotDoubleClick,
-      onSlotContextMenu,
-      selection: signal<SchedulerSelection | null>(null),
-      dragPreview: signal<SchedulerDragPreview | null>(null),
-      dragging: signal(false),
-      scrollRequest: signal<SchedulerScrollRequest | null>(null),
-      pendingFocus: signal<SchedulerFocusRequest | null>(null),
-      popoverDay: signal<number | null>(null),
-      announcement: signal<readonly [string, string]>(["", ""]),
-    };
-  });
+  const {
+    events,
+    defaultEvents,
+    onEventsChange,
+    view,
+    defaultView,
+    onViewChange,
+    date,
+    defaultDate,
+    onDateChange,
+    canMove,
+    canResize,
+    onEventMove,
+    onEventResize,
+    onVisibleRangeChange,
+    onRangeSelect,
+    onExternalDrop,
+    onEventAction,
+    onEventDoubleClick,
+    onEventContextMenu,
+    onEventDelete,
+    onSlotAction,
+    onSlotDoubleClick,
+    onSlotContextMenu,
+    ...options
+  } = props;
+  const given = untrack(() => read(options.timeZone));
+  const zone = defaultTimeZone();
+  if (DEV && given === undefined && isServer() && !warnedZone) {
+    warnedZone = true;
+    console.warn(
+      '[rivet:cdk] scheduler: no `timeZone` on a server-rendered Scheduler: the page lays out in "UTC" (the server\'s ' +
+        "default, kept on the resumed page). Pass `timeZone` (e.g. the user's zone from a cookie) for local time." +
+        devWhere(),
+    );
+  }
+  const timeZone = given ?? zone;
+  return {
+    events: controllable<readonly SchedulerEvent<T>[]>(events, defaultEvents ?? [], onEventsChange),
+    view: controllable<SchedulerView>(view, defaultView ?? "month", onViewChange),
+    date: controllable<SchedulerDate>(date, defaultDate ?? todayString(timeZone), onDateChange),
+    options,
+    zone,
+    canMove,
+    canResize,
+    onEventMove,
+    onEventResize,
+    onVisibleRangeChange,
+    onRangeSelect,
+    onExternalDrop,
+    onEventAction,
+    onEventDoubleClick,
+    onEventContextMenu,
+    onEventDelete,
+    onSlotAction,
+    onSlotDoubleClick,
+    onSlotContextMenu,
+    selection: signal<SchedulerSelection | null>(null),
+    dragPreview: signal<SchedulerDragPreview | null>(null),
+    dragging: signal(false),
+    scrollRequest: signal<SchedulerScrollRequest | null>(null),
+    pendingFocus: signal<SchedulerFocusRequest | null>(null),
+    popoverDay: signal<number | null>(null),
+    announcement: signal<readonly [string, string]>(["", ""]),
+  };
 }
 
 let warnedZone = false;
@@ -724,7 +722,7 @@ export function commitSelection(state: SchedulerState<any>, source: SchedulerCha
   });
 }
 
-/** Per-state live-region bookkeeping (runtime only, never region state): next slot + messages of this task. */
+/** Per-state live-region bookkeeping (runtime only): next slot + messages of this task. */
 const liveSlots = new WeakMap<SchedulerState<any>, { slot: 0 | 1; batch: number }>();
 
 /**

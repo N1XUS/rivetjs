@@ -19,11 +19,8 @@ const encodeIn = (conditions: string[]) =>
   ).trim();
 
 test("development: serialization errors name the value path", () => {
-  assert.match(
-    encodeIn(["--conditions=development"]),
-    /^\.items\[2\]\.onClick: function is not serializable — only functions created in a resume-compiled component/,
-  );
-  assert.equal(encodeIn([]), "function is not serializable: build it inside the component, or a library object with reconstruct(() => …)");
+  assert.match(encodeIn(["--conditions=development"]), /^\.items\[2\]\.onClick: function is not serializable — only data resumes/);
+  assert.equal(encodeIn([]), "function is not serializable: pass data, create functions in the component that uses them");
 });
 
 test("development: paths cover maps, sets and quoted keys", () => {
@@ -48,18 +45,13 @@ test("development: paths cover maps, sets and quoted keys", () => {
 test("development hints name the cause and the fix", async () => {
   const { DEV } = await import("../dev/on.ts");
   assert.match(DEV.hint("Missing resumable element 3", "drift"), /^Missing resumable element 3 — the HTML changed between the server render and resume/);
-  assert.match(DEV.hint("Resume symbol is not loaded: a#b", "skew"), /another build/);
-  assert.match(DEV.hint("Resume manifest has no chunk for a#b", "manifest"), /resume\.modules/);
-  const content = DEV.hint("rendered content is not serializable", "content");
-  // Names the real cause (captured, already rendered JSX) and every accepted fix.
-  assert.match(content, /captures JSX that was already rendered/);
-  assert.match(content, /const x = \(\) => <…\/>/);
-  assert.match(content, /r:slot="header"` on a direct child of the component element/);
+  assert.match(DEV.hint("Resume table entry `t` needs @rivetjs/runtime/resume-builtins (not loaded)", "manifest"), /rivet-resume\.json/);
+  assert.match(DEV.hint("boundary App did not adopt", "adopt"), /rendered afresh in the browser/);
 });
 
 test("production (default resolution): short messages", () => {
   assert.throws(() => createEncoder().ref({ a: [() => {}] }), {
-    message: "function is not serializable: build it inside the component, or a library object with reconstruct(() => …)",
+    message: "function is not serializable: pass data, create functions in the component that uses them",
   });
 });
 

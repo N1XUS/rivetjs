@@ -2,10 +2,11 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, focused, libraryScripts, type Stories } from "./harness.ts";
+import { stories, watch, focused, hinted, libraryScripts, type Stories } from "./harness.ts";
 
 let s: Stories;
-beforeAll(async () => (s = await stories()));
+// Fetch-ahead on (`data-fo`): the "preloaded when visible" / cold-key checks expect the page's chunks fetched after load.
+beforeAll(async () => (s = await stories({ preload: {} })));
 afterAll(async () => s?.close());
 
 const focusedId = (page: Page, id: string) => page.waitForFunction((id) => document.activeElement?.id === id, id);
@@ -152,7 +153,13 @@ test("form fields: native controls, labels, descriptions, two-way state, exclusi
   assert.equal(await page.evaluate(() => document.querySelector<HTMLDetailsElement>("#faq-1")!.open), true);
   await page.click("#faq-2 summary");
   assert.equal(await page.evaluate(() => document.querySelector<HTMLDetailsElement>("#faq-1")!.open), false, "exclusive group");
-  assert.deepEqual(libraryScripts(seen), [], "details need no library code");
+  // Fetch-ahead (this file opts in) hints the page's chunks after load: only code fetched beyond those counts.
+  const hints = new Set(await hinted(page));
+  assert.deepEqual(
+    libraryScripts(seen).filter((script) => !hints.has(script)),
+    [],
+    "details need no library code",
+  );
 
   // A cold Space keeps the server-rendered control (and the keyboard focus): no re-render.
   await page.evaluate(() => ((document.querySelector("#terms") as HTMLElement & { __server?: boolean }).__server = true));

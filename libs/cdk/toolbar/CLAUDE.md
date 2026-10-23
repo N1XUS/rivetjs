@@ -4,11 +4,11 @@
 RAC Toolbar: arrow keys move focus across controls (also across `Group`s, separators, nested toolbars; no wrap), Tab leaves, re-entry restores last focused control.
 
 ## Entry points
-- `@rivetjs/cdk/toolbar` -> `index.tsx`: `Toolbar`, `ToolbarContext` (id `rv-toolbar`), types `ToolbarProps`, `ToolbarRenderProps`
+- `@rivetjs/cdk/toolbar` -> `index.tsx`: `Toolbar`, `ToolbarContext`, types `ToolbarProps`, `ToolbarRenderProps`
 - `@rivetjs/cdk/toolbar/behaviour` -> `behaviour.ts`: `toolbarProps(props, isInToolbar?)`, `toolbarKeys(orientation)`, `toolbarKeyDown(e, { orientation, direction? })`, `toolbarFocus(e)`, `toolbarBlur(e)`, type `AriaToolbarProps`
 
 ## Layout
-- `index.tsx` - `<Toolbar>`; internal `InToolbarContext` (id `rv-in-toolbar`): nested toolbar renders `role="group"` without `data-rk` from the server on
+- `index.tsx` - `<Toolbar>`; internal `InToolbarContext`: nested toolbar renders `role="group"` without `data-rk` from the server on
 - `behaviour.ts` - RA useToolbar; last-focused control in a module `WeakMap` (browser only)
 - importers: `toggle-button-group/*` (`toolbarProps`, `toolbarKeyDown(event, state)`)
 - tests: `tests/toolbar.browser.test.tsx` (RAC Toolbar.test.tsx port, render case in `tests/render-collections.browser.test.tsx`), `tests-components/links.test.ts`, `tests-components/dom-events-forms.test.ts`

@@ -19,7 +19,7 @@ import { hoverProps } from "../interactions/hover.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { resumableContext, renderPropsOf, type RefValue, type RenderProps, type StyleObject } from "../slots/index.tsx";
+import { renderPropsOf, type RefValue, type RenderProps, type StyleObject } from "../slots/index.tsx";
 import type { HoverEvents } from "../utils/types.ts";
 import { read, type MaybeAccessor } from "../interactions/utils.ts";
 
@@ -47,7 +47,7 @@ export interface InternalColorThumbContextValue {
 }
 
 /** @internal RAC `InternalColorThumbContext`. */
-export const InternalColorThumbContext = resumableContext(createContext<InternalColorThumbContextValue | null>(null, { id: "rv-color-thumb" }));
+export const InternalColorThumbContext = createContext<InternalColorThumbContextValue | null>(null);
 
 export interface ColorThumbRenderProps {
   /** The selected color, excluding the alpha channel. */

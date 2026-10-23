@@ -31,17 +31,16 @@ test("rivet check prints file:line:col diagnostics and fails on errors", () => {
   }
 });
 
-test("rivet check: warnings (RV2101) do not fail; --no-types skips them", () => {
+test("rivet check: warnings (RV2104) do not fail", () => {
   const root = app(
-    `import { clientEffect } from "@rivetjs/runtime/dom";\nclass Store { #n = 1; }\ndeclare function make(): Store;\nexport function Counter() {\n  const store = make();\n  clientEffect(() => { void store; });\n  return <p>x</p>;\n}\n`,
+    `import { signal } from "@rivetjs/reactivity";\nexport function Counter(props: { list: number[] }) {\n  const all = [];\n  for (const v of props.list) all.push(signal(v));\n  return <p onClick={() => all[0]?.set(1)}>{all.length}</p>;\n}\n`,
   );
   try {
     write(root);
     const run = spawnSync("node", [cli], { cwd: root, encoding: "utf8" });
     assert.equal(run.status, 0, run.stdout + run.stderr);
-    assert.match(run.stdout, /src\/counter\.tsx:5:9 - warning RV2101: `store` is captured/);
-    const untyped = spawnSync("node", [cli, "--no-types"], { cwd: root, encoding: "utf8" });
-    assert.match(untyped.stdout, /1 file, 0 errors, 0 warnings/);
+    assert.match(run.stdout, /src\/counter\.tsx:4:\d+ - warning RV2104: Keyed state `signal\(\)` is created inside a loop/);
+    assert.match(run.stdout, /1 file, 0 errors, 1 warning/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

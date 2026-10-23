@@ -48,5 +48,4 @@ test("surface: SurfaceContext provides the variant to descendants (nearest wins)
     </div>
   ));
   assert.match(html, /^<div><i>none<\/i><div[^>]*><i>tertiary<\/i><div[^>]*><i>transparent<\/i><\/div><\/div><\/div>$/);
-  assert.equal(SurfaceContext.id, "rv-ui-surface");
 });

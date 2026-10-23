@@ -3,7 +3,7 @@
 // as plain signals + free functions (resume-safe: no closures are created here).
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";
 import { matchesSidebarShortcut, parseSidebarShortcut } from "@rivetjs/cdk/sidebar/state";
-import { _regionState, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 
 /** Cookie holding the aside's open state (`true` / `false`), written on every change. */
 export const ASIDE_COOKIE_NAME = "aside_state";
@@ -33,11 +33,11 @@ export interface AsideState {
 }
 
 export function createAsideState(props: AsideStateProps): AsideState {
-  return _regionState(() => ({
+  return {
     control: controllable<boolean>(props.asideOpen, props.defaultAsideOpen ?? true, props.onAsideOpenChange),
     mobileOpen: signal(false),
     shortcut: props.asideToggleShortcut || null,
-  }));
+  };
 }
 
 export const isAsideOpen = (state: AsideState): boolean => state.control.value();
@@ -126,7 +126,7 @@ export function createPanelSizeState(
   behavior: "preserve-relative-size" | "preserve-pixel-size" | undefined,
   storageKey: string | null,
 ): PanelSizeState {
-  return _regionState(() => ({ size: signal(defaultSize), min, max, defaultSize, pixels: behavior === "preserve-pixel-size", storageKey }));
+  return { size: signal(defaultSize), min, max, defaultSize, pixels: behavior === "preserve-pixel-size", storageKey };
 }
 
 /** A length in px (`%` of `total`, `px`, `rem` / `em` at 16 px; else `fallback`). */

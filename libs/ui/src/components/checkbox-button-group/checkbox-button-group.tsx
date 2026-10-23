@@ -28,7 +28,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { Check } from "lucide";
 
@@ -53,10 +52,10 @@ interface CheckboxButtonGroupContext {
   layout?: CheckboxButtonGroupVariants["layout"];
 }
 
-const CheckboxButtonGroupContext = resumableContext(createContext<CheckboxButtonGroupContext>({}, { id: "rv-ui-checkbox-button-group" }));
+const CheckboxButtonGroupContext = createContext<CheckboxButtonGroupContext>({});
 
 /** The enclosing item's render props (accessors), for Indicator function children. */
-const CheckboxButtonGroupItemContext = resumableContext(createContext<{ state?: CheckboxButtonRenderProps }>({}, { id: "rv-ui-checkbox-button-group-item" }));
+const CheckboxButtonGroupItemContext = createContext<{ state?: CheckboxButtonRenderProps }>({});
 
 type Slots = ReturnType<typeof checkboxButtonGroupVariants>;
 

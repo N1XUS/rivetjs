@@ -29,7 +29,6 @@ import type { TextFieldProps as TextFieldPrimitiveProps, TextFieldRenderProps } 
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 
 import type { NativeSelectVariants } from "../../../styles/src/components/native-select/index.ts";
@@ -52,7 +51,7 @@ interface NativeSelectContext {
   fullWidth?: NativeSelectVariants["fullWidth"];
 }
 
-const NativeSelectContext = resumableContext(createContext<NativeSelectContext>({}, { id: "rv-ui-native-select" }));
+const NativeSelectContext = createContext<NativeSelectContext>({});
 
 type NativeSelectSlots = ReturnType<typeof nativeSelectVariants>;
 

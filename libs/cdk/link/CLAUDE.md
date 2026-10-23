@@ -4,7 +4,7 @@
 RAC Link: `<a href>` (or `<span role="link">` without href / disabled) with RA press, hover, focus ring and `RouterProvider` client routing.
 
 ## Entry points
-- `@rivetjs/cdk/link` -> `index.tsx`: `Link`, `LinkContext` (id `rv-link`, default null), types `LinkProps`, `LinkRenderProps`, `PressEvent`; re-exports from `router.ts` (= `../utils/links.tsx`): `RouterProvider`, `createRouter`, `openLink`, `routerHref`, `RouterContext`, `shouldClientNavigate`, `useRouter`, types `Href`, `LinkDOMProps`, `Router`, `RouterOptions`, `RouterProviderProps`
+- `@rivetjs/cdk/link` -> `index.tsx`: `Link`, `LinkContext` (default null), types `LinkProps`, `LinkRenderProps`, `PressEvent`; re-exports from `router.ts` (= `../utils/links.tsx`): `RouterProvider`, `createRouter`, `openLink`, `routerHref`, `RouterContext`, `shouldClientNavigate`, `useRouter`, types `Href`, `LinkDOMProps`, `Router`, `RouterOptions`, `RouterProviderProps`
 - `@rivetjs/cdk/link/behaviour` -> `behaviour.ts`: `linkProps(props, router?)`, `ariaCurrentAttr`, handlers `linkClick(e, o, router, href, routerOptions)`, `linkKeyDown`, `linkPointerDown`, `linkPointerUp`, `linkMouseDown`, `linkDragStart` (`(e, pressOptions)`), types `AriaLinkBaseProps`, `AriaLinkProps`, `AriaLinkOptions`
 - `router.ts`: not a subpath; re-export shim of `../utils/links.tsx`
 

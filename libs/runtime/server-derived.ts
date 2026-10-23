@@ -1,6 +1,6 @@
-// Derived model, boundary recorder (milestone M2 lane A, R1; plan docs/design/plans/2026-10-18-derived-client.md, design
-// docs/design/specs/2026-10-18-structural-resume-design.md §3.3). Under `resumableToString(…, { model: "derived" })`
-// the compiled server module (`resume: { model: "derived" }`) calls nothing but:
+// Resumable server rendering (the derived model, the only resume model since M6; plan
+// docs/design/plans/2026-10-18-derived-client.md, design docs/design/specs/2026-10-18-structural-resume-design.md §3.3).
+// The compiled server module (`resume: { module }`) calls nothing but:
 //
 //   const B = _rB("Name", flags[, props]);   // boundary open: a record [id, parent, flags, name, …], the body's token
 //   try { return _rBOut(B, <template>); }    // the boundary's rendered value: markers + the render-time context
@@ -8,10 +8,11 @@
 //   _rBAttr(B)                                // `data-b="<id>"` on the boundary's element root (ATTR flag: no comments)
 //   _rSig(key, init[, options])               // keyed state: `signal(init)` whose value ships and whose tracked reads
 //   _rSigStore(key, init)                     // record the reading boundary (wake list); `createStore(init)` likewise
+//   _rFor(props)                              // a keyed `For` whose rows render from a compiled tape (DERIVED-S)
 //
-// Own subpath (`@rivetjs/runtime/server-derived`, pay-per-use): the compiled module imports the ABI from here and this
-// module installs the recorder hooks into `server-resume.ts` on import (`_setDerived`), so serialized-model pages and
-// bundles never carry it (zero-cost gate: `/server-resume` unchanged by this file).
+// Own subpath (`@rivetjs/runtime/server-derived`, pay-per-use); `@rivetjs/runtime/server-resume` re-exports its renderers as
+// `renderResumable` / `resumableToString`. The render frame (one per render, AsyncLocalStorage) holds the render options,
+// the row / branch marker counter and the derived recorder.
 //
 // Nothing else is recorded: no handler / binding / site records, no object table, no captures. The tail is one JSON
 // script (`<script type="rivet/boundaries">`, `BoundaryTail` in resume-format.ts): boundary records with their keyed
@@ -19,23 +20,39 @@
 // evaluated (a per-render stack: component bodies run eagerly, in tree order) or, while the renderer walks a boundary's
 // subtree (lazy slots, For rows, Show branches), the one `_rBOut` provided as a context frame around that subtree.
 //
-// Derived client (M2 lane R, R2): `derivedToString` / `renderDerived` render with the manifest and nonce in hand, so the
-// tail also names each boundary's chunk (`m`), the keys its cold keydowns hold (`k`), the delegated event types
-// (`data-events`), the runtime (`data-rt`) and `data-boot` (a load / idle / visible trigger), and the derived inline loader
-// (`resume-loader-derived.ts`) follows it. Plain `resumableToString(…, { model: "derived" })` writes the tail only.
-import { computed, createContext, createRoot, provide, selector, useContext, getOwner, runWithOwner, signal, _dispose, _tracking } from "@rivetjs/reactivity";
-import type { EqualsOptions, Signal } from "@rivetjs/reactivity";
+// Derived client (M2 lane R, R2): with the manifest and nonce in hand the tail also names each boundary's chunk (`m`), the
+// keys its cold keydowns hold (`k`), the delegated event types (`data-events`), the runtime (`data-rt`) and `data-boot`
+// (a load / idle / visible trigger), and the derived inline loader (`resume-loader-derived.ts`) follows it. Without a
+// `manifest.runtime` the tail only.
+import { AsyncLocalStorage } from "node:async_hooks";
+import {
+  computed,
+  createContext,
+  createRoot,
+  provide,
+  selector,
+  useContext,
+  getOwner,
+  runWithOwner,
+  signal,
+  _dispose,
+  _scheduleFolds,
+  _tracking,
+  _wrapEffects,
+} from "@rivetjs/reactivity";
+import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
-import { compiledTemplate, template, _attributeRecord } from "./template.ts";
-import { For, ROWS, _scopedRecord } from "./server-structural.ts";
-import { _list, renderToString } from "./server.ts";
-import { _asyncHook, _onAsync, _onUserAsync } from "./server-async.ts";
+import { compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
+import { CONSTANT, For, ROWS, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
+import type { ConstantGetter } from "./server-structural.ts";
+import { _onErrorBoundary } from "./server-boundary.ts";
+import { _onSlot } from "./slot.ts";
+import { _list, renderToString, renderToWriter, type ServerWriter } from "./server.ts";
+import { _asyncHook, _onAsync, _onAsyncContent, _onUserAsync } from "./server-async.ts";
 import { _onDerivedResource } from "./server-resource-slot.ts";
 import type { AsyncStream } from "./server-async.ts";
-import { _CLASSES, _builtinKinds, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
-import { _setDerived, _shellRecorder, renderResumable, resumableToString } from "./server-resume.ts";
-import type { ResumableOptions, ResumeManifest, StreamingResumableOptions } from "./server-resume.ts";
+import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
 import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, TableEntry } from "./resume-format.ts";
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
@@ -44,8 +61,8 @@ import { _onEager, _onIsland } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 import { _idScope } from "./id.ts";
+import { _trigger, EFFECT, ONLY as ONLY_KIND } from "./server-trigger.ts";
 import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
-import type { _Recorder as Recorder } from "./server-resume.ts";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
 export const INDEPENDENT = 1,
@@ -113,7 +130,7 @@ interface OwnerFrames {
   ctx: unknown;
 }
 
-/** The derived recorder of one render (held by `server-resume.ts`'s Recorder, provided as the `DERIVED` context). */
+/** The derived recorder of one render (held by the render frame, provided as the `DERIVED` context). */
 export interface DerivedRender {
   boundaries: Boundary[];
   /** Bodies being evaluated, innermost last. */
@@ -242,10 +259,8 @@ export interface DerivedOptions {
   signal?: AbortSignal;
   variant?: unknown;
 }
-// The options of the render being started (read once by `createDerived`: the Recorder constructor runs synchronously), and
-// the recorder it created (`renderDerived` writes its segments after the shell).
-let pending: DerivedOptions | null = null,
-  created: DerivedRender | null = null;
+// The options of the render being started (read once by `createDerived`).
+let pending: DerivedOptions | null = null;
 
 const DERIVED = createContext<DerivedRender | null>(null);
 /** The boundary whose subtree the renderer is walking (`_rBOut` provides it around the rendered value). */
@@ -255,7 +270,7 @@ const CURRENT = createContext<Boundary | null>(null);
 export function createDerived(): DerivedRender {
   const options = pending;
   pending = null;
-  return (created = {
+  return {
     boundaries: [],
     stack: [],
     wake: new Map(),
@@ -286,41 +301,190 @@ export function createDerived(): DerivedRender {
     lean: [],
     adopt: [],
     tailed: false,
-  });
+  };
 }
 
+// ---- Render frame ----
+/** Build output the renderers read (`rivet()` plugin `.vite/rivet-resume.json`). */
+export interface ResumeManifest {
+  hash?: string;
+  /** URL whose default export is the `@rivetjs/runtime/dom-derived` instance (`data-rt`). */
+  runtime: string;
+  /** Boundary name (`<module>#<Name>`) → URL of the chunk exporting the component. */
+  symbols: Record<string, string>;
+  /**
+   * URL of the `@rivetjs/runtime/resume-builtins` chunk (RegExp / URLSearchParams / binary / error / `registerClass`
+   * decoders of a `_rData` payload or an `Async` value that is not JSON data). Omitted: the app loads it itself.
+   */
+  builtins?: string;
+  /** The build's browser runtime reads DOM-backed data (`rivet({ resume: { domData: true } })`, DERIVED-C5). */
+  domData?: boolean;
+  /** Static import closure per chunk URL: fetch-ahead (`data-fo`) lists it too. */
+  deps?: Record<string, string[]>;
+  /** Minified chunk sizes per URL. */
+  sizes?: Record<string, number>;
+  /** Framework island chunk URL per island key (`@rivetjs/bridge` facades: `<module>#<export>`). */
+  islands?: Record<string, string>;
+}
+/** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
+export interface ResumableOptions {
+  signal?: AbortSignal;
+  manifest: ResumeManifest;
+  /** CSP nonce for the inline loader (and stream) scripts. */
+  nonce?: string;
+  /** Locale variant index for compiled i18n templates (default 0); see RenderOptions. */
+  variant?: number;
+  /** `lean`: no fetch-ahead (`data-fo`): chunks load on intent / interaction only. */
+  preload?: { lean?: boolean };
+  /** The request's origin: same-origin `URL` values in `_rData` payloads ship relative. */
+  origin?: string;
+  /** @internal Shell cache (router route rule `shell`, PPR-T3B): built by `@rivetjs/runtime/server-shell` `shellHook`. */
+  shell?: ShellHook;
+}
+/** Options of streaming resumable rendering. */
+export interface StreamingResumableOptions extends ResumableOptions {
+  /**
+   * Out-of-order streaming: a pending `Async` with a fallback writes the fallback first; its content streams after the
+   * shell with a boundaries patch. `deadline` (ms from render start, no default) stops waiting: unfinished boundaries
+   * continue in the browser (their `load` runs there).
+   */
+  stream?: { deadline?: number };
+}
+/** @internal `server-shell.ts`: at the root tail; true = the tail writes nothing (a replay). */
+export interface ShellHook {
+  tail(recorder: Recorder): boolean;
+  /** A streamed top-level `Async` (its props, its root owner) whose compiler fact marks it retainable (`$hole`, PPR-T6). */
+  hole?(props: object, owner: Owner | null | undefined): void;
+  /** H-holes hit: the request's deferred loader promises per data slot. */
+  slots?: readonly (PromiseLike<unknown> | undefined)[];
+}
+/** @internal One render's frame (`_shellRecorder`). */
+export interface Recorder {
+  readonly options: Partial<StreamingResumableOptions>;
+  /** Row / branch marker ids (`<!--rN[-->…<!--]-->`, the adopt run's anchors). */
+  next: number;
+  readonly derived: DerivedRender;
+  /** Inside an `ErrorBoundary`'s synchronously evaluated content (or a slot / awaited `Async` content made there): `Show`
+   * / `Switch` branches render without markers. */
+  held: boolean;
+}
+export type { Recorder as _Recorder };
+
+const store = new AsyncLocalStorage<Recorder>();
+/** @internal The running render's frame (shell cache, bridges). */
+export const _shellRecorder = (): Recorder | undefined => store.getStore();
 /**
- * A derived-model page as a string (`resumableToString` with `model: "derived"`), plus the derived client: tail `m` / `k`,
- * the script attributes and the inline loader. `manifest.runtime` = the URL whose default export is the
- * `@rivetjs/runtime/dom-derived` instance; `manifest.symbols[<boundary name>]` = the chunk exporting that component.
+ * @internal Bridge hook: the CSP nonce of the current resumable render, sanitised the way the runtime writes it into its own
+ * scripts, for framework islands whose inline scripts need it. `undefined` outside a resumable render or without a nonce.
  */
-export function derivedToString(factory: () => ServerValue, options: Partial<ResumableOptions> = {}): string | Promise<string> {
+export function _renderNonce(): string | undefined {
+  const nonce = store.getStore()?.options.nonce;
+  return nonce ? String(nonce).replace(/[^\w+/=-]/g, "") : undefined;
+}
+// An effect created during a resumable render re-runs in its own request's async context: a write by another, concurrent
+// request (module-level signal) must not run this render's work under that one.
+_wrapEffects((fn) => {
+  if (store.getStore() === undefined) return fn;
+  const snapshot = AsyncLocalStorage.snapshot();
+  return () => snapshot(fn);
+});
+// Server memory (VIRT-LEAK 2026-10-21): a keyed selector read during a render schedules its index fold in a timer; a Node
+// timer keeps the async context it was created in, and with it this render's frame. The fold timer is created in the
+// context captured here, at module load, outside any render.
+const outside = store.exit(() => AsyncLocalStorage.snapshot());
+_scheduleFolds((fn) => outside(() => (setTimeout(fn, 0) as unknown as { unref?: () => void }).unref?.()));
+// `_rUnrecorded(fn)` (cdk collection build passes): `fn` runs outside the frame — no row / branch markers.
+_setUnrecorded((fn) => (store.getStore() ? store.exit(fn) : fn()));
+
+// For rows and Show / Switch branches keep `<!--rN[-->…<!--]-->` markers (the adopt run's anchors); a marker id that
+// continues the stride of the two before it is left out (`MARK_CHAIN`).
+const REGION = /* @__PURE__ */ _markFragments(["<!--r", "[-->", "<!--]-->"], MARK_CHAIN);
+_onBranch((pick, _keyed, render) => {
+  const [key, value] = pick();
+  const get: ConstantGetter<unknown> = () => value;
+  get[CONSTANT] = value;
+  const recorder = store.getStore();
+  return recorder && !recorder.held ? compiledTemplate(REGION, [recorder.next++, render(key, get)]) : render(key, get);
+});
+_onForRow((_list, item, _key, index, render) => {
+  const get: ConstantGetter<unknown> = () => item;
+  get[CONSTANT] = item;
+  const at: ConstantGetter<number> = () => index;
+  at[CONSTANT] = index;
+  const recorder = store.getStore();
+  return recorder ? compiledTemplate(REGION, [recorder.next++, render(get, at)]) : render(get, at);
+});
+// Content held in place (an `ErrorBoundary`'s content, and the slots / awaited `Async` content made while it evaluates):
+// its branches render plainly.
+const held =
+  <T>(recorder: Recorder, fn: () => T) =>
+  (): T => {
+    if (store.getStore() !== recorder || recorder.held) return fn();
+    recorder.held = true;
+    try {
+      return fn();
+    } finally {
+      recorder.held = false;
+    }
+  };
+_onSlot((fn) => {
+  const recorder = store.getStore();
+  return recorder?.held ? held(recorder, fn) : fn;
+});
+_onAsyncContent(() => {
+  const recorder = store.getStore();
+  return recorder?.held ? <R>(fn: () => R): R => held(recorder, fn)() : null;
+});
+_onErrorBoundary(() => {
+  const recorder = store.getStore();
+  if (!recorder) return null;
+  return {
+    content<T>(fn: () => T): T {
+      const outer = recorder.held;
+      recorder.held = true;
+      try {
+        return fn();
+      } finally {
+        recorder.held = outer;
+      }
+    },
+    defer: (value) => value,
+    fail: () => noop,
+    fallback: <T>(fn: () => T): T => fn(),
+  };
+});
+
+const frame = (options: Partial<StreamingResumableOptions>): Recorder => {
   pending = options as DerivedOptions;
   try {
-    return resumableToString(factory, { ...options, model: "derived" } as ResumableOptions);
+    return { options, next: 0, derived: createDerived(), held: false };
   } finally {
     pending = null;
   }
+};
+// The root tail: the boundaries script + loader, unless the shell cache writes nothing (a replay).
+const tailOf = (recorder: Recorder) => (): ServerValue => (recorder.options.shell?.tail(recorder) ? null : derivedTail(recorder.derived));
+
+/**
+ * A resumable page as a string (`@rivetjs/runtime/server-resume` `resumableToString`): the content, then the derived tail
+ * (`<script type="rivet/boundaries">`) and, with `manifest.runtime`, the inline loader.
+ */
+export function derivedToString(factory: () => ServerValue, options: Partial<ResumableOptions> = {}): string | Promise<string> {
+  const recorder = frame(options);
+  return store.run(recorder, () => withDerived(recorder.derived, () => renderToString([factory(), tailOf(recorder)], options)));
 }
 
-/** `renderResumable` twin of `derivedToString`. */
+/** `renderResumable` (`@rivetjs/runtime/server-resume`): streaming twin of `derivedToString`. */
 export function renderDerived(
   factory: () => ServerValue,
   writer: { write(chunk: string): unknown },
   options: Partial<StreamingResumableOptions> = {},
 ): void | Promise<void> {
-  pending = options as DerivedOptions;
-  created = null;
-  let shell: void | Promise<void>;
-  try {
-    shell = renderResumable(factory, writer, { ...options, model: "derived" } as StreamingResumableOptions);
-  } finally {
-    pending = null;
-  }
-  const ctx = created as DerivedRender | null;
-  created = null;
+  const recorder = frame(options),
+    ctx = recorder.derived;
+  const shell = store.run(recorder, () => withDerived(ctx, () => renderToWriter([factory(), tailOf(recorder)], writer as ServerWriter, options)));
   // Streamed `Async`s (DERIVED-C2): their segments follow the shell (state + loader included), in completion order.
-  if (!ctx || !ctx.stream) return shell;
+  if (!ctx.stream) return shell;
   return Promise.resolve(shell).then(
     () => segments(ctx, writer),
     (error: unknown) => {
@@ -418,6 +582,38 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
   }
   return boundary;
 }
+
+// `clientEffect` / `clientEvent` / `clientOnly` during a derived render: the open boundary gets the trigger `when` names
+// (`interaction` / `media:` have no boundary trigger: the boundary runs at its first use).
+_trigger.on = (when, kind) => {
+  const ctx = useContext(DERIVED);
+  const b = ctx && current(ctx);
+  if (!b || b.id < ctx.base) return;
+  const flag =
+    when === undefined
+      ? kind === ONLY_KIND
+        ? VISIBLE
+        : IDLE
+      : when === "visible"
+        ? VISIBLE
+        : when === "idle"
+          ? IDLE
+          : when === "load"
+            ? kind === EFFECT
+              ? IDLE
+              : LOAD
+            : 0;
+  if (!flag) return;
+  b.flags |= flag;
+  ctx.boot = true;
+};
+// A spread listener prop (`onPointerEnter` forwarded through cdk props): its type, unless the loader delegates it anyway.
+const listenerTypes = new Map<string, string>();
+_trigger.ev = (key) => {
+  let type = listenerTypes.get(key);
+  if (type === undefined) listenerTypes.set(key, (type = /^on(.+?)((?<!Pointer)Capture)?$/.exec(key)![1]!.toLowerCase()));
+  if (!DEFAULT_TYPES.has(type)) useContext(DERIVED)?.events.add(type);
+};
 
 /** Close a boundary body (compiled into the body's `finally`): the token leaves the stack, whatever is above it too. */
 export function _rBEnd(token: Boundary | null): void {
@@ -836,7 +1032,8 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
     forced = ctx.forced;
   // An H-holes hit re-runs a retained hole: its key and place are the fill's (the shell's counters are not re-run).
   ctx.forced = null;
-  const b = forced ? forced[0] : by === seg ? -seg!.id : (at?.id ?? 0),
+  // (No segment and no boundary — an `Async` outside every boundary: `by` and `seg` are both null — keys at the page.)
+  const b = forced ? forced[0] : seg && by === seg ? -seg.id : (at?.id ?? 0),
     k = forced ? forced[1] : by ? by.an++ : ctx.an++;
   let entry: DerivedAsyncState | null = null;
   return {
@@ -862,7 +1059,7 @@ function derivedAsync(ctx: DerivedRender): AsyncStream {
       ctx.asyncs.push(a);
       ctx.changed.add(a);
       // Shell cache fill (H-holes): a streamed top-level boundary the compiler marked `$hole` may be retained.
-      if (hole && ctx.stream && !seg && ctx.sources) _shellRecorder()?.options.shell?.hole?.({ parent: null, A: a.id, F: 0, M: null } as never, hole, owner);
+      if (hole && ctx.stream && !seg && ctx.sources) _shellRecorder()?.options.shell?.hole?.(hole, owner);
       // In place: the content renders where the boundary is (its `Async`s constructed meanwhile are its own).
       const inside = (fn: () => unknown): ServerValue => {
         const outer = ctx.segment;
@@ -1265,19 +1462,21 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   }
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const nonce = options.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
-    events = [...ctx.events].join(" "),
+    events = [...ctx.events].filter((type) => !DEFAULT_TYPES.has(type)).join(" "),
     attrs =
       ' data-rt="' +
       attr(options.manifest.runtime) +
       '"' +
-      (events && events !== DEFAULT_EVENTS ? ' data-events="' + attr(events) + '"' : "") +
+      (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
       (ctx.boot ? " data-boot" : "") +
       (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
       (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
   return template([lean + '<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
 }
-/** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`). */
+/** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
+ * other listener types (boundary `events`, spread listener props). */
 const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout";
+const DEFAULT_TYPES = new Set(DEFAULT_EVENTS.split(" "));
 const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */
@@ -1293,7 +1492,7 @@ export function derivedPatch(ctx: DerivedRender, marker: number): string {
 // boundary id; a hit renders no shell, re-runs each hole under its frame with this render's recorder (`hole`: the fill's
 // key / place forced, content boundaries numbered from the fill's `next`), and its patches carry what the fill's did — not
 // wake lists from the content's reads of shell boundaries: a fill whose content made one keeps the entry on replays.
-const DERIVED_SEAL: ShellSeal = Object.freeze({ t: 0, c: [], s: [], e: [], f: 0, d: 1 });
+const DERIVED_SEAL: ShellSeal = Object.freeze({ d: 1 });
 /**
  * The shell tail of a derived render (DERIVED-C3; `server-shell.ts` `shellHook` calls it as `DerivedShell.tail`, so servers
  * of serialized builds carry none of it): the tail is the boundaries script + the loader, values only (no
@@ -1310,8 +1509,8 @@ function shellTail(
   reset: () => void,
   frameSignals: FrameSignals,
 ): boolean {
-  // Not covered: serialized-model state beside the derived tail, DOM-backed data, no stream.
-  const covered = !recorder.used && recorder.stream !== null && !recorder.dom && !recorder.lean;
+  // Not covered: no stream.
+  const covered = derived.stream;
   const replay = options.replay;
   if (!replay) {
     if (options.holes) {
@@ -1336,8 +1535,6 @@ function shellTail(
             n: recorder.next,
             ids: scope.n,
             prefix: scope.prefix,
-            contexts: new Map(recorder.contexts),
-            tokens: new Map(recorder.tokens),
             watch: frameSignals(kept!, (fn) => SHELL.source(derived, fn)),
             derived: sealed,
             check: () => SHELL.crossed(derived, sealed),
@@ -1348,12 +1545,12 @@ function shellTail(
       reset();
     }
     if (covered) options.seal?.(DERIVED_SEAL);
-    options.cut?.(true);
+    options.cut?.();
     return false;
   }
   if (!covered) {
     options.mismatch?.("the replay's page has no streamed resumable state of the derived model");
-    options.cut?.(true);
+    options.cut?.();
     return false;
   }
   const retained = options.retained;
@@ -1364,7 +1561,7 @@ function shellTail(
       options.mismatch?.("the hit's boundaries number differently from the stored shell's");
   }
   SHELL.mute(derived);
-  options.cut?.(true);
+  options.cut?.();
   return true;
 }
 
@@ -1394,5 +1591,3 @@ const SHELL: DerivedShell = {
   },
   source: (ctx, fn) => ctx.sources?.get(fn),
 };
-
-_setDerived({ create: createDerived, run: withDerived, tail: derivedTail, patch: derivedPatch });

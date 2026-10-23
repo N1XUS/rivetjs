@@ -1,7 +1,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { compile, _compileSymbolModule, registerTable, type CompileOptions } from "../index.ts";
+import { compile, registerTable, type CompileOptions } from "../index.ts";
 import { renderToString } from "../../runtime/server.ts";
 import { buildTable } from "../../i18n/catalog.ts";
 
@@ -123,13 +123,12 @@ test("tags inside cases: resumed bindings render markup; attributes are diagnose
 export default function C() { const n = signal(1); return <button onClick={() => n.set(n() + 1)}>{t("cart", { n: n(), who: "Bo", link: (c) => <i>{c}</i> })}</button>; }`;
   const server = compile(header + source, options({ resume: {} }));
   assert.deepEqual(server.diagnostics, []);
-  assert.equal((server.code.match(/__rivetR_bind\(/g) ?? []).length, 1);
+  assert.match(server.code, /__rivetR_b\(/);
   const dom = compile(header + source, options({ target: "dom", variant: 1, resume: {} }));
   assert.deepEqual(dom.diagnostics, []);
-  // Symbols: the tagged case is a `_tpl` fragment (dom_v2_i18n.rs).
-  const symbols = _compileSymbolModule(dom.symbols!, "/fixture.tsx", { staticCalls, variants: ["en", "de"], variant: 1 });
-  assert.ok(symbols.includes(String.raw`__rivet_tpl("<i>Korb von </i>: <b></b> Dinge", 4)`), symbols);
-  assert.doesNotMatch(symbols, /__rivetSpec|"en"|\bt\(/);
+  // The boundary's DOM code: the tagged case is a `_tpl` fragment (dom_v2_i18n.rs).
+  assert.ok(dom.code.includes(String.raw`__rivet_tpl("<i>Korb von </i>: <b></b> Dinge", 4)`), dom.code);
+  assert.doesNotMatch(dom.code, /__rivetSpec|"en"|\bt\(/);
   assert.deepEqual(diagnostics(`export const A = (g) => <p title={t("wrote", { g })} />;`), [attributeTags("<em>", "wrote")]);
 });
 
@@ -172,17 +171,16 @@ test("rich messages are values: DOM templates for the variant", () => {
   assert.doesNotMatch(code, /Read|Hi |\bt\(/);
 });
 
-test("rich messages in resumed bindings render markup on the server and in symbols", async () => {
+test("rich messages in resumed bindings render markup on the server and in the boundary DOM code", async () => {
   const source = `import { signal } from "@rivetjs/reactivity";
 export default function C() { const n = signal("Bo"); return <button onClick={() => n.set("Al")}>{t("hi", { name: n() })}</button>; }`;
   const server = compile(header + source, options({ resume: {} }));
   assert.deepEqual(server.diagnostics, []);
-  assert.equal((server.code.match(/__rivetR_bind\(/g) ?? []).length, 1);
+  assert.match(server.code, /__rivetR_b\(/);
   const dom = compile(header + source, options({ target: "dom", variant: 1, resume: {} }));
   assert.deepEqual(dom.diagnostics, []);
-  const symbols = _compileSymbolModule(dom.symbols!, "/fixture.tsx", { staticCalls, variants: ["en", "de"], variant: 1 });
-  assert.ok(symbols.includes(String.raw`__rivet_tpl("Hallo <b></b>!", 4)`), symbols);
-  assert.doesNotMatch(symbols, /__rivetSpec|"en"|Hi |\bt\(/);
+  assert.ok(dom.code.includes(String.raw`__rivet_tpl("<button>Hallo <b></b>!")`), dom.code);
+  assert.doesNotMatch(dom.code, /__rivetSpec|"en"|Hi |\bt\(/);
 });
 
 test("rich messages in attributes and t.in are diagnosed with the reason", () => {
@@ -255,25 +253,21 @@ test("unused staticCalls leave every corpus compile byte-identical", () => {
   assert.ok(compared > 100);
 });
 
-test("resume: static messages create no sites; messages reading signals bind and keep t() in symbols", () => {
+test("resume: static messages stay static fragments; the boundary renders messages reading signals", () => {
   const source = `import { signal } from "@rivetjs/reactivity";
 export default function C() { const n = signal(1); return <button onClick={() => n.set(n() + 1)} title={t("hello")}>{t("items", { count: n() })} {t("hello")}</button>; }`;
   const result = compile(header + source, options({ resume: {} }));
   assert.deepEqual(result.diagnostics, []);
-  assert.equal((result.code.match(/__rivetR_bind\(/g) ?? []).length, 1);
-  assert.match(result.code, /" title=\\"Hallo\\""/);
-  const bind = result.symbols!.find((s) => s.kind === "bind")!;
-  assert.match(bind.source, /t\("items", \{ count: n\(\) \}\)/);
-  assert.ok(bind.imports.some((i) => i.local === "t" && i.from === "@rivetjs/i18n"));
+  assert.match(result.code, /__rivetR_b\(/);
+  assert.match(result.code, /"<button title=\\"Hallo\\""/);
 });
 
-test("resume symbol modules lower t() for the client variant", () => {
+test("resume: the boundary DOM code lowers t() for the client variant", () => {
   const source = `import { signal } from "@rivetjs/reactivity";
 export default function C() { const n = signal(1); return <button onClick={() => n.set(n() + 1)}>{t("items", { count: n() })}</button>; }`;
-  const { symbols, code: module } = compile(header + source, options({ target: "dom", variant: 1, resume: {} }));
-  // The binding's import is compiled away, so the module must not re-export it for symbols.
-  assert.doesNotMatch(module, /\bt\b.*from "@rivetjs\/i18n"|export \{ t \}/);
-  const code = _compileSymbolModule(symbols!, "/fixture.tsx", { staticCalls, variants: ["en", "de"], variant: 1 });
+  const { code } = compile(header + source, options({ target: "dom", variant: 1, resume: {} }));
+  // The binding's import is compiled away.
+  assert.doesNotMatch(code, /\bt\b.*from "@rivetjs\/i18n"|export \{ t \}/);
   assert.match(code, /__i18nPlural\("de"/);
   assert.doesNotMatch(code, /"en"|\bt\(/);
 });

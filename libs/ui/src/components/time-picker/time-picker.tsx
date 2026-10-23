@@ -28,7 +28,6 @@ import { createContext, useContext } from "@rivetjs/reactivity";
 import type { Signal } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { Clock } from "lucide";
 
 import type { SurfaceVariants } from "../../../styles/src/components/surface/index.ts";
@@ -51,7 +50,7 @@ type TimePickerContext = {
   inPicker?: boolean;
 };
 
-const TimePickerContext = resumableContext(createContext<TimePickerContext>({}, { id: "rv-ui-time-picker" }));
+const TimePickerContext = createContext<TimePickerContext>({});
 
 type TimePickerSlots = ReturnType<typeof timePickerVariants>;
 let SLOTS: TimePickerSlots | undefined;

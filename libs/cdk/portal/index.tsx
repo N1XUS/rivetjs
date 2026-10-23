@@ -13,7 +13,6 @@
 // `PortalProvider`, `Overlay` ported from @react-aria/overlays (PortalProvider.tsx, Overlay.tsx),
 // Apache-2.0, © Adobe. Imperative portals / outlets (Angular CDK): ./portal-outlet.ts.
 import { createContext, useContext } from "@rivetjs/reactivity";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { clientEffect, ref, Provider } from "@rivetjs/runtime/dom";
 import { FocusScope } from "../focus/focus-scope.tsx";
 import { ClearPressResponder } from "../interactions/pressable.tsx";
@@ -24,7 +23,7 @@ import { renderSlot } from "@rivetjs/runtime/slot";
 export { resolveMount, type PortalMount };
 
 /** Default mount for portals below a `PortalProvider` (`null`: none). */
-export const PortalContext = resumableContext(createContext<PortalMount>(null, { id: "rv-portal" }));
+export const PortalContext = createContext<PortalMount>(null);
 
 /** Set the container of every `Portal` / `Overlay` / `OverlayContainer` rendered below it. */
 export function PortalProvider(props: { container?: PortalMount; children?: Content | (() => Content) }) {

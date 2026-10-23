@@ -1,5 +1,5 @@
 // Scheduler without `timeZone` on a resumed page (week of today): the server lays out in UTC and the page must keep
-// that zone (`state.zone`, region state) when it recomputes — `#zone-refresh` writes a copy of the events (the first
+// that zone (`state.zone`) when it recomputes — `#zone-refresh` writes a copy of the events (the first
 // recompute of the normalized events), `scheduler-resume.test.ts` runs it in a non-UTC browser zone.
 import { signal } from "@rivetjs/reactivity";
 import { Scheduler, type SchedulerEvent } from "@rivetjs/cdk/scheduler";

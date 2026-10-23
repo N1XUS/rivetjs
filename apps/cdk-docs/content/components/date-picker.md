@@ -316,7 +316,6 @@ The group owns `onPointerDown` / `onPointerUp` (a press focuses a segment) and t
 
 - Server HTML: the label, the segments (with `data-rk`: Rivet holds those keys while the code loads), the button, the hidden inputs. A closed picker ships no popover and no calendar markup.
 - The picker state (value, open state, focus flags) is region state: the first open creates only the popover and its calendar, from serializable locals.
-- `onChange`, `onOpenChange`, `isDateUnavailable`, `validate`, render-prop functions and the event handlers: inline arrows or local functions (module-level functions are not serializable). The `DateInput` and `CalendarGrid` children functions are slots: write them inline.
 - Popover content as plain JSX works (as in the examples); content holding your own stateful components is safest as a render function (`{() => …}`).
 - `on…Capture` handlers do not resume yet.
 

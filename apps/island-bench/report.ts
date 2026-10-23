@@ -23,7 +23,7 @@ const results = JSON.parse(readFileSync(input, "utf8")) as {
 };
 
 const SUBJECT = "rivet-bridge-react";
-const ORDER = ["rivet-bridge-react", "rivet-bridge-react-full", "astro-react", "next", "rivet-native"];
+const ORDER = ["rivet-bridge-react", "astro-react", "next", "rivet-native"];
 /** The Preact pair (T8): `rivet-bridge-preact-p10` (same Preact 10 as Astro, headline) + `rivet-bridge-preact` (Preact 11, cross-version) vs `astro-preact`. */
 const PAIR = { subject: "rivet-bridge-preact", same: "rivet-bridge-preact-p10", other: "astro-preact" };
 type Verdict = "WIN" | "TIE" | "LOSE";
@@ -339,25 +339,12 @@ const REFERENCE = "rivet-native";
 const preactNeed = (need: string) => need.replaceAll("React DOM server", "preact-render-to-string").replaceAll("React", "Preact");
 md.push("## Losses and what Rivet would need");
 md.push("");
-/** T7b baseline: the subject's own build with the full resume driver (pre-T7b tail); a loss against it is a regression. */
-const BASELINE = "rivet-bridge-react-full";
-const competitorLosses = losses.filter((loss) => loss.lane !== REFERENCE && loss.lane !== BASELINE);
+const competitorLosses = losses.filter((loss) => loss.lane !== REFERENCE);
 if (!competitorLosses.length && !pairLosses.length) md.push("None against astro-react / next / astro-preact.");
 for (const loss of competitorLosses) md.push(`- **${loss.metric.label}** (${loss.section}) vs ${loss.lane}: ${ratioText(loss.ratio)} — ${loss.metric.need}.`);
 for (const loss of pairLosses)
   md.push(`- **${loss.metric.label}** (${loss.section}) ${loss.lane} vs ${PAIR.other}: ${ratioText(loss.ratio, loss.lane)} — ${preactNeed(loss.metric.need)}.`);
 md.push("");
-const regressions = losses.filter((loss) => loss.lane === BASELINE);
-if (lanes.includes(BASELINE)) {
-  md.push(`## Lean client vs full driver (rivet-bridge-react vs ${BASELINE})`);
-  md.push("");
-  md.push(
-    "Same build and manifest; the baseline serves an SSR bundle copy with `offerLean` stubbed, so its islands-only page keeps the full resume driver (state script + resume loader + runtime chunks, the pre-T7b tail). Verdict columns above; a LOSE here is a regression:",
-  );
-  md.push("");
-  md.push(regressions.length ? regressions.map((loss) => `- **${loss.metric.label}** (${loss.section}): ${ratioText(loss.ratio)}`).join("\n") : "- none");
-  md.push("");
-}
 const islandCost = losses.filter((loss) => loss.lane === REFERENCE);
 if (islandCost.length) {
   md.push(`## Island cost (rivet-bridge-react vs ${REFERENCE})`);

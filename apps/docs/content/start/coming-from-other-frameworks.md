@@ -15,7 +15,7 @@ In Rivet a component function runs **once, on the server**. The browser never ru
 Three rules follow from it, whatever framework you come from:
 
 - **Code in the component body is server code.** `window`, `document` and `localStorage` are not there. Put browser code in a handler or a `clientEffect`. See [browser-only code](../guides/components/browser-only.md).
-- **What a handler uses must be data.** Signals, plain objects, arrays, `Date`, `Map`, `Set`, and functions written in your components (local `const` functions, inline callback props such as `onSave={() => …}`) work. Module-level functions passed directly as props work too. Class instances, functions from libraries, and functions stored in objects or arrays do not. See [serializable captures](../best-practices/serializable-captures.md).
+- **Route data must be data.** Loader results travel in the page: plain objects, arrays, `Date`, `Map`, `Set`. Handlers can use any value of their component, because the browser runs the component again when it wakes up. See [what reaches the browser](../learn/resuming.md#what-reaches-the-browser).
 - **Props are live, as in Solid.** `<Badge count={count()} />` updates the child when `count` changes, because the compiler passes a getter. Read `props.count` where it is shown; destructuring props reads once. See [components](../guides/components/components.md#props-are-live).
 
 ## From React (and Next.js, Remix)
@@ -60,7 +60,7 @@ Solid's model is the closest: signals, components that run once, fine-grained up
 | `createResource` | `resource` from `@rivetjs/runtime/dom` (one handle: `user()`, `user.loading()`, `user.refetch()`, `user.mutate()`); `load(…)` for page data. See [resource](../guides/components/async.md#data-as-a-signal-resource) |
 | SolidStart `"use server"` | `load(…)` / `actions(…)` / `onGet(…)` exports next to the page, or `*.server.ts` files |
 
-What differs: Solid hydrates, so in the browser your components run once more. In Rivet they do not, which is why captured values must be serializable and why browser code must be in handlers and `clientEffect`. As in Solid, destructuring props reads them once: use `props.x`, `mergeProps` and `splitProps` from `@rivetjs/runtime/props`.
+What differs: Solid hydrates, so in the browser every component runs once more on load. In Rivet a component runs in the browser only when it is used, which is why browser code must be in handlers and `clientEffect`. As in Solid, destructuring props reads them once: use `props.x`, `mergeProps` and `splitProps` from `@rivetjs/runtime/props`.
 
 ## From Svelte (and SvelteKit)
 
@@ -97,7 +97,7 @@ Qwik also resumes. The main change is that Rivet needs no `$` markers: the compi
 | `routeAction$`, `<Form>` | `actions(…)` and a plain `<form method="post">`, or [`@rivetjs/forms`](../guides/forms/forms.md) |
 | `server$` | an endpoint (`routes/api/x.ts` with `onPost(…)`) or an action |
 
-The serialization rules feel familiar: what a handler captures is written into the page. Rivet keeps them in one place: inline arrows and local `const` functions in the component are fine, also when they reach a child as props; so are module-level functions passed directly as props; class instances and functions Rivet did not compile (libraries, functions stored in objects or arrays) are not; a `.bind(…)` of a compiled function is fine inline in a prop or in a local constant, not written inside an object literal.
+The serialization rules are smaller: only route data, signal values and plain-data props are written into the page. A component that gets a function or a class instance as a prop runs together with its parent in the browser.
 
 ## Reading without subscribing
 
@@ -117,7 +117,7 @@ Every signal library has a way to read a value without making the current comput
 3. **Move data loading to the server.** Put fetches that ran in effects or loaders into `load(…)` next to the page, and mutations into `actions(…)`. Pages get the result as `data`.
 4. **Convert components.** State to `signal` / `computed`, effects that touch the browser to `clientEffect`, lists to `<For>`. Keep handlers as inline arrows or local `const` functions. React or Preact components you are not converting yet can stay as [islands](../guides/components/framework-components.md): rename them to `*.react.tsx` and add `react()` to `bridges`.
 5. **Keep shared components in the project.** Components outside `src/routes` resume without being listed: `rivetRouter` resumes every app component file a route imports.
-6. **Run the checks.** `npm run check` (`rivet-check`) reports what cannot resume, such as a class instance captured by a handler, or a browser global read during server rendering. The [language service](../guides/tooling/language-service.md) shows the same errors in your editor.
+6. **Run the checks.** `npm run check` (`rivet-check`) reports what cannot resume, such as `Date.now()` in a render or a browser global read during server rendering. The [language service](../guides/tooling/language-service.md) shows the same errors in your editor.
 7. **Measure a build, not dev.** `npm run build` and serve the result. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 
 ## See also

@@ -12,8 +12,6 @@
 //   `renderItem`, the items preset's option renderer, called with item states off as RAC calls the item's
 //   render function) or the item label — and for multiple selection a localized list (`Intl.ListFormat`
 //   parts, each item in a `<span data-slot="value-item">`).
-// - contexts are registered (`resumableContext`, ids `rv-select`, `rv-select-state`, `rv-select-value`):
-//   a re-created region on a resumed page is re-provided with the (serializable) select state.
 // - RAC parts mode (the Select built its collection from the children): default children = each selected item's
 //   children (`ListBoxItem` content; a render function is called with every state off, as RAC), `selectedItems` /
 //   `selectedItem` = the items' object values (`null` for static items), as RAC. Hidden in a collection build pass
@@ -25,16 +23,7 @@ import { Show } from "@rivetjs/runtime/dom";
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot, renderSlot } from "@rivetjs/runtime/slot";
 import { listFormatter } from "../i18n/list-formatter.ts";
-import {
-  resumableContext,
-  useContext,
-  contextProps,
-  slottedContext,
-  type ContextValue,
-  type HTMLProps,
-  type RefValue,
-  type StyleObject,
-} from "../slots/index.tsx";
+import { useContext, contextProps, slottedContext, type ContextValue, type HTMLProps, type RefValue, type StyleObject } from "../slots/index.tsx";
 import { resolveLocale } from "../i18n/index.ts";
 import { formatMessage } from "../_adapters/intl.ts";
 import type { SelectionBehavior } from "../collections/types.ts";
@@ -67,11 +56,11 @@ export interface SelectContextValue {
 }
 
 /** RAC `SelectContext`. */
-export const SelectContext = resumableContext(createContext<ContextValue<SelectContextValue, HTMLDivElement>>(null, { id: "rv-select" }));
+export const SelectContext = createContext<ContextValue<SelectContextValue, HTMLDivElement>>(null);
 /** RAC `SelectStateContext`: the state of the nearest Select (extra children can read and change it). */
-export const SelectStateContext = resumableContext(createContext<SelectState<SelectionMode> | null>(null, { id: "rv-select-state" }));
+export const SelectStateContext = createContext<SelectState<SelectionMode> | null>(null);
 /** RAC `SelectValueContext`: SelectValue props from the Select (`useSelect` `valueProps`: its `id`). */
-export const SelectValueContext = resumableContext(createContext<ContextValue<SelectValueProps, HTMLSpanElement>>(null, { id: "rv-select-value" }));
+export const SelectValueContext = createContext<ContextValue<SelectValueProps, HTMLSpanElement>>(null);
 
 /** RAC `SelectValueRenderProps` (accessors). */
 export interface SelectValueRenderProps {

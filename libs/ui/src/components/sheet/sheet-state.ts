@@ -1,10 +1,10 @@
 // Rivet-authored (NOT a HeroUI port: HeroUI v3.2.6 has no sheet). Feature set (props, defaults) inspired by HeroUI Pro's public
-// Sheet docs; independent implementation. Serializable sheet state (plain data + signals + the caller's callbacks), created as
-// region state so a re-created region of a resumed page keeps it; free functions take the state first (handlers resume).
+// Sheet docs; independent implementation. Sheet state (plain data + signals + the caller's callbacks); free functions take
+// the state first (handlers resume).
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";
 import type { SheetPlacement, SheetSnapPoint } from "@rivetjs/cdk/sheet-motion";
 import { closeOverlay, type OverlayTriggerState } from "@rivetjs/cdk/state/overlays";
-import { _regionState, untrack, type Signal } from "@rivetjs/reactivity";
+import { untrack, type Signal } from "@rivetjs/reactivity";
 
 export type { SheetPlacement, SheetSnapPoint };
 
@@ -72,33 +72,31 @@ export interface SheetState {
   readonly onAnimationEnd: SheetOptions["onAnimationEnd"];
 }
 
-/** Creates the sheet state (region state). */
+/** Creates the sheet state. */
 export function createSheetState(options: SheetOptions, sheetId: string, parentId: string | undefined): SheetState {
-  return _regionState(() => {
-    const points = options.snapPoints?.length ? options.snapPoints : undefined;
-    const defaultSnap = options.defaultActiveSnapPoint !== undefined ? options.defaultActiveSnapPoint : (points?.[0] ?? null);
-    return {
-      placement: options.placement ?? "bottom",
-      isDismissable: options.isDismissable ?? true,
-      isDetached: !!options.isDetached,
-      isModal: options.isModal ?? true,
-      isHandleOnly: !!options.isHandleOnly,
-      snapPoints: points,
-      snap: controllable<SheetSnapPoint | null>(options.activeSnapPoint, defaultSnap, options.onActiveSnapPointChange),
-      snapUncontrolled: options.activeSnapPoint === undefined,
-      defaultSnap,
-      fadeFromIndex: options.fadeFromIndex,
-      closeThreshold: options.closeThreshold,
-      shouldScaleBackground: !!options.shouldScaleBackground,
-      sequential: !!options.snapToSequentialPoint,
-      shouldAutoFocus: !!options.shouldAutoFocus,
-      sheetId,
-      parentId,
-      onDrag: options.onDrag,
-      onRelease: options.onRelease,
-      onAnimationEnd: options.onAnimationEnd,
-    };
-  });
+  const points = options.snapPoints?.length ? options.snapPoints : undefined;
+  const defaultSnap = options.defaultActiveSnapPoint !== undefined ? options.defaultActiveSnapPoint : (points?.[0] ?? null);
+  return {
+    placement: options.placement ?? "bottom",
+    isDismissable: options.isDismissable ?? true,
+    isDetached: !!options.isDetached,
+    isModal: options.isModal ?? true,
+    isHandleOnly: !!options.isHandleOnly,
+    snapPoints: points,
+    snap: controllable<SheetSnapPoint | null>(options.activeSnapPoint, defaultSnap, options.onActiveSnapPointChange),
+    snapUncontrolled: options.activeSnapPoint === undefined,
+    defaultSnap,
+    fadeFromIndex: options.fadeFromIndex,
+    closeThreshold: options.closeThreshold,
+    shouldScaleBackground: !!options.shouldScaleBackground,
+    sequential: !!options.snapToSequentialPoint,
+    shouldAutoFocus: !!options.shouldAutoFocus,
+    sheetId,
+    parentId,
+    onDrag: options.onDrag,
+    onRelease: options.onRelease,
+    onAnimationEnd: options.onAnimationEnd,
+  };
 }
 
 /** Index of the active snap point (`-1` without snap points; an unknown value → 0). */

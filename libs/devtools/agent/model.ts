@@ -622,13 +622,13 @@ export class Model {
         };
       });
   }
-  /** Display name of a context token: binding name (dev transform), else its `id`, else `context #n`; repeats numbered. */
+  /** Display name of a context token: binding name (dev transform), else `context #n`; repeats numbered. */
   contextRef(token: object): ContextRef {
     const meta = this.tokens.get(token);
-    const own = meta?.label ?? (token as { id?: string }).id;
+    const own = meta?.label;
     let name = own ?? "context #" + this.id(token);
     if (meta && own !== undefined) {
-      const same = this.tokenList.filter((t) => (t.label ?? (t.ref.deref() as { id?: string } | undefined)?.id) === own && t.ref.deref() !== undefined);
+      const same = this.tokenList.filter((t) => t.label === own && t.ref.deref() !== undefined);
       const at = same.indexOf(meta);
       if (at > 0) name = own + "#" + (at + 1);
     }

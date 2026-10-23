@@ -52,7 +52,6 @@ Subscribe in a client effect and return the cleanup:
 ## Resumability
 
 - `breakpointState(…).state` is a plain signal: bindings that read it resume.
-- Its `connect` method is a function created by the library at run time. A client effect that captures the returned object cannot resume (the server reports "function is not serializable"). Subscribe with `breakpointObserver().observe(queries)` inside the effect instead, capturing only the signal and the queries, as in the first example.
 - Server-rendered HTML uses `initial`. Pick the value that matches most visitors, or design so both states render sensibly.
 
 ## Upstream

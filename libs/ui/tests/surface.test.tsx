@@ -46,7 +46,6 @@ test("surface: exports = HeroUI v3.2.6 index (Surface.Root, SurfaceRoot, Surface
   assert.equal(Surface.Root, SurfaceRoot);
   assert.equal(SurfaceRoot, root.SurfaceRoot);
   assert.equal(SurfaceContext, root.SurfaceContext);
-  assert.equal(SurfaceContext.id, "rv-ui-surface");
   assert.deepEqual(SurfaceContext.defaultValue, {});
   assert.equal(surfaceVariants({ variant: "tertiary" }), "surface surface--tertiary");
   assert.equal(surfaceVariants(), "surface surface--default");

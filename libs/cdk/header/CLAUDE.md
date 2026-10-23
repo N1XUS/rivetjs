@@ -4,7 +4,7 @@
 RAC `Header`: section header (`<header>`), reading `HeaderContext`; collection leaf (`createLeafComponent(HeaderNode, …)`, `../collections/components.tsx`).
 
 ## Entry points
-- `@rivetjs/cdk/header` -> `index.tsx`: `Header`, `HeaderContext` (`rv-header`), `HeaderProps`
+- `@rivetjs/cdk/header` -> `index.tsx`: `Header`, `HeaderContext`, `HeaderProps`
 
 ## Layout
 - `index.tsx` - component + context

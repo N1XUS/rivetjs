@@ -22,7 +22,8 @@ export interface StoreView<T = unknown> {
 /** A store or a view of one. */
 export type StoreLike<T = unknown> = Store<T> | StoreView<T>;
 
-type Leaf = string | number | boolean | bigint | symbol | null | undefined | Date | RegExp | Map<unknown, unknown> | Set<unknown> | ((...args: never[]) => unknown);
+type Leaf =
+  string | number | boolean | bigint | symbol | null | undefined | Date | RegExp | Map<unknown, unknown> | Set<unknown> | ((...args: never[]) => unknown);
 type Depth = [never, 0, 1, 2, 3, 4, 5, 6, 7];
 /** Every dotted path of `T` (arrays as `${number}`, depth capped at 8), like forms' `FieldPath`. */
 export type StorePath<T, D extends number = 8> = [D] extends [never]
@@ -34,7 +35,9 @@ export type StorePath<T, D extends number = 8> = [D] extends [never]
       : { [K in keyof T & string]: K | `${K}.${StorePath<NonNullable<T[K]>, Depth[D]>}` }[keyof T & string];
 type Step<T, K extends string> = T extends readonly (infer U)[] ? (K extends `${number}` ? U : undefined) : K extends keyof T ? T[K] : undefined;
 /** The value type at path `P` of `T`. */
-export type StoreValue<T, P extends string> = P extends `${infer Head}.${infer Rest}` ? StoreValue<NonNullable<Step<NonNullable<T>, Head>>, Rest> : Step<NonNullable<T>, P>;
+export type StoreValue<T, P extends string> = P extends `${infer Head}.${infer Rest}`
+  ? StoreValue<NonNullable<Step<NonNullable<T>, Head>>, Rest>
+  : Step<NonNullable<T>, P>;
 /** A new value, or an updater of the previous one. A function is always an updater: store a function
  * value through one (`write(st, "onSave", () => handler)`); raw function values do not typecheck. */
 export type StoreUpdate<V> = Exclude<V, Function> | ((previous: V) => V);
@@ -57,34 +60,17 @@ function segments(path: string): string[] {
 const split = (store: StoreLike<any>): [Node, string] => ("s" in store ? [store.s, store.p] : [store as Node, ""]);
 const absolute = (prefix: string, path: string | undefined): string => (path === undefined || path === "" ? prefix.slice(0, -1) : prefix + path);
 
-// Resume ABI (Function Bridge T12): a root read whole since creation (`read(store)`) carries this flag, for `_storePaths`.
-// A symbol key: never encoded (the resume encoder and JSON read string keys), one store per read after the first (a
-// WeakSet add measured +3.5 ns per whole read, +60 ns per new store).
-const WHOLE: unique symbol = Symbol();
-/**
- * Resume ABI (Function Bridge T12, server-resume narrowing): absolute paths of the nodes reads created so far (cache
- * keys; ancestors of a read path are not listed), or `null` when the store was read whole since creation, or for a view.
- */
-export function _storePaths(store: StoreLike<any>): string[] | null {
-  const [root, prefix] = split(store);
-  if (prefix !== "" || (root as { [WHOLE]?: true })[WHOLE]) return null;
-  const cache = caches.get(root);
-  return cache === undefined ? [] : [...cache.keys()];
-}
-
 /** The node at an absolute path, created (with its ancestors) from the current data on first use. */
 function node(root: Node, path: string): Node {
-  if (path === "") {
-    (root as { [WHOLE]?: true })[WHOLE] = true;
-    return root;
-  }
+  if (path === "") return root;
   let cache = caches.get(root);
   if (!cache) caches.set(root, (cache = new Map()));
   const cached = cache.get(path);
   if (cached) return cached;
   let found: Node = root;
   for (const segment of segments(path)) {
-    const parent: Node = found, children: Record<string, Node> = (parent.c ??= {});
+    const parent: Node = found,
+      children: Record<string, Node> = (parent.c ??= {});
     found = Object.hasOwn(children, segment) ? children[segment]! : (children[segment] = { v: signal(childOf(untrack(parent.v), segment)) });
   }
   cache.set(path, found);
@@ -132,7 +118,8 @@ export function write(store: StoreLike<any>, ...args: [unknown] | [string, unkno
   const updated: unknown[] = new Array(keys.length + 1);
   updated[keys.length] = value;
   for (let i = keys.length - 1; i >= 0; i--) {
-    const key = keys[i]!, parent = values[i];
+    const key = keys[i]!,
+      parent = values[i];
     // Missing containers are created; a primitive on the path is not silently replaced by one.
     if (parent != null && !container(parent))
       throw new TypeError(`Store write "${path}": "${keys.slice(0, i).join(".") || "(root)"}" holds a ${typeof parent}, not an object or array`);
@@ -159,7 +146,8 @@ function refresh(root: Node, at: Node, value: unknown, path: string): void {
   const children = at.c;
   if (children === undefined) return;
   for (const key in children) {
-    const child = children[key]!, next = childOf(value, key);
+    const child = children[key]!,
+      next = childOf(value, key);
     if (next === undefined && !(container(value) && Object.hasOwn(value, key)) && !observed(child)) {
       delete children[key];
       forget(caches.get(root), path === "" ? key : path + "." + key, child);

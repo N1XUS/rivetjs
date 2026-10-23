@@ -21,7 +21,8 @@ const Wrapper = () => {};
 const container = { nodeType: 1, localName: "div", id: "app" };
 
 test("tree, owner details, edits, graph and update counts", async () => {
-  const token = r.createContext("theme", { id: "theme" });
+  const token = r.createContext("theme");
+  hook.emit("name", { value: token, name: "theme" });
   let rootOwner!: object, counter!: object, inner!: object, wrapper!: object, binding!: object;
   let count!: ReturnType<typeof r.signal<number>>, internal!: ReturnType<typeof r.signal<number>>;
   const { dispose } = r.createRoot((stop) => {
@@ -57,21 +58,42 @@ test("tree, owner details, edits, graph and update counts", async () => {
   hook.emit("comp.hide", { fn: Wrapper });
 
   const tree = model.tree();
-  assert.deepEqual(
-    JSON.parse(JSON.stringify(tree, (key, value) => (key === "id" || key === "updates" ? undefined : value))),
-    [{ name: "div#app", kind: "root", children: [{ name: "CounterView", file: "src/counter.tsx", kind: "component", children: [{ name: "Inner", kind: "component", children: [] }] }] }],
-  );
+  assert.deepEqual(JSON.parse(JSON.stringify(tree, (key, value) => (key === "id" || key === "updates" ? undefined : value))), [
+    {
+      name: "div#app",
+      kind: "root",
+      children: [{ name: "CounterView", file: "src/counter.tsx", kind: "component", children: [{ name: "Inner", kind: "component", children: [] }] }],
+    },
+  ]);
   const counterId = tree[0]!.children[0]!.id;
   assert.equal(counterId, model.id(counter));
 
   const info = (await model.owner(counterId))!;
   assert.equal(info.name, "CounterView");
-  assert.deepEqual(info.signals.map((s) => [s.value.p, s.editable, s.owner?.name]), [["1", true, "CounterView"]]);
-  assert.deepEqual(info.computeds.map((c) => [c.value?.p, c.runs]), [["2", 1]]);
+  assert.deepEqual(
+    info.signals.map((s) => [s.value.p, s.editable, s.owner?.name]),
+    [["1", true, "CounterView"]],
+  );
+  assert.deepEqual(
+    info.computeds.map((c) => [c.value?.p, c.runs]),
+    [["2", 1]],
+  );
   assert.deepEqual(info.effects, { count: 1, runs: 1 });
-  assert.deepEqual(info.context.map((c) => [c.ctx.name, c.value, c.signal, typeof c.readonly]), [["theme", { k: "s", p: '"dark"' }, undefined, "string"]]);
-  assert.deepEqual(info.props.map((e) => [e.key, e.value.k]), [["label", "s"], ["lazy", "get"]]);
-  assert.deepEqual((await model.owner(model.id(inner)))!.signals.map((s) => s.value.p), ['"inner"']);
+  assert.deepEqual(
+    info.context.map((c) => [c.ctx.name, c.value, c.signal, typeof c.readonly]),
+    [["theme", { k: "s", p: '"dark"' }, undefined, "string"]],
+  );
+  assert.deepEqual(
+    info.props.map((e) => [e.key, e.value.k]),
+    [
+      ["label", "s"],
+      ["lazy", "get"],
+    ],
+  );
+  assert.deepEqual(
+    (await model.owner(model.id(inner)))!.signals.map((s) => s.value.p),
+    ['"inner"'],
+  );
 
   // Edits write through .set, tagged; the drained event carries the new value.
   model.drain();
@@ -87,11 +109,20 @@ test("tree, owner details, edits, graph and update counts", async () => {
   const down = model.graph(signalId, "down", 5)!;
   assert.deepEqual([down.kind, down.next[0]!.kind, down.next[0]!.next[0]!.kind, down.next[0]!.scope], ["signal", "computed", "effect", "CounterView"]);
   const up = model.graph(down.next[0]!.next[0]!.id, "up", 1)!;
-  assert.deepEqual(up.next.map((n) => [n.kind, n.value?.p]), [["computed", "10"]]);
+  assert.deepEqual(
+    up.next.map((n) => [n.kind, n.value?.p]),
+    [["computed", "10"]],
+  );
 
   // DOM updates count against the nearest component.
   hook.emit("dom.update", { node: {}, kind: "child", name: null, owner: binding });
-  assert.deepEqual(model.drain().find(({ t }) => t === "dom.update")!.d(), { counts: [[counterId, 1]] });
+  assert.deepEqual(
+    model
+      .drain()
+      .find(({ t }) => t === "dom.update")!
+      .d(),
+    { counts: [[counterId, 1]] },
+  );
   assert.equal(model.tree()[0]!.children[0]!.updates, 1);
   model.resetCounts();
   assert.equal(model.tree()[0]!.children[0]!.updates, 0);
@@ -126,7 +157,10 @@ test("names: source bindings scoped by component, collisions numbered in creatio
       item2 = named(r.signal(2), "item");
     });
     plain = r.signal(3);
-    total = named(r.computed(() => item() + item2()), "total");
+    total = named(
+      r.computed(() => item() + item2()),
+      "total",
+    );
     total();
     hook.emit("comp.mount", { owner, fn: function Cart() {}, props: {} });
   });
@@ -140,9 +174,15 @@ test("names: source bindings scoped by component, collisions numbered in creatio
     info.signals.map((s) => displayName(s)),
     ["Cart › item", "Cart › signal #" + model.id(plain), "Cart › item#2"],
   );
-  assert.deepEqual(info.computeds.map((c) => [displayName(c), displayName(c, { scoped: false })]), [["Cart › total", "total"]]);
+  assert.deepEqual(
+    info.computeds.map((c) => [displayName(c), displayName(c, { scoped: false })]),
+    [["Cart › total", "total"]],
+  );
   // Another component's `item` is its own first.
-  assert.deepEqual((await model.owner(model.id(other)))!.signals.map((s) => displayName(s)), ["Other › item"]);
+  assert.deepEqual(
+    (await model.owner(model.id(other)))!.signals.map((s) => displayName(s)),
+    ["Other › item"],
+  );
   // The graph uses the same names.
   const down = model.graph(model.id(item2), "down", 1)!;
   assert.deepEqual([displayName(down), displayName(down.next[0]!)], ["Cart › item#2", "Cart › total"]);

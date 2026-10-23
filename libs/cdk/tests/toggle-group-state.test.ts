@@ -5,7 +5,6 @@ import { describe, expect, it, jest } from "@rivetjs/testing/jest";
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { createToggleGroupState, isGroupDisabled, isKeySelected, selectedKeysOf, setSelected, setSelectedKeys, toggleKey } from "../state/toggle-group.ts";
 import type { Key } from "../collections/types.ts";
-import { jsonRoundTrip } from "./state-json.ts";
 
 const keys = (state: ReturnType<typeof createToggleGroupState>) => [...untrack(() => selectedKeysOf(state))];
 
@@ -116,16 +115,6 @@ describe("createToggleGroupState", () => {
     expect(isGroupDisabled(state)).toBe(true);
     expect(state.isDisabled).toBe(false);
     expect(isGroupDisabled(createToggleGroupState({ isDisabled: true }))).toBe(true);
-  });
-
-  it("serializes as region state (resume-table round trip)", () => {
-    const state = createToggleGroupState({ selectionMode: "multiple", defaultSelectedKeys: ["a", 2], isDisabled: true });
-    const copy = jsonRoundTrip(state);
-    expect(copy.selectionMode).toBe("multiple");
-    expect(copy.isDisabled).toBe(true);
-    expect(keys(copy)).toEqual(["a", 2]);
-    toggleKey(copy, "a");
-    expect(keys(copy)).toEqual([2]);
   });
 
   describe("selectedKey (Rivet extension)", () => {

@@ -4,8 +4,8 @@
 // © Brian Vaughn — the effect bodies of the components (registration with the global engine, change subscriptions,
 // previews), framework-free.
 // Rivet:
-// - the components (`./index.tsx`) only render markup + record their props in a serializable `GroupState`
-//   (`_regionState`): panel / separator records keyed by id. `ensureGroup(state)` builds the engine's
+// - the components (`./index.tsx`) only render markup + record their props in a plain-data `GroupState`:
+//   panel / separator records keyed by id. `ensureGroup(state)` builds the engine's
 //   `RegisteredResizeAxis` from the group element's DOM children (`data-panel` / `data-separator` with a record) — the
 //   upstream Group's `useIsomorphicLayoutEffect` — and mounts it (`../engine/global/mountAxis.ts`, unchanged).
 // - when: a client render mounts after the Group is inserted (its `clientEffect`); a server-rendered (resumed) group
@@ -97,7 +97,7 @@ export interface SeparatorRecord {
   aria: Signal<SeparatorAria>;
 }
 
-/** A Group's serializable state (`_regionState`; resumed handlers mount the engine from it). */
+/** A Group's plain-data state (handlers mount the engine from it). */
 export interface GroupState {
   id: string;
   orientation: Orientation;

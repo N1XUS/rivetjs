@@ -19,6 +19,7 @@ import { resolveCdkSubpath } from "./resolve-subpath.ts";
 
 const cdk = new URL("../", import.meta.url);
 const runtime = [
+  "@rivetjs/runtime/server-derived",
   "@rivetjs/runtime/server-resume",
   "@rivetjs/runtime/server",
   "@rivetjs/runtime/style",
@@ -105,7 +106,7 @@ const kitModule = (): Promise<string> =>
       resume: { module: "@rivetjs/kit/transition.tsx" },
     }) as unknown as { code: string; diagnostics: { message: string }[]; symbols: { id: string; component: string }[] };
     if (result.diagnostics.length) throw new Error(result.diagnostics.map((d) => d.message).join("\n"));
-    for (const s of result.symbols) symbols[s.id] = `/c/${s.component}.js`;
+    for (const s of result.symbols ?? []) symbols[s.id] = `/c/${s.component}.js`;
     let code = result.code;
     for (const specifier of runtime) code = code.replaceAll(`"${specifier}"`, JSON.stringify(import.meta.resolve(specifier)));
     return emit("kit-transition", code);
@@ -121,7 +122,7 @@ async function build(self: Built, name: string, source?: string): Promise<void> 
     sourcePackages: ["@rivetjs/cdk"],
   }) as unknown as { code: string; diagnostics: { message: string }[]; symbols: { id: string; component: string }[] };
   if (result.diagnostics.length) throw new Error(result.diagnostics.map((d) => d.message).join("\n"));
-  for (const s of result.symbols) symbols[s.id] = `/c/${s.component}.js`;
+  for (const s of result.symbols ?? []) symbols[s.id] = `/c/${s.component}.js`;
   let code = result.code;
   for (const specifier of runtime) code = code.replaceAll(`"${specifier}"`, JSON.stringify(import.meta.resolve(specifier)));
   // `#dev` (package `imports`): resolved here, under this run's conditions (dev-off, or dev-on in `cdk-dev`) — the temp dir has no package scope.

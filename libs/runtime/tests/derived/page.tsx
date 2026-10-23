@@ -1,5 +1,5 @@
 // Derived model fixture, plain source: the components of `page.dom.tsx` before lowering. Compiled with the M2-C
-// derived server target (`resume: { model: "derived" }`, wasm with `hasDerivedModel()`) by
+// derived server target (`resume: { module }`, wasm with `hasDerivedModel()`) by
 // tests/derived-adopt-browser.test.ts — the compiled server shape (ATTR roots, content markers, keys `<h5>-<n>`) that
 // the hand-lowered DOM module adopts.
 import { createContext, provide, signal, useContext } from "@rivetjs/reactivity";

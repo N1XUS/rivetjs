@@ -1,15 +1,14 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/surface/surface.tsx (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet:
 // - `"use client"` dropped (resume, no hydration pass); `className` → `class`; React types → Rivet JSX types.
-// - `createContext<SurfaceContext>({})` + `<SurfaceContext value>` → a resumable token (`resumableContext`, id
-//   `rv-ui-surface`, same `{}` default) + `Provider`; the value is data (`{ variant }`, serializes on resume) whose
+// - `createContext<SurfaceContext>({})` + `<SurfaceContext value>` → a context token (same `{}` default) + `Provider`;
+//   the value is data (`{ variant }`, serializes on resume) whose
 //   `variant` is a getter over the live prop (`React.useMemo` → that object; the body never re-runs).
 // - Props are read lazily (`splitLive` = runtime `splitProps`): a destructure would snapshot the live getters. The body casts `props` to the
 //   default-element shape (upstream casts `rest as any`): a split of the generic intersection is TS2590.
 import { createContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { SurfaceVariants } from "../../../styles/src/components/surface/index.ts";
 import { surfaceVariants } from "../../../styles/src/components/surface/index.ts";
@@ -24,7 +23,7 @@ type SurfaceContext = {
   variant?: SurfaceVariants["variant"];
 };
 
-const SurfaceContext = resumableContext(createContext<SurfaceContext>({}, { id: "rv-ui-surface" }));
+const SurfaceContext = createContext<SurfaceContext>({});
 
 /* ------------------------------------------------------------------------------------------------
  * Surface Root

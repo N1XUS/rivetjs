@@ -57,7 +57,7 @@ const failures = ["light", "dark"].flatMap((mode) =>
 - Preserve live props: read `props.name`, and use `splitProps`/`mergeProps` from `@rivetjs/runtime/props` for forwarding. Destructuring live props can read them once.
 - Dynamic collections use `For` from `@rivetjs/runtime/dom` with a stable `by` key; its item and index arguments are accessors. Component render-prop state values can also be accessors; inspect the example/type before reading them.
 - For renderable props use `Content` from `@rivetjs/runtime/jsx-runtime`. For deferred closed overlays/providers on resumable pages use render-function children `{() => …}` instead of already-created JSX. `AppLayout` named slots also take render functions, not JSX values.
-- Keep handlers as inline arrows or supported local functions with serializable captures. Browser reads (`window`, `document`, storage) belong in handlers or `clientEffect`, not server render. Import browser runtime helpers from `.tsx` modules for resume rewriting.
+- Handlers are plain functions; keep render output the same on server and browser (no `Date.now()` / random values in render). Browser reads (`window`, `document`, storage) belong in handlers or `clientEffect`, not server render. Import browser runtime helpers from `.tsx` modules for resume rewriting.
 - Icons: `import { Icon } from "@rivetjs/kit/icon"` and icon data from `lucide`, then `<Icon icon={Search} />`. Keep decorative icons hidden and icon-only controls named. Do not invent SVG paths or use text glyphs as icons.
 - CDK is headless: documented `rv-*` classes and `data-*` state support custom CSS, while behavior-critical styles remain inline. Use its overlay primitives, not a hand-built/native-dialog replacement with a different focus/dismissal model.
 

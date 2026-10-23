@@ -14,7 +14,7 @@ afterAll(async () => s?.close());
 
 test("masonry: server markup places every item", async () => {
   const html = await (await fetch(s.origin + "/masonry")).text();
-  assert.match(html, /class="rv-Masonry"[^>]*data-layout="exact"><div role="grid"[^>]*id="photos"/);
+  assert.match(html, /class="rv-Masonry"[^>]*data-layout="exact"(?: data-b="\d+")?><div role="grid"[^>]*id="photos"/);
   assert.equal((html.match(/data-rv-item=""/g) ?? []).length, 12 + 5);
   assert.match(html, /--rv-w0:calc\(\(100cqw - 16px\) \/ 3\)/);
   assert.match(html, /class="rv-Bento"[^>]*data-layout="dense"/);
@@ -94,8 +94,8 @@ test("masonry: measured mode places by measured heights after resume", async () 
   );
   await page.click("#more");
   await page.waitForFunction(() => document.querySelectorAll("#notes [data-rv-item]").length === 15);
-  // Lazy rows (default since LAZY-FLIP 2026-10-22): the rows materialise over the server nodes, so all 9 survive the first
-  // items change (with `resume.lazyRows: false` the recorded rows are re-created: RESUME-KEEP-ROWS gap, none survive).
+  // The rows materialise over the server nodes, so all 9 survive the first
+  // items change.
   assert.equal(
     await page.evaluate(
       () => [...document.querySelectorAll<HTMLElement>("#notes [data-rv-item]")].filter((el) => (el as { rvServer?: boolean } & HTMLElement).rvServer).length,

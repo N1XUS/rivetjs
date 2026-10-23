@@ -31,7 +31,6 @@ export type { InlineStylesheets } from "./route-css.ts";
 export { mergeRouteCSS } from "./route-css.ts";
 import { bundleRouteCSS, devRouteCSS, INLINE_CSS, inlineCSS, mergeRouteCSS, ROUTE_CSS, type InlineStylesheets } from "./route-css.ts";
 import { devHandler, devReport, listenClientErrors } from "./dev-errors.ts";
-import { lazyRowsBuild, lazyRowsHarness } from "./lazy-rows.ts";
 import { unexportHead } from "./head-strip.ts";
 import { analyzeReach, serverOnlyOption, RV_REACH, type Reach, type ReachProblem, type ServerOnlyOption } from "./reach.ts";
 import { compileRoutes } from "@rivetjs/runtime/router/server";
@@ -68,12 +67,6 @@ export interface RivetRouterOptions {
    * `a/index.html`. `/` itself never changes; endpoints and other methods are never redirected.
    */
   trailingSlash?: TrailingSlash;
-  /**
-   * Preload planner default for this app's pages (`createApp` / adapter `preload` options override it per server):
-   * `background` = byte budget (minified closures) of below-the-fold `visible` chunks also prefetched at idle; `0` off.
-   * Default 1 MiB. Dev pages keep `visible` chunks viewport-only (dev manifests have no bundle sizes).
-   */
-  preload?: { background?: number };
   /**
    * Route rules by path pattern (`/about`, `/blog/*`, `/docs/**`): `headers`, and `cache` / `swr` / `isr` — rendered pages
    * stored in process (fresh for `maxAge` s, then served stale while one render refreshes them; `isr: true` until
@@ -124,8 +117,7 @@ export interface RivetRouterOptions {
   staticIcons?: boolean;
   /**
    * Route transitions (View Transitions) + pending UI. Off by default; `true` = defaults. The
-   * transitions module loads on the first navigation intent; the generated resume entry provides
-   * the navigation context (a custom `resume.entry` must add `[Navigation, navigation]` itself).
+   * transitions module loads on the first navigation intent.
    */
   transitions?: CodegenOptions["transitions"];
   /** Route announcer for screen readers after client navigation (default true; `false` opts out). */
@@ -326,10 +318,9 @@ export async function generateRoutes(
     | "prefetch"
     | "prefetchEagerness"
     | "prefetchPaths"
-    | "preload"
     | "routeRules"
     | "clientRouter"
-  > & { head?: "components" | undefined; documents?: readonly string[]; derived?: boolean } = {},
+  > & { head?: "components" | undefined; documents?: readonly string[] } = {},
 ) {
   const routesDir = posix(options.routes ?? "src/routes");
   const outDir = posix(options.outDir ?? ".rivet");
@@ -352,22 +343,17 @@ export async function generateRoutes(
     ...(options.prefetchEagerness ? { prefetchEagerness: options.prefetchEagerness } : {}),
     ...(options.prefetchPaths === false ? { prefetchPaths: false } : {}),
     ...(options.trailingSlash && options.trailingSlash !== "ignore" ? { trailingSlash: options.trailingSlash } : {}),
-    ...(options.preload?.background !== undefined ? { preloadBackground: options.preload.background } : {}),
     ...(options.routeRules && Object.keys(options.routeRules).length ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
     ...(options.documents?.length ? { documents: options.documents } : {}),
-    ...(options.derived ? { derived: true } : {}),
   });
   const changed = await sync(resolve(root, outDir), generated.files);
-  // No router contexts: the compiler's default resume entry (drop a stale generated one).
-  const resumeEntry = "entry.resume.ts" in generated.files;
-  if (!resumeEntry) await rm(resolve(root, outDir, "entry.resume.ts"), { force: true });
   // Editors: route ids/patterns/files for links (go to route, unknown-route warnings). Best effort.
   try {
     const routes = table.routes.filter((route) => route.page).map((route) => ({ id: route.id, pattern: route.pattern, file: routesDir + "/" + route.page }));
     updateEditorManifest(root, { routesDir, routes });
   } catch {}
-  return { table, resumeModules: generated.resumeModules, changed, resumeEntry };
+  return { table, resumeModules: generated.resumeModules, changed };
 }
 
 /** Routes-relative modules that declare server exports (in-file pages/layouts, plain `.ts` endpoints). */
@@ -432,11 +418,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     ...(options.trailingSlash ? { trailingSlash: options.trailingSlash } : {}),
     ...(options.prefetchEagerness ? { prefetchEagerness: options.prefetchEagerness } : {}),
     ...(options.prefetchPaths === false ? { prefetchPaths: false } : {}),
-    ...(options.preload ? { preload: options.preload } : {}),
     ...(options.routeRules ? { routeRules: options.routeRules } : {}),
     ...(options.clientRouter !== undefined ? { clientRouter: options.clientRouter } : {}),
-    // Derived resume model (M2 R5): the generated `Root` boundary carries the route payload as data.
-    ...(options.resume?.model === "derived" && mode !== "csr" ? { derived: true } : {}),
   };
   if (options.routeRules !== undefined) {
     // Checked at config time (same checks as at server start, except the origin `isr` needs: a server option), and
@@ -451,9 +434,6 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
         : typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(json));
     if (!json(options.routeRules)) throw new Error("rivetRouter: routeRules must be JSON data (numbers, strings, booleans; use isr: true for no expiry)");
   }
-  const background = options.preload?.background;
-  if (background !== undefined && !(Number.isFinite(background) && background >= 0))
-    throw new Error(`rivetRouter: preload.background must be a non-negative number of bytes (got ${JSON.stringify(background)})`);
   if (options.prefetch !== undefined && typeof options.prefetch !== "boolean" && options.prefetch !== "document" && options.prefetch !== "prerender")
     throw new Error(`rivetRouter: prefetch must be a boolean, "document" or "prerender" (got ${JSON.stringify(options.prefetch)})`);
   if (options.prefetchEagerness !== undefined && !["conservative", "moderate", "eager"].includes(options.prefetchEagerness))
@@ -477,30 +457,15 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   if (slash !== "ignore" && slash !== "never" && slash !== "always")
     throw new Error(`rivetRouter: trailingSlash must be "ignore", "never" or "always" (got ${JSON.stringify(slash)})`);
   // Filled in `config`, which runs before the compiler plugin reads it in `configResolved`.
-  // Page chunks prefetch on navigation intent, not at idle (the App chunk loads eagerly for clicks).
-  // The generated App prefetches the hovered route's page itself: page chunks are not chunk lazies (`lazyOwned`).
   const resume: RivetResumeOptions = {
-    lazy: "intent",
     ...options.resume,
-    lazyOwned: [...(options.resume?.lazyOwned ?? []), posix(join(outDir, "app.tsx"))],
     modules: [...(options.resume?.modules ?? [])],
     dev: options.dev?.resume !== false,
     // Every app component module a route imports resumes without being listed in `resume.modules`.
     appModules: options.resume?.appModules ?? true,
-    // Lazy rows measurement builds (`RIVET_LAZY_ROWS=on` / `off` + the harness flag of the lazy-rows tools): the option on / off.
-    ...(lazyRowsBuild() !== undefined ? { lazyRows: lazyRowsBuild() } : {}),
-    // Derived model (M2 R5): `.rivet/app.tsx`'s default export (`Root`) is an independent root boundary (its props =
-    // the route payload as data), like a route module's default export.
-    ...(options.resume?.model === "derived" && mode !== "csr" ? { roots: [...(options.resume.roots ?? []), posix(join(outDir, "app.tsx"))] } : {}),
-  };
-  // The generated resume entry (when there is one) provides the router's contexts (navigation state,
-  // search params) to resumed regions.
-  const ownEntry = resume.entry;
-  // Dev resumed pages read it live (the compiler's dev manifest): kept in step on regeneration too.
-  const entryFor = (generated: boolean) => {
-    if (ownEntry) resume.entry = ownEntry;
-    else if (generated) resume.entry = posix(join(outDir, "entry.resume.ts"));
-    else delete resume.entry;
+    // `.rivet/app.tsx`'s default export (`Root`) is an independent root boundary (its props = the route payload as data),
+    // like a route module's default export (M2 R5).
+    ...(mode !== "csr" ? { roots: [...(options.resume?.roots ?? []), posix(join(outDir, "app.tsx"))] } : {}),
   };
   let root = process.cwd();
   let table: RouteTable = { routes: [] };
@@ -629,7 +594,6 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const usage = await routerUsage(root, { exclude: [config.build?.outDir ?? "dist", outDir] });
       for (const name of USAGE) (codegen as Record<keyof RouterUsage, unknown>)[name] = options[name] ?? usage[name];
       const generated = await generateRoutes(root, codegen);
-      entryFor(generated.resumeEntry);
       const { resumeModules } = generated;
       table = generated.table;
       serverExports.modules.splice(0, serverExports.modules.length, ...routeModules(table, routesDir));
@@ -659,8 +623,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
           resolve(root, path),
         ]),
       );
-      // Resumed pages have no application entry, only stylesheets (the compiler emits the resume
-      // runtime and symbol chunks itself). CSR apps start from the generated client entry.
+      // Resumed pages have no application entry, only stylesheets (the compiler emits the derived
+      // runtime entry and the boundary chunks itself). CSR apps start from the generated client entry.
       const defaultInput = mode === "csr" ? { app: clientEntry(), ...stylesInput } : styles.length ? stylesInput : { "rivet-empty": EMPTY };
       return {
         // Pages come from the app handler (or the CSR shell), not an index.html fallback.
@@ -697,7 +661,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       if (id === EMPTY || id.startsWith(DOCUMENT_PAGE) || id.startsWith(STAND_IN)) return id;
       // `x.server.ts` modules hold secrets and server code: never part of a browser graph.
       if (!importer || resolveOptions?.ssr || this.environment?.config?.consumer === "server") return null;
-      // The compiler's resume grouping resolves every specifier its facts list (type-only imports too): not an import.
+      // The compiler's resume walk resolves every specifier its facts list (type-only imports too): not an import.
       if (_factsResolve(id, importer)) return null;
       const from = fileOf(importer);
       // Client build: the App's import of a document route's page — the browser never renders it (links load its document).
@@ -820,8 +784,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const refresh = (): Promise<boolean> => {
         const run = regenerations.then(async () => {
           if (closed) return false;
-          const { changed, table: next, resumeEntry } = await generateRoutes(root, codegen);
-          entryFor(resumeEntry);
+          const { changed, table: next } = await generateRoutes(root, codegen);
           table = next;
           serverExports.modules.splice(0, serverExports.modules.length, ...routeModules(table, routesDir));
           inFile = serverFiles(table);
@@ -920,14 +883,9 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       const devMount = server.config.base + posix(join(outDir, "dev-mount.tsx"));
       // Dev errors: server failures reach the overlay and a dev error page; browser ones are forwarded.
       listenClientErrors(server);
-      // Dev SSR records like production (resume recorder, dev manifest): serialization errors surface.
+      // Dev SSR renders like production (boundary recorder, dev manifest).
       const devResume = (compiler.api as { devResume: DevResume }).devResume;
-      const onError = devReport(
-        server,
-        () => table,
-        routesPath,
-        (id) => devResume.describe(id),
-      );
+      const onError = devReport(server, () => table, routesPath);
       // Pages resume like production; opted out, or a non-default i18n locale (its client graph
       // compiles per locale, chunks do not yet): client-render without the recorded state.
       const devMode = (locale: string | undefined): "check" | "resume" =>
@@ -1002,10 +960,13 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       };
     },
   };
-  // Server / static apps: route modules' `head` export leaves the client build (server data; `head-strip.ts`).
+  // Server / static apps: route modules' `head` export leaves the client build (server data; `head-strip.ts`). Builds only:
+  // on the dev server the hot wrapper (compiler `hot.ts`) has listed `head` among the module's exports before this post
+  // transform, so a stripped export made every edit look like an export change (`invalidate`: a reload, state lost).
   const headStrip: Plugin = {
     name: "vite-plugin-rivet-router-head",
     enforce: "post",
+    apply: "build",
     transform(code, id, transformOptions) {
       if (mode === "csr" || transformOptions?.ssr || this.environment?.config?.consumer === "server") return null;
       const file = id.split("?")[0]!;
@@ -1018,8 +979,6 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
     router,
     ...plugins,
     headStrip,
-    // Measurement only (`RIVET_LAZY_ROWS=swap`, dev / lazy-rows tools): inert otherwise.
-    lazyRowsHarness(() => resolve(root, outDir, "entry.server.tsx")),
     ...(adapter ? [targetEntryPlugin(adapter, { serverEntry: () => resolve(root, outDir, "entry.server.tsx"), mode: () => mode })] : []),
   ];
 }

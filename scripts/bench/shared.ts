@@ -1,4 +1,4 @@
-// Helpers shared by the benchmark runners and spikes (apps/*-bench, apps/bridge-demo, scripts/lazy-rows): import by
+// Helpers shared by the benchmark runners and spikes (apps/*-bench, apps/bridge-demo): import by
 // relative path (`../../scripts/bench/shared.ts`), no package. Node-only, no dependencies.
 
 /** Median of `values` (the mean of the two middle values for an even count); NaN when empty. Never mutates `values`. */

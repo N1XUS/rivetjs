@@ -231,7 +231,7 @@ A `class` replaces the default `rv-*` class. `@rivetjs/cdk/theme.css` does not s
 
 - Before interaction: the trigger's server HTML and an empty binding site per `Tooltip`; no tooltip code loads until the first hover or focus.
 - Callbacks (`onOpenChange`, DOM events): inline arrows or local consts.
-- Known limitations: a standalone `Tooltip` with `isOpen` and `onOpenChange` props may not open on a resumed page (use an `isOpen` signal and read it); the first open on a resumed page sets no `data-entering`; `onFocus` / `onBlur` on a `Button` inside `TooltipTrigger` fail at SSR ("function is not serializable").
+- Known limitations: a standalone `Tooltip` with `isOpen` and `onOpenChange` props may not open on a resumed page (use an `isOpen` signal and read it); the first open on a resumed page sets no `data-entering`.
 
 ## Testing
 

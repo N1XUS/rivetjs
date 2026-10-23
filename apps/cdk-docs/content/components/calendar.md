@@ -371,8 +371,6 @@ Pointer: a press selects on release over the pressed cell; cells do not steal fo
 - The server renders the full markup: heading, labels, every cell with its state attributes. No calendar code loads before the first interaction; the grid's `data-rk` keys are held while the handler chunk loads, so the first arrow key is not lost.
 - Cells carry no handlers: one set of handlers per grid finds the cell from `data-date`. Paging re-renders only the body rows; focus and selection changes patch attributes in place. The first change re-creates the body rows once.
 - State is signals plus JSON, so `value` / `focusedValue` signals resume as they were, and so does a state read from `CalendarStateContext`.
-- `isDateUnavailable`, `onChange`, `onFocusChange`, `createCalendar`, render-prop functions and DOM event handlers must be inline arrows or local consts. Imported or module-level functions passed directly are not serializable: wrap them in an inline arrow (`createCalendar={() => new Custom454()}`).
-- Don't capture date objects in JSX handlers or bindings (a `CalendarDate` is not serializable); keep strings, or destructure the fields you need (picker items).
 - `on…Capture` handlers do not resume yet.
 
 ## Testing

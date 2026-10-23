@@ -31,10 +31,8 @@
 //   `persistedKeys`, `useCachedChildren` → `collectionChildren`).
 import {
   _observer,
-  _regionState,
   _reobserve,
   _scoped,
-  _tracker,
   computed,
   createContext,
   provide,
@@ -46,11 +44,10 @@ import {
 } from "@rivetjs/reactivity";
 import { For, Provider } from "@rivetjs/runtime/dom";
 import type { RefProp } from "@rivetjs/runtime/jsx-runtime";
-import { _rUnrecorded, resumableContext } from "@rivetjs/runtime/resume-format";
+import { _rUnrecorded } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { HiddenContext } from "./hidden.ts";
 import { domRowItem } from "#server";
-import { rowKey, stampSet, stamp, type RowBox } from "./row-stamps.ts";
 import { hasLive } from "../utils/live.tsx";
 import { mergeProps as mergeLive, splitProps } from "@rivetjs/runtime/props";
 import {
@@ -95,18 +92,18 @@ export interface CollectionScope {
   readonly ids: { n: number };
 }
 /** Provided by collection hosts (`CollectionRoot`) and branches; `null` outside any collection. */
-export const CollectionScopeContext = resumableContext(createContext<CollectionScope | null>(null, { id: "rv-collection-scope" }));
+export const CollectionScopeContext = createContext<CollectionScope | null>(null);
 
 /** Defaults a `Collection items` row gives its part (`useCachedChildren` `addIdAndValue`). */
 interface ItemDefaults {
   readonly id: Key | undefined;
   readonly value: unknown;
 }
-const CollectionItemContext = resumableContext(createContext<ItemDefaults | null>(null, { id: "rv-collection-item" }));
+const CollectionItemContext = createContext<ItemDefaults | null>(null);
 /**
  * RAC `addIdAndValue` clones the ONE element a row renders: only the first part of a row takes the
  * row's id / value (a fragment's other parts, e.g. a trailing load-more item, keep their own / auto
- * ids). Tracked outside the (serialized) context value so a re-created region starts fresh.
+ * ids). Tracked outside the context value.
  */
 const consumedDefaults = new WeakSet<ItemDefaults>();
 function takeItemDefaults(): ItemDefaults | null {
@@ -129,7 +126,7 @@ export function collectionItemId(): Key | undefined {
 interface CollectionContextValue {
   readonly idScope?: Key | undefined;
 }
-const CollectionContext = resumableContext(createContext<CollectionContextValue | null>(null, { id: "rv-collection" }));
+const CollectionContext = createContext<CollectionContextValue | null>(null);
 
 /**
  * Run `fn` tracked by the build pass that `build` belongs to. Component bodies run untracked (runtime
@@ -773,147 +770,40 @@ export function sameRender(a: Node<unknown> | null | undefined, b: Node<unknown>
  * node renders the same (`sameRender`) and re-renders it when its render inputs changed, or when `depends` (read in the
  * region) changes: a part whose content renders from its parent's value (TreeItemContent).
  */
-export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null | undefined, key: () => Key | RowBox, depends?: () => unknown): unknown {
+export function renderNodeAt(collection: () => ICollection<Node<unknown>> | null | undefined, key: () => Key, depends?: () => unknown): unknown {
   // Server: rendered once, untracked. `depends` / the cut-off `node` are the browser region's re-render triggers; read
   // in a resumable row they would count as the row's own reads, so the resumed For re-created the row on every re-run
   // of its region (a sort re-created the table header and body: focus lost) instead of keeping it like a client rebuild.
   if (isServer)
     return untrack(() => {
-      const n = collection()?.getItem(rowKey(key())) ?? null;
+      const n = collection()?.getItem(key()) ?? null;
       // DOM-DATA servers: the row's data object (the For iterates keys), registered with the row (`domRowItem`).
       if (n !== null) domRowItem(n.value);
       return n?.render ? n.render(n) : null;
     });
-  const node = computed(() => collection()?.getItem(rowKey(key())) ?? null, { equals: sameRender });
+  const node = computed(() => collection()?.getItem(key()) ?? null, { equals: sameRender });
   return serverNow(() => {
     depends?.();
     node();
     // The current node (the cut-off computed keeps the first of equal ones; `depends` re-renders with the latest).
-    const n = untrack(() => collection()?.getItem(rowKey(key())) ?? null);
+    const n = untrack(() => collection()?.getItem(key()) ?? null);
     return n?.render ? untrack(() => n.render!(n)) : null;
   });
 }
 
-/**
- * Lazy collection rows (`resume.lazyRows`, LAZY-T6): a loop over container nodes — a section, a table's header / body (nodes
- * whose children have children) — is not the lazy `For`; the rows below it are (a lazy row is one option / table row, not a
- * whole table body). Read by the server's lazy rows only.
- */
-function leafNodes(collection: CollectionInput, parent: Node<unknown> | null): boolean {
-  const c = resolveCollection(collection);
-  if (!c?.getChildren) return true;
-  for (const n of parent ? c.getChildren(parent.key) : c) {
-    if (n.type === "content") continue;
-    if (n.type === "section") return false;
-    // No children (built nodes keep `firstChildKey`): no iterator per leaf (LAZY-COST-2: 1000 options ≈ 0.5 ms / render).
-    if ((n as { firstChildKey?: Key | null }).firstChildKey === null) continue;
-    for (const child of c.getChildren(n.key)) {
-      for (const _ of c.getChildren(child.key)) return false;
-      break;
-    }
-  }
-  return true;
-}
-
-/**
- * The nodes a row of `n` renders (its stamp covers them): `n`, and a section's items / a table row's cells — a nested `For`
- * inside the row (`CollectionBranch`) that keeps no baseline of its own (`serverRows`).
- */
-function rowNodes(c: ICollection<Node<unknown>>, n: Node<unknown>): Node<unknown>[] {
-  const row = [n];
-  if (n.firstChildKey != null && c.getChildren) for (const child of c.getChildren(n.key)) if (n.type === "section" || child.type === "cell") row.push(child);
-  return row;
-}
-/** The stamp of a row's nodes (`row-stamps.ts`). */
-const rowStamp = (row: Node<unknown>[]): string => stamp(row[0], row.length > 1 ? row.slice(1) : null);
-
-/**
- * Server baseline of a resumed For over collection keys (ROW-RERENDER): `_regionState` with the stamps of the rows the server
- * renders (`row-stamps.ts`) when the collection is an accessor whose build read signals (a static collection never rebuilds:
- * null), recorded with the For's region; none (no slot) for the children of a section / table row (`parentType`). Called by the server and the browser alike (one `_regionState` slot per accessor
- * collection, so the region's other slots keep their positions); the browser gets the server's value back when it
- * re-creates that region (adopting the rows), null otherwise.
- */
-export function serverRows(collection: CollectionInput, keys: () => readonly Key[], parentType?: string | undefined): string | null {
-  // The rows of a section / a table row: covered by the stamp of the row holding them (`rowNodes`). Decided by the
-  // parent node's type alone (the same on the server and in the browser: the `_regionState` slot is positional).
-  if (typeof collection !== "function" || parentType === "section" || parentType === "item") return null;
-  return _regionState(() => {
-    if (!isServer) return null;
-    // `_trackReads` through the slot (`_tracker`, installed by the server resume runtime): a static import would ship
-    // `@rivetjs/reactivity/track` to the browser with this module. Null = no resumable render, nothing records stamps.
-    const track = _tracker();
-    if (!track) return null;
-    return untrack(() => {
-      const c = track(collection);
-      if (!c.signals.length || !c.value) return null;
-      let out = "";
-      for (const k of keys()) {
-        const n = c.value.getItem(k);
-        out += n ? rowStamp(rowNodes(c.value, n)) : stamp(null);
-      }
-      return out || null;
-    });
-  });
-}
-
-/**
- * The keys of a resumed For over collection keys (`renderNodeAt` rows), given the server baseline (`serverRows`): an adopted
- * server row keeps its key while its node renders like the server's (stamp in the baseline; then `sameRender` against the
- * last node checked), else its key is boxed (`RowBox`, one box per key for good) — a key the adopted list does not know, so
- * the For re-creates that row (rows read `rowKey(key())`). Rows the server did not render get a box too (created anyway).
- * Without a baseline: `keys` itself.
- */
-export function resumedKeys(collection: CollectionInput, base: string | null, keys: () => readonly Key[]): () => readonly (Key | RowBox)[] {
-  if (base === null || isServer) return keys;
-  let set: Set<string> | null = null;
-  const boxes = new Map<Key, RowBox>(),
-    // The last node (`rowNodes`: + its items / cells) found to render like the server's, per key.
-    seen = new Map<Key, Node<unknown>[]>();
-  return () => {
-    const list = keys(),
-      c = resolveCollection(collection);
-    return untrack(() => {
-      set ??= stampSet(base);
-      let out: (Key | RowBox)[] | null = null;
-      for (let i = 0; i < list.length; i++) {
-        const k = list[i]!;
-        let box = boxes.get(k);
-        if (box === undefined) {
-          const n = c?.getItem(k) ?? null;
-          if (n === null) continue;
-          const row = rowNodes(c!, n),
-            last = seen.get(k);
-          // Unchanged since the last check (`sameRender`, node by node): no stamp.
-          if (last !== undefined && last.length === row.length && row.every((x, j) => sameRender(last[j], x))) continue;
-          if (set.has(rowStamp(row))) {
-            seen.set(k, row);
-            continue;
-          }
-          seen.delete(k);
-          boxes.set(k, (box = { k }));
-        }
-        (out ??= list.slice())[i] = box;
-      }
-      return out ?? list;
-    });
-  };
-}
-
-function renderNodes(collection: CollectionInput, parent: Node<unknown> | null, parentType?: string): unknown {
+function renderNodes(collection: CollectionInput, parent: Node<unknown> | null): unknown {
   // Rows are keyed by primitive keys (stable across rebuilds) so an adopted (resumed) row survives a
   // collection rebuild; a row re-renders only when its node's render inputs changed (`renderNodeAt`) and parts
-  // read live data by key. An adopted row whose node changed since the server render is re-created (`resumedKeys`).
+  // read live data by key.
   const keys = (): readonly Key[] => {
     const c = resolveCollection(collection)!;
     const keys: Key[] = [];
     for (const n of parent ? c.getChildren!(parent.key) : c) if (n.type !== "content") keys.push(n.key);
     return keys;
   };
-  const each = resumedKeys(collection, serverRows(collection, keys, parentType), keys);
   return (
-    <For each={each} by={(key: Key | RowBox) => key} lazy={() => leafNodes(collection, parent)}>
-      {(key: () => Key | RowBox) => renderNodeAt(() => resolveCollection(collection), key) as never}
+    <For each={keys} by={(key: Key) => key}>
+      {(key: () => Key) => renderNodeAt(() => resolveCollection(collection), key) as never}
     </For>
   );
 }
@@ -933,7 +823,7 @@ export const DefaultCollectionRenderer: CollectionRenderer = {
     const { collection, parent } = props;
     // `parent` may be row data (`{ key }`, a resumable capture), not the node: its type comes from the collection.
     const node = collection ? untrack(() => resolveCollection(collection)?.getItem(parent.key)) : null;
-    if (node) return renderNodes(collection, parent, node.type);
+    if (node) return renderNodes(collection, parent);
     return ((parent as { content?: () => unknown }).content?.() ?? null) as never;
   },
 };

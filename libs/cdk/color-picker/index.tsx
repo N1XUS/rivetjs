@@ -16,7 +16,7 @@ import {
   type ColorPickerProps as StatelyColorPickerProps,
 } from "@rivetjs/cdk/color";
 import { mergeProps } from "../interactions/merge-props.tsx";
-import { Provider, renderProps, resumableContext, slottedContext, type ChildrenOrFunction, type SlotProps, type SlottedContextValue } from "../slots/index.tsx";
+import { Provider, renderProps, slottedContext, type ChildrenOrFunction, type SlotProps, type SlottedContextValue } from "../slots/index.tsx";
 import { ColorAreaContext } from "../color-area/index.tsx";
 import { ColorFieldContext } from "../color-field/index.tsx";
 import { ColorSliderContext } from "../color-slider/index.tsx";
@@ -36,9 +36,9 @@ export interface ColorPickerProps extends StatelyColorPickerProps, SlotProps {
 }
 
 /** RAC `ColorPickerContext`. */
-export const ColorPickerContext = resumableContext(createContext<SlottedContextValue<Partial<ColorPickerProps>>>(null, { id: "rv-color-picker" }));
+export const ColorPickerContext = createContext<SlottedContextValue<Partial<ColorPickerProps>>>(null);
 /** RAC `ColorPickerStateContext`. */
-export const ColorPickerStateContext = resumableContext(createContext<ColorPickerState | null>(null, { id: "rv-color-picker-state" }));
+export const ColorPickerStateContext = createContext<ColorPickerState | null>(null);
 
 /**
  * A ColorPicker synchronizes a color value between multiple React Aria color components.

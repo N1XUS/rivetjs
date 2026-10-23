@@ -30,19 +30,6 @@ for (const target of ["server", "dom"] as const) {
   });
 }
 
-test("compound parts: resume server/dom symbols match and capture the namespace import", () => {
-  const server = compile(src, { target: "server", filename: "m.tsx", resume });
-  const dom = compile(src, { target: "dom", filename: "m.tsx", resume });
-  assert.deepEqual(server.diagnostics, []);
-  assert.deepEqual(dom.diagnostics, []);
-  assert.deepEqual(
-    server.symbols!.map((s) => [s.id, s.captures]),
-    dom.symbols!.map((s) => [s.id, s.captures]),
-  );
-  // `Card` is a module import: never a capture (imports are re-imported by symbol modules).
-  for (const s of dom.symbols!) assert.ok(!s.captures.includes("Card"), `${s.id} captures Card`);
-});
-
 test("compound parts: nested namespace <Select.Popover><ListBox.Item> compiles", () => {
   const out = compile(
     `import { Select } from "./s.tsx"; import { ListBox } from "./l.tsx";

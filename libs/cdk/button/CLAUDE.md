@@ -4,7 +4,7 @@
 Native `<button>` with RA press events, pending state, form attrs; `press.ts` adapts the shared `usePress` handlers for explicit `onX` wiring (also used by toggle-button).
 
 ## Entry points
-- `@rivetjs/cdk/button` -> `index.tsx`: `Button`, `ButtonContext` (id `rv-button`), types `ButtonProps`, `ButtonRenderProps`, `ButtonContextValue`, `PressEvent`, `PointerType`
+- `@rivetjs/cdk/button` -> `index.tsx`: `Button`, `ButtonContext`, types `ButtonProps`, `ButtonRenderProps`, `ButtonContextValue`, `PressEvent`, `PointerType`
 - `@rivetjs/cdk/button/behaviour` -> `behaviour.ts`: `buttonProps(AriaButtonProps)`, `isPendingNow`, `pendingOptions`, `buttonKeyDown`, `buttonClick`, `buttonPointerDown`, `buttonPointerUp`, `buttonMouseDown`, `buttonDragStart`; types `PressEvent`, `PressEvents`, `PressOptions`, `PointerType`
 - `press.ts`: not a subpath (import via behaviour types); per-element adapter over `../interactions/press.tsx`: `pressKeyDown/Click/PointerDown/MouseDown/PointerUp/PointerEnter/PointerLeave/DragStart(options, event)`, `cancelPress`, `isPressed`; re-exports `isVirtualClick`, `isVirtualPointerEvent` (`../platform`), types `PressEvent`, `PressEvents`, `PressProps`, `PointerType`; `PressOptions` = `PressProps`
 

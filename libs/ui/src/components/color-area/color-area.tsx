@@ -14,7 +14,6 @@ import type { ColorThumbProps as ColorThumbPrimitiveProps, ColorThumbRenderProps
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 
 import type { ColorAreaVariants } from "../../../styles/src/components/color-area/index.ts";
 import { colorAreaVariants } from "../../../styles/src/components/color-area/index.ts";
@@ -33,7 +32,7 @@ interface ColorAreaContext {
   showDots?: boolean;
 }
 
-const ColorAreaContext = resumableContext(createContext<ColorAreaContext>({}, { id: "rv-ui-color-area" }));
+const ColorAreaContext = createContext<ColorAreaContext>({});
 
 type ColorAreaSlots = ReturnType<typeof colorAreaVariants>;
 

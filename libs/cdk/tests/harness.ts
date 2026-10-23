@@ -70,9 +70,22 @@ export function watch(page: Page): Watch {
   return seen;
 }
 
+const LIBRARY = /scrolling|virtualizer|drag-drop|dnd|behaviour/;
 /** Library chunks requested so far: cdk module chunks (`/cdk/<module>/` paths or names) plus `extra`. */
-export const libraryScripts = (seen: Watch, extra?: RegExp): string[] =>
-  seen.scripts.filter((url) => /scrolling|virtualizer|drag-drop|dnd|behaviour/.test(url) || (extra?.test(url) ?? false));
+export const libraryScripts = (seen: Watch, extra?: RegExp): string[] => seen.scripts.filter((url) => LIBRARY.test(url) || (extra?.test(url) ?? false));
+/** Library chunks the page imported (not the derived loader's low-priority fetch-ahead `modulepreload`s, which are
+ *  fetched and compiled, never evaluated — Chromium reports them with initiator `script`, so they are told apart by the
+ *  `<link rel="modulepreload">` hrefs): resource entries matching the library pattern that no preload link names. A started
+ *  derived runtime (it installs `document.$rdp`) counts too: it evaluates the boundary chunks it adopts. */
+export const libraryImports = (page: Page): Promise<string[]> =>
+  page.evaluate((source) => {
+    const preloaded = new Set([...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"]')].map((l) => l.href));
+    const out = (performance.getEntriesByType("resource") as PerformanceResourceTiming[])
+      .filter((e) => e.initiatorType !== "link" && !preloaded.has(e.name) && new RegExp(source).test(new URL(e.name).pathname))
+      .map((e) => new URL(e.name).pathname);
+    if ("$rdp" in document) out.push("(derived runtime started)");
+    return out;
+  }, LIBRARY.source);
 
 /** Focused element: id, role, data-key. */
 export const focused = (page: Page) =>

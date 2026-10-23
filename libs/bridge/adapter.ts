@@ -85,7 +85,7 @@ export interface IslandDef<C = unknown> {
   c?: C;
   /** Its server adapter (server facade). */
   a?: ServerAdapter<C>;
-  /** Island chunk URL (build manifest `lazy` entry of the facade's dynamic import) for the preload planner. */
+  /** Island key echoed by the facade; unused since M6-CUT (the derived model resolves chunks through manifest `islands` by `id`). */
   chunk?: string;
   /** Head sink for hoisted entries (`@rivetjs/kit` `pushHead`, passed by the facade when the app uses kit). */
   head?: (head: IslandHead) => ServerValue;

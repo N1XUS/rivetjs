@@ -22,7 +22,7 @@ React Stately color model + color states (`@react-stately/color`), state only. C
 react-spectrum `packages/react-stately/src/color/*` (`@react-stately/color` re-exports them), `intl/color/*.json`; tests `packages/react-stately/test/color/{Color.test.tsx,useColor.test.js,useColorFieldState.test.js}`.
 
 ## Rules / invariants
-- State = plain signals + JSON + free functions (cdk `state/` convention); every state passes the resume-table round trip (`tests/state-json.ts`). No Color instances, closures or getters stored.
+- State = plain signals + JSON + free functions (cdk `state/` convention). No Color instances, closures or getters stored.
 - Live `isDisabled` (live props P5): `createColorAreaState` / `createColorWheelState` store a given accessor as `state.disabled` (creation value in `isDisabled`); read `isColorAreaDisabled` / `isColorWheelDisabled` (module exports, not in the barrel). ColorSlider: the accessor passes to `createSliderState` (`state.slider.disabled`).
 - Colors live in signals as strings: uncontrolled → `stringifyColor` (lossless, own space: `rgba(…)`, `hsla(…)`, `hsba(…)` with unrounded channels, decimal never exponent); controlled `value` = two-way `Signal<string | Color>` (written back as a Color if it held a Color, else the lossless string) or a fixed plain value (only `onChange` fires).
 - Equality = `colorKey` (same space + channel values); upstream compares Color objects by identity (useControlledState `Object.is`, `newValue === colorValue`).
@@ -31,7 +31,7 @@ react-spectrum `packages/react-stately/src/color/*` (`@react-stately/color` re-e
 - `ColorSliderProps.snap` (Rivet Slider deviation, default `"release"`) passes through to `createSliderState`; `sliderView` spreads `state.slider`, so free-drag positions / snap flags / the snap-motion key (`refs`) are the stored ones.
 
 ## Tests
-`tests/color-model.test.ts` (Color + useColor upstream suites, Rivet additions), `tests/color-field-state.test.ts` (useColorFieldState upstream suite + signal + round trip), `tests/color-states.test.ts` (area / slider / wheel / channel field / picker + round trips; upstream has no direct tests for these hooks).
+`tests/color-model.test.ts` (Color + useColor upstream suites, Rivet additions), `tests/color-field-state.test.ts` (useColorFieldState upstream suite + signal), `tests/color-states.test.ts` (area / slider / wheel / channel field / picker; upstream has no direct tests for these hooks).
 `npx vitest run --project cdk libs/cdk/tests/color-model.test.ts libs/cdk/tests/color-field-state.test.ts libs/cdk/tests/color-states.test.ts`
 
 ## Same names, different modules

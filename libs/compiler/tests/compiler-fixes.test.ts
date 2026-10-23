@@ -6,56 +6,6 @@ import { compile } from "../index.ts";
 
 const resume = { module: "src/m.tsx" };
 
-test("resume: a child expression mixing JSX and non-JSX branches always binds as a region (flag 1)", () => {
-  const source = `
-import { signal } from "@rivetjs/reactivity";
-export function View() {
-  const on = signal(false);
-  const n = signal(0);
-  return <div>
-    <p>{on() ? <b>yes</b> : null}</p>
-    <p>{on() && <i>and</i>}</p>
-    <p>{n() > 1 ? "many" : n() ? <><u>one</u></> : null}</p>
-    <p>{(on() || null) ?? <Item />}</p>
-    <p>{n()}</p>
-    <p>{on() ? "a" : "b"}</p>
-    <p>{on() ? <b>always</b> : <i>jsx</i>}</p>
-  </div>;
-}
-function Item() { return <s>item</s>; }`;
-  const server = compile(source, { target: "server", filename: "m.tsx", resume });
-  assert.deepEqual(server.diagnostics, []);
-  const binds = [...server.code.matchAll(/__rivetR_bind\("src\/m\.tsx#View\$\w+", [\s\S]*?\[(?:on|n)\](, 1)?\)/g)].map((m) => m[1] === ", 1");
-  // All-JSX branches never yield a primitive: no flag (unchanged output).
-  assert.deepEqual(binds, [true, true, true, true, false, false, false]);
-  // The DOM output and symbols are unchanged by the flag.
-  const dom = compile(source, { target: "dom", filename: "m.tsx", resume });
-  assert.deepEqual(dom.diagnostics, []);
-  assert.ok(dom.symbols!.every((symbol) => symbol.kind !== "region" || symbol.source.includes("<")));
-});
-
-test("resume: a const derived through an arrow may hold a primitive (find(arrow) ?? fallback)", () => {
-  const source = `
-import { signal } from "@rivetjs/reactivity";
-import { load } from "@rivetjs/router";
-const items = [{ id: 1, name: "a" }];
-export const loader = load(() => ({ ok: true }));
-export default function Page() {
-  const id = signal(1);
-  const label = items.find((i) => i.id === 2)?.name ?? "fallback";
-  const found = items.find((i) => i.id === 3);
-  return <p onClick={() => id.set(id() + label.length + (found ? 1 : 0))}>{items.find((i) => i.id === id())?.name ?? "none"}</p>;
-}`;
-  for (const target of ["server", "dom"] as const)
-    for (const options of [{ resume }, { resume, serverExports: true }, { serverExports: true }, {}]) {
-      const result = compile(source, { target, filename: "m.tsx", ...options });
-      assert.deepEqual(result.diagnostics, [], target + " " + JSON.stringify(options));
-    }
-  // Server: the derived consts are registered through _rFn (which accepts any value).
-  const server = compile(source, { target: "server", filename: "m.tsx", resume });
-  assert.match(server.code, /const label = __rivetR_fn\("src\/m\.tsx#Page\$\w+", items\.find/);
-});
-
 test("serverExports: type-only imports from server-only modules are erased, never rejected", () => {
   const sources = [
     `import type { Row } from "./db.server.ts";
@@ -74,7 +24,6 @@ export default function Page({ data }: { data: Row[] }) { const pick = (r: Row):
         assert.deepEqual(result.diagnostics, [], target);
         if (target === "dom") {
           assert.doesNotMatch(result.code, /db\.server/);
-          for (const symbol of result.symbols ?? []) assert.ok(!symbol.imports.some((entry) => entry.from.includes("db.server")));
         }
       }
 });

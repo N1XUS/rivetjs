@@ -1,7 +1,7 @@
 // Rivet plumbing for the color states (port of react-stately `useControlledState` semantics over signals).
 // Not a port: the stored value is a color string (or a Color in a user-owned signal); Color class
 // instances are not serializable, so uncontrolled state keeps `stringifyColor` strings.
-import { signal, untrack, _regionState, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { colorKey, stringifyColor, type Color } from "./color.ts";
 
 /** A stored color value: a parseable string, a Color, or null / undefined (empty). */
@@ -30,12 +30,12 @@ export const isSignal = <T>(v: unknown): v is Signal<T> => typeof v === "functio
 export function colorCell<T extends ColorValue>(input: ColorInput<T> | undefined, defaultValue: T): ColorCell<T> {
   if (input === undefined) {
     const initial = (defaultValue != null && typeof defaultValue !== "string" ? stringifyColor(defaultValue as Color) : defaultValue) as T;
-    return { read: _regionState(() => signal<T>(initial)), writable: true };
+    return { read: signal<T>(initial), writable: true };
   }
   if (isSignal<T>(input)) return { read: input, writable: true };
   if (typeof input === "function") return { read: input as () => T, writable: false };
   const fixed = (input != null && typeof input !== "string" ? stringifyColor(input as Color) : input) as T;
-  return { read: _regionState(() => signal<T>(fixed)), writable: false };
+  return { read: signal<T>(fixed), writable: false };
 }
 
 /**

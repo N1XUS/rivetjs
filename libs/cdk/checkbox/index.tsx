@@ -38,7 +38,6 @@ import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
   Provider,
-  resumableContext,
   contextProps,
   createSlot,
   renderProps,
@@ -234,13 +233,13 @@ export interface CheckboxRenderProps extends CheckboxFieldRenderProps {
 export interface CheckboxButtonRenderProps extends CheckboxRenderProps {}
 
 /** RAC `CheckboxContext`. */
-export const CheckboxContext = resumableContext(createContext<ContextValue<CheckboxProps, HTMLLabelElement>>(null, { id: "rv-checkbox" }));
+export const CheckboxContext = createContext<ContextValue<CheckboxProps, HTMLLabelElement>>(null);
 /** RAC `CheckboxFieldContext`. */
-export const CheckboxFieldContext = resumableContext(createContext<ContextValue<CheckboxFieldProps, HTMLDivElement>>(null, { id: "rv-checkbox-field" }));
+export const CheckboxFieldContext = createContext<ContextValue<CheckboxFieldProps, HTMLDivElement>>(null);
 /** RAC `CheckboxGroupContext`. */
-export const CheckboxGroupContext = resumableContext(createContext<ContextValue<CheckboxGroupProps, HTMLDivElement>>(null, { id: "rv-checkbox-group" }));
+export const CheckboxGroupContext = createContext<ContextValue<CheckboxGroupProps, HTMLDivElement>>(null);
 /** RAC `CheckboxGroupStateContext`. */
-export const CheckboxGroupStateContext = resumableContext(createContext<CheckboxGroupState | null>(null, { id: "rv-checkbox-group-state" }));
+export const CheckboxGroupStateContext = createContext<CheckboxGroupState | null>(null);
 
 const DOM_OWNED = ["style", "onClick", "render"] as const;
 
@@ -360,7 +359,7 @@ interface InternalCheckboxContextValue extends ToggleAria {
   isRequired?: MaybeAccessor<boolean | undefined>;
 }
 
-const InternalCheckboxContext = resumableContext(createContext<InternalCheckboxContextValue | null>(null, { id: "rv-checkbox-internal" }));
+const InternalCheckboxContext = createContext<InternalCheckboxContextValue | null>(null);
 
 /** RAC `useCheckboxAria`: group item or standalone checkbox behaviour. */
 function checkboxAria(props: CheckboxProps | CheckboxFieldProps, userInputRef: InputRef | undefined): ToggleAria {

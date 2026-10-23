@@ -14,7 +14,7 @@
 //   the `[state]` passive effect waits for the node (React: the child mounts before passive effects run).
 // - Server / before the effects run: the state is `mounted` when `present` is true at creation, else `unmounted`.
 // - `useStableComposedRefs` / `getElementRef` (React 19 ref plumbing) not needed.
-import { _regionState, signal, untrack, type Signal } from "@rivetjs/reactivity";
+import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 import { clientEffect } from "@rivetjs/runtime/dom";
 import { cssEscape } from "../utils/dom.ts";
 
@@ -50,10 +50,9 @@ function getAnimationName(styles: CSSStyleDeclaration | null): string {
 /** Radix `usePresence`: the presence state of a part (render it while `isPresent(state())`). */
 export function createPresence(options: PresenceOptions): Signal<PresenceState> {
   const initial = untrack(options.present);
-  // Component-owned (`_regionState`): a part re-created on a resumed page continues from the server's values.
-  const state = _regionState(() => signal<PresenceState>(initial ? "mounted" : "unmounted"));
+  const state = signal<PresenceState>(initial ? "mounted" : "unmounted");
   // Radix refs: stylesRef, prevPresentRef, prevAnimationNameRef, mountAnimationNameRef (plain data: resumes as one object).
-  const memo = _regionState(() => ({ prevPresent: initial, prevAnimationName: "none", mountAnimationName: undefined as string | undefined }));
+  const memo = { prevPresent: initial, prevAnimationName: "none", mountAnimationName: undefined as string | undefined };
 
   // `[state]` passive effect: the animation name at mount (captured when the node attached) becomes the previous one.
   clientEffect(() => {

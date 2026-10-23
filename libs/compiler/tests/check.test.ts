@@ -139,28 +139,12 @@ test("sites are returned even when the file has diagnostics; non-resume files ha
 import { signal } from "@rivetjs/reactivity";
 export function A() {
   const s = signal(0);
-  return <div ref={(el) => el.focus()} onClick={() => s.set(2)}><i {...{}} /></div>;
+  return <div ref={(el) => el.focus()} onClick={() => s.set(2)}><i>{...[]}</i></div>;
 }`;
   const resumed = check(source, { filename: "a.tsx", resume: { module: "a.tsx" } });
-  assert.ok(resumed.diagnostics.some((d) => d.code === "RV2002"));
+  assert.ok(resumed.diagnostics.some((d) => d.code === "RV1002"));
   assert.ok(resumed.sites.some((s) => s.kind === "event"));
   assert.deepEqual(check(source, { filename: "a.tsx" }).sites, []);
-});
-
-test("check reports the module's resumable classes (data / revive) for RV2101; resources and non-resume files have none (T28)", () => {
-  const source = `
-import { revive } from "@rivetjs/runtime/resume-format";
-export class Point { constructor(public x: number, public y: number) {} }
-export class Lazy { n = 1; static [revive](d: unknown) { void d; return new Lazy(); } }
-export class Conn { live = new WebSocket("wss://x"); }
-export class Secret { #n = 1; }
-`;
-  const { classes } = check(source, { filename: "a.tsx", resume: { module: "a.tsx" } });
-  assert.deepEqual(classes, [
-    { kind: "data", name: "Point" },
-    { kind: "revive", name: "Lazy" },
-  ]);
-  assert.deepEqual(check(source, { filename: "a.tsx" }).classes, []);
 });
 
 test("message families map to stable codes", () => {
@@ -173,7 +157,7 @@ test("message families map to stable codes", () => {
     [`export const A = () => <div onFrobnicate={() => 1} />;`, "RV1012"],
     [`export { clientEffect } from "@rivetjs/runtime/dom";`, "RV3001"],
     [`import * as dom from "@rivetjs/runtime/dom";\nexport const f = () => dom.For;`, "RV3002"],
-    [`export function A() { return <div onClick={function () { this; }} />; }`, "RV2007", true],
+    [`export function A() { const t = Date.now(); return <b onClick={() => t}>{t}</b>; }`, "RV2103", true],
   ];
   for (const [source, code, resume] of cases) {
     const { diagnostics } = check(source, { filename: "a.tsx", ...(resume ? { resume: { module: "a.tsx" } } : {}) });

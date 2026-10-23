@@ -39,11 +39,13 @@ export function excerptParts(excerpt: string): Hit["excerpt"] {
   return out;
 }
 
-/** Pagefind's entry: written by `docs-kit build`, served from memory by the dev server (`tools/dev-search.ts`). */
+/** Pagefind's entry: written by `docs-kit build`, served from memory by the dev server (`tools/dev-search.ts`). Module helpers
+ * below run in the browser only; they read `globalThis.location` / `globalThis.document` (RV2001 flags bare browser
+ * globals in every function of a resumable module but its handlers / client effects). */
 const PAGEFIND = "/pagefind/pagefind.js";
 let pagefind: Promise<Pagefind> | undefined;
 const loadPagefind = (): Promise<Pagefind> =>
-  (pagefind ??= (import(/* @vite-ignore */ new URL(PAGEFIND, location.href).href) as Promise<Pagefind>).then(
+  (pagefind ??= (import(/* @vite-ignore */ new URL(PAGEFIND, globalThis.location.href).href) as Promise<Pagefind>).then(
     async (module) => {
       await module.options({ excerptLength: 24 });
       return module;
@@ -57,7 +59,7 @@ const loadPagefind = (): Promise<Pagefind> =>
 /** What failed: the index answer (status + the dev server's plain-text reason), else the error itself. */
 async function failure(error: unknown): Promise<string> {
   try {
-    const response = await fetch(new URL(PAGEFIND, location.href), { cache: "no-store" });
+    const response = await fetch(new URL(PAGEFIND, globalThis.location.href), { cache: "no-store" });
     if (!response.ok) {
       const reason = response.headers.get("content-type")?.startsWith("text/plain") ? (await response.text()).trim().slice(0, 300) : "";
       return `Search index unavailable: ${PAGEFIND} answered ${response.status}${reason ? ` (${reason})` : ""}.`;
@@ -206,12 +208,12 @@ function SearchDialog({ initial }: { initial: string }) {
 export function openSearch(initial = ""): void {
   if (!mounted) {
     mounted = true;
-    const host = document.createElement("div");
-    document.body.append(host);
+    const host = globalThis.document.createElement("div");
+    globalThis.document.body.append(host);
     mount(() => <SearchDialog initial={initial} />, host);
   }
   open.set(true);
   shown.set(true);
   // The FocusScope focuses the `autofocus` input from a client effect; select its text after that.
-  requestAnimationFrame(() => document.querySelector<HTMLInputElement>(".search-box input")?.select());
+  requestAnimationFrame(() => globalThis.document.querySelector<HTMLInputElement>(".search-box input")?.select());
 }

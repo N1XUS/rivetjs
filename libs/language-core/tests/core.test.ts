@@ -66,7 +66,10 @@ test("check: resume mode per manifest, both targets, cached per text", () => {
     const a = core.check(join(root, "src/a.tsx"), source);
     assert.equal(a.resume, true);
     assert.equal(a.moduleId, "src/a.tsx");
-    assert.deepEqual(a.diagnostics.map((d) => d.code), ["RV2001"]);
+    assert.deepEqual(
+      a.diagnostics.map((d) => d.code),
+      ["RV2001"],
+    );
     assert.equal(core.check(join(root, "src/a.tsx"), source), a);
     const b = core.check(join(root, "src/b.tsx"), source);
     assert.equal(b.resume, false);
@@ -101,7 +104,10 @@ test("quick fixes remove the diagnostic", () => {
   assert.match(fixed(`export const A = () => <div preload="idel" onClick={() => 1} />;`, "RV1102"), /preload="idle"/);
   assert.match(fixed(`export const A = () => <br class="x">text</br>;`, "RV1008"), /<br class="x" \/>/);
   assert.match(
-    fixed(`import { signal } from "@rivetjs/reactivity";\nexport function A() { const s = signal(""); return <textarea model:value={s}>x</textarea>; }`, "RV1009"),
+    fixed(
+      `import { signal } from "@rivetjs/reactivity";\nexport function A() { const s = signal(""); return <textarea model:value={s}>x</textarea>; }`,
+      "RV1009",
+    ),
     /<textarea model:value=\{s\} \/>/,
   );
   const effect = fixed(
@@ -111,12 +117,10 @@ test("quick fixes remove the diagnostic", () => {
   );
   assert.match(effect, /import \{ clientEffect \} from "@rivetjs\/runtime\/dom";/);
   assert.match(effect, /clientEffect\(\(\) => \{\n {4}window\.addEventListener/);
-  const ref = fixed(`export function A() {\n  return <input ref={(el) => el.focus()} />;\n}\n`, "RV2002", true);
-  assert.match(ref, /^import \{ ref \} from "@rivetjs\/runtime\/dom";\n/);
-  assert.match(ref, /const inputRef = ref<HTMLElementTagNameMap\["input"\]>\(\);\n {2}return <input ref=\{inputRef\} \/>/);
-  const local = fixed(`export function A() {\n  return <input ref={(el) => el.focus()} />;\n}\n`, "RV2002", true, 1);
-  assert.match(local, /let inputRef!: HTMLElementTagNameMap\["input"\];\n {2}return <input ref=\{\(el\) => \(inputRef = el\)\} \/>/);
-  const named = fixed(`import * as dom from "@rivetjs/runtime/dom";\nexport const A = (p: { items: string[] }) => <dom.For each={p.items}>{(x: string) => <i>{x}</i>}</dom.For>;\n`, "RV3002");
+  const named = fixed(
+    `import * as dom from "@rivetjs/runtime/dom";\nexport const A = (p: { items: string[] }) => <dom.For each={p.items}>{(x: string) => <i>{x}</i>}</dom.For>;\n`,
+    "RV3002",
+  );
   assert.match(named, /import \{ For \} from "@rivetjs\/runtime\/dom";/);
   assert.match(named, /<For each=\{p\.items\}>.*<\/For>/);
 });
@@ -127,36 +131,18 @@ test("doctor: inferred project, wrong JSX settings, missing manifest and route t
     const base = { fileName: join(root, "src/a.tsx"), tsVersion: ts.version, pluginLoaded: true, project: null };
     const ids = (input: Parameters<typeof doctor>[0]) => doctor(input).map((f) => f.id);
     assert.deepEqual(ids({ ...base, configFile: undefined, jsx: undefined, jsxImportSource: undefined }), ["inferred-project", "manifest"]);
-    assert.deepEqual(ids({ ...base, configFile: "tsconfig.json", jsx: "react-jsx", jsxImportSource: undefined, pluginLoaded: false }), ["jsx-settings", "plugin", "manifest"]);
-    assert.deepEqual(ids({ ...base, configFile: "tsconfig.json", jsx: "preserve", jsxImportSource: "@rivetjs/runtime", tsVersion: "0.0.1" }), ["typescript-version", "manifest"]);
+    assert.deepEqual(ids({ ...base, configFile: "tsconfig.json", jsx: "react-jsx", jsxImportSource: undefined, pluginLoaded: false }), [
+      "jsx-settings",
+      "plugin",
+      "manifest",
+    ]);
+    assert.deepEqual(ids({ ...base, configFile: "tsconfig.json", jsx: "preserve", jsxImportSource: "@rivetjs/runtime", tsVersion: "0.0.1" }), [
+      "typescript-version",
+      "manifest",
+    ]);
     const project = { root, manifest: { version: 1 as const, routesDir: "src/routes", routes: [] } };
     assert.deepEqual(ids({ ...base, configFile: "tsconfig.json", jsx: "preserve", jsxImportSource: "@rivetjs/runtime", project }), ["route-types"]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-});
-
-test("check: `.bind` RV2012 / RV2013 / RV2014 are warnings unless the receiver is provably a function (T10 fix 2)", () => {
-  const H = `import { signal } from "@rivetjs/reactivity";\nimport { makeStmt } from "./db";\n`;
-  const page = (params: string, setup: string, call: string) =>
-    H +
-    `export function Page(${params}) { const n = signal(0); const add = (by: number) => n.set(n() + by); ${setup} return <b onClick={() => ${call}}>{n()}</b>; }`;
-  const own = "props: { stmt: { bind(x: number): { id: number } } }";
-  const found = (source: string) =>
-    compiler
-      .check(source, { filename: "src/a.tsx", resume: { module: "src/a.tsx" } })
-      .diagnostics.filter((d) => /^RV201[234]$/.test(d.code))
-      .map((d) => `${d.code} ${d.severity}`);
-  // Review false positives: legal objects with their own `bind` (call result, prop, destructured param, spread) → warnings.
-  assert.deepEqual(found(page("", "const stmt = makeStmt(); const s = stmt.bind(4);", "n.set(s.id)")), ["RV2013 warning"]);
-  assert.deepEqual(found(page(own, "const s = props.stmt.bind(4);", "n.set(s.id)")), ["RV2013 warning"]);
-  assert.deepEqual(found(page(`{ stmt }: { stmt: { bind(x: number): { id: number } } }`, "const s = stmt.bind(4);", "n.set(s.id)")), ["RV2013 warning"]);
-  assert.deepEqual(found(page("", "const stmt = makeStmt(); const xs: [number] = [4]; const s = stmt.bind(...xs);", "n.set(s.id)")), ["RV2012 warning"]);
-  // RV2014 only for a reached key: another key read → clean; the bound key read → warning.
-  assert.deepEqual(found(page("", "const o = { k: 1, s: makeStmt().bind(4) };", "n.set(o.k)")), []);
-  assert.deepEqual(found(page("", "const api = { inc: add.bind(null, 1) };", "api.inc()")), ["RV2014 warning"]);
-  // Provable function receiver: error.
-  assert.deepEqual(found(page("", "const args: [null, number] = [null, 2]; const go = add.bind(...args);", "go()")), ["RV2012 error"]);
-  // Green.
-  assert.deepEqual(found(page("", "const go = add.bind(null, 2);", "go()")), []);
 });

@@ -2,7 +2,8 @@ import { defineExample } from "@rivetjs/docs-kit/define.ts";
 
 export default defineExample({
   title: "Resumable callbacks",
-  summary: "Callbacks written as an inline arrow or a local constant resume on a server-rendered page: the first press runs them without re-rendering.",
+  summary:
+    "Callbacks written as an inline arrow or a local constant work on a server-rendered page: the first press runs the component over its HTML, then the callback.",
   tags: ["resumability", "button", "listbox"],
   status: "experimental",
   frame: { height: 208, auto: true },

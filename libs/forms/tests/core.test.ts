@@ -26,7 +26,7 @@ import {
 } from "../index.ts";
 import { issueSignal, runtime, type FormStore } from "../store.ts";
 import { check, trigger, validateAll } from "../engine.ts";
-import { encodeState, fakeElement, fd, schema, tick } from "./fixtures.ts";
+import { fakeElement, fd, schema, tick } from "./fixtures.ts";
 
 type Signup = { email?: string; password?: string; confirm?: string; address?: { city?: string } };
 const signupSchema = schema<Signup>((input) => [
@@ -42,7 +42,7 @@ test("defineForm validates its name and schema", () => {
   assert.equal(Object.isFrozen(def), true);
 });
 
-test("store: signals and literals only, small serialized state; records on first use", () => {
+test("store: signals and literals only; records on first use", () => {
   const def = defineForm({ name: "signup", schema: signupSchema });
   const form = createForm(def);
   assert.equal(form.i, "signup");
@@ -50,8 +50,6 @@ test("store: signals and literals only, small serialized state; records on first
     isInvalid(form, path as never);
     describedBy(form, path as never);
   }
-  const state = encodeState(form);
-  assert.ok(state.length < 400, `state ${state.length} B`);
   assert.throws(() => createForm(def, { id: "1bad" }), /id must start with a letter/);
   // Fine-grained: a field binding subscribes to that field's issue signal only.
   const reads = _trackReads(() => isInvalid(form, "email"));
@@ -60,10 +58,18 @@ test("store: signals and literals only, small serialized state; records on first
 
 test("result from a failed no-JS POST: issues shown, echo, autofocus, submitted; other forms ignore it", () => {
   const def = defineForm({ name: "signup", schema: signupSchema });
-  const reply = { ok: false, issues: { password: [{ key: "errors.min8" }], email: [{ key: "errors.taken" }] }, form: [{ key: "errors.form" }], values: { email: "a@b.c", tags: ["x", "y"], agree: "on" } };
+  const reply = {
+    ok: false,
+    issues: { password: [{ key: "errors.min8" }], email: [{ key: "errors.taken" }] },
+    form: [{ key: "errors.form" }],
+    values: { email: "a@b.c", tags: ["x", "y"], agree: "on" },
+  };
   const form = createForm(def, { result: { name: "signup", result: reply }, initial: { email: "init@x", address: { city: "Kyiv" } } });
   assert.equal(issueText(form, "email"), "errors.taken");
-  assert.equal(issueText(form, "password", (issue) => `T(${issue.key})`), "T(errors.min8)");
+  assert.equal(
+    issueText(form, "password", (issue) => `T(${issue.key})`),
+    "T(errors.min8)",
+  );
   assert.equal(isInvalid(form, "password"), true);
   assert.equal(isInvalid(form, "confirm"), undefined);
   assert.equal(isInvalid(form), true);
@@ -82,7 +88,10 @@ test("result from a failed no-JS POST: issues shown, echo, autofocus, submitted;
   assert.equal(describedBy(form, "confirm"), undefined);
   assert.equal(fieldId(form, "address.city"), "signup-address-city");
   assert.equal(errorId(form, "email"), "signup-email-error");
-  assert.deepEqual(fieldIssues(form).map(([path]) => path), ["password", "email"]);
+  assert.deepEqual(
+    fieldIssues(form).map(([path]) => path),
+    ["password", "email"],
+  );
   // Another instance (`_form` id) or another action leaves a form untouched.
   const other = createForm(def, { id: "second", result: { name: "signup", result: { ...reply, id: "signup" } } });
   assert.equal(isInvalid(other), undefined);
@@ -130,7 +139,12 @@ test("timing: validateOn blur, revalidateOn input; cross-field dependents update
 });
 
 test("timing matrix: validateOn × revalidateOn", () => {
-  const cases: [validateOn: "submit" | "blur" | "input" | "change", revalidateOn: "input" | "blur" | "submit", events: ("input" | "change" | "blur")[], shown: boolean[]][] = [
+  const cases: [
+    validateOn: "submit" | "blur" | "input" | "change",
+    revalidateOn: "input" | "blur" | "submit",
+    events: ("input" | "change" | "blur")[],
+    shown: boolean[],
+  ][] = [
     ["submit", "input", ["input", "change", "blur"], [false, false, false]],
     ["input", "input", ["input"], [true]],
     ["change", "input", ["input", "change"], [false, true]],
@@ -158,8 +172,20 @@ test("validateAll: arms every invalid field, returns output; async schemas drop 
   const form = createForm(def);
   const bad = await validateAll(def, form, fakeElement, fd([["email", "x"]]));
   assert.equal(bad.ok, false);
-  assert.deepEqual(fieldIssues(form).map(([p]) => p), ["email", "password"]);
-  const good = await validateAll(def, form, fakeElement, fd([["email", "a@b"], ["password", "12345678"], ["confirm", "12345678"]]));
+  assert.deepEqual(
+    fieldIssues(form).map(([p]) => p),
+    ["email", "password"],
+  );
+  const good = await validateAll(
+    def,
+    form,
+    fakeElement,
+    fd([
+      ["email", "a@b"],
+      ["password", "12345678"],
+      ["confirm", "12345678"],
+    ]),
+  );
   assert.deepEqual(good, { ok: true, value: { email: "a@b", password: "12345678", confirm: "12345678" } });
   assert.equal(isInvalid(form), undefined);
   // Root issues → form issues.
@@ -168,7 +194,11 @@ test("validateAll: arms every invalid field, returns output; async schemas drop 
   assert.equal((await validateAll(rootDef, rootForm, fakeElement, fd([]))).ok, false);
   assert.deepEqual(formIssues(rootForm), [{ key: "errors.root" }]);
   // Async schema: validating bit while pending; the latest run wins.
-  const asyncDef = defineForm({ name: "a", schema: schema<Signup>((i) => (i.email === "bad" ? [{ path: ["email"], message: "errors.email" }] : []), { async: true }), validateOn: "input" });
+  const asyncDef = defineForm({
+    name: "a",
+    schema: schema<Signup>((i) => (i.email === "bad" ? [{ path: ["email"], message: "errors.email" }] : []), { async: true }),
+    validateOn: "input",
+  });
   const asyncForm = createForm(asyncDef);
   trigger(asyncDef, asyncForm, fakeElement, "email", "input", data({ email: "bad" }));
   assert.equal(validating(asyncForm), true);
@@ -262,11 +292,25 @@ test("issue mapping: zod paths (nested, arrays, refinements) and root issues", a
   });
   const mismatch = await zodSchema["~standard"].validate({ email: "a@b.co", items: [], address: { city: "K" }, password: "a", confirm: "b" });
   assert.deepEqual(mapSchemaIssues(mismatch.issues).fields, { confirm: [{ key: "errors.mismatch" }] });
-  assert.deepEqual(mapSchemaIssues([{ message: "root" }, { message: "seg", path: [{ key: "a" }, 0] }]), { fields: { "a.0": [{ key: "seg" }] }, form: [{ key: "root" }] });
+  assert.deepEqual(mapSchemaIssues([{ message: "root" }, { message: "seg", path: [{ key: "a" }, 0] }]), {
+    fields: { "a.0": [{ key: "seg" }] },
+    form: [{ key: "root" }],
+  });
   // Through a definition: coercion feeds zod numbers.
   const def = defineForm({ name: "z", schema: zodSchema, coerce: { "items.$.qty": "number" } });
   const form = createForm(def);
-  const outcome = await validateAll(def, form, fakeElement, fd([["email", "a@b.co"], ["items.0.qty", "0"], ["address.city", "K"], ["password", "p"], ["confirm", "p"]]));
+  const outcome = await validateAll(
+    def,
+    form,
+    fakeElement,
+    fd([
+      ["email", "a@b.co"],
+      ["items.0.qty", "0"],
+      ["address.city", "K"],
+      ["password", "p"],
+      ["confirm", "p"],
+    ]),
+  );
   assert.equal(outcome.ok, false);
   assert.equal(issueText(form, "items.0.qty"), "errors.qty");
 });

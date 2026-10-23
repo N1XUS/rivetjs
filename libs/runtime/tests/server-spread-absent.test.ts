@@ -4,8 +4,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compiledTemplate, omitted, renderToString, renderToWriter, spreadAttributes, template } from "../server.ts";
-import { resumableToString } from "../server-resume.ts";
-import { compileResume, importServer } from "./resume/compile.ts";
 
 const element = (attrs: object, tag = "div") => compiledTemplate([`<${tag}`, `></${tag}>`], [spreadAttributes(attrs, tag)]);
 
@@ -122,23 +120,6 @@ test("omitted handler slots are inert; a function with its own `then` is still o
   assert.equal(await out, "<button>b</button>");
   assert.ok(thens >= 1);
   assert.equal(calls, 0);
-});
-
-test("resume: a reactive spread's rendered-names list leaves its absent names out", async () => {
-  const source = `
-    import { signal } from "@rivetjs/reactivity";
-    export function Page() {
-      const on = signal(true);
-      return <div {...{ id: "box", title: undefined, "aria-pressed": () => on(), class: null, onClick: () => on.set(!on()) }}>x</div>;
-    }
-  `;
-  const server = await importServer<{ Page(): never }>(compileResume(source, "server").code);
-  const body = await resumableToString(() => server.Page(), {
-    manifest: { hash: "t", runtime: "/rt.js", symbols: new Proxy({}, { get: () => "/c.js" }) } as never,
-  });
-  assert.match(body, /<div id="box" aria-pressed="true" data-r="\d+">x<\/div>/);
-  // Absent `title` / `class`: not listed (the resumed first run treats them like a client render: nothing to remove).
-  assert.match(body, /"\.\.\.id aria-pressed @click"/);
 });
 
 // SSR-OMITTED-SLOTS (review LOW-2): string / byte writers inline an all-primitive spread (`spreadString`);

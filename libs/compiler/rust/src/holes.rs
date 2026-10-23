@@ -3,7 +3,7 @@
 //! content thunk and re-run only it on a hit. Eligible: an `<Async>` whose `load` / `children` / `error` (and function
 //! child) capture only data — module-level bindings, globals, parameters, `const`s initialised by data (literals,
 //! object / array literals, member reads, operators over those) — and whose component creates no reactive state
-//! (`signal` / `computed` / `createStore` / `_regionState` from `@rivetjs/reactivity*`) outside the thunks. The server
+//! (`signal` / `computed` / `createStore` from `@rivetjs/reactivity*`) outside the thunks. The server
 //! target marks eligible elements with a `$hole: 1` prop (the runtime retains only those, `server-shell.ts`); the facts
 //! (`moduleFacts(…, { holes: true })`) list every boundary with the first reason it is not eligible.
 
@@ -26,7 +26,7 @@ pub struct HoleFact {
     pub because: Option<String>,
 }
 
-const STATE: [&str; 4] = ["signal", "computed", "createStore", "_regionState"];
+const STATE: [&str; 3] = ["signal", "computed", "createStore"];
 
 fn runtime(from: &str) -> bool {
     from == "@rivetjs/runtime" || from.starts_with("@rivetjs/runtime/")

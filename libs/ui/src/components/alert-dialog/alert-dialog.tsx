@@ -28,7 +28,6 @@ import { Icon } from "@rivetjs/kit/icon";
 import { createContext, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { resumableContext } from "@rivetjs/runtime/resume-format";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { CircleAlert, CircleCheck, Info, TriangleAlert } from "lucide";
 
@@ -55,7 +54,7 @@ type AlertDialogContext = {
   placement?: AlertDialogPlacement;
 };
 
-const AlertDialogContext = resumableContext(createContext<AlertDialogContext>({}, { id: "rv-ui-alert-dialog" }));
+const AlertDialogContext = createContext<AlertDialogContext>({});
 
 type AlertDialogSlots = ReturnType<typeof alertDialogVariants>;
 const SLOTS = new Map<string, AlertDialogSlots>();

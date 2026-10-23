@@ -6,7 +6,7 @@ import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { chromium, type Browser, type Page } from "playwright";
 import { start } from "@rivetjs/router/node";
-import { buildApp, dist } from "./drawer-app/serve.ts";
+import { buildApp } from "./drawer-app/serve.ts";
 
 const root = new URL("./drawer-app/", import.meta.url).pathname;
 let origin = "";
@@ -15,7 +15,7 @@ let browser: Browser;
 
 beforeAll(async () => {
   await buildApp();
-  const app = await start({ dist, port: 0, host: "127.0.0.1", onError: () => {} });
+  const app = await start({ dist: root + "dist", port: 0, host: "127.0.0.1", onError: () => {} });
   origin = app.url;
   close = () => app.close();
   browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });

@@ -74,8 +74,8 @@ npm install -D @rivetjs/typescript-plugin @rivetjs/language-core
 
 - Compiler errors while you type, with the same text as the build. For example, reading `document` during server rendering is marked at the exact place.
 - Quick fixes, such as wrapping browser-only code in `clientEffect`.
-- Hints that show which code runs in the browser and which values a handler captures.
-- A warning when a handler captures a value that cannot be written into the page, such as a class instance.
+- Hints that show which components run in the browser.
+- A warning when a component's render reads a value that differs between server and browser, such as `Date.now()`.
 
 [Language service](../guides/tooling/language-service.md) explains the setup steps, the VS Code extension shell and the `rivet-check` command for CI.
 
