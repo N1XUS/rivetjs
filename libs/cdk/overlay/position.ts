@@ -750,8 +750,9 @@ function translateRTL(position: Placement, direction: Direction): Placement {
 /**
  * Position `overlay` relative to `target` now and keep it positioned until `dispose()`: window and
  * visual viewport resizes, overlay / target size changes (ResizeObserver), and the iOS virtual
- * keyboard. Scrolling a scroll parent of the target calls `onClose` (the position would be stale);
- * window scroll needs nothing (document coordinates). Call when the overlay opens; dispose on close.
+ * keyboard. Scrolling a scroll parent of the target calls `onClose` when its viewport position moves.
+ * Queued scroll notifications from before opening do not dismiss an already-positioned overlay.
+ * Call when the overlay opens; dispose on close.
  */
 export function overlayPosition(props: AriaPositionProps): PositionAria {
   const {
@@ -911,6 +912,10 @@ export function overlayPosition(props: AriaPositionProps): PositionAria {
       (onClose ?? (target ? onCloseMap.get(target) : undefined))?.();
     };
     if (onClose !== null) {
+      // Focus may scroll the trigger before opening but deliver its scroll event after the menu has focused.
+      // Snapshot the actual trigger (not a virtual pointer rect), so only subsequent movement dismisses it.
+      const openingTarget = read(props.target);
+      const openingRect = openingTarget?.getBoundingClientRect();
       listen(
         window,
         "scroll",
@@ -920,6 +925,10 @@ export function overlayPosition(props: AriaPositionProps): PositionAria {
           // window contains everything; elements outside the trigger's ancestors do not move it.
           if (!target || (source instanceof Node && !source.contains(target))) return;
           if (source instanceof HTMLInputElement || source instanceof HTMLTextAreaElement) return;
+          if (target === openingTarget && openingRect) {
+            const current = target.getBoundingClientRect();
+            if (current.left === openingRect.left && current.top === openingRect.top) return;
+          }
           close();
         },
         true,

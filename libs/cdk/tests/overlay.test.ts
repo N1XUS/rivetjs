@@ -231,14 +231,16 @@ describe("useOverlayTrigger → overlayTriggerProps() + overlayPosition()", () =
     registerTrigger(trigger, state);
     const position = overlayPosition({ target: trigger, overlay: overlayElement });
     cleanups.push(() => position.dispose());
-    return state;
+    return { state, trigger };
   }
 
   test("should close the overlay when the trigger scrolls with useOverlayPosition for backward compatibility", () => {
     const onOpenChange = calls();
     const scrollable = document.createElement("div");
     document.body.append(scrollable);
-    Example(scrollable, onOpenChange);
+    const { trigger } = Example(scrollable, onOpenChange);
+    // Model the viewport movement caused by scrolling, rather than only dispatching its notification.
+    trigger.getBoundingClientRect = () => new DOMRect(0, -20, 0, 0);
     scrollable.dispatchEvent(new Event("scroll"));
     assert.deepEqual(onOpenChange.calls, [[false]]);
   });
@@ -256,7 +258,8 @@ describe("useOverlayTrigger → overlayTriggerProps() + overlayPosition()", () =
 
   test("should close the overlay when the body scrolls with useOverlayPosition for backward compatibility", () => {
     const onOpenChange = calls();
-    Example(document.body, onOpenChange);
+    const { trigger } = Example(document.body, onOpenChange);
+    trigger.getBoundingClientRect = () => new DOMRect(0, -20, 0, 0);
     document.body.dispatchEvent(new Event("scroll"));
     assert.deepEqual(onOpenChange.calls, [[false]]);
   });

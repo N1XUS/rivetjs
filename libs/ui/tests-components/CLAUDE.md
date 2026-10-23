@@ -1,4 +1,5 @@
 # libs/ui/tests-components
+- Scheduler docs integration (2026-10-23): `/scheduler-crud` mirrors the public docs CRUD/confirmation/range-menu consumer so the library regression remains independent of the docs app. `scheduler.test.ts` adds a permanent production regression: delete and confirm, queue focus/document scrolling and open a selected-range menu in the same task; the menu stays focused after the old scroll notification, then real anchor movement dismisses it. This caught the shared overlay position guard bug; no sleep, quarantine or exception hides it.
 
 > **Keep this file current:** ALWAYS update this CLAUDE.md in the same change whenever code in this directory changes (APIs, layout, commands, invariants, gotchas).
 

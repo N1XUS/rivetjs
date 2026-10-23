@@ -39,6 +39,38 @@ const shot = async (page: Page, name: string) => {
   await page.locator("#scheduler-story").screenshot({ path: resolve(shots, `scheduler-${name}.png`), animations: "disabled" });
 };
 
+test("scheduler UI: rapid post-confirmation range menu survives the earlier focus scroll, then closes on real anchor movement", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const seen = watch(page);
+  try {
+    await page.goto(s.origin + "/scheduler-crud");
+    await page.locator('[data-rv-event-id="design"]').press("Shift+F10");
+    await page.locator('[role="menuitem"][data-key="delete-event"]').click();
+    await page.locator(".rv-SchedulerMenu-popover").waitFor({ state: "detached" });
+    await page.locator("#confirm-delete").click();
+    await page.locator('[data-rv-event-id="design"]').waitFor({ state: "detached" });
+    // A focus-induced document scroll is queued. Open before that notification is delivered, exactly as rapid
+    // keyboard navigation after confirming can do. The trigger already has its final position when F10 opens.
+    await page.evaluate(() => {
+      const cell = document.querySelector<HTMLElement>('[data-rv-day-index="21"][data-rv-minutes="all-day"]')!;
+      window.scrollTo(0, 200);
+      cell.focus({ preventScroll: true });
+      cell.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", shiftKey: true, bubbles: true, cancelable: true }));
+      cell.dispatchEvent(new KeyboardEvent("keydown", { key: "F10", shiftKey: true, bubbles: true, cancelable: true }));
+    });
+    const create = page.locator('[role="menuitem"][data-key="new-event"]');
+    await create.waitFor();
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    assert.equal(await create.count(), 1, "queued pre-open scrolling must not dismiss a menu at its already-final anchor");
+    assert.equal(await create.evaluate((el) => el === document.activeElement), true);
+    await page.evaluate(() => window.scrollBy(0, 20));
+    await page.locator(".rv-SchedulerMenu-popover").waitFor({ state: "detached" });
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test("scheduler UI: chevrons follow direction independently of language and nearest nested dir wins", () =>
   onPage(async (page) => {
     for (const dir of ["ltr", "rtl"]) {

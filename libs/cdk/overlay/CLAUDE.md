@@ -20,6 +20,7 @@ React Aria overlay primitives (imperative, browser-side): overlay stack, positio
 - `prevent-scroll-ios.ts`: no subpath; lazy-loaded by `preventScroll` on iOS Safari / `overrideFocus`
 
 ## Layout
+- Queued-scroll correction (Scheduler docs, 2026-10-23): `overlayPosition` snapshots the actual trigger viewport position at open. A previously queued ancestor/document/window scroll with unchanged trigger coordinates does not dismiss a newly focused overlay; real trigger movement still closes it. Input/textarea, adjacent scroll and visual-viewport resize exceptions remain. `overlay-position.test.ts` covers stable notifications followed by real movement; close-case fixtures explicitly move their mocked rectangles.
 - `index.ts` — visible-overlay stack (top-most closes only), Escape, interact outside (pointerdown then click, capture), close on blur
 - `position.ts` — calculatePosition + overlayPosition (resize / visual viewport / size observers, close on trigger scroll-parent scroll); CSSOM writes; `data-placement` on overlay + arrow; default `zIndex` 100000
 - `overlay-trigger.tsx`, `overlay-trigger-state.ts`, `close-on-scroll.ts`, `prevent-scroll.ts`, `prevent-scroll-ios.ts`, `aria-hide-outside.ts`, `modal-overlay.ts`, `dismiss-button.tsx`, `overlay-strings.ts`, `contexts.ts` (RAC overlay contexts), `hover-trigger.tsx` (hover / focus trigger modes), `safe-area.ts` (RA useSafeArea)

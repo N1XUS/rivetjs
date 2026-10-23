@@ -193,7 +193,9 @@ describe("useOverlayPosition", () => {
     const scrollable = document.createElement("div");
     scrollable.dataset.testid = "scrollable";
     document.body.append(scrollable);
-    render({ isOpen: true, onClose, parent: scrollable });
+    const { trigger } = render({ isOpen: true, onClose, parent: scrollable });
+    // A real ancestor scroll moves the viewport rect. A queued pre-open scroll notification does not.
+    trigger.style.top = "230px";
     scrollable.dispatchEvent(new Event("scroll"));
     assert.equal(onClose.calls.length, 1);
   });
@@ -212,22 +214,39 @@ describe("useOverlayPosition", () => {
 
   test("should close the overlay when the body scrolls", () => {
     const onClose = calls();
-    render({ isOpen: true, onClose });
+    const { trigger } = render({ isOpen: true, onClose });
+    trigger.style.top = "230px";
     document.body.dispatchEvent(new Event("scroll"));
     assert.equal(onClose.calls.length, 1);
   });
 
   test("should close the overlay when the document scrolls", () => {
     const onClose = calls();
-    render({ isOpen: true, onClose });
+    const { trigger } = render({ isOpen: true, onClose });
+    trigger.style.top = "230px";
     document.dispatchEvent(new Event("scroll"));
     assert.equal(onClose.calls.length, 1);
   });
 
   test("should close the overlay when target is window in a scroll event", () => {
     const onClose = calls();
-    render({ isOpen: true, onClose });
+    const { trigger } = render({ isOpen: true, onClose });
+    trigger.style.top = "230px";
     window.dispatchEvent(new Event("scroll"));
+    assert.equal(onClose.calls.length, 1);
+  });
+
+  test("ignores queued pre-open scroll notifications at a stable trigger but closes after actual movement", () => {
+    const onClose = calls();
+    const parent = document.createElement("div");
+    document.body.append(parent);
+    const { trigger } = render({ isOpen: true, onClose, parent });
+    // These may have been queued by focus/confirmation layout before the overlay opened. Its anchor already has
+    // the position they describe; a notification alone must not destroy the newly focused menu.
+    for (const target of [parent, document.body, document, window]) target.dispatchEvent(new Event("scroll"));
+    assert.equal(onClose.calls.length, 0);
+    trigger.style.left = "30px";
+    parent.dispatchEvent(new Event("scroll"));
     assert.equal(onClose.calls.length, 1);
   });
 
