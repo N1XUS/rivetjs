@@ -127,3 +127,5 @@ export * from "./chat-tool/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./chat-conversation/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./chat-attachment/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./prompt-input/index.ts"; // Rivet-authored (TWEAKS.md)
+
+export * from "./scheduler/index.ts";

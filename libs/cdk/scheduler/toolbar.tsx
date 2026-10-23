@@ -7,6 +7,7 @@
 // - `MlvSchedulerHeaderDef` → `renderHeader(api)` (read once at mount; its output is reactive): the header api holds
 //   accessors (`title()`, `view()`, `range()`) + actions (`next`, `previous`, `today`, `setView`, `goTo`) instead of
 //   malva's per-change snapshot.
+import { schedulerPart, type SchedulerClassNames } from "./context.tsx";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { Button } from "../button/index.tsx";
 import { ToggleButton } from "../toggle-button/index.tsx";
@@ -16,6 +17,8 @@ import type { SchedulerDate } from "./dates.ts";
 
 /** What `renderHeader` receives (malva `MlvSchedulerHeaderApi` + `goTo`): accessors and actions. */
 export interface SchedulerHeaderApi {
+  /** Live localized labels, including view-specific previous / next labels. */
+  readonly labels: SchedulerToolbarLabels;
   /** Localized title of the rendered period ("September 2026", "Aug 31 – Sep 6, 2026", the day label). */
   readonly title: () => string;
   /** The active view. */
@@ -55,11 +58,11 @@ const VIEWS: readonly SchedulerView[] = ["month", "week", "day"];
  * (previous, next, today) + `h2.rv-SchedulerToolbar-title` + `.rv-SchedulerToolbar-views` (radio group of the three
  * views). DOM order and labels stay the same in RTL (mirroring is CSS).
  */
-export function SchedulerToolbar(props: { api: SchedulerHeaderApi; labels: SchedulerToolbarLabels }) {
+export function SchedulerToolbar(props: { api: SchedulerHeaderApi; labels: SchedulerToolbarLabels; classNames?: () => SchedulerClassNames | undefined }) {
   const api = props.api;
   const labels = props.labels;
   return (
-    <div class="rv-SchedulerToolbar">
+    <div class={schedulerPart("rv-SchedulerToolbar", props.classNames?.(), "toolbar")}>
       <div class="rv-SchedulerToolbar-nav">
         <Button class="rv-SchedulerToolbar-previous" aria-label={labels.previous()} onPress={() => api.previous()} />
         <Button class="rv-SchedulerToolbar-next" aria-label={labels.next()} onPress={() => api.next()} />
@@ -67,7 +70,7 @@ export function SchedulerToolbar(props: { api: SchedulerHeaderApi; labels: Sched
           {labels.today()}
         </Button>
       </div>
-      <h2 class="rv-SchedulerToolbar-title">{api.title()}</h2>
+      <h2 class={schedulerPart("rv-SchedulerToolbar-title", props.classNames?.(), "title")}>{api.title()}</h2>
       <ToggleButtonGroup
         class="rv-SchedulerToolbar-views"
         aria-label={labels.viewSwitch()}

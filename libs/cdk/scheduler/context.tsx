@@ -54,9 +54,40 @@ export interface SchedulerSlotPosition {
   readonly inSelection: boolean;
 }
 
+/** Optional live presentation hooks. Fixed headless classes remain on every part. */
+export type SchedulerClassNames = Partial<
+  Record<
+    | "toolbar"
+    | "title"
+    | "grid"
+    | "header"
+    | "cell"
+    | "slot"
+    | "allDay"
+    | "event"
+    | "eventTitle"
+    | "eventTime"
+    | "more"
+    | "morePanel"
+    | "moreOverlay"
+    | "nowLine"
+    | "handle"
+    | "menu"
+    | "menuPopover",
+    string
+  >
+>;
+
+/** Append a presentation class without changing the headless selector contract. */
+export function schedulerPart(fixed: string, classes: SchedulerClassNames | undefined, part: keyof SchedulerClassNames): string {
+  const extra = classes?.[part];
+  return extra ? `${fixed} ${extra}` : fixed;
+}
+
 /** Root → views contract. */
 export interface SchedulerContextValue<T = unknown> {
   readonly state: SchedulerState<T>;
+  readonly classNames?: () => SchedulerClassNames | undefined;
   readonly view: () => SchedulerView;
   readonly locale: () => string;
   readonly timeZone: () => string;

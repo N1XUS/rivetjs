@@ -177,3 +177,5 @@ export * from "./src/components/prompt-input/index.ts";
 //  ===================================
 export * from "./src/utils/dom.tsx";
 export { tv, cn, type VariantProps } from "tailwind-variants";
+
+export * from "./src/components/scheduler/index.ts";

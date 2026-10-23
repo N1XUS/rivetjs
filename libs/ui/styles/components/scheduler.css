@@ -1,0 +1,255 @@
+/* Rivet-authored Scheduler (not vendored). Geometry follows CDK custom properties; palette follows soft Chips. */
+.scheduler,
+.scheduler__more-panel {
+  --rv-scheduler-slot-height: 40px;
+  --rv-scheduler-lane-height: 28px;
+  --rv-scheduler-row-min-height: 164px;
+  --rv-scheduler-column-min-width: 100px;
+  --rv-scheduler-gutter: 64px;
+  @apply text-sm;
+  color: var(--foreground);
+}
+.scheduler:where(.rv-Scheduler) {
+  --scheduler-radius: min(32px, var(--radius-3xl));
+  --scheduler-surface: var(--surface);
+  min-width: 0;
+  background: var(--scheduler-surface);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--scheduler-radius);
+  box-shadow: var(--surface-shadow);
+}
+.scheduler--secondary { --scheduler-surface: var(--surface-secondary); }
+.scheduler--compact {
+  --rv-scheduler-slot-height: 32px;
+  --rv-scheduler-lane-height: 24px;
+  --rv-scheduler-row-min-height: 132px;
+  --rv-scheduler-column-min-width: 80px;
+  --rv-scheduler-gutter: 52px;
+}
+.scheduler--comfortable {
+  --rv-scheduler-slot-height: 48px;
+  --rv-scheduler-lane-height: 32px;
+  --rv-scheduler-row-min-height: 212px;
+  --rv-scheduler-column-min-width: 120px;
+  --rv-scheduler-gutter: 72px;
+}
+.scheduler__toolbar {
+  @apply flex flex-wrap items-center gap-3 p-4;
+}
+.scheduler__navigation { @apply flex items-center gap-2; }
+.scheduler__title {
+  @apply grow text-base font-semibold;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.scheduler .rv-Scheduler-body {
+  overflow: clip;
+  border-radius: 0 0 var(--scheduler-radius) var(--scheduler-radius);
+}
+.scheduler .rv-SchedulerMonth { overflow-x: auto; }
+.scheduler .rv-SchedulerMonth-grid {
+  --scheduler-columns: repeat(var(--rv-scheduler-row-length), minmax(0, 1fr));
+  min-width: calc(var(--rv-scheduler-row-length) * var(--rv-scheduler-column-min-width));
+}
+.scheduler .rv-SchedulerMonth[data-week-numbers="true"] .rv-SchedulerMonth-grid {
+  --scheduler-columns: 36px repeat(var(--rv-scheduler-row-length), minmax(0, 1fr));
+  min-width: calc(36px + var(--rv-scheduler-row-length) * var(--rv-scheduler-column-min-width));
+}
+.scheduler .rv-SchedulerMonth-weekdays,
+.scheduler .rv-SchedulerMonth-row { display: grid; grid-template-columns: var(--scheduler-columns); }
+.scheduler .rv-SchedulerMonth-weekday {
+  @apply px-2 py-3 text-xs font-medium;
+  text-align: center;
+  color: var(--muted);
+  border-block: 1px solid var(--border);
+}
+.scheduler .rv-SchedulerMonth-week-number {
+  @apply px-1 py-2 text-xs;
+  text-align: center;
+  color: var(--muted);
+  border-inline-end: 1px solid var(--border);
+  border-block-end: 1px solid var(--border);
+}
+.scheduler .rv-SchedulerMonth-cell {
+  position: relative;
+  min-width: 0;
+  min-height: max(var(--rv-scheduler-row-min-height), calc(36px + var(--rv-scheduler-visible-lanes) * var(--rv-scheduler-lane-height)));
+  border-inline-end: 1px solid var(--border);
+  border-block-end: 1px solid var(--border);
+}
+.scheduler .rv-SchedulerMonth-day-number {
+  @apply m-1 flex size-7 items-center justify-center rounded-full text-xs;
+  margin-inline-start: auto;
+  color: var(--muted);
+}
+.scheduler .rv-SchedulerMonth-cell[data-outside="true"] .rv-SchedulerMonth-day-number { opacity: .5; }
+.scheduler .rv-SchedulerMonth-cell[data-today="true"] .rv-SchedulerMonth-day-number,
+.scheduler .rv-SchedulerTimeGrid-day-header[data-today="true"] .rv-SchedulerTimeGrid-day-number {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+.scheduler .rv-SchedulerMonth-lanes,
+.scheduler .rv-SchedulerTimeGrid-all-day-lanes { position: relative; margin-inline: 4px; }
+.scheduler .rv-SchedulerMonth-lanes > .scheduler__event,
+.scheduler .rv-SchedulerTimeGrid-all-day-lanes > .scheduler__event,
+.scheduler .scheduler__more {
+  position: absolute;
+  inset-block-start: calc((var(--rv-scheduler-lane) - 1) * var(--rv-scheduler-lane-height));
+  inset-inline-start: 0;
+  width: calc(var(--rv-scheduler-span, 1) * (100% + 9px) - 9px);
+  height: calc(var(--rv-scheduler-lane-height) - 4px);
+  z-index: 1;
+}
+.scheduler__more {
+  @apply rounded-sm px-2 text-xs font-medium;
+  background: transparent;
+  color: var(--accent-soft-foreground);
+  border: 0;
+  text-align: start;
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+}
+.scheduler__more:hover { background: var(--accent-soft); }
+.scheduler .rv-SchedulerTimeGrid-scroller { height: var(--rv-scheduler-height, 640px); }
+.scheduler .rv-SchedulerTimeGrid-sheet {
+  min-width: calc(var(--rv-scheduler-gutter) + var(--rv-scheduler-day-count) * var(--rv-scheduler-column-min-width));
+}
+.scheduler .rv-SchedulerTimeGrid-header,
+.scheduler .rv-SchedulerTimeGrid-all-day,
+.scheduler .rv-SchedulerTimeGrid-body {
+  display: grid;
+  grid-template-columns: var(--rv-scheduler-gutter) repeat(var(--rv-scheduler-day-count), minmax(0, 1fr));
+}
+.scheduler .rv-SchedulerTimeGrid-top {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 3;
+  background: var(--scheduler-surface);
+  border-block-end: 1px solid var(--border);
+}
+.scheduler .rv-SchedulerTimeGrid-day-header {
+  @apply flex flex-col items-center gap-1 py-2 text-xs;
+  border-inline-end: 1px solid var(--border);
+  color: var(--muted);
+}
+.scheduler .rv-SchedulerTimeGrid-day-number { @apply flex size-7 items-center justify-center rounded-full text-sm font-medium; }
+.scheduler .rv-SchedulerTimeGrid-all-day-cell {
+  position: relative;
+  min-width: 0;
+  min-height: calc(max(1, var(--rv-scheduler-all-day-lanes)) * var(--rv-scheduler-lane-height) + 8px);
+  padding-block: 4px;
+  border-inline-end: 1px solid var(--border);
+}
+.scheduler .rv-SchedulerTimeGrid-all-day-label { @apply px-1 py-2 text-xs; color: var(--muted); text-align: center; }
+.scheduler .rv-SchedulerTimeGrid-column { position: relative; min-width: 0; border-inline-end: 1px solid var(--border); }
+.scheduler .rv-SchedulerTimeGrid-slot {
+  height: var(--rv-scheduler-slot-height);
+  border-block-end: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
+}
+.scheduler .rv-SchedulerTimeGrid-slot[data-hour="true"] { border-block-start: 1px solid var(--border); }
+.scheduler .rv-SchedulerTimeGrid-gutter { position: relative; border-inline-end: 1px solid var(--border); }
+.scheduler .rv-SchedulerTimeGrid-hour {
+  @apply px-2 text-xs;
+  position: absolute;
+  inset-block-start: var(--rv-scheduler-offset);
+  inset-inline: 0;
+  color: var(--muted);
+  text-align: end;
+  transform: translateY(-50%);
+  font-variant-numeric: tabular-nums;
+}
+.scheduler .rv-SchedulerTimeGrid-hour:first-child { transform: none; }
+.scheduler .rv-SchedulerTimeGrid-events { position: absolute; inset: 0; pointer-events: none; }
+.scheduler .rv-SchedulerTimeGrid-events > .scheduler__event {
+  position: absolute;
+  pointer-events: auto;
+  inset-block-start: var(--rv-scheduler-event-top);
+  inset-inline-start: var(--rv-scheduler-event-start);
+  width: calc(var(--rv-scheduler-event-width) - 4px);
+  height: var(--rv-scheduler-event-height);
+  min-height: 20px;
+}
+.scheduler__event {
+  --scheduler-event-bg: var(--accent-soft);
+  --scheduler-event-fg: var(--accent-soft-foreground);
+  --scheduler-event-bar: var(--accent);
+  @apply flex items-center gap-1 px-2 text-xs;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: max(var(--r-min), var(--r-inner, 8px));
+  border-inline-start: 3px solid var(--scheduler-event-bar);
+  background: var(--scheduler-event-bg);
+  color: var(--scheduler-event-fg);
+  cursor: var(--cursor-interactive);
+  transition: opacity var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth);
+}
+.scheduler__event[data-color="default"] { --scheduler-event-bg: var(--default-soft); --scheduler-event-fg: var(--default-soft-foreground); --scheduler-event-bar: var(--default-foreground); }
+.scheduler__event[data-color="accent"] { --scheduler-event-bg: var(--accent-soft); --scheduler-event-fg: var(--accent-soft-foreground); --scheduler-event-bar: var(--accent); }
+.scheduler__event[data-color="success"] { --scheduler-event-bg: var(--success-soft); --scheduler-event-fg: var(--success-soft-foreground); --scheduler-event-bar: var(--success); }
+.scheduler__event[data-color="warning"] { --scheduler-event-bg: var(--warning-soft); --scheduler-event-fg: var(--warning-soft-foreground); --scheduler-event-bar: var(--warning); }
+.scheduler__event[data-color="danger"] { --scheduler-event-bg: var(--danger-soft); --scheduler-event-fg: var(--danger-soft-foreground); --scheduler-event-bar: var(--danger); }
+.scheduler__event[data-custom-color="true"] {
+  --scheduler-event-bar: var(--rv-scheduler-event-color);
+  --scheduler-event-bg: color-mix(in oklab, var(--rv-scheduler-event-color) 18%, var(--surface));
+  --scheduler-event-fg: var(--foreground);
+}
+.scheduler__event[data-timed="true"] { @apply flex-col items-start gap-1 py-1; }
+.scheduler__event[data-continues-before="true"] { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-color: transparent; }
+.scheduler__event[data-continues-after="true"] { border-start-end-radius: 0; border-end-end-radius: 0; }
+.scheduler__event[data-ghost="true"] { opacity: .5; }
+.scheduler__event-title { @apply truncate font-medium; max-width: 100%; }
+.scheduler__event-time { @apply shrink-0 truncate; font-variant-numeric: tabular-nums; }
+.scheduler__event[data-timed="true"] .scheduler__event-time { max-width: 100%; overflow: hidden; }
+.scheduler__handle { position: absolute; z-index: 2; }
+.scheduler__event[data-timed="true"] > .scheduler__handle { inset-inline: 0; height: 6px; cursor: ns-resize; }
+.scheduler__event[data-timed="true"] > .scheduler__handle[data-edge="start"] { inset-block-start: 0; }
+.scheduler__event[data-timed="true"] > .scheduler__handle[data-edge="end"] { inset-block-end: 0; }
+.scheduler__event[data-all-day="true"] > .scheduler__handle { inset-block: 0; width: 6px; cursor: ew-resize; }
+.scheduler__event[data-all-day="true"] > .scheduler__handle[data-edge="start"] { inset-inline-start: 0; }
+.scheduler__event[data-all-day="true"] > .scheduler__handle[data-edge="end"] { inset-inline-end: 0; }
+.scheduler__now-line {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: var(--rv-scheduler-offset);
+  border-block-start: 2px solid var(--accent);
+  pointer-events: none;
+  z-index: 2;
+}
+.scheduler__now-line::before { content: ""; position: absolute; inset-inline-start: -3px; inset-block-start: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.scheduler [data-weekend="true"],
+.scheduler .rv-SchedulerTimeGrid-slot[data-outside-business="true"] { background: color-mix(in oklab, var(--surface-secondary) 60%, transparent); }
+.scheduler [data-selected="true"] { background: var(--accent-soft); }
+.scheduler__cell:focus-visible,
+.scheduler__slot:focus-visible,
+.scheduler__more:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.scheduler__event:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.scheduler .rv-SchedulerTimeGrid-scroller .scheduler__event:focus-visible { outline-offset: -2px; }
+/* Portaled surfaces stand alone; portalTheme carries the enclosing theme and forced mode to their host. */
+.scheduler__more-overlay {
+  --scheduler-panel-radius: min(32px, var(--radius-3xl));
+  --r-inner: max(var(--r-min), calc(var(--scheduler-panel-radius) - 8px));
+  padding: 8px;
+  background: var(--overlay);
+  color: var(--foreground);
+  border-radius: var(--scheduler-panel-radius);
+  box-shadow: var(--overlay-shadow);
+}
+.scheduler__more-panel {
+  @apply flex flex-col gap-1;
+  width: min(320px, calc(100vw - 32px));
+  border-radius: var(--r-inner);
+  outline-offset: -2px;
+}
+.scheduler__more-panel .rv-SchedulerMonth-popover-title { @apply px-2 py-2 text-sm font-medium; }
+.scheduler__more-panel > .scheduler__event { min-height: calc(var(--rv-scheduler-lane-height) - 4px); }
+.scheduler__menu-popover { min-width: 200px; }
+.scheduler__menu.scheduler--compact .menu-item { min-height: 32px; padding-block: 4px; }
+.scheduler__menu.scheduler--comfortable .menu-item { min-height: 40px; padding-block: 6px; }
+.scheduler__menu { --r-inner: max(var(--r-min), calc(min(32px, var(--radius-3xl)) - 4px)); }
+.scheduler:dir(rtl) .scheduler__navigation svg { transform: scaleX(-1); }
+.scheduler:dir(rtl) .scheduler__navigation .button:not([aria-label]) svg { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .scheduler__event,
+  .scheduler__more { transition: none; }
+}

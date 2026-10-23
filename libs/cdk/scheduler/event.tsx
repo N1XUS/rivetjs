@@ -12,6 +12,7 @@
 //   on a handle never starts a pan). A ghost is not hit-testable (inline `pointer-events: none`, behaviour style).
 // - Pointer / keyboard behaviour (drag, resize, click → action, focus hand-off) is delegated on the views
 //   (`behaviour.ts` `schedulerPress`, `keys*.ts`); this file is markup only.
+import { schedulerPart } from "./context.tsx";
 import { computed, useContext } from "@rivetjs/reactivity";
 import { For, type DOMValue } from "@rivetjs/runtime/dom";
 import { SchedulerContext } from "./context.tsx";
@@ -96,7 +97,7 @@ export function SchedulerEventChip<T>(props: SchedulerEventChipProps<T>): DOMVal
   });
   return (
     <div
-      class="rv-SchedulerEvent"
+      class={schedulerPart("rv-SchedulerEvent", ctx.classNames?.(), "event")}
       role={ghost() ? undefined : "button"}
       tabIndex={ghost() ? -1 : tabIndex}
       aria-hidden={ghost() ? "true" : undefined}
@@ -129,16 +130,21 @@ export function SchedulerEventChip<T>(props: SchedulerEventChipProps<T>): DOMVal
       ) : (
         <>
           {time() ? (
-            <span class="rv-SchedulerEvent-time">
+            <span class={schedulerPart("rv-SchedulerEvent-time", ctx.classNames?.(), "eventTime")}>
               <bdi>{time()}</bdi>
             </span>
           ) : null}
-          <span class="rv-SchedulerEvent-title">{n().event.title}</span>
+          <span class={schedulerPart("rv-SchedulerEvent-title", ctx.classNames?.(), "eventTitle")}>{n().event.title}</span>
         </>
       )}
       <For each={edges} by={(edge) => edge}>
         {(edge) => (
-          <span class="rv-SchedulerEvent-resize-handle" data-edge={edge()} aria-hidden="true" style={HANDLE_STYLE}>
+          <span
+            class={schedulerPart("rv-SchedulerEvent-resize-handle", ctx.classNames?.(), "handle")}
+            data-edge={edge()}
+            aria-hidden="true"
+            style={HANDLE_STYLE}
+          >
             <span class="rv-SchedulerEvent-grip" />
           </span>
         )}

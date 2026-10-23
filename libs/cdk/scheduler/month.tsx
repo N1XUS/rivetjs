@@ -14,6 +14,7 @@
 //   paint `state.selection` (`aria-selected` / `data-selected`).
 // - Keyboard, clicks, focus hand-off (T8): delegated on the grid + the panel (`keys-month.ts` / `keys.ts`, leaf
 //   chunks); `data-rk` holds the navigation keys while a cold handler chunk loads.
+import { schedulerPart } from "./context.tsx";
 import { computed, signal, useContext } from "@rivetjs/reactivity";
 import { For, ref as elementRef, type DOMValue } from "@rivetjs/runtime/dom";
 import { Popover } from "../popover/index.tsx";
@@ -161,7 +162,7 @@ export function SchedulerMonth<T>(): DOMValue {
     >
       <div
         ref={grid}
-        class="rv-SchedulerMonth-grid"
+        class={schedulerPart("rv-SchedulerMonth-grid", ctx.classNames?.(), "grid")}
         role="grid"
         aria-label={gridLabel()}
         aria-multiselectable={ctx.selectable() ? "true" : undefined}
@@ -185,13 +186,17 @@ export function SchedulerMonth<T>(): DOMValue {
       >
         <div class="rv-SchedulerMonth-weekdays" role="row">
           {ctx.showWeekNumbers() ? (
-            <div class="rv-SchedulerMonth-weekday rv-SchedulerMonth-week-header" role="columnheader">
+            <div class={schedulerPart("rv-SchedulerMonth-weekday rv-SchedulerMonth-week-header", ctx.classNames?.(), "header")} role="columnheader">
               {ctx.t("weekNumber", { week: "" }).trim()}
             </div>
           ) : null}
           <For each={weekdays} by={(_w, i) => i}>
             {(weekday) => (
-              <div class="rv-SchedulerMonth-weekday" role="columnheader" data-weekend={weekday().weekend ? "true" : undefined}>
+              <div
+                class={schedulerPart("rv-SchedulerMonth-weekday", ctx.classNames?.(), "header")}
+                role="columnheader"
+                data-weekend={weekday().weekend ? "true" : undefined}
+              >
                 {weekday().name}
               </div>
             )}
@@ -228,7 +233,7 @@ export function SchedulerMonth<T>(): DOMValue {
                       const segments = () => cell().segments;
                       return (
                         <div
-                          class="rv-SchedulerMonth-cell"
+                          class={schedulerPart("rv-SchedulerMonth-cell", ctx.classNames?.(), "cell")}
                           role="gridcell"
                           aria-label={cell().label}
                           tabIndex={tabStop() === dayIndex ? 0 : -1}
@@ -260,7 +265,7 @@ export function SchedulerMonth<T>(): DOMValue {
                             {cell().hidden.length ? (
                               <button
                                 type="button"
-                                class="rv-SchedulerMonth-more"
+                                class={schedulerPart("rv-SchedulerMonth-more", ctx.classNames?.(), "more")}
                                 data-rv-more=""
                                 tabIndex={-1}
                                 aria-haspopup="dialog"
@@ -297,11 +302,11 @@ export function SchedulerMonth<T>(): DOMValue {
         placement="bottom start"
         shouldCloseOnInteractOutside={(element) => !element.closest("[data-rv-more]")}
         aria-label={panel()?.label}
-        class="rv-SchedulerMonth-popover-overlay"
+        class={schedulerPart("rv-SchedulerMonth-popover-overlay", ctx.classNames?.(), "moreOverlay")}
       >
         {() => (
           <div
-            class="rv-SchedulerMonth-popover"
+            class={schedulerPart("rv-SchedulerMonth-popover", ctx.classNames?.(), "morePanel")}
             role="group"
             id={popoverId}
             aria-label={panel()?.label}

@@ -15,6 +15,7 @@
 //   for the views to clear their own selection; here the selection is the one root signal).
 // - non-modal: no underlay, nothing outside goes inert, so a right-click elsewhere reaches the scheduler and re-targets
 //   (malva: overlay without a backdrop); Escape, an item action and focus leaving the panel close it.
+import { schedulerPart, type SchedulerClassNames } from "./context.tsx";
 import { untrack, type Signal } from "@rivetjs/reactivity";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { Menu } from "../menu/index.tsx";
@@ -107,6 +108,7 @@ export function slotMenuRange(day: number, minutes: number | null, axis: Schedul
  */
 export function SchedulerMenu<T>(props: {
   menu: Signal<SchedulerMenuOpen<T> | null>;
+  classNames?: () => SchedulerClassNames | undefined;
   close: () => void;
   renderSlotMenu: SchedulerRenderSlotMenu | undefined;
   renderEventMenu: SchedulerRenderEventMenu<T> | undefined;
@@ -133,14 +135,19 @@ export function SchedulerMenu<T>(props: {
       isNonModal
       placement="bottom start"
       offset={4}
-      class="rv-SchedulerMenu-popover"
+      class={schedulerPart("rv-SchedulerMenu-popover", props.classNames?.(), "menuPopover")}
     >
       {() => {
         const open = menu();
         // Re-rendered per open: a re-target renders the new items and focuses again.
         if (!open) return null;
         return (
-          <Menu class="rv-SchedulerMenu" aria-label={open.label} autoFocus={open.point ? true : "first"} onClose={() => close()}>
+          <Menu
+            class={schedulerPart("rv-SchedulerMenu", props.classNames?.(), "menu")}
+            aria-label={open.label}
+            autoFocus={open.point ? true : "first"}
+            onClose={() => close()}
+          >
             {open.kind === "event"
               ? renderEventMenu!(open.event!, { view: open.view, close: () => close() })
               : renderSlotMenu!(open.range!, { selection: open.selection, view: open.view, close: () => close() })}

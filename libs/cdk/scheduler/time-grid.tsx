@@ -17,6 +17,7 @@
 //   cells paint `state.selection` continuously (malva).
 // - Keyboard, clicks, focus hand-off (T8): delegated on the sheet (`keys-time-grid.ts` / `keys.ts`, leaf chunks);
 //   timed chips carry their owning slot (`data-rv-slot`) so `Enter` / `Escape` / the hand-off are DOM lookups.
+import { schedulerPart } from "./context.tsx";
 import { computed, signal, untrack, useContext } from "@rivetjs/reactivity";
 import { For, Show, ref as elementRef, type DOMValue } from "@rivetjs/runtime/dom";
 import { SchedulerContext } from "./context.tsx";
@@ -208,7 +209,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
     >
       <div ref={scroller} class="rv-SchedulerTimeGrid-scroller" data-rv-scroller="" style={{ overflow: "auto", "overflow-anchor": "none" }}>
         <div
-          class="rv-SchedulerTimeGrid-sheet"
+          class={schedulerPart("rv-SchedulerTimeGrid-sheet", ctx.classNames?.(), "grid")}
           role="group"
           aria-label={gridLabel()}
           style={{ "touch-action": "pan-x pan-y pinch-zoom", "user-select": "none", "-webkit-user-select": "none" }}
@@ -235,7 +236,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                   const column = computed(() => columns()[dayIndex]!, { equals: keep });
                   return (
                     <div
-                      class="rv-SchedulerTimeGrid-day-header"
+                      class={schedulerPart("rv-SchedulerTimeGrid-day-header", ctx.classNames?.(), "header")}
                       role="columnheader"
                       aria-label={column().label}
                       data-today={column().today ? "true" : undefined}
@@ -252,7 +253,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                 }}
               </For>
             </div>
-            <div class="rv-SchedulerTimeGrid-all-day" role="row">
+            <div class={schedulerPart("rv-SchedulerTimeGrid-all-day", ctx.classNames?.(), "allDay")} role="row">
               <div class="rv-SchedulerTimeGrid-all-day-label" role="presentation" aria-hidden="true">
                 {ctx.t("allDay")}
               </div>
@@ -263,7 +264,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                   const lanes = () => lanesByDay().get(dayIndex) ?? NO_LANES;
                   return (
                     <div
-                      class="rv-SchedulerTimeGrid-all-day-cell"
+                      class={schedulerPart("rv-SchedulerTimeGrid-all-day-cell", ctx.classNames?.(), "cell")}
                       role="gridcell"
                       aria-label={column().label}
                       tabIndex={isStop(dayIndex, null) ? 0 : -1}
@@ -327,7 +328,7 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                       <For each={slotsOf} by={(slot) => slot.minutes}>
                         {(slot) => (
                           <div
-                            class="rv-SchedulerTimeGrid-slot"
+                            class={schedulerPart("rv-SchedulerTimeGrid-slot", ctx.classNames?.(), "slot")}
                             role="option"
                             aria-label={slot().label}
                             tabIndex={isStop(dayIndex, slot().minutes) ? 0 : -1}
@@ -370,7 +371,13 @@ export function SchedulerTimeGrid<T>(): DOMValue {
                       </For>
                     </div>
                     <Show when={() => nowLine()?.dayIndex === dayIndex}>
-                      {() => <div class="rv-SchedulerTimeGrid-now" aria-hidden="true" style={{ "--rv-scheduler-offset": nowLine()?.offset }} />}
+                      {() => (
+                        <div
+                          class={schedulerPart("rv-SchedulerTimeGrid-now", ctx.classNames?.(), "nowLine")}
+                          aria-hidden="true"
+                          style={{ "--rv-scheduler-offset": nowLine()?.offset }}
+                        />
+                      )}
                     </Show>
                   </div>
                 );

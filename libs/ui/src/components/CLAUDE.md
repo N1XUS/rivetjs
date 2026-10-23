@@ -156,3 +156,5 @@ Ports of HeroUI v3.2.6 `packages/react/src/components/<name>/` (Apache-2.0, © 2
 ## Tests
 
 - `../../tests/<name>.server.test.tsx` (SSR through `index.ts`; the test register carries the server target through relative `.ts` imports) + `../../tests/<name>.test.tsx` (DOM via happy-dom; markup, `ref`, context, index exports) + `../../tests/<name>.types.tsx` (type-level, `tsc -p libs/ui`: default element, explicit `<XRoot<"tag">>`, `ref` / handlers, `// @ts-expect-error` bad variant).
+
+| `scheduler/` | `scheduler/{scheduler.tsx,index.ts}` | `Scheduler`, generic `SchedulerProps<T>`, `SchedulerClassNames`, `schedulerVariants`, `SchedulerVariants` + type-only CDK event/header/menu/state helpers | Thin data-driven CDK wrapper; live `variant` / `density` and slot classes, localized UI Button/ButtonGroup/Segment toolbar; caller header wins, `toolbar=false` hides the default. |

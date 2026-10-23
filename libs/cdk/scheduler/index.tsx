@@ -20,7 +20,7 @@ import { useLocale } from "../i18n/index.ts";
 import { createId } from "../utils/id.ts";
 import { liveOptions } from "../utils/live.tsx";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
-import { SchedulerContext, type SchedulerContextValue, type SchedulerRenderEvent } from "./context.tsx";
+import { SchedulerContext, type SchedulerContextValue, type SchedulerRenderEvent, type SchedulerClassNames } from "./context.tsx";
 import { SchedulerToolbar, type SchedulerHeaderApi, type SchedulerRenderHeader } from "./toolbar.tsx";
 import {
   SchedulerMenu,
@@ -82,6 +82,7 @@ export * from "./intl.ts";
 export {
   SchedulerContext,
   type SchedulerContextValue,
+  type SchedulerClassNames,
   type SchedulerEventRenderState,
   type SchedulerRenderEvent,
   type SchedulerSlotPosition,
@@ -129,6 +130,8 @@ export interface SchedulerProps<T = unknown> extends SchedulerStateProps<T>, Omi
   id?: string;
   /** Accessible name of the root group. Default: the `scheduler` string. */
   "aria-label"?: string;
+  /** Live part classes appended to the fixed headless classes (including portaled surfaces). */
+  classNames?: SchedulerClassNames;
   /** Root class. Default `rv-Scheduler`. */
   class?: string;
   style?: Record<string, string | number | undefined>;
@@ -198,6 +201,7 @@ const OWNED = [
   "id",
   "aria-label",
   "class",
+  "classNames",
   "style",
 ] as const;
 
@@ -208,8 +212,8 @@ const OWNED = [
  */
 export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
   const dom = globalDOMProps(props, OWNED);
-  const [view] = splitProps(props as unknown as Record<string, unknown>, ["aria-label", "class", "style", "toolbar"]) as unknown as [
-    Pick<SchedulerProps<T>, "aria-label" | "class" | "style" | "toolbar">,
+  const [view] = splitProps(props as unknown as Record<string, unknown>, ["aria-label", "class", "style", "toolbar", "classNames"]) as unknown as [
+    Pick<SchedulerProps<T>, "aria-label" | "class" | "style" | "toolbar" | "classNames">,
   ];
   const env = useLocale();
   const options = liveOptions(props, OPTION_KEYS as never, CONTROLLED_KEYS as never) as SchedulerProps<T>;
@@ -263,6 +267,7 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
   };
   const ctx: SchedulerContextValue<T> = {
     state,
+    classNames: () => view.classNames,
     view: () => state.view.value(),
     locale: () => locale(),
     timeZone: () => timeZone(),
@@ -356,7 +361,17 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
     onMoreAction,
   };
   const dragHintId = ctx.dragHintId;
+  const labels = {
+    previous: () => t(`previous.${state.view.value()}`),
+    next: () => t(`next.${state.view.value()}`),
+    today: () => t("today"),
+    viewSwitch: () => t("viewSwitch"),
+    month: () => t("month"),
+    week: () => t("week"),
+    day: () => t("day"),
+  };
   const api: SchedulerHeaderApi = {
+    labels,
     title: () => schedulerTitle(state),
     view: () => state.view.value(),
     range: () => schedulerVisibleRange(state),
@@ -383,22 +398,7 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
       {renderHeader ? (
         renderHeader(api)
       ) : (
-        <Show when={() => view.toolbar !== false}>
-          {() => (
-            <SchedulerToolbar
-              api={api}
-              labels={{
-                previous: () => t(`previous.${state.view.value()}`),
-                next: () => t(`next.${state.view.value()}`),
-                today: () => t("today"),
-                viewSwitch: () => t("viewSwitch"),
-                month: () => t("month"),
-                week: () => t("week"),
-                day: () => t("day"),
-              }}
-            />
-          )}
-        </Show>
+        <Show when={() => view.toolbar !== false}>{() => <SchedulerToolbar api={api} labels={labels} classNames={() => view.classNames} />}</Show>
       )}
       {external ? (
         <DropList
@@ -433,6 +433,7 @@ export function Scheduler<T = unknown>(props: SchedulerProps<T>): DOMValue {
       {hasMenus ? (
         <SchedulerMenu
           menu={menu}
+          classNames={() => view.classNames}
           close={() =>
             untrack(() => {
               const open = menu();
