@@ -24,9 +24,9 @@ export interface DocsSite {
   /** Version label in the top bar. */
   version: string;
   /**
-   * Lean pages (URL paths, e.g. `["/"]`): no code runs before the first interaction — no idle code highlighter
-   * (their code is coloured at build time: fragments), no `/` / Ctrl+K search shortcut listener (the search button
-   * still works), no runtime fetch-ahead (`preload.lean`). Only the resume loader ships up front.
+   * Lean pages (URL paths, e.g. `["/"]`): no generic idle code highlighter (colour code at build time),
+   * no `/` / Ctrl+K search shortcut listener (the search button still works), and no runtime fetch-ahead
+   * (`preload.lean`). Page-owned visible effects and client triggers still load and run normally.
    */
   leanPages?: readonly string[];
   /**

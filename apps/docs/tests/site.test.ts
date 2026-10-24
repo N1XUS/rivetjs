@@ -75,7 +75,7 @@ test("home: benchmarks with losses and their source, server-rendered component a
   assert.match(home, /data-verdict="loss"/, "metrics where Rivet loses stay on the page");
   assert.match(home, /href="\/about\/benchmarks\/"/);
   assert.match(home, /id="home-code-component"[^]*?const count = signal\(7\)/);
-  assert.match(home, /id="home-code-server"[^]*?&lt;button&gt;7&lt;\/button&gt;/);
+  assert.match(home, /id="home-code-server"[^]*?&lt;output aria-live=(?:&quot;|")polite(?:&quot;|")&gt;07&lt;\/output&gt;/);
   assert.match(home, /id="home-counter-value"[^>]*>[^]*?07/);
   assert.match(home, /<pre>npm create rivet@latest<\/pre>/);
   assert.doesNotMatch(home, /not on npm yet|not published|coming soon/i, "no obsolete unpublished-package warnings");

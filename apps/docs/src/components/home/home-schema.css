@@ -526,6 +526,7 @@
     white-space: nowrap;
   }
   .hs-loop-icon {
+    opacity: 0.55;
     position: relative;
     z-index: 1;
     display: grid;
@@ -538,6 +539,7 @@
     color: var(--schema-blue);
     box-shadow: inset 0 0 15px #4422cf0a;
     transition:
+      opacity 240ms ease,
       border-color 240ms ease,
       box-shadow 240ms ease;
   }
@@ -546,6 +548,7 @@
     height: 29px;
   }
   .hs-loop-node[data-active] .hs-loop-icon {
+    opacity: 1;
     border-color: var(--hs-pink);
     box-shadow:
       0 0 1px var(--hs-pink),

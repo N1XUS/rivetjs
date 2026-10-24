@@ -99,7 +99,7 @@ export function SiteFrame({ path, links = [], children }: { path: string; links?
   const area = areaOf(sections, path);
   const side = area && area !== "api" && area !== "examples" ? area : undefined;
   const columns = defaultColumns(links);
-  // Lean pages (site `leanPages`) run nothing before the first interaction: their code is coloured at build time.
+  // Lean pages skip generic idle highlighting/search setup; page-owned visible effects can still run.
   const lean = site.leanPages?.includes(path) ?? false;
   // Code blocks are plain server text; the browser colours visible ones (shared lazy highlighter chunk).
   if (!lean) watchCodeAtIdle();

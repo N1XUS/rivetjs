@@ -6,6 +6,8 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, test } from "vitest";
 import { chromium, type Browser } from "playwright";
+import { compile } from "@rivetjs/compiler";
+import { DERIVED_BUILD, rewrite, withPage } from "../../../libs/runtime/tests/resume/harness.ts";
 
 const client = resolve(fileURLToPath(new URL("..", import.meta.url)), "dist/client");
 let server: Server;
@@ -224,6 +226,91 @@ test("studio counter: repeated keyboard input clamps at both limits without stal
     await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "00");
     assert.ok(await dec.isDisabled());
     assert.equal(await page.locator(".hs-counter-digits").getAttribute("data-value"), "00");
+  } finally {
+    await page.close();
+  }
+});
+
+test("studio code sample: copied source compiles and reproduces the preview's formatting, controls and limits", async () => {
+  const page = await home("reduce");
+  let source: string;
+  try {
+    source = (await page.locator(".hs-code-line > span:last-child").allTextContents()).join("\n");
+  } finally {
+    await page.close();
+  }
+  const result = compile(source, { filename: "copied-counter.tsx", target: "dom" });
+  assert.deepEqual(result.diagnostics, []);
+  await withPage(
+    {
+      ...DERIVED_BUILD,
+      "/": '<!doctype html><main id="sample"></main><script type="module">import { mount } from "/dom.ts"; import Counter from "/sample.js"; mount(() => Counter(), document.querySelector("main"));</script>',
+      "/sample.js": rewrite(result.code),
+    },
+    async (copied) => {
+      copied.setDefaultTimeout(5000);
+      await copied.goto("http://rivet.test/");
+      await copied.waitForSelector("#sample > *");
+      assert.equal(await copied.locator("output").count(), 1, "the copied component exposes the same formatted value");
+      assert.equal(await copied.locator("output").textContent(), "07");
+      const inc = copied.getByRole("button", { name: "Increment counter", exact: true });
+      const dec = copied.getByRole("button", { name: "Decrement counter", exact: true });
+      for (let n = 0; n < 3; n++) await inc.click();
+      await copied.waitForFunction(() => document.querySelector("output")?.textContent === "10");
+      await copied.evaluate(() => {
+        for (let n = 0; n < 100; n++) document.querySelectorAll<HTMLButtonElement>("button")[1]!.click();
+      });
+      await copied.waitForFunction(() => document.querySelector("output")?.textContent === "99");
+      assert.ok(await inc.isDisabled());
+      await copied.evaluate(() => {
+        for (let n = 0; n < 110; n++) document.querySelectorAll<HTMLButtonElement>("button")[0]!.click();
+      });
+      await copied.waitForFunction(() => document.querySelector("output")?.textContent === "00");
+      assert.ok(await dec.isDisabled());
+    },
+  );
+});
+
+test("studio schema: explanatory text keeps AA contrast in the early manual steps", async () => {
+  const page = await home("no-preference", 1440, true);
+  try {
+    await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+    await page.addScriptTag({ path: resolve("node_modules/axe-core/axe.min.js") });
+    for (const step of ["render", "send", "wait"]) {
+      await page.getByRole("button", { name: `Show ${step} step`, exact: true }).click();
+      await page.waitForTimeout(600); // Allow the staggered decorative transition to settle.
+      const minimum = await page.evaluate(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext("2d")!;
+        const rgb = (color: string) => {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3);
+        };
+        const background = rgb(getComputedStyle(document.querySelector(".hs-home")!).backgroundColor);
+        const luminance = (color: number[]) =>
+          color
+            .map((n) => n / 255)
+            .map((n) => (n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4))
+            .reduce((sum, n, i) => sum + n * [0.2126, 0.7152, 0.0722][i]!, 0);
+        return Math.min(
+          ...[...document.querySelectorAll<HTMLElement>(".hs-loop-node > span:last-of-type")].map((label) => {
+            let opacity = 1;
+            for (let node: HTMLElement | null = label; node; node = node.parentElement) opacity *= Number(getComputedStyle(node).opacity);
+            const foreground = rgb(getComputedStyle(label).color).map((n, i) => n * opacity + background[i]! * (1 - opacity));
+            return (luminance(foreground) + 0.05) / (luminance(background) + 0.05);
+          }),
+        );
+      });
+      assert.ok(minimum >= 4.5, `${step}: effective label contrast ${minimum.toFixed(2)}:1 includes ancestor opacity`);
+      const violations = await page.evaluate(async () => {
+        const axe = (window as unknown as { axe: { run: (root: string) => Promise<{ violations: { id: string }[] }> } }).axe;
+        return (await axe.run(".hs-interaction-loop")).violations.map((v) => v.id);
+      });
+      assert.deepEqual(violations, [], `${step}: labels remain readable before the interaction`);
+    }
   } finally {
     await page.close();
   }

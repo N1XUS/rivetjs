@@ -334,7 +334,8 @@
   .hs-code-column pre {
     font: 400 0.76rem/1.9 var(--font-mono);
     color: var(--fg-soft);
-    overflow-x: auto;
+    max-height: 20rem;
+    overflow: auto;
     scrollbar-width: thin;
   }
   .hs-code-column [hidden] {

@@ -7,11 +7,20 @@ const SOURCE = `import { signal } from "@rivetjs/reactivity";
 
 export default function Counter() {
   const count = signal(7);
+  const change = (by: number) => count.update(
+    (n) => Math.max(0, Math.min(99, n + by))
+  );
 
   return (
-    <button onClick={() => count.set(count() + 1)}>
-      {count()}
-    </button>
+    <div>
+      <output aria-live="polite">
+        {String(count()).padStart(2, "0")}
+      </output>
+      <button type="button" disabled={count() === 0}
+        onClick={() => change(-1)}>Decrement counter</button>
+      <button type="button" disabled={count() === 99}
+        onClick={() => change(1)}>Increment counter</button>
+    </div>
   );
 }`;
 
@@ -78,9 +87,11 @@ export function HomeWorkbench() {
           </pre>
           <pre id="home-code-server" role="tabpanel" aria-labelledby="home-tab-server" tabIndex={0} hidden={pane() !== 1}>
             <code>
-              <span class="hs-code-comment">// The first value is already in the page.</span>
-              {"\n\n<button>7</button>\n\n"}
-              <span class="hs-code-comment">{"// Rivet records boundary signal values too.\n// Interaction adopts the existing DOM."}</span>
+              <span class="hs-code-comment">// Initial HTML. Boundary metadata omitted.</span>
+              {
+                '\n\n<div>\n  <output aria-live="polite">07</output>\n  <button type="button">Decrement counter</button>\n  <button type="button">Increment counter</button>\n</div>\n\n'
+              }
+              <span class="hs-code-comment">{"// Signal value: { count: 7 }\n// The preview adds icons and Motion digit tracks."}</span>
             </code>
           </pre>
         </div>

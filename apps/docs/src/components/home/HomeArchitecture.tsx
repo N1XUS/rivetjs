@@ -243,7 +243,7 @@ export function HomeArchitecture() {
                 class="hs-loop-node"
                 data-active={step() >= 3 || undefined}
                 initial={false}
-                animate={() => ({ opacity: step() >= 3 ? 1 : 0.55, y: step() >= 3 ? 0 : 5 })}
+                animate={() => ({ y: step() >= 3 ? 0 : 5 })}
                 transition={{ duration: 0.28, delay: i * 0.09 }}
               >
                 <span class="hs-loop-icon">
