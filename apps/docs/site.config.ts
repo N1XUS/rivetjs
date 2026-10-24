@@ -18,7 +18,7 @@ export const site = {
   packageVersion: "0.1.0-alpha.1",
   /** Version label in the top bar. */
   version: "0.1.0-alpha.1",
-  /** Pages that run no code before the first interaction (docs-kit `leanPages`): the home page is the proof. */
+  /** Disable generic docs idle effects and fetch-ahead. The home still runs its own visible canvas/Motion effects. */
   leanPages: ["/"],
   /** Diagnostic code pages `/errors/RVxxxx` (docs-kit `tools/errors.ts`), generated from the code registry. */
   errorPages: true,

@@ -1,9 +1,9 @@
-// Writes content/_home-perf.json: numbers the home page states about itself, measured on the BUILT site.
+// Writes content/_home-perf.json: homepage regression metadata, measured on the BUILT site.
 //   node apps/docs/scripts/home-perf.ts          measure dist/client/index.html, write the JSON
 //   node apps/docs/scripts/home-perf.ts --check  exit 1 when the JSON no longer matches the build
 //   node apps/docs/scripts/home-perf.ts --lighthouse  also: Lighthouse mobile × 3 (median) + Fast 3G / 4× CPU navigation × 3
 //     on dist/client served by apps/editorial-bench/harness/static-server.mjs (gzip); run it under the bench lock.
-// Rebuild (docs:build) after writing: the page renders these numbers. tests/site.test.ts runs the check.
+// tests/site.test.ts checks this metadata against the build; the current home does not render it.
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,13 +16,13 @@ export interface HomePerf {
   /** Inline resume loader of `/` (the script right after the `rivet/boundaries` script): UTF-8 bytes, brotli quality 11 bytes. */
   loader: { bytes: number; brotli: number };
   /** `@rivetjs/cdk` test cases (`it(` / `test(` calls in libs/cdk/tests*); `a11y` = those whose title names ARIA, keyboard,
-   * focus, labels, roles, screen readers or announcements. The home quotes them rounded down ("4,800+"), so new tests
+   * focus, labels, roles, screen readers or announcements. The legacy home quoted them rounded down ("4,800+"), so new tests
    * never make the JSON wrong; the check only fails when tests were removed below the quoted count. */
   cdk: { tests: number; a11y: number };
   /** Every inline executable `<script>` of `/` (no `src`, no data type: theme bootstrap, speculation-rules fallback,
-   * resume loader): UTF-8 bytes summed. The footer states it. */
+   * resume loader): UTF-8 bytes summed. Visible effects also download external scripts. */
   inlineJs: { bytes: number; scripts: number };
-  /** The built `/` document: UTF-8 bytes and brotli-11 bytes. It renders this JSON, so `stale()` compares whole KB. */
+  /** The built `/` document: UTF-8 bytes and brotli-11 bytes. `stale()` compares whole KB, preserving the existing regression contract. */
   html: { bytes: number; brotli: number };
   /** `--lighthouse` run (kept by plain writes): date, Lighthouse mobile medians of 3, Fast 3G + 4× CPU navigation medians of 3. */
   lighthouse?: {

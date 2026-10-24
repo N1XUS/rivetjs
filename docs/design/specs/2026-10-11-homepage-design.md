@@ -1,5 +1,7 @@
 # Homepage design: competitive analysis + page spec (lane HOMEPAGE-DESIGN, 2026-10-11)
 
+> Historical design and measurements. The homepage is superseded by [Runtime Studio (2026-10-24)](2026-10-24-homepage-studio-design.md), including requested visible canvas/Motion startup.
+
 - Scope: `apps/docs` landing (`apps/docs/src/routes/index.tsx` + `apps/docs/src/home.css`) rebuilt as a page that sells; this doc = research + design, no code. Build lane = HOMEPAGE (task list in §5).
 - User (2026-10-11): "our landing has to be more selling"; "migrate to our ui lib"; static "Render once on the server. Resume in the browser." "is not appealing"; wants animations and switching text ("framework built to be fast/performant/dynamic/yours"); "think more on homepage. take look at others, like solid, vercel, next, astro".
 - Standing rules: boxed charts / tables read as "cheap", "90s" (memory homepage-must-sell); soft gradients, de-cloned (docs-identity-b); brand palette = `logo.svg` gradient (root CLAUDE.md); no AI images; lucide icons only; numbers only from committed reports (`apps/docs/content/_charts.ts`).
