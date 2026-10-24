@@ -25,7 +25,7 @@
 
 ### Task1: Implement the selected homepage and motion
 
-**Files:** apps/docs/src/routes/index.tsx, src/home-studio.css, src/components/home/{HomeCanvas.tsx,home-aurora.ts,HomeHeadline.tsx,HomeWorkbench.tsx,HomeArchitecture.tsx}, tests/{home,site}.test.ts, site.config.ts, content/_home-perf.json, apps/docs/CLAUDE.md and relevant design index.
+**Files:** apps/docs/src/routes/index.tsx, src/home-studio.css, src/components/home/{HomeCanvas.tsx,home-aurora.ts,HomeHeadline.tsx,HomeWorkbench.tsx,HomeArchitecture.tsx,home-schema.css}, tests/{home,site}.test.ts, site.config.ts, content/_home-perf.json, apps/docs/CLAUDE.md and relevant design index.
 **Interfaces:** HomeCanvas renders decorative canvas/pause; HomeWorkbench renders code tabs and counter; HomeArchitecture renders three interactive explanatory states. All have no required props. Existing SiteFrame remains.
 
 - [x] Migrate obsolete home-specific assertions individually with production tests for hero/CTA/copy, workbench tabs+keyboard+counter rapid directions, canvas lifecycle, architecture, no-JS/reduced-motion/mobile. Keep unrelated site tests. Run focused new hero/workbench RED against prior build.

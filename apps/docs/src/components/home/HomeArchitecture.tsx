@@ -1,8 +1,9 @@
 import { signal } from "@rivetjs/reactivity";
 import { clientEffect, ref } from "@rivetjs/runtime/dom";
 import { Motion } from "@rivetjs/motion";
-import { ArrowRight, Box, Code, FileCode, FileText, Grid2X2, MousePointer2, Minus, Pause, Play, Plus, RotateCcw, Server, SquareTerminal, Zap } from "lucide";
+import { ArrowRight, Box, Code, FileCode, FileText, Grid2X2, MousePointer2, Minus, Pause, Play, Plus, RotateCcw, Server, AppWindow, Zap } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
+import "./home-schema.css";
 
 const STAGES = [
   {
@@ -135,17 +136,21 @@ export function HomeArchitecture() {
             <b>const</b> count = <em>signal</em>(<i>7</i>);
           </code>
         </div>
-        <p class="hs-schema-caption" aria-live="polite">
-          <Icon icon={STAGES[stage()]!.icon} size={15} />
+        <p class="sr-only" aria-live="polite">
           {STAGES[stage()]!.caption}
         </p>
         <div class="hs-resume-diagram" data-step={String(step())}>
           <div class="hs-schema-lanes">
             <div class="hs-server-lane">
-              <div class="hs-domain">
+              <div class="hs-domain hs-server-domain">
                 <Icon icon={Server} size={25} />
                 <span>
-                  SERVER<small>Render HTML and values.</small>
+                  SERVER
+                  <small>
+                    Render components
+                    <br />
+                    to HTML and values.
+                  </small>
                 </span>
               </div>
               <div class="hs-output-node">
@@ -167,7 +172,7 @@ export function HomeArchitecture() {
                 <Motion.span
                   class="hs-packet"
                   initial={false}
-                  animate={() => ({ x: step() >= 1 ? "100%" : "-12%", opacity: step() === 1 ? 1 : 0 })}
+                  animate={() => ({ x: step() === 1 ? "85%" : "48%", opacity: step() >= 1 ? 1 : 0 })}
                   transition={{ duration: 1 }}
                 >
                   <Icon icon={Box} size={15} />
@@ -177,49 +182,62 @@ export function HomeArchitecture() {
             </div>
             <div class="hs-browser-lane">
               <div class="hs-domain">
-                <Icon icon={SquareTerminal} size={25} />
+                <Icon icon={AppWindow} size={25} />
                 <span>
-                  BROWSER<small>Continue in your app.</small>
+                  BROWSER
+                  <small>
+                    Resume interactivity
+                    <br />
+                    in your app.
+                  </small>
                 </span>
               </div>
               <div class="hs-browser-node">
                 <span>Your page, already rendered</span>
-                <strong class="hs-schema-count">
-                  <span class="sr-only">{step() >= 4 ? "08" : "07"}</span>
-                  <Motion.span
-                    aria-hidden="true"
-                    class="hs-schema-count-track"
-                    initial={false}
-                    animate={() => ({ y: step() >= 4 ? "-1em" : "0em" })}
-                    transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <span>07</span>
-                    <span>08</span>
-                  </Motion.span>
-                </strong>
-                <div aria-hidden="true">
-                  <span>
-                    <Icon icon={Minus} size={17} />
-                  </span>
-                  <span>
-                    <Icon icon={Plus} size={17} />
+                <div class="hs-browser-preview">
+                  <strong class="hs-schema-count">
+                    <span class="sr-only">{step() >= 4 ? "08" : "07"}</span>
+                    <Motion.span
+                      aria-hidden="true"
+                      class="hs-schema-count-track"
+                      initial={false}
+                      animate={() => ({ y: step() >= 4 ? "-1em" : "0em" })}
+                      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <span>07</span>
+                      <span>08</span>
+                    </Motion.span>
+                  </strong>
+                  <div class="hs-browser-controls" aria-hidden="true">
+                    <span>
+                      <Icon icon={Minus} size={17} />
+                    </span>
+                    <span>
+                      <Icon icon={Plus} size={17} />
+                    </span>
+                  </div>
+                  <span class="hs-click-marker" data-active={step() >= 3 || undefined}>
+                    <Icon icon={MousePointer2} size={18} />
                   </span>
                 </div>
-                <span class="hs-click-marker" data-active={step() >= 3 || undefined}>
-                  <Icon icon={MousePointer2} size={18} />
+                <span class="hs-update-label" aria-hidden="true">
+                  Update
+                  <br />
+                  changed value
                 </span>
               </div>
-              <span class="hs-node-caption hs-update-caption">
+              <span class="sr-only">
                 {step() >= 4 ? "Only the changed value updates." : step() >= 3 ? "Adopt existing DOM, run the handler." : "HTML is ready before interaction."}
               </span>
             </div>
           </div>
           <div class="hs-interaction-loop" aria-label="Interaction resumes the component">
+            <span class="hs-trigger-route" aria-hidden="true" />
             {[
-              { icon: MousePointer2, label: "User interacts" },
-              { icon: FileText, label: "Load component code" },
-              { icon: Grid2X2, label: "Adopt existing DOM" },
-              { icon: Zap, label: "Run handler" },
+              { icon: MousePointer2, lines: ["User", "interacts"] },
+              { icon: FileText, lines: ["Load", "component code"] },
+              { icon: Grid2X2, lines: ["Adopt", "existing DOM"] },
+              { icon: Zap, lines: ["Run", "handler"] },
             ].map((item, i) => (
               <Motion.div
                 class="hs-loop-node"
@@ -231,7 +249,11 @@ export function HomeArchitecture() {
                 <span class="hs-loop-icon">
                   <Icon icon={item.icon} size={21} />
                 </span>
-                <span>{item.label}</span>
+                <span>
+                  {item.lines[0]}
+                  <br />
+                  {item.lines[1]}
+                </span>
                 {i < 3 ? <Icon icon={ArrowRight} class="hs-loop-arrow" size={17} /> : null}
               </Motion.div>
             ))}
