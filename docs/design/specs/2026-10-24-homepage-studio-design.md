@@ -12,6 +12,6 @@ User amendment: add an attractive explanatory resumability schema. Replace the d
 
 User amendment: final hero word rotates with staggered Motion transitions (alive → fast → fluid). Reserve a stable word box; meaningful accessible heading, visible pause and reduced-motion static word. User requested the schema design be drawn and shown first; the diagram design was shown and approved with “Ok” before implementation.
 
-User correction: staggered characters must sample one gradient across the entire current word, not repeat a complete gradient per glyph. Keep that coordinate space aligned across font loading, viewport resizing and word replacement.
+User correction: staggered characters must sample one gradient across the entire current word, not repeat a complete gradient per glyph. Keep that coordinate space aligned across font loading, viewport resizing and word replacement. Word replacement must not flash before the entrance starts: prepare incoming glyphs while hidden, then stagger opacity, vertical movement and 8px-to-zero blur over 420ms; exit over 220ms with blur. Live reduced motion cancels pending transitions and reveals a sharp static alive word.
 
 User fidelity correction: the architecture block must closely match the approved schema illustration, including its interior column proportions, nested browser panel, prominent 08 counter, connected glowing delivery/interaction/update routes, code bar and playback rail. Merely using the same conceptual nodes with flatter generic boxes is insufficient.

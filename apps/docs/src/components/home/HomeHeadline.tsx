@@ -19,6 +19,7 @@ export function HomeHeadline() {
         busy = false,
         disposed = false;
       let frame = 0;
+      let transition = 0;
       let animation: ReturnType<typeof animate> | undefined;
       const syncGradient = () => {
         if (disposed) return;
@@ -39,26 +40,32 @@ export function HomeHeadline() {
       const tick = async () => {
         if (reduce.matches || document.hidden || !visible || paused() || busy) return;
         busy = true;
+        const current = ++transition;
         const letters = [...node.querySelectorAll<HTMLElement>(".hs-word-letter")];
-        animation = animate(letters, { opacity: 0, y: -16, filter: "blur(4px)" }, { duration: 0.18, delay: stagger(0.018) });
+        animation = animate(letters, { opacity: 0, y: -14, filter: "blur(8px)" }, { duration: 0.22, delay: stagger(0.018) });
         await animation;
-        if (disposed || reduce.matches) {
-          busy = false;
-          return;
-        }
+        if (disposed || current !== transition) return;
+        // Signal reconciliation and Motion's first frame happen separately. Keep new
+        // glyphs hidden until their initial styles and shared gradient are ready.
+        if (wordNode) wordNode.style.visibility = "hidden";
         index = (index + 1) % WORDS.length;
         word.set(WORDS[index]!);
         frame = requestAnimationFrame(() => {
-          if (disposed) return;
+          if (disposed || current !== transition) return;
           syncGradient();
           const next = [...node.querySelectorAll<HTMLElement>(".hs-word-letter")];
+          for (const letter of next) {
+            letter.style.opacity = "0";
+            letter.style.filter = "blur(8px)";
+          }
+          if (wordNode) wordNode.style.visibility = "";
           animation = animate(
             next,
-            { opacity: [0, 1], y: [18, 0], filter: ["blur(4px)", "blur(0px)"] },
-            { duration: 0.32, delay: stagger(0.025), ease: [0.22, 1, 0.36, 1] },
+            { opacity: [0, 1], y: [18, 0], filter: ["blur(8px)", "blur(0px)"] },
+            { duration: 0.42, delay: stagger(0.028), ease: [0.22, 1, 0.36, 1] },
           );
           void animation.then(() => {
-            busy = false;
+            if (current === transition) busy = false;
           });
         });
       };
@@ -71,14 +78,14 @@ export function HomeHeadline() {
       seen.observe(node);
       const staticWord = () => {
         if (!reduce.matches) return;
+        transition++;
         animation?.stop();
+        index = 0;
+        if (wordNode) wordNode.style.visibility = "";
         word.set("alive.");
         busy = false;
-        for (const letter of node.querySelectorAll<HTMLElement>(".hs-word-letter")) {
-          letter.style.opacity = "1";
-          letter.style.transform = "none";
-          letter.style.filter = "none";
-        }
+        // Reset Motion's cached values too: a queued render can overwrite direct styles.
+        animation = animate([...node.querySelectorAll<HTMLElement>(".hs-word-letter")], { opacity: 1, y: 0, filter: "blur(0px)" }, { duration: 0 });
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(syncGradient);
       };

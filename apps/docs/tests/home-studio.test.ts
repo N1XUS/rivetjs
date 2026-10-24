@@ -182,6 +182,111 @@ test("studio headline: words stagger without moving the heading box and pause at
   }
 });
 
+test("studio headline: replacement words enter from hidden with staggered blur and no flash", async () => {
+  const page = await home();
+  try {
+    await page.waitForFunction(() => document.querySelector(".hs-word")?.hasAttribute("data-gradient-ready"));
+    const transitions = await page.evaluate(
+      () =>
+        new Promise<
+          {
+            word: string;
+            firstHidden: boolean;
+            blurred: boolean;
+            staggered: boolean;
+            settled: boolean;
+          }[]
+        >((resolve) => {
+          const results: Awaited<Parameters<typeof resolve>[0]> = [];
+          let previous = document.querySelector(".hs-word")!.textContent;
+          const started = performance.now();
+          function sample(now: number) {
+            const word = document.querySelector<HTMLElement>(".hs-word")!;
+            const styles = [...word.children].map((letter) => getComputedStyle(letter));
+            if (word.textContent !== previous) {
+              previous = word.textContent;
+              results.push({
+                word: previous!,
+                firstHidden: getComputedStyle(word).visibility === "hidden" || styles.every((style) => Number(style.opacity) < 0.1),
+                blurred: false,
+                staggered: false,
+                settled: false,
+              });
+            }
+            const current = results.at(-1);
+            if (current && !current.settled) {
+              current.blurred ||= styles.some((style) => Number(style.opacity) > 0.1 && Number(style.opacity) < 0.9 && parseFloat(style.filter.slice(5)) > 2);
+              current.staggered ||= Number(styles[0]!.opacity) > 0.3 && Number(styles.at(-1)!.opacity) < 0.1;
+              current.settled ||=
+                getComputedStyle(word).visibility === "visible" &&
+                styles.every(
+                  (style) =>
+                    Number(style.opacity) === 1 &&
+                    new DOMMatrixReadOnly(style.transform).m42 === 0 &&
+                    (style.filter === "none" || style.filter === "blur(0px)"),
+                );
+            }
+            if ((results.length === 3 && current!.settled) || now - started > 12000) resolve(results);
+            else requestAnimationFrame(sample);
+          }
+          requestAnimationFrame(sample);
+        }),
+    );
+    assert.deepEqual(
+      transitions.map(({ word }) => word),
+      ["fast.", "fluid.", "alive."],
+    );
+    for (const transition of transitions) {
+      assert.ok(transition.firstHidden, `${transition.word} must never paint fully visible before entering`);
+      assert.ok(transition.blurred, `${transition.word} visibly blurs during entry`);
+      assert.ok(transition.staggered, `${transition.word} enters letter by letter`);
+      assert.ok(transition.settled, `${transition.word} settles sharp and aligned`);
+    }
+  } finally {
+    await page.close();
+  }
+});
+
+test("studio headline: reduced motion interrupts exit and entry without leaving hidden or blurry text", async () => {
+  const page = await home();
+  try {
+    for (const word of ["alive.", "fast."]) {
+      await page.waitForFunction(
+        (text) => {
+          const word = document.querySelector(".hs-word");
+          if (word?.textContent !== text) return false;
+          const style = getComputedStyle(word.firstElementChild!);
+          return Number(style.opacity) > 0.1 && Number(style.opacity) < 0.9 && style.filter !== "none";
+        },
+        word,
+        { timeout: 6000 },
+      );
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      const sharp = () =>
+        page.evaluate(() => {
+          const word = document.querySelector(".hs-word")!;
+          return (
+            word.textContent === "alive." &&
+            getComputedStyle(word).visibility === "visible" &&
+            [...word.children].every((letter) => {
+              const style = getComputedStyle(letter);
+              return style.opacity === "1" && (style.filter === "none" || style.filter === "blur(0px)") && new DOMMatrixReadOnly(style.transform).m42 === 0;
+            })
+          );
+        });
+      await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "alive.");
+      await page.waitForTimeout(100);
+      assert.ok(await sharp(), "preference changes reveal a complete, sharp static word");
+      await page.waitForTimeout(600);
+      assert.ok(await sharp(), "a cancelled transition cannot overwrite the static word");
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+    }
+    await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "fast.", undefined, { timeout: 6000 });
+  } finally {
+    await page.close();
+  }
+});
+
 test("studio headline: every staggered letter samples the same word-wide gradient", async () => {
   const page = await home("reduce");
   try {
