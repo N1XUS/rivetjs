@@ -32,4 +32,5 @@
 - [x] Build the page/components/CSS faithful to selected visual plus requested motion; preserve sourced proof and actual docs links.
 - [x] Build production docs --no-checks, run new home tests and full docs suite serially; inspect failures, fix causes. Run docs types and content/snippets/llms/MCP/AI.
 - [x] Generate home-perf metadata, rebuild and check. Compare source/production screenshots at normalized desktop and375px; exercise interactions in in-app browser. Write design-qa.md, fix actionable visual gaps, recapture.
-- [ ] Run format/diff checks; update nearest CLAUDE and index. Commit explicit task files. One fresh whole-change reviewer; fix actionable findings with relevant RED/GREEN. Preserve validation evidence and report limitations honestly.
+- [x] Run format/diff checks; update nearest CLAUDE and index. Commit explicit task files.
+- [ ] One fresh whole-change reviewer; fix actionable findings with relevant RED/GREEN. Preserve validation evidence and report limitations honestly.

@@ -865,7 +865,7 @@
     }
     .hs-trigger-route {
       left: 12.5%;
-      width: 52%;
+      width: calc(37.5% + 2rem);
     }
     .hs-interaction-loop::after {
       right: -0.75rem;
