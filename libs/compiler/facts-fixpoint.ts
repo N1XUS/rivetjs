@@ -228,12 +228,10 @@ export function boundaryFacts(
         }
     }
   const adopted = new Set<string>();
-  for (const id of info.keys())
-    if (interactive.get(id) || escaped.has(id) || (!sites.has(id) && !shell(id))) adopted.add(id);
+  for (const id of info.keys()) if (interactive.get(id) || escaped.has(id) || (!sites.has(id) && !shell(id))) adopted.add(id);
   for (let changed = true; changed;) {
     changed = false;
-    for (const [id, list] of sites)
-      if (!adopted.has(id) && list.some((s) => adopted.has(s.caller))) (adopted.add(id), (changed = true));
+    for (const [id, list] of sites) if (!adopted.has(id) && list.some((s) => adopted.has(s.caller))) (adopted.add(id), (changed = true));
   }
   // Independent: every call site in the program (by resolved target) passes data; unresolved targets never count.
   const verdicts = new Map<string, Map<string, BoundaryVerdict>>();

@@ -75,7 +75,10 @@ compiled("lite page: a cold click adopts only its boundary through the residual;
     await page.waitForFunction(() => document.querySelectorAll(".n")[1]!.textContent === "Count: 1");
     assert.deepEqual(await counts(page), ["Count: 0", "Count: 1", "Count: 0"]);
     assert.deepEqual(await handled(page), [false, true, false], "only the clicked boundary adopted");
-    assert.ok(await page.evaluate(() => [...document.querySelectorAll(".n")].every((p, i) => (p as unknown as { __t: number }).__t === i)), "server nodes kept");
+    assert.ok(
+      await page.evaluate(() => [...document.querySelectorAll(".n")].every((p, i) => (p as unknown as { __t: number }).__t === i)),
+      "server nodes kept",
+    );
     // Live from now on: the native dispatch runs the handler synchronously.
     await page.click(".c:nth-child(2) .inc");
     assert.deepEqual(await counts(page), ["Count: 0", "Count: 2", "Count: 0"]);

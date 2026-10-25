@@ -325,7 +325,9 @@ test("ZERO A1: adopted = boundary, rendered by an adopted component, used as a v
   assert.equal(v("src/card.tsx", "Glyph").adopted, true, "used as a value");
   assert.equal(v("src/page.tsx", "Orphan").adopted, true, "no resolved call site");
   // A shell root with no boundary below: nothing is adopted.
-  const plain = new Map<string, ModuleFacts>([["src/page.tsx", module({ Page: { renders: ["Static"], params: "none" }, Static: { renders: ["Leaf"] }, Leaf: {} }, {}, "Page")]]);
+  const plain = new Map<string, ModuleFacts>([
+    ["src/page.tsx", module({ Page: { renders: ["Static"], params: "none" }, Static: { renders: ["Leaf"] }, Leaf: {} }, {}, "Page")],
+  ]);
   out = boundaryFacts(plain, new Map(), new Set(["src/page.tsx"]), new Set(["src/page.tsx"]));
   assert.deepEqual(out.static("src/page.tsx").sort(), ["Leaf", "Page", "Static"]);
   // `file#Name` shell entries name a component other than the default export.
