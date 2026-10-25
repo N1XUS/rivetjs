@@ -4,6 +4,8 @@
 
 The `rivet-compiler` crate (Rust 2024, oxc 0.75 pinned) built to `wasm32-unknown-unknown` as a raw module: JSON request in, JSON response out. Output lands at `../rivet_compiler.wasm` (committed, generated).
 
+`build.sh` gives each Docker invocation its own `mktemp` directory inside the mounted crate, passes that exact output path through `RIVET_WASM_OUTPUT`, atomically moves the completed WASM to its final path, and traps cleanup of only that invocation’s temporary file/directory. This avoids reusing an intermediate filename after it has moved across the bind mount; no retry or sleep masks build/copy failures. Cargo flags, source hashing and named cache volumes are unchanged.
+
 ## Protocol (`src/lib.rs`)
 
 - Exports: `alloc(len) -> ptr`, `dealloc(ptr, len)`, `run(ptr, len) -> ptr` (consumes the request buffer), `result_len()`, `panic_ptr()` / `panic_len()` (UTF-8 message of the last panic, `"<payload> (at file:line:col)"`, written by the hook `run` installs once; the trap itself is `unreachable`), `source_hash_ptr()` / `source_hash_len()` (X2: `RIVET_SOURCE_HASH` set by `build.sh`, empty otherwise). Loader: `../wasm.ts` (`call()`), one instance per process, recreated after a panic.

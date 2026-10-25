@@ -8,17 +8,30 @@ import { cp, readFile, rm, writeFile } from "node:fs/promises";
 
 const root = fileURLToPath(new URL("./", import.meta.url));
 const work = resolve(root, "../../.build/rivet");
-const resume: RivetResumeOptions = { modules: ["page.tsx", "detail.tsx"] };
+const resume: RivetResumeOptions = { modules: ["root.tsx", "page.tsx", "detail.tsx"], roots: ["root.tsx"] };
 
 /** Client (resume chunks) + SSR builds, then prerender `/` into outDir/index.html. */
 export async function build(outDir: string): Promise<void> {
   await rm(work, { recursive: true, force: true });
-  const common: InlineConfig = { configFile: false, root, logLevel: "warn", plugins: [rivet({ resume })] };
+  const client: InlineConfig = { configFile: false, root, logLevel: "warn", plugins: [rivet({ resume })] };
+  const server: InlineConfig = {
+    configFile: false,
+    root,
+    logLevel: "warn",
+    plugins: [rivet({ resume })],
+    resolve: {
+      alias: [
+        { find: resolve(root, "router.browser.ts"), replacement: resolve(root, "router.server.ts") },
+        // Vite also resolves aliases before normalizing Root's relative import.
+        { find: /^\.\/router\.browser\.ts$/, replacement: resolve(root, "router.server.ts") },
+      ],
+    },
+  };
   await vite({
-    ...common,
-    build: { outDir: resolve(work, "client"), minify: true, sourcemap: false, emptyOutDir: true, rollupOptions: { input: resolve(root, "page.tsx") } },
+    ...client,
+    build: { outDir: resolve(work, "client"), minify: true, sourcemap: false, emptyOutDir: true, rollupOptions: { input: resolve(root, "root.tsx") } },
   });
-  await vite({ ...common, build: { ssr: resolve(root, "server.tsx"), outDir: resolve(work, "server"), minify: false, emptyOutDir: true } });
+  await vite({ ...server, build: { ssr: resolve(root, "server.tsx"), outDir: resolve(work, "server"), minify: false, emptyOutDir: true } });
   const manifest = JSON.parse(await readFile(resolve(work, "client/.vite/rivet-resume.json"), "utf8")) as ResumeManifest;
   const { render } = (await import(pathToFileURL(resolve(work, "server/server.js")).href + "?" + Date.now())) as {
     render(manifest: ResumeManifest): Promise<string>;

@@ -73,7 +73,7 @@ export function Page({ items, router }: { items: Item[]; router: any }) {
   );
 }
 
-function List({ items, query, picked, follow }: { items: Item[]; query: any; picked: any; follow: Follow }) {
+export function List({ items, query, picked, follow }: { items: Item[]; query: any; picked: any; follow: Follow }) {
   return (
     <section>
       <input id="filter" type="search" model:value={query} />

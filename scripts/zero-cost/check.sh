@@ -12,6 +12,8 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 node "$dir/runtime-hashes.mjs" "$root" > "$tmp/runtime.now"
 node "$dir/packages-hashes.mjs" "$root" > "$tmp/packages.now"
+# Fresh dist: lanes-hashes.mjs hashes every file there, so artifacts of a deleted lane (rivet-derived, M6-CUT) must not survive.
+rm -rf apps/ssr-bench/dist
 node apps/ssr-bench/build.ts > /dev/null
 node "$dir/lanes-hashes.mjs" "$root/apps/ssr-bench/dist" > "$tmp/lanes.now"
 if [ "$1" = "--update" ]; then

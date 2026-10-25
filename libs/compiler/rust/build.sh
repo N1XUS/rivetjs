@@ -5,6 +5,11 @@
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 image="${RIVET_RUST_IMAGE:-rust:1.85.1-bookworm}"
+# Use an invocation-owned path so Docker never reuses an intermediate filename moved by a
+# previous build. A unique directory also prevents separate invocations sharing an output.
+build_tmp="$(mktemp -d "$here/.rivet-compiler.XXXXXX")"
+output="$build_tmp/rivet_compiler.wasm"
+trap 'rm -f -- "$output"; rmdir -- "$build_tmp"' EXIT
 docker run --rm \
   -v "${RIVET_CARGO_VOLUME:-rivet-cargo}":/usr/local/cargo/registry \
   -v "${RIVET_TARGET_VOLUME:-rivet-target}":/target \
@@ -12,6 +17,7 @@ docker run --rm \
   -v "$here":/src \
   -w /src \
   -e CARGO_TARGET_DIR=/target \
+  -e RIVET_WASM_OUTPUT="/src/${build_tmp##*/}/rivet_compiler.wasm" \
   "$image" \
   bash -c '
     set -euo pipefail
@@ -21,7 +27,7 @@ docker run --rm \
     export RIVET_SOURCE_HASH="$( { echo Cargo.toml; echo Cargo.lock; echo .cargo/config.toml; find src -type f; } | LC_ALL=C sort | xargs sha256sum | sha256sum | cut -d" " -f1)"
     cargo build --release --locked --target wasm32-unknown-unknown "$@"
     out=/target/wasm32-unknown-unknown/release/rivet_compiler.wasm
-    if command -v wasm-opt >/dev/null; then wasm-opt -O3 "$out" -o /src/rivet_compiler.wasm; else cp "$out" /src/rivet_compiler.wasm; fi
+    if command -v wasm-opt >/dev/null; then wasm-opt -O3 "$out" -o "$RIVET_WASM_OUTPUT"; else cp "$out" "$RIVET_WASM_OUTPUT"; fi
   ' bash "$@"
-mv "$here/rivet_compiler.wasm" "$here/../rivet_compiler.wasm"
+mv "$output" "$here/../rivet_compiler.wasm"
 ls -l "$here/../rivet_compiler.wasm"

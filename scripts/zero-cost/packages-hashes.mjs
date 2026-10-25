@@ -14,7 +14,9 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-const root = process.argv[2];
+import { fileURLToPath } from "node:url";
+const main = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const root = main ? process.argv[2] : fileURLToPath(new URL("../../", import.meta.url));
 const { rolldown } = await import(createRequire(root + "/package.json").resolve("rolldown"));
 const { compile } = await import(`${root}/libs/compiler/index.ts`);
 const PACKAGES = ["libs/router", "libs/forms", "libs/i18n", "libs/kit", "libs/ui", "libs/motion", "libs/bridge", "libs/bridge-react", "libs/bridge-preact"];
@@ -51,17 +53,24 @@ function rivet(target, seen) {
   };
 }
 
-async function hash(input, { target, browser }) {
+export async function hash(input, { target, browser }) {
   const seen = { tsx: false };
   const css = new Set();
   const bundle = await rolldown({
     input,
     platform: browser ? "browser" : "node",
-    logLevel: "silent",
+    logLevel: "warn",
+    // Missing own-package imports must not become unmeasured external modules.
+    onLog(level, log, handler) {
+      if (log.code === "UNRESOLVED_IMPORT") throw new Error(log.message);
+      if (level === "error") handler(level, log);
+    },
     // Bare specifiers (other packages, including other @rivetjs packages) and node:* are external. `#` specifiers are
     // the package's own `imports` map (e.g. `@rivetjs/ui` `#dev`): resolved with the production conditions, as an app does.
     external: (id, importer) => {
-      if (id.endsWith(".css")) {
+      // A package imports alias must reach the normal resolver first. Rolldown then calls this
+      // hook with its resolved filesystem ID, preserving package ownership and active conditions.
+      if (id.endsWith(".css") && !id.startsWith("#")) {
         css.add(id.startsWith(".") && importer ? resolve(dirname(importer), id) : id);
         return true;
       }
@@ -98,26 +107,28 @@ function entries(pkg) {
   return list;
 }
 
-const out = [];
-for (const pkg of PACKAGES) {
-  for (const { name, file, browser } of entries(pkg)) {
-    const input = `${root}/${pkg}/${file}`;
+if (main) {
+  const out = [];
+  for (const pkg of PACKAGES) {
+    for (const { name, file, browser } of entries(pkg)) {
+      const input = `${root}/${pkg}/${file}`;
+      const dom = await hash(input, { target: "dom" });
+      if (!dom.tsx) out.push(`${name} ${dom.line}`);
+      else {
+        out.push(`${name} [dom] ${dom.line}`);
+        out.push(`${name} [server] ${(await hash(input, { target: "server" })).line}`);
+      }
+      if (browser) out.push(`${name} [browser] ${(await hash(`${root}/${pkg}/${browser}`, { target: "dom", browser: true })).line}`);
+    }
+  }
+  for (const [name, file] of CDK_ENTRIES) {
+    const input = `${root}/libs/cdk/${file}`;
     const dom = await hash(input, { target: "dom" });
     if (!dom.tsx) out.push(`${name} ${dom.line}`);
     else {
       out.push(`${name} [dom] ${dom.line}`);
       out.push(`${name} [server] ${(await hash(input, { target: "server" })).line}`);
     }
-    if (browser) out.push(`${name} [browser] ${(await hash(`${root}/${pkg}/${browser}`, { target: "dom", browser: true })).line}`);
   }
+  console.log(out.join("\n"));
 }
-for (const [name, file] of CDK_ENTRIES) {
-  const input = `${root}/libs/cdk/${file}`;
-  const dom = await hash(input, { target: "dom" });
-  if (!dom.tsx) out.push(`${name} ${dom.line}`);
-  else {
-    out.push(`${name} [dom] ${dom.line}`);
-    out.push(`${name} [server] ${(await hash(input, { target: "server" })).line}`);
-  }
-}
-console.log(out.join("\n"));

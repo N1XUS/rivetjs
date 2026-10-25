@@ -37,6 +37,23 @@ it must reach the browser through each framework's own state mechanism (serializ
 - Production builds, minified, no source maps. Each lane is served on its own origin; the server
   answers `/item/*` with 404 (navigation must be client-side).
 - `apps/resume-bench/lanes/<lane>/` holds that lane's sources; shared data from `../../data.ts`.
+- Rivet's default `root.tsx` is the independent resumable boundary and receives only `{ items, initialUrl }`.
+  It constructs the router inside its reactive owner and passes it to the existing Page. The browser adapter
+  uses the served browser location/origin; the SSR build aliases that adapter to the server factory using
+  `initialUrl`. Separate client/server Vite plugin instances register root/page/detail as resume modules and
+  root as `resume.roots` and the client input. `List` is explicitly exported for boundary resolution;
+  page state, effects, and lazy detail behavior follow the page contract above.
+- After a build, run `node apps/resume-bench/lanes/rivet/check-bootstrap.ts apps/resume-bench/dist/rivet`
+  with `RESUME_BENCH_CHROME` set to the verification browser when pinning it. This read-only gate checks
+  the tail's independent Root, exact data-only items/initialUrl props, connected boundary parents, required
+  runtime/preload/lazy assets, and actual callable exports in real Chrome. It supplements full `--verify`,
+  which remains the authority for counter/toggle/filter/selection, lazy detail/back/popstate without reload,
+  preserved state, scroll/canvas/analytics and document identity.
+- The raw `40e7bd49c` reference bootstrap is invalid for timing. The repaired comparison is labeled
+  **40e7bd49c + benchmark-bootstrap migration**, using the identical benchmark Root/adapter/List-export
+  migration and artifact checker in reference and candidate. Preserve the original evidence and each
+  variant's source/artifact hashes, compiler WASM and peer/browser versions. Shared bootstrap repair
+  overhead is not a framework improvement; semantic verification alone supports no performance claim.
 
 ## Runner metrics beyond DOM timing (`run.ts`)
 
