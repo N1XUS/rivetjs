@@ -41,6 +41,8 @@ interface FrameParams {
 
 // Frame modules loaded on this server (the route's loader fills it before the page and head render).
 const loaded = new Map<string, { module: FrameModule; styles: readonly string[] }>();
+// ZERO Z7: one module + stylesheet lookup per example per server (production), not one per request.
+const memo = new Map<string, Promise<{ module: FrameModule; styles: readonly string[] }>>();
 
 /** Prerender entries: the `/` page of every live example (`sub` false) or their other pages (`sub` true). */
 export function frameEntries(sub: boolean): FrameParams[] {
@@ -52,8 +54,18 @@ export async function loadFrame(event: { params: FrameParams }): Promise<unknown
   const { id, path = "" } = event.params;
   const frame = frames[id];
   if (!frame || !frame.paths.includes(path)) throw notFound();
-  const module = await frame.load();
-  loaded.set(id, { module, styles: await frameStyles(id) });
+  let entry = memo.get(id);
+  if (!entry) {
+    entry = Promise.all([frame.load(), frameStyles(id)]).then(([module, styles]) => ({ module, styles }));
+    // Production only (the dev server's frame modules and styles change under hot updates); a failed load retries.
+    if (!import.meta.env.DEV)
+      memo.set(
+        id,
+        entry.catch((cause) => (memo.delete(id), Promise.reject(cause))),
+      );
+  }
+  const { module, styles } = await entry;
+  loaded.set(id, { module, styles });
   // The page's own loader: its export tagged `load` (`@rivetjs/router` wrapper tag, any export name).
   const own = Object.values(module.pages[path]!.module).find((value) => typeof value === "function" && (value as { [TAG]?: unknown })[TAG] === "load");
   return own ? await (own as (event: unknown) => unknown)(event) : null;

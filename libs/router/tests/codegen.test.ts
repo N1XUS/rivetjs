@@ -367,10 +367,11 @@ test("dev error forwarder: overlay text for an ErrorEvent without error and for 
   const { stripTypeScriptTypes } = await import("node:module");
   const files = generate(table, { routesDir: "src/routes" }).files;
   assert.match(files["entry.dev.tsx"]!, /send\("error" in event \? \(event\.error \?\? event\) : event\.reason\)/);
-  // The helper `app.tsx` exports (the dev entry inlines the same lines as `describe`).
+  // The helper `app.tsx` holds (module-local: production builds drop it; the dev entry inlines the same lines as `describe`).
   const app = files["app.tsx"]!;
-  const start = app.indexOf("export const _devDescribe = ");
-  const expression = app.slice(start + "export const _devDescribe = ".length, app.indexOf("\n};\n", start) + 2);
+  assert.doesNotMatch(app, /export const _devDescribe|export const _devBenign/);
+  const start = app.indexOf("const _devDescribe = ");
+  const expression = app.slice(start + "const _devDescribe = ".length, app.indexOf("\n};\n", start) + 2);
   const describe = new Function("return " + stripTypeScriptTypes(`(${expression})`))() as (error: unknown) => { message: string; stack?: string };
   const error = new Error("boom");
   assert.deepEqual(describe(error), { message: "boom", stack: error.stack });
@@ -400,8 +401,8 @@ test("dev error forwarder: overlay text for an ErrorEvent without error and for 
   assert.equal(event.error, null);
   assert.match(describe(event).message, /^ResizeObserver loop completed .* \(http:\/\/x\/a\.js:0:0; the error event carries no Error\)$/);
   // ...which is a benign notice: the dev entry and `_devError` drop it (Chrome + Firefox/Safari texts), anything else is forwarded.
-  const benignStart = app.indexOf("export const _devBenign = ");
-  const benignSource = app.slice(benignStart + "export const _devBenign = ".length, app.indexOf("\n};\n", benignStart) + 2);
+  const benignStart = app.indexOf("const _devBenign = ");
+  const benignSource = app.slice(benignStart + "const _devBenign = ".length, app.indexOf("\n};\n", benignStart) + 2);
   const benign = new Function("const console = { debug() {} };let benignLogged = false;return " + stripTypeScriptTypes(`(${benignSource})`))() as (
     message: string,
   ) => boolean;

@@ -583,8 +583,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "  const report = _devDescribe(error);",
     '  if (!_devBenign(report.message)) import.meta.hot.send("rivet:client-error", report);',
     "};",
-    ...DEV_BENIGN("export const _devBenign"),
-    ...DEV_DESCRIBE("export const _devDescribe"),
+    // Module-local (ZERO Z5): only `_devError` reads them, so production builds (`import.meta.hot` undefined) drop both.
+    ...DEV_BENIGN("const _devBenign"),
+    ...DEV_DESCRIBE("const _devDescribe"),
     "// Dev: failures that are not HTTP errors (data decode, page chunk loads) also reach the overlay.",
     "const failed = (cause: unknown): Loaded => {",
     '  if (import.meta.hot && typeof document !== "undefined" && !isHttpError(cause) && (cause as Error | undefined)?.name !== "AbortError") _devError(cause);',

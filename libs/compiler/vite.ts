@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
@@ -317,8 +317,8 @@ function domDataSwitch(id: string): string | null {
 // instead of lazily inside the first interaction (whose handler, dispatch and flush paths run for the first
 // time). Lazily imported (dynamic) chunks stay lazy.
 const EAGER = "//# allFunctionsCalledOnLoad\n";
-/** Prepend the eager-compile hint to the chunks matching `root` and their static imports (maps shift a line). */
-function hintEagerCompile(bundle: Rollup.OutputBundle, root: (output: Rollup.OutputChunk) => boolean): void {
+/** @internal Prepend the eager-compile hint to the chunks matching `root` and their static imports (maps shift a line). */
+export function _hintEagerCompile(bundle: Rollup.OutputBundle, root: (output: Rollup.OutputChunk) => boolean): void {
   const stack = Object.values(bundle)
       .filter((o): o is Rollup.OutputChunk => o.type === "chunk" && !!o.facadeModuleId && root(o))
       .map((o) => o.fileName),
@@ -332,7 +332,76 @@ function hintEagerCompile(bundle: Rollup.OutputBundle, root: (output: Rollup.Out
     if (output.code.startsWith(EAGER)) continue;
     output.code = EAGER + output.code;
     if (output.map) output.map.mappings = ";" + output.map.mappings;
+    // The emitted `.map` file is its own bundle asset, serialized before this hook: shift it too (else every mapping of
+    // a hinted chunk points one line too high).
+    const asset = bundle[file + ".map"];
+    if (asset?.type === "asset") {
+      const map = JSON.parse(typeof asset.source === "string" ? asset.source : Buffer.from(asset.source).toString("utf8")) as { mappings?: string };
+      if (typeof map.mappings === "string") ((map.mappings = ";" + map.mappings), (asset.source = JSON.stringify(map)));
+    }
   }
+}
+
+/** A re-export facade chunk: one `import{…}from"./x.js";export{…};` and nothing else (Rolldown's output for a strict entry
+ * whose module landed in a shared chunk). */
+const FACADE = /^(?:\/\/# allFunctionsCalledOnLoad\n)?import\{([^}]*)\}from"(\.\/[^"]+\.js)";export\{([^}]*)\};?\s*(?:\/\/# sourceMappingURL=\S+\s*)?$/;
+/** The chunk's final `export{…}` clause (Rolldown prints exactly one, last), with what may follow it. */
+const EXPORTS_TAIL = /export\{([^}]*)\};?(\s*(?:\/\/# sourceMappingURL=\S+\s*)?)$/;
+const IDENT = /^[A-Za-z_$][\w$]*$/;
+/** `a as b,c` → [[b, a], [c, c]] (exported or imported name first, then the local binding); null on anything unexpected. */
+function specifiers(list: string): [string, string][] | null {
+  const out: [string, string][] = [];
+  for (const part of list.split(",")) {
+    const item = part.trim();
+    if (!item) continue;
+    const [left = "", right = left] = item.split(/\s+as\s+/);
+    if (!IDENT.test(left) || !IDENT.test(right)) return null;
+    out.push([right, left]);
+  }
+  return out;
+}
+/**
+ * @internal Facade folding (B1 / B6'): the manifest names the chunk that holds an entry's code, not its 1-line re-export facade.
+ * The `wanted` export names of the facade are added to that chunk's own `export{…}` clause (same bindings, extra names: an ES module may
+ * export one binding under several names), so `import(chunk)[name]` is the facade's export. Returns the chunk to name, or
+ * the facade itself when the shape is not the expected one or a name would collide. The facade file stays emitted (the Vite
+ * manifest lists it) and is no longer fetched.
+ */
+export function _foldFacade(bundle: Rollup.OutputBundle, facade: Rollup.OutputChunk, wanted: readonly string[]): Rollup.OutputChunk {
+  const hit = FACADE.exec(facade.code);
+  if (!hit) return facade;
+  const target = bundle[posix.join(posix.dirname(facade.fileName), hit[2]!)];
+  const imported = specifiers(hit[1]!),
+    all = specifiers(hit[3]!);
+  if (target?.type !== "chunk" || !imported || !all) return facade;
+  // Only the names the manifest's readers use (boundary exports, the runtime's `default`): a strict facade re-exports the
+  // module's whole signature, and every extra name would grow a chunk other pages fetch too.
+  const exported = all.filter(([name]) => wanted.includes(name));
+  if (exported.length !== new Set(wanted).size) return facade;
+  const tail = EXPORTS_TAIL.exec(target.code);
+  const own = tail && specifiers(tail[1]!);
+  if (!tail || !own) return facade;
+  const bindingOf = new Map(own); // target export name → its local binding
+  const viaImport = new Map(imported); // facade local → target export name
+  const added: string[] = [];
+  for (const [name, local] of exported) {
+    const from = viaImport.get(local);
+    const binding = from === undefined ? undefined : bindingOf.get(from);
+    if (binding === undefined) return facade;
+    const existing = bindingOf.get(name);
+    if (existing !== undefined) {
+      if (existing !== binding) return facade;
+      continue;
+    }
+    bindingOf.set(name, binding);
+    added.push(binding === name ? name : binding + " as " + name);
+  }
+  if (added.length) {
+    const at = tail.index;
+    target.code = target.code.slice(0, at) + "export{" + [tail[1]!, ...added].filter(Boolean).join(",") + "};" + tail[2]! + "";
+    target.exports = [...new Set([...target.exports, ...exported.map(([name]) => name)])];
+  }
+  return target;
 }
 
 /** Compile project JSX/TSX for Vite's DOM or SSR environment. Styles use Vite's normal pipeline.
@@ -666,6 +735,7 @@ function rivetPlugin(
       deps: Record<string, string[]> = {},
       islands: Record<string, string> = {},
       chunks = new Map<string, Rollup.OutputChunk>(),
+      sized = new Set<Rollup.OutputChunk>(),
       roots: string[] = [];
     let runtime: string | null = null,
       builtins: string | null = null;
@@ -673,17 +743,28 @@ function rivetPlugin(
       if (output.type !== "chunk") continue;
       chunks.set(output.fileName, output);
       if (!output.facadeModuleId) continue;
-      if (output.facadeModuleId === DERIVED_ENTRY) ((runtime = base + output.fileName), roots.push(output.fileName));
-      if (output.facadeModuleId === builtinsId) builtins = base + output.fileName;
+      if (output.facadeModuleId === DERIVED_ENTRY) {
+        const real = _foldFacade(bundle, output, ["default"]);
+        runtime = base + real.fileName;
+        roots.push(real.fileName);
+      }
+      if (output.facadeModuleId === builtinsId) builtins = base + _foldFacade(bundle, output, []).fileName;
       // Framework island chunks (M6-PARITY): island key → URL + size + closure, as on the serialized manifest.
       const island = bridges ? bridges.islandKey(output.facadeModuleId) : null;
       if (island) ((islands[island] = base + output.fileName), (sizes[base + output.fileName] = Buffer.byteLength(output.code)), roots.push(output.fileName));
       const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
       if (!names?.length) continue;
-      sizes[base + output.fileName] = Buffer.byteLength(output.code);
-      for (const name of names) symbols[name] = base + output.fileName;
-      roots.push(output.fileName);
+      const real = _foldFacade(
+        bundle,
+        output,
+        names.map((name) => name.slice(name.lastIndexOf("#") + 1)),
+      );
+      sized.add(real);
+      for (const name of names) symbols[name] = base + real.fileName;
+      roots.push(real.fileName);
     }
+    // After the loop: folding (`foldFacade`) appends export names to a chunk named earlier.
+    for (const chunk of sized) sizes[base + chunk.fileName] = Buffer.byteLength(chunk.code);
     for (const file of roots) {
       const seen = new Set<string>(),
         stack = [...(chunks.get(file)?.imports ?? [])];
@@ -1051,7 +1132,7 @@ function rivetPlugin(
       order: "post",
       handler(_options, bundle) {
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
-        hintEagerCompile(bundle, (output) => output.isEntry);
+        _hintEagerCompile(bundle, (output) => output.isEntry);
         if (resume) derivedManifest.call(this, bundle);
       },
     },

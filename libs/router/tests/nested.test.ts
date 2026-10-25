@@ -181,10 +181,10 @@ test(
           links.map((link) => new URL((link as HTMLLinkElement).href).pathname),
         );
         // The derived runtime and the App's module chunk (`app-*`).
-        assert.ok(prefetched.some((url) => /derived-runtime-/.test(url)) && prefetched.some((url) => /\/app-/.test(url)), prefetched.join());
+        assert.ok(prefetched.some((url) => /dom-derived-/.test(url)) && prefetched.some((url) => /\/app-/.test(url)), prefetched.join());
         assert.deepEqual(
-          scripts.filter((url) => /(derived-runtime|dom-derived|\/app)-/.test(url)).sort(),
-          prefetched.filter((url) => /(derived-runtime|dom-derived|\/app)-/.test(url)).sort(),
+          scripts.filter((url) => /(dom-derived|\/app)-/.test(url)).sort(),
+          prefetched.filter((url) => /(dom-derived|\/app)-/.test(url)).sort(),
           "runtime / App chunk only fetched (modulepreload) before the click",
         );
         const before = scripts.length;
@@ -192,7 +192,7 @@ test(
         await fresh.evaluate(() => document.querySelector<HTMLElement>('nav a[href="/u/1/x"]')!.click());
         await fresh.waitForFunction(() => document.querySelector("h1")?.textContent === "User page x");
         assert.deepEqual(
-          scripts.slice(before).filter((url) => /(derived-runtime|dom-derived|\/app)-/.test(url)),
+          scripts.slice(before).filter((url) => /(dom-derived|\/app)-/.test(url)),
           [],
           "the click refetches neither",
         );

@@ -32,6 +32,7 @@ npx vitest run --project runtime -t "shipped loader"          # by name
 ## Rules
 
 - Browser suites import runtime sources by explicit path lists (`dom.test.ts` `routerFiles`, `dom-router.test.ts`, `dom-async.test.ts`, `dom-boundary.test.ts`, `resume/harness.ts` `sources`, `libs/compiler/tests/compiler-dom.test.ts`; `dom-v2.ts` → `dom-v2-spread.ts`, `dom.ts` → `dom-v2-controls.ts` + `dom-adopt.ts`): a new relative import inside `dom.ts`, `dom-v2.ts`, `dom-derived.ts`, … must be added there (404 in Chromium otherwise).
+- `derived-selection-browser.test.ts`: real Vite build + `renderDocument` page, client modules held across a focused selection; dirty first input and pristine NUL-normalized controls keep value, node identity, focus and selection direction after adoption; the same trusted insert replaces the selection in adoption and in a fresh CSR mount.
 - Resume fixtures assert `__componentRuns` stays unset in the browser before the first interaction — a component running on load is a bug, not a flake.
 - `resume-loader.test.ts` fails when `resume-loader-derived.min.ts` is stale: run `node libs/runtime/build-loader.ts` after touching `resume-loader-derived.ts`.
 - Keep test locations: the root vitest config is not editable from this package; new suites go in this folder as `*.test.ts`.

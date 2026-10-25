@@ -106,7 +106,8 @@ export interface Boundary {
   props: object | null;
   /** Keyed state registered while this body evaluated: (key, current value getter), creation order. */
   signals: [key: string, value: () => unknown][];
-  /** Occurrences per key (a site registering twice in one boundary gets `key#2`, `key#3`, …). */
+  /** Occurrences per key once the unit registered many (a site registering twice in one boundary gets `key#2`, `key#3`, …;
+   * `register`), else null. */
   keys: Map<string, number> | null;
   /** `_rBAttr` ran: the element root carries `data-b`, `_rBOut` writes no comment pair. */
   attr: boolean;
@@ -117,7 +118,8 @@ export interface Boundary {
   /** While its body evaluates: the owner whose context frame names it (`CURRENT`), and that owner's frame before. */
   frame: [owner: OwnerFrames, ctx: unknown] | null;
   /** Dependency facts (DERIVED-C4): plain signals made in its unit, numbered (`"<id>.$<n>"` wake keys); reactive sources made in
-   * its unit (signals, computeds: the deferral weight); `EAGER` / `MOD` marks (below). */
+   * its unit (signals, computeds: the deferral weight; its whole subtree's once flushed, `deferFlags`); `EAGER` / `MOD` marks
+   * (below). */
   made: number;
   weight: number;
   mark: number;
@@ -697,13 +699,32 @@ export function _rBAttr(token: Boundary | null): ServerValue {
   return _attributeRecord("data-b", token.id, "html") as unknown as ServerValue;
 }
 
+// Its wire key (`key`, a repeat in the same unit `key#2`, `key#3`, …). A unit registers a handful of keys: counted by a scan
+// of its list (no Map per boundary); a unit holding many (rows of a component that is not a boundary) counts by a Map.
 function register(owner: Boundary, key: string, value: () => unknown): string {
-  const keys = (owner.keys ??= new Map());
-  const n = (keys.get(key) ?? 0) + 1;
-  keys.set(key, n);
+  const list = owner.signals;
+  let n = 1;
+  const keys = owner.keys;
+  if (keys !== null) keys.set(key, (n = (keys.get(key) ?? 0) + 1));
+  else {
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i]![0];
+      if (e === key || (e.length > key.length && e.charCodeAt(key.length) === 35 && e.startsWith(key))) n++;
+    }
+    if (list.length >= 8) {
+      const counts = (owner.keys = new Map<string, number>());
+      for (let i = 0; i < list.length; i++) {
+        const e = list[i]![0],
+          at = e.indexOf("#"),
+          base = at < 0 ? e : e.slice(0, at);
+        counts.set(base, (counts.get(base) ?? 0) + 1);
+      }
+      counts.set(key, n);
+    }
+  }
   const k = n > 1 ? key + "#" + n : key;
-  owner.signals.push([k, value]);
-  return owner.id + "." + k;
+  list.push([k, value]);
+  return k;
 }
 
 function wake(ctx: DerivedRender, id: string, reader: number): void {
@@ -726,17 +747,33 @@ export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Sig
   const owner = ctx && current(ctx);
   // (An H-holes hit's content outside a child boundary: the stored shell's boundary, not this render's — never registered.)
   if (!ctx || !owner || owner.id < ctx.base) return s;
-  const id = register(owner, key, s);
-  const src: Src = { c: owner, n: -1, k: id, x: ctx, s: null, r: null, z: 0 };
+  const src: Src = { c: owner, n: -1, k: register(owner, key, s), x: ctx, s: null, r: null, z: 0, g: s };
   owner.weight++;
-  const get = function () {
-    note(src);
-    return s();
-  } as Signal<T>;
-  get.set = (value) => (wrote(src), s.set(value));
-  get.update = (fn) => (wrote(src), s.update(fn));
-  (get as unknown as Tracked)[SRC] = src;
+  const get = tracked<T>(src);
   ctx.sources?.set(get, s);
+  return get;
+}
+// A tracked signal getter: `srcRead` bound to its source, `set` / `update` methods shared by all (as the base signal's: called
+// on the getter), no closures per signal.
+function srcRead(this: Src): unknown {
+  note(this);
+  return this.g!();
+}
+function srcSet(this: Tracked, value: unknown): unknown {
+  const src = this[SRC]!;
+  wrote(src);
+  return (src.g as Signal<unknown>).set(value);
+}
+function srcUpdate(this: Tracked, fn: (value: unknown) => unknown): unknown {
+  const src = this[SRC]!;
+  wrote(src);
+  return (src.g as Signal<unknown>).update(fn);
+}
+function tracked<T>(src: Src): Signal<T> {
+  const get = srcRead.bind(src) as unknown as Signal<T> & Tracked;
+  get.set = srcSet as Signal<T>["set"];
+  get.update = srcUpdate as Signal<T>["update"];
+  get[SRC] = src;
   return get;
 }
 
@@ -775,8 +812,10 @@ interface Src {
   s: Set<Src> | null;
   r: Boundary | null;
   z: number;
-  /** Numbered: its wake key, built on the first cross read. */
+  /** Its wake key (keyed: `"<maker id>.<key>"`, numbered: `"<maker id>.$<n>"`), built on the first cross read. */
   w?: string;
+  /** The base signal / computed getter it tracks. */
+  g: (() => unknown) | null;
 }
 const EAGER_MARK = 1,
   MOD_MARK = 2,
@@ -832,7 +871,7 @@ function cross(ctx: DerivedRender, src: Src, r: Boundary, depth: number): void {
     return;
   }
   if (c === null) return markUp(r, null, MOD_MARK);
-  if (src.k !== null && c !== r) wake(ctx, src.k, r.id);
+  if (src.k !== null && c !== r) wake(ctx, (src.w ??= c.id + "." + src.k), r.id);
   if (within(r, c)) return;
   if (!within(c, r)) markUp(c, r, EAGER_MARK);
   if (src.k !== null) return;
@@ -857,22 +896,16 @@ function made(ctx: DerivedRender | null, s: Src): void {
 export function _dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
   const s = signal(init as T, options);
   const ctx = useContext(DERIVED);
-  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: null, r: null, z: 0 };
+  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: null, r: null, z: 0, g: s };
   made(ctx, src);
-  const get = function () {
-    note(src);
-    return s();
-  } as Signal<T>;
-  get.set = (value) => (wrote(src), s.set(value));
-  get.update = (fn) => (wrote(src), s.update(fn));
-  (get as unknown as Tracked)[SRC] = src;
+  const get = tracked<T>(src);
   ctx?.sources?.set(get, s);
   return get;
 }
 /** Derived alias of `computed` (DERIVED-C4): its reads while it evaluates become its sources; a read of it reads them. */
 export function _dcomputed<T>(fn: () => T, options?: EqualsOptions<T>): () => T {
   const ctx = useContext(DERIVED);
-  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: new Set(), r: null, z: 0 };
+  const src: Src = { c: ctx && current(ctx), n: -1, k: null, x: ctx, s: new Set(), r: null, z: 0, g: null };
   made(ctx, src);
   const base = computed(
     ctx === null
@@ -887,13 +920,15 @@ export function _dcomputed<T>(fn: () => T, options?: EqualsOptions<T>): () => T 
         },
     options,
   ) as () => T;
-  const get = (): T => {
-    const value = base();
-    note(src);
-    return value;
-  };
-  (get as unknown as Tracked)[SRC] = src;
+  src.g = base;
+  const get = srcComputed.bind(src) as unknown as (() => T) & Tracked;
+  get[SRC] = src;
   return get;
+}
+function srcComputed(this: Src): unknown {
+  const value = this.g!();
+  note(this);
+  return value;
 }
 /** Derived alias of `selector` (DERIVED-C4): a key read reads its source (the selector caches it). */
 export function _dselector<T, K = T, R = boolean>(
@@ -957,16 +992,16 @@ _onIsland((entry) => {
 /** Flush: `DEFER` / `MOD` on the dependent boundaries whose subtree is closed and heavy enough (`flags`), creator counts. */
 function deferFlags(ctx: DerivedRender, from: number): void {
   if (ctx.stores || moduleStores || ctx.sources !== null || (ctx.stream && ctx.asyncs.some((a) => a.state === 0 || a.state === 3))) return;
-  const weight = new Map<Boundary, number>();
-  for (let i = ctx.boundaries.length - 1; i >= 0; i--) {
-    const b = ctx.boundaries[i]!,
-      w = (weight.get(b) ?? 0) + b.weight;
-    weight.set(b, w);
-    if (b.parent) weight.set(b.parent, (weight.get(b.parent) ?? 0) + w);
+  const list = ctx.boundaries;
+  // Subtree weights, bottom-up over this flush's boundaries only (a boundary's subtree was opened after it; each boundary is
+  // flushed once): `weight` holds its subtree's from here on.
+  for (let i = list.length - 1; i >= from; i--) {
+    const b = list[i]!;
+    if (b.parent !== null) b.parent.weight += b.weight;
   }
-  for (let i = from; i < ctx.boundaries.length; i++) {
-    const b = ctx.boundaries[i]!;
-    if (b.parent === null || !b.out || b.flags & (INDEPENDENT | TRIGGERS) || b.mark & EAGER_MARK || weight.get(b)! < DEFER_WEIGHT) continue;
+  for (let i = from; i < list.length; i++) {
+    const b = list[i]!;
+    if (b.parent === null || !b.out || b.flags & (INDEPENDENT | TRIGGERS) || b.mark & EAGER_MARK || b.weight < DEFER_WEIGHT) continue;
     b.flags |= DEFER | (b.mark & MOD_MARK ? MOD : 0);
   }
 }
@@ -1012,7 +1047,6 @@ interface DerivedMark {
   seg: DerivedAsyncState | null;
   segAn: number;
   signals: number;
-  keys: [string, number][] | null;
   made: number;
 }
 _onDerivedResource({
@@ -1041,7 +1075,6 @@ _onDerivedResource({
       seg,
       segAn: seg?.an ?? 0,
       signals: at?.signals.length ?? 0,
-      keys: at?.keys ? [...at.keys] : null,
       made: at?.made ?? 0,
     } satisfies DerivedMark;
   },
@@ -1059,7 +1092,8 @@ _onDerivedResource({
     if (at) {
       at.an = m.atAn;
       at.signals.length = m.signals;
-      at.keys = m.keys && new Map(m.keys);
+      // (Counts again from its list on the next registration.)
+      at.keys = null;
       at.made = m.made;
     }
   },

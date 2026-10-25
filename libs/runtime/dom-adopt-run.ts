@@ -80,7 +80,14 @@ export const describe = (node: Node | null | undefined): string =>
         : "#" + node.nodeName;
 // Form controls the user changed (value / checked / selection differ from the markup's defaults): restored after the adopt
 // run when one of its bindings wrote the server value back (a live page never had that write: the user's state wins).
-export type Dirty = [el: HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, value: string, checked: boolean, index: number];
+export type Dirty = [
+  el: HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement,
+  value: string,
+  checked: boolean,
+  /** -2 preserves only a pristine focused text selection; its model may initialize its value. */
+  index: number,
+  selection?: [start: number, end: number, direction: "forward" | "backward" | "none"],
+];
 
 /**
  * A row plan (LAZY-T6): the probe's answers of one row, as pre-order indexes into the row's server nodes (`flatRow`), reused
@@ -133,14 +140,21 @@ export function dirtyOf(controls: readonly Element[]): Dirty[] {
   for (const node of controls) {
     const el = node as Dirty[0],
       tag = el.localName;
-    if (
+    const dirty =
       tag === "input"
         ? el.value !== el.defaultValue || el.checked !== el.defaultChecked
         : tag === "textarea"
           ? el.value !== el.defaultValue
-          : Array.from(el.options).some((o) => o.selected !== o.hasAttribute("selected"))
-    )
-      out.push([el, el.value, el.checked, tag === "select" ? el.selectedIndex : -1]);
+          : Array.from(el.options).some((o) => o.selected !== o.hasAttribute("selected"));
+    const selected = tag !== "select" && el.selectionStart !== null && (dirty || el.ownerDocument.activeElement === el);
+    if (dirty || selected)
+      out.push([
+        el,
+        el.value,
+        el.checked,
+        dirty ? (tag === "select" ? el.selectedIndex : -1) : -2,
+        selected ? [el.selectionStart!, el.selectionEnd!, el.selectionDirection!] : undefined,
+      ]);
   }
   return out;
 }
@@ -437,13 +451,15 @@ export function adopt(
     _dispose(row.owner);
     return MISS;
   }
-  for (const [el, value, checked, index] of dirty) {
+  for (const [el, value, checked, index, selection] of dirty) {
     if (!el.isConnected) continue;
     if (el.localName === "select") el.selectedIndex !== index && (el.selectedIndex = index);
-    else {
+    else if (index !== -2) {
       if (el.value !== value) el.value = value;
       if (el.checked !== checked) el.checked = checked;
     }
+    if (selection && (el.selectionStart !== selection[0] || el.selectionEnd !== selection[1] || el.selectionDirection !== selection[2]))
+      el.setSelectionRange(...selection);
   }
   return row.owner;
 }

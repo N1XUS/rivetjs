@@ -6,7 +6,7 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 
 - Router apps (`rivetRouter`): every app `.tsx` module a route imports resumes (`resume.appModules`, default true); `resume.modules` only for modules not statically reachable. Plain `rivet({ resume })` lists every app module (or `appModules: true`).
 - Options (`RivetResumeOptions`): `modules`, `appModules`, `roots`, `dev` (dev server serves resumable pages), `domData` (default `false`). Removed in M6: `entry`, `chunks`, `merge`, `cap`, `lazy`, `lazyOwned`, `lazyRows`, `model`, `preload.rules`; router `createApp` `preload` = `{ lean? }`.
-- Client build: one chunk per boundary module + the `derived-runtime` entry; manifest `.vite/rivet-resume.json` `{ hash, runtime, symbols: boundary name → chunk, sizes, deps, builtins?, domData? }`.
+- Client build: one chunk per boundary module + the runtime entry (manifest `runtime` / `data-rt` = the `dom-derived-*.js` chunk holding the runtime, no re-export facade; boundary `symbols` likewise name the chunk holding the module's code, `vite.ts` `_foldFacade`); manifest `.vite/rivet-resume.json` `{ hash, runtime, symbols: boundary name → chunk, sizes, deps, builtins?, domData? }`.
 - Server: `renderResumable(() => <Page/>, writer, { manifest, signal, nonce })` / `resumableToString(…)` from `@rivetjs/runtime/server-resume` (façade over `renderDerived` / `derivedToString`, `@rivetjs/runtime/server-derived`).
 - Playground (production build): file routes `/`, `/items/:id`, `/resume` ([resume-demo.tsx](../../apps/playground/src/resume-demo.tsx)).
 

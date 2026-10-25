@@ -158,6 +158,74 @@ test("flags: independent props kept, demoted on non-data props, UNKEYED for non-
   assert.ok(html.includes("<!--b3-->c<!--/b-->"));
 });
 
+test("repeated sites: numbered by a scan, then by a Map once a unit holds many keys (rows of a non-boundary component)", () => {
+  const html = derivedToString(
+    () => {
+      const A = _rB("A", 0);
+      try {
+        for (let i = 0; i < 12; i++) {
+          _rSig("row", i);
+          if (i % 3 === 0) _rSig("r", i && -i);
+        }
+        _rSig("row#x", 0);
+        return _rBOut(A, "a");
+      } finally {
+        _rBEnd(A);
+      }
+    },
+    { manifest },
+  ) as string;
+  const signals = tailOf(html).tail.b[0]![4] as unknown[];
+  const names = signals.filter((_, i) => i % 2 === 0);
+  assert.deepEqual(names, [
+    "row",
+    "r",
+    "row#2",
+    "row#3",
+    "row#4",
+    "r#2",
+    "row#5",
+    "row#6",
+    "row#7",
+    "r#3",
+    "row#8",
+    "row#9",
+    "row#10",
+    "r#4",
+    "row#11",
+    "row#12",
+    "row#x",
+  ]);
+  assert.deepEqual(
+    signals.filter((_, i) => i % 2 === 1),
+    [0, 0, 1, 2, 3, -3, 4, 5, 6, -6, 7, 8, 9, -9, 10, 11, 0],
+  );
+});
+
+test("keyed signal: set / update are methods (the base signal's contract), reads track, writes note", () => {
+  derivedToString(
+    () => {
+      const A = _rB("A", 0);
+      try {
+        const s = _rSig("k", 1);
+        assert.equal(s.set(2), 2);
+        assert.equal(
+          s.update((v) => v + 1),
+          3,
+        );
+        assert.equal(s(), 3);
+        const other = _rSig("j", 0);
+        assert.equal(s.set.call(other, 5), 5);
+        assert.equal(other(), 5);
+        return _rBOut(A, "a");
+      } finally {
+        _rBEnd(A);
+      }
+    },
+    { manifest },
+  );
+});
+
 test("isData: JSON data only", () => {
   assert.ok(isData({ a: [1, "x", null, { b: true }] }));
   assert.ok(isData(Object.create(null)));

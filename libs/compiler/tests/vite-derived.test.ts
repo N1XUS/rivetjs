@@ -155,8 +155,12 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
   try {
     for (const rows of ["interactive", "static"] as const) {
       const derived = await buildApp(rows, roots);
-      // Manifest: the derived runtime entry, boundary names (`<module>#<export>`) → the chunk of their module.
-      assert.match(derived.manifest.runtime, /^\/assets\/derived-runtime-.*\.js$/);
+      // Manifest: the derived runtime (the chunk holding it, no re-export facade: B1), boundary names (`<module>#<export>`)
+      // → the chunk of their module.
+      assert.match(derived.manifest.runtime, /^\/assets\/dom-derived-.*\.js$/);
+      const runtimeChunk = await readFile(resolve(derived.root, "client-dist" + derived.manifest.runtime), "utf8");
+      assert.match(runtimeChunk, /as default\}/);
+      assert.ok(runtimeChunk.length > 10_000, "the runtime itself, not a facade");
       // The built-in decoders' chunk (DERIVED-S): route payloads with RegExp / binary / errors / registered classes name it.
       assert.match(derived.manifest.builtins!, /^\/assets\/resume-builtins-.*\.js$/);
       assert.deepEqual(Object.keys(derived.manifest.symbols).sort(), ["src/counter.tsx#Counter", "src/counter.tsx#Other", "src/page.tsx#default"]);
