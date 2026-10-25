@@ -25,16 +25,20 @@ export interface BoundaryVerdict {
   /** Its data can change in the browser (own source, live inputs or a live provider's context): what its calls pass on. */
   live: boolean;
   /**
-   * Its inputs are values: a props object parameter (no destructuring), no context consumed, and every call site in the
-   * program passes data only (the compiler's data-only verdict per call); route roots (`roots`) count as independent.
+   * Its inputs are values: a props object parameter (or a flat object pattern, ZERO A5: `{ a, b: c = 1, ...rest }` records
+   * the object rebuilt from its bindings; a nested pattern stays dependent), no context consumed, and every call site in the
+   * program passes data only (the compiler's data-only verdict per call: literals and, ZERO C3, plain values over
+   * read-only module data — `books.map((b) => <Card title={b.title} />)`, Rust `plain_value`); route roots (`roots`)
+   * count as independent.
    * Only meaningful for interactive components (`false` otherwise).
    */
   independent: boolean;
   /**
-   * A boundary without a change source of its own (`because` is not `source`; never a route root): the compiled `_rB`
-   * carries `COND` and the server keeps its record only for an instance that turned out live — it read a source that can
-   * change from outside its subtree (a live prop, slot content, a live context value), or a boundary below it was kept
-   * (`server-derived.ts` "Conditional boundaries"). A static instance (`<Meter value={40}>`) ships no record and no chunk.
+   * A boundary without a change source of its own (`because` is not `source`; ZERO C3: route roots too): the compiled
+   * `_rB` carries `COND` and the server keeps its record only for an instance that turned out live — it read a source that
+   * can change from outside its subtree (a live prop, slot content, a live context value), or a dependent boundary below
+   * it was kept (an independent one adopts standalone; `server-derived.ts` "Conditional boundaries"). A static instance
+   * (`<Meter value={40}>`) ships no record and no chunk; a page root that only renders independent cards neither.
    */
   conditional: boolean;
   /**
@@ -44,7 +48,7 @@ export interface BoundaryVerdict {
    */
   adopted: boolean;
   /** Why it is not independent (first reason), for the interaction map / dev output. */
-  dependentBecause?: "not-interactive" | "destructured-props" | "context" | "call-site" | "no-call-site";
+  dependentBecause?: "not-interactive" | "destructured-props" | "context" | "not-exported" | "call-site" | "no-call-site";
   /** Why it is a boundary (first reason, by priority): own source, a conditional handler (`listens`: kept per instance
    * that installs a function, STATIC-ZERO T3), live data in, live context, a boundary below. */
   because?: "source" | "listener" | "live-props" | "live-context" | "renders";
@@ -245,7 +249,7 @@ export function boundaryFacts(
         interactive: isInteractive,
         live: live.get(id) ?? false,
         independent: false,
-        conditional: isInteractive && !c.source && !isRoot.has(id),
+        conditional: (isInteractive || isRoot.has(id)) && !c.source,
         adopted: adopted.has(id),
       };
       if (isInteractive)
@@ -262,9 +266,13 @@ export function boundaryFacts(
       else if (isRoot.has(id)) verdict.independent = true;
       else if (c.params === "destructured") verdict.dependentBecause = "destructured-props";
       else if (c.context) verdict.dependentBecause = "context";
+      // A standalone adopt imports the component from its chunk (`dom-derived.ts` `exported`): a component the module
+      // does not export adopts with its parent (else a `COND` parent left unkept strands it: no record, no chunk export).
       else {
         const list = sites.get(id);
         if (!list) verdict.dependentBecause = "no-call-site";
+        else if (name !== "default" && ![...f.exports.values()].includes(name) && list.every((s) => s.caller.startsWith(file + "?")))
+          verdict.dependentBecause = "not-exported";
         else if (list.every((s) => s.data)) verdict.independent = true;
         else verdict.dependentBecause = "call-site";
       }

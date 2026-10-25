@@ -24,8 +24,8 @@ const server = (source: string, options: object = {}) => compile(source, { targe
 it("server derived target: boundary + keyed state calls, no site records", () => {
   const out = server(COUNTER);
   assert.deepEqual(out.diagnostics, []);
-  assert.match(out.code, /const __rivetB = __rivetR_b\("src\/m\.tsx#Counter", 2\);\n\s*try \{/);
-  assert.match(out.code, /__rivetR_sig\("[0-9a-z]{5}-0", 0\)/);
+  assert.match(out.code, /const __rivetB = __rivetR_b\("src\/m\.tsx#Counter", 2, undefined, "click"\);\n\s*try \{/);
+  assert.match(out.code, /__rivetR_sig\("[0-9a-z]{5}-0", 0, undefined, 1\)/);
   assert.match(out.code, /return __rivetR_bOut\(__rivetB, __rivetTemplate\(__rivetFragments0, \[__rivetR_bAttr\(__rivetB\), n\(\)\]\)\);/);
   assert.match(out.code, /finally \{\n\s*__rivetR_bEnd\(__rivetB\);/);
   assert.match(out.code, /import \{ [^}]*_rB as __rivetR_b[^}]* \} from "@rivetjs\/runtime\/server-derived";/);
@@ -53,44 +53,48 @@ export const Arrow = (props) => <i onClick={() => props.go()}>go</i>;
   );
   assert.deepEqual(out.diagnostics, []);
   // Two returns, both through `_rBOut`; the nested function's `return 1` is untouched; fragment root → flags 0.
-  assert.match(out.code, /__rivetR_b\("src\/m\.tsx#Switcher", 0\)/);
+  assert.match(out.code, /__rivetR_b\("src\/m\.tsx#Switcher", 0, undefined, "click"\)/);
   assert.equal(out.code.match(/__rivetR_bOut\(__rivetB, /g)?.length, 3);
   assert.ok(out.code.includes("return __rivetR_bOut(__rivetB, null);"));
   assert.match(out.code, /const inner = \(\) => \{\s*return 1;\s*\};/);
   assert.match(
     out.code,
-    /export const Arrow = \(props\) => \{\n\s*const __rivetB = __rivetR_b\("src\/m\.tsx#Arrow", 2\);\n\s*try \{\n\s*return __rivetR_bOut\(__rivetB, __rivetTemplate/,
+    /export const Arrow = \(props\) => \{\n\s*const __rivetB = __rivetR_b\("src\/m\.tsx#Arrow", 2, undefined, "click"\);\n\s*try \{\n\s*return __rivetR_bOut\(__rivetB, __rivetTemplate/,
   );
 });
 
-it("independent boundaries pass their props object; destructured props and context consumers stay dependent", () => {
+it("independent boundaries pass their props object; nested destructured props and context consumers stay dependent", () => {
   const source = `
 import { signal } from "@rivetjs/reactivity";
-export function Page() { return <main><Counter start={1} /><Shell title="x" /></main>; }
+export function Page() { return <main><Counter start={1} /><Shell title="x" /><Deep a={{ b: 1 }} /></main>; }
 export function Counter(props) { const n = signal(props.start); return <button onClick={() => n.set(2)}>{n()}</button>; }
-export function Shell({ title }) { const n = signal(0); return <b onClick={() => n.set(1)}>{title}</b>; }
+export function Shell({ title, n: count = 0, ...rest }) { const n = signal(0); return <b {...rest} onClick={() => n.set(1)}>{title}{count}</b>; }
+export function Deep({ a: { b } }) { const n = signal(0); return <b onClick={() => n.set(1)}>{b}</b>; }
 `;
   const local = server(source);
   assert.deepEqual(local.diagnostics, []);
-  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Counter", 3, props)'), local.code);
-  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Shell", 2)'), local.code);
+  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Counter", 3, props, "click")'), local.code);
+  // ZERO A5: a flat object pattern records the object rebuilt from its bindings (defaults applied, rest spread).
+  assert.match(local.code, /__rivetR_b\("src\/m\.tsx#Shell", 3, \{\s*title,\s*n: count,\s*\.\.\.rest\s*\}, "click"\)/);
+  assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Deep", 2, undefined, "click")'), local.code);
   assert.ok(local.code.includes('__rivetR_b("src/m.tsx#Page", 2)'), local.code);
   // The build's verdicts win over the module-local closure.
   const build = server(source, { boundaries: ["Counter"], independent: [] });
-  assert.ok(build.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), build.code);
+  assert.ok(build.code.includes('__rivetR_b("src/m.tsx#Counter", 2, undefined, "click")'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Page"'), build.code);
   assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Shell"'), build.code);
+  assert.ok(!build.code.includes('__rivetR_b("src/m.tsx#Deep"'), build.code);
   // M6-PARITY 6b: a `conditional` verdict (no change source of its own) sets COND (1024) on its `_rB`.
   const cond = server(source, { boundaries: ["Counter", "Page"], independent: [], conditional: ["Page"] });
   assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Page", 1026)'), cond.code);
-  assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Counter", 2)'), cond.code);
+  assert.ok(cond.code.includes('__rivetR_b("src/m.tsx#Counter", 2, undefined, "click")'), cond.code);
 });
 
 it("moduleFacts boundaries: own interactivity, context, params, renders, data-only calls", () => {
   const facts = moduleFacts(
     `
 import { signal, useContext } from "@rivetjs/reactivity";
-export function Page({ data }) { return <main><Shell title="x">static</Shell><Counter start={data.n} items={[1, 2]} /></main>; }
+export function Page({ data: { n } }) { return <main><Shell title="x">static</Shell><Counter start={n} items={[1, 2]} /></main>; }
 export function Shell(props) { const v = useContext(Ctx); return <section>{props.children}</section>; }
 export function Counter(props) { const n = signal(props.start); return <button onClick={() => n.set(2)}>{n()}</button>; }
 export default function () { return <Page data={null} />; }
@@ -199,7 +203,9 @@ export function Mixed(props) { return <p onClick={() => 1} onPointerEnter={props
   // leaves the static `_rB` events list.
   assert.ok(out.code.includes('__rivetR_handler(__rivetB, props.track ? (e) => sync(e.currentTarget) : undefined, "scroll")'), out.code);
   assert.ok(out.code.includes('__rivetR_b("src/m.tsx#Root", 2)'), out.code);
-  assert.ok(out.code.includes("__rivetR_handler(__rivetB, props.onClick)"), out.code);
+  // D5 (ZERO R2): every conditional handler names its type (default delegated ones too): the record's listened types.
+  assert.ok(out.code.includes('__rivetR_handler(__rivetB, props.onClick, "click")'), out.code);
+  assert.ok(out.code.includes('__rivetR_b("src/m.tsx#Mixed", 2, undefined, "click")'), out.code);
   assert.ok(out.code.includes('__rivetR_handler(__rivetB, props.onEnter, "pointerenter")'), out.code);
   assert.ok(!/__rivetR_handler\(__rivetB, (go|run)\b/.test(out.code), out.code);
   assert.ok(
@@ -333,7 +339,7 @@ import { Card } from "./card.tsx";
 export function List(props) {
   return <ul><li>{props.a}</li><Card title={props.b} /><Item /></ul>;
 }
-function Item() { return <li>{"x"}<b>{1 + 1}</b></li>; }
+function Item() { const n = 2; return <li>{n}<b>{n}</b></li>; }
 export const table = { card: Card, item: Item };
 `;
   const marked = server(SOURCE, { boundaries: [], independent: [] }).code;
@@ -354,4 +360,88 @@ export const table = { card: Card, item: Item };
     { boundaries: true },
   );
   assert.deepEqual(compound.componentValues, []);
+});
+
+it("ZERO A2: never-written const signals and signals in static components are not keyed; literal children fold into the template", () => {
+  const SOURCE = `
+import { signal } from "@rivetjs/reactivity";
+export function Pane() {
+  const fixed = signal(1);
+  const count = signal(0);
+  const passed = signal(2);
+  const stamp = signal(Date.now());
+  use(passed);
+  return <button onClick={() => count.set(count() + 1)}>{fixed()} {count()} {passed()} {stamp()} {"Hello"} {42} {true}</button>;
+}
+function Quiet() { const s = signal(3); s.set(4); return <i>{s()}</i>; }
+export function Page() { return <div><Pane /><Quiet /></div>; }
+`;
+  const out = server(SOURCE, { boundaries: ["Pane"], independent: [] }).code;
+  const keys = (code: string) => (code.match(/__rivetR_sig\(/g) ?? []).length;
+  // `count` (written), `passed` (escapes into `use`) and `stamp` (non-literal init) keep keys; `fixed` is only read.
+  assert.equal(keys(out), 4, out);
+  const quiet = server(SOURCE, { boundaries: ["Pane"], independent: [], static: ["Quiet"] }).code;
+  assert.equal(keys(quiet), 3, quiet);
+  assert.match(out, /Hello/);
+  assert.ok(!/"Hello"\)|_escape\("Hello"/.test(out), out);
+  const client = compile(SOURCE, { target: "dom", filename: "m.tsx", resume: { module: "m.tsx", boundaries: ["Pane"], independent: [] } }).code;
+  assert.match(client, /Hello/);
+  assert.equal((client.match(/_sig\("/g) ?? []).length, 4, client);
+});
+
+it("ZERO A3: keyed state over a syntactic data literal carries LIT (server only, BE-STATE S1)", () => {
+  const SOURCE = `
+import { signal } from "@rivetjs/reactivity";
+import { createStore } from "@rivetjs/reactivity/store";
+const START = { a: [1, "x"] };
+export function Pane(props) {
+  const a = signal(0);
+  const b = signal([1, { c: "d" }], { equals: false });
+  const c = signal(START);
+  const d = signal(props.start);
+  const e = signal();
+  const f = signal(-1,);
+  const s = createStore({ open: false });
+  const t = createStore(props.items);
+  return <button onClick={() => { a.set(1); b.set([]); c.set(null); d.set(1); e.set(1); f.set(2); s.open = true; t.x = 1; }}>{a()}{d()}</button>;
+}
+`;
+  const out = server(SOURCE, { boundaries: ["Pane"], independent: [] });
+  assert.deepEqual(out.diagnostics, []);
+  const code = out.code.replace(/\s+/g, " ");
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-0", 0, undefined, 1\)/);
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-1", \[1, \{ c: "d" \}\], \{ equals: false \}, 1\)/);
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-2", START, undefined, 1\)/);
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-3", props\.start\)/);
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-4", undefined, undefined, 1\)/);
+  assert.match(code, /__rivetR_sig\("[0-9a-z]{5}-5", -1, undefined, 1,? ?\)/);
+  assert.match(code, /__rivetR_sigStore\("[0-9a-z]{5}-6", \{ open: false \}, 1\)/);
+  assert.match(code, /__rivetR_sigStore\("[0-9a-z]{5}-7", props\.items\)/);
+  // The DOM target keeps `_sig(key, init)`: an absent key already means the init.
+  const client = compile(SOURCE, { target: "dom", filename: "m.tsx", resume: { module: "m.tsx", boundaries: ["Pane"], independent: [] } }).code;
+  assert.ok(!client.includes("undefined, 1)") && !/false \}, 1\)/.test(client.replace(/\s+/g, " ")), client);
+});
+
+it("ZERO C3: call sites passing plain values over pure module data are data; a pure module const is no source", () => {
+  const facts = (source: string) => {
+    const f = moduleFacts(source, "m.tsx", { boundaries: true });
+    return Object.fromEntries([...f.boundaries].map(([name, c]) => [name, { source: c.source, data: c.calls.map((call) => call.data) }]));
+  };
+  const LIST = `
+import { Card } from "./card.tsx";
+const books = Array.from({ length: 3 }, (_, i) => ({ title: "Book " + i }));
+const COLORS = ["a", "b"];
+export default function Home() {
+  return <ul>{books.map((b, i) => <Card title={b.title} n={i + 1} label={\`#\${i}\`} color={COLORS[i % 2]} />)}</ul>;
+}`;
+  assert.deepEqual(facts(LIST), { Home: { source: false, data: [true] } });
+  // Reactive or unknown roots stay non-data: an import (a store / signal may hide behind it), a component local, a prop.
+  const cases = {
+    imported: `import { Card } from "./card.tsx";\nimport { books } from "./books.ts";\nexport function Home() { return <ul>{books.map((b) => <Card title={b.title} />)}</ul>; }`,
+    store: `import { Card } from "./card.tsx";\nimport { createStore } from "@rivetjs/reactivity/store";\nconst books = createStore([{ title: "x" }]);\nexport function Home() { return <ul>{books.map((b) => <Card title={b.title} />)}</ul>; }`,
+    local: `import { Card } from "./card.tsx";\nexport function Home() { const xs = [{ t: "a" }]; return <ul>{xs.map((b) => <Card title={b.t} />)}</ul>; }`,
+    prop: `import { Card } from "./card.tsx";\nexport function Home(props) { return <ul>{props.items.map((b) => <Card title={b.t} />)}</ul>; }`,
+    call: `import { Card } from "./card.tsx";\nconst books = [{ t: "a" }];\nexport function Home() { return <ul>{books.map((b) => <Card title={b.t.toUpperCase()} />)}</ul>; }`,
+  };
+  for (const [name, source] of Object.entries(cases)) assert.deepEqual(facts(source).Home!.data, [false], name);
 });

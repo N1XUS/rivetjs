@@ -5,12 +5,16 @@
 // `tests/derived/cond.{server,dom}.tsx`.
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { readFile } from "node:fs/promises";
 import { compile } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 const fixture = (name: string): Promise<string> => readFile(new URL("./derived/" + name, import.meta.url), "utf8");
 const manifest = { hash: "t", runtime: "/rt.js", symbols: { App: "/page.js", Label: "/page.js", Box: "/page.js" } };
@@ -21,7 +25,7 @@ async function server(): Promise<Mod> {
   assert.deepEqual(out.diagnostics, []);
   return importServer<Mod>(out.code);
 }
-const tailOf = (html: string) => JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+const tailOf = (html: string) => tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
 
 test("server: an instance that read a source from outside keeps its record, the others ship none", async () => {
   const { App } = await server();

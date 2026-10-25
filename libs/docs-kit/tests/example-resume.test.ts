@@ -1,6 +1,6 @@
 // Production docs pages must retain their previews when an idle effect adopts the app, and on client navigation.
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -117,6 +117,16 @@ test("a loaded iframe and its source survive idle adoption", async () => {
   const html = await (await fetch(app.url + "/start/live/")).text();
   assert.match(html, /<iframe/);
   assert.ok(!html.includes("unrelated-example-source-sentinel"), "only this page's examples travel with it");
+  // ZERO Z9: the page's examples are a module of the page chunk, not route data in the resume tail.
+  const tail = /<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? "";
+  assert.ok(tail.length > 0 && !tail.includes("const answer"), "example source stays out of the route payload");
+  const assets = join(temp, "apps/site/dist/client/assets");
+  const chunks = await Promise.all((await readdir(assets)).filter((f) => f.endsWith(".js")).map((f) => readFile(join(assets, f), "utf8")));
+  assert.ok(
+    chunks.some((code) => code.includes("const answer = 42")),
+    "the page chunk carries its example",
+  );
+  assert.ok(!chunks.some((code) => code.includes("unrelated-example-source-sentinel")), "no other example reaches the client");
   const page = await browser.newPage();
   try {
     await page.goto(app.url + "/start/live/");

@@ -56,6 +56,19 @@ test("client: empty in a build, the parsed file on the dev server", () => {
   );
 });
 
+test("examples?ids= (generated pages, ZERO Z9): server = the disk reader, client build = only the listed records", async () => {
+  plugin.configResolved({ root: temp, command: "build" });
+  writeFileSync(manifest, JSON.stringify({ hello: { id: "hello", title: "Hello" }, other: { id: "other", title: "Other" } }));
+  assert.equal(resolveIn("server", "examples?ids=hello"), resolveIn("server"));
+  const id = resolveIn("client", "examples?ids=hello,missing")!;
+  const client = await importModule<{ examples: Record<string, { title: string }> }>(id, "ids-client.mjs");
+  assert.deepEqual(Object.keys(client.module.examples), ["hello"]);
+  assert.deepEqual(client.watched, [manifest]);
+  plugin.configResolved({ root: temp, command: "serve" });
+  assert.equal(resolveIn("client", "examples?ids=hello"), resolveIn("client"));
+  writeFileSync(manifest, JSON.stringify({ hello: { id: "hello", title: "Hello" } }));
+});
+
 test("api: the server parses api.json from disk (watched), a client build gets a throwing stand-in, the dev client the file", async () => {
   assert.deepEqual(plugin.api.rivetServerOnly, ["virtual:docs/api"]);
   plugin.configResolved({ root: temp, command: "build" });

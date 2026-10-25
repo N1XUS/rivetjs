@@ -4,10 +4,14 @@
 // absent ships no tail, no loader, no runtime. Compiled end to end with the build's verdicts.
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
 import { importServer } from "./resume/compile.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 const SOURCE = `
 import { sync } from "./sync.ts";
@@ -46,7 +50,7 @@ const render = async (props: { track?: boolean; enter?: boolean }) => {
   const { Page } = await page();
   return (await derivedToString(() => Page(props), { manifest })) as string;
 };
-const tailOf = (html: string) => JSON.parse(/<script type="rivet\/boundaries"([^>]*)>(.*?)<\/script>/s.exec(html)![2]!);
+const tailOf = (html: string) => tailJson(JSON.parse(/<script type="rivet\/boundaries"([^>]*)>(.*?)<\/script>/s.exec(html)![2]!));
 const attrsOf = (html: string) => /<script type="rivet\/boundaries"([^>]*)>/.exec(html)![1]!;
 
 it("absent handlers: no record, no tail, no loader", async () => {

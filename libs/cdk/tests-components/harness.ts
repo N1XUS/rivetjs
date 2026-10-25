@@ -145,9 +145,13 @@ export const hinted = async (page: Page): Promise<Set<string>> => {
     const tail = document.querySelector<HTMLElement>('script[type="rivet/boundaries"]');
     const booted: string[] = [];
     if (tail?.hasAttribute("data-boot")) {
-      const t = JSON.parse(tail.textContent!) as { b: [number, number, number, string][]; m?: Record<string, string> };
+      // Tail v2 (ZERO S2): names table `n` ([name, url index]), URLs `u`, records `[id, parent, flags, name index, …]`
+      // and runs `[id, 0, 0, -1, count, [[parent, flags, name index], …]]`.
+      const t = JSON.parse(tail.textContent!) as { n: [string, number][]; u?: string[]; b: number[][] };
       booted.push(tail.dataset.rt!);
-      for (const b of t.b) if (b[2] & 224 && t.m?.[b[3]]) booted.push(t.m[b[3]]!);
+      for (const e of t.b)
+        for (const [, flags, name] of e[3] === -1 ? (e[5] as unknown as number[][]) : [[0, e[2]!, e[3]!]])
+          if (flags! & 224 && t.n[name!]![1] >= 0) booted.push(t.u![t.n[name!]![1]]!);
     }
     return [...planned, ...ahead, ...booted];
   });

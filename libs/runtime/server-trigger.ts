@@ -11,6 +11,7 @@ export const EFFECT = 0,
 
 /**
  * @internal Set by `server-derived`. `on`: a client trigger (`when`, kind). `ev`: a listener prop (`onScroll`) a server
- * spread dropped — its event type joins the loader's delegated types (`data-events`) when not a default one.
+ * spread dropped — its event type joins the loader's delegated types (`data-events`) when not a default one; `""` = a
+ * spread `ref` (D5: the unit listens to any type).
  */
 export const _trigger: { on: ((when: unknown, kind: number) => void) | null; ev: ((key: string) => void) | null } = { on: null, ev: null };

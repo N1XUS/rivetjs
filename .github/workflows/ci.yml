@@ -176,6 +176,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run size-report -- --check
+      # Real docs / ui-docs frame payloads (ZERO Z2): frames-only builds, ratchet against scripts/size-report/frames.json.
+      - run: node scripts/size-report/frames.mjs --check
 
   # docs:build already runs as a dependency of docs:test (test job); cdk-docs has no test target and ui-docs:test
   # (upstream section drift check, in the test job) does not build the site, so both sites build here.

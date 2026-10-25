@@ -154,8 +154,8 @@ it("component calls: dependent and independent children are both plain _c(Child,
     server = derived(PAGE, "server");
   // Counter is independent (server `_rB(…, 3, props)`), Header dependent (`_rB(…, 2)`): the DOM calls look the same — the
   // runtime defers by the record flags (no `_defer`).
-  assert.match(server.code, /__rivetR_b\("src\/page\.tsx#Counter", 3, props\)/);
-  assert.match(server.code, /__rivetR_b\("src\/page\.tsx#Header", 2\)/);
+  assert.match(server.code, /__rivetR_b\("src\/page\.tsx#Counter", 3, props, "click keydown"\)/);
+  assert.match(server.code, /__rivetR_b\("src\/page\.tsx#Header", 2, undefined, "click"\)/);
   assert.match(dom.code, /__rivet_c\(Counter, \{ "start": 5 \}\)/);
   assert.match(dom.code, /__rivet_c\(Header, \{\}\)/);
   assert.ok(!dom.code.includes("_defer"));

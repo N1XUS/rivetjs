@@ -148,6 +148,18 @@ export interface CompileResult {
    * (`<resume module>#<Name>`, source order) — the names `_rB` / `_b` carry and the build manifest's `symbols` keys.
    */
   boundaries?: string[];
+  /**
+   * Derived DOM target only (ZERO C1, absent when no boundary is eligible): the module's lite entry — per eligible
+   * independent boundary `export function <Name>$a(node, rec)` (adopt residual over the server nodes, against
+   * `@rivetjs/runtime/dom-lite`) and `export const <Name>$c = () => import(<filename>)` (the ordinary module); module
+   * constants it reads are copied in, it never imports the module statically. `names` = the boundary names it covers.
+   */
+  lite?: { code: string; map: null; names: string[] };
+  /**
+   * Derived DOM target only (ZERO B1 census): per independent boundary that got no lite residual, why — `"dependent"`, or
+   * the first construct the residual cannot express (`"component root"`, `"declaration"`, …). Diagnostic data only.
+   */
+  liteBecause?: Record<string, string>;
   /** Source map v3 JSON (with `sourceMap: true`). */
   map?: string;
   /** Scoped CSS of the module's css`` blocks (`styles` option). */

@@ -10,6 +10,7 @@ import { pathToFileURL } from "node:url";
 import { build, createLogger, type Logger } from "vite";
 import { rivet } from "@rivetjs/compiler/vite";
 import { fixtureApp } from "./app.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 interface Manifest {
   symbols: Record<string, string>;
@@ -70,7 +71,7 @@ test("two islands: facades, one runtime chunk, manifest islands + closures, serv
     );
     assert.match(html, /<rivet-island data-ri="i1"[^>]*><b class="badge">badge<\/b><\/rivet-island>/);
     // Every boundary the server recorded exists in the client manifest (same facade text both sides).
-    const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)?.[1] ?? '{"b":[]}') as {
+    const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)?.[1] ?? '{"v":2,"n":[],"b":[]}')) as unknown as {
       b: [number, number, number, string][];
     };
     for (const [, , , name] of tail.b) assert.ok(name in manifest.symbols, name + " not in client manifest");

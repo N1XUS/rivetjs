@@ -6,12 +6,14 @@
 // "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout": a cold press holds its
 // pointer / mouse / focus events too, DERIVED-C), `data-rt` (the runtime URL: its default export is `dom-derived.ts`'s instance),
 // `data-boot` (a boundary has a load / idle / visible trigger: start now). An event inside a boundary (`data-b`, or
-// `<!--b<id>-->` openers before an ancestor) goes to the runtime: when everything around its target is adopted now it
+// `<!--b<id>-->` openers before an ancestor) whose name listens to its type (tail v2 `n[i][2]`, D5 / ZERO R2; any other event acts
+// natively: nothing listens there before the page adopts) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
 // invalid, the keys the boundary record lists (`k`) — and queued with its path and the target's form state, and the
-// runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every boundary whose target is inside
+// runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
 // a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
-// (pointerdown, focusin, touchstart) starts the runtime and loads the target boundary's chunk (`rt.w`). One chunk per
+// (pointerdown, focusin, touchstart) inside a listening boundary starts the runtime and
+// loads the chunks of the listening boundaries around the target (`rt.w`). One chunk per
 // boundary: tail `m`.
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
 import type { BoundaryTail } from "./resume-format.ts";
@@ -45,16 +47,26 @@ export function derivedLoader(): void {
       rt.start(parse(), d, api);
       return rt;
     }));
-  // The boundary ids around a node, innermost first.
-  const ids = (node: Node | null): string[] => {
-    const out: string[] = [];
+  // The ids of the boundaries around a node whose name listens to `type` ("": to anything), innermost first (D5: tail v2
+  // `n[i][2]` by name, a run's member through its template; a record not in the tail — streamed later — and a tail whose
+  // names list no types: all).
+  const ids = (node: Node | null, type: string): string[] => {
+    const out: string[] = [],
+      t = parse(),
+      e = t.n.some((x) => x[2]),
+      add = (id: string): unknown => {
+        let x: any, k: number;
+        // The record's name index (a run's member: its template slot's).
+        if (e) for (const r of t.b as any[]) (k = +id - r[0]) < 0 || (r[3] < 0 ? k < r[4] * r[5].length && (x = r[5][k % r[5].length][2]) : k || (x = r[3]));
+        return (x == null || ((x = t.n[x]![2]) && (!type || x == "*" || (" " + x + " ").includes(" " + type + " ")))) && out.push(id);
+      };
     for (let n = node; n && n.nodeType != 9; n = n.parentNode) {
       const b = (n as Element).getAttribute?.("data-b");
-      if (b) out.push(b);
+      if (b) add(b);
       for (let s = n.previousSibling, depth = 0; s; s = s.previousSibling)
         if (s.nodeType == 8) {
           const x = (s as Comment).data;
-          x == "/b" ? depth++ : /^b\d+$/.test(x) && (depth ? depth-- : out.push(x.slice(1)));
+          x == "/b" ? depth++ : /^b\d+$/.test(x) && (depth ? depth-- : add(x.slice(1)));
         }
     }
     return out;
@@ -64,7 +76,10 @@ export function derivedLoader(): void {
       target = event.target as HTMLInputElement;
     // A replay's own click / submit (resume-loader.ts `on`).
     if (target == skip) return (type != "click" || skip!.localName == "a" || event.stopImmediatePropagation(), (skip = null));
-    const at = ids(target);
+    // The records around the target listening to this type: an event no record hears acts natively (not held, no boot).
+    // Listening to anything: once the runtime runs (it filters by type itself) or an event is held (a press's later events
+    // keep their order), and for a form control's / a form's events (the deferred units in the form adopt first).
+    const at = ids(target, rt || q.length || type == "submit" || target.form ? "" : type);
     // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
     at.length || !target.closest?.(script.dataset.g!) || at.push("");
     if (!at.length || rt?.on(event)) return;
@@ -104,7 +119,9 @@ export function derivedLoader(): void {
   };
   const listen = (type: string, fn: (event: Event) => unknown, active?: boolean): void => d.addEventListener(type, fn, { capture: true, passive: !active });
   const im = window as Window & { __rvIM?: string };
-  const warm = (event: Event): unknown => ids(event.target as Node).length && boot().then((r) => r.w(event.target), fail);
+  // Intent inside a listening record, or on a document click listener's match (`data-g`: the router's links).
+  const warm = (event: Event): unknown =>
+    (ids(event.target as Node, "").length || (event.target as Element).closest?.(script.dataset.g!)) && boot().then((r) => r.w(event.target), fail);
   listen("pointerdown", (event) => ((im.__rvIM = (event as PointerEvent).pointerType || "mouse"), warm(event)));
   listen("keydown", (event) => {
     const e = event as KeyboardEvent;

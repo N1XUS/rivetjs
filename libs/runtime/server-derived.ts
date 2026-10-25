@@ -24,6 +24,7 @@
 // keys its cold keydowns hold (`k`), the delegated event types (`data-events`), the runtime (`data-rt`) and `data-boot`
 // (a load / idle / visible trigger), and the derived inline loader (`resume-loader-derived.ts`) follows it. Without a
 // `manifest.runtime` the tail only.
+import { foUrls } from "./server-derived-fo.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   computed,
@@ -53,8 +54,9 @@ import { _list, renderToString, renderToWriter, type ServerWriter } from "./serv
 import { _asyncHook, _onAsync, _onAsyncContent, _onUserAsync } from "./server-async.ts";
 import { _onDerivedResource } from "./server-resource-slot.ts";
 import type { AsyncStream } from "./server-async.ts";
-import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, escapeJSON, serialize, typeName } from "./resume-format.ts";
-import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, TableEntry } from "./resume-format.ts";
+import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, serialize, typeName } from "./resume-format.ts";
+import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, FlushTail, TableEntry } from "./resume-format.ts";
+import { encodeTail } from "./server-tail.ts";
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
@@ -65,6 +67,7 @@ import { _idScope } from "./id.ts";
 import { omitted } from "./omitted.ts";
 import { _trigger, EFFECT, ONLY as ONLY_KIND } from "./server-trigger.ts";
 import type { ShellHole, ShellHookOptions, ShellSeal, _FrameSignals as FrameSignals } from "./server-shell.ts";
+import { DEV } from "#dev";
 
 /** Boundary flags (`_rB`'s `flags`; wire `BoundaryRecord[2]`); the compiler sets `INDEPENDENT` / `ATTR`. */
 export const INDEPENDENT = 1,
@@ -96,6 +99,20 @@ export const INDEPENDENT = 1,
    */
   COND = 1024;
 const TRIGGERS = LOAD | IDLE | VISIBLE;
+/**
+ * Keyed state flags (`_rSig` / `_rSigStore` `flags`, compiler-set; never on the wire). `LIT`: the initializer is a literal
+ * tree (literals, arrays / objects of literals, templates without expressions), so the browser's adopt run evaluates the
+ * same value — a key still holding that very init at the flush (identity: never written on the server; store writes copy)
+ * ships nothing, and the browser's `_sig` / `_sigStore` start from their own init for the absent key (S1, ZERO 2026-10-25).
+ */
+export const LIT = 1;
+/**
+ * `DOMREAD` (ZERO X9, compiler-set when the browser reads the key's initial value back from the server markup — a text
+ * node / attribute / property the compiler proved shows the value as is, decoded by `_lr`): a key still holding its init
+ * at the flush (identity: never written on the server) ships nothing; a key written after it was rendered ships (the
+ * markup may be stale against it, so the browser takes the tail value when present).
+ */
+export const DOMREAD = 2;
 
 /** One boundary of a render (the token the compiled body holds). */
 export interface Boundary {
@@ -105,9 +122,9 @@ export interface Boundary {
   flags: number;
   /** Independent boundaries: the props object (checked to be data at `_rB`). */
   props: object | null;
-  /** Keyed state registered while this body evaluated: (key, current value getter), creation order (`NO_SIGNALS`, shared
-   * and frozen, until the first). */
-  signals: [key: string, value: () => unknown][];
+  /** Keyed state registered while this body evaluated: (key, current value getter[, `LIT` init[, DEV: its JSON]]), creation
+   * order (`NO_SIGNALS`, shared and frozen, until the first). */
+  signals: [key: string, value: () => unknown, init?: unknown, json?: string][];
   /** Occurrences per key once the unit registered many (a site registering twice in one boundary gets `key#2`, `key#3`, …;
    * `register`), else null. */
   keys: Map<string, number> | null;
@@ -136,6 +153,12 @@ export interface Boundary {
   on?: boolean;
   /** ZERO Z3 (`_rWeak`): kept only when the first flush also keeps a boundary that is not weak. */
   weak?: boolean;
+  /**
+   * STATIC-ZERO-2 D5: the event types its unit listens to (`_rB` `events`: own handlers + model bindings; `_rHandler` with a
+   * function; spread listener props rendered while it is the current boundary; `*` = any: an `interaction` client trigger,
+   * a handler of unknown type). Tail `e`: an event adopts only the records around its target that listen to its type.
+   */
+  ev?: Set<string>;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -147,6 +170,9 @@ export interface DerivedRender {
   boundaries: Boundary[];
   /** Bodies being evaluated, innermost last. */
   stack: Boundary[];
+  /** Depth of discarded passes (`_rUnrecorded`: cdk collection build passes, slot probes) running now: no boundaries, no
+   * keyed state, no triggers — as in the browser, where such a pass runs outside every unit. */
+  off: number;
   /** `"<boundary id>.<key>"` → ids of the other boundaries whose reads tracked it. */
   wake: Map<string, Set<number>>;
   /** Wake lists changed since the last flush (patches re-send a changed list whole). */
@@ -158,6 +184,8 @@ export interface DerivedRender {
   options: DerivedOptions | null;
   /** Delegated event types of every boundary (`_rB` `events`). */
   events: Set<string>;
+  /** D5 (ZERO R2 / R-30): boundary name → the union of its instances' listened types written so far (tail `e`). */
+  listened?: Map<string, string>;
   /** Boundary id → its cold-held keydown keys (`_rB` `keys`). */
   keys: Record<string, string>;
   /** A boundary has a client trigger: the loader starts the runtime at once (`data-boot`). */
@@ -285,6 +313,7 @@ export function createDerived(): DerivedRender {
   return {
     boundaries: [],
     stack: [],
+    off: 0,
     wake: new Map(),
     dirty: new Set(),
     flushed: 0,
@@ -405,8 +434,21 @@ _wrapEffects((fn) => {
 // context captured here, at module load, outside any render.
 const outside = store.exit(() => AsyncLocalStorage.snapshot());
 _scheduleFolds((fn) => outside(() => (setTimeout(fn, 0) as unknown as { unref?: () => void }).unref?.()));
-// `_rUnrecorded(fn)` (cdk collection build passes): `fn` runs outside the frame — no row / branch markers.
-_setUnrecorded((fn) => (store.getStore() ? store.exit(fn) : fn()));
+// `_rUnrecorded(fn)` (cdk collection build passes, slot probes): `fn` runs outside the frame — no row / branch markers — and
+// opens no boundary (ZERO W6: a 1000-row table's build pass opened ~5,000 boundaries the flush then dropped; their markers
+// and records never reach the page). Its reads attribute to the boundary around the pass (the collection host), its
+// `signal()`s are plain, its client triggers ignored: what the browser does with the same pass (`dom-derived.ts`).
+_setUnrecorded((fn) => {
+  if (!store.getStore()) return fn();
+  const ctx = useContext(DERIVED);
+  if (ctx === null) return store.exit(fn);
+  ctx.off++;
+  try {
+    return store.exit(fn);
+  } finally {
+    ctx.off--;
+  }
+});
 
 // For rows and Show / Switch branches keep `<!--rN[-->…<!--]-->` markers (the adopt run's anchors); a marker id that
 // continues the stride of the two before it is left out (`MARK_CHAIN`).
@@ -554,7 +596,7 @@ export function isData(value: unknown, depth = 0): boolean {
  */
 export function _rB(name: string, flags: number, props?: object | null, events?: string, keys?: string): Boundary | null {
   const ctx = useContext(DERIVED);
-  if (!ctx) return null;
+  if (!ctx || ctx.off) return null;
   const parent = current(ctx);
   let keep: object | null = null;
   if (flags & INDEPENDENT) {
@@ -580,7 +622,7 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     weight: 0,
     mark: 0,
   };
-  if (events) for (const type of events.split(" ")) if (type) ctx.events.add(type);
+  if (events) for (const type of events.split(" ")) if (type) (type === "*" || ctx.events.add(type), (boundary.ev ??= new Set()).add(type));
   if (keys) ctx.keys[boundary.id] = keys;
   if (flags & TRIGGERS) ctx.boot = true;
   ctx.boundaries.push(boundary);
@@ -603,7 +645,7 @@ const NO_SIGNALS: [key: string, value: () => unknown][] = /* @__PURE__ */ Object
 // (`interaction` / `media:` have no boundary trigger: the boundary runs at its first use).
 _trigger.on = (when, kind) => {
   const ctx = useContext(DERIVED);
-  const b = ctx && current(ctx);
+  const b = ctx && !ctx.off && current(ctx);
   if (!b || b.id < ctx.base) return;
   const flag =
     when === undefined
@@ -619,28 +661,52 @@ _trigger.on = (when, kind) => {
               ? IDLE
               : LOAD
             : 0;
-  if (!flag) return;
+  // `interaction` (and `media:`): the boundary adopts on its first event, whatever its type (D5).
+  if (!flag) return void (b.ev ??= new Set()).add("*");
   b.flags |= flag;
   ctx.boot = true;
 };
 // A spread listener prop (`onPointerEnter` forwarded through cdk props): its type, unless the loader delegates it anyway.
 const listenerTypes = new Map<string, string>();
 _trigger.ev = (key) => {
-  let type = listenerTypes.get(key);
+  // "" = a spread `ref` (any type, `*`).
+  let type = key ? listenerTypes.get(key) : "*";
   if (type === undefined) listenerTypes.set(key, (type = /^on(.+?)((?<!Pointer)Capture)?$/.exec(key)![1]!.toLowerCase()));
-  if (!DEFAULT_TYPES.has(type)) useContext(DERIVED)?.events.add(type);
+  const ctx = useContext(DERIVED);
+  if (!ctx) return;
+  if (type !== "*" && !DEFAULT_TYPES.has(type)) ctx.events.add(type);
+  // D5: the unit rendering the spread installs it when adopted (a non-boundary helper's element counts for its boundary).
+  const b = current(ctx);
+  if (b) (b.ev ??= new Set()).add(type);
 };
+
+/**
+ * D5 (intake 3, ABI 11): an in-place handler of a module function that is no boundary body (a lowercase helper a
+ * component calls — cdk `group` / `compareRoot` — or a non-boundary component), compiled in place of its server slot: the
+ * boundary open at render installs that listener when it adopts, so it listens to `type` (`*`: unknown). An empty slot.
+ */
+export function _rListens(type: string): null {
+  const ctx = useContext(DERIVED);
+  const b = ctx && !ctx.off && current(ctx);
+  // No `ctx.events` widening: the helper's listener installs on adoption, which a default-type event triggers first
+  // (widening the loader to keyup / focus / blur replays those cold and broke cdk Select typeahead's pressed state).
+  if (b) (b.ev ??= new Set()).add(type);
+  return null;
+}
 
 /**
  * A handler of a boundary body whose value the compiler cannot tell is a function (STATIC-ZERO T3: `cond ? f : undefined`,
  * `props.onX`, a hook's destructured handler), compiled in place of the server's evaluation slot: with a function the
- * boundary installs a listener (a conditional boundary keeps its record; `type`, a type the loader does not delegate by
- * default, joins `data-events`); without one nothing — a page whose only handlers are absent ships no tail.
+ * boundary installs a listener (a conditional boundary keeps its record and listens to `type`, D5; a type the loader does
+ * not delegate by default joins `data-events`); without one nothing — a page whose only handlers are absent ships no tail.
  */
 export function _rHandler(token: Boundary | null, value: unknown, type?: string): ServerValue {
   if (token && typeof value === "function") {
     token.on = true;
-    if (type) useContext(DERIVED)?.events.add(type);
+    if (type) {
+      if (type !== "*" && !DEFAULT_TYPES.has(type)) useContext(DERIVED)?.events.add(type);
+      (token.ev ??= new Set()).add(type);
+    }
   }
   return omitted(value) as unknown as ServerValue;
 }
@@ -737,7 +803,7 @@ export function _rBAttr(token: Boundary | null): ServerValue {
 
 // Its wire key (`key`, a repeat in the same unit `key#2`, `key#3`, …). A unit registers a handful of keys: counted by a scan
 // of its list (no Map per boundary); a unit holding many (rows of a component that is not a boundary) counts by a Map.
-function register(owner: Boundary, key: string, value: () => unknown): string {
+function register(owner: Boundary, key: string, value: () => unknown, flags?: number, init?: unknown): string {
   let list = owner.signals;
   if (list === NO_SIGNALS) owner.signals = list = [];
   let n = 1;
@@ -760,7 +826,15 @@ function register(owner: Boundary, key: string, value: () => unknown): string {
     }
   }
   const k = n > 1 ? key + "#" + n : key;
-  list.push([k, value]);
+  // `LIT` / `DOMREAD`: the init rides along (identity-compared at the flush); DEV snapshots a `LIT` object init to catch
+  // in-place mutation.
+  list.push(
+    !(flags! & (LIT | DOMREAD))
+      ? [k, value]
+      : DEV && flags! & LIT && init !== null && typeof init === "object"
+        ? [k, value, init, JSON.stringify(init)]
+        : [k, value, init],
+  );
   return k;
 }
 
@@ -778,13 +852,14 @@ function wake(ctx: DerivedRender, id: string, reader: number): void {
  * evaluating (its value ships in the tail); a tracked read by another boundary adds that boundary to the key's wake
  * list. Outside a boundary (module level, a static component): a plain signal.
  */
-export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>): Signal<T> {
+export function _rSig<T>(key: string, init?: T, options?: EqualsOptions<T>, flags?: number): Signal<T> {
   const s = signal(init as T, options);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
-  // (An H-holes hit's content outside a child boundary: the stored shell's boundary, not this render's — never registered.)
-  if (!ctx || !owner || owner.id < ctx.base) return s;
-  const src: Src = { c: owner, n: -1, k: register(owner, key, s), x: ctx, s: null, r: null, z: 0, g: s };
+  // (An H-holes hit's content outside a child boundary: the stored shell's boundary, not this render's — never registered;
+  // a discarded pass: plain.)
+  if (!ctx || !owner || owner.id < ctx.base || ctx.off) return s;
+  const src: Src = { c: owner, n: -1, k: register(owner, key, s, flags, init), x: ctx, s: null, r: null, z: 0, g: s };
   owner.weight++;
   const get = tracked<T>(src);
   ctx.sources?.set(get, s);
@@ -816,13 +891,13 @@ function tracked<T>(src: Src): Signal<T> {
 
 /** Keyed store (compiled from `createStore(init)`): registered like `_rSig` (value = `read(store)` at the flush); reads
  * through `read` / `at` are not wake-tracked in M2 (a store-reading boundary materialises on its own events only). */
-export function _rSigStore<T extends object>(key: string, init: T): Store<T> {
+export function _rSigStore<T extends object>(key: string, init: T, flags?: number): Store<T> {
   const store = createStore(init);
   const ctx = useContext(DERIVED);
   const owner = ctx && current(ctx);
   // Store reads are not tracked (M2): a render holding one defers nothing (DERIVED-C4).
   if (ctx) ctx.stores = true;
-  if (ctx && owner && owner.id >= ctx.base) register(owner, key, () => read(store));
+  if (ctx && owner && owner.id >= ctx.base && !ctx.off) register(owner, key, () => read(store), flags, init);
   return store;
 }
 
@@ -1447,11 +1522,12 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */
 // Island keys of the last flush's `i` (the tail's fetch-ahead lists their chunks).
 let islandUrls: string[] = [];
-function flush(ctx: DerivedRender): BoundaryTail | null {
+function flush(ctx: DerivedRender): FlushTail | null {
   islandUrls = [];
   if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0 && ctx.adopt.length === 0) return null;
-  const b: BoundaryRecord[] = [];
-  let d: DerivedDom[] | undefined;
+  const b: BoundaryRecord[] = [],
+    first = ctx.flushed === 0;
+  let d: DerivedDom[] | undefined, e: Record<string, string> | undefined;
   deferFlags(ctx, ctx.flushed);
   keep(ctx, ctx.flushed);
   // ZERO Z3: the first flush keeps only weak boundaries (the router's Root / App with nothing live below them) and nothing
@@ -1467,19 +1543,32 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     if (boundary.flags & COND && !boundary.kept) continue;
     boundary.flags &= ~COND;
     const signals: unknown[] = [];
-    for (const [key, value] of boundary.signals) {
-      const v = value();
-      if (isData(v)) signals.push(key, v);
+    for (const entry of boundary.signals) {
+      const v = entry[1]();
+      // `LIT` / `DOMREAD` key still holding its init: the browser's own init / markup (DEV: unless a `LIT` object was mutated in
+      // place during render).
+      if (entry.length > 2 && v === entry[2] && (!DEV || entry.length < 4 || litSame(entry[0], v, entry[3]!))) continue;
+      if (isData(v)) signals.push(entry[0], v);
       else boundary.flags |= UNKEYED;
     }
     if (!boundary.out) boundary.flags |= SILENT;
-    const record: BoundaryRecord = [boundary.id, boundary.parent?.id ?? 0, boundary.flags, boundary.name, signals];
+    // The nearest kept ancestor (a dropped `COND` parent of an independent child is not on the wire).
+    let parent = boundary.parent;
+    while (parent && parent.flags & COND && !parent.kept) parent = parent.parent;
+    const record: BoundaryRecord = [boundary.id, parent?.id ?? 0, boundary.flags, boundary.name, signals];
     if (boundary.props)
       record.push(ctx.dom?.length ? (derivedDom.api!.props(ctx.dom, boundary.id, boundary.props, [], (d ??= []), 0) as object) : boundary.props);
     b.push(record);
+    // D5 by NAME (R-30): the union over the name's instances; a patch re-sends a name whose union grew.
+    const ev = boundary.ev;
+    if (ev?.size) {
+      const seen = (ctx.listened ??= new Map()).get(boundary.name);
+      const all = seen === "*" || ev.has("*") ? "*" : [...new Set([...(seen ? seen.split(" ") : []), ...ev])].join(" ");
+      if (all !== seen) (((e ??= {})[boundary.name] = all), ctx.listened.set(boundary.name, all));
+    }
   }
   ctx.flushed = ctx.boundaries.length;
-  const tail: BoundaryTail & { i?: string[] } = { v: 1, b };
+  const tail: FlushTail = { b };
   if (ctx.adopt.length) tail.i = ctx.adopt.splice(0).map((island) => (islandUrls.push(island.key), island.id));
   if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
@@ -1488,6 +1577,10 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     if (root) {
       tail.g = ctx.listen.map((match) => [root[0], match]);
       ctx.clicks ||= ctx.listen.join(",");
+      // D5: the document click listener's boundary (the router's `App`) provides the client router to everything below it
+      // (`invalidate`, client navigation from a portal): it listens to every event, so any event inside the page adopts it
+      // first (the pre-D5 `around` order), not only a click on a `g` match (ZERO intake 3: forms drawer overlays).
+      if (ctx.listened?.get(root[3]) !== "*") (((e ??= {})[root[3]] = "*"), (ctx.listened ??= new Map()).set(root[3], "*"));
       ctx.listen = [];
     }
   }
@@ -1505,6 +1598,11 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
     if (named) tail.m = m;
     if (keyed) tail.k = k;
   }
+  // D5: per boundary name the types its units listen to (`*` = any). Always on a shell tail (no `e` = a tail without the
+  // facts: every record listens to everything); a patch carries the names whose union grew. Only with a compiler that
+  // emits every listened type in `_rB` `events` (FE-COMPILE D5 facts, same wasm batch): an old `events` (non-default
+  // types only) would make `e` drop click / input listeners.
+  if (e || first) tail.e = e ?? {};
   if (ctx.dirty.size) {
     const w: Record<string, number[]> = {};
     for (const id of ctx.dirty) w[id] = [...ctx.wake.get(id)!];
@@ -1535,6 +1633,14 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
   return tail;
 }
 
+/** DEV: a `LIT` object init mutated in place during render (identity kept, JSON changed) ships its value, with a warning
+ * (render must not mutate a literal init: the browser starts from a pristine one). */
+function litSame(key: string, value: unknown, json: string): boolean {
+  if (JSON.stringify(value) === json) return true;
+  console.warn("Rivet resume: keyed signal " + key + " was mutated in place during render (its literal init changed); write a new value instead");
+  return false;
+}
+
 /** Every record the first flush would write is weak, and the render made nothing else the browser needs. */
 function weakOnly(ctx: DerivedRender): boolean {
   if (ctx.adopt.length || ctx.dirty.size || ctx.counted.size || ctx.changed.size || ctx.dom?.length) return false;
@@ -1554,7 +1660,7 @@ function weakOnly(ctx: DerivedRender): boolean {
 // only because some caller may feed them live data, a live context, or because they render an interactive child. Per
 // instance, the server keeps such a record when the instance turned out live: its unit read a source that can change
 // from outside its subtree (`changes`: a live prop getter, slot content reading the caller's signal, a context value over
-// a signal), a boundary below it was kept, its body installs a listener (`_rHandler` / `_rHandlers` saw a function,
+// a signal), a dependent boundary below it was kept (an independent one adopts standalone: ZERO C3), its body installs a listener (`_rHandler` / `_rHandlers` saw a function,
 // STATIC-ZERO T3), it holds an `Async` / island trigger / keyed state, something it made escaped
 // or it wrote outside (`EAGER_MARK`), or the render holds a store (store reads are not tracked). Otherwise the record is
 // dropped: its markers stay on the page (inert: no record, the browser's adopt run of an ancestor keeps its server nodes
@@ -1576,7 +1682,9 @@ function keep(ctx: DerivedRender, from: number): void {
       ctx.keys[x.id] !== undefined
     ) {
       x.kept = true;
-      if (x.parent) x.parent.kept = true;
+      // An independent child adopts standalone: it keeps no ancestor (ZERO C3: a renders-only page root over independent
+      // cards ships no record, so the browser adopts no ancestor unit around a card's event).
+      if (x.parent && !(x.flags & INDEPENDENT)) x.parent.kept = true;
     }
   }
 }
@@ -1592,36 +1700,56 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     ? ctx.lean[0]!.tail(ctx.lean, options?.manifest as never, options?.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "")
     : "";
   if (!tail) return lean ? template([lean]) : null;
-  const json = escapeJSON(JSON.stringify(tail));
-  if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + json + "</script>"]);
+  if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + encodeTail(tail) + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
   // (manifest `deps`), as low-priority modulepreloads after `load` (`data-fo`; fetched + compiled, never evaluated before
   // an event): the first click evaluates modules already in the module map instead of an import waterfall.
+  // The script's attributes and the loader are a pure function of (manifest, fetch-ahead list, extra event types, boot,
+  // document clicks, nonce presence): frozen fragments memoised per manifest, so the attributes and the loader are encoded
+  // once per process, not per request; the JSON and the nonce are slots.
   const manifest = options.manifest,
-    deps = manifest.deps;
-  let ahead = "";
-  if (!options.preload?.lean) {
-    const urls = new Set<string>();
-    // (+ the chunks of the islands an adopt run hydrates, M6-PARITY.)
-    const islands = (manifest as { islands?: Record<string, string> }).islands;
-    for (const url of [manifest.runtime!, ...(tail.m ? Object.values(tail.m) : []), ...islandUrls.map((key) => islands?.[key]!).filter(Boolean)]) {
-      urls.add(url);
-      if (deps?.[url]) for (const dep of deps[url]!) urls.add(dep);
-    }
-    ahead = [...urls].join(" ");
+    nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
+    ahead = options.preload?.lean ? "" : fetchAhead(manifest, tail);
+  // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
+  const json = encodeTail(tail);
+  let events = "";
+  for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
+  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + events + "\0" + ctx.clicks + "\0" + ahead;
+  let memo = tails.get(manifest);
+  if (memo === undefined) tails.set(manifest, (memo = new Map()));
+  let fragments = memo.get(key);
+  if (fragments === undefined) {
+    fragments = tailFragments(manifest.runtime!, ahead, events, ctx, !!nonce);
+    // Bounded: an app with more page shapes than this re-builds the rest per request.
+    if (memo.size < 512) memo.set(key, fragments);
   }
+  const record = compiledTemplate(fragments, nonce ? [template([json]), nonce] : [template([json])]);
+  return lean ? [template([lean]), record] : record;
+}
+/** The fetch-ahead list (`data-fo`, ZERO R6a `foUrls`): the runtime and the chunks of the boundaries that can become live (D5
+ * listening records, triggers, document click listeners and what adopting them needs; every boundary without D5 facts), the
+ * chunks of the islands an adopt run hydrates (M6-PARITY) and their static import closures (manifest `deps`). Nothing live and
+ * no island: empty (no fetch-ahead, the runtime never boots). */
+function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail): string {
+  const islands = (manifest as { islands?: Record<string, string> }).islands;
+  return foUrls(tail, manifest.runtime!, manifest.deps, islandUrls.map((key) => islands?.[key]!).filter(Boolean)).join(" ");
+}
+/** Per manifest: memo key (`derivedTail`) → the tail script's frozen fragments around the JSON (and nonce) slots. */
+const tails = new WeakMap<object, Map<string, readonly string[]>>();
+function tailFragments(runtime: string, ahead: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
-  const nonce = options.nonce ? ' nonce="' + String(options.nonce).replace(/[^\w+/=-]/g, "") + '"' : "",
-    events = [...ctx.events].filter((type) => !DEFAULT_TYPES.has(type)).join(" "),
-    attrs =
-      ' data-rt="' +
-      attr(options.manifest.runtime) +
-      '"' +
-      (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
-      (ctx.boot ? " data-boot" : "") +
-      (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
-      (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
-  return template([lean + '<script type="rivet/boundaries"' + attrs + ">" + json + "</script><script" + nonce + ">" + DERIVED_LOADER + "</script>"]);
+  const attrs =
+    ' data-rt="' +
+    attr(runtime) +
+    '"' +
+    (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
+    (ctx.boot ? " data-boot" : "") +
+    (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
+    (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
+  const open = '<script type="rivet/boundaries"' + attrs + ">";
+  return Object.freeze(
+    nonce ? [open, '</script><script nonce="', '">' + DERIVED_LOADER + "</script>"] : [open, "</script><script>" + DERIVED_LOADER + "</script>"],
+  );
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
  * other listener types (boundary `events`, spread listener props). */
@@ -1632,7 +1760,7 @@ const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/
 /** A streamed segment's patch (records + wake lists added since the last flush), "" when nothing was added. */
 export function derivedPatch(ctx: DerivedRender, marker: number): string {
   const tail = flush(ctx);
-  return tail ? '<script type="rivet/boundaries" data-patch="' + marker + '">' + escapeJSON(JSON.stringify(tail)) + "</script>" : "";
+  return tail ? '<script type="rivet/boundaries" data-patch="' + marker + '">' + encodeTail(tail) + "</script>" : "";
 }
 
 // ---- Shell cache (DERIVED-C3, 2026-10-21) ----

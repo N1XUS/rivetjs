@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
-import { dirname, join, posix, relative, resolve, sep } from "node:path";
+import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
@@ -298,6 +298,8 @@ export interface DevResume {
 
 /** The derived runtime entry (manifest `runtime`, default export = the `dom-derived` instance). */
 const DERIVED_ENTRY = "\0rivet-derived-entry";
+/** Client resume builds: prefix of a boundary module's facade entry id (ZERO B6). */
+const BOUNDARY_ENTRY = "\0rivet-boundary:";
 const MANIFEST = ".vite/rivet-resume.json";
 /** Importers the derived reactivity alias leaves alone (DERIVED-C4): the runtime and reactivity packages themselves. */
 const RUNTIME_OWN = /[\\/](?:libs[\\/](?:runtime|reactivity)|@rivetjs[\\/](?:runtime|reactivity))[\\/]/;
@@ -409,6 +411,115 @@ export function _foldFacade(bundle: Rollup.OutputBundle, facade: Rollup.OutputCh
     target.exports = [...new Set([...target.exports, ...exported.map(([name]) => name)])];
   }
   return target;
+}
+
+/** @internal Names a TS module exports as types only (`export type X`, `export interface X`, `export { type X }`, `export type { X }`). */
+export function _typeExports(source: string): Set<string> {
+  const out = new Set<string>();
+  for (const m of source.matchAll(/\bexport\s+(?:declare\s+)?(?:type|interface)\s+([A-Za-z_$][\w$]*)/g)) out.add(m[1]!);
+  for (const m of source.matchAll(/\bexport\s+(type\s+)?\{([^}]*)\}/g))
+    for (const part of m[2]!.split(",")) {
+      const spec = part.trim();
+      if (!spec || !(m[1] || /^type\s/.test(spec))) continue;
+      const names = spec.replace(/^type\s+/, "").split(/\s+as\s+/);
+      out.add(names[names.length - 1]!.trim());
+    }
+  return out;
+}
+
+/** @internal Query marking `@rivetjs/ui`'s own `tailwind-variants` import (ZERO B3): the merge-only copy below. */
+export const _MERGE_ONLY = "?rivet-tw-merge";
+/** @internal `@rivetjs/ui`'s variant resolver (`styles/src/utils/tv.ts`, source or packaged): the one importer redirected. */
+export const _UI_TV = /[/\\]ui[/\\]styles[/\\]src[/\\]utils[/\\]tv\.[jt]s$/;
+
+/**
+ * @internal ZERO B3: a project module importing only `cn` / `cx` from `tailwind-variants` takes them from the merge-only
+ * copy too (`_MERGE_ONLY`), so a page using `cn` next to `@rivetjs/ui` loads one tailwind-merge, not two. Builds only; the
+ * import line keeps its length class (no newline change). Type-only / default / namespace imports and other names: as is.
+ */
+export function _mergeOnlyImports(source: string): string {
+  if (!source.includes("tailwind-variants")) return source;
+  return source.replace(/(\bimport\s*\{([^}]*)\}\s*from\s*)(["'])tailwind-variants\3/g, (all, head: string, names: string, quote: string) => {
+    if (/^\s*import\s+type\b/.test(head)) return all;
+    const specifiers = names
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const values = specifiers.filter((name) => !/^type\s/.test(name)).map((name) => name.split(/\s+as\s+/)[0]!.trim());
+    if (!values.length || values.some((name) => name !== "cn" && name !== "cx")) return all;
+    return head + quote + "tailwind-variants" + _MERGE_ONLY + quote;
+  });
+}
+
+/** @internal Query of the `tailwind-variants` internal chunk copy holding the package's one `state` (ZERO B3). */
+export const _TW_STATE = "?rivet-tw-state";
+
+// tailwind-variants 3.x `index.js`: tailwind-merge + `cn` (body), then `// src/index.ts` = the `tv` runtime + exports.
+const TW_TAIL = "\n// src/index.ts\n";
+const TW_SETUP = /^var runtime = (getTailwindVariants\((?:cnAdapter|classAdapter)\));\nvar tv = runtime\.tv;\nvar createTV = runtime\.createTV;$/m;
+const TW_CHUNK_IMPORT = /^(import [^;\n]* from '\.\/chunk-[\w-]+\.js)';$/gm;
+function twLayout(code: string): { body: string; tail: string } | null {
+  const at = code.indexOf(TW_TAIL);
+  if (at < 0) return null;
+  const body = code.slice(0, at),
+    tail = code.slice(at);
+  const names = ["cn", "cnMerge", "cnAdapter"];
+  if (
+    !TW_SETUP.test(tail) ||
+    names.some((name) => !new RegExp("^var " + name + " = ", "m").test(body)) ||
+    !/^import \{[^}]*\bcx\b[^}]*\} from '\.\/chunk-/m.test(body)
+  )
+    return null;
+  return { body, tail };
+}
+const twPure = (code: string): string =>
+  code.replace(
+    TW_SETUP,
+    "var runtime = /* @__PURE__ */ $1;\nvar tv = /* @__PURE__ */ (() => runtime.tv)();\nvar createTV = /* @__PURE__ */ (() => runtime.createTV)();",
+  );
+
+/**
+ * @internal Build-time module layout for tailwind-variants 3.x (ZERO B3). Rolldown shakes per statement but places per
+ * module, so upstream's single `index.js` (tailwind-merge + `cn`, then the `tv` runtime built at load) put the `tv` runtime
+ * into the chunk every `@rivetjs/ui` page loads for `cn` as soon as any page of the build imported upstream `tv`.
+ * - `index.js` + `_MERGE_ONLY` (= `tailwind-variants${_MERGE_ONLY}`: ui's `tv.ts`, `_UI_TV`, and project `cn` / `cx`-only
+ *   imports, `_mergeOnlyImports`): the body alone, exporting `cn` / `cnMerge` / `cnAdapter` / `cx`.
+ * - `index.js`: its `tv` runtime over that module (`cn` & co imported from it: one tailwind-merge per page), the setup
+ *   annotated pure; `lite.js`: the setup annotated pure.
+ * - `chunk-*.js` holding `var state = createState();`: imports `state` from its `_TW_STATE` copy instead, so both module
+ *   sets share the one mutable state (twMergeConfig cache), and the merge module never reaches `getTailwindVariants`; the
+ *   merge side's other internal chunks are `_MERGE_ONLY` copies (helpers upstream's `tv` keeps stay on its side).
+ * Same values, same evaluation order. Text that does not match (another version) is left as is (then upstream's layout).
+ */
+export function _pureAnnotate(id: string, code: string, query = ""): string | null {
+  const match = /[/\\]node_modules[/\\]tailwind-variants[/\\]dist[/\\](index|lite|chunk-[\w-]+)\.js$/.exec(id);
+  if (!match) return null;
+  const file = match[1]!;
+  if (file.startsWith("chunk-")) {
+    // The state copy and the merge module's helper copies import the merge-side copies (`_MERGE_ONLY`) of the other chunks:
+    // statements upstream's `tv` keeps in a shared helper chunk stay out of the merge side's chunk.
+    if (query === _TW_STATE.slice(1) || query === _MERGE_ONLY.slice(1)) {
+      const out = code.replace(TW_CHUNK_IMPORT, "$1" + _MERGE_ONLY + "';");
+      return out === code ? null : out;
+    }
+    if (!/^var state = createState\(\);$/m.test(code)) return null;
+    return `import { state } from './${file}.js${_TW_STATE}';\n` + code.replace(/^var state = createState\(\);$/m, "");
+  }
+  if (file === "lite") {
+    const out = twPure(code);
+    return out === code ? null : out;
+  }
+  const layout = twLayout(code);
+  if (!layout) return null;
+  // The merge module reads `state` straight from the copy: reaching the original chunk would pull `getTailwindVariants`.
+  if (query === _MERGE_ONLY.slice(1))
+    return (
+      layout.body.replace(TW_CHUNK_IMPORT, (_, line: string) => line + (/\bstate\b/.test(line) ? _TW_STATE : _MERGE_ONLY) + "';") +
+      "\nexport { cn, cnMerge, cnAdapter, cx };\n"
+    );
+  const head = (layout.body.match(TW_CHUNK_IMPORT) ?? []).filter((line) => /\bgetTailwindVariants\b/.test(line));
+  if (head.length !== 1) return null;
+  return head[0] + `\nimport { cn, cnMerge, cnAdapter, cx } from './index.js${_MERGE_ONLY}';` + twPure(layout.tail);
 }
 
 /** Compile project JSX/TSX for Vite's DOM or SSR environment. Styles use Vite's normal pipeline.
@@ -564,6 +675,12 @@ function rivetPlugin(
   // Client build: module → its boundary names as the DOM compile emitted them (`CompileResult.boundaries`: the export
   // names the runtime reads from the chunk), for the manifest's `symbols`.
   const derivedNames = new Map<string, string[]>();
+  // Client build (ZERO B6, codex 994dcf7e6 vite half): boundary entry `\0rivet-boundary:<file>` → `<file>`. The strict entry
+  // is a facade re-exporting only the compiled boundary names, so the module's other exports (and imports only they use)
+  // shake, instead of the whole module signature being pinned by a strict entry on the module itself.
+  const boundaryEntries = new Map<string, string>();
+  // Resume walk: module → whether it exports anything but its boundary components (the facade only pays off then).
+  const derivedExtraExports = new Map<string, boolean>();
   // Framework bridges (`rivet({ bridges })`): the facade host's api once Vite resolved the config, else null.
   let bridges: RivetBridgesApi | null = null;
   /** An island facade (`\0rivet-island:…`): a virtual Rivet module (its text from the bridge plugin). */
@@ -593,7 +710,9 @@ function rivetPlugin(
     }
     return exports;
   };
-  const prepared = (filename: string, source: string): string => (icons && /\.[jt]sx$/.test(filename) ? staticIcons(source, filename, lucideFor) : source);
+  // `<Icon>` with constant props → inline `<svg>`.
+  const prepared = (filename: string, source: string): string =>
+    !/\.[jt]sx$/.test(filename) ? source : (serve ? (text: string) => text : _mergeOnlyImports)(icons ? staticIcons(source, filename, lucideFor) : source);
   // Read live: the router adds route modules while the dev server runs.
   const isRoute = (filename: string) => !!serverExports?.modules.some((path) => resolve(root, path) === resolve(filename));
   const split = (filename: string) => (isRoute(filename) ? { serverExports: true } : {});
@@ -702,6 +821,7 @@ function rivetPlugin(
   /** Walk the resume module graph from `resume.modules` (facts with `boundaries`), close the boundary facts over it (`boundaryFacts`; route modules' default exports are independent roots) and keep each module's verdicts. */
   const derivedWalk = async (ctx: Rollup.PluginContext): Promise<void> => {
     const facts = new Map<string, ModuleFacts>(),
+      typeExports = new Map<string, Set<string>>(),
       graph = new Map<string, Map<string, string>>(),
       roots = new Set<string>();
     const pending = [...resumable];
@@ -719,6 +839,7 @@ function rivetPlugin(
         ? moduleFacts(source, filename)
         : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
       facts.set(filename, f);
+      typeExports.set(filename, _typeExports(source));
       if (route || isDerivedRoot(filename)) roots.add(filename);
       const map = new Map<string, string>();
       for (const spec of new Set([...f.statics, ...f.dynamics])) {
@@ -737,14 +858,23 @@ function rivetPlugin(
     }
     const verdicts = boundaryFacts(facts, graph, roots, shellSet());
     derivedVerdicts.clear();
-    for (const file of facts.keys())
-      if (!plain.has(file))
+    derivedExtraExports.clear();
+    for (const [file, f] of facts)
+      if (!plain.has(file)) {
+        const boundaries = verdicts.boundaries(file);
         derivedVerdicts.set(file, {
-          boundaries: verdicts.boundaries(file),
+          boundaries,
           independent: verdicts.independent(file),
           conditional: verdicts.conditional(file),
           static: verdicts.static(file),
         });
+        const own = new Set(boundaries.map((name) => name.slice(name.lastIndexOf("#") + 1)));
+        const types = typeExports.get(file)!;
+        derivedExtraExports.set(
+          file,
+          f.reexports.size > 0 || [...f.exports].some(([exported, local]) => !own.has(local) && !own.has(exported) && !types.has(exported)),
+        );
+      }
   };
   /** Resume manifest (`.vite/rivet-resume.json`): `runtime` (the derived entry chunk), `symbols` (boundary
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
@@ -773,7 +903,8 @@ function rivetPlugin(
       // Framework island chunks (M6-PARITY): island key → URL + size + closure, as on the serialized manifest.
       const island = bridges ? bridges.islandKey(output.facadeModuleId) : null;
       if (island) ((islands[island] = base + output.fileName), (sizes[base + output.fileName] = Buffer.byteLength(output.code)), roots.push(output.fileName));
-      const names = output.isEntry && derivedVerdicts.get(output.facadeModuleId)?.boundaries.length ? derivedNames.get(output.facadeModuleId) : undefined;
+      const source = boundaryEntries.get(output.facadeModuleId) ?? output.facadeModuleId;
+      const names = output.isEntry && derivedVerdicts.get(source)?.boundaries.length ? derivedNames.get(source) : undefined;
       if (!names?.length) continue;
       const real = _foldFacade(
         bundle,
@@ -1069,7 +1200,14 @@ function rivetPlugin(
       if (serve) return;
       await derivedWalk(this);
       if (ssrBuild || this.environment?.config?.consumer === "server") return;
-      for (const [file, verdict] of derivedVerdicts) if (verdict.boundaries.length) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
+      boundaryEntries.clear();
+      for (const [file, verdict] of derivedVerdicts)
+        if (verdict.boundaries.length && !derivedExtraExports.get(file)) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
+        else if (verdict.boundaries.length) {
+          const id = BOUNDARY_ENTRY + file;
+          boundaryEntries.set(id, file);
+          this.emitFile({ type: "chunk", id, name: basename(file).replace(/\.[^.]+$/, ""), preserveSignature: "strict" });
+        }
       // Island facades the walk reached without a boundary (an islands-only page): emitted too, so their loaders'
       // island chunks are built and listed in manifest `islands` (the lean boot loads them; the facade chunk stays unused).
       if (bridges)
@@ -1079,6 +1217,7 @@ function rivetPlugin(
       if (builtinsId) this.emitFile({ type: "chunk", id: builtinsId, name: "resume-builtins", preserveSignature: "strict" });
     },
     resolveId(id, importer) {
+      if (boundaryEntries.has(id)) return id;
       // `<module>.rivet.css`: absolute (our imports) or root-relative (dev URLs).
       const [clean = "", query] = id.split("?", 2);
       if (clean.endsWith(_STYLE_SUFFIX)) {
@@ -1090,6 +1229,12 @@ function rivetPlugin(
       if (id === "@rivetjs/reactivity" && serve && importer && this.environment?.config?.consumer !== "server" && appModule(importer.split("?")[0]!))
         return this.resolve("@rivetjs/runtime/hot-reactivity", importer, { skipSelf: true });
       if (id === DERIVED_ENTRY) return id;
+      // Builds: `@rivetjs/ui`'s resolver (and project `cn` / `cx` imports, `_mergeOnlyImports`) get tailwind-variants' `cn`
+      // without the upstream `tv` runtime (`_pureAnnotate`).
+      if ((id === "tailwind-variants" && !serve && importer && _UI_TV.test(importer.split("?")[0]!)) || id === "tailwind-variants" + _MERGE_ONLY)
+        return this.resolve("tailwind-variants", importer, { skipSelf: true }).then((resolved) =>
+          resolved && !resolved.external && !serve ? resolved.id + _MERGE_ONLY : resolved,
+        );
       // Resume builds (DERIVED-C4): every module but the runtime's / reactivity's own makes its signals through the derived
       // alias (server: which boundary made and read each source — the wake lists' dependency facts; browser: adopt runs
       // number their plain signals), `runtime/derived-reactivity.ts` / `server-derived-reactivity.ts`.
@@ -1119,6 +1264,20 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
+      const boundarySource = boundaryEntries.get(id);
+      if (boundarySource !== undefined) {
+        // Through Vite's pipeline first: the DOM compile records the boundary export names (`derivedNames`).
+        const info = await this.load({ id: boundarySource });
+        // Only names the compiled module exports (a local boundary without an export alias has no chunk export to keep).
+        const own = new Set(info.exports ?? []);
+        const exports = [...new Set((derivedNames.get(boundarySource) ?? []).map((name) => name.slice(name.lastIndexOf("#") + 1)))].filter((name) =>
+          own.has(name),
+        );
+        const from = JSON.stringify(boundarySource);
+        return exports.length
+          ? `export { ${exports.map((name) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name))).join(", ")} } from ${from};\n`
+          : `import ${from};\n`;
+      }
       const clean = id.split("?", 1)[0]!;
       const client = !ssrBuild && this.environment?.config?.consumer !== "server";
       // Resume builds: the browser runtime ships the adopt run's switches (`DERIVED` `_for` hook + `LAZY_ROWS` adopt hooks).
@@ -1161,6 +1320,8 @@ function rivetPlugin(
     },
     transform(original, id, options) {
       const [filename = "", query = ""] = id.split("?", 2);
+      const annotated = _pureAnnotate(filename, original, query);
+      if (annotated !== null) return { code: annotated, map: null };
       // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
       const facade = virtual(filename);
       if ((id.startsWith("\0") && !facade) || (/(?:^|[/\\])node_modules[/\\]/.test(filename) && !sourcePackage(filename) && !frameworkJsx(filename)))

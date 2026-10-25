@@ -7,6 +7,7 @@ import { compile } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
 import { importServer } from "./resume/compile.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 const source = `
 import { _rB, _rBOut, _rBEnd, _rSig } from "@rivetjs/runtime/server-derived";
@@ -56,7 +57,7 @@ test("server: a render whose records are all weak ships no tail, loader or runti
 test("server: a kept boundary that is not weak keeps the weak records with it", async () => {
   const { Live } = await server();
   const html = (await derivedToString(() => Live(), { manifest })) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.deepEqual(
     tail.b.map((r: unknown[]) => r.slice(0, 2).concat(r[3])),
     [

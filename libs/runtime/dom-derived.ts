@@ -38,6 +38,7 @@ import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, s
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
 import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
+import { eachRecord } from "./resume-tail.ts";
 import { DOM_DATA } from "./dom-data.ts";
 import { DEV } from "#dev";
 
@@ -49,7 +50,8 @@ const INDEPENDENT = 1,
   IDLE = 64,
   VISIBLE = 128,
   DEFER = 256,
-  MOD = 512;
+  MOD = 512,
+  BROWSER = 2048;
 const PROBE = 0,
   ADOPT = 1,
   CLIENT = 2;
@@ -282,8 +284,12 @@ let cur: Unit | null = null,
   doc: Document | null = null,
   api: DerivedLoaderApi | null = null,
   tail: BoundaryTail | null = null,
-  openers: [Map<number, Node>, TreeWalker] | null = null;
+  openers: [Map<number, Node>, TreeWalker] | null = null,
+  // D5: boundary name → its listened types (tail v2 `n[i][2]`); null while no name lists any (every record listens).
+  listened: Map<string, string> | null = null;
 const recs = new Map<number, Rec>(),
+  // Boundary name → its chunk URL (tail / patch names tables `n` + `u`, as written: the loader resolves the short form).
+  chunks = new Map<string, string>(),
   modules = new Map<string, Record<string, unknown>>(),
   loads = new Map<string, Promise<void>>(),
   rowsByStart = new WeakMap<Node, LRow>(),
@@ -1594,6 +1600,19 @@ function prepare(r: Rec, module: Record<string, unknown>): true | Promise<void> 
   }
   return r.ready;
 }
+function demotedRoot(r: Rec, module: Record<string, unknown>): void {
+  r.done = true;
+  const range = rangeOf(r),
+    fn = exported(r, module);
+  if (!range || !fn) return;
+  if (DEV)
+    DEV.adopt(
+      r.name + " (b" + r.id + ")",
+      "a root boundary was given props that are not data (functions, class instances, signals): it renders in the browser",
+    );
+  r.owner = client(null, () => fn(r.props ?? {}), range[0]!, range[range.length - 1]!, r, true);
+  if (DEV && r.owner) roots.push(r.owner);
+}
 function standalone(r: Rec, module: Record<string, unknown>): void {
   if (r.done) return;
   r.done = true;
@@ -1643,7 +1662,7 @@ let disposed = false;
 const load = (name: string): Promise<void> => {
   let p = loads.get(name);
   if (!p) {
-    const url = tail?.m?.[name];
+    const url = chunks.get(name);
     p = url ? api!.m(url).then((module) => void modules.set(name, module)) : Promise.reject(Error("Rivet resume: no chunk for boundary " + name));
     loads.set(name, p);
   }
@@ -1679,6 +1698,10 @@ function need(r: Rec): true | Promise<void> {
   }
   const module = modules.get(r.name);
   if (!module) return (r.loading ??= load(r.name).then(() => void need(r)));
+  // A root whose props hand it behaviour (`BROWSER` 2048, server-set on a demoted root, ruling R-22): no parent to adopt
+  // with and no props to adopt it from — it renders in the browser (dev: warned, as a mismatch), never adopts silently
+  // with `{}` (a dead page). A root demoted by a promise prop still adopts (its `Async` holes ship the values).
+  if (r.flags & BROWSER && !r.parent) return (demotedRoot(r, module), true);
   const residual = lite(r, module);
   if (residual !== false) return residual;
   const ready = prepare(r, module);
@@ -1850,15 +1873,22 @@ function idleSweep(deadline?: { timeRemaining(): number }): void {
 // The records of the tail or of a streamed segment's patch (its names, keys and wake lists merged into the tail), then
 // its `Async` entries.
 function records(t: BoundaryTail, patch: boolean): void {
-  const added: Rec[] = [];
-  for (const [id, parent, flags, name, signals, props] of t.b) {
+  const added: Rec[] = [],
+    n = t.n;
+  for (let i = 0; i < n.length; i++) {
+    const url = n[i]![1];
+    if (url >= 0 && !chunks.has(n[i]![0])) chunks.set(n[i]![0], t.u![url]!);
+    // D5: a patch re-sends a name whose union grew.
+    if (n[i]![2]) (listened ??= new Map()).set(n[i]![0], n[i]![2]!);
+  }
+  eachRecord(t, (id, parent, flags, name, signals, props) => {
     const values = new Map<string, unknown>();
     for (let i = 0; i < signals.length; i += 2) values.set(signals[i] as string, signals[i + 1]);
     const r: Rec = {
       id,
       parent: recs.get(parent) ?? null,
       flags,
-      name,
+      name: n[name]![0],
       values,
       props: props ?? null,
       done: false,
@@ -1870,11 +1900,10 @@ function records(t: BoundaryTail, patch: boolean): void {
     };
     recs.set(id, r);
     added.push(r);
-  }
+  });
   if (patch) {
     // The segment's markup is in the page now: the opener walk starts over (it may have passed where it went).
     openers = null;
-    if (t.m) Object.assign((tail!.m ??= {}), t.m);
     if (t.k) Object.assign((tail!.k ??= {}), t.k);
     if (t.w) Object.assign((tail!.w ??= {}), t.w);
   }
@@ -1886,7 +1915,7 @@ function records(t: BoundaryTail, patch: boolean): void {
     for (const entry of t.d) domEntry(entry);
     if (unread && !sweeping) ((sweeping = true), (((window.requestIdleCallback as Idle | undefined) || setTimeout) as Idle)(idleSweep));
   }
-  for (const id of (t as BoundaryTail & { i?: string[] }).i ?? []) islandIds.add(id);
+  for (const id of t.i ?? []) islandIds.add(id);
   for (const r of added) if (r.flags & (LOAD | IDLE | VISIBLE) && !r.hole) trigger(r);
   asyncEntries(t.a);
 }
@@ -1932,8 +1961,30 @@ function enclosing(node: Node | null): [kind: number, id: number, at: Node][] {
   }
   return out.reverse();
 }
-// Materialise every unit around `target`, outermost first: true when done now, a promise while a chunk loads.
-function around(target: EventTarget | null): true | Promise<void> {
+// D5 listening records (ZERO R2, ruling R-30): the record's unit listens to `type` (tail v2 `n[i][2]`, by boundary NAME —
+// the union over that name's instances; any type when `type` is undefined; every record while no name lists types). An
+// event adopts only the listening records around its target — and what they need (`need`: a dependent one's parent chain,
+// its wake-list sources) — not every enclosing record: a click on a page's static text or a native control no handler
+// listens to acts natively, a click in an independent boundary adopts just its unit.
+function listens(r: Rec, type?: string): boolean {
+  if (!listened) return true;
+  const x = listened.get(r.name);
+  return x !== undefined && (type === undefined || x === "*" || (" " + x + " ").includes(" " + type + " "));
+}
+// Materialise the units around `target` an event of `type` needs, outermost first (records: those listening to it; lazy
+// rows of adopted lists: every one): true when done now, a promise while a chunk loads.
+function around(target: EventTarget | null, type?: string): true | Promise<void> {
+  // Intake 3: once a record around the target listens to the event, every record around it adopts (outermost first, as
+  // before D5): an independent unit's dependent descendants may read a context an ancestor unit provides (a `use…` hook
+  // the facts cannot see: ui `Stepper` / `ChainOfThought`), which a standalone adopt would run without its provider.
+  let all = false;
+  for (const [kind, id] of enclosing(target as Node | null)) {
+    const r = kind ? undefined : recs.get(id);
+    if (r && listens(r, type)) {
+      all = true;
+      break;
+    }
+  }
   for (let guard = 0; guard < 256; guard++) {
     let step: true | Promise<void> | null = null;
     for (const [kind, id, at] of enclosing(target as Node | null)) {
@@ -1946,7 +1997,7 @@ function around(target: EventTarget | null): true | Promise<void> {
         }
       } else {
         const r = recs.get(id);
-        if (r && !r.done) {
+        if (r && !r.done && (all || listens(r, type))) {
           step = need(r);
           // A dependent record inside a lazy row of its parent: the row is the next unit.
           if (step === true && !r.done) continue;
@@ -1970,7 +2021,7 @@ function formOf(event: Event, target: Element | null): HTMLFormElement | null {
   return control?.form && /^(submit|image|reset)$/.test(control.type) ? control.form : null;
 }
 // Document click listeners (tail `g`, server `_rListen`: the router's link clicks): materialise the boundaries listening
-// for a click wherever its target is, before the units around the target. True when done now, a promise while a chunk loads.
+// for a click (D5 listening records: any delegated event) wherever its target is, before the units around the target. True when done now, a promise while a chunk loads.
 const gAdopts = (target: Element | null): boolean =>
   (tail?.g ?? []).some(([id, match]) => {
     const r = recs.get(id);
@@ -1985,7 +2036,9 @@ function listeners(event: Event): true | Promise<void> {
         const p = need(r);
         if (p !== true) return p;
       }
-  if (event.type !== "click") return true;
+  // D5: a link intent (pointerdown / focusin / any delegated event on a match) adopts them too — no enclosing record that
+  // listens adopts them any more (before D5 every record listened: `around` did).
+  if (event.type !== "click" && !listened) return true;
   for (const [id, match] of tail?.g ?? []) {
     const r = recs.get(id);
     if (r && !r.done && target?.closest?.(match)) {
@@ -2220,7 +2273,10 @@ async function drain(): Promise<void> {
     const item = pending[0]!;
     try {
       for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
-      for (let step = around(item[0].target); step !== true; step = around(item[0].target)) await step;
+      for (let step = around(item[0].target, item[0].type); step !== true; step = around(item[0].target, item[0].type)) await step;
+      // D5: the units around the target may adopt only now (a press's earlier events no longer adopt a record that does
+      // not listen to them): the deferred units its run claimed inside a submitted form adopt before the replay.
+      for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
       enter(item[0], item[1]);
       await replay(item);
     } catch (error) {
@@ -2302,10 +2358,13 @@ const runtime: DerivedRuntime = {
     live = event;
     let step: true | Promise<void>;
     try {
-      step = around(event.target);
+      step = around(event.target, event.type);
     } finally {
       live = null;
     }
+    // D5: what that run claimed inside a submitted form adopts first (`listeners`): the event waits for it.
+    const claimed = step === true ? listeners(event) : true;
+    if (claimed !== true) return (claimed.catch(() => {}), false);
     const target = event.target as HTMLInputElement | null;
     if (step === true && target && !target.isConnected && retargets.has(target)) {
       // Its unit rendered in the browser while adopting: the native dispatch would reach the removed server nodes only.
@@ -2342,14 +2401,21 @@ const runtime: DerivedRuntime = {
     if (pending.push(item) === 1) void drain();
   },
   w(target) {
-    for (const [kind, id] of enclosing(target as Node | null)) {
-      if (kind) continue;
-      let r = recs.get(id);
+    // Intent (D5): the units of the listening records around the target (innermost first; while no name lists types the
+    // outermost record's), else of the document click listeners matching it (tail `g`): the chunk, then what its component needs
+    // before adopting (`ready`), nothing runs.
+    const warm = (r: Rec | undefined): void => {
       while (r && !r.done && !r.hole && r.parent && !(r.flags & INDEPENDENT) && !r.parent.done) r = r.parent;
-      // Intent: the chunk, then what its component needs before adopting (`ready`), nothing runs.
       if (r && !r.done && !r.hole) load(r.name).then(() => void prepare(r!, modules.get(r!.name)!), report);
-      return;
+    };
+    const units = enclosing(target as Node | null).filter(([kind, id]) => !kind && recs.has(id));
+    if (!listened) return warm(recs.get(units[0]?.[1]!));
+    let found = false;
+    for (let i = units.length; i--;) {
+      const r = recs.get(units[i]![1])!;
+      if (listens(r)) ((found = true), warm(r));
     }
+    if (!found) for (const [id, match] of tail?.g ?? []) if ((target as Element | null)?.closest?.(match)) warm(recs.get(id));
   },
   m(id) {
     const r = recs.get(id);

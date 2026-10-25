@@ -1,49 +1,163 @@
 // Rivet-authored (NOT vendored from @heroui/styles; TWEAKS.md row): the `tv` every `*.styles.ts` definition imports.
-// Same output as tailwind-variants' default `tv` (`twMerge: true`), but tailwind-merge only runs when a call passes a
-// non-empty `class` / `className` override. The component's own class strings (base + variants + compounds) are joined
-// (`tailwind-variants/lite`): merging them is a no-op for every vendored definition (tests/tv-merge.test.ts enumerates
-// every definition × variant combination × slot, byte for byte), and skipping it skips tailwind-merge's lazy class-map
-// build (≈ 1.6 ms on the first tv call of a page). With an override the joined core + override go through
-// tailwind-merge exactly like upstream (`cn(core, class, className)`), so conflicting user utilities still dedupe.
-// The public `tv` / `cn` (`../index.ts`, `@rivetjs/ui`) stay tailwind-variants' own.
-import type {TV} from "tailwind-variants";
+// Same output as tailwind-variants' default `tv` (`twMerge: true`; tests/tv-merge.test.ts enumerates every definition ×
+// variant combination × slot × override, byte for byte), from a small resolver of its own instead of tailwind-variants'
+// `tv` runtime (ZERO B3: −2.2…−3.5 KB gz on every ui frame). The definitions use only `base` / `slots` /
+// `variants` / `defaultVariants` (no `extend`, compounds or config: rejected here, the test scans them all).
+// Class strings join (tailwind-variants' own `cx`); tailwind-merge runs only on a `class` / `className` override, and only
+// when the result can differ from the join: every core token is a component class tailwind-merge does not recognise
+// (tests/tv-core-bem.test.ts; `UTILITY_CORE_TOKENS` lists the exceptions), so `cn(core, override)` = `core + " " +
+// cn(override)`, and a one-token override (most call sites: `class="w-96"`) merges with nothing. That also skips
+// tailwind-merge's lazy class-map build (≈ 1.6 ms on the first merge of a page). The public `tv` / `cn` (`../index.ts`,
+// `@rivetjs/ui`) stay tailwind-variants' own.
+import type { TV } from "tailwind-variants";
 
-import {cn} from "tailwind-variants";
-import {tv as tvJoin} from "tailwind-variants/lite";
+// Builds resolve this one import to the merge half of tailwind-variants' `index.js` (`@rivetjs/compiler` vite
+// `_pureAnnotate`): the whole module would carry upstream's `tv` runtime into every ui page whenever any page of the build
+// imports upstream `tv`. ui modules take `cx` from here for the same reason (not from `/lite`).
+import { cn, cx } from "tailwind-variants";
 
-type ClassProps = {class?: unknown; className?: unknown} | null | undefined;
-type Resolver = ((props?: ClassProps) => unknown) & Record<string, unknown>;
+export { cx };
+
+type ClassProps = { class?: unknown; className?: unknown; [variant: string]: unknown } | null | undefined;
+type Values = Record<string, unknown>;
+type Options = {
+  base?: unknown;
+  slots?: Record<string, unknown>;
+  variants?: Record<string, Values>;
+  defaultVariants?: Record<string, unknown>;
+  [unsupported: string]: unknown;
+};
+
+/** Core tokens tailwind-merge recognises as utilities (kept in sync by tests/tv-core-bem.test.ts): a core holding one merges. */
+export const UTILITY_CORE_TOKENS: readonly string[] = ["text-shimmer"];
+const UTILITY_CORE = new RegExp("(?:^|\\s)(?:" + UTILITY_CORE_TOKENS.join("|") + ")(?=\\s|$)");
 
 // = tailwind-variants `hasClassOverride` (the condition its own override merge runs on).
 const hasOverride = (props: ClassProps): boolean =>
   props != null && ((props.class != null && props.class !== "") || (props.className != null && props.className !== ""));
 
-const mergeOverride = (joined: unknown, props: ClassProps): unknown => (hasOverride(props) ? cn(joined as string) : joined);
+/** The final class of a core string under `props`' override: joined, merged with tailwind-merge when it can matter. */
+const withOverride = (core: string | undefined, props: ClassProps): string | undefined => {
+  if (!hasOverride(props)) return core;
+  const joined = cx(core, props!.class as never, props!.className as never);
+  if (typeof joined !== "string") return cn(joined as never) as string | undefined;
+  const override = cx(props!.class as never, props!.className as never);
+  // One override token (or none) next to an inert core: nothing for tailwind-merge to drop.
+  if ((override === undefined || override.indexOf(" ") < 0) && (core === undefined || !UTILITY_CORE.test(core))) return joined;
+  return cn(joined) as string | undefined;
+};
 
-const METADATA = ["variantKeys", "extend", "base", "slots", "variants", "defaultVariants", "compoundSlots", "compoundVariants"];
+// = tailwind-variants `falsyToString`.
+const keyOf = (value: unknown): unknown => (value === false ? "false" : value === true ? "true" : value === 0 ? "0" : value);
+const isEmpty = (values: unknown): boolean => {
+  if (!values || typeof values !== "object") return true;
+  for (const _ in values) return false;
+  return true;
+};
 
-export const tv = ((options: {slots?: unknown}, config?: {twMerge?: boolean; twMergeConfig?: object}) => {
-  // Explicit configs (none in the vendored styles) keep upstream behaviour.
-  if (config != null) return (tvJoin as unknown as (o: unknown, c: unknown) => unknown)(options, config);
-  const inner = (tvJoin as unknown as (o: unknown) => Resolver)(options);
-  let component: Resolver;
-  if (options.slots === undefined) {
-    component = ((props?: ClassProps) => mergeOverride(inner(props), props)) as Resolver;
-  } else {
-    // Slot results are cached by tv per variant fingerprint: wrap each result's slot functions once, in place.
-    const wrapped = new WeakSet<object>();
-    component = ((props?: ClassProps) => {
-      const result = inner(props) as Record<string, (slotProps?: ClassProps) => unknown>;
-      if (!wrapped.has(result)) {
-        wrapped.add(result);
-        for (const key in result) {
-          const slot = result[key];
-          result[key] = (slotProps?: ClassProps) => mergeOverride(slot(slotProps), slotProps);
-        }
+/** Fingerprint of the variant props (null: a value that is not a plain primitive, uncached). */
+const fingerprint = (keys: readonly string[], props: ClassProps): string | null => {
+  if (props == null) return "";
+  let out = "";
+  for (const key of keys) {
+    const value = props[key];
+    const type = typeof value;
+    if (value !== undefined && value !== null && type !== "string" && type !== "number" && type !== "boolean") return null;
+    out += (value === undefined ? "u" : value === null ? "n" : type[0] + String(value)) + "\0";
+  }
+  return out;
+};
+const LIMIT = 256;
+
+export const tv = ((options: Options, config?: unknown) => {
+  for (const key of ["extend", "compoundVariants", "compoundSlots"])
+    if (options[key] != null && !(Array.isArray(options[key]) && (options[key] as unknown[]).length === 0))
+      throw new TypeError("ui tv: no " + key);
+  if (config != null) throw new TypeError("ui tv: no config");
+  const base = options.base;
+  const variants = options.variants ?? {};
+  const defaults = options.defaultVariants ?? {};
+  const variantKeys = Object.keys(variants);
+  const compiled = variantKeys.map((key) => ({ key, values: variants[key]!, empty: isEmpty(variants[key]) }));
+  // = tailwind-variants `getVariantValue`: slot props first, then props, then the default; `undefined` → the "false" key.
+  const valueOf = (variant: (typeof compiled)[number], props: ClassProps, slotProps?: ClassProps): unknown => {
+    if (variant.empty) return null;
+    const prop = slotProps?.[variant.key] ?? props?.[variant.key];
+    if (prop === null) return null;
+    const key = keyOf(prop);
+    if (typeof key === "object") return null;
+    return variant.values[((key != null ? key : keyOf(defaults[variant.key])) as string) || "false"];
+  };
+  const hasSlots = options.slots !== undefined;
+  let component: ((props?: ClassProps) => unknown) & Record<string, unknown>;
+  if (!hasSlots) {
+    let plain: string | undefined | null = null;
+    let cache = new Map<string, string | undefined>();
+    const core = (props: ClassProps): string | undefined => {
+      if (!compiled.length) return plain === null ? (plain = cx(base as never)) : plain;
+      const id = fingerprint(variantKeys, props);
+      if (id !== null) {
+        const hit = cache.get(id);
+        if (hit !== undefined || cache.has(id)) return hit;
+      }
+      const classes: unknown[] = [];
+      for (const variant of compiled) {
+        const value = valueOf(variant, props);
+        if (value) classes.push(value);
+      }
+      const result = cx(base as never, classes as never);
+      if (id !== null) {
+        if (cache.size >= LIMIT) cache = new Map();
+        cache.set(id, result);
       }
       return result;
-    }) as Resolver;
+    };
+    component = ((props?: ClassProps) => withOverride(core(props), props)) as typeof component;
+  } else {
+    const slots: Record<string, unknown> = { base: typeof base === "string" || base == null ? base : cx(base as never), ...options.slots };
+    const slotKeys = Object.keys(slots);
+    const compute = (slot: string, props: ClassProps, slotProps?: ClassProps): string | undefined => {
+      const classes: unknown[] = [];
+      for (const variant of compiled) {
+        const value = valueOf(variant, props, slotProps) as unknown;
+        const own = slot === "base" && typeof value === "string" ? value : value && (value as Record<string, unknown>)[slot];
+        if (own) classes.push(own);
+      }
+      return cx(slots[slot] as never, classes as never);
+    };
+    let cache = new Map<string, Record<string, (slotProps?: ClassProps) => unknown>>();
+    const result = (props: ClassProps) => {
+      const out: Record<string, (slotProps?: ClassProps) => unknown> = {};
+      for (const slot of slotKeys) {
+        const core = compute(slot, props);
+        out[slot] = (slotProps?: ClassProps) => {
+          if (slotProps == null) return core;
+          for (const key in slotProps)
+            if (key !== "class" && key !== "className" && slotProps[key] !== undefined) return withOverride(compute(slot, props, slotProps), slotProps);
+          return withOverride(core, slotProps);
+        };
+      }
+      return out;
+    };
+    component = ((props?: ClassProps) => {
+      const id = fingerprint(variantKeys, props);
+      if (id === null) return result(props);
+      let hit = cache.get(id);
+      if (hit === undefined) {
+        if (cache.size >= LIMIT) cache = new Map();
+        cache.set(id, (hit = result(props)));
+      }
+      return hit;
+    }) as typeof component;
   }
-  for (const key of METADATA) component[key] = inner[key];
+  // tailwind-variants' metadata (tests and docs tooling read it).
+  component.variantKeys = variantKeys;
+  component.extend = null;
+  component.base = base;
+  component.slots = hasSlots ? { base: typeof base === "string" || base == null ? base : cx(base as never), ...options.slots } : {};
+  component.variants = variants;
+  component.defaultVariants = defaults;
+  component.compoundSlots = [];
+  component.compoundVariants = [];
   return component;
 }) as unknown as TV;

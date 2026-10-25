@@ -95,3 +95,13 @@ test("3: ineligible For shapes keep the generic rows", () => {
     assert.doesNotMatch(r.code, /\$list/, body);
   }
 });
+
+test("ZERO A2 (C4b): literal children folded into a row template take no list slot", async () => {
+  await same(
+    `import { For } from "@rivetjs/runtime/server";
+export function Page(p: { rows: { id: number; name: string }[] }) {
+  return <ul><For each={() => p.rows} by={(r) => r.id}>{(row) => <li><b>{row().name}{" "}{1}{true}</b>{row().id}</li>}</For></ul>;
+}`,
+    [{ rows: rows(3) }],
+  );
+});

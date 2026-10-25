@@ -13,7 +13,7 @@
 import { createContext, untrack, useContext } from "@rivetjs/reactivity";
 import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
-import { cx } from "tailwind-variants/lite";
+import { cx } from "../../../styles/src/utils/tv.ts";
 
 import type { BadgeVariants } from "../../../styles/src/components/badge/index.ts";
 import { badgeVariants } from "../../../styles/src/components/badge/index.ts";

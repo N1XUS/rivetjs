@@ -6,9 +6,10 @@
 // replayed here per shape.
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { _rB, _rBEnd, _rBOut, _rData, derivedToString } from "@rivetjs/runtime/server-derived";
 import { createDecoder, registerClass, serialize } from "@rivetjs/runtime/resume-format";
-import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
+import type { FlushTail } from "@rivetjs/runtime/resume-format";
 
 const INDEPENDENT = 1,
   DEMOTED = 8;
@@ -34,7 +35,7 @@ class Plain {
 }
 
 // The router's shape: `<Root s={rootData(input)} />`, Root's body opening the independent boundary with its props.
-async function render(payload: object, origin?: string): Promise<{ record: BoundaryTail["b"][number]; html: string }> {
+async function render(payload: object, origin?: string): Promise<{ record: FlushTail["b"][number]; html: string }> {
   const html = (await derivedToString(
     () => {
       const props = { s: _rData(payload) };
@@ -47,7 +48,7 @@ async function render(payload: object, origin?: string): Promise<{ record: Bound
     },
     { manifest, ...(origin ? { origin } : {}) } as never,
   )) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!) as BoundaryTail;
+  const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   return { record: tail.b[0]!, html };
 }
 // The generated browser `Root`: `Root.ready` loads the chunk the payload names (`x`, here the module itself), `rootPayload`

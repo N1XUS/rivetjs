@@ -10,12 +10,15 @@ import { DERIVED_LOADER, DERIVED_STREAM } from "../resume-loader-derived.min.ts"
 // DERIVED-C (2026-10-21): +79 B (1,122) for the fetch-ahead (`data-fo` modulepreloads after `load`; ssr-bench `/resume`
 // 1000 rows first click 1×: latency 70.7 → 39.8 ms, 0 scripts on the click instead of 8); +38 B (1,160) for the cold press
 // (default `data-events` hold pointerdown / pointerup / mousedown / mouseup / focusin / focusout, the focused element at
-// dispatch in the held state: cdk fuzz PRESS pins): budget 1,160 B.
-test("shipped derived loader is current, inline-safe and fits 1,160 B brotli", async () => {
+// dispatch in the held state: cdk fuzz PRESS pins): budget 1,160 B. ZERO R2 (2026-10-25, D5 listening records): +87 B
+// (1,247) — tail `e` by boundary name: an event is held / boots / warms only inside a record whose name listens to its
+// type (intent also on a `data-g` match: the router's links); static text and native controls nothing listens to stay
+// native (no runtime, no chunk): budget 1,247 B. ZERO R7 (tail v2, S2): +58 B (1,305) — the name lookup reads `n[i][2]` and a run's member through its template.
+test("shipped derived loader is current, inline-safe and fits 1,305 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1160, `minified ${size} B`);
+  assert.ok(size <= 1305, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 

@@ -41,7 +41,11 @@ export function spreadAttributes(value: object | null | undefined, tag: string, 
     }
     // React: a controlled `value` / `checked` wins over the uncontrolled default (both write that attribute).
     if ((key === "defaultValue" && "value" in value!) || (key === "defaultChecked" && "checked" in value!)) continue;
-    if (key === "ref") continue;
+    // A spread ref (cdk parts): it may attach listeners imperatively at adopt — the unit listens to any event (D5, `*`).
+    if (key === "ref") {
+      if (item != null) _trigger.ev?.("");
+      continue;
+    }
     // `on[A-Z]` (char codes: a regex test per key was a top self-time line of cdk part SSR).
     const third = key.charCodeAt(2);
     if (key.charCodeAt(0) === 111 && key.charCodeAt(1) === 110 && third >= 65 && third <= 90 && (item == null || typeof item === "function")) {

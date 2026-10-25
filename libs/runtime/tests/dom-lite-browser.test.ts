@@ -24,16 +24,18 @@ export function Page(props: { n: number }) {
 const RESUME = { module: "src/c.tsx", boundaries: ["Counter"], independent: ["Counter"] };
 // The hand-written residual of `Counter` (what lite emission produces): the keyed signal from the record, the button's
 // handler, the count text after its content opener. `walk` = the path to that opener from the button.
-const residual = (walk = "nfn", key?: string) => `import { _ls, _le, _lt, _lw } from "@rivetjs/runtime/dom-lite";
+// `read` (ZERO X9): the count's initial value read from the page (`_lr` codec 1: the text as a number), not the record.
+const residual = (walk = "nfn", key?: string, read = false) => `import { _ls, _le, _lr, _lt, _lw } from "@rivetjs/runtime/dom-lite";
 export function Counter$a(n, r) {
-  const count = _ls(r, ${JSON.stringify(key ?? "KEY")}, 0), b = n.firstChild;
+  const b = n.firstChild, at = _lw(b, ${JSON.stringify(walk)}),
+    count = ${read ? `_lr(r, ${JSON.stringify(key ?? "KEY")}, at, 1)` : `_ls(r, ${JSON.stringify(key ?? "KEY")}, 0)`};
   _le(r, b, "click", () => count.update((x) => x + 1));
-  _lt(_lw(b, ${JSON.stringify(walk)}), () => count());
+  _lt(at, () => count());
 }
 export const Counter$c = () => import("/c-full.js");`;
 
 const compiled = hasDerivedModel() ? test : test.skip;
-async function files(n: number, options: { runtime?: "lite" | "full"; walk?: string; wake?: boolean } = {}): Promise<Record<string, string>> {
+async function files(n: number, options: { runtime?: "lite" | "full"; walk?: string; wake?: boolean; read?: string } = {}): Promise<Record<string, string>> {
   const server = compile(SOURCE, { target: "server", filename: "c.tsx", resume: RESUME } as never);
   const dom = compile(SOURCE, { target: "dom", filename: "c.tsx", resume: RESUME } as never);
   assert.deepEqual(server.diagnostics, []);
@@ -43,13 +45,17 @@ async function files(n: number, options: { runtime?: "lite" | "full"; walk?: str
   const runtime = options.runtime === "full" ? "/rt.js" : "/lite.js";
   let html = (await derivedToString(() => Page({ n }), { manifest: { runtime, symbols: { "src/c.tsx#Counter": "/c.js" } } })) as string;
   // A wake list naming the first counter's key (another boundary reads it): not lite.
-  if (options.wake) html = html.replace('"m":{', '"w":{"1.' + key + '":[2]},"m":{');
+  // (Tail v2, ZERO S2: inserted before the names table `n`.)
+  if (options.wake) html = html.replace('"n":[', '"w":{"1.' + key + '":[2]},"n":[');
+  // X9: the page shows another count than the init (the server elides a DOMREAD key while unwritten).
+  if (options.read !== undefined) html = html.replaceAll("Count: <!--[-->0<!--]-->", "Count: <!--[-->" + options.read + "<!--]-->");
   return {
     ...DERIVED_BUILD,
     "/": "<!doctype html><html><body>" + html + "</body></html>",
     "/lite.js": 'export { default } from "/dom-lite.ts";',
     "/rt.js": 'export { default } from "/dom-derived.ts";',
-    "/c.js": rewrite(residual(options.walk, key)),
+    // X9: the residual reads a key the record does not have (what DOMREAD elision leaves).
+    "/c.js": rewrite(residual(options.walk, options.read !== undefined ? "elided" : key, options.read !== undefined)),
     "/c-full.js": rewrite(dom.code),
   };
 }
@@ -157,6 +163,23 @@ compiled("full runtime (R5): a residual that throws adopts through `$c` (one-way
     await page.waitForFunction(() => document.querySelector(".n")!.textContent === "Count: 1");
     await page.click(".inc");
     assert.deepEqual(await counts(page), ["Count: 2"]);
+    assert.ok(requests.includes("/c-full.js"), requests.join(" "));
+  });
+});
+
+compiled("X9: a residual reads a keyed signal's initial value from the page (`_lr`); an unreadable one falls back", async () => {
+  await withPage(await files(2, { read: "7" }), async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    assert.deepEqual(await counts(page), ["Count: 7", "Count: 7"]);
+    await page.click(".c:nth-child(1) .inc");
+    await page.waitForFunction(() => document.querySelectorAll(".n")[0]!.textContent === "Count: 8");
+    assert.ok(!requests.includes("/c-full.js"), requests.join(" "));
+  });
+  // Not a number on the page: `LiteMiss` → the ordinary component (its init: the record has no such key either).
+  await withPage(await files(1, { read: "x" }), async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    await page.click(".c:nth-child(1) .inc");
+    await page.waitForFunction(() => /^Count: \d+$/.test(document.querySelectorAll(".n")[0]!.textContent!));
     assert.ok(requests.includes("/c-full.js"), requests.join(" "));
   });
 });

@@ -210,7 +210,7 @@ fn trim_closing(html: &mut String) {
     }
 }
 
-fn delegated(event: &str) -> bool {
+pub(super) fn delegated(event: &str) -> bool {
     DELEGATED.contains(&event)
 }
 
@@ -909,13 +909,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
                         continue;
                     }
                     let inner = strip_parens(e);
-                    let literal = match inner {
-                        Expression::StringLiteral(s) => Some(s.value.to_string()),
-                        Expression::TemplateLiteral(t) if t.expressions.is_empty() => {
-                            t.quasis.first().and_then(|q| q.value.cooked.as_ref()).map(|c| c.to_string())
-                        }
-                        _ => None,
-                    };
+                    // ZERO A2 (C4b): the server folds the same children (`compile.rs` `literal_child`).
+                    let literal = super::literal_child(self.tree, e);
                     if let Some(text) = literal {
                         if !text.is_empty() {
                             match items.last_mut() {

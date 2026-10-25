@@ -10,6 +10,7 @@ import { chromium } from "playwright";
 import { afterAll, beforeAll, test } from "vitest";
 import { buildFrames, type FramesBuild } from "../tools/check-examples.ts";
 import { CHROMIUM_ARGS, serveClient } from "../tools/example-checks.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 const app = fileURLToPath(new URL("../../../apps/docs", import.meta.url));
 const dist = resolve(app, ".artifacts/frame-root-test");
@@ -27,7 +28,7 @@ const tail = async (id: string) => {
   const html = await readFile(resolve(frames.build.client, "examples", id, "frame/index.html"), "utf8");
   const json = /<script type="rivet\/boundaries"[^>]*>([^<]*)<\/script>/.exec(html)?.[1];
   assert.ok(json, `${id}: no boundaries tail`);
-  return JSON.parse(json) as { b: [number, number, number, string, unknown[], { s?: unknown }?][] };
+  return expandTail(JSON.parse(json)) as unknown as { b: [number, number, number, string, unknown[], { s?: unknown }?][] };
 };
 
 test("a frame page that takes props resumes under FrameRoot with its payload; one that takes none has no frame record", async () => {

@@ -65,6 +65,11 @@ export interface ExampleFile {
   /** Line range (1-based, inclusive) of the `#region demo` focus, when present. */
   focus?: [number, number];
 }
+/**
+ * What `<Example>` renders (ZERO Z9): a generated page's `virtual:docs/examples?ids=…` module carries only these fields,
+ * not the manifest's summary / tags / status / pages / test steps / usedOn (`vite.ts` `VIEW_FIELDS`, same list).
+ */
+export type ExampleView = Pick<ExampleData, "title" | "height" | "auto" | "phone" | "codeOnly" | "files">;
 export interface ExampleMeasure {
   /** Inline script + state bytes in the HTML (before any request). */
   inlineBytes: number;

@@ -6,12 +6,16 @@
 // Compiled with the real derived server + DOM targets (skips on a wasm without the model).
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString, renderDerived } from "@rivetjs/runtime/server-derived";
 import type { Page } from "playwright";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 const compiled = hasDerivedModel() ? test : test.skip;
 const PAGE = `import { signal } from "@rivetjs/reactivity";
@@ -84,7 +88,7 @@ compiled("server: awaited in place — markers around the content, the value in 
   const { App } = await build();
   const html = (await derivedToString(() => App({ data: Promise.resolve(ITEMS) }), { manifest })) as string;
   assert.match(html, /<!--a1--><div id="list">.*<\/div><!--\/a-->/s);
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.deepEqual(tail.a, [[1, 1, 0, 1, ITEMS]]);
   assert.ok(!html.includes("$rD"), "no stream add-on without streaming");
 });
@@ -95,9 +99,9 @@ compiled("server: streamed — fallback in the shell (entry pending), the conten
   const html = chunks.join("");
   const shell = html.slice(0, html.indexOf("<template"));
   assert.match(shell, /<!--a1--><p id="wait">wait<\/p><!--\/a-->/);
-  assert.deepEqual(JSON.parse(/<script type="rivet\/boundaries" data-rt[^>]*>(.*?)<\/script>/s.exec(shell)![1]!).a, [[1, 1, 0]]);
+  assert.deepEqual(tailJson(JSON.parse(/<script type="rivet\/boundaries" data-rt[^>]*>(.*?)<\/script>/s.exec(shell)![1]!)).a, [[1, 1, 0]]);
   assert.equal(html.match(/window\.\$rD=/g)?.length, 1, "the swap add-on once");
-  const patch = JSON.parse(/<script type="rivet\/boundaries" data-patch="1">(.*?)<\/script>/s.exec(html)![1]!);
+  const patch = tailJson(JSON.parse(/<script type="rivet\/boundaries" data-patch="1">(.*?)<\/script>/s.exec(html)![1]!));
   assert.deepEqual(patch.a, [[1, 1, 0, 1, ITEMS]]);
   // The content's boundary (Inner) is numbered on from the shell's.
   assert.deepEqual(
@@ -115,7 +119,7 @@ compiled("server: a stream cut by its deadline leaves the boundary to the browse
   const chunks = await streamed(App, new Promise(() => {}), 10);
   const html = chunks.join("");
   assert.ok(!html.includes("<template"));
-  assert.deepEqual(JSON.parse(/data-patch="1">(.*?)<\/script>/s.exec(html)![1]!).a, [[1, 1, 0, 0]]);
+  assert.deepEqual(tailJson(JSON.parse(/data-patch="1">(.*?)<\/script>/s.exec(html)![1]!)).a, [[1, 1, 0, 0]]);
 });
 
 compiled("awaited in place: the content adopts with the server's value (its load never runs in the browser)", async () => {
@@ -257,10 +261,10 @@ compiled("server: an `Async` in a children slot under a provider is keyed by the
     { manifest: providedManifest, stream: {} },
   );
   const html = chunks.join("");
-  const tail = JSON.parse(/<script type="rivet\/boundaries" data-rt[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries" data-rt[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   const app = tail.b.find((r: unknown[]) => r[3] === "src/page.tsx#App")[0];
   assert.deepEqual(tail.a, [[1, app, 0]], "keyed by App (its body made the provider), place 0");
-  const patch = JSON.parse(/data-patch="1">(.*?)<\/script>/s.exec(html)![1]!);
+  const patch = tailJson(JSON.parse(/data-patch="1">(.*?)<\/script>/s.exec(html)![1]!));
   assert.equal(patch.w, undefined, "the content's reads of App's keyed state are App's own (no wake list)");
 });
 
@@ -307,7 +311,7 @@ async function streamedDated(App: (props: { data: PromiseLike<unknown> }) => Ser
 compiled("server: a settled value that is not JSON data ships as its resume table (settled 2)", async () => {
   const { App } = await build();
   const html = await streamedDated(App);
-  const [entry] = JSON.parse(/<script type="rivet\/boundaries" data-patch="1">(.*?)<\/script>/s.exec(html)![1]!).a;
+  const [entry] = tailJson(JSON.parse(/<script type="rivet\/boundaries" data-patch="1">(.*?)<\/script>/s.exec(html)![1]!)).a;
   assert.deepEqual(entry.slice(0, 4), [1, 1, 0, 2]);
   const { createDecoder } = await import("@rivetjs/runtime/resume-format");
   assert.deepEqual(createDecoder(entry[4].t).get(entry[4].r), DATED);
@@ -426,7 +430,7 @@ compiled("a discarded Suspense build leaves no records: the boundaries of the re
   const { App } = await importServer<{ App: () => ServerValue }>(server.code);
   const symbols = { "src/page.tsx#App": "/page.js", "src/page.tsx#Inner": "/page.js" };
   const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols } })) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.deepEqual(
     tail.b.map((r: unknown[]) => r.slice(0, 2)),
     [

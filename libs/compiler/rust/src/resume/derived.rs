@@ -218,7 +218,7 @@ fn reads_module_state(tree: &Tree<'_>, closure: NodeId) -> bool {
                 match &d.init {
                     _ if !constant => true,
                     Some(init) if matches!(unwrap(init), Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_)) => false,
-                    Some(init) if data_literal(tree, init, 0) || context_token(init) || module_data_const(tree, decl, d, 0) => false,
+                    Some(init) if data_literal(tree, init, 0) || context_token(init) || module_data_const(tree, decl, d, 0) || pure_const(tree, decl, 0) => false,
                     _ => value_use(tree, n, false),
                 }
             }
@@ -334,22 +334,26 @@ pub struct Plan {
     pub keyed: FxHashMap<NodeId, (String, bool)>,
     /// Boundary names (export names) in source order.
     pub names: Vec<String>,
-    /// Boundary function → the event types of its own JSX handlers outside the loader's default list (space separated,
-    /// `_rB`'s `events`: the loader's `data-events`, so a cold `scroll` / `pointerenter` / … wakes the boundary).
+    /// Boundary function → the event types of its own unconditional JSX handlers and model bindings (space separated, `*` =
+    /// a handler of unknown type; `_rB`'s `events`): the record's listened types (tail `e`, STATIC-ZERO-2 D5: an event
+    /// adopts only the records around its target that listen to its type), and the loader's `data-events` (the types
+    /// outside its default list, so a cold `scroll` / `pointerenter` / … wakes the boundary).
     pub events: FxHashMap<NodeId, String>,
-    /// STATIC-ZERO T3: event attributes of boundary bodies whose handler value is conditional → the event type when the
-    /// loader does not delegate it by default ("" otherwise). The server target writes `_rHandler(B, value[, type])` for them
-    /// (the instance is live — and its type delegated — only when the value is a function).
+    /// STATIC-ZERO T3: event attributes of boundary bodies whose handler value is conditional → the event type (`*`:
+    /// unknown). The server target writes `_rHandler(B, value, type)` for them (the instance is live — listening to that
+    /// type, and a non-default type delegated — only when the value is a function).
     pub listen: FxHashMap<NodeId, String>,
     /// STATIC-ZERO T3: native spread elements in the bodies of conditional boundaries (`COND`): the server target passes
     /// their attribute object through `_rHandlers(B, object)` (a forwarded listener function makes the instance live).
     pub spreads: FxHashSet<NodeId>,
     /// ZERO A1: functions of components in `resume.static` (never reached by an adopt walk): no slot markers inside.
     pub static_fns: FxHashSet<NodeId>,
+    /// D5 (intake 3): unconditional event attributes outside every boundary body (a lowercase helper a component calls —
+    /// cdk `group` / `compareRoot` — or a component that is no boundary) → the event type (`*`: unknown). The listener is
+    /// installed by the adopt run of the boundary around the caller, so the server target writes `_rListens("type")` there
+    /// (that boundary listens to the type); no `_rB` events list can name it.
+    pub orphan_on: FxHashMap<NodeId, String>,
 }
-
-/// The loader's default delegated types (`resume-loader-derived.ts`); `_rB` names only the others.
-const DEFAULT_EVENTS: &[&str] = &["click", "input", "change", "submit", "keydown", "pointerdown", "pointerup", "mousedown", "mouseup", "focusin", "focusout"];
 
 fn pascal(name: &str) -> bool {
     name.starts_with(|c: char| c.is_ascii_uppercase())
@@ -444,8 +448,43 @@ fn params(tree: &Tree<'_>, function: NodeId) -> (&'static str, Option<String>) {
     let Some(first) = params.items.first() else { return ("none", None) };
     match &first.pattern.kind {
         BindingPatternKind::BindingIdentifier(id) => ("object", Some(id.name.to_string())),
+        BindingPatternKind::ObjectPattern(o) => match flat_pattern(o) {
+            Some(props) => ("object", Some(props)),
+            None => ("destructured", None),
+        },
         _ => ("destructured", None),
     }
+}
+
+/// ZERO A5: a flat object pattern (`{ title, n: count, open = false, ...rest }`: static keys, identifier values with
+/// optional defaults, an identifier rest) → an object expression over its bindings: the props an independent boundary
+/// records (`_rB(name, flags, { title, n: count, open, ...rest })`, evaluated after the parameter defaults ran).
+fn flat_pattern(o: &ObjectPattern<'_>) -> Option<String> {
+    let mut parts = Vec::with_capacity(o.properties.len() + 1);
+    for p in &o.properties {
+        if p.computed {
+            return None;
+        }
+        let key = match &p.key {
+            PropertyKey::StaticIdentifier(k) => k.name.to_string(),
+            PropertyKey::StringLiteral(k) => serde_json::to_string(k.value.as_str()).ok()?,
+            _ => return None,
+        };
+        let local = match &p.value.kind {
+            BindingPatternKind::BindingIdentifier(id) => id.name.as_str(),
+            BindingPatternKind::AssignmentPattern(a) => match &a.left.kind {
+                BindingPatternKind::BindingIdentifier(id) => id.name.as_str(),
+                _ => return None,
+            },
+            _ => return None,
+        };
+        parts.push(if key == local { key } else { format!("{key}: {local}") });
+    }
+    if let Some(rest) = &o.rest {
+        let BindingPatternKind::BindingIdentifier(id) = &rest.argument.kind else { return None };
+        parts.push(format!("...{}", id.name));
+    }
+    Some(format!("{{ {} }}", parts.join(", ")))
 }
 
 /// A browser-only closure's node: handlers, effects, client events (and their targets), element effects, refs, local
@@ -477,7 +516,7 @@ fn browser_closures(tree: &Tree<'_>, resumed: &Resumed) -> FxHashSet<NodeId> {
 
 /// A JSON-like literal: strings, numbers, booleans, null, expression-free templates, arrays / objects of those, a
 /// module-level `const` bound to one.
-fn data_literal<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
+pub(crate) fn data_literal<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
     if depth > 8 {
         return false;
     }
@@ -515,12 +554,169 @@ fn data_literal<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
     }
 }
 
+/// ZERO C3 (2026-10-25): a call-site value that cannot change after the server render without the caller re-creating the
+/// call: a data literal, or a plain value over module data — member / index chains, `+` / template / `?:` / `!` /
+/// comparison over such values, rooted at a pure module `const` (`pure_const`) or at a parameter of a `.map` callback
+/// whose receiver is one (the call is re-created when the list changes; live props getters are never involved).
+/// The runtime still demotes a boundary whose recorded props are not JSON data (`isData`).
+pub(crate) fn plain_value<'a>(tree: &Tree<'a>, e: &Expression<'a>, depth: u32) -> bool {
+    if depth > 12 {
+        return false;
+    }
+    if data_literal(tree, e, 0) {
+        return true;
+    }
+    match unwrap(e) {
+        Expression::Identifier(ident) => {
+            let Some(decl) = tree.resolve(ident, false) else { return false };
+            pure_const(tree, decl, depth + 1) || map_param(tree, decl, depth + 1)
+        }
+        Expression::StaticMemberExpression(m) => !m.optional && plain_value(tree, &m.object, depth + 1),
+        Expression::ComputedMemberExpression(m) => !m.optional && plain_value(tree, &m.object, depth + 1) && plain_value(tree, &m.expression, depth + 1),
+        Expression::TemplateLiteral(t) => t.expressions.iter().all(|x| plain_value(tree, x, depth + 1)),
+        Expression::BinaryExpression(b) => {
+            use oxc_syntax::operator::BinaryOperator as B;
+            matches!(
+                b.operator,
+                B::Addition
+                    | B::Subtraction
+                    | B::Multiplication
+                    | B::Division
+                    | B::Remainder
+                    | B::StrictEquality
+                    | B::StrictInequality
+                    | B::LessThan
+                    | B::LessEqualThan
+                    | B::GreaterThan
+                    | B::GreaterEqualThan
+            ) && plain_value(tree, &b.left, depth + 1)
+                && plain_value(tree, &b.right, depth + 1)
+        }
+        Expression::LogicalExpression(l) => plain_value(tree, &l.left, depth + 1) && plain_value(tree, &l.right, depth + 1),
+        Expression::ConditionalExpression(c) => {
+            plain_value(tree, &c.test, depth + 1) && plain_value(tree, &c.consequent, depth + 1) && plain_value(tree, &c.alternate, depth + 1)
+        }
+        Expression::UnaryExpression(u) => matches!(u.operator, UnaryOperator::LogicalNot | UnaryOperator::UnaryNegation) && plain_value(tree, &u.argument, depth + 1),
+        _ => false,
+    }
+}
+
+/// A top-level `const x = init` whose init refers to nothing but globals, its own bindings and other pure constants
+/// (no import: a `createStore` / `signal` value would be reactive).
+fn pure_const(tree: &Tree<'_>, decl: NodeId, depth: u32) -> bool {
+    if depth > 12 {
+        return false;
+    }
+    let AstKind::VariableDeclarator(d) = tree.kind(decl) else { return false };
+    let Some(declaration) = tree.raw_parent(decl) else { return false };
+    let AstKind::VariableDeclaration(v) = tree.kind(declaration) else { return false };
+    let top = match tree.raw_parent(declaration).map(|p| (p, tree.kind(p))) {
+        Some((_, AstKind::Program(_))) => true,
+        Some((p, AstKind::ExportNamedDeclaration(_))) => matches!(tree.raw_parent(p).map(|g| tree.kind(g)), Some(AstKind::Program(_))),
+        _ => false,
+    };
+    if !top || v.kind != VariableDeclarationKind::Const {
+        return false;
+    }
+    let BindingPatternKind::BindingIdentifier(binding) = &d.id.kind else { return false };
+    // Module state the program changes in place (`loaded.set(…)`, `xs.push(…)`, `x.a = …`, passed on) is no data.
+    if !binding.symbol_id.get().is_some_and(|symbol| read_only(tree, symbol)) {
+        return false;
+    }
+    let Some(init) = d.init.as_ref() else { return false };
+    let span = init.span();
+    let Some(id) = tree.expr_id(init) else { return false };
+    let mut pure = true;
+    tree.walk(id, &mut |n| {
+        if let AstKind::IdentifierReference(ident) = tree.kind(n) {
+            if tree.in_type_name(n) {
+                return true;
+            }
+            if let Some(symbol) = tree.symbol_of_ref(ident) {
+                let at = tree.decl_of_symbol(symbol);
+                let own = tree.span(at);
+                if !(own.start >= span.start && own.end <= span.end) && !pure_const(tree, at, depth + 1) {
+                    pure = false;
+                }
+            }
+        }
+        pure
+    });
+    pure
+}
+
+/// Every reference of `symbol` reads through a member chain (`x.a`, `x[i].b`, `x.map(…)`) that is never written,
+/// deleted, updated or called with a mutating array / collection method.
+fn read_only(tree: &Tree<'_>, symbol: oxc_semantic::SymbolId) -> bool {
+    const MUTATORS: &[&str] = &["set", "add", "delete", "clear", "push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill", "copyWithin"];
+    tree.sem.scoping().get_resolved_references(symbol).all(|r| {
+        let mut at = r.node_id();
+        let mut member = false;
+        loop {
+            let Some(parent) = tree.parent(at) else { return false };
+            let here = tree.span(at);
+            match tree.kind(parent) {
+                AstKind::StaticMemberExpression(m) if m.object.span() == here => {
+                    member = true;
+                    if let Some(AstKind::CallExpression(c)) = tree.parent(parent).map(|p| tree.kind(p)) {
+                        if c.callee.span() == m.span && MUTATORS.contains(&m.property.name.as_str()) {
+                            return false;
+                        }
+                    }
+                    at = parent;
+                }
+                AstKind::ComputedMemberExpression(m) if m.object.span() == here => {
+                    member = true;
+                    at = parent;
+                }
+                AstKind::ParenthesizedExpression(_) | AstKind::TSAsExpression(_) | AstKind::TSNonNullExpression(_) | AstKind::TSSatisfiesExpression(_) => at = parent,
+                AstKind::AssignmentExpression(a) if a.left.span() == here => return false,
+                AstKind::SimpleAssignmentTarget(_) | AstKind::AssignmentTarget(_) | AstKind::UpdateExpression(_) => return false,
+                AstKind::UnaryExpression(u) if u.operator == UnaryOperator::Delete => return false,
+                // A member read ends the chain (its value is a copy or another read); a bare reference must be a member's object.
+                _ => return member,
+            }
+        }
+    })
+}
+
+/// `decl` is a parameter binding of a callback passed first to `<receiver>.map(…)` with a plain receiver.
+fn map_param(tree: &Tree<'_>, decl: NodeId, depth: u32) -> bool {
+    let mut n = tree.raw_parent(decl);
+    let mut in_params = false;
+    while let Some(id) = n {
+        match tree.kind(id) {
+            AstKind::FormalParameters(_) => in_params = true,
+            AstKind::ArrowFunctionExpression(_) | AstKind::Function(_) => break,
+            _ => {}
+        }
+        n = tree.raw_parent(id);
+    }
+    let (true, Some(function)) = (in_params, n) else { return false };
+    let callback = tree.span(function);
+    let mut p = tree.raw_parent(function);
+    while let Some(id) = p {
+        match tree.kind(id) {
+            AstKind::CallExpression(call) => {
+                let Expression::StaticMemberExpression(m) = &call.callee else { return false };
+                return m.property.name == "map"
+                    && !m.optional
+                    && call.arguments.first().is_some_and(|a| a.span() == callback)
+                    && plain_value(tree, &m.object, depth + 1);
+            }
+            AstKind::ParenthesizedExpression(_) | AstKind::Argument(_) => p = tree.raw_parent(id),
+            _ => return false,
+        }
+    }
+    false
+}
+
 fn data_attributes<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
     el.opening_element.attributes.iter().all(|item| match item {
         JSXAttributeItem::SpreadAttribute(_) => false,
         JSXAttributeItem::Attribute(attr) => match &attr.value {
             None | Some(JSXAttributeValue::StringLiteral(_)) => true,
-            Some(JSXAttributeValue::ExpressionContainer(c)) => c.expression.as_expression().is_some_and(|e| data_literal(tree, e, 0)),
+            Some(JSXAttributeValue::ExpressionContainer(c)) => c.expression.as_expression().is_some_and(|e| plain_value(tree, e, 0)),
             Some(_) => false,
         },
     })
@@ -620,7 +816,8 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                     AstKind::CallExpression(c) if context_call(c) => context = true,
                     AstKind::CallExpression(c) => {
                         let resource = matches!(unwrap(&c.callee), Expression::Identifier(i) if imported(tree, i).is_some_and(|(name, from)| name == "resource" && from.starts_with("@rivetjs/runtime")));
-                        if resource || keyed_callee(tree, c).is_some() {
+                        // ZERO A2 (C4): a `signal()` bound to a `const` and only ever called (`x()`) never changes: no source.
+                        if resource || keyed_callee(tree, c).is_some_and(|store| store || !never_written(tree, n)) {
                             source = true;
                         }
                     }
@@ -659,6 +856,32 @@ fn keyed_callee<'a>(tree: &Tree<'a>, call: &CallExpression<'a>) -> Option<bool> 
         "createStore" if from == "@rivetjs/reactivity/store" || from == "@rivetjs/reactivity" => Some(true),
         _ => None,
     }
+}
+
+/// ZERO A2 (C4): `const x = signal(init)` whose every reference is a plain read call `x()` (no `.set` / `.update`, never
+/// passed, returned, stored or compared as a value): its value never changes after render, so it is no change source.
+pub fn never_written(tree: &Tree<'_>, call: NodeId) -> bool {
+    let mut at = call;
+    let declarator = loop {
+        let Some(parent) = tree.parent(at) else { return false };
+        match tree.kind(parent) {
+            AstKind::ParenthesizedExpression(_) | AstKind::TSAsExpression(_) | AstKind::TSSatisfiesExpression(_) | AstKind::TSNonNullExpression(_) => at = parent,
+            AstKind::VariableDeclarator(_) => break parent,
+            _ => return false,
+        }
+    };
+    let AstKind::VariableDeclarator(d) = tree.kind(declarator) else { return false };
+    let constant = matches!(tree.raw_parent(declarator).map(|p| tree.kind(p)), Some(AstKind::VariableDeclaration(v)) if v.kind == VariableDeclarationKind::Const);
+    let BindingPatternKind::BindingIdentifier(id) = &d.id.kind else { return false };
+    let Some(symbol) = id.symbol_id.get() else { return false };
+    if !constant {
+        return false;
+    }
+    tree.sem.scoping().get_resolved_references(symbol).all(|r| {
+        let node = r.node_id();
+        let span = tree.span(node);
+        matches!(tree.parent(node).map(|p| tree.kind(p)), Some(AstKind::CallExpression(c)) if c.callee.span() == span && c.arguments.is_empty())
+    })
 }
 
 /// Five base-36 digits of FNV-1a (32-bit) over the module id: the keyed-state key prefix.
@@ -836,20 +1059,46 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         }
         let props = if independent[i] { c.props.clone() } else { None };
         let name = export_name(tree, &c.name);
+        // STATIC-ZERO-2 D5: every type a body's own handlers listen to (default delegated ones too, `*` = unknown): the
+        // server's record says which events adopt it (tail `e`); the loader's `data-events` keeps only the non-default ones.
         for s in resumed.sites.iter().filter(|s| s.component == c.name) {
             if let Some(attr) = conditional_event(tree, s) {
-                let delegated = s.event_type.is_empty() || DEFAULT_EVENTS.contains(&s.event_type.as_str());
-                plan.listen.insert(attr, if delegated { String::new() } else { s.event_type.clone() });
+                plan.listen.insert(attr, if s.event_type.is_empty() { "*".to_string() } else { s.event_type.clone() });
             }
         }
         let mut events: Vec<&str> = resumed
             .sites
             .iter()
-            .filter(|s| s.kind == SiteKind::Event && s.component == c.name && !DEFAULT_EVENTS.contains(&s.event_type.as_str()))
-            .filter(|s| conditional_event(tree, s).is_none())
-            .map(|s| s.event_type.as_str())
-            .filter(|t| !t.is_empty())
+            .filter(|s| s.component == c.name)
+            .flat_map(|s| match s.kind {
+                SiteKind::Event if conditional_event(tree, s).is_none() => vec![if s.event_type.is_empty() { "*" } else { s.event_type.as_str() }],
+                _ => Vec::new(),
+            })
             .collect();
+        // `model:` bindings (their sites carry no component; `<select model:value>` is an element site): the unit listens
+        // to the control's input / change. A `ref` or an effect may attach listeners imperatively at adopt (`ref={el =>
+        // el.addEventListener(…)}`, Embla's viewport ref, an effect's document keydown; callback refs are no sites): `*`.
+        tree.walk(c.function, &mut |n| {
+            match tree.kind(n) {
+                AstKind::JSXAttribute(a) => {
+                    let name = crate::compile::attr_name(tree, a);
+                    if name.starts_with("model:") {
+                        events.extend(["input", "change"]);
+                    } else if name == "ref" {
+                        events.push("*");
+                    }
+                }
+                AstKind::CallExpression(call) => {
+                    if let Expression::Identifier(id) = &call.callee {
+                        if matches!(id.name.as_str(), "effect" | "onMount" | "renderEffect" | "clientEffect") {
+                            events.push("*");
+                        }
+                    }
+                }
+                _ => {}
+            }
+            true
+        });
         events.sort_unstable();
         events.dedup();
         if !events.is_empty() {
@@ -869,6 +1118,15 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         plan.names.push(name);
         boundary_of.insert(c.function, i);
     }
+    // D5 (intake 3): handlers written in place outside every boundary body report their type to the open boundary at
+    // render (`Plan::orphan_on`); conditional ones reach the server as `omitted(value)` (a function: `*`).
+    for s in resumed.sites.iter().filter(|s| s.kind == SiteKind::Event) {
+        let Some(attr) = s.attr else { continue };
+        if conditional_event(tree, s).is_some() || outermost_function(tree, attr).is_some_and(|f| plan.boundaries.contains_key(&f)) {
+            continue;
+        }
+        plan.orphan_on.insert(attr, if s.event_type.is_empty() { "*".to_string() } else { s.event_type.clone() });
+    }
     // Keyed state (source order, inside functions, outside browser-only closures) and RV2103 in boundary bodies.
     let closures = browser_closures(tree, resumed);
     let prefix = key_prefix(module);
@@ -883,7 +1141,15 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         let kind = tree.kind(n);
         let mut keyed_here = in_keyed;
         if let AstKind::CallExpression(call) = kind {
-            if let (true, Some(store)) = (in_function, keyed_callee(tree, call)) {
+            // ZERO A2: a component no adopt walk reaches (`resume.static`) keys nothing: no browser code reads its state.
+            let unread = !plan.static_fns.is_empty() && outermost_function(tree, n).is_some_and(|f| plan.static_fns.contains(&f));
+            // ZERO A2 (C4): a `const` signal over literal data that is only ever read keeps its init on both sides.
+            let frozen = || {
+                call.arguments.len() <= 2
+                    && call.arguments.first().is_none_or(|a| a.as_expression().is_some_and(|e| data_literal(tree, e, 0)))
+                    && never_written(tree, n)
+            };
+            if let (true, false, Some(store)) = (in_function, unread, keyed_callee(tree, call).filter(|&store| store || !frozen())) {
                 let key = format!("{prefix}-{}", plan.keyed.len());
                 plan.keyed.insert(n, (key, store));
                 keyed_here = true;

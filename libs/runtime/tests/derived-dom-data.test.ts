@@ -3,6 +3,7 @@
 // arrays left out of the records' props, and a list whose row template shows no item value (or an empty list) is left as is.
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString, renderDerived } from "@rivetjs/runtime/server-derived";
@@ -11,6 +12,9 @@ import { Writable } from "node:stream";
 import { derivedDom } from "../dom-data-derived.ts";
 import { _derivedDom } from "../server-derived-dom.ts";
 import { importServer } from "./resume/compile.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 // The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
@@ -43,7 +47,8 @@ const props = (n: number): Props => ({
   rows: Array.from({ length: n }, (_, i) => ({ id: i + 1, label: i % 4 ? "row " + i : `<i>"${i}"</i> & é𝄞`, n: i * 3 })),
   blank: [{ id: 1 }, { id: 2 }],
 });
-const tailOf = (html: string): { b: unknown[][]; d?: unknown[][] } => JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+const tailOf = (html: string): { b: unknown[][]; d?: unknown[][] } =>
+  tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
 const body = (html: string): string => html.replace(/<script type="rivet\/boundaries".*$/s, "").replace(/<!--r0\d+\[-->/g, "<!--r[-->");
 
 async function bytes(factory: () => ServerValue, domData: boolean): Promise<string> {

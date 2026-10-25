@@ -1171,8 +1171,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 174,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L174"
+    "line": 192,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L192"
    },
    "href": "/api/rivetjs/compiler/CheckDiagnostic/"
   },
@@ -1222,8 +1222,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 211,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L211"
+    "line": 229,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L229"
    },
    "href": "/api/rivetjs/compiler/CheckOptions/"
   },
@@ -1259,8 +1259,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 221,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L221"
+    "line": 239,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L239"
    },
    "href": "/api/rivetjs/compiler/CheckResult/"
   },
@@ -1352,8 +1352,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 191,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L191"
+    "line": 209,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L209"
    },
    "href": "/api/rivetjs/compiler/CheckSite/"
   },
@@ -1577,6 +1577,20 @@
      "optional": false
     },
     {
+     "name": "lite",
+     "kind": "property",
+     "signature": "lite?: { code: string; map: null; names: string[] }",
+     "doc": "Derived DOM target only (ZERO C1, absent when no boundary is eligible): the module's lite entry — per eligible\nindependent boundary `export function <Name>$a(node, rec)` (adopt residual over the server nodes, against\n`@rivetjs/runtime/dom-lite`) and `export const <Name>$c = () => import(<filename>)` (the ordinary module); module\nconstants it reads are copied in, it never imports the module statically. `names` = the boundary names it covers.",
+     "optional": true
+    },
+    {
+     "name": "liteBecause",
+     "kind": "property",
+     "signature": "liteBecause?: Record<string, string>",
+     "doc": "Derived DOM target only (ZERO B1 census): per independent boundary that got no lite residual, why — `\"dependent\"`, or\nthe first construct the residual cannot express (`\"component root\"`, `\"declaration\"`, …). Diagnostic data only.",
+     "optional": true
+    },
+    {
      "name": "map",
      "kind": "property",
      "signature": "map?: string",
@@ -1617,8 +1631,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 135,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L135"
+    "line": 141,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L141"
    },
    "href": "/api/rivetjs/compiler/CompileResult/"
   },
@@ -1813,8 +1827,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 279,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L279"
+    "line": 303,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L303"
    },
    "href": "/api/rivetjs/compiler/ComponentBoundaryFacts/"
   },
@@ -1871,8 +1885,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 421,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L421"
+    "line": 447,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L447"
    },
    "href": "/api/rivetjs/compiler/ComponentGroups/"
   },
@@ -2015,8 +2029,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 323,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L323"
+    "line": 347,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L347"
    },
    "href": "/api/rivetjs/compiler/HoleFacts/"
   },
@@ -2037,8 +2051,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 436,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L436"
+    "line": 462,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L462"
    },
    "href": "/api/rivetjs/compiler/MAIN_LATE_ROOT/"
   },
@@ -2059,8 +2073,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 434,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L434"
+    "line": 460,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L460"
    },
    "href": "/api/rivetjs/compiler/MAIN_ROOT/"
   },
@@ -2089,6 +2103,13 @@
      "signature": "components: Map<string, Set<string>>",
      "doc": "component name → rendered component tag names",
      "optional": false
+    },
+    {
+     "name": "componentValues",
+     "kind": "property",
+     "signature": "componentValues?: string[]",
+     "doc": "`boundaries: true` only (ZERO A1): PascalCase bindings the module uses as values — not as a JSX tag, an export\nspecifier, a `typeof` operand, a type or a top-level `Object.assign` compound's root / part (`icon={Glyph}`, a lookup\ntable, a direct call). A component reached this way may render under code the walk does not see: it counts adopted.",
+     "optional": true
     },
     {
      "name": "compounds",
@@ -2201,8 +2222,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 240,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L240"
+    "line": 258,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L258"
    },
    "href": "/api/rivetjs/compiler/ModuleFacts-interface/"
   },
@@ -2252,8 +2273,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 336,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L336"
+    "line": 360,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L360"
    },
    "href": "/api/rivetjs/compiler/ModuleFactsOptions/"
   },
@@ -2287,7 +2308,7 @@
    "summary": "Runtime helper contract the compiler emits for.",
    "remarks": "Runtime helper contract the compiler emits for. Bump it together with `rivet.abi` in\nlibs/runtime/package.json whenever compiled output and runtime helpers change in a way the other\nside must match (new/removed/renamed helper, changed arguments, template/marker/resume format).",
    "signatures": [
-    "const RUNTIME_ABI: 10"
+    "const RUNTIME_ABI: 11"
    ],
    "params": [],
    "members": [],
@@ -2296,8 +2317,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/abi.ts",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L18"
+    "line": 20,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L20"
    },
    "href": "/api/rivetjs/compiler/RUNTIME_ABI/"
   },
@@ -2391,6 +2412,13 @@
      "signature": "module?: string",
      "doc": "Boundary name prefix (defaults to the filename).",
      "optional": true
+    },
+    {
+     "name": "static",
+     "kind": "property",
+     "signature": "static?: string[]",
+     "doc": "ZERO A1: names of this module's components no adopt walk reaches (`BoundaryVerdict.adopted` false: not a boundary,\nrendered only by components that are not adopted, never used as a value). Their server output carries no\n`<!--[-->…<!--]-->` slot markers (nothing in the browser walks it).",
+     "optional": true
     }
    ],
    "runsOn": "build",
@@ -2471,8 +2499,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 116,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L116"
+    "line": 122,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L122"
    },
    "href": "/api/rivetjs/compiler/StaticCall/"
   },
@@ -2493,8 +2521,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 127,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L127"
+    "line": 133,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L133"
    },
    "href": "/api/rivetjs/compiler/StaticTable/"
   },
@@ -2537,8 +2565,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 106,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L106"
+    "line": 112,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L112"
    },
    "href": "/api/rivetjs/compiler/StylesOptions/"
   },
@@ -2574,8 +2602,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 228,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L228"
+    "line": 246,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L246"
    },
    "href": "/api/rivetjs/compiler/check/"
   },
@@ -2641,8 +2669,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 160,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L160"
+    "line": 178,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L178"
    },
    "href": "/api/rivetjs/compiler/compile/"
   },
@@ -2719,8 +2747,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 446,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L446"
+    "line": 472,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L472"
    },
    "href": "/api/rivetjs/compiler/groupComponents/"
   },
@@ -2784,8 +2812,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 384,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L384"
+    "line": 409,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L409"
    },
    "href": "/api/rivetjs/compiler/moduleFacts/"
   },
@@ -2820,8 +2848,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/index.ts",
-    "line": 130,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L130"
+    "line": 136,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/index.ts#L136"
    },
    "href": "/api/rivetjs/compiler/registerTable/"
   },
@@ -3422,8 +3450,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 93,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L93"
+    "line": 100,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L100"
    },
    "href": "/api/rivetjs/compiler/vite/BridgeEntry/"
   },
@@ -3452,8 +3480,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 280,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L280"
+    "line": 287,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L287"
    },
    "href": "/api/rivetjs/compiler/vite/DevResume/"
   },
@@ -3603,8 +3631,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L74"
+    "line": 81,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L81"
    },
    "href": "/api/rivetjs/compiler/vite/RivetCSSOptions/"
   },
@@ -3696,8 +3724,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 152,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L152"
+    "line": 159,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L159"
    },
    "href": "/api/rivetjs/compiler/vite/RivetOptions/"
   },
@@ -3746,6 +3774,13 @@
      "kind": "property",
      "signature": "roots?: string[]",
      "doc": "Root-relative modules whose default export is an independent root boundary (its props are data, whatever its call\nsites pass or which contexts it reads), like a route module's default export. `rivetRouter()` adds its generated\n`app.tsx` (`Root`: the route payload as props).",
+     "optional": true
+    },
+    {
+     "name": "shells",
+     "kind": "property",
+     "signature": "shells?: string[]",
+     "doc": "ZERO A1: components rendered only by a host that never adopts them (docs-kit `FrameShell`): root-relative `file` (its\ndefault export) or `file#Name`. Without a resolved call site a component counts as adopted (some boundary may render\nit through code the walk does not see) and keeps its slot markers; a shell entry is adopted only through its own\nboundaries. Plugins add entries with `api.resumeShell(file, name?)` before the build starts.",
      "optional": true
     }
    ],
@@ -3880,8 +3915,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 197,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L197"
+    "line": 204,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L204"
    },
    "href": "/api/rivetjs/compiler/vite/foreignJsxPragma/"
   },
@@ -3995,8 +4030,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/vite.ts",
-    "line": 350,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L350"
+    "line": 537,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/vite.ts#L537"
    },
    "href": "/api/rivetjs/compiler/vite/rivet/"
   },
@@ -25494,8 +25529,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 248,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L248"
+    "line": 224,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L224"
    },
    "href": "/api/rivetjs/runtime/dom/Async/"
   },
@@ -25559,8 +25594,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 231,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L231"
+    "line": 207,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L207"
    },
    "href": "/api/rivetjs/runtime/dom/AsyncProps/"
   },
@@ -25625,8 +25660,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 515,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L515"
+    "line": 473,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L473"
    },
    "href": "/api/rivetjs/runtime/dom/ChunkGroup/"
   },
@@ -25765,8 +25800,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 567,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L567"
+    "line": 525,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L525"
    },
    "href": "/api/rivetjs/runtime/dom/Dynamic/"
   },
@@ -25787,8 +25822,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 559,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L559"
+    "line": 517,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L517"
    },
    "href": "/api/rivetjs/runtime/dom/DynamicProps/"
   },
@@ -25817,8 +25852,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 421,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L421"
+    "line": 397,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L397"
    },
    "href": "/api/rivetjs/runtime/dom/ErrorBoundary/"
   },
@@ -25839,8 +25874,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 524,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L524"
+    "line": 482,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L482"
    },
    "href": "/api/rivetjs/runtime/dom/For/"
   },
@@ -25898,8 +25933,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 549,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L549"
+    "line": 507,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L507"
    },
    "href": "/api/rivetjs/runtime/dom/Match/"
   },
@@ -25942,8 +25977,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 543,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L543"
+    "line": 501,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L501"
    },
    "href": "/api/rivetjs/runtime/dom/MatchProps/"
   },
@@ -25972,8 +26007,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 601,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L601"
+    "line": 559,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L559"
    },
    "href": "/api/rivetjs/runtime/dom/Portal/"
   },
@@ -26002,8 +26037,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 221,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L221"
+    "line": 197,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L197"
    },
    "href": "/api/rivetjs/runtime/dom/Provider/"
   },
@@ -26304,8 +26339,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 536,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L536"
+    "line": 494,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L494"
    },
    "href": "/api/rivetjs/runtime/dom/Show/"
   },
@@ -26356,8 +26391,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 551,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L551"
+    "line": 509,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L509"
    },
    "href": "/api/rivetjs/runtime/dom/Switch/"
   },
@@ -26392,8 +26427,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 651,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L651"
+    "line": 609,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L609"
    },
    "href": "/api/rivetjs/runtime/dom/bindRef/"
   },
@@ -26428,8 +26463,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 672,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L672"
+    "line": 630,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L630"
    },
    "href": "/api/rivetjs/runtime/dom/clientEffect/"
   },
@@ -26441,12 +26476,12 @@
    "summary": "Owned listener on window, document, an element or a \"media:(query)\" match; handler runs in a batch.",
    "remarks": "Owned listener on window, document, an element or a \"media:(query)\" match; handler runs in a batch.\n`standalone: false` (resumed pages): the listener alone does not make a server-rendered page resumable — a page\nwith nothing else to resume ships no JavaScript and the listener never attaches (the router's link listeners unless\n`rivetRouter({ clientRouter: true })`).\n`match` (a CSS selector): the handler runs only for events whose target is inside a matching element\n(`target.closest(match)`); on resumed pages its chunk loads only then — the router's document link listeners\n(`\"a\"`) load no router code for a click or hover elsewhere. With `once`, the first matching event removes the\nlistener. A `media:` target has no element target: `match` never matches there (leave it out). Development builds\nvalidate the selector at registration (`SyntaxError`; dev façade + resume runtime).",
    "signatures": [
-    "function clientEvent<E extends Event = Event>(target: Element | Document | `media:${string}` | Window, type: string, handler: (event: E) => void, options?: { capture?: boolean; match?: string; once?: boolean; passive?: boolean; preload?: \"visible\" | \"idle\" | \"interaction\" | \"eager\" | \"intent\"; standalone?: boolean; when?: ClientWhen }): void"
+    "function clientEvent<E extends Event = Event>(target: Element | `media:${string}` | Window | Document, type: string, handler: (event: E) => void, options?: { capture?: boolean; match?: string; once?: boolean; passive?: boolean; preload?: \"visible\" | \"idle\" | \"interaction\" | \"eager\" | \"intent\"; standalone?: boolean; when?: ClientWhen }): void"
    ],
    "params": [
     {
      "name": "target",
-     "type": "Element | Document | `media:${string}` | Window",
+     "type": "Element | `media:${string}` | Window | Document",
      "optional": false,
      "doc": ""
     },
@@ -26476,8 +26511,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 701,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L701"
+    "line": 659,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L659"
    },
    "href": "/api/rivetjs/runtime/dom/clientEvent/"
   },
@@ -26519,8 +26554,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 472,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L472"
+    "line": 448,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L448"
    },
    "href": "/api/rivetjs/runtime/dom/clientOnly/"
   },
@@ -26562,8 +26597,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 441,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L441"
+    "line": 417,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L417"
    },
    "href": "/api/rivetjs/runtime/dom/lazyComponent/"
   },
@@ -26598,8 +26633,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 98,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L98"
+    "line": 74,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L74"
    },
    "href": "/api/rivetjs/runtime/dom/mount/"
   },
@@ -26628,8 +26663,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 668,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L668"
+    "line": 626,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L626"
    },
    "href": "/api/rivetjs/runtime/dom/reconstruct/"
   },
@@ -26651,8 +26686,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 649,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L649"
+    "line": 607,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L607"
    },
    "href": "/api/rivetjs/runtime/dom/ref/"
   },
@@ -26687,8 +26722,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/dom.ts",
-    "line": 102,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L102"
+    "line": 78,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/dom.ts#L78"
    },
    "href": "/api/rivetjs/runtime/dom/render/"
   },
@@ -29787,12 +29822,12 @@
    "summary": "Browser-only listeners never attach during server rendering; under a derived render a standalone listener flags its boundary's client trigger.",
    "remarks": "Browser-only listeners never attach during server rendering; under a derived render a standalone listener flags its boundary's client trigger.",
    "signatures": [
-    "function clientEvent<E extends Event = Event>(target: Element | Document | `media:${string}` | Window, type: string, handler: (event: E) => void, options?: { capture?: boolean; match?: string; once?: boolean; passive?: boolean; preload?: \"visible\" | \"idle\" | \"interaction\" | \"eager\" | \"intent\"; standalone?: boolean; when?: ClientWhen }): void"
+    "function clientEvent<E extends Event = Event>(target: Element | `media:${string}` | Window | Document, type: string, handler: (event: E) => void, options?: { capture?: boolean; match?: string; once?: boolean; passive?: boolean; preload?: \"visible\" | \"idle\" | \"interaction\" | \"eager\" | \"intent\"; standalone?: boolean; when?: ClientWhen }): void"
    ],
    "params": [
     {
      "name": "target",
-     "type": "Element | Document | `media:${string}` | Window",
+     "type": "Element | `media:${string}` | Window | Document",
      "optional": false,
      "doc": ""
     },
@@ -30011,8 +30046,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/omitted.ts",
-    "line": 20,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/omitted.ts#L20"
+    "line": 21,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/omitted.ts#L21"
    },
    "href": "/api/rivetjs/runtime/server/omitted/"
   },
@@ -30257,8 +30292,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-spread.ts",
-    "line": 105,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-spread.ts#L105"
+    "line": 109,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-spread.ts#L109"
    },
    "href": "/api/rivetjs/runtime/server/spreadChildren/"
   },
@@ -30418,8 +30453,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 333,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L333"
+    "line": 371,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L371"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumableOptions/"
   },
@@ -30497,8 +30532,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 312,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L312"
+    "line": 350,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L350"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumeManifest/"
   },
@@ -30569,8 +30604,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 348,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L348"
+    "line": 386,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L386"
    },
    "href": "/api/rivetjs/runtime/server-resume/StreamingResumableOptions/"
   },
@@ -30612,8 +30647,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 481,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L481"
+    "line": 532,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L532"
    },
    "href": "/api/rivetjs/runtime/server-resume/renderResumable/"
   },
@@ -30649,8 +30684,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 475,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L475"
+    "line": 526,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L526"
    },
    "href": "/api/rivetjs/runtime/server-resume/resumableToString/"
   },

@@ -1,4 +1,5 @@
 import type { OmittedSlot } from "./server.ts";
+import { _trigger } from "./server-trigger.ts";
 
 // A private class carrying a registered prototype brand: recognised across duplicate runtime module
 // instances (dev cache-busters), like the other Symbol.for brands — one allocation per slot, no global
@@ -18,6 +19,9 @@ class Omitted implements OmittedSlot {
  * cost an allocation plus 5–6 brand probes in `admit` and again in `visit`; Motion tags carry 9 per element).
  */
 export function omitted(value: unknown): OmittedSlot | null {
+  // D5 (intake 3): a handler / ref slot of a non-boundary component (cdk `Select` / `Group` internals) installs a listener
+  // when the enclosing boundary's unit adopts: that unit listens to any type (`""` = `*`; no compiler event list covers it).
+  if (typeof value === "function") _trigger.ev?.("");
   return inert(value) ? null : new Omitted(value);
 }
 /** Recognize private compiler evaluation slots without interpreting author objects. */

@@ -1,7 +1,7 @@
 // Vite plugins for a docs site: content routes generated before the router scans `src/routes`, and
 // the `virtual:docs/*` modules the kit's components and routes import, mapped onto the app's files.
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin, Rollup, ViteDevServer } from "vite";
@@ -36,8 +36,8 @@ const DEV_FRAME_STYLES = Symbol.for("rivet.docs.frameStyles");
 /**
  * `virtual:docs/*` → app files. Large generated data is never a module on the server: `examples` (examples.json: every
  * example's code) and `api` (api.json) are parsed from disk while pages render (bundling a 70 MB examples module /
- * 8 MB api.json cost the site build tens of GB, 2026-10-08). In a client build `examples` is an empty object (its
- * data reaches the browser through per-page route loaders) and `api` an empty model (API pages have no browser code:
+ * 8 MB api.json cost the site build tens of GB, 2026-10-08). In a client build `examples` is an empty object (a
+ * generated page's own records come from `examples?ids=…`, a module of just those; hand-written routes use loaders) and `api` an empty model (API pages have no browser code:
  * bundled, api.json was a 4.9 / 7.2 MB client chunk (cdk-docs / ui-docs) the App chunk imported, and 0.1–0.3 GB of
  * the client build's memory, 2026-10-09); the dev client gets the files (a page renders in the browser after a hot update).
  * `api` is declared server-only (`api.rivetServerOnly`, SERVER-REACH): the router renders the API routes (their pages
@@ -61,6 +61,10 @@ function docsModules(): Plugin {
       if (!source.startsWith("virtual:docs/")) return null;
       const name = source.slice("virtual:docs/".length);
       const server = this.environment?.config.consumer === "server";
+      // `examples?ids=a,b` (ZERO Z9): a generated page's own examples. Server: the whole disk-backed manifest (one
+      // module for every page); client build: a module of just those records (the page chunk carries them, not the
+      // route payload); dev client: the whole file, as `examples`.
+      if (name.startsWith("examples?ids=")) return server ? FROM_DISK + "examples" : dev ? EXAMPLES_CLIENT : EXAMPLES_CLIENT + name.slice("examples".length);
       if (name === "frame-styles") return FRAME_STYLES + (server ? "" : "?client");
       const file = FILES[name];
       if (!file) throw new Error(`docs-kit: unknown module ${source}`);
@@ -70,6 +74,18 @@ function docsModules(): Plugin {
       return resolve(root, file);
     },
     load(id) {
+      if (id.startsWith(EXAMPLES_CLIENT + "?ids=")) {
+        const file = resolve(root, EXAMPLES_JSON);
+        this.addWatchFile(file);
+        const all = examplesOnDisk(file);
+        const ids = id
+          .slice(EXAMPLES_CLIENT.length + "?ids=".length)
+          .split(",")
+          .map(decodeURIComponent);
+        // Only what `<Example>` renders (`ExampleView`): no summary / tags / status / pages / test steps / usedOn.
+        const view = (e: Record<string, unknown>) => Object.fromEntries(VIEW_FIELDS.filter((k) => e[k] !== undefined).map((k) => [k, e[k]]));
+        return `export const examples = ${JSON.stringify(Object.fromEntries(ids.filter((key) => all[key]).map((key) => [key, view(all[key] as Record<string, unknown>)])))};`;
+      }
       if (id === EXAMPLES_CLIENT)
         return dev ? `import examples from ${JSON.stringify(resolve(root, EXAMPLES_JSON))};\nexport { examples };` : "export const examples = {};";
       if (id === API_CLIENT) return serverOnlyStub("virtual:docs/api", apiImporter ? [relative(root, apiImporter.split("?")[0]!).split(sep).join("/")] : []);
@@ -82,6 +98,19 @@ function docsModules(): Plugin {
       return [`import { readFileSync } from "node:fs";`, name === "api" ? `export default ${parsed};` : `export const examples = ${parsed};`].join("\n");
     },
   };
+}
+
+/** The `ExampleData` fields `components/Example.tsx` renders (`ExampleView`). */
+const VIEW_FIELDS = ["title", "height", "auto", "phone", "codeOnly", "files"] as const;
+/** examples.json parsed once per (path, mtime): every generated page's `examples?ids=` module reads it (client build). */
+const examplesCache = new Map<string, { mtime: number; data: Record<string, unknown> }>();
+function examplesOnDisk(file: string): Record<string, unknown> {
+  const mtime = statSync(file).mtimeMs;
+  const hit = examplesCache.get(file);
+  if (hit && hit.mtime === mtime) return hit.data;
+  const data = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+  examplesCache.set(file, { mtime, data });
+  return data;
 }
 
 const CSS_REQUEST = /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
@@ -253,6 +282,55 @@ function docsBrand(): Plugin {
   };
 }
 
+/** The docs page script (ZERO Z13): `components/page-script.ts` (highlighter, search shortcuts, TOC spy), a plain module script. */
+const PAGE_SCRIPT = realpathSync(fileURLToPath(new URL("./components/page-script.ts", import.meta.url)));
+const SCRIPTS = "\0virtual:docs/scripts";
+/** Client build asset: `{ page: url }` of the emitted page script, read by the server bundle at render. */
+export const SCRIPTS_FILE = ".vite/docs-scripts.json";
+
+/**
+ * `virtual:docs/scripts` (`pageScript()`: URL of the docs page script, or undefined): the client build emits
+ * `components/page-script.ts` as its own entry chunk (`assets/docs-page-<hash>.js`; not a resume chunk, the page needs
+ * no runtime for it) and writes `SCRIPTS_FILE`; the server bundle reads that file; the dev server serves the source
+ * (`/@fs/…`). `document.ts` links it on every docs page (not example frames).
+ */
+function docsScripts(): Plugin {
+  let clientOut = "";
+  let dev = false;
+  let base = "/";
+  return {
+    name: "rivet-docs-scripts",
+    enforce: "pre",
+    configResolved(config) {
+      dev = config.command === "serve";
+      base = config.base ?? "/";
+      clientOut = resolve(config.root, config.environments?.client?.build?.outDir ?? config.build.outDir);
+    },
+    resolveId(id) {
+      return id === "virtual:docs/scripts" ? SCRIPTS + (this.environment?.config.consumer === "server" ? "" : "?client") : null;
+    },
+    load(id) {
+      if (id === SCRIPTS + "?client") return "export const pageScript = () => undefined;";
+      if (id !== SCRIPTS) return null;
+      if (dev) return `export const pageScript = () => ${JSON.stringify(base + "@fs" + PAGE_SCRIPT)};`;
+      const file = resolve(clientOut, SCRIPTS_FILE);
+      return [
+        `import { existsSync, readFileSync } from "node:fs";`,
+        "let scripts;",
+        `export const pageScript = () => (scripts ??= existsSync(${JSON.stringify(file)}) ? JSON.parse(readFileSync(${JSON.stringify(file)}, "utf8")) : {}).page;`,
+      ].join("\n");
+    },
+    buildStart() {
+      if (!dev && this.environment?.config.consumer === "client") this.emitFile({ type: "chunk", id: PAGE_SCRIPT, name: "docs-page" });
+    },
+    generateBundle(_options, bundle) {
+      if (this.environment.config.consumer !== "client") return;
+      const chunk = Object.values(bundle).find((output): output is Rollup.OutputChunk => output.type === "chunk" && output.facadeModuleId === PAGE_SCRIPT);
+      if (chunk) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page: base + chunk.fileName }) + "\n" });
+    },
+  };
+}
+
 /**
  * The dev server does not watch build output inside the app root (`dist/`, `.artifacts/`): a build next to
  * `serve --dev` writes thousands of files, and chokidar's FSEvents handler took the event loop (docs pages hung,
@@ -277,7 +355,7 @@ function docsWatch(): Plugin {
 export const FRAME_ROOT = realpathSync(fileURLToPath(new URL("./components/frame.tsx", import.meta.url)));
 
 export function docsSite(): Plugin[] {
-  return [docsWatch(), docsContent(), docsBrand(), docsModules(), docsFrames(), docsDevSearch()];
+  return [docsWatch(), docsContent(), docsBrand(), docsScripts(), docsModules(), docsFrames(), docsDevSearch()];
 }
 
 /**

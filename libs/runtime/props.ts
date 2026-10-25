@@ -172,6 +172,16 @@ export function _pm(object: Props, key: Key, i: number, source: unknown, name: K
 const isProxy = (value: unknown): boolean => value !== null && typeof value === "object" && (value as { [PROXY]?: 1 })[PROXY] === 1;
 // "__proto__" / "constructor" are never props: copying them would change the result's prototype / shadow it.
 const skip = (key: Key): boolean => key === "__proto__" || key === "constructor";
+// Own enumerable keys in `Reflect.ownKeys` order (strings — integer keys first —, then symbols). `Object.keys` takes V8's
+// enum cache: `Reflect.ownKeys` cost ~90 ns + ~390 B per 3-key props object, the top server allocation of a 1000-row
+// table's collection build (ZERO W6, 2026-10-25).
+const propertyIsEnumerable = Object.prototype.propertyIsEnumerable;
+const enumKeys = (object: object): Key[] => {
+  const keys: Key[] = Object.keys(object),
+    symbols = Object.getOwnPropertySymbols(object);
+  for (let i = 0; i < symbols.length; i++) if (propertyIsEnumerable.call(object, symbols[i])) keys.push(symbols[i]!);
+  return keys;
+};
 
 const traps: ProxyHandler<{ get: (key: Key) => unknown; has: (key: Key) => boolean; keys: () => Key[] }> = {
   get: (target, key) => (key === PROXY ? 1 : target.get(key)),
@@ -293,12 +303,11 @@ export function splitProps<T extends Props, const K extends readonly (readonly (
   const groups = keys as unknown as readonly (readonly Key[])[];
   const out: Props[] = new Array(groups.length + 1);
   for (let i = 0; i <= groups.length; i++) out[i] = slotted(props);
-  const keysOf = Reflect.ownKeys(props);
+  const keysOf = enumKeys(props);
   for (let k = 0; k < keysOf.length; k++) {
     const key = keysOf[k]!;
     if (skip(key)) continue;
     const desc = Object.getOwnPropertyDescriptor(props, key)!;
-    if (!desc.enumerable) continue;
     let g = 0;
     while (g < groups.length && !groups[g]!.includes(key)) g++;
     forward(out[g]!, props, key, desc);
@@ -384,12 +393,11 @@ export function _spreadProps(...sources: Source[]): Props {
 export function _restProps(props: Props, used: readonly Key[]): Props {
   if (isProxy(props)) return splitProps(props, used)[1] as Props;
   const out = slotted(props),
-    keys = Reflect.ownKeys(props);
+    keys = enumKeys(props);
   for (let k = 0; k < keys.length; k++) {
     const key = keys[k]!;
     if (skip(key) || used.includes(key)) continue;
-    const desc = Object.getOwnPropertyDescriptor(props, key)!;
-    if (desc.enumerable) forward(out, props, key, desc);
+    forward(out, props, key, Object.getOwnPropertyDescriptor(props, key)!);
   }
   return out;
 }

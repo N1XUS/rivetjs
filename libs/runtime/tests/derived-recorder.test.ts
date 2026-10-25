@@ -5,6 +5,7 @@
 // last case compiles the un-lowered page with `resume: { module }` .
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import type { ServerValue } from "@rivetjs/runtime/server";
@@ -12,7 +13,8 @@ import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore, derivedToString, NOLAZ
 import { compiledTemplate } from "@rivetjs/runtime/server";
 import { isData } from "../server-derived.ts";
 import { importServer } from "./resume/compile.ts";
-import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
+import type { FlushTail } from "@rivetjs/runtime/resume-format";
+import { _rUnrecorded } from "@rivetjs/runtime/resume-format";
 
 type Row = { id: number; values: number[] };
 type Data = { title: string; rows: Row[] };
@@ -36,7 +38,7 @@ export function Layout(props) {
   ${lowered ? "} finally { _rBEnd(B); }" : ""}
 }
 export function Page(props) {
-  ${lowered ? 'const B = _rB("Page", 1, props); try {' : ""}
+  ${lowered ? 'const B = _rB("Page", 1, props, "click"); try {' : ""}
   const data = props.data;
   const selected = ${lowered ? '_rSig("k-1", -1)' : "signal(-1)"};
   const open = ${lowered ? '_rSig("k-2", false)' : "signal(false)"};
@@ -68,10 +70,10 @@ export function App(props) {
 `;
 const data: Data = { title: "Records", rows: Array.from({ length: 200 }, (_, i) => ({ id: i + 1, values: [i * 3] })) };
 
-const tailOf = (html: string): { script: string; tail: BoundaryTail } => {
+const tailOf = (html: string): { script: string; tail: FlushTail } => {
   const match = html.match(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s);
   assert.ok(match, "boundaries tail present:\n" + html.slice(-400));
-  return { script: match[0], tail: JSON.parse(match[1]!) as BoundaryTail };
+  return { script: match[0], tail: expandTail(JSON.parse(match[1]!)) };
 };
 
 type AppModule = { App: (p: { data: Data }) => ServerValue };
@@ -80,6 +82,27 @@ async function loweredApp(): Promise<AppModule["App"]> {
   assert.deepEqual(out.diagnostics, []);
   return (await importServer<AppModule>(out.code)).App;
 }
+
+test("tail script: memoised attributes + loader per manifest; JSON and nonce stay per request", async () => {
+  const App = await loweredApp();
+  const m = { ...manifest, symbols: { App: "/page.js", Layout: "/page.js", Page: "/page.js" } };
+  const render = (options: object) => derivedToString(() => App({ data }), { manifest: m, ...options }) as Promise<string>;
+  const a = await render({}),
+    b = await render({}),
+    n1 = await render({ nonce: "abc" }),
+    n2 = await render({ nonce: 'x"y<z' });
+  // Same page shape: byte-identical (the memoised fragments), the loader after the tail.
+  assert.equal(a, b);
+  assert.match(a, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-fo="\/rt\.js \/page\.js">\{.*?\}<\/script><script>\(function/s);
+  // Nonce presence is part of the key; its value is a sanitised slot.
+  assert.match(n1, /<\/script><script nonce="abc">\(function/);
+  assert.match(n2, /<\/script><script nonce="xyz">\(function/);
+  assert.equal(n1.replace('nonce="abc"', ""), a.replace("<script>(function", "<script >(function"));
+  // Another manifest (another runtime URL): its own fragments.
+  const other = (await derivedToString(() => App({ data }), { manifest: { ...m, runtime: "/rt2.js" } })) as string;
+  assert.match(other, /data-rt="\/rt2\.js" data-fo="\/rt2\.js \/page\.js"/);
+  assert.equal(other.replaceAll("/rt2.js", "/rt.js"), a);
+});
 
 test("hand-lowered page: boundary records, keyed values, wake lists, markers; nothing of the serialized state", async () => {
   const App = await loweredApp();
@@ -273,6 +296,52 @@ test("_rBOut: inert values (scalars, compiled templates of scalars, NOLAZY) rend
   );
 });
 
+test("discarded pass (_rUnrecorded, cdk collection build): no boundary, no keyed state; the host keeps its own", async () => {
+  let inner: unknown = "unset",
+    plain: unknown = null;
+  const html = await derivedToString(
+    () => {
+      const A = _rB("A", 0);
+      try {
+        const a = _rSig("a", 1);
+        _rUnrecorded(() => {
+          const B = _rB("B", 0);
+          inner = B;
+          try {
+            plain = _rSig("b", 2);
+            return _rBOut(B, "x");
+          } finally {
+            _rBEnd(B);
+          }
+        });
+        const C = _rB("C", 0);
+        try {
+          return _rBOut(A, [String(a()), _rBOut(C, "c")]);
+        } finally {
+          _rBEnd(C);
+        }
+      } finally {
+        _rBEnd(A);
+      }
+    },
+    { manifest },
+  );
+  assert.equal(inner, null);
+  // A plain signal (no tracked getter: no `SRC`, no wake key).
+  assert.equal(typeof plain, "function");
+  assert.equal((plain as () => number)(), 2);
+  assert.ok(html.startsWith("<!--b1-->1<!--b2-->c<!--/b--><!--/b-->"), html);
+  const { tail } = tailOf(html);
+  // Ids stay dense: C is 2, nothing of B / "b".
+  assert.deepEqual(
+    tail.b.map((r) => [r[0], r[1], r[3], r[4]]),
+    [
+      [1, 0, "A", ["a", 1]],
+      [2, 1, "C", []],
+    ],
+  );
+});
+
 test("isData: JSON data only", () => {
   assert.ok(isData({ a: [1, "x", null, { b: true }] }));
   assert.ok(isData(Object.create(null)));
@@ -287,13 +356,16 @@ const derived = hasDerivedModel();
   const { App } = await importServer<AppModule>(out.code);
   const html = (await derivedToString(() => App({ data }), { manifest })) as string;
   const { tail } = tailOf(html);
-  // Boundary names are module-qualified (`<resume module>#<Name>`, the same in the DOM target's `_b`).
+  // Boundary names are module-qualified (`<resume module>#<Name>`, the same in the DOM target's `_b`). Every keyed init is a
+  // literal: a compiler that flags them `LIT` (ZERO S1) ships none of the unwritten values.
+  const lit = out.code.includes(", undefined, 1)") ? 0 : 1;
   assert.deepEqual(
     tail.b.map(([id, parent, flags, name, signals]) => [id, parent, flags, name, signals.length / 2]),
     [
-      [1, 0, 0, "src/page.tsx#App", 1],
-      [2, 1, 2, "src/page.tsx#Layout", 1],
-      [3, 2, 2, "src/page.tsx#Page", 2],
+      [1, 0, 0, "src/page.tsx#App", 1 * lit],
+      [2, 1, 2, "src/page.tsx#Layout", 1 * lit],
+      // `open` is a `const` signal over a literal that is only ever read (ZERO A2): the compiler keys `selected` alone.
+      [3, 2, 2, "src/page.tsx#Page", 1 * lit],
     ],
   );
   assert.ok(html.includes('<div data-layout="resume" data-b="2">'));

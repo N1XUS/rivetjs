@@ -33,6 +33,7 @@ const sources: Record<string, string> = {
   "/router.ts": "router.ts",
   "/resume-format.ts": "resume-format.ts",
   "/resume-kinds.ts": "resume-kinds.ts",
+  "/resume-tail.ts": "resume-tail.ts",
   "/resume-builtins.ts": "resume-builtins.ts",
   "/id.ts": "id.ts",
   "/id-dom.ts": "id-dom.ts",

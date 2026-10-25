@@ -8,6 +8,7 @@
 // runtime (default export of `@rivetjs/runtime/dom-derived`).
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { readFile } from "node:fs/promises";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
@@ -15,6 +16,9 @@ import { derivedToString } from "@rivetjs/runtime/server-derived";
 import type { Page } from "playwright";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, DEV_BUILD, rewrite, withPage } from "./resume/harness.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 type Data = { title: string; rows: { id: number }[] };
 const fixture = (name: string): Promise<string> => readFile(new URL("./derived/" + name, import.meta.url), "utf8");
@@ -57,7 +61,7 @@ test("server: tail with chunk names, held keys, runtime URL and the derived load
   const html = await serverHtml(3);
   const match = /<script type="rivet\/boundaries" data-rt="\/rt.js" data-fo="\/rt.js \/page.js">(.*?)<\/script><script>\(function\(\)\{/s.exec(html);
   assert.ok(match, html.slice(-600));
-  const tail = JSON.parse(match[1]!);
+  const tail = tailJson(JSON.parse(match[1]!));
   assert.deepEqual(tail.m, { App: "/page.js", Header: "/page.js", Counter: "/page.js" });
   assert.deepEqual(tail.k, { "3": "ArrowUp" });
   assert.deepEqual(tail.w, { "1.a-0": [3] });
@@ -295,7 +299,7 @@ test("document click listeners (`_rListen`, M2-R5) + `ready`: a link outside eve
   const { App } = await importServer<{ App: (props: { data: Data }) => ServerValue }>(out.code);
   const { _rListen } = await import("@rivetjs/runtime/server-derived");
   const html = (await derivedToString(() => (_rListen("a.nav"), App({ data: data(4) })), { manifest })) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.deepEqual(tail.g, [[1, "a.nav"]]);
   assert.match(html, /<script type="rivet\/boundaries" data-rt="\/rt\.js" data-g="a\.nav" data-fo="\/rt\.js \/page\.js">/);
   // Browser: App's chunk exports `ready` (the router's `Root.ready`: page modules), awaited once before its adopt run.
@@ -462,7 +466,7 @@ compiled("UNKEYED boundary (non-data keyed state) adopts over the server nodes; 
   const { App } = await importServer<{ App: () => ServerValue }>(server.code);
   const symbols = { "src/page.tsx#App": "/page.js", "src/page.tsx#Item": "/page.js" };
   const html = (await derivedToString(() => App(), { manifest: { ...manifest, symbols } })) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.ok(tail.b[0][2] & 4, "App is UNKEYED");
   const served = {
     ...DERIVED_BUILD,

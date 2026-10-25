@@ -37,11 +37,11 @@ The time does not change. It was taken while the HTML was made and kept in a sig
 
 Step by step:
 
-1. **Server.** `ResumeDemo()` runs. It creates the signals `renderedAt` and `count` and returns JSX. Because the component has a handler, the server marks where it starts and ends in the HTML and records the two signal values.
-2. **HTML.** The page carries the markup, the component's markers and a `<script type="rivet/boundaries">` with the records: "component `ResumeDemo`, its signals are `"2026-…"` and `0`". The inline loader follows it.
+1. **Server.** `ResumeDemo()` runs. It creates the signals `renderedAt` and `count` and returns JSX. Because the component has a handler, the server marks where it starts and ends in the HTML and records the signal values the browser cannot know: `renderedAt`. `count` still holds its literal start value `0`, which the browser's code evaluates the same way, so it is left out.
+2. **HTML.** The page carries the markup, the component's markers and a `<script type="rivet/boundaries">` with the records: "component `ResumeDemo`, its signal `renderedAt` is `"2026-…"`". The inline loader follows it.
 3. **Browser, on load.** The loader runs. It listens for events on the whole document. Your component code does not run.
 4. **Browser, on intent.** You move the pointer over the button. The loader starts fetching the file that contains `ResumeDemo`.
-5. **Browser, on click.** The runtime runs `ResumeDemo`'s compiled code over the existing nodes: it creates no element and moves none, it attaches the handler and the text binding, and each signal takes its recorded value. The components around it that have not run yet run the same way first (here, only the example page). Then the click reaches the handler: `count.update((n) => n + 1)` updates the text.
+5. **Browser, on click.** The runtime runs `ResumeDemo`'s compiled code over the existing nodes: it creates no element and moves none, it attaches the handler and the text binding, and each recorded signal takes its value (`count` starts from `0`, as it did on the server). The components around it that have not run yet run the same way first (here, only the example page). Then the click reaches the handler: `count.update((n) => n + 1)` updates the text.
 
 The "Server HTML" tab of the example shows the real markup.
 

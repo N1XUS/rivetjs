@@ -50,7 +50,7 @@ import { Provider } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
 import { ChevronUp } from "lucide";
-import { cx } from "tailwind-variants/lite";
+import { cx } from "../../../styles/src/utils/tv.ts";
 
 import type { TableVariants } from "../../../styles/src/components/table/index.ts";
 import { tableVariants } from "../../../styles/src/components/table/index.ts";

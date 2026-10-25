@@ -63,8 +63,8 @@ test(
       const tail = html.indexOf('<script type="rivet/boundaries" data-rt=');
       assert.ok(tail > 0 && item > tail && user > item, "boundaries tail, then the item segment, then the user segment");
       assert.match(html, /"a":\[\[1,3,0\],\[2,4,0\]\]/);
-      assert.match(html, /<script type="rivet\/boundaries" data-patch="2">\{"v":1,"b":\[\],"a":\[\[2,4,0,2,\{"t":/);
-      assert.match(html, /data-patch="1">\{"v":1,"b":\[\],"a":\[\[1,3,0,1,\{"name":"ann"\}\]\]\}/);
+      assert.match(html, /<script type="rivet\/boundaries" data-patch="2">\{"v":2,"n":\[\],"b":\[\],"a":\[\[2,4,0,2,\{"t":/);
+      assert.match(html, /data-patch="1">\{"v":2,"n":\[\],"b":\[\],"a":\[\[1,3,0,1,\{"name":"ann"\}\]\]\}/);
       assert.ok(html.endsWith("</div></body></html>"));
     });
 

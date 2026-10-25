@@ -6,6 +6,7 @@
 // before. Real derived server + DOM targets (skips on a wasm without the model).
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
@@ -14,6 +15,9 @@ import { derivedDom } from "../dom-data-derived.ts";
 import { _derivedDom } from "../server-derived-dom.ts";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
+// Tail v2 (ZERO S2) in its flush shape (names resolved, runs expanded), loosely typed like the JSON it was.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tailJson = (tail: unknown): any => expandTail(tail as never);
 
 // The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
@@ -73,7 +77,7 @@ async function render(domData: boolean): Promise<{ html: string; tail: Tail }> {
   const html = (await derivedToString(() => App({ rows: ROWS }), {
     manifest: { hash: "t", runtime: "/rt.js", symbols, ...(domData ? { domData: true } : {}) },
   })) as string;
-  return { html, tail: JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!) };
+  return { html, tail: tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!)) };
 }
 const appProps = (tail: Tail): Record<string, unknown> => tail.b.find((r) => r[3] === "src/page.tsx#App")![5]!;
 

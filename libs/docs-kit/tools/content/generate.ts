@@ -236,11 +236,13 @@ export async function generateContent(
     const components = "@rivetjs/docs-kit/components";
     const imports = [`import { DocPage } from "${components}/DocPage.tsx";`];
     if (rendered.uses.has("CopyButton")) imports.push(`import { CopyButton } from "${components}/CodeBlock.tsx";`);
-    if (rendered.examples.size)
+    // ZERO Z9: the page's examples are a module of the page (client build: just these records, in the page chunk), not
+    // route data — the payload of every document (resume tail) and client navigation (`_data`) no longer carries them.
+    const exampleIds = [...rendered.examples].sort();
+    if (exampleIds.length)
       imports.push(
         `import { Example } from "${components}/Example.tsx";`,
-        `import { load, type PageProps } from "@rivetjs/router";`,
-        `import { examples } from "virtual:docs/examples";`,
+        `import { examples } from "virtual:docs/examples?ids=${exampleIds.map(encodeURIComponent).join(",")}";`,
       );
     if (rendered.uses.has("ApiCard")) imports.push(`import { ApiCard } from "${components}/ApiCard.tsx";`);
     if (rendered.uses.has("BenchChart")) imports.push(`import { BenchChart } from "${components}/BenchChart.tsx";`);
@@ -281,15 +283,9 @@ export async function generateContent(
       "",
       `export const head = ${JSON.stringify(head)};`,
       "",
-      // The browser adopts and client-renders pages too. Keep the full manifest on the server, and send only the
-      // examples this page embeds through the route payload (the client manifest is deliberately empty).
-      ...(rendered.examples.size
-        ? [
-            `export const loader = load(() => ({ examples: { ${[...rendered.examples].map((id) => `${JSON.stringify(id)}: examples[${JSON.stringify(id)}]`).join(", ")} } }));`,
-            "",
-            `export default function Page({ data }: PageProps<typeof loader>) {`,
-          ]
-        : [`export default function Page() {`]),
+      // The browser adopts and client-renders pages too: the page's own examples module holds what it embeds.
+      ...(exampleIds.length ? [`const data = { examples };`, ""] : []),
+      `export default function Page() {`,
       `  return (`,
       `    <DocPage page={${JSON.stringify(props)}}>`,
       rendered.jsx

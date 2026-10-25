@@ -56,6 +56,8 @@ export default function Home() {
 
 `hero` is a plain JSON object (an `ImageDescriptor`) with `src`, `width`, `height`, `layout`, `sizes` and a list of `sources`. By default the build makes AVIF and WebP files plus a JPEG or PNG fallback, in several widths. It also adds a small blurred placeholder that shows while the image loads.
 
+In a build, a small descriptor (up to 1 KB of JSON) is copied into each file that imports it, so the browser does not fetch a separate file for each image. Larger descriptors stay in their own file and importers share it.
+
 `alt` is required. Use `alt=""` for decorative images.
 
 ::api{symbol="@rivetjs/runtime/image#Picture"}

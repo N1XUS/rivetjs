@@ -54,7 +54,7 @@ import type { Signal } from "@rivetjs/reactivity";
 import { Provider, ref } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { ChevronLeft, ChevronRight } from "lucide";
-import { cx } from "tailwind-variants/lite";
+import { cx } from "../../../styles/src/utils/tv.ts";
 
 import type { CalendarVariants } from "../../../styles/src/components/calendar/index.ts";
 import { calendarVariants } from "../../../styles/src/components/calendar/index.ts";

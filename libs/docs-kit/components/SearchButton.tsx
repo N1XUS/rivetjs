@@ -1,4 +1,3 @@
-import { clientEvent } from "@rivetjs/runtime/dom";
 import { Search } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 
@@ -11,33 +10,13 @@ import { Icon } from "@rivetjs/kit/icon";
  *
  * The dialog chunk (palette + light cdk overlay primitives) is fetched ahead of the press (CHUNK-CYCLE 2026-10-20):
  * on a pointer over / focus of either trigger and on a lone Ctrl / Meta keydown (the shortcut's first key), so the
- * press itself loads nothing. `import()` of a library module is never a chunk lazy the loader prefetches (only app
- * modules' are), hence the explicit warm-up. Document listeners (`clientEvent` with `match`), not handlers on the
- * link: a delegated handler run counts as an interaction with the shell chunk, and the loader then prefetches its
- * intent sibling (`resume-route_main-intent`: the frame menus + cdk collections, ~85 KB br) on a mere hover.
+ * press itself loads nothing. The shortcuts and that warm-up are plain document listeners of the docs page script
+ * (`page-script.ts`, ZERO Z13): no client trigger (they booted the resume runtime at idle), and no delegated handler
+ * run on a mere hover (the loader would prefetch the shell chunk's intent sibling, ~85 KB br).
  */
 export function SearchButton({ variant = "bar", shortcuts = true }: { variant?: "bar" | "icon"; shortcuts?: boolean }) {
-  // `shortcuts: false` (lean pages): no document listener, so nothing boots before the first interaction.
-  if (variant === "bar" && shortcuts)
-    clientEvent(
-      document,
-      "keydown",
-      (event: KeyboardEvent) => {
-        // Ctrl / Meta down: Ctrl+K / Cmd+K follows — fetch the dialog while the second key is on its way.
-        if (event.key === "Control" || event.key === "Meta") return void import("../search/dialog.tsx");
-        const target = event.target as HTMLElement | null;
-        const typing = target?.closest("input, textarea, select, [contenteditable='true']");
-        if ((event.key === "k" && (event.metaKey || event.ctrlKey)) || (event.key === "/" && !typing)) {
-          event.preventDefault();
-          void import("../search/dialog.tsx").then((module) => module.openSearch());
-        }
-      },
-      { capture: true },
-    );
-  if (variant === "bar" && shortcuts) {
-    clientEvent(document, "pointerover", () => void import("../search/dialog.tsx"), { match: ".search-button", once: true });
-    clientEvent(document, "focusin", () => void import("../search/dialog.tsx"), { match: ".search-button", once: true });
-  }
+  // Shortcuts (`/`, Ctrl/Cmd+K) and the dialog warm-up are the docs page script's (`page-script.ts`, ZERO Z13): document
+  // listeners here were client triggers that booted the resume runtime at idle on every page. `shortcuts` = the hint.
   return (
     <a
       class={"search-button search-button-" + variant}

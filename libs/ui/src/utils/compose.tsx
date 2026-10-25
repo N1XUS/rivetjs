@@ -5,7 +5,7 @@
 // `.tsx` (server-rewritten, unlike `.ts`): the composed render-prop function is an object-literal function value (cdk
 // `composeRenderProps` pattern), a compiler-registered resumable symbol over `cls` / `tw` — a cdk class binding that captures it
 // serializes on resumed pages (a closure built in a `.ts` module would fail: "capture #n function is not serializable").
-import { cx } from "tailwind-variants/lite";
+import { cx } from "../../styles/src/utils/tv.ts";
 
 // Re-export utility classes from @heroui/styles for backward compatibility (as upstream).
 export { disabledClasses, focusRingClasses, ariaDisabledClasses } from "../../styles/src/index.ts";

@@ -11,14 +11,19 @@ const RUNTIME = "@rivetjs/runtime/image";
  * `@__PURE__` (and the brand key a hoisted pure const) so an unused import tree-shakes to 0 B (zero-cost). */
 const PURE = "/* @__PURE__ */ ";
 const BRAND = `const brand = ${PURE}Symbol.for("rivet.image");\n`;
-const frozen = (value: unknown, top = false): string =>
+/** Largest descriptor (JSON chars) a build inlines into its importer instead of leaving a module (one request per
+ * image on the client); bigger ones (long blur placeholders) keep their module so importers share one copy. */
+export const IMAGE_INLINE_LIMIT = 1024;
+/** `import name from "<file>?…image"` lines (default import only) in project modules. */
+const IMAGE_IMPORT = /^import[ \t]+([A-Za-z_$][\w$]*)[ \t]+from[ \t]*(["'])([^"'\n]*[?&]image(?:[&=][^"'\n]*)?)\2[ \t]*;?[ \t]*$/gm;
+const frozen = (value: unknown, top = false, brand = "brand"): string =>
   Array.isArray(value)
     ? `${PURE}Object.freeze([${value.map((item) => frozen(item)).join(",")}])`
     : value !== null && typeof value === "object"
       ? `${PURE}Object.freeze({${Object.entries(value)
           .filter(([, item]) => item !== undefined)
           .map(([key, item]) => JSON.stringify(key) + ":" + frozen(item))
-          .join(",")}${top ? ",[brand]:true" : ""}})`
+          .join(",")}${top ? `,[${brand}]:true` : ""}})`
       : JSON.stringify(value);
 const SERVER_ONLY_WARNING =
   "image variants referenced from server code may be missing from the client build; build with createBuilder().buildApp() (vite build --app)";
@@ -61,6 +66,39 @@ export function imagesPlugin(input: ImagesConfig | true): Plugin {
     async resolveId(id, importer, options) {
       if (id === RUNTIME && isClient(this, options?.ssr)) return this.resolve(RUNTIME + "/dom", importer, { skipSelf: true });
       return null;
+    },
+    // Builds: a small `?image` descriptor is pure data, so it is inlined into each importing project module
+    // (`const name = <frozen descriptor>` on the import's line) instead of becoming its own client chunk (B4'(a)).
+    transform: {
+      order: "pre",
+      async handler(code, id) {
+        if (resolved.command !== "build" || id.includes("/node_modules/") || id.includes("\0") || !/\.[cm]?[jt]sx?$/.test(id.split("?")[0]!)) return null;
+        if (!code.includes("image")) return null;
+        const found = [...code.matchAll(IMAGE_IMPORT)];
+        if (!found.length) return null;
+        let out = code;
+        for (const match of found.reverse()) {
+          const [line, name, , spec] = match as unknown as [string, string, string, string];
+          const target = await this.resolve(spec, id);
+          const request = target && !target.external ? parseImageId(target.id) : null;
+          if (!request || request.kind !== "image") continue;
+          if (request.warning) this.warn(request.warning);
+          this.addWatchFile(request.file);
+          let described;
+          try {
+            described = await pipeline.describe(request.file, request.directives);
+          } catch (error) {
+            this.error({ message: (error as Error).message, id: request.file });
+          }
+          const { descriptor, assets, warnings } = described;
+          if (JSON.stringify(descriptor).length > IMAGE_INLINE_LIMIT) continue;
+          for (const warning of warnings) this.warn(warning);
+          for (const asset of assets) registry.set(`${asset.key}.${asset.ext}`, asset);
+          const value = `const ${name} = ${frozen(descriptor, true, `${PURE}Symbol.for("rivet.image")`)};`;
+          out = out.slice(0, match.index) + value + out.slice(match.index! + line.length);
+        }
+        return out === code ? null : { code: out, map: null };
+      },
     },
     async load(id, options) {
       let request;

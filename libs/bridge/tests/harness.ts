@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { compile } from "@rivetjs/compiler";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 interface Compiled {
   code: string;
@@ -68,7 +69,8 @@ export interface Tail {
 }
 export const tailOf = (html: string): Tail | null => {
   const json = /<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)?.[1];
-  return json ? (JSON.parse(json) as Tail) : null;
+  // Tail v2 (ZERO S2) in its flush shape: names resolved, runs expanded, `m` name → chunk.
+  return json ? (expandTail(JSON.parse(json)) as unknown as Tail) : null;
 };
 /** The lean islands records (`<script type="rivet/islands">`) of a page. */
 export const islandsOf = (html: string): unknown[][] | null => {

@@ -3,6 +3,8 @@ import { FRAME_HEIGHT, FRAME_THEME, frameIdOf, PARENT_FRAME_HEIGHT, PARENT_THEME
 import { site } from "virtual:docs/site";
 // Favicon: the Rivet logo (repo root logo.svg, emitted as a hashed asset by `docsSite()`).
 import { logo } from "virtual:docs/brand";
+// The docs page script (ZERO Z13): highlighter, search shortcuts, TOC spy without the resume runtime (`components/page-script.ts`).
+import { pageScript } from "virtual:docs/scripts";
 
 const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 // Applies the saved theme (`localStorage.theme`: "light" | "dark"; absent = follow the system) before
@@ -49,9 +51,16 @@ const frameDocument: DocumentShell = ({ head, nonce, managed }) => ({
 /** Document around every page. Route heads (title, description, links, scripts) merge over the defaults. */
 const document: DocumentShell = (input) => (frameIdOf(input.url.pathname) ? frameDocument(input) : siteDocument(input));
 
-const siteDocument: DocumentShell = ({ head, nonce, styles, managed }) => ({
+/** The docs page script (every docs page; `site.leanPages` are marked `<html data-lean>`: no highlighter / search shortcuts). */
+const pageScriptTag = (nonce: string | undefined) => {
+  const src = pageScript();
+  return src ? `<script type="module" src="${escape(src)}"${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}></script>` : "";
+};
+
+const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => ({
   start:
-    '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    `<!doctype html><html lang="en"${site.leanPages?.includes(url.pathname) ? " data-lean" : ""}>` +
+    '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     themeScript(nonce) +
     // The whole route head (scripts included: a route `head.scripts` entry is written, nonce'd on server pages).
     headTags(
@@ -65,6 +74,7 @@ const siteDocument: DocumentShell = ({ head, nonce, styles, managed }) => ({
     '<meta name="color-scheme" content="light dark">' +
     `<link rel="icon" type="image/svg+xml" href="${logo}">` +
     styles.map((href) => `<link rel="stylesheet" href="${escape(href)}">`).join("") +
+    pageScriptTag(nonce) +
     "</head><body>",
   end: "</body></html>",
 });

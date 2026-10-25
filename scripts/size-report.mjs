@@ -48,6 +48,10 @@ const EXAMPLES = [
   "motion-presence",
   "motion-layout",
   "motion-scroll",
+  // ZERO small-page targets (residual / lite runtime candidates: `dom-lite` shows up in rt / eager files when picked).
+  "resume-demo",
+  "tutorial-03",
+  "card-slots",
 ];
 
 /** cdk docs examples measured (`apps/cdk-docs/examples`; `../assets/*` imports staged from its shared `_assets`). */
@@ -245,7 +249,8 @@ async function measure(browser, url, client, route, sizes, saveAs) {
     if (saveAs) await writeFile(saveAs, html);
     const parsed = doc.state.map((text) => { try { return JSON.parse(text); } catch { return {}; } });
     const rt = [...new Set(doc.rt.filter(Boolean))];
-    const chunks = [...new Set(parsed.flatMap((s) => Object.values(s.m ?? {})))];
+    // Boundary chunks: tail v2 (ZERO S2) URL table `u` (names table `n` indexes it); v1 `m` name → URL.
+    const chunks = [...new Set(parsed.flatMap((s) => (s.v === 2 ? (s.u ?? []) : Object.values(s.m ?? {}))))];
     // Render-blocking CSS: the stylesheets the HTML links (app entry + the router's merged route sheet).
     const sheets = [...html.toString().matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*>/g)].map((m) => /\bhref="([^"]+)"/.exec(m[0])?.[1]).filter((h) => h?.startsWith("/"));
     const row = {

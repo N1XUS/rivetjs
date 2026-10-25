@@ -216,6 +216,13 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
     if !output.boundaries.is_empty() {
         result.insert("boundaries".into(), json!(output.boundaries));
     }
+    if !output.lite_because.is_empty() {
+        let map: Map<String, Value> = output.lite_because.into_iter().map(|(name, why)| (name, Value::String(why))).collect();
+        result.insert("liteBecause".into(), Value::Object(map));
+    }
+    if let Some((code, names)) = output.lite {
+        result.insert("lite".into(), json!({ "code": code, "map": null, "names": names }));
+    }
     if let Some(server) = server {
         result.insert("serverExports".into(), json!(server.exports));
         result.insert("serverKinds".into(), json!(server.kinds));

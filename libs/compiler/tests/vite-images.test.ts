@@ -103,6 +103,28 @@ test("zero-cost: a client chunk importing but not using ?image / ?jsx descriptor
   }
 });
 
+test("build: a small ?image descriptor is inlined into its importer (no own chunk); a large one keeps its module", async () => {
+  const root = await project();
+  try {
+    await writeFile(resolve(root, "lazy.ts"), 'import photo from "./photo.jpg?image"; export const big = photo;');
+    await writeFile(
+      resolve(root, "client.tsx"),
+      'import logo from "./logo.png?layout=fixed&width=100&image";\nexport const keep = logo;\ndocument.title = logo.src + String(logo[Symbol.for("rivet.image")]) + Object.isFrozen(logo.sources);\nimport("./lazy.ts").then((m) => (document.body.dataset.big = m.big.src));',
+    );
+    await build({ root, configFile: false, logLevel: "silent", plugins: [rivet({ images: { cacheDir: ".image-cache" } })], build: { outDir: "inline-dist" } });
+    const dir = resolve(root, "inline-dist/assets");
+    const files = (await readdir(dir)).filter((n) => n.endsWith(".js"));
+    const sources = await Promise.all(files.map((n) => readFile(resolve(dir, n), "utf8")));
+    const entry = sources.find((code) => code.includes("document.title"))!;
+    assert.match(entry, /\/assets\/logo-100-[0-9a-f]{8}\.png/, "small descriptor inlined into the entry");
+    assert.doesNotMatch(entry, /\/assets\/photo-/, "large descriptor stays in its own module");
+    assert.ok(sources.some((code) => code !== entry && /\/assets\/photo-/.test(code)));
+    assert.equal(files.length, 2, "entry + lazy (photo descriptor bundled into lazy chunk); no logo chunk");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("bad directive fails the build with the module id", async () => {
   const root = await project();
   try {

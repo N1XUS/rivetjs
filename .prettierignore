@@ -9,6 +9,7 @@ apps/*/src/routes/(docs)/
 package-lock.json
 # Written by gates (JSON.stringify): ui identity baselines
 scripts/size-report/ui-components.json
+scripts/size-report/frames.json
 libs/ui/tests-components/a11y.known.json
 libs/ui/tests-components/parity-counts.json
 # Agent worktrees and scratch copies

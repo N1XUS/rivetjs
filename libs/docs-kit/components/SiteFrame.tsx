@@ -6,7 +6,6 @@ import { SearchButton } from "./SearchButton.tsx";
 import { SideNav } from "./SideNav.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 import { areaOf, ROUTE_ITEMS, topItems } from "./nav.ts";
-import { watchCodeAtIdle } from "./code-watch.tsx";
 import { frameIdOf } from "../frame-theme.ts";
 
 export interface FooterLink {
@@ -91,8 +90,8 @@ export function TopLinks({ path, class: cls }: { path: string; class: string }) 
  * Site frame: skip link, top bar (menu drawer below 900px, logo + version, area / API / Examples links,
  * search, theme menu, GitHub), the side nav of the current area (when the URL belongs to one), the
  * page, the footer inside the content column. `path` = the request path (`url().pathname` in the app
- * layout). `links` adds footer columns between the reference and project columns. At idle the browser
- * starts the code highlighter (`highlight-browser.ts`). Example frame pages (`/examples/<id>/frame/…`) render bare.
+ * layout). `links` adds footer columns between the reference and project columns. The code highlighter is a
+ * separate page script (`page-script.ts`, linked by `document.ts`). Example frame pages (`/examples/<id>/frame/…`) render bare.
  */
 export function SiteFrame({ path, links = [], children }: { path: string; links?: FooterColumn[]; children?: JSX.Element | readonly JSX.Element[] }) {
   if (frameIdOf(path)) return children;
@@ -101,8 +100,8 @@ export function SiteFrame({ path, links = [], children }: { path: string; links?
   const columns = defaultColumns(links);
   // Lean pages skip generic idle highlighting/search setup; page-owned visible effects can still run.
   const lean = site.leanPages?.includes(path) ?? false;
-  // Code blocks are plain server text; the browser colours visible ones (shared lazy highlighter chunk).
-  if (!lean) watchCodeAtIdle();
+  // Code blocks are plain server text; the browser colours visible ones: `page-script.ts`, a plain module script
+  // `document.ts` links on non-lean pages (no idle trigger here: it booted the resume runtime on every page, ZERO Z13).
   return (
     <div class={side ? "frame frame-side" : "frame"}>
       <a class="skip-link" href="#content">

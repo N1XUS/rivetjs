@@ -34,6 +34,7 @@ const DERIVED_ABI: &[(&str, &str)] = &[
     ("for", "_rFor"),
     ("handler", "_rHandler"),
     ("handlers", "_rHandlers"),
+    ("listens", "_rListens"),
 ];
 /// DOM derived ABI: local suffix → export of `@rivetjs/runtime/dom-derived`.
 const DOM_DERIVED_ABI: &[(&str, &str)] = &[("b", "_b"), ("sig", "_sig"), ("sigStore", "_sigStore")];
@@ -220,6 +221,23 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 reps.push((Span::new(at, at), Expr::Raw(quote(key))));
             }
         }
+        // ZERO A3 (BE-STATE S1, ruling R-11): a syntactic data-literal init (or none) is re-evaluated identically by the
+        // browser's `_sig` / `_sigStore`, so the server flush may skip the key while its value is still that init
+        // (`_rSig(key, init, options, LIT)` / `_rSigStore(key, init, LIT)`, `LIT = 1`). Server target only.
+        let literal = call.arguments.len() <= if store { 1 } else { 2 }
+            && call.arguments.first().is_none_or(|a| a.as_expression().is_some_and(|e| resume::derived::data_literal(tree, e, 0)));
+        if self.server && literal {
+            // After the last argument (a trailing comma stays after the insertion), else before `)`.
+            let at = call.arguments.last().map_or(call.span.end.saturating_sub(1), |a| a.span().end);
+            let tail = match (store, call.arguments.len()) {
+                (true, 0) => ", undefined, 1",
+                (true, _) => ", 1",
+                (false, 0) => ", undefined, undefined, 1",
+                (false, 1) => ", undefined, 1",
+                (false, _) => ", 1",
+            };
+            reps.push((Span::new(at, at), Expr::Raw(tail.into())));
+        }
         Some(Expr::Raw(self.render_sorted(tree.span(id), reps)))
     }
 
@@ -238,6 +256,23 @@ impl<'t, 'a> Compiler<'t, 'a> {
             args.push(Expr::Str(event));
         }
         Some(Expr::call(&on, args))
+    }
+
+    /// D5 (intake 3): an in-place handler outside every boundary body (`plan.orphan_on`, server target) → `_rListens("type")`:
+    /// the boundary open at render (around the helper's caller) listens to the type. An empty slot.
+    pub(super) fn derived_orphan_on(&mut self, attr: Option<NodeId>) -> Option<Expr> {
+        let attr = attr?;
+        if !self.server {
+            return None;
+        }
+        let event = self.derived.as_ref()?.plan.orphan_on.get(&attr)?.clone();
+        let listens = self.derived_name("listens");
+        Some(Expr::call(&listens, vec![Expr::Str(event)]))
+    }
+
+    /// D5 (intake 3): `width_scan` parity — whether `derived_orphan_on` writes a slot for this attribute.
+    pub(super) fn derived_orphan_slot(&self, attr: NodeId) -> bool {
+        self.server && self.derived.as_ref().is_some_and(|d| d.plan.orphan_on.contains_key(&attr))
     }
 
     /// STATIC-ZERO T3: a native spread element of a conditional boundary's own body (`plan.spreads`, server target) →

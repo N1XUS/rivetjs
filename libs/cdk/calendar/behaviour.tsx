@@ -846,8 +846,32 @@ export interface CalendarYearPickerProps {
   visibleYears?: number;
 }
 
-function yearItems(options: CalendarYearPickerProps, state: AnyCalendarState): { items: CalendarPickerItem[]; value: number } {
-  const focused = focusedDate(state);
+type YearItems = { items: CalendarPickerItem[]; value: number };
+/** Rivet: `yearItems` of the same inputs (focused date, locale, time zone, min / max) once per picker, not once per read — its
+ * `items` / `value` / `onChange` accessors each rebuilt (formatted) the whole year list: 4 builds of 20 `Intl` formats per
+ * server render of a year picker (ZERO W6). The inputs are read on every call (tracking unchanged). */
+function yearItemsMemo(options: CalendarYearPickerProps, state: AnyCalendarState): () => YearItems {
+  let key: string | undefined, last: YearItems | undefined;
+  return () => {
+    const focused = focusedDate(state);
+    const k =
+      focused.calendar.identifier +
+      " " +
+      String(focused) +
+      " " +
+      state.locale +
+      " " +
+      state.timeZone +
+      " " +
+      String(minValueOf(state)) +
+      " " +
+      String(maxValueOf(state));
+    if (k !== key || last === undefined) ((last = yearItems(options, state, focused)), (key = k));
+    return last;
+  };
+}
+
+function yearItems(options: CalendarYearPickerProps, state: AnyCalendarState, focused = focusedDate(state)): YearItems {
   const formatter = getDateFormatter(state.locale, {
     year: options.format?.year || "numeric",
     era: options.format?.era || (focused.calendar.identifier === "gregory" && focused.era === "BC" ? "short" : undefined),
@@ -885,13 +909,14 @@ function yearItems(options: CalendarYearPickerProps, state: AnyCalendarState): {
 export function calendarYearPickerProps(props: CalendarYearPickerProps, state: AnyCalendarState): CalendarPickerAria {
   // A plain copy: the closures must not capture the caller's (component) props object.
   const options: CalendarYearPickerProps = { format: props.format, visibleYears: props.visibleYears };
+  const years = yearItemsMemo(options, state);
   return {
     "aria-label": cachedIntl(Intl.DisplayNames, state.locale, { type: "dateTimeField" }).of("year")!,
-    value: () => yearItems(options, state).value,
+    value: () => years().value,
     onChange: (key) => {
-      if (key != null) setFocusedDate(state, untrack(() => yearItems(options, state)).items[Number(key)]!.date);
+      if (key != null) setFocusedDate(state, untrack(years).items[Number(key)]!.date);
     },
-    items: () => yearItems(options, state).items,
+    items: () => years().items,
   };
 }
 

@@ -16,8 +16,16 @@ declare module "virtual:docs/pages" {
   export const pages: import("./components/types.ts").PageIndexEntry[];
 }
 declare module "virtual:docs/examples" {
-  /** Every example (meta + shown code): `src/generated/examples.json`; server only (`{}` in a client build); page loaders pass the needed records as route data. */
+  /** Every example (meta + shown code): `src/generated/examples.json`; server only (`{}` in a client build); generated pages import `virtual:docs/examples?ids=…` instead, other routes pass the needed records as route data. */
   export const examples: Record<string, import("./components/types.ts").ExampleData>;
+}
+declare module "virtual:docs/examples?ids=*" {
+  /** A generated page's own examples (ZERO Z9): client build = just the listed records' `ExampleView` fields (in the page chunk); server / dev = every example. */
+  export const examples: Record<string, import("./components/types.ts").ExampleView>;
+}
+declare module "virtual:docs/scripts" {
+  /** URL of the docs page script (`components/page-script.ts`, ZERO Z13); undefined in the browser / when not built. */
+  export const pageScript: () => string | undefined;
 }
 declare module "virtual:docs/example-frames" {
   /** Live examples: their frame page paths and frame module (`src/generated/example-frames.tsx`). */

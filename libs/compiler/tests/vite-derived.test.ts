@@ -13,6 +13,7 @@ import { build } from "vite";
 import { chromium, type Browser } from "playwright";
 import { hasDerivedModel } from "../index.ts";
 import { rivet } from "../vite.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 const COUNTER = `import { signal } from "@rivetjs/reactivity";
 export function Counter(props) {
@@ -170,7 +171,7 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
       assert.match(counterChunk, /src\/counter\.tsx#Counter/);
       // Server: the derived tail (module-qualified names, `m` from the manifest; the route root and both counters are
       // independent ATTR boundaries), no serialized state.
-      const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(derived.html)![1]!);
+      const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(derived.html)![1]!)) as any;
       assert.deepEqual(
         tail.b.map((r: unknown[]) => [r[3], r[2]]),
         [
@@ -238,7 +239,7 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
       assert.equal(plain.manifest.domData, undefined);
       const built = await buildApp("interactive", roots, true);
       assert.equal(built.manifest.domData, true);
-      const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(built.html)![1]!);
+      const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(built.html)![1]!)) as any;
       assert.equal(tail.d?.length, 1, "one d entry: the 50 rows");
       assert.equal(tail.d[0][3], 50);
       assert.ok(!JSON.stringify(tail.b).includes("row 17"), "row names are in the page only");

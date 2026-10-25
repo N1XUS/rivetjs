@@ -1,12 +1,10 @@
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
-import { clientEvent } from "@rivetjs/runtime/dom";
 import { ArrowLeft, ArrowRight, ArrowUp, ChevronRight, Info, Pencil } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 import { areas, sections } from "virtual:docs/nav";
 import { site } from "virtual:docs/site";
 import { StatusBadge } from "./StatusBadge.tsx";
 import { breadcrumbOf, sectionOf } from "./nav.ts";
-import { spy, spyState } from "./browser.ts";
 import type { PageInfo } from "./types.ts";
 
 /** "On this page" links (h2, h3). */
@@ -22,18 +20,8 @@ function TocList({ toc }: { toc: PageInfo["toc"] }) {
   );
 }
 
-/** TOC column + scroll-spy. The spy's code loads on the first scroll (`preload: "intent"`): nothing before. */
+/** TOC column. Its scroll-spy is the docs page script's (`page-script.ts`, ZERO Z13): no listener (no client trigger) here. */
 function Toc({ toc }: { toc: PageInfo["toc"] }) {
-  clientEvent(
-    window,
-    "scroll",
-    () => {
-      if (spyState.queued) return;
-      spyState.queued = true;
-      requestAnimationFrame(spy);
-    },
-    { passive: true, preload: "intent" },
-  );
   return (
     <aside class="toc-column" aria-labelledby="toc-title" data-pagefind-ignore="">
       <div class="toc-sticky">

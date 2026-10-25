@@ -3,6 +3,7 @@
 // reference at a time. Plus the derived model's tail types (`<script type="rivet/boundaries">`).
 import { DEV } from "#dev";
 import { BINARY, ERRORS, builtin } from "./resume-kinds.ts";
+import { eachRecord, urlOf } from "./resume-tail.ts";
 
 /**
  * Run `fn` with resume recording suspended: nothing it renders registers ids, bindings, handlers or
@@ -644,22 +645,55 @@ export function escapeJSON(json: string): string {
 // tail `<script type="rivet/boundaries">` (and `data-patch="<marker>"` scripts after streamed segments).
 
 /**
- * One boundary: `[id, parent id (0 = page root), flags, component name, keyed values, props?]`. `flags`: 1 independent
- * (props are values: `props` present), 2 the element root carries `data-b` (else `<!--b<id>-->` … `<!--/b-->` around
- * its output), 4 a keyed value was not JSON data (left out: render, do not adopt), 8 independence demoted at render
- * (props held a non-data value), 16 no output (`_rBOut` never ran). Keyed values: a flat `[key, value, key, value, …]`
- * list in creation order (key = module prefix + site ordinal from the compiler, `#n` suffix for a repeated site).
+ * One boundary as the server's flush holds it (encoded by `server-tail.ts` into a `BoundaryTail` entry): `[id, parent id
+ * (0 = page root), flags, component name, keyed values, props?]`. `flags`: 1 independent (props are values: `props`
+ * present), 2 the element root carries `data-b` (else `<!--b<id>-->` … `<!--/b-->` around its output), 4 a keyed value was
+ * not JSON data (left out: render, do not adopt), 8 independence demoted at render (props held a non-data value), 16 no
+ * output (`_rBOut` never ran). Keyed values: a flat `[key, value, key, value, …]` list in creation order (key = module
+ * prefix + site ordinal from the compiler, `#n` suffix for a repeated site); a `LIT` key still holding its literal init is
+ * left out (the browser's own init).
  */
 export type BoundaryRecord = [id: number, parent: number, flags: number, name: string, signals: unknown[], props?: object];
 
-/** The boundaries tail: records (new ones only in a patch) and the wake lists (`"<id>.<key>"` → reader boundary ids;
- * a patch re-sends a list whole when it grew). */
-export interface BoundaryTail {
-  v: 1;
+/** What one server flush produced (records by name, chunk per name `m`, listened types per name `e`), before encoding. */
+export interface FlushTail extends Omit<BoundaryTail, "v" | "n" | "u" | "b"> {
   b: BoundaryRecord[];
-  w?: Record<string, number[]>;
-  /** Derived client (`derivedToString` / `renderDerived`): boundary name → its chunk URL (manifest `symbols`). */
   m?: Record<string, string>;
+  e?: Record<string, string>;
+}
+
+/**
+ * Tail names table entry: boundary name, its chunk (index into `u`, -1: none), the event types its instances listen to
+ * (D5 / ZERO R2, ruling R-30: space separated, `*` = any, the union over the name's instances; absent = listens to
+ * nothing). An event adopts — and the loader holds / warms for — only the records around its target whose name listens
+ * to its type (and what those need). While no entry lists types every record listens (a server without D5 facts); a
+ * record the loader cannot find (streamed later) listens to everything.
+ */
+export type TailName = [name: string, url: number, types?: string];
+/** A record on the wire: `BoundaryRecord` with the name as an index into `n`, keyed values left out when empty (no props). */
+export type TailRecord = [id: number, parent: number, flags: number, name: number, signals?: unknown[], props?: object];
+/**
+ * A run of stateless records (no keyed value, no props) with consecutive ids: `count` repetitions of `tmpl` (period
+ * `tmpl.length`, 1–4). Record `id + j` is `tmpl[j % period]`: `[parent, flags, name]`, parent `>= 0` absolute, `< 0`
+ * relative to the record's own id (calendar cells: each cdk cell under its ui cell).
+ */
+export type TailRun = [id: number, zero: 0, zero2: 0, run: -1, count: number, tmpl: [parent: number, flags: number, name: number][]];
+export type TailEntry = TailRecord | TailRun;
+
+/**
+ * The boundaries tail, wire format v2 (ZERO S2, 2026-10-25): names once (`n`), chunk URLs once (`u`), records by name index
+ * with runs of stateless siblings — O(distinct record shapes), not O(instances). Entries ascend by (first) id. Plus the
+ * wake lists (`"<id>.<key>"` → reader boundary ids; a patch re-sends a list whole when it grew).
+ */
+export interface BoundaryTail {
+  v: 2;
+  n: TailName[];
+  /** Chunk URLs of `n` (entries without `/` are `data-ab` + entry + `.js`, resolved by the loader). */
+  u?: string[];
+  b: TailEntry[];
+  w?: Record<string, number[]>;
+  /** Framework islands the adopt runs hydrate (their keys). */
+  i?: string[];
   /** Derived client: boundary id → the `keydown` keys its handlers hold while cold (space separated). */
   k?: Record<string, string>;
   /**
@@ -706,3 +740,25 @@ export type DerivedDom = [
 ];
 /** One `BoundaryTail.a` entry. */
 export type DerivedAsync = [id: number, boundary: number, k: number, settled?: 0 | 1 | 2, value?: unknown];
+
+// ---- Tail v2 decoder: `resume-tail.ts` (no dependency, so the lite runtime imports it alone); re-exported here. ----
+export { eachRecord, recAt, nameOf, urlOf } from "./resume-tail.ts";
+/**
+ * The flush shape of a v2 tail (records by name with keyed value lists, `m` name → chunk URL, `e` name → listened types,
+ * the other fields as they are): tests, tools and DevTools. The runtime reads the wire format in place (`eachRecord`).
+ */
+export function expandTail(t: BoundaryTail): FlushTail {
+  const { v: _v, n, u: _u, b: _b, ...rest } = t;
+  const out: FlushTail = { b: [], ...rest };
+  eachRecord(t, (id, parent, flags, name, signals, props) => {
+    const r: BoundaryRecord = [id, parent, flags, n[name]![0], signals.length ? signals : []];
+    if (props !== undefined) r.push(props);
+    out.b.push(r);
+  });
+  n.forEach((entry, i) => {
+    const url = urlOf(t, i);
+    if (url !== undefined) (out.m ??= {})[entry[0]] = url;
+    if (entry[2] !== undefined) (out.e ??= {})[entry[0]] = entry[2];
+  });
+  return out;
+}

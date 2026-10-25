@@ -5,6 +5,8 @@
 // parent. Real derived server + DOM targets (skips on a wasm without the model).
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { expandTail } from "@rivetjs/runtime/resume-format";
+import type { FlushTail } from "@rivetjs/runtime/resume-format";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
 import { derivedToString } from "@rivetjs/runtime/server-derived";
@@ -94,17 +96,14 @@ const dataUrl = (code: string): string => "data:text/javascript;base64," + Buffe
 /** The same page with the helper inside it: the compiler keys `make`'s signal (`_rSig`), every boundary's under one key. */
 const KEYED = PAGE.replace('import { make } from "/helper.js";', 'import { signal } from "@rivetjs/reactivity";\nconst make = (v) => signal(v);');
 
-async function render(
-  alias = true,
-  page = PAGE,
-): Promise<{ html: string; tail: { b: [number, number, number, string][]; w?: Record<string, number[]>; c?: Record<string, number> } }> {
+async function render(alias = true, page = PAGE): Promise<{ html: string; tail: FlushTail }> {
   const out = compile(page, { target: "server", filename: "page.tsx", resume: RESUME } as never);
   assert.deepEqual(out.diagnostics, []);
   const reactivity = alias ? serverAlias : JSON.stringify(import.meta.resolve("@rivetjs/reactivity"));
   const code = out.code.replaceAll('"@rivetjs/reactivity"', reactivity).replaceAll('"/helper.js"', JSON.stringify(dataUrl(helper(reactivity))));
   const { App } = await importServer<{ App: () => ServerValue }>(code);
   const html = (await derivedToString(() => App(), { manifest })) as string;
-  return { html, tail: JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!) };
+  return { html, tail: expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!)) };
 }
 const flagsOf = (tail: Awaited<ReturnType<typeof render>>["tail"], name: string): number => tail.b.find((r) => r[3] === "src/page.tsx#" + name)![2];
 
@@ -259,7 +258,7 @@ compiled("browser: a submit adopts the deferred units inside its form first (the
   );
   const symbols = Object.fromEntries(FORM_RESUME.boundaries.map((name) => ["src/page.tsx#" + name, "/page.js"]));
   const html = (await derivedToString(() => Page(), { manifest: { hash: "t", runtime: "/rt.js", symbols } })) as string;
-  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!) as { b: [number, number, number, string][] };
+  const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
   assert.ok(tail.b.find((r) => r[3] === "src/page.tsx#Field")![2] & DEFER, "Field defers");
   const dom = compile(FORM, { target: "dom", filename: "page.tsx", resume: FORM_RESUME } as never);
   assert.deepEqual(dom.diagnostics, []);

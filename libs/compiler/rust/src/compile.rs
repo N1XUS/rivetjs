@@ -36,6 +36,8 @@ mod lazy_binds;
 mod server_link;
 // exception: derived model (M2 C2 / C3, 2026-10-20) — server + DOM target boundary / keyed-state lowering.
 mod derived;
+// ZERO C1 (2026-10-25): lite residuals `<Name>$a` on the derived DOM target.
+mod derived_lite;
 use derived::{Derived, is_function_child};
 
 pub const TARGET_HELPERS: &[&str] = &["Provider", "For", "Async", "lazyComponent", "clientOnly"];
@@ -167,6 +169,11 @@ pub struct Output {
     /// Resume: the module's boundary names (`<module>#<Name>`, source order), the
     /// keys of the build manifest's `symbols` (`compile` JSON `boundaries`).
     pub boundaries: Vec<String>,
+    /// ZERO C1 (derived DOM target): the module's lite residual entry (`<Name>$a` / `<Name>$c` exports against
+    /// `@rivetjs/runtime/dom-lite`; never imports this module statically) and the boundary names it covers.
+    pub lite: Option<(String, Vec<String>)>,
+    /// B1 census: boundary name → why no residual (derived DOM target).
+    pub lite_because: Vec<(String, String)>,
 }
 
 pub struct Diags<'t, 'a> {
@@ -364,6 +371,23 @@ fn strip_parens<'b, 'a>(mut e: &'b Expression<'a>) -> &'b Expression<'a> {
         e = &p.expression;
     }
     e
+}
+
+/// ZERO A2 (C4b): an expression child whose rendered text is known at compile time, folded into the template text on
+/// BOTH targets (same rule, so server markup and the DOM template agree): a string literal, an expression-free template,
+/// an integer literal of at most 15 decimal digits (its `String(n)` is its source text), `true` / `false` / `null`
+/// (render nothing).
+pub(crate) fn literal_child(tree: &Tree<'_>, e: &Expression<'_>) -> Option<String> {
+    match strip_parens(e) {
+        Expression::StringLiteral(s) => Some(s.value.to_string()),
+        Expression::TemplateLiteral(t) if t.expressions.is_empty() => t.quasis.first().and_then(|q| q.value.cooked.as_ref()).map(|c| c.to_string()),
+        Expression::NumericLiteral(n) => {
+            let text = tree.text_of(n.span);
+            (text.len() <= 15 && text.chars().all(|c| c.is_ascii_digit()) && (text == "0" || !text.starts_with('0'))).then(|| text.to_string())
+        }
+        Expression::BooleanLiteral(_) | Expression::NullLiteral(_) => Some(String::new()),
+        _ => None,
+    }
 }
 
 fn as_element<'b, 'a>(e: &'b Expression<'a>) -> Option<&'b JSXElement<'a>> {
@@ -588,6 +612,8 @@ pub struct Compiler<'t, 'a> {
     i18n: bool,
     /// Lazily allocated helper locals: (module, export, local).
     i18n_imports: Vec<(String, &'static str, String)>,
+    /// B1 census (ZERO C1): boundary → why it has no lite residual (`Output.lite_because`).
+    lite_because: Vec<(String, String)>,
     /// G10 helpers imported from `@rivetjs/runtime/style` (export, local), first use order.
     style_imports: Vec<(&'static str, String)>,
     /// Local name of `_slot` (`@rivetjs/runtime/slot`) once lazy children brand a thunk.
@@ -627,7 +653,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         "dom" => "dom",
         _ => {
             early.add("Unknown compilation target", None);
-            return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
+            return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
         }
     };
     let allocator = Allocator::default();
@@ -641,7 +667,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         early.add_parse_error(error.message.to_string(), span, source);
     }
     if parsed.panicked {
-        return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
+        return Output { code: String::new(), diagnostics: early.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
@@ -692,6 +718,7 @@ pub fn compile(source: &str, options: Options) -> Output {
         v2_vars: 0,
         i18n: false,
         i18n_imports: Vec::new(),
+        lite_because: Vec::new(),
         style_imports: Vec::new(),
         slot_import: None,
         props_imports: Vec::new(),
@@ -849,7 +876,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         }
         if options.check {
             let sites = std::mem::take(&mut self.sites);
-            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites, css: None, boundaries: Vec::new() };
+            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites, css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
         }
         let top = self.reps.pop().unwrap_or_default();
         let mut body = self.render(program.span, &top);
@@ -945,10 +972,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
             imports.push_str(&format!("import {{ {} }} from {};\n", named(&list), quote(module)));
         }
         let resume_imports = self.derived_imports();
+        // ZERO C1: lite residual entry (`compile/derived_lite.rs`), derived DOM target only — a module of its own.
+        let lite = self.lite_residuals(filename);
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
         let text = format!("{hashbang}{imports}{resume_imports}{hoists}{body}");
         if self.diags.has_errors() {
-            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
+            return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
         }
         let (clean, segments) = if self.mapping { map::extract(&text) } else { (text, Vec::new()) };
         let mapped = self.mapping.then_some((source, segments.as_slice()));
@@ -956,12 +985,23 @@ impl<'t, 'a> Compiler<'t, 'a> {
             Ok(output) => output,
             Err(message) => {
                 self.diag(format!("Internal error: emitted code failed to parse: {message}"), None);
-                return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new() };
+                return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
             }
         };
         let css = self.styles_output();
         let boundaries = self.derived_boundaries();
-        Output { code, diagnostics: self.diags.list, map: source_map, sites: Vec::new(), css, boundaries }
+        let lite = match lite {
+            Some((text, names)) => match strip_types(&text, filename, is_js_filename(filename), None) {
+                Ok((code, _)) => Some((code, names)),
+                Err(message) => {
+                    self.diag(format!("Internal error: emitted lite code failed to parse: {message}"), None);
+                    return Output { code: String::new(), diagnostics: self.diags.list, map: None, sites: Vec::new(), css: None, boundaries: Vec::new(), lite: None, lite_because: Vec::new() };
+                }
+            },
+            None => None,
+        };
+        let lite_because = std::mem::take(&mut self.lite_because);
+        Output { code, diagnostics: self.diags.list, map: source_map, sites: Vec::new(), css, boundaries, lite, lite_because }
     }
 
     fn emit_plan(&mut self, plans: &[Plan], n: usize, emitted: &mut FxHashSet<String>) {
@@ -2228,6 +2268,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
                         t.slot(on);
                     } else if !Self::function_value(attr, &value) {
                         t.slot(Expr::call(&self.abi_name("omitted"), vec![value]));
+                    } else if let Some(on) = self.derived_orphan_on(attr_id) {
+                        // exception: derived model (D5, intake 3) — a helper's handler: the open boundary listens to it.
+                        t.slot(on);
                     }
                 }
                 continue;
@@ -2416,6 +2459,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     let Some(e) = c.expression.as_expression() else { continue };
                     if self.static_child_server(e, t) {
                         continue;
+                    }
+                    // ZERO A2 (C4b): compile-time text joins the template (no slot, no markers, no runtime escape).
+                    if !OPAQUE_CONTENT.contains(&tag) && tag != "script" && tag != "style" {
+                        if let Some(text) = literal_child(self.tree, e) {
+                            t.append(&escaped(&text));
+                            continue;
+                        }
                     }
                     let value = match self.list_slot(e) {
                         Some(value) => value,
@@ -3651,6 +3701,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             let literal = matches!(&attr.value, Some(JSXAttributeValue::ExpressionContainer(c))
                 if matches!(c.expression, JSXExpression::ArrowFunctionExpression(_) | JSXExpression::FunctionExpression(_)));
             if literal && (name == "ref" || matches!(global_event(name), Some(Some(_))) || starts_with_on(name)) {
+                // D5 (intake 3): a helper's in-place handler writes `_rListens(type)` (`derived_orphan_on`).
+                *n += usize::from(starts_with_on(name) && event_info(name).is_some() && self.id(attr).is_some_and(|id| self.derived_orphan_slot(id)));
                 continue;
             }
             if starts_with_on(name) {
@@ -3668,7 +3720,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
         for child in &el.children {
             match child {
                 JSXChild::Text(_) => {}
-                JSXChild::ExpressionContainer(c) => *n += usize::from(c.expression.as_expression().is_some()),
+                // ZERO A2 (C4b): a literal child `walk_server` folds into the template text takes no slot.
+                JSXChild::ExpressionContainer(c) => {
+                    *n += usize::from(c.expression.as_expression().is_some_and(|e| {
+                        OPAQUE_CONTENT.contains(&tag) || tag == "script" || tag == "style" || literal_child(self.tree, e).is_none()
+                    }))
+                }
                 JSXChild::Spread(_) => {}
                 JSXChild::Element(c) if self.native(c) => self.width_scan(c, parent, n),
                 JSXChild::Element(c) => {

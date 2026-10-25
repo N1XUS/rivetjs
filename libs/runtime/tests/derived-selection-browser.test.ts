@@ -9,7 +9,7 @@ import { withPage } from "./resume/harness.ts";
 async function fixture() {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/selection-"));
-  const source = `import {signal} from '@rivetjs/reactivity';export default function Input(){const value=signal("A\\0B");return <div><input id="input" model:value={value}/><p id="value">{value()}</p></div>}`;
+  const source = `import {signal} from '@rivetjs/reactivity';export default function Input(){const value=signal("A\\0B");return <div><input id="input" model:value={value}/><p id="value">{value()}</p><button id="go" onClick={()=>value.set(value())}>go</button></div>}`;
   await writeFile(resolve(root, "package.json"), '{"type":"module"}');
   await writeFile(resolve(root, "page.tsx"), source);
   await writeFile(resolve(root, "entry.ts"), 'export {default} from "./page.tsx";export {mount} from "@rivetjs/runtime/dom";');
@@ -51,7 +51,10 @@ for (const dirty of [false, true])
             input.focus();
             if (dirty) input.value = "Next";
             input.setSelectionRange(dirty ? 1 : 0, dirty ? 2 : 3, "backward");
+            // Dirty: the input event adopts the unit. Pristine: focus alone adopts nothing (D5 listening records: the unit
+            // listens to input / change / click), so a synthetic click on its button (focus stays) adopts it.
             if (dirty) input.dispatchEvent(new InputEvent("input", { bubbles: true }));
+            else document.querySelector("#go")!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
           }, dirty);
           release();
           await page.waitForFunction((dirty) => (document.querySelector("#input") as HTMLInputElement).value === (dirty ? "Next" : "A\0B"), dirty);

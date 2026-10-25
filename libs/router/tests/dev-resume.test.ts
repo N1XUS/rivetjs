@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
 import { chromium, type Page } from "playwright";
 import { bare, nodeEnv } from "./vite-env.ts";
+import { expandTail } from "@rivetjs/runtime/resume-format";
 
 const fixture = new URL("./fixture/", import.meta.url).pathname;
 const runtimeDom = new URL("../../runtime/dom.ts", import.meta.url).pathname;
@@ -58,7 +59,7 @@ test("dev resume: the page resumes like production, an interaction loads its chu
     assert.match(bare(html), /<div data-rivet-dev="resume" style="display:contents"><div id="shell">/);
     assert.match(html, /<button type="button" id="likes">Likes <!--\[-->0<!--\]--><\/button>/);
     const tag = /<script type="rivet\/boundaries"[^>]*>/.exec(html)![0]!;
-    const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/.exec(html)![1]!) as { m: Record<string, string> };
+    const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/.exec(html)![1]!)) as { m: Record<string, string> };
     // The derived runtime entry of the compiler plugin; boundary chunks = the modules Vite serves.
     assert.match(tag, /data-rt="\/@id\/__x00__rivet-derived-entry"/);
     const chunks = Object.values(tail.m);

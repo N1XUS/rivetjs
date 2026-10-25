@@ -65,6 +65,7 @@ import Icon from "./icon.svg?jsx";                          // component sugar
 - `sizes`: string, `"auto"`, or `{ sm…2xl | px | "(media)": value, default }`.
 - Art direction: `image={{ "(max-width: 640px)": mobile, default: hero }}`.
 - CDN: `cdn("cat.jpg", { cdn: cloudinary({ cloud }), width, height })`.
+- Builds inline small `?image` descriptors (JSON ≤ `IMAGE_INLINE_LIMIT` = 1024 chars) into each importing project module (`const x = <frozen descriptor>` on the import line, pre-order transform) → no per-image client chunk; larger ones keep their module. `?jsx` / `?svg` are components, never inlined. Dev unchanged.
 - Raw API: descriptors are JSON; `srcset()`, `imageSet()`, `preloadLink()`, `getImage()` (`@rivetjs/compiler/images`).
 - Types: add `"@rivetjs/compiler/images/client"` to `compilerOptions.types`.
 - Router apps: `rivetRouter({ images })` passes the option through.

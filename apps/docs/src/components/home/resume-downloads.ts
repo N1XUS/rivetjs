@@ -1,3 +1,4 @@
+import { recAt, urlOf } from "@rivetjs/runtime/resume-format";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
 
 // The boundaries holding a node, innermost first: an element root's `data-b`, else the `<!--b<id>-->` … `<!--/b-->`
@@ -42,11 +43,15 @@ export async function loadedFor(event: Event): Promise<Downloads> {
   const tails = [...document.querySelectorAll<HTMLScriptElement>('script[type="rivet/boundaries"]')];
   const runtime = tails.find((node) => node.dataset.rt)?.dataset.rt;
   if (!runtime) return unmeasured("chunk information is available in a production build");
-  // The click's roots: the runtime + the chunks of the button's boundaries (tail `m`, boundary name → chunk URL).
+  // The click's roots: the runtime + the chunks of the button's boundaries (tail v2: record → names table `n` → URL `u`).
   const roots = new Set([runtime]);
   for (const node of tails) {
     const tail = JSON.parse(node.textContent!) as BoundaryTail;
-    for (const [id, , , name] of tail.b) if (ids.has(String(id)) && tail.m?.[name]) roots.add(tail.m[name]!);
+    for (const id of ids) {
+      const record = recAt(tail, +id),
+        url = record && urlOf(tail, record[3]);
+      if (url) roots.add(url);
+    }
   }
   const path = (url: string) => {
     const resolved = new URL(url, location.href);
