@@ -12,7 +12,7 @@ function module(
   components: Record<string, Component>,
   imports: Record<string, [string, string]> = {},
   defaultName: string | null = null,
-  extra: Partial<Pick<ModuleFacts, "exports" | "reexports" | "stars" | "compounds">> = {},
+  extra: Partial<Pick<ModuleFacts, "exports" | "reexports" | "stars" | "compounds" | "componentValues">> = {},
 ): ModuleFacts {
   const boundaries = new Map<string, ComponentBoundaryFacts>();
   for (const [name, c] of Object.entries(components))
@@ -44,6 +44,7 @@ function module(
     reexports: extra.reexports ?? new Map(),
     stars: extra.stars ?? [],
     compounds: extra.compounds ?? new Map(),
+    ...(extra.componentValues ? { componentValues: extra.componentValues } : {}),
     boundaries,
   };
 }
@@ -286,4 +287,62 @@ test("STATIC-ZERO T3: a component whose only source is a conditional handler is 
   // The route root renders it: a boundary, never conditional.
   assert.deepEqual(out.boundaries("src/page.tsx"), ["Page"]);
   assert.deepEqual(out.conditional("src/page.tsx"), []);
+});
+
+test("ZERO A1: adopted = boundary, rendered by an adopted component, used as a value, or reached by unseen code", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/page.tsx",
+      module(
+        {
+          Page: { renders: ["Card", "Static", "Island"], params: "none" },
+          Static: { renders: ["Leaf"] },
+          Leaf: {},
+          Island: { renders: ["Inner"] },
+          Inner: {},
+          Orphan: {},
+        },
+        { Card: ["./card", "Card"] },
+        "Page",
+      ),
+    ],
+    ["src/card.tsx", module({ Card: { interactive: true, renders: ["Label"] }, Label: {}, Glyph: {} }, {}, null, { componentValues: ["Glyph"] })],
+  ]);
+  const resolved = new Map([["src/page.tsx", new Map([["./card", "src/card.tsx"]])]]);
+  const v = (file: string, name: string) => out.verdicts.get(file)!.get(name)!;
+  // A route root rendered by the router's `Root` (no resolved call site): adopted, and so everything it renders.
+  let out = boundaryFacts(facts, resolved, new Set(["src/page.tsx"]));
+  assert.equal(v("src/page.tsx", "Page").adopted, true);
+  assert.equal(v("src/page.tsx", "Static").adopted, true);
+  assert.deepEqual(out.static("src/page.tsx"), []);
+  // The same root under a host that never adopts it (`shells`): only boundaries and what they render are adopted.
+  out = boundaryFacts(facts, resolved, new Set(["src/page.tsx"]), new Set(["src/page.tsx"]));
+  assert.equal(v("src/page.tsx", "Page").interactive, true, "renders a boundary");
+  assert.equal(v("src/page.tsx", "Page").adopted, true);
+  // Page is a boundary (it renders Card): what it renders is walked by its adopt run.
+  assert.equal(v("src/page.tsx", "Static").adopted, true);
+  assert.equal(v("src/card.tsx", "Label").adopted, true, "rendered by a boundary");
+  assert.equal(v("src/card.tsx", "Glyph").adopted, true, "used as a value");
+  assert.equal(v("src/page.tsx", "Orphan").adopted, true, "no resolved call site");
+  // A shell root with no boundary below: nothing is adopted.
+  const plain = new Map<string, ModuleFacts>([["src/page.tsx", module({ Page: { renders: ["Static"], params: "none" }, Static: { renders: ["Leaf"] }, Leaf: {} }, {}, "Page")]]);
+  out = boundaryFacts(plain, new Map(), new Set(["src/page.tsx"]), new Set(["src/page.tsx"]));
+  assert.deepEqual(out.static("src/page.tsx").sort(), ["Leaf", "Page", "Static"]);
+  // `file#Name` shell entries name a component other than the default export.
+  out = boundaryFacts(plain, new Map(), new Set(), new Set(["src/page.tsx#Page"]));
+  assert.deepEqual(out.static("src/page.tsx").sort(), ["Leaf", "Page", "Static"]);
+});
+
+test("ZERO A1: a compound used as a value counts every part adopted", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/menu.tsx",
+      module({ MenuRoot: {}, MenuItem: {}, Page: { renders: ["MenuRoot"], params: "none" } }, {}, "Page", {
+        compounds: new Map([["Menu", { root: "MenuRoot", parts: new Map([["Item", "MenuItem"]]) }]]),
+        componentValues: ["Menu"],
+      }),
+    ],
+  ]);
+  const out = boundaryFacts(facts, new Map(), new Set(["src/menu.tsx"]), new Set(["src/menu.tsx"]));
+  assert.deepEqual(out.static("src/menu.tsx"), ["Page"]);
 });

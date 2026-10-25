@@ -37,6 +37,12 @@ export interface BoundaryVerdict {
    * (`server-derived.ts` "Conditional boundaries"). A static instance (`<Meter value={40}>`) ships no record and no chunk.
    */
   conditional: boolean;
+  /**
+   * ZERO A1: an adopt walk may reach its server output — it is a boundary, a component that is adopted renders it, it is
+   * used as a value (`ModuleFacts.componentValues`: a prop, a table, a direct call) or it has no resolved call site (not a
+   * route root). `false`: its server output needs no slot markers (`resume.static`).
+   */
+  adopted: boolean;
   /** Why it is not independent (first reason), for the interaction map / dev output. */
   dependentBecause?: "not-interactive" | "destructured-props" | "context" | "call-site" | "no-call-site";
   /** Why it is a boundary (first reason, by priority): own source, a conditional handler (`listens`: kept per instance
@@ -53,6 +59,8 @@ export interface BoundaryFacts {
   independent(file: string): string[];
   /** Component names of `file` that are conditional boundaries (for `resume.conditional`). */
   conditional(file: string): string[];
+  /** Component names of `file` no adopt walk reaches (for `resume.static`, ZERO A1). */
+  static(file: string): string[];
 }
 
 const key = (file: string, name: string) => file + "?" + name;
@@ -60,12 +68,15 @@ const key = (file: string, name: string) => file + "?" + name;
 /**
  * Close the per-module component facts over the module graph. `facts`: file → `moduleFacts(…, { boundaries: true })`;
  * `resolved`: file → import specifier → resolved file (resumable files only, as `groupComponents` takes); `roots`: files
- * whose default export is a route component (always independent: loader data + params are values).
+ * whose default export is a route component (always independent: loader data + params are values); `shells` (ZERO A1):
+ * `file` (its default export) or `file#Name` components rendered only by a host that never adopts them (docs-kit
+ * `FrameShell`): without a resolved call site they are adopted only through their own boundaries.
  */
 export function boundaryFacts(
   facts: Map<string, ModuleFacts>,
   resolved: Map<string, Map<string, string>>,
   roots: ReadonlySet<string> = new Set(),
+  shells: ReadonlySet<string> = new Set(),
 ): BoundaryFacts {
   const target = (file: string, spec: string) => resolved.get(file)?.get(spec) ?? null;
   type Bound = { file: string; local: string };
@@ -194,6 +205,36 @@ export function boundaryFacts(
       }
     }
   }
+  // ZERO A1 adopted (least fixpoint): a boundary, a component used as a value, one without a resolved call site (rendered
+  // by code the walk does not see — a route root under the router's `Root`, a frame page under `FrameRoot` — unless it is
+  // a `shells` entry), or one an adopted component renders. A compound used as a value counts with every part.
+  const shell = (id: string): boolean => {
+    const at = id.lastIndexOf("?");
+    const file = id.slice(0, at),
+      name = id.slice(at + 1);
+    return shells.has(file + "#" + name) || (shells.has(file) && (facts.get(file)?.defaultName ?? "default") === name);
+  };
+  const escaped = new Set<string>();
+  for (const [file, f] of facts)
+    for (const name of f.componentValues ?? []) {
+      const bound = local(file, name, new Set());
+      const hit = component(bound);
+      if (hit) escaped.add(hit);
+      const compound = bound && facts.get(bound.file)!.compounds?.get(bound.local);
+      if (compound)
+        for (const part of compound.parts.values()) {
+          const p = component(local(bound!.file, part, new Set()));
+          if (p) escaped.add(p);
+        }
+    }
+  const adopted = new Set<string>();
+  for (const id of info.keys())
+    if (interactive.get(id) || escaped.has(id) || (!sites.has(id) && !shell(id))) adopted.add(id);
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const [id, list] of sites)
+      if (!adopted.has(id) && list.some((s) => adopted.has(s.caller))) (adopted.add(id), (changed = true));
+  }
   // Independent: every call site in the program (by resolved target) passes data; unresolved targets never count.
   const verdicts = new Map<string, Map<string, BoundaryVerdict>>();
   for (const [file, f] of facts) {
@@ -207,6 +248,7 @@ export function boundaryFacts(
         live: live.get(id) ?? false,
         independent: false,
         conditional: isInteractive && !c.source && !isRoot.has(id),
+        adopted: adopted.has(id),
       };
       if (isInteractive)
         verdict.because = c.source
@@ -237,5 +279,6 @@ export function boundaryFacts(
     boundaries: (file) => names(file, (v) => v.interactive),
     independent: (file) => names(file, (v) => v.independent),
     conditional: (file) => names(file, (v) => v.conditional),
+    static: (file) => names(file, (v) => !v.adopted),
   };
 }

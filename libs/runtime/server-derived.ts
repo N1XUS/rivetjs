@@ -43,7 +43,8 @@ import {
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
-import { compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
+import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
+import type { AttributeRecord, TemplateRecord } from "./template.ts";
 import { CONSTANT, For, ROWS, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
 import type { ConstantGetter } from "./server-structural.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
@@ -57,7 +58,7 @@ import type { BoundaryRecord, BoundaryTail, ClassHooks, ClassRegistry, DerivedAs
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
-import { _onEager, _onIsland } from "./derived-eager.ts";
+import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
 import { _idScope } from "./id.ts";
@@ -104,7 +105,8 @@ export interface Boundary {
   flags: number;
   /** Independent boundaries: the props object (checked to be data at `_rB`). */
   props: object | null;
-  /** Keyed state registered while this body evaluated: (key, current value getter), creation order. */
+  /** Keyed state registered while this body evaluated: (key, current value getter), creation order (`NO_SIGNALS`, shared
+   * and frozen, until the first). */
   signals: [key: string, value: () => unknown][];
   /** Occurrences per key once the unit registered many (a site registering twice in one boundary gets `key#2`, `key#3`, …;
    * `register`), else null. */
@@ -116,7 +118,10 @@ export interface Boundary {
   /** `Async`s with a fallback constructed while it was the current boundary (their `k` in `BoundaryTail.a`). */
   an: number;
   /** While its body evaluates: the owner whose context frame names it (`CURRENT`), and that owner's frame before. */
-  frame: [owner: OwnerFrames, ctx: unknown] | null;
+  fo: OwnerFrames | null;
+  fc: unknown;
+  /** Its render's recorder (`_rBEnd` needs no context lookup). */
+  readonly x: DerivedRender;
   /** Dependency facts (DERIVED-C4): plain signals made in its unit, numbered (`"<id>.$<n>"` wake keys); reactive sources made in
    * its unit (signals, computeds: the deferral weight; its whole subtree's once flushed, `deferFlags`); `EAGER` / `MOD` marks
    * (below). */
@@ -129,6 +134,8 @@ export interface Boundary {
   kept?: boolean;
   /** STATIC-ZERO T3: its body installs a listener whose value was checked (`_rHandler` / `_rHandlers` saw a function). */
   on?: boolean;
+  /** ZERO Z3 (`_rWeak`): kept only when the first flush also keeps a boundary that is not weak. */
+  weak?: boolean;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -561,12 +568,14 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     name,
     flags,
     props: keep,
-    signals: [],
+    signals: NO_SIGNALS,
     keys: null,
     attr: false,
     out: false,
     an: 0,
-    frame: null,
+    fo: null,
+    fc: null,
+    x: ctx,
     made: 0,
     weight: 0,
     mark: 0,
@@ -582,11 +591,13 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
   // adopt run of this boundary's unit counts it.
   const owner = getOwner() as unknown as OwnerFrames | null;
   if (owner) {
-    boundary.frame = [owner, owner.ctx];
+    boundary.fo = owner;
+    boundary.fc = owner.ctx;
     owner.ctx = { token: CURRENT, value: boundary, up: owner.ctx, owner, memo: null };
   }
   return boundary;
 }
+const NO_SIGNALS: [key: string, value: () => unknown][] = /* @__PURE__ */ Object.freeze([]) as never;
 
 // `clientEffect` / `clientEvent` / `clientOnly` during a derived render: the open boundary gets the trigger `when` names
 // (`interaction` / `media:` have no boundary trigger: the boundary runs at its first use).
@@ -661,28 +672,34 @@ export function _rHandlers<T extends object>(token: Boundary | null, attrs: T): 
 /** Close a boundary body (compiled into the body's `finally`): the token leaves the stack, whatever is above it too. */
 export function _rBEnd(token: Boundary | null): void {
   if (!token) return;
-  const ctx = useContext(DERIVED);
-  if (!ctx) return;
-  const at = ctx.stack.lastIndexOf(token);
+  const stack = token.x.stack,
+    top = stack.length - 1;
+  // (LIFO, the common case: the token is on top.)
+  const at = top >= 0 && stack[top] === token ? top : stack.lastIndexOf(token);
   if (at < 0) return;
-  for (let i = ctx.stack.length - 1; i >= at; i--) {
-    const frame = ctx.stack[i]!.frame;
-    if (frame) frame[0].ctx = frame[1];
-    ctx.stack[i]!.frame = null;
+  for (let i = top; i >= at; i--) {
+    const b = stack[i]!;
+    if (b.fo) b.fo.ctx = b.fc;
+    b.fo = b.fc = null;
   }
-  ctx.stack.length = at;
+  stack.length = at;
 }
 
 const COMMENTS = /* @__PURE__ */ Object.freeze(["<!--b", "-->", "<!--/b-->"]);
+/** `_rBOut` flags (compiler): the returned value holds no lazy part (slot, row, branch, component output rendered later). */
+export const NOLAZY = 1;
 
 /**
  * The boundary's rendered value (compiled around every `return` of its body): a scoped record whose content renders
  * under a `CURRENT` frame naming the boundary (reads in lazy slots / rows / branches attribute to it), between
  * `<!--b<id>-->` … `<!--/b-->` unless its element root carries `data-b` (`_rBAttr`).
  */
-export function _rBOut(token: Boundary | null, value: ServerValue): ServerValue {
+export function _rBOut(token: Boundary | null, value: ServerValue, flags?: number): ServerValue {
   if (!token) return value;
   token.out = true;
+  // Nothing in it runs code while it renders (a scalar, a compiled template of scalars; `NOLAZY`: the compiler knows the
+  // returned value holds no lazy part): no context frame, owner, scope.
+  if ((flags !== undefined && flags & NOLAZY) || inert(value)) return token.attr ? value : compiledTemplate(COMMENTS, [token.id, value]);
   let owner = getOwner();
   const content = provide(CURRENT, token, () => {
     owner = getOwner();
@@ -690,6 +707,25 @@ export function _rBOut(token: Boundary | null, value: ServerValue): ServerValue 
   });
   const scoped = _scopedRecord(owner, content, () => _dispose(owner)) as unknown as ServerValue;
   return token.attr ? scoped : compiledTemplate(COMMENTS, [token.id, scoped]);
+}
+
+// A scalar, or a compiled template whose slots are scalars / attribute records of scalars (the boundary's own element:
+// `<div data-b class={c()}>{text()}</div>` once evaluated); collection build passes return null.
+function inert(value: ServerValue): boolean {
+  if (value === null || typeof value !== "object") return typeof value !== "function";
+  if ((value as { [COMPILED]?: true })[COMPILED] !== true) return false;
+  const slots = (value as unknown as TemplateRecord).slots;
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i] as unknown;
+    if (slot === null || typeof slot !== "object") {
+      if (typeof slot === "function") return false;
+      continue;
+    }
+    if ((slot as { [ATTRIBUTE]?: true })[ATTRIBUTE] !== true) return false;
+    const v = (slot as AttributeRecord).value;
+    if (typeof v === "function" || (v !== null && typeof v === "object")) return false;
+  }
+  return true;
 }
 
 /** `data-b="<id>"` on the boundary's element root (an attribute slot the compiler writes into the root's start tag). */
@@ -702,7 +738,8 @@ export function _rBAttr(token: Boundary | null): ServerValue {
 // Its wire key (`key`, a repeat in the same unit `key#2`, `key#3`, …). A unit registers a handful of keys: counted by a scan
 // of its list (no Map per boundary); a unit holding many (rows of a component that is not a boundary) counts by a Map.
 function register(owner: Boundary, key: string, value: () => unknown): string {
-  const list = owner.signals;
+  let list = owner.signals;
+  if (list === NO_SIGNALS) owner.signals = list = [];
   let n = 1;
   const keys = owner.keys;
   if (keys !== null) keys.set(key, (n = (keys.get(key) ?? 0) + 1));
@@ -958,6 +995,11 @@ _onEager(() => {
     r = ctx && current(ctx);
   if (r) markUp(r, null, EAGER_MARK);
 });
+_onWeak(() => {
+  const ctx = useContext(DERIVED),
+    r = ctx && current(ctx);
+  if (r) r.weak = true;
+});
 // ---- Framework islands (M6-PARITY, `@rivetjs/bridge`) ----
 // A hydrated island with plain JSON props rendered in the shell boots through the bridge's lean boot (its records + boot
 // script before the boundaries tail): the Rivet runtime never runs for it. Any other one (live / callback props, Rivet
@@ -1091,7 +1133,7 @@ _onDerivedResource({
     const at = m.at;
     if (at) {
       at.an = m.atAn;
-      at.signals.length = m.signals;
+      if (at.signals.length !== m.signals) at.signals.length = m.signals;
       // (Counts again from its list on the next registration.)
       at.keys = null;
       at.made = m.made;
@@ -1412,6 +1454,14 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
   let d: DerivedDom[] | undefined;
   deferFlags(ctx, ctx.flushed);
   keep(ctx, ctx.flushed);
+  // ZERO Z3: the first flush keeps only weak boundaries (the router's Root / App with nothing live below them) and nothing
+  // else for the browser (no island, Async, wake list): the page ships nothing. Later flushes (streamed segments) only
+  // follow an `Async`, which keeps the shell's records (`an`).
+  if (ctx.flushed === 0 && weakOnly(ctx)) {
+    ctx.flushed = ctx.boundaries.length;
+    ctx.listen = [];
+    return null;
+  }
   for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
     const boundary = ctx.boundaries[i]!;
     if (boundary.flags & COND && !boundary.kept) continue;
@@ -1483,6 +1533,19 @@ function flush(ctx: DerivedRender): BoundaryTail | null {
   // Every boundary of this flush was a static conditional instance: nothing for the browser (no runtime, no chunk).
   if (!b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a) return null;
   return tail;
+}
+
+/** Every record the first flush would write is weak, and the render made nothing else the browser needs. */
+function weakOnly(ctx: DerivedRender): boolean {
+  if (ctx.adopt.length || ctx.dirty.size || ctx.counted.size || ctx.changed.size || ctx.dom?.length) return false;
+  let weak = false;
+  for (const x of ctx.boundaries) {
+    if (x.an) return false;
+    if (x.flags & COND && !x.kept) continue;
+    if (!x.weak) return false;
+    weak = true;
+  }
+  return weak;
 }
 
 // ---- Conditional boundaries (M6-PARITY 6b, 2026-10-22) ----

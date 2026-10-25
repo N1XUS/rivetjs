@@ -2404,7 +2404,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             self.select_stack.push(select_temp.clone());
         }
         // exception: derived model (M2 C2) — slot marker pairs for the adopt walk (`compile/derived.rs` `slot_marks`).
-        let marks = self.slot_marks(tag, &el.children);
+        let marks = self.slot_marks(el_id, tag, &el.children);
         for child in &el.children {
             match child {
                 JSXChild::Text(text) => t.append(&escaped(&jsx_text(self.tree.text_of(text.span)))),

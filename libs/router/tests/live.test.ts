@@ -73,7 +73,7 @@ test("codegen: live wiring only with a live page and navigate()/forms in use; ot
   assert.match(out, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), _liveRouter\(router, live\)\)\}/);
   // The slot is declared before the listeners that capture it.
   assert.ok(out.indexOf("const live = ") < out.indexOf('clientEvent(document, "click"'));
-  assert.match(out, /const data = LIVE\.includes\(row\[2\]\) \? _livePage\(live, result\.data\[depth\], match\.url, depth\) : result\.data\[depth\];/);
+  assert.match(out, /const data = LIVE\.includes\(n\) \? _livePage\(live, result\.data\[depth\], match\.url, depth\) : result\.data\[depth\];/);
   // A static prop (hoisted): a getter would create a signal per read.
   assert.match(out, /<Page data=\{data\} params=\{match\.params\} url=\{match\.url\} \/>/);
   // Without layouts: no layout state.

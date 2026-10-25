@@ -319,20 +319,21 @@ pub fn module_facts(source: &str, filename: &str) -> Value {
 
 /// Derived model (M2 C1): per module-level component boundary facts (`moduleFacts(…, { boundaries: true })`); runs the
 /// resume analysis (its diagnostics are not facts and are dropped).
-pub fn boundary_facts(source: &str, filename: &str) -> Value {
+/// Also: the PascalCase bindings the module uses as values (`componentValues`, ZERO A1 `resume::derived::value_components`).
+pub fn boundary_facts(source: &str, filename: &str) -> (Value, Value) {
     let allocator = Allocator::default();
     let parsed = Parser::new(&allocator, source, crate::source_type::of(filename))
         .with_options(ParseOptions { preserve_parens: true, ..ParseOptions::default() })
         .parse();
     if parsed.panicked {
-        return Value::Array(Vec::new());
+        return (Value::Array(Vec::new()), Value::Array(Vec::new()));
     }
     let program = allocator.alloc(parsed.program);
     let semantic = SemanticBuilder::new().with_check_syntax_error(false).build(program).semantic;
     let tree = Tree::new(source, program, semantic);
     let mut scratch = crate::compile::Diags { tree: Some(&tree), filename: filename.to_string(), list: Vec::new() };
     let resumed = crate::resume::analyze(&tree, filename, &mut scratch, &Default::default(), &[]);
-    crate::resume::derived::facts_json(&tree, &resumed)
+    (crate::resume::derived::facts_json(&tree, &resumed), json!(crate::resume::derived::value_components(&tree)))
 }
 
 /// Shell cache H-holes (PPR-T6): every streamed boundary element and whether a stored shell may re-run only its content

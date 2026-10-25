@@ -8,6 +8,16 @@ export const _rEager = (): void => void hook?.();
 /** @internal The derived server's mark. */
 export const _onEager = (fn: () => void): void => void (hook = fn);
 
+// Weak boundaries (ZERO Z3, 2026-10-25): `_rWeak()` marks the boundary rendering it weak — the router's generated `Root` /
+// `App` (`rivetRouter({ clientRouter })` off: links load documents). A render whose records are all weak ships no tail, no
+// loader, no runtime (the page has nothing live of its own; the router alone does not make it resumable). A no-op outside
+// a derived server render (the derived server registers the hook).
+let weak: (() => void) | null = null;
+/** Mark the current derived boundary weak. */
+export const _rWeak = (): void => void weak?.();
+/** @internal The derived server's mark. */
+export const _onWeak = (fn: () => void): void => void (weak = fn);
+
 // Framework islands on the derived model (M6-PARITY, `@rivetjs/bridge` `_island`): the server bridge offers each hydrated
 // island to the derived render. One with plain JSON props (`props`) boots through the bridge's lean boot (records +
 // inline boot before the derived tail, `tail` writes them): no Rivet runtime involved. Any other (live / callback props,

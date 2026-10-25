@@ -10,13 +10,14 @@
 //   pointing at every example that shares it (Tailwind compiles once per group, not once per example).
 // Examples that cannot run as a page of the static docs app (server mode, own config / document / i18n, endpoints,
 // dynamic pages, absolute links between pages) are shown as code only (`ExampleData.codeOnly` says why).
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readdir, readFile, rm, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { ExampleConfig } from "../define.ts";
 import type { ExampleData, ExampleFile } from "../components/types.ts";
+import { moduleFacts } from "@rivetjs/compiler";
 import { loadApp } from "./app.ts";
 import { codeLines } from "./content/highlight.ts";
 import { writeAtomic } from "./lock.ts";
@@ -27,6 +28,12 @@ export const EXAMPLES_JSON = "src/generated/examples.json";
 export const FRAMES_INDEX = "src/generated/example-frames.tsx";
 export const FRAMES_DIR = "src/generated/example-frames";
 export const CSS_DIR = "src/generated/example-css";
+/**
+ * ZERO A1: root-relative route files of frame pages that render in `FrameShell` (no layouts, a page function without
+ * parameters: `FramePage.props` false), which never adopts them — `docsFrames()` hands them to the compiler plugin as
+ * `api.resumeShell(file)` so their static parts carry no slot markers.
+ */
+export const FRAME_SHELLS = "src/generated/example-shells.json";
 /** Shared example assets: a relative import of `src/assets/<path>` the example does not have resolves to `examples/_assets/<path>`. */
 export const SHARED_ASSETS = "_assets";
 
@@ -302,6 +309,7 @@ export async function generateExamples(root: string, options: { lenient?: (messa
   }
   // Frame wrappers: the example's pages, each wrapped in its layouts, behind one module per example.
   const framesDir = resolve(root, FRAMES_DIR);
+  const shells: string[] = [];
   for (const { id, pages } of frames) {
     const spec = (file: string) => posix(relative(framesDir, resolve(root, "examples", id, "src/routes", file)));
     // Per route file: its default export (the component) and the module (head, loader).
@@ -321,6 +329,11 @@ export async function generateExamples(root: string, options: { lenient?: (messa
       );
       // `props`: the frame root carries the route payload only when something reads it (a layout, a page with a parameter).
       const props = layouts.length ? "true" : `C${page}.length > 0`;
+      if (!layouts.length) {
+        const route = resolve(root, "examples", id, "src/routes", file);
+        const facts = existsSync(route) ? moduleFacts(readFileSync(route, "utf8"), route, { boundaries: true }) : null;
+        if (facts?.boundaries.get(facts.defaultName ?? "default")?.params === "none") shells.push(posix(relative(root, route)));
+      }
       return `  ${JSON.stringify(path)}: { module: M${page}, Page: (props: FrameProps) => ${wrapped}, props: ${props} },`;
     });
     const source = [
@@ -358,6 +371,7 @@ export async function generateExamples(root: string, options: { lenient?: (messa
     ].join("\n"),
   );
   await write(EXAMPLES_JSON, JSON.stringify(examples) + "\n");
+  await write(FRAME_SHELLS, JSON.stringify(shells.sort()) + "\n");
   // Stale wrappers / stylesheets of removed examples.
   for (const [dir, keep] of [
     [framesDir, new Set(frames.map(({ id }) => id + ".tsx"))],

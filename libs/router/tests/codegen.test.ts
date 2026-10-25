@@ -40,15 +40,20 @@ test("app.tsx: lazy pages, static layouts, nearest 404 by static folder (groups 
   assert.ok(userPage >= 0, pageFiles.join());
   assert.match(app, /const page = \(i: number\): [^\n]* => \(views\[i\] \?\?= lazyComponent<PageProps>\(PAGES\[i\]!\)\);/);
   assert.doesNotMatch(app, /const (loadPage|Page)\d+ =|LOADERS/);
-  // Data-driven route table (RA1/RA2): one row per route (page = PAGES index), modules derived from both.
+  // Data-driven route table (RA1/RA2): paths + per-row columns (page = PAGES index), modules derived from both. Z5:
+  // columns, not row literals; a constant column is inlined (depth 1, no enter view), the row index is `n`.
   const paths = JSON.parse(/const PATHS: readonly string\[\] = (\[[^\n]*\]);/.exec(app)![1]!) as string[];
-  const rows = /const ROUTES: readonly Row\[\] = \[(.*)\];/.exec(app)![1]!.match(/\[[^[\]]*\]/g)!;
-  assert.match(rows[paths.indexOf("/users/:id")]!, new RegExp(`^\\[${paths.indexOf("/users/:id")}, 1, ${userPage}, -1, \\d+\\]$`));
+  const pagesOf = JSON.parse(/const R_2: readonly number\[\] = (\[[^\n]*\]);/.exec(app)![1]!) as number[];
+  assert.equal(pagesOf[paths.indexOf("/users/:id")], userPage);
+  assert.doesNotMatch(app, /ROUTES|const R_[013]:|type Row\b/);
+  assert.match(app, /const modules: [^\n]* = PATHS\.map\(\(path, n\) => \[path, \(\) => preloadPage\(page\(R_2\[n\]!\), PAGES\[R_2\[n\]!\]!\)\]\);/);
+  assert.match(app, /const Page = page\(R_2\[n\]!\), depth = 1;/);
+  assert.match(app, /_landed\(nest, NEST, 0, n, result, match\)/);
+  // Layout chains: one shared array per distinct chain, rows built from PATHS (no pattern repeated in NEST).
   assert.match(
     app,
-    /const modules: [^\n]* = PATHS\.map\(\(path, n\) => \[path, \(\) => preloadPage\(page\(ROUTES\[n\]!\[2\]\), PAGES\[ROUTES\[n\]!\[2\]\]!\)\]\);/,
+    /const CHAINS: readonly \(readonly number\[\]\)\[\] = \[\[0\]\];\nconst NEST: LayoutTable = \{ ids: \["\/"\], [^\n]*, routes: PATHS\.map\(\(path\) => \[path, CHAINS\[0\]!\]\) \};/,
   );
-  assert.match(app, /const Page = page\(row\[2\]\), depth = row\[1\];/);
   assert.ok(!paths.includes("/api/health"));
   // The table has a layout loader: data requests name the layouts the client keeps.
   assert.match(app, /prefetchModule\(url, modules\);\n {4}prefetchData\(url, "server", _keepIds\(nest, NEST, url\)\);/);
@@ -201,7 +206,7 @@ test("head: components wraps levels and hands the sink over; off leaves the outp
   for (const file of Object.values(off)) assert.doesNotMatch(file, /HeadLevel|@rivetjs\/kit|headSink|headComponents/);
   assert.match(on["app.tsx"]!, /import \{ HeadLevel, applyRouteHead \} from "@rivetjs\/kit";/);
   assert.match(on["app.tsx"]!, /<Provider token=\{HeadLevel\} value=\{0\}>/);
-  assert.match(on["app.tsx"]!, /\.then\(\(result\) => applyRouteHead\(result, ROUTES\[n\]!\[1\]\)\)/);
+  assert.match(on["app.tsx"]!, /\.then\(\(result\) => applyRouteHead\(result, 1\)\)/);
   assert.match(on["app.tsx"]!, /<Provider token=\{HeadLevel\} value=\{depth\}><Page data=\{result\.data\[depth\]\}/);
   assert.match(on["entry.server.tsx"]!, /export const headComponents = true;/);
   assert.match(on["entry.server.tsx"]!, /headSink: input\.headSink/);
@@ -220,7 +225,7 @@ test("app.tsx: one commit per navigation (data + page chunk), swap/hold, prefetc
   const app = generate(table, { routesDir: "src/routes" }).files["app.tsx"]!;
   assert.match(
     app,
-    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\) \?\? revived\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\) \?\? Promise\.all\(\[routeData\(work, match, router, "server", _keepIds\(nest, NEST, match\.url\)\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\)\.then\(\(result\) => _landed\(nest, NEST, 0, ROUTES\[n\]!\[0\], result, match\)\)/,
+    /load: \(work, match\) => _ssrLevel\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, n, result, match\)\) \?\? revived\(work, \(data\) => loaded\(data\), failed, \(result\) => _landed\(nest, NEST, 0, n, result, match\)\) \?\? Promise\.all\(\[routeData\(work, match, router, "server", _keepIds\(nest, NEST, match\.url\)\), loadPage\(match\.url\)\]\)\.then\(\(\[data\]\) => data\)\.then\(loaded, failed\)\.then\(\(result\) => _landed\(nest, NEST, 0, n, result, match\)\)/,
   );
   // Without layouts: the load chain as before (no layout state).
   const bare = generate(routeTable(["index.tsx", "about.tsx"]), { routesDir: "src/routes" }).files["app.tsx"]!;
@@ -436,8 +441,14 @@ test("server / static modes (derived resume model): app.tsx default-exports Root
   // Root: the server renders the request's router; the browser rebuilds the router and provides the payload as `Revived`.
   assert.match(
     app,
-    /export default function Root\(props: \{ s: RootData \| EncodedRoot \}\) \{\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
+    /export default function Root\(props: \{ s: RootData \| EncodedRoot \}\) \{\n {2}if \(import\.meta\.env\.SSR\) _rWeak\(\);\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
   );
+  // ZERO Z3: client router off → the generated Root / App are weak (a page with nothing else live ships no tail / runtime);
+  // `clientRouter: true` keeps them (router listeners make the page resumable).
+  assert.match(app, /export function App\(\{ router \}: \{ router: AppRouter \}\) \{\n {2}if \(import\.meta\.env\.SSR\) _rWeak\(\);/);
+  const routed = generate(table, { routesDir: "src/routes", clientRouter: true }).files["app.tsx"]!;
+  assert.doesNotMatch(routed, /_rWeak/);
+  assert.doesNotMatch(generate(routeTable(["index.tsx", "about.tsx"]), { routesDir: "src/routes", mode: "csr" }).files["app.tsx"]!, /_rWeak/);
   assert.match(app, /<Provider token=\{Revived\} value=\{server\}>/);
   // A payload that is not JSON data arrives as its resume table (server `_rData`): decoded here, its built-in decoders first.
   assert.match(app, /const s = rootPayload\(props\.s\),/);
@@ -460,7 +471,7 @@ test("server / static modes (derived resume model): app.tsx default-exports Root
   assert.match(app, /const adoptSwap = \(apply: \(\) => void, next: ParentNode\): void => \(adopting \? apply\(\) : swapRoute\(apply, next\)\);/);
   assert.match(app, /swap=\{adoptSwap\}/);
   // DERIVED-C4: the boundary a Router level renders in adopts with its parent (never deferred to idle).
-  assert.match(app, /import \{ _rEager \} from "@rivetjs\/runtime\/derived-eager";/);
+  assert.match(app, /import \{ _rEager, _rWeak \} from "@rivetjs\/runtime\/derived-eager";/);
   assert.match(app, /<Router router=\{\(import\.meta\.env\.SSR && _rEager\(\), /);
   assert.doesNotMatch(app, /swap=\{swapRoute\}/);
   assert.match(app, /\{view\(\)\}/);
@@ -484,11 +495,11 @@ test("csr: route loads apply the route head in the browser (`_csrHead`); server 
   const csr = generate(routeTable(files), { routesDir: "src/routes", mode: "csr" }).files["app.tsx"]!;
   assert.match(csr, /import \* as Layout\d+\$ from "\.\.\/src\/routes\/_layout\.tsx";/);
   assert.match(csr, /const HEADS: readonly \(readonly unknown\[\]\)\[\] = \[\[Layout\d+\$, Layout\d+\$\], \[Layout\d+\$\]\];/);
-  assert.match(csr, /\.then\(\(\[data, page\]\) => _csrHead\(data, HEADS\[ROUTES\[n\]!\[0\]\]!, page, match\)\)/);
+  assert.match(csr, /\.then\(\(\[data, page\]\) => _csrHead\(data, HEADS\[n\]!, page, match\)\)/);
   assert.doesNotMatch(csr, /rankMerge/);
   const kit = generate(routeTable(files), { routesDir: "src/routes", mode: "csr", head: "components" }).files["app.tsx"]!;
   assert.match(kit, /import \{ rankMerge \} from "@rivetjs\/router\/head";/);
-  assert.match(kit, /_csrHead\(data, HEADS\[ROUTES\[n\]!\[0\]\]!, page, match, rankMerge\)\)\.then\(\(result\) => applyRouteHead\(result/);
+  assert.match(kit, /_csrHead\(data, HEADS\[n\]!, page, match, rankMerge\)\)\.then\(\(result\) => applyRouteHead\(result/);
   for (const mode of ["server", "static"] as const) {
     const app = generate(routeTable(files), { routesDir: "src/routes", mode }).files["app.tsx"]!;
     assert.doesNotMatch(app, /_csrHead|HEADS|import \* as/, mode);

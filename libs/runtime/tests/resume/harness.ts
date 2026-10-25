@@ -19,6 +19,9 @@ const sources: Record<string, string> = {
   "/dom-adopt-run.ts": "dom-adopt-run.ts",
   "/lazy.ts": "lazy.ts",
   "/url.ts": "url.ts",
+  "/dom-base.ts": "dom-base.ts",
+  "/dom-attr.ts": "dom-attr.ts",
+  "/dom-events.ts": "dom-events.ts",
   "/style.ts": "style.ts",
   "/slot.ts": "slot.ts",
   "/props.ts": "props.ts",
@@ -38,6 +41,7 @@ const sources: Record<string, string> = {
   "/dom-data.ts": "dom-data.ts",
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
+  "/dom-lite.ts": "dom-lite.ts",
   // DERIVED-C4: the derived build's `@rivetjs/reactivity` alias (fixtures import it by path).
   "/derived-reactivity.ts": "derived-reactivity.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).
@@ -59,6 +63,7 @@ export const DERIVED_BUILD: Record<string, string> = switchBuild(DERIVED_SWITCHE
 export const rewrite = (code: string): string =>
   code
     .replaceAll("@rivetjs/runtime/dom-derived", "/dom-derived.ts")
+    .replaceAll("@rivetjs/runtime/dom-lite", "/dom-lite.ts")
     .replaceAll("@rivetjs/runtime/resume-format", "/resume-format.ts")
     .replaceAll("@rivetjs/runtime/dom", "/dom.ts")
     .replaceAll("@rivetjs/runtime/style", "/style.ts")

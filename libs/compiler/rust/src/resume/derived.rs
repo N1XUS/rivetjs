@@ -314,6 +314,9 @@ pub struct Verdicts {
     pub boundaries: Option<Vec<String>>,
     pub independent: Option<Vec<String>>,
     pub conditional: Option<Vec<String>>,
+    /// ZERO A1: components no adopt walk ever reaches (`BoundaryVerdict.adopted` false, `resume.static`): their server
+    /// output carries no `<!--[-->…<!--]-->` slot markers.
+    pub r#static: Option<Vec<String>>,
 }
 
 /// The derived server target's plan for one module.
@@ -341,6 +344,8 @@ pub struct Plan {
     /// STATIC-ZERO T3: native spread elements in the bodies of conditional boundaries (`COND`): the server target passes
     /// their attribute object through `_rHandlers(B, object)` (a forwarded listener function makes the instance live).
     pub spreads: FxHashSet<NodeId>,
+    /// ZERO A1: functions of components in `resume.static` (never reached by an adopt walk): no slot markers inside.
+    pub static_fns: FxHashSet<NodeId>,
 }
 
 /// The loader's default delegated types (`resume-loader-derived.ts`); `_rB` names only the others.
@@ -405,7 +410,7 @@ fn module_components(tree: &Tree<'_>) -> Vec<(String, NodeId)> {
 }
 
 /// The outermost function enclosing `node` (`node` included).
-fn outermost_function(tree: &Tree<'_>, node: NodeId) -> Option<NodeId> {
+pub(crate) fn outermost_function(tree: &Tree<'_>, node: NodeId) -> Option<NodeId> {
     let mut top = None;
     let mut n = Some(node);
     while let Some(id) = n {
@@ -796,6 +801,9 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
             .collect(),
     };
     let mut plan = Plan::default();
+    if let Some(list) = &verdicts.r#static {
+        plan.static_fns = components.iter().filter(|c| list.iter().any(|n| n == &c.name)).map(|c| c.function).collect();
+    }
     let mut boundary_of: FxHashMap<NodeId, usize> = FxHashMap::default();
     for (i, c) in components.iter().enumerate() {
         if !interactive[i] {
@@ -912,6 +920,46 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         diags.warn(message, Some(node));
     }
     plan
+}
+
+/// ZERO A1: PascalCase bindings this module uses as values (not as a JSX tag, an export specifier, a `typeof` operand, a
+/// type, or the root / part of a top-level `Object.assign` compound): a component reached this way may be rendered by
+/// code the walk does not see (a prop `icon={Glyph}`, a lookup table, a direct call), so the build counts it adopted.
+pub fn value_components(tree: &Tree<'_>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    tree.walk(tree.root(), &mut |n| {
+        let AstKind::IdentifierReference(ident) = tree.kind(n) else { return true };
+        if !pascal(&ident.name) || tree.symbol_of_ref(ident).is_none() || tree.in_type_name(n) || out.iter().any(|o| o == ident.name.as_str()) {
+            return true;
+        }
+        let parent = tree.parent(n).map(|p| (p, tree.kind(p)));
+        let skip = match parent {
+            Some((_, AstKind::JSXOpeningElement(_) | AstKind::JSXClosingElement(_) | AstKind::JSXMemberExpression(_))) => true,
+            Some((_, AstKind::ExportSpecifier(_) | AstKind::ExportDefaultDeclaration(_))) => true,
+            Some((_, AstKind::UnaryExpression(u))) => u.operator == UnaryOperator::Typeof,
+            Some((p, AstKind::CallExpression(_))) => compound_part(tree, p),
+            Some((p, AstKind::ObjectProperty(_))) => tree.parent(p).and_then(|o| tree.parent(o)).is_some_and(|c| compound_part(tree, c)),
+            _ => false,
+        };
+        if !skip {
+            out.push(ident.name.to_string());
+        }
+        true
+    });
+    out
+}
+
+/// `n` is (inside) a top-level `Object.assign(Root, { Part })` call (`facts.rs` reports it as a compound).
+fn compound_part(tree: &Tree<'_>, n: NodeId) -> bool {
+    let mut at = Some(n);
+    for _ in 0..3 {
+        let Some(id) = at else { return false };
+        if let AstKind::CallExpression(c) = tree.kind(id) {
+            return matches!(unwrap(&c.callee), Expression::StaticMemberExpression(m) if m.property.name == "assign" && matches!(&m.object, Expression::Identifier(o) if o.name == "Object"));
+        }
+        at = tree.parent(id);
+    }
+    false
 }
 
 /// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, listens, context, params, renders, calls: [[tag,

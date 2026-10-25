@@ -265,9 +265,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
 
     /// Marker pairs in a native element's content: `Some(sole)` (whether the slot is the element's only child) under the
     /// derived model outside opaque content, `None` otherwise.
-    pub(super) fn slot_marks(&self, tag: &str, children: &[JSXChild<'a>]) -> Option<bool> {
-        self.derived.as_ref()?;
+    /// ZERO A1: none inside a component no adopt walk reaches (`plan.static_fns`, `resume.static`).
+    pub(super) fn slot_marks(&self, el: Option<NodeId>, tag: &str, children: &[JSXChild<'a>]) -> Option<bool> {
+        let d = self.derived.as_ref()?;
         if OPAQUE_CONTENT.contains(&tag) {
+            return None;
+        }
+        if !d.plan.static_fns.is_empty() && el.and_then(|el| resume::derived::outermost_function(self.tree, el)).is_some_and(|f| d.plan.static_fns.contains(&f)) {
             return None;
         }
         let count = children

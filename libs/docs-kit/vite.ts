@@ -8,7 +8,7 @@ import type { Plugin, Rollup, ViteDevServer } from "vite";
 import { serverOnlyStub } from "@rivetjs/compiler/vite";
 import { docsContent } from "./tools/content/plugin.ts";
 import { docsDevSearch } from "./tools/dev-search.ts";
-import { CSS_DIR, EXAMPLES_JSON, FRAMES_DIR, FRAMES_INDEX, SHARED_ASSETS } from "./tools/examples.ts";
+import { CSS_DIR, EXAMPLES_JSON, FRAME_SHELLS, FRAMES_DIR, FRAMES_INDEX, SHARED_ASSETS } from "./tools/examples.ts";
 import { frameStyleLists, mergeFrameStyles } from "./tools/frame-styles.ts";
 
 /** `virtual:docs/<name>` → file relative to the app root. */
@@ -109,6 +109,14 @@ function docsFrames(): Plugin {
       root = config.root;
       const out = config.environments?.client?.build?.outDir ?? config.build.outDir;
       clientOut = isAbsolute(out) ? out : resolve(root, out);
+      // ZERO A1: pages that render in `FrameShell` (`FRAME_SHELLS`, written by `generateExamples`) and `FrameShell` itself
+      // are never adopted by a host: the compiler drops their slot markers unless their own boundaries need them.
+      const api = config.plugins.find((plugin) => plugin.name === "vite-plugin-rivet")?.api as { resumeShell?: (file: string, name?: string) => void } | undefined;
+      const list = resolve(root, FRAME_SHELLS);
+      if (api?.resumeShell && existsSync(list)) {
+        api.resumeShell(FRAME_ROOT, "FrameShell");
+        for (const file of JSON.parse(readFileSync(list, "utf8")) as string[]) api.resumeShell(resolve(root, file));
+      }
     },
     async resolveId(source, importer) {
       if (!importer || !source.startsWith(".")) return null;

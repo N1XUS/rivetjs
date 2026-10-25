@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/server";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore, derivedToString } from "@rivetjs/runtime/server-derived";
+import { _rB, _rBOut, _rBEnd, _rBAttr, _rSig, _rSigStore, derivedToString, NOLAZY } from "@rivetjs/runtime/server-derived";
+import { compiledTemplate } from "@rivetjs/runtime/server";
 import { isData } from "../server-derived.ts";
 import { importServer } from "./resume/compile.ts";
 import type { BoundaryTail } from "@rivetjs/runtime/resume-format";
@@ -223,6 +224,52 @@ test("keyed signal: set / update are methods (the base signal's contract), reads
       }
     },
     { manifest },
+  );
+});
+
+test("_rBOut: inert values (scalars, compiled templates of scalars, NOLAZY) render the same markers without a context frame", async () => {
+  const html = await derivedToString(
+    () => {
+      const A = _rB("A", 0);
+      try {
+        const B = _rB("B", 0);
+        const C = _rB("C", 0);
+        const D = _rB("D", 0);
+        let lazy = "";
+        const E = _rB("E", 0);
+        const slot = _rBOut(E, () => {
+          // A lazy slot still renders under E's frame: a keyed signal made there registers on E.
+          lazy = String(_rSig("e", 7)());
+          return lazy;
+        });
+        _rBEnd(E);
+        const out = [
+          _rBOut(B, null),
+          _rBOut(C, compiledTemplate(["<i", ">", "</i>"], [_rBAttr(C), "c"])),
+          _rBOut(D, compiledTemplate(["<b>", "</b>"], ["d"]), NOLAZY),
+          slot,
+        ];
+        _rBEnd(D);
+        _rBEnd(C);
+        _rBEnd(B);
+        return _rBOut(A, out);
+      } finally {
+        _rBEnd(A);
+      }
+    },
+    { manifest },
+  );
+  assert.ok(html.startsWith('<!--b1--><!--b2--><!--/b--><i data-b="3">c</i><!--b4--><b>d</b><!--/b--><!--b5-->7<!--/b--><!--/b-->'), html);
+  const { tail } = tailOf(html);
+  assert.deepEqual(
+    tail.b.map((r) => [r[0], r[3], r[4]]),
+    [
+      [1, "A", []],
+      [2, "B", []],
+      [3, "C", []],
+      [4, "D", []],
+      [5, "E", ["e", 7]],
+    ],
   );
 });
 

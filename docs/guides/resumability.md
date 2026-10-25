@@ -46,6 +46,15 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 - Limits (LOW): double `focus` for a plain `onFocus` on the pressed element; `focusVisible: false` Chromium-only; shadow DOM presses get no focus restore; touch pointerdown is not a press.
 - Tests: `libs/runtime/tests/derived-cold-press-browser.test.ts`, `libs/ui/tests-components/cold-focus-ring.test.ts`.
 
+## Lite runtime (`@rivetjs/runtime/dom-lite`, ZERO R4 / R5)
+
+- What: a second `DerivedRuntime` (same loader contract: `data-rt`, `start` / `on` / `cold` / `w` / `m`) for pages whose boundary chunks export residuals: `<Name>$a(node, rec)` adopts the server nodes directly (no template clone, no probe), `<Name>$c = () => import(ordinary module)`. Helpers: `_lw` (walk `f`/`n`/`h` steps), `_ls(rec, key, init)` (record value or init; wake-listed key → miss), `_le` (delegated handler), `_lt` (text after a sole child / content opener, scalars only), `_la` / `_lp` (attr / prop bindings). One reactivity instance, one delegated listener per event type (constant in N).
+- Adopt: an event adopts the boundaries around its target (outermost first); a residual runs in `createRoot`. A throw (`LiteMiss`, missing node, wake key) = one-way fallback: dynamic import of `dom-derived`, handed `{ q: pending events, l: lite-owned ids, x: fallen ids }`; the full runtime re-adopts fallen ids through `$c` and leaves lite-owned ones live.
+- Full runtime (R5): `dom-derived` runs `<Name>$a` too when the boundary is standalone; throw → ordinary component (one-way, dev warning).
+- Leaves: `dom-events.ts` (delegation), `dom-attr.ts` (attribute writes), `dom-base.ts` (`_setProp`, construction doc) split out of `dom-v2.ts` / `dom.ts` so the lite chunk does not pull the whole DOM runtime (rolldown chunks per module).
+- Numbers (shells count/N, gzip): JS before first input 22,655 → 7,534 B (N=1), 32,004 → 7,534 B (N=1000, constant in N); total 43,384 → 18,891 B at N=1000; first click 4× CPU at N=1000 112.7 → 43.7 ms. Floor = reactivity (~3.1–3.9 KB gz).
+- Residuals are hand-written until the compiler emits them (FE-COMPILE C1, same ABI). Tests: `libs/runtime/tests/dom-lite-browser.test.ts`.
+
 ## Tests
 
 - `libs/runtime/tests/derived-*.test.ts` (recorder, data, rows, adopt, defer, stream, cold press, DOM data), `resume-loader.test.ts` (loader freshness + budget), `libs/compiler/tests/vite-derived.test.ts`, router `libs/router/tests/`, resume fuzz below.

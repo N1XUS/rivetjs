@@ -326,3 +326,32 @@ export function Mixed(props) {
   const facts = moduleFacts(source, "m.tsx", { boundaries: true });
   assert.deepEqual([...facts.boundaries.keys()], ["Root", "Accessor", "Mixed"]);
 });
+
+it("ZERO A1: `resume.static` components carry no slot markers; `componentValues` lists components used as values", () => {
+  const SOURCE = `
+import { Card } from "./card.tsx";
+export function List(props) {
+  return <ul><li>{props.a}</li><Card title={props.b} /><Item /></ul>;
+}
+function Item() { return <li>{"x"}<b>{1 + 1}</b></li>; }
+export const table = { card: Card, item: Item };
+`;
+  const marked = server(SOURCE, { boundaries: [], independent: [] }).code;
+  assert.match(marked, /<!--\[-->/);
+  const plain = server(SOURCE, { boundaries: [], independent: [], static: ["List", "Item"] }).code;
+  assert.ok(!plain.includes("<!--["), plain);
+  // Only the listed component loses its markers.
+  const one = server(SOURCE, { boundaries: [], independent: [], static: ["Item"] }).code;
+  assert.match(one, /<\/li><!--\[-->/);
+  const pairs = (code: string) => code.split("<!--[-->").length - 1;
+  assert.deepEqual([pairs(marked), pairs(one), pairs(plain)], [3, 2, 0]);
+  const facts = moduleFacts(SOURCE, "m.tsx", { boundaries: true });
+  assert.deepEqual(facts.componentValues?.sort(), ["Card", "Item"]);
+  // JSX tags, exports, `typeof` and compound parts are no value uses.
+  const compound = moduleFacts(
+    `function Root() { return <p/>; }\nfunction Part() { return <i/>; }\nexport const Menu = Object.assign(Root, { Part });\nexport { Root };\nexport default function Page() { return typeof Root === "function" ? <Menu.Part /> : <Root />; }`,
+    "c.tsx",
+    { boundaries: true },
+  );
+  assert.deepEqual(compound.componentValues, []);
+});

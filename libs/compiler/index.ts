@@ -100,6 +100,12 @@ export interface ResumeOptions {
    * their `_rB` carries `COND`, so the server keeps the record only for a live instance.
    */
   conditional?: string[];
+  /**
+   * ZERO A1: names of this module's components no adopt walk reaches (`BoundaryVerdict.adopted` false: not a boundary,
+   * rendered only by components that are not adopted, never used as a value). Their server output carries no
+   * `<!--[-->…<!--]-->` slot markers (nothing in the browser walks it).
+   */
+  static?: string[];
 }
 
 /** Scoped style options of `compile()` for css`` blocks. */
@@ -262,6 +268,12 @@ export interface ModuleFacts {
    */
   boundaries: Map<string, ComponentBoundaryFacts>;
   /**
+   * `boundaries: true` only (ZERO A1): PascalCase bindings the module uses as values — not as a JSX tag, an export
+   * specifier, a `typeof` operand, a type or a top-level `Object.assign` compound's root / part (`icon={Glyph}`, a lookup
+   * table, a direct call). A component reached this way may render under code the walk does not see: it counts adopted.
+   */
+  componentValues?: string[];
+  /**
    * `holes: true` only (shell cache H-holes, PPR-T6): every streamed boundary element (`<Async>` / `<Suspense>` from
    * `@rivetjs/runtime*`) in source order, and whether a stored shell may re-run only its content on a hit. The server
    * resume target marks eligible ones with a `$hole: 1` prop. Absent without the option.
@@ -356,6 +368,7 @@ interface RawFacts {
   reexports?: [string, string, string][];
   stars?: string[];
   compounds?: [string, string, [string, string][]][];
+  componentValues?: string[];
   boundaries?: [
     string,
     {
@@ -413,6 +426,7 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
         } satisfies ComponentBoundaryFacts,
       ]),
     ),
+    ...(raw.componentValues ? { componentValues: raw.componentValues } : {}),
     ...(raw.holes ? { holes: raw.holes } : {}),
   };
 }

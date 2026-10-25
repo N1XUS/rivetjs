@@ -1606,6 +1606,37 @@ function standalone(r: Rec, module: Record<string, unknown>): void {
   r.owner = adoptUnit(null, () => fn(r.props ?? {}), range[0]!, range[range.length - 1]!, r, true, r.name);
   if (DEV && r.owner) roots.push(r.owner);
 }
+// Lite residual (ZERO R5, ownership §3.1): a standalone boundary whose chunk exports `<Name>$a` (a compiled lite chunk)
+// adopts through it — handlers, live bindings and keyed state over the server nodes, no template, no probe. A residual
+// that throws leaves the boundary to its ordinary component for good (`fallen`; the chunk's `<Name>$c()` imports it when
+// the chunk has no `<Name>`). True when adopted, a promise while the ordinary module loads, false: not lite.
+const fallen = new Set<Rec>();
+function lite(r: Rec, module: Record<string, unknown>): true | false | Promise<void> {
+  const name = r.name.slice(r.name.lastIndexOf("#") + 1),
+    residual = module[name + "$a"] as ((node: Node, rec: object) => void) | undefined;
+  if (!residual) return false;
+  if (!fallen.has(r)) {
+    const node = r.flags & ATTR ? doc!.querySelector('[data-b="' + r.id + '"]') : opener(r.id);
+    const holder = { owner: null as Owner | null };
+    try {
+      if (!node) throw Error("LiteMiss");
+      _rootIn(null, () => residual(node, { id: r.id, v: Object.fromEntries(r.values), w: tail?.w }), holder);
+      r.owner = holder.owner;
+      r.done = true;
+      return true;
+    } catch (error) {
+      // (`_rootIn` disposed what the residual made.)
+      if (DEV) console.warn("Rivet resume: lite residual of " + r.name + " (b" + r.id + ") fell back", error);
+      fallen.add(r);
+    }
+  }
+  if (module[name]) return false;
+  return (r.loading = Promise.resolve((module[name + "$c"] as () => Promise<Record<string, unknown>>)()).then((ordinary) => {
+    modules.set(r.name, ordinary);
+    r.loading = null;
+    return void need(r);
+  }));
+}
 /** Dev (`dispose`): the standalone units' owners, the roots of everything adopted. */
 const roots: Owner[] = [];
 let disposed = false;
@@ -1648,6 +1679,8 @@ function need(r: Rec): true | Promise<void> {
   }
   const module = modules.get(r.name);
   if (!module) return (r.loading ??= load(r.name).then(() => void need(r)));
+  const residual = lite(r, module);
+  if (residual !== false) return residual;
   const ready = prepare(r, module);
   if (ready !== true) return ready.then(() => void need(r));
   standalone(r, module);
@@ -2244,6 +2277,11 @@ const runtime: DerivedRuntime = {
     for (const type of DELEGATED) _on(probe, type, null);
     if (DEV) _adoption.probe = () => cur !== null && cur.mode === PROBE;
     records(t, false);
+    // Handed over by the lite runtime (`dom-lite.ts` fallback, ZERO R4): the boundaries it adopted stay its own, the
+    // ones whose residual threw adopt through their ordinary component.
+    const lite = loader as DerivedLoaderApi & { l?: Map<number, unknown>; x?: number[] };
+    for (const id of lite.l?.keys() ?? []) recs.get(id) && (recs.get(id)!.done = true);
+    for (const id of lite.x ?? []) recs.get(id) && fallen.add(recs.get(id)!);
     // Streamed segments (DERIVED-C2): patches that landed before the runtime started, then each one as it lands.
     const sd = d as Document & { $rd?: BoundaryTail[]; $rdp?: (patch: BoundaryTail) => void };
     for (const x of sd.$rd ?? []) records(x, true);

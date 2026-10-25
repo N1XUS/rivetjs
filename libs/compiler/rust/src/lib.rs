@@ -233,7 +233,9 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
         let mut facts = facts::module_facts(source, filename);
         if let Value::Object(map) = &mut facts {
             if boundaries {
-                map.insert("boundaries".into(), facts::boundary_facts(source, filename));
+                let (list, values) = facts::boundary_facts(source, filename);
+                map.insert("boundaries".into(), list);
+                map.insert("componentValues".into(), values);
             }
             if holes {
                 map.insert("holes".into(), facts::hole_facts(source, filename));
@@ -246,7 +248,9 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
     let mut facts = facts::module_facts(browser, filename);
     if let Value::Object(map) = &mut facts {
         if boundaries {
-            map.insert("boundaries".into(), facts::boundary_facts(browser, filename));
+            let (list, values) = facts::boundary_facts(browser, filename);
+                map.insert("boundaries".into(), list);
+                map.insert("componentValues".into(), values);
         }
         if holes {
             map.insert("holes".into(), facts::hole_facts(browser, filename));
@@ -294,7 +298,7 @@ fn resume_option(resume: &Option<Value>, filename: &str) -> Result<(Option<Strin
             Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
         }
     };
-    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")? }))
+    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")?, r#static: list("static")? }))
 }
 
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)

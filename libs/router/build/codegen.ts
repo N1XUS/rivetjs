@@ -207,7 +207,7 @@ function wrap(providers: readonly (readonly [string, string])[], inner: string, 
  * router, the payload as `Revived`, and the contexts the server entry provides (navigation state, search params) as the
  * browser's; `ready` loads the page modules of the URL first, so the adopt run renders the route synchronously.
  */
-function rootComponent(transitions: boolean, search: boolean): string[] {
+function rootComponent(transitions: boolean, search: boolean, weak: string): string[] {
   const providers: [string, string][] = [
     ...(transitions
       ? [["{/* useNavigation(): the browser's navigation signal. */}", "<Provider token={Navigation} value={navigation}>"] as [string, string]]
@@ -218,6 +218,7 @@ function rootComponent(transitions: boolean, search: boolean): string[] {
     "",
     "/** Derived resume model: the page root (independent boundary: its props are the route payload as data). */",
     "export default function Root(props: { s: RootData | EncodedRoot }) {",
+    ...(weak ? [weak] : []),
     "  if (import.meta.env.SSR) return <App router={serverRouter(useContext(ServerData)!.url)} />;",
     "  if (!adopting) ((adopting = true), queueMicrotask(() => (adopting = false)));",
     "  const s = rootPayload(props.s),",
@@ -252,6 +253,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   const mode = options.mode ?? "server";
   // Router listeners that alone keep a page resumable (`clientRouter: true`, opt-in; csr: no resume), else `standalone: false`.
   const lone = options.clientRouter === true || mode === "csr" ? "" : ", standalone: false";
+  // ZERO Z3: with the client router off, the generated Root / App are weak boundaries (`_rWeak`): a page whose only records
+  // are theirs ships no tail, loader or runtime — links load documents, as `clientRouter` documents.
+  const weak = lone ? "  if (import.meta.env.SSR) _rWeak();" : "";
   // Matched URL paths include the base: `/` → `/app`, `/items/:id` → `/app/items/:id`.
   const base = normalizeBase(options.base);
   const at = (pattern: string) => (base ? (pattern === "/" ? base : base + pattern) : pattern);
@@ -407,36 +411,56 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       .map((pair) => pair.split(":").map(Number) as [number, number])
       .map(([i, k]) => ({ name: String(i), k, routes: pageRoutes.filter((route) => persisted(route).map((at) => indexOf(route.layouts[at]!))[k - 1] === i) })),
   ];
-  const tableRows = ({ k, routes }: Level): string =>
-    "[" +
-    routes
-      .map((route) => {
+  // Z5: route table columns [route id, data depth, page, enter view, failure view] per level, each as code: a literal when
+  // every row has the same value, `n` (the row index) when it equals the row, else a per-level array `R<level>_<c>`
+  // (columns, not rows: the App chunk grows by a few bytes per route, not by a row literal per route).
+  const columnDecls: string[] = [];
+  const column = (values: readonly number[], name: string): string => {
+    if (values.length && values.every((value) => value === values[0])) return String(values[0]);
+    if (values.every((value, i) => value === i)) return "n";
+    columnDecls.push(`const ${name}: readonly number[] = ${str(values)};`);
+    return `${name}[n]!`;
+  };
+  const columnsOf = ({ name, k, routes }: Level): string[] =>
+    [
+      routes.map(routeIndex),
+      routes.map((route) => route.layouts.length),
+      routes.map((route) => pageIndex.get(route.page!)!),
+      routes.map((route) => {
         const enter = nested ? enterKey(route, k) : null;
-        return `[${routeIndex(route)}, ${route.layouts.length}, ${pageIndex.get(route.page!)}, ${enter === null ? -1 : enterKeys.indexOf(enter)}, ${failureKeys.indexOf(failureKey(route))}]`;
-      })
-      .join(", ") +
-    "]";
+        return enter === null ? -1 : enterKeys.indexOf(enter);
+      }),
+      routes.map((route) => failureKeys.indexOf(failureKey(route))),
+    ].map((values, c) => column(values, `R${name}_${c}`));
+  const columns = new Map(tables.map((table) => [table, columnsOf(table)]));
+  const topPage = columns.get(tables[0]!)![2]!;
+  // Layout chains of the top-level rows (`NEST.routes`, same order as `PATHS`): one shared array per distinct chain.
+  const chains = [...new Set(pageRoutes.map((route) => str(route.layouts.map(indexOf))))];
+  const chain = column(
+    pageRoutes.map((route) => chains.indexOf(str(route.layouts.map(indexOf)))),
+    "R_L",
+  );
   // Shared views reachable from a level's rows (a single one is called directly).
   const pick = (indices: number[], call: (j: number) => string, at: string): string =>
     indices.slice(0, -1).reduceRight((rest, j) => `${at} === ${j} ? ${call(j)} : ${rest}`, call(indices.at(-1)!));
   const routeTableOf = (table: Level): string => {
     const { name, k, routes } = table;
+    const col = columns.get(table)!;
     const fails = [...new Set(routes.map((route) => failureKeys.indexOf(failureKey(route))))].sort((a, b) => a - b);
     const enters = nested
       ? [...new Set(routes.map((route) => enterKey(route, k)).filter((key) => key !== null))].map((key) => enterKeys.indexOf(key)).sort((a, b) => a - b)
       : [];
     const pageRows = routes.some((route) => !nested || enterKey(route, k) === null);
-    const enter = enters.length ? pick(enters, (j) => `enter${j}(result, match.url)`, "row[3]") : "";
+    const enter = enters.length ? pick(enters, (j) => `enter${j}(result, match.url)`, col[3]!) : "";
     const page = [
-      `          const Page = page(row[2]), depth = row[1];`,
-      ...(live.length ? [`          const data = LIVE.includes(row[2]) ? _livePage(live, result.data[depth], match.url, depth) : result.data[depth];`] : []),
+      `          const Page = page(${col[2]}), depth = ${col[1]};`,
+      ...(live.length ? [`          const data = LIVE.includes(${col[2]}) ? _livePage(live, result.data[depth], match.url, depth) : result.data[depth];`] : []),
       `          return ${pageView()};`,
     ];
-    const view = !enters.length ? page : pageRows ? [`          if (row[3] >= 0) return ${enter};`, ...page] : [`          return ${enter};`];
-    const usesRow = pageRows || fails.length > 1 || enters.length > 1;
+    const view = !enters.length ? page : pageRows ? [`          if (${col[3]} >= 0) return ${enter};`, ...page] : [`          return ${enter};`];
     // Server: the same chain on the handler's data, synchronously (`_ssrLevel`; undefined in the browser).
-    const land = useNest ? `(result) => _landed(nest, NEST, ${k}, ROUTES${name}[n]![0], result, match)` : "(result) => result";
-    const ok = `(data) => loaded(${kit ? `applyRouteHead(data, ROUTES${name}[n]![1])` : "data"})`;
+    const land = useNest ? `(result) => _landed(nest, NEST, ${k}, ${col[0]}, result, match)` : "(result) => result";
+    const ok = `(data) => loaded(${kit ? `applyRouteHead(data, ${col[1]})` : "data"})`;
     // Derived model: the browser's adopt run answers each level's first load from the revived payload (`Root`).
     const served = mode === "csr" ? "" : `_ssrLevel(work, ${ok}, failed, ${land}) ?? ${derived ? `revived(work, ${ok}, failed, ${land}) ?? ` : ""}`;
     return [
@@ -447,12 +471,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       `        load: (work, match) => ${nested ? `_take<Loaded>(${k}, match.url) ?? ` : ""}${served}Promise.all([routeData(work, match, router, ${source}${keeps ? ", _keepIds(nest, NEST, match.url)" : ""}), loadPage(match.url)${transitions ? ", transitions()" : ""}])` +
         (mode === "csr"
           ? // CSR: no server writes the head; the route's modules give it (`_csrHead`: title, the merged head for the kit).
-            `.then(([data, page]) => ${transitions ? "(_routeModule(page), " : ""}_csrHead(data, HEADS[ROUTES${name}[n]![0]]!, page, match${kit ? ", rankMerge" : ""})${transitions ? ")" : ""})`
+            `.then(([data, page]) => ${transitions ? "(_routeModule(page), " : ""}_csrHead(data, HEADS[${col[0]}]!, page, match${kit ? ", rankMerge" : ""})${transitions ? ")" : ""})`
           : `.then(([data${transitions ? ", page" : ""}]) => ${transitions ? "(_routeModule(page), data)" : "data"})`) +
-        `${kit ? `.then((result) => applyRouteHead(result, ROUTES${name}[n]![1]))` : ""}.then(loaded, failed)${useNest ? `.then((result) => _landed(nest, NEST, ${k}, ROUTES${name}[n]![0], result, match))` : ""},`,
+        `${kit ? `.then((result) => applyRouteHead(result, ${col[1]}))` : ""}.then(loaded, failed)${useNest ? `.then((result) => _landed(nest, NEST, ${k}, ${col[0]}, result, match))` : ""},`,
       `        render: (result, match) => {`,
-      ...(usesRow ? [`          const row = ROUTES${name}[n]!;`] : []),
-      `          if (result.failure !== undefined) return ${pick(fails, (j) => `fail${j}(result.failure, match.url)`, "row[4]")};`,
+      `          if (result.failure !== undefined) return ${pick(fails, (j) => `fail${j}(result.failure, match.url)`, col[4]!)};`,
       ...view,
       `        },`,
       `      }),`,
@@ -498,7 +521,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `import { _indexURL, createRouter as browserRouter, type BrowserRouter } from "@rivetjs/runtime/router/dom";`,
           `import { createRouter as serverRouter } from "@rivetjs/runtime/router/server";`,
           `import { createDecoder, _useTableDecoder } from "@rivetjs/runtime/resume-format";`,
-          `import { _rEager } from "@rivetjs/runtime/derived-eager";`,
+          `import { _rEager${weak ? ", _rWeak" : ""} } from "@rivetjs/runtime/derived-eager";`,
           ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
           ...(search ? [`import { SearchParams, searchParams } from "@rivetjs/router/search";`] : []),
         ]
@@ -526,7 +549,6 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     `const PAGES = [${[...pages.keys()].map((file) => `() => import(${str(spec(file))})`).join(", ")}];`,
     "const views: ((props: PageProps) => unknown)[] = [];",
     "const page = (i: number): ((props: PageProps) => unknown) => (views[i] ??= lazyComponent<PageProps>(PAGES[i]!));",
-    ...(useNest ? [`const NEST: LayoutTable = ${str(layoutTable)};`] : []),
     ...(live.length
       ? [
           "// Live pages (page indices): `data` is an accessor, revalidated in place.",
@@ -539,15 +561,22 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `const HEADS: readonly (readonly unknown[])[] = [${pageRoutes.map((route) => "[" + route.layouts.flatMap((layout) => (layout.page ? [layouts.get(layout.page)! + "$"] : [])).join(", ") + "]").join(", ")}];`,
         ]
       : []),
-    "// Route tables per Router level (see App): paths + [route index, data depth, page, enter view, failure view] rows.",
-    "type Row = readonly [route: number, depth: number, page: number, enter: number, failure: number];",
-    ...tables.flatMap((table) => [
-      `const PATHS${table.name}: readonly string[] = ${str(table.routes.map((route) => at(route.pattern)))};`,
-      `const ROUTES${table.name}: readonly Row[] = ${tableRows(table)};`,
-    ]),
+    "// Route tables per Router level (see App): paths + the columns that differ per row (route index, data depth, page,",
+    "// enter view, failure view; constant columns are inlined).",
+    ...tables.map((table) => `const PATHS${table.name}: readonly string[] = ${str(table.routes.map((route) => at(route.pattern)))};`),
+    ...columnDecls,
+    ...(useNest
+      ? [
+          `const CHAINS: readonly (readonly number[])[] = [${chains.join(", ")}];`,
+          `const NEST: LayoutTable = { ${Object.entries(layoutTable)
+            .filter(([key]) => key !== "routes")
+            .map(([key, value]) => `${key}: ${str(value)}`)
+            .join(", ")}, routes: PATHS.map(${/\bn\b/.test(chain) ? "(path, n)" : "(path)"} => [path, CHAINS[${chain}]!]) };`,
+        ]
+      : []),
     ...(shadowed.length || documentRows.length
       ? [
-          "const modules: (readonly [string, () => unknown])[] = PATHS.map((path, n) => [path, () => preloadPage(page(ROUTES[n]![2]), PAGES[ROUTES[n]![2]]!)]);",
+          `const modules: (readonly [string, () => unknown])[] = PATHS.map(${/\bn\b/.test(topPage) ? "(path, n)" : "(path)"} => [path, () => preloadPage(page(${topPage}), PAGES[${topPage}]!)]);`,
           ...(documentRows.length
             ? [
                 "// Document routes (their browser graph reaches a server-only module): the browser loads their documents.",
@@ -562,7 +591,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             : []),
         ]
       : [
-          "const modules: readonly (readonly [string, () => unknown])[] = PATHS.map((path, n) => [path, () => preloadPage(page(ROUTES[n]![2]), PAGES[ROUTES[n]![2]]!)]);",
+          `const modules: readonly (readonly [string, () => unknown])[] = PATHS.map(${/\bn\b/.test(topPage) ? "(path, n)" : "(path)"} => [path, () => preloadPage(page(${topPage}), PAGES[${topPage}]!)]);`,
         ]),
     "/** Import the page module for `url` (dev mounts after it, so lazy pages render without a fallback frame). */",
     "export const loadPage = (url: URL): Promise<unknown> | undefined => loadModule(url, modules);",
@@ -627,6 +656,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "",
     "/** File-routed application: layouts wrap pages; client navigation fetches route data from the server. */",
     "export function App({ router }: { router: AppRouter }) {",
+    ...(derived && weak ? [weak] : []),
     ...(useNest
       ? [
           "  // Layout props are App-level signals (resume state carries them): the request's data on the",
@@ -726,7 +756,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           `  return server?.error && !server.data.length ? view${derived ? "()" : ""} : ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view${derived ? "()" : ""}}</${layouts.get(rootLayout)}>`)};`
         : `  return ${level(0, `<${layouts.get(rootLayout)} data={layoutData} params={noParams} url={layoutURL}>{view${derived ? "()" : ""}}</${layouts.get(rootLayout)}>`)};`,
     "}",
-    ...(derived ? rootComponent(transitions !== null, search) : []),
+    ...(derived ? rootComponent(transitions !== null, search, weak) : []),
     "",
   ].join("\n");
 

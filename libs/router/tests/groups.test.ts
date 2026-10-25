@@ -4,11 +4,12 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { createServer as createHTTPServer } from "node:http";
-import { readFile, rm, stat } from "node:fs/promises";
+import { readFile, readdir, rm, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { build, createServer } from "vite";
 import { chromium, type Page } from "playwright";
 import { prerenderBuild } from "../adapters/static.ts";
+import { rivetRouter } from "../build/vite.ts";
 import { nodeEnv, withNodeEnv } from "./vite-env.ts";
 
 const root = new URL("./fixture-groups/", import.meta.url).pathname;
@@ -23,8 +24,9 @@ function watch(page: Page) {
 }
 const heading = (page: Page) => page.locator("h1").first().textContent();
 
-/** Start at `/`, click through careers → job → back → other job → contact → home, all client side. */
-async function walk(page: Page, origin: string): Promise<void> {
+/** Start at `/`, click through careers → job → back → other job → contact → home, all client side (`documents`: each
+ * click loads a document instead — the client router off and nothing live on the pages). */
+async function walk(page: Page, origin: string, documents = false): Promise<void> {
   const log = watch(page);
   await page.goto(origin + "/");
   await page.waitForLoadState("networkidle");
@@ -43,7 +45,8 @@ async function walk(page: Page, origin: string): Promise<void> {
   await step("Contact", "Contact");
   await step("Privacy", "Privacy");
   await step("Home", "Home");
-  assert.deepEqual(log.documents, ["/"], "client navigations only");
+  if (documents) assert.deepEqual(log.documents, ["/", "/careers/", "/careers/analyst/", "/careers/", "/careers/buyer", "/contact/", "/privacy/", "/"]);
+  else assert.deepEqual(log.documents, ["/"], "client navigations only");
   assert.deepEqual(log.errors, []);
 }
 
@@ -108,5 +111,40 @@ test("static build: client navigation into nested route groups renders the prere
   } finally {
     await browser.close();
     site.close();
+  }
+});
+
+// ZERO Z3: `clientRouter` off (the default) and nothing live on a page: the generated Root / App are weak boundaries, so the
+// prerendered pages ship no boundaries tail, no loader and no module script; links load documents.
+test("static build, client router off: pages with nothing live ship no JS and links load documents", async () => {
+  // Own dist + generated dir (the server entry module of the build above stays cached in this process).
+  const dist = root + "dist/documents/";
+  await rm(dist, { recursive: true, force: true });
+  const config = {
+    root,
+    configFile: false as const,
+    logLevel: "silent" as const,
+    plugins: [rivetRouter({ mode: "static", transitions: true, outDir: "dist/documents/.rivet" })],
+  };
+  await withNodeEnv("production", async () => {
+    await build({ ...config, build: { outDir: dist + "client" } });
+    await build({ ...config, build: { ssr: true, outDir: dist + "server" } });
+  });
+  await prerenderBuild({ dist, csp: false });
+  for (const path of ["", "careers/", "careers/analyst/", "contact/"]) {
+    const html = await readFile(dist + "client/" + path + "index.html", "utf8");
+    assert.ok(!html.includes('type="rivet/boundaries"'), path + ": no boundaries tail");
+    assert.doesNotMatch(html, /<script\b[^>]*type="module"|modulepreload/, path + ": no module script");
+  }
+  // No page references a script: the prerender prunes every client chunk.
+  assert.deepEqual(await readdir(dist + "client/assets").catch(() => []), []);
+  const site = await serveStatic(dist + "client");
+  const browser = await chromium.launch({ headless: true, args: ["--use-mock-keychain", "--password-store=basic"] });
+  try {
+    await walk(await browser.newPage(), site.origin, true);
+  } finally {
+    await browser.close();
+    site.close();
+    await rm(dist, { recursive: true, force: true });
   }
 });

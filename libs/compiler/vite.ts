@@ -68,6 +68,13 @@ export interface RivetResumeOptions {
    * `app.tsx` (`Root`: the route payload as props).
    */
   roots?: string[];
+  /**
+   * ZERO A1: components rendered only by a host that never adopts them (docs-kit `FrameShell`): root-relative `file` (its
+   * default export) or `file#Name`. Without a resolved call site a component counts as adopted (some boundary may render
+   * it through code the walk does not see) and keeps its slot markers; a shell entry is adopted only through its own
+   * boundaries. Plugins add entries with `api.resumeShell(file, name?)` before the build starts.
+   */
+  shells?: string[];
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -540,9 +547,18 @@ function rivetPlugin(
   // Per resume module, the build's boundary verdicts (`facts-fixpoint.ts`, buildStart of every build environment: client
   // and server walk the same graph, so both targets get the same boundaries / names / keys); dev compiles without them
   // (module-local closure, identical on both targets).
-  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[]; conditional: string[] }>();
+  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[]; conditional: string[]; static: string[] }>();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
+  // `resume.shells` + `api.resumeShell()` (ZERO A1): absolute `file` / `file#Name` entries, resolved in the walk.
+  const shellEntries: string[] = [];
+  const shellSet = (): Set<string> =>
+    new Set(
+      [...(resume?.shells ?? []), ...shellEntries].map((entry) => {
+        const at = entry.lastIndexOf("#");
+        return at > 0 ? resolve(root, entry.slice(0, at)) + entry.slice(at) : resolve(root, entry);
+      }),
+    );
   // Dev: boundary name (`<module>#<export>`, compile results) → defining file, for the dev manifest's `symbols`.
   const derivedDev = new Map<string, string>();
   // Client build: module → its boundary names as the DOM compile emitted them (`CompileResult.boundaries`: the export
@@ -719,11 +735,16 @@ function rivetPlugin(
       }
       graph.set(filename, map);
     }
-    const verdicts = boundaryFacts(facts, graph, roots);
+    const verdicts = boundaryFacts(facts, graph, roots, shellSet());
     derivedVerdicts.clear();
     for (const file of facts.keys())
       if (!plain.has(file))
-        derivedVerdicts.set(file, { boundaries: verdicts.boundaries(file), independent: verdicts.independent(file), conditional: verdicts.conditional(file) });
+        derivedVerdicts.set(file, {
+          boundaries: verdicts.boundaries(file),
+          independent: verdicts.independent(file),
+          conditional: verdicts.conditional(file),
+          static: verdicts.static(file),
+        });
   };
   /** Resume manifest (`.vite/rivet-resume.json`): `runtime` (the derived entry chunk), `symbols` (boundary
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
@@ -826,7 +847,7 @@ function rivetPlugin(
   const resumeOptions = (filename: string, source: string): Partial<CompileOptions> => {
     const sourcePackages = sourcePackagesOf(filename, source);
     // The build's verdicts for this module (absent in dev: the compiler's module-local closure).
-    let verdict: { boundaries?: string[]; independent: string[]; conditional?: string[] } | undefined = derivedVerdicts.get(filename);
+    let verdict: { boundaries?: string[]; independent: string[]; conditional?: string[]; static?: string[] } | undefined = derivedVerdicts.get(filename);
     // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
     if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {
@@ -943,6 +964,8 @@ function rivetPlugin(
       devResume,
       /** `rivet({ serverOnly })`: modules browser code must never import (read by `rivetRouter()`). */
       rivetServerOnly: serverOnly,
+      /** ZERO A1: a `resume.shells` entry from a plugin (`file` default export, or `name`), before the build starts. */
+      resumeShell: (file: string, name?: string): void => void shellEntries.push(name ? `${file}#${name}` : file),
     },
     async configureServer(server: ViteDevServer) {
       // Server-side dev warnings (cdk, runtime `DEV.locate()`) name the app code that triggered them: the first app frames

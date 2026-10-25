@@ -21,7 +21,7 @@ import {
 import { lazyFunction } from "./lazy.ts";
 import { coordinator } from "./async-coordinator.ts";
 import type { Coordinator } from "./async-coordinator.ts";
-import { INVALID_URL, MEDIA_URLS, URLS, unsafeUrl } from "./url.ts";
+import { _constructionDoc, _root } from "./dom-base.ts";
 import { _adoption, _anchor, _c, _for, _insert, _match, _show, _spread, _switch } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { DERIVED } from "./derived.ts";
@@ -69,31 +69,7 @@ export type ClientWhen = "load" | "visible" | "idle" | "interaction" | `media:${
 const HTML = "http://www.w3.org/1999/xhtml",
   SVG = "http://www.w3.org/2000/svg",
   MATH = "http://www.w3.org/1998/Math/MathML";
-// Boolean attributes (a regex literal: side-effect free, so unused copies tree-shake); = template.ts
-// `booleanAttributes` and html.rs `BOOLEAN_ATTRIBUTES` (C4).
-export const _booleans =
-  /^(?:allowfullscreen|alpha|async|autofocus|autoplay|checked|controls|default|defer|disabled|disablepictureinpicture|disableremoteplayback|formnovalidate|hidden|inert|ismap|itemscope|loop|multiple|muted|nomodule|novalidate|open|playsinline|readonly|required|reversed|selected|shadowrootclonable|shadowrootdelegatesfocus|shadowrootserializable)$/;
-/**
- * Runtime-private (DOM attribute writers): `defaultValue` / `defaultChecked` — React's uncontrolled
- * defaults — write the default property (an input's `value` / `checked` attribute, a textarea's
- * content), never an attribute of that name; null / undefined clear it. False when the element has no
- * such property (the caller writes the `value` / `checked` attribute instead, as the server).
- */
-export function _writeDefault(el: Element, lower: string, value: unknown): boolean {
-  const checked = lower === "defaultchecked";
-  if (!((checked ? "defaultChecked" : "defaultValue") in el)) return false;
-  if (checked) (el as HTMLInputElement).defaultChecked = !!value;
-  else if (value == null && el.localName !== "textarea") el.removeAttribute("value");
-  else (el as HTMLInputElement).defaultValue = value == null ? "" : String(value);
-  return true;
-}
-// The container of the running mount / render: its document constructs DOM (else the global document).
-let rootContainer: Element | DocumentFragment | null = null;
-/** @internal The document DOM is constructed in: the running mount's, else the global document. */
-export function _constructionDoc(): Document {
-  return rootContainer?.ownerDocument ?? document;
-}
-
+export { _booleans, _constructionDoc, _setProp, _writeDefault } from "./dom-base.ts";
 /** Mount compiled output: run `factory` in a new root and append its value to `container`. The disposer disposes the root and removes the appended nodes. */
 export function mount(factory: () => DOMValue, container: Element | DocumentFragment): Disposer {
   return attach(factory, container, "mount");
@@ -106,7 +82,7 @@ function attach(factory: () => unknown, container: Element | DocumentFragment, n
   const doc = container?.ownerDocument;
   if (!doc || ![1, 11].includes(container.nodeType)) throw TypeError(`${name} requires an Element or DocumentFragment`);
   const before = container.lastChild,
-    previousRoot = rootContainer;
+    previousRoot = _root.c;
   let root: { value: unknown; dispose: Disposer } | undefined;
   const remove = () => {
     if (!before && container.firstChild) {
@@ -119,7 +95,7 @@ function attach(factory: () => unknown, container: Element | DocumentFragment, n
       node = next;
     }
   };
-  rootContainer = container;
+  _root.c = container;
   try {
     root = createRoot(() => _insert(container as Element, factory()));
   } catch (error) {
@@ -129,7 +105,7 @@ function attach(factory: () => unknown, container: Element | DocumentFragment, n
     remove();
     throw error;
   } finally {
-    rootContainer = previousRoot;
+    _root.c = previousRoot;
   }
   let active = true;
   return () => {
@@ -493,24 +469,6 @@ export function clientOnly<M, P>(importer: () => M | PromiseLike<M>, select?: (m
 // A listener can fire while its owner is mid-disposal (removing a focused control fires focusout
 // before the owner's cleanups detach it); events reaching a disposed owner are dropped.
 const live = (owner: Owner | null): boolean => !(owner as unknown as { disposed?: boolean } | null)?.disposed;
-/** Compiler ABI: set an element property for `prop:name` (URL properties checked like URL attributes). */
-export function _setProp(target: Element, name: string, value: unknown): void {
-  const lower = name.toLowerCase();
-  if (!/^[A-Za-z_$][\w$]*$/.test(name) || /^on|^(innerhtml|outerhtml|srcdoc|style|__proto__|constructor|prototype)$/.test(lower))
-    throw TypeError("Unsafe property name");
-  // A URL property set to an object (`new URL(…)`, a TrustedScriptURL) is checked as the string the
-  // setter will see (SEC4); the object itself is still what gets assigned when safe.
-  let url = value;
-  if (value !== null && typeof value === "object" && URLS.has(lower))
-    try {
-      url = String(value);
-    } catch {
-      // No string form (a null-prototype object): not a URL the browser could navigate to.
-    }
-  (target as unknown as Record<string, unknown>)[name] =
-    typeof url === "string" && unsafeUrl(lower, url, MEDIA_URLS.test(target.localName + " " + lower)) ? INVALID_URL : value;
-}
-
 // Resume chunk-grouping boundary (`resume.chunks: "group"`): renders its children unchanged.
 export const ChunkGroup: (props: { name?: string; preload?: "eager" | "idle" | "visible" | "intent" | "interaction"; children?: DOMValue }) => DOMValue = (
   props,

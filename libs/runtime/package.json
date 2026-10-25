@@ -98,6 +98,10 @@
       "types": "./dom-derived.ts",
       "default": "./dom-derived.ts"
     },
+    "./dom-lite": {
+      "types": "./dom-lite.ts",
+      "default": "./dom-lite.ts"
+    },
     "./derived-reactivity": {
       "types": "./derived-reactivity.ts",
       "default": "./derived-reactivity.ts"
