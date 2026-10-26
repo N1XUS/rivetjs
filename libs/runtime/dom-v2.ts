@@ -22,6 +22,7 @@ import {
 } from "@rivetjs/reactivity";
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { coerce, unsupported, write } from "./dom-attr.ts";
+import { _booleans } from "./dom-base.ts";
 
 import { _constructionDoc, _parseHTML, bindRef } from "./dom.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
@@ -116,7 +117,7 @@ export function _t(el: Element, value: unknown): void {
       if (next === last) return;
       const node = last === undefined ? null : el.firstChild;
       if (node !== null) (node as Text).data = next;
-      else el.textContent = next;
+      else if (!(LAZY_ROWS && _adoption.live && soleText(el, next))) el.textContent = next;
       (el as unknown as { $$t?: string }).$$t = next;
       return;
     }
@@ -141,12 +142,13 @@ export function _tx(text: Text, value: unknown): void {
   let slot = (text as unknown as { $$s?: Slot }).$$s;
   if (slot === undefined) {
     if (typeof value === "string") {
-      text.data = value;
+      if (!(LAZY_ROWS && _adoption.live && text.data === value)) text.data = value;
       return;
     }
     if (value == null || (typeof value !== "object" && typeof value !== "function")) {
       // Numbers go to the DOM as-is (see `_textValue`).
-      text.data = typeof value === "number" ? (value as unknown as string) : coerce(value);
+      const next = typeof value === "number" ? (value as unknown as string) : coerce(value);
+      if (!(LAZY_ROWS && _adoption.live && text.data === String(next))) text.data = next;
       return;
     }
     text.data = "";
@@ -170,11 +172,39 @@ export function _textValue(el: Element, value: unknown): void {
     });
   else if (value !== null && typeof value === "object") _insert(el, value);
   // Numbers go to the DOM as-is: `String(n)` would fill V8's number-string cache (0 is coerced: some DOMs drop a falsy value).
-  else el.textContent = typeof value === "number" && value ? (value as unknown as string) : coerce(value);
+  else if (!(LAZY_ROWS && _adoption.live && soleText(el, coerce(value))))
+    el.textContent = typeof value === "number" && value ? (value as unknown as string) : coerce(value);
 }
+// The server node already shows `next` (one text, or text the build decorated: `dom-derived.ts` `decorated`).
+const soleText = (el: Element, next: string): boolean => el.textContent === next;
 
-// ---- attributes (`write` / `coerce` / `_attrValue`: `dom-attr.ts`) ----
-export { _attrValue } from "./dom-attr.ts";
+// ---- attributes (`write` / `coerce`: `dom-attr.ts`; adopt runs skip held writes: `put`) ----
+/** Compiler ABI: an identifier-only attribute value: written once unless it is an accessor. */
+export function _attrValue(el: Element, name: string, value: unknown): void {
+  if (typeof value === "function") _bindingEffect(() => (LAZY_ROWS ? put : write)(el, name, (value as () => unknown)()));
+  else (LAZY_ROWS ? put : write)(el, name, value);
+}
+/** `write`, unless an adopt run finds the value on the server's node already (`holds`). Resume builds only. */
+function put(el: Element, name: string, value: unknown): void {
+  if (!(_adoption.live && holds(el, name, value))) write(el, name, value);
+}
+/**
+ * ADOPT-CONTENT (2026-10-26), adopt runs (`_adoption.live`, `LAZY_ROWS` builds): `el` already holds what writing `value`
+ * to attribute `name` would leave (`write`'s rules), so the write is skipped — the server rendered it, and a re-set is not
+ * free: an `<iframe src>` re-set reloads the frame's document, every write queues a mutation record and restyles.
+ */
+function holds(el: Element, name: string, value: unknown): boolean {
+  const lower = name.toLowerCase();
+  if (el.namespaceURI === HTML) {
+    // `<details>` / `<dialog>` `open` is the user's once the page is live (a toggle changes the attribute): the run keeps it.
+    if (lower === "open" && (el.localName === "details" || el.localName === "dialog")) return true;
+    if (lower === "defaultvalue" || lower === "defaultchecked" || lower === "popover") return false;
+    // Boolean attributes follow truthiness (a `checked` / `selected` default kept: the control's state is not reset).
+    if (_booleans.test(lower) && !(lower === "hidden" && typeof value === "string" && value)) return el.hasAttribute(name) === !!value;
+  }
+  if (value == null) return !el.hasAttribute(name);
+  return (typeof value === "string" || typeof value === "number" || typeof value === "boolean") && el.getAttribute(name) === String(value);
+}
 /**
  * Compiler ABI: a plain attribute (compiler-classified: HTML/SVG name that is not boolean, URL-bearing,
  * namespaced or a form-control property). null/undefined remove; other values stringify.
@@ -185,7 +215,7 @@ export function _setAttr(el: Element, name: string, value: unknown): void {
 }
 function plain(el: Element, name: string, value: unknown): void {
   if (value == null) el.removeAttribute(name);
-  else el.setAttribute(name, value as string);
+  else if (!(LAZY_ROWS && _adoption.live && holds(el, name, value))) el.setAttribute(name, value as string);
 }
 /**
  * Compiler ABI for dynamic attributes: the compiler emits one closure per binding,
@@ -212,7 +242,7 @@ export const _cls: (el: Element, value: unknown) => void = className;
 /** Compiler ABI: write a plain attribute value (null/undefined remove it). */
 export const _attrSet: (el: Element, name: string, value: unknown) => void = plain;
 /** Compiler ABI: write an attribute value with full semantics (booleans, URLs, control properties). */
-export const _attrWrite: (el: Element, name: string, value: unknown) => void = write;
+export const _attrWrite: (el: Element, name: string, value: unknown) => void = LAZY_ROWS ? put : write;
 /** Compiler ABI: an HTML element's class (null/undefined/false/"" remove it); a function binds. */
 export function _className(el: Element, value: unknown): void {
   if (typeof value === "function") _bindingEffect(() => className(el, (value as () => unknown)()));
@@ -222,7 +252,7 @@ function className(el: Element, value: unknown): void {
   // An empty class removes the attribute: a fresh row has none, so no write (and no style
   // invalidation) happens for it (krausest 01 / 07 / 08 +2–3% with the write).
   if (value == null || value === false || value === "") el.removeAttribute("class");
-  else el.className = value as string;
+  else if (!(LAZY_ROWS && _adoption.live && holds(el, "class", value))) el.className = value as string;
 }
 // ---- events (delegated): `dom-events.ts` (a leaf module the lite runtime shares) ----
 export { _delegateBelow, _listen, _on } from "./dom-events.ts";
@@ -596,7 +626,10 @@ export const _adoption: {
   node?: (<N extends Node>(node: N, kind: number) => N) | null;
   /** Each new insertion slot, in creation order (probe: recorded; adopt run: seeded with the live nodes the probe's slot held). */
   slot?: ((slot: InsertSlot) => void) | null;
-  /** True during an adopt run: element content is never wiped (`_spread` children, `_rcdata`), it is the server's. */
+  /**
+   * True during an adopt run: element content is never wiped (`_spread` children, `_rcdata`), it is the server's; writes
+   * the server's node already holds are skipped (`holds`, `soleText`; ADOPT-CONTENT).
+   */
   live?: boolean;
   /**
    * Derived model adopt runs (`dom-derived.ts`, `DERIVED` builds only): called first by every `_for` with its props; a

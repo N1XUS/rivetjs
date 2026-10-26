@@ -3,9 +3,9 @@
 // colour classes' rules (`src/generated/highlight.css`) from the two themes' palettes.
 import githubDark from "shiki/themes/github-dark.mjs";
 import githubLight from "shiki/themes/github-light.mjs";
-import { darkClass, lightClass, STYLE_CLASSES } from "../../components/highlight-classes.ts";
+import { AA_COLORS, darkClass, lightClass, STYLE_CLASSES } from "../../components/highlight-classes.ts";
 
-export { LANGS } from "../../components/highlight-classes.ts";
+export { AA_COLORS, LANGS } from "../../components/highlight-classes.ts";
 
 /** One line of a code block and its line notation mark. */
 export interface Line {
@@ -40,16 +40,6 @@ export function palette(theme: ThemeJSON): string[] {
   const colors = [theme.colors?.["editor.foreground"], ...(theme.tokenColors ?? []).map((rule) => rule.settings?.foreground)];
   return [...new Set(colors.filter((color): color is string => !!color).map((color) => color.toLowerCase()))].sort();
 }
-
-/**
- * Theme colours below WCAG AA (4.5:1) on `--bg-code` (theme.css), replaced by the nearest GitHub Primer colour of the
- * same hue; the class keeps the theme colour's name (`hl-d73a49`), so browser-coloured and build-coloured blocks agree.
- * tests/contrast.test.ts checks every token colour after this map, both themes.
- */
-export const AA_COLORS: { light: Record<string, string>; dark: Record<string, string> } = {
-  light: { "#d73a49": "#cf222e", "#22863a": "#1a7f37", "#e36209": "#bc4c00" },
-  dark: { "#6a737d": "#8b949e" },
-};
 
 /** The theme stylesheet (same for every site). */
 export function highlightCSS(): string {

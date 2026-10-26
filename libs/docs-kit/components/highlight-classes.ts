@@ -30,6 +30,16 @@ export function langOf(lang: string): Lang | undefined {
 /** Compiler-inserted names in compiled output (`<pre data-rv>`): marked `code-rv`. */
 export const COMPILER_NAME = /(__rivet\w*|_el\$\d+)/;
 
+/**
+ * Theme colours below WCAG AA (4.5:1) on `--bg-code` (theme.css), replaced by the nearest GitHub Primer colour of the
+ * same hue; the class keeps the theme colour's name (`hl-d73a49`), so browser-coloured and build-coloured blocks agree.
+ * tests/contrast.test.ts checks every token colour after this map, both themes.
+ */
+export const AA_COLORS: { light: Record<string, string>; dark: Record<string, string> } = {
+  light: { "#d73a49": "#cf222e", "#22863a": "#1a7f37", "#e36209": "#bc4c00" },
+  dark: { "#6a737d": "#8b949e" },
+};
+
 const hex = (color: string) => color.replace(/^#/, "").toLowerCase();
 export const lightClass = (color: string) => "hl-" + hex(color);
 export const darkClass = (color: string) => "hd-" + hex(color);
@@ -50,4 +60,28 @@ export function tokenClass(light: string, dark: string, style: number, fg: { lig
   let cls = lightClass(light) + " " + darkClass(dark);
   for (const [bit, name] of STYLE_CLASSES) if (style & bit) cls += " " + name;
   return cls;
+}
+
+/** The highlight of compiler names (`COMPILER_NAME` in `<pre data-rv>`), painted above the token colours. */
+export const RV_HIGHLIGHT = "code-rv";
+/**
+ * The CSS Custom Highlight of one token class list (`tokenClass`) or `RV_HIGHLIGHT`: its name (the classes joined by
+ * `_`, a CSS ident) and its `::highlight()` rule. Colour `light-dark(<light>, <dark>)` (AA-mapped, the page's
+ * `color-scheme` picks one: the rule also works in a shadow root, where `[data-theme]` selectors cannot reach),
+ * `hu` = underline. `::highlight()` takes no font style: italic / bold tokens (`hi` / `hb`, markup only) stay plain.
+ */
+export function highlightRule(cls: string): [name: string, rule: string] {
+  const names = cls.split(" ");
+  const name = names.join("_");
+  if (cls === RV_HIGHLIGHT) return [name, `::highlight(${name}){color:var(--accent-strong)}`];
+  let light = "",
+    dark = "",
+    decoration = "";
+  for (const one of names) {
+    const color = "#" + one.slice(3);
+    if (one.startsWith("hl-")) light = AA_COLORS.light[color] ?? color;
+    else if (one.startsWith("hd-")) dark = AA_COLORS.dark[color] ?? color;
+    else if (one === "hu") decoration = ";text-decoration:underline";
+  }
+  return [name, `::highlight(${name}){color:light-dark(${light || "currentColor"},${dark || "currentColor"})${decoration}}`];
 }

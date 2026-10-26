@@ -856,6 +856,8 @@ interface UnitAlign extends Align {
   span: Map<Node, Node[]>;
   /** The server markup does not have the probe's structure: render the unit instead. */
   fail: boolean;
+  /** The probe's created nodes (built on first use, `decorated`). */
+  made: () => Set<Node>;
 }
 const data = (n: Node | undefined): string | null => (n !== undefined && n.nodeType === 8 ? (n as Comment).data : null);
 // The index of the comment closing the range `ll[j]` opens (same kind, balanced), -1 when none.
@@ -1011,7 +1013,7 @@ function anchored(el: Element): Node[] {
   return [s, el, e];
 }
 // Pair the probe's children `fl` with the server's `ll` (children of `at`, before `ref`), level by level.
-function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | null): void {
+function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | null, deco = false): void {
   let i = 0,
     j = 0;
   for (;;) {
@@ -1034,17 +1036,37 @@ function alignUnit(a: UnitAlign, fl: Node[], ll: Node[], at: Node, ref: Node | n
     a.map.set(f, l);
     const fk = kids(f),
       only = fk.length === 2 ? a.holes.get(fk[0]!) : undefined;
-    if (only !== undefined && only.kind === 1 && fk[1] === only.nodes[1]) {
+    const marked = deco || l.hasAttribute(DECORATED);
+    if (marked && decorated(a, f, l)) {
+      // Kept as the server has it (no pairs below: nothing of the probe's subtree is live).
+    } else if (only !== undefined && only.kind === 1 && fk[1] === only.nodes[1]) {
       // The list is the element's only content: its rows stay unscanned until needed (`rowsOf`), the slot holds the
       // element's children through a lazy view (O(1) adopt for a page's long list).
       only.sole = l;
       a.span.set(only.nodes[0]!, lazyKids(l));
       a.span.set(only.nodes[1]!, []);
-    } else alignUnit(a, fk, kids(l), l, null);
+    } else alignUnit(a, fk, kids(l), l, null, marked);
     if (a.fail) return;
     i++;
     j++;
   }
+}
+
+/**
+ * Build decoration (ADOPT-CONTENT 2026-10-26): an element carrying `data-rv-text` says the build wrapped markup around
+ * the rendered text below it (a docs build's syntax-highlight token spans in `span.line`s, docs-kit
+ * `highlight-pages.ts`). Under it, a server element whose children differ from the probe's but whose text is equal is
+ * adopted as it is when the probe's subtree is static (no hole, no comment marker, no node the run creates). Was: a
+ * mismatch — the unit rendered in the browser (the first chrome click rebuilt a docs page's whole content).
+ */
+const DECORATED = "data-rv-text";
+function decorated(a: UnitAlign, f: Element, l: Element): boolean {
+  return f.textContent === l.textContent && fixed(a, f);
+}
+function fixed(a: UnitAlign, n: Node): boolean {
+  for (let c = n.firstChild; c !== null; c = c.nextSibling)
+    if (c.nodeType === 8 || a.holes.has(c) || a.made().has(c) || (c.nodeType === 1 && !fixed(a, c))) return false;
+  return true;
 }
 
 // The form controls among a unit's own live elements (the alignment's map values: never a hole's range, which its own
@@ -1105,7 +1127,17 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   const fresh = kids(probe.frag);
   fresh.pop(); // the anchor
   // 2. Align.
-  const a: UnitAlign = { map: new Map(), first: null, copied: false, verify, holes: new Map(), span: new Map(), fail: false };
+  let made: Set<Node> | null = null;
+  const a: UnitAlign = {
+    map: new Map(),
+    first: null,
+    copied: false,
+    verify,
+    holes: new Map(),
+    span: new Map(),
+    fail: false,
+    made: () => (made ??= new Set(probe.made.flat())),
+  };
   for (const hole of pu.holes) a.holes.set(hole.nodes[0]!, hole);
   alignUnit(a, fresh, between(start, end), end.parentNode!, end);
   const map = a.map;

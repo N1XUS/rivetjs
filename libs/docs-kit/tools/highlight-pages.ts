@@ -5,7 +5,8 @@
 // so the page ships no highlighter JS (was: a 52 KB br Shiki chunk + a grammar per page, tokenised on the main
 // thread). Left for the browser (`page-script.ts` → `highlight-browser.ts`): blocks filled at runtime (`data-src`:
 // an example's "Server HTML" tab, fetched when shown) and code the browser renders itself (dev server, client
-// renders). Example frame pages are not touched (`sitePages`).
+// renders). Example frame pages are not touched (`sitePages`). Coloured blocks carry `data-rv-text` (decoration: the
+// resumed unit adopts the token spans instead of rendering in the browser).
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { COMPILER_NAME, LANGS, langOf } from "../components/highlight-classes.ts";
@@ -100,7 +101,14 @@ export function highlightHTML(
     }
     stats.blocks++;
     const rv = /\sdata-rv(?:[\s=>]|$)/.test(attrs);
-    return mark + "<code>" + lines.map((line, index) => `<span class="${line.cls}">${lineHTML(tokens![index] ?? [], rv)}</span>`).join("\n") + "</code></pre>";
+    // `data-rv-text`: the token spans are build decoration around the rendered text — a resumable unit holding the block
+    // (DocPage, Example) adopts its server lines as they are (runtime `dom-derived.ts` `decorated`; ADOPT-CONTENT).
+    return (
+      `<pre${attrs} data-hl="" data-rv-text="">` +
+      "<code>" +
+      lines.map((line, index) => `<span class="${line.cls}">${lineHTML(tokens![index] ?? [], rv)}</span>`).join("\n") +
+      "</code></pre>"
+    );
   });
 }
 

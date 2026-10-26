@@ -121,7 +121,8 @@ function copyCode(button: HTMLButtonElement): void {
   const pres = block ? [...block.querySelectorAll("pre")] : [];
   const pre = pres.find((p) => p.offsetParent !== null) ?? pres[0];
   if (!pre) return;
-  void navigator.clipboard.writeText(pre.textContent ?? "").then(
+  // A block the highlighter filled at runtime (example "Server HTML") holds its lines in a shadow root (ADOPT-CONTENT).
+  void navigator.clipboard.writeText((pre.querySelector(".line")?.shadowRoot ?? pre).textContent ?? "").then(
     () => {
       button.dataset.copied = "";
       button.setAttribute("aria-label", "Copied");

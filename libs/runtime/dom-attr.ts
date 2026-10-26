@@ -1,7 +1,6 @@
 // Attribute writes (moved out of `dom-v2.ts`, ZERO R4 2026-10-25): the one client rule for attribute values (booleans,
 // enumerated `hidden` / `popover`, URL checks, form-control properties). A leaf module for the lite resume runtime
-// (`dom-lite.ts` `_la`); `dom-v2.ts` re-exports `_attrValue` and uses `write` / `coerce` itself.
-import { _bindingEffect } from "@rivetjs/reactivity";
+// (`dom-lite.ts` `_la`); `dom-v2.ts` uses `write` / `coerce` (its `_attrValue` / `_attrWrite` skip held writes in adopt runs).
 import { INVALID_URL, MEDIA_URLS, unsafeUrl } from "./url.ts";
 import { _booleans, _writeDefault } from "./dom-base.ts";
 
@@ -41,9 +40,4 @@ export function write(el: Element, name: string, value: unknown): void {
   else if (name.startsWith("xml:")) el.setAttributeNS("http://www.w3.org/XML/1998/namespace", name, encoded);
   else el.setAttribute(name, encoded);
   if (bool && lower in el) (el as unknown as Record<string, unknown>)[lower] = true;
-}
-/** Compiler ABI: an identifier-only attribute value: written once unless it is an accessor. */
-export function _attrValue(el: Element, name: string, value: unknown): void {
-  if (typeof value === "function") _bindingEffect(() => write(el, name, (value as () => unknown)()));
-  else write(el, name, value);
 }
