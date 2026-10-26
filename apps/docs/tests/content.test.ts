@@ -72,7 +72,7 @@ test("markdown: code blocks keep newlines and indentation through the compiler",
   assert.match(jsx, /class="line mark-highlight"/);
   assert.doesNotMatch(jsx, /\[!code/);
   const out = serverHTML(jsx.replace("<CopyButton />", "").replace(/<Icon [^>]*\/>/g, ""));
-  // Plain lines (the browser colours them): newline and indentation kept, the mark on its line.
+  // Plain lines (coloured after prerender, tools/highlight-pages.ts): newline and indentation kept, the mark on its line.
   assert.match(out, /<span class=\\"line\\">const a = 1;<\/span>\\n<span class=\\"line mark-highlight\\">  if \(a\) \{\}<\/span>/);
 });
 

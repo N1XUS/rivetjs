@@ -114,7 +114,7 @@ test("home: visible animations load before input, generic docs highlighter and s
     try {
       await page.goto(origin + "/", { waitUntil: "load" });
       await page.waitForTimeout(1500); // idle-time prefetches would have started by now
-      assert.ok(scripts.some((url) => url.includes("HomeCanvas")), `visible canvas really started at width ${width}`);
+      assert.ok(scripts.some((url) => url.includes("/docs-route-")), `the hero script (canvas + headline) really started at width ${width}`);
       assert.ok(!scripts.some((url) => /pagefind|SearchDialog|highlight/i.test(url)), `no generic docs eager code: ${scripts.join(", ")}`);
       const settled = scripts.length;
       await page.waitForTimeout(1200);

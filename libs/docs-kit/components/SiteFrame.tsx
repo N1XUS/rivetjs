@@ -7,6 +7,8 @@ import { SideNav } from "./SideNav.tsx";
 import { ThemeMenu } from "./ThemeMenu.tsx";
 import { areaOf, ROUTE_ITEMS, topItems } from "./nav.ts";
 import { frameIdOf } from "../frame-theme.ts";
+// The docs fonts' `@font-face` sheets (kit `?font`, metric-matched fallback faces) on every docs page.
+import "../fonts.ts";
 
 export interface FooterLink {
   title: string;
@@ -100,7 +102,7 @@ export function SiteFrame({ path, links = [], children }: { path: string; links?
   const columns = defaultColumns(links);
   // Lean pages skip generic idle highlighting/search setup; page-owned visible effects can still run.
   const lean = site.leanPages?.includes(path) ?? false;
-  // Code blocks are plain server text; the browser colours visible ones: `page-script.ts`, a plain module script
+  // Code blocks are coloured at build (tools/highlight-pages.ts); the rest (dev, runtime-filled) by `page-script.ts`, a plain module script
   // `document.ts` links on non-lean pages (no idle trigger here: it booted the resume runtime on every page, ZERO Z13).
   return (
     <div class={side ? "frame frame-side" : "frame"}>

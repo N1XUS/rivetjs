@@ -10,6 +10,7 @@ import { copyFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises"
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { hashCSP } from "@rivetjs/router/static";
 import { restoreLinks } from "./critical-css.ts";
+import { highlightHTML, pageTokenizer } from "./highlight-pages.ts";
 // Deep imports (no package subpath): the build type and the wire constants the static adapter uses.
 import type { LoadedBuild } from "../../router/adapters/build.ts";
 import { DATA_PARAM } from "../../router/shared/data.ts";
@@ -166,7 +167,9 @@ export async function prerenderPartial(options: {
   for (const path of canaries) {
     const page = await render(path);
     if (!page) return { ok: false, why: `canary ${path} is gone` };
-    const { html, data } = page;
+    const { data } = page;
+    // The copy was coloured by the build (tools/highlight-pages.ts); the fresh page is coloured the same way.
+    const html = highlightHTML(page.html, await pageTokenizer());
     const copy = rewritePage(await readFile(resolve(previous, htmlFile(path)), "utf8"), map, true, hash);
     if (copy !== html) return { ok: false, why: `canary ${path} changed beyond asset names: ${difference(copy, html)}` };
     const oldData = await readFile(resolve(previous, dataFile(path)), "utf8").catch(() => null);

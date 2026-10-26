@@ -55,7 +55,7 @@ export interface PageInfo {
   since?: string;
 }
 
-/** One shown file of an example: plain text (the browser colours it, components/highlighter.ts). */
+/** One shown file of an example: plain text (coloured after prerender, tools/highlight-pages.ts; dev: components/highlighter.ts). */
 export interface ExampleFile {
   path: string;
   /** Shown text (`#region` markers and line notation stripped). */

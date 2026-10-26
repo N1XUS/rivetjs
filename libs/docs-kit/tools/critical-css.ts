@@ -4,6 +4,9 @@
 // at-rule statement, `@font-face`, `@keyframes` and `@property`. The full sheets stay in the head as
 // `<link rel="x-rivet-defer" href>` (not fetched) + a `<noscript>` stylesheet copy; the document shell's script
 // (`document.ts`) turns them into stylesheets after the first paint (load → frame → task) or on the first input.
+// A sheet of `@font-face` rules only (docs-kit fonts.ts: kit `?font` sheets) is inline whole: its link becomes
+// `<link rel="x-rivet-inline" href>` (never fetched; `restoreLinks` keeps it) — the full copy re-declared the faces
+// after the first paint, an extra VeryHigh request that moved Lighthouse's simulated LCP (cdk-docs home 1.65 → 2.25 s).
 // The inline rules are a subsequence of the full sheets in the same order, so the cascade is the same before and
 // after the full sheets apply. DOM that scripts add before the full sheets may have loaded is invisible in the HTML:
 // its names are declared (`CLIENT_SELECTORS` + the site's `criticalCss.extraSelectors`, counted as present on every
@@ -397,7 +400,9 @@ function stylesheetHref(attrs: string): string | undefined {
   return href;
 }
 const CRITICAL = /<style data-rivet-critical>[\s\S]*?<\/style>/;
-const DEFERRED = /<link rel="x-rivet-defer" href="([^"]+)">/g;
+const DEFERRED = /<link rel="x-rivet-(?:defer|inline)" href="([^"]+)">/g;
+/** A sheet the inline CSS carries whole: `@font-face` rules only (no selectors to filter, nothing pruned). */
+const wholeInline = (sheet: Sheet) => sheet.nodes.length > 0 && sheet.nodes.every((node) => node.kind === "raw" && /^@font-face\s*\{/i.test(node.text));
 const NOSCRIPT = /<noscript data-rivet-css>[\s\S]*?<\/noscript>/;
 const HTML_MARK = "<html data-rivet-critical ";
 
@@ -435,14 +440,16 @@ export async function inlineCritical(
   const page = presence(html);
   for (const key of ["classes", "ids", "tags", "attrs"] as const) for (const name of extra[key]) page[key].add(name);
   if (added) page.added = added;
-  const css = pruneCustomProperties(criticalCSS(await Promise.all(hrefs.map(sheet)), page), html);
+  const sheets = await Promise.all(hrefs.map(sheet));
+  const css = pruneCustomProperties(criticalCSS(sheets, page), html);
+  const inline = new Set(hrefs.filter((_, i) => wholeInline(sheets[i]!)));
   let first = true;
   const end = head.length;
   const out =
     html.slice(0, end).replace(HEAD_LINK, (link0, attrs: string) => {
       const href = stylesheetHref(attrs);
       if (!href) return link0;
-      const link = `<link rel="x-rivet-defer" href="${href}">`;
+      const link = `<link rel="x-rivet-${inline.has(href) ? "inline" : "defer"}" href="${href}">`;
       if (!first) return link;
       first = false;
       return `<style data-rivet-critical>${css.replaceAll("</style", "<\\/style")}</style>${link}`;

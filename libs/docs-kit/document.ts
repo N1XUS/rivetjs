@@ -4,7 +4,7 @@ import { site } from "virtual:docs/site";
 // Favicon: the Rivet logo (repo root logo.svg, emitted as a hashed asset by `docsSite()`).
 import { logo } from "virtual:docs/brand";
 // The docs page script (ZERO Z13): highlighter, search shortcuts, TOC spy without the resume runtime (`components/page-script.ts`).
-import { pageScript } from "virtual:docs/scripts";
+import { pageScript, routeScript } from "virtual:docs/scripts";
 
 const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 // Applies the saved theme (`localStorage.theme`: "light" | "dark"; absent = follow the system) before
@@ -51,10 +51,19 @@ const frameDocument: DocumentShell = ({ head, nonce, managed }) => ({
 /** Document around every page. Route heads (title, description, links, scripts) merge over the defaults. */
 const document: DocumentShell = (input) => (frameIdOf(input.url.pathname) ? frameDocument(input) : siteDocument(input));
 
-/** The docs page script (every docs page; `site.leanPages` are marked `<html data-lean>`: no highlighter / search shortcuts). */
-const pageScriptTag = (nonce: string | undefined) => {
+/**
+ * The docs page script (every docs page; `site.leanPages` are marked `<html data-lean>`: no highlighter / search
+ * shortcuts) + the page's own script (`docsSite({ scripts })`). Both low priority: nothing the first paint needs
+ * (a High module script counts as render-blocking in Lighthouse's simulation when it starts before first paint).
+ */
+const pageScriptTag = (nonce: string | undefined, pathname: string) => {
+  const attr = nonce === undefined ? "" : ` nonce="${escape(nonce)}"`;
   const src = pageScript();
-  return src ? `<script type="module" src="${escape(src)}"${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}></script>` : "";
+  const own = routeScript(pathname);
+  return (
+    (src ? `<script type="module" src="${escape(src)}" fetchpriority="low"${attr}></script>` : "") +
+    (own ? `<script type="module" src="${escape(own)}" fetchpriority="low"${attr}></script>` : "")
+  );
 };
 
 const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => ({
@@ -74,7 +83,7 @@ const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => (
     '<meta name="color-scheme" content="light dark">' +
     `<link rel="icon" type="image/svg+xml" href="${logo}">` +
     styles.map((href) => `<link rel="stylesheet" href="${escape(href)}">`).join("") +
-    pageScriptTag(nonce) +
+    pageScriptTag(nonce, url.pathname) +
     "</head><body>",
   end: "</body></html>",
 });

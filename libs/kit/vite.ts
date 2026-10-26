@@ -90,16 +90,22 @@ async function fallbackFace(request: FontRequest, warn: (message: string) => voi
     return skip("install @capsizecss/unpack and @capsizecss/metrics");
   }
   if (typeof unpack.fromBuffer !== "function") return skip("@capsizecss/unpack has no fromBuffer: install 3.x or 4.x");
-  const name = request.fallback.replace(/\s+(\w)/g, (_, c: string) => c.toUpperCase()).replace(/^\w/, (c) => c.toLowerCase());
+  const camel = (family: string) => family.replace(/\s+(\w)/g, (_, c: string) => c.toUpperCase()).replace(/^\w/, (c) => c.toLowerCase());
+  const name = camel(request.fallback);
+  const metrics = async (id: string) => ((await import(`@capsizecss/metrics/${id}` as string)) as { default: Metrics }).default;
   let fallback: Metrics;
   try {
-    fallback = ((await import(`@capsizecss/metrics/${name}` as string)) as { default: Metrics }).default;
+    fallback = await metrics(name);
   } catch {
     return skip(`no @capsizecss/metrics/${name}: install @capsizecss/metrics or pick a font it covers`);
   }
-  let primary: Metrics;
+  // A variable font (weight range) unpacks as its default instance, which is often not the regular weight text uses
+  // (Manrope's: xWidthAvg 0.4435 em vs 0.46 at 400 → size-adjust 3.7 % too small, lines wrapped differently after the
+  // swap: docs CLS 0.11–0.13). The metrics collection's entry of the family (measured at regular) wins when it has one.
+  let primary: Metrics | undefined;
+  if (request.weight.includes(" ")) primary = await metrics(camel(request.family)).catch(() => undefined);
   try {
-    primary = await unpack.fromBuffer(await readFile(request.file));
+    primary ??= await unpack.fromBuffer(await readFile(request.file));
   } catch (error) {
     return skip(`unreadable font: ${(error as Error).message}`);
   }
@@ -116,7 +122,7 @@ async function fallbackFace(request: FontRequest, warn: (message: string) => voi
 export function kit(options: KitOptions = {}): Plugin {
   const fallbacks = new Map<string, Promise<string | null>>();
   const fallbackOf = (request: FontRequest, warn: (message: string) => void) => {
-    const key = request.file + "\0" + (request.fallback ?? "");
+    const key = [request.file, request.fallback ?? "", request.family, request.weight].join("\0");
     let face = fallbacks.get(key);
     if (!face) fallbacks.set(key, (face = fallbackFace(request, warn)));
     return face;

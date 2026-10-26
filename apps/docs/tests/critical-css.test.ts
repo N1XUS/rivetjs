@@ -42,8 +42,15 @@ async function styles(path: string, width: number, critical: boolean, open?: { c
     const response = await page.goto(origin + path, { waitUntil: "load" });
     assert.equal(response?.status(), 200);
     assert.equal(await page.evaluate(() => document.documentElement.hasAttribute("data-rivet-critical")), true, "page carries critical CSS");
-    // The self-hosted fonts now swap on the first visit. Compare both CSS paths with the same loaded faces.
-    await page.evaluate(() => document.fonts.ready);
+    // The self-hosted fonts now swap on the first visit. Compare both CSS paths with the same loaded faces. The full
+    // sheets re-declare the inline `@font-face` rules (docs-kit fonts.ts, with metric fallback faces): a layout forced
+    // while Chrome registers them resolves `ch` against the fallback face, never painted (per-frame sampling), so
+    // settle two frames and the new faces first.
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
+      await document.fonts.ready;
+    });
     if (open) {
       await page.click(open.click);
       await page.waitForSelector(open.root, { state: "visible" });

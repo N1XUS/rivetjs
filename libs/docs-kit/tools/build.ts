@@ -127,6 +127,10 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
     }
   } else report = await fullPrerender(build, site.origin);
   log(`prerender: ${report.rendered} pages (${report.prerender})`);
+  // Code blocks coloured in the HTML (tools/highlight-pages.ts): docs pages ship no highlighter JS.
+  const { highlightPages } = await import("./highlight-pages.ts");
+  const coloured = await highlightPages(client);
+  log(`highlight: ${coloured.blocks} code blocks coloured in ${coloured.pages} pages (${coloured.plain} plain, ${coloured.left} left for the browser)`);
   await hostFiles(client);
   // AI outputs (llms.txt, llms-full.txt, `<page>.md`): tools/llms/generate.ts.
   const llms = await import("./llms/generate.ts");
@@ -143,10 +147,11 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
   // Inline critical CSS per page, full stylesheets after the first paint (tools/critical-css.ts). After the measures:
   // their "What loaded" markup (<strong>) counts as page content.
   const { inlineCriticalPages } = await import("./critical-css.ts");
-  // Pages with code blocks: the idle highlighter (components/highlighter.ts) adds its token classes, maybe before the
-  // full stylesheets arrive (bold / italic tokens would change line widths then).
+  // Code is coloured in the HTML (above), so its token classes are page content. Pages that still have a visible plain
+  // block (markup the build pass left) get the browser highlighter's classes, which may arrive before the full
+  // stylesheets (bold / italic tokens would change line widths then); `data-src` blocks sit in hidden tabs.
   const critical = await inlineCriticalPages(client, {
-    added: (html) => (html.includes(" data-lang=") ? HIGHLIGHT_CLASSES : undefined),
+    added: (html) => (PLAIN_CODE.test(html) ? HIGHLIGHT_CLASSES : undefined),
     extraSelectors: site.criticalCss?.extraSelectors,
   });
   log(`critical css: ${critical.pages} pages, ${Math.round(critical.bytes / Math.max(1, critical.pages) / 100) / 10} KB inline per page`);
@@ -180,6 +185,8 @@ export async function buildSite(root: string, options: SiteBuildOptions): Promis
 
 /** Token classes of components/highlight-classes.ts (`lightClass` / `darkClass` / `STYLE_CLASSES`, `code-rv`). */
 const HIGHLIGHT_CLASSES = /^(?:h[ld]-[0-9a-f]{3,8}|h[ibu]|code-rv)$/;
+/** A code block the browser would colour on sight: `data-lang`, no `data-hl` (coloured / plain at build), no `data-src` (hidden tab). */
+const PLAIN_CODE = /<pre(?![^>]*\sdata-(?:hl|src)[\s=>])[^>]*\sdata-lang=/;
 
 /** `prerenderBuild` over an already loaded build. */
 async function fullPrerender(build: LoadedBuild, origin: string): Promise<Omit<SiteBuildReport, "timings">> {

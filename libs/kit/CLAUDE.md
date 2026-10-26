@@ -68,7 +68,7 @@ npx vitest run --project kit                                                    
 - `docs/guides/kit.md` describes `document.$rs` as `{ p, a }`; code uses `{ p, l }` (`dom.ts` `Shared`).
 - No head sink (no router / no `kit()` and no `head: "components"`) → server components throw with a setup hint.
 - Client nav ranking is an approximation: layout components rank below the route head; page-level components win.
-- Font `fallback` metrics need optional peers `@capsizecss/unpack` (`^3 || ^4`) + `@capsizecss/metrics`; absent → warning, no fallback face. Use `fromBuffer(await readFile())` only: unpack 4.x moved `fromFile` to `@capsizecss/unpack/fs` (G16). Pinned as kit devDeps (unpack 4.0.1, metrics 4.3.0; hoisted to root `node_modules` so apps resolve it). Typed `?font` import needs `&font` last.
+- Font `fallback` metrics need optional peers `@capsizecss/unpack` (`^3 || ^4`) + `@capsizecss/metrics`; absent → warning, no fallback face. Use `fromBuffer(await readFile())` only: unpack 4.x moved `fromFile` to `@capsizecss/unpack/fs` (G16). Pinned as kit devDeps (unpack 4.0.1, metrics 4.3.0; hoisted to root `node_modules` so apps resolve it). Typed `?font` import needs `&font` last. Variable fonts (`weight=a..b`): the primary metrics come from `@capsizecss/metrics/<camelFamily>` when it has the family (measured at regular), else from the file (unpack reads the default instance: Manrope's gave size-adjust 99.48 % vs 103.19 %, docs CLS 0.11–0.13). Fallback cache key = file + fallback + family + weight.
 - `google-font:` ids hit the network only on a cold cache (`node_modules/.rivet/fonts`); tests must stub `globalThis.fetch` (see `tests/font.test.ts`), never reach Google.
 
 ## See also

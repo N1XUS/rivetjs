@@ -181,7 +181,7 @@ import inter from "../fonts/Inter.woff2?weight=100..900&fallback=Arial&font";
 
 - Query parameters: `family` (default: file name), `weight` (`400` or a range `100..900`), `style`, `display` (default `swap`, or `kit({ fonts: { display } })`), `fallback`, `unicodeRange`.
 - The `@font-face` rule goes into the CSS of the route that imports the font. The preload and the CSS use the same file.
-- A `fallback` font with adjusted size and line metrics needs the optional packages `@capsizecss/unpack` (3.x or 4.x) and `@capsizecss/metrics`. Without them you get a warning and no adjusted fallback.
+- A `fallback` font with adjusted size and line metrics needs the optional packages `@capsizecss/unpack` (3.x or 4.x) and `@capsizecss/metrics`. Without them you get a warning and no adjusted fallback. For a variable font (a `weight` range) the metrics of the family's regular weight are used when `@capsizecss/metrics` knows the family, otherwise those of the file's default instance.
 
 ### Google Fonts
 

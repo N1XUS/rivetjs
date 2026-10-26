@@ -91,7 +91,7 @@ export function focusRegion(source: string): { text: string; focus?: [number, nu
   return start !== undefined && end !== undefined && end >= start ? { text, focus: [start, end] } : { text };
 }
 
-/** A shown file: plain text (`#region` markers and line notation stripped) + marks + focus; the browser colours it. */
+/** A shown file: plain text (`#region` markers and line notation stripped) + marks + focus; coloured after prerender (highlight-pages.ts). */
 export function shownFile(path: string, source: string): ExampleFile {
   const { text, focus } = focusRegion(source);
   const lines = codeLines(text);

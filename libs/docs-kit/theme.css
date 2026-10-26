@@ -5,22 +5,9 @@
  * there and here together.
  */
 
-/* Self-hosted variable fonts. Swap ensures the requested typefaces appear on the first visit,
-   including with JavaScript disabled. Code uses Fira Code's contextual ligatures. */
-@font-face {
-  font-family: "Manrope";
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-  src: url("../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2") format("woff2-variations");
-}
-@font-face {
-  font-family: "Fira Code";
-  font-style: normal;
-  font-weight: 300 700;
-  font-display: swap;
-  src: url("../../node_modules/@fontsource-variable/fira-code/files/fira-code-latin-wght-normal.woff2") format("woff2-variations");
-}
+/* Fonts: self-hosted variable Manrope + Fira Code as @rivetjs/kit `?font` imports (../fonts.ts): their `@font-face`
+   rules, swap display and metric-matched fallback faces ("Manrope Fallback", "Fira Code Fallback") come with the
+   docs page frame (SiteFrame.tsx); no preload (see fonts.ts). Code uses Fira Code's contextual ligatures. */
 @theme {
   --color-brand-cyan: #01eef9;
   --color-brand-blue: #0085f8;
@@ -31,9 +18,9 @@
   --color-brand-purple: #b815f9;
   --color-brand-magenta: #f827f5;
   --color-brand-pink: #f930bf;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Manrope", "Manrope Fallback", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-sans);
-  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-mono: "Fira Code", "Fira Code Fallback", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /*

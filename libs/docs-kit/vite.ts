@@ -6,6 +6,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin, Rollup, ViteDevServer } from "vite";
 import { serverOnlyStub } from "@rivetjs/compiler/vite";
+import { kit } from "@rivetjs/kit/vite";
 import { docsContent } from "./tools/content/plugin.ts";
 import { docsDevSearch } from "./tools/dev-search.ts";
 import { CSS_DIR, EXAMPLES_JSON, FRAME_SHELLS, FRAMES_DIR, FRAMES_INDEX, SHARED_ASSETS } from "./tools/examples.ts";
@@ -288,19 +289,32 @@ function docsBrand(): Plugin {
 /** The docs page script (ZERO Z13): `components/page-script.ts` (highlighter, search shortcuts, TOC spy), a plain module script. */
 const PAGE_SCRIPT = realpathSync(fileURLToPath(new URL("./components/page-script.ts", import.meta.url)));
 const SCRIPTS = "\0virtual:docs/scripts";
-/** Client build asset: `{ page: url }` of the emitted page script, read by the server bundle at render. */
+/** Client build asset: `{ page: url, routes: { [pathname]: url } }` of the emitted scripts, read by the server bundle at render. */
 export const SCRIPTS_FILE = ".vite/docs-scripts.json";
 
+/** `docsSite()` options. */
+export interface DocsSiteOptions {
+  /**
+   * Plain module scripts of single pages (DOCS-FAST): page path → module (relative to the Vite root), e.g.
+   * `{ "/": "src/components/home/hero.ts" }`. Each is its own entry chunk (`assets/docs-route-<n>-<hash>.js`, no resume
+   * runtime); `document.ts` links it on that page only, `fetchpriority="low"` (visible effects that must not compete
+   * with the page's first paint).
+   */
+  scripts?: Record<string, string>;
+}
+
 /**
- * `virtual:docs/scripts` (`pageScript()`: URL of the docs page script, or undefined): the client build emits
- * `components/page-script.ts` as its own entry chunk (`assets/docs-page-<hash>.js`; not a resume chunk, the page needs
- * no runtime for it) and writes `SCRIPTS_FILE`; the server bundle reads that file; the dev server serves the source
- * (`/@fs/…`). `document.ts` links it on every docs page (not example frames).
+ * `virtual:docs/scripts` (`pageScript()`: URL of the docs page script, `routeScript(pathname)`: URL of that page's own
+ * script (`DocsSiteOptions.scripts`), or undefined): the client build emits `components/page-script.ts` and every page
+ * script as its own entry chunk (`assets/docs-page-<hash>.js`; not resume chunks, the page needs no runtime for them)
+ * and writes `SCRIPTS_FILE`; the server bundle reads that file; the dev server serves the sources (`/@fs/…`).
+ * `document.ts` links the page script on every docs page (not example frames).
  */
-function docsScripts(): Plugin {
+function docsScripts(routes: Record<string, string> = {}): Plugin {
   let clientOut = "";
   let dev = false;
   let base = "/";
+  let files: [path: string, file: string][] = [];
   return {
     name: "rivet-docs-scripts",
     enforce: "pre",
@@ -308,28 +322,44 @@ function docsScripts(): Plugin {
       dev = config.command === "serve";
       base = config.base ?? "/";
       clientOut = resolve(config.root, config.environments?.client?.build?.outDir ?? config.build.outDir);
+      files = Object.entries(routes).map(([path, file]) => [path, realpathSync(resolve(config.root, file))]);
     },
     resolveId(id) {
       return id === "virtual:docs/scripts" ? SCRIPTS + (this.environment?.config.consumer === "server" ? "" : "?client") : null;
     },
     load(id) {
-      if (id === SCRIPTS + "?client") return "export const pageScript = () => undefined;";
+      if (id === SCRIPTS + "?client") return "export const pageScript = () => undefined;\nexport const routeScript = (_path) => undefined;";
       if (id !== SCRIPTS) return null;
-      if (dev) return `export const pageScript = () => ${JSON.stringify(base + "@fs" + PAGE_SCRIPT)};`;
+      if (dev)
+        return [
+          `export const pageScript = () => ${JSON.stringify(base + "@fs" + PAGE_SCRIPT)};`,
+          `const routes = ${JSON.stringify(Object.fromEntries(files.map(([path, file]) => [path, base + "@fs" + file])))};`,
+          "export const routeScript = (path) => routes[path];",
+        ].join("\n");
       const file = resolve(clientOut, SCRIPTS_FILE);
       return [
         `import { existsSync, readFileSync } from "node:fs";`,
         "let scripts;",
-        `export const pageScript = () => (scripts ??= existsSync(${JSON.stringify(file)}) ? JSON.parse(readFileSync(${JSON.stringify(file)}, "utf8")) : {}).page;`,
+        `const read = () => (scripts ??= existsSync(${JSON.stringify(file)}) ? JSON.parse(readFileSync(${JSON.stringify(file)}, "utf8")) : {});`,
+        "export const pageScript = () => read().page;",
+        "export const routeScript = (path) => read().routes?.[path];",
       ].join("\n");
     },
     buildStart() {
-      if (!dev && this.environment?.config.consumer === "client") this.emitFile({ type: "chunk", id: PAGE_SCRIPT, name: "docs-page" });
+      if (dev || this.environment?.config.consumer !== "client") return;
+      this.emitFile({ type: "chunk", id: PAGE_SCRIPT, name: "docs-page" });
+      files.forEach(([, file], index) => this.emitFile({ type: "chunk", id: file, name: `docs-route-${index}` }));
     },
     generateBundle(_options, bundle) {
       if (this.environment.config.consumer !== "client") return;
-      const chunk = Object.values(bundle).find((output): output is Rollup.OutputChunk => output.type === "chunk" && output.facadeModuleId === PAGE_SCRIPT);
-      if (chunk) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page: base + chunk.fileName }) + "\n" });
+      const chunks = Object.values(bundle).filter((output): output is Rollup.OutputChunk => output.type === "chunk");
+      const url = (file: string) => {
+        const chunk = chunks.find((output) => output.facadeModuleId === file);
+        return chunk ? base + chunk.fileName : undefined;
+      };
+      const page = url(PAGE_SCRIPT);
+      const scripts = Object.fromEntries(files.flatMap(([path, file]) => (url(file) ? [[path, url(file)]] : [])));
+      if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, routes: scripts }) + "\n" });
     },
   };
 }
@@ -357,8 +387,26 @@ function docsWatch(): Plugin {
  */
 export const FRAME_ROOT = realpathSync(fileURLToPath(new URL("./components/frame.tsx", import.meta.url)));
 
-export function docsSite(): Plugin[] {
-  return [docsWatch(), docsContent(), docsBrand(), docsScripts(), docsModules(), docsFrames(), docsDevSearch()];
+/**
+ * The kit Vite plugin's font loader only, for the docs fonts' `?font` imports (`fonts.ts`): renamed, since the router
+ * turns component head on when it sees `vite-plugin-rivet-kit` (docs pages keep route `head` exports, the early head),
+ * and without kit's client aliases (`@rivetjs/kit` → `/dom`, `@rivetjs/runtime/image` → `/image/dom`), so the sites'
+ * bundles resolve as before.
+ */
+function docsFonts(): Plugin {
+  const base = kit();
+  const resolveId = base.resolveId as Extract<Plugin["resolveId"], (...args: never[]) => unknown>;
+  return {
+    ...base,
+    name: "rivet-docs-fonts",
+    resolveId(id, importer, options) {
+      return id === "@rivetjs/kit" || id === "@rivetjs/runtime/image" ? null : resolveId.call(this, id, importer, options);
+    },
+  };
+}
+
+export function docsSite(options: DocsSiteOptions = {}): Plugin[] {
+  return [docsWatch(), docsContent(), docsBrand(), docsScripts(options.scripts), docsModules(), docsFrames(), docsDevSearch(), docsFonts()];
 }
 
 /**

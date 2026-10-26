@@ -26,6 +26,8 @@ declare module "virtual:docs/examples?ids=*" {
 declare module "virtual:docs/scripts" {
   /** URL of the docs page script (`components/page-script.ts`, ZERO Z13); undefined in the browser / when not built. */
   export const pageScript: () => string | undefined;
+  /** URL of a page's own plain module script (`docsSite({ scripts })`, DOCS-FAST); undefined in the browser / for other pages. */
+  export const routeScript: (pathname: string) => string | undefined;
 }
 declare module "virtual:docs/example-frames" {
   /** Live examples: their frame page paths and frame module (`src/generated/example-frames.tsx`). */

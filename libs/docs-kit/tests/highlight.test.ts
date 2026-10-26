@@ -1,4 +1,4 @@
-// Code highlighting: plain server lines (tools/content/highlight.ts `codeLines`), coloured in the browser
+// Code highlighting: plain server lines (tools/content/highlight.ts `codeLines`), coloured by the browser highlighter
 // (components/highlighter.ts `highlightPre`, Shiki core + JavaScript regex engine) with classes whose rules come
 // from the themes' palettes (`highlightCSS`): every class a token gets has a rule; text and marks survive.
 import { strict as assert } from "node:assert";
@@ -68,4 +68,30 @@ test("highlightPre: compiler names marked in `data-rv` blocks; unknown languages
   const plain = block("some text\n", "txt");
   await highlightPre(plain);
   assert.equal(plain.querySelectorAll(".line span").length, 0);
+});
+
+test("highlightHTML (build pass, tools/highlight-pages.ts): same markup as the browser highlighter; data-src left, unknown languages plain", async () => {
+  const { highlightHTML, pageTokenizer } = await import("../tools/highlight-pages.ts");
+  const tokenize = await pageTokenizer();
+  const sources: [string, string, string?][] = [
+    [readFileSync(resolve(import.meta.dirname, "../components/Example.tsx"), "utf8").slice(0, 6_000), "tsx"],
+    ['<a href="x">&amp; "q"</a>\n', "html"],
+    ["const _el$1 = __rivetTpl(); // [!code highlight]\n", "js", ' data-rv=""'],
+  ];
+  for (const [code, lang, attrs] of sources) {
+    const pre = block(code, lang, attrs);
+    const stats = { blocks: 0, plain: 0, left: 0 };
+    const host = window.document.createElement("div");
+    host.innerHTML = highlightHTML(pre.outerHTML, tokenize, stats);
+    await highlightPre(pre);
+    assert.equal(stats.blocks, 1, lang);
+    assert.ok(host.querySelector("pre")!.hasAttribute("data-hl"), lang);
+    assert.equal(host.querySelector("code")!.innerHTML, pre.querySelector("code")!.innerHTML, lang);
+  }
+  const stats = { blocks: 0, plain: 0, left: 0 };
+  const src = '<pre data-lang="html" data-src="/x/"><code></code></pre>';
+  assert.equal(highlightHTML(src, tokenize, stats), src);
+  const txt = block("some text\n", "txt").outerHTML;
+  assert.match(highlightHTML(txt, tokenize, stats), /^<pre data-lang="txt" data-hl=""><code><span class="line">some text<\/span><\/code><\/pre>$/);
+  assert.deepEqual(stats, { blocks: 0, plain: 1, left: 1 });
 });

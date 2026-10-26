@@ -3,7 +3,8 @@ import "../home-studio.css";
 import { ArrowRight, BookOpen, Box, Code, FileText, Layers, Package, Terminal } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 import { CopyButton } from "@rivetjs/docs-kit/components/CodeBlock.tsx";
-import { homeStrip } from "../../content/_charts.ts";
+// The strip values as literals (docs-kit writes them from content/_charts.ts): importing the module would bundle its reports.
+import { homeStrip } from "../generated/charts.ts";
 import { HomeCanvas } from "../components/home/HomeCanvas.tsx";
 import { HomeHeadline } from "../components/home/HomeHeadline.tsx";
 import { HomeWorkbench } from "../components/home/HomeWorkbench.tsx";

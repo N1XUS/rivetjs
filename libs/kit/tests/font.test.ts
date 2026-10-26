@@ -43,6 +43,18 @@ test("?font fallback: metric-matched @font-face for a local woff2 (capsize unpac
   assert.equal(face[4], "0.00");
 });
 
+test("?font fallback: a variable font of a family the metrics collection knows uses its regular-weight metrics", async () => {
+  const plugin = kit();
+  const file = fileURLToPath(new URL("../../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2", import.meta.url));
+  const face = (code: string) => /size-adjust:([\d.]+)%/.exec(code)?.[1];
+  // Variable (weight range): Manrope regular xWidthAvg 920 / 2000 upm (the file's default instance unpacks narrower: 0.4435).
+  const variable = await load(plugin, `${file}.rivet-font.css?family=Manrope&weight=200..800&fallback=Arial&font`);
+  assert.equal(face(variable.code), ((920 / 2000 / (913 / 2048)) * 100).toFixed(2));
+  // One weight: the file's own metrics.
+  const single = await load(plugin, `${file}.rivet-font.css?family=Manrope&weight=400&fallback=Arial&font`);
+  assert.notEqual(face(single.code), face(variable.code));
+});
+
 test("?font fallback: generic families need no metrics", async () => {
   const plugin = kit();
   const { code, warnings } = await load(plugin, `${WOFF2}?fallback=serif&font`);

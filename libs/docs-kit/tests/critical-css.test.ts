@@ -116,6 +116,15 @@ test("inlineCritical: one inline style + deferred links + noscript; restoreLinks
   );
   assert.equal(restoreLinks(out), html);
   assert.equal(restoreLinks(html), html);
+  // A sheet of `@font-face` rules only is inline whole: never fetched (x-rivet-inline), restored like the others.
+  const fonts: Record<string, string> = {
+    ...sheets,
+    "/assets/b.css": "@font-face{font-family:F;src:url(/assets/f.woff2)}@font-face{font-family:F Fallback;src:local(Arial)}",
+  };
+  const whole = await inlineCritical(html, async (href) => parseSheet(fonts[href]!));
+  assert.match(whole, /<\/style><link rel="x-rivet-defer" href="\/assets\/a.css"><link rel="x-rivet-inline" href="\/assets\/b.css">/);
+  assert.match(whole, /@font-face\{font-family:F Fallback;src:local\(Arial\)\}<\/style>/);
+  assert.equal(restoreLinks(whole), html);
   // Highlighter classes added later count when asked.
   const coded = html.replace('<p class="x">hi</p>', '<pre data-lang="ts"></pre>');
   const withAdded = await inlineCritical(coded, async (href) => parseSheet(sheets[href] + ".hl-d73a49{color:#cf222e}"), /^hl-/);

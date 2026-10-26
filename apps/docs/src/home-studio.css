@@ -158,6 +158,16 @@
     background-repeat: no-repeat;
     background-clip: text;
   }
+  .hs-word-pause-icon {
+    display: inline-flex;
+  }
+  .hs-word-play-icon,
+  .hs-word-pause[aria-pressed="true"] .hs-word-pause-icon {
+    display: none;
+  }
+  .hs-word-pause[aria-pressed="true"] .hs-word-play-icon {
+    display: inline-flex;
+  }
   .hs-word-pause {
     position: absolute;
     right: 0.5rem;

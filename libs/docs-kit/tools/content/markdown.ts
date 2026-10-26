@@ -252,8 +252,8 @@ export function renderMarkdown(body: string, context: RenderContext, lineOffset 
   };
 
   /**
-   * `<pre data-lang>` of plain lines (`span.line`, marks as `mark-*`): the browser colours it when visible
-   * (components/highlighter.ts). `rv` (`data-rv`) marks compiler-inserted names (`code-rv`), here and in the browser.
+   * `<pre data-lang>` of plain lines (`span.line`, marks as `mark-*`): coloured after prerender
+   * (../highlight-pages.ts; dev: in the browser, components/highlighter.ts). `rv` (`data-rv`) marks compiler-inserted names (`code-rv`), here and in the browser.
    */
   const preOf = (lines: Line[], lang: string, attrs = "", rv = false): string => {
     const piece = (part: string, cls: string, i: number) => {

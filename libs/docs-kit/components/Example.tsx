@@ -9,7 +9,7 @@ const langOfPath = (path: string) => path.match(/\.([a-z]+)$/)?.[1] ?? "txt";
 
 /**
  * Plain lines of a file (optionally a 1-based inclusive range), one `span.line` each (notation marks as `mark-*`);
- * the browser colours them when visible (`highlighter.ts`).
+ * coloured after prerender (`tools/highlight-pages.ts`; dev: by `highlighter.ts` in the browser).
  */
 function Lines({ file, range }: { file: ExampleFile; range?: [number, number] }) {
   const all = linesOf(file);

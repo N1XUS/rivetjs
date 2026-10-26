@@ -13,7 +13,8 @@ import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
  */
 export default defineConfig({
   plugins: [
-    docsSite(),
+    // The home hero's aurora + rotating headline: a plain low-priority module script, no resume runtime at load.
+    docsSite({ scripts: { "/": "src/components/home/hero.ts" } }),
     rivetRouter({
       mode: "static",
       styles: ["src/styles.css"],
