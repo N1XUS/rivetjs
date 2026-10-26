@@ -91,13 +91,28 @@ export function linear(domainMax: number, x0: number, x1: number): (value: numbe
   return (value) => x0 + (Math.min(Math.max(value, 0), span) / span) * (x1 - x0);
 }
 
+// One `Intl.NumberFormat` per option set: `Number.prototype.toLocaleString(locale, options)` builds a new formatter on
+// every call (~10 µs each; 80 % of the server render of a page with a few charts). `format` is the same algorithm
+// (ECMA-402 `toLocaleString` = `new Intl.NumberFormat(locale, options).format`), so labels are unchanged.
+const formats = new Map<number, Intl.NumberFormat>();
+let tick: Intl.NumberFormat | undefined;
+function formatter(digits: number): Intl.NumberFormat {
+  let format = formats.get(digits);
+  if (format === undefined) {
+    // Throws for invalid digits like `toLocaleString` does; only a valid formatter is kept.
+    format = new Intl.NumberFormat("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (formats.size < 32) formats.set(digits, format);
+  }
+  return format;
+}
+
 /** Label with fixed decimals; thousands separated. */
 export function formatValue(value: number, digits = 1): string {
-  return value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  return formatter(digits).format(value);
 }
 /** Tick label: no trailing zeros. */
 export function formatTick(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return (tick ??= new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 })).format(value);
 }
 
 /** Points of a group, best first (ties keep source order). */

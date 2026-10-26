@@ -53,6 +53,13 @@ test("formatting", () => {
   assert.equal(formatValue(30, 1), "30.0");
   assert.equal(formatTick(2.5), "2.5");
   assert.equal(formatTick(200), "200");
+  // Cached formatters print what `toLocaleString` prints (lane X7: one Intl.NumberFormat per option set).
+  for (const value of [0, -0, -1234.5678, 0.005, 1e21, 123456789.987, Number.NaN, Infinity, 2.345, 0.125])
+    for (const digits of [0, 1, 2, 3]) {
+      assert.equal(formatValue(value, digits), value.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits }));
+      assert.equal(formatTick(value), value.toLocaleString("en-US", { maximumFractionDigits: 2 }));
+    }
+  assert.throws(() => formatValue(1, -1), RangeError);
 });
 
 test("sorted: best first, stable on ties", () => {
