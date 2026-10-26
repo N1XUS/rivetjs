@@ -657,11 +657,13 @@ export type BoundaryRecord = [id: number, parent: number, flags: number, name: s
 
 /** What one server flush produced (records by name, chunk per name `m`, listened types per name `e`, read-back props per
  * name `r`), before encoding. */
-export interface FlushTail extends Omit<BoundaryTail, "v" | "n" | "u" | "b"> {
+export interface FlushTail extends Omit<BoundaryTail, "v" | "n" | "u" | "b" | "l"> {
   b: BoundaryRecord[];
   m?: Record<string, string>;
   e?: Record<string, string>;
   r?: Record<string, string>;
+  /** RT-DIET2 mixed lite: name → lite entry URL of the live records (wire: `l`, by name / URL index). */
+  l?: Record<string, string>;
 }
 
 /**
@@ -726,6 +728,15 @@ export interface BoundaryTail {
    * after the list's anchor (`<!--r0<n>[-->`). `DerivedDom`.
    */
   d?: DerivedDom[];
+  /**
+   * RT-DIET2 mixed lite (`data-rt` = the lite runtime on a page whose other records only the full runtime adopts): name
+   * index → URL index of the lite entry (`<Name>$a`) of each live record's name; `n` / `u` stay the ordinary chunks the
+   * full runtime reads.
+   */
+  l?: Record<number, number>;
+  /** RT-DIET2 mixed lite: the full runtime's URL first, then its fetch-ahead list (space separated; the lite runtime
+   * preloads it and imports the first on a link intent or a fallback). */
+  F?: string;
 }
 /**
  * One `BoundaryTail.d` entry: the record whose props hold the array, the list anchor number, the array's key path in the
@@ -752,8 +763,12 @@ export { eachRecord, recAt, nameOf, urlOf } from "./resume-tail.ts";
  * the other fields as they are): tests, tools and DevTools. The runtime reads the wire format in place (`eachRecord`).
  */
 export function expandTail(t: BoundaryTail): FlushTail {
-  const { v: _v, n, u: _u, b: _b, ...rest } = t;
+  const { v: _v, n, u: _u, b: _b, l, ...rest } = t;
   const out: FlushTail = { b: [], ...rest };
+  if (l) {
+    out.l = {};
+    for (const i in l) out.l[n[+i]![0]] = t.u![l[+i]!]!;
+  }
   eachRecord(t, (id, parent, flags, name, signals, props) => {
     const r: BoundaryRecord = [id, parent, flags, n[name]![0], signals.length ? signals : []];
     if (props !== undefined) r.push(props);

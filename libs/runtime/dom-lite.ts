@@ -112,6 +112,8 @@ interface HandOff extends DerivedLoaderApi {
 }
 type Rec = [id: number, name: number, flags: number, rec: LiteRec, state: number /* 0 cold, 1 adopted, 2 fallback */];
 let doc: Document, tail: BoundaryTail, api: DerivedLoaderApi, full: DerivedRuntime | undefined, handing: Promise<DerivedRuntime> | undefined;
+// RT-DIET2 mixed lite (tail `l`): name index → its lite entry's URL index; the other records only the full runtime adopts.
+let mixed: Record<number, number> | undefined;
 const recs = new Map<number, Rec>(),
   // Boundary name index → its chunk module (tail v2 names table `n` → `u`).
   modules = new Map<number, Record<string, unknown> | Promise<unknown>>(),
@@ -119,17 +121,22 @@ const recs = new Map<number, Rec>(),
 const report = (error: unknown): void => api.f(error);
 // A replay is running: the events it dispatches (a replayed click's `input` / `change`) act live, never held behind it.
 let replaying = 0;
-// The records around `node`, outermost first (the loader's walk: `data-b` ancestors, balanced `<!--b<id>-->` openers).
-const around = (node: EventTarget | null): Rec[] =>
-  api
-    .i(node as Node | null, "")
+// The records around `node`, outermost first (the loader's walk: `data-b` ancestors, balanced `<!--b<id>-->` openers);
+// mixed: those listening to `type` (the full runtime's `around`: a context-free unit adopts alone), and none of them a
+// record without a lite entry or a document click listener's match (`data-g`: the router's links) — else null (the full
+// runtime's).
+const around = (node: EventTarget | null, type = ""): Rec[] | null => {
+  const out = api
+    .i(node as Node | null, mixed ? type : "")
     .reverse()
     .map((id) => recs.get(+id)!)
     .filter(Boolean);
+  return mixed && (out.some((r) => !(r[1] in mixed!)) || tail.g?.some((g) => (node as Element | null)?.closest?.(g[1]))) ? null : out;
+};
 const load = (r: Rec): Record<string, unknown> | Promise<unknown> => {
   let m = modules.get(r[1]);
   if (!m) {
-    const url = tail.u![tail.n[r[1]]![1]] ?? miss("" + r[1]);
+    const url = tail.u![mixed ? mixed[r[1]]! : tail.n[r[1]]![1]] ?? miss("" + r[1]);
     modules.set(r[1], (m = api.m(url).then((module) => (modules.set(r[1], module), module))));
   }
   return m;
@@ -163,9 +170,12 @@ function adopt(r: Rec): true | Promise<unknown> {
   }
   return true;
 }
-// Units around `target`: true when all are adopted now, else a promise for the next module.
-function ready(target: EventTarget | null): true | Promise<unknown> {
-  for (const r of around(target)) {
+// Units around `target`: true when all are adopted now (or the full runtime takes the page), else a promise for the next
+// module.
+function ready(target: EventTarget | null, type?: string): true | Promise<unknown> {
+  const rs = around(target, type);
+  if (!rs) return (fallback().catch(report), true);
+  for (const r of rs) {
     const step = adopt(r);
     if (step !== true) return step;
   }
@@ -173,7 +183,9 @@ function ready(target: EventTarget | null): true | Promise<unknown> {
 }
 // Hand the page to the full runtime (one-way): lite-owned records stay done there; queued events go with it.
 function fallback(): Promise<DerivedRuntime> {
-  return (handing ??= import("./dom-lite-full.ts").then((module) => {
+  // Mixed: the ordinary full runtime (tail `F`: its URL, then its fetch-ahead list, all imported at once — no import
+  // waterfall), over the ordinary chunks of `n` / `u`; else the lite graph's copy (`dom-lite-full.ts`).
+  return (handing ??= (tail.F ? Promise.all(tail.F.split(" ").map(api.m)).then((all) => all[0]) : import("./dom-lite-full.ts")).then((module) => {
     for (const type of types) doc.removeEventListener(type, dispatch);
     const rt = module.default as DerivedRuntime,
       l = new Map<number, unknown>(),
@@ -220,7 +232,7 @@ async function drain(): Promise<void> {
   while (queue.length) {
     const item = queue[0]!;
     try {
-      for (let step = ready(item[0].target); step !== true; step = ready(item[0].target)) await step;
+      for (let step = ready(item[0].target, item[0].type); step !== true; step = ready(item[0].target, item[0].type)) await step;
       // A fallback took the queue (the full runtime's `start` replays it); what came in meanwhile follows it.
       if (handing) return void (await handing, queue.splice(0).forEach((held) => full!.cold(held)));
       replay(item);
@@ -235,6 +247,7 @@ const runtime: DerivedRuntime = {
     tail = t;
     doc = d;
     api = loader;
+    mixed = t.l;
     eachRecord(t, (id, _parent, flags, name, signals) => {
       const v: Record<string, unknown> = {};
       for (let i = 0; i < signals.length; i += 2) v[signals[i] as string] = signals[i + 1];
@@ -245,8 +258,8 @@ const runtime: DerivedRuntime = {
   on(event) {
     if (full) return full.on(event);
     if ((queue.length && !replaying) || handing) return false;
-    const step = ready(event.target);
-    if (step === true) return !full;
+    const step = ready(event.target, event.type);
+    if (step === true) return !handing;
     step.catch(() => {});
     return false;
   },
@@ -256,7 +269,9 @@ const runtime: DerivedRuntime = {
   },
   w(target) {
     if (full) return full.w(target);
-    for (const r of around(target)) if (!r[4]) void Promise.resolve(load(r)).catch(report);
+    const rs = around(target);
+    if (!rs) return void fallback().then((rt) => rt.w(target), report);
+    for (const r of rs) if (!r[4]) void Promise.resolve(load(r)).catch(report);
   },
   m(id) {
     if (full) return full.m(id);

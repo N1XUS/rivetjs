@@ -241,7 +241,7 @@ test("resume counter: an earlier theme interaction leaves the counter working wi
     await page.waitForLoadState("networkidle");
     await page.keyboard.press("Escape");
     const prior = await scriptsNow(page);
-    assert.ok(prior.some((name) => /\/ThemeMenu-/.test(name)), `the theme was really loaded before the counter: ${prior.join(", ")}`);
+    assert.ok(prior.some((name) => /\/theme-menu-open-/.test(name)), `the theme was really loaded before the counter: ${prior.join(", ")}`);
     await page.getByRole("button", { name: "Increment counter", exact: true }).click();
     await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "08");
     await page.waitForLoadState("networkidle");

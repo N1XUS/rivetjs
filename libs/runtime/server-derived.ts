@@ -1763,7 +1763,11 @@ function flush(ctx: DerivedRender): FlushTail | null {
   // ZERO Z3: the first flush keeps only weak boundaries (the router's Root / App with nothing live below them) and nothing
   // else for the browser (no island, Async, wake list): the page ships nothing. Later flushes (streamed segments) only
   // follow an `Async`, which keeps the shell's records (`an`).
-  if (ctx.flushed === 0 && weakOnly(ctx)) {
+  // RT-DIET2 DOCS-CHROME: likewise when nothing on the page can become live — no record listens or has a trigger, no
+  // island / `Async` / DOM data — below a weak root (the client router off): its records only render, and its links
+  // (the root's document click listener) load documents, as on a page without them (an MPA: docs sites, every link
+  // `data-rivet-reload`, shipped the tail, the loader and the router on a link intent for nothing).
+  if (ctx.flushed === 0 && (weakOnly(ctx) || inertOnly(ctx))) {
     ctx.flushed = ctx.boundaries.length;
     ctx.listen = [];
     return null;
@@ -1791,7 +1795,8 @@ function flush(ctx: DerivedRender): FlushTail | null {
     // around its target outermost first (`dom-derived.ts` `around`), so a standalone adopt never happens — an independent
     // record there would ship its props for nothing (a route page's `data`, again next to the route data). Without a
     // trigger (`load` / `idle` / `visible` adopt it on their own) it adopts with its parent, as a dependent one.
-    if (any && boundary.flags & INDEPENDENT && boundary.props && !(boundary.flags & TRIGGERS))
+    // (RT-DIET2: not a `CTXFREE` one — its unit reads nothing an ancestor provides, so `around` adopts it standalone.)
+    if (any && boundary.flags & INDEPENDENT && boundary.props && !(boundary.flags & (TRIGGERS | CTXFREE)))
       for (let a = parent; a; a = a.parent)
         if (!(a.flags & COND && !a.kept) && (a === star || ctx.listened?.get(a.name) === "*")) {
           boundary.flags &= ~(INDEPENDENT | CTXFREE);
@@ -1836,10 +1841,11 @@ function flush(ctx: DerivedRender): FlushTail | null {
     if (root) {
       tail.g = ctx.listen.map((match) => [root[0], match]);
       ctx.clicks ||= ctx.listen.join(",");
-      // D5: the document click listener's boundary (the router's `App`) provides the client router to everything below it
-      // (`invalidate`, client navigation from a portal): it listens to every event, so any event inside the page adopts it
-      // first (the pre-D5 `around` order), not only a click on a `g` match (ZERO intake 3: forms drawer overlays).
-      if (ctx.listened?.get(root[3]) !== "*") (((e ??= {})[root[3]] = "*"), (ctx.listened ??= new Map()).set(root[3], "*"));
+      // RT-DIET2: the document click listener's boundary (the router's `Root`) no longer listens to every event (was the
+      // ZERO intake 3 rule): a unit below it that reads what it provides (the client router: `invalidate`, navigation from
+      // a portal) is not `CTXFREE`, and `dom-derived.ts` `around` adopts every record around such a unit's event outermost
+      // first anyway; a `CTXFREE` unit (the build proved it reads nothing the route hosts provide) adopts standalone, and an
+      // event outside every listening record acts natively (no runtime, no router chunk before a link intent).
       ctx.listen = [];
     }
   }
@@ -1892,10 +1898,10 @@ function flush(ctx: DerivedRender): FlushTail | null {
   // ZERO LITE-WIRE: a shell whose records all have lite residuals (and nothing else the lite runtime does not handle)
   // names the lite entries; `derivedTail` writes the lite runtime. Decided once, on the shell: no `Async` → no patch.
   const lite = first && manifest?.lite;
-  if (lite && b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a && !tail.g && !ctx.lean.length) {
+  if (lite && b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a && !ctx.lean.length) {
     const m: Record<string, string> = {};
-    let all = true;
-    for (const record of b) {
+    let all = !tail.g;
+    for (const record of all ? b : []) {
       // RT-DIET: any record with a residual (the compiler emits one only for a compile-time independent boundary). A
       // render-time demotion (`DEMOTED`: props that are not data, or no context proof) concerns re-running the component
       // body with its props / context; a residual never does — it reads no props live and no context — so it adopts the
@@ -1909,6 +1915,27 @@ function flush(ctx: DerivedRender): FlushTail | null {
       m[record[3]] = url;
     }
     if (all) ((tail.m = m), (liteTail = true));
+    // RT-DIET2 mixed lite: every record that can become live (a listening name, no trigger) has a residual and adopts
+    // standalone (independent, context-free or outermost); the others (the router's `Root` / `App`, a renders-only page)
+    // only adopt through the full runtime — on a link intent (`g`) or when the lite runtime falls back. The tail stays the
+    // ordinary one (`m` = ordinary chunks, for the full runtime) plus `l` (lite entries of the live records); `derivedTail`
+    // writes the lite runtime, fetches ahead only it and those entries, and names the full runtime + its fetch-ahead list.
+    else if (manifest!.runtime) {
+      const l: Record<string, string> = {},
+        listened = ctx.listened;
+      let ok = true;
+      for (const record of b) {
+        const types = listened?.get(record[3]);
+        if (!types && !(record[2] & TRIGGERS)) continue;
+        const url = record[2] & (UNKEYED | TRIGGERS) ? undefined : lite.symbols[record[3]];
+        if (url === undefined || !(record[2] & INDEPENDENT) || !(record[2] & CTXFREE || record[1] === 0)) {
+          ok = false;
+          break;
+        }
+        l[record[3]] = url;
+      }
+      if (ok) ((tail.l = l), (liteTail = true));
+    }
   }
   return tail;
 }
@@ -1930,6 +1957,19 @@ function weakOnly(ctx: DerivedRender): boolean {
     if (x.flags & COND && !x.kept) continue;
     if (!x.weak) return false;
     weak = true;
+  }
+  return weak;
+}
+
+/** RT-DIET2: no record the first flush would write can become live, and one of them is weak (the router's root, client router off). */
+function inertOnly(ctx: DerivedRender): boolean {
+  if (ctx.boot || ctx.adopt.length || ctx.asyncs.length || ctx.an || ctx.dom?.length) return false;
+  let weak = false;
+  for (const x of ctx.boundaries) {
+    if (x.flags & COND && !x.kept) continue;
+    // (A weak record's listeners are the router's, which alone do not make a page resumable.)
+    if (x.weak) weak = true;
+    else if (x.an || x.ev || x.flags & TRIGGERS) return false;
   }
   return weak;
 }
@@ -1991,8 +2031,13 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   const manifest = options.manifest,
     runtime = liteTail ? manifest.lite!.runtime : manifest.runtime!,
     nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
-    ahead = fetchAhead(manifest, tail, runtime),
-    when = options.preload?.lean ? "intent" : (options.preload?.ahead ?? "idle");
+    // RT-DIET2 mixed lite: ahead = the lite runtime + the live records' lite entries; the full runtime's list rides in the
+    // tail (`F`, fetched on a link intent / fallback only).
+    ahead = tail.l ? liteAhead(manifest, tail.l, runtime) : fetchAhead(manifest, tail, runtime),
+    // RT-DIET2: a page whose only live records are document click listeners (the router's links, nothing else listening,
+    // no trigger) fetches nothing in the background: its full runtime + router chunks load on the first link intent.
+    when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
+  if (tail.l) tail.F = fetchAhead(manifest, tail, manifest.runtime!) || manifest.runtime!;
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
   const json = encodeTail(tail);
   let events = "";
@@ -2033,6 +2078,26 @@ function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime:
   return ahead;
 }
 const aheads = new WeakMap<object, Map<string, string>>();
+/** RT-DIET2: the tail's only live records are its document click listeners (`g`): no listening name, no trigger. */
+function linksOnly(tail: FlushTail): boolean {
+  if (!tail.g || tail.l || tail.i || tail.a) return false;
+  for (const name in tail.e) if (tail.e[name]) return false;
+  for (const r of tail.b) if (r[2] & TRIGGERS) return false;
+  return true;
+}
+/** RT-DIET2 mixed lite: the lite runtime + the live records' lite entries + their static closures, memoised like `aheads`. */
+function liteAhead(manifest: Partial<ResumeManifest>, l: Record<string, string>, runtime: string): string {
+  let key = "\u0002";
+  for (const name in l) key += "\0" + name;
+  let memo = aheads.get(manifest);
+  if (memo === undefined) aheads.set(manifest, (memo = new Map()));
+  let ahead = memo.get(key);
+  if (ahead === undefined) {
+    ahead = urlsOf(new Set(Object.keys(l)), l, runtime, manifest.deps, []).join(" ");
+    if (memo.size < 512) memo.set(key, ahead);
+  }
+  return ahead;
+}
 /** Per manifest: memo key (`derivedTail`) → the tail script's frozen fragments around the JSON (and nonce) slots. */
 const tails = new WeakMap<object, Map<string, readonly string[]>>();
 function tailFragments(runtime: string, ahead: string, when: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {

@@ -127,3 +127,30 @@ compiled("an independent child below a record that listens to everything ships n
     [3, 1, 0, null],
   ]);
 });
+
+// RT-DIET2: a page whose only live input is the document click listeners (tail `g`; no record listens, no trigger) fetches
+// the full runtime ahead on link intent (`data-fw="intent"`), not on idle: a page nobody navigates from loads no JS.
+compiled("links-only page: the fetch-ahead waits for link intent", async () => {
+  const src = `import { signal } from "@rivetjs/reactivity";
+export function Clock() {
+  const t = signal(1);
+  return <p class="t">{t()}</p>;
+}
+export function Item() {
+  const on = signal(false);
+  return <li onClick={() => on.set(!on())}>{on() ? "on" : "off"}</li>;
+}`;
+  const opts = { module: "src/k.tsx", boundaries: ["Clock", "Item"], independent: ["Clock", "Item"] };
+  const server = compile(src, { target: "server", filename: "k.tsx", resume: opts } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { Clock, Item } = await importServer<{ Clock: () => ServerValue; Item: () => ServerValue }>(server.code);
+  const { _rListen } = await import("@rivetjs/runtime/server-derived");
+  const render = async (listen: boolean, item: boolean) =>
+    (await derivedToString(() => (listen && _rListen("a[href]"), item ? Item() : Clock()), {
+      manifest: { runtime: "/rt.js", symbols: { "src/k.tsx#Clock": "/k.js", "src/k.tsx#Item": "/k.js" } },
+    })) as string;
+  assert.match(await render(true, false), /data-g="a\[href\]" data-fo="\/rt\.js \/k\.js" data-fw="intent"/);
+  assert.doesNotMatch(await render(false, false), /data-fw/);
+  // A listening record: idle as before.
+  assert.doesNotMatch(await render(true, true), /data-fw/);
+});

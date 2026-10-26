@@ -42,6 +42,8 @@ rivetRouter({ clientRouter: true });
 
 An app with a single page route has no client router at all. A CSR app (`mode: "csr"`) always routes in the browser.
 
+Links the router never handles do not load it either: a click on a `#fragment` link, a URL with a scheme (`https://…`, `mailto:`), a `download`, `target="_blank"`, `rel="external"` or `data-rivet-reload` link acts natively before the page's JavaScript has started. A site whose links all load documents (every link `data-rivet-reload`) and that has nothing else to resume ships no JavaScript on any page.
+
 ## Use `<Link>` for typed links
 
 `<Link>` renders the same plain `<a href>`, with two extras: TypeScript checks `to` against your pages (see [typed routes](./typed-routes.md)), and its props set the router's options for this link.

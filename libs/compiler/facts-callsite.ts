@@ -44,6 +44,13 @@ export interface ContextOptions {
   external(file: string, specifier: string): string | null;
   /** Components (`file#Name`, or `file` for its default export) rendered above every shell page: the frame hosts. */
   hosts?: ReadonlySet<string>;
+  /**
+   * RT-DIET2: modules whose default export renders every route module (`resume.roots`: the router's generated `Root`, which
+   * renders `App`, the layouts and the `Router` levels). A route root without call sites then has what they may provide
+   * above it (their provisions, walked without the route page modules they load, plus its `_layout` files) instead of
+   * TOP, so a component a route page renders can be proven context-free.
+   */
+  routeHosts?: ReadonlySet<string>;
   /** Census: overlap results name the shared tokens. */
   debug?: boolean;
 }
@@ -406,10 +413,11 @@ export function callSites(input: CallSiteInput): CallSites {
       if (to && pageFiles.has(to)) wrapperFiles.add(file);
     }
   const hostProv = new Map<string, Set<number>>();
-  const hostProvOf = (id: string): Set<number> => {
-    let out = hostProv.get(id);
+  const hostProvOf = (id: string, skip: ReadonlySet<string> = pageFiles, skip2: ReadonlySet<string> = wrapperFiles): Set<number> => {
+    const memo = (skip === pageFiles ? "" : "\u0001") + id;
+    let out = hostProv.get(memo);
     if (out) return out;
-    hostProv.set(id, (out = new Set()));
+    hostProv.set(memo, (out = new Set()));
     const start = nodeOf(id);
     if (start === null) return (out.add(TOP), out);
     const seen = new Uint8Array(nodes.length);
@@ -422,7 +430,7 @@ export function callSites(input: CallSiteInput): CallSites {
         if (seen[w]) continue;
         seen[w] = 1;
         const file = nodeFile[w];
-        if (file !== undefined && w !== start && (pageFiles.has(file) || wrapperFiles.has(file))) continue;
+        if (file !== undefined && w !== start && (skip.has(file) || skip2.has(file))) continue;
         queue.push(w);
       }
     }
@@ -441,6 +449,33 @@ export function callSites(input: CallSiteInput): CallSites {
     for (const h of hostKeys) for (const t of hostProvOf(h)) out.add(t);
     return out;
   };
+  // RT-DIET2: what the route hosts (`routeHosts`: the router's `Root`, rendering `App`, the layouts and the levels) may
+  // provide above a route module — their provisions without the route page modules they load (`import()` literals: what a
+  // page provides sits below it), plus the page's own `_layout` files (`hostSet` minus the frame hosts).
+  const routeHostFiles = options.routeHosts ?? new Set<string>();
+  const routePages = new Set<string>();
+  for (const [file, byNameV] of input.verdicts)
+    if (!routeHostFiles.has(file) && !/(^|[/\\])_layout\.[jt]sx$/.test(file))
+      for (const name of byNameV.keys()) if (input.isRoot(file + "?" + name)) routePages.add(file);
+  let routeProv: Set<number> | null = null;
+  const routeSet = (file: string): Set<number> => {
+    if (!routeProv) {
+      routeProv = new Set();
+      for (const h of routeHostFiles) for (const t of hostProvOf(h + "?" + (facts.get(h)?.defaultName ?? "default"), routePages, new Set())) routeProv.add(t);
+    }
+    const out = new Set(routeProv);
+    const at = file.lastIndexOf("/routes/");
+    const base = at < 0 ? null : file.slice(0, at + 8);
+    if (base !== null)
+      for (const l of layoutFiles)
+        if (l.startsWith(base) && file.startsWith(l.slice(0, l.lastIndexOf("/") + 1)) && l !== file)
+          for (const [name] of facts.get(l)!.boundaries) for (const t of provOf(l + "?" + name)) out.add(t);
+    return out;
+  };
+  const routeRoot = (id: string): boolean => {
+    const file = id.slice(0, id.lastIndexOf("?"));
+    return routeHostFiles.size > 0 && !routeHostFiles.has(file) && !input.sites.has(id);
+  };
   // ---- above(component): least fixpoint over its call sites (monotone unions); roots / values / unknown: TOP.
   const above = new Map<string, Set<number>>();
   const keys: string[] = [];
@@ -448,7 +483,8 @@ export function callSites(input: CallSiteInput): CallSites {
   for (const id of keys) {
     const list = input.sites.get(id);
     const at = id.lastIndexOf("?");
-    if (input.isRoot(id) || input.escaped.has(id)) above.set(id, new Set(TOPSET));
+    if (input.escaped.has(id)) above.set(id, new Set(TOPSET));
+    else if (input.isRoot(id)) above.set(id, routeRoot(id) ? routeSet(id.slice(0, at)) : new Set(TOPSET));
     else if (!list) above.set(id, input.shell(id) && options.hosts ? hostSet(id.slice(0, at)) : new Set(TOPSET));
     else above.set(id, new Set());
   }

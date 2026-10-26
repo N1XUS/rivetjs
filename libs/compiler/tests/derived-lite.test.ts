@@ -102,7 +102,8 @@ export function Card() {
 it("C1: ineligible boundaries keep the ordinary adopt (no residual)", () => {
   const cases: Record<string, string> = {
     dependent: CARD,
-    component: `import { signal } from "@rivetjs/reactivity";\nimport { Icon } from "./icon.tsx";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}><Icon />{n()}</button>; }`,
+    // RT-DIET2: a component child with a live prop (a static one is skipped, `derived-lite-static.test.ts`).
+    component: `import { signal } from "@rivetjs/reactivity";\nimport { Icon } from "./icon.tsx";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}><Icon n={n()} />{n()}</button>; }`,
     spread: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button {...props} onClick={() => n.set(1)}>{n()}</button>; }`,
     propsInHandler: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button onClick={() => n.set(props.step)}>{n()}</button>; }`,
     structural: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}>{n() ? <b>x</b> : null}</button>; }`,

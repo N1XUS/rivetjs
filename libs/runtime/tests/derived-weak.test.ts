@@ -1,6 +1,6 @@
 // Weak boundaries (ZERO Z3): `_rWeak()` marks the boundary rendering it weak (the router's generated `Root` / `App` with the
 // client router off). A render whose first flush keeps only weak records ships nothing (no tail, loader or runtime); one
-// that also keeps a boundary that is not weak ships every record as before.
+// that also keeps a boundary that is not weak ships every record as before — unless none of them can become live (RT-DIET2).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile } from "@rivetjs/compiler";
@@ -30,6 +30,18 @@ export function Counter() {
     _rBEnd(B);
   }
 }
+export function Plain() {
+  const B = _rB("Plain", 0);
+  try {
+    const n = _rSig("p-0", 2);
+    return _rBOut(B, <p>{n()}</p>);
+  } finally {
+    _rBEnd(B);
+  }
+}
+export function Quiet() {
+  return <Shell><Plain /></Shell>;
+}
 export function Inert() {
   return <Shell><p>static</p></Shell>;
 }
@@ -37,8 +49,12 @@ export function Live() {
   return <Shell><Counter /></Shell>;
 }
 `;
-const manifest = { hash: "t", runtime: "/rt.js", symbols: { Shell: "/page.js", Counter: "/page.js", Inert: "/page.js", Live: "/page.js" } };
-type Mod = Record<"Inert" | "Live", () => ServerValue>;
+const manifest = {
+  hash: "t",
+  runtime: "/rt.js",
+  symbols: { Shell: "/page.js", Counter: "/page.js", Plain: "/page.js", Quiet: "/page.js", Inert: "/page.js", Live: "/page.js" },
+};
+type Mod = Record<"Inert" | "Live" | "Quiet", () => ServerValue>;
 
 async function server(): Promise<Mod> {
   const out = compile(source, { target: "server", filename: "weak.server.tsx" });
@@ -52,6 +68,13 @@ test("server: a render whose records are all weak ships no tail, loader or runti
   assert.ok(!html.includes("rivet/boundaries"), html);
   assert.ok(!html.includes("<script"), html);
   assert.match(html, /<p>static<\/p>/);
+});
+
+test("server (RT-DIET2): below a weak root, records that cannot become live (no listener, trigger, island, Async) ship nothing", async () => {
+  const { Quiet } = await server();
+  const html = (await derivedToString(() => Quiet(), { manifest })) as string;
+  assert.ok(!html.includes("<script"), html);
+  assert.match(html, /<p>2<\/p>/);
 });
 
 test("server: a kept boundary that is not weak keeps the weak records with it", async () => {

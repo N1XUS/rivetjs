@@ -28,7 +28,8 @@
 //! - `<For each={keyed | computed} by={closed-world fn}>{(item, i) => <native row>}</For>` → `_lf(at, each, by, row,
 //!   spec)`: `spec` = the row's template as data (`lite_spec`: tag, decoded literal attrs, text runs, `0, 1` = marker
 //!   pair of a non-sole dynamic child), rows adopt `<!--r[-->` / `<!--]-->` server rows; row bodies allow only
-//!   literal / live attributes and children (a static non-literal → ineligible) and no component child.
+//!   literal / live attributes and children (a static non-literal → ineligible); a static component child
+//!   (`derived_lite_static.rs`, RT-DIET2) makes `spec` `0`: the browser's rows are copies of the first server row.
 //!
 //! Node paths mirror the server markup (`compile.rs` `walk_server` + `derived.rs` `slot_marks`): adjacent JSX text and
 //! folded literal children are one Text node; a dynamic child among others sits between `<!--[-->` / `<!--]-->` (path
@@ -107,7 +108,7 @@ pub(super) struct Names {
     pub lb: String,
 }
 
-type Fail = &'static str;
+pub(super) type Fail = &'static str;
 
 /// Bubbling types `_le` handles through one document listener (`dom-events.ts` `_on`): the delegated set, plus the
 /// bubbling form events the ordinary DOM lowering listens to on the element (RT-DIET lite v2).
@@ -458,6 +459,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             Element(&'b JSXElement<'b>),
             /// A `For` (RT-DIET lite v2): always between `<!--[-->` / `<!--]-->`, rows `<!--r[-->el<!--]-->`.
             List(&'b JSXElement<'b>),
+            /// A static component child (RT-DIET2, `derived_lite_static.rs`): between `<!--[-->` / `<!--]-->`, nothing to bind.
+            Static,
         }
         let mut items: Vec<Item<'a>> = Vec::new();
         let mut run = String::new();
@@ -504,6 +507,14 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     items.push(Item::List(child));
                 }
+                JSXChild::Element(child) if !self.lite_is_for(child) => {
+                    self.lite_static_component(child, &mut |e| self.lite_refs(e, unit, false).map(|class| class == Class::Live))?;
+                    if !run.is_empty() {
+                        items.push(Item::Text);
+                        run.clear();
+                    }
+                    items.push(Item::Static);
+                }
                 _ => return Err("component / fragment child"),
             }
         }
@@ -525,6 +536,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     self.lite_list(list, &at, unit)?;
                     at.push_str("hn");
                 }
+                Item::Static => at.push_str("hn"),
             }
         }
         Ok(())
@@ -585,7 +597,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if !is_native(tree, row) {
             return Err("list row root");
         }
+        // A row with a static component child (`\0` in its spec, RT-DIET2): `0` — the browser builds its rows as copies of
+        // the first server row (`dom-lite-list.ts` `_lf`).
         let spec = self.lite_spec(row)?;
+        let spec = if spec.contains('\0') { "0".to_string() } else { spec };
         let node = format!("__rivetLn{}", unit.vars);
         unit.vars += 1;
         let (outer_node, outer_out) = (std::mem::replace(&mut unit.node, node.clone()), std::mem::take(&mut unit.out));
@@ -666,6 +681,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     parts.push(self.lite_spec(child)?);
                 }
+                // A static component child (checked by `lite_element`): the row is a copy of a server row (`lite_list`).
+                JSXChild::Element(child) if !self.lite_is_for(child) => parts.push("\0".into()),
                 _ => return Err("row child"),
             }
         }

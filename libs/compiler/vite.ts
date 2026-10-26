@@ -1153,6 +1153,8 @@ function rivetPlugin(
         external: contextExternal,
         debug: !!process.env.RIVET_CALLSITE_TRACE,
         ...(hostList.length ? { hosts: new Set(hostList) } : {}),
+        // RT-DIET2: the derived roots (`resume.roots`: the router's `Root`) render every route module.
+        ...(resume?.roots?.length ? { routeHosts: new Set(resume.roots.map((path) => resolve(root, path))) } : {}),
       },
       { families, stateStyled },
     );

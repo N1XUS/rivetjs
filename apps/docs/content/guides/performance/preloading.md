@@ -13,9 +13,11 @@ A Rivet page arrives as finished HTML. The JavaScript of a button is not needed 
 1. The page loads. The inline loader starts; no component code runs.
 2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. Nothing of it runs yet.
 3. When the pointer moves onto a component that reacts to hover, rests on an element (80 ms), it gets focus, a key is pressed, or a finger or the pointer goes down, the loader fetches every file of that list that has not arrived, at high priority and all at once.
-4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root), then the handler. An event that comes before its code is held and replayed.
+4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root, unless the build proved the component reads nothing they provide), then the handler. An event that comes before its code is held and replayed.
 
 With Save-Data on, or on a 2G connection, step 2 is skipped: code loads on intent.
+
+A page whose only interactive part is its links (client navigation, nothing else reacts to events) also skips step 2 unless you set `ahead`: the runtime and the router load when the pointer rests on a link, or on the first click.
 
 Until the code has run, hover, pressed and keyboard-focus styles come from CSS (`:hover`, `:active`, `:focus-visible`): Rivet UI pairs its `data-hovered`, `data-pressed` and `data-focus-visible` styles with the pseudo-class, so the page looks the same before and after. Do the same in your own styles for headless components, except pressed transforms, scales and opacity: an `:active` rule changing those makes the first click about 20 ms slower (measured), so keep them on `data-pressed`.
 

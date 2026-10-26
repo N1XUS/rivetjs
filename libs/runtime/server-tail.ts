@@ -156,6 +156,19 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
   if (t.a) out.a = t.a;
   if (t.c) out.c = t.c;
   if (t.d) out.d = t.d;
+  if (t.l) {
+    // RT-DIET2 mixed lite: name index → URL index (the names are the records' own: indexed above).
+    const l: Record<number, number> = {};
+    for (const name in t.l) {
+      const short = shortUrl(t.l[name]!, base);
+      let ui = (urls ??= new Map()).get(short) ?? -1;
+      if (ui < 0) (urls.set(short, (ui = (u ??= []).length)), u.push(short));
+      l[nameIdx(name)] = ui;
+    }
+    out.l = l;
+    if (u) out.u = u;
+  }
+  if (t.F) out.F = t.F;
   return out;
 }
 

@@ -8,7 +8,7 @@ import { test } from "vitest";
 import assert from "node:assert/strict";
 import { compile, hasDerivedModel } from "@rivetjs/compiler";
 import type { ServerValue } from "@rivetjs/runtime/server";
-import { derivedToString } from "@rivetjs/runtime/server-derived";
+import { _rListen, derivedToString } from "@rivetjs/runtime/server-derived";
 import type { Page } from "playwright";
 import { importServer } from "./resume/compile.ts";
 import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
@@ -228,3 +228,59 @@ compiled("RT-DIET: nano state — writes in one handler flush once, the first mo
     );
   });
 });
+
+compiled(
+  "RT-DIET2 mixed lite: lite boundaries adopt on the lite runtime; a document click listener's match hands the page to the ordinary full runtime",
+  async () => {
+    // The build proved `Counter` context-free at its call site (CTXFREE): it adopts standalone, lite-eligible next to a g root.
+    const resume = { ...RESUME, free: ["Counter"] };
+    const server = compile(SOURCE, { target: "server", filename: "c.tsx", resume } as never);
+    const dom = compile(SOURCE, { target: "dom", filename: "c.tsx", resume } as never);
+    const key = /__rivetR_sig\("([^"]+)"/.exec(dom.code)![1]!;
+    const { Page } = await importServer<{ Page: (props: { n: number }) => ServerValue }>(server.code);
+    const html = (await derivedToString(
+      () => {
+        _rListen("a.g");
+        return Page({ n: 3 });
+      },
+      {
+        manifest: {
+          runtime: "/rt.js",
+          symbols: { "src/c.tsx#Counter": "/c-full.js" },
+          lite: { runtime: "/lite.js", symbols: { "src/c.tsx#Counter": "/c.js" } },
+        },
+      },
+    )) as string;
+    assert.match(html, /data-rt="\/lite\.js"/);
+    assert.match(html, /data-fo="\/lite\.js \/c\.js"/);
+    assert.match(html, /"l":\{"0":1\}/);
+    assert.match(html, /"F":"\/rt\.js \/c-full\.js"/);
+    const site = {
+      ...DERIVED_BUILD,
+      "/": '<!doctype html><html><body><a class="g" href="#x">go</a>' + html + "</body></html>",
+      "/lite.js": 'export { default } from "/dom-lite.ts";',
+      "/rt.js": 'export { default } from "/dom-derived.ts";',
+      "/c.js": rewrite(residual("nfn", key)),
+      "/c-full.js": rewrite(dom.code),
+    };
+    await withPage(site, async (page, requests) => {
+      await page.goto("http://rivet.test/");
+      await page.click(".c:nth-child(2) .inc");
+      await page.waitForFunction(() => document.querySelectorAll(".n")[1]!.textContent === "Count: 1");
+      assert.ok(!requests.includes("/rt.js") && !requests.includes("/dom-derived.ts"), requests.join(" "));
+      // A link click (tail `g`): the ordinary runtime (tail `F`) takes over; the lite boundary stays its own.
+      await page.click("a.g");
+      await page.waitForFunction(() => location.hash === "#x");
+      await page.waitForFunction(
+        () => (globalThis as { __rt?: boolean }).__rt || performance.getEntriesByType("resource").some((e) => e.name.endsWith("/rt.js")),
+      );
+      await page.click(".c:nth-child(1) .inc");
+      await page.waitForFunction(() => document.querySelectorAll(".n")[0]!.textContent === "Count: 1");
+      await page.click(".c:nth-child(2) .inc");
+      await page.click(".c:nth-child(3) .inc");
+      await page.waitForFunction(() => document.querySelectorAll(".n")[2]!.textContent === "Count: 1");
+      assert.deepEqual(await counts(page), ["Count: 1", "Count: 2", "Count: 1"]);
+      assert.ok(requests.includes("/rt.js") && requests.includes("/c-full.js"), requests.join(" "));
+    });
+  },
+);

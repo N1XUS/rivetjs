@@ -247,6 +247,13 @@ function rootComponent(transitions: boolean, search: boolean, weak: string): str
   ];
 }
 
+/**
+ * RT-DIET2: the document click listener's selector (`_rListen`, loader `data-g`): the links the client router may
+ * intercept (`routableAnchor`). A URL with a scheme or `//` is left out too (and a relative one with a `:`): before the
+ * runtime runs, it loads its document.
+ */
+export const LINKS = "a[href]:not([href^='#'],[href*=':'],[href^='//'],[download],[data-rivet-reload],[rel~=external],[target=_blank])";
+
 /** Generate the app, server entry, route table and route types for a scanned table. */
 export function generate(table: RouteTable, options: CodegenOptions): Generated {
   const outDir = options.outDir ?? ".rivet";
@@ -886,9 +893,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
           ...(single
             ? []
             : [
-                "/** Derived resume model: link clicks anywhere in the document are `Root`'s (its App's document click listener). */",
+                "/** Derived resume model: link clicks anywhere in the document are `Root`'s (its App's document click listener) —",
+                " * not the links the client router leaves to the browser (`routableAnchor`: reload, download, external, another",
+                " * tab, a fragment, an absolute / scheme URL): before the runtime runs, those act natively (no boot). */",
                 "function Links() {",
-                '  _rListen("a[href]");',
+                `  _rListen(${str(LINKS)});`,
                 "  return null;",
                 "}",
               ]),

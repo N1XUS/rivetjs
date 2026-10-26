@@ -174,19 +174,20 @@
  },
  "computed-total": {
   "site": "docs",
-  "html": 8711,
+  "html": 8746,
   "holes": 10,
   "records": 1,
-  "stateBytes": 132,
+  "stateBytes": 131,
   "inlineJsBytes": 5720,
-  "files": 3,
-  "jsRaw": 90057,
-  "jsGz": 32246,
-  "jsBr": 29244,
+  "files": 4,
+  "jsRaw": 8170,
+  "jsGz": 4212,
+  "jsBr": 3811,
   "urls": [
-   "/assets/dom-derived.js",
-   "/assets/plus.js",
-   "/assets/routes.js"
+   "/assets/dom-lite.js",
+   "/assets/dom-lite-attr.js",
+   "/assets/dom-lite-list.js",
+   "/assets/index.js"
   ]
  },
  "data-grid-selection": {
@@ -345,9 +346,9 @@
   "stateBytes": 162,
   "inlineJsBytes": 5720,
   "files": 2,
-  "jsRaw": 5465,
-  "jsGz": 2769,
-  "jsBr": 2515,
+  "jsRaw": 5751,
+  "jsGz": 2891,
+  "jsBr": 2612,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/index.js"
@@ -648,17 +649,18 @@
  },
  "todo-list": {
   "site": "docs",
-  "html": 7425,
+  "html": 7459,
   "holes": 3,
   "records": 1,
   "stateBytes": 146,
   "inlineJsBytes": 5720,
-  "files": 4,
-  "jsRaw": 8324,
-  "jsGz": 4368,
-  "jsBr": 3924,
+  "files": 5,
+  "jsRaw": 8929,
+  "jsGz": 4720,
+  "jsBr": 4223,
   "urls": [
    "/assets/dom-lite.js",
+   "/assets/dom-lite-attr.js",
    "/assets/dom-lite-list.js",
    "/assets/dom-lite-model.js",
    "/assets/index.js"
@@ -685,9 +687,9 @@
   "stateBytes": 173,
   "inlineJsBytes": 5720,
   "files": 2,
-  "jsRaw": 5482,
-  "jsGz": 2782,
-  "jsBr": 2530,
+  "jsRaw": 5768,
+  "jsGz": 2907,
+  "jsBr": 2629,
   "urls": [
    "/assets/BookCard.js",
    "/assets/dom-lite.js"
@@ -701,9 +703,9 @@
   "stateBytes": 343,
   "inlineJsBytes": 5720,
   "files": 3,
-  "jsRaw": 7275,
-  "jsGz": 3766,
-  "jsBr": 3428,
+  "jsRaw": 7652,
+  "jsGz": 3952,
+  "jsBr": 3581,
   "urls": [
    "/assets/dom-lite.js",
    "/assets/dom-lite-list.js",

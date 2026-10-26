@@ -38,6 +38,8 @@ mod server_link;
 mod derived;
 // ZERO C1 (2026-10-25): lite residuals `<Name>$a` on the derived DOM target.
 mod derived_lite;
+// RT-DIET2 (2026-10-26): static component children inside lite residuals.
+mod derived_lite_static;
 // ZERO REGRESS (2026-10-26): independent boundaries' rendered-only props read back from the markup (`_rB` `read`).
 mod derived_read;
 // exception: lane INCR2 — `$incr` facts of proven `<For>` rows (opt-in `incr`).

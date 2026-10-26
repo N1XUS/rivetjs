@@ -59,7 +59,10 @@ test("search: a cold Ctrl+K fetches only the palette + light overlay primitives;
     await input.waitFor({ state: "visible" });
     await page.waitForFunction(() => document.activeElement?.matches(".search-box input"));
     await page.waitForLoadState("networkidle");
-    const fetched = js.slice(mark);
+    // The DOM runtime chunk (RT-DIET2 DOCS-CHROME: docs pages boot no runtime before input, so the first overlay brings
+    // it; once per page, shared with the theme menu / drawer) is not the palette's.
+    const fetched = js.slice(mark).filter(([path]) => !/\/dom-derived-[\w-]+\.js$/.test(path));
+    assert.ok(js.slice(mark).length - fetched.length <= 1, "one DOM runtime chunk");
     const bytes = fetched.reduce((sum, [, size]) => sum + size, 0);
     assert.ok(bytes <= PALETTE_BUDGET, `palette fetched ${bytes} B: ${fetched.map(([path, size]) => `${path} ${size}`).join(", ")}`);
     assert.equal(await page.getByRole("dialog", { name: "Search the documentation" }).getAttribute("aria-modal"), "true");

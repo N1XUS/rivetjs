@@ -16,7 +16,7 @@ type Row<T> = [key: unknown, item: Signal<T>, index: Signal<number>, nodes: Node
 /**
  * A keyed list (`<For each by>`; RT-DIET lite v2): `at` = its content opener; server rows `<!--r[-->el<!--]-->` are
  * adopted in order (one per item of `each()`, else `LiteMiss`), each through `row(el, item, index)`; later lists
- * reconcile by key — kept rows get their new item / index, new rows are built from `spec`, removed rows release their
+ * reconcile by key — kept rows get their new item / index, new rows are built from `spec` (`0`: copies of the first server row), removed rows release their
  * bindings, the rest move into order.
  */
 export function _lf<T>(
@@ -24,7 +24,7 @@ export function _lf<T>(
   each: () => readonly T[],
   by: (item: T, index: number) => unknown,
   row: (n: Element, item: Signal<T>, index: Signal<number>) => void,
-  spec: LiteSpec,
+  spec: LiteSpec | 0,
 ): void {
   const d = at.ownerDocument!,
     end = _lw(at, "h"),
@@ -32,12 +32,13 @@ export function _lf<T>(
       const x = signal(item),
         i = signal(index),
         mine: Eff[] = [];
-      nodes ??= [d.createComment("r["), build(d, spec), d.createComment("]")];
+      nodes ??= [d.createComment("r["), spec ? build(d, spec) : tpl!.cloneNode(true), d.createComment("]")];
       own(mine, () => row(nodes[1] as Element, x, i));
       return [by(item, index), x, i, nodes, mine];
     };
   let rows: Row<T>[] = [],
-    first = true;
+    first = true,
+    tpl: Element | undefined;
   untracked(() => {
     const items = each();
     for (let n = at.nextSibling, i = 0; n != end; n = n!.nextSibling, i++) {
@@ -48,6 +49,10 @@ export function _lf<T>(
       n = close!;
     }
     if (rows.length != items.length) miss("rows");
+    // RT-DIET2: a row holding a static component child (spec `0`) is built as a copy of the first server row (its live
+    // parts are the row's bindings, rewritten when they run); a boundary inside it (its own record) is not copied.
+    // (Its current state does not matter: a copy's bindings rewrite every live part.)
+    spec || (rows.length && !/--b\d|data-b/.test((tpl = rows[0]![3][1] as Element).outerHTML)) || miss("copy");
   });
   effect(() => {
     const next = each();

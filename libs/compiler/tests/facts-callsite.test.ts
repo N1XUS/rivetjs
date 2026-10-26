@@ -135,3 +135,43 @@ import { ThemeContext } from "./ctx.tsx";
 export default function Demo() { return provide(ThemeContext, "dark", () => <div><HookPart label="a" /></div>); }`);
   assert.deepEqual(out.callSites!.free("src/parts.tsx"), []);
 });
+
+test("RT-DIET2: a route module's `above` is what the route hosts provide (walked without the pages they load), not TOP", () => {
+  const sources: Record<string, string> = {
+    "src/ctx.tsx": CTX,
+    "src/parts.tsx": PARTS,
+    "src/page.tsx": `import { HookPart } from "./parts.tsx";
+export default function Index() { return <div><HookPart label="a" /></div>; }`,
+  };
+  const run = (app: string, routeHosts: boolean) => {
+    const all = { ...sources, "src/app.tsx": app };
+    const facts = new Map<string, ModuleFacts>();
+    for (const [file, source] of Object.entries(all)) facts.set(file, moduleFacts(source, file, { boundaries: true, refs: true }));
+    const resolved = new Map<string, Map<string, string>>();
+    for (const file of Object.keys(all)) {
+      const map = new Map<string, string>();
+      for (const [, { from }] of facts.get(file)!.imports) if (from.startsWith("./")) map.set(from, "src/" + from.slice(2));
+      resolved.set(file, map);
+    }
+    return boundaryFacts(facts, resolved, new Set(["src/page.tsx", "src/app.tsx"]), new Set(), {
+      external: (_file, spec) => (spec.startsWith("@rivetjs/") ? null : "pkg:" + spec),
+      hosts: new Set(),
+      ...(routeHosts ? { routeHosts: new Set(["src/app.tsx"]) } : {}),
+    }).callSites!;
+  };
+  // The host loads the page (`import()`): what the page provides sits below it, not above.
+  const plain = `export default function App(props: { children: unknown }) { return <body>{props.children}</body>; }
+export const load = () => import("./page.tsx");`;
+  const provides = `import { provide } from "@rivetjs/reactivity";
+import { ThemeContext } from "./ctx.tsx";
+export default function App(props: { children: unknown }) { return provide(ThemeContext, "dark", () => <body>{props.children}</body>); }
+export const load = () => import("./page.tsx");`;
+  let out = run(plain, false);
+  assert.deepEqual(out.free("src/parts.tsx"), []);
+  assert.deepEqual(out.trace.get("src/parts.tsx?HookPart"), ["above-top"]);
+  out = run(plain, true);
+  assert.deepEqual(out.free("src/parts.tsx"), ["HookPart"]);
+  out = run(provides, true);
+  assert.deepEqual(out.free("src/parts.tsx"), []);
+  assert.deepEqual(out.trace.get("src/parts.tsx?HookPart"), ["overlap"]);
+});

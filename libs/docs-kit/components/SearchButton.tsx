@@ -8,6 +8,8 @@ import { Icon } from "@rivetjs/kit/icon";
  * buttons stop the propagation of keys pressed on them); `icon` (narrow top bar) is icon-only and
  * registers none.
  *
+ * Plain markup (RT-DIET2 DOCS-CHROME): the click that opens the dialog is the docs page script's too (no boundary).
+ *
  * The dialog chunk (palette + light cdk overlay primitives) is fetched ahead of the press (CHUNK-CYCLE 2026-10-20):
  * on a pointer over / focus of either trigger and on a lone Ctrl / Meta keydown (the shortcut's first key), so the
  * press itself loads nothing. The shortcuts and that warm-up are plain document listeners of the docs page script
@@ -24,10 +26,6 @@ export function SearchButton({ variant = "bar", shortcuts = true }: { variant?: 
       data-rivet-reload=""
       aria-label="Search"
       aria-keyshortcuts={variant === "bar" && shortcuts ? "/ Control+K Meta+K" : undefined}
-      onClick={(event) => {
-        event.preventDefault();
-        void import("../search/dialog.tsx").then((module) => module.openSearch());
-      }}
     >
       <Icon icon={Search} size={variant === "bar" ? 16 : 20} strokeWidth={1.75} />
       {variant === "bar" ? (

@@ -51,7 +51,7 @@ const SCRIPT_ATTRS = ["data-theme", "data-theme-pref", "data-fonts"];
  * hero glow, proof strip). A site adds its own with `site.config.ts` `criticalCss.extraSelectors`.
  */
 export const CLIENT_SELECTORS: readonly string[] = [
-  // Shell overlays (components/ThemeMenu.tsx, MobileMenu.tsx).
+  // Shell overlays (components/theme-menu-open.tsx, mobile-menu-open.tsx: mounted on the first activation).
   ".menu-popover .menu .menu-item .menu-item-label .menu-check",
   ".drawer-overlay .drawer .drawer-dialog .drawer-body .drawer-sections .drawer-close .top-link",
   // cdk overlay layer (portal, positioned popovers, overlay service panes) + interaction states set on mount / input.
