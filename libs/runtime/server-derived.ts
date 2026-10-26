@@ -1896,7 +1896,12 @@ function flush(ctx: DerivedRender): FlushTail | null {
     const m: Record<string, string> = {};
     let all = true;
     for (const record of b) {
-      const url = record[2] & INDEPENDENT ? lite.symbols[record[3]] : undefined;
+      // RT-DIET: any record with a residual (the compiler emits one only for a compile-time independent boundary). A
+      // render-time demotion (`DEMOTED`: props that are not data, or no context proof) concerns re-running the component
+      // body with its props / context; a residual never does — it reads no props live and no context — so it adopts the
+      // server nodes alike.
+      // (`UNKEYED`: a keyed value that is not data stayed off the record; a residual would take the site's init instead.)
+      const url = record[2] & UNKEYED ? undefined : lite.symbols[record[3]];
       if (url === undefined) {
         all = false;
         break;

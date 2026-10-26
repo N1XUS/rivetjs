@@ -326,7 +326,9 @@ export function boundaryFacts(
       // does not export adopts with its parent (else a `COND` parent left unkept strands it: no record, no chunk export).
       else {
         const list = sites.get(id);
-        if (!list) verdict.dependentBecause = "no-call-site";
+        // A shell (ZERO A1: rendered only by a host that never adopts it) taking no props has no parent to adopt with and
+        // nothing a call site could pass: standalone is its only adopt (RT-DIET: docs frame pages, then lite residuals).
+        if (!list) shell(id) && c.params === "none" ? (verdict.independent = true) : (verdict.dependentBecause = "no-call-site");
         else if (name !== "default" && ![...f.exports.values()].includes(name) && list.every((s) => s.caller.startsWith(file + "?")))
           verdict.dependentBecause = "not-exported";
         else if (list.every((s) => s.data)) verdict.independent = true;

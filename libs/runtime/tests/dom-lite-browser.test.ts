@@ -25,8 +25,9 @@ const RESUME = { module: "src/c.tsx", boundaries: ["Counter"], independent: ["Co
 // The hand-written residual of `Counter` (what lite emission produces): the keyed signal from the record, the button's
 // handler, the count text after its content opener. `walk` = the path to that opener from the button.
 // `read` (ZERO X9): the count's initial value read from the page (`_lr` codec 1: the text as a number), not the record.
-const residual = (walk = "nfn", key?: string, read = false) => `import { _ls, _le, _lr, _lt, _lw } from "@rivetjs/runtime/dom-lite";
+const residual = (walk = "nfn", key?: string, read = false, failId = 0) => `import { _ls, _le, _lr, _lt, _lw } from "@rivetjs/runtime/dom-lite";
 export function Counter$a(n, r) {
+  if (r.id === ${failId}) throw Error("LiteMiss test");
   const b = n.firstChild, at = _lw(b, ${JSON.stringify(walk)}),
     count = ${read ? `_lr(r, ${JSON.stringify(key ?? "KEY")}, at, 1)` : `_ls(r, ${JSON.stringify(key ?? "KEY")}, 0)`};
   _le(r, b, "click", () => count.update((x) => x + 1));
@@ -35,7 +36,10 @@ export function Counter$a(n, r) {
 export const Counter$c = () => import("/c-full.js");`;
 
 const compiled = hasDerivedModel() ? test : test.skip;
-async function files(n: number, options: { runtime?: "lite" | "full"; walk?: string; wake?: boolean; read?: string } = {}): Promise<Record<string, string>> {
+async function files(
+  n: number,
+  options: { runtime?: "lite" | "full"; walk?: string; wake?: boolean; read?: string; failId?: number } = {},
+): Promise<Record<string, string>> {
   const server = compile(SOURCE, { target: "server", filename: "c.tsx", resume: RESUME } as never);
   const dom = compile(SOURCE, { target: "dom", filename: "c.tsx", resume: RESUME } as never);
   assert.deepEqual(server.diagnostics, []);
@@ -55,7 +59,7 @@ async function files(n: number, options: { runtime?: "lite" | "full"; walk?: str
     "/lite.js": 'export { default } from "/dom-lite.ts";',
     "/rt.js": 'export { default } from "/dom-derived.ts";',
     // X9: the residual reads a key the record does not have (what DOMREAD elision leaves).
-    "/c.js": rewrite(residual(options.walk, options.read !== undefined ? "elided" : key, options.read !== undefined)),
+    "/c.js": rewrite(residual(options.walk, options.read !== undefined ? "elided" : key, options.read !== undefined, options.failId)),
     "/c-full.js": rewrite(dom.code),
   };
 }
@@ -181,5 +185,46 @@ compiled("X9: a residual reads a keyed signal's initial value from the page (`_l
     await page.click(".c:nth-child(1) .inc");
     await page.waitForFunction(() => /^Count: \d+$/.test(document.querySelectorAll(".n")[0]!.textContent!));
     assert.ok(requests.includes("/c-full.js"), requests.join(" "));
+  });
+});
+
+compiled("RT-DIET: after a fallback, a lite-adopted boundary keeps working through the full runtime's delegation (no second listener)", async () => {
+  // Record ids: the page has none of its own (no handler), counters are 1, 2 (the second one's residual throws).
+  await withPage(await files(2, { failId: 2 }), async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    await page.click(".c:nth-child(1) .inc");
+    await page.waitForFunction(() => document.querySelectorAll(".n")[0]!.textContent === "Count: 1");
+    assert.ok(!requests.includes("/dom-derived.ts"), requests.join(" "));
+    await page.click(".c:nth-child(2) .inc");
+    await page.waitForFunction(() => document.querySelectorAll(".n")[1]!.textContent === "Count: 1");
+    assert.ok(requests.includes("/dom-derived.ts") && requests.includes("/c-full.js"), requests.join(" "));
+    // The lite boundary: exactly one handler run per click (one delegation), its nano state intact.
+    await page.click(".c:nth-child(1) .inc");
+    await page.click(".c:nth-child(2) .inc");
+    await page.waitForFunction(() => document.querySelectorAll(".n")[1]!.textContent === "Count: 2");
+    assert.deepEqual(await counts(page), ["Count: 2", "Count: 2"]);
+  });
+});
+
+compiled("RT-DIET: nano state — writes in one handler flush once, the first mouse click's DOM update lands one task later", async () => {
+  await withPage(await files(1), async (page) => {
+    await page.goto("http://rivet.test/");
+    await page.click(".inc");
+    await page.waitForFunction(() => document.querySelector(".n")!.textContent === "Count: 1");
+    // Live: a trusted mouse click after the first one per document flushes synchronously (read in its own task).
+    await page.evaluate(() =>
+      document
+        .querySelector(".inc")!
+        .addEventListener("click", () => ((window as unknown as { seen: string }).seen = document.querySelector(".n")!.textContent!)),
+    );
+    await page.click(".inc");
+    await page.waitForFunction(() => document.querySelector(".n")!.textContent === "Count: 2");
+    // The page's own listener on the button runs before the document's delegation: it saw the old text.
+    assert.equal(await page.evaluate(() => (window as unknown as { seen: string }).seen), "Count: 1");
+    // A synthetic click (not trusted): flushed at the end of its dispatch.
+    assert.equal(
+      await page.evaluate(() => (document.querySelector<HTMLButtonElement>(".inc")!.click(), document.querySelector(".n")!.textContent)),
+      "Count: 3",
+    );
   });
 });

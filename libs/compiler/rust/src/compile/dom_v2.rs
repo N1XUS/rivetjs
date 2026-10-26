@@ -215,7 +215,7 @@ pub(super) fn delegated(event: &str) -> bool {
 }
 
 /// An attribute written with `setAttribute` as is: not boolean, URL-bearing, namespaced or a control property.
-fn plain_attribute(name: &str) -> bool {
+pub(super) fn plain_attribute(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
     !lower.contains(':')
         && !BOOLEAN_NAMES.contains(&lower.as_str())

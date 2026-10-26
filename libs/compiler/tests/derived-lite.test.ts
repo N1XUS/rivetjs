@@ -45,7 +45,7 @@ it("C1: lite entry for an eligible independent boundary; static props text needs
   assert.ok(!out.code.includes("Card$a") && !out.code.includes("dom-lite"), out.code);
   assert.deepEqual(out.lite?.names, ["src/c.tsx#Card"]);
   const code = out.lite!.code.replace(/\s+/g, " ");
-  assert.match(code, /^import \{ _ls as \w+, _le as \w+, _lt as \w+, _lw as \w+, _la as \w+ \} from "@rivetjs\/runtime\/dom-lite";/);
+  assert.match(code, /^import \{ _ls as \w+, _le as \w+, _lt as \w+, _lw as \w+, _lq as \w+ \} from "@rivetjs\/runtime\/dom-lite";/);
   assert.ok(!/import \{[^}]*\} from "\.?\/?c\.tsx"/.test(code) && !code.includes("@rivetjs/runtime/dom-derived"), code);
   // A module constant live code reads is copied (data literal).
   assert.match(code, /const LABELS = \["off", "on"\];/);
@@ -57,7 +57,8 @@ it("C1: lite entry for an eligible independent boundary; static props text needs
   assert.ok(!/__rivetL_s\([^)]*"x"\)/.test(code) && !code.includes("@rivetjs/reactivity"), code);
   // `{title}` / `{n}` / `data-n` are props (recorded data, never change): no binding.
   assert.ok(!code.includes("title") && !code.includes("data-n"), code);
-  assert.match(code, /__rivetL_a\(__rivetLe\d, "aria-pressed", \(\) => on\(\) \? "true" : "false"\)/);
+  // A plain attribute: `_lq` (`setAttribute`; RT-DIET: the writer is picked by name, `_la` only for URL / form / enumerated ones).
+  assert.match(code, /__rivetL_q\(__rivetLe\d, "aria-pressed", \(\) => on\(\) \? "true" : "false"\)/);
   assert.match(code, /__rivetL_e\(__rivetLr, __rivetLe\d, "click", \(\) => \{/);
 });
 
@@ -74,11 +75,28 @@ export function Card(props) { const { title } = props; const read = signal(false
   );
 });
 
-it("C1: a never-written signal a handler reads is re-declared (its `signal` import comes along)", () => {
+it("C1: a never-written signal a handler reads is re-declared (the lite world's `signal`, RT-DIET)", () => {
   const code = lite(`import { signal as s } from "@rivetjs/reactivity";
 export function Card() { const step = s(2); const n = s(0); return <button onClick={() => n.set(n() + step())}>{n()}</button>; }`)!.code;
-  assert.match(code, /import \{ signal as s \} from "@rivetjs\/reactivity";/);
+  assert.match(code, /import \{ signal as s \} from "@rivetjs\/runtime\/dom-lite";/);
+  assert.ok(!code.includes("@rivetjs/reactivity"), code);
   assert.match(code, /const step = s\(2\);/);
+});
+
+it("RT-DIET: a keyed signal no live code reads is not declared; a non-literal init comes from the record (no init argument)", () => {
+  const code = lite(`import { signal } from "@rivetjs/reactivity";
+export function Card() {
+  const at = signal(new Date().toISOString());
+  const start = signal(Date.now());
+  const n = signal(0);
+  return <div><p>{at()}</p><button onClick={() => (n.set(n() + 1), start.set(Date.now()))}>{n()} {start()}</button></div>;
+}`)!.code.replace(/\s+/g, " ");
+  // `at` is never written: its text is what the server rendered (static), no declaration, its init never runs again.
+  assert.ok(!code.includes("toISOString") && !/const at\b/.test(code), code);
+  // `start` is live (a binding reads it): the record's value, no init argument (a miss when the record lacks it).
+  assert.match(code, /const start = __rivetL_s\(__rivetLr, "[0-9a-z]{5}-1"\);/);
+  assert.ok(!code.includes("signal(Date.now"), code);
+  assert.match(code, /const n = __rivetL_s\(__rivetLr, "[0-9a-z]{5}-2", 0\);/);
 });
 
 it("C1: ineligible boundaries keep the ordinary adopt (no residual)", () => {
@@ -87,12 +105,10 @@ it("C1: ineligible boundaries keep the ordinary adopt (no residual)", () => {
     component: `import { signal } from "@rivetjs/reactivity";\nimport { Icon } from "./icon.tsx";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}><Icon />{n()}</button>; }`,
     spread: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button {...props} onClick={() => n.set(1)}>{n()}</button>; }`,
     propsInHandler: `import { signal } from "@rivetjs/reactivity";\nexport function Card(props) { const n = signal(0); return <button onClick={() => n.set(props.step)}>{n()}</button>; }`,
-    local: `import { signal, computed } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); const d = computed(() => n() * 2); return <button onClick={() => n.set(1)}>{d()}</button>; }`,
     structural: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(1)}>{n() ? <b>x</b> : null}</button>; }`,
     nonDelegated: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <div onScroll={() => n.set(1)}>{n()}</div>; }`,
     moduleSignal: `import { signal } from "@rivetjs/reactivity";\nconst shared = signal(0);\nexport function Card() { const n = signal(0); return <button onClick={() => { n.set(1); shared.set(1); }}>{n()}</button>; }`,
     imported: `import { signal } from "@rivetjs/reactivity";\nimport { step } from "./step.ts";\nexport function Card() { const n = signal(0); return <button onClick={() => n.set(step)}>{n()}</button>; }`,
-    liveClass: `import { signal } from "@rivetjs/reactivity";\nexport function Card() { const n = signal(0); return <button class={n() ? "a" : "b"} onClick={() => n.set(1)}>x</button>; }`,
   };
   for (const [name, source] of Object.entries(cases)) {
     const resume = name === "dependent" ? { ...RESUME, independent: [] } : RESUME;
@@ -154,3 +170,118 @@ for (const runtime of ["lite", "full"] as const) {
     });
   });
 }
+
+// RT-DIET lite v2: keyed lists (`For`: server rows adopted, new rows from the row spec, removed rows released), `computed`
+// locals, local functions, live `class` / `checked`, `model:value`, `submit` / `change` handlers.
+const TODOS = `import { signal, computed } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+export function Todos({ n }: { n: number }) {
+  const todos = signal([{ id: 1, text: "One", done: true }, { id: 2, text: "Two", done: false }]);
+  const draft = signal("");
+  const left = computed(() => todos().filter((t) => !t.done).length);
+  const label = (count: number) => count + (count === 1 ? " item" : " items");
+  return (
+    <div class="todos" data-n={n}>
+      <form onSubmit={(event) => { event.preventDefault(); const text = draft().trim(); if (!text) return; todos.update((list) => [...list, { id: list.length + 10, text, done: false }]); draft.set(""); }}>
+        <input class="new" model:value={draft} />
+        <button class="add">Add</button>
+      </form>
+      <ul>
+        <For each={todos} by={(t) => t.id}>
+          {(todo, i) => (
+            <li class="row">
+              <input type="checkbox" class="done" checked={todo().done} onChange={() => todos.update((list) => list.map((t) => (t.id === todo().id ? { ...t, done: !t.done } : t)))} />
+              <span class={todo().done ? "text off" : "text"}>{i()}: {todo().text}</span>
+              <button class="rm" onClick={() => todos.update((list) => list.filter((t) => t.id !== todo().id))}>x</button>
+            </li>
+          )}
+        </For>
+      </ul>
+      <p class="left">{label(left())} left</p>
+    </div>
+  );
+}
+export function Page() {
+  return <main><Todos n={1} /></main>;
+}`;
+const TODO_RESUME = { module: "src/c.tsx", boundaries: ["Todos"], independent: ["Todos"] };
+async function todoFiles(runtime: "lite" | "full" = "lite"): Promise<Record<string, string>> {
+  const server = compile(TODOS, { target: "server", filename: "c.tsx", resume: TODO_RESUME } as never);
+  const client = compile(TODOS, { target: "dom", filename: "c.tsx", resume: TODO_RESUME } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.ok(client.lite, JSON.stringify((client as { liteBecause?: unknown }).liteBecause));
+  const { Page } = await importServer<{ Page: () => ServerValue }>(server.code);
+  const rt = runtime === "lite" ? "/lite.js" : "/rt.js";
+  const html = (await derivedToString(() => Page(), { manifest: { runtime: rt, symbols: { "src/c.tsx#Todos": "/c.js" } } })) as string;
+  return {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/lite.js": 'export { default } from "/dom-lite.ts";',
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/c.js": rewrite(client.lite!.code.replace('import("c.tsx")', 'import("/c-full.js")')),
+    "/c-full.js": rewrite(client.code),
+  };
+}
+const rows = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("li.row")].map(
+      (li) => (li.querySelector(".done") as HTMLInputElement).checked + "|" + li.querySelector("span")!.className + "|" + li.querySelector("span")!.textContent,
+    ),
+  );
+
+for (const runtime of ["lite", "full"] as const)
+  it(`RT-DIET lite v2 (${runtime} runtime): a keyed list, computed, model and form events adopt and update`, async () => {
+    await withPage(await todoFiles(runtime), async (page, requests) => {
+      await page.goto("http://rivet.test/");
+      assert.deepEqual(await rows(page), ["true|text off|0: One", "false|text|1: Two"]);
+      assert.equal(await page.textContent(".left"), "1 item left");
+      const first = await page.evaluate(() => ((window as { __li?: Element }).__li = document.querySelector("li.row")!) && true);
+      assert.ok(first);
+      // Cold: the first click boots the lite runtime, which adopts the server rows and replays the click.
+      await page.click("li.row:nth-child(1) .done");
+      await page.waitForFunction(() => document.querySelector(".left")!.textContent === "2 items left");
+      assert.deepEqual(await rows(page), ["false|text|0: One", "false|text|1: Two"]);
+      assert.ok(await page.evaluate(() => document.querySelector("li.row") === (window as { __li?: Element }).__li), "server row kept");
+      // Add through model + submit: a new row built from the row spec, with its own bindings and handlers.
+      await page.fill(".new", "Three");
+      await page.click(".add");
+      await page.waitForFunction(() => document.querySelectorAll("li.row").length === 3);
+      assert.deepEqual(await rows(page), ["false|text|0: One", "false|text|1: Two", "false|text|2: Three"]);
+      assert.equal(await page.inputValue(".new"), "");
+      await page.click("li.row:nth-child(3) .done");
+      await page.waitForFunction(() => document.querySelector(".left")!.textContent === "2 items left");
+      assert.deepEqual(await rows(page), ["false|text|0: One", "false|text|1: Two", "true|text off|2: Three"]);
+      // Remove the first row: the others move up (index text follows), the removed row's bindings are released.
+      await page.click("li.row:nth-child(1) .rm");
+      await page.waitForFunction(() => document.querySelectorAll("li.row").length === 2);
+      assert.deepEqual(await rows(page), ["false|text|0: Two", "true|text off|1: Three"]);
+      assert.equal(await page.textContent(".left"), "1 item left");
+      // The list's markers stay balanced (row openers / closers inside the list's own pair).
+      const marks = await page.evaluate(() => {
+        const out: string[] = [];
+        for (const n of document.querySelector("ul")!.childNodes) out.push(n.nodeType == 8 ? (n as Comment).data : (n as Element).localName);
+        return out.join(" ");
+      });
+      assert.equal(marks, "[ r[ li ] r[ li ] ]");
+      if (runtime === "lite") assert.ok(!requests.includes("/dom-derived.ts"), requests.join(" "));
+      assert.ok(!requests.includes("/c-full.js"), requests.join(" "));
+    });
+  });
+
+it("RT-DIET lite v2: text typed before adoption survives the model's first run", async () => {
+  let release!: () => void;
+  const hold = new Promise<void>((resolve) => (release = resolve));
+  await withPage(
+    await todoFiles(),
+    async (page) => {
+      await page.goto("http://rivet.test/");
+      await page.fill(".new", "Early");
+      release();
+      await page.waitForFunction(() => (globalThis as { __rivetLite?: unknown }).__rivetLite !== undefined || document.querySelector(".new") !== null);
+      await page.click(".add");
+      await page.waitForFunction(() => document.querySelectorAll("li.row").length === 3);
+      assert.deepEqual((await rows(page))[2], "false|text|2: Early");
+    },
+    { delays: { "/c.js": hold } },
+  );
+});

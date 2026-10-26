@@ -62,7 +62,7 @@ export function derivedLoader(): void {
       } catch {}
   };
   const retry = (url: string): Promise<Record<string, unknown>> => import(url).catch(() => import(url + (url.includes("?") ? "&" : "?") + "r=" + Date.now()));
-  const api: DerivedLoaderApi = { q, m: retry, f: fail };
+  const api: DerivedLoaderApi = { q, m: retry, f: fail, i: (node, type) => ids(node, type) };
   // Starts the runtime; an event / intent (not a trigger, `bg`) also fetches the fetch-ahead list at high priority.
   const boot = (bg?: unknown): Promise<DerivedRuntime> => (
     bg || ahead("high"),

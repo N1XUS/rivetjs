@@ -842,7 +842,9 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     HEADER,
     ...(search ? [`import { signal } from "@rivetjs/reactivity";`] : []),
     `import { Provider } from "@rivetjs/runtime/server";`,
-    ...(derived ? [`import { _rData, _rListen } from "@rivetjs/runtime/server-derived";`] : [`import { createRouter } from "@rivetjs/runtime/router/server";`]),
+    ...(derived
+      ? [`import { _rData${single ? "" : ", _rListen"} } from "@rivetjs/runtime/server-derived";`]
+      : [`import { createRouter } from "@rivetjs/runtime/router/server";`]),
     `import { ServerData } from "@rivetjs/router/client";`,
     ...(transitions ? [`import { Navigation, navigation } from "@rivetjs/router/navigation";`] : []),
     ...(search ? [`import { SearchParams } from "@rivetjs/router/search";`] : []),
@@ -879,11 +881,17 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "",
     ...(derived
       ? [
-          "/** Derived resume model: link clicks anywhere in the document are `Root`'s (its App's document click listener). */",
-          "function Links() {",
-          '  _rListen("a[href]");',
-          "  return null;",
-          "}",
+          // RT-DIET: one static page route has no client router (links load documents): no document click listener, so
+          // the tail names no `g` and a page of lite boundaries resumes on the lite runtime.
+          ...(single
+            ? []
+            : [
+                "/** Derived resume model: link clicks anywhere in the document are `Root`'s (its App's document click listener). */",
+                "function Links() {",
+                '  _rListen("a[href]");',
+                "  return null;",
+                "}",
+              ]),
           "/** Derived resume model: the route payload `Root` carries as data (`undefined` loader results listed in `n`); `_rData`: as",
           " * it is when JSON data, else its resume table (Date, Map, …), else RV2107 (`Root` demoted: the page does not resume). */",
           "const rootData = (input: PageInput) => {",
@@ -920,7 +928,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
             ]
           : []),
       ],
-      derived ? "<>\n        <Links />\n        <Root s={rootData(input)} />\n      </>" : "<App router={createRouter(input.url)} />",
+      derived
+        ? single
+          ? "<Root s={rootData(input)} />"
+          : "<>\n        <Links />\n        <Root s={rootData(input)} />\n      </>"
+        : "<App router={createRouter(input.url)} />",
       "      ",
     ),
     "    </Provider>",

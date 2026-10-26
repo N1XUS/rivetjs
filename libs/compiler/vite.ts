@@ -1588,7 +1588,10 @@ function rivetPlugin(
       if (id === LITE_RUNTIME) return 'export { default } from "@rivetjs/runtime/dom-lite";\n';
       if (id === LITE_EMPTY) return { code: "", moduleSideEffects: false };
       if (id.startsWith(LITE_PREFIX)) return liteEntries.get(id.slice(LITE_PREFIX.length, -3))?.code ?? "";
-      if (id === liteCopy(PRELOAD_HELPER)) return (await this.load({ id: PRELOAD_HELPER })).code ?? null;
+      // RT-DIET: the lite graph's dynamic imports are its rare paths only (the fallback runtime, a boundary's ordinary
+      // module `<Name>$c`): no dependency preloading, so the always-loaded lite runtime chunk carries no preload helper
+      // (~1.4 KB min). Same signature as Vite's (`load`, deps, importer URL): the import itself, unchanged.
+      if (id === liteCopy(PRELOAD_HELPER)) return "export const __vitePreload = (load) => load();\n";
       const clean = id.split("?", 1)[0]!;
       const client = !ssrBuild && this.environment?.config?.consumer !== "server";
       // Resume builds: the browser runtime ships the adopt run's switches (`DERIVED` `_for` hook + `LAZY_ROWS` adopt hooks).

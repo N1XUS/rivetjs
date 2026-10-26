@@ -15,8 +15,20 @@
 //!   form-select content), i18n off;
 //! - an expression child or attribute value either reads a keyed signal (live: props / other locals not allowed; module
 //!   scope and globals allowed) or is static (props members and literals only: no call, no module reference);
-//! - handlers `on<Type>` of a delegated bubbling type, referring to keyed / never-written signals, module scope,
-//!   globals and their own bindings only.
+//! - handlers `on<Type>` of a delegated bubbling type (submit / change / reset too), referring to keyed / never-written
+//!   signals, module scope, globals and their own bindings only.
+//!
+//! Lite v2 (RT-DIET 2026-10-26, runtime `dom-lite-attr.ts` / `-write.ts` / `-list.ts` / `-model.ts` leaves):
+//! - `computed(arrow)` over closed-world reads → `_lc(arrow)`; local arrow / function declarations copied verbatim when
+//!   their bodies are closed world (`Local::Fn`); declarations emitted only when referenced;
+//! - live `class` / `className` → `_lk`; a plain attribute (`dom_v2::plain_attribute`) → `_lq`; a boolean attribute
+//!   (not `hidden`) → `_lb`; others `_la`; `style` / `key` stay ineligible;
+//! - `model:value` (text input / textarea) and `model:checked` (checkbox) over a keyed signal → `_lm` (ineligible with
+//!   an own onInput / onChange);
+//! - `<For each={keyed | computed} by={closed-world fn}>{(item, i) => <native row>}</For>` → `_lf(at, each, by, row,
+//!   spec)`: `spec` = the row's template as data (`lite_spec`: tag, decoded literal attrs, text runs, `0, 1` = marker
+//!   pair of a non-sole dynamic child), rows adopt `<!--r[-->` / `<!--]-->` server rows; row bodies allow only
+//!   literal / live attributes and children (a static non-literal → ineligible) and no component child.
 //!
 //! Node paths mirror the server markup (`compile.rs` `walk_server` + `derived.rs` `slot_marks`): adjacent JSX text and
 //! folded literal children are one Text node; a dynamic child among others sits between `<!--[-->` / `<!--]-->` (path
@@ -28,15 +40,25 @@ use oxc_span::{GetSpan, Span};
 use rustc_hash::FxHashMap;
 
 use super::{Compiler, OPAQUE_CONTENT, attr_name, attr_string, dom_v2, event_info, is_function_child, is_native, jsx_text, literal_child, may_render_jsx, starts_with_on, strip_parens};
+use crate::entities::decode_html;
 use crate::ir::quote;
 use crate::resume::derived::{ATTR, INDEPENDENT, data_literal, never_written};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Local {
     Keyed,
+    /// A keyed signal nothing writes (RT-DIET): its reads render what the server rendered (static), a handler reads its
+    /// recorded value.
+    KeyedStill,
     Frozen,
     /// Bound from the props parameter (`const { a } = props`, `const a = props.a`): recorded data, static.
     Props,
+    /// `const x = computed(fn)` over the closed world (RT-DIET lite v2): `_lc(fn)`, live.
+    Computed,
+    /// A local function (`const f = (…) => …`) over the closed world, copied; `true`: its body reads live state.
+    Fn(bool),
+    /// A `For` row's item / index accessor (RT-DIET lite v2): live.
+    Row,
 }
 
 #[derive(PartialEq)]
@@ -53,6 +75,8 @@ struct Unit<'s> {
     out: Vec<String>,
     /// Never-written signals a handler refers to (re-declared from their source text).
     frozen_used: Vec<SymbolId>,
+    /// Keyed signals live code or a handler refers to (RT-DIET: only those are declared; an unread one costs nothing).
+    keyed_used: Vec<SymbolId>,
     frozen_text: FxHashMap<SymbolId, &'s str>,
     /// The local name of `signal` (a never-written signal re-declared in the entry needs its import).
     signal_local: Option<String>,
@@ -63,6 +87,10 @@ struct Unit<'s> {
     names: &'s Names,
     /// Element locals declared so far (`const __rivetLeN = _lw(n, path)`).
     vars: usize,
+    /// Inside a `For` row (RT-DIET lite v2): a new row is built from a static spec, so every non-literal value binds.
+    row: bool,
+    /// `lite_refs`' last verdict read live state (a local function's body).
+    last_live: bool,
 }
 
 pub(super) struct Names {
@@ -71,13 +99,20 @@ pub(super) struct Names {
     pub lt: String,
     pub lw: String,
     pub la: String,
+    pub lc: String,
+    pub lf: String,
+    pub lk: String,
+    pub lm: String,
+    pub lq: String,
+    pub lb: String,
 }
 
 type Fail = &'static str;
 
-/// Delegated bubbling types `_le` (`dom-events.ts` `_on`) handles.
+/// Bubbling types `_le` handles through one document listener (`dom-events.ts` `_on`): the delegated set, plus the
+/// bubbling form events the ordinary DOM lowering listens to on the element (RT-DIET lite v2).
 fn delegated(event: &str) -> bool {
-    dom_v2::delegated(event)
+    dom_v2::delegated(event) || matches!(event, "submit" | "change" | "reset")
 }
 
 impl<'t, 'a> Compiler<'t, 'a> {
@@ -98,10 +133,22 @@ impl<'t, 'a> Compiler<'t, 'a> {
             return None;
         }
         list.sort_by_key(|(id, _, _)| self.tree.span(*id).start);
-        let names = Names { ls: "__rivetL_s".into(), le: "__rivetL_e".into(), lt: "__rivetL_t".into(), lw: "__rivetL_w".into(), la: "__rivetL_a".into() };
+        let names = Names {
+            ls: "__rivetL_s".into(),
+            le: "__rivetL_e".into(),
+            lt: "__rivetL_t".into(),
+            lw: "__rivetL_w".into(),
+            la: "__rivetL_a".into(),
+            lc: "__rivetL_c".into(),
+            lf: "__rivetL_f".into(),
+            lk: "__rivetL_k".into(),
+            lm: "__rivetL_m".into(),
+            lq: "__rivetL_q".into(),
+            lb: "__rivetL_b".into(),
+        };
         let (node, rec) = ("__rivetLn".to_string(), "__rivetLr".to_string());
         let mut code = String::new();
-        let mut used = [false; 5];
+        let mut used = [false; 11];
         let mut covered: Vec<String> = Vec::new();
         let mut constants: Vec<SymbolId> = Vec::new();
         let mut signal_local: Option<String> = None;
@@ -113,7 +160,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     continue;
                 }
             };
-            for (i, local) in [&names.ls, &names.le, &names.lt, &names.lw, &names.la].iter().enumerate() {
+            for (i, local) in [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb].iter().enumerate() {
                 used[i] |= text.contains(local.as_str());
             }
             for symbol in module_used {
@@ -128,13 +175,15 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if covered.is_empty() {
             return None;
         }
-        let exports = ["_ls", "_le", "_lt", "_lw", "_la"];
-        let locals = [&names.ls, &names.le, &names.lt, &names.lw, &names.la];
-        let specifiers: Vec<String> = (0..5).filter(|&i| used[i]).map(|i| format!("{} as {}", exports[i], locals[i])).collect();
+        let exports = ["_ls", "_le", "_lt", "_lw", "_la", "_lc", "_lf", "_lk", "_lm", "_lq", "_lb"];
+        let locals = [&names.ls, &names.le, &names.lt, &names.lw, &names.la, &names.lc, &names.lf, &names.lk, &names.lm, &names.lq, &names.lb];
+        let specifiers: Vec<String> = (0..11).filter(|&i| used[i]).map(|i| format!("{} as {}", exports[i], locals[i])).collect();
         let mut out = format!("import {{ {} }} from \"@rivetjs/runtime/dom-lite\";\n", specifiers.join(", "));
+        // A never-written signal a handler reads: the lite world's `signal` (RT-DIET: residual state never meets
+        // `@rivetjs/reactivity`, so a lite page ships none of it).
         if let Some(local) = signal_local {
             let spec = if local == "signal" { local } else { format!("signal as {local}") };
-            out.push_str(&format!("import {{ {spec} }} from \"@rivetjs/reactivity\";\n"));
+            out.push_str(&format!("import {{ {spec} }} from \"@rivetjs/runtime/dom-lite\";\n"));
         }
         constants.sort_by_key(|s| self.tree.span(self.tree.decl_of_symbol(*s)).start);
         for symbol in constants {
@@ -163,6 +212,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
             locals: FxHashMap::default(),
             out: Vec::new(),
             frozen_used: Vec::new(),
+            keyed_used: Vec::new(),
             frozen_text: FxHashMap::default(),
             signal_local: None,
             module_used: Vec::new(),
@@ -170,8 +220,12 @@ impl<'t, 'a> Compiler<'t, 'a> {
             rec: rec.to_string(),
             names,
             vars: 0,
+            row: false,
+            last_live: false,
         };
         let mut decls: Vec<String> = Vec::new();
+        // Keyed declarations in source order, emitted after the walk for the ones live code reads (RT-DIET).
+        let mut keyed: Vec<(SymbolId, String)> = Vec::new();
         let root: &JSXElement = if concise {
             let Some(Statement::ExpressionStatement(s)) = body.statements.first() else { return Err("concise body") };
             as_jsx(&s.expression).ok_or("root not an element")?
@@ -201,24 +255,47 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     let BindingPatternKind::BindingIdentifier(id) = &declarator.id.kind else { return Err("pattern declaration") };
                     let symbol = id.symbol_id.get().ok_or("symbol")?;
+                    // RT-DIET lite v2: a local function over the closed world (copied as written; live when its body
+                    // reads live state).
+                    if let Some(init @ (Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_))) = declarator.init.as_ref().map(strip_parens) {
+                        if matches!(init, Expression::ArrowFunctionExpression(a) if a.r#async) || matches!(init, Expression::FunctionExpression(f) if f.r#async || f.generator) {
+                            return Err("async local function");
+                        }
+                        self.lite_refs(init, &mut unit, true)?;
+                        unit.locals.insert(symbol, Local::Fn(unit.last_live));
+                        keyed.push((symbol, format!("const {} = {};", id.name, tree.text_of(init.span()))));
+                        continue;
+                    }
                     let Some(Expression::CallExpression(call)) = declarator.init.as_ref().map(strip_parens) else { return Err("declaration") };
+                    // RT-DIET lite v2: `computed(fn)` over the closed world: `_lc(fn)`.
+                    if is_reactivity(tree, call, "computed") {
+                        let [arg] = &call.arguments[..] else { return Err("computed options") };
+                        let arg = arg.as_expression().ok_or("spread argument")?;
+                        if !matches!(strip_parens(arg), Expression::ArrowFunctionExpression(a) if !a.r#async) {
+                            return Err("computed argument");
+                        }
+                        self.lite_refs(arg, &mut unit, false)?;
+                        unit.locals.insert(symbol, Local::Computed);
+                        keyed.push((symbol, format!("const {} = {}({});", id.name, names.lc, tree.text_of(arg.span()))));
+                        continue;
+                    }
                     let call_id = tree.id_of(&**call).ok_or("call")?;
                     if let Some((key, store)) = d.plan.keyed.get(&call_id) {
                         if *store || call.arguments.len() > 1 {
                             return Err("store / signal options");
                         }
                         let init = match call.arguments.first() {
-                            Some(a) => tree.text_of(a.as_expression().ok_or("spread argument")?.span()),
-                            None => "undefined",
-                        };
-                        if let Some(a) = call.arguments.first().and_then(|a| a.as_expression()) {
-                            // The init runs again in the browser: only what the ordinary `_sig` would run too.
-                            if !data_literal(tree, a, 0) {
-                                return Err("keyed init");
+                            Some(a) => {
+                                let a = a.as_expression().ok_or("spread argument")?;
+                                // The init runs again in the browser only when it is a data literal (what the ordinary `_sig`
+                                // would run too, and what the server leaves off the record while unchanged). Any other init:
+                                // the server always records the value (RT-DIET) — no init argument, the record must have it.
+                                if data_literal(tree, a, 0) { format!(", {}", tree.text_of(a.span())) } else { String::new() }
                             }
-                        }
-                        unit.locals.insert(symbol, Local::Keyed);
-                        decls.push(format!("const {} = {}({rec}, {}, {init});", id.name, names.ls, quote(key)));
+                            None => ", undefined".to_string(),
+                        };
+                        unit.locals.insert(symbol, if never_written(tree, call_id) { Local::KeyedStill } else { Local::Keyed });
+                        keyed.push((symbol, format!("const {} = {}({rec}, {}{init});", id.name, names.ls, quote(key))));
                     } else if is_signal(tree, call) && call.arguments.len() <= 1 && never_written(tree, call_id) {
                         if let Some(a) = call.arguments.first() {
                             if !a.as_expression().is_some_and(|e| data_literal(tree, e, 0)) {
@@ -245,6 +322,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
         self.lite_element(root, &start, &mut unit)?;
         if unit.out.is_empty() {
             return Err("nothing live");
+        }
+        for (symbol, text) in keyed {
+            if unit.keyed_used.contains(&symbol) {
+                decls.push(text);
+            }
         }
         for symbol in &unit.frozen_used {
             if let Some(text) = unit.frozen_text.get(symbol) {
@@ -280,6 +362,38 @@ impl<'t, 'a> Compiler<'t, 'a> {
         for item in &el.opening_element.attributes {
             let JSXAttributeItem::Attribute(attr) = item else { return Err("spread") };
             let name = attr_name(tree, attr);
+            // `model:value` / `model:checked` over a keyed signal (RT-DIET lite v2): `_lm`.
+            if let Some(kind) = name.strip_prefix("model:") {
+                let text_input = tag == "textarea"
+                    || (tag == "input"
+                        && el.opening_element.attributes.iter().all(|a| match a {
+                            JSXAttributeItem::Attribute(t) if attr_name(tree, t) == "type" => {
+                                attr_string(tree, t).is_some_and(|v| matches!(v, "text" | "search" | "email" | "url" | "tel" | "password"))
+                            }
+                            _ => true,
+                        }));
+                let checkbox = tag == "input"
+                    && el.opening_element.attributes.iter().any(|a| matches!(a, JSXAttributeItem::Attribute(t) if attr_name(tree, t) == "type" && attr_string(tree, t) == Some("checkbox")));
+                if !((kind == "value" && text_input) || (kind == "checked" && checkbox)) {
+                    return Err("model");
+                }
+                let event = if kind == "value" { "onInput" } else { "onChange" };
+                if el.opening_element.attributes.iter().any(|a| matches!(a, JSXAttributeItem::Attribute(t) if attr_name(tree, t) == event)) {
+                    return Err("model with handler");
+                }
+                let Some(JSXAttributeValue::ExpressionContainer(c)) = &attr.value else { return Err("model") };
+                let Some(Expression::Identifier(state)) = c.expression.as_expression().map(strip_parens) else { return Err("model") };
+                let symbol = tree.symbol_of_ref(state).ok_or("model")?;
+                if unit.locals.get(&symbol) != Some(&Local::Keyed) {
+                    return Err("model signal");
+                }
+                if !unit.keyed_used.contains(&symbol) {
+                    unit.keyed_used.push(symbol);
+                }
+                let at = target(&mut *unit);
+                unit.out.push(format!("{}({at}, {}, {});", unit.names.lm, quote(kind), state.name));
+                continue;
+            }
             if name.contains(':') || matches!(name, "ref" | "children" | "innerHTML" | "textContent" | "dangerouslySetInnerHTML") {
                 return Err("directive");
             }
@@ -299,14 +413,30 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 continue;
             }
             match self.lite_refs(e, unit, false)? {
+                // A row built in the browser has no server text for it (its spec holds literals only).
+                Class::Static if unit.row => return Err("row static attribute"),
                 Class::Static => {}
                 Class::Live => {
-                    if matches!(name, "class" | "className" | "style" | "value" | "checked" | "selected" | "key") {
+                    if matches!(name, "style" | "key") {
                         return Err("live attribute");
                     }
-                    let html = if name == "htmlFor" { "for" } else { name };
                     let at = target(&mut *unit);
-                    unit.out.push(format!("{}({at}, {}, () => ({}));", unit.names.la, quote(html), tree.text_of(e.span())));
+                    // `class`: `_className` semantics (null / false / "" remove it), RT-DIET lite v2.
+                    if matches!(name, "class" | "className") {
+                        unit.out.push(format!("{}({at}, () => ({}));", unit.names.lk, tree.text_of(e.span())));
+                        continue;
+                    }
+                    let html = if name == "htmlFor" { "for" } else { name };
+                    let lower = html.to_ascii_lowercase();
+                    // The lightest writer with the client's semantics for this name (RT-DIET): plain `setAttribute`,
+                    // a boolean attribute (+ its property), else the full rules (`_la`: URLs, enumerated, form values).
+                    if dom_v2::plain_attribute(html) {
+                        unit.out.push(format!("{}({at}, {}, () => ({}));", unit.names.lq, quote(html), tree.text_of(e.span())));
+                    } else if lower != "hidden" && crate::html::BOOLEAN_ATTRIBUTES.contains(&lower.as_str()) {
+                        unit.out.push(format!("{}({at}, {}, () => ({}));", unit.names.lb, quote(&lower), tree.text_of(e.span())));
+                    } else {
+                        unit.out.push(format!("{}({at}, {}, () => ({}));", unit.names.la, quote(html), tree.text_of(e.span())));
+                    }
                 }
             }
         }
@@ -326,6 +456,8 @@ impl<'t, 'a> Compiler<'t, 'a> {
             Text,
             Slot(Option<&'b Expression<'b>>),
             Element(&'b JSXElement<'b>),
+            /// A `For` (RT-DIET lite v2): always between `<!--[-->` / `<!--]-->`, rows `<!--r[-->el<!--]-->`.
+            List(&'b JSXElement<'b>),
         }
         let mut items: Vec<Item<'a>> = Vec::new();
         let mut run = String::new();
@@ -342,6 +474,9 @@ impl<'t, 'a> Compiler<'t, 'a> {
                         return Err("structural child");
                     }
                     let class = self.lite_refs(e, unit, false)?;
+                    if unit.row && class == Class::Static {
+                        return Err("row static child");
+                    }
                     if sole {
                         if class == Class::Live {
                             let at = target(&mut *unit);
@@ -362,6 +497,13 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     items.push(Item::Element(child));
                 }
+                JSXChild::Element(child) if !unit.row && self.lite_is_for(child) => {
+                    if !run.is_empty() {
+                        items.push(Item::Text);
+                        run.clear();
+                    }
+                    items.push(Item::List(child));
+                }
                 _ => return Err("component / fragment child"),
             }
         }
@@ -379,9 +521,158 @@ impl<'t, 'a> Compiler<'t, 'a> {
                     }
                     at.push_str("hn");
                 }
+                Item::List(list) => {
+                    self.lite_list(list, &at, unit)?;
+                    at.push_str("hn");
+                }
             }
         }
         Ok(())
+    }
+
+    /// `<For>` imported from the runtime (structural), no spread.
+    fn lite_is_for(&self, el: &'a JSXElement<'a>) -> bool {
+        let JSXElementName::IdentifierReference(tag) = &el.opening_element.name else { return false };
+        self.imported_structural(tag) == Some("For")
+    }
+
+    /// RT-DIET lite v2: `<For each={s} by={fn}>{(x, i) => <native/>}</For>` over the server rows:
+    /// `_lf(opener, each, by, (n, x, i) => { row bindings }, spec)`. `each` is a keyed / computed local, `by` and the
+    /// row closed-world code; the row's markup (`spec`: literals only) builds rows the server did not render.
+    fn lite_list(&self, el: &'a JSXElement<'a>, at: &str, unit: &mut Unit<'_>) -> Result<(), Fail> {
+        let tree = self.tree;
+        let (mut each, mut by) = (None, None);
+        for item in &el.opening_element.attributes {
+            let JSXAttributeItem::Attribute(attr) = item else { return Err("list spread") };
+            let Some(JSXAttributeValue::ExpressionContainer(c)) = &attr.value else { return Err("list attribute") };
+            let e = c.expression.as_expression().ok_or("list attribute")?;
+            match attr_name(tree, attr) {
+                "each" => each = Some(e),
+                "by" => by = Some(e),
+                _ => return Err("list attribute"),
+            }
+        }
+        let (Some(each), Some(by)) = (each, by) else { return Err("list without each / by") };
+        let Expression::Identifier(source) = strip_parens(each) else { return Err("list each") };
+        let symbol = tree.symbol_of_ref(source).ok_or("list each")?;
+        if !matches!(unit.locals.get(&symbol), Some(Local::Keyed | Local::KeyedStill | Local::Computed)) {
+            return Err("list each");
+        }
+        if !unit.keyed_used.contains(&symbol) {
+            unit.keyed_used.push(symbol);
+        }
+        self.lite_refs(by, unit, true)?;
+        let mut content = el.children.iter().filter(|c| !matches!(c, JSXChild::Text(t) if jsx_text(tree.text_of(t.span)).is_empty()));
+        let (Some(JSXChild::ExpressionContainer(c)), None) = (content.next(), content.next()) else { return Err("list children") };
+        let JSXExpression::ArrowFunctionExpression(callback) = &c.expression else { return Err("list children") };
+        let params = &callback.params;
+        if callback.r#async || !(1..=2).contains(&params.items.len()) || params.rest.is_some() {
+            return Err("list row function");
+        }
+        let mut names: Vec<String> = Vec::new();
+        for p in &params.items {
+            let BindingPatternKind::BindingIdentifier(id) = &p.pattern.kind else { return Err("list row parameter") };
+            unit.locals.insert(id.symbol_id.get().ok_or("symbol")?, Local::Row);
+            names.push(id.name.to_string());
+        }
+        let row: &JSXElement = if callback.expression {
+            let Some(Statement::ExpressionStatement(s)) = callback.body.statements.first() else { return Err("list row") };
+            as_jsx(&s.expression).ok_or("list row")?
+        } else {
+            let [Statement::ReturnStatement(r)] = &callback.body.statements[..] else { return Err("list row body") };
+            as_jsx(r.argument.as_ref().ok_or("list row")?).ok_or("list row")?
+        };
+        if !is_native(tree, row) {
+            return Err("list row root");
+        }
+        let spec = self.lite_spec(row)?;
+        let node = format!("__rivetLn{}", unit.vars);
+        unit.vars += 1;
+        let (outer_node, outer_out) = (std::mem::replace(&mut unit.node, node.clone()), std::mem::take(&mut unit.out));
+        unit.row = true;
+        let done = self.lite_element(row, "", unit);
+        unit.row = false;
+        let body = std::mem::replace(&mut unit.out, outer_out);
+        unit.node = outer_node;
+        done?;
+        if names.len() == 1 {
+            names.push("__rivetLi".into());
+        }
+        let list = format!("{}({}, {})", unit.names.lw, unit.node, quote(at));
+        unit.out.push(format!(
+            "{}({list}, {}, {}, ({node}, {}) => {{\n    {}\n  }}, {spec});",
+            unit.names.lf,
+            tree.text_of(each.span()),
+            tree.text_of(by.span()),
+            names.join(", "),
+            body.join("\n    ")
+        ));
+        Ok(())
+    }
+
+    /// The static markup of a row element as the server renders it with every binding empty (RT-DIET lite v2):
+    /// `[tag, { literal attributes }, …children]`, children a Text's data, `0` / `1` for `<!--[-->` / `<!--]-->`
+    /// around a dynamic child that is not the sole child, or an element spec.
+    fn lite_spec(&self, el: &'a JSXElement<'a>) -> Result<String, Fail> {
+        let tree = self.tree;
+        let tag = tree.text_of(el.opening_element.name.span());
+        let mut attrs: Vec<String> = Vec::new();
+        for item in &el.opening_element.attributes {
+            let JSXAttributeItem::Attribute(attr) = item else { return Err("spread") };
+            let name = attr_name(tree, attr);
+            let html = match name {
+                "className" => "class",
+                "htmlFor" => "for",
+                n => n,
+            };
+            match &attr.value {
+                None => attrs.push(format!("{}: \"\"", quote(html))),
+                Some(JSXAttributeValue::StringLiteral(_)) => attrs.push(format!("{}: {}", quote(html), quote(&decode_html(attr_string(tree, attr).unwrap_or_default())))),
+                _ => {}
+            }
+        }
+        let count = el
+            .children
+            .iter()
+            .filter(|child| match child {
+                JSXChild::Text(text) => !jsx_text(tree.text_of(text.span)).is_empty(),
+                JSXChild::ExpressionContainer(c) => c.expression.as_expression().is_some(),
+                _ => true,
+            })
+            .count();
+        let mut parts: Vec<String> = vec![quote(tag), format!("{{ {} }}", attrs.join(", "))];
+        let mut run = String::new();
+        for child in &el.children {
+            match child {
+                JSXChild::Text(text) => run.push_str(&jsx_text(tree.text_of(text.span))),
+                JSXChild::ExpressionContainer(c) => {
+                    let Some(e) = c.expression.as_expression() else { continue };
+                    if let Some(text) = literal_child(tree, e) {
+                        run.push_str(&text);
+                        continue;
+                    }
+                    if !run.is_empty() {
+                        parts.push(quote(&run));
+                        run.clear();
+                    }
+                    if count != 1 {
+                        parts.push("0, 1".into());
+                    }
+                }
+                JSXChild::Element(child) if is_native(tree, child) => {
+                    if !run.is_empty() {
+                        parts.push(quote(&run));
+                        run.clear();
+                    }
+                    parts.push(self.lite_spec(child)?);
+                }
+                _ => return Err("row child"),
+            }
+        }
+        if !run.is_empty() {
+            parts.push(quote(&run));
+        }
+        Ok(format!("[{}]", parts.join(", ")))
     }
 
     /// Classify the references of `e`: live (reads a keyed signal), static (props members / literals only), else an
@@ -393,6 +684,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let id = tree.expr_id(e).ok_or("expression")?;
         let (mut live, mut props, mut module, mut call, mut other) = (false, false, false, false, false);
         let mut frozen: Vec<SymbolId> = Vec::new();
+        let mut keyed: Vec<SymbolId> = Vec::new();
         let mut constants: Vec<SymbolId> = Vec::new();
         tree.walk(id, &mut |n| {
             match tree.kind(n) {
@@ -408,9 +700,18 @@ impl<'t, 'a> Compiler<'t, 'a> {
                                 // own binding (parameter / local of a nested function)
                             } else if let Some(local) = unit.locals.get(&symbol) {
                                 match local {
-                                    Local::Keyed => live = true,
+                                    Local::Keyed => {
+                                        live = true;
+                                        keyed.push(symbol);
+                                    }
+                                    Local::KeyedStill => keyed.push(symbol),
                                     Local::Frozen => frozen.push(symbol),
                                     Local::Props => props = true,
+                                    Local::Computed | Local::Row | Local::Fn(true) => {
+                                        live = true;
+                                        keyed.push(symbol);
+                                    }
+                                    Local::Fn(false) => keyed.push(symbol),
                                 }
                             } else if decl.start >= unit.params.start && decl.end <= unit.params.end {
                                 props = true;
@@ -426,7 +727,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 AstKind::CallExpression(c) => {
                     // `x()` over a never-written signal is its init (rendered by the server already).
                     let frozen_read = c.arguments.is_empty()
-                        && matches!(&c.callee, Expression::Identifier(i) if tree.symbol_of_ref(i).is_some_and(|s| unit.locals.get(&s) == Some(&Local::Frozen)));
+                        && matches!(&c.callee, Expression::Identifier(i) if tree.symbol_of_ref(i).is_some_and(|s| matches!(unit.locals.get(&s), Some(&Local::Frozen | &Local::KeyedStill))));
                     if !frozen_read {
                         call = true;
                     }
@@ -441,6 +742,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if other {
             return Err("component local");
         }
+        unit.last_live = live;
         // Code that runs in the entry: each module binding it reads must be a copyable constant.
         let copy = |unit: &mut Unit<'_>, constants: Vec<SymbolId>| -> Result<(), Fail> {
             for symbol in constants {
@@ -453,11 +755,19 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
             Ok(())
         };
+        let mark = |unit: &mut Unit<'_>, keyed: Vec<SymbolId>| {
+            for symbol in keyed {
+                if !unit.keyed_used.contains(&symbol) {
+                    unit.keyed_used.push(symbol);
+                }
+            }
+        };
         if handler {
             if props {
                 return Err("handler reads props");
             }
             copy(unit, constants)?;
+            mark(unit, keyed);
             for symbol in frozen {
                 if !unit.frozen_used.contains(&symbol) {
                     unit.frozen_used.push(symbol);
@@ -470,6 +780,7 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 return Err("live binding reads props");
             }
             copy(unit, constants)?;
+            mark(unit, keyed);
             for symbol in frozen {
                 if !unit.frozen_used.contains(&symbol) {
                     unit.frozen_used.push(symbol);
@@ -546,8 +857,13 @@ fn as_jsx<'b, 'a>(e: &'b Expression<'a>) -> Option<&'b JSXElement<'a>> {
 
 /// `signal(…)` imported from `@rivetjs/reactivity`.
 fn is_signal<'a>(tree: &crate::tree::Tree<'a>, call: &CallExpression<'a>) -> bool {
+    is_reactivity(tree, call, "signal")
+}
+
+/// `<name>(…)` imported from `@rivetjs/reactivity`.
+fn is_reactivity<'a>(tree: &crate::tree::Tree<'a>, call: &CallExpression<'a>, name: &str) -> bool {
     let Expression::Identifier(ident) = &call.callee else { return false };
     let Some(decl) = tree.resolve(ident, false) else { return false };
     let AstKind::ImportSpecifier(s) = tree.kind(decl) else { return false };
-    s.imported.name() == "signal" && crate::resume::import_source(tree, decl).is_some_and(|from| from == "@rivetjs/reactivity")
+    s.imported.name() == name && crate::resume::import_source(tree, decl).is_some_and(|from| from == "@rivetjs/reactivity")
 }

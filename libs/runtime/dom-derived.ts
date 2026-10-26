@@ -254,6 +254,8 @@ export interface DerivedLoaderApi {
   m(url: string): Promise<Record<string, unknown>>;
   /** Report a failure (`rivet:resume-error`, reload unless prevented). */
   f(error: unknown): void;
+  /** The ids of the boundaries around `node` whose name listens to `type` ("": any), innermost first (the loader's walk). */
+  i(node: Node | null, type: string): string[];
 }
 /** The runtime instance (`default` export) the loader starts. */
 export interface DerivedRuntime {
@@ -1727,7 +1729,12 @@ function need(r: Rec): true | Promise<void> {
   // A root whose props hand it behaviour (`BROWSER` 2048, server-set on a demoted root, ruling R-22): no parent to adopt
   // with and no props to adopt it from — it renders in the browser (dev: warned, as a mismatch), never adopts silently
   // with `{}` (a dead page). A root demoted by a promise prop still adopts (its `Async` holes ship the values).
-  if (r.flags & BROWSER && !r.parent) return (demotedRoot(r, module), true);
+  if (r.flags & BROWSER && !r.parent) {
+    const name = r.name.slice(r.name.lastIndexOf("#") + 1);
+    if (module[name] || !module[name + "$c"]) return (demotedRoot(r, module), true);
+    // A lite chunk (no component export, RT-DIET: a demoted root may be lite-picked): its ordinary module renders it.
+    fallen.add(r);
+  }
   const residual = lite(r, module);
   if (residual !== false) return residual;
   const ready = prepare(r, module);
@@ -2375,6 +2382,9 @@ const runtime: DerivedRuntime = {
     // after the router's).
     const probe = d.createElement("i");
     for (const type of DELEGATED) _on(probe, type, null);
+    // The page's delegation (RT-DIET): a lite residual this runtime adopts (R5) or a lite runtime that handed over binds
+    // its handlers through it (`dom-lite.ts` `on`), never a second document listener.
+    (d as Document & { $$rvOn?: typeof _on }).$$rvOn = _on;
     if (DEV) _adoption.probe = () => cur !== null && cur.mode === PROBE;
     records(t, false);
     // Handed over by the lite runtime (`dom-lite.ts` fallback, ZERO R4): the boundaries it adopted stay its own, the
