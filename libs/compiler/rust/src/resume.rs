@@ -3497,17 +3497,35 @@ pub fn analyze(
     // a new symbol of its component shares its prefix (both then extend; deploy skew stays fail-safe). Identical twins
     // (equal digests) get `_<k>` (k = ordinal among them in source order; twins are interchangeable, so an ordinal
     // swap is harmless).
+    // Shared prefixes per component in O(n log n): a component's distinct digests sorted; a digest's longest prefix shared
+    // with any other is the longer of its common prefixes with its sorted neighbours (CHECK-LIN: the pairwise scan made
+    // `check` quadratic in sites).
+    let mut sorted: FxHashMap<&str, Vec<&str>> = FxHashMap::default();
+    for (symbol, digest) in symbols.iter().zip(&digests) {
+        sorted.entry(symbol.component.as_str()).or_default().push(digest.as_str());
+    }
+    for list in sorted.values_mut() {
+        list.sort_unstable();
+        list.dedup();
+    }
+    let common = |a: &str, b: &str| a.bytes().zip(b.bytes()).take_while(|(x, y)| x == y).count();
+    let shared: Vec<usize> = symbols
+        .iter()
+        .zip(&digests)
+        .map(|(symbol, digest)| {
+            let list = &sorted[symbol.component.as_str()];
+            let at = list.binary_search(&digest.as_str()).unwrap_or_else(|at| at);
+            let before = at.checked_sub(1).map_or(0, |b| common(list[b], digest));
+            let after = list.get(at + 1).map_or(0, |next| common(next, digest));
+            before.max(after)
+        })
+        .collect();
     let mut twins: FxHashMap<String, usize> = FxHashMap::default();
     for (i, &index) in queue.iter().enumerate() {
         let (component, digest) = (&symbols[i].component, &digests[i]);
-        let mut len = HASH_MIN;
-        while len < digest.len()
-            && (RESERVED_SUFFIXES.contains(&&digest[..len])
-                || symbols
-                    .iter()
-                    .zip(&digests)
-                    .any(|(other, d)| other.component == *component && d != digest && d[..len] == digest[..len]))
-        {
+        // Shortest prefix ≥ `HASH_MIN` longer than every prefix shared with another digest, then past reserved suffixes.
+        let mut len = HASH_MIN.max((shared[i] + 1).min(digest.len()));
+        while len < digest.len() && RESERVED_SUFFIXES.contains(&&digest[..len]) {
             len += 1;
         }
         let local = format!("{component}${}", &digest[..len]);

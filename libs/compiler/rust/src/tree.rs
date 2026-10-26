@@ -8,6 +8,36 @@ use oxc_index::Idx;
 use oxc_semantic::{NodeId, Semantic, SymbolId};
 use oxc_span::{GetSpan, Span};
 use rustc_hash::FxHashMap;
+use std::collections::HashMap;
+use std::hash::{BuildHasherDefault, Hasher};
+
+/// Hasher of arena addresses (`by_addr`). FxHash on wasm32 multiplies the 32-bit address, so its alignment zeros stay zero
+/// (rotated into bits 15–17): past 2^15 buckets most home buckets are unreachable and probe chains grow with the node
+/// count (CHECK-LIN: `Tree::new` / `node_at` quadratic on large modules). A full 64-bit finalizer (murmur3 `fmix64`)
+/// spreads every address bit.
+#[derive(Default)]
+struct AddressHasher(u64);
+
+impl Hasher for AddressHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        for &b in bytes {
+            self.0 = (self.0 << 8 | self.0 >> 56) ^ u64::from(b);
+        }
+    }
+    fn write_usize(&mut self, value: usize) {
+        self.0 ^= value as u64;
+    }
+    fn finish(&self) -> u64 {
+        let mut x = self.0;
+        x ^= x >> 33;
+        x = x.wrapping_mul(0xff51_afd7_ed55_8ccd);
+        x ^= x >> 33;
+        x = x.wrapping_mul(0xc4ce_b9fe_1a85_ec53);
+        x ^ (x >> 33)
+    }
+}
+
+type AddressMap<V> = HashMap<Address, V, BuildHasherDefault<AddressHasher>>;
 
 /// TypeScript declaration kinds the compiler distinguishes (`symbol.declarations[0].kind`).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -44,7 +74,7 @@ pub struct Tree<'a> {
     child_start: Vec<u32>,
     child_list: Vec<NodeId>,
     /// First non-wrapper node at each AST address (`node_at`).
-    by_addr: FxHashMap<Address, NodeId>,
+    by_addr: AddressMap<NodeId>,
     binding_of_symbol: FxHashMap<SymbolId, NodeId>,
     line_starts: Vec<usize>,
     comment_by_end: FxHashMap<u32, u32>,
@@ -103,7 +133,7 @@ impl<'a> Tree<'a> {
         }
         let mut child_list = vec![NodeId::DUMMY; child_start[len] as usize];
         let mut fill = child_start.clone();
-        let mut by_addr: FxHashMap<Address, NodeId> = FxHashMap::with_capacity_and_hasher(len, Default::default());
+        let mut by_addr: AddressMap<NodeId> = AddressMap::with_capacity_and_hasher(len, Default::default());
         let mut binding_of_symbol = FxHashMap::default();
         for node in nodes.iter() {
             let id = node.id();
