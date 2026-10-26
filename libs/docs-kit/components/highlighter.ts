@@ -1,4 +1,5 @@
-// Browser syntax highlighter: one shared chunk (Shiki core + JavaScript regex engine + the two themes), loaded by
+// Browser syntax highlighter: a lazy entry + Shiki core, JavaScript regex engine and the two themes in the
+// `highlighter-core` chunk (`vite.ts` `docsChunks`: kept out of this entry so rolldown's runtime does not merge here), loaded by
 // highlight-browser.ts when the first code block scrolls into view; each grammar is its own chunk, loaded on first
 // use. It colours the server's plain `<pre data-lang><code>` of `span.line`s in place: same lines (marks, padding),
 // token spans inside (`highlight-classes.ts` classes, rules in `src/generated/highlight.css`). A block with

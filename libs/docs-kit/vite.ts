@@ -377,6 +377,32 @@ function docsWatch(): Plugin {
 }
 
 /**
+ * Client chunking (SEARCH-CHUNK 2026-10-27): Shiki and its dependencies (not the grammars: each stays its own lazy
+ * chunk) go to a chunk of their own, `highlighter-core-<hash>.js`, that the lazy `components/highlighter.ts` entry
+ * imports. Rolldown merges its runtime (`__exportAll`, the helper behind every namespace object) into an entry chunk
+ * that already uses it; Shiki's `property-information` namespace import made that the 189 KB highlighter entry, so
+ * every chunk with a namespace object (merged route / boundary facades, the search palette) imported the highlighter
+ * statically — 202 docs chunks, the palette's cold open 223 KB. Out of an entry, the runtime stays its own
+ * 187 B `rolldown-runtime` chunk.
+ */
+function docsChunks(): Plugin {
+  const shiki = /[\\/]node_modules[\\/](?:shiki|@shikijs)[\\/]/;
+  const grammar = /[\\/]langs[\\/]/;
+  return {
+    name: "rivet-docs-chunks",
+    config: () => ({
+      environments: {
+        client: {
+          build: {
+            rolldownOptions: { output: { codeSplitting: { groups: [{ name: "highlighter-core", test: (id) => shiki.test(id) && !grammar.test(id) }] } } },
+          },
+        },
+      },
+    }),
+  };
+}
+
+/**
  * Docs-kit plugins: put them before `rivetRouter(...)`. `docsContent` generates content routes and the example frames
  * before the router scans; `docsBrand` resolves its module before `docsModules` rejects unknown names; `docsFrames`
  * links each frame page's stylesheets; `docsDevSearch` serves `/pagefind/*` on the dev server (in-memory index).
@@ -406,7 +432,7 @@ function docsFonts(): Plugin {
 }
 
 export function docsSite(options: DocsSiteOptions = {}): Plugin[] {
-  return [docsWatch(), docsContent(), docsBrand(), docsScripts(options.scripts), docsModules(), docsFrames(), docsDevSearch(), docsFonts()];
+  return [docsWatch(), docsChunks(), docsContent(), docsBrand(), docsScripts(options.scripts), docsModules(), docsFrames(), docsDevSearch(), docsFonts()];
 }
 
 /**

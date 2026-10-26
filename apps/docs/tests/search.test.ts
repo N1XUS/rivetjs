@@ -1,8 +1,10 @@
 // Search palette on the BUILT site (nx `docs:test` depends on `docs:build`), in Chromium: a cold keyboard shortcut
 // fetches only the palette and the light cdk overlay primitives (DOCS-COLD 2026-10-20: 187 KB before, the cdk Modal /
-// Dialog closure with collections), and the palette is a modal: focus inside, Escape / outside press close it, the
-// page around it is inert while open, focus returns, the query is kept for the next open. A lone Ctrl keydown and trigger
-// hover / focus fetch the palette ahead, so the press fetches none of it (CHUNK-CYCLE 2026-10-20).
+// Dialog closure with collections; SEARCH-CHUNK 2026-10-27: 223 KB, the palette chunk imported the 189 KB highlighter
+// entry that held rolldown's runtime — docs-kit `vite.ts` `docsChunks`), and the palette is a modal: focus inside,
+// Escape / outside press close it, the page around it is inert while open, focus returns, the query is kept for the
+// next open. A lone Ctrl keydown and trigger hover / focus fetch the palette ahead, so the press fetches none of it
+// (CHUNK-CYCLE 2026-10-20).
 import { strict as assert } from "node:assert";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
