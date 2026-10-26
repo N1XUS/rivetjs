@@ -62,6 +62,14 @@ pub struct Component {
     pub call_info: Vec<(bool, Vec<String>, bool)>,
     /// ZERO CALLSITE: the JSX element of each call (same order as `calls`).
     pub call_nodes: Vec<NodeId>,
+    /// PLACE (placement cost features, `facts_json` only): native JSX elements written in the component (its own markup,
+    /// what an adopt walk of an instance runs over besides its children's), and per call (same order as `calls`) the
+    /// source bytes of its attributes and text children (the props a `SITE` / independent record would ship).
+    pub elements: u32,
+    pub call_bytes: Vec<u32>,
+    /// PLACE: per call, it has JSX element / fragment children (its `children` prop holds rendered values at run time,
+    /// so the server demotes a `SITE` instance there: `DEMOTED`).
+    pub call_children: Vec<bool>,
 }
 
 /// Site kinds that run in the browser whatever the inputs (change sources). A `ref` is not one: the element reaches
@@ -767,6 +775,14 @@ fn component_tag<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> Option<&'a str> {
     }
 }
 
+/// PLACE: source bytes of a call's props — its opening tag without `<`, the tag name and `>` / `/>`, plus its JSX text
+/// children (trimmed). A cost feature only (an estimate of the record's props bytes), never a verdict.
+fn props_bytes(el: &JSXElement<'_>, tag: u32) -> u32 {
+    let open = el.opening_element.span.size().saturating_sub(tag + 2);
+    let text: u32 = el.children.iter().map(|c| if let JSXChild::Text(t) = c { t.value.trim().len() as u32 } else { 0 }).sum();
+    open + text
+}
+
 fn context_call(e: &CallExpression<'_>) -> bool {
     match unwrap(&e.callee) {
         Expression::Identifier(i) => {
@@ -829,6 +845,9 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
             let mut calls = Vec::new();
             let mut call_info = Vec::new();
             let mut call_nodes = Vec::new();
+            let mut elements = 0u32;
+            let mut call_bytes = Vec::new();
+            let mut call_children = Vec::new();
             tree.walk(function, &mut |n| {
                 match tree.kind(n) {
                     AstKind::CallExpression(c) if context_call(c) => context = true,
@@ -840,6 +859,9 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                         }
                     }
                     AstKind::JSXElement(el) => {
+                        if is_native(tree, el) {
+                            elements += 1;
+                        }
                         if let Some(tag) = component_tag(tree, el) {
                             if tag == "Provider" || tag.ends_with(".Provider") {
                                 provides = true;
@@ -853,13 +875,15 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                             calls.push((tag.to_string(), data_call(tree, resumed, el)));
                             call_info.push((passes_function(tree, el), enclosing(tree, n, function), data_inputs(tree, el)));
                             call_nodes.push(n);
+                            call_bytes.push(props_bytes(el, tag.len() as u32));
+                            call_children.push(el.children.iter().any(|c| matches!(c, JSXChild::Element(_) | JSXChild::Fragment(_))));
                         }
                     }
                     _ => {}
                 }
                 true
             });
-            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info, call_nodes }
+            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info, call_nodes, elements, call_bytes, call_children }
         })
         .collect()
 }
@@ -1265,7 +1289,7 @@ fn compound_part(tree: &Tree<'_>, n: NodeId) -> bool {
 }
 
 /// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, listens, context, params, renders, calls: [[tag,
-/// data, function, enclosing, data inputs]] }]]`.
+/// data, function, enclosing, data inputs, props bytes, element children]], elements }]]` (the last three: PLACE cost features).
 pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
     let list: Vec<serde_json::Value> = components(tree, resumed)
         .into_iter()
@@ -1274,7 +1298,8 @@ pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
                 .calls
                 .iter()
                 .zip(&c.call_info)
-                .map(|((tag, data), (function, around, inputs))| serde_json::json!([tag, data, function, around, inputs]))
+                .zip(c.call_bytes.iter().zip(&c.call_children))
+                .map(|(((tag, data), (function, around, inputs)), (bytes, children))| serde_json::json!([tag, data, function, around, inputs, bytes, children]))
                 .collect();
             serde_json::json!([c.name, {
                 "interactive": c.own,
@@ -1284,7 +1309,8 @@ pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
                 "context": c.context,
                 "params": c.params,
                 "renders": c.renders,
-                "calls": calls
+                "calls": calls,
+                "elements": c.elements
             }])
         })
         .collect();

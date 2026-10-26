@@ -1,0 +1,434 @@
+{
+  "kind": "measured",
+  "siteBonus": 0,
+  "htmlMsPerByte": 0.0015990095748418833,
+  "jsMsPerByte": 0.0011903945884822896,
+  "runtimeLiteMs": 0,
+  "runtimeFullMs": 0,
+  "recordBytes": 16.680479783805254,
+  "dependentRecordBytes": 0.1259628374717643,
+  "propsRatio": 0.9999949561458653,
+  "adoptMsPerElement": 0.0007400131355589693,
+  "adoptMsPerRecord": 0,
+  "pInteract": 0.5,
+  "serverUsPerRecord": 0.4454914897674628,
+  "serverUsPerStateByte": 0.00030917874647772963,
+  "serverMsPerUs": 0.001,
+  "meta": {
+    "measured": "2026-10-26T07:42:38.553Z",
+    "machine": "Apple M4 Pro × 14, darwin 25.6.0, node v26.5.1",
+    "profile": {
+      "name": "mobile",
+      "kbps": 1638.4,
+      "rttMs": 150,
+      "cpu": 4
+    },
+    "policy": {
+      "pInteract": 0.5,
+      "serverWeight": 0.001
+    },
+    "js": {
+      "modules": 131,
+      "sourceBytes": 1273911,
+      "rawPerSource": 0.8161857461000023,
+      "gzPerSource": 0.23984014581866395,
+      "parseMsPerKB1x": 0.006053563667026882,
+      "parseR2": 0.9672825414269935
+    },
+    "tail": {
+      "intercept": 64.05427363650233,
+      "r2": 0.9999978187223572,
+      "gzRatio": 0.3274771609276177,
+      "syntheticGz": 0.09231791011733452,
+      "abGz": {
+        "frames": 7,
+        "ratio": 0.3274771609276177
+      }
+    },
+    "server": {
+      "intercept": 3.6617068752489867,
+      "r2": 0.9980609877077581,
+      "samples": [
+        {
+          "parts": 1,
+          "label": 4,
+          "site": false,
+          "html": 3070,
+          "htmlGz": 1668,
+          "records": 2,
+          "independent": 1,
+          "dependent": 1,
+          "state": 107,
+          "props": 0,
+          "us": 8.466044999999838
+        },
+        {
+          "parts": 1,
+          "label": 4,
+          "site": true,
+          "html": 3055,
+          "htmlGz": 1666,
+          "records": 1,
+          "independent": 1,
+          "dependent": 0,
+          "state": 92,
+          "props": 15,
+          "us": 4.502709999999865
+        },
+        {
+          "parts": 1,
+          "label": 64,
+          "site": false,
+          "html": 3130,
+          "htmlGz": 1701,
+          "records": 2,
+          "independent": 1,
+          "dependent": 1,
+          "state": 107,
+          "props": 0,
+          "us": 5.71708000000001
+        },
+        {
+          "parts": 1,
+          "label": 64,
+          "site": true,
+          "html": 3175,
+          "htmlGz": 1701,
+          "records": 1,
+          "independent": 1,
+          "dependent": 0,
+          "state": 152,
+          "props": 75,
+          "us": 3.6895849999999086
+        },
+        {
+          "parts": 1,
+          "label": 256,
+          "site": false,
+          "html": 3322,
+          "htmlGz": 1766,
+          "records": 2,
+          "independent": 1,
+          "dependent": 1,
+          "state": 107,
+          "props": 0,
+          "us": 3.6031250000002046
+        },
+        {
+          "parts": 1,
+          "label": 256,
+          "site": true,
+          "html": 3559,
+          "htmlGz": 1768,
+          "records": 1,
+          "independent": 1,
+          "dependent": 0,
+          "state": 344,
+          "props": 267,
+          "us": 3.6250000000001137
+        },
+        {
+          "parts": 20,
+          "label": 4,
+          "site": false,
+          "html": 4388,
+          "htmlGz": 1794,
+          "records": 21,
+          "independent": 1,
+          "dependent": 20,
+          "state": 121,
+          "props": 0,
+          "us": 13.324374999999975
+        },
+        {
+          "parts": 20,
+          "label": 4,
+          "site": true,
+          "html": 4941,
+          "htmlGz": 1881,
+          "records": 20,
+          "independent": 20,
+          "dependent": 0,
+          "state": 674,
+          "props": 300,
+          "us": 12.75520499999999
+        },
+        {
+          "parts": 20,
+          "label": 64,
+          "site": false,
+          "html": 5588,
+          "htmlGz": 2073,
+          "records": 21,
+          "independent": 1,
+          "dependent": 20,
+          "state": 121,
+          "props": 0,
+          "us": 11.920414999999878
+        },
+        {
+          "parts": 20,
+          "label": 64,
+          "site": true,
+          "html": 7341,
+          "htmlGz": 2234,
+          "records": 20,
+          "independent": 20,
+          "dependent": 0,
+          "state": 1874,
+          "props": 1500,
+          "us": 14.160415000000057
+        },
+        {
+          "parts": 20,
+          "label": 256,
+          "site": false,
+          "html": 9428,
+          "htmlGz": 2531,
+          "records": 21,
+          "independent": 1,
+          "dependent": 20,
+          "state": 121,
+          "props": 0,
+          "us": 11.960830000000158
+        },
+        {
+          "parts": 20,
+          "label": 256,
+          "site": true,
+          "html": 15021,
+          "htmlGz": 2709,
+          "records": 20,
+          "independent": 20,
+          "dependent": 0,
+          "state": 5714,
+          "props": 5340,
+          "us": 13.868544999999983
+        },
+        {
+          "parts": 100,
+          "label": 4,
+          "site": false,
+          "html": 9911,
+          "htmlGz": 2136,
+          "records": 101,
+          "independent": 1,
+          "dependent": 100,
+          "state": 122,
+          "props": 0,
+          "us": 48.390210000000025
+        },
+        {
+          "parts": 100,
+          "label": 4,
+          "site": true,
+          "html": 12945,
+          "htmlGz": 2514,
+          "records": 100,
+          "independent": 100,
+          "dependent": 0,
+          "state": 3156,
+          "props": 1500,
+          "us": 47.980625000000146
+        },
+        {
+          "parts": 100,
+          "label": 64,
+          "site": false,
+          "html": 15911,
+          "htmlGz": 3131,
+          "records": 101,
+          "independent": 1,
+          "dependent": 100,
+          "state": 122,
+          "props": 0,
+          "us": 46.736045000000104
+        },
+        {
+          "parts": 100,
+          "label": 64,
+          "site": true,
+          "html": 24945,
+          "htmlGz": 3965,
+          "records": 100,
+          "independent": 100,
+          "dependent": 0,
+          "state": 9156,
+          "props": 7500,
+          "us": 52.471874999999955
+        },
+        {
+          "parts": 100,
+          "label": 256,
+          "site": false,
+          "html": 35111,
+          "htmlGz": 5105,
+          "records": 101,
+          "independent": 1,
+          "dependent": 100,
+          "state": 122,
+          "props": 0,
+          "us": 51.61603999999954
+        },
+        {
+          "parts": 100,
+          "label": 256,
+          "site": true,
+          "html": 63345,
+          "htmlGz": 6012,
+          "records": 100,
+          "independent": 100,
+          "dependent": 0,
+          "state": 28356,
+          "props": 26700,
+          "us": 53.48125000000039
+        },
+        {
+          "parts": 400,
+          "label": 4,
+          "site": false,
+          "html": 30911,
+          "htmlGz": 3306,
+          "records": 401,
+          "independent": 1,
+          "dependent": 400,
+          "state": 122,
+          "props": 0,
+          "us": 170.6845850000002
+        },
+        {
+          "parts": 400,
+          "label": 4,
+          "site": true,
+          "html": 43545,
+          "htmlGz": 4764,
+          "records": 400,
+          "independent": 400,
+          "dependent": 0,
+          "state": 12756,
+          "props": 6000,
+          "us": 183.88874999999985
+        },
+        {
+          "parts": 400,
+          "label": 64,
+          "site": false,
+          "html": 54911,
+          "htmlGz": 6573,
+          "records": 401,
+          "independent": 1,
+          "dependent": 400,
+          "state": 122,
+          "props": 0,
+          "us": 187.1095850000006
+        },
+        {
+          "parts": 400,
+          "label": 64,
+          "site": true,
+          "html": 91545,
+          "htmlGz": 10903,
+          "records": 400,
+          "independent": 400,
+          "dependent": 0,
+          "state": 36756,
+          "props": 30000,
+          "us": 196.8472900000006
+        },
+        {
+          "parts": 400,
+          "label": 256,
+          "site": false,
+          "html": 131711,
+          "htmlGz": 5030,
+          "records": 401,
+          "independent": 1,
+          "dependent": 400,
+          "state": 122,
+          "props": 0,
+          "us": 188.3904199999995
+        },
+        {
+          "parts": 400,
+          "label": 256,
+          "site": true,
+          "html": 245145,
+          "htmlGz": 8230,
+          "records": 400,
+          "independent": 400,
+          "dependent": 0,
+          "state": 113556,
+          "props": 106800,
+          "us": 216.80812500000002
+        }
+      ]
+    },
+    "adopt": {
+      "intercept": 4.751578382238029,
+      "r2": 0.19046169315840755,
+      "samples": [
+        {
+          "elements": 2,
+          "records": 2,
+          "ms": 3.843
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 3.146
+        },
+        {
+          "elements": 41,
+          "records": 41,
+          "ms": 3.702
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 4.691
+        },
+        {
+          "elements": 202,
+          "records": 2,
+          "ms": 4.295
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 5.321000000000001
+        },
+        {
+          "elements": 241,
+          "records": 41,
+          "ms": 4.791
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 4.829
+        },
+        {
+          "elements": 802,
+          "records": 2,
+          "ms": 5.871
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 5.523
+        },
+        {
+          "elements": 841,
+          "records": 41,
+          "ms": 3.8080000000000003
+        },
+        {
+          "elements": 1,
+          "records": 1,
+          "ms": 5.699
+        }
+      ]
+    },
+    "note": "runtimeLiteMs / runtimeFullMs are 0: no phase-1 decision changes whether a page has records or runs lite (spec §4.2)."
+  }
+}

@@ -68,6 +68,10 @@ export interface BoundaryFacts {
   static(file: string): string[];
   /** ZERO CALLSITE (`contexts` given): the per-call-site context proof (`facts-callsite.ts`); null without. */
   callSites: CallSites | null;
+  /** PLACE (`place.ts`): resolved call sites by callee key (`file?Name`), in the order `callSites` trace results use. */
+  callers: ReadonlyMap<string, readonly { caller: string; index: number }[]>;
+  /** PLACE: route / derived roots (component keys). */
+  roots: ReadonlySet<string>;
 }
 
 const key = (file: string, name: string) => file + "?" + name;
@@ -295,6 +299,8 @@ export function boundaryFacts(
   const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, shell, options: contexts }) : null;
   return {
     callSites: proof,
+    callers: sites,
+    roots: isRoot,
     verdicts,
     boundaries: (file) => names(file, (v) => v.interactive),
     independent: (file) => names(file, (v) => v.independent),

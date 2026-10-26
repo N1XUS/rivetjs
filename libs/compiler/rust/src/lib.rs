@@ -16,6 +16,7 @@ mod html;
 mod i18n;
 mod ir;
 mod map;
+mod place;
 mod resume;
 mod server_split;
 mod slots;
@@ -85,6 +86,8 @@ enum Request {
     ModuleFacts { source: String, filename: String, options: Option<FactsOptions> },
     Check { source: String, options: Option<Value> },
     DecodeHtml { text: String },
+    /// PLACE: automatic placement over the whole-program graph (`place/mod.rs`).
+    Place(place::Request),
     /// Loader self-test: panics with `message` (exercises the panic hook + instance replacement).
     Panic { message: String },
 }
@@ -413,6 +416,7 @@ pub fn handle(request: &[u8]) -> Vec<u8> {
         Ok(Request::ModuleFacts { source, filename, options }) => ok(module_facts(&source, &filename, options)),
         Ok(Request::Check { source, options }) => ok(check_json(&source, options)),
         Ok(Request::DecodeHtml { text }) => ok(Value::String(entities::decode_html(&text))),
+        Ok(Request::Place(request)) => ok(place::run(request)),
         Ok(Request::Panic { message }) => panic!("{message}"),
         Err(error) => json!({ "error": format!("invalid request: {error}") }),
     };

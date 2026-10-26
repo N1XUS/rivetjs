@@ -68,6 +68,13 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 - ui-docs (1,048 frames, base 49024275d): records 13,698 → 12,821, state 1,218,506 → 1,152,393 B, HTML median 11,453 → 11,374 B (gz 4,653 → 4,635); 892 frames smaller, 16 larger (literal props now shipped by `SITE` records: `button-custom-styles` +616 B, long class strings); ≥ 30 KB frames neutral (gz −45 B over 40). First click 4× CPU: alert-basic 122 → 92 ms, button-variants 88 → 83 ms (heap −0.4 MB); single-part examples, scheduler-views, showcase-kanban within noise. Server: zero-cards, routes-100 / 500 unchanged.
 - Tests: `libs/compiler/tests/facts-callsite.test.ts`, `libs/runtime/tests/derived-callsite.test.ts`.
 
+## Automatic placement (PLACE phase 1, 2026-10-26)
+
+- Spec `docs/design/specs/2026-10-26-automatic-placement-design.md`. Build pass after `boundaryFacts()`: `libs/compiler/place.ts` → wasm `place` op (`rust/src/place/*`) decides per proven call site `site` vs `with-parent` by a cost model (state bytes, fetched JS, first-click adopt work, server µs).
+- `rivet({ resume: { placement } })` / env `RIVET_PLACEMENT`: `heuristic` (default; = ZERO CALLSITE, byte-identical), `measured` (`libs/compiler/place-table.json`, from `scripts/place/calibrate.ts`), `off`, table / path. `RIVET_PLACEMENT_EXPLAIN=<file>` → decision report (`<file>` JSON + `.txt`).
+- Legality only from proofs: never a `site` the call-site proof does not allow; any choice keeps behaviour (both backends exist today).
+- Tests: `libs/compiler/tests/place.test.ts`.
+
 ## Fetch-ahead gating (`server-derived-fo.ts`, ZERO R6a)
 
 - `data-fo` lists only what can become live: records whose name listens (D5), `load` / `idle` / `visible` triggers, the document click listeners (`g`), plus their dependent parent chains, wake-list sources / readers and `MOD` records; nothing live → no `data-fo` (no runtime fetch). Pre-D5 tails (no types): every record.

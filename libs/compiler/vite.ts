@@ -1,11 +1,12 @@
 import { readFile } from "node:fs/promises";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
+import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import { compile, moduleFacts, type CompileOptions, type CompileResult, type ModuleFacts } from "./index.ts";
 import { docsUrl } from "./codes.ts";
@@ -83,6 +84,15 @@ export interface RivetResumeOptions {
    * proof below it). Plugins add entries with `api.resumeHost(file, name?)`.
    */
   hosts?: string[];
+  /**
+   * PLACE (phase 1, spec `docs/design/specs/2026-10-26-automatic-placement-design.md`, `place.ts`): how the build picks
+   * per proven call site between `site` (independent, context-free record with its props) and `with-parent` (adopts with
+   * its parent). `"heuristic"` (default): today's rule, every proven site — byte-identical to the unplaced build;
+   * `"measured"`: the calibrated cost table (`@rivetjs/compiler` `place-table.json`, `scripts/place/calibrate.ts`); a
+   * table object or `{ table, explain, weights }`; `"off"`: no placement pass. Env `RIVET_PLACEMENT`
+   * (`heuristic` | `measured` | `off` | a table JSON path) overrides; `RIVET_PLACEMENT_EXPLAIN=<file>` writes the report.
+   */
+  placement?: PlacementOption;
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -923,9 +933,51 @@ function rivetPlugin(
     }
     return deps ? "pkg:" + name : null;
   };
+  /** PLACE: run the placement pass over the walk (null: `placement: "off"`). Pages: route / derived roots + shell pages. */
+  const placementOf = (
+    facts: Map<string, ModuleFacts>,
+    verdicts: ReturnType<typeof boundaryFacts>,
+    bytes: Map<string, number>,
+    shells: Set<string>,
+  ): ReturnType<typeof placeVerdicts> | null => {
+    const env = process.env.RIVET_PLACEMENT;
+    const option: PlacementOption = env
+      ? env === "heuristic" || env === "measured" || env === "off"
+        ? env
+        : { table: env }
+      : (resume?.placement ?? "heuristic");
+    if (option === "off" || !verdicts.callSites) return null;
+    const config: Exclude<PlacementOption, string | PlacementTable> =
+      typeof option === "object" && !("kind" in option) ? option : { table: option as "heuristic" | "measured" | PlacementTable };
+    const pages = [...verdicts.roots];
+    for (const entry of shells) {
+      const at = entry.lastIndexOf("#");
+      const file = at > 0 && !existsSync(entry) ? entry.slice(0, at) : entry;
+      const name = file === entry ? (facts.get(file)?.defaultName ?? "default") : entry.slice(at + 1);
+      if (facts.get(file)?.boundaries.has(name)) pages.push(file + "?" + name);
+    }
+    const explainFile = process.env.RIVET_PLACEMENT_EXPLAIN ?? config.explain;
+    const placed = placeVerdicts({
+      facts,
+      verdicts,
+      bytes,
+      pages,
+      table: placementTable(config.table),
+      ...(config.weights ? { weights: config.weights } : {}),
+      explain: !!explainFile,
+      display: (file) => posix(relative(root, file)),
+    });
+    if (!placed.agrees) console.warn("[rivet] placement: the legal call sites differ from the call-site proof; today's verdicts kept");
+    if (explainFile) {
+      writeFileSync(explainFile + ".txt", explainText(placed, { all: true }));
+      writeFileSync(explainFile, JSON.stringify({ result: placed.result, graph: placed.graph }));
+    }
+    return placed;
+  };
   /** Walk the resume module graph from `resume.modules` (facts with `boundaries`), close the boundary facts over it (`boundaryFacts`; route modules' default exports are independent roots) and keep each module's verdicts. */
   const derivedWalk = async (ctx: Rollup.PluginContext): Promise<void> => {
     const facts = new Map<string, ModuleFacts>(),
+      sourceBytes = new Map<string, number>(),
       typeExports = new Map<string, Set<string>>(),
       graph = new Map<string, Map<string, string>>(),
       roots = new Set<string>();
@@ -939,6 +991,7 @@ function rivetPlugin(
     for (let filename; (filename = pending.shift());) {
       if (facts.has(filename)) continue;
       const source = prepared(filename, await sourceOf(ctx, filename));
+      sourceBytes.set(filename, source.length);
       const route = isRoute(filename);
       const f = plain.has(filename)
         ? moduleFacts(source, filename, { refs: true })
@@ -990,6 +1043,8 @@ function rivetPlugin(
           : verdicts.callSites!.why(resolve(root, id.split("@")[0]!), id.split("@")[1]);
       appendFileSync(process.env.RIVET_CALLSITE_TRACE, JSON.stringify(out) + "\n");
     }
+    // PLACE: per proven call site, `site` vs `with-parent` (heuristic table = today's marks, byte-identical).
+    const placement = placementOf(facts, verdicts, sourceBytes, shells);
     derivedVerdicts.clear();
     derivedExtraExports.clear();
     for (const [file, f] of facts)
@@ -1000,8 +1055,8 @@ function rivetPlugin(
           independent: verdicts.independent(file),
           conditional: verdicts.conditional(file),
           static: verdicts.static(file),
-          site: verdicts.callSites!.site(file),
-          sites: verdicts.callSites!.sites(file),
+          site: placement ? placement.site(file) : verdicts.callSites!.site(file),
+          sites: placement ? placement.sites(file) : verdicts.callSites!.sites(file),
           free: verdicts.callSites!.free(file),
         });
         const own = new Set(boundaries.map((name) => name.slice(name.lastIndexOf("#") + 1)));

@@ -366,7 +366,13 @@ export interface ComponentBoundaryFacts {
     around: string[];
     /** Its attributes and expression children are data (element children are calls of their own, function children slots). */
     inputs: boolean;
+    /** PLACE cost feature: source bytes of its attributes and text children (≈ the props a record would ship; absent from an older wasm). */
+    bytes?: number;
+    /** PLACE: it has JSX element / fragment children (a `SITE` instance there is demoted at run time). */
+    children?: boolean;
   }[];
+  /** PLACE cost feature: native JSX elements written in the component (absent from an older wasm). */
+  elements?: number;
 }
 
 /**
@@ -425,7 +431,8 @@ interface RawFacts {
       context: boolean;
       params: "none" | "object" | "destructured";
       renders: string[];
-      calls: [string, boolean, boolean?, string[]?, boolean?][];
+      calls: [string, boolean, boolean?, string[]?, boolean?, number?, boolean?][];
+      elements?: number;
     },
   ][];
   holes?: HoleFacts[];
@@ -474,7 +481,15 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
           provides: facts.provides ?? false,
           listens: facts.listens ?? false,
           renders: new Set(facts.renders),
-          calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data]) => ({ tag, data, fn, around, inputs })),
+          calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data, bytes, children]) => ({
+            tag,
+            data,
+            fn,
+            around,
+            inputs,
+            ...(bytes === undefined ? {} : { bytes }),
+            ...(children === undefined ? {} : { children }),
+          })),
         } satisfies ComponentBoundaryFacts,
       ]),
     ),

@@ -113,10 +113,13 @@ export default function () { return <Page data={null} />; }
       context: false,
       params: "destructured",
       renders: ["Shell", "Counter"],
+      // PLACE cost features: `bytes` = attribute + text-children source bytes, `children` = element children, `elements` =
+      // native elements written in the component.
       calls: [
-        { tag: "Shell", data: true, fn: false, around: [], inputs: true },
-        { tag: "Counter", data: false, fn: false, around: [], inputs: false },
+        { tag: "Shell", data: true, fn: false, around: [], inputs: true, bytes: 16, children: false },
+        { tag: "Counter", data: false, fn: false, around: [], inputs: false, bytes: 27, children: false },
       ],
+      elements: 1,
     },
   );
   assert.equal(facts.boundaries.get("Shell")!.context, true);
@@ -125,7 +128,7 @@ export default function () { return <Page data={null} />; }
   assert.equal(facts.boundaries.get("Counter")!.source, true);
   assert.equal(facts.boundaries.get("Shell")!.source, false);
   assert.equal(facts.boundaries.get("Counter")!.params, "object");
-  assert.deepEqual(facts.boundaries.get("default")!.calls, [{ tag: "Page", data: true, fn: false, around: [], inputs: true }]);
+  assert.deepEqual(facts.boundaries.get("default")!.calls, [{ tag: "Page", data: true, fn: false, around: [], inputs: true, bytes: 14, children: false }]);
   assert.equal(moduleFacts(COUNTER, "m.tsx").boundaries.size, 0);
 });
 
@@ -164,8 +167,8 @@ export { x as y } from "./other.ts";
   );
   assert.equal(b("Root").provides, true);
   assert.deepEqual(b("Root").calls, [
-    { tag: "Provider", data: false, fn: false, around: [], inputs: false },
-    { tag: "Part", data: false, fn: true, around: ["Provider"], inputs: false },
+    { tag: "Provider", data: false, fn: false, around: [], inputs: false, bytes: 26, children: true },
+    { tag: "Part", data: false, fn: true, around: ["Provider"], inputs: false, bytes: 33, children: false },
   ]);
   assert.equal(facts.exports.get("Alias"), "Reads");
   assert.equal(facts.exports.get("Meter"), "Meter");
