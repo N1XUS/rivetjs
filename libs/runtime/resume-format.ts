@@ -655,11 +655,13 @@ export function escapeJSON(json: string): string {
  */
 export type BoundaryRecord = [id: number, parent: number, flags: number, name: string, signals: unknown[], props?: object];
 
-/** What one server flush produced (records by name, chunk per name `m`, listened types per name `e`), before encoding. */
+/** What one server flush produced (records by name, chunk per name `m`, listened types per name `e`, read-back props per
+ * name `r`), before encoding. */
 export interface FlushTail extends Omit<BoundaryTail, "v" | "n" | "u" | "b"> {
   b: BoundaryRecord[];
   m?: Record<string, string>;
   e?: Record<string, string>;
+  r?: Record<string, string>;
 }
 
 /**
@@ -667,9 +669,11 @@ export interface FlushTail extends Omit<BoundaryTail, "v" | "n" | "u" | "b"> {
  * (D5 / ZERO R2, ruling R-30: space separated, `*` = any, the union over the name's instances; absent = listens to
  * nothing). An event adopts — and the loader holds / warms for — only the records around its target whose name listens
  * to its type (and what those need). While no entry lists types every record listens (a server without D5 facts); a
- * record the loader cannot find (streamed later) listens to everything.
+ * record the loader cannot find (streamed later) listens to everything. `read` (ZERO REGRESS; types `""` when it listens
+ * to nothing): its props a record leaves out are read back from its markup, `"key=path …"` (path from the record's
+ * `data-b` element: `f` firstChild, `n` nextSibling; the value = that element's `textContent`).
  */
-export type TailName = [name: string, url: number, types?: string];
+export type TailName = [name: string, url: number, types?: string, read?: string];
 /** A record on the wire: `BoundaryRecord` with the name as an index into `n`, keyed values left out when empty (no props). */
 export type TailRecord = [id: number, parent: number, flags: number, name: number, signals?: unknown[], props?: object];
 /**
@@ -758,7 +762,8 @@ export function expandTail(t: BoundaryTail): FlushTail {
   n.forEach((entry, i) => {
     const url = urlOf(t, i);
     if (url !== undefined) (out.m ??= {})[entry[0]] = url;
-    if (entry[2] !== undefined) (out.e ??= {})[entry[0]] = entry[2];
+    if (entry[2]) (out.e ??= {})[entry[0]] = entry[2];
+    if (entry[3]) (out.r ??= {})[entry[0]] = entry[3];
   });
   return out;
 }

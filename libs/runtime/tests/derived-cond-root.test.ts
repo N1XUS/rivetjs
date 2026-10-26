@@ -87,3 +87,43 @@ compiled("a card's first click adopts only that card under the dropped root", as
     assert.equal(await p.evaluate(() => (globalThis as { __componentRuns?: number }).__componentRuns), undefined);
   });
 });
+
+// ZERO REGRESS: below a record listening to every event (the document click listeners' root, the router's `App`), any event
+// adopts every record around its target outermost first — an independent child there never adopts standalone, so it
+// ships no props (a route page's `data` twice) and adopts with its parent; one with a trigger stays independent.
+const SHELL = `import { signal } from "@rivetjs/reactivity";
+export function Item(props: { label: string; n: number }) {
+  const on = signal(false);
+  return <li class="item" onClick={() => on.set(!on())}>{on() ? props.label + props.n : "-"}</li>;
+}
+export function Shell(props: { n: number }) {
+  const open = signal(true);
+  return <main onClick={() => open.set(!open())}><ul>{Array.from({ length: props.n }, (_, i) => <Item label={"L" + i} n={i} />)}</ul></main>;
+}`;
+compiled("an independent child below a record that listens to everything ships no props and adopts with its parent", async () => {
+  const opts = { module: "src/s.tsx", boundaries: ["Item", "Shell"], independent: ["Item"] };
+  const server = compile(SHELL, { target: "server", filename: "s.tsx", resume: opts } as never);
+  assert.deepEqual(server.diagnostics, []);
+  const { Shell } = await importServer<{ Shell: (props: { n: number }) => ServerValue }>(server.code);
+  const { _rListen } = await import("@rivetjs/runtime/server-derived");
+  const shape = async (listen: boolean) =>
+    expandTail(
+      JSON.parse(
+        /<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(
+          (await derivedToString(() => (listen && _rListen("a[href]"), Shell({ n: 2 })), {
+            manifest: { runtime: "/rt.js", symbols: { "src/s.tsx#Item": "/s.js", "src/s.tsx#Shell": "/s.js" } },
+          })) as string,
+        )![1]!,
+      ),
+    ).b.map(([id, parent, flags, , , props]) => [id, parent, flags & 1, props ?? null]);
+  assert.deepEqual(await shape(false), [
+    [1, 0, 0, null],
+    [2, 1, 1, { label: "L0", n: 0 }],
+    [3, 1, 1, { label: "L1", n: 1 }],
+  ]);
+  assert.deepEqual(await shape(true), [
+    [1, 0, 0, null],
+    [2, 1, 0, null],
+    [3, 1, 0, null],
+  ]);
+});

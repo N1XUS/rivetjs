@@ -24,7 +24,7 @@
 // keys its cold keydowns hold (`k`), the delegated event types (`data-events`), the runtime (`data-rt`) and `data-boot`
 // (a load / idle / visible trigger), and the derived inline loader (`resume-loader-derived.ts`) follows it. Without a
 // `manifest.runtime` the tail only.
-import { foUrls } from "./server-derived-fo.ts";
+import { foNames, urlsOf } from "./server-derived-fo.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   computed,
@@ -122,6 +122,9 @@ export interface Boundary {
   flags: number;
   /** Independent boundaries: the props object (checked to be data at `_rB`). */
   props: object | null;
+  /** ZERO REGRESS: `_rB` `read` — its props the browser reads back from the markup (`"key=path …"`, compiler-proved), else
+   * undefined. */
+  read?: string;
   /** Keyed state registered while this body evaluated: (key, current value getter[, `LIT` init[, DEV: its JSON]]), creation
    * order (`NO_SIGNALS`, shared and frozen, until the first). */
   signals: [key: string, value: () => unknown, init?: unknown, json?: string][];
@@ -157,8 +160,11 @@ export interface Boundary {
    * STATIC-ZERO-2 D5: the event types its unit listens to (`_rB` `events`: own handlers + model bindings; `_rHandler` with a
    * function; spread listener props rendered while it is the current boundary; `*` = any: an `interaction` client trigger,
    * a handler of unknown type). Tail `e`: an event adopts only the records around its target that listen to its type.
+   * Space separated, in first-seen order, `*` alone once any type: the compiler's `events` string as is (interned, shared by
+   * every instance of the site — ZERO REGRESS: a `Set` per boundary and a union per record cost a 500-card page +25 % server
+   * time), grown by `listen`.
    */
-  ev?: Set<string>;
+  ev?: string;
 }
 /** Reactivity's owner as the body sees it: `ctx` is its context chain (immutable frames, inherited by owners made under it). */
 interface OwnerFrames {
@@ -591,10 +597,13 @@ export function isData(value: unknown, depth = 0): boolean {
  * Open a boundary (compiled at the top of an interactive component's body). `flags`: `INDEPENDENT` / `ATTR` from the
  * compiler; an independent boundary whose `props` object is not data is demoted (`DEMOTED`, the flag cleared); `LOAD` /
  * `IDLE` / `VISIBLE` client triggers pass through. `events`: the delegated event types its handlers use (space separated,
- * loader `data-events`); `keys`: the keydown keys its handlers handle (held while cold, tail `k`). Outside a derived
+ * loader `data-events`); `keys`: the keydown keys its handlers handle (held while cold, tail `k`). `read` (ZERO REGRESS,
+ * compiler-set for an independent boundary): the props whose every use is the sole text of an element on a static path
+ * from its root element, `"key=path …"` (`compile/derived_read.rs`): the record leaves out a string / number value of
+ * them (the browser reads that element's text, `dom-derived.ts` `propsOf`; tail names table `n[i][3]`). Outside a derived
  * render: `null` (every other call takes a null token and does nothing).
  */
-export function _rB(name: string, flags: number, props?: object | null, events?: string, keys?: string): Boundary | null {
+export function _rB(name: string, flags: number, props?: object | null, events?: string, keys?: string, read?: string): Boundary | null {
   const ctx = useContext(DERIVED);
   if (!ctx || ctx.off) return null;
   const parent = current(ctx);
@@ -622,8 +631,13 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
     weight: 0,
     mark: 0,
   };
-  if (events) for (const type of events.split(" ")) if (type) (type === "*" || ctx.events.add(type), (boundary.ev ??= new Set()).add(type));
+  if (events) {
+    const parsed = eventsOf(events);
+    boundary.ev = parsed[0];
+    for (let i = 0; i < parsed[1].length; i++) ctx.events.add(parsed[1][i]!);
+  }
   if (keys) ctx.keys[boundary.id] = keys;
+  if (read && keep) boundary.read = read;
   if (flags & TRIGGERS) ctx.boot = true;
   ctx.boundaries.push(boundary);
   ctx.stack.push(boundary);
@@ -640,6 +654,62 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
   return boundary;
 }
 const NO_SIGNALS: [key: string, value: () => unknown][] = /* @__PURE__ */ Object.freeze([]) as never;
+// `_rB` `events` (a compile-time constant per site) → [its listened types as `ev` holds them, its types for `ctx.events`].
+const eventsParsed = new Map<string, [ev: string, types: readonly string[]]>();
+function eventsOf(events: string): [ev: string, types: readonly string[]] {
+  let parsed = eventsParsed.get(events);
+  if (parsed === undefined) {
+    let ev = "";
+    const types: string[] = [];
+    for (const type of events.split(" ")) if (type) ((ev = listenOf(ev, type)), type === "*" || types.includes(type) || types.push(type));
+    eventsParsed.set(events, (parsed = [ev, types]));
+  }
+  return parsed;
+}
+/** `list` (an `ev` string, "" = none) also listening to `type`; the same string when it already does (no allocation). */
+function listenOf(list: string, type: string): string {
+  if (list === "*" || list === type) return list;
+  if (type === "*" || list === "") return type;
+  return hasType(list, type) ? list : list + " " + type;
+}
+/** `type` is one of the space separated `list` (no allocation). */
+function hasType(list: string, type: string): boolean {
+  for (let i = list.indexOf(type); i >= 0; i = list.indexOf(type, i + 1)) {
+    const end = i + type.length;
+    if ((i === 0 || list.charCodeAt(i - 1) === 32) && (end === list.length || list.charCodeAt(end) === 32)) return true;
+  }
+  return false;
+}
+// `_rB` `read` (a compile-time constant per site) → its keys.
+const readParsed = new Map<string, readonly string[]>();
+const readKeys = (read: string): readonly string[] => {
+  let keys = readParsed.get(read);
+  if (keys === undefined) readParsed.set(read, (keys = read.split(" ").map((entry) => entry.slice(0, entry.indexOf("=")))));
+  return keys;
+};
+/**
+ * ZERO REGRESS: an independent boundary's props as its record ships them — without the `read` keys holding a number or a
+ * non-empty string the HTML parser keeps as written (no CR, no NUL): the browser reads those back from the markup, where
+ * the server rendered exactly `String(value)` as the element's one text node. The same object when nothing is left out,
+ * null when nothing is left.
+ */
+const readable = (v: unknown): boolean => typeof v === "number" || (typeof v === "string" && v !== "" && v.indexOf("\r") < 0 && v.indexOf("\0") < 0);
+function shipped(props: object, read: string): object | null {
+  const keys = readKeys(read),
+    p = props as Record<string, unknown>;
+  // Per read key (the props object's keys are walked only to tell whether any other is left).
+  let dropped = 0,
+    all = 0;
+  for (let i = 0; i < keys.length; i++) if (readable(p[keys[i]!]) && Object.hasOwn(p, keys[i]!)) dropped++;
+  if (!dropped) return props;
+  for (const _ in p) all++;
+  if (all === dropped) return null;
+  const out: Record<string, unknown> = {};
+  for (const key in p) if (!(keys.includes(key) && readable(p[key]))) out[key] = p[key];
+  return out;
+}
+/** D5: boundary `b` (its unit) listens to `type` too. */
+const listen = (b: Boundary, type: string): void => void (b.ev = listenOf(b.ev ?? "", type));
 
 // `clientEffect` / `clientEvent` / `clientOnly` during a derived render: the open boundary gets the trigger `when` names
 // (`interaction` / `media:` have no boundary trigger: the boundary runs at its first use).
@@ -662,7 +732,7 @@ _trigger.on = (when, kind) => {
               : LOAD
             : 0;
   // `interaction` (and `media:`): the boundary adopts on its first event, whatever its type (D5).
-  if (!flag) return void (b.ev ??= new Set()).add("*");
+  if (!flag) return listen(b, "*");
   b.flags |= flag;
   ctx.boot = true;
 };
@@ -677,7 +747,7 @@ _trigger.ev = (key) => {
   if (type !== "*" && !DEFAULT_TYPES.has(type)) ctx.events.add(type);
   // D5: the unit rendering the spread installs it when adopted (a non-boundary helper's element counts for its boundary).
   const b = current(ctx);
-  if (b) (b.ev ??= new Set()).add(type);
+  if (b) listen(b, type);
 };
 
 /**
@@ -690,7 +760,7 @@ export function _rListens(type: string): null {
   const b = ctx && !ctx.off && current(ctx);
   // No `ctx.events` widening: the helper's listener installs on adoption, which a default-type event triggers first
   // (widening the loader to keyup / focus / blur replays those cold and broke cdk Select typeahead's pressed state).
-  if (b) (b.ev ??= new Set()).add(type);
+  if (b) listen(b, type);
   return null;
 }
 
@@ -705,7 +775,7 @@ export function _rHandler(token: Boundary | null, value: unknown, type?: string)
     token.on = true;
     if (type) {
       if (type !== "*" && !DEFAULT_TYPES.has(type)) useContext(DERIVED)?.events.add(type);
-      (token.ev ??= new Set()).add(type);
+      listen(token, type);
     }
   }
   return omitted(value) as unknown as ServerValue;
@@ -1527,7 +1597,11 @@ function flush(ctx: DerivedRender): FlushTail | null {
   if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0 && ctx.adopt.length === 0) return null;
   const b: BoundaryRecord[] = [],
     first = ctx.flushed === 0;
-  let d: DerivedDom[] | undefined, e: Record<string, string> | undefined;
+  let d: DerivedDom[] | undefined, e: Record<string, string> | undefined, rd: Record<string, string> | undefined;
+  let star: Boundary | null = null,
+    // Some name listens to every event (else no ancestor walk below).
+    any = false;
+  if (ctx.listened) for (const types of ctx.listened.values()) any ||= types === "*";
   deferFlags(ctx, ctx.flushed);
   keep(ctx, ctx.flushed);
   // ZERO Z3: the first flush keeps only weak boundaries (the router's Root / App with nothing live below them) and nothing
@@ -1555,20 +1629,47 @@ function flush(ctx: DerivedRender): FlushTail | null {
     // The nearest kept ancestor (a dropped `COND` parent of an independent child is not on the wire).
     let parent = boundary.parent;
     while (parent && parent.flags & COND && !parent.kept) parent = parent.parent;
+    // The record taking this flush's document click listeners (`g` below): it listens to every event.
+    if (!parent && !star && ctx.listen.length) any = !!(star = boundary);
+    // ZERO REGRESS: below a record that listens to every event (`*`: the router's `App`), any event adopts every record
+    // around its target outermost first (`dom-derived.ts` `around`), so a standalone adopt never happens — an independent
+    // record there would ship its props for nothing (a route page's `data`, again next to the route data). Without a
+    // trigger (`load` / `idle` / `visible` adopt it on their own) it adopts with its parent, as a dependent one.
+    if (any && boundary.flags & INDEPENDENT && boundary.props && !(boundary.flags & TRIGGERS))
+      for (let a = parent; a; a = a.parent)
+        if (!(a.flags & COND && !a.kept) && (a === star || ctx.listened?.get(a.name) === "*")) {
+          boundary.flags &= ~INDEPENDENT;
+          boundary.props = null;
+          break;
+        }
     const record: BoundaryRecord = [boundary.id, parent?.id ?? 0, boundary.flags, boundary.name, signals];
-    if (boundary.props)
-      record.push(ctx.dom?.length ? (derivedDom.api!.props(ctx.dom, boundary.id, boundary.props, [], (d ??= []), 0) as object) : boundary.props);
+    let props = boundary.props;
+    if (props && boundary.read) {
+      const kept = shipped(props, boundary.read);
+      // The names table says which keys a record without them reads back (once per name and flush).
+      if (kept !== props) (rd ??= {})[boundary.name] = boundary.read;
+      props = kept;
+    }
+    if (props) record.push(ctx.dom?.length ? (derivedDom.api!.props(ctx.dom, boundary.id, props, [], (d ??= []), 0) as object) : props);
     b.push(record);
     // D5 by NAME (R-30): the union over the name's instances; a patch re-sends a name whose union grew.
+    // (Siblings share their site's `ev` string: the union is the same string, nothing allocated.)
     const ev = boundary.ev;
-    if (ev?.size) {
+    if (ev) {
       const seen = (ctx.listened ??= new Map()).get(boundary.name);
-      const all = seen === "*" || ev.has("*") ? "*" : [...new Set([...(seen ? seen.split(" ") : []), ...ev])].join(" ");
-      if (all !== seen) (((e ??= {})[boundary.name] = all), ctx.listened.set(boundary.name, all));
+      if (seen !== ev && seen !== "*") {
+        let all = seen ?? "";
+        if (ev === "*") all = "*";
+        else
+          for (let i = 0, j = 0; i <= ev.length; i++)
+            if (i === ev.length || ev.charCodeAt(i) === 32) ((all = i > j ? listenOf(all, ev.slice(j, i)) : all), (j = i + 1));
+        if (all !== seen) (((e ??= {})[boundary.name] = all), ctx.listened.set(boundary.name, all), (any ||= all === "*"));
+      }
     }
   }
   ctx.flushed = ctx.boundaries.length;
   const tail: FlushTail = { b };
+  if (rd) tail.r = rd;
   if (ctx.adopt.length) tail.i = ctx.adopt.splice(0).map((island) => (islandUrls.push(island.key), island.id));
   if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
@@ -1731,9 +1832,25 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
  * chunks of the islands an adopt run hydrates (M6-PARITY) and their static import closures (manifest `deps`). Nothing live and
  * no island: empty (no fetch-ahead, the runtime never boots). */
 function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail): string {
-  const islands = (manifest as { islands?: Record<string, string> }).islands;
-  return foUrls(tail, manifest.runtime!, manifest.deps, islandUrls.map((key) => islands?.[key]!).filter(Boolean)).join(" ");
+  const islands = (manifest as { islands?: Record<string, string> }).islands,
+    list = islandUrls.map((key) => islands?.[key]!).filter(Boolean),
+    names = foNames(tail);
+  if (!names.size && !list.length) return "";
+  // A pure function of (manifest, names, islands): memoised per manifest (ZERO REGRESS: the closure over chunk deps cost a
+  // routed page ~0.5 µs per request).
+  let key = list.join(" ");
+  for (const name of names) key += "\0" + name;
+  let memo = aheads.get(manifest);
+  if (memo === undefined) aheads.set(manifest, (memo = new Map()));
+  let ahead = memo.get(key);
+  if (ahead === undefined) {
+    ahead = urlsOf(names, tail.m, manifest.runtime!, manifest.deps, list).join(" ");
+    // Bounded like `tails`: past it, the rest is computed per request.
+    if (memo.size < 512) memo.set(key, ahead);
+  }
+  return ahead;
 }
+const aheads = new WeakMap<object, Map<string, string>>();
 /** Per manifest: memo key (`derivedTail`) → the tail script's frozen fragments around the JSON (and nonce) slots. */
 const tails = new WeakMap<object, Map<string, readonly string[]>>();
 function tailFragments(runtime: string, ahead: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {

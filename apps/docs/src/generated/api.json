@@ -2308,7 +2308,7 @@
    "summary": "Runtime helper contract the compiler emits for.",
    "remarks": "Runtime helper contract the compiler emits for. Bump it together with `rivet.abi` in\nlibs/runtime/package.json whenever compiled output and runtime helpers change in a way the other\nside must match (new/removed/renamed helper, changed arguments, template/marker/resume format).",
    "signatures": [
-    "const RUNTIME_ABI: 11"
+    "const RUNTIME_ABI: 12"
    ],
    "params": [],
    "members": [],
@@ -2317,8 +2317,8 @@
    "examples": [],
    "source": {
     "file": "libs/compiler/abi.ts",
-    "line": 20,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L20"
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/compiler/abi.ts#L22"
    },
    "href": "/api/rivetjs/compiler/RUNTIME_ABI/"
   },
@@ -30453,8 +30453,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 371,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L371"
+    "line": 377,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L377"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumableOptions/"
   },
@@ -30532,8 +30532,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 350,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L350"
+    "line": 356,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L356"
    },
    "href": "/api/rivetjs/runtime/server-resume/ResumeManifest/"
   },
@@ -30604,8 +30604,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 386,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L386"
+    "line": 392,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L392"
    },
    "href": "/api/rivetjs/runtime/server-resume/StreamingResumableOptions/"
   },
@@ -30647,8 +30647,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 532,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L532"
+    "line": 538,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L538"
    },
    "href": "/api/rivetjs/runtime/server-resume/renderResumable/"
   },
@@ -30684,8 +30684,8 @@
    "examples": [],
    "source": {
     "file": "libs/runtime/server-derived.ts",
-    "line": 526,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L526"
+    "line": 532,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/runtime/server-derived.ts#L532"
    },
    "href": "/api/rivetjs/runtime/server-resume/resumableToString/"
   },

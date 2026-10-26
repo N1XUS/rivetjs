@@ -53,9 +53,15 @@ Status: one model since M6-CUT (2026-10-22) — the derived model (plan [derived
 - What a unit listens to (compiler `_rB` events + server): its own JSX handlers (every type, default delegated ones too; unknown type `*`), `model:` bindings (`input change`), conditional handlers holding a function (`_rHandler` type), spread listener props rendered while it is current (`_trigger.ev`), a handler of a non-boundary helper it runs (cdk `Select` / `Group` / `Compare` internals: in place → compiler `_rListens("type")`, else `omitted` with a function → `*`), `*` for an `interaction` client trigger and for any `ref` / effect in its body (they may attach listeners imperatively at adopt). Focus alone no longer adopts a unit that does not listen to `focusin` (a `model:` input adopts on its first input / change).
 - Server emission uses the compiler's full `_rB` events list (FE-COMPILE D5 events, landed with the runtime in ZERO batch 3); a module compiled by an older compiler passes no events and its names carry no types (every record listens, pre-D5 behaviour).
 
+## Independent records: what ships (ZERO REGRESS 2026-10-26)
+
+- Props read back (tail names `n[i][3]` = `"key=path …"`): the compiler (`compile/derived_read.rs`) names, in `_rB`'s sixth argument, each prop of an independent element-root boundary whose every use is the sole text of a native element on a static path from the root element (`<p>{title}</p>`, `props.title` or destructured; path `f` firstChild / `n` nextSibling; no spread / `innerHTML` / opaque / `pre` / `select` / foreign content, no other use). The server leaves a number or non-empty string without CR / NUL of those keys out of the record (`shipped`); the browser reads a missing key from that element's `textContent` before the boundary's standalone run (`dom-derived.ts` `propsOf`; DEV warns when the path finds no node). 500-card list: HTML 13.3 → 8.6 KB gz (one run record, no props), server time back to the pre-C3 cost.
+- Below a record that listens to every event (`*`: the document click listeners' root, the router's `App`) an independent record without a trigger is flushed dependent and ships no props: any event there adopts every record around its target outermost first, so its standalone adopt never runs (a route page's `data` was sent twice). Test `tests/derived-cond-root.test.ts`.
+
 ## Fetch-ahead gating (`server-derived-fo.ts`, ZERO R6a)
 
 - `data-fo` lists only what can become live: records whose name listens (D5), `load` / `idle` / `visible` triggers, the document click listeners (`g`), plus their dependent parent chains, wake-list sources / readers and `MOD` records; nothing live → no `data-fo` (no runtime fetch). Pre-D5 tails (no types): every record.
+- Per manifest the list is memoised by (kept names, islands) (`derivedTail` `fetchAhead`); a flush of ≤ 31 records runs the closure over a bit mask (`foNames`), no maps.
 - Measured (size-report eager): route-transitions 5 → 4 requests (−0.5 KB br), scheduler-views-binding 60 → 59; ui frames unchanged (every cdk control listens: press / hover / focus handlers — R-13).
 
 ## Lite runtime (`@rivetjs/runtime/dom-lite`, ZERO R4 / R5)

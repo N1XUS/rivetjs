@@ -38,6 +38,8 @@ mod server_link;
 mod derived;
 // ZERO C1 (2026-10-25): lite residuals `<Name>$a` on the derived DOM target.
 mod derived_lite;
+// ZERO REGRESS (2026-10-26): independent boundaries' rendered-only props read back from the markup (`_rB` `read`).
+mod derived_read;
 use derived::{Derived, is_function_child};
 
 pub const TARGET_HELPERS: &[&str] = &["Provider", "For", "Async", "lazyComponent", "clientOnly"];

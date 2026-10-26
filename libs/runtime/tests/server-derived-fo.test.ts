@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { foRecords, foUrls } from "../server-derived-fo.ts";
+import { foNames, foRecords, foUrls } from "../server-derived-fo.ts";
 import type { BoundaryRecord, FlushTail } from "../resume-format.ts";
 
 // ZERO R6a: fetch-ahead gating by D5 listening records (`server-derived-fo.ts`).
@@ -43,4 +43,23 @@ test("foUrls: runtime + kept names' chunks + islands, each with its static closu
   const deps = { "/rt.js": ["/core.js"], "/button.js": ["/press.js", "/core.js"] };
   assert.deepEqual(foUrls(tail, "/rt.js", deps, []), ["/rt.js", "/core.js", "/button.js", "/press.js"]);
   assert.deepEqual(foUrls({ b: tail.b, e: {}, m: tail.m }, "/rt.js", deps, ["/island.js"]), ["/rt.js", "/core.js", "/island.js"]);
+});
+
+test("foNames: the names of foRecords (small flushes take the bit-mask path, ZERO REGRESS), random tails", () => {
+  let seed = 7;
+  const rand = (n: number): number => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff), seed % n);
+  for (let round = 0; round < 400; round++) {
+    const len = 1 + rand(round < 300 ? 31 : 60),
+      b: BoundaryRecord[] = [],
+      e: Record<string, string> = {},
+      w: Record<string, number[]> = {};
+    for (let i = 1; i <= len; i++) {
+      const flags = (rand(2) ? 1 : 0) | (rand(9) ? 0 : [32, 64, 128, 512][rand(4)]!);
+      b.push(rec(i, i === 1 ? 0 : 1 + rand(i - 1), flags, "N" + rand(Math.min(len, 12))));
+    }
+    for (let i = 0; i < 4; i++) if (rand(2)) e["N" + rand(12)] = "click";
+    for (let i = 0, n = rand(4); i < n; i++) w[1 + rand(len) + ".k" + i] = [1 + rand(len), 1 + rand(len)];
+    const tail: FlushTail = { b, e, w, ...(rand(4) ? {} : { g: [[1, "a[href]"]] as [number, string][] }) };
+    assert.deepEqual([...foNames(tail)].sort(), [...new Set(foRecords(tail).map((r) => r[3]))].sort(), "round " + round);
+  }
 });

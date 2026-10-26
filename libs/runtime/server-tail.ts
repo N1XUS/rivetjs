@@ -116,8 +116,10 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
       if (ui < 0) (urls.set(short, (ui = (u ??= []).length)), u.push(short));
     }
     const entry: TailName = [name, ui];
-    const types = e?.[name];
-    if (types) entry.push(types);
+    const types = e?.[name],
+      read = t.r?.[name];
+    if (types || read) entry.push(types ?? "");
+    if (read) entry.push(read);
     n.push(entry);
     return i;
   };

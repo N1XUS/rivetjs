@@ -290,6 +290,8 @@ let cur: Unit | null = null,
 const recs = new Map<number, Rec>(),
   // Boundary name → its chunk URL (tail / patch names tables `n` + `u`, as written: the loader resolves the short form).
   chunks = new Map<string, string>(),
+  // Boundary name → its props read back from the markup (names table `n[i][3]`, ZERO REGRESS: `propsOf`).
+  readBack = new Map<string, string>(),
   modules = new Map<string, Record<string, unknown>>(),
   loads = new Map<string, Promise<void>>(),
   rowsByStart = new WeakMap<Node, LRow>(),
@@ -1585,6 +1587,29 @@ function rangeOf(r: Rec): Node[] | null {
     e = closeAt(list, at, B_OPEN, "/b");
   return e < 0 ? null : [start, list[e]!];
 }
+/**
+ * A standalone record's props (ZERO REGRESS): its record's, plus each read-back key (names table `n[i][3]`, `"key=path …"`)
+ * the record left out, read from its markup — the `textContent` of the element at `path` from its `data-b` element (`f`
+ * firstChild, `n` nextSibling): the compiler proved that text is all the component does with the value, the server
+ * rendered it from that very value. Read before the first run (the `ready` hook, the adopt or a browser render) and kept on
+ * the record (`r.props`), so later calls reuse it.
+ */
+function propsOf(r: Rec): object {
+  const spec = readBack.get(r.name),
+    root = spec && doc!.querySelector('[data-b="' + r.id + '"]');
+  let p = r.props as Record<string, unknown> | null;
+  // (A key already in the record: read before, or shipped — a value that was no string / number.)
+  if (root)
+    for (const entry of spec.split(" ")) {
+      const [key, path] = entry.split("=") as [string, string];
+      let x: Node | null = root;
+      if (p && key in p) continue;
+      for (const c of path) x = x && (c == "f" ? x.firstChild : x.nextSibling);
+      if (x) (p ??= {})[key] = x.textContent;
+      else if (DEV) console.warn("Rivet resume: boundary " + r.name + " (b" + r.id + ") has no markup to read prop " + key + " from");
+    }
+  return (r.props = p) ?? {};
+}
 /** A standalone boundary's component in its chunk (the export named after the last `#`). */
 type Exported = ((props: object) => unknown) & { ready?: (props: object) => unknown };
 const exported = (r: Rec, module: Record<string, unknown>): Exported | undefined => module[r.name.slice(r.name.lastIndexOf("#") + 1)] as Exported | undefined;
@@ -1595,7 +1620,7 @@ const exported = (r: Rec, module: Record<string, unknown>): Exported | undefined
 function prepare(r: Rec, module: Record<string, unknown>): true | Promise<void> {
   if (r.ready === null) {
     const hook = exported(r, module)?.ready;
-    const p = hook ? hook(r.props ?? {}) : undefined;
+    const p = hook ? hook(propsOf(r)) : undefined;
     r.ready = p && typeof (p as Promise<unknown>).then === "function" ? Promise.resolve(p).then(() => void (r.ready = true)) : true;
   }
   return r.ready;
@@ -1610,7 +1635,7 @@ function demotedRoot(r: Rec, module: Record<string, unknown>): void {
       r.name + " (b" + r.id + ")",
       "a root boundary was given props that are not data (functions, class instances, signals): it renders in the browser",
     );
-  r.owner = client(null, () => fn(r.props ?? {}), range[0]!, range[range.length - 1]!, r, true);
+  r.owner = client(null, () => fn(propsOf(r)), range[0]!, range[range.length - 1]!, r, true);
   if (DEV && r.owner) roots.push(r.owner);
 }
 function standalone(r: Rec, module: Record<string, unknown>): void {
@@ -1622,7 +1647,7 @@ function standalone(r: Rec, module: Record<string, unknown>): void {
     if (DEV) console.warn("Rivet resume: boundary " + r.name + " (b" + r.id + ") has no " + (fn ? "markup" : "export in its chunk") + " to adopt");
     return;
   }
-  r.owner = adoptUnit(null, () => fn(r.props ?? {}), range[0]!, range[range.length - 1]!, r, true, r.name);
+  r.owner = adoptUnit(null, () => fn(propsOf(r)), range[0]!, range[range.length - 1]!, r, true, r.name);
   if (DEV && r.owner) roots.push(r.owner);
 }
 // Lite residual (ZERO R5, ownership §3.1): a standalone boundary whose chunk exports `<Name>$a` (a compiled lite chunk)
@@ -1878,6 +1903,7 @@ function records(t: BoundaryTail, patch: boolean): void {
   for (let i = 0; i < n.length; i++) {
     const url = n[i]![1];
     if (url >= 0 && !chunks.has(n[i]![0])) chunks.set(n[i]![0], t.u![url]!);
+    if (n[i]![3]) readBack.set(n[i]![0], n[i]![3]!);
     // D5: a patch re-sends a name whose union grew.
     if (n[i]![2]) (listened ??= new Map()).set(n[i]![0], n[i]![2]!);
   }

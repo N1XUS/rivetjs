@@ -135,10 +135,18 @@ impl<'t, 'a> Compiler<'t, 'a> {
         let b = self.derived_name("b");
         let end = self.derived_name("bEnd");
         let events = self.derived.as_ref().and_then(|d| d.plan.events.get(&id).cloned());
-        let props = match (props, events) {
-            (props, Some(events)) => format!(", {}, {}", props.unwrap_or("undefined"), quote(&events)),
-            (Some(p), None) => format!(", {p}"),
-            (None, None) => String::new(),
+        // ZERO REGRESS: props the browser reads back from the markup (`derived_read.rs`): `_rB(…, keys, read)`.
+        let read = props.and_then(|_| self.derived_read_back(id, flags));
+        let props = match (props, events, read) {
+            (props, events, Some(read)) => format!(
+                ", {}, {}, undefined, {}",
+                props.unwrap_or("undefined"),
+                events.as_deref().map_or_else(|| "undefined".to_string(), quote),
+                quote(&read)
+            ),
+            (props, Some(events), None) => format!(", {}, {}", props.unwrap_or("undefined"), quote(&events)),
+            (Some(p), None, None) => format!(", {p}"),
+            (None, None, None) => String::new(),
         };
         let open = format!("const {token} = {b}({}, {flags}{props});", quote(name));
         let close = format!(" finally {{ {end}({token}); }}");
