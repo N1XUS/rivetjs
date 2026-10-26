@@ -204,3 +204,17 @@ test("strict server route types preserve loader data and required renderer props
     [],
   );
 });
+
+// FLOOR 2026-10-26: no URL parses the server does not need. A `URL` argument is read, not reparsed; every `location()`
+// read is still a fresh copy.
+test("createRouter reads a URL argument without aliasing it", () => {
+  const input = new URL("https://example.com/a/b?q=1");
+  const router = api.createRouter(input);
+  const first = router.location();
+  assert.notEqual(first, input);
+  assert.notEqual(router.location(), first);
+  first.pathname = "/changed";
+  input.search = "?other";
+  assert.equal(router.location().href, "https://example.com/a/b?q=1");
+  assert.throws(() => api.createRouter(new URL("ftp://example.com/")), /absolute HTTP\(S\) URL/);
+});

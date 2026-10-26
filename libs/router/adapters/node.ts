@@ -388,7 +388,7 @@ const MAX_BUFFERED = 256 * 1024;
  * - Complete when attached (the renderer hands a Response out only once it waits or ended, so status and
  *   headers are final either way): one write with a Content-Length (its chunks corked, or compressed in
  *   one call).
- * - Still rendering when attached (a large synchronous page past the renderer's 64 KiB queue, or pending
+ * - Still rendering when attached (a large synchronous page past the renderer's 256 KiB queue, or pending
  *   content), uncompressed: headers + the rendered head go to the socket at once (early bytes: first byte
  *   = document head, no event-loop turn), later chunks stream (chunked; Node corks a tick's writes) with
  *   backpressure (`MAX_BUFFERED`).
@@ -665,11 +665,16 @@ function toRequest(req: IncomingMessage, res: ServerResponse, url: string): { re
   const abort = () => {
     if (!res.writableFinished) controller.abort(new Error("Client disconnected"));
   };
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(req.headers)) {
+  // Name / value pairs, not a `Headers`: the Request fills (and validates) its own header list once — from a `Headers`
+  // it copies, so each header was validated and stored twice (FLOOR 2026-10-26). Same entries as before (Node's
+  // `req.headers` view: duplicates folded, `set-cookie` kept apart).
+  const headers: [string, string][] = [];
+  const view = req.headers;
+  for (const name in view) {
+    const value = view[name];
     if (value === undefined) continue;
-    if (Array.isArray(value)) for (const v of value) headers.append(name, v);
-    else headers.set(name, value);
+    if (Array.isArray(value)) for (const v of value) headers.push([name, v]);
+    else headers.push([name, value]);
   }
   const method = req.method ?? "GET";
   const body = method === "GET" || method === "HEAD" ? null : (Readable.toWeb(req) as ReadableStream<Uint8Array>);
@@ -852,6 +857,13 @@ export function createListener(options: ServeOptions): {
     const body = await job;
     res.writeHead(200, { ...headers, "Content-Encoding": encoding, "Content-Length": String(body.length) });
     res.end(req.method === "HEAD" ? undefined : body);
+  }
+
+  /** Surely no static file (index lookup of an unescaped path, as `file()` normalizes it); false = ask `serveFile`. */
+  function staticMiss(pathname: string): boolean {
+    if (!index || !client || pathname.includes("%")) return false;
+    if (prefix && !pathname.startsWith(prefix + "/")) return true;
+    return !index.has((prefix ? pathname.slice(prefix.length) : pathname).split("/").filter(Boolean).join("/"));
   }
 
   async function serveFile(req: IncomingMessage, res: ServerResponse, pathname: string): Promise<boolean> {
@@ -1182,7 +1194,8 @@ export function createListener(options: ServeOptions): {
         if (req.method === "GET" || req.method === "HEAD") {
           const dictionaryFile = dictionaries?.files.get(pathname);
           if (dictionaryFile) return await serveDictionary(req, res, dictionaryFile);
-          if (await serveFile(req, res, pathname)) return;
+          // Indexed client directory and a plain path the index lacks (a page URL): no file, no async lookup.
+          if (!staticMiss(pathname) && (await serveFile(req, res, pathname))) return;
           const lookup = (handler as { [ROUTE_CACHE]?: CacheLookup })[ROUTE_CACHE];
           const page = lookup?.(req.method, origin, pathname, target.slice(pathname.length), (name) => one(req.headers[name]));
           if (page) return await serveCached(req, res, page, pathname);

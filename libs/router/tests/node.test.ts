@@ -196,9 +196,10 @@ test("bodies complete before the event loop turns go out in one write, compresse
 });
 
 // Rendered pages (renderDocument) skip the web stream: the adapter takes the renderer's slab views
-// directly (server/body.ts). Content-Length for bodies complete when attached (one corked write) or, compressed,
-// before the event loop turns (one compression call); an uncompressed body still rendering (past the 64 KiB
-// queue, pending content) sends headers + its head at once (early bytes), the rest chunked.
+// directly (server/body.ts). Content-Length for bodies complete when attached (one corked write; a synchronous page up to
+// the renderer's 256 KiB queue, e.g. a ~100 KB one: ONE-SHOT) or, compressed, before the event loop turns (one
+// compression call); an uncompressed body still rendering (past the 256 KiB queue, pending content) sends headers + its
+// head at once (early bytes), the rest chunked.
 test("rendered pages go out directly: small bodies with Content-Length, large plain ones head first (chunked), compressed in one call, pending ones streamed", async () => {
   const { renderDocument } = await import("../server/render.ts");
   const document = () => ({ start: "<!doctype html><body>", end: "</body>" });
@@ -211,15 +212,16 @@ test("rendered pages go out directly: small bodies with Content-Length, large pl
       const factory =
         path === "/pending"
           ? () => ["shell", new Promise<string>((done) => (release = done)), Array.from({ length: 200 }, () => row)]
-          : () => Array.from({ length: path === "/big" ? 700 : 3 }, () => row);
+          : () => Array.from({ length: path === "/big" ? 700 : path === "/mid" ? 100 : 3 }, () => row);
       return renderDocument(factory as never, input, { document }, { status: 200, headers: new Headers() });
     },
     async (url) => {
-      for (const path of ["/small", "/big"]) {
-        const rows = path === "/big" ? 700 : 3;
+      for (const path of ["/small", "/mid", "/big"]) {
+        const rows = path === "/big" ? 700 : path === "/mid" ? 100 : 3;
         const expected = "<!doctype html><body>" + row.repeat(rows) + "</body>";
         const plain = await get(url + path);
-        // Past the renderer's 64 KiB queue the Response exists before the render ends: early bytes, chunked.
+        // Past the renderer's 256 KiB queue the Response exists before the render ends: early bytes, chunked. A ~100 KB
+        // synchronous page ends first: one write with a Content-Length.
         assert.equal(plain.headers["content-length"], path === "/big" ? undefined : String(expected.length), path);
         assert.equal(plain.headers["transfer-encoding"], path === "/big" ? "chunked" : undefined, path);
         assert.equal(plain.body.toString(), expected);
@@ -312,7 +314,7 @@ test("a large synchronous page writes its head to the socket before the render e
       const socket = sockets.at(-1)!,
         before = socket.bytesWritten;
       return renderDocument(
-        // Row 600 (~600 KB in, far past the 64 KiB queue) records what already reached the socket.
+        // Row 600 (~600 KB in, far past the 256 KiB queue) records what already reached the socket.
         (() => Array.from({ length: 700 }, (_, i) => (i === 600 ? () => ((written = socket.bytesWritten - before), row) : row))) as never,
         input,
         { document },

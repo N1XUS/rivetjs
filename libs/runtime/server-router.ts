@@ -23,7 +23,8 @@ export function compileRoutes<T, V>(routes: readonly RouteDefinition<T, V>[]): (
 /** Snapshot an absolute HTTP(S) request URL; no browser state is accessed. */
 // Location reads return fresh copies.
 export function createRouter(input: URL | string): ServerRouter {
-  const url = new URL(input);
+  // A URL is only read (its href snapshotted below): no second parse of the request URL.
+  const url = input instanceof URL ? input : new URL(input);
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new TypeError("Server router requires an absolute HTTP(S) URL");
   const href = url.href;
   return Object.freeze({ location: () => new URL(href) });

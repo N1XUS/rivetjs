@@ -39,7 +39,7 @@ test("large output flushes at the coalescing size and waits for the consumer (ba
   const big = "x".repeat(1024);
   let produced = 0;
   const response = page(() => Array.from({ length: 512 }, () => () => (produced++, big)));
-  // Nothing read yet: the renderer stops once the stream's queue (64 KiB) is full.
+  // Nothing read yet: the renderer stops once the stream's queue (256 KiB) is full.
   await new Promise((done) => setTimeout(done, 20));
   assert.ok(produced < 512, `renderer ran ahead of the consumer (${produced})`);
   const out = await chunks(response);
@@ -97,8 +97,8 @@ test("head hold keeps the byte writer: held fragments and integers replay after 
 });
 
 // Docs prerender shape (cdk-docs /components/menu/: a ~680 KB page with a held head): the held body is
-// released past the stream's 64 KiB queue in one go, then the document end waits on backpressure while no
-// Response has been handed out yet (renderDocument). It must still answer and finish (no stall at 3×64 KiB).
+// released past the stream's 256 KiB queue in one go, then the document end waits on backpressure while no
+// Response has been handed out yet (renderDocument). It must still answer and finish (no stall past the queue).
 test("renderDocument + head hold: a page far past the queue size answers and completes, with or without a pending boundary", async () => {
   const { renderDocument } = await import("../server/render.ts");
   const held: DocumentShell = ({ head }) => ({ start: "<!doctype html><title>" + (head?.title ?? "") + "</title><body>", end: "</body>" });

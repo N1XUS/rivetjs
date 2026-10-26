@@ -83,8 +83,14 @@ export interface RenderPageOptions {
 
 /** Coalesced write size (bytes): fewer, larger body chunks. */
 const FLUSH_AT = 16 * 1024;
-/** Bytes handed off but not consumed yet (no reader / sink, or a reader that has not asked) before the renderer waits. */
-const QUEUE = 64 * 1024;
+/**
+ * Bytes handed off but not consumed yet (no reader / sink, or a reader that has not asked) before the renderer waits.
+ * Sized so a typical synchronous page (ssr-bench 100 rows: 68–84 KB) completes before any consumer attaches: the node
+ * adapter then sends it whole (one corked writev + Content-Length) instead of streaming it chunked from its first
+ * 64 KiB (BEAT-RAZOR ONE-SHOT 2026-10-26, Docker 1 CPU `/resume` 100 rows c10: CPU/page −20 %, p99 halved). Same
+ * bound as the node adapter's streamed `MAX_BUFFERED`: the renderer never holds more than the socket would buffer.
+ */
+const QUEUE = 256 * 1024;
 /** Byte slab the writes coalesce in; chunks are views of it (a slab is reused only after a direct sink released every view). */
 const SLAB = 64 * 1024;
 /** Strings up to this length are copied as ASCII by hand (cheaper than `encodeInto` + a view per write). */
@@ -125,7 +131,8 @@ const retire = (slab: Slab): void => {
  * end), so the shell before an await still leaves at once. The renderer hands over its pre-encoded template
  * fragments and integers instead of strings to concatenate and encode per chunk.
  *
- * Consumer: none yet (chunks park, QUEUE bytes at most before the renderer waits), the web `ReadableStream`
+ * Consumer: none yet (chunks park, QUEUE bytes at most before the renderer waits: a page up to QUEUE ends before the
+ * Response is handed out, so the adapter sends it whole), the web `ReadableStream`
  * (high-water mark 0: `pull` = a read waits; parked chunks go out, later ones straight to a waiting read),
  * or a direct sink (`attach`, node adapter: views of pooled slabs, released by the sink; no stream at all).
  */
@@ -147,7 +154,10 @@ export class BodyWriter extends SlabWriter {
   declare failure: { error: unknown } | null;
   /** The consumer cancelled: the next hand-off throws and ends the render. */
   declare cancelled: boolean;
-  /** The consumer is behind (QUEUE bytes parked): every write flushes and returns the shared wait. */
+  /**
+   * The consumer is behind (QUEUE bytes parked: `threshold` 0, every write flushes and returns the shared wait; a direct
+   * sink's wait at attach: writes coalesce at FLUSH_AT, each flush returns the shared wait).
+   */
   declare full: boolean;
   // One shared wait per full queue: a second write before the first wait settled (a renderer path that
   // does not await every write) gets the same promise instead of orphaning the first one's wake.
@@ -222,8 +232,10 @@ export class BodyWriter extends SlabWriter {
     if (this.failure) sink.error(this.failure.error);
     else if (this.ended) (this.finish(), sink.end());
     else if (wait) {
+      // The sink is behind: the renderer waits on `waiting`; writes until then keep coalescing (FLUSH_AT, not one
+      // tiny chunk per write — `full` already makes every flush return the wait).
       this.full = true;
-      this.threshold = 0;
+      this.threshold = FLUSH_AT;
       this.waiting = wait.then(() => this.ready(), this.gone);
     } else this.ready();
     return true;
