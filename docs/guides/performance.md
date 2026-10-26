@@ -46,6 +46,13 @@ Measured by lane ZERO BE-RENDER 2026-10-25 (Node 26 in-process: `frames-cpu` ove
 - **Discarded passes open no boundaries.** A cdk collection build pass (`_rUnrecorded`) evaluates every row's parts to register nodes; on the server each part's `_rB` made a boundary, a context frame (and its lookup memo `Map`) and often a record the page never used (ui-docs: 3,864 of 11,467 tail records, no markers). `_rB` returns null inside such a pass: table-virtualization 16.3 → 13.6 MB alloc, wall −21 %.
 - **Memoise accessor results that rebuild lists.** A props object whose `items()` / `value()` / `onChange` each rebuilt a 20-entry formatted list (`calendarYearPickerProps`) did the `Intl` work four times per render; key the last result on the inputs read (they are still read on every call, so tracking is unchanged).
 
+Measured by lane ZERO SEGMENTS 2026-10-26 (ssr-bench `/resume` page through the real node adapter, Docker Linux Node 26.11.1, gRPC data, interleaved lanes; in-process handler A/B; `docs/benchmarks/2026-10-26-segments.md`).
+
+- **Walk data once per render.** A value checked as JSON data a moment ago is not walked again: `_rData` keeps its payload and loader results in `ctx.verified`, `_rB` (`propsData`) skips a props member found there (the page's `{ data }`). 1000 route rows: two `isData` walks → one.
+- **Inline primitive checks in recursive walkers.** Test number / string / boolean members in the loop (`v - v === 0` = finite) and recurse only into objects: `isData` over 1000 rows × 11 numbers 50 → 28 µs.
+- **One native string write per chunk, not per short string.** A `Buffer#utf8Write` call on a fresh (cons) string costs ~35 ns, mostly flattening; join the strings into one pending JS string and encode it once (UTF-8 of a concatenation = the concatenated encodings). Exception: a string ending in a lone high surrogate is written at once, or the next string's low half would pair with it. Row emitter 2000 string slots 68 → 19 µs; `/resume` 1000 rows −10–18 % request CPU together with the item above.
+- **Measured no gain (do not retry):** per-plan slot-kind tables instead of reading `attributes[k]` in the row loop; 64-byte unrolled fragment copies in the wasm row emitter (fragment copies are not its bottleneck); a JS ASCII loop instead of `utf8Write` for short strings (57 vs 68 µs: flattening dominates either way).
+
 ## Shipped bytes
 
 Measured by lane DIET-CODE 2026-10-22 (size report, Playwright coverage of the cdk / ui story apps before input; spec `docs/design/specs/2026-10-22-chunk-merge-rule.md`).

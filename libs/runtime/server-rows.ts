@@ -1,6 +1,7 @@
 // List rows in chunks through a WebAssembly (SIMD) emitter, for byte writers with the raw-slab protocol
-// (`claim` / `commit`). Per row, every string slot is copied into the module's memory with one native UTF-8
-// encode (no escape check, no escaping in JS) and its UTF-16 length recorded; int32 slots go into a number array.
+// (`claim` / `commit`). A chunk's string slots are copied into the module's memory with one native UTF-8 encode
+// (joined first; no escape check, no escaping in JS), each slot's UTF-16 length recorded; int32 slots go into a
+// number array.
 // One wasm call per chunk interleaves the plan's encoded fragments, escapes text (& < >) and attribute values
 // (& < > " '), writes the digits; the chunk is then copied into the writer's slab. Output is byte-identical to
 // the per-row path (`rawRow` / `rawTemplate`, tests/server-rows.test.ts). A row the emitter does not take (a
@@ -49,7 +50,7 @@ const CHUNK = 128 * 1024;
 const PIECE = 32 * 1024;
 const MAX_LENS = (M.nums - M.lens) >> 2;
 const MAX_TABLE = (M.fragments - M.table) / 12;
-/** Worst-case output bytes per input byte (`"` → `&quot;`) and per int32 (sign + 10 digits). */
+/** Worst-case output bytes per string UTF-16 unit (`"` → `&quot;`) and per int32 (sign + 10 digits). */
 const ESCAPED = 6;
 const DIGITS = 11;
 /** Output room: the 16-byte block stores may run up to 16 bytes past the last written byte. */
@@ -168,18 +169,32 @@ export function _listRows(
   const attributes = plan.attributes,
     width = attributes.length,
     fixed = info[2];
+  // String slots join one pending JS string, encoded with ONE native UTF-8 write per chunk (`put`): per-slot writes of
+  // fresh (cons) strings cost ~35 ns each, 2000 slots 68 -> 19 us (lane SEGMENTS). The bytes are the same as per-slot
+  // encodes (UTF-8 of a concatenation = the concatenation of the encodings) except across a lone high surrogate ending a
+  // slot, which a following low one would pair with: such a slot is written at once. `at` = an upper bound of the input
+  // bytes (3 per UTF-16 unit) the input room check uses; `real` = bytes written; `units` = UTF-16 units of the chunk's
+  // strings: at most ESCAPED output bytes each (only ASCII is escaped; a non-ASCII unit is at most 3 bytes), the bound the
+  // output room checks use (an ASCII string: units = bytes, the same chunks as per-slot writes).
   let n = 0,
     li = 0,
     at: number = M.input,
+    real: number = M.input,
+    pending = "",
+    units = 0,
     ints = 0,
     waiting: unknown;
+  const put = (): void => {
+    if (pending !== "") ((real += utf8(pending, real, M.out)), (pending = ""));
+  };
   // Emits the buffered rows and copies them into the writer's slab (all accepted under backpressure; the
   // first wait is kept).
   const flush = (): void => {
     if (n === 0) return;
+    put();
     const end = emit(n, width, M.input, M.lens, M.out, M.table);
-    n = li = ints = 0;
-    at = M.input;
+    n = li = ints = units = 0;
+    at = real = M.input;
     for (let from: number = M.out; from < end;) {
       const length = Math.min(end - from, PIECE);
       const claimed = writer.claim!(length);
@@ -200,6 +215,9 @@ export function _listRows(
     const base = r * width;
     for (let attempt = 0; ; attempt++) {
       const rowAt = at,
+        rowReal = real,
+        rowPending = pending,
+        rowUnits = units,
         rowInts = ints;
       let fits = true,
         k = 0;
@@ -213,11 +231,15 @@ export function _listRows(
             const first = child.charCodeAt(0);
             if (slot.raw!.list || (first !== 47 && first !== 35 && first !== 63 && first !== 46)) break;
           }
-          if (at + child.length * 3 > M.out) {
+          const size = child.length * 3;
+          if (at + size > M.out) {
             fits = false;
             break;
           }
-          at += utf8(child, at, M.out);
+          at += size;
+          units += child.length;
+          pending += child;
+          if ((child.charCodeAt(child.length - 1) & 0xfc00) === 0xd800) put();
           lens[li + k] = child.length;
         } else if (typeof child === "number") {
           if ((child | 0) !== child) break;
@@ -227,7 +249,7 @@ export function _listRows(
         } else if (slot === null && (child == null || typeof child === "boolean")) lens[li + k] = 0;
         else break;
       }
-      if (fits && k === width && (n + 1) * fixed + (at - M.input) * ESCAPED + ints * DIGITS <= ROOM) {
+      if (fits && k === width && (n + 1) * fixed + units * ESCAPED + ints * DIGITS <= ROOM) {
         // The marker id (an int32 slot, counted in the bound above): written or left out as the renderer decides.
         if (mark !== undefined && lens[li] === -1) {
           const id = mark(nums[li]!, mode!);
@@ -236,13 +258,16 @@ export function _listRows(
         }
         li += width;
         n++;
-        if (n * fixed + (at - M.input) * ESCAPED + ints * DIGITS >= CHUNK) {
+        if (n * fixed + units * ESCAPED + ints * DIGITS >= CHUNK) {
           flush();
           if (waiting !== undefined) return { wait: waiting, row: r + 1 };
         }
         continue rowLoop;
       }
       at = rowAt;
+      real = rowReal;
+      pending = rowPending;
+      units = rowUnits;
       ints = rowInts;
       // Not this row (or it alone exceeds a chunk): the caller writes it.
       if (k < width && fits) break rowLoop;

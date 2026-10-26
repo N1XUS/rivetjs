@@ -245,6 +245,8 @@ export interface DerivedRender {
   lean: DerivedIsland[];
   adopt: DerivedIsland[];
   tailed: boolean;
+  /** `_rData`'s payload (or its table encoding) and the objects in it, checked as data this render (`propsData`). */
+  verified: unknown[] | null;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -359,6 +361,7 @@ export function createDerived(): DerivedRender {
     lean: [],
     adopt: [],
     tailed: false,
+    verified: null,
   };
 }
 
@@ -594,19 +597,45 @@ const current = (ctx: DerivedRender): Boundary | null =>
   ctx.stack.length ? ctx.stack[ctx.stack.length - 1]! : (useContext(CURRENT) ?? ctx.segment?.at ?? null);
 
 /** Plain JSON data: primitives, arrays and plain objects of such (no functions, signals, class instances, Dates, Maps). */
+// Primitive members are checked inline (no call per number / string; `v - v === 0` is `Number.isFinite` for a number):
+// 1000 route rows of 11 numbers 50 -> 28 us per walk (lane SEGMENTS). A hole or an `undefined` member is not data.
 export function isData(value: unknown, depth = 0): boolean {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
-  // `_rData`'s payload, checked a moment ago (the generated `Root`'s props): not walked twice.
-  if (value === verified && value !== null) return true;
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value !== "object" || depth > 64) return false;
+  if (typeof value !== "object") return typeof value === "string" || typeof value === "boolean" || (typeof value === "number" && value - value === 0);
+  if (value === null) return true;
+  if (depth > 64) return false;
   if (Array.isArray(value)) {
-    for (let i = 0; i < value.length; i++) if (!(i in value) || !isData(value[i], depth + 1)) return false;
+    for (let i = 0, n = value.length; i < n; i++) {
+      const v: unknown = value[i];
+      if (typeof v === "number") {
+        if (v - v !== 0) return false;
+      } else if (typeof v !== "string" && typeof v !== "boolean" && (v === undefined || !isData(v, depth + 1))) return false;
+    }
     return true;
   }
   const proto = Object.getPrototypeOf(value);
   if (proto !== Object.prototype && proto !== null) return false;
-  for (const key in value) if (!isData((value as Record<string, unknown>)[key], depth + 1)) return false;
+  for (const key in value) {
+    const v = (value as Record<string, unknown>)[key];
+    if (typeof v === "number") {
+      if (v - v !== 0) return false;
+    } else if (typeof v !== "string" && typeof v !== "boolean" && !isData(v, depth + 1)) return false;
+  }
+  return true;
+}
+
+// An independent boundary's props: data unless a member is not. `_rData`'s payload and its loader results (`ctx.verified`,
+// walked a moment before the render) count as checked: the page component's `{ data }` is not walked a second time
+// (1000 route rows: one walk per request instead of two, lane SEGMENTS).
+function propsData(ctx: DerivedRender, props: object): boolean {
+  const ok = ctx.verified;
+  if (ok === null || Array.isArray(props)) return isData(props);
+  if (props === ok[0]) return true;
+  const proto = Object.getPrototypeOf(props);
+  if (proto !== Object.prototype && proto !== null) return false;
+  for (const key in props) {
+    const v = (props as Record<string, unknown>)[key];
+    if (!(typeof v === "object" && v !== null && ok.includes(v)) && !isData(v, 1)) return false;
+  }
   return true;
 }
 
@@ -631,11 +660,10 @@ export function _rB(name: string, flags: number, props?: object | null, events?:
   const parent = current(ctx);
   let keep: object | null = null;
   if (flags & INDEPENDENT) {
-    if (props && isData(props)) keep = props;
+    if (props && propsData(ctx, props)) keep = props;
     // A context-free independent component without a props parameter: nothing to ship (the browser passes `{}`).
     else if (!(props === undefined && flags & CTXFREE)) flags = (flags & ~(INDEPENDENT | CTXFREE)) | DEMOTED;
   }
-  verified = null;
   const boundary: Boundary = {
     id: ctx.next++,
     parent,
@@ -1484,7 +1512,6 @@ function release(ctx: DerivedRender): void {
 // bundled `import()` of the side-effect module would be dropped: the package is `sideEffects: false`). What the table cannot encode (functions, symbols, promises, other class instances — `static [revive]`
 // needs a class symbol, which the derived model has not) warns RV2107 once per message and the payload is kept as is:
 // `Root` is demoted (no props), the page renders but does not resume.
-let verified: object | null = null;
 const warned = new Set<string>();
 // The `registerClass` hooks of `value`'s own class (the first own `constructor` on its chain), as server-resume finds them.
 function hooksOf(value: object): ClassHooks | undefined {
@@ -1520,18 +1547,36 @@ function encodeTable(ctx: DerivedRender, value: unknown): EncodedData | null {
     return null;
   }
 }
+// The payload, its object members and their object elements (the router's `d`: one loader result each), at most 32.
+function checked(payload: object): unknown[] {
+  const out: unknown[] = [payload];
+  for (const key in payload) {
+    const v = (payload as Record<string, unknown>)[key];
+    if (typeof v !== "object" || v === null) continue;
+    if (out.length < 32) out.push(v);
+    if (Array.isArray(v)) for (let i = 0; i < v.length && out.length < 32; i++) if (typeof v[i] === "object" && v[i] !== null) out.push(v[i]);
+  }
+  return out;
+}
 /**
  * Router ABI (generated `entry.server.tsx`, derived model): the `Root` boundary's route payload as `Root` props can carry it —
  * `payload` itself when it is JSON data, else its resume table encoding (`EncodedData`), else (RV2107 warning) `payload`.
  */
 export function _rData<T extends object>(payload: T): T | EncodedData {
-  if (isData(payload)) return (verified = payload);
+  const ctx = useContext(DERIVED);
+  if (ctx) ctx.verified = null;
+  if (isData(payload)) {
+    if (ctx) ctx.verified = checked(payload);
+    return payload;
+  }
   try {
-    const options = useContext(DERIVED)?.options;
+    const options = ctx?.options;
     const encoder = createEncoder({ special: registered, opaque, origin: options?.origin });
     const r = encoder.ref(payload),
       x = _builtinKinds(encoder.table) ? options?.manifest?.builtins : undefined;
-    return (verified = x ? { t: encoder.table, r, x } : { t: encoder.table, r });
+    const encoded: EncodedData = x ? { t: encoder.table, r, x } : { t: encoder.table, r };
+    if (ctx) ctx.verified = [encoded];
+    return encoded;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     if (warned.size < 64 && !warned.has(reason)) {

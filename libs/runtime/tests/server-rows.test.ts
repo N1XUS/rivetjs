@@ -144,6 +144,23 @@ test("row emitter: large lists cross chunk and slab-piece boundaries; long strin
   assert.deepEqual(slab.out(), expected(plan, tape, rows));
 });
 
+test("row emitter: a row retried in an empty chunk after a lone high surrogate was written mid-row (batched string writes)", () => {
+  // Even rows ~13k UTF-16 units (output bound under one chunk), odd rows ~67k: an odd row does not fit behind an even one,
+  // is rolled back after its surrogate-ending first slot was already encoded, then retried alone. Non-ASCII units count
+  // 6 output bytes each, as ASCII ones.
+  const plan = _listPlan(["<p>", "|", "|", "</p>"], [null, null, ["title", "html"]]);
+  const part = (r: number, units: number) => (r % 4 === 1 ? "é€漢" : "a<&").repeat(units / 3);
+  const tape: unknown[] = [];
+  for (let r = 0; r < 8; r++) {
+    const units = r % 2 ? 22500 : 6666;
+    tape.push(part(r, units) + "\ud83d", "\ude00" + part(r + 1, units), r % 2 ? '"' + part(r, units) : r);
+  }
+  const slab = new Slab();
+  drive(plan, tape, 8, slab);
+  assert.deepEqual(slab.out(), expected(plan, tape, 8));
+  assert.ok(!slab.out().includes(Buffer.from("\u{1F600}")), "the halves never pair across slots");
+});
+
 test("row emitter: more value slots than one chunk's length table holds (tiny rows)", () => {
   const plan = _listPlan(["<i>", "</i>"], [null]);
   const tape = Array.from({ length: 40000 }, (_, i) => (i % 3 ? i % 10 : ""));
