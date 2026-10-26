@@ -7,5 +7,5 @@ export default defineExample({
   status: "experimental",
   frame: { height: "sm" },
   show: ["src/routes/index.tsx"],
-  test: [{ click: "[data-slot=switch-content]" }, { attr: ["[data-slot=switch]", "data-selected", "true"] }],
+  test: [{ click: "[data-slot=switch-content]" }, { matches: "[data-slot=switch]:is([data-selected=true], :has(input:checked))" }],
 });

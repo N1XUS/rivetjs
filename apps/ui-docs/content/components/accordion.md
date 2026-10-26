@@ -133,6 +133,10 @@ The Accordion component uses these CSS classes ([View source styles](https://git
 - `.accordion__trigger[aria-expanded="true"]` - Expanded state
 - `.accordion__panel[aria-hidden="false"]` - Panel visible state
 
+### Zero-JS native path
+
+Where the build proves an accordion call site closed (declared data props only, no handlers, no controlled or default expansion, no render props, no live values, no context-reading components inside, no state selectors in the calling module), it renders native markup and ships no JavaScript, before or after an interaction: items are `<details>` (single expansion: one shared `name`), the heading sits in a `<summary class="accordion__summary">`, the trigger is a `span`, expanded = `details[open]`; `aria-expanded` / `data-expanded` are not set there, keyboard = native (Tab between summaries, Enter / Space toggle). Classes, slots and `data-disabled` stay the same; style state with the selectors above that include the native form (`:checked`, `[open]`, `:focus-visible`), not with a state attribute alone. Any other call site keeps the interactive path. See the framework guide "Native automata".
+
 ### Interactive States
 
 The component supports both CSS pseudo-classes and data attributes for flexibility:

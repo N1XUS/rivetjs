@@ -60,6 +60,9 @@ pub struct Component {
     /// component elements enclosing it in this component's JSX (innermost first), and whether its attributes and
     /// expression children are data (element children are calls of their own, function children slots).
     pub call_info: Vec<(bool, Vec<String>, bool)>,
+    /// ZERO STATESPACE: per call (same order as `calls`), its attribute names (`name*`: a value that is not a plain value,
+    /// `...`: a spread) and `()` for a function child — what `facts-native.ts` checks a family's call sites against.
+    pub call_attrs: Vec<Vec<String>>,
     /// ZERO CALLSITE: the JSX element of each call (same order as `calls`).
     pub call_nodes: Vec<NodeId>,
     /// PLACE (placement cost features, `facts_json` only): native JSX elements written in the component (its own markup,
@@ -292,6 +295,34 @@ fn passes_function<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
     })
 }
 
+/// ZERO STATESPACE: a call's attribute names (`name*`: its value is not a plain value; `...`: a spread) plus `()` when
+/// a child is a function (a render prop).
+fn call_attributes<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> Vec<String> {
+    let mut out = Vec::new();
+    for item in &el.opening_element.attributes {
+        match item {
+            JSXAttributeItem::SpreadAttribute(_) => out.push("...".to_string()),
+            JSXAttributeItem::Attribute(attr) => {
+                let name = crate::compile::attr_name(tree, attr);
+                let plain = match &attr.value {
+                    None | Some(JSXAttributeValue::StringLiteral(_)) => true,
+                    Some(JSXAttributeValue::ExpressionContainer(c)) => c.expression.as_expression().is_some_and(|e| plain_value(tree, e, 0)),
+                    Some(_) => false,
+                };
+                out.push(if plain { name.to_string() } else { format!("{name}*") });
+            }
+        }
+    }
+    let function_child = el.children.iter().any(|child| match child {
+        JSXChild::ExpressionContainer(c) => c.expression.as_expression().is_some_and(|e| matches!(unwrap(e), Expression::ArrowFunctionExpression(_) | Expression::FunctionExpression(_))),
+        _ => false,
+    });
+    if function_child {
+        out.push("()".to_string());
+    }
+    out
+}
+
 /// Attributes and expression children of a call are data: element / fragment children are calls of their own and
 /// function children are slots the callee renders.
 fn data_inputs<'a>(tree: &Tree<'a>, el: &JSXElement<'a>) -> bool {
@@ -339,6 +370,9 @@ pub struct Verdicts {
     pub sites: Option<Vec<String>>,
     /// ZERO CALLSITE: independent components whose every instance's unit reads no context set above it (`CTXFREE`).
     pub free: Option<Vec<String>>,
+    /// ZERO STATESPACE: call sites of this module (`"<Caller>:<call index>"`) the build proved closed native automata
+    /// (`facts-native.ts`): the element gets the hidden prop `$native: 1` on both targets.
+    pub native: Option<Vec<String>>,
 }
 
 /// The derived server target's plan for one module.
@@ -347,6 +381,8 @@ pub struct Plan {
     /// ZERO CALLSITE: component elements whose props the server passes through `_rS` (a proven call site of a `SITE`
     /// callee: that instance is independent).
     pub sites: FxHashSet<NodeId>,
+    /// ZERO STATESPACE: component elements proven native (`Verdicts.native`): `$native: 1` joins their props.
+    pub native: FxHashSet<NodeId>,
     /// Boundary function → (emitted name: its export name, `export_name`; flags; props parameter).
     pub boundaries: FxHashMap<NodeId, (String, u32, Option<String>)>,
     /// Return statements (with an argument) of boundary bodies: `return _rBOut(B, value)`.
@@ -844,6 +880,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
             let mut renders: Vec<String> = Vec::new();
             let mut calls = Vec::new();
             let mut call_info = Vec::new();
+            let mut call_attrs = Vec::new();
             let mut call_nodes = Vec::new();
             let mut elements = 0u32;
             let mut call_bytes = Vec::new();
@@ -874,6 +911,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                             }
                             calls.push((tag.to_string(), data_call(tree, resumed, el)));
                             call_info.push((passes_function(tree, el), enclosing(tree, n, function), data_inputs(tree, el)));
+                            call_attrs.push(call_attributes(tree, el));
                             call_nodes.push(n);
                             call_bytes.push(props_bytes(el, tag.len() as u32));
                             call_children.push(el.children.iter().any(|c| matches!(c, JSXChild::Element(_) | JSXChild::Fragment(_))));
@@ -883,7 +921,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                 }
                 true
             });
-            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info, call_nodes, elements, call_bytes, call_children }
+            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info, call_attrs, call_nodes, elements, call_bytes, call_children }
         })
         .collect()
 }
@@ -1074,6 +1112,15 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
             let (Some(&ci), Ok(k)) = (by_name.get(caller), index.parse::<usize>()) else { continue };
             if let Some(&node) = components[ci].call_nodes.get(k) {
                 plan.sites.insert(node);
+            }
+        }
+    }
+    if let Some(list) = &verdicts.native {
+        for entry in list {
+            let Some((caller, index)) = entry.rsplit_once(':') else { continue };
+            let (Some(&ci), Ok(k)) = (by_name.get(caller), index.parse::<usize>()) else { continue };
+            if let Some(&node) = components[ci].call_nodes.get(k) {
+                plan.native.insert(node);
             }
         }
     }
@@ -1289,7 +1336,8 @@ fn compound_part(tree: &Tree<'_>, n: NodeId) -> bool {
 }
 
 /// `moduleFacts(…, { boundaries: true })`: `[[name, { interactive, source, provides, listens, context, params, renders, calls: [[tag,
-/// data, function, enclosing, data inputs, props bytes, element children]], elements }]]` (the last three: PLACE cost features).
+/// data, function, enclosing, data inputs, props bytes, element children, attribute names]], elements }]]` (props bytes,
+/// element children, elements: PLACE cost features; attribute names: ZERO STATESPACE).
 pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
     let list: Vec<serde_json::Value> = components(tree, resumed)
         .into_iter()
@@ -1299,7 +1347,8 @@ pub fn facts_json(tree: &Tree<'_>, resumed: &Resumed) -> serde_json::Value {
                 .iter()
                 .zip(&c.call_info)
                 .zip(c.call_bytes.iter().zip(&c.call_children))
-                .map(|(((tag, data), (function, around, inputs)), (bytes, children))| serde_json::json!([tag, data, function, around, inputs, bytes, children]))
+                .zip(&c.call_attrs)
+                .map(|((((tag, data), (function, around, inputs)), (bytes, children)), attrs)| serde_json::json!([tag, data, function, around, inputs, bytes, children, attrs]))
                 .collect();
             serde_json::json!([c.name, {
                 "interactive": c.own,

@@ -29,8 +29,9 @@
    */
   @apply transition duration-(--duration-base) motion-reduce:transition-none;
 
-  /* Expanded state for indicator rotation */
-  &[data-expanded="true"] {
+  /* Expanded state for indicator rotation (Rivet, TW-156: a native item's `[open]`) */
+  &[data-expanded="true"],
+  details[open] > summary & {
     @apply -rotate-180;
   }
 }
@@ -87,7 +88,7 @@ span.accordion__indicator {
    * consumers who want to key their own styles off it.
    */
   @media (hover: hover) {
-    &:hover:not([aria-expanded="true"]) {
+    &:hover:not([aria-expanded="true"]):not(:where(details[open] > summary *)) {
       background-color: color-mix(in oklab, var(--foreground) 3%, transparent 90%);
     }
   }
@@ -98,14 +99,33 @@ span.accordion__indicator {
 
   /* Focus state */
   &:focus-visible:not([data-focused]),
-  &[data-focus-visible="true"] {
+  &[data-focus-visible="true"],
+  .accordion__summary:focus-visible & {
     @apply status-focused;
   }
 
   /* Disabled State */
   &:disabled,
-  &[aria-disabled="true"] {
+  &[aria-disabled="true"],
+  .accordion__summary[aria-disabled="true"] & {
     @apply status-disabled;
+  }
+}
+
+/* Rivet (ZERO STATESPACE, TW-156): a native accordion item is a `<details>`; its `<summary>` (the browser's toggle, the
+   focus target) holds the heading and lays out like the heading alone: no marker, no own outline (the trigger draws the
+   ring), not clickable while disabled (`tabindex="-1"`: not in the tab order, as the disabled `<button>`). */
+.accordion__summary {
+  display: block;
+  list-style: none;
+  outline: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &[aria-disabled="true"] {
+    pointer-events: none;
   }
 }
 
@@ -123,7 +143,8 @@ span.accordion__indicator {
     opacity var(--duration-base) var(--ease-out);
   @apply motion-reduce:transition-none;
 
-  &[data-expanded="true"] {
+  &[data-expanded="true"],
+  details[open] > & {
     will-change: height, opacity;
     opacity: 1;
   }
@@ -160,7 +181,7 @@ span.accordion__indicator {
     border-start-end-radius: min(32px, var(--radius-3xl));
   }
 
-  &:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"]))
+  &:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"])):not([open])
     [data-slot="accordion-trigger"] {
     border-end-start-radius: min(32px, var(--radius-3xl));
     border-end-end-radius: min(32px, var(--radius-3xl));

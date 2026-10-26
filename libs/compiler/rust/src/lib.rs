@@ -312,7 +312,7 @@ fn resume_option(resume: &Option<Value>, filename: &str) -> Result<(Option<Strin
             Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
         }
     };
-    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")?, r#static: list("static")?, site: list("site")?, sites: list("sites")?, free: list("free")? }))
+    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")?, r#static: list("static")?, site: list("site")?, sites: list("sites")?, free: list("free")?, native: list("native")? }))
 }
 
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)

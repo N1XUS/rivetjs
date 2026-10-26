@@ -10,6 +10,6 @@ export default defineExample({
   test: [
     { described: ["input[name=shorthand-mentions]", "Get notified"] },
     { click: "[data-slot=checkbox-content]" },
-    { attr: ["[data-slot=checkbox]", "data-selected", "true"] },
+    { matches: "[data-slot=checkbox]:is([data-selected=true], :has(input:checked))" },
   ],
 });

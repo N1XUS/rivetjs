@@ -59,7 +59,8 @@
   &[data-disabled="true"][aria-checked="true"],
   &[data-disabled="true"][data-selected="true"],
   &[aria-disabled="true"][aria-checked="true"],
-  &[aria-disabled="true"][data-selected="true"] {
+  &[aria-disabled="true"][data-selected="true"],
+  &[data-disabled="true"][data-native]:has(input:checked) {
     .switch__thumb {
       opacity: 0.4;
     }
@@ -100,7 +101,8 @@
   /* Focus states */
   .switch:focus-visible &,
   .switch:has([data-slot="switch-content"][data-focus-visible="true"]) &,
-  .switch [data-slot="switch-content"][data-focus-visible="true"] & {
+  .switch [data-slot="switch-content"][data-focus-visible="true"] &,
+  .switch[data-native]:has(input:focus-visible) & {
     @apply status-focused;
   }
 
@@ -119,9 +121,10 @@
     @apply motion-reduce:transform-none;
   }
 
-  /* Checked states */
+  /* Checked states (Rivet, TW-156: a native switch — `[data-native]`, no JS — reads its input's `:checked`) */
   .switch[aria-checked="true"] &,
-  .switch[data-selected="true"] & {
+  .switch[data-selected="true"] &,
+  .switch[data-native]:has(input:checked) & {
     background-color: var(--switch-control-bg-checked);
   }
 
@@ -130,7 +133,8 @@
   .switch[data-selected="true"]:hover &,
   .switch[aria-checked="true"][data-hovered="true"] &,
   .switch[data-selected="true"][data-hovered="true"] &,
-  .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] & {
+  .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] &,
+  .switch[data-native]:has(input:checked):hover & {
     background-color: var(--switch-control-bg-checked-hover);
   }
 
@@ -139,7 +143,8 @@
   .switch[data-selected="true"]:active &,
   .switch[aria-checked="true"][data-pressed="true"] &,
   .switch[data-selected="true"][data-pressed="true"] &,
-  .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] & {
+  .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] &,
+  .switch[data-native]:has(input:checked):active & {
     background-color: var(--switch-control-bg-checked-hover);
   }
 }
@@ -185,7 +190,8 @@
 
   /* Selected/checked state - use margin instead of translate */
   .switch[aria-checked="true"] &,
-  .switch[data-selected="true"] & {
+  .switch[data-selected="true"] &,
+  .switch[data-native]:has(input:checked) & {
     @apply ms-[calc(100%-1.5rem)] bg-accent-foreground text-accent;
     box-shadow:
       0px 0px 5px 0px rgb(0 0 0 / 0.02),
@@ -206,7 +212,8 @@
 
   /* Small selected state positioning */
   .switch[aria-checked="true"] &,
-  .switch[data-selected="true"] & {
+  .switch[data-selected="true"] &,
+  .switch[data-native]:has(input:checked) & {
     @apply ms-[calc(100%-1.15625rem)];
   }
 }
@@ -218,7 +225,8 @@
 
   /* Large selected state positioning */
   .switch[aria-checked="true"] &,
-  .switch[data-selected="true"] & {
+  .switch[data-selected="true"] &,
+  .switch[data-native]:has(input:checked) & {
     @apply ms-[calc(100%-1.84375rem)];
   }
 }

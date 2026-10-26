@@ -35,7 +35,8 @@
 
   /* Indicator styles */
   &[data-selected="true"],
-  &[data-indeterminate="true"] {
+  &[data-indeterminate="true"],
+  &[data-native]:has(input:checked) {
     .checkbox__indicator {
       border-color: var(--accent-foreground);
     }
@@ -51,8 +52,14 @@
     @apply transition-all duration-(--duration-base) motion-reduce:transition-none;
   }
 
-  &[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"] {
+  &[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"],
+  &[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
     transition: stroke-dashoffset var(--duration-fast) linear 15ms;
+  }
+
+  /* Native (ZERO STATESPACE): the browser's `:checked` draws the checkmark (the cdk path sets the offset attribute) */
+  &[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
+    stroke-dashoffset: 48;
   }
 
   /* Invalid + Selected: checkmark icon color */
@@ -116,6 +123,7 @@
   /* Interactive states */
   /* Focus */
   .checkbox:focus-visible &,
+  .checkbox[data-native]:has(input:focus-visible) &,
   .checkbox:has([data-slot="checkbox-content"][data-focus-visible="true"]) &,
   .checkbox [data-slot="checkbox-content"][data-focus-visible="true"] & {
     @apply status-focused;
@@ -141,7 +149,8 @@
   /* Selection states */
   /* Selected */
   .checkbox[aria-checked="true"] &,
-  .checkbox[data-selected="true"] & {
+  .checkbox[data-selected="true"] &,
+  .checkbox[data-native]:has(input:checked) & {
     @apply border-transparent text-accent-foreground;
 
     &::before {
@@ -235,14 +244,15 @@
 /* Unselected state background for secondary variant */
 .checkbox--secondary:not([aria-checked="true"]):not([data-selected="true"]):not(
     [data-indeterminate="true"]
-  )
+  ):not([data-native]:has(input:checked))
   .checkbox__control {
   background-color: var(--checkbox-control-bg);
 }
 
 /* Selected state on secondary variant */
 .checkbox--secondary[aria-checked="true"] .checkbox__control,
-.checkbox--secondary[data-selected="true"] .checkbox__control {
+.checkbox--secondary[data-selected="true"] .checkbox__control,
+.checkbox--secondary[data-native]:has(input:checked) .checkbox__control {
   &::before {
     @apply bg-accent;
   }

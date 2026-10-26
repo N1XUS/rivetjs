@@ -15,7 +15,15 @@
 //   child does not unify with the generic intrinsic `children` type (TS2322).
 // - Live `class` / `variant` → render-prop class functions (the composed class is a local: it reaches the cdk part as a plain value); `isSelected` / `isIndeterminate` /
 //   `isDisabled` are forwarded as getters (cdk keeps them live).
-import { CheckboxButton as CheckboxButtonPrimitive, CheckboxField as CheckboxFieldPrimitive } from "@rivetjs/cdk/checkbox";
+// - Rivet-only: the state-space path (ZERO STATESPACE, `nativeCheckbox` below).
+import {
+  CheckboxButton as CheckboxButtonPrimitive,
+  CheckboxField as CheckboxFieldPrimitive,
+  CheckboxFieldContext,
+  CheckboxGroupStateContext,
+} from "@rivetjs/cdk/checkbox";
+import { visuallyHidden } from "@rivetjs/cdk/a11y";
+import { FormValidationContext } from "@rivetjs/cdk/form";
 import type {
   CheckboxButtonProps as CheckboxButtonPrimitiveProps,
   CheckboxButtonRenderProps,
@@ -38,6 +46,7 @@ import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { DescriptionRoot } from "../description/description.tsx";
 import { CheckboxGroupContext } from "../checkbox-group/context.ts";
+import { nativeProps } from "../../utils/native.ts";
 import { DEV } from "#dev";
 
 const LABEL_SPAN_CONTEXT = { elementType: "span" as const };
@@ -47,6 +56,18 @@ interface CheckboxContext {
   inCheckbox?: true;
   variant?: CheckboxVariants["variant"];
   state?: CheckboxFieldRenderProps;
+  /** State-space path (ZERO STATESPACE): the native input's attributes; the parts render static native markup. */
+  native?: NativeCheckbox;
+}
+
+/** The input of a native (zero-JS) checkbox: static attributes, the browser owns `checked`. */
+interface NativeCheckbox {
+  checked?: true;
+  disabled?: true;
+  name?: string;
+  value?: string;
+  id?: string;
+  [aria: `aria-${string}`]: unknown;
 }
 
 const CheckboxContext = createContext<CheckboxContext>({});
@@ -59,6 +80,31 @@ const slotsFor = (variant: CheckboxVariants["variant"]): CheckboxSlots => (SLOTS
 
 /** Upstream `use(CheckboxContext).slots`: `undefined` outside a Checkbox. */
 const slotsOf = (context: CheckboxContext): CheckboxSlots | undefined => (context.inCheckbox ? slotsFor(context.variant) : undefined);
+
+/* -------------------------------------------------------------------------------------------------
+ * State-space path (ZERO STATESPACE, as `switch.tsx`). A checkbox's states (selected, hovered, pressed, focus-visible,
+ * disabled) are the native checkbox's: the browser toggles it (label click, Space) and exposes checked to assistive tech;
+ * the stylesheet derives every visual state from `:checked` / `:hover` / `:active` / `:focus-visible` (the `[data-native]`
+ * rules in `styles/components/checkbox.css`). The build marks the call sites where nothing else can observe or drive the
+ * state (`$native`, `libs/compiler/facts-native.ts`); the root re-checks its props and contexts. Indeterminate (a DOM
+ * property only script sets), a description (its id links through the cdk field) and a group / field / form provider
+ * above keep the cdk path. The `id` goes on the input (as the cdk field's: an external `<Label for>` labels it).
+ * -----------------------------------------------------------------------------------------------*/
+// @rivet-native CheckboxRoot(children,class,variant,label,defaultSelected,isDisabled,name,value,id) CheckboxContent(children,class) CheckboxControl(children,class) CheckboxIndicator(class)
+const NATIVE_ROOT = new Set(["children", "class", "variant", "label", "defaultSelected", "isDisabled", "name", "value", "id"]);
+
+const nativeCheckbox = (props: CheckboxRootProps): NativeCheckbox | null => {
+  if (!nativeProps(props, NATIVE_ROOT)) return null;
+  if (useContext(CheckboxFieldContext) || useContext(CheckboxGroupStateContext) || useContext(FormValidationContext) !== undefined) return null;
+  const native: NativeCheckbox = {};
+  for (const key in props) if (key.startsWith("aria-")) (native as Record<string, unknown>)[key] = (props as Record<string, unknown>)[key];
+  if (props.defaultSelected) native.checked = true;
+  if (props.isDisabled) native.disabled = true;
+  if (props.name !== undefined) native.name = props.name;
+  if (props.value !== undefined) native.value = props.value as string;
+  if (props.id !== undefined) native.id = props.id;
+  return native;
+};
 
 /* -------------------------------------------------------------------------------------------------
  * Checkbox (Field) — React Aria `CheckboxField`.
@@ -74,7 +120,46 @@ interface CheckboxRootProps extends CheckboxFieldPrimitiveProps, CheckboxVariant
 }
 
 const CheckboxRoot = (props: CheckboxRootProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class", "description", "label", "variant", "isSelected", "isIndeterminate", "isDisabled"]);
+  const native = nativeCheckbox(props);
+  if (native) {
+    const variant = props.variant ?? useContext(CheckboxGroupContext).variant;
+    const contextValue: CheckboxContext = { inCheckbox: true, variant, native };
+    const data: Record<string, unknown> = {};
+    for (const key in props) if (key.startsWith("data-")) data[key] = (props as Record<string, unknown>)[key];
+    return (
+      <div
+        {...data}
+        data-slot="checkbox"
+        class={composeTwRenderProps(props.class as never, slotsFor(variant).base()) as string}
+        data-disabled={native.disabled}
+        data-native=""
+      >
+        <Provider token={CheckboxContext} value={contextValue}>
+          {props.children === undefined ? (
+            <CheckboxContent>
+              <CheckboxControl>
+                <CheckboxIndicator />
+              </CheckboxControl>
+              {props.label}
+            </CheckboxContent>
+          ) : (
+            (props.children as Content)
+          )}
+        </Provider>
+      </div>
+    );
+  }
+  const [local, rest] = splitLive(props, [
+    "children",
+    "class",
+    "description",
+    "label",
+    "variant",
+    "isSelected",
+    "isIndeterminate",
+    "isDisabled",
+    "$native" as never,
+  ]);
   if (DEV && local.children !== undefined) DEV.shorthandIgnored("Checkbox", local, ["label", "description"]);
   const checkboxGroupContext = useContext(CheckboxGroupContext);
   const variantOf = () => local.variant ?? checkboxGroupContext.variant;
@@ -132,8 +217,26 @@ const CheckboxRoot = (props: CheckboxRootProps): JSX.Element => {
 interface CheckboxContentProps extends CheckboxButtonPrimitiveProps {}
 
 const CheckboxContent = (props: CheckboxContentProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(CheckboxContext);
+  const native = context.native;
+  if (native) {
+    return (
+      <label
+        data-slot="checkbox-content"
+        class={composeTwRenderProps(props.class as never, slotsOf(context)?.content()) as string}
+        data-disabled={native.disabled}
+        data-nc=""
+      >
+        <span style={visuallyHidden}>
+          <input {...native} type="checkbox" />
+        </span>
+        <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
+          {props.children as Content}
+        </Provider>
+      </label>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class"]);
   const classOf = (): string | ((values: CheckboxButtonRenderProps) => string) => composeTwRenderProps(local.class as never, slotsOf(context)?.content());
   const cls =
     hasLiveProp(local, ["class"]) || hasLiveProp(context, ["variant"]) ? (values: CheckboxButtonRenderProps) => renderClass(classOf(), values) : classOf();
@@ -185,6 +288,20 @@ const CheckboxIndicator = (props: CheckboxIndicatorSpanProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(CheckboxContext);
   const state = context.state;
+  // Native: the checkmark drawn by the stylesheet from `:checked` (`checkbox.css` `[data-native]`), offset 72 = not drawn.
+  if (context.native && local.children === undefined)
+    return (
+      <dom.span aria-hidden="true" class={composeSlotClassName(slotsOf(context)?.indicator, local.class)} data-slot="checkbox-indicator" {...rest}>
+        <Icon
+          aria-hidden="true"
+          data-slot="checkbox-default-indicator--checkmark"
+          icon={Check}
+          role="presentation"
+          stroke-dasharray={24}
+          stroke-dashoffset={72}
+        />
+      </dom.span>
+    );
 
   const isSelected = () => !!state?.isSelected();
   const isIndeterminate = () => !!state?.isIndeterminate();

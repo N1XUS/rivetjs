@@ -9,7 +9,9 @@
 // - span parts: generic `dom.span` (`render` prop) as upstream.
 // - Live `class` / `size` → render-prop class functions (the composed class is a local: it reaches the cdk part as a plain value); `isSelected` / `isDisabled` are
 //   forwarded as getters (cdk keeps them live).
-import { SwitchButton as SwitchButtonPrimitive, SwitchField as SwitchFieldPrimitive } from "@rivetjs/cdk/switch";
+import { SwitchButton as SwitchButtonPrimitive, SwitchField as SwitchFieldPrimitive, SwitchFieldContext } from "@rivetjs/cdk/switch";
+import { visuallyHidden } from "@rivetjs/cdk/a11y";
+import { FormValidationContext } from "@rivetjs/cdk/form";
 import type {
   SwitchButtonProps as SwitchButtonPrimitiveProps,
   SwitchButtonRenderProps,
@@ -38,6 +40,21 @@ interface SwitchContext {
   inSwitch?: true;
   size?: SwitchVariants["size"];
   state?: SwitchFieldRenderProps;
+  /** State-space path (ZERO STATESPACE): the native input's attributes; the parts render static native markup. */
+  native?: NativeSwitch;
+}
+
+/** The input of a native (zero-JS) switch: static attributes, the browser owns `checked`. */
+interface NativeSwitch {
+  checked?: true;
+  disabled?: true;
+  name?: string;
+  value?: string;
+  id?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-describedby"?: string;
+  "aria-details"?: string;
 }
 
 const SwitchContext = createContext<SwitchContext>({});
@@ -52,6 +69,54 @@ const slotsFor = (size: SwitchVariants["size"]): SwitchSlots => (SLOTS[String(si
 const slotsOf = (context: SwitchContext): SwitchSlots | undefined => (context.inSwitch ? slotsFor(context.size) : undefined);
 
 /* -------------------------------------------------------------------------------------------------
+ * State-space path (ZERO STATESPACE). A switch's states (selected, hovered, pressed, focus-visible, disabled) are the
+ * native checkbox's: the browser toggles it (label click, Space), exposes `role="switch"` + checked to assistive tech,
+ * and the stylesheet derives every visual state from `:checked` / `:hover` / `:active` / `:focus-visible` (the
+ * `[data-native]` rules in `styles/components/switch.css`). The build marks the call sites where nothing else can observe
+ * or drive the state (`$native`: the compiler's `resume.native` proof — every part of the switch at that site passes
+ * declared data props only); the root checks its own props once more and renders static markup: no handler, no keyed
+ * state, so the server keeps no record and the page ships no JavaScript for it, before or after a click.
+ * -----------------------------------------------------------------------------------------------*/
+// @rivet-native SwitchRoot(children,class,size,label,defaultSelected,isDisabled,name,value,id) SwitchContent(children,class) SwitchControl(children,class) SwitchThumb(children,class)
+const NATIVE_ROOT_KEYS = new Set([
+  "$native",
+  "children",
+  "class",
+  "size",
+  "label",
+  "description",
+  "defaultSelected",
+  "isDisabled",
+  "name",
+  "value",
+  "id",
+  "aria-label",
+  "aria-labelledby",
+  "aria-describedby",
+  "aria-details",
+]);
+
+const nativeSwitch = (props: SwitchRootProps): NativeSwitch | null => {
+  if ((props as { $native?: unknown }).$native !== 1) return null;
+  const native: NativeSwitch = {};
+  for (const key in props) {
+    const d = Object.getOwnPropertyDescriptor(props, key)!;
+    // A live prop (getter), a key the native path does not render, or behaviour (a function, a render-function child).
+    if (d.get !== undefined || !(NATIVE_ROOT_KEYS.has(key) || key.startsWith("data-"))) return null;
+    const v = d.value;
+    if (typeof v === "function" && !(key === "children" && isSlot(v))) return null;
+    if (key === "defaultSelected" && v) native.checked = true;
+    else if (key === "isDisabled" && v) native.disabled = true;
+    else if (key === "name" || key === "value" || key === "id" || key.startsWith("aria-")) (native as Record<string, unknown>)[key] = v;
+  }
+  // The description links its id through the cdk field's slots (`aria-describedby`): only the cdk path renders it.
+  if (props.description !== undefined) return null;
+  // A provider above that merges props / server errors into the cdk field: the cdk path.
+  if (useContext(SwitchFieldContext) || useContext(FormValidationContext) !== undefined) return null;
+  return native;
+};
+
+/* -------------------------------------------------------------------------------------------------
  * Switch (Field) — React Aria `SwitchField`.
  * -----------------------------------------------------------------------------------------------*/
 interface SwitchRootProps extends SwitchFieldPrimitiveProps, SwitchVariants {
@@ -62,7 +127,36 @@ interface SwitchRootProps extends SwitchFieldPrimitiveProps, SwitchVariants {
 }
 
 const SwitchRoot = (props: SwitchRootProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class", "description", "label", "size", "isSelected", "isDisabled"]);
+  const native = nativeSwitch(props);
+  if (native) {
+    const size = props.size;
+    const contextValue: SwitchContext = { inSwitch: true, size, native };
+    const data: Record<string, unknown> = {};
+    for (const key in props) if (key.startsWith("data-")) data[key] = (props as Record<string, unknown>)[key];
+    return (
+      <div
+        {...data}
+        data-slot="switch"
+        class={composeTwRenderProps(props.class as never, slotsFor(size).base()) as string}
+        data-disabled={native.disabled}
+        data-native=""
+      >
+        <Provider token={SwitchContext} value={contextValue}>
+          {props.children === undefined ? (
+            <SwitchContent>
+              <SwitchControl>
+                <SwitchThumb />
+              </SwitchControl>
+              {props.label}
+            </SwitchContent>
+          ) : (
+            (props.children as Content)
+          )}
+        </Provider>
+      </div>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class", "description", "label", "size", "isSelected", "isDisabled", "$native" as never]);
   if (DEV && local.children !== undefined) DEV.shorthandIgnored("Switch", local, ["label", "description"]);
   const live = hasLiveProp(local, ["class", "size"]);
   const classOf = (): string | ((values: SwitchFieldRenderProps) => string) => composeTwRenderProps(local.class as never, slotsFor(local.size).base());
@@ -117,8 +211,26 @@ const SwitchRoot = (props: SwitchRootProps): JSX.Element => {
 interface SwitchContentProps extends SwitchButtonPrimitiveProps {}
 
 const SwitchContent = (props: SwitchContentProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(SwitchContext);
+  const native = context.native;
+  if (native) {
+    return (
+      <label
+        data-slot="switch-content"
+        class={composeTwRenderProps(props.class as never, slotsOf(context)?.content()) as string}
+        data-disabled={native.disabled}
+        data-nc=""
+      >
+        <span style={visuallyHidden}>
+          <input {...native} type="checkbox" role="switch" />
+        </span>
+        <Provider token={LabelContext} value={LABEL_SPAN_CONTEXT}>
+          {props.children as Content}
+        </Provider>
+      </label>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class"]);
   const classOf = (): string | ((values: SwitchButtonRenderProps) => string) => composeTwRenderProps(local.class as never, slotsOf(context)?.content());
   const cls = hasLiveProp(local, ["class"]) || hasLiveProp(context, ["size"]) ? (values: SwitchButtonRenderProps) => renderClass(classOf(), values) : classOf();
 

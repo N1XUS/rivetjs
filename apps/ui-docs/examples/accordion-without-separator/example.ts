@@ -10,6 +10,6 @@ export default defineExample({
   test: [
     { matches: "[data-slot=accordion-item][data-hide-separator=true]" },
     { click: "[data-slot=accordion-item]:nth-of-type(3) [data-slot=accordion-trigger]" },
-    { matches: "[data-slot=accordion-item]:nth-of-type(3) [data-slot=accordion-trigger][aria-expanded=true]" },
+    { matches: "[data-slot=accordion-item]:nth-of-type(3):is([open], :has([data-slot=accordion-trigger][aria-expanded=true]))" },
   ],
 });

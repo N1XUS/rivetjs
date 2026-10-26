@@ -54,7 +54,7 @@
     pointer-events: none;
   }
 
-  :is(.checkbox[data-selected="true"], .checkbox[data-indeterminate="true"]) .checkbox__indicator {
+  :is(.checkbox[data-selected="true"], .checkbox[data-indeterminate="true"], .checkbox[data-native]:has(input:checked)) .checkbox__indicator {
     border-color: var(--accent-foreground);
   }
 
@@ -80,8 +80,12 @@
     }
   }
 
-  .checkbox[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"] {
+  .checkbox[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
     transition: stroke-dashoffset var(--duration-fast) linear 15ms;
+  }
+
+  .checkbox[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
+    stroke-dashoffset: 48px;
   }
 
   .checkbox[data-invalid="true"][data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[data-invalid="true"][aria-checked="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[aria-invalid="true"][data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[aria-invalid="true"][aria-checked="true"] [data-slot="checkbox-default-indicator--checkmark"] {
@@ -162,7 +166,7 @@
     }
   }
 
-  .checkbox:focus-visible .checkbox__control, .checkbox:has([data-slot="checkbox-content"][data-focus-visible="true"]) .checkbox__control, .checkbox [data-slot="checkbox-content"][data-focus-visible="true"] .checkbox__control {
+  .checkbox:focus-visible .checkbox__control, .checkbox[data-native]:has(input:focus-visible) .checkbox__control, .checkbox:has([data-slot="checkbox-content"][data-focus-visible="true"]) .checkbox__control, .checkbox [data-slot="checkbox-content"][data-focus-visible="true"] .checkbox__control {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -181,12 +185,12 @@
     background-color: var(--accent-hover);
   }
 
-  .checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control {
+  .checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control, .checkbox[data-native]:has(input:checked) .checkbox__control {
     color: var(--accent-foreground);
     border-color: #0000;
   }
 
-  :is(.checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control):before {
+  :is(.checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control, .checkbox[data-native]:has(input:checked) .checkbox__control):before {
     --tw-scale-x: 100%;
     --tw-scale-y: 100%;
     --tw-scale-z: 100%;
@@ -302,11 +306,11 @@
     position: relative;
   }
 
-  .checkbox--secondary:not([aria-checked="true"]):not([data-selected="true"]):not([data-indeterminate="true"]) .checkbox__control {
+  .checkbox--secondary:not([aria-checked="true"]):not([data-selected="true"]):not([data-indeterminate="true"]):not([data-native]:has(input:checked)) .checkbox__control {
     background-color: var(--checkbox-control-bg);
   }
 
-  :is(.checkbox--secondary[aria-checked="true"] .checkbox__control, .checkbox--secondary[data-selected="true"] .checkbox__control):before, .checkbox--secondary[data-indeterminate="true"] .checkbox__control, .checkbox--secondary[data-indeterminate="true"] .checkbox__control:before {
+  :is(.checkbox--secondary[aria-checked="true"] .checkbox__control, .checkbox--secondary[data-selected="true"] .checkbox__control, .checkbox--secondary[data-native]:has(input:checked) .checkbox__control):before, .checkbox--secondary[data-indeterminate="true"] .checkbox__control, .checkbox--secondary[data-indeterminate="true"] .checkbox__control:before {
     background-color: var(--accent);
   }
 }

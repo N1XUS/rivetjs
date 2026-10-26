@@ -206,6 +206,10 @@ The switch supports both CSS pseudo-classes and data attributes for flexibility:
 - **Disabled**: `:disabled` or `[aria-disabled="true"]` (reduced opacity, no pointer events)
 - **Pressed**: `:active` or `[data-pressed="true"]`
 
+### Zero-JS native path
+
+Where the build proves a switch call site closed (declared data props only, no handlers, no controlled state, no render props, no live values, no context-reading components inside, no state selectors in the calling module), it renders native markup and ships no JavaScript, before or after an interaction: a visually hidden `<input type="checkbox" role="switch">` inside the `<label>` (`.switch[data-native]`), selected = `.switch[data-native]:has(input:checked)`, focus = `:has(input:focus-visible)`; `data-selected` / `data-hovered` / `data-pressed` / `data-focus-visible` are not set there. Classes, slots and `data-disabled` stay the same; style state with the selectors above that include the native form (`:checked`, `[open]`, `:focus-visible`), not with a state attribute alone. Any other call site keeps the interactive path. See the framework guide "Native automata".
+
 ## API Reference
 
 ### Switch

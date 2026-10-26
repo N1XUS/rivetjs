@@ -10,6 +10,8 @@ export default defineExample({
   test: [
     { expect: ["h2", "Frequently Asked Questions"] },
     { click: "div:nth-of-type(3) > .accordion [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger]" },
-    { matches: "div:nth-of-type(3) > .accordion [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger][aria-expanded=true]" },
+    {
+      matches: "div:nth-of-type(3) > .accordion [data-slot=accordion-item]:nth-of-type(1):is([open], :has([data-slot=accordion-trigger][aria-expanded=true]))",
+    },
   ],
 });

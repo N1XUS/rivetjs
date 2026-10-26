@@ -14,11 +14,12 @@ import { DERIVED_LOADER, DERIVED_STREAM } from "../resume-loader-derived.min.ts"
 // (1,247) — tail `e` by boundary name: an event is held / boots / warms only inside a record whose name listens to its
 // type (intent also on a `data-g` match: the router's links); static text and native controls nothing listens to stay
 // native (no runtime, no chunk): budget 1,247 B. ZERO R7 (tail v2, S2): +58 B (1,305) — the name lookup reads `n[i][2]` and a run's member through its template.
-test("shipped derived loader is current, inline-safe and fits 1,305 B brotli", async () => {
+// ZERO STATESPACE: +39 B (1,344) — native automaton controls (`data-nc`): no form-control hold, presses act natively, no replay.
+test("shipped derived loader is current, inline-safe and fits 1,344 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1305, `minified ${size} B`);
+  assert.ok(size <= 1344, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 

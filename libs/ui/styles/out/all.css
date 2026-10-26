@@ -1798,7 +1798,7 @@
     }
   }
 
-  .accordion__indicator[data-expanded="true"] {
+  .accordion__indicator[data-expanded="true"], details[open] > summary .accordion__indicator {
     rotate: -180deg;
   }
 
@@ -1861,18 +1861,18 @@
   }
 
   @media (hover: hover) {
-    .accordion__trigger:hover:not([aria-expanded="true"]) {
+    .accordion__trigger:hover:not([aria-expanded="true"]):not(:where(details[open] > summary *)) {
       background-color: var(--foreground);
     }
 
     @supports (color: color-mix(in lab, red, red)) {
-      .accordion__trigger:hover:not([aria-expanded="true"]) {
+      .accordion__trigger:hover:not([aria-expanded="true"]):not(:where(details[open] > summary *)) {
         background-color: color-mix(in oklab, var(--foreground) 3%, transparent 90%);
       }
     }
   }
 
-  .accordion__trigger:focus-visible:not([data-focused]), .accordion__trigger[data-focus-visible="true"] {
+  .accordion__trigger:focus-visible:not([data-focused]), .accordion__trigger[data-focus-visible="true"], .accordion__summary:focus-visible .accordion__trigger {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -1883,9 +1883,23 @@
     outline-style: none;
   }
 
-  .accordion__trigger:disabled, .accordion__trigger[aria-disabled="true"] {
+  .accordion__trigger:disabled, .accordion__trigger[aria-disabled="true"], .accordion__summary[aria-disabled="true"] .accordion__trigger {
     opacity: var(--disabled-opacity);
     cursor: var(--cursor-disabled);
+    pointer-events: none;
+  }
+
+  .accordion__summary {
+    outline: none;
+    list-style: none;
+    display: block;
+  }
+
+  .accordion__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .accordion__summary[aria-disabled="true"] {
     pointer-events: none;
   }
 
@@ -1906,7 +1920,7 @@
     }
   }
 
-  .accordion__panel[data-expanded="true"] {
+  .accordion__panel[data-expanded="true"], details[open] > .accordion__panel {
     will-change: height, opacity;
     opacity: 1;
   }
@@ -1942,7 +1956,7 @@
     border-start-end-radius: min(32px, var(--radius-3xl));
   }
 
-  .accordion--surface .accordion__item:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"])) [data-slot="accordion-trigger"] {
+  .accordion--surface .accordion__item:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"])):not([open]) [data-slot="accordion-trigger"] {
     border-end-end-radius: min(32px, var(--radius-3xl));
     border-end-start-radius: min(32px, var(--radius-3xl));
   }
@@ -7750,7 +7764,7 @@
     padding-inline-start: 3.75rem;
   }
 
-  :is(.switch:disabled[aria-checked="true"], .switch:disabled[data-selected="true"], .switch[data-disabled="true"][aria-checked="true"], .switch[data-disabled="true"][data-selected="true"], .switch[aria-disabled="true"][aria-checked="true"], .switch[aria-disabled="true"][data-selected="true"]) .switch__thumb {
+  :is(.switch:disabled[aria-checked="true"], .switch:disabled[data-selected="true"], .switch[data-disabled="true"][aria-checked="true"], .switch[data-disabled="true"][data-selected="true"], .switch[aria-disabled="true"][aria-checked="true"], .switch[aria-disabled="true"][data-selected="true"], .switch[data-disabled="true"][data-native]:has(input:checked)) .switch__thumb {
     opacity: .4;
   }
 
@@ -7777,7 +7791,7 @@
     }
   }
 
-  .switch:focus-visible .switch__control, .switch:has([data-slot="switch-content"][data-focus-visible="true"]) .switch__control, .switch [data-slot="switch-content"][data-focus-visible="true"] .switch__control {
+  .switch:focus-visible .switch__control, .switch:has([data-slot="switch-content"][data-focus-visible="true"]) .switch__control, .switch [data-slot="switch-content"][data-focus-visible="true"] .switch__control, .switch[data-native]:has(input:focus-visible) .switch__control {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -7806,11 +7820,11 @@
     }
   }
 
-  .switch[aria-checked="true"] .switch__control, .switch[data-selected="true"] .switch__control {
+  .switch[aria-checked="true"] .switch__control, .switch[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked) .switch__control {
     background-color: var(--switch-control-bg-checked);
   }
 
-  .switch[aria-checked="true"]:hover .switch__control, .switch[data-selected="true"]:hover .switch__control, .switch[aria-checked="true"][data-hovered="true"] .switch__control, .switch[data-selected="true"][data-hovered="true"] .switch__control, .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] .switch__control, .switch[aria-checked="true"]:active .switch__control, .switch[data-selected="true"]:active .switch__control, .switch[aria-checked="true"][data-pressed="true"] .switch__control, .switch[data-selected="true"][data-pressed="true"] .switch__control, .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] .switch__control {
+  .switch[aria-checked="true"]:hover .switch__control, .switch[data-selected="true"]:hover .switch__control, .switch[aria-checked="true"][data-hovered="true"] .switch__control, .switch[data-selected="true"][data-hovered="true"] .switch__control, .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked):hover .switch__control, .switch[aria-checked="true"]:active .switch__control, .switch[data-selected="true"]:active .switch__control, .switch[aria-checked="true"][data-pressed="true"] .switch__control, .switch[data-selected="true"][data-pressed="true"] .switch__control, .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked):active .switch__control {
     background-color: var(--switch-control-bg-checked-hover);
   }
 
@@ -7884,7 +7898,7 @@
     }
   }
 
-  .switch[aria-checked="true"] .switch__thumb, .switch[data-selected="true"] .switch__thumb {
+  .switch[aria-checked="true"] .switch__thumb, .switch[data-selected="true"] .switch__thumb, .switch[data-native]:has(input:checked) .switch__thumb {
     background-color: var(--accent-foreground);
     color: var(--accent);
     margin-inline-start: calc(100% - 1.5rem);
@@ -7897,7 +7911,7 @@
     height: .75rem;
   }
 
-  .switch[aria-checked="true"] :is(.switch--sm .switch__thumb), .switch[data-selected="true"] :is(.switch--sm .switch__thumb) {
+  .switch[aria-checked="true"] :is(.switch--sm .switch__thumb), .switch[data-selected="true"] :is(.switch--sm .switch__thumb), .switch[data-native]:has(input:checked) :is(.switch--sm .switch__thumb) {
     margin-inline-start: calc(100% - 1.15625rem);
   }
 
@@ -7907,7 +7921,7 @@
     height: 1.25rem;
   }
 
-  .switch[aria-checked="true"] :is(.switch--lg .switch__thumb), .switch[data-selected="true"] :is(.switch--lg .switch__thumb) {
+  .switch[aria-checked="true"] :is(.switch--lg .switch__thumb), .switch[data-selected="true"] :is(.switch--lg .switch__thumb), .switch[data-native]:has(input:checked) :is(.switch--lg .switch__thumb) {
     margin-inline-start: calc(100% - 1.84375rem);
   }
 
@@ -10328,7 +10342,7 @@
     pointer-events: none;
   }
 
-  :is(.checkbox[data-selected="true"], .checkbox[data-indeterminate="true"]) .checkbox__indicator {
+  :is(.checkbox[data-selected="true"], .checkbox[data-indeterminate="true"], .checkbox[data-native]:has(input:checked)) .checkbox__indicator {
     border-color: var(--accent-foreground);
   }
 
@@ -10354,8 +10368,12 @@
     }
   }
 
-  .checkbox[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"] {
+  .checkbox[data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
     transition: stroke-dashoffset var(--duration-fast) linear 15ms;
+  }
+
+  .checkbox[data-native]:has(input:checked) [data-slot="checkbox-default-indicator--checkmark"] {
+    stroke-dashoffset: 48px;
   }
 
   .checkbox[data-invalid="true"][data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[data-invalid="true"][aria-checked="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[aria-invalid="true"][data-selected="true"] [data-slot="checkbox-default-indicator--checkmark"], .checkbox[aria-invalid="true"][aria-checked="true"] [data-slot="checkbox-default-indicator--checkmark"] {
@@ -10436,7 +10454,7 @@
     }
   }
 
-  .checkbox:focus-visible .checkbox__control, .checkbox:has([data-slot="checkbox-content"][data-focus-visible="true"]) .checkbox__control, .checkbox [data-slot="checkbox-content"][data-focus-visible="true"] .checkbox__control {
+  .checkbox:focus-visible .checkbox__control, .checkbox[data-native]:has(input:focus-visible) .checkbox__control, .checkbox:has([data-slot="checkbox-content"][data-focus-visible="true"]) .checkbox__control, .checkbox [data-slot="checkbox-content"][data-focus-visible="true"] .checkbox__control {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -10455,12 +10473,12 @@
     background-color: var(--accent-hover);
   }
 
-  .checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control {
+  .checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control, .checkbox[data-native]:has(input:checked) .checkbox__control {
     color: var(--accent-foreground);
     border-color: #0000;
   }
 
-  :is(.checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control):before {
+  :is(.checkbox[aria-checked="true"] .checkbox__control, .checkbox[data-selected="true"] .checkbox__control, .checkbox[data-native]:has(input:checked) .checkbox__control):before {
     --tw-scale-x: 100%;
     --tw-scale-y: 100%;
     --tw-scale-z: 100%;
@@ -10576,11 +10594,11 @@
     position: relative;
   }
 
-  .checkbox--secondary:not([aria-checked="true"]):not([data-selected="true"]):not([data-indeterminate="true"]) .checkbox__control {
+  .checkbox--secondary:not([aria-checked="true"]):not([data-selected="true"]):not([data-indeterminate="true"]):not([data-native]:has(input:checked)) .checkbox__control {
     background-color: var(--checkbox-control-bg);
   }
 
-  :is(.checkbox--secondary[aria-checked="true"] .checkbox__control, .checkbox--secondary[data-selected="true"] .checkbox__control):before, .checkbox--secondary[data-indeterminate="true"] .checkbox__control, .checkbox--secondary[data-indeterminate="true"] .checkbox__control:before {
+  :is(.checkbox--secondary[aria-checked="true"] .checkbox__control, .checkbox--secondary[data-selected="true"] .checkbox__control, .checkbox--secondary[data-native]:has(input:checked) .checkbox__control):before, .checkbox--secondary[data-indeterminate="true"] .checkbox__control, .checkbox--secondary[data-indeterminate="true"] .checkbox__control:before {
     background-color: var(--accent);
   }
 }

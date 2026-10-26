@@ -8,9 +8,9 @@ export default defineExample({
   frame: { height: 396, auto: true },
   show: ["src/routes/index.tsx"],
   test: [
-    { matches: ".accordion[data-disabled] [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger][disabled]" },
-    { matches: "[data-slot=accordion-item]:nth-of-type(2) [data-slot=accordion-trigger][disabled]" },
+    { matches: ".accordion[data-disabled] [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger][data-disabled]" },
+    { matches: "[data-slot=accordion-item]:nth-of-type(2) [data-slot=accordion-trigger][data-disabled]" },
     { click: "div.space-y-2:nth-of-type(2) [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger]" },
-    { matches: "div.space-y-2:nth-of-type(2) [data-slot=accordion-item]:nth-of-type(1) [data-slot=accordion-trigger][aria-expanded=true]" },
+    { matches: "div.space-y-2:nth-of-type(2) [data-slot=accordion-item]:nth-of-type(1):is([open], :has([data-slot=accordion-trigger][aria-expanded=true]))" },
   ],
 });

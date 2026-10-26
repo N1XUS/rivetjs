@@ -1628,6 +1628,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 }
                 props.push((Key::Ident("children".into()), value));
             }
+            // ZERO STATESPACE: a proven native call site (`plan.native`, both targets) renders its family's native automaton.
+            if self.tree.id_of(el).is_some_and(|id| self.derived.as_ref().is_some_and(|d| d.plan.native.contains(&id))) {
+                props.push((Key::Str("$native".into()), Expr::Num(1)));
+            }
             let callee = self.tag_expr(&el.opening_element.name);
             if !self.server {
                 return self.component_v2(el, callee, props);

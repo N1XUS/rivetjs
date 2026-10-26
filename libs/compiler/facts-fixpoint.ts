@@ -18,6 +18,7 @@
 // included. A component with no resolved call site (rendered by code the walk does not see) counts its inputs as live.
 import type { ComponentBoundaryFacts as ComponentFacts, ModuleFacts } from "./index.ts";
 import { callSites, type CallSites, type ContextOptions } from "./facts-callsite.ts";
+import { nativeSites, type NativeOptions } from "./facts-native.ts";
 
 /** The derived model's verdict for one component. */
 export interface BoundaryVerdict {
@@ -68,6 +69,8 @@ export interface BoundaryFacts {
   static(file: string): string[];
   /** ZERO CALLSITE (`contexts` given): the per-call-site context proof (`facts-callsite.ts`); null without. */
   callSites: CallSites | null;
+  /** ZERO STATESPACE: the call sites of `file` proven native automata (`facts-native.ts`, `resume.native`). */
+  native(file: string): string[];
   /** PLACE (`place.ts`): resolved call sites by callee key (`file?Name`), in the order `callSites` trace results use. */
   callers: ReadonlyMap<string, readonly { caller: string; index: number }[]>;
   /** PLACE: route / derived roots (component keys). */
@@ -89,6 +92,7 @@ export function boundaryFacts(
   roots: ReadonlySet<string> = new Set(),
   shells: ReadonlySet<string> = new Set(),
   contexts?: ContextOptions,
+  natives?: NativeOptions,
 ): BoundaryFacts {
   const target = (file: string, spec: string) => resolved.get(file)?.get(spec) ?? null;
   type Bound = { file: string; local: string };
@@ -296,9 +300,13 @@ export function boundaryFacts(
     }
   }
   const names = (file: string, pick: (v: BoundaryVerdict) => boolean) => [...(verdicts.get(file) ?? [])].filter(([, v]) => pick(v)).map(([name]) => name);
+  const native = natives?.families.size
+    ? nativeSites({ ...natives, facts, info, sites, escaped, interactive: (id) => interactive.get(id) ?? false, live: (id) => live.get(id) ?? false, renders })
+    : new Map<string, string[]>();
   const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, shell, options: contexts }) : null;
   return {
     callSites: proof,
+    native: (file) => native.get(file) ?? [],
     callers: sites,
     roots: isRoot,
     verdicts,

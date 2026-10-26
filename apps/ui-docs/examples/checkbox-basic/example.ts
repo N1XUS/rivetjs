@@ -7,5 +7,5 @@ export default defineExample({
   status: "experimental",
   frame: { height: "sm" },
   show: ["src/routes/index.tsx"],
-  test: [{ click: "[data-slot=checkbox-content]" }, { attr: ["[data-slot=checkbox]", "data-selected", "true"] }],
+  test: [{ click: "[data-slot=checkbox-content]" }, { matches: "[data-slot=checkbox]:is([data-selected=true], :has(input:checked))" }],
 });

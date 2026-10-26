@@ -110,6 +110,11 @@ export interface ResumeOptions {
   /** ZERO CALLSITE: names of this module's independent boundaries whose every call site is proven (`CTXFREE`). */
   free?: string[];
   /**
+   * ZERO STATESPACE: this module's call sites proven native automata, `"<Caller>:<call index>"` (`facts-native.ts`): the
+   * element gets the hidden prop `$native: 1` on both targets (its family renders static native markup).
+   */
+  native?: string[];
+  /**
    * ZERO A1: names of this module's components no adopt walk reaches (`BoundaryVerdict.adopted` false: not a boundary,
    * rendered only by components that are not adopted, never used as a value). Their server output carries no
    * `<!--[-->…<!--]-->` slot markers (nothing in the browser walks it).
@@ -370,6 +375,11 @@ export interface ComponentBoundaryFacts {
     bytes?: number;
     /** PLACE: it has JSX element / fragment children (a `SITE` instance there is demoted at run time). */
     children?: boolean;
+    /**
+     * ZERO STATESPACE: its attribute names (`name*`: the value is not a plain value, `...`: a spread) and `()` for a
+     * function child (absent from an older wasm: no call site proves native, `facts-native.ts`).
+     */
+    attrs?: string[];
   }[];
   /** PLACE cost feature: native JSX elements written in the component (absent from an older wasm). */
   elements?: number;
@@ -431,7 +441,7 @@ interface RawFacts {
       context: boolean;
       params: "none" | "object" | "destructured";
       renders: string[];
-      calls: [string, boolean, boolean?, string[]?, boolean?, number?, boolean?][];
+      calls: [string, boolean, boolean?, string[]?, boolean?, number?, boolean?, string[]?][];
       elements?: number;
     },
   ][];
@@ -481,7 +491,7 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
           provides: facts.provides ?? false,
           listens: facts.listens ?? false,
           renders: new Set(facts.renders),
-          calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data, bytes, children]) => ({
+          calls: facts.calls.map(([tag, data, fn = false, around = [], inputs = data, bytes, children, attrs]) => ({
             tag,
             data,
             fn,
@@ -489,6 +499,7 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
             inputs,
             ...(bytes === undefined ? {} : { bytes }),
             ...(children === undefined ? {} : { children }),
+            ...(attrs === undefined ? {} : { attrs }),
           })),
         } satisfies ComponentBoundaryFacts,
       ]),

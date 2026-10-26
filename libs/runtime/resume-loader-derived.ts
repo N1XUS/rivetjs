@@ -79,7 +79,12 @@ export function derivedLoader(): void {
     // The records around the target listening to this type: an event no record hears acts natively (not held, no boot).
     // Listening to anything: once the runtime runs (it filters by type itself) or an event is held (a press's later events
     // keep their order), and for a form control's / a form's events (the deferred units in the form adopt first).
-    const at = ids(target, rt || q.length || type == "submit" || target.form ? "" : type);
+    // A native automaton's control (`data-nc`, ZERO STATESPACE: a native switch's label, an accordion's summary): its state
+    // is the browser's. No form control here (only records listening to the type hold its events), and its presses act
+    // natively — a held press replays the cold-press focus emulation after the native activation already focused.
+    const nc = target.closest?.("[data-nc]");
+    if (nc && /^(pointer|mouse)(down|up)$/.test(type)) return;
+    const at = ids(target, rt || q.length || type == "submit" || (target.form && !nc) ? "" : type);
     // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
     at.length || !target.closest?.(script.dataset.g!) || at.push("");
     if (!at.length || rt?.on(event)) return;
@@ -96,10 +101,14 @@ export function derivedLoader(): void {
     ) {
       const el = (event.composedPath() as (HTMLInputElement & HTMLAnchorElement)[]).find((n) => n.matches?.("a[href],button,input,summary,label"))!,
         kind = el && (el.type || el.localName);
+      // A native control's activation acts at once (a replayed, synthetic one would count as script focus:
+      // `:focus-visible` after a mouse click); the held event still reaches the handlers around it.
       if (
         el?.localName == "a"
           ? !el.target && !el.hasAttribute("download")
-          : /^(checkbox|radio|summary|label)$/.test(kind) || (el?.form && /^(submit|image|reset)$/.test(kind))
+          : /^(checkbox|radio|summary|label)$/.test(kind)
+            ? !nc
+            : el?.form && /^(submit|image|reset)$/.test(kind)
       )
         replay = () => ((skip = el), el.dispatchEvent(new (event.constructor as typeof MouseEvent)(type, event)), (skip = null));
     } else if (type == "submit") {

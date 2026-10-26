@@ -40,6 +40,8 @@ import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.
 import type { DOMRenderProps } from "../../utils/dom.tsx";
 import { dom } from "../../utils/dom.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
+import { nativeAttrs, nativeProps } from "../../utils/native.ts";
+import { createId } from "@rivetjs/runtime/id";
 
 type AccordionVariant = NonNullable<AccordionVariants["variant"]> | "__none";
 
@@ -47,6 +49,43 @@ type AccordionContext = {
   /** Rivet: the root's variant (upstream: `slots`); `undefined` outside an `Accordion`. */
   variant?: AccordionVariant;
   hideSeparator?: boolean;
+  /** State-space path (ZERO STATESPACE): the items are `<details>`; the browser owns which are open. */
+  native?: NativeAccordion;
+};
+
+/**
+ * A native (zero-JS) accordion: exclusive items share `name`. Every item starts closed: an `open` attribute would be a
+ * binding an ancestor's adopt run rewrites over the browser's state (the user's toggles), so default expansion keeps
+ * today's path (`defaultExpandedKeys` / `defaultExpanded` are not native props).
+ */
+interface NativeAccordion {
+  name?: string;
+  disabled: boolean;
+}
+
+/** A native item's ids (its trigger labels the panel) and disabled flag, for its heading / trigger / panel. */
+interface NativeItem {
+  id: string;
+  disabled: boolean;
+}
+
+const NativeItemContext = createContext<NativeItem | null>(null);
+
+/*
+ * State-space path (ZERO STATESPACE). An accordion's states (which items are open; hover / focus-visible) are native:
+ * `<details>` items (exclusive ones share `name`), `<summary>` holding the heading, `[open]` / `:hover` /
+ * `:focus-visible` in `styles/components/accordion.css` (`[data-native]` rules). Browsers expose the summary as an
+ * expandable control (expanded state), toggle it with Enter / Space and open a closed item for find-in-page. The build
+ * marks the call sites where every part passes declared data props only (`$native`, `../../utils/native.ts`); the parts
+ * render static markup: no record, no JavaScript before or after a toggle.
+ */
+// @rivet-native AccordionRoot(children,class,variant,hideSeparator,allowsMultipleExpanded,isDisabled,id) AccordionItem(children,class,id,isDisabled) AccordionHeading(children,class,level) AccordionTrigger(children,class) AccordionPanel(children,class) AccordionIndicator(children,class) AccordionBody(children,class)
+const NATIVE_ROOT = new Set(["children", "class", "variant", "hideSeparator", "allowsMultipleExpanded", "isDisabled", "id"]);
+
+const nativeAccordion = (props: AccordionRootProps): NativeAccordion | null => {
+  if (!nativeProps(props, NATIVE_ROOT)) return null;
+  const multiple = !!props.allowsMultipleExpanded;
+  return { name: multiple ? undefined : props.id != null ? String(props.id) + "-group" : createId(), disabled: !!props.isDisabled };
 };
 
 const AccordionContext = createContext<AccordionContext>({});
@@ -71,7 +110,28 @@ interface AccordionRootProps extends DisclosureGroupProps, AccordionVariants {
 }
 
 const AccordionRoot = (props: AccordionRootProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class", "hideSeparator", "variant"]);
+  const native = nativeAccordion(props);
+  if (native) {
+    const variant = (props.variant ?? "__none") as AccordionVariant;
+    const outer = useContext(SurfaceContext);
+    return (
+      <Provider token={AccordionContext} value={{ variant, hideSeparator: props.hideSeparator ?? false, native }}>
+        <Provider token={SurfaceContext} value={{ variant: variant === "surface" ? DEFAULT_SURFACE_VARIANT : outer.variant }}>
+          <div
+            {...nativeAttrs(props)}
+            data-slot="accordion"
+            id={props.id != null ? String(props.id) : undefined}
+            class={composeTwRenderProps(props.class as never, slotsFor(variant).base()) as string}
+            data-disabled={native.disabled ? "true" : undefined}
+            data-native=""
+          >
+            {props.children as Content}
+          </div>
+        </Provider>
+      </Provider>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class", "hideSeparator", "variant", "$native" as never]);
   const variant = (): AccordionVariant => (local.variant ?? "__none") as AccordionVariant;
   const outerSurface = useContext(SurfaceContext);
   const contextValue: AccordionContext = {
@@ -112,8 +172,28 @@ const AccordionRoot = (props: AccordionRootProps): JSX.Element => {
 interface AccordionItemProps extends DisclosureProps {}
 
 const AccordionItem = (props: AccordionItemProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(AccordionContext);
+  const native = context.native;
+  if (native) {
+    const id = createId();
+    const item: NativeItem = { id, disabled: native.disabled || !!props.isDisabled };
+    return (
+      <details
+        {...nativeAttrs(props)}
+        class={composeTwRenderProps(props.class as never, slotsOf(context)?.item()) as string}
+        data-hide-separator={context.hideSeparator ? "true" : undefined}
+        data-slot="accordion-item"
+        id={props.id != null ? String(props.id) : undefined}
+        name={native.name}
+        data-disabled={item.disabled ? "true" : undefined}
+      >
+        <Provider token={NativeItemContext} value={item}>
+          {props.children as Content}
+        </Provider>
+      </details>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class"]);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.item()) as string | ((v: DisclosureRenderProps) => string);
   const cls = hasLiveProp(local, ["class"]) ? (values: DisclosureRenderProps) => renderClass(classOf(), values) : classOf();
 
@@ -143,6 +223,24 @@ type AccordionIndicatorSvgProps = AccordionIndicatorProps & Omit<JSX.IntrinsicEl
 const AccordionIndicator = <E extends keyof JSX.IntrinsicElements = "svg">(props: AccordionIndicatorProps<E> & JSX.IntrinsicElements[E]): JSX.Element => {
   const [local, rest] = splitLive(props as AccordionIndicatorSvgProps, ["children", "class"]);
   const context = useContext(AccordionContext);
+  if (context.native) {
+    // `[open]` rotates it (accordion.css): no `data-expanded`.
+    if (local.children)
+      return (
+        <span {...(rest as {})} class={composeSlotClassName(slotsOf(context)?.indicator, local.class)} data-slot="accordion-indicator">
+          {local.children}
+        </span>
+      );
+    return (
+      <Icon
+        icon={ChevronDown}
+        size={16}
+        class={composeSlotClassName(slotsOf(context)?.indicator, local.class)}
+        data-slot="accordion-indicator"
+        {...(rest as {})}
+      />
+    );
+  }
   const state = useContext(DisclosureStateContext)!;
   const expanded = () => dataAttr(state.isExpanded());
 
@@ -174,8 +272,44 @@ interface AccordionHeadingProps extends DisclosureHeadingProps {
 }
 
 const AccordionHeading = (props: AccordionHeadingProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["class"]);
   const context = useContext(AccordionContext);
+  if (context.native) {
+    // The item's `<summary>` (first child of its `<details>`) holds the heading: the browser's toggle.
+    const item = useContext(NativeItemContext);
+    const level = props.level ?? 3;
+    const cls = composeSlotClassName(slotsOf(context)?.heading, props.class as string | undefined);
+    const children = props.children as Content;
+    return (
+      <summary class="accordion__summary" data-nc="" tabIndex={item?.disabled ? -1 : undefined} aria-disabled={item?.disabled ? "true" : undefined}>
+        {level === 1 ? (
+          <h1 class={cls} data-slot="accordion-heading">
+            {children}
+          </h1>
+        ) : level === 2 ? (
+          <h2 class={cls} data-slot="accordion-heading">
+            {children}
+          </h2>
+        ) : level === 4 ? (
+          <h4 class={cls} data-slot="accordion-heading">
+            {children}
+          </h4>
+        ) : level === 5 ? (
+          <h5 class={cls} data-slot="accordion-heading">
+            {children}
+          </h5>
+        ) : level === 6 ? (
+          <h6 class={cls} data-slot="accordion-heading">
+            {children}
+          </h6>
+        ) : (
+          <h3 class={cls} data-slot="accordion-heading">
+            {children}
+          </h3>
+        )}
+      </summary>
+    );
+  }
+  const [local, rest] = splitLive(props, ["class"]);
 
   return <DisclosureHeading class={composeSlotClassName(slotsOf(context)?.heading, local.class)} data-slot="accordion-heading" {...rest} />;
 };
@@ -186,8 +320,21 @@ const AccordionHeading = (props: AccordionHeadingProps): JSX.Element => {
 interface AccordionTriggerProps extends ButtonProps {}
 
 const AccordionTrigger = (props: AccordionTriggerProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(AccordionContext);
+  if (context.native) {
+    const item = useContext(NativeItemContext);
+    return (
+      <span
+        class={composeTwRenderProps(props.class as never, slotsOf(context)?.trigger()) as string}
+        data-slot="accordion-trigger"
+        id={item ? item.id + "-trigger" : undefined}
+        data-disabled={item?.disabled ? "true" : undefined}
+      >
+        {props.children as Content}
+      </span>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class"]);
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.trigger()) as string | ((v: ButtonRenderProps) => string);
   const cls = hasLiveProp(local, ["class"]) ? (values: ButtonRenderProps) => renderClass(classOf(), values) : classOf();
 
@@ -226,8 +373,22 @@ const AccordionBody = <E extends keyof JSX.IntrinsicElements = "div">(props: Acc
 interface AccordionPanelProps extends DisclosurePanelProps {}
 
 const AccordionPanel = (props: AccordionPanelProps): JSX.Element => {
-  const [local, rest] = splitLive(props, ["children", "class"]);
   const context = useContext(AccordionContext);
+  if (context.native) {
+    const item = useContext(NativeItemContext);
+    return (
+      <div
+        class={composeTwRenderProps(props.class as never, slotsOf(context)?.panel()) as string}
+        data-slot="accordion-panel"
+        id={item ? item.id + "-panel" : undefined}
+        role="group"
+        aria-labelledby={item ? item.id + "-trigger" : undefined}
+      >
+        {props.children as Content}
+      </div>
+    );
+  }
+  const [local, rest] = splitLive(props, ["children", "class"]);
   const state = useContext(DisclosureStateContext)!;
   const classOf = () => composeTwRenderProps(local.class as never, slotsOf(context)?.panel()) as string | ((v: DisclosurePanelRenderProps) => string);
   const cls = hasLiveProp(local, ["class"]) ? (values: DisclosurePanelRenderProps) => renderClass(classOf(), values) : classOf();

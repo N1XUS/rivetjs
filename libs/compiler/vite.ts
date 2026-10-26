@@ -6,6 +6,7 @@ import { basename, dirname, join, posix, relative, resolve, sep } from "node:pat
 import { pathToFileURL } from "node:url";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
+import { nativeFamilies, stylesState, type NativeFamily } from "./facts-native.ts";
 import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import { compile, moduleFacts, type CompileOptions, type CompileResult, type ModuleFacts } from "./index.ts";
@@ -735,7 +736,7 @@ function rivetPlugin(
   // (module-local closure, identical on both targets).
   const derivedVerdicts = new Map<
     string,
-    { boundaries: string[]; independent: string[]; conditional: string[]; static: string[]; site: string[]; sites: string[]; free: string[] }
+    { boundaries: string[]; independent: string[]; conditional: string[]; static: string[]; site: string[]; sites: string[]; free: string[]; native: string[] }
   >();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
@@ -980,7 +981,9 @@ function rivetPlugin(
       sourceBytes = new Map<string, number>(),
       typeExports = new Map<string, Set<string>>(),
       graph = new Map<string, Map<string, string>>(),
-      roots = new Set<string>();
+      roots = new Set<string>(),
+      families = new Map<string, NativeFamily[]>(),
+      stateStyled = new Set<string>();
     const pending = [...resumable];
     // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
     // `index.ts`, `meter/index.ts` with `Object.assign(MeterRoot, { … })`) join the walk without boundaries, so tags
@@ -997,6 +1000,10 @@ function rivetPlugin(
         ? moduleFacts(source, filename, { refs: true })
         : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true });
       facts.set(filename, f);
+      // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
+      const declared = plain.has(filename) ? [] : nativeFamilies(source);
+      if (declared.length) families.set(filename, declared);
+      if (!plain.has(filename) && stylesState(source)) stateStyled.add(filename);
       typeExports.set(filename, _typeExports(source));
       if (route || isDerivedRoot(filename)) roots.add(filename);
       const map = new Map<string, string>();
@@ -1021,11 +1028,18 @@ function rivetPlugin(
       const at = entry.lastIndexOf("#");
       return at > 0 ? resolve(root, entry.slice(0, at)) + entry.slice(at) : resolve(root, entry);
     });
-    const verdicts = boundaryFacts(facts, graph, roots, shells, {
-      external: contextExternal,
-      debug: !!process.env.RIVET_CALLSITE_TRACE,
-      ...(hostList.length ? { hosts: new Set(hostList) } : {}),
-    });
+    const verdicts = boundaryFacts(
+      facts,
+      graph,
+      roots,
+      shells,
+      {
+        external: contextExternal,
+        debug: !!process.env.RIVET_CALLSITE_TRACE,
+        ...(hostList.length ? { hosts: new Set(hostList) } : {}),
+      },
+      { families, stateStyled },
+    );
     if (process.env.RIVET_CALLSITE_TRACE) {
       const out: Record<string, unknown> = {};
       for (const [id, results] of verdicts.callSites!.trace) out[id] = results;
@@ -1058,6 +1072,7 @@ function rivetPlugin(
           site: placement ? placement.site(file) : verdicts.callSites!.site(file),
           sites: placement ? placement.sites(file) : verdicts.callSites!.sites(file),
           free: verdicts.callSites!.free(file),
+          native: verdicts.native(file),
         });
         const own = new Set(boundaries.map((name) => name.slice(name.lastIndexOf("#") + 1)));
         const types = typeExports.get(file)!;
@@ -1222,7 +1237,16 @@ function rivetPlugin(
     const sourcePackages = sourcePackagesOf(filename, source);
     // The build's verdicts for this module (absent in dev: the compiler's module-local closure).
     let verdict:
-      | { boundaries?: string[]; independent: string[]; conditional?: string[]; static?: string[]; site?: string[]; sites?: string[]; free?: string[] }
+      | {
+          boundaries?: string[];
+          independent: string[];
+          conditional?: string[];
+          static?: string[];
+          site?: string[];
+          sites?: string[];
+          free?: string[];
+          native?: string[];
+        }
       | undefined = derivedVerdicts.get(filename);
     // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
     if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };

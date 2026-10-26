@@ -65,7 +65,7 @@
     padding-inline-start: 3.75rem;
   }
 
-  :is(.switch:disabled[aria-checked="true"], .switch:disabled[data-selected="true"], .switch[data-disabled="true"][aria-checked="true"], .switch[data-disabled="true"][data-selected="true"], .switch[aria-disabled="true"][aria-checked="true"], .switch[aria-disabled="true"][data-selected="true"]) .switch__thumb {
+  :is(.switch:disabled[aria-checked="true"], .switch:disabled[data-selected="true"], .switch[data-disabled="true"][aria-checked="true"], .switch[data-disabled="true"][data-selected="true"], .switch[aria-disabled="true"][aria-checked="true"], .switch[aria-disabled="true"][data-selected="true"], .switch[data-disabled="true"][data-native]:has(input:checked)) .switch__thumb {
     opacity: .4;
   }
 
@@ -92,7 +92,7 @@
     }
   }
 
-  .switch:focus-visible .switch__control, .switch:has([data-slot="switch-content"][data-focus-visible="true"]) .switch__control, .switch [data-slot="switch-content"][data-focus-visible="true"] .switch__control {
+  .switch:focus-visible .switch__control, .switch:has([data-slot="switch-content"][data-focus-visible="true"]) .switch__control, .switch [data-slot="switch-content"][data-focus-visible="true"] .switch__control, .switch[data-native]:has(input:focus-visible) .switch__control {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -121,11 +121,11 @@
     }
   }
 
-  .switch[aria-checked="true"] .switch__control, .switch[data-selected="true"] .switch__control {
+  .switch[aria-checked="true"] .switch__control, .switch[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked) .switch__control {
     background-color: var(--switch-control-bg-checked);
   }
 
-  .switch[aria-checked="true"]:hover .switch__control, .switch[data-selected="true"]:hover .switch__control, .switch[aria-checked="true"][data-hovered="true"] .switch__control, .switch[data-selected="true"][data-hovered="true"] .switch__control, .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] .switch__control, .switch[aria-checked="true"]:active .switch__control, .switch[data-selected="true"]:active .switch__control, .switch[aria-checked="true"][data-pressed="true"] .switch__control, .switch[data-selected="true"][data-pressed="true"] .switch__control, .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] .switch__control {
+  .switch[aria-checked="true"]:hover .switch__control, .switch[data-selected="true"]:hover .switch__control, .switch[aria-checked="true"][data-hovered="true"] .switch__control, .switch[data-selected="true"][data-hovered="true"] .switch__control, .switch:has([data-slot="switch-content"][data-hovered="true"])[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked):hover .switch__control, .switch[aria-checked="true"]:active .switch__control, .switch[data-selected="true"]:active .switch__control, .switch[aria-checked="true"][data-pressed="true"] .switch__control, .switch[data-selected="true"][data-pressed="true"] .switch__control, .switch:has([data-slot="switch-content"][data-pressed="true"])[data-selected="true"] .switch__control, .switch[data-native]:has(input:checked):active .switch__control {
     background-color: var(--switch-control-bg-checked-hover);
   }
 
@@ -199,7 +199,7 @@
     }
   }
 
-  .switch[aria-checked="true"] .switch__thumb, .switch[data-selected="true"] .switch__thumb {
+  .switch[aria-checked="true"] .switch__thumb, .switch[data-selected="true"] .switch__thumb, .switch[data-native]:has(input:checked) .switch__thumb {
     background-color: var(--accent-foreground);
     color: var(--accent);
     margin-inline-start: calc(100% - 1.5rem);
@@ -212,7 +212,7 @@
     height: .75rem;
   }
 
-  .switch[aria-checked="true"] :is(.switch--sm .switch__thumb), .switch[data-selected="true"] :is(.switch--sm .switch__thumb) {
+  .switch[aria-checked="true"] :is(.switch--sm .switch__thumb), .switch[data-selected="true"] :is(.switch--sm .switch__thumb), .switch[data-native]:has(input:checked) :is(.switch--sm .switch__thumb) {
     margin-inline-start: calc(100% - 1.15625rem);
   }
 
@@ -222,7 +222,7 @@
     height: 1.25rem;
   }
 
-  .switch[aria-checked="true"] :is(.switch--lg .switch__thumb), .switch[data-selected="true"] :is(.switch--lg .switch__thumb) {
+  .switch[aria-checked="true"] :is(.switch--lg .switch__thumb), .switch[data-selected="true"] :is(.switch--lg .switch__thumb), .switch[data-native]:has(input:checked) :is(.switch--lg .switch__thumb) {
     margin-inline-start: calc(100% - 1.84375rem);
   }
 

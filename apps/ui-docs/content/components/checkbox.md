@@ -184,6 +184,10 @@ The checkbox supports both CSS pseudo-classes and data attributes for flexibilit
 - **Disabled**: `[data-disabled="true"]` on the field (reduced opacity, including help text)
 - **Pressed**: `:active` or `[data-pressed="true"]`
 
+### Zero-JS native path
+
+Where the build proves a checkbox call site closed (declared data props only, no handlers, no controlled state, no render props, no live values, no context-reading components inside, no state selectors in the calling module), it renders native markup and ships no JavaScript, before or after an interaction: a visually hidden `<input type="checkbox">` inside the `<label>` (`.checkbox[data-native]`, the `id` on the input), selected = `.checkbox[data-native]:has(input:checked)`; indeterminate, a description, a group, a field provider or a form validation provider keep the interactive path. Classes, slots and `data-disabled` stay the same; style state with the selectors above that include the native form (`:checked`, `[open]`, `:focus-visible`), not with a state attribute alone. Any other call site keeps the interactive path. See the framework guide "Native automata".
+
 ## API Reference
 
 ### Checkbox

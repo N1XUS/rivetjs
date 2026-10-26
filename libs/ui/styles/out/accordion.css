@@ -47,7 +47,7 @@
     }
   }
 
-  .accordion__indicator[data-expanded="true"] {
+  .accordion__indicator[data-expanded="true"], details[open] > summary .accordion__indicator {
     rotate: -180deg;
   }
 
@@ -110,18 +110,18 @@
   }
 
   @media (hover: hover) {
-    .accordion__trigger:hover:not([aria-expanded="true"]) {
+    .accordion__trigger:hover:not([aria-expanded="true"]):not(:where(details[open] > summary *)) {
       background-color: var(--foreground);
     }
 
     @supports (color: color-mix(in lab, red, red)) {
-      .accordion__trigger:hover:not([aria-expanded="true"]) {
+      .accordion__trigger:hover:not([aria-expanded="true"]):not(:where(details[open] > summary *)) {
         background-color: color-mix(in oklab, var(--foreground) 3%, transparent 90%);
       }
     }
   }
 
-  .accordion__trigger:focus-visible:not([data-focused]), .accordion__trigger[data-focus-visible="true"] {
+  .accordion__trigger:focus-visible:not([data-focused]), .accordion__trigger[data-focus-visible="true"], .accordion__summary:focus-visible .accordion__trigger {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     --tw-ring-color: var(--focus);
@@ -132,9 +132,23 @@
     outline-style: none;
   }
 
-  .accordion__trigger:disabled, .accordion__trigger[aria-disabled="true"] {
+  .accordion__trigger:disabled, .accordion__trigger[aria-disabled="true"], .accordion__summary[aria-disabled="true"] .accordion__trigger {
     opacity: var(--disabled-opacity);
     cursor: var(--cursor-disabled);
+    pointer-events: none;
+  }
+
+  .accordion__summary {
+    outline: none;
+    list-style: none;
+    display: block;
+  }
+
+  .accordion__summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .accordion__summary[aria-disabled="true"] {
     pointer-events: none;
   }
 
@@ -155,7 +169,7 @@
     }
   }
 
-  .accordion__panel[data-expanded="true"] {
+  .accordion__panel[data-expanded="true"], details[open] > .accordion__panel {
     will-change: height, opacity;
     opacity: 1;
   }
@@ -191,7 +205,7 @@
     border-start-end-radius: min(32px, var(--radius-3xl));
   }
 
-  .accordion--surface .accordion__item:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"])) [data-slot="accordion-trigger"] {
+  .accordion--surface .accordion__item:last-child:not(:has([data-slot="accordion-trigger"][aria-expanded="true"])):not([open]) [data-slot="accordion-trigger"] {
     border-end-end-radius: min(32px, var(--radius-3xl));
     border-end-start-radius: min(32px, var(--radius-3xl));
   }
