@@ -97,7 +97,18 @@ export const INDEPENDENT = 1,
    * Conditional (M6-PARITY 6b, compiler: build verdict `conditional`): a boundary without a change source of its own. Its
    * record is kept only for a live instance (`keep` below); never on the wire.
    */
-  COND = 1024;
+  COND = 1024,
+  /**
+   * ZERO CALLSITE (wire): an independent record whose unit reads no context a provider above it may set (the build's
+   * context proof: `resume.free`, or a proven call site): its standalone adopt needs no ancestor unit (`dom-derived.ts`
+   * `around`). Cleared with `INDEPENDENT` on a demotion.
+   */
+  CTXFREE = 4096,
+  /**
+   * ZERO CALLSITE (compiler: build verdict `resume.site`; never on the wire): independent only at a call site the build
+   * proved (the caller passed this props object through `_rS`), dependent elsewhere.
+   */
+  SITE = 8192;
 const TRIGGERS = LOAD | IDLE | VISIBLE;
 /**
  * Keyed state flags (`_rSig` / `_rSigStore` `flags`, compiler-set; never on the wire). `LIT`: the initializer is a literal
@@ -610,13 +621,19 @@ export function isData(value: unknown, depth = 0): boolean {
  * render: `null` (every other call takes a null token and does nothing).
  */
 export function _rB(name: string, flags: number, props?: object | null, events?: string, keys?: string, read?: string): Boundary | null {
+  // ZERO CALLSITE: a `SITE` boundary is independent (and context-free) where its caller marked this props object.
+  if (flags & SITE) {
+    flags = props !== undefined && props === site ? (flags & ~SITE) | INDEPENDENT | CTXFREE : flags & ~SITE;
+    site = undefined;
+  }
   const ctx = useContext(DERIVED);
   if (!ctx || ctx.off) return null;
   const parent = current(ctx);
   let keep: object | null = null;
   if (flags & INDEPENDENT) {
     if (props && isData(props)) keep = props;
-    else flags = (flags & ~INDEPENDENT) | DEMOTED;
+    // A context-free independent component without a props parameter: nothing to ship (the browser passes `{}`).
+    else if (!(props === undefined && flags & CTXFREE)) flags = (flags & ~(INDEPENDENT | CTXFREE)) | DEMOTED;
   }
   verified = null;
   const boundary: Boundary = {
@@ -714,6 +731,17 @@ function shipped(props: object, read: string): object | null {
   for (const key in p) if (!(keys.includes(key) && readable(p[key]))) out[key] = p[key];
   return out;
 }
+/** ZERO CALLSITE: the props object `_rS` marked last (one call's argument: the callee's `_rB` reads it first thing). */
+let site: object | undefined;
+/**
+ * ZERO CALLSITE: a call site the build proved (`resume.sites`: data-only props, and no provider of a context the callee's
+ * unit reads above it) passes its props object through `_rS`: the callee (a `SITE` boundary) is independent there.
+ */
+export function _rS<T extends object>(props: T): T {
+  site = props;
+  return props;
+}
+
 /** D5: boundary `b` (its unit) listens to `type` too. */
 const listen = (b: Boundary, type: string): void => void (b.ev = listenOf(b.ev ?? "", type));
 
@@ -1647,10 +1675,12 @@ function flush(ctx: DerivedRender): FlushTail | null {
     if (any && boundary.flags & INDEPENDENT && boundary.props && !(boundary.flags & TRIGGERS))
       for (let a = parent; a; a = a.parent)
         if (!(a.flags & COND && !a.kept) && (a === star || ctx.listened?.get(a.name) === "*")) {
-          boundary.flags &= ~INDEPENDENT;
+          boundary.flags &= ~(INDEPENDENT | CTXFREE);
           boundary.props = null;
           break;
         }
+    // (`CTXFREE` only matters below another record: an outermost one adopts with no unit above it anyway.)
+    if (!parent) boundary.flags &= ~CTXFREE;
     const record: BoundaryRecord = [boundary.id, parent?.id ?? 0, boundary.flags, boundary.name, signals];
     let props = boundary.props;
     if (props && boundary.read) {

@@ -35,6 +35,7 @@ const DERIVED_ABI: &[(&str, &str)] = &[
     ("handler", "_rHandler"),
     ("handlers", "_rHandlers"),
     ("listens", "_rListens"),
+    ("site", "_rS"),
 ];
 /// DOM derived ABI: local suffix → export of `@rivetjs/runtime/dom-derived`.
 const DOM_DERIVED_ABI: &[(&str, &str)] = &[("b", "_b"), ("sig", "_sig"), ("sigStore", "_sigStore")];
@@ -93,6 +94,14 @@ impl<'t, 'a> Compiler<'t, 'a> {
             d.used.push(name);
         }
         d.names.iter().find(|(n, _)| *n == name).map(|(_, local)| local.clone()).unwrap_or_default()
+    }
+
+    /// ZERO CALLSITE: a proven call site (`plan.sites`, server target) → the `_rS` local its props object goes through.
+    pub(super) fn derived_site(&mut self, el: NodeId) -> Option<String> {
+        if !self.server || !self.derived.as_ref().is_some_and(|d| d.plan.sites.contains(&el)) {
+            return None;
+        }
+        Some(self.derived_name("site"))
     }
 
     /// The derived For local (`_rFor`, DERIVED-S): server target, a `<For>` with a list mount (`$list`).

@@ -17,6 +17,7 @@
 // compound components (`Object.assign(Root, { Part })`, `<Meter.Output>`) of the walked modules, `.ts` re-export modules
 // included. A component with no resolved call site (rendered by code the walk does not see) counts its inputs as live.
 import type { ComponentBoundaryFacts as ComponentFacts, ModuleFacts } from "./index.ts";
+import { callSites, type CallSites, type ContextOptions } from "./facts-callsite.ts";
 
 /** The derived model's verdict for one component. */
 export interface BoundaryVerdict {
@@ -65,6 +66,8 @@ export interface BoundaryFacts {
   conditional(file: string): string[];
   /** Component names of `file` no adopt walk reaches (for `resume.static`, ZERO A1). */
   static(file: string): string[];
+  /** ZERO CALLSITE (`contexts` given): the per-call-site context proof (`facts-callsite.ts`); null without. */
+  callSites: CallSites | null;
 }
 
 const key = (file: string, name: string) => file + "?" + name;
@@ -81,6 +84,7 @@ export function boundaryFacts(
   resolved: Map<string, Map<string, string>>,
   roots: ReadonlySet<string> = new Set(),
   shells: ReadonlySet<string> = new Set(),
+  contexts?: ContextOptions,
 ): BoundaryFacts {
   const target = (file: string, spec: string) => resolved.get(file)?.get(spec) ?? null;
   type Bound = { file: string; local: string };
@@ -135,7 +139,7 @@ export function boundaryFacts(
     return part !== undefined ? component(local(head!.file, part, new Set())) : null;
   };
   // Per component: facts, resolved renders, and its call sites by callee.
-  type Site = { caller: string; data: boolean; inputs: boolean; fn: boolean; around: (string | null)[] };
+  type Site = { caller: string; index: number; data: boolean; inputs: boolean; fn: boolean; around: (string | null)[]; tags: string[] };
   const info = new Map<string, ComponentFacts>();
   const renders = new Map<string, (string | null)[]>();
   const sites = new Map<string, Site[]>();
@@ -149,13 +153,21 @@ export function boundaryFacts(
         id,
         [...c.renders].map((tag) => resolveTag(file, tag)),
       );
-      for (const call of c.calls) {
+      c.calls.forEach((call, index) => {
         const to = resolveTag(file, call.tag);
-        if (!to) continue;
+        if (!to) return;
         let list = sites.get(to);
         if (!list) sites.set(to, (list = []));
-        list.push({ caller: id, data: call.data, inputs: call.inputs, fn: call.fn, around: call.around.map((tag) => resolveTag(file, tag)) });
-      }
+        list.push({
+          caller: id,
+          index,
+          data: call.data,
+          inputs: call.inputs,
+          fn: call.fn,
+          around: call.around.map((tag) => resolveTag(file, tag)),
+          tags: call.around,
+        });
+      });
     }
   // Least fixpoint (monotone): live data, then boundaries.
   const live = new Map<string, boolean>();
@@ -280,7 +292,9 @@ export function boundaryFacts(
     }
   }
   const names = (file: string, pick: (v: BoundaryVerdict) => boolean) => [...(verdicts.get(file) ?? [])].filter(([, v]) => pick(v)).map(([name]) => name);
+  const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, shell, options: contexts }) : null;
   return {
+    callSites: proof,
     verdicts,
     boundaries: (file) => names(file, (v) => v.interactive),
     independent: (file) => names(file, (v) => v.independent),

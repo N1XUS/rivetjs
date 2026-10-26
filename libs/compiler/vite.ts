@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { basename, dirname, join, posix, relative, resolve, sep } from "node:path";
@@ -76,6 +76,13 @@ export interface RivetResumeOptions {
    * boundaries. Plugins add entries with `api.resumeShell(file, name?)` before the build starts.
    */
   shells?: string[];
+  /**
+   * ZERO CALLSITE: the components that render every `shells` page (docs-kit `FrameShell` / `FrameRoot`): root-relative
+   * `file` (its default export) or `file#Name`. The per-call-site context proof (`facts-callsite.ts`) counts what they and
+   * the page's `_layout` files touch as provided above a shell page; without hosts a shell page's ancestry is unknown (no
+   * proof below it). Plugins add entries with `api.resumeHost(file, name?)`.
+   */
+  hosts?: string[];
 }
 
 /** Scoped styles: css`` blocks and `*.module.<ext>` stylesheets. */
@@ -716,11 +723,15 @@ function rivetPlugin(
   // Per resume module, the build's boundary verdicts (`facts-fixpoint.ts`, buildStart of every build environment: client
   // and server walk the same graph, so both targets get the same boundaries / names / keys); dev compiles without them
   // (module-local closure, identical on both targets).
-  const derivedVerdicts = new Map<string, { boundaries: string[]; independent: string[]; conditional: string[]; static: string[] }>();
+  const derivedVerdicts = new Map<
+    string,
+    { boundaries: string[]; independent: string[]; conditional: string[]; static: string[]; site: string[]; sites: string[]; free: string[] }
+  >();
   // `resume.roots`: modules whose default export is an independent root (the router's generated `Root`).
   const isDerivedRoot = (filename: string): boolean => !!resume?.roots?.some((path) => resolve(root, path) === resolve(filename));
   // `resume.shells` + `api.resumeShell()` (ZERO A1): absolute `file` / `file#Name` entries, resolved in the walk.
   const shellEntries: string[] = [];
+  const hostEntries: string[] = [];
   const shellSet = (): Set<string> =>
     new Set(
       [...(resume?.shells ?? []), ...shellEntries].map((entry) => {
@@ -878,6 +889,40 @@ function rivetPlugin(
     }
     return [...found].sort();
   };
+  // ZERO CALLSITE (`facts-callsite.ts` `ContextOptions.external`): a module outside the walk an app module imports —
+  // null when it holds no context app code could provide or read: the reactivity / runtime packages (their own tokens
+  // are internal; `Suspense` / `Async` / `resource` / `lazy` and the runtime router are pseudo-tokens of their own),
+  // assets, npm packages without an `@rivetjs/*` dependency; else its pseudo-token.
+  const rivetDeps = new Map<string, boolean>(); // "<dir>\0<package>" → its package.json names an `@rivetjs/*` dependency
+  const contextExternal = (file: string, spec: string): string | null => {
+    if (spec.startsWith("\0") || spec.startsWith("virtual:")) return "mod:" + spec;
+    if (spec.includes("?") || /\.(css|scss|json|svg|png|jpe?g|gif|webp|avif|ico|woff2?|md|txt|mp[34]|webm)$/.test(spec)) return null;
+    if (/^@rivetjs\/runtime\/(async|lazy)$/.test(spec)) return "!suspense";
+    if (/^@rivetjs\/runtime\/router/.test(spec)) return "pkg:@rivetjs/router";
+    if (/^@rivetjs\/(reactivity|runtime)(\/|$)/.test(spec)) return null;
+    if (spec.startsWith(".") || spec.startsWith("/")) return "mod:" + resolve(dirname(file), spec);
+    const name = spec
+      .split("/")
+      .slice(0, spec.startsWith("@") ? 2 : 1)
+      .join("/");
+    if (name.startsWith("@rivetjs/")) return "pkg:" + name;
+    const key = dirname(file) + "\0" + name;
+    let deps = rivetDeps.get(key);
+    if (deps === undefined) {
+      deps = true;
+      for (let dir = dirname(file); ; dir = dirname(dir)) {
+        const pkg = join(dir, "node_modules", name, "package.json");
+        if (existsSync(pkg)) {
+          const json = JSON.parse(readFileSync(pkg, "utf8")) as Record<string, Record<string, string> | undefined>;
+          deps = [json.dependencies, json.peerDependencies, json.optionalDependencies].some((d) => d && Object.keys(d).some((k) => k.startsWith("@rivetjs/")));
+          break;
+        }
+        if (dirname(dir) === dir) break;
+      }
+      rivetDeps.set(key, deps);
+    }
+    return deps ? "pkg:" + name : null;
+  };
   /** Walk the resume module graph from `resume.modules` (facts with `boundaries`), close the boundary facts over it (`boundaryFacts`; route modules' default exports are independent roots) and keep each module's verdicts. */
   const derivedWalk = async (ctx: Rollup.PluginContext): Promise<void> => {
     const facts = new Map<string, ModuleFacts>(),
@@ -896,8 +941,8 @@ function rivetPlugin(
       const source = prepared(filename, await sourceOf(ctx, filename));
       const route = isRoute(filename);
       const f = plain.has(filename)
-        ? moduleFacts(source, filename)
-        : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true } : { boundaries: true });
+        ? moduleFacts(source, filename, { refs: true })
+        : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true });
       facts.set(filename, f);
       typeExports.set(filename, _typeExports(source));
       if (route || isDerivedRoot(filename)) roots.add(filename);
@@ -909,14 +954,42 @@ function rivetPlugin(
         if (isResumable(file)) {
           map.set(spec, file);
           if (!resumable.has(file)) (resumable.add(file), pending.push(file));
-        } else if (f.statics.has(spec) && !file.startsWith("\0") && passThrough(file) && existsSync(file)) {
+        } else if (!file.startsWith("\0") && passThrough(file) && existsSync(file)) {
+          // (Dynamic ones too, ZERO CALLSITE: `import("./announcer.ts")` in a hook reaches that module's declarations.)
           map.set(spec, file);
           if (!plain.has(file)) (plain.add(file), pending.push(file));
         }
       }
       graph.set(filename, map);
     }
-    const verdicts = boundaryFacts(facts, graph, roots, shellSet());
+    // ZERO CALLSITE: the hosts above every shell page (`resume.hosts` + `api.resumeHost`: docs-kit `FrameShell` / `FrameRoot`).
+    const shells = shellSet();
+    const hostList = [...(resume?.hosts ?? []), ...hostEntries].map((entry) => {
+      const at = entry.lastIndexOf("#");
+      return at > 0 ? resolve(root, entry.slice(0, at)) + entry.slice(at) : resolve(root, entry);
+    });
+    const verdicts = boundaryFacts(facts, graph, roots, shells, {
+      external: contextExternal,
+      debug: !!process.env.RIVET_CALLSITE_TRACE,
+      ...(hostList.length ? { hosts: new Set(hostList) } : {}),
+    });
+    if (process.env.RIVET_CALLSITE_TRACE) {
+      const out: Record<string, unknown> = {};
+      for (const [id, results] of verdicts.callSites!.trace) out[id] = results;
+      const marks: Record<string, unknown> = {};
+      for (const file of facts.keys()) {
+        const site = verdicts.callSites!.site(file),
+          sites = verdicts.callSites!.sites(file),
+          free = verdicts.callSites!.free(file);
+        if (site.length || sites.length || free.length) marks[file] = { site, sites, free };
+      }
+      out["marks:"] = marks;
+      for (const id of (process.env.RIVET_CALLSITE_WHY ?? "").split(",").filter(Boolean))
+        out["why:" + id] = id.startsWith("^")
+          ? verdicts.callSites!.whyAbove(resolve(root, id.slice(1).split("@")[0]!), id.split("@")[1])
+          : verdicts.callSites!.why(resolve(root, id.split("@")[0]!), id.split("@")[1]);
+      appendFileSync(process.env.RIVET_CALLSITE_TRACE, JSON.stringify(out) + "\n");
+    }
     derivedVerdicts.clear();
     derivedExtraExports.clear();
     for (const [file, f] of facts)
@@ -927,6 +1000,9 @@ function rivetPlugin(
           independent: verdicts.independent(file),
           conditional: verdicts.conditional(file),
           static: verdicts.static(file),
+          site: verdicts.callSites!.site(file),
+          sites: verdicts.callSites!.sites(file),
+          free: verdicts.callSites!.free(file),
         });
         const own = new Set(boundaries.map((name) => name.slice(name.lastIndexOf("#") + 1)));
         const types = typeExports.get(file)!;
@@ -1090,7 +1166,9 @@ function rivetPlugin(
   const resumeOptions = (filename: string, source: string): Partial<CompileOptions> => {
     const sourcePackages = sourcePackagesOf(filename, source);
     // The build's verdicts for this module (absent in dev: the compiler's module-local closure).
-    let verdict: { boundaries?: string[]; independent: string[]; conditional?: string[]; static?: string[] } | undefined = derivedVerdicts.get(filename);
+    let verdict:
+      | { boundaries?: string[]; independent: string[]; conditional?: string[]; static?: string[]; site?: string[]; sites?: string[]; free?: string[] }
+      | undefined = derivedVerdicts.get(filename);
     // Dev (no build walk): a `resume.roots` module's default export is independent all the same.
     if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {
@@ -1209,6 +1287,7 @@ function rivetPlugin(
       rivetServerOnly: serverOnly,
       /** ZERO A1: a `resume.shells` entry from a plugin (`file` default export, or `name`), before the build starts. */
       resumeShell: (file: string, name?: string): void => void shellEntries.push(name ? `${file}#${name}` : file),
+      resumeHost: (file: string, name?: string): void => void hostEntries.push(name ? `${file}#${name}` : file),
     },
     async configureServer(server: ViteDevServer) {
       // Server-side dev warnings (cdk, runtime `DEV.locate()`) name the app code that triggered them: the first app frames

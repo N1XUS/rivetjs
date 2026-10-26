@@ -101,6 +101,15 @@ export interface ResumeOptions {
    */
   conditional?: string[];
   /**
+   * ZERO CALLSITE: names of this module's dependent boundaries independent at proven call sites only (`SITE`: their
+   * server `_rB` takes the props; a proven site passes them through `_rS`).
+   */
+  site?: string[];
+  /** ZERO CALLSITE: this module's proven call sites, `"<Caller>:<call index>"` (index in the caller's `calls`). */
+  sites?: string[];
+  /** ZERO CALLSITE: names of this module's independent boundaries whose every call site is proven (`CTXFREE`). */
+  free?: string[];
+  /**
    * ZERO A1: names of this module's components no adopt walk reaches (`BoundaryVerdict.adopted` false: not a boundary,
    * rendered only by components that are not adopted, never used as a value). Their server output carries no
    * `<!--[-->…<!--]-->` slot markers (nothing in the browser walks it).
@@ -291,12 +300,35 @@ export interface ModuleFacts {
    * resume target marks eligible ones with a `$hole: 1` prop. Absent without the option.
    */
   holes?: HoleFacts[];
+  /**
+   * `refs: true` only (ZERO CALLSITE): the module-level reference graph (Rust `facts_refs.rs`) the per-call-site context
+   * proof closes over (`facts-callsite.ts`).
+   */
+  refs?: ModuleRefs;
   /** `serverExports` only: facts are of the browser source; these list what was removed. */
   serverExports?: string[];
   /** Kind per server export (parallel to `serverExports`, see `CompileResult.serverKinds`). */
   serverKinds?: string[];
   serverImports?: string[];
   serverErrors?: { message: string; line: number | null; column: number | null }[];
+}
+
+/** ZERO CALLSITE: a module's reference graph (`moduleFacts(…, { refs: true })`). */
+export interface ModuleRefs {
+  /** Top-level `const X = createContext(…)` (any `…Context(…)` factory) names: context tokens. */
+  tokens: Set<string>;
+  /**
+   * Per top-level declaration (a function, a class, one declarator; `default` for an anonymous default export): the names
+   * it declares, the module bindings / import locals its code references as values and as JSX tags, the specifiers it
+   * imports dynamically (`import("…")`), the bindings it passes straight to a context reader call (`reads`: `[name, callee]`,
+   * `useContext(X)` / `contextProps(…, X)` / `slottedContext(X)` by callee name; the proof resolves the callee); `flags` 1 = code the graph cannot follow (`import(expression)`, `eval`,
+   * `require`, `new Function`), 2 = creates context tokens at run time.
+   */
+  decls: { names: string[]; values: string[]; jsx: string[]; flags: number; dynamic: string[]; reads: [name: string, callee: string][] }[];
+  /** Top-level statements that declare nothing (`X.part = Y`): every name in one reaches the others. */
+  groups: { values: string[]; flags: number; dynamic: string[] }[];
+  /** Namespace imports: local → specifier. */
+  namespaces: Map<string, string>;
 }
 
 /** Module-level facts of one component for the derived model (`ModuleFacts.boundaries`). */
@@ -366,6 +398,8 @@ export interface ModuleFactsOptions {
   boundaries?: boolean;
   /** Shell cache H-holes (PPR-T6): also compute `ModuleFacts.holes`. */
   holes?: boolean;
+  /** ZERO CALLSITE: also compute `ModuleFacts.refs` (the module-level reference graph). */
+  refs?: boolean;
 }
 
 interface RawFacts {
@@ -395,6 +429,12 @@ interface RawFacts {
     },
   ][];
   holes?: HoleFacts[];
+  refs?: {
+    tokens: string[];
+    decls: [string[], string[], string[], number, string[]?, [string, string][]?][];
+    groups: [string[], number, string[]?][];
+    namespaces: [string, string][];
+  } | null;
   serverExports?: string[];
   serverKinds?: string[];
   serverImports?: string[];
@@ -440,6 +480,16 @@ export function moduleFacts(source: string, filename: string, options?: ModuleFa
     ),
     ...(raw.componentValues ? { componentValues: raw.componentValues } : {}),
     ...(raw.holes ? { holes: raw.holes } : {}),
+    ...(raw.refs
+      ? {
+          refs: {
+            tokens: new Set(raw.refs.tokens),
+            decls: raw.refs.decls.map(([names, values, jsx, flags, dynamic = [], reads = []]) => ({ names, values, jsx, flags, dynamic, reads })),
+            groups: raw.refs.groups.map(([values, flags, dynamic = []]) => ({ values, flags, dynamic })),
+            namespaces: new Map(raw.refs.namespaces),
+          },
+        }
+      : {}),
   };
 }
 

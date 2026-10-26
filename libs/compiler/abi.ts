@@ -12,6 +12,9 @@ import { dirname, join } from "node:path";
  * libs/runtime/package.json whenever compiled output and runtime helpers change in a way the other
  * side must match (new/removed/renamed helper, changed arguments, template/marker/resume format).
  */
+// 13: ZERO CALLSITE (2026-10-26): `_rS(props)` (a proven call site marks the props object it passes), `_rB` flag `SITE`
+// (8192, compile-only: independent where `_rS` marked its props) and wire flag `CTXFREE` (4096: standalone adopt without
+// the ancestors, `dom-derived.ts` `around`).
 // 12: ZERO REGRESS (2026-10-26): `_rB(name, flags, props, events, keys, read)` props read back from the markup (`read` =
 // "key=path …"; tail v2 names entry `[name, url, types, read]`, the record leaves those values out).
 // 11: ZERO batch 3 (2026-10-25): keyed state flags `_rSig(key, init, options, flags)` / `_rSigStore(key, init, flags)` (`LIT` = 1,
@@ -19,7 +22,7 @@ import { dirname, join } from "node:path";
 // 10: derived model `_rHandler` (STATIC-ZERO T3: conditional handlers of boundary bodies record their value on the server).
 // 9: derived model `_rFor` (DERIVED-S: list-mounted `<For>` rows from one tape on the derived server target).
 // 8: Function Bridge (_rMod, thunk captures, _rCell, _rBound, _rFn member, _rStorePaths, _rClass).
-export const RUNTIME_ABI = 12;
+export const RUNTIME_ABI = 13;
 
 /** The @rivetjs/runtime package owning `file` (any resolved runtime module). */
 export interface RuntimePackage {

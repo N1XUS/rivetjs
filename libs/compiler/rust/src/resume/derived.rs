@@ -22,6 +22,12 @@ pub const ATTR: u32 = 2;
 /// Boundary flag (M6-PARITY 6b): a boundary without a change source of its own (build verdict `resume.conditional`): the
 /// server keeps its record only for an instance that turned out live (`server-derived.ts` "Conditional boundaries").
 pub const COND: u32 = 1024;
+/// Boundary flag (ZERO CALLSITE, wire): an independent record whose unit reads no context a provider above it may set
+/// (build verdict `resume.free`, or a proven call site): its standalone adopt needs no ancestor's run.
+pub const CTXFREE: u32 = 4096;
+/// Boundary flag (ZERO CALLSITE, build verdict `resume.site`; never on the wire): independent at the call sites the build
+/// proved (`resume.sites`, the caller passes its props through `_rS`), dependent elsewhere; `_rB` gets the props.
+pub const SITE: u32 = 8192;
 
 /// Module-level facts of one component (`ModuleFacts.boundaries`).
 pub struct Component {
@@ -54,6 +60,8 @@ pub struct Component {
     /// component elements enclosing it in this component's JSX (innermost first), and whether its attributes and
     /// expression children are data (element children are calls of their own, function children slots).
     pub call_info: Vec<(bool, Vec<String>, bool)>,
+    /// ZERO CALLSITE: the JSX element of each call (same order as `calls`).
+    pub call_nodes: Vec<NodeId>,
 }
 
 /// Site kinds that run in the browser whatever the inputs (change sources). A `ref` is not one: the element reaches
@@ -158,7 +166,7 @@ fn constant_name(name: &str) -> bool {
 }
 
 /// `createContext(…)` / `resumableContext(…)` (any wrapping of them): a context token, not state.
-fn context_token(e: &Expression<'_>) -> bool {
+pub(crate) fn context_token(e: &Expression<'_>) -> bool {
     let Expression::CallExpression(call) = unwrap(e) else { return false };
     matches!(unwrap(&call.callee), Expression::Identifier(i) if i.name.ends_with("Context") || i.name == "createContext")
 }
@@ -317,11 +325,20 @@ pub struct Verdicts {
     /// ZERO A1: components no adopt walk ever reaches (`BoundaryVerdict.adopted` false, `resume.static`): their server
     /// output carries no `<!--[-->…<!--]-->` slot markers.
     pub r#static: Option<Vec<String>>,
+    /// ZERO CALLSITE: components independent at proven call sites only (`SITE`; `_rB` gets their props).
+    pub site: Option<Vec<String>>,
+    /// ZERO CALLSITE: proven call sites of this module, `"<Caller>:<call index>"` (the index in the caller's `calls`).
+    pub sites: Option<Vec<String>>,
+    /// ZERO CALLSITE: independent components whose every instance's unit reads no context set above it (`CTXFREE`).
+    pub free: Option<Vec<String>>,
 }
 
 /// The derived server target's plan for one module.
 #[derive(Default)]
 pub struct Plan {
+    /// ZERO CALLSITE: component elements whose props the server passes through `_rS` (a proven call site of a `SITE`
+    /// callee: that instance is independent).
+    pub sites: FxHashSet<NodeId>,
     /// Boundary function → (emitted name: its export name, `export_name`; flags; props parameter).
     pub boundaries: FxHashMap<NodeId, (String, u32, Option<String>)>,
     /// Return statements (with an argument) of boundary bodies: `return _rBOut(B, value)`.
@@ -811,6 +828,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
             let mut renders: Vec<String> = Vec::new();
             let mut calls = Vec::new();
             let mut call_info = Vec::new();
+            let mut call_nodes = Vec::new();
             tree.walk(function, &mut |n| {
                 match tree.kind(n) {
                     AstKind::CallExpression(c) if context_call(c) => context = true,
@@ -834,13 +852,14 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
                             }
                             calls.push((tag.to_string(), data_call(tree, resumed, el)));
                             call_info.push((passes_function(tree, el), enclosing(tree, n, function), data_inputs(tree, el)));
+                            call_nodes.push(n);
                         }
                     }
                     _ => {}
                 }
                 true
             });
-            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info }
+            Component { name, function, own, context, params, props, renders, calls, source, provides, listens, call_info, call_nodes }
         })
         .collect()
 }
@@ -1024,6 +1043,16 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
             .collect(),
     };
     let mut plan = Plan::default();
+    // ZERO CALLSITE: the proven call sites (`Caller:index`) → their JSX elements (`_rS` around the props).
+    if let Some(list) = &verdicts.sites {
+        for entry in list {
+            let Some((caller, index)) = entry.rsplit_once(':') else { continue };
+            let (Some(&ci), Ok(k)) = (by_name.get(caller), index.parse::<usize>()) else { continue };
+            if let Some(&node) = components[ci].call_nodes.get(k) {
+                plan.sites.insert(node);
+            }
+        }
+    }
     if let Some(list) = &verdicts.r#static {
         plan.static_fns = components.iter().filter(|c| list.iter().any(|n| n == &c.name)).map(|c| c.function).collect();
     }
@@ -1049,6 +1078,13 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         if verdicts.conditional.as_ref().is_some_and(|list| list.iter().any(|n| n == &c.name)) {
             flags |= COND;
         }
+        let site = !independent[i] && c.props.is_some() && verdicts.site.as_ref().is_some_and(|list| list.iter().any(|n| n == &c.name));
+        if site {
+            flags |= SITE;
+        }
+        if independent[i] && verdicts.free.as_ref().is_some_and(|list| list.iter().any(|n| n == &c.name)) {
+            flags |= CTXFREE;
+        }
         if attr {
             flags |= ATTR;
             plan.attr_roots.extend(roots.into_iter().flatten());
@@ -1057,7 +1093,7 @@ pub fn plan(tree: &Tree<'_>, resumed: &Resumed, module: &str, verdicts: &Verdict
         if matches!(tree.kind(c.function), AstKind::ArrowFunctionExpression(a) if a.expression) {
             plan.concise.insert(c.function);
         }
-        let props = if independent[i] { c.props.clone() } else { None };
+        let props = if independent[i] || site { c.props.clone() } else { None };
         let name = export_name(tree, &c.name);
         // STATIC-ZERO-2 D5: every type a body's own handlers listen to (default delegated ones too, `*` = unknown): the
         // server's record says which events adopt it (tail `e`); the loader's `data-events` keeps only the non-default ones.

@@ -141,10 +141,13 @@ function docsFrames(): Plugin {
       // ZERO A1: pages that render in `FrameShell` (`FRAME_SHELLS`, written by `generateExamples`) and `FrameShell` itself
       // are never adopted by a host: the compiler drops their slot markers unless their own boundaries need them.
       const api = config.plugins.find((plugin) => plugin.name === "vite-plugin-rivet")?.api as
-        { resumeShell?: (file: string, name?: string) => void } | undefined;
+        { resumeShell?: (file: string, name?: string) => void; resumeHost?: (file: string, name?: string) => void } | undefined;
       const list = resolve(root, FRAME_SHELLS);
       if (api?.resumeShell && existsSync(list)) {
         api.resumeShell(FRAME_ROOT, "FrameShell");
+        // ZERO CALLSITE: a frame page renders under `FrameShell` or `FrameRoot` only (`components/frame-page.tsx`).
+        api.resumeHost?.(FRAME_ROOT, "FrameShell");
+        api.resumeHost?.(FRAME_ROOT);
         for (const file of JSON.parse(readFileSync(list, "utf8")) as string[]) api.resumeShell(resolve(root, file));
       }
     },

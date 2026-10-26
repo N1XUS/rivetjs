@@ -1688,6 +1688,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
         if self.holes.contains(&el.span.start) {
             props.push((Key::Str("$hole".into()), Expr::Num(1)));
         }
+        // ZERO CALLSITE: a proven call site of a `SITE` callee: `Tag(_rS({ props }))` marks this instance independent.
+        if let Some(site) = self.tree.id_of(el).and_then(|id| self.derived_site(id)) {
+            return Expr::Call(Box::new(callee), vec![Expr::Call(Box::new(Expr::Ident(site)), vec![Expr::Object(props)])]);
+        }
         let spread = el.opening_element.attributes.iter().any(|a| matches!(a, JSXAttributeItem::SpreadAttribute(_)));
         let declaration = if spread { None } else { self.resolve_tag(&el.opening_element.name) };
         let twin = declaration.filter(|d| self.twins.contains_key(d));

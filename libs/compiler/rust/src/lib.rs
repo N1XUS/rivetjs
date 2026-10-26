@@ -10,6 +10,7 @@ mod entities;
 mod entities_data;
 mod events_data;
 mod facts;
+mod facts_refs;
 mod holes;
 mod html;
 mod i18n;
@@ -62,6 +63,8 @@ struct FactsOptions {
     boundaries: Option<bool>,
     /// Shell cache H-holes (PPR-T6): also report `holes` (`facts::hole_facts`).
     holes: Option<bool>,
+    /// ZERO CALLSITE: also report `refs` (the module-level reference graph, `facts_refs`).
+    refs: Option<bool>,
 }
 
 #[derive(Deserialize, Default)]
@@ -236,8 +239,9 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
 fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> Value {
     let boundaries = options.as_ref().is_some_and(|o| o.boundaries.unwrap_or(false));
     let holes = options.as_ref().is_some_and(|o| o.holes.unwrap_or(false));
+    let refs = options.as_ref().is_some_and(|o| o.refs.unwrap_or(false));
     let Some(options) = options.filter(|o| o.server_exports.unwrap_or(false)) else {
-        let mut facts = facts::module_facts(source, filename);
+        let mut facts = facts::module_facts(source, filename, refs);
         if let Value::Object(map) = &mut facts {
             if boundaries {
                 let (list, values) = facts::boundary_facts(source, filename);
@@ -252,7 +256,7 @@ fn module_facts(source: &str, filename: &str, options: Option<FactsOptions>) -> 
     };
     let server = server_split::run(source, filename, options.resume.unwrap_or(false));
     let browser = server.browser.as_deref().unwrap_or(source);
-    let mut facts = facts::module_facts(browser, filename);
+    let mut facts = facts::module_facts(browser, filename, refs);
     if let Value::Object(map) = &mut facts {
         if boundaries {
             let (list, values) = facts::boundary_facts(browser, filename);
@@ -305,7 +309,7 @@ fn resume_option(resume: &Option<Value>, filename: &str) -> Result<(Option<Strin
             Some(_) => Err(format!("Invalid compiler option `resume.{key}`: expected an array of component names")),
         }
     };
-    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")?, r#static: list("static")? }))
+    Ok((Some(module), resume::derived::Verdicts { boundaries: list("boundaries")?, independent: list("independent")?, conditional: list("conditional")?, r#static: list("static")?, site: list("site")?, sites: list("sites")?, free: list("free")? }))
 }
 
 /// Editor check: diagnostics of every target (merged, deduplicated, with codes and UTF-16 ranges)

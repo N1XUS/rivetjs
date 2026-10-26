@@ -278,7 +278,8 @@ impl<'t, 'a> Facts<'t, 'a> {
     }
 }
 
-pub fn module_facts(source: &str, filename: &str) -> Value {
+/// `refs` (ZERO CALLSITE): also the module-level reference graph (`facts_refs`).
+pub fn module_facts(source: &str, filename: &str, refs: bool) -> Value {
     let allocator = Allocator::default();
     let parsed = Parser::new(&allocator, source, crate::source_type::of(filename))
         .with_options(ParseOptions { preserve_parens: true, ..ParseOptions::default() })
@@ -302,7 +303,9 @@ pub fn module_facts(source: &str, filename: &str) -> Value {
         compounds: Vec::new(),
     };
     facts.visit(tree.root(), None);
+    let refs = if refs { crate::facts_refs::ref_facts(&tree) } else { Value::Null };
     json!({
+        "refs": refs,
         "imports": facts.imports.iter().map(|(k, v)| json!([k, v])).collect::<Vec<_>>(),
         "statics": facts.statics,
         "dynamics": facts.dynamics,

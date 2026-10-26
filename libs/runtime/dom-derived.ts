@@ -51,7 +51,8 @@ const INDEPENDENT = 1,
   VISIBLE = 128,
   DEFER = 256,
   MOD = 512,
-  BROWSER = 2048;
+  BROWSER = 2048,
+  CTXFREE = 4096;
 const PROBE = 0,
   ADOPT = 1,
   CLIENT = 2;
@@ -2003,12 +2004,18 @@ function around(target: EventTarget | null, type?: string): true | Promise<void>
   // Intake 3: once a record around the target listens to the event, every record around it adopts (outermost first, as
   // before D5): an independent unit's dependent descendants may read a context an ancestor unit provides (a `use…` hook
   // the facts cannot see: ui `Stepper` / `ChainOfThought`), which a standalone adopt would run without its provider.
+  // ZERO CALLSITE: not when the listening record's unit (it, or its nearest independent ancestor: the one `need` adopts
+  // standalone) is `CTXFREE` (the build proved no provider above it sets a context its unit reads).
   let all = false;
   for (const [kind, id] of enclosing(target as Node | null)) {
     const r = kind ? undefined : recs.get(id);
     if (r && listens(r, type)) {
-      all = true;
-      break;
+      let u = r;
+      while (u.parent && !(u.flags & INDEPENDENT)) u = u.parent;
+      if (!(u.flags & CTXFREE)) {
+        all = true;
+        break;
+      }
     }
   }
   for (let guard = 0; guard < 256; guard++) {
