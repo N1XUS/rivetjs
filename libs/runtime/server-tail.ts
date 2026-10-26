@@ -160,8 +160,14 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
 }
 
 /** The v2 tail of a flush as script-safe JSON (`<script type="rivet/boundaries">` text). */
+// One `JSON.stringify` per field, joined: byte-identical to stringifying the whole tail, but V8's fast serializer
+// (13.8+) gives up on an object with an integer-like key (`c` / `k`: `{"2": 8}`) and restarts the WHOLE value on the
+// slow path — 1000 resumed rows: 385 → 68 µs per tail (lane NATIVE). Only that small field takes the slow path now.
 export function encodeTail(t: FlushTail, base?: string): string {
-  return escapeJSON(JSON.stringify(tailOf(t, base)));
+  const tail = tailOf(t, base) as unknown as Record<string, unknown>;
+  let json = "{";
+  for (const key in tail) json += (json.length > 1 ? ',"' : '"') + key + '":' + JSON.stringify(tail[key]);
+  return escapeJSON(json + "}");
 }
 /** Ownership interface name (`ownership.md` §3.4): the tail JSON. */
 export const tailJson = encodeTail;

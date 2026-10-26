@@ -3,7 +3,7 @@
 // relative template parents), records with values / props kept whole.
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { expandTail, recAt, type BoundaryRecord, type BoundaryTail, type FlushTail } from "../resume-format.ts";
+import { escapeJSON, expandTail, recAt, type BoundaryRecord, type BoundaryTail, type FlushTail } from "../resume-format.ts";
 import { chunkBase, encodeTail, foAttr, shortUrl, tailOf } from "../server-tail.ts";
 
 const copy = (t: FlushTail): FlushTail => ({ ...t, b: t.b.map((r) => [...r] as BoundaryRecord) });
@@ -130,4 +130,21 @@ test("script-safe: `</script>` in a value is escaped", () => {
   const json = encodeTail({ b: [rec(1, 0, "A", ["s", "</script><!--"])] });
   assert.ok(!json.includes("</script>") && !json.includes("<!--"), json);
   assert.deepEqual(expandTail(JSON.parse(json)).b[0]![4], ["s", "</script><!--"]);
+});
+
+test("per-field encoding is byte-identical to one JSON.stringify of the tail (integer-keyed `c` / `k`, every field)", () => {
+  const rows = Array.from({ length: 50 }, (_, id) => ({ id, values: [id, id + 1, "a<b "] }));
+  const t: FlushTail = {
+    b: [rec(1, 0, "App", ["s", 1], 1, { s: { d: [{ lane: "x" }, null, { title: "A < B & C", rows }] } }), rec(2, 1, "Page", [], 2)],
+    m: { App: "/assets/app-X.js", Page: "/assets/page-Y.js" },
+    e: { Page: "click" },
+    w: { "2.$1": [2] },
+    i: ["/assets/island.js"],
+    k: { "2": "Enter Space" },
+    g: [[1, "a[href]"]],
+    a: [[1, 1, 0]],
+    c: { "2": 8, "10": 1 },
+  };
+  const once = escapeJSON(JSON.stringify(tailOf(copy(t), "/assets/")));
+  assert.equal(encodeTail(copy(t), "/assets/"), once);
 });
