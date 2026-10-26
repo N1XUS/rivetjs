@@ -55,7 +55,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 - Docs production: the framework, CDK and UI docs apps are connected to Cloudflare Workers Builds from `N1XUS/rivetjs` `main`, repo-root build directory; CDK/UI deployment is enabled by the user (2026-10-16), using `cdk.rivetjs.severyn.pro` and `ui.rivetjs.severyn.pro`. `npm run docs:build:cloudflare -- apps/docs` builds the framework site; deploy `npx wrangler deploy --config apps/docs/wrangler.jsonc`, static assets `apps/docs/dist/client`, custom domain `rivetjs.severyn.pro`; preview builds off. `.node-version` and `.nvmrc` pin Node 24.14.1. Sibling configs/build scripts are enabled for CDK/UI (UI uses its staged split + dedicated npm deploy script). See README "Documentation hosting".
 
 - `export PATH=/Users/denisseverin/.nvm/versions/node/v26.5.1/bin:$PATH` before any `node`/`npx`/`npm` (Node ≥ 24 required).
-- Shell is zsh: unquoted `$VAR` does not word-split; a glob with no match aborts the whole command (`setopt nullglob` or use `find`); quote `--include='*.ts'`.
+- Shell is zsh: unquoted `$VAR` does not word-split; a glob with no match aborts the whole command (`setopt nullglob` or use `find`); quote `--include='*.ts'`; `$p:typecheck` applies the `:t` history modifier (→ `runtimeypecheck`, nx "Both project and target have to be specified") — write `"${p}:typecheck"`.
 - Always run from the repo root with absolute paths; nx: `NX_DAEMON=false NX_ISOLATE_PLUGINS=false`.
 - Rust toolchain is NOT installed on the host and must not be: compiler wasm builds only via Docker (`libs/compiler/rust/build.sh`). Never install host toolchains (brew, rustup, cargo, pip globals).
 - Python 3.12 + Docker Compose only for `apps/ssr-bench` benchmarks.
