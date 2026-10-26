@@ -12,7 +12,8 @@ const ctx = {
   },
 };
 function plugin(options: RivetOptions = {}) {
-  const p = rivet(options);
+  // Hook-level calls with a fake context (no `resolve`): build-time evaluation off (its own tests: comptime.test.ts).
+  const p = rivet({ comptime: false, ...options });
   (p.configResolved as (config: unknown) => void)({ root: "/app", command: "build", build: {}, plugins: [] });
   const transform = p.transform as Transform;
   return (code: string, id: string, ssr = false) => transform.call(ctx, code, id, { ssr })?.code ?? null;

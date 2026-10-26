@@ -62,6 +62,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV2105](RV2105.md) | retired | Keyed `For` row renders non-deterministically (Date.now / Math.random / performance.now / crypto.randomUUID / getRandomValues / `Date()` / new `Date()`): its rows stay recorded instead of lazy (resume) (retired: derived resume model) |
 | [RV2106](RV2106.md) | retired | Keyed `For` row holds a site a lazy row cannot replay (clientOnly / Async / Portal / a ref into a local outside the row): its rows stay recorded (resume) (retired: derived resume model) |
 | [RV2107](RV2107.md) | warning | Route data cannot resume under the derived model: a loader / action / error value the resume table cannot encode (function, symbol, promise, unregistered class instance); the page renders but does not resume (server) |
+| [RV2108](RV2108.md) | warning | A build-time evaluation was refused and the call stays at runtime: a non-deterministic result (time, randomness, locale, environment), a result that is not data, or a tv definition the table adapter cannot prove (compound variants, over the budget) (Vite build) |
 | [RV2145](RV2145.md) | error | A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build) |
 | [RV2146](RV2146.md) | warning | Non-component export of a framework module used in browser code of a Rivet module (Vite build) |
 | [RV2148](RV2148.md) | error | A module owned by a framework bridge uses the Rivet runtime (Vite build) |

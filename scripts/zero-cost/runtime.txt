@@ -46,6 +46,7 @@
 @rivetjs/runtime/escape 294256b1b2d3 308
 @rivetjs/runtime/slot 67a96bfb615f 534
 @rivetjs/runtime/css 0c5a7ea47dd6 586
+@rivetjs/runtime/comptime-tv 173c879dea33 1334
 @rivetjs/runtime/id 75dd524027f7 2904
 @rivetjs/runtime/image-plan 987fd7613ef7 1782
 @rivetjs/runtime/testing 8e25e77882e9 14108

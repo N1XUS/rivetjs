@@ -18,6 +18,7 @@ import { staticIcons } from "./static-icons.ts";
 import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
+import { comptimeCandidate, createComptime, MERGE_PREFIX, type Comptime, type ComptimeOptions } from "./comptime.ts";
 
 /** Browser-side `@rivetjs/*` packages (`optimizeDeps.exclude` takes names, not patterns). */
 const RIVET_PACKAGES = [
@@ -197,6 +198,18 @@ export interface RivetOptions {
    * browser import of one fails the build. Declared to other plugins as `api.rivetServerOnly`.
    */
   serverOnly?: ServerOnlyPattern[];
+  /**
+   * Build-time evaluation (default on in builds; dev always keeps the runtime calls). Calls of allowlisted functions
+   * (tailwind-variants `tv` / `cn` / `cx`) or of functions annotated `@comptime` / `@comptime tv` with compile-time
+   * constant arguments run in Node at build time and become their result; a `tv(…)` definition becomes a lookup table
+   * proven against the real library for every enumerated variant combination, so call sites without a `class` /
+   * `className` override read the table and only pages with an override load tailwind-merge. Non-deterministic results
+   * (time, randomness, locale, environment) stay runtime calls (RV2108 warning). A `tv` wrapper module with a
+   * `@comptime defer` import (`@rivetjs/ui`'s `cn`) keeps its definitions as runtime calls instead and the deferred import
+   * is loaded only by modules that may pass an override. `false` turns it off; `functions` extends the allowlist:
+   * `{ "my-lib": { join: "value", variants: "tv" } }`.
+   */
+  comptime?: boolean | ComptimeOptions;
 }
 
 /** A file that asks for another JSX runtime in its leading comments (`@jsxImportSource react`, or a
@@ -547,8 +560,9 @@ export function rivet({
   staticIcons: icons = true,
   bridges,
   serverOnly,
+  comptime = true,
 }: RivetOptions = {}): Plugin | Plugin[] {
-  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? []);
+  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? [], comptime);
   // Bridges: framework plugins first (they own their modules), then the facade host, then the Rivet compiler.
   const framed = bridges?.length ? [...bridges.flatMap((entry) => entry.plugins()), bridgeHost(bridges), plugin] : [plugin];
   if (images) framed.push(imagesPlugin(images));
@@ -639,6 +653,7 @@ function rivetPlugin(
   patterns: { include?: FilterPattern; exclude?: FilterPattern },
   icons: boolean,
   serverOnly: readonly ServerOnlyPattern[],
+  comptimeOption: boolean | ComptimeOptions = true,
 ): Plugin {
   // `include` / `exclude` (resolved against the Vite root once it is known).
   let selected: (id: string) => boolean = () => true;
@@ -652,6 +667,32 @@ function rivetPlugin(
     base = "/",
     // `rivetRouter()` in the config: it owns the server-only guard (document routes, RV3011); else `serverOnly` is guarded here.
     routed = false;
+  // Build-time evaluation (`comptime.ts`): builds only, one evaluator per plugin instance (shared by its environments).
+  let comptime: Comptime | null = null;
+  let comptimeCache: string | undefined;
+  // A build (`configResolved` with `command: "build"`): the only mode the pass runs in.
+  let built = false;
+  const comptimeOn = (): Comptime | null =>
+    !built || comptimeOption === false ? null : (comptime ??= createComptime(comptimeOption === true ? {} : comptimeOption, comptimeCache));
+  const comptimeHost = (ctx: Rollup.PluginContext) => ({
+    resolve: async (spec: string, importer: string) => {
+      const hit = await ctx.resolve(spec, importer, { skipSelf: true });
+      return hit && !hit.external ? hit.id : null;
+    },
+    // Ids imports may name (externals included: the server build keeps `tailwind-variants` external).
+    resolveId: async (spec: string, importer: string) => (await ctx.resolve(spec, importer, { skipSelf: true }))?.id ?? null,
+    warn: (message: string, file: string) => ctx.warn({ message: message + "\n  docs: " + docsUrl("RV2108"), id: file, plugin: "vite-plugin-rivet" }),
+  });
+  /** Comptime rewrite of a transformed module (call sites, definitions); the input's map stays (lines are kept). */
+  // Synchronous when the pass is off (dev, `comptime: false`, a hook called without `configResolved`).
+  type Out = { code: string; map: Rollup.SourceMapInput | null } | null;
+  const comptimeRewrite = (ctx: Rollup.TransformPluginContext, filename: string, out: Out, original: string): Out | Promise<Out> => {
+    const pass = comptimeOn();
+    if (!pass || !comptimeCandidate(out ? out.code : original)) return out;
+    return pass
+      .transform(out ? out.code : original, filename, comptimeHost(ctx))
+      .then((next) => (next === null ? out : { code: next, map: out ? out.map : null }));
+  };
   const resumable = new Set<string>();
   // `resume.domData` (DERIVED-C5): off unless `true` (the row read-back costs the first click a few ms at 4× CPU).
   const domDataOn = (): boolean => resume?.domData === true;
@@ -1165,6 +1206,8 @@ function rivetPlugin(
       sourceMap = serve || Boolean(config.build?.sourcemap);
       root = config.root ?? root;
       base = config.base ?? "/";
+      comptimeCache = config.cacheDir;
+      built = config.command === "build";
       routed = !!config.plugins?.some((plugin) => plugin.name === "vite-plugin-rivet-router");
       if (patterns.include != null || patterns.exclude != null) selected = createFilter(patterns.include, patterns.exclude, { resolve: root });
       resumable.clear();
@@ -1218,6 +1261,7 @@ function rivetPlugin(
     },
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
+      if (id.startsWith(MERGE_PREFIX)) return { id, moduleSideEffects: true };
       // `<module>.rivet.css`: absolute (our imports) or root-relative (dev URLs).
       const [clean = "", query] = id.split("?", 2);
       if (clean.endsWith(_STYLE_SUFFIX)) {
@@ -1264,6 +1308,12 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
+      // Build-time evaluation: the override merge provider (registers tailwind-merge for full tv resolvers).
+      // Side effects by definition (it registers the merge): never tree-shaken with an importer's `sideEffects: false`.
+      if (id.startsWith(MERGE_PREFIX)) {
+        const code = await comptimeOn()?.loadMerge(id);
+        return code ? { code, moduleSideEffects: true } : null;
+      }
       const boundarySource = boundaryEntries.get(id);
       if (boundarySource !== undefined) {
         // Through Vite's pipeline first: the DOM compile records the boundary export names (`derivedNames`).
@@ -1328,6 +1378,9 @@ function rivetPlugin(
         return null;
       // A `.ts` route module (an endpoint a page imports from): its server exports leave the browser build too.
       const routeScript = /\.[cm]?ts$/.test(filename) && !filename.endsWith(".d.ts") && isRoute(filename);
+      // Build-time evaluation of plain script modules (`tv(…)` definitions, constant calls).
+      if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript && /\.[cm]?[jt]s$/.test(filename) && !filename.endsWith(".d.ts") && comptimeOn())
+        return comptimeRewrite(this, filename, null, original);
       if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript) {
         // DevTools (dev client only): plain app modules name their signals, computeds and contexts too
         // (same-line edits: line numbers and stacks stay right).
@@ -1358,9 +1411,16 @@ function rivetPlugin(
         if (server) return null;
         const split = compile(source, { ...contributed(false, id), serverExports: true, target: "dom", filename, ...(sourceMap ? { sourceMap: true } : {}) });
         if (split.diagnostics.length) fail(this, split, filename);
-        return { code: split.code, map: split.map ?? null };
+        return comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original);
       }
-      return finish(this, filename, source, server, id);
+      const done = finish(this, filename, source, server, id);
+      return facade ? done : comptimeRewrite(this, filename, done, original);
+    },
+    async closeBundle() {
+      // The last environment's bundle closes the evaluator (a later build of this plugin instance makes a new one).
+      const pass = comptime;
+      comptime = null;
+      await pass?.close();
     },
     // T6: a deleted (or renamed away) module drops its dev caches — sheet, last client code, dev boundary names.
     watchChange(id, change) {

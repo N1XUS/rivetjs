@@ -11,8 +11,8 @@ const RESUME = new Set(["RV2001", "RV3009"]);
 const DERIVED = new Set(["RV2103", "RV2104"]);
 const SERVER_EXPORTS = new Set(["RV3007", "RV3008", "RV3009", "RV3010"]);
 const STYLES = new Set(["RV5001", "RV5002"]);
-/** Not reproducible by a single-file compile: i18n catalogs (RV4xxx), options / panics, project checks, RV2145 / RV2146 / RV2148 (Vite build: bridge ownership, framework exports in browser code, Rivet runtime in a framework module), RV2149 (browser: framework island hydration recovery), RV2150 (server: Preact useId mask probe), RV2107 (server render: derived route data the resume table cannot encode). */
-const SKIP = /^RV4|^RV(7001|7101|7102|9001|2145|2146|2148|2149|2150|2107|3011|3101)$/;
+/** Not reproducible by a single-file compile: i18n catalogs (RV4xxx), options / panics, project checks, RV2145 / RV2146 / RV2148 (Vite build: bridge ownership, framework exports in browser code, Rivet runtime in a framework module), RV2149 (browser: framework island hydration recovery), RV2150 (server: Preact useId mask probe), RV2107 (server render: derived route data the resume table cannot encode), RV2108 (Vite build: a refused build-time evaluation, `tests/comptime.test.ts`). */
+const SKIP = /^RV4|^RV(7001|7101|7102|9001|2145|2146|2148|2149|2150|2107|2108|3011|3101)$/;
 
 describe("explain", () => {
   it("covers every registered code, nothing else", () => {

@@ -150,6 +150,10 @@
       "types": "./css.ts",
       "default": "./css.ts"
     },
+    "./comptime-tv": {
+      "types": "./comptime-tv.ts",
+      "default": "./comptime-tv.ts"
+    },
     "./id": {
       "types": "./id.ts",
       "browser": "./id-dom.ts",

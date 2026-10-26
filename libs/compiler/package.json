@@ -27,6 +27,10 @@
       "types": "./diagnostics-format.ts",
       "default": "./diagnostics-format.ts"
     },
+    "./comptime": {
+      "types": "./comptime.ts",
+      "default": "./comptime.ts"
+    },
     "./switches": {
       "types": "./switches.ts",
       "default": "./switches.ts"

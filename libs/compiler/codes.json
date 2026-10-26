@@ -308,6 +308,12 @@
       "docs": "https://rivetjs.severyn.pro/errors/RV2107"
     },
     {
+      "code": "RV2108",
+      "severity": "warning",
+      "title": "A build-time evaluation was refused and the call stays at runtime: a non-deterministic result (time, randomness, locale, environment), a result that is not data, or a tv definition the table adapter cannot prove (compound variants, over the budget) (Vite build)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV2108"
+    },
+    {
       "code": "RV2145",
       "severity": "error",
       "title": "A module is claimed by both the Rivet compiler and a framework bridge, or by two bridges (Vite build)",

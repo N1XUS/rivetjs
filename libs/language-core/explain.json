@@ -293,6 +293,14 @@
       "note": "Server, resume modules (derived model). The router's `Root` boundary carries the route payload (loader data, action result, error) as its props: JSON data ships as it is, other encodable values as the resume table (`{ t, r }`, the data-endpoint wire), decoded by the generated `Root` in the browser. A value the table cannot encode demotes `Root`: the page is server HTML that does not resume until the next client navigation. `static [revive]` classes need a class symbol and are not supported here; use `registerClass`. `console.warn`, once per distinct reason per server process."
     },
     {
+      "code": "RV2108",
+      "messages": ["Build-time evaluation of {call} kept at runtime: {reason}"],
+      "fix": "Nothing is required: the call runs at runtime exactly as before (only its build-time saving is lost). To get the saving, make the evaluated function deterministic (no Date.now(), Math.random(), Intl / toLocale*, process.env, crypto) or move the varying part to a runtime argument; for a tv definition, express compound variants as plain variants, or split a definition whose variant combinations exceed the table budget.",
+      "avoid": "/** @comptime */\nexport function stamp(label: string) {\n  return `${label}-${Date.now()}`;\n}",
+      "prefer": "/** @comptime */\nexport function label(name: string) {\n  return `rv-${name}`;\n}",
+      "note": "Vite builds (dev keeps every runtime call). `rivet({ comptime })` evaluates calls of allowlisted functions (tailwind-variants `tv` / `cn` / `cx`) and functions annotated `@comptime` / `@comptime tv` whose arguments are compile-time constants, in Node at build time; the evaluator traps time, randomness, locale and environment reads (during the call and while the callee's modules load), evaluates value calls twice, and proves a tv table against the real library for every enumerated combination. Any failure refuses that call or definition: it stays a runtime call, with this warning once per site."
+    },
+    {
       "code": "RV2145",
       "messages": [
         "{file} matches both the Rivet compiler and {framework}({ include }) — pick one owner",

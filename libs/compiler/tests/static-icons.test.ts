@@ -98,7 +98,8 @@ test("Vite plugin: both targets inline icons (lucide from the importer's resolut
   type Transform = (this: unknown, code: string, id: string, options?: { ssr?: boolean }) => { code: string } | null;
   const root = new URL("..", import.meta.url).pathname;
   const plugin = (options = {}) => {
-    const p = rivet(options);
+    // Fake hook context (no `resolve`): build-time evaluation off (its own tests: comptime.test.ts).
+    const p = rivet({ comptime: false, ...options });
     (p.configResolved as (config: unknown) => void)({ root, command: "build", build: {}, plugins: [] });
     return (ssr: boolean) =>
       (p.transform as Transform).call({ error: (e: { message: string }) => assert.fail(e.message) }, source, root + "src/page.tsx", { ssr })!.code;

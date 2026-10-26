@@ -116,6 +116,11 @@ export interface RivetRouterOptions {
   /** Compile-time `<Icon>` from `@rivetjs/kit/icon` (`rivet({ staticIcons })`, default true); `false` keeps every component call. */
   staticIcons?: boolean;
   /**
+   * Build-time evaluation (`rivet({ comptime })`, default on in builds): constant calls of allowlisted / `@comptime`
+   * functions become their results; tailwind-variants definitions become proven lookup tables. `false` keeps every call.
+   */
+  comptime?: RivetOptions["comptime"];
+  /**
    * Route transitions (View Transitions) + pending UI. Off by default; `true` = defaults. The
    * transitions module loads on the first navigation intent.
    */
@@ -509,7 +514,10 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   // waits for the running one and drops queued ones.
   let regenerations: Promise<unknown> = Promise.resolve();
   let closed = false;
-  const icons = options.staticIcons === undefined ? {} : { staticIcons: options.staticIcons };
+  const icons = {
+    ...(options.staticIcons === undefined ? {} : { staticIcons: options.staticIcons }),
+    ...(options.comptime === undefined ? {} : { comptime: options.comptime }),
+  };
   const compilerOptions = mode === "csr" ? { devtools, serverExports, ...css, ...icons } : { resume, devtools, serverExports, ...css, ...icons };
   const bridges = options.bridges?.length ? options.bridges : undefined;
   if (bridges && mode === "csr") throw new Error("rivetRouter: framework bridges need server or static mode (islands are server-rendered)");
