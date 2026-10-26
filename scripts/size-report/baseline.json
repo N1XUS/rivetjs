@@ -140,7 +140,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6580,
+          "htmlBr": 6581,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -592,17 +592,17 @@
     "starter-ui": {
       "totalJS": {
         "files": 28,
-        "min": 179138,
-        "br": 58465
+        "min": 179130,
+        "br": 58468
       },
       "serverJS": {
-        "min": 197436,
-        "br": 65642
+        "min": 197428,
+        "br": 65735
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2833,
+          "htmlBr": 2855,
           "cssSheets": 2,
           "css": {
             "min": 67108,
@@ -612,8 +612,8 @@
           "inlineBytes": 3381,
           "eagerRequests": 15,
           "eagerJS": {
-            "min": 165256,
-            "br": 52891
+            "min": 165248,
+            "br": 52894
           },
           "eagerFiles": [
             "dom-derived.js",
@@ -637,8 +637,8 @@
             "br": 24436
           },
           "pageJS": {
-            "min": 165256,
-            "br": 52891
+            "min": 165248,
+            "br": 52894
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1314,7 +1314,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4460,
+          "htmlBr": 4465,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1549,18 +1549,18 @@
     },
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
-        "files": 87,
-        "min": 475555,
-        "br": 156563
+        "files": 86,
+        "min": 475359,
+        "br": 156472
       },
       "serverJS": {
-        "min": 444631,
-        "br": 129516
+        "min": 444621,
+        "br": 129548
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5135,
+          "htmlBr": 5147,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1568,10 +1568,10 @@
           },
           "stateBytes": 835,
           "inlineBytes": 3381,
-          "eagerRequests": 54,
+          "eagerRequests": 53,
           "eagerJS": {
-            "min": 444612,
-            "br": 143163
+            "min": 444416,
+            "br": 143045
           },
           "eagerFiles": [
             "dom-derived.js",
@@ -1612,7 +1612,6 @@
             "portal.js",
             "preload-helper.js",
             "press.js",
-            "press.js",
             "pressable.js",
             "render.js",
             "scheduler.js",
@@ -1634,8 +1633,8 @@
             "br": 25782
           },
           "pageJS": {
-            "min": 444612,
-            "br": 143163
+            "min": 444416,
+            "br": 143045
           },
           "interactionRequests": 0,
           "interactionJS": {

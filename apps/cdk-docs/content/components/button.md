@@ -186,7 +186,7 @@ expect(presses).toEqual(["virtual"]);
 | --- | --- |
 | `Button` | RAC `Button` |
 | `@rivetjs/cdk/button/behaviour` | react-aria `useButton` |
-| press events | react-aria `usePress` (local port in `button/press.ts`) |
+| press events | react-aria `usePress` (local port in `interactions/press.tsx`) |
 
 Deviations:
 

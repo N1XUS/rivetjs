@@ -5,14 +5,21 @@
 // Ported from @react-aria/interactions usePress (react-spectrum), Apache-2.0, © Adobe; portions from
 // React (react-interactions), MIT, © Meta.
 //
-// Rivet: the returned handlers are resumable symbols (R2: function expressions in the returned
+// Rivet: THE press implementation of the package, in one module with its two front ends — the `pressProps` hook
+// (state per hook call, `isPressed` signal) and the per-element adapter (`element*`, state in a module WeakMap,
+// `data-pressed` written on the element) that `../button/press.ts` re-exports for Button, Link, ToggleButton,
+// ToggleButtonGroup items and Table rows — plus `preventFocus` (`preventFocusOnPress`), whose only user this is.
+// One module, not a core + feature modules (PRESSSPLIT 2026-10-26, measured): every feature a native `<button>` can skip
+// (hook, exit tracking, preventFocus, non-native keyboard emulation, onClick, onPressUp) is < 400 B gz, under the cost
+// of the request a module of its own adds on the pages that use it (the frame build chunks per importer set).
+// The returned handlers are resumable symbols (R2: function expressions in the returned
 // object), state is a plain JSON object created on the first event (`pressState`: an idle press ships none in resume
 // state) plus an `isPressed` signal, all browser listeners are added
 // inside handlers. `pressProps` holds only runtime-delegated handlers (keydown / click / pointerdown /
 // mousedown / pointerup: no listener per element); the target's `dragstart` / `pointerenter` /
 // `pointerleave` (RA: element listeners for the element's whole life, acting only while a pointer press is
-// active) bind at pointerdown and unbind when the press ends (`Press.track`). THE press implementation of the package: `button/press.ts` (Button, ToggleButton)
-// drives the exported `press*` handler functions with per-element state (`createPressState`).
+// active) bind at pointerdown and unbind when the press ends (`Press.track`: the hook binds all three, the element
+// adapter `dragstart` only — Button / Link / ToggleButton had no RA enter / leave press handlers on the element).
 // Deviations: no mouse/touch fallback branch (the original's is test-only, for JSDOM); the
 // double-tap-zoom `touch-action` is set through the CSSOM on the first pointerdown (CSP-safe, no
 // stylesheet) instead of an injected <style>. Resumability (cold handlers run after later events
@@ -25,16 +32,20 @@ import { createContext, signal, useContext } from "@rivetjs/reactivity";
 import { mergeProps } from "./merge-props.tsx";
 import {
   disableTextSelection,
+  focusGuard,
   focusWithoutScrolling,
+  getActiveElement,
   getEventTarget,
   getOwnerDocument,
+  getOwnerWindow,
+  isFocusable,
   isMac,
+  isShadowRoot,
   isVirtualClick,
   isVirtualPointerEvent,
   linkState,
   nodeContains,
   nonTextInputTypes,
-  preventFocus,
   read,
   restoreTextSelection,
   type FocusableElement,
@@ -681,3 +692,122 @@ function isValidInputKey(target: HTMLInputElement, key: string): boolean {
   // Only Space toggles checkboxes and radios, not Enter.
   return target.type === "checkbox" || target.type === "radio" ? key === " " : nonTextInputTypes.has(target.type);
 }
+
+// --- preventFocus (usePress `preventFocusOnPress`; react-aria `utils/preventFocus`) ---------------------------------
+// Hosted with the press core, its only user: pages without a press never carry it (PRESSSPLIT 2026-10-26).
+
+/**
+ * Prevent the focus that the current mousedown would cause on `target` (or its nearest focusable
+ * ancestor) without `preventDefault()` (which would also stop text selection / drag): let the
+ * browser move focus, swallow the events, and move focus back. Returns a cleanup function.
+ */
+export function preventFocus(target: FocusableElement | null): (() => void) | undefined {
+  while (target && !isFocusable(target, { skipVisibilityCheck: true })) target = target.parentElement;
+  const win = getOwnerWindow(target);
+  const active = getActiveElement(win.document) as FocusableElement | null;
+  if (!active || active === target) return;
+  const targetRoot = target?.getRootNode();
+  const root: EventTarget = targetRoot != null && isShadowRoot(targetRoot) ? targetRoot : win;
+  const movingToTarget = (node: Element | null) => node === target || (!!node && nodeContains(target, node));
+  const fromActive = (node: Element | null) => node === active || (!!node && nodeContains(active, node));
+  focusGuard.ignore = true;
+  let refocusing = false;
+  const onBlur = (e: Event) => {
+    if (fromActive(getEventTarget(e)) || refocusing) e.stopImmediatePropagation();
+  };
+  const onFocusOut = (e: Event) => {
+    if (fromActive(getEventTarget(e)) || refocusing) {
+      e.stopImmediatePropagation();
+      // No focusable ancestor: no focus event follows; restore now.
+      if (!target && !refocusing) {
+        refocusing = true;
+        focusWithoutScrolling(active);
+        cleanup();
+      }
+    }
+  };
+  const onFocus = (e: Event) => {
+    if (movingToTarget(getEventTarget(e)) || refocusing) e.stopImmediatePropagation();
+  };
+  const onFocusIn = (e: Event) => {
+    if (movingToTarget(getEventTarget(e)) || refocusing) {
+      e.stopImmediatePropagation();
+      if (!refocusing) {
+        refocusing = true;
+        focusWithoutScrolling(active);
+        cleanup();
+      }
+    }
+  };
+  root.addEventListener("blur", onBlur, true);
+  root.addEventListener("focusout", onFocusOut, true);
+  root.addEventListener("focusin", onFocusIn, true);
+  root.addEventListener("focus", onFocus, true);
+  const cleanup = () => {
+    cancelAnimationFrame(raf);
+    root.removeEventListener("blur", onBlur, true);
+    root.removeEventListener("focusout", onFocusOut, true);
+    root.removeEventListener("focusin", onFocusIn, true);
+    root.removeEventListener("focus", onFocus, true);
+    focusGuard.ignore = false;
+    refocusing = false;
+  };
+  const raf = requestAnimationFrame(cleanup);
+  return cleanup;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Per-element adapter (explicit `onX` wiring: Button, Link, ToggleButton, ToggleButtonGroup items, Table rows; their
+// `(options, event)` calls are re-exported by `../button/press.ts`): press state per element (module WeakMap,
+// transient, never serialized), the pressed render state written as `data-pressed="true"` on the element instead of a
+// signal. Hosted here, not in its own module: every adapter consumer needs the core, so the pair is one chunk.
+
+const states = new WeakMap<Element, PressState>();
+
+const stateOf = (el: Element): PressState => {
+  let s = states.get(el);
+  if (!s) states.set(el, (s = createPressState()));
+  return s;
+};
+
+const setPressed = (el: Element, pressed: boolean): void => {
+  if (pressed) el.setAttribute("data-pressed", "true");
+  else el.removeAttribute("data-pressed");
+};
+
+/** The `Press` instance of `el` for `options` (options are read per event: build them in the handler). */
+export function elementPress(el: Element, options: PressProps): Press {
+  // A controlled `isPressed` (RAC: MenuTrigger / DialogTrigger keep the trigger pressed while open) holds the attribute.
+  // `dragstart` cancels a pointer press: bound on the element while pressed only (no listener at render).
+  return {
+    props: options as PressHookProps,
+    state: stateOf(el),
+    pressed: { set: (value: boolean) => setPressed(el, value || !!read(options.isPressed)) },
+    track: PRESS_TRACK_DRAG,
+  };
+}
+
+const at = (e: Event, o: PressProps): Press => elementPress(e.currentTarget as Element, o);
+
+/** keydown */
+export const elementKeyDown = (o: PressProps, e: KeyboardEvent): void => pressKeyDown(at(e, o), e);
+/** click (virtual clicks and the end of pointer / native keyboard presses) */
+export const elementClick = (o: PressProps, e: MouseEvent): void => pressClick(at(e, o), e);
+/** pointerdown */
+export const elementPointerDown = (o: PressProps, e: PointerEvent): void => pressPointerDown(at(e, o), e);
+/** mousedown: `preventFocusOnPress` keeps focus where it is (react-aria `preventFocus`). */
+export const elementMouseDown = (o: PressProps, e: MouseEvent): void => pressMouseDown(at(e, o), e);
+/** pointerup on the element (press up without a press start, e.g. dragged in). */
+export const elementPointerUp = (o: PressProps, e: PointerEvent): void => pressPointerUp(at(e, o), e);
+/** dragstart cancels the press (bound by `pressPointerDown` on the element while pressed; for explicit wiring). */
+export const elementDragStart = (o: PressProps, e: DragEvent): void => pressDragStart(at(e, o), e);
+
+/** Cancel an active press of `el` (react-aria: `isDisabled` while pressed). */
+export const elementCancelPress = (o: PressProps, el: Element): void => cancelPress(elementPress(el, o));
+
+/** Whether `el` is pressed right now. */
+export const isElementPressed = (el: Element): boolean => states.get(el)?.didFirePressStart ?? false;
+/** pointerenter of the per-element adapter: re-press when the active pointer comes back (explicit wiring: Table rows / cells). */
+export const elementPointerEnter = (o: PressProps, e: PointerEvent): void => pressPointerEnter(elementPress(e.currentTarget as Element, o), e);
+/** pointerleave: un-press (and cancel with `shouldCancelOnPointerExit`). */
+export const elementPointerLeave = (o: PressProps, e: PointerEvent): void => pressPointerLeave(elementPress(e.currentTarget as Element, o), e);

@@ -1,5 +1,6 @@
 // Shared helpers of the interaction hooks: virtual click detection, focusability selectors,
-// preventFocus, text selection, createEventHandler, `read` / `MaybeAccessor`.
+// text selection, the preventFocus guard, createEventHandler, `read` / `MaybeAccessor` (`preventFocus` itself lives
+// with its only user, the press core `./press-core.ts`: PRESSSPLIT 2026-10-26).
 // Ported from @react-aria/interactions + @react-aria/utils (react-spectrum), Apache-2.0, © Adobe.
 // Browser-only bodies; nothing runs at import time.
 //
@@ -12,8 +13,8 @@
 // importing this file does not pull prop merging or the router module into its chunk.
 import { getEventTarget as domEventTarget } from "../utils/dom.ts";
 import { isIOS, isWebKit } from "../platform/index.ts";
-import { getActiveElement, getOwnerDocument, getOwnerWindow, isShadowRoot, nodeContains } from "../utils/dom.ts";
-import { focusWithoutScrolling, runAfterTransition } from "../utils/transitions.ts";
+import { getOwnerDocument, getOwnerWindow } from "../utils/dom.ts";
+import { runAfterTransition } from "../utils/transitions.ts";
 export { DEV } from "../utils/dom.ts";
 
 export { isAndroid, isChrome, isFirefox, isIOS, isIPad, isIPhone, isMac, isWebKit, isVirtualClick, isVirtualPointerEvent } from "../platform/index.ts";
@@ -150,70 +151,10 @@ export function restoreTextSelection(target?: Element): void {
 /** `<input type>`s that take no text (upstream declares this set in usePress and useFocusVisible each; one copy here). */
 export const nonTextInputTypes: ReadonlySet<string> = new Set(["checkbox", "radio", "range", "color", "file", "image", "button", "submit", "reset"]);
 
-// --- preventFocus ----------------------------------------------------------------------------------
+// --- preventFocus guard (preventFocus itself: `./press-core.ts`, its only user) ------------------------
 
-/** Set while `preventFocus` swallows the focus events it causes (focus-visible ignores them). */
+/** Set while `preventFocus` (`./press-core.ts`, usePress `preventFocusOnPress`) swallows the focus events it causes (focus-visible ignores them). */
 export const focusGuard = { ignore: false };
-
-/**
- * Prevent the focus that the current mousedown would cause on `target` (or its nearest focusable
- * ancestor) without `preventDefault()` (which would also stop text selection / drag): let the
- * browser move focus, swallow the events, and move focus back. Returns a cleanup function.
- */
-export function preventFocus(target: FocusableElement | null): (() => void) | undefined {
-  while (target && !isFocusable(target, { skipVisibilityCheck: true })) target = target.parentElement;
-  const win = getOwnerWindow(target);
-  const active = getActiveElement(win.document) as FocusableElement | null;
-  if (!active || active === target) return;
-  const targetRoot = target?.getRootNode();
-  const root: EventTarget = targetRoot != null && isShadowRoot(targetRoot) ? targetRoot : win;
-  const movingToTarget = (node: Element | null) => node === target || (!!node && nodeContains(target, node));
-  const fromActive = (node: Element | null) => node === active || (!!node && nodeContains(active, node));
-  focusGuard.ignore = true;
-  let refocusing = false;
-  const onBlur = (e: Event) => {
-    if (fromActive(getEventTarget(e)) || refocusing) e.stopImmediatePropagation();
-  };
-  const onFocusOut = (e: Event) => {
-    if (fromActive(getEventTarget(e)) || refocusing) {
-      e.stopImmediatePropagation();
-      // No focusable ancestor: no focus event follows; restore now.
-      if (!target && !refocusing) {
-        refocusing = true;
-        focusWithoutScrolling(active);
-        cleanup();
-      }
-    }
-  };
-  const onFocus = (e: Event) => {
-    if (movingToTarget(getEventTarget(e)) || refocusing) e.stopImmediatePropagation();
-  };
-  const onFocusIn = (e: Event) => {
-    if (movingToTarget(getEventTarget(e)) || refocusing) {
-      e.stopImmediatePropagation();
-      if (!refocusing) {
-        refocusing = true;
-        focusWithoutScrolling(active);
-        cleanup();
-      }
-    }
-  };
-  root.addEventListener("blur", onBlur, true);
-  root.addEventListener("focusout", onFocusOut, true);
-  root.addEventListener("focusin", onFocusIn, true);
-  root.addEventListener("focus", onFocus, true);
-  const cleanup = () => {
-    cancelAnimationFrame(raf);
-    root.removeEventListener("blur", onBlur, true);
-    root.removeEventListener("focusout", onFocusOut, true);
-    root.removeEventListener("focusin", onFocusIn, true);
-    root.removeEventListener("focus", onFocus, true);
-    focusGuard.ignore = false;
-    refocusing = false;
-  };
-  const raf = requestAnimationFrame(cleanup);
-  return cleanup;
-}
 
 // --- Events -----------------------------------------------------------------------------------------
 

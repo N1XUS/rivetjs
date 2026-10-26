@@ -10,7 +10,7 @@
 
 ## Layout
 - `index.tsx` - `<ToggleButton>` (RAC)
-- `behaviour.ts` - RA `useToggleButton`: attrs + press wiring over `../button/press.ts` (adapter of `../interactions/press.tsx`)
+- `behaviour.ts` - RA `useToggleButton`: attrs + press wiring over `../button/press.ts` (re-exports of the per-element adapter in `../interactions/press.tsx`)
 - `../state/toggle.ts` - React Stately `useToggleState`
 - tests: `tests/toggle-button.browser.test.tsx` (port of RAC ToggleButton.test.js: class, DOM props, render props, `render`, slot, hover, focus ring, press state, disabled, selected + Rivet: context without slots, two-way signal, `state` render prop, group render props / `render`, zero interaction attrs before interaction); `tests-components/button.test.ts` "toggle button:" (route `tests-components/app/src/routes/button.tsx`); `tests-components/widgets.test.ts` "buttons:" (route `buttons.tsx`); `tests-components/dom-events-forms.test.ts` "ToggleButton forwards global events…" (route `dom-events-forms.tsx`); `tests-components/axe.test.ts` (`/buttons`)
 - docs examples: `apps/cdk-docs/examples/toggle-button-*/`
