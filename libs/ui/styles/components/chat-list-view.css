@@ -27,6 +27,7 @@
     }
   }
 
+  &:active,
   &[data-pressed="true"] {
     @apply bg-default-hover;
   }

@@ -35,6 +35,7 @@
     }
   }
 
+  &:active,
   &[data-pressed="true"] {
     background-color: var(--cell-select-bg-hover);
   }

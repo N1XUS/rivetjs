@@ -37,7 +37,7 @@ export interface FetchOptions {
   resolveLocale?: (request: Request) => string | undefined | Promise<string | undefined>;
   /** HTML pages' Content-Security-Policy (`createApp` `csp`): default `strictCSP`; `{ trustedTypes, directives }` (`strictCSP` with them), a `(nonce) => policy` function, or `false` (none). */
   csp?: AppConfig["csp"];
-  /** Preload planner (`createApp` `preload`): `lean` (nothing before an interaction); per page when a function. */
+  /** Preload planner (`createApp` `preload`): `ahead` (fetch-ahead timing: `"idle"` default / `"load"` / `"intent"`), `lean` (nothing before an interaction; per page when a function). */
   preload?: AppConfig["preload"];
   /** Route rules (`createApp` `routeRules`; default: the entry's, `rivetRouter({ routeRules })`): headers + in-process page cache per path pattern. */
   routeRules?: AppConfig["routeRules"];

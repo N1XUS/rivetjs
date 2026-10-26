@@ -10120,7 +10120,7 @@
   }
 
   @media (hover: hover) {
-    .checkbox-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
+    .checkbox-button-group__item:hover:not([data-selected="true"]), .checkbox-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
       background-color: var(--surface-secondary);
     }
   }
@@ -11253,8 +11253,14 @@
     --button-fg: var(--field-placeholder, var(--muted));
   }
 
-  :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"]) {
+  :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"], :active) {
     --button-fg: var(--field-foreground);
+  }
+
+  @media (hover: hover) {
+    :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):hover {
+      --button-fg: var(--field-foreground);
+    }
   }
 
   :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button svg {
@@ -11761,7 +11767,7 @@
   }
 
   @media (hover: hover) {
-    .number-stepper__button[data-hovered="true"]:not([data-disabled="true"]) {
+    .number-stepper__button:hover:not([data-disabled="true"]), .number-stepper__button[data-hovered="true"]:not([data-disabled="true"]) {
       background-color: var(--surface-secondary);
     }
   }
@@ -11977,7 +11983,7 @@
   }
 
   @media (hover: hover) {
-    .radio-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
+    .radio-button-group__item:hover:not([data-selected="true"]), .radio-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
       background-color: var(--surface-secondary);
     }
   }
@@ -19847,7 +19853,7 @@
     }
   }
 
-  .cell-select__trigger[data-pressed="true"] {
+  .cell-select__trigger:active, .cell-select__trigger[data-pressed="true"] {
     background-color: var(--cell-select-bg-hover);
   }
 
@@ -19990,7 +19996,7 @@
     }
   }
 
-  .inline-select__trigger[data-pressed="true"], .inline-select__trigger[aria-expanded="true"] {
+  .inline-select__trigger:active, .inline-select__trigger[data-pressed="true"], .inline-select__trigger[aria-expanded="true"] {
     background-color: var(--default);
   }
 
@@ -21452,7 +21458,7 @@
     }
   }
 
-  .chat-list-view__item[data-pressed="true"] {
+  .chat-list-view__item:active, .chat-list-view__item[data-pressed="true"] {
     background-color: var(--default-hover);
   }
 

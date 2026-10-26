@@ -219,8 +219,14 @@
     --button-fg: var(--field-placeholder, var(--muted));
   }
 
-  &:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"]) {
+  &:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"], :active) {
     --button-fg: var(--field-foreground);
+  }
+
+  @media (hover: hover) {
+    &:is(.button--ghost, .button--tertiary):hover {
+      --button-fg: var(--field-foreground);
+    }
   }
 
   svg {

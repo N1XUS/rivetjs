@@ -60,7 +60,8 @@ compiled("listening records: an event adopts the records around a record listeni
   assert.deepEqual(dom.diagnostics, []);
   const { Root } = await importServer<{ Root: () => ServerValue }>(server.code);
   const symbols = { "src/page.tsx#Root": "/root.js", "src/page.tsx#Inner": "/inner.js", "src/page.tsx#Outer": "/outer.js" };
-  // `lean`: no fetch-ahead (`data-fo`), so every request below is a load the event caused.
+  // `lean`: no fetch-ahead (`data-fo`) before the first intent, so every request below is one an event caused (the first
+  // intent fetches the list at once: the listening records' chunks + the runtime, ZERO ONDEMAND).
   const served0 = (await derivedToString(() => Root(), { manifest: { hash: "t", runtime: "/rt.js", symbols }, preload: { lean: true } } as never)) as string;
   const listening = { "src/page.tsx#Inner": "click", "src/page.tsx#Outer": "click pointerenter" };
   const html = withListening(served0, listening);
@@ -84,15 +85,16 @@ compiled("listening records: an event adopts the records around a record listeni
     assert.equal(await page.isChecked("#box"), true, "the toggle is native, not held for a replay");
     await page.waitForTimeout(200);
     assert.deepEqual(loaded(), [], "no runtime, no chunk");
-    // A click in a listening boundary: the runtime, its chunk and the records around it (outermost first, intake 3: an
-    // ancestor unit may provide a context its descendants read).
+    // A click in a listening boundary: the fetch-ahead list (the runtime + the listening records' chunks, fetched, not run)
+    // and the records around the target (outermost first, intake 3: an ancestor unit may provide a context its descendants
+    // read). The non-listening root is not in the list: the click loads it.
     await page.click("#inner");
     await page.waitForFunction(() => document.querySelector("#inner")!.textContent === "2");
-    assert.deepEqual(loaded().sort(), ["/inner.js", "/root.js", "/rt.js"]);
+    assert.deepEqual([...new Set(loaded())].sort(), ["/inner.js", "/outer.js", "/root.js", "/rt.js"]);
     // The sibling adopts on its own event (inside the adopted root's unit: no chunk of its own).
     await page.click("#outer");
     await page.waitForFunction(() => +document.querySelector("#outer")!.textContent! > 10);
-    assert.deepEqual(loaded().sort(), ["/inner.js", "/root.js", "/rt.js"]);
+    assert.deepEqual([...new Set(loaded())].sort(), ["/inner.js", "/outer.js", "/root.js", "/rt.js"]);
     await page.click("#box");
     assert.equal(await page.isChecked("#box"), false);
     assert.deepEqual(errors, []);

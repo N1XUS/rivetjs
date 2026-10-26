@@ -47,7 +47,7 @@
     }
   }
 
-  .cell-select__trigger[data-pressed="true"] {
+  .cell-select__trigger:active, .cell-select__trigger[data-pressed="true"] {
     background-color: var(--cell-select-bg-hover);
   }
 

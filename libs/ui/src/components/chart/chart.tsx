@@ -161,7 +161,7 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
       rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
     };
   });
-  return Frame(
+  return renderFrame(
     props,
     p,
     props.kind,
@@ -199,7 +199,7 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
               {slot.dots.map((dot) => (
                 <span class={SLOTS.dot()} style={{ top: dot.top, "inset-inline-start": slot.inner, "--chart-color": dot.color }} />
               ))}
-              {Tooltip(slot.title, slot.rows, slot.inner)}
+              {renderTooltip(slot.title, slot.rows, slot.inner)}
             </div>
           ))}
         </div>
@@ -209,7 +209,10 @@ function Cartesian(props: AreaChartProps & { kind: "area" | "line" }): JSX.Eleme
   );
 }
 
-function Tooltip(title: string, rows: { label: string; value: string; color: string }[], anchor?: string): JSX.Element {
+// Positional-argument helpers are lower-case (`renderTooltip` / `renderFrame`): a capitalised function returning JSX
+// compiles as a component boundary, and these are not components (called with positional arguments, not props) — as
+// boundaries the resumed page re-rendered the frame on its first event (tooltips gone, focus lost).
+function renderTooltip(title: string, rows: { label: string; value: string; color: string }[], anchor?: string): JSX.Element {
   return (
     <div class={SLOTS.tooltip()} data-slot="chart-tooltip" aria-hidden="true" style={anchor ? { "--chart-anchor": anchor } : undefined}>
       <div class={SLOTS.tooltipTitle()}>{title}</div>
@@ -225,7 +228,7 @@ function Tooltip(title: string, rows: { label: string; value: string; color: str
 }
 
 /** Figure + legend + y axis + grid + plot content + x axis. */
-function Frame(props: CartesianChartProps, p: Prepared, kind: string, plot: JSX.Element, xOf: (i: number) => number): JSX.Element {
+function renderFrame(props: CartesianChartProps, p: Prepared, kind: string, plot: JSX.Element, xOf: (i: number) => number): JSX.Element {
   const showY = props.showYAxis !== false && kind !== "sparkline";
   const showX = props.showXAxis !== false && kind !== "sparkline";
   const showGrid = props.showGrid !== false && kind !== "sparkline";
@@ -322,7 +325,7 @@ const Sparkline = (props: Omit<AreaChartProps, "showLegend" | "showGrid" | "show
     const line = monotonePath(points);
     return { line, area: areaPath(line, points, 100), color: p.colors[si]!, gradient: `${id}-g${si}` };
   });
-  return Frame(
+  return renderFrame(
     { ...props, showTooltip: false },
     p,
     "sparkline",
@@ -362,7 +365,7 @@ const BarChart = (props: BarChartProps): JSX.Element => {
     bars: r.values.map((v, si) => ({ height: pct(stacked ? (v / (p.max - p.min || 1)) * 100 : base - p.y(v)), color: p.colors[si]! })),
     rows: r.values.map((v, si) => ({ label: p.labels[si]!, value: p.format(v), color: p.colors[si]! })),
   }));
-  return Frame(
+  return renderFrame(
     props,
     p,
     "bar",
@@ -378,7 +381,7 @@ const BarChart = (props: BarChartProps): JSX.Element => {
           ) : (
             g.bars.map((bar) => <span class={SLOTS.bar()} style={{ height: bar.height, "--chart-color": bar.color }} />)
           )}
-          {props.showTooltip === false ? null : Tooltip(g.title, g.rows)}
+          {props.showTooltip === false ? null : renderTooltip(g.title, g.rows)}
         </div>
       ))}
     </div>,

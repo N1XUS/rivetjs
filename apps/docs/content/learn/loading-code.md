@@ -33,15 +33,15 @@ The "What loaded" line under the example shows the scripts fetched before and af
 What happens:
 
 1. **Load.** The page appears and the loader starts. Your component code does not run.
-2. **Fetch ahead.** After the page has loaded, the loader asks the browser to fetch the runtime and the files of the page's interactive components at low priority, without running them.
-3. **Intent.** The pointer rests on a button, or it gets focus. The loader starts fetching that component's file now, if it has not arrived yet.
+2. **Fetch ahead.** When the browser is idle after the page has loaded, the loader asks it to fetch the runtime and the files of the page's interactive components at low priority, without running them.
+3. **Intent.** The pointer rests on a button, it gets focus, or a key or the pointer goes down. The loader fetches every file it has not got yet, at high priority and all at once.
 4. **Click.** The runtime runs the component, and the components around it that have not run yet, over their server HTML, then the click reaches the handler. So `event.preventDefault()` works as expected.
 
 If you click before the file has arrived, the loader holds the event, waits for the code, runs the handler, and then repeats the browser's default action (for example following a link) unless the handler prevented it.
 
 A `clientEvent` with `standalone: false` only resumes when something else on the page does. On its own, the page ships no JavaScript. The router's link listeners use it unless you turn the client router on for every page (`rivetRouter({ clientRouter: true })`).
 
-The loader fetches ahead only when the browser reports neither Save-Data nor a 2G connection, and not on [lean pages](../guides/performance/preloading.md#lean-pages); then it fetches on intent.
+The loader fetches ahead only when the browser reports neither Save-Data nor a 2G connection, and not on [lean pages](../guides/performance/preloading.md#lean-pages) or with `preload: { ahead: "intent" }` ([change the timing](../guides/performance/preloading.md#change-the-timing)); then it fetches on intent.
 
 A `clientEffect` or `clientOnly` part with `when: "load" | "idle" | "visible"` wakes its component at that moment instead of on first use.
 

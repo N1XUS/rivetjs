@@ -267,6 +267,32 @@ test("retarget (M6-PARITY task 5): a live click whose unit renders in the browse
   });
 });
 
+test("retarget onto SVG (ZERO ONDEMAND): a press on an icon whose unit renders in the browser clicks the browser's icon", async () => {
+  // The press starts on a server `<rect>` that the adopt run of the pointerdown removes (a mismatch renders Counter in
+  // the browser): Chrome sends the mousedown to a connected ancestor and no click, so the release clicks the browser's
+  // `<rect>` — SVG elements have no `click()`: a dispatched click (before: TypeError, the press was lost).
+  const icon = (s: string) =>
+    s
+      .replace("          +\n", '          <svg id="ico" width="40" height="40"><rect width="40" height="40" /></svg>\n')
+      .replace('id="inc" onClick', 'id="inc" onPointerDown={() => {}} onClick')
+      .replace('"click keydown", "ArrowUp"', '"click keydown pointerdown", "ArrowUp"');
+  const broken = await files(3, { dev: true, server: icon, edit: (s) => icon(s).replace('<span id="count">{n()}</span>', '<em id="count">{n()}</em>') });
+  await withPage(broken, async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("http://rivet.test/");
+    await page.click("ul li:nth-child(2) button");
+    await page.waitForFunction(() => document.querySelector("ul li:nth-child(2)")!.getAttribute("data-sel") === "y");
+    const box = (await page.locator("#ico rect").boundingBox())!;
+    await page.mouse.move(box.x + 20, box.y + 20);
+    await page.mouse.down();
+    await page.waitForFunction(() => document.querySelector("#count")!.localName === "em");
+    await page.mouse.up();
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+    assert.deepEqual(errors, []);
+  });
+});
+
 test("adopt cost: materialising the page root is O(spine), not O(rows)", async () => {
   const cost = async (n: number) =>
     withPage(await files(n), async (page) => {

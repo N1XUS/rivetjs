@@ -74,7 +74,7 @@
   }
 
   @media (hover: hover) {
-    .radio-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
+    .radio-button-group__item:hover:not([data-selected="true"]), .radio-button-group__item[data-hovered="true"]:not([data-selected="true"]) {
       background-color: var(--surface-secondary);
     }
   }

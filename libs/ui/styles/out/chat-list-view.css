@@ -65,7 +65,7 @@
     }
   }
 
-  .chat-list-view__item[data-pressed="true"] {
+  .chat-list-view__item:active, .chat-list-view__item[data-pressed="true"] {
     background-color: var(--default-hover);
   }
 

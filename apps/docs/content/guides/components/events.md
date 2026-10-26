@@ -91,9 +91,10 @@ For more control (passive listeners, `once`, media queries) use `clientEvent`. S
 
 On a server-rendered page, the browser does not download your handlers when the page loads. Rivet marks the element in the HTML and starts a tiny loader script.
 
-1. You point at or focus the button. Rivet starts downloading the handler code, with low priority.
-2. You press the button. Rivet makes sure the code is loaded.
-3. The handler runs. Signals change, and the page updates.
+1. The page has loaded and the browser is idle. Rivet downloads the handler code at low priority, without running it.
+2. You rest the pointer on the button or focus it. Rivet downloads what has not arrived yet, at high priority.
+3. You press the button. Rivet makes sure the code is loaded.
+4. The handler runs. Signals change, and the page updates.
 
 The handler runs inside a [batch](../state/batching.md), so several writes cause one update (for the first mouse click on a page, that update lands one task later: see [the first mouse click on a page](../state/batching.md#the-first-mouse-click-on-a-page)). You can tune when code downloads with the `preload` attribute, for example `<button preload="idle">`. See [preloading](/guides/performance/preloading.md).
 

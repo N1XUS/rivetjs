@@ -39,9 +39,10 @@ export interface RenderPageOptions {
   /** Out-of-order streaming for pending `Async` boundaries; `deadline` ms hands the rest to the browser. */
   stream?: { deadline?: number };
   /**
-   * Preload planner (`renderResumable` `preload`): `lean`: nothing before an interaction (no runtime fetch-ahead).
+   * Preload planner (`renderResumable` `preload`, `PreloadOptions`): fetch-ahead timing `ahead` (`idle` default / `load` /
+   * `intent`); `lean` = `intent`: nothing before an interaction.
    */
-  preload?: { lean?: boolean };
+  preload?: { ahead?: "idle" | "load" | "intent"; lean?: boolean };
   signal?: AbortSignal;
   nonce?: string;
   /**

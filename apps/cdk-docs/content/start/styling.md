@@ -8,6 +8,8 @@ related: [start/installation, start/introduction, components/overview, foundatio
 
 cdk components ship no styles. Every part has a class name you can replace, and every state is an attribute on the element: an ARIA attribute (`aria-selected`, `aria-pressed`, `aria-expanded`, `aria-disabled`, `aria-invalid`) or a React Aria Components render-state attribute (`data-pressed`, `data-focused`, `data-entering`, …). Style those with Tailwind variants or CSS attribute selectors.
 
+Interaction attributes (`data-hovered`, `data-pressed`, `data-focus-visible`) appear once the component's code has run, which on a resumed page is the first interaction. Pair each with its pseudo-class so the first hover, press or Tab looks the same: `[data-pressed], :active`, `[data-hovered], :hover` (inside `@media (hover: hover)`), `[data-focus-visible], :focus-visible`. In Tailwind: `data-pressed:bg-neutral-200 active:bg-neutral-200`. Keep pressed transforms, scales and opacity on `data-pressed` only: an `:active` rule changing those makes the first click about 20 ms slower (measured).
+
 ::example{id=styling-tailwind}
 
 ## Class names

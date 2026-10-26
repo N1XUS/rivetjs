@@ -47,7 +47,7 @@
     }
   }
 
-  .inline-select__trigger[data-pressed="true"], .inline-select__trigger[aria-expanded="true"] {
+  .inline-select__trigger:active, .inline-select__trigger[data-pressed="true"], .inline-select__trigger[aria-expanded="true"] {
     background-color: var(--default);
   }
 

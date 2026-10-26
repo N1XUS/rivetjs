@@ -2284,12 +2284,16 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
 // elements on its path the enter events a loaded page had seen, in the browser's order (DERIVED-C3: every
 // `pointerenter`, outermost first, then every `mouseenter` likewise; once per element): the first mouse / pen event
 // after an adopt run (`adopted`; a focus or key event may have adopted them). `pointerover` / `mouseover` are not
-// replayed: they bubble to delegated listeners that may have seen the native one (a page running since before).
+// replayed: they bubble to delegated listeners that may have seen the native one (a page running since before). Held
+// enters (`pointerenter` / `mouseenter`: the loader holds them until the pointer rests, ZERO ONDEMAND) are not replayed
+// either: a run of them (one pointer move enters outermost first) adopts around the innermost target and gives the
+// synthetic enters over its path (`drain`) — one enter per element, in the browser's order, not a replayed one plus a
+// synthetic one on the next mouse event.
 const entered = new WeakSet<EventTarget>();
 let adopted = false;
 function enter(event: Event, path: EventTarget[]): void {
   const type = (event as PointerEvent).pointerType;
-  if (!adopted || !/^(pointer|mouse)(down|over|move|up)$|^click$/.test(event.type) || type === "touch") return;
+  if (!adopted || !/^(pointer|mouse)(down|over|move|up|enter)$|^click$/.test(event.type) || type === "touch") return;
   adopted = false;
   const { clientX, clientY } = event as MouseEvent,
     init = { clientX, clientY, pointerType: type || "mouse", pointerId: (event as PointerEvent).pointerId || 1, isPrimary: true },
@@ -2303,15 +2307,22 @@ function enter(event: Event, path: EventTarget[]): void {
 }
 async function drain(): Promise<void> {
   while (pending.length) {
-    const item = pending[0]!;
+    let item = pending[0]!;
+    const run = /enter$/.test(item[0].type),
+      next = (): boolean => run && !!pending[1] && /enter$/.test(pending[1][0].type);
     try {
-      for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
-      for (let step = around(item[0].target, item[0].type); step !== true; step = around(item[0].target, item[0].type)) await step;
-      // D5: the units around the target may adopt only now (a press's earlier events no longer adopt a record that does
-      // not listen to them): the deferred units its run claimed inside a submitted form adopt before the replay.
-      for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
+      do {
+        // A run of held enters: its innermost one stands for the run (its path holds the others' targets) — also the
+        // ones queued while the outer ones adopted (one pointer move dispatches them all before the first adopt ends).
+        while (next()) (pending.shift(), (item = pending[0]!));
+        for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
+        for (let step = around(item[0].target, item[0].type); step !== true; step = around(item[0].target, item[0].type)) await step;
+        // D5: the units around the target may adopt only now (a press's earlier events no longer adopt a record that does
+        // not listen to them): the deferred units its run claimed inside a submitted form adopt before the replay.
+        for (let step = listeners(item[0]); step !== true; step = listeners(item[0])) await step;
+      } while (next());
       enter(item[0], item[1]);
-      await replay(item);
+      if (!/enter$/.test(item[0].type)) await replay(item);
     } catch (error) {
       report(error);
     }
@@ -2419,8 +2430,14 @@ const runtime: DerivedRuntime = {
         runtime.cold([event, pathOf(to), undefined, [to.value, to.checked, doc!.activeElement]]);
         return true;
       }
+      // (An SVG node has no `click()`: a dispatched click runs its handlers; SVG has no activation behaviour.)
       if (event.type === "mouseup" && (target === to || to.contains(target)))
-        setTimeout(() => pressTo === to && ((pressTo = null), to.isConnected && to.click()));
+        setTimeout(
+          () =>
+            pressTo === to &&
+            ((pressTo = null),
+            to.isConnected && (to.click ? to.click() : to.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, composed: true })))),
+        );
     }
     if (event.type === "click" || event.type === "pointerdown") pressTo = null;
     if (step === true) return (enter(event, event.composedPath()), true);

@@ -110,7 +110,7 @@
   }
 
   @media (hover: hover) {
-    .number-stepper__button[data-hovered="true"]:not([data-disabled="true"]) {
+    .number-stepper__button:hover:not([data-disabled="true"]), .number-stepper__button[data-hovered="true"]:not([data-disabled="true"]) {
       background-color: var(--surface-secondary);
     }
   }

@@ -3,7 +3,7 @@
 // `server-derived.ts` `derivedToString` / `renderDerived`), so it is self-contained: browser globals only.
 //
 // It reads nothing but the tail script's attributes until an event: `data-events` (delegated types, default
-// "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout": a cold press holds its
+// "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout": a cold press holds its
 // pointer / mouse / focus events too, DERIVED-C), `data-rt` (the runtime URL: its default export is `dom-derived.ts`'s instance),
 // `data-boot` (a boundary has a load / idle / visible trigger: start now). An event inside a boundary (`data-b`, or
 // `<!--b<id>-->` openers before an ancestor) whose name listens to its type (tail v2 `n[i][2]`, D5 / ZERO R2; any other event acts
@@ -12,9 +12,15 @@
 // invalid, the keys the boundary record lists (`k`) — and queued with its path and the target's form state, and the
 // runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
 // a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
-// (pointerdown, focusin, touchstart) inside a listening boundary starts the runtime and
-// loads the chunks of the listening boundaries around the target (`rt.w`). One chunk per
-// boundary: tail `m`.
+// (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element) inside a listening
+// boundary starts the runtime, fetches the page's fetch-ahead list at once (`data-fo`, high priority: no import
+// waterfall) and loads the chunks of the listening boundaries around the target (`rt.w`). One chunk per boundary: tail
+// `m`. Hover events (`pointerover` / `mouseover` / `…enter`) of a listening boundary boot like any held event (a pointer
+// passing over adopts before the press: no click pays the adopt). With `data-fw="intent"` (ZERO ONDEMAND) they never boot
+// by themselves: they are held until the pointer rests, and a held one whose target the pointer left is dropped (the state
+// it would leave is "not hovered"; the page's CSS `:hover` drew the hover meanwhile).
+// Fetch-ahead timing (`data-fw`, ZERO ONDEMAND): absent = after `load`, in the first idle period; `load` = right after
+// `load`; `intent` = nothing before the first intent. None in the background under Save-Data or a 2G connection.
 import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.ts";
 import type { BoundaryTail } from "./resume-format.ts";
 
@@ -28,7 +34,23 @@ export function derivedLoader(): void {
     // The element a replay re-dispatches on (its own event is not handled again).
     skip: Element | null | undefined;
   const q: HeldEvent[] = [],
-    parse = (): BoundaryTail => (tail ??= JSON.parse(script.textContent!));
+    parse = (): BoundaryTail => (tail ??= JSON.parse(script.textContent!)),
+    fo = script.dataset.fo,
+    fw = script.dataset.fw,
+    // `intent` pages: hover events are held without booting (the dwell decides).
+    lazy = fw == "intent",
+    hover = /^(pointer|mouse)(over|enter)$/,
+    hovered = (n: EventTarget | null): unknown => (n as Element).matches?.(":hover"),
+    // `intent` pages: drops the held hover events whose target the pointer left.
+    prune = (): void => {
+      if (lazy) for (let i = q.length; i--;) hover.test(q[i]![0].type) && !hovered(q[i]![0].target) && q.splice(i, 1);
+    };
+  // The fetch-ahead list as modulepreloads (fetched + compiled, never evaluated), once: low priority in the background,
+  // high on intent.
+  let ahead = (priority?: string): unknown =>
+    fo &&
+    ((ahead = () => {}),
+    fo.split(" ").map((href) => d.head.append(Object.assign(d.createElement("link"), { rel: "modulepreload", href, fetchPriority: priority || "low" }))));
   // Reload unless prevented, at most once per page URL within 10 s (resume-loader.ts `fail`; without sessionStorage:
   // no reload — the serialized loader's navigation-type fallback did not fit the 1 KB budget).
   const fail = (error: unknown): void => {
@@ -41,12 +63,16 @@ export function derivedLoader(): void {
   };
   const retry = (url: string): Promise<Record<string, unknown>> => import(url).catch(() => import(url + (url.includes("?") ? "&" : "?") + "r=" + Date.now()));
   const api: DerivedLoaderApi = { q, m: retry, f: fail };
-  const boot = (): Promise<DerivedRuntime> =>
+  // Starts the runtime; an event / intent (not a trigger, `bg`) also fetches the fetch-ahead list at high priority.
+  const boot = (bg?: unknown): Promise<DerivedRuntime> => (
+    bg || ahead("high"),
     (booting ??= retry(script.dataset.rt!).then((module) => {
+      prune();
       rt = module.default as DerivedRuntime;
       rt.start(parse(), d, api);
       return rt;
-    }));
+    }))
+  );
   // The ids of the boundaries around a node whose name listens to `type` ("": to anything), innermost first (D5: tail v2
   // `n[i][2]` by name, a run's member through its template; a record not in the tail — streamed later — and a tail whose
   // names list no types: all).
@@ -84,7 +110,7 @@ export function derivedLoader(): void {
     // natively — a held press replays the cold-press focus emulation after the native activation already focused.
     const nc = target.closest?.("[data-nc]");
     if (nc && /^(pointer|mouse)(down|up)$/.test(type)) return;
-    const at = ids(target, rt || q.length || type == "submit" || (target.form && !nc) ? "" : type);
+    const at = ids(target, rt || booting || type == "submit" || (target.form && !nc) ? "" : type);
     // Outside every boundary inside a `data-g` match (the router's links): the document click listener's (tail `g`).
     at.length || !target.closest?.(script.dataset.g!) || at.push("");
     if (!at.length || rt?.on(event)) return;
@@ -124,32 +150,44 @@ export function derivedLoader(): void {
     }
     if (replay) event.preventDefault();
     const item: HeldEvent = [event, event.composedPath(), replay, [target.value, target.checked, d.activeElement]];
-    rt ? rt.cold(item) : (q.push(item), boot().catch(fail));
+    rt ? rt.cold(item) : (q.push(item), booting || !(lazy && hover.test(type))) && boot().catch(fail);
   };
   const listen = (type: string, fn: (event: Event) => unknown, active?: boolean): void => d.addEventListener(type, fn, { capture: true, passive: !active });
   const im = window as Window & { __rvIM?: string };
-  // Intent inside a listening record, or on a document click listener's match (`data-g`: the router's links).
-  const warm = (event: Event): unknown =>
-    (ids(event.target as Node, "").length || (event.target as Element).closest?.(script.dataset.g!)) && boot().then((r) => r.w(event.target), fail);
+  // Intent inside a listening record, or on a document click listener's match (`data-g`: the router's links); with held
+  // hover events (records that listen to hover), always.
+  const warm = (event: Event): unknown => {
+    const t = event.target as Element;
+    return (q.length || ids(t, "").length || t.closest?.(script.dataset.g!)) && boot().then((r) => r.w(t), fail);
+  };
+  let dwell: ReturnType<typeof setTimeout> | undefined;
   listen("pointerdown", (event) => ((im.__rvIM = (event as PointerEvent).pointerType || "mouse"), warm(event)));
   listen("keydown", (event) => {
     const e = event as KeyboardEvent;
     if (!(e.metaKey || e.ctrlKey || e.key == "Shift")) im.__rvIM = "keyboard";
+    warm(event);
   });
-  (script.dataset.events || "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout")
+  // Hover intent: a mouse / pen pointer rests 80 ms. Before the runtime boots, the held hover events the pointer left are
+  // dropped first: nothing held and nothing listening around the target, nothing loads.
+  listen("pointerover", (event) => {
+    clearTimeout(dwell);
+    (event as PointerEvent).pointerType == "touch" || (dwell = setTimeout(() => (booting || prune(), hovered(event.target) && warm(event)), 80));
+  });
+  (script.dataset.events || "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout")
     .split(" ")
     .map((type) => listen(type, on, !/^(touch|wheel|scroll)/.test(type)));
   listen("focusin", warm);
   listen("touchstart", warm);
-  if (script.hasAttribute("data-boot")) boot().catch(fail);
-  // Fetch-ahead (`data-fo`, DERIVED-C): after `load`, low-priority modulepreloads of the runtime + the page's boundary
-  // chunks + their static closures (fetched and compiled, never evaluated): the first event evaluates modules already in
-  // the module map instead of waiting on the import waterfall.
-  const fo = script.dataset.fo;
-  fo &&
-    addEventListener("load", () =>
-      fo.split(" ").map((href) => d.head.append(Object.assign(d.createElement("link"), { rel: "modulepreload", href, fetchPriority: "low" }))),
-    );
+  if (script.hasAttribute("data-boot")) boot(1).catch(fail);
+  // Fetch-ahead (`data-fo`, DERIVED-C; timing `data-fw`, ZERO ONDEMAND): the runtime + the page's live boundary chunks +
+  // their static closures as low-priority modulepreloads in the first idle period after `load` (default) or right after it
+  // (`load`), so the first event evaluates modules already in the module map; `intent`: none before the first intent.
+  // None in the background under Save-Data / 2G (intent still fetches).
+  const net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  lazy ||
+    net?.saveData ||
+    /2g/.test(net?.effectiveType!) ||
+    addEventListener("load", () => (fw ? ahead() : (self.requestIdleCallback || setTimeout)(() => ahead())));
 }
 
 /**

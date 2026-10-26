@@ -81,6 +81,7 @@
   }
 
   @media (hover: hover) {
+    &:hover:not([data-disabled="true"]),
     &[data-hovered="true"]:not([data-disabled="true"]) {
       @apply bg-surface-secondary;
     }

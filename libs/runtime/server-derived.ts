@@ -311,8 +311,8 @@ export interface DerivedOptions {
   nonce?: string;
   /** The request's origin (`ResumableOptions.origin`): same-origin `URL` values in `_rData` payloads ship relative. */
   origin?: string;
-  /** `lean`: no fetch-ahead (`data-fo`): chunks load on intent / interaction only. */
-  preload?: { lean?: boolean };
+  /** Fetch-ahead timing (`PreloadOptions`). */
+  preload?: PreloadOptions;
   /** `renderDerived` with `stream` (out-of-order streaming): `deadline` stops waiting (the browser renders what is left). */
   stream?: { deadline?: number };
   signal?: AbortSignal;
@@ -393,6 +393,21 @@ export interface ResumeManifest {
    */
   lite?: { runtime: string; symbols: Record<string, string> };
 }
+/**
+ * When the browser fetches the page's handler code (tail `data-fo`: the runtime + the chunks of the boundaries that can
+ * become live + their static import closures) before the first interaction (ZERO ONDEMAND, loader `data-fw`). Code always
+ * loads on intent (pointer down / resting 80 ms, focus, touch, key) at the latest, the whole list at once, and the
+ * triggering event replays.
+ * - `ahead: "idle"` (default): low-priority modulepreloads in the first idle period after `load`;
+ * - `"load"`: right after `load`;
+ * - `"intent"` (= `lean: true`): nothing before the first intent: a page nobody touches fetches no JS.
+ * Save-Data / 2G connections skip the background fetch. Nothing is ever evaluated before an event or trigger.
+ */
+export interface PreloadOptions {
+  ahead?: "idle" | "load" | "intent";
+  /** Same as `ahead: "intent"`. */
+  lean?: boolean;
+}
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
   signal?: AbortSignal;
@@ -401,8 +416,8 @@ export interface ResumableOptions {
   nonce?: string;
   /** Locale variant index for compiled i18n templates (default 0); see RenderOptions. */
   variant?: number;
-  /** `lean`: no fetch-ahead (`data-fo`): chunks load on intent / interaction only. */
-  preload?: { lean?: boolean };
+  /** Fetch-ahead timing (`PreloadOptions`). */
+  preload?: PreloadOptions;
   /** The request's origin: same-origin `URL` values in `_rData` payloads ship relative. */
   origin?: string;
   /** @internal Shell cache (router route rule `shell`, PPR-T3B): built by `@rivetjs/runtime/server-shell` `shellHook`. */
@@ -1903,25 +1918,27 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   if (!tail) return lean ? template([lean]) : null;
   if (!options?.manifest?.runtime) return template([lean + '<script type="rivet/boundaries">' + encodeTail(tail) + "</script>"]);
   // Fetch-ahead (DERIVED-C): the runtime, the chunks of the page's boundaries (tail `m`) and their static import closures
-  // (manifest `deps`), as low-priority modulepreloads after `load` (`data-fo`; fetched + compiled, never evaluated before
-  // an event): the first click evaluates modules already in the module map instead of an import waterfall.
+  // (manifest `deps`) as modulepreloads (`data-fo`; fetched + compiled, never evaluated before an event): in the background
+  // after `load` per `data-fw` (ZERO ONDEMAND: idle by default, `load`, or `intent` = none), and at once on the first
+  // intent, so the first click evaluates modules already in the module map instead of an import waterfall.
   // The script's attributes and the loader are a pure function of (manifest, fetch-ahead list, extra event types, boot,
   // document clicks, nonce presence): frozen fragments memoised per manifest, so the attributes and the loader are encoded
   // once per process, not per request; the JSON and the nonce are slots.
   const manifest = options.manifest,
     runtime = liteTail ? manifest.lite!.runtime : manifest.runtime!,
     nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
-    ahead = options.preload?.lean ? "" : fetchAhead(manifest, tail, runtime);
+    ahead = fetchAhead(manifest, tail, runtime),
+    when = options.preload?.lean ? "intent" : (options.preload?.ahead ?? "idle");
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
   const json = encodeTail(tail);
   let events = "";
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
-  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + (liteTail ? "l" : "-") + events + "\0" + ctx.clicks + "\0" + ahead;
+  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + (liteTail ? "l" : "-") + when + events + "\0" + ctx.clicks + "\0" + ahead;
   let memo = tails.get(manifest);
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
   if (fragments === undefined) {
-    fragments = tailFragments(runtime, ahead, events, ctx, !!nonce);
+    fragments = tailFragments(runtime, ahead, when, events, ctx, !!nonce);
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
@@ -1954,7 +1971,7 @@ function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime:
 const aheads = new WeakMap<object, Map<string, string>>();
 /** Per manifest: memo key (`derivedTail`) → the tail script's frozen fragments around the JSON (and nonce) slots. */
 const tails = new WeakMap<object, Map<string, readonly string[]>>();
-function tailFragments(runtime: string, ahead: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {
+function tailFragments(runtime: string, ahead: string, when: string, events: string, ctx: DerivedRender, nonce: boolean): readonly string[] {
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const attrs =
     ' data-rt="' +
@@ -1963,7 +1980,7 @@ function tailFragments(runtime: string, ahead: string, events: string, ctx: Deri
     (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
     (ctx.boot ? " data-boot" : "") +
     (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
-    (ahead ? ' data-fo="' + attr(ahead) + '"' : "");
+    (ahead ? ' data-fo="' + attr(ahead) + '"' + (when === "idle" ? "" : ' data-fw="' + when + '"') : "");
   const open = '<script type="rivet/boundaries"' + attrs + ">";
   return Object.freeze(
     nonce ? [open, '</script><script nonce="', '">' + DERIVED_LOADER + "</script>"] : [open, "</script><script>" + DERIVED_LOADER + "</script>"],
@@ -1971,7 +1988,7 @@ function tailFragments(runtime: string, ahead: string, events: string, ctx: Deri
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's
  * other listener types (boundary `events`, spread listener props). */
-const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout";
+const DEFAULT_EVENTS = "click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout";
 const DEFAULT_TYPES = new Set(DEFAULT_EVENTS.split(" "));
 const attr = (value: string): string => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 

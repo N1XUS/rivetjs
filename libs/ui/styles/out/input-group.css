@@ -305,8 +305,14 @@
     --button-fg: var(--field-placeholder, var(--muted));
   }
 
-  :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"]) {
+  :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):is([data-hovered="true"], [data-pressed="true"], :active) {
     --button-fg: var(--field-foreground);
+  }
+
+  @media (hover: hover) {
+    :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button:is(.button--ghost, .button--tertiary):hover {
+      --button-fg: var(--field-foreground);
+    }
   }
 
   :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button svg {

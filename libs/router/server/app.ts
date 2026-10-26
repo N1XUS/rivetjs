@@ -99,11 +99,14 @@ export interface AppConfig {
   };
   readonly stream?: { deadline?: number };
   /**
-   * Preload planner. `lean` (per page URL when a function): nothing loads before the first interaction — no runtime
-   * fetch-ahead (`data-fo` modulepreloads of the page's handler closures after `load`); handlers load on intent
-   * (pointer dwell, focus, touch) and interaction.
+   * Preload planner (`@rivetjs/runtime/server-derived` `PreloadOptions`). The page's handler closures (`data-fo`) are
+   * fetched as low-priority modulepreloads in the first idle period after `load` (`ahead: "idle"`, default), right after
+   * it (`"load"`), or not before the first intent (`"intent"`); intent (pointer down / resting 80 ms, focus, touch, key)
+   * always fetches them at once. `lean` (per page URL when a function) = `ahead: "intent"` for that page: nothing loads
+   * before the first interaction.
    */
   readonly preload?: {
+    readonly ahead?: "idle" | "load" | "intent";
     readonly lean?: boolean | ((url: URL) => boolean | undefined);
   };
   /**
@@ -350,7 +353,7 @@ export function createApp(config: AppConfig): AppHandler {
           // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
           // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
           ...(config.stream ? { stream: config.stream } : page.deferred || page.shell ? { stream: {} } : {}),
-          ...(lean ? { preload: { lean } } : {}),
+          ...(lean ? { preload: { lean } } : config.preload?.ahead ? { preload: { ahead: config.preload.ahead } } : {}),
           signal,
           ...(nonce !== undefined ? { nonce } : {}),
           onError: (error: unknown) => {

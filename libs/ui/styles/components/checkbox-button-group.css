@@ -62,6 +62,7 @@
   }
 
   @media (hover: hover) {
+    &:hover:not([data-selected="true"]),
     &[data-hovered="true"]:not([data-selected="true"]) {
       @apply bg-surface-secondary;
     }

@@ -54,7 +54,10 @@ async function served(): Promise<Record<string, string>> {
   const manifest = { hash: "t", runtime: "/rt.js", symbols: { "src/page.tsx#App": "/page.js" } };
   const html = (await derivedToString(() => App(), { manifest })) as string;
   // The default delegated types (pointer / mouse / focus events) + the hover button's own: `data-events` lists both.
-  assert.match(html, / data-events="click input change submit keydown pointerdown pointerup mousedown mouseup focusin focusout pointerenter pointerleave"/);
+  assert.match(
+    html,
+    / data-events="click input change submit keydown pointerdown pointerup pointercancel mousedown mouseup focusin focusout pointerenter pointerleave"/,
+  );
   return {
     ...DERIVED_BUILD,
     "/": "<!doctype html><html><body>" + html + "</body></html>",

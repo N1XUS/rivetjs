@@ -27,8 +27,26 @@ test("data display: no boot, CSS applied, chart tooltip on hover + focus without
   assert.match((await page.textContent(tip))!, /Apr.*Visits.*5,200.*Signups.*690/);
   await page.mouse.move(5, 5);
   // keyboard: focus the first bar group
-  await page.focus("#bar [data-slot=chart-slot]:nth-child(2)");
+  const slot = "#bar [data-slot=chart-slot]:nth-child(2)";
+  await page.$eval(slot, (el) => ((el as unknown as Record<string, boolean>).__server = true));
+  await page.focus(slot);
   await page.waitForFunction(() => getComputedStyle(document.querySelector("#bar [data-slot=chart-slot]:nth-child(2) .chart__tooltip")!).display === "flex");
+  // The first focus adopts the page: the chart keeps its server nodes, its tooltips and the focus. Was: the chart's
+  // positional-argument helpers (`Frame(…)` / `Tooltip(…)`, capitalised) compiled as boundaries, rendered nothing for the
+  // tooltip in the browser, so the frame re-rendered: tooltips gone, focus on <body>.
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(300);
+  assert.deepEqual(
+    await page.evaluate((sel) => {
+      const el = document.querySelector(sel)!;
+      return {
+        server: (el as unknown as Record<string, boolean>).__server === true,
+        focused: document.activeElement === el,
+        tooltip: getComputedStyle(el.querySelector(".chart__tooltip")!).display,
+      };
+    }, slot),
+    { server: true, focused: true, tooltip: "flex" },
+  );
   // bars: stacked heights sum below the plot height
   const h = await page.evaluate(() =>
     [...document.querySelectorAll("#bar [data-slot=chart-slot]:nth-child(5) .chart__bar")].map((b) => b.getBoundingClientRect().height),

@@ -181,7 +181,7 @@ Returns `{ pages: string[], fallback: string[], dictionaries? }`.
 | `resolveLocale` | `(request) => string \| undefined` (may be async) | none | With i18n: the locale of error pages when the URL has none. |
 | `maxBody` | `number` \| `{ default, multipart }` | 1 MiB, multipart 10 MiB | Request body limit for unsafe methods; larger bodies get `413`. |
 | `csp` | `false` \| `{ trustedTypes?, directives? }` \| `(nonce) => string` | strict CSP with a nonce | Content-Security-Policy of HTML pages. See [CSP](../guides/security/csp.md). |
-| `preload` | `{ lean?: boolean }` or a function of the request | none | `lean: true`: pages whose only client code is framework islands boot from an inline script without the Rivet runtime. See [Preloading](../guides/performance/preloading.md). |
+| `preload` | `{ ahead?: "idle" \| "load" \| "intent", lean?: boolean \| (url) => boolean \| undefined }` | none | `ahead`: when component code downloads before the first interaction (`"idle"` default). `lean: true`: none before the first interaction (like `"intent"`), and pages whose only client code is framework islands boot from an inline script without the Rivet runtime. See [Preloading](../guides/performance/preloading.md#change-the-timing). |
 | `routeRules` | `Record<string, RouteRule>` | the build's (`rivetRouter({ routeRules })`) | Headers and page caching per path; replaces the build's rules. |
 | `routeCache` | `{ maxBytes?, maxEntries?, origin? }` | 32 MiB, 5,000 pages | Bounds of the route rules' page store. |
 | `renderCache` | `RenderCache` | none | Cross-request fragment cache (`createRenderCache()` from `@rivetjs/runtime/server-cache`). |

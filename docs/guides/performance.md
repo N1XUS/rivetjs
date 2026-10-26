@@ -53,6 +53,13 @@ Measured by lane ZERO SEGMENTS 2026-10-26 (ssr-bench `/resume` page through the 
 - **One native string write per chunk, not per short string.** A `Buffer#utf8Write` call on a fresh (cons) string costs ~35 ns, mostly flattening; join the strings into one pending JS string and encode it once (UTF-8 of a concatenation = the concatenated encodings). Exception: a string ending in a lone high surrogate is written at once, or the next string's low half would pair with it. Row emitter 2000 string slots 68 → 19 µs; `/resume` 1000 rows −10–18 % request CPU together with the item above.
 - **Measured no gain (do not retry):** per-plan slot-kind tables instead of reading `attributes[k]` in the row loop; 64-byte unrolled fragment copies in the wasm row emitter (fragment copies are not its bottleneck); a JS ASCII loop instead of `utf8Write` for short strings (57 vs 68 µs: flattening dominates either way).
 
+## First interaction (ZERO ONDEMAND 2026-10-26)
+
+- **Fetch the handler list at once, not the import chain.** On intent the loader appends every `data-fo` URL as a high-priority modulepreload: Slow 4G + 4x CPU first click without background fetch 4.4 s → 1.1 s (button-basic), 5.0 → 1.4 s (ui-docs median), 5.4 → 2.3 s (scheduler-views), against walking the target's imports.
+- **Keep the idle background fetch on.** With it the first click stays at 17–25 ms on Slow 4G (and 9–19 ms fast); without it (`ahead: "intent"`) it costs one round trip + the list (0.6–2.3 s); a 300 ms hover hides only 0.2–0.45 s of that. Default `idle`; `intent` for pages scored on bytes only.
+- **Adopt on the pointer pass.** Booting on a held hover adopts the boundary before the press: holding hovers until an 80 ms rest made a no-rest click pay the adopt after pointerdown (prompt-suggestion 11 → 38 ms fast, 17 → 45 ms Slow 4G). The dwell is kept for `intent` pages only, where a pass must not fetch.
+- **Cold states belong in CSS.** Pair `data-hovered` / `data-pressed` / `data-focus-visible` with `:hover` / `:active` / `:focus-visible` so the page looks right before its code runs (`libs/ui/tests-components/cold-states.test.ts` pixel parity) — except pressed transforms / scales / opacity: an `:active` rule changing those made the first adopt at pointerdown ~20 ms slower (checkbox-button-group 21 → 38 ms, number-stepper 23 → 47 ms fast); colour-only `:active` twins cost nothing measurable.
+
 ## Shipped bytes
 
 Measured by lane DIET-CODE 2026-10-22 (size report, Playwright coverage of the cdk / ui story apps before input; spec `docs/design/specs/2026-10-22-chunk-merge-rule.md`).

@@ -44,7 +44,7 @@ What to look at:
 
 In the **Elements** panel, find `<script type="rivet/boundaries">` near the end of `<body>`. It holds what the browser needs to continue where the server stopped: one record per interactive component (its place in the page, its signal values and its plain-data props) and the chunk of each component. If it is large, look for big props or signals: pass only what a component shows, and keep large lists in route data, where [data from the page](../../learn/resuming.md#data-from-the-page) can leave them out.
 
-The `data-fo` attribute on the same script lists the files the loader fetches after the page loads (the runtime and the page's component chunks), and `data-rt` names the runtime (the lite runtime on a page whose every interactive component has a lite chunk, see [Chunks](chunks.md)). See [Preloading](preloading.md).
+The `data-fo` attribute on the same script lists the files the loader fetches after the page loads, or on the first intent (the runtime and the page's component chunks; `data-fw` names a timing other than the default, see [Preloading](preloading.md#change-the-timing)), and `data-rt` names the runtime (the lite runtime on a page whose every interactive component has a lite chunk, see [Chunks](chunks.md)). See [Preloading](preloading.md).
 
 If the page has client effects or client events, `data-boot` is set, and the runtime loads at idle.
 
@@ -53,7 +53,7 @@ If the page has client effects or client events, `data-boot` is set, and the run
 Keep the Network panel open, with the JS filter, after the page has loaded.
 
 1. Note which scripts are already in the list.
-2. Move the pointer over a button and rest there. Intent prefetch starts: new JS requests appear with low priority.
+2. Move the pointer over a button and rest there. If the files have not all arrived yet, the rest are requested now, with high priority.
 3. Click. The handler should run at once.
 
 What to look for:

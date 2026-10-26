@@ -1,6 +1,6 @@
 ---
 title: Preloading
-description: Learn when Rivet downloads the code of your interactive components, and how to turn the downloads before the first interaction off.
+description: Learn when Rivet downloads the code of your interactive components, and how to move or turn off the downloads before the first interaction.
 template: guide
 status: experimental
 related: [guides/performance/chunks, learn/loading-code, guides/performance/measuring]
@@ -11,15 +11,33 @@ A Rivet page arrives as finished HTML. The JavaScript of a button is not needed 
 ## What happens by default
 
 1. The page loads. The inline loader starts; no component code runs.
-2. After the load, the loader asks the browser to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. Nothing of it runs yet.
-3. When the pointer rests on an element, or it gets focus, the loader fetches that component's chunk right away if it has not arrived.
+2. When the browser is idle after the load, the loader asks it to fetch the runtime and the chunks of the page's interactive components (with their static imports) at low priority. Nothing of it runs yet.
+3. When the pointer moves onto a component that reacts to hover, rests on an element (80 ms), it gets focus, a key is pressed, or a finger or the pointer goes down, the loader fetches every file of that list that has not arrived, at high priority and all at once.
 4. On the event, the runtime runs the component and the components around it that have not run yet (with file routes: up to the router's root), then the handler. An event that comes before its code is held and replayed.
 
 With Save-Data on, or on a 2G connection, step 2 is skipped: code loads on intent.
 
+Until the code has run, hover, pressed and keyboard-focus styles come from CSS (`:hover`, `:active`, `:focus-visible`): Rivet UI pairs its `data-hovered`, `data-pressed` and `data-focus-visible` styles with the pseudo-class, so the page looks the same before and after. Do the same in your own styles for headless components, except pressed transforms, scales and opacity: an `:active` rule changing those makes the first click about 20 ms slower (measured), so keep them on `data-pressed`.
+
+## Change the timing
+
+`preload: { ahead }` on the server (`start`, `createApp` or the adapters) sets step 2 for every page:
+
+| `ahead` | Before the first interaction |
+| --- | --- |
+| `"idle"` (default) | The page's code, at low priority, when the browser is idle after the load |
+| `"load"` | The same, right after the load |
+| `"intent"` | Nothing, and a pointer that only passes over the page loads nothing. The code loads on intent, which can make the first click wait for the network on a slow connection |
+
+```ts
+import { start } from "@rivetjs/router/node";
+
+await start({ dist: "dist", preload: { ahead: "load" } });
+```
+
 ## Lean pages
 
-`preload: { lean: true }` downloads nothing before the first interaction: no fetch-ahead after load. Code loads on intent or on the event itself, which then replays. Use it for landing pages whose score counts every byte before the visitor acts. It can be a function of the request URL (`true`, or `undefined` for the default):
+`preload: { lean: true }` downloads nothing before the first interaction, like `ahead: "intent"`, for chosen pages. Code loads on intent or on the event itself, which then replays. Use it for landing pages whose score counts every byte before the visitor acts. It can be a function of the request URL (`true`, or `undefined` for the default):
 
 ```ts
 import { start } from "@rivetjs/router/node";
