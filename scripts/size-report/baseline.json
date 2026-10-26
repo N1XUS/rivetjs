@@ -140,7 +140,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6606,
+          "htmlBr": 6581,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -592,17 +592,17 @@
     "starter-ui": {
       "totalJS": {
         "files": 28,
-        "min": 179130,
-        "br": 58468
+        "min": 179895,
+        "br": 58824
       },
       "serverJS": {
-        "min": 198362,
-        "br": 66013
+        "min": 199156,
+        "br": 66237
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2855,
+          "htmlBr": 2827,
           "cssSheets": 2,
           "css": {
             "min": 67108,
@@ -612,8 +612,8 @@
           "inlineBytes": 3381,
           "eagerRequests": 15,
           "eagerJS": {
-            "min": 165248,
-            "br": 52894
+            "min": 166013,
+            "br": 53236
           },
           "eagerFiles": [
             "dom-derived.js",
@@ -637,8 +637,8 @@
             "br": 24436
           },
           "pageJS": {
-            "min": 165248,
-            "br": 52894
+            "min": 166013,
+            "br": 53236
           },
           "interactionRequests": 0,
           "interactionJS": {
@@ -1311,7 +1311,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4467,
+          "htmlBr": 4456,
           "cssSheets": 0,
           "css": {
             "min": 0,

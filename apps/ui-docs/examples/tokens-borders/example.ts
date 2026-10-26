@@ -12,6 +12,7 @@ export default defineExample({
     { expect: ["[data-value='--border-width']", "px"] },
     { expect: ["[data-value='--separator-secondary']", "("] },
     { press: ["#tb-field", "Tab"] },
-    { attr: ["#tb-focus-button", "data-focus-visible", "true"] },
+    // A native `<button>` (ZERO JSLEAK native path): the browser's focus-visible, ring from the `:focus-visible` CSS twin.
+    { matches: "#tb-focus-button:focus-visible" },
   ],
 });

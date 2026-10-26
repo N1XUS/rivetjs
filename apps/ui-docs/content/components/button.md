@@ -13,11 +13,11 @@ Notes:
 - `class`, not `className`.
 - `isDisabled` and `isPending` accept accessors; the button updates without being re-created.
 - Function `class` / `children` get accessor render props.
-- A Button loads its resume chunk with the page (unlike markup-only components such as Card).
+- A Button with a handler loads its resume chunk with the page. A Button without behaviour (data props only, no handler, not a submit / reset button, outside triggers / groups / forms) renders a plain `<button>` and ships no JavaScript: pressed / hover / focus styles come from `:active` / `:hover` / `:focus-visible`.
 - `variant="brand"` (Rivet addition): the logo gradient for the one primary call to action of a page (white label ≥ 4.5:1 on every stop).
 - `radius="concentric"` (Rivet addition): the padded parent's inner radius instead of the pill, for a Button in a Card corner ([Styling](/start/styling/)).
 
-Accessibility: A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only).
+Accessibility: A native `<button>` with the cdk Button behaviour: Enter and Space press it, a disabled button is `disabled`, a pending one is announced and keeps focus. Focus rings follow `data-focus-visible` (keyboard only); a Button without behaviour is a plain `<button>` whose ring follows `:focus-visible`.
 
 ## Usage
 

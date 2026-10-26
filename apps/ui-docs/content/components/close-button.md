@@ -14,7 +14,7 @@ Notes:
 - The icon is lucide `X` (stroked).
 - Any child replaces the default icon; omit children to keep it.
 
-Accessibility: A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space.
+Accessibility: A real `<button>` named "Close" unless you pass another `aria-label`. Keyboard: Enter and Space. A CloseButton without `onPress`, outside triggers, ships no JavaScript (plain `<button>`, CSS states).
 
 ## Usage
 

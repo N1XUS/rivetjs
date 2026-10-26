@@ -17,9 +17,13 @@
 // - No built-in pending spinner (as upstream): compose `<Spinner/>` in a render-prop child (`({ isPending }) => …`).
 // - Rivet additions: `variant="brand"` (logo gradient, `button.css`), `radius="concentric"` → `data-radius` (the padded
 //   parent's inner radius instead of the pill, identity spec R5; live like the other props).
-import { Button as ButtonPrimitive } from "@rivetjs/cdk/button";
+import { Button as ButtonPrimitive, ButtonContext } from "@rivetjs/cdk/button";
+import { isHiddenPart } from "@rivetjs/cdk/collections/hidden";
+import { FocusableContext } from "@rivetjs/cdk/interactions/focus";
+import { PressResponderContext } from "@rivetjs/cdk/interactions/press";
 import type { ButtonProps as ButtonPrimitiveProps, ButtonRenderProps } from "@rivetjs/cdk/button";
 import { useContext } from "@rivetjs/reactivity";
+import { createId } from "@rivetjs/runtime/id";
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import type { ButtonVariants } from "../../../styles/src/components/button/index.ts";
@@ -44,6 +48,57 @@ const STYLE_PROPS = ["class", "fullWidth", "isIconOnly", "size", "variant"] as c
 /** Group context fields that pick the classes (getters when the group's prop is live). */
 const GROUP_STYLE_PROPS = ["fullWidth", "size", "variant"] as const;
 const OWN_PROPS = ["children", ...STYLE_PROPS, "isDisabled", "radius", "slot", "style", BUTTON_GROUP_CHILD] as const;
+
+/* -------------------------------------------------------------------------------------------------
+ * State-space path (ZERO JSLEAK, the STATESPACE mechanism: `docs/guides/resumability.md` "Native automata"). A Button
+ * with no behaviour (no handler, no pending / render-prop state, no trigger / group / form context above) is a native
+ * `<button>`: the browser owns press / hover / focus, and `button.css` derives every visual state from `:active` /
+ * `@media (hover: hover) :hover` / `:focus-visible` / `:disabled` (the twins of `data-pressed` / `data-hovered` /
+ * `data-focus-visible`). At a call site the build proved closed (`$native`, `libs/compiler/facts-native.ts`) the root
+ * renders the same markup as the cdk part (same attributes and id sequence): no handler, no record, no JavaScript.
+ * Server and browser take the same branch (an ancestor's adopt run renders it over the server nodes). Helpers are
+ * file-local (a shared module became its own chunk: +1 request on Button pages, measured).
+ * -----------------------------------------------------------------------------------------------*/
+// @rivet-native ButtonRoot(children,class,variant,size,fullWidth,isIconOnly,isDisabled,type,id,radius)
+
+/** A context value that hands a button props or behaviour (a provider above). */
+const given = (value: unknown): boolean => value != null && (typeof value !== "object" || Object.keys(value).length > 0);
+
+/**
+ * The call site is proven (`$native: 1`: declared keys only, plain data values, no handler / spread / function child —
+ * `libs/compiler/facts-native.ts` checks it, so no props re-scan here), the type is not `submit` / `reset`, and nothing
+ * above gives the button props or behaviour: no cdk `ButtonContext` value (slots: DialogTrigger, Select, …), no
+ * `PressResponder` (triggers), no `FocusableContext` (TooltipTrigger), not the collection build pass. Same answer on the
+ * server and in the browser (an ancestor's adopt run renders this branch over the server's `<button>`: the cdk part, a
+ * boundary without a server record, would replace the nodes).
+ */
+function inertButton(props: object): boolean {
+  const p = props as { $native?: unknown; type?: unknown };
+  // A submit / reset button belongs to its form: the cdk Form adopts on its press (constraint validation fires
+  // non-bubbling `invalid` events at the fields before any submit handler; a native press would leave them cold).
+  return (
+    p.$native === 1 &&
+    (p.type === undefined || p.type === "button") &&
+    !isHiddenPart() &&
+    !given(useContext(ButtonContext)) &&
+    !given(useContext(PressResponderContext)) &&
+    !given(useContext(FocusableContext))
+  );
+}
+
+/** What the cdk part renders for static data props without behaviour (same attributes, same id sequence). */
+function inertAttrs(props: object, slot: string, cls: string): Record<string, unknown> {
+  const p = props as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key in p) if (key.startsWith("data-") || key.startsWith("aria-")) out[key] = p[key];
+  out["data-slot"] = slot;
+  out.type = p.type ?? "button";
+  out.id = p.id ?? createId(); // the cdk Button's `aria.id ?? createId()`: same ids as the cdk path
+  out.class = cls;
+  out["data-radius"] = p.radius;
+  if (p.isDisabled) ((out.disabled = true), (out["data-disabled"] = "true"));
+  return out;
+}
 
 const ButtonRoot = (props: ButtonRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, OWN_PROPS);
@@ -81,6 +136,10 @@ const ButtonRoot = (props: ButtonRootProps): JSX.Element => {
   // Inside a `<Form form>` (T20): a submit button without `isPending` is pending while the store's submit runs.
   const fields = useContext(FormFieldsContext);
   const pending = fields && rest.type === "submit" && rest.isPending === undefined ? { isPending: fields.submitting } : undefined;
+  // Native path: the compiler proved this call's props (`$native`: declared keys, plain data, no handler / spread /
+  // render function); no provider above adds behaviour (a trigger, a tooltip, a group, a form).
+  if (!fields && !(buttonGroupContext && Object.keys(buttonGroupContext).length) && inertButton(props))
+    return <button {...inertAttrs(props, "button", cls as string)}>{local.children as never}</button>;
 
   return (
     <ButtonPrimitive
