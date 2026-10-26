@@ -372,6 +372,12 @@ export interface ResumeManifest {
   sizes?: Record<string, number>;
   /** Framework island chunk URL per island key (`@rivetjs/bridge` facades: `<module>#<export>`). */
   islands?: Record<string, string>;
+  /**
+   * Lite resume (ZERO LITE-WIRE): the lite runtime (`@rivetjs/runtime/dom-lite` instance) and, per boundary name with a
+   * lite residual, its lite entry. A page whose every record is listed (and that holds nothing else for the browser:
+   * no island, `Async`, wake list, DOM data, document listener) loads these instead of `runtime` / `symbols`.
+   */
+  lite?: { runtime: string; symbols: Record<string, string> };
 }
 /** Options of resumable server rendering: manifest, CSP nonce, locale variant. */
 export interface ResumableOptions {
@@ -1592,8 +1598,11 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */
 // Island keys of the last flush's `i` (the tail's fetch-ahead lists their chunks).
 let islandUrls: string[] = [];
+// The last flush named the lite entries (`manifest.lite`): its tail loads the lite runtime.
+let liteTail = false;
 function flush(ctx: DerivedRender): FlushTail | null {
   islandUrls = [];
+  liteTail = false;
   if (ctx.flushed === ctx.boundaries.length && ctx.dirty.size === 0 && ctx.changed.size === 0 && ctx.adopt.length === 0) return null;
   const b: BoundaryRecord[] = [],
     first = ctx.flushed === 0;
@@ -1731,6 +1740,22 @@ function flush(ctx: DerivedRender): FlushTail | null {
   }
   // Every boundary of this flush was a static conditional instance: nothing for the browser (no runtime, no chunk).
   if (!b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a) return null;
+  // ZERO LITE-WIRE: a shell whose records all have lite residuals (and nothing else the lite runtime does not handle)
+  // names the lite entries; `derivedTail` writes the lite runtime. Decided once, on the shell: no `Async` → no patch.
+  const lite = first && manifest?.lite;
+  if (lite && b.length && !tail.i && !tail.d && !tail.w && !tail.c && !tail.a && !tail.g && !ctx.lean.length) {
+    const m: Record<string, string> = {};
+    let all = true;
+    for (const record of b) {
+      const url = record[2] & INDEPENDENT ? lite.symbols[record[3]] : undefined;
+      if (url === undefined) {
+        all = false;
+        break;
+      }
+      m[record[3]] = url;
+    }
+    if (all) ((tail.m = m), (liteTail = true));
+  }
   return tail;
 }
 
@@ -1809,18 +1834,19 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
   // document clicks, nonce presence): frozen fragments memoised per manifest, so the attributes and the loader are encoded
   // once per process, not per request; the JSON and the nonce are slots.
   const manifest = options.manifest,
+    runtime = liteTail ? manifest.lite!.runtime : manifest.runtime!,
     nonce = options.nonce ? String(options.nonce).replace(/[^\w+/=-]/g, "") : "",
-    ahead = options.preload?.lean ? "" : fetchAhead(manifest, tail);
+    ahead = options.preload?.lean ? "" : fetchAhead(manifest, tail, runtime);
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
   const json = encodeTail(tail);
   let events = "";
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
-  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + events + "\0" + ctx.clicks + "\0" + ahead;
+  const key = (nonce ? "n" : "-") + (ctx.boot ? "b" : "-") + (liteTail ? "l" : "-") + events + "\0" + ctx.clicks + "\0" + ahead;
   let memo = tails.get(manifest);
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
   if (fragments === undefined) {
-    fragments = tailFragments(manifest.runtime!, ahead, events, ctx, !!nonce);
+    fragments = tailFragments(runtime, ahead, events, ctx, !!nonce);
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
@@ -1831,20 +1857,20 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
  * listening records, triggers, document click listeners and what adopting them needs; every boundary without D5 facts), the
  * chunks of the islands an adopt run hydrates (M6-PARITY) and their static import closures (manifest `deps`). Nothing live and
  * no island: empty (no fetch-ahead, the runtime never boots). */
-function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail): string {
+function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime: string): string {
   const islands = (manifest as { islands?: Record<string, string> }).islands,
     list = islandUrls.map((key) => islands?.[key]!).filter(Boolean),
     names = foNames(tail);
   if (!names.size && !list.length) return "";
   // A pure function of (manifest, names, islands): memoised per manifest (ZERO REGRESS: the closure over chunk deps cost a
   // routed page ~0.5 µs per request).
-  let key = list.join(" ");
+  let key = runtime === manifest.runtime ? list.join(" ") : "\u0001" + list.join(" ");
   for (const name of names) key += "\0" + name;
   let memo = aheads.get(manifest);
   if (memo === undefined) aheads.set(manifest, (memo = new Map()));
   let ahead = memo.get(key);
   if (ahead === undefined) {
-    ahead = urlsOf(names, tail.m, manifest.runtime!, manifest.deps, list).join(" ");
+    ahead = urlsOf(names, tail.m, runtime, manifest.deps, list).join(" ");
     // Bounded like `tails`: past it, the rest is computed per request.
     if (memo.size < 512) memo.set(key, ahead);
   }

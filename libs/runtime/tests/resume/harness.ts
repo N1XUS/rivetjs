@@ -43,6 +43,7 @@ const sources: Record<string, string> = {
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
   "/dom-lite.ts": "dom-lite.ts",
+  "/dom-lite-full.ts": "dom-lite-full.ts",
   // DERIVED-C4: the derived build's `@rivetjs/reactivity` alias (fixtures import it by path).
   "/derived-reactivity.ts": "derived-reactivity.ts",
   // The production build of `#dev` (browsers have no package `imports` resolution).

@@ -66,10 +66,15 @@ export function assemble(entry: GeneratedEntry, build: BuildManifests, config: B
   });
 }
 
-/** URLs of the compiler's entry chunks in a client build (boundary chunks, runtime, builtins, island facades). */
+/** URLs of the compiler's entry chunks in a client build (boundary chunks, runtime, builtins, island facades, lite entries + runtime). */
 export function resumeChunks(manifest: ResumeManifest): Set<string> {
-  const urls = new Set<string>([...Object.values(manifest.symbols ?? {}), ...Object.values(manifest.islands ?? {})]);
+  const urls = new Set<string>([
+    ...Object.values(manifest.symbols ?? {}),
+    ...Object.values(manifest.islands ?? {}),
+    ...Object.values(manifest.lite?.symbols ?? {}),
+  ]);
   if (manifest.runtime) urls.add(manifest.runtime);
+  if (manifest.lite) urls.add(manifest.lite.runtime);
   if (manifest.builtins) urls.add(manifest.builtins);
   return urls;
 }

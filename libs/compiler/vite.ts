@@ -314,6 +314,23 @@ const DERIVED_ENTRY = "\0rivet-derived-entry";
 /** Client resume builds: prefix of a boundary module's facade entry id (ZERO B6). */
 const BOUNDARY_ENTRY = "\0rivet-boundary:";
 const MANIFEST = ".vite/rivet-resume.json";
+/**
+ * Lite resume (ZERO LITE-WIRE): a module's lite entry (`CompileResult.lite`, `\0rivet-lite:<file>.js`) and the lite runtime
+ * entry (default export = the `@rivetjs/runtime/dom-lite` instance). Everything they reach is a copy of its own (the id +
+ * `?rivet-lite`): the lite modules share no module with the ordinary client graph, so the chunks of pages that load the
+ * full runtime stay what they were (no split of `dom-events` & co. out of the runtime chunk), and a lite page loads
+ * one reactivity / event table (a fallback's full runtime and ordinary module are copies too).
+ */
+const LITE_PREFIX = "\0rivet-lite:";
+const LITE_RUNTIME = "\0rivet-lite-runtime";
+/** Stylesheets reached from lite modules: the page already links them (server render), a copy would be a second sheet. */
+const LITE_EMPTY = "\0rivet-lite-empty";
+const LITE_QUERY = /[?&]rivet-lite(?=&|$)/;
+const PRELOAD_HELPER = "\0vite/preload-helper.js";
+/** A stylesheet imported for its side effect (no query, not a CSS module): `LITE_EMPTY` in the lite graph. */
+const LITE_CSS = /(?<!\.module)\.(?:css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/;
+/** The id of a module's copy in the lite graph. */
+const liteCopy = (id: string): string => id + (id.includes("?") ? "&" : "?") + "rivet-lite";
 /** Importers the derived reactivity alias leaves alone (DERIVED-C4): the runtime and reactivity packages themselves. */
 const RUNTIME_OWN = /[\\/](?:libs[\\/](?:runtime|reactivity)|@rivetjs[\\/](?:runtime|reactivity))[\\/]/;
 /**
@@ -720,6 +737,8 @@ function rivetPlugin(
   // is a facade re-exporting only the compiled boundary names, so the module's other exports (and imports only they use)
   // shake, instead of the whole module signature being pinned by a strict entry on the module itself.
   const boundaryEntries = new Map<string, string>();
+  // Client build (ZERO LITE-WIRE): module → its lite entry (compile `lite`: residual code + the boundary names it covers).
+  const liteEntries = new Map<string, { code: string; names: string[] }>();
   // Resume walk: module → whether it exports anything but its boundary components (the facade only pays off then).
   const derivedExtraExports = new Map<string, boolean>();
   // Framework bridges (`rivet({ bridges })`): the facade host's api once Vite resolved the config, else null.
@@ -929,8 +948,10 @@ function rivetPlugin(
       chunks = new Map<string, Rollup.OutputChunk>(),
       sized = new Set<Rollup.OutputChunk>(),
       roots: string[] = [];
+    const lite: Record<string, string> = {};
     let runtime: string | null = null,
-      builtins: string | null = null;
+      builtins: string | null = null,
+      liteRuntime: string | null = null;
     for (const output of Object.values(bundle)) {
       if (output.type !== "chunk") continue;
       chunks.set(output.fileName, output);
@@ -941,6 +962,22 @@ function rivetPlugin(
         roots.push(real.fileName);
       }
       if (output.facadeModuleId === builtinsId) builtins = base + _foldFacade(bundle, output, []).fileName;
+      // Lite graph (ZERO LITE-WIRE): the lite runtime + per module its lite entry (`lite.symbols`: boundary name → URL).
+      if (output.facadeModuleId === LITE_RUNTIME) {
+        const real = _foldFacade(bundle, output, ["default"]);
+        liteRuntime = base + real.fileName;
+        roots.push(real.fileName);
+        continue;
+      }
+      if (output.facadeModuleId.startsWith(LITE_PREFIX)) {
+        const entry = liteEntries.get(output.facadeModuleId.slice(LITE_PREFIX.length, -3));
+        if (entry) {
+          for (const name of entry.names) lite[name] = base + output.fileName;
+          sized.add(output);
+          roots.push(output.fileName);
+        }
+        continue;
+      }
       // Framework island chunks (M6-PARITY): island key → URL + size + closure, as on the serialized manifest.
       const island = bridges ? bridges.islandKey(output.facadeModuleId) : null;
       if (island) ((islands[island] = base + output.fileName), (sizes[base + output.fileName] = Buffer.byteLength(output.code)), roots.push(output.fileName));
@@ -956,6 +993,7 @@ function rivetPlugin(
       for (const name of names) symbols[name] = base + real.fileName;
       roots.push(real.fileName);
     }
+    if (liteRuntime) liteShared.call(this, chunks);
     // After the loop: folding (`foldFacade`) appends export names to a chunk named earlier.
     for (const chunk of sized) sizes[base + chunk.fileName] = Buffer.byteLength(chunk.code);
     for (const file of roots) {
@@ -978,9 +1016,34 @@ function rivetPlugin(
       ...(Object.keys(islands).length ? { islands } : {}),
       ...(builtins ? { builtins } : {}),
       ...(domDataIn ? { domData: true } : {}),
+      // Pages whose every record is in `lite.symbols` load `lite.runtime` + those entries instead (server `flush`).
+      ...(liteRuntime && Object.keys(lite).length ? { lite: { runtime: liteRuntime, symbols: lite } } : {}),
     };
     const hash = createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 16);
     this.emitFile({ type: "asset", fileName: MANIFEST, source: JSON.stringify({ hash, ...body }, null, 2) + "\n" });
+  }
+  /** ZERO LITE-WIRE: a chunk both graphs reach (static or dynamic imports) means the lite modules changed the ordinary
+   * chunking (a module Vite / Rolldown injects into both, e.g. Rolldown's runtime helpers): warn, naming the chunks. */
+  function liteShared(this: Rollup.PluginContext, chunks: Map<string, Rollup.OutputChunk>): void {
+    const lite = (id: string | null) => !!id && (id === LITE_RUNTIME || id.startsWith(LITE_PREFIX) || LITE_QUERY.test(id));
+    const reach = (from: Rollup.OutputChunk[]) => {
+      const seen = new Set<string>(),
+        stack = from.map((chunk) => chunk.fileName);
+      for (let file; (file = stack.pop()) !== undefined;) {
+        if (seen.has(file)) continue;
+        seen.add(file);
+        const chunk = chunks.get(file);
+        if (chunk) stack.push(...chunk.imports, ...chunk.dynamicImports);
+      }
+      return seen;
+    };
+    const entries = [...chunks.values()].filter((chunk) => chunk.isEntry);
+    const ordinary = reach(entries.filter((chunk) => !lite(chunk.facadeModuleId)));
+    const shared = [...reach(entries.filter((chunk) => lite(chunk.facadeModuleId)))].filter((file) => ordinary.has(file));
+    if (shared.length)
+      this.warn(
+        `[rivet] lite resume: the lite graph shares ${shared.join(", ")} with the ordinary client graph (pages on the full runtime may load other chunks than without lite modules)`,
+      );
   }
   const warned = new Set<string>();
   // Compile + dev bookkeeping of one transformed `.tsx` / `.jsx` module.
@@ -998,6 +1061,14 @@ function rivetPlugin(
     // Dev server: boundary names → their module (dev manifest `symbols`).
     if (serve && resume) for (const name of result.boundaries ?? []) derivedDev.set(name, filename);
     if (resume && !server) derivedNames.set(filename, result.boundaries ?? []);
+    // ZERO LITE-WIRE: a module with lite residuals gets its lite entry (`\0rivet-lite:<file>.js`, a strict chunk of its own)
+    // and the build the lite runtime entry, once; a copy in the lite graph (`?rivet-lite`) emits nothing.
+    if (resume && !server && !serve && result.lite && !LITE_QUERY.test(id)) {
+      if (!liteEntries.size) ctx.emitFile({ type: "chunk", id: LITE_RUNTIME, name: "lite-runtime", preserveSignature: "strict" });
+      if (!liteEntries.has(filename))
+        ctx.emitFile({ type: "chunk", id: LITE_PREFIX + filename + ".js", name: basename(filename).replace(/\.[^.]+$/, ""), preserveSignature: "strict" });
+      liteEntries.set(filename, result.lite);
+    }
     // DevTools (dev client only): signals / computeds named after their bindings.
     const named = tools && serve && !server ? tools.nameSignals(result.code, result.map) : null;
     let code = named?.code ?? result.code;
@@ -1244,6 +1315,7 @@ function rivetPlugin(
       await derivedWalk(this);
       if (ssrBuild || this.environment?.config?.consumer === "server") return;
       boundaryEntries.clear();
+      liteEntries.clear();
       for (const [file, verdict] of derivedVerdicts)
         if (verdict.boundaries.length && !derivedExtraExports.get(file)) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
         else if (verdict.boundaries.length) {
@@ -1261,6 +1333,25 @@ function rivetPlugin(
     },
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
+      if (id === LITE_RUNTIME || id === LITE_EMPTY || id.startsWith(LITE_PREFIX)) return id;
+      // Lite graph (ZERO LITE-WIRE): an import of a lite module resolves as the ordinary one would (this plugin's aliases
+      // included), then names that module's copy; stylesheets → an empty module.
+      const liteImporter = !!importer && !serve && (importer === LITE_RUNTIME || importer.startsWith(LITE_PREFIX) || LITE_QUERY.test(importer));
+      // Vite's dynamic import preload helper: a copy too (else the lite page loads its shared chunk as a file of its own).
+      if (liteImporter && id === PRELOAD_HELPER) return liteCopy(id);
+      if (liteImporter && importer && !id.startsWith("\0")) {
+        const from =
+          importer === LITE_RUNTIME
+            ? join(root, "index.html")
+            : importer.startsWith(LITE_PREFIX)
+              ? importer.slice(LITE_PREFIX.length, -3)
+              : importer.replace(LITE_QUERY, "");
+        return this.resolve(id, from).then((hit) => {
+          if (!hit || hit.external || hit.id.startsWith("\0")) return hit;
+          if (LITE_CSS.test(hit.id) || hit.id.split("?", 1)[0]!.endsWith(_STYLE_SUFFIX)) return LITE_EMPTY;
+          return { ...hit, id: liteCopy(hit.id) };
+        });
+      }
       if (id.startsWith(MERGE_PREFIX)) return { id, moduleSideEffects: true };
       // `<module>.rivet.css`: absolute (our imports) or root-relative (dev URLs).
       const [clean = "", query] = id.split("?", 2);
@@ -1328,6 +1419,10 @@ function rivetPlugin(
           ? `export { ${exports.map((name) => (/^[A-Za-z_$][\w$]*$/.test(name) ? name : JSON.stringify(name))).join(", ")} } from ${from};\n`
           : `import ${from};\n`;
       }
+      if (id === LITE_RUNTIME) return 'export { default } from "@rivetjs/runtime/dom-lite";\n';
+      if (id === LITE_EMPTY) return { code: "", moduleSideEffects: false };
+      if (id.startsWith(LITE_PREFIX)) return liteEntries.get(id.slice(LITE_PREFIX.length, -3))?.code ?? "";
+      if (id === liteCopy(PRELOAD_HELPER)) return (await this.load({ id: PRELOAD_HELPER })).code ?? null;
       const clean = id.split("?", 1)[0]!;
       const client = !ssrBuild && this.environment?.config?.consumer !== "server";
       // Resume builds: the browser runtime ships the adopt run's switches (`DERIVED` `_for` hook + `LAZY_ROWS` adopt hooks).

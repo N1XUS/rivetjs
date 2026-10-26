@@ -8,7 +8,8 @@
 //
 // Fallback (one-way, per boundary): a residual that throws (`LiteMiss`: a node the path expected is missing, a value it
 // cannot write, a cross-unit wake key) leaves that boundary to the full runtime: its root is disposed, the full runtime
-// (`dom-derived.ts`, a dynamic import: the bundler's chunk, never fetched unless a fallback happens) starts with the
+// (`dom-lite-full.ts` = `dom-derived.ts`'s default, a dynamic import: the bundler's chunk, never fetched unless a fallback
+// happens) starts with the
 // lite-owned records marked done (`api.l`), and every later call of this instance forwards to it. A boundary never goes
 // back to lite.
 import { _bindingEffect1, createRoot, signal } from "@rivetjs/reactivity";
@@ -199,7 +200,7 @@ function ready(target: EventTarget | null): true | Promise<unknown> {
 }
 // Hand the page to the full runtime (one-way): lite-owned records stay done there; queued events go with it.
 function fallback(): Promise<DerivedRuntime> {
-  return (handing ??= import("./dom-derived.ts").then((module) => {
+  return (handing ??= import("./dom-lite-full.ts").then((module) => {
     const rt = module.default as DerivedRuntime;
     rt.start(tail, doc, { ...api, q: pending.splice(0), l: owned, x: [...recs.values()].filter((r) => r[4] > 1).map((r) => r[0]) } as HandOff);
     return (full = rt);

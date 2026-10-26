@@ -44,7 +44,7 @@ What to look at:
 
 In the **Elements** panel, find `<script type="rivet/boundaries">` near the end of `<body>`. It holds what the browser needs to continue where the server stopped: one record per interactive component (its place in the page, its signal values and its plain-data props) and the chunk of each component. If it is large, look for big props or signals: pass only what a component shows, and keep large lists in route data, where [data from the page](../../learn/resuming.md#data-from-the-page) can leave them out.
 
-The `data-fo` attribute on the same script lists the files the loader fetches after the page loads (the runtime and the page's component chunks), and `data-rt` names the runtime. See [Preloading](preloading.md).
+The `data-fo` attribute on the same script lists the files the loader fetches after the page loads (the runtime and the page's component chunks), and `data-rt` names the runtime (the lite runtime on a page whose every interactive component has a lite chunk, see [Chunks](chunks.md)). See [Preloading](preloading.md).
 
 If the page has client effects or client events, `data-boot` is set, and the runtime loads at idle.
 
