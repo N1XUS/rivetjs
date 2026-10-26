@@ -262,7 +262,9 @@ const AppLayoutRoot = (props: AppLayoutRootProps): JSX.Element => {
   const asideLabel = local.asideLabel ?? "Details";
 
   // The aside shortcut: window-wide once the runtime runs; cold, the wrapper's delegated keydown (handled once).
-  if (aside.shortcut) clientEvent(window, "keydown", (event: KeyboardEvent) => asideShortcutKeyDown(event, aside, sheet), { preload: "interaction" });
+  // `standalone: false`: it never boots the page (a standalone `clientEvent` sets the idle trigger, TOAST-ACTIVE).
+  if (aside.shortcut)
+    clientEvent(window, "keydown", (event: KeyboardEvent) => asideShortcutKeyDown(event, aside, sheet), { preload: "interaction", standalone: false });
   // Persisted widths (opt-in): restored at idle; the sidebar width variable lives on the wrapper (set imperatively).
   if (autoSave && (sidebarSize || asideSize))
     clientEffect(

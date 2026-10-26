@@ -32,11 +32,12 @@ test("codegen: the App serves navigate() requests; routes provide params; the se
   assert.match(nested["entry.server.tsx"]!, /\.\.\.\(input\.deps \? \{ deps: input\.deps \} : \{\}\)/);
   assert.match(nested["dev-mount.tsx"]!, /\.\.\.\(body\.deps \? \{ deps: body\.deps \} : \{\}\)/);
   const statics = generate(routeTable(["_layout.tsx", "_layout.server.ts", "index.tsx"]), { routesDir: "src/routes", mode: "static", navigate: true }).files;
-  // `clientRouter` off (the default, every mode): the router's listeners alone keep no page resumable; on: they do.
+  // The router's listeners never set the App's client trigger (`standalone: false`, TOAST-ACTIVE): `clientRouter: true`
+  // keeps the page resumable through the App's record (no `_rWeak`), not through the listeners.
   assert.match(statics["app.tsx"]!, /_serve\(router\), \{ preload: "intent", standalone: false \}\);/);
   const routed = generate(table, { routesDir: "src/routes", navigate: true, clientRouter: true }).files["app.tsx"]!;
-  assert.match(routed, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent" \}\);/);
-  assert.doesNotMatch(routed, /standalone/);
+  assert.match(routed, /clientEvent\(document, "rivet:go", \(\) => _serve\(router\), \{ preload: "intent", standalone: false \}\);/);
+  assert.doesNotMatch(routed, /_rWeak/);
   // Without navigate() use: no listener, but the server entry still passes depends() keys on.
   const nestedLean = generate(routeTable(["_layout.tsx", "_layout.server.ts", "index.tsx"]), { routesDir: "src/routes" }).files;
   assert.doesNotMatch(nestedLean["app.tsx"]!, /rivet:go|_serve|data-rivet-go/);

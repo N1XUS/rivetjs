@@ -226,7 +226,7 @@ Landmark navigation comes from the cdk port of React Aria's landmark manager (`@
 ## Resumability
 
 - **Server output.** The server renders no region, only the empty anchor. No toast code ships before the first toast. The region's listener is registered in the resume data, and its code loads when the event arrives.
-- **Waking the region.** A `ToastQueue` is a class instance, so it never serializes. On a resumed page, the first `add` (for example from a resumed button's `onPress`) dispatches a `rv-toast-queue` document event that carries the queue. The `ToastRegion` whose queue has the same `name` connects to it and renders.
+- **Waking the region.** A `ToastQueue` is a class instance, so it never serializes. On a resumed page, the first `add` (for example from a resumed button's `onPress`) dispatches a `rv-toast-queue` document event that carries the queue. The `ToastRegion` whose queue has the same `name` connects to it and renders. The region listens from idle on: a document event has no target inside the region, so its code loads at idle, not with the first toast.
 - **Repeated wake-up.** The resume runtime can attach that listener after the interaction that added the toast has already run. While no region is connected, the queue dispatches the event again a few times over about four seconds (0, 50, 250, 1000 and 3000 ms).
 - **Where to create the queue.** Create it at module level and use it from inline-arrow handlers. A queue created inside a component would be a new one when the component runs again in the browser.
 - **Pages rendered in the browser.** A region rendered in the browser subscribes to the queue directly.

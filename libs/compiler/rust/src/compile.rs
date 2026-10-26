@@ -1166,11 +1166,14 @@ impl<'t, 'a> Compiler<'t, 'a> {
             }
         }
         // Server: `clientEvent(…)` never attaches on the server, but its target argument (`window` / `document`) would
-        // still be evaluated and throw where those globals do not exist; the call lowers to `undefined`. The derived
-        // server target drops `clientEffect(…)`'s closure the same way (M6-PARITY): a server no-op whose closure would keep
-        // browser-only imports (`import("./dialog.tsx")`) in the SSR bundle. The call itself stays as
-        // `clientEffect(void 0, options)` (M6-CUT): the server's `clientEffect` flags the open boundary's client trigger
-        // (`when`), without which a `clientEffect` page never boots.
+        // still be evaluated and throw where those globals do not exist; on a plain server build the call lowers to
+        // `undefined`. The derived server target drops `clientEffect(…)`'s closure the same way (M6-PARITY): a server no-op
+        // whose closure would keep browser-only imports (`import("./dialog.tsx")`) in the SSR bundle. Both calls stay there
+        // with their options only — `clientEffect(void 0, options)` (M6-CUT), `clientEvent(void 0, void 0, void 0, options)`
+        // (TOAST-ACTIVE 2026-10-26; a literal `standalone: false` one still lowers to `undefined`): the server's helper flags
+        // the open boundary's client trigger (`when`; a standalone `clientEvent` without `when` = idle), without which the
+        // boundary never adopts — a `clientEffect` page never boots,
+        // a document `clientEvent` (cdk `ToastRegion`'s `rv-toast-queue`) never hears its event.
         if self.server {
             if let AstKind::CallExpression(call) = kind {
                 if let Expression::Identifier(ident) = &call.callee {
@@ -1180,9 +1183,18 @@ impl<'t, 'a> Compiler<'t, 'a> {
                             if (name == "clientEvent" || (name == "clientEffect" && self.derived.is_some()))
                                 && resume::import_source(tree, decl).is_some_and(|from| from.starts_with("@rivetjs/runtime"))
                             {
-                                if name == "clientEffect" && !call.arguments.iter().any(|a| matches!(a, Argument::SpreadElement(_))) {
-                                    let mut args = vec![Expr::VoidZero];
-                                    if let Some(options) = call.arguments.get(1) {
+                                // Options position: clientEffect(fn, options), clientEvent(target, type, handler, options).
+                                let at = if name == "clientEffect" { 1 } else { 3 };
+                                // A literal `standalone: false` clientEvent flags nothing on the server (router / sidebar
+                                // listeners): it lowers to `undefined` as before, no server bytes.
+                                let inert = name == "clientEvent"
+                                    && matches!(call.arguments.get(at), Some(Argument::ObjectExpression(o)) if o.properties.iter().any(|p| matches!(p,
+                                        ObjectPropertyKind::ObjectProperty(p) if !p.computed && p.kind == PropertyKind::Init
+                                            && matches!(&p.key, PropertyKey::StaticIdentifier(i) if i.name == "standalone")
+                                            && matches!(&p.value, Expression::BooleanLiteral(b) if !b.value))));
+                                if self.derived.is_some() && !inert && !call.arguments.iter().any(|a| matches!(a, Argument::SpreadElement(_))) {
+                                    let mut args = vec![Expr::VoidZero; at];
+                                    if let Some(options) = call.arguments.get(at) {
                                         args.push(self.arg_expr(options));
                                     }
                                     let mut callee = tree.text_of(call.callee.span()).to_string();

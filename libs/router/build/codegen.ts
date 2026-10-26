@@ -251,11 +251,13 @@ function rootComponent(transitions: boolean, search: boolean, weak: string): str
 export function generate(table: RouteTable, options: CodegenOptions): Generated {
   const outDir = options.outDir ?? ".rivet";
   const mode = options.mode ?? "server";
-  // Router listeners that alone keep a page resumable (`clientRouter: true`, opt-in; csr: no resume), else `standalone: false`.
-  const lone = options.clientRouter === true || mode === "csr" ? "" : ", standalone: false";
+  // Router listeners never set the App's client trigger (`standalone: false`; csr: no resume): the derived server keeps a
+  // `clientEvent`'s trigger (TOAST-ACTIVE), and a standalone one would boot the router at idle (Z1: it boots on the first
+  // link click, `_rListen`, or intent). With `clientRouter: true` the App's record (no `_rWeak`) keeps the page resumable.
+  const lone = mode === "csr" ? "" : ", standalone: false";
   // ZERO Z3: with the client router off, the generated Root / App are weak boundaries (`_rWeak`): a page whose only records
   // are theirs ships no tail, loader or runtime — links load documents, as `clientRouter` documents.
-  const weak = lone ? "  if (import.meta.env.SSR) _rWeak();" : "";
+  const weak = options.clientRouter === true || mode === "csr" ? "" : "  if (import.meta.env.SSR) _rWeak();";
   // Matched URL paths include the base: `/` → `/app`, `/items/:id` → `/app/items/:id`.
   const base = normalizeBase(options.base);
   const at = (pattern: string) => (base ? (pattern === "/" ? base : base + pattern) : pattern);

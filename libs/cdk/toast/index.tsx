@@ -4,9 +4,10 @@
 // - The region renders nothing on the server (RA: `useIsSSR` → no portal) and only while toasts are
 //   visible, in the shared div overlay layer (`<Portal>`: the nearest PortalProvider's container, else
 //   `document.body`). Browser-rendered: subscribes to `queue` at once. Resumed page: the region listens
-//   for the queue's `rv-toast-queue` document event (a resumable `clientEvent`, chunk fetched on the
-//   first toast, `preload: "interaction"`), connects to the queue named like its own (`queue.name`) and
-//   renders the toasts. Nothing of the region loads before the first toast.
+//   for the queue's `rv-toast-queue` document event (a standalone `clientEvent` without `when`: the region's
+//   boundary adopts at idle — a document event has no target inside the region to adopt it on), connects to
+//   the queue named like its own (`queue.name`) and renders the toasts. Region content (`ToastRegionContent`,
+//   the toast parts) is created only with the first toast.
 // - The queue (a class instance) is never captured by a resumable closure: bindings capture its
 //   `name` and a signal of the visible toasts; the browser-created content finds the queue through a
 //   module WeakMap keyed by that signal.

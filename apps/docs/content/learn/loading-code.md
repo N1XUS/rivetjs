@@ -39,7 +39,7 @@ What happens:
 
 If you click before the file has arrived, the loader holds the event, waits for the code, runs the handler, and then repeats the browser's default action (for example following a link) unless the handler prevented it.
 
-A `clientEvent` with `standalone: false` only resumes when something else on the page does. On its own, the page ships no JavaScript. The router's link listeners use it unless you turn the client router on for every page (`rivetRouter({ clientRouter: true })`).
+A `clientEvent` without `when` wakes its component when the browser is idle: a listener on `document` or `window` hears events that start outside the component, so no click inside it can wake it. With `standalone: false` it only resumes when something else on the page does. On its own, the page ships no JavaScript. The router's link listeners always use it. `rivetRouter({ clientRouter: true })` keeps every page resumable through the router's own component, which runs on the first link click.
 
 The loader fetches ahead only when the browser reports neither Save-Data nor a 2G connection, and not on [lean pages](../guides/performance/preloading.md#lean-pages) or with `preload: { ahead: "intent" }` ([change the timing](../guides/performance/preloading.md#change-the-timing)); then it fetches on intent.
 

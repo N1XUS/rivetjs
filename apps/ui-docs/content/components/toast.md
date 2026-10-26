@@ -11,7 +11,7 @@ related: [components/alert, components/button, components/close-button, componen
 Notes:
 
 - `class`, not `className`. Content values (`title`, `description`, `indicator`, `loading` / `success` / `error`) are Rivet content: strings, JSX or nodes.
-- The server renders no region and no toast: `Toast.Provider` leaves an empty anchor, and a resumed page loads the toast code with the first toast. Every example renders its own `<Toast.Provider />` for the shared queue (an app mounts one at its root).
+- The server renders no region and no toast: `Toast.Provider` leaves an empty anchor. A resumed page loads the provider's listener at idle, and the first toast renders the region. Every example renders its own `<Toast.Provider />` for the shared queue (an app mounts one at its root).
 - Queues live at module level. A page with several queues gives each a distinct `name` (`new ToastQueue({ name: "errors" })`): the name connects a queue to its provider on a resumed page.
 - A custom render function (`Toast.Provider` children) runs once per toast; read `toast.content` there, update a toast's look through `toast.update` / the default layout.
 - Enter and exit animations are CSS (`data-entering` / `data-exiting`); closing toasts stay mounted for `exitDuration`.

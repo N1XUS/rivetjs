@@ -40,3 +40,27 @@ export default function Home() {
   assert.match(code, /clientEffect\(void 0, \{\s*when: "load"\s*\}\)/);
   assert.doesNotMatch(code, /setInterval/);
 });
+
+// Derived server modules keep `clientEvent` as `clientEvent(void 0, void 0, void 0, options)` (TOAST-ACTIVE): target,
+// type and handler leave the SSR bundle, the call still flags the open boundary's client trigger — a standalone listener
+// without `when` = idle. Lowered to `undefined`, a boundary whose only browser code is a document listener (cdk
+// `ToastRegion`'s `rv-toast-queue`) never adopted on a resumed page.
+test("derived server build keeps clientEvent's options, drops target / type / handler", async () => {
+  const source = `import { signal } from "@rivetjs/reactivity";
+import { clientEvent } from "@rivetjs/runtime/dom";
+export default function Home() {
+  const n = signal(0);
+  clientEvent(document, "rv-ping", () => n.set(n() + 1), { preload: "interaction" });
+  clientEvent(window, "resize", () => n.set(0));
+  clientEvent(window, "keydown", () => n.set(2), { preload: "interaction", standalone: false });
+  return <p>{n()}</p>;
+}`;
+  const resume = { module: "src/home.tsx", boundaries: ["default"], independent: ["default"] };
+  const { code, diagnostics } = await compile(source, { filename: "home.tsx", target: "server", resume } as never);
+  assert.deepEqual(diagnostics, []);
+  assert.match(code, /clientEvent\(void 0, void 0, void 0, \{\s*preload: "interaction"\s*\}\)/);
+  assert.match(code, /clientEvent\(void 0, void 0, void 0\)/);
+  // A literal `standalone: false` flags nothing: still `undefined` (no server bytes for the router's listeners).
+  assert.doesNotMatch(code, /standalone/);
+  assert.doesNotMatch(code, /document|window|rv-ping|resize|keydown/);
+});

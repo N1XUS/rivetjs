@@ -208,11 +208,12 @@ export function SidebarProvider(props: SidebarProviderProps) {
   });
   const reduce = dataBool(!!reduceMotion);
   // use-mobile.ts: every media query change, once the runtime runs (no boot at load; toggles re-read the width).
-  // A literal: `media:` + MOBILE_QUERY.
-  clientEvent("media:(max-width: 767px)", "change", () => updateSidebarIsMobile(state), { preload: "interaction" });
+  // A literal: `media:` + MOBILE_QUERY. `standalone: false`: these listeners never boot the page (a standalone
+  // `clientEvent` sets the idle trigger on the derived server, TOAST-ACTIVE).
+  clientEvent("media:(max-width: 767px)", "change", () => updateSidebarIsMobile(state), { preload: "interaction", standalone: false });
   // Adds a keyboard shortcut to toggle the sidebar: window-wide once the runtime runs; cold, the wrapper's
   // delegated keydown below (an event is handled once).
-  clientEvent(window, "keydown", (event: KeyboardEvent) => sidebarShortcutKeyDown(event, state), { preload: "interaction" });
+  clientEvent(window, "keydown", (event: KeyboardEvent) => sidebarShortcutKeyDown(event, state), { preload: "interaction", standalone: false });
   const rp = renderProps({ class: cls, children, values: NONE, defaultClassName: "rv-SidebarProvider" });
   // `navigate`: a router for the subtree (cdk Link / menu buttons); default = the native router.
   // Built in the body (not inside the closure): the router object is a capture of `content`, its `navigate` the caller's.

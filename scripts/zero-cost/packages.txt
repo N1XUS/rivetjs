@@ -48,7 +48,7 @@
 @rivetjs/kit/transition [server] 12cce6077a07 4522
 @rivetjs/kit/icon [dom] 0e663327bde1 2618
 @rivetjs/kit/icon [server] 8cd4042ffdf9 2426
-@rivetjs/ui [dom] 6a3b25143a9b 426371 css bed50ddbd47a 1024992
+@rivetjs/ui [dom] 52aab92fb53b 426385 css bed50ddbd47a 1024992
 @rivetjs/ui [server] 950fea7bb586 377608 css bed50ddbd47a 1024992
 @rivetjs/ui/surface [dom] 89fba73e2102 3605 css 319605878d70 769
 @rivetjs/ui/surface [server] 0bdfa0324bea 3487 css 319605878d70 769
@@ -120,7 +120,7 @@
 @rivetjs/ui/popover [server] 650c9cebafc9 6002 css bed50ddbd47a 1024992
 @rivetjs/ui/sidebar [dom] dac292b25680 14124 css 0071bf32177b 81064
 @rivetjs/ui/sidebar [server] a5bd1373cfc7 13403 css 0071bf32177b 81064
-@rivetjs/ui/app-layout [dom] 513ae64a76d3 28088 css bed50ddbd47a 1024992
+@rivetjs/ui/app-layout [dom] 42d3f3c923e4 28102 css bed50ddbd47a 1024992
 @rivetjs/ui/app-layout [server] f63ae00a45e1 23309 css bed50ddbd47a 1024992
 @rivetjs/ui/stepper [dom] 38cc89e2eba0 8342 css bed50ddbd47a 1024992
 @rivetjs/ui/stepper [server] e3029ab77535 7441 css bed50ddbd47a 1024992

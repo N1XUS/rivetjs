@@ -58,7 +58,7 @@ test(
         const source = await readFile(root + ".rivet/app.tsx", "utf8");
         assert.match(
           source,
-          /clientEvent\(document, "click", \(event: MouseEvent\) => _onStopped\(event, \(\) => .*\), \{ capture: true, preload: "intent", match: "a" \}\);/,
+          /clientEvent\(document, "click", \(event: MouseEvent\) => _onStopped\(event, \(\) => .*\), \{ capture: true, preload: "intent", match: "a", standalone: false \}\);/,
         );
       });
 

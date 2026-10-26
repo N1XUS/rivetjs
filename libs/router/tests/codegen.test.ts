@@ -444,7 +444,7 @@ test("server / static modes (derived resume model): app.tsx default-exports Root
     /export default function Root\(props: \{ s: RootData \| EncodedRoot \}\) \{\n {2}if \(import\.meta\.env\.SSR\) _rWeak\(\);\n {2}if \(import\.meta\.env\.SSR\) return <App router=\{serverRouter\(useContext\(ServerData\)!\.url\)\} \/>;/,
   );
   // ZERO Z3: client router off → the generated Root / App are weak (a page with nothing else live ships no tail / runtime);
-  // `clientRouter: true` keeps them (router listeners make the page resumable).
+  // `clientRouter: true` keeps them (the App's record makes the page resumable; its listeners stay `standalone: false`).
   assert.match(app, /export function App\(\{ router \}: \{ router: AppRouter \}\) \{\n {2}if \(import\.meta\.env\.SSR\) _rWeak\(\);/);
   const routed = generate(table, { routesDir: "src/routes", clientRouter: true }).files["app.tsx"]!;
   assert.doesNotMatch(routed, /_rWeak/);
