@@ -25,8 +25,9 @@ import { type DOMRenderProps } from "../utils/render.ts";
 import { createId } from "../utils/id.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { dataBool, readAttrs, mergeFocusableContext, focusStateIn, hoverStateOver, type InteractionStateOptions } from "../utils/data-attrs.tsx";
-import { keyboardKeyDown, keyboardKeyUp } from "../interactions/keyboard.tsx";
-import { read, type MaybeAccessor } from "../interactions/utils.ts";
+// A user `onKeyDown` / `onKeyUp` alone = `keyboardKeyDown({ onKeyDown }, e)` (useKeyboard without shortcuts): the
+// propagation wrapper only, so the element never reaches `../interactions/keyboard.tsx` + `../keys` (BUTTONDIET).
+import { createEventHandler, read, type MaybeAccessor } from "../interactions/utils.ts";
 import {
   contextProps,
   mergeRefValues,
@@ -42,7 +43,7 @@ import { mergeProps as mergeLive } from "@rivetjs/runtime/props";
 import { hasLive, isLive, liveAt, liveView } from "../utils/live.tsx";
 import { liveRenderProps } from "../slots/index.tsx";
 import { ProgressBarContext } from "../progress-bar/context.ts";
-import { FocusableContext } from "../focus/focusable.tsx";
+import { FocusableContext } from "../interactions/focus.tsx";
 import type { HoverEvents } from "../utils/types.ts";
 import {
   buttonClick,
@@ -360,10 +361,10 @@ export function Button(inProps: ButtonProps) {
       onKeyDown: (event: BE<KeyboardEvent>) => {
         buttonKeyDown(event, press, isPending);
         watchDisabled(event.currentTarget, press, isDisabled);
-        if (onKeyDown && !isPendingNow(isPending)) keyboardKeyDown({ onKeyDown }, event);
+        if (onKeyDown && !isPendingNow(isPending)) createEventHandler(onKeyDown)!(event);
       },
       onKeyUp: (event: BE<KeyboardEvent>) => {
-        if (onKeyUp && !isPendingNow(isPending)) keyboardKeyUp({ onKeyUp }, event);
+        if (onKeyUp && !isPendingNow(isPending)) createEventHandler(onKeyUp)!(event);
       },
       onClick: (event: BE<MouseEvent>) => buttonClick(event, press, isPending),
       // Hover / focus: delegated (`pointerover` / `focusin`); the leave / blur bind while hovered / focused.
@@ -438,9 +439,9 @@ export function Button(inProps: ButtonProps) {
       onKeyDown={(event) => {
         buttonKeyDown(event, press, isPending);
         watchDisabled(event.currentTarget, press, isDisabled);
-        if (onKeyDown && !isPendingNow(isPending)) keyboardKeyDown({ onKeyDown }, event);
+        if (onKeyDown && !isPendingNow(isPending)) createEventHandler(onKeyDown)!(event);
       }}
-      onKeyUp={onKeyUp ? (event) => (isPendingNow(isPending) ? undefined : keyboardKeyUp({ onKeyUp }, event)) : undefined}
+      onKeyUp={onKeyUp ? (event) => (isPendingNow(isPending) ? undefined : createEventHandler(onKeyUp)!(event)) : undefined}
       onClick={(event) => buttonClick(event, press, isPending)}
       // Hover / focus: delegated (`pointerover` / `focusin`, no listener per button); the leave / blur bind on
       // the element while hovered / focused (data-attrs.tsx). A user `onPointerEnter` / `onPointerLeave` binds natively.

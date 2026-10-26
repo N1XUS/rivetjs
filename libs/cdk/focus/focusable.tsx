@@ -11,11 +11,11 @@
 //   function receiving the merged props, which it spreads on its element and whose `ref` it passes
 //   (`{(p) => <span {...p} ref={p.ref} role="button">…</span>}`: a spread never sets `ref`). Dev checks (child focusable / interactive
 //   role) run in a dev-only client effect.
-import { createContext, untrack, useContext } from "@rivetjs/reactivity";
+import { untrack, useContext } from "@rivetjs/reactivity";
 import { Provider as ContextProvider, clientEffect, ref as createRef } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { renderSlot } from "@rivetjs/runtime/slot";
-import { focusProps } from "../interactions/focus.tsx";
+import { FocusableContext, focusProps, type FocusableContextValue } from "../interactions/focus.tsx";
 import { keyboardProps } from "../interactions/keyboard.tsx";
 import { mergeProps } from "../interactions/merge-props.tsx";
 import { DEV, isFocusable } from "../interactions/utils.ts";
@@ -35,13 +35,7 @@ export interface FocusableProviderProps {
   [attribute: string]: unknown;
 }
 
-export interface FocusableContextValue {
-  ref?: RefValue<Element>;
-  [attribute: string]: unknown;
-}
-
-/** DOM props for the nearest focusable child (RA `FocusableContext`, exported for collections). */
-export const FocusableContext = createContext<FocusableContextValue | null>(null);
+export { FocusableContext, type FocusableContextValue } from "../interactions/focus.tsx";
 
 /** Provides DOM props to the nearest focusable child (RA `FocusableProvider`). */
 export function FocusableProvider(props: FocusableProviderProps) {

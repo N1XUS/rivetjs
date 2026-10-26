@@ -9,23 +9,19 @@
 // provider needed. `RouterProvider` is for other routers (or to map hrefs with `useHref`).
 // This is THE router module: `@rivetjs/cdk/link` re-exports it, `interactions/utils.ts` reads
 // `linkState` from its leaf `./link-state.ts` (usePress / focus-visible ignore the synthetic click `openLink` dispatches),
-// `selection/*` and `_adapters/*` call `openLink` / `isOpeningLink` from here.
+// `selection/*` and `_adapters/*` call `openLink` / `isOpeningLink` from here. `openLink` itself lives in the leaf
+// (re-exported here): usePress calls it without this module (BUTTONDIET 2026-10-26).
 import type { Content, Slot } from "@rivetjs/runtime/jsx-runtime";
 import { createContext, provide, useContext } from "@rivetjs/reactivity";
-import { isIPad, isMac, isWebKit } from "../platform/index.ts";
+import { openLink, type Modifiers } from "./link-state.ts";
 import { renderSlot } from "@rivetjs/runtime/slot";
-import { linkState } from "./link-state.ts";
 
 export type Href = string;
 /** Options passed through to the router's `navigate` (react-aria `RouterOptions`). */
 export type RouterOptions = Record<string, unknown> | undefined;
 
-export interface Modifiers {
-  metaKey?: boolean;
-  ctrlKey?: boolean;
-  altKey?: boolean;
-  shiftKey?: boolean;
-}
+export type { Modifiers } from "./link-state.ts";
+export { openLink } from "./link-state.ts";
 
 /**
  * The router in scope (react-aria `Router`). Rivet: plain data so handlers can capture it — the
@@ -69,24 +65,6 @@ export function shouldClientNavigate(link: HTMLAnchorElement, modifiers: Modifie
 }
 
 export { isOpeningLink, linkState } from "./link-state.ts";
-
-/**
- * Open `target` as if clicked with `modifiers` (new tab / window / download follow the browser's
- * rules for them). Focuses the link without scrolling, then dispatches a click (WebKit on macOS:
- * a keydown Enter, as WebKit ignores modifiers on synthetic clicks).
- */
-export function openLink(target: HTMLAnchorElement, modifiers: Modifiers, setOpening = true): void {
-  const { metaKey, ctrlKey, altKey, shiftKey } = modifiers;
-  const view = target.ownerDocument.defaultView!;
-  const event =
-    isWebKit() && isMac() && !isIPad()
-      ? new view.KeyboardEvent("keydown", { keyIdentifier: "Enter", metaKey, ctrlKey, altKey, shiftKey } as KeyboardEventInit)
-      : new view.MouseEvent("click", { metaKey, ctrlKey, altKey, shiftKey, detail: 1, bubbles: true, cancelable: true });
-  linkState.isOpening = setOpening;
-  target.focus({ preventScroll: true });
-  target.dispatchEvent(event);
-  linkState.isOpening = false;
-}
 
 function getSyntheticLink(target: Element, open: (link: HTMLAnchorElement) => void): void {
   if (target instanceof target.ownerDocument.defaultView!.HTMLAnchorElement) open(target as HTMLAnchorElement);

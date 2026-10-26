@@ -41,7 +41,7 @@ import {
   type MaybeAccessor,
   type PointerType,
 } from "./utils.ts";
-import { openLink } from "../utils/links.tsx";
+import { openLink } from "../utils/link-state.ts";
 
 export type { PointerType } from "./utils.ts";
 

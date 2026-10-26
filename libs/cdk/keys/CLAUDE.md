@@ -7,14 +7,15 @@ Pure key handling: APG composite navigation (`nextIndex`), typeahead, and React 
 - `./keys` -> `index.ts`: `nextIndex(count, from, key, opts)`, `navigationKeys(opts)` (-> `data-rk` value), `typeahead(owner, texts, from, key, now?, isDisabled?)`, `_resetTypeahead`; shortcuts: `createKeyboardShortcutHandler(bindings)`, `parseKeyboardShortcut`, `canonicalKeyboardShortcut`, `keyboardEventToCanonicalShortcut`, `modifierSetFromParsed`, `modifierSetFromEvent`; types `Orientation`, `NavigationOptions` (`orientation`, `wrap`, `homeEnd`, `pageSize`, `dir`, `isDisabled`), `KeyboardShortcutBindings`, `KeyboardShortcutAction`, `ParsedKeyboardShortcut`
 
 ## Layout
-- `index.ts` - single file; imports only `Direction` type from `../bidi/index.ts`
-- consumers: `../interactions/keyboard.tsx` (shortcuts), composite widgets (`data-rk`)
+- `index.ts` - navigation + typeahead; imports only `Direction` type from `../bidi/index.ts`; re-exports the shortcut section from `shortcuts.ts`
+- `shortcuts.ts` - keyboard shortcuts (RA createKeyboardShortcutHandler); `../interactions/keyboard.tsx` imports it directly so its chunk does not split from keyboard when navigation-only pages (tabs, stepper) reach `index.ts` (BUTTONDIET 2026-10-26)
+- consumers: `../interactions/keyboard.tsx` (shortcuts, via `shortcuts.ts`), `../stepper/state.ts` (`nextIndex`), `../tabs/behaviour.ts` (`navigationKeys`), composite widgets (`data-rk`)
 - tests: `tests/cdk.test.ts` (`nextIndex`, `navigationKeys`, `typeahead`); shortcuts only indirectly
 - docs examples: `apps/cdk-docs/examples/{keys-parse,keys-shortcuts}/`
 
 ## Upstream
 - navigation + typeahead: Rivet-own (APG)
-- shortcuts section (`index.ts:115`): `@react-aria/interactions` createKeyboardShortcutHandler (Apache-2.0)
+- shortcuts (`shortcuts.ts`): `@react-aria/interactions` createKeyboardShortcutHandler (Apache-2.0)
 
 ## Rules / invariants
 - pure functions over indices; collection = whatever the caller has; disabled skipped via `isDisabled`; RTL = caller's `dir` (horizontal arrows swap)

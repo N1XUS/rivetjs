@@ -69,7 +69,7 @@ import {
   setDataAttr,
   type InteractionStateOptions,
 } from "../utils/data-attrs.tsx";
-import { FocusableContext } from "../focus/focusable.tsx";
+import { FocusableContext } from "../interactions/focus.tsx";
 import { createEnterAnimation, createExitAnimation } from "../utils/animation.tsx";
 import { focusRingBlur, focusRingFocus } from "../focus/focus-ring.tsx";
 import { pressProps, type PressEvents } from "../interactions/press.tsx";

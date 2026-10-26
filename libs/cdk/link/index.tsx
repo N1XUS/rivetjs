@@ -16,8 +16,9 @@ import { createContext, signal, untrack, useContext, type Signal } from "@rivetj
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import { dataBool, mergeFocusableContext, readAttrs, focusStateIn, hoverStateOver, type InteractionStateOptions } from "../utils/data-attrs.tsx";
-import { keyboardKeyDown, keyboardKeyUp } from "../interactions/keyboard.tsx";
-import { read, type MaybeAccessor } from "../interactions/utils.ts";
+// A user `onKeyDown` / `onKeyUp` alone = `keyboardKeyDown({ onKeyDown }, e)` (useKeyboard without shortcuts): the
+// propagation wrapper only, so the element never reaches `../interactions/keyboard.tsx` + `../keys` (BUTTONDIET).
+import { createEventHandler, read, type MaybeAccessor } from "../interactions/utils.ts";
 import {
   contextProps,
   mergeRefValues,
@@ -28,7 +29,7 @@ import {
   type SlotProps,
 } from "../slots/index.tsx";
 import type { HoverEvents } from "../utils/types.ts";
-import { FocusableContext } from "../focus/focusable.tsx";
+import { FocusableContext } from "../interactions/focus.tsx";
 import { useRouter } from "./router.ts";
 import {
   linkClick,
@@ -200,9 +201,9 @@ function renderLink(props: LinkProps, ref: RefValue<HTMLAnchorElement> | undefin
     },
     onKeyDown: (event: KeyboardEvent) => {
       linkKeyDown(event, press);
-      if (onKeyDown) keyboardKeyDown({ onKeyDown }, event);
+      if (onKeyDown) createEventHandler(onKeyDown)!(event);
     },
-    onKeyUp: (event: KeyboardEvent) => (onKeyUp ? keyboardKeyUp({ onKeyUp }, event) : undefined),
+    onKeyUp: (event: KeyboardEvent) => (onKeyUp ? createEventHandler(onKeyUp)!(event) : undefined),
     onClick: (event: MouseEvent) => linkClick(event, press, router, href, routerOptions),
     onPointerOver: (event: PointerEvent) => {
       // The user's pointerover first: React Aria starts the hover on pointerenter, after it.

@@ -9,7 +9,22 @@
 // symbols. Rivet-internal focus state (useFocusRing, cdk data-* writers) uses the delegated `focusin` + a native
 // `blur` bound while focused (`bindBlur`): it carries no user callbacks and runs after every native focus handler
 // of the element, where React Aria's components merge it (last).
+import { createContext } from "@rivetjs/reactivity";
+import type { RefValue } from "../slots/index.tsx";
 import { getActiveElement, getEventTarget, getOwnerDocument, getOwnerWindow, nodeContains, read, type MaybeAccessor } from "./utils.ts";
+
+export interface FocusableContextValue {
+  ref?: RefValue<Element>;
+  [attribute: string]: unknown;
+}
+
+/**
+ * DOM props for the nearest focusable child (RA `FocusableContext`, useFocusable.tsx, exported for collections).
+ * Defined here, not in `../focus/focusable.tsx` (which re-exports it): Button / Link / Tabs read the context without
+ * reaching `focusableProps` / `<Focusable>` / `<FocusableProvider>` + their keyboard / `focusSafely` imports, and this
+ * module is already in each of their closures (BUTTONDIET 2026-10-26).
+ */
+export const FocusableContext = createContext<FocusableContextValue | null>(null);
 
 export interface FocusEvents<E extends Event = FocusEvent> {
   /** Called when the element receives focus. */

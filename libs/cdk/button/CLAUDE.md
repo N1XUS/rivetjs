@@ -9,7 +9,7 @@ Native `<button>` with RA press events, pending state, form attrs; `press.ts` ad
 - `press.ts`: not a subpath (import via behaviour types); per-element adapter over `../interactions/press.tsx`: `pressKeyDown/Click/PointerDown/MouseDown/PointerUp/PointerEnter/PointerLeave/DragStart(options, event)`, `cancelPress`, `isPressed`; re-exports `isVirtualClick`, `isVirtualPointerEvent` (`../platform`), types `PressEvent`, `PressEvents`, `PressProps`, `PointerType`; `PressOptions` = `PressProps`
 
 ## Layout
-- `index.tsx` - `<Button>` (RAC Button): contextProps ButtonContext, PressResponderContext merge, FocusableContext merge (`mergeFocusableContext` + `readAttrs`), always provides `ProgressBarContext` `{ id: <id>-progress }`, hideable (`isHiddenPart`, `../collections/hidden.ts`)
+- `index.tsx` - `<Button>` (RAC Button): contextProps ButtonContext, PressResponderContext merge, FocusableContext merge (`mergeFocusableContext` + `readAttrs`; context from `../interactions/focus.tsx`, not `../focus/focusable.tsx`), user `onKeyDown` / `onKeyUp` via `createEventHandler` (no `../interactions/keyboard.tsx` / `../keys`: import diet BUTTONDIET 2026-10-26, button-basic −4.2 KB gz / −4 files), always provides `ProgressBarContext` `{ id: <id>-progress }`, hideable (`isHiddenPart`, `../collections/hidden.ts`)
 - hideable: `if (slotProbing || isHiddenPart()) return null` first (`slotProbing`: a field's server slot probe, `#server`)
 - `behaviour.ts` - RA `useButton` attr bag (`elementType` button/a/div/span/input) + pending-aware handler wrappers
 - `press.ts` - thin layer: `pressOf(el, options)` builds a `Press` instance (state in a module `WeakMap` per element, transient, never serialized; `pressed.set` writes `data-pressed="true"`) and calls the shared handler functions

@@ -6,10 +6,10 @@
 // (`continuePropagation`, `isPropagationStopped`). Resumed pages: delegated dispatch runs only the
 // innermost handler of a type, so `continuePropagation()` reaches native ancestors' listeners but not
 // other resumed handlers (queued runtime work, see the parity spec).
-import { createKeyboardShortcutHandler, type KeyboardShortcutBindings } from "../keys/index.ts";
+import { createKeyboardShortcutHandler, type KeyboardShortcutBindings } from "../keys/shortcuts.ts";
 import { createEventHandler, getEventTarget, nodeContains, read, type BaseEvent, type MaybeAccessor } from "./utils.ts";
 
-export type { KeyboardShortcutBindings } from "../keys/index.ts";
+export type { KeyboardShortcutBindings } from "../keys/shortcuts.ts";
 
 /** The keyboard event handlers receive: native event + `continuePropagation()`. */
 export type RivetKeyboardEvent = BaseEvent<KeyboardEvent>;

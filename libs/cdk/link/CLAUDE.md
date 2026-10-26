@@ -9,7 +9,7 @@ RAC Link: `<a href>` (or `<span role="link">` without href / disabled) with RA p
 - `router.ts`: not a subpath; re-export shim of `../utils/links.tsx`
 
 ## Layout
-- `index.tsx` - `Link` (contextProps LinkContext, `mergeFocusableContext` FocusableContext, `renderLink` picks `<a>` / `<span>`; accessor `isDisabled` → `{() => relink(...)}` re-creates the element)
+- `index.tsx` - `Link` (contextProps LinkContext, `mergeFocusableContext` FocusableContext (from `../interactions/focus.tsx`), user `onKeyDown` / `onKeyUp` via `createEventHandler` (no keyboard / keys modules, BUTTONDIET), `renderLink` picks `<a>` / `<span>`; accessor `isDisabled` → `{() => relink(...)}` re-creates the element)
 - tests: `tests/link.browser.test.tsx` (RAC Link.test.js port), `tests/pilots-ssr.test.ts` (FocusableContext attrs SSR), `tests-components/links.test.ts`, `tests-components/dom-events-forms.test.ts`
 - docs: `apps/cdk-docs/content/components/link.md`, examples `link-*`
 
