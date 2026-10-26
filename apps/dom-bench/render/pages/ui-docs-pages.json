@@ -1,0 +1,6 @@
+[
+  { "name": "table", "path": "/components/table/" },
+  { "name": "scheduler", "path": "/components/scheduler/" },
+  { "name": "button", "path": "/components/button/" },
+  { "name": "data-grid", "path": "/components/data-grid/" }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "zero-cards",
+    "path": "/examples/zero-cards/frame/",
+    "steps": [
+      { "click": "#books li:nth-child(2) button", "name": "first" },
+      { "click": "#books li:nth-child(3) button", "name": "second" },
+      { "click": "#books li:nth-child(2) button", "name": "third" }
+    ]
+  },
+  {
+    "name": "zero-rows",
+    "path": "/examples/zero-rows/frame/",
+    "steps": [
+      { "click": "#books li:nth-child(2) button", "name": "first" },
+      { "click": "#books li:nth-child(3) button", "name": "second" },
+      { "click": "#books li:nth-child(2) button", "name": "third" }
+    ]
+  }
+]

@@ -1,5 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["*.ts", "tests/*.ts", "krausest/*.ts", "context/*.ts", "props/*.ts", "masonry/*.ts", "motion/*.ts", "types.d.ts"],
+  "include": ["*.ts", "tests/*.ts", "krausest/*.ts", "context/*.ts", "props/*.ts", "masonry/*.ts", "motion/*.ts", "render/*.ts", "types.d.ts"],
   "exclude": ["node_modules", "dist", "adapters"]
 }

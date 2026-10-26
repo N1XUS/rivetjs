@@ -35,7 +35,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 | `apps/ui-docs` | `@rivetjs/ui` docs site: component pages + live examples, theme builder, showcases; upstream named only on `start/licenses` (brand gate `tests/brand.test.ts`). |
 | `apps/playground` | Tailwind resumable SSR example app (user WIP — do not touch `src/routes/_layout.tsx`, `tsconfig.json`). |
 | `apps/ssr-bench` | Docker SSR benchmark: Rivet vs Solid/Qwik/Razor lanes; zero-cost lane hashes come from its build. |
-| `apps/dom-bench` | Browser DOM benchmarks + krausest; writes `docs/benchmarks/perf-scoreboard.md`. |
+| `apps/dom-bench` | Browser DOM benchmarks + krausest + rendering-cost tools (`render/`: per-phase style / layout / paint self time, screenshot parity); writes `docs/benchmarks/perf-scoreboard.md`. |
 | `apps/resume-bench` | Resume (click-to-interactive) benchmark lanes. |
 | `apps/bench-stable` | Isolated stable-release toolchains for the comparison lanes. |
 | `apps/bridge-demo` | Bridges demo: one React 19 dashboard (TanStack Table, Radix Dialog, react-hook-form + zod, recharts) as Next 16 App Router vs Rivet routes with the same components as `@rivetjs/bridge-react` islands; JS fetched / executed before input + per-chunk breakdown, input-to-paint, server CPU, Lighthouse. |

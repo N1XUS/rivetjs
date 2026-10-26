@@ -1,0 +1,41 @@
+[
+  {
+    "name": "kanban",
+    "path": "/examples/showcase-kanban/frame/",
+    "steps": [
+      { "click": "#next-t1", "name": "first move" },
+      { "click": "#next-t2", "name": "move" },
+      { "click": "#add-todo", "name": "add" },
+      { "click": "#next-t3", "name": "move2" }
+    ]
+  },
+  {
+    "name": "scheduler-views",
+    "path": "/examples/scheduler-views/frame/",
+    "steps": [
+      { "click": "[aria-label='Next month']", "name": "first next" },
+      { "click": "[aria-label='Next month']", "name": "next" },
+      { "click": "[aria-label='Previous month']", "name": "prev" },
+      { "click": "[data-slot='segment-item']:nth-of-type(2)", "name": "view switch" },
+      { "click": "[data-slot='segment-item']:nth-of-type(1)", "name": "view back" }
+    ]
+  },
+  {
+    "name": "dg-virt",
+    "path": "/examples/data-grid-virtualized/frame/",
+    "steps": [
+      { "click": "th[data-column='sensor']", "name": "first sort" },
+      { "click": "th[data-column='sensor']", "name": "sort desc" },
+      { "click": "th[data-column='value']", "name": "sort value" }
+    ]
+  },
+  {
+    "name": "table-sel",
+    "path": "/examples/table-selection/frame/",
+    "steps": [
+      { "click": "th label[data-slot='checkbox-content']", "name": "first all" },
+      { "click": "th label[data-slot='checkbox-content']", "name": "none" },
+      { "click": "th label[data-slot='checkbox-content']", "name": "all" }
+    ]
+  }
+]
