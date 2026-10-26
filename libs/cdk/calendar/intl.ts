@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "@rivetjs/cdk/i18n";
 
 export type CalendarMessageKey = "previous" | "next" | "selectedDateDescription" | "selectedRangeDescription" | "todayDate" | "todayDateSelected" | "dateSelected" | "startRangeSelectionPrompt" | "finishRangeSelectionPrompt" | "minimumDate" | "maximumDate" | "dateRange";
 
+// @rivet-locale-table
 export const calendarMessages: LocalizedStrings<CalendarMessageKey> = {
   "ar-AE": {"dateRange":"{startDate} إلى {endDate}","dateSelected":"{date} المحدد","finishRangeSelectionPrompt":"انقر لإنهاء عملية تحديد نطاق التاريخ","maximumDate":"آخر تاريخ متاح","minimumDate":"أول تاريخ متاح","next":"التالي","previous":"السابق","selectedDateDescription":"تاريخ محدد: {date}","selectedRangeDescription":"المدى الزمني المحدد: {dateRange}","startRangeSelectionPrompt":"انقر لبدء عملية تحديد نطاق التاريخ","todayDate":"اليوم، {date}","todayDateSelected":"اليوم، {date} محدد"},
   "bg-BG": {"dateRange":"{startDate} до {endDate}","dateSelected":"Избрано е {date}","finishRangeSelectionPrompt":"Натиснете, за да довършите избора на времеви интервал","maximumDate":"Последна налична дата","minimumDate":"Първа налична дата","next":"Напред","previous":"Назад","selectedDateDescription":"Избрана дата: {date}","selectedRangeDescription":"Избран диапазон: {dateRange}","startRangeSelectionPrompt":"Натиснете, за да пристъпите към избора на времеви интервал","todayDate":"Днес, {date}","todayDateSelected":"Днес, {date} са избрани"},

@@ -55,6 +55,7 @@ function inertButton(props: object): boolean {
   );
 }
 
+// @rivet-class-join inertAttrs(2)
 /** What the cdk part renders for static data props without behaviour (same attributes, same id sequence). */
 function inertAttrs(props: object, slot: string, cls: string): Record<string, unknown> {
   const p = props as Record<string, unknown>;

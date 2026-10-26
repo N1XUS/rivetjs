@@ -21,6 +21,8 @@ import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
 import { comptimeCandidate, createComptime, MERGE_PREFIX, type Comptime, type ComptimeOptions } from "./comptime.ts";
+import { classJoinDeclarations, classOverrideCandidate, classOverrideSites } from "./class-merge.ts";
+import { entriesText, keptEntries, languagesOf, localeTables, LOCALE_TABLE_MARK, type LocaleTable } from "./locale-tables.ts";
 
 /** Browser-side `@rivetjs/*` packages (`optimizeDeps.exclude` takes names, not patterns). */
 const RIVET_PACKAGES = [
@@ -235,6 +237,13 @@ export interface RivetOptions {
    * `{ "my-lib": { join: "value", variants: "tv" } }`.
    */
   comptime?: boolean | ComptimeOptions;
+  /**
+   * Locales the app serves. Declared (here, or the `i18n()` plugin's `locales`), production client builds keep, in locale
+   * tables (`// @rivet-locale-table`: the cdk `intl.ts` string tables), only the keys of these languages + `en-US`; a lookup
+   * for another language loads the full table (its first render may show `en-US` strings until it has loaded), so list
+   * every language the app serves. Undeclared: every table ships whole (exact for any locale). See `locale-tables.ts`.
+   */
+  locales?: readonly string[];
 }
 
 /** A file that asks for another JSX runtime in its leading comments (`@jsxImportSource react`, or a
@@ -485,7 +494,9 @@ export function _typeExports(source: string): Set<string> {
 /** @internal Query marking `@rivetjs/ui`'s own `tailwind-variants` import (ZERO B3): the merge-only copy below. */
 export const _MERGE_ONLY = "?rivet-tw-merge";
 /** @internal `@rivetjs/ui`'s variant resolver (`styles/src/utils/tv.ts`, source or packaged): the one importer redirected. */
-export const _UI_TV = /[/\\]ui[/\\]styles[/\\]src[/\\]utils[/\\]tv\.[jt]s$/;
+export const _UI_TV = /[/\\]ui[/\\]styles[/\\]src[/\\]utils[/\\](?:tv|tv-merge|merge-on)\.[jt]s$/;
+/** @internal `@rivetjs/ui`'s tailwind-merge provider (ZERO UI-JS2): imported by client modules `class-merge.ts` flags. */
+export const _UI_TV_MERGE = "@rivetjs/ui/tv-merge";
 
 /**
  * @internal ZERO B3: a project module importing only `cn` / `cx` from `tailwind-variants` takes them from the merge-only
@@ -603,8 +614,9 @@ export function rivet({
   bridges,
   serverOnly,
   comptime = true,
+  locales,
 }: RivetOptions = {}): Plugin | Plugin[] {
-  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? [], comptime);
+  const plugin = rivetPlugin(resume, devtools, css, serverExports, { include, exclude }, icons, serverOnly ?? [], comptime, locales);
   // Bridges: framework plugins first (they own their modules), then the facade host, then the Rivet compiler.
   const framed = bridges?.length ? [...bridges.flatMap((entry) => entry.plugins()), bridgeHost(bridges), plugin] : [plugin];
   if (images) framed.push(imagesPlugin(images));
@@ -696,6 +708,7 @@ function rivetPlugin(
   icons: boolean,
   serverOnly: readonly ServerOnlyPattern[],
   comptimeOption: boolean | ComptimeOptions = true,
+  localesOption?: readonly string[],
 ): Plugin {
   // `include` / `exclude` (resolved against the Vite root once it is known).
   let selected: (id: string) => boolean = () => true;
@@ -735,6 +748,45 @@ function rivetPlugin(
       .transform(out ? out.code : original, filename, comptimeHost(ctx))
       .then((next) => (next === null ? out : { code: next, map: out ? out.map : null }));
   };
+  /** `classMergeImport` on production client builds (dev and server builds merge always: ui `#tv-merge`). */
+  const classMerged = (
+    ctx: Rollup.TransformPluginContext,
+    filename: string,
+    original: string,
+    options: { ssr?: boolean } | undefined,
+    out: Out | Promise<Out>,
+  ): Out | Promise<Out> => {
+    const consumer = ctx.environment?.config?.consumer;
+    // Synchronous unless the module can hold an override at all (the scan resolves the provider: async).
+    if (!built || serve || (options?.ssr ?? (consumer ? consumer === "server" : ssrBuild)) || !classOverrideCandidate(original) || !classMergeScope(filename))
+      return out;
+    return Promise.resolve(out).then((value) => classMergeImport(ctx, filename, original, value));
+  };
+  // Locale tables (ZERO UI-JS2, `locale-tables.ts`): the declared locales (option, else the `i18n()` plugin's), the tables by marker index.
+  let declaredLocales: readonly string[] | null = localesOption ?? null;
+  const localeMarks: { table: LocaleTable; file: string }[] = [];
+  const LOCALE_FULL = "\0rivet-locale-table:";
+  const localeClient = (ctx: { environment?: { config?: { consumer?: string } } }, options?: { ssr?: boolean }): boolean => {
+    const consumer = ctx.environment?.config?.consumer;
+    return built && !serve && declaredLocales !== null && !(options?.ssr ?? (consumer ? consumer === "server" : ssrBuild));
+  };
+  /** A table module's client code: each table = the marker spread + the lazy full table (`renderChunk` fills it in). */
+  const localeRewrite = (filename: string, code: string): string | null => {
+    const tables = localeTables(code, filename);
+    if (!tables.length) return null;
+    let out = code;
+    for (const table of [...tables].sort((a, b) => b.start - a.start)) {
+      const index = localeMarks.push({ table, file: filename }) - 1;
+      const full = JSON.stringify(LOCALE_FULL + filename + "#" + table.name);
+      out =
+        out.slice(0, table.start) +
+        `{ ...${JSON.stringify(`__rivet_lt_${index}__`)}, [Symbol.for("rivet.locales")]: { l: ${JSON.stringify(`__rivet_ll_${index}__`)}, f: () => import(${full}).then((m) => m.${table.name}) } }` +
+        out.slice(table.end);
+    }
+    return out;
+  };
+  /** The languages this client build renders: the declared locales' (`languagesOf`, with `en`). */
+  const localeLanguages = (): Set<string> => languagesOf(declaredLocales ?? []);
   const resumable = new Set<string>();
   // `resume.domData` (DERIVED-C5): off unless `true` (the row read-back costs the first click a few ms at 4× CPU).
   const domDataOn = (): boolean => resume?.domData === true;
@@ -861,6 +913,63 @@ function rivetPlugin(
       frameworkNames.set(dir, (hit = !!name && FRAMEWORK.has(name)));
     }
     return hit;
+  };
+  // tailwind-merge on demand (ZERO UI-JS2, `class-merge.ts`): a production client module that can hand `@rivetjs/ui`'s
+  // resolver an override tailwind-merge would change imports `@rivetjs/ui/tv-merge` (registers the merge before its code
+  // runs). Scope: app modules and packages that may render ui components (`@rivetjs/*` packages other than ui that do not
+  // depend on it render classes, never resolve them); third-party code under node_modules is never scanned.
+  const mergeScopes = new Map<string, boolean>(); // package dir → in scope
+  const classMergeScope = (file: string): boolean => {
+    if (file.startsWith("\0") || !/\.[cm]?[jt]sx?$/.test(file) || file.endsWith(".d.ts")) return false;
+    if (/[/\\]node_modules[/\\]/.test(file) && !sourcePackage(file)) return false;
+    const dir = packageOf(dirname(file));
+    if (!dir) return true;
+    let hit = mergeScopes.get(dir);
+    if (hit === undefined) {
+      const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as { name?: string } & Record<string, Record<string, string> | undefined>;
+      const deps = { ...pkg.dependencies, ...pkg.peerDependencies, ...pkg.devDependencies };
+      hit = !pkg.name?.startsWith("@rivetjs/") || pkg.name === "@rivetjs/ui" || "@rivetjs/ui" in deps;
+      mergeScopes.set(dir, hit);
+    }
+    return hit;
+  };
+  const joinFiles = new Map<string, Map<string, number[]>>();
+  // `@rivet-class-join` helpers of the module's relative imports (ui's `utils/compose.tsx`, `utils/live.tsx`).
+  const importedJoins = (file: string, code: string): Map<string, number[]> => {
+    const out = new Map<string, number[]>();
+    for (const [, spec = ""] of code.matchAll(/\bfrom\s*["'](\.{1,2}\/[^"']+)["']/g)) {
+      const target = resolve(dirname(file), spec);
+      let joins = joinFiles.get(target);
+      if (!joins) joinFiles.set(target, (joins = existsSync(target) ? classJoinDeclarations(readFileSync(target, "utf8")) : new Map()));
+      for (const [name, args] of joins) out.set(name, args);
+    }
+    return out;
+  };
+  const mergeProviders = new Map<string, Promise<string | null>>(); // package dir → resolved provider id
+  let twMergeFn: ((value: string) => string) | null | undefined;
+  const classMergeImport = async (ctx: Rollup.TransformPluginContext, filename: string, original: string, out: Out): Promise<Out> => {
+    const code = out ? out.code : original;
+    if (!classOverrideCandidate(original)) return out;
+    const dir = packageOf(dirname(filename)) ?? dirname(filename);
+    let provider = mergeProviders.get(dir);
+    if (!provider)
+      mergeProviders.set(dir, (provider = ctx.resolve(_UI_TV_MERGE, filename, { skipSelf: true }).then((hit) => (hit && !hit.external ? hit.id : null))));
+    const id = await provider;
+    if (!id || id.split("?", 1)[0] === filename) return out;
+    if (twMergeFn === undefined) {
+      try {
+        const require = createRequire(id.split("?", 1)[0]!);
+        const mod = (await import(pathToFileURL(require.resolve("tailwind-variants")).href)) as { cn: (value: string) => string };
+        twMergeFn = (value: string) => mod.cn(value) ?? "";
+      } catch {
+        twMergeFn = null;
+      }
+    }
+    // Without tailwind-merge at build time every override counts as one that may change.
+    const merge = twMergeFn ?? (() => "\0");
+    if (!classOverrideSites(original, filename, { merge, joins: importedJoins(filename, original) }).length) return out;
+    // Same line (maps and line numbers stay): ES imports are hoisted.
+    return { code: `import ${JSON.stringify(id)};` + code, map: out ? out.map : null };
   };
   // Source packages (`"rivet": { "source": true }` in package.json, e.g. @rivetjs/cdk): their .tsx
   // compile like app code even under node_modules and, in resume apps, in resume mode, with module ids
@@ -1458,8 +1567,14 @@ function rivetPlugin(
         const api = (plugin as { api?: { rivetCompileOptions?: (server: boolean, id?: string) => Partial<CompileOptions> } }).api;
         return api?.rivetCompileOptions ? [api.rivetCompileOptions.bind(api)] : [];
       });
+      declaredLocales = localesOption ?? null;
+      // `@rivetjs/i18n/vite`: its catalog locales are the app's.
+      for (const plugin of config.plugins ?? [])
+        if (plugin.name === "vite-plugin-rivet-i18n")
+          declaredLocales ??= (plugin as { api?: { config?: { locales?: readonly string[] } } }).api?.config?.locales ?? null;
     },
     async buildStart() {
+      if (localeClient(this)) localeMarks.length = 0;
       // Compiler ↔ runtime ABI handshake (abi.ts), once per plugin instance: the app's resolved runtime.
       if (!abiChecked) {
         abiChecked = true;
@@ -1499,6 +1614,15 @@ function rivetPlugin(
     },
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
+      if (id.startsWith(LOCALE_FULL)) return id;
+      // `@rivetjs/ui`'s merge switch (ZERO UI-JS2): merge everywhere but production browser builds, whatever the
+      // environment's conditions (a worker SSR target resolves `browser`); the package `imports` map is the fallback.
+      if (id === "#tv-merge" && importer && /[/\\]tv\.[jt]s$/.test(importer.split("?", 1)[0]!) && _UI_TV.test(importer.split("?", 1)[0]!)) {
+        const file = importer.split("?", 1)[0]!;
+        const client = built && !serve && !ssrBuild && this.environment?.config?.consumer !== "server";
+        const target = join(dirname(file), (client ? "merge-off" : "merge-on") + file.slice(file.lastIndexOf(".")));
+        if (existsSync(target)) return target;
+      }
       if (id === LITE_RUNTIME || id === LITE_EMPTY || id.startsWith(LITE_PREFIX)) return id;
       // Lite graph (ZERO LITE-WIRE): an import of a lite module resolves as the ordinary one would (this plugin's aliases
       // included), then names that module's copy; stylesheets → an empty module.
@@ -1565,6 +1689,15 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
+      // A locale table whole (its lazy chunk): the table's own source text (pure data).
+      if (id.startsWith(LOCALE_FULL)) {
+        const hash = id.lastIndexOf("#");
+        const file = id.slice(LOCALE_FULL.length, hash);
+        const name = id.slice(hash + 1);
+        const table = localeTables(await readFile(file, "utf8"), file).find((entry) => entry.name === name);
+        if (!table) this.error(`locale table ${name} of ${file} not found`);
+        return { code: `export const ${name} = ${entriesText(table.entries)};\n`, moduleSideEffects: false };
+      }
       // Build-time evaluation: the override merge provider (registers tailwind-merge for full tv resolvers).
       // Side effects by definition (it registers the merge): never tree-shaken with an importer's `sideEffects: false`.
       if (id.startsWith(MERGE_PREFIX)) {
@@ -1623,6 +1756,20 @@ function rivetPlugin(
       }
       return null;
     },
+    // Locale tables: the kept entries and languages, now that every client module's literals are known.
+    renderChunk(code) {
+      if (!localeMarks.length || !code.includes("__rivet_l")) return null;
+      const languages = localeLanguages();
+      const list = JSON.stringify([...languages].sort());
+      const next = code
+        .replace(
+          /\.\.\.\s*\(?\s*(["'`])__rivet_lt_(\d+)__\1\s*\)?/g,
+          (_, _quote, index: string) => "..." + entriesText(keptEntries(localeMarks[+index]!.table, languages)),
+        )
+        .replace(/(["'`])__rivet_ll_(\d+)__\1/g, () => list);
+      if (/__rivet_l[lt]_\d+__/.test(next)) this.error("locale table markers left in a chunk (locale-tables.ts)");
+      return { code: next, map: null };
+    },
     // Post: chunk code is final (Vite's preload helpers rewritten), so sizes match the emitted files.
     generateBundle: {
       order: "post",
@@ -1634,6 +1781,12 @@ function rivetPlugin(
     },
     transform(original, id, options) {
       const [filename = "", query = ""] = id.split("?", 2);
+      if (localeClient(this, options) && !id.startsWith(LOCALE_FULL)) {
+        if (original.includes(LOCALE_TABLE_MARK) && /\.[cm]?[jt]s$/.test(filename) && !id.startsWith("\0")) {
+          const code = localeRewrite(filename, original);
+          if (code !== null) return { code, map: null };
+        }
+      }
       const annotated = _pureAnnotate(filename, original, query);
       if (annotated !== null) return { code: annotated, map: null };
       // Island facades (`rivet({ bridges })`) are the only virtual modules compiled here.
@@ -1643,8 +1796,8 @@ function rivetPlugin(
       // A `.ts` route module (an endpoint a page imports from): its server exports leave the browser build too.
       const routeScript = /\.[cm]?ts$/.test(filename) && !filename.endsWith(".d.ts") && isRoute(filename);
       // Build-time evaluation of plain script modules (`tv(…)` definitions, constant calls).
-      if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript && /\.[cm]?[jt]s$/.test(filename) && !filename.endsWith(".d.ts") && comptimeOn())
-        return comptimeRewrite(this, filename, null, original);
+      if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript && /\.[cm]?[jt]s$/.test(filename) && !filename.endsWith(".d.ts") && built && !serve)
+        return classMerged(this, filename, original, options, comptimeOn() ? comptimeRewrite(this, filename, null, original) : null);
       if (!facade && !/\.[jt]sx$/.test(filename) && !routeScript) {
         // DevTools (dev client only): plain app modules name their signals, computeds and contexts too
         // (same-line edits: line numbers and stacks stay right).
@@ -1675,10 +1828,10 @@ function rivetPlugin(
         if (server) return null;
         const split = compile(source, { ...contributed(false, id), serverExports: true, target: "dom", filename, ...(sourceMap ? { sourceMap: true } : {}) });
         if (split.diagnostics.length) fail(this, split, filename);
-        return comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original);
+        return classMerged(this, filename, original, options, comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original));
       }
       const done = finish(this, filename, source, server, id);
-      return facade ? done : comptimeRewrite(this, filename, done, original);
+      return facade ? done : classMerged(this, filename, original, options, comptimeRewrite(this, filename, done, original));
     },
     async closeBundle() {
       // The last environment's bundle closes the evaluator (a later build of this plugin instance makes a new one).

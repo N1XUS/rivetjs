@@ -15,6 +15,7 @@ import { mkdir, readdir, readFile, rm, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { parseAst } from "vite";
 import type { ExampleConfig } from "../define.ts";
 import type { ExampleData, ExampleFile } from "../components/types.ts";
 import { moduleFacts } from "@rivetjs/compiler";
@@ -314,9 +315,21 @@ export async function generateExamples(root: string, options: { lenient?: (messa
     const spec = (file: string) => posix(relative(framesDir, resolve(root, "examples", id, "src/routes", file)));
     // Per route file: its default export (the component) and the module (head, loader).
     const imports = new Map<string, number>();
+    // `module` (head, loader) is read on the server only: named imports behind `import.meta.env.SSR`, so the browser
+    // bundle keeps no namespace object (rolldown's `__exportAll` helper = one extra request per frame, UI-JS2).
+    const names = new Map<number, readonly string[] | null>();
+    const moduleOf = (index: number) => {
+      const exported = names.get(index);
+      if (exported === null) return `M${index}`;
+      return `import.meta.env.SSR ? { ${exported!.map((name) => `${JSON.stringify(name)}: M${index}_${name}`).join(", ")} } : {}`;
+    };
     const local = (file: string) => {
       let index = imports.get(file);
-      if (index === undefined) imports.set(file, (index = imports.size));
+      if (index === undefined) {
+        imports.set(file, (index = imports.size));
+        const route = resolve(root, "examples", id, "src/routes", file);
+        names.set(index, existsSync(route) ? namedExports(readFileSync(route, "utf8"), route) : null);
+      }
       return index;
     };
     const entries = pages.map(({ path, file, layouts }) => {
@@ -334,14 +347,23 @@ export async function generateExamples(root: string, options: { lenient?: (messa
         const facts = existsSync(route) ? moduleFacts(readFileSync(route, "utf8"), route, { boundaries: true }) : null;
         if (facts?.boundaries.get(facts.defaultName ?? "default")?.params === "none") shells.push(posix(relative(root, route)));
       }
-      return `  ${JSON.stringify(path)}: { module: M${page}, Page: (props: FrameProps) => ${wrapped}, props: ${props} },`;
+      return `  ${JSON.stringify(path)}: { module: ${moduleOf(page)}, Page: (props: FrameProps) => ${wrapped}, props: ${props} },`;
     });
     const source = [
       HEADER(`examples/${id}`).trimEnd(),
       `import "../example-css/${groupOf.get(id)}.css";`,
       `import type { FrameComponent, FrameModule, FrameProps } from "@rivetjs/docs-kit/components/frame.tsx";`,
       ...[...imports].flatMap(([file, index]) => [
-        `import _C${index}, * as M${index} from ${JSON.stringify(spec(file))};`,
+        names.get(index) === null
+          ? `import _C${index}, * as M${index} from ${JSON.stringify(spec(file))};`
+          : `import _C${index}${
+              names.get(index)!.length
+                ? `, { ${names
+                    .get(index)!
+                    .map((name) => `${name} as M${index}_${name}`)
+                    .join(", ")} }`
+                : ""
+            } from ${JSON.stringify(spec(file))};`,
         // Pages / layouts that take no props (or typed ones): the frame passes router-shaped props to all.
         `const C${index} = _C${index} as FrameComponent;`,
       ]),
@@ -402,4 +424,61 @@ export async function examplesCommand(root: string): Promise<void> {
   const codeOnly = all.filter((example) => example.codeOnly);
   console.log(`examples: ${all.length} (${all.length - codeOnly.length} live, ${codeOnly.length} code only), ${written.length} file(s) written`);
   for (const example of codeOnly) console.log(`  code only: ${example.id} — ${example.codeOnly}`);
+}
+
+/**
+ * Route data exports of a route module (`head` in any form, the `load(…)` loader, other non-function values, `export { a, b as c }`;
+ * not function / class declarations = components), or null when the module has a form this does not read (`export *`,
+ * re-exports, destructuring): the frame then keeps the namespace import.
+ */
+const FUNCTION_VALUE = new Set(["ArrowFunctionExpression", "FunctionExpression", "ClassExpression"]);
+
+function namedExports(code: string, file: string): readonly string[] | null {
+  type Node = { type: string; [key: string]: unknown };
+  let program: { body: Node[] };
+  try {
+    program = parseAst(code, { lang: file.endsWith(".tsx") ? "tsx" : file.endsWith(".ts") ? "ts" : "jsx" }) as unknown as { body: Node[] };
+  } catch {
+    return null;
+  }
+  const names = new Set<string>();
+  // Top-level function / class bindings (components): `export { Demo }` skips them too.
+  const functions = new Set<string>();
+  for (const node of program.body) {
+    const declaration = (node.type === "ExportNamedDeclaration" ? node.declaration : node) as Node | null;
+    if (declaration?.type === "FunctionDeclaration" || declaration?.type === "ClassDeclaration") functions.add((declaration.id as Node).name as string);
+    else if (declaration?.type === "VariableDeclaration")
+      for (const declarator of declaration.declarations as Node[])
+        if ((declarator.id as Node).type === "Identifier" && FUNCTION_VALUE.has((declarator.init as Node | null)?.type ?? ""))
+          functions.add((declarator.id as Node).name as string);
+  }
+  for (const node of program.body) {
+    if (node.type === "ExportAllDeclaration") return null;
+    if (node.type !== "ExportNamedDeclaration" || node.exportKind === "type") continue;
+    if (node.source) return null;
+    const declaration = node.declaration as Node | null;
+    if (declaration) {
+      if (declaration.type === "VariableDeclaration") {
+        for (const declarator of declaration.declarations as Node[]) {
+          const id = declarator.id as Node;
+          if (id.type !== "Identifier") return null;
+          // Components (function values) are no route data: referencing them as values here would make the analysis
+          // treat them as escaping (no site records).
+          if (id.name === "head" || !FUNCTION_VALUE.has((declarator.init as Node | null)?.type ?? "")) names.add(id.name as string);
+        }
+      } else if (declaration.type === "TSEnumDeclaration" && !(declaration as { declare?: boolean }).declare)
+        names.add((declaration.id as Node).name as string);
+      else if (declaration.type === "FunctionDeclaration" && (declaration.id as Node).name === "head") names.add("head");
+      continue;
+    }
+    for (const specifier of node.specifiers as Node[]) {
+      if (specifier.exportKind === "type") continue;
+      const exported = specifier.exported as Node;
+      const name = (exported.name ?? exported.value) as string;
+      if (name === "default" || (name !== "head" && functions.has(((specifier.local as Node).name ?? "") as string))) continue;
+      if (!/^[A-Za-z_$][\w$]*$/.test(name)) return null;
+      names.add(name);
+    }
+  }
+  return [...names].sort();
 }

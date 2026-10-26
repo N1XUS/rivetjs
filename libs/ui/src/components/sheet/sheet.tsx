@@ -63,6 +63,7 @@ const SheetContext = createContext<SheetContext>({});
 
 type SheetSlots = ReturnType<typeof sheetVariants>;
 const SLOTS = new Map<string, SheetSlots>();
+// @rivet-class-resolvers variantSlots
 /** `sheetVariants(variants)`, one object per variant combination. */
 const variantSlots = (variants: { placement?: SheetPlacement; isDetached?: boolean; variant?: SheetVariants["variant"] }): SheetSlots => {
   const key = `${variants.placement}|${variants.isDetached}|${variants.variant}`;

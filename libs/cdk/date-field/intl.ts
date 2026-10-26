@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "@rivetjs/cdk/i18n";
 
 export type DatePickerMessageKey = "era" | "year" | "month" | "day" | "hour" | "minute" | "second" | "dayPeriod" | "calendar" | "startDate" | "endDate" | "weekday" | "timeZoneName" | "selectedDateDescription" | "selectedRangeDescription" | "selectedTimeDescription" | "Empty";
 
+// @rivet-locale-table
 export const datePickerMessages: LocalizedStrings<DatePickerMessageKey> = {
   "ar-AE": {"calendar":"التقويم","day":"يوم","dayPeriod":"ص/م","endDate":"تاريخ الانتهاء","era":"العصر","hour":"الساعات","minute":"الدقائق","month":"الشهر","second":"الثواني","selectedDateDescription":"تاريخ محدد: {date}","selectedRangeDescription":"المدى الزمني المحدد: {startDate} إلى {endDate}","selectedTimeDescription":"الوقت المحدد: {time}","startDate":"تاريخ البدء","timeZoneName":"التوقيت","weekday":"اليوم","year":"السنة","Empty":"فارغ"},
   "bg-BG": {"calendar":"Календар","day":"ден","dayPeriod":"пр.об./сл.об.","endDate":"Крайна дата","era":"ера","hour":"час","minute":"минута","month":"месец","second":"секунда","selectedDateDescription":"Избрана дата: {date}","selectedRangeDescription":"Избран диапазон: {startDate} до {endDate}","selectedTimeDescription":"Избрано време: {time}","startDate":"Начална дата","timeZoneName":"часова зона","weekday":"ден от седмицата","year":"година","Empty":"Изпразни"},

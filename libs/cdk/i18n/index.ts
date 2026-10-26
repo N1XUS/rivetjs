@@ -146,8 +146,25 @@ export function getDateFormatter(locale: string, options: Intl.DateTimeFormatOpt
 /** Localized string tables: locale → key → `{name}` template. */
 export type LocalizedStrings<K extends string = string> = Record<string, Record<K, string>>;
 
+// A locale table a production browser build trimmed to its languages (`@rivetjs/compiler` `locale-tables.ts`):
+// `{ l: languages, f: () => full table }` under `Symbol.for("rivet.locales")`. The full table once loaded, else the
+// trimmed one, starting the load for a language outside `l`. File-local on purpose (copies in `_adapters/intl.ts`,
+// `i18n/index.ts`, `overlay/overlay-strings.ts`): a shared module became its own chunk (+1 request on 559 ui frames).
+const TRIMMED = Symbol.for("rivet.locales");
+function localeTable<T extends object>(strings: T, locale: string | null | undefined): T {
+  const trimmed = (strings as { [TRIMMED]?: { l: readonly string[]; f(): Promise<object>; t?: object; p?: Promise<void> } })[TRIMMED];
+  if (!trimmed) return strings;
+  if (!trimmed.t && !trimmed.p && locale && !trimmed.l.includes(locale.split("-")[0]!.toLowerCase()))
+    trimmed.p = trimmed.f().then(
+      (full) => void (trimmed.t = full),
+      () => void (trimmed.p = undefined),
+    );
+  return (trimmed.t as T | undefined) ?? strings;
+}
+
 /** Strings of `locale` from `strings`: exact match, language-script, language, any region of the language, else `defaultLocale`. */
-export function getStringsForLocale<K extends string>(strings: LocalizedStrings<K>, locale: string, defaultLocale = "en-US"): Record<K, string> {
+export function getStringsForLocale<K extends string>(table: LocalizedStrings<K>, locale: string, defaultLocale = "en-US"): Record<K, string> {
+  const strings = localeTable(table, locale);
   if (strings[locale]) return strings[locale];
   const [language, script] = localeParts(locale);
   if (script && strings[language + "-" + script]) return strings[language + "-" + script]!;

@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "@rivetjs/cdk/i18n";
 
 export type DateValidationMessageKey = "rangeUnderflow" | "rangeOverflow" | "rangeReversed" | "unavailableDate";
 
+// @rivet-locale-table
 export const dateValidationMessages: LocalizedStrings<DateValidationMessageKey> = {
   "ar-AE": {"rangeOverflow":"يجب أن تكون القيمة {maxValue} أو قبل ذلك.","rangeReversed":"تاريخ البدء يجب أن يكون قبل تاريخ الانتهاء.","rangeUnderflow":"يجب أن تكون القيمة {minValue} أو بعد ذلك.","unavailableDate":"البيانات المحددة غير متاحة."},
   "bg-BG": {"rangeOverflow":"Стойността трябва да е {maxValue} или по-ранна.","rangeReversed":"Началната дата трябва да е преди крайната.","rangeUnderflow":"Стойността трябва да е {minValue} или по-късно.","unavailableDate":"Избраната дата не е налична."},

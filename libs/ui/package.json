@@ -6,7 +6,8 @@
   "private": true,
   "type": "module",
   "sideEffects": [
-    "*.css"
+    "*.css",
+    "./styles/src/utils/tv-merge.*"
   ],
   "rivet": {
     "source": true
@@ -16,12 +17,24 @@
       "types": "./src/utils/dev-off.ts",
       "development": "./src/utils/dev-on.ts",
       "default": "./src/utils/dev-off.ts"
+    },
+    "#tv-merge": {
+      "types": "./styles/src/utils/merge-on.ts",
+      "browser": {
+        "development": "./styles/src/utils/merge-on.ts",
+        "default": "./styles/src/utils/merge-off.ts"
+      },
+      "default": "./styles/src/utils/merge-on.ts"
     }
   },
   "exports": {
     ".": {
       "types": "./index.ts",
       "default": "./index.ts"
+    },
+    "./tv-merge": {
+      "types": "./styles/src/utils/tv-merge.ts",
+      "default": "./styles/src/utils/tv-merge.ts"
     },
     "./surface": {
       "types": "./src/components/surface/index.ts",

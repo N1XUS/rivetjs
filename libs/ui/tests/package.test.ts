@@ -14,7 +14,7 @@ test("package: exact dependency pins, no React", () => {
 
 test("package: every component subpath points at src/components/<name>/index.ts", () => {
   for (const [key, value] of Object.entries<any>(pkg.exports)) {
-    if (!/^\.\/[a-z-]+$/.test(key) || key === "./styles" || key === "./theme") continue;
+    if (!/^\.\/[a-z-]+$/.test(key) || key === "./styles" || key === "./theme" || key === "./tv-merge") continue;
     assert.equal(value.default, `./src/components/${key.slice(2)}/index.ts`);
   }
 });

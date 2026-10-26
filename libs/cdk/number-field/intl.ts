@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/numberfield/*.json), Apache-2.0, © Adobe. Generated: every locale of the original; do not edit.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": {"decrease":"خفض {fieldLabel}","increase":"زيادة {fieldLabel}","numberField":"حقل رقمي"},
   "bg-BG": {"decrease":"Намаляване {fieldLabel}","increase":"Усилване {fieldLabel}","numberField":"Номер на полето"},

@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/menu/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": {"longPressMessage":"اضغط مطولاً أو اضغط على Alt + السهم لأسفل لفتح القائمة"},
   "bg-BG": {"longPressMessage":"Натиснете продължително или натиснете Alt+ стрелка надолу, за да отворите менюто"},

@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/grid/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": {"deselectedItem":"{item} غير المحدد","longPressToSelect":"اضغط مطولًا للدخول إلى وضع التحديد.","select":"تحديد","selectedAll":"جميع العناصر المحددة.","selectedCount":"{count, plural, =0 {لم يتم تحديد عناصر} one {# عنصر محدد} other {# عنصر محدد}}.","selectedItem":"{item} المحدد"},
   "bg-BG": {"deselectedItem":"{item} не е избран.","longPressToSelect":"Натиснете и задръжте за да влезете в избирателен режим.","select":"Изберете","selectedAll":"Всички елементи са избрани.","selectedCount":"{count, plural, =0 {Няма избрани елементи} one {# избран елемент} other {# избрани елементи}}.","selectedItem":"{item} избран."},

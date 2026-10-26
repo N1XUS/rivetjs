@@ -57,6 +57,7 @@ export type SchedulerPluralKey =
 export type SchedulerStrings = Record<SchedulerMessageKey, string> & Partial<Record<SchedulerPluralKey, string>>;
 
 /** Locale tables (14 locales of the malva packs). */
+// @rivet-locale-table
 export const schedulerMessages: Record<string, SchedulerStrings> = {
   "en-US": {
     allDay: "All day",

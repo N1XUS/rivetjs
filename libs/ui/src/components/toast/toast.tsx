@@ -93,6 +93,7 @@ const ToastContext = createContext<ToastContext>({});
 
 type ToastSlots = ReturnType<typeof toastVariants>;
 const SLOTS = new Map<string, ToastSlots>();
+// @rivet-class-resolvers slotsFor
 const slotsFor = (placement: ToastVariants["placement"]): ToastSlots => {
   const key = String(placement);
   let slots = SLOTS.get(key);

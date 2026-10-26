@@ -67,6 +67,7 @@ const DrawerContext = createContext<DrawerContext>({});
 
 type DrawerSlots = ReturnType<typeof drawerVariants>;
 const SLOTS = new Map<string, DrawerSlots>();
+// @rivet-class-resolvers variantSlots
 /** `drawerVariants(variants)`, one object per variant combination. */
 const variantSlots = (variants: { placement?: DrawerPlacement; variant?: DrawerVariants["variant"] }): DrawerSlots => {
   const key = `${variants.placement}|${variants.variant}`;

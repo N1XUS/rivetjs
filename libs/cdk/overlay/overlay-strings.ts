@@ -3,6 +3,7 @@
 // Ported from @react-aria/overlays (intl/overlays/*.json), Apache-2.0, © Adobe.
 
 /** Locale → "Dismiss" label. */
+// @rivet-locale-table
 export const dismissStrings: Record<string, string> = {
   "ar-AE": "تجاهل",
   "bg-BG": "Отхвърляне",
@@ -40,12 +41,29 @@ export const dismissStrings: Record<string, string> = {
   "zh-TW": "關閉",
 };
 
+// A locale table a production browser build trimmed to its languages (`@rivetjs/compiler` `locale-tables.ts`):
+// `{ l: languages, f: () => full table }` under `Symbol.for("rivet.locales")`. The full table once loaded, else the
+// trimmed one, starting the load for a language outside `l`. File-local on purpose (copies in `_adapters/intl.ts`,
+// `i18n/index.ts`, `overlay/overlay-strings.ts`): a shared module became its own chunk (+1 request on 559 ui frames).
+const TRIMMED = Symbol.for("rivet.locales");
+function localeTable<T extends object>(strings: T, locale: string | null | undefined): T {
+  const trimmed = (strings as { [TRIMMED]?: { l: readonly string[]; f(): Promise<object>; t?: object; p?: Promise<void> } })[TRIMMED];
+  if (!trimmed) return strings;
+  if (!trimmed.t && !trimmed.p && locale && !trimmed.l.includes(locale.split("-")[0]!.toLowerCase()))
+    trimmed.p = trimmed.f().then(
+      (full) => void (trimmed.t = full),
+      () => void (trimmed.p = undefined),
+    );
+  return (trimmed.t as T | undefined) ?? strings;
+}
+
 /** The label for `locale`: exact match, then language match (`de` → `de-DE`), else English. */
 export function dismissLabel(locale?: string | null): string {
+  const strings = localeTable(dismissStrings, locale);
   if (locale) {
-    if (dismissStrings[locale]) return dismissStrings[locale]!;
+    if (strings[locale]) return strings[locale]!;
     const language = locale.split("-")[0]!.toLowerCase();
-    for (const key in dismissStrings) if (key.split("-")[0]!.toLowerCase() === language) return dismissStrings[key]!;
+    for (const key in strings) if (key.split("-")[0]!.toLowerCase() === language) return strings[key]!;
   }
-  return dismissStrings["en-US"]!;
+  return strings["en-US"]!;
 }

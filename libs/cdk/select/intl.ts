@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria-components intl/*.json: selectPlaceholder), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": { selectPlaceholder: "حدد عنصرًا" },
   "bg-BG": { selectPlaceholder: "Изберете предмет" },

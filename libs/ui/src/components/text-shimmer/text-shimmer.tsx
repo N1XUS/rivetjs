@@ -9,6 +9,8 @@
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import { textShimmerVariants } from "../../../styles/src/components/text-shimmer/index.ts";
+// `text-shimmer` is a core token tailwind-merge reads as a utility: any override merges (`UTILITY_CORE_TOKENS`).
+import "../../../styles/src/utils/tv-merge.ts";
 import { splitLive } from "../../utils/live.tsx";
 
 const BASE = textShimmerVariants().base();

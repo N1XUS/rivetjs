@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/searchfield/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": { "Clear search": "مسح البحث" },
   "bg-BG": { "Clear search": "Изчистване на търсене" },

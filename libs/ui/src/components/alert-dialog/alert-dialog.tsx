@@ -58,6 +58,7 @@ const AlertDialogContext = createContext<AlertDialogContext>({});
 
 type AlertDialogSlots = ReturnType<typeof alertDialogVariants>;
 const SLOTS = new Map<string, AlertDialogSlots>();
+// @rivet-class-resolvers variantSlots
 /** `alertDialogVariants(variants)`, one object per variant combination. */
 const variantSlots = (variants: {
   size?: AlertDialogVariants["size"];

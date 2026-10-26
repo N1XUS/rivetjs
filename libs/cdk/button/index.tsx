@@ -149,7 +149,7 @@ function watchPending(el: Element, isPending: MaybeAccessor<boolean | undefined>
         const now = !!read(isPending);
         if (now !== was) {
           const message = { "aria-labelledby": labelledBy() };
-          void import("../announcer/live-announcer.ts").then((m) => m.announce(message, "assertive"));
+          void import("../announcer/announce-lazy.ts").then((m) => m.announceAssertive(message));
         }
         was = now;
       });

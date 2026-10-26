@@ -10,6 +10,7 @@ Server-rendered live regions (exist before the first announcement) + React Aria 
 ## Layout
 - `index.tsx` - two region components, hidden via `visuallyHidden` from `../a11y/index.ts`
 - `live-announcer.ts` - react-aria live announcer (one node per message, removed after `timeout`)
+- `announce-lazy.ts` - `announceAssertive(message)`: the `import()` target of lazy callers (cdk Button pending state). A dynamic import of `live-announcer.ts` itself (statically shared by number-field / combobox / table / grid / spinbutton) made rolldown build its namespace object (`__exportAll` → `rolldown-runtime` chunk, +1 request on every Button page); the lazy entry is its own chunk with real export names (ZERO UI-JS2)
 - used by: story layouts `tests/app/src/routes/_layout.tsx`, `tests-components/app/src/routes/_layout.tsx`
 - tests: `tests/browser/smoke.test.ts` (Announcer SSR markup); live-announcer has no direct test
 - docs examples: `apps/cdk-docs/examples/{announce-basic,live-announcer}/`

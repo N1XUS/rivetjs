@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "../i18n/index.ts";
 
 export type BreadcrumbsMessageKey = "breadcrumbs";
 
+// @rivet-locale-table
 export const breadcrumbsMessages: LocalizedStrings<BreadcrumbsMessageKey> = {
   "ar-AE": {
     breadcrumbs: "عناصر الواجهة",

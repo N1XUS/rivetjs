@@ -33,6 +33,7 @@ export function accessorIfLive<T extends object, K extends keyof T>(props: T, ke
  *  closure factory: the component body builds the render-prop function inline (`(values) => renderClass(classOf(), values)`),
  *  which the compiler registers with the body's captures; a closure returned from here would capture the caller's
  *  unregistered `compute` argument (`cdkClass(live, () => …)`, removed: "function is not serializable" on resumed pages). */
+// @rivet-class-join renderClass(0)
 export function renderClass(c: string | ((values: never) => string), values: unknown): string {
   return typeof c === "function" ? c(values as never) : c;
 }

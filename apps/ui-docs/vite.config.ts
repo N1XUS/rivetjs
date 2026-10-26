@@ -18,6 +18,8 @@ export default defineConfig({
       prefetchPaths: false,
       // Example frame pages that take props resume under their own root boundary (docs-kit `FrameRoot`).
       resume: { roots: [FRAME_ROOT] },
+      // Every locale a demo renders (`<html lang="en">`): component strings of other languages stay out of the browser build.
+      locales: ["en-US", "ar-EG", "de-DE", "hi-IN"],
     }),
     tailwindcss(),
   ],

@@ -25,6 +25,7 @@ type ItemClass = string | ((state: MasonryItemState) => string | undefined) | un
 
 type SlotFn = (options?: { class?: string | undefined }) => string;
 
+// @rivet-class-join itemClassOf(1)
 /** The item slot class merged with the user's `itemClass` (string, or a per-item function → one per item). */
 function itemClassOf(slot: SlotFn, user: ItemClass): ItemClass {
   if (typeof user !== "function") return composeSlotClassName(slot, user);

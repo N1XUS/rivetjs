@@ -35,6 +35,7 @@ import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 import type { ScrollAreaVariants } from "../../../styles/src/components/scroll-area/index.ts";
 import { scrollAreaVariants } from "../../../styles/src/components/scroll-area/index.ts";
 import { scrollShadowVariants } from "../../../styles/src/components/scroll-shadow/index.ts";
+import { cx } from "../../../styles/src/utils/tv.ts";
 import { splitLive } from "../../utils/live.tsx";
 
 /** The parts' slots (no per-part variant: `size` / `variant` are root modifiers): one tv call per module. */
@@ -112,7 +113,7 @@ const ScrollAreaViewport = (props: ScrollAreaViewportProps): JSX.Element => {
   const context = useContext(ScrollAreaContext);
   const shadow = context.shadow;
   const orientation = shadow === "horizontal" ? "horizontal" : "vertical";
-  const cls = SLOTS.viewport({ class: shadow ? `${SHADOW_CLASS[orientation]}${local.class ? ` ${local.class}` : ""}` : local.class });
+  const cls = SLOTS.viewport({ class: shadow ? cx(SHADOW_CLASS[orientation], local.class) : local.class });
   const style = shadow ? { "--scroll-shadow-size": `${context.shadowSize ?? 40}px`, ...local.style } : local.style;
   return (
     <ScrollAreaViewportPrimitive

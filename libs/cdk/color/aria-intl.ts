@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "@rivetjs/cdk/i18n";
 
 export type ColorAriaMessageKey = "colorInputLabel" | "colorNameAndValue" | "colorPicker" | "colorSwatch" | "transparent" | "twoDimensionalSlider";
 
+// @rivet-locale-table
 export const colorAriaMessages: LocalizedStrings<ColorAriaMessageKey> = {
   "ar-AE": {
     colorInputLabel: "{label}, {channelLabel}",

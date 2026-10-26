@@ -67,6 +67,7 @@ const ModalContext = createContext<ModalContext>({});
 
 type ModalSlots = ReturnType<typeof modalVariants>;
 const SLOTS = new Map<string, ModalSlots>();
+// @rivet-class-resolvers variantSlots
 /** `modalVariants(variants)`, one object per variant combination. */
 const variantSlots = (variants: { scroll?: ModalVariants["scroll"]; size?: ModalVariants["size"]; variant?: ModalVariants["variant"] }): ModalSlots => {
   const key = `${variants.scroll}|${variants.size}|${variants.variant}`;

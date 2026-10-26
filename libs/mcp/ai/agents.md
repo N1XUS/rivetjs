@@ -290,6 +290,7 @@ export default function Contact() {
 - Compile-time: `t("key")` is replaced by the string for the locale being built; no runtime catalog. One client build per locale.
 - `i18n.config.ts` (`locales`, `defaultLocale`, `catalogs: "locales/{locale}.json"`, `routing`); Vite: `plugins: [i18n(config), rivetRouter()]` — `i18n()` from `@rivetjs/i18n/vite`, **before** the router.
 - Catalogs: JSON, nested keys → dotted, values ICU MessageFormat (`"Hello, {name}!"`, plural / select).
+- Component strings (`@rivetjs/cdk` / `@rivetjs/ui` labels, date / number formats) ship every locale unless the app declares the ones it serves: `rivetRouter({ locales: ["en-US", "de-DE"] })` (default: `i18n()` `locales`). Declared, other languages load their strings on first use and may show `en-US` text until then: list every language you serve.
 
 ```tsx
 import { t } from "@rivetjs/i18n";

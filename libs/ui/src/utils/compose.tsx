@@ -12,6 +12,8 @@ export { disabledClasses, focusRingClasses, ariaDisabledClasses } from "../../st
 
 type SlotFn = (args?: { class?: string; [key: string]: unknown }) => string;
 
+// Class joins (`@rivetjs/compiler` class-merge.ts: the result is a tailwind-merge fixed point when the listed arguments are).
+// @rivet-class-join composeSlotClassName(1) composeTwRenderProps(0,1)
 export const composeSlotClassName = (slotFn: SlotFn | undefined, cls?: string, variants?: Record<string, unknown>): string | undefined =>
   // No `{ ...(variants ?? {}) }` copy when `variants` is absent (every Card part): 24.5 → 20.8 ns/call (node 26, warm).
   typeof slotFn === "function" ? slotFn(variants ? { ...variants, class: cls } : { class: cls }) : cls;

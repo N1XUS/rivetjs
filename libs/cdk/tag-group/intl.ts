@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/tag/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": { removeButtonLabel: "إزالة", removeDescription: "اضغط على مفتاح DELETE لإزالة علامة." },
   "bg-BG": { removeButtonLabel: "Премахване", removeDescription: "Натиснете Delete, за да премахнете маркера." },

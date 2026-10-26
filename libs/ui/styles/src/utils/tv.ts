@@ -9,14 +9,24 @@
 // cn(override)`, and a one-token override (most call sites: `class="w-96"`) merges with nothing. That also skips
 // tailwind-merge's lazy class-map build (≈ 1.6 ms on the first merge of a page). The public `tv` / `cn` (`../index.ts`,
 // `@rivetjs/ui`) stay tailwind-variants' own.
+// tailwind-merge on demand (ZERO UI-JS2): the server and dev builds merge with it always (`#tv-merge` = `merge-on.ts`); a
+// production browser bundle starts without it (`merge-off.ts`) and merges once `./tv-merge.ts` registered it. The compiler
+// (`@rivetjs/compiler` `class-merge.ts`) makes every module that can hand a resolver an override tailwind-merge would change
+// import `@rivetjs/ui/tv-merge`; any other override is a tailwind-merge fixed point, so its join is the merge.
 import type { TV } from "tailwind-variants";
 
-// Builds resolve this one import to the merge half of tailwind-variants' `index.js` (`@rivetjs/compiler` vite
-// `_pureAnnotate`): the whole module would carry upstream's `tv` runtime into every ui page whenever any page of the build
-// imports upstream `tv`. ui modules take `cx` from here for the same reason (not from `/lite`).
-import { cn, cx } from "tailwind-variants";
+// `cx` = tailwind-variants' own, ported (`./cx.ts`): upstream's shares its module with tailwind-merge. ui modules take
+// `cx` from here (not from `tailwind-variants` / `/lite`: those carry tailwind-merge or upstream's `tv` runtime).
+import { cx } from "./cx.ts";
+import { merge as initialMerge } from "#tv-merge";
 
 export { cx };
+
+let merge: ((joined: string) => string | undefined) | null = initialMerge as ((joined: string) => string | undefined) | null;
+/** @internal `./tv-merge.ts`: registers tailwind-merge (a module whose overrides it may change imports that module). */
+export const provideMerge = (fn: (joined: string) => string | undefined): void => {
+  merge ??= fn;
+};
 
 type ClassProps = { class?: unknown; className?: unknown; [variant: string]: unknown } | null | undefined;
 type Values = Record<string, unknown>;
@@ -40,11 +50,11 @@ const hasOverride = (props: ClassProps): boolean =>
 const withOverride = (core: string | undefined, props: ClassProps): string | undefined => {
   if (!hasOverride(props)) return core;
   const joined = cx(core, props!.class as never, props!.className as never);
-  if (typeof joined !== "string") return cn(joined as never) as string | undefined;
+  if (typeof joined !== "string") return merge ? merge(joined as never) : joined;
   const override = cx(props!.class as never, props!.className as never);
   // One override token (or none) next to an inert core: nothing for tailwind-merge to drop.
   if ((override === undefined || override.indexOf(" ") < 0) && (core === undefined || !UTILITY_CORE.test(core))) return joined;
-  return cn(joined) as string | undefined;
+  return merge ? merge(joined) : joined;
 };
 
 // = tailwind-variants `falsyToString`.

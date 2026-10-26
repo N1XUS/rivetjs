@@ -121,6 +121,12 @@ export interface RivetRouterOptions {
    */
   comptime?: RivetOptions["comptime"];
   /**
+   * Locales the app serves (`rivet({ locales })`; default: the `i18n()` plugin's `locales`, else none). Declared, the
+   * browser build ships cdk locale strings of these languages only (+ `en-US`); another language loads the full table on
+   * its first lookup and may show `en-US` strings until then. Undeclared: every table ships whole.
+   */
+  locales?: RivetOptions["locales"];
+  /**
    * Route transitions (View Transitions) + pending UI. Off by default; `true` = defaults. The
    * transitions module loads on the first navigation intent.
    */
@@ -517,6 +523,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
   const icons = {
     ...(options.staticIcons === undefined ? {} : { staticIcons: options.staticIcons }),
     ...(options.comptime === undefined ? {} : { comptime: options.comptime }),
+    ...(options.locales === undefined ? {} : { locales: options.locales }),
   };
   const compilerOptions = mode === "csr" ? { devtools, serverExports, ...css, ...icons } : { resume, devtools, serverExports, ...css, ...icons };
   const bridges = options.bridges?.length ? options.bridges : undefined;

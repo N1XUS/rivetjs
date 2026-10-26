@@ -14,7 +14,15 @@ import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
 export default defineConfig({
   plugins: [
     docsSite(),
-    rivetRouter({ mode: "static", styles: ["src/styles.css"], prefetch: "document", prefetchPaths: false, resume: { roots: [FRAME_ROOT] } }),
+    rivetRouter({
+      mode: "static",
+      styles: ["src/styles.css"],
+      prefetch: "document",
+      prefetchPaths: false,
+      resume: { roots: [FRAME_ROOT] },
+      // Every locale a demo renders (`<html lang="en">`): component strings of other languages stay out of the browser build.
+      locales: ["en-US", "de-DE", "ja-JP", "pt-BR", "uk"],
+    }),
     tailwindcss(),
   ],
   define: {

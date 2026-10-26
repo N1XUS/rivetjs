@@ -3,6 +3,7 @@ import type { LocalizedStrings } from "@rivetjs/cdk/i18n";
 
 export type ColorSwatchPickerMessageKey = "colorSwatchPicker";
 
+// @rivet-locale-table
 export const colorSwatchPickerMessages: LocalizedStrings<ColorSwatchPickerMessageKey> = {
   "ar-AE": {
     colorSwatchPicker: "تغييرات الألوان",

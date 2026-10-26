@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/table/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": {"ascending":"تصاعدي","ascendingSort":"ترتيب حسب العمود {columnName} بترتيب تصاعدي","collapse":"طي","columnSize":"{value} بالبكسل","descending":"تنازلي","descendingSort":"ترتيب حسب العمود {columnName} بترتيب تنازلي","expand":"تمديد","resizerDescription":"اضغط على مفتاح Enter لبدء تغيير الحجم","select":"تحديد","selectAll":"تحديد الكل","sortable":"عمود قابل للترتيب"},
   "bg-BG": {"ascending":"възходящ","ascendingSort":"сортирано по колона {columnName} във възходящ ред","collapse":"Свиване","columnSize":"{value} пиксела","descending":"низходящ","descendingSort":"сортирано по колона {columnName} в низходящ ред","expand":"Разширяване","resizerDescription":"Натиснете „Enter“, за да започнете да преоразмерявате","select":"Изберете","selectAll":"Изберете всичко","sortable":"сортираща колона"},

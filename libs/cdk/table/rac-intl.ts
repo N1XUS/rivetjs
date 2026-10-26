@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria-components intl/*.json: tableResizer), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": {"tableResizer":"أداة تغيير الحجم"},
   "bg-BG": {"tableResizer":"Преоразмерител"},

@@ -1,6 +1,7 @@
 // Ported from react-spectrum (react-aria intl/toast/*.json), Apache-2.0, © Adobe. Generated: every locale of the original.
 import type { LocalizedStrings } from "../_adapters/intl.ts";
 
+// @rivet-locale-table
 export const strings: LocalizedStrings = {
   "ar-AE": { close: "إغلاق", notifications: "{count, plural, one {# إشعار} other {# إشعارات}}." },
   "bg-BG": { close: "Затвори", notifications: "{count, plural, one {# известие} other {# известия}}." },

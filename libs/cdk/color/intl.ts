@@ -40,6 +40,7 @@ export type ColorMessageKey =
   | "magenta"
   | "magenta pink";
 
+// @rivet-locale-table
 export const colorMessages: LocalizedStrings<ColorMessageKey> = {
   "ar-AE": {
     alpha: "ألفا",
