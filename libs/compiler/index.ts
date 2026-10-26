@@ -38,6 +38,8 @@ export interface CompileOptions {
   serverListMounts?: boolean;
   /** Resume (the derived model); `module` is the boundary name prefix (defaults to the filename). */
   resume?: ResumeOptions | null;
+  /** Server target, resume on: `$incr` facts on proven `<For>` lists (incremental server lists, INCR2). Default false. */
+  incr?: boolean;
   /** Also return a source map of `code` to `source` (`map`). The emitted code is unchanged. */
   sourceMap?: boolean;
   /**

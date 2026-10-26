@@ -85,6 +85,25 @@ export function _onForRow(fn: ForRowHook): void {
   rowHook = fn;
 }
 
+/** Incremental list hook (`@rivetjs/runtime/server-incr`, lane INCR2): the list's rows (`undefined`: render them as usual).
+ * Called after `each`, before any `by`, under the For's root, only for a For whose compiler fact proved its rows pure
+ * (`$incr`). */
+export type ForIncrHook = (
+  site: unknown,
+  items: readonly unknown[],
+  by: (item: unknown, index: number) => unknown,
+  children: (item: () => unknown, index: () => number) => ServerValue,
+  /** `_rFor`'s tape rows: their markers carry no id and take none from the render's marker count. */
+  tape: boolean,
+) => unknown;
+let incrHook: ForIncrHook | null = null;
+/** @internal `server-incr` installs its list hook. */
+export function _onForIncr(fn: ForIncrHook): void {
+  incrHook = fn;
+}
+/** @internal The installed list hook (`_rFor`'s tape rows ask it too). */
+export const _forIncr = (): ForIncrHook | null => incrHook;
+
 type ListMount = (
   items: readonly unknown[],
   original: (item: unknown, index: number) => unknown,
@@ -104,11 +123,13 @@ interface ForProps<T, K> {
   children: (item: () => T, index: () => number) => ServerValue;
   /** Compiler-private list mount of the rows (`[plan, each]`, FLATTEN-CMP-3), used when no row hook is installed. */
   $list?: readonly [ListPlan, (tape: unknown[], base: number, item: T, index: number) => void];
+  /** Compiler fact (opt-in `incr` builds): the rows are pure functions of their items' read fields (`server-incr`). */
+  $incr?: unknown;
 }
 /** Snapshot a keyed list; constant row/index getters match the compiled DOM authoring ABI. */
 export function For<T, K>(props: ForProps<T, K>): ServerScope {
-  const { each, by, children, $list } = props;
-  return scoped((capture) => capture(() => forRows(each, by, children, $list))) as unknown as ServerScope;
+  const { each, by, children, $list, $incr } = props;
+  return scoped((capture) => capture(() => forRows(each, by, children, $list, $incr))) as unknown as ServerScope;
 }
 
 // The row loop lives in a module-level function, not in the per-For closure: V8 keeps a function's optimized
@@ -119,10 +140,21 @@ function forRows<T, K>(
   by: (item: T, index: number) => K,
   children: (item: () => T, index: () => number) => ServerValue,
   $list: readonly [ListPlan, (tape: unknown[], base: number, item: T, index: number) => void] | undefined,
+  $incr?: unknown,
 ): unknown {
   // A value (live-props getter, `each={xs()}`) or an accessor (`each={xs}`).
   const items = typeof each === "function" ? each() : each;
   if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
+  if ($incr !== undefined && incrHook !== null) {
+    const rows = incrHook(
+      $incr,
+      items,
+      by as (item: unknown, index: number) => unknown,
+      children as (item: () => unknown, index: () => number) => ServerValue,
+      false,
+    );
+    if (rows !== undefined) return rows;
+  }
   const hook = rowHook,
     keys = new Set<K>();
   for (let index = 0; index < items.length; index++) {

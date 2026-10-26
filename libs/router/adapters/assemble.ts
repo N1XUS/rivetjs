@@ -27,7 +27,10 @@ export interface BuildManifests {
   /** `.vite/rivet-inline-css.json` of the first client build (the sheets pages may write inline), when written. */
   readonly inlineStyles?: InlineStyleManifest;
 }
-export type BuildConfig = Pick<AppConfig, "stream" | "onError" | "maxBody" | "csp" | "preload" | "routeRules" | "routeCache" | "renderCache" | "earlyHints"> & {
+export type BuildConfig = Pick<
+  AppConfig,
+  "stream" | "onError" | "maxBody" | "csp" | "preload" | "routeRules" | "routeCache" | "renderCache" | "incr" | "incrPartition" | "earlyHints"
+> & {
   /** i18n: error-page locale when the request has none settled (`createApp` `i18n.resolve`). */
   readonly resolveLocale?: (request: Request) => string | undefined | Promise<string | undefined>;
 };

@@ -104,6 +104,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
         Some(self.derived_name("site"))
     }
 
+    /// INCR2: the resume module id (site ids of `$incr` facts).
+    pub(super) fn derived_module(&self) -> Option<String> {
+        self.derived.as_ref().map(|d| d.module.clone())
+    }
+
     /// The derived For local (`_rFor`, DERIVED-S): server target, a `<For>` with a list mount (`$list`).
     pub(super) fn derived_for(&mut self) -> String {
         self.derived_name("for")

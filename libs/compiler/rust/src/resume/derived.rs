@@ -927,7 +927,7 @@ pub fn components(tree: &Tree<'_>, resumed: &Resumed) -> Vec<Component> {
 }
 
 /// Keyed state callee: `signal` from `@rivetjs/reactivity` (false) / `createStore` from `@rivetjs/reactivity/store` (true).
-fn keyed_callee<'a>(tree: &Tree<'a>, call: &CallExpression<'a>) -> Option<bool> {
+pub fn keyed_callee<'a>(tree: &Tree<'a>, call: &CallExpression<'a>) -> Option<bool> {
     let Expression::Identifier(ident) = &call.callee else { return None };
     let decl = tree.resolve(ident, false)?;
     let AstKind::ImportSpecifier(s) = tree.kind(decl) else { return None };

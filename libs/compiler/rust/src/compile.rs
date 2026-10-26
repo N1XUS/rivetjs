@@ -40,6 +40,8 @@ mod derived;
 mod derived_lite;
 // ZERO REGRESS (2026-10-26): independent boundaries' rendered-only props read back from the markup (`_rB` `read`).
 mod derived_read;
+// exception: lane INCR2 — `$incr` facts of proven `<For>` rows (opt-in `incr`).
+mod incr;
 use derived::{Derived, is_function_child};
 
 pub const TARGET_HELPERS: &[&str] = &["Provider", "For", "Async", "lazyComponent", "clientOnly"];
@@ -95,6 +97,9 @@ pub struct Options {
     /// lower plain plus boundary / keyed-state calls from one plan (`compile/derived.rs`: server `_rB` / `_rSig`; DOM
     /// `_b` / `_sig`). Read only when `resume` is set.
     pub verdicts: resume::derived::Verdicts,
+    /// INCR2 (server target, resume on): proven `<For>` lists carry a `$incr` fact for the runtime list cache
+    /// (`compile/incr.rs`, `@rivetjs/runtime/server-incr`). Default false: output unchanged.
+    pub incr: bool,
 }
 
 /// Scoped styles options: class names hash `scope` (root-relative module id) with the local name.
@@ -565,6 +570,11 @@ pub struct Compiler<'t, 'a> {
     derived: Option<Derived>,
     target: &'static str,
     list_mounts: bool,
+    /// `Options::incr` (server target, resume on) and the module's proven lists so far (`compile/incr.rs`).
+    incr: bool,
+    incr_sites: usize,
+    /// The `_incrSite` local once a fact is emitted (`compile/incr.rs`).
+    incr_site: Option<String>,
     has_checker: bool,
     diags: Diags<'t, 'a>,
     names: FxHashSet<String>,
@@ -681,6 +691,9 @@ pub fn compile(source: &str, options: Options) -> Output {
         derived: None,
         target,
         list_mounts,
+        incr: options.incr && target == "server" && options.resume.is_some(),
+        incr_sites: 0,
+        incr_site: None,
         has_checker: false,
         diags: Diags { tree: Some(&tree), filename: filename.clone(), list: std::mem::take(&mut diags.list) },
         names: FxHashSet::default(),
@@ -973,7 +986,11 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 .collect();
             imports.push_str(&format!("import {{ {} }} from {};\n", named(&list), quote(module)));
         }
-        let resume_imports = self.derived_imports();
+        let mut resume_imports = self.derived_imports();
+        // exception: lane INCR2 — `$incr` facts go through `_incrSite` (`compile/incr.rs`).
+        if let Some(local) = &self.incr_site {
+            resume_imports.push_str(&format!("import {{ _incrSite as {local} }} from \"@rivetjs/runtime/server-incr\";\n"));
+        }
         // ZERO C1: lite residual entry (`compile/derived_lite.rs`), derived DOM target only — a module of its own.
         let lite = self.lite_residuals(filename);
         let hoists: String = self.hoists.iter().map(|h| h.clone() + "\n").collect();
@@ -1623,6 +1640,10 @@ impl<'t, 'a> Compiler<'t, 'a> {
                 props.push((Key::Ident("children".into()), children));
                 props.push((Key::Str("$list".into()), list));
                 rest.clear();
+            }
+            // exception: lane INCR2 — a proven `<For>` (opt-in `incr`) carries its `$incr` fact (`compile/incr.rs`).
+            if let Some(fact) = self.incr_fact(el) {
+                props.push((Key::Str("$incr".into()), fact));
             }
             // Plain children with elements / expressions are lazy: a thunk the component calls where
             // it renders them (after its providers). Text-only children stay a string.

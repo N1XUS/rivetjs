@@ -76,6 +76,9 @@ export interface RenderPageOptions {
    * (the stored prefix is out).
    */
   holes?: () => ServerValue;
+  /** Incremental lists (`createApp({ incr })`, `@rivetjs/runtime/server-incr`): the list cache and the request's partition. */
+  incr?: object;
+  incrPartition?: string | undefined;
 }
 
 /** Coalesced write size (bytes): fewer, larger body chunks. */
@@ -527,6 +530,7 @@ function stream(
               ...(options.preload ? { preload: options.preload } : {}),
               ...(variant ? { variant } : {}),
               ...(options.shell ? { shell: options.shell } : {}),
+              ...(options.incr ? { incr: options.incr, ...(options.incrPartition !== undefined ? { incrPartition: options.incrPartition } : {}) } : {}),
             })
           : renderToWriter(app, writer, { ...(signal ? { signal } : {}), ...(variant ? { variant } : {}) }),
       );

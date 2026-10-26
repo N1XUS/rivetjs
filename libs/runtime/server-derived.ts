@@ -46,7 +46,7 @@ import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
 import type { AttributeRecord, TemplateRecord } from "./template.ts";
-import { CONSTANT, For, ROWS, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, For, ROWS, _forIncr, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
 import type { ConstantGetter } from "./server-structural.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import { _onSlot } from "./slot.ts";
@@ -422,6 +422,9 @@ export interface ResumableOptions {
   origin?: string;
   /** @internal Shell cache (router route rule `shell`, PPR-T3B): built by `@rivetjs/runtime/server-shell` `shellHook`. */
   shell?: ShellHook;
+  /** @internal Incremental lists (`@rivetjs/runtime/server-incr` `createIncrCache`) and the request's partition of it. */
+  incr?: object;
+  incrPartition?: string;
 }
 /** Options of streaming resumable rendering. */
 export interface StreamingResumableOptions extends ResumableOptions {
@@ -619,6 +622,11 @@ export function isData(value: unknown, depth = 0): boolean {
   if (value === null) return true;
   if (depth > 64) return false;
   if (Array.isArray(value)) {
+    // Long arrays of deeply frozen data: checked once per element (`server-incr` data memo, lane INCR2).
+    if (value.length >= 64 && dataHook !== null) {
+      const known = dataHook(value, depth);
+      if (known !== undefined) return known;
+    }
     for (let i = 0, n = value.length; i < n; i++) {
       const v: unknown = value[i];
       if (typeof v === "number") {
@@ -636,6 +644,12 @@ export function isData(value: unknown, depth = 0): boolean {
     } else if (typeof v !== "string" && typeof v !== "boolean" && !isData(v, depth + 1)) return false;
   }
   return true;
+}
+
+let dataHook: ((value: readonly unknown[], depth: number) => boolean | undefined) | null = null;
+/** @internal `server-incr`: the long-array answer of `isData` (undefined: walk it). */
+export function _onDataArray(fn: (value: readonly unknown[], depth: number) => boolean | undefined): void {
+  dataHook = fn;
 }
 
 // An independent boundary's props: data unless a member is not. `_rData`'s payload and its loader results (`ctx.verified`,
@@ -1653,6 +1667,17 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
   const { each, by, children } = props;
   const items = typeof each === "function" ? (each as () => readonly unknown[])() : each;
   if (!Array.isArray(items)) throw new TypeError("For each must return an array (or be one)");
+  const incr = props.$incr !== undefined ? _forIncr() : null;
+  if (incr !== null) {
+    const rows = incr(
+      props.$incr,
+      items,
+      by as (item: unknown, index: number) => unknown,
+      children as (item: () => unknown, index: () => number) => ServerValue,
+      true,
+    );
+    if (rows !== undefined) return rows;
+  }
   const keys = new Set<unknown>();
   let dense = Object.getPrototypeOf(items) === Array.prototype;
   for (let index = 0; index < items.length; index++) {
@@ -1681,6 +1706,41 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
   }
   ROWS.add(rows);
   return rows;
+}
+
+// ---- Incremental lists (lane INCR2, `@rivetjs/runtime/server-incr`) ----
+/** @internal The running derived render's frame when incremental lists cover it: its options carry an incr cache, and it is
+ * not a discarded pass, an H-holes hit, a shell cache render or a DOM-data build. Else null. */
+export function _incrFrame(): Recorder | null {
+  const recorder = store.getStore();
+  if (recorder === undefined || !(recorder.options as { incr?: unknown }).incr) return null;
+  const ctx = recorder.derived;
+  return ctx.off || ctx.base || ctx.sources !== null || ctx.dom !== null || useContext(DERIVED) !== ctx ? null : recorder;
+}
+/** @internal The running render's options carry an incr cache (`server-incr` data memo). */
+export const _incrOn = (): boolean => !!(store.getStore()?.options as { incr?: unknown } | undefined)?.incr;
+/** @internal What `count` replayed rows' `_rSig(key, init, undefined, LIT)` calls leave on the boundary they register on: the
+ * deferral weight, and one `LIT` entry still at its init (a flush never ships it; nothing in a proven row writes it). */
+export function _incrState(key: string, init: unknown, count: number): void {
+  const ctx = useContext(DERIVED),
+    owner = ctx && current(ctx);
+  if (!ctx || !owner || owner.id < ctx.base || ctx.off || !count) return;
+  register(owner, key, () => init, LIT, init);
+  owner.weight += count;
+}
+/** @internal The render state a proven row may not change but by its keyed state (`server-incr` checks every row it renders
+ * changed only that): written into `out`; [6] / [7] = the current boundary's keyed entries / weight. */
+export function _incrStamp(recorder: Recorder, out: number[]): void {
+  const ctx = recorder.derived,
+    owner = current(ctx);
+  out[0] = ctx.boundaries.length;
+  out[1] = recorder.next;
+  out[2] = ctx.dirty.size + ctx.counted.size + ctx.asyncs.length + ctx.listen.length + ctx.adopt.length;
+  out[3] = ctx.wake.size;
+  out[4] = owner === null ? -1 : owner.mark + (owner.hot ? 4 : 0) + (owner.on ? 8 : 0);
+  out[5] = owner === null ? -1 : owner.made + owner.an;
+  out[6] = owner === null ? 0 : owner.signals.length;
+  out[7] = owner === null ? 0 : owner.weight;
 }
 
 /** Records of the boundaries not flushed yet (values read now), plus the wake lists changed since the last flush. */

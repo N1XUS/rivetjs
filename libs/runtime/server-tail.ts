@@ -165,9 +165,16 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
 // slow path — 1000 resumed rows: 385 → 68 µs per tail (lane NATIVE). Only that small field takes the slow path now.
 export function encodeTail(t: FlushTail, base?: string): string {
   const tail = tailOf(t, base) as unknown as Record<string, unknown>;
+  // `server-incr` data memo (lane INCR2): records' long frozen arrays as their stored JSON.
+  const spliced = tailHook === null ? null : tailHook(tail.b as unknown[][]);
   let json = "{";
-  for (const key in tail) json += (json.length > 1 ? ',"' : '"') + key + '":' + JSON.stringify(tail[key]);
-  return escapeJSON(json + "}");
+  for (const key in tail) json += (json.length > 1 ? ',"' : '"') + key + '":' + JSON.stringify(key === "b" && spliced !== null ? spliced.b : tail[key]);
+  return spliced === null ? escapeJSON(json + "}") : spliced.fill(escapeJSON(json + "}"));
+}
+let tailHook: ((b: unknown[][]) => { b: unknown[]; fill(json: string): string } | null) | null = null;
+/** @internal `server-incr`: records `b` with placeholders for stored array JSON, and how to splice it into the escaped tail. */
+export function _onTailRecords(fn: (b: unknown[][]) => { b: unknown[]; fill(json: string): string } | null): void {
+  tailHook = fn;
 }
 /** Ownership interface name (`ownership.md` §3.4): the tail JSON. */
 export const tailJson = encodeTail;

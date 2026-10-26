@@ -53,6 +53,8 @@ struct CompileOptions {
     server_exports: Option<bool>,
     /// Resume: `@rivetjs/*` source packages whose components are user components.
     source_packages: Option<Vec<String>>,
+    /// INCR2: `$incr` facts on proven `<For>` lists (server target, resume on).
+    incr: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -173,6 +175,7 @@ fn compile_json(source: &str, raw: Option<Value>) -> Value {
             check: false,
             source_packages: options.source_packages.unwrap_or_default(),
             verdicts,
+            incr: options.incr.unwrap_or(false),
         },
     );
     if let Some(server) = &server {
@@ -363,6 +366,7 @@ fn check_json(source: &str, raw: Option<Value>) -> Value {
                 check: true,
                 source_packages: options.source_packages.clone().unwrap_or_default(),
                 verdicts: verdicts.clone(),
+                incr: false,
             },
         );
         if sites.is_empty() || target == "dom" {

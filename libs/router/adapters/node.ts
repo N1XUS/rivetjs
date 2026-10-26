@@ -1327,6 +1327,10 @@ export interface StartOptions extends Omit<ServeOptions, "handler" | "client" | 
   routeCache?: AppConfig["routeCache"];
   /** Cross-request fragment cache (`createApp` `renderCache`, `createRenderCache()` from `@rivetjs/runtime/server-cache`). */
   renderCache?: AppConfig["renderCache"];
+  /** Incremental lists (`createApp` `incr`: `createIncrCache()` from `@rivetjs/runtime/server-incr`). */
+  incr?: AppConfig["incr"];
+  /** With `incr`: the request's partition (`createApp` `incrPartition`). */
+  incrPartition?: AppConfig["incrPartition"];
   /**
    * Worker processes (node:cluster): `"auto"` = `os.availableParallelism()`, default 1 (this process serves). With
    * more, this process becomes the primary: it forks that many copies of the running script, each serving the build,
@@ -1365,6 +1369,8 @@ export async function start(options: StartOptions = {}): Promise<Serving> {
     routeRules,
     routeCache,
     renderCache,
+    incr,
+    incrPartition,
     earlyHints,
     workers: _workers,
     ...serveOptions
@@ -1381,6 +1387,7 @@ export async function start(options: StartOptions = {}): Promise<Serving> {
       // The fixed public origin is the one stored pages are for (`isr` rules need one).
       ...(routeCache || serveOptions.origin ? { routeCache: { ...(serveOptions.origin ? { origin: serveOptions.origin } : {}), ...routeCache } } : {}),
       ...(renderCache ? { renderCache } : {}),
+      ...(incr ? { incr, ...(incrPartition ? { incrPartition } : {}) } : {}),
       ...(earlyHints ? { earlyHints } : {}),
     },
     locales?.length ? { locales, ...(resolveLocale ? { resolveLocale } : {}) } : {},

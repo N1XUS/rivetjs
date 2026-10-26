@@ -1,6 +1,7 @@
 // Import server-compiled test fixtures without a bundler.
 const specifiers = [
   "@rivetjs/runtime/server-derived",
+  "@rivetjs/runtime/server-incr",
   "@rivetjs/runtime/derived-eager",
   "@rivetjs/runtime/server",
   "@rivetjs/runtime/style",

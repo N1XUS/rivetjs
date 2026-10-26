@@ -2,6 +2,7 @@
 import type { ServerValue } from "@rivetjs/runtime/server";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { RenderCache, RenderCacheScope } from "@rivetjs/runtime/server-cache";
+import type { IncrCache } from "@rivetjs/runtime/server-incr";
 import type { ActionResult, Head, HeadSink, LoaderDeps } from "../shared/data.ts";
 import { headTags, rankMerge, type RankedHead } from "../shared/head.ts";
 import { nonceCSP, type CSPOptions } from "../shared/csp.ts";
@@ -146,6 +147,16 @@ export interface AppConfig {
    * `_cached` components hit across requests. Node-only (AsyncLocalStorage; Workers: `nodejs_als`); loaded only when set.
    */
   readonly renderCache?: RenderCache;
+  /**
+   * Incremental server rendering of keyed lists: `createIncrCache()` from `@rivetjs/runtime/server-incr` (opt-in; build with
+   * `rivetRouter({ resume: { incr: true } })` / `rivet({ resume: { incr: true } })` so the compiler emits its row proofs). A
+   * `<For>` whose rows the compiler proved pure re-renders only the rows whose read fields changed since the last render of
+   * that list; the rest are written from their stored bytes. Byte-identical to an uncached render. Resumable (production)
+   * renders only.
+   */
+  readonly incr?: IncrCache;
+  /** With `incr`: the request's partition (tenant); lists of different partitions never share state. */
+  readonly incrPartition?: (request: Request) => string | undefined;
   /**
    * Early hints for HTML pages (production only): linked stylesheets, the head's build-asset font preloads (learned
    * per route from its last render), `links` (e.g. preconnects), and with `runtime: true` the resume runtime entry. Sent as `103 Early
@@ -349,6 +360,7 @@ export function createApp(config: AppConfig): AppHandler {
               }
             : {}),
           ...(pageManifest ? { manifest: pageManifest } : {}),
+          ...(incrCache ? { incr: incrCache, ...(incrPartition ? { incrPartition: incrPartition(request) } : {}) } : {}),
           ...(variant ? { variant } : {}),
           // Deferred loaders: their boundaries stream out of order (shell first) even when the app set no `stream`.
           // Shell routes (`routeRules` `shell`) always stream: the stored shell ends where the first boundary would stream.
@@ -385,6 +397,8 @@ export function createApp(config: AppConfig): AppHandler {
         )
       : run();
   };
+  const incrCache = config.incr,
+    incrPartition = config.incrPartition;
   // `renderCache`: the scope module (AsyncLocalStorage) loads at startup, pay-per-use like `directives`.
   let withCache: (<T>(scope: RenderCacheScope, fn: () => T) => T) | undefined;
   let fragments: Promise<void> | null = config.renderCache

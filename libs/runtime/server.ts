@@ -202,6 +202,21 @@ function arrayLoop(steps: ArraySteps, value: readonly unknown[], owner: Owner | 
 const safeInteger = (value: number): boolean => value % 1 === 0 && value <= 9007199254740991 && value >= -9007199254740991;
 // Compiled fragments are frozen and hoisted, so their UTF-8 encoding is computed once per array.
 const encoder = new TextEncoder();
+/** An incremental list's rows (`@rivetjs/runtime/server-incr` forms it): `runWrite` in the renderer. */
+const RUN = Symbol.for("rivet.incr.run");
+interface RunRecord {
+  readonly [RUN]: true;
+  /** Row `r` (`from` ≤ r < `to`) = `bufs[bi[r]]` bytes `st[r]`..`en[r]`: `<!--r[-->…<!--]-->` (marker id left out). */
+  readonly bufs: readonly Uint8Array[];
+  readonly bi: Int32Array;
+  readonly st: Int32Array;
+  readonly en: Int32Array;
+  readonly from: number;
+  readonly to: number;
+  /** Row `from`'s marker id (the next rows count on from it); -1: tape rows, whose markers carry no id. */
+  readonly first: number;
+}
+const runDecoder = /* @__PURE__ */ new TextDecoder();
 const encodedFragments = new WeakMap<readonly string[], Uint8Array[]>();
 // i18n: a template whose static text differs per locale carries one fragment set per variant;
 // a translated value outside static text (plural, formatted number, non-JSX `t()`) one value per
@@ -1465,10 +1480,46 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       return here(owner) ? visitValue(output, owner) : valueWithin(output, owner);
     }
     if (translated && (value as Branded)[VARIANT_VALUE]) return visit(_variantOf(value, variant), owner);
+    if ((value as { [RUN]?: true })[RUN]) return runWrite(value as RunRecord, 0);
     if (typeof value === "object") throw new TypeError("Unsupported server child object");
     return write(escapeText(value));
   };
   const steps: ArraySteps = { here, visit, visitValue, visitWithin, resumeArray };
+  // Incremental list rows (`@rivetjs/runtime/server-incr`, lane INCR2): each row's bytes `<!--r[-->…<!--]-->` with its
+  // marker id left out. The id goes in where the marker chain needs it (`markOut`: the first rows of a list); rows adjacent
+  // in one buffer whose ids the chain leaves out are one write.
+  const runWrite = (run: RunRecord, start: number): unknown => {
+    const { bufs, bi, st, en, to } = run,
+      marked = run.first >= 0,
+      first = run.first - run.from;
+    for (let i = start < run.from ? run.from : start; i < to;) {
+      check(signal);
+      const b = bi[i]!,
+        buffer = bufs[b]!;
+      let from = st[i]!,
+        end = en[i]!,
+        head: unknown;
+      const id = marked ? markOut(first + i, MARK_CHAIN) : -1;
+      if (id >= 0) {
+        // `<!--r` + id, then the rest of the row joins the span.
+        head = bytes ? writer.writeBytes!(buffer.subarray(from, from + 5)) : writer.write("<!--r");
+        head = (writeInteger ? writer.writeInteger!(id) : writer.write(String(id))) ?? head;
+        from += 5;
+      }
+      for (i++; i < to; i++) {
+        if (bi[i] !== b || st[i] !== end) break;
+        if (marked) {
+          if (markStep !== 1 || markLast !== first + i - 1) break;
+          markLast++;
+        }
+        end = en[i]!;
+      }
+      const span = buffer.subarray(from, end);
+      const result = (bytes ? writer.writeBytes!(span) : writer.write(runDecoder.decode(span))) ?? head;
+      const acknowledgment = result === undefined ? null : normalizeThenable(result);
+      if (acknowledgment) return wait(acknowledgment, signal).then(() => runWrite(run, i));
+    }
+  };
   // ErrorBoundary content renders into a buffer (traversal is sequential, so the sink swap covers
   // exactly this content): complete → written in order; failed → none of it was written and the
   // fallback renders in its place. Request abort is never caught.

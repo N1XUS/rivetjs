@@ -66,6 +66,13 @@ export interface RivetResumeOptions {
    */
   domData?: boolean;
   /**
+   * Incremental server lists (INCR2, opt-in): the server compile proves which `<For>` rows render from their item's read
+   * fields only (native elements over `row().a.b`, the row's index and its literal-init local signals; `compile/incr.rs`) and
+   * gives those lists a `$incr` fact. The runtime list cache (`incr` in `@rivetjs/router/server` `createApp` /
+   * `@rivetjs/runtime/server-incr`) then reuses unchanged rows' bytes across requests. Default false: output unchanged.
+   */
+  incr?: boolean;
+  /**
    * Root-relative modules whose default export is an independent root boundary (its props are data, whatever its call
    * sites pass or which contexts it reads), like a route module's default export. `rivetRouter()` adds its generated
    * `app.tsx` (`Root`: the route payload as props).
@@ -1252,6 +1259,7 @@ function rivetPlugin(
     if (!verdict && isDerivedRoot(filename)) verdict = { independent: [moduleFacts(source, filename).defaultName ?? "default"] };
     return {
       resume: { module: moduleId(filename), ...verdict },
+      ...(resume?.incr ? { incr: true } : {}),
       ...(sourcePackages.length ? { sourcePackages } : {}),
     };
   };

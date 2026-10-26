@@ -90,6 +90,10 @@
       "types": "./server-cache.ts",
       "default": "./server-cache.ts"
     },
+    "./server-incr": {
+      "types": "./incr/index.ts",
+      "default": "./incr/index.ts"
+    },
     "./props": {
       "types": "./props.ts",
       "default": "./props.ts"

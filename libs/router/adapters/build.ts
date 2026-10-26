@@ -54,7 +54,10 @@ export async function readManifests(dist: string, options: LoadBuildOptions = {}
 /** Import `<dist>/server/entry.server.js` and wire it to the client build's resume manifest and stylesheets. */
 export async function loadBuild(
   dist: string,
-  config: Pick<AppConfig, "stream" | "onError" | "maxBody" | "csp" | "preload" | "routeRules" | "routeCache" | "renderCache" | "earlyHints"> = {},
+  config: Pick<
+    AppConfig,
+    "stream" | "onError" | "maxBody" | "csp" | "preload" | "routeRules" | "routeCache" | "renderCache" | "incr" | "incrPartition" | "earlyHints"
+  > = {},
   options: LoadBuildOptions = {},
 ): Promise<LoadedBuild> {
   const root = resolve(dist);

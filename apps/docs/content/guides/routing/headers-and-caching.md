@@ -203,6 +203,31 @@ closeOnSignals(serving);
 
 For parts of a page instead of whole pages, see the render cache option `renderCache` of `createApp()` and `start()`: it takes `createRenderCache()` from `@rivetjs/runtime/server-cache`, and components wrapped in `cached()` then render once across requests.
 
+## Incremental lists
+
+A page that shows a long list from a database changes only a few rows between requests. With incremental lists the server renders again only the rows whose fields changed and writes the others from the bytes it rendered for them last time. The page is the same, byte for byte, as without the cache.
+
+Two switches: the build proves which lists qualify, and the server keeps the cache.
+
+```ts title="vite.config.ts"
+rivetRouter({ resume: { incr: true } });
+```
+
+```js title="serve.js"
+import { closeOnSignals, start } from "@rivetjs/router/node";
+import { createIncrCache } from "@rivetjs/runtime/server-incr";
+
+closeOnSignals(await start({ dist: "dist", incr: createIncrCache() }));
+```
+
+A list qualifies when its rows show only fields of their item: native elements whose text and attributes read `row().field` (also `row().a.b`, `row()?.a`), the row's index, and signals the row creates with a literal value (`const open = signal(false)`, changed only by event handlers). The key function reads item fields (`by={(r) => r.id}`). Components, `<Show>` / nested `<For>` and other calls in a row keep the list on the ordinary path. Rows match by position, then by key (moved, inserted and removed rows keep their bytes when the rows do not read their index). Items must be plain objects.
+
+- A row is reused only for exactly the field values it was rendered for, so a list never shows another request's data. `incrPartition: (request) => tenantOf(request)` also keeps lists of different tenants apart.
+- `createIncrCache({ maxBytes, maxLists })` (defaults 32 MiB and 1,000 lists) bounds the memory; least recently used lists go first. `cache.stats()` counts reused and rendered rows.
+- `createIncrCache({ verify: true })` renders every row anyway and logs a row whose stored bytes differ from a fresh render. Use it in tests or staging.
+
+On a 1,000-row list the server's time per page drops about 5× when nothing changed and about 4× when 1% of the rows changed; when most rows change, the cache steps aside and the cost is the same as without it.
+
 ## Partial prerendering: shell cache
 
 A page that greets the signed-in visitor cannot be stored whole, but most of it (the layout, the article, the footer) is the same for everyone. The `shell` rule stores that part, the **shell**, and renders only the personal parts, the **holes**, per request. The holes are [deferred loaders](./loading-data.md#deferred-loaders) shown through `<Async fallback>`:
