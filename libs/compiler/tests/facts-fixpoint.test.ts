@@ -159,7 +159,9 @@ test('an anonymous default export (facts name "default", no defaultName) resolve
 });
 
 // M6-PARITY 6b (user ruling 2026-10-22): props are live when the caller passes a reactive value; literals are static.
-test("6b: a component whose sites only read its props is a boundary only when a live caller feeds it", () => {
+// ORPHAN-B (2026-10-26): live data alone makes a component `live` (what it passes on), not a boundary — the boundary holding
+// the change source runs it inline in its unit.
+test("6b + ORPHAN-B: a component whose sites only read its props is live when a live caller feeds it, never a boundary", () => {
   const facts = new Map<string, ModuleFacts>([
     [
       "src/routes/index.tsx",
@@ -211,20 +213,90 @@ test("6b: a component whose sites only read its props is a boundary only when a 
   assert.deepEqual(only(true).boundaries("src/meter.tsx"), []);
   assert.equal(only(true).verdicts.get("src/meter.tsx")!.get("Meter")!.dependentBecause, "not-interactive");
   const out = only(false);
-  assert.deepEqual(out.boundaries("src/meter.tsx"), ["Meter"]);
-  assert.equal(out.verdicts.get("src/meter.tsx")!.get("Meter")!.because, "live-props");
+  const meter = out.verdicts.get("src/meter.tsx")!.get("Meter")!;
+  assert.deepEqual(out.boundaries("src/meter.tsx"), []);
+  assert.equal(meter.live, true);
+  assert.equal(meter.interactive, false);
+  assert.equal(meter.because, undefined);
+  // Its live caller's unit adopts it: rendered by a boundary, so its server output keeps its slot markers.
+  assert.equal(meter.adopted, true);
+  // `Live` passes a function into `Fill`: behaviour handed in, so Fill stays a (conditional) boundary even where its
+  // caller is one, and `Live` renders it.
   assert.deepEqual(out.boundaries("src/counter.tsx"), ["Counter", "Live", "Fill"]);
-  assert.equal(out.verdicts.get("src/counter.tsx")!.get("Live")!.because, "renders");
-  // Conditional (no change source of its own): the server keeps such a record per live instance only.
-  assert.deepEqual(out.conditional("src/meter.tsx"), ["Meter"]);
-  assert.deepEqual(
-    out.conditional("src/counter.tsx"),
-    ["Live", "Fill"].filter((n) => out.verdicts.get("src/counter.tsx")!.get(n)!.because !== "source"),
-  );
-  assert.ok(!out.conditional("src/counter.tsx").includes("Counter"));
+  assert.equal(out.verdicts.get("src/counter.tsx")!.get("Fill")!.because, "live-props");
+  assert.deepEqual(out.conditional("src/meter.tsx"), []);
+  assert.deepEqual(out.conditional("src/counter.tsx"), ["Live", "Fill"]);
+  assert.equal(out.verdicts.get("src/counter.tsx")!.get("Counter")!.because, "source");
 });
 
-test("6b: context readers follow their provider's liveness (enclosing elements and callers)", () => {
+test("ORPHAN-B: live data makes a boundary only where an instance may render outside every boundary", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/page.tsx",
+      module(
+        {
+          // No resolved call site (a frame page, rendered by code the walk does not see): its inputs count as live, and
+          // nothing proves a boundary around it — its helpers' hidden sources (`createInView`) need it as one.
+          Page: {
+            interactive: true,
+            source: false,
+            renders: ["Row", "Cell"],
+            calls: [
+              { tag: "Row", data: false },
+              { tag: "Cell", data: false },
+            ],
+          },
+          // Called only by the (kept) page: enclosed, so no boundary of its own.
+          Row: { interactive: true, source: false },
+          // Also passed as a value (unseen callers): not enclosed.
+          Cell: { interactive: true, source: false },
+        },
+        {},
+        null,
+        { componentValues: ["Cell"] },
+      ),
+    ],
+  ]);
+  const out = boundaryFacts(facts, new Map());
+  const v = (name: string) => out.verdicts.get("src/page.tsx")!.get(name)!;
+  assert.deepEqual(out.boundaries("src/page.tsx"), ["Page", "Cell"]);
+  assert.equal(v("Page").because, "live-props");
+  assert.equal(v("Cell").because, "live-props");
+  assert.equal(v("Row").interactive, false);
+  assert.equal(v("Row").live, true);
+  assert.equal(v("Row").adopted, true);
+});
+
+test("ORPHAN-B: a component handed a function (callback, signal) stays a boundary inside a boundary", () => {
+  const facts = new Map<string, ModuleFacts>([
+    [
+      "src/demo.tsx",
+      module({
+        // Its own signal: a boundary (route root).
+        Demo: {
+          interactive: true,
+          source: true,
+          renders: ["Stepper", "Label"],
+          calls: [
+            // `currentStep={step} onStepChange={(i) => step.set(i)}`: behaviour handed in.
+            { tag: "Stepper", data: false, fn: true },
+            // `text={label()}`: plain live data.
+            { tag: "Label", data: false },
+          ],
+        },
+        Stepper: { interactive: true, source: false },
+        Label: { interactive: true, source: false },
+      }),
+    ],
+  ]);
+  const out = boundaryFacts(facts, new Map(), new Set(["src/demo.tsx"]));
+  assert.deepEqual(out.boundaries("src/demo.tsx"), ["Demo", "Stepper"]);
+  assert.equal(out.verdicts.get("src/demo.tsx")!.get("Stepper")!.because, "live-props");
+  assert.equal(out.verdicts.get("src/demo.tsx")!.get("Label")!.interactive, false);
+  assert.equal(out.verdicts.get("src/demo.tsx")!.get("Label")!.live, true);
+});
+
+test("6b + ORPHAN-B: context readers follow their provider's liveness (enclosing elements and callers), no boundary", () => {
   const page = (liveRoot: boolean) =>
     module(
       {
@@ -250,7 +322,9 @@ test("6b: context readers follow their provider's liveness (enclosing elements a
       resolved,
       new Set(["src/routes/index.tsx"]),
     );
-    assert.deepEqual(out.boundaries("src/meter.tsx"), live ? ["MeterRoot", "MeterOutput"] : [], String(live));
+    assert.deepEqual(out.boundaries("src/meter.tsx"), [], String(live));
+    assert.equal(out.verdicts.get("src/meter.tsx")!.get("MeterOutput")!.live, live, String(live));
+    assert.equal(out.verdicts.get("src/meter.tsx")!.get("MeterRoot")!.live, live, String(live));
   }
 });
 

@@ -19,7 +19,7 @@ import type { AttributeNamespace, AttributeRecord, Coercible, TemplateRecord } f
 import { omitted, isOmitted, inert } from "./omitted.ts";
 import { computed, createRoot, getOwner, runWithOwner } from "@rivetjs/reactivity";
 import type { Owner } from "@rivetjs/reactivity";
-import { ROWS, SCOPED, _forListMount } from "./server-structural.ts";
+import { SCOPED, _forListMount } from "./server-structural.ts";
 import type { ScopedRecord } from "./server-structural.ts";
 import { withRequestSignal } from "./server-async.ts";
 import { _trigger, EFFECT, EVENT } from "./server-trigger.ts";
@@ -186,11 +186,11 @@ interface ArraySteps {
 // An array's item loop (a For's rows: thousands of iterations) is module-level, not a per-render closure: V8
 // keeps optimized and OSR code only while a closure using it is alive, so the loop of a per-render closure was
 // re-tiered (interpreter → OSR Maglev → OSR TurboFan) after nearly every full GC on large pages.
-function arrayLoop(steps: ArraySteps, value: readonly unknown[], owner: Owner | null, count: number, start: number, formed: boolean): unknown {
+function arrayLoop(steps: ArraySteps, value: readonly unknown[], owner: Owner | null, count: number, start: number): unknown {
   for (let i = start; i < count; i++) {
     const item = value[i];
     const result =
-      formed && item !== null && typeof item === "object" && (item as Branded)[COMPILED]
+      item !== null && typeof item === "object" && (item as Branded)[TEMPLATE]
         ? steps.visitValue(item, owner)
         : steps.here(owner)
           ? steps.visit(item, owner)
@@ -636,6 +636,12 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       return;
     }
     if ((value as Branded)[ATTRIBUTE]) return admit((value as AttributeRecord).value);
+    // Template records (`template()`; runtime-made like compiled ones, never thenable with untampered built-ins, no scope):
+    // no identity / thenable probe either (ORPHAN-B: two hash operations and a `then` lookup per record).
+    if ((value as Branded)[TEMPLATE]) {
+      for (const child of (value as TemplateRecord).slots) admit(child);
+      return;
+    }
     // Scoped records (Provider and other owned scopes) are runtime-made, never thenable: `scopes` is their
     // identity cache (no `admitted` / thenable probe per record — one hash op per nested provider).
     if ((value as Branded)[SCOPED]) {
@@ -674,8 +680,6 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       );
     } else if (Array.isArray(value)) {
       for (const child of value) if (child !== null && (typeof child === "object" || typeof child === "function")) admit(child);
-    } else if ((value as Branded)[TEMPLATE]) {
-      for (const child of (value as TemplateRecord).slots) admit(child);
     } else if ((value as Branded)[CAUGHT]) admit((value as CaughtRecord).value);
   };
   // A reused writer acknowledgment is a fresh wait for each write, unlike
@@ -796,14 +800,21 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
   // Specialized loops avoid allocating a callback for each template/array.
   // Capture the original position count, while reading values at visit time.
   const arraySequence = (value: readonly unknown[], owner: Owner | null, count: number, start = 0): unknown => {
-    // Rows of a server For were admitted with their array (runtime-formed, never mutated): a compiled row
-    // dispatches without re-admitting its subtree (visitChild's rule; visitValue restores the owner itself).
+    // Every array reaches here admitted (`visit` admits it first; admission recurses into its items), so a compiled item
+    // dispatches without re-admitting its subtree (visitChild's rule; visitValue restores the owner itself) — a server
+    // For's rows and a `.map` list alike (ORPHAN-B: nested `.map` lists re-admitted every item subtree once per level, the
+    // codex 1000-section page admitted each section twice: `admit` 11.5 % → see docs/server.md). An item put in after
+    // admission (mutating formed values is unsupported) is still observed: its non-compiled slots are admitted when visited.
     // Outside the owner (a continuation after a wait): re-enter it once for the remaining items, not per item.
     if (start < count && !here(owner)) return arrayWithin(value, owner, count, start);
-    return arrayLoop(steps, value, owner, count, start, ROWS.has(value));
+    return arrayLoop(steps, value, owner, count, start);
   };
-  const templateStep = (value: TemplateRecord, owner: Owner | null, i: number): unknown =>
-    i % 2 ? visit(value.slots[(i - 1) / 2], owner) : templateFragment(value.fragments[i / 2]!);
+  // A template record reaches here admitted too: its compiled slots dispatch without re-admission (`visitChild`'s rule).
+  const templateStep = (value: TemplateRecord, owner: Owner | null, i: number): unknown => {
+    if (!(i % 2)) return templateFragment(value.fragments[i / 2]!);
+    const slot = value.slots[(i - 1) / 2];
+    return slot !== null && typeof slot === "object" && (slot as Branded)[TEMPLATE] ? visitValue(slot, owner) : visit(slot, owner);
+  };
   // A runtime / user template's raw HTML may carry resume markers of its own (a cached render): reset.
   const templateFragment = (fragment: string): unknown => {
     if (fragment) ((markLast = -1), (markStep = 0));
@@ -1417,9 +1428,10 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
   };
   // A child of an admitted compiled record or list tape was admitted with it (compiled admission
   // recurses into every object slot), so a compiled child dispatches without re-admitting its
-  // subtree, which made admission quadratic in nesting depth. visitValue's compiled branch
-  // restores the owner itself (recordSequence); anything else still goes through visit.
-  const visitChild = (child: unknown, owner: Owner | null): unknown => ((child as Branded)[COMPILED] ? visitValue(child, owner) : visit(child, owner));
+  // subtree, which made admission quadratic in nesting depth. Template records (compiled or
+  // `template()`) alike: they carry no identity cache entry (ORPHAN-B). visitValue's record branches
+  // restore the owner themselves (recordSequence / templateSequence); anything else still goes through visit.
+  const visitChild = (child: unknown, owner: Owner | null): unknown => ((child as Branded)[TEMPLATE] ? visitValue(child, owner) : visit(child, owner));
   const visitValue = (value: unknown, owner: Owner | null): unknown => {
     check(signal);
     if (value == null || typeof value === "boolean") return;
@@ -1466,11 +1478,12 @@ function renderCore(value: unknown, writer: Sink, signal: AbortSignal | undefine
       if (promise) return wait(promise, signal).then(() => {});
       return;
     }
+    // Template records are never thenable (admission skips their probe too).
+    if ((value as Branded)[TEMPLATE]) return templateSequence(value as TemplateRecord, owner, (value as TemplateRecord).slots.length * 2 + 1);
     const promise = promiseOf(value);
     if (promise) return awaitValue(promise, owner);
     if (Array.isArray(value)) return arraySequence(value, owner, value.length);
-    // COMPILED and ATTRIBUTE records returned above.
-    if ((value as Branded)[TEMPLATE]) return templateSequence(value as TemplateRecord, owner, (value as TemplateRecord).slots.length * 2 + 1);
+    // COMPILED, TEMPLATE and ATTRIBUTE records returned above.
     if ((value as Branded)[CAUGHT]) return caught(value as CaughtRecord, owner);
     if (typeof value === "function") {
       // Only deferred user setup needs the private Async request signal. Owner

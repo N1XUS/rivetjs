@@ -1,6 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
-import { _list, _listPlan, compiledTemplate, Provider, ErrorBoundary, Suspense, Async, renderToString, renderToWriter } from "../server.ts";
+import { _list, _listPlan, compiledTemplate, template, Provider, ErrorBoundary, Suspense, Async, renderToString, renderToWriter } from "../server.ts";
 import type { ServerValue } from "../server.ts";
 import { createRoot, createContext, effect, getOwner, onCleanup, provide, signal, useContext } from "@rivetjs/reactivity";
 
@@ -312,5 +312,36 @@ test("nested compiled records are admitted once: slot reads stay constant per le
       Array.from({ length: depth }, () => 2),
       writer,
     );
+  }
+});
+
+// ORPHAN-B (2026-10-26): every array / template record reaches traversal admitted, so its compiled items are not
+// admitted again — nested `.map` lists and runtime `template()` wrappers re-admitted each compiled subtree once per level.
+test("compiled items of nested arrays and template records are admitted once", () => {
+  const fragments = Object.freeze(["<b>", "</b>"]);
+  let reads = 0;
+  const leaf = () => {
+    const slots: ServerValue[] = [];
+    Object.defineProperty(slots, 0, { get: () => (reads++, "x"), enumerable: true });
+    slots.length = 1;
+    return compiledTemplate(fragments, slots);
+  };
+  // Three `.map` levels around a template() wrapper of a compiled leaf.
+  const tree: ServerValue = [[[template(["<i>", "</i>"], [leaf()]), leaf()]], leaf()];
+  for (const writer of ["string", "bytes"] as const) {
+    reads = 0;
+    const out: string[] = [];
+    const sink =
+      writer === "string"
+        ? { write: (chunk: string) => void out.push(chunk) }
+        : {
+            write: (chunk: string) => void out.push(chunk),
+            writeBytes: (bytes: Uint8Array) => void out.push(new TextDecoder().decode(bytes)),
+            writeInteger: (n: number) => void out.push(String(n)),
+          };
+    assert.equal(renderToWriter(tree, sink), undefined);
+    assert.equal(out.join(""), "<i><b>x</b></i><b>x</b><b>x</b>");
+    // Per leaf: one read by root admission, one by traversal.
+    assert.equal(reads, 6, writer);
   }
 });

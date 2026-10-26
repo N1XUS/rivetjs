@@ -46,7 +46,7 @@ import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
 import type { AttributeRecord, TemplateRecord } from "./template.ts";
-import { CONSTANT, For, ROWS, _forIncr, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, For, _forIncr, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
 import type { ConstantGetter } from "./server-structural.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import { _onSlot } from "./slot.ts";
@@ -1691,7 +1691,7 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
   if (dense) {
     const marked = rowPlan($list[0]),
       list = _list(items, noRow, marked, $list[1] as (tape: unknown[], base: number, item: unknown, index: number) => void);
-    return ctx.dom !== null && items.length ? derivedDom.api!.list(ctx.dom, items, $list[0], marked, list, ROWS) : list;
+    return ctx.dom !== null && items.length ? derivedDom.api!.list(ctx.dom, items, $list[0], marked, list) : list;
   }
   // Holes / subclasses: row by row, each between its row region markers (as the resume row hook writes them).
   const rows: ServerValue[] = new Array(items.length);
@@ -1704,7 +1704,6 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
       ),
     ]) as unknown as ServerValue;
   }
-  ROWS.add(rows);
   return rows;
 }
 

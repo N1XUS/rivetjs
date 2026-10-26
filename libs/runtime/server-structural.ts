@@ -67,9 +67,6 @@ export function Provider<T>({ token, value, children }: { token: Context<T>; val
   return _scopedRecord(owner, content, () => _dispose(owner));
 }
 
-/** Row arrays a server For formed (data elements, never mutated): admitted once with the array, the
- * renderer dispatches their compiled rows without re-admitting them. */
-export const ROWS = new WeakSet<readonly unknown[]>();
 /** Resume row hook: renders the row through `render(itemGetter, indexGetter)`. */
 export type ForRowHook = (
   list: object,
@@ -184,7 +181,6 @@ function forRows<T, K>(
         () => index,
       ),
     );
-    ROWS.add(rows);
     return rows;
   }
   // Resumable renders: each row renders through the hook (row region, recorder scope), still under the
@@ -194,7 +190,6 @@ function forRows<T, K>(
     render = (get: () => unknown, at: () => number) => children(get as () => T, at);
   const rows: unknown[] = new Array(items.length);
   for (let index = 0; index < items.length; index++) rows[index] = hook(instance, items[index], list[index], index, render);
-  ROWS.add(rows);
   return rows;
 }
 

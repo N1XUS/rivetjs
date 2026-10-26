@@ -10,10 +10,12 @@
 // Interactivity = change sources (M6-PARITY 6b, user ruling 2026-10-22): a component is a boundary when it has a change
 // source of its own (`source`: handler, client effect / event, keyed state, resource, Async / clientOnly, a read of module
 // state; a handler whose value is conditional — `cond ? f : undefined`, `props.onX` — counts per instance: `listens`,
-// conditional, STATIC-ZERO T3), when live data flows into a component whose sites read its inputs (`interactive` own sites: a caller passes a
-// function, or passes non-data while its own data is live; or it reads a context whose provider's data is live), or when
-// it renders a boundary. Props are live when the caller passes a reactive value; literals are static: `<Meter value={40}>`
-// is no boundary, ships no chunk and is never adopted. Tags resolve through re-exports (`export … from`, `export *`) and
+// conditional, STATIC-ZERO T3), when it renders a boundary, or when live data flows into a component whose sites read its
+// inputs (a caller passes a function, or passes non-data while its own data is live; or it reads a context whose
+// provider's data is live) and some instance may render outside every boundary (ORPHAN-B 2026-10-26: an `enclosed` one —
+// every call site's caller a boundary or enclosed — is `live` but no boundary: the boundary around it runs its code
+// inline). Props are live when the caller passes a reactive value; literals are static: `<Meter value={40}>` is no
+// boundary, ships no chunk and is never adopted. Tags resolve through re-exports (`export … from`, `export *`) and
 // compound components (`Object.assign(Root, { Part })`, `<Meter.Output>`) of the walked modules, `.ts` re-export modules
 // included. A component with no resolved call site (rendered by code the walk does not see) counts its inputs as live.
 import type { ComponentBoundaryFacts as ComponentFacts, ModuleFacts } from "./index.ts";
@@ -52,7 +54,9 @@ export interface BoundaryVerdict {
   /** Why it is not independent (first reason), for the interaction map / dev output. */
   dependentBecause?: "not-interactive" | "destructured-props" | "context" | "not-exported" | "call-site" | "no-call-site";
   /** Why it is a boundary (first reason, by priority): own source, a conditional handler (`listens`: kept per instance
-   * that installs a function, STATIC-ZERO T3), live data in, live context, a boundary below. */
+   * that installs a function, STATIC-ZERO T3), live data in, live context, a boundary below. Live data in / live context
+   * only for a component not every instance of which renders inside a boundary (ORPHAN-B: an enclosed one runs inline in
+   * the unit of the boundary around it). */
   because?: "source" | "listener" | "live-props" | "live-context" | "renders";
 }
 
@@ -207,37 +211,7 @@ export function boundaryFacts(
     };
     return up(id);
   };
-  for (let changed = true; changed;) {
-    changed = false;
-    for (const [id, c] of info) {
-      const inputs = liveIn.get(id) || inputsLive(id);
-      const context = liveContext.get(id) || (c.context && contextLive(id));
-      const isLive = c.source || c.listens || inputs || context;
-      const below = (renders.get(id) ?? []).some((t) => t !== null && interactive.get(t));
-      const isInteractive = c.source || c.listens || ((inputs || context) && c.interactive) || below;
-      if (
-        inputs !== (liveIn.get(id) ?? false) ||
-        context !== (liveContext.get(id) ?? false) ||
-        isLive !== (live.get(id) ?? false) ||
-        isInteractive !== (interactive.get(id) ?? false)
-      ) {
-        liveIn.set(id, inputs);
-        liveContext.set(id, context);
-        live.set(id, isLive);
-        interactive.set(id, isInteractive);
-        changed = true;
-      }
-    }
-  }
-  // ZERO A1 adopted (least fixpoint): a boundary, a component used as a value, one without a resolved call site (rendered
-  // by code the walk does not see — a route root under the router's `Root`, a frame page under `FrameRoot` — unless it is
-  // a `shells` entry), or one an adopted component renders. A compound used as a value counts with every part.
-  const shell = (id: string): boolean => {
-    const at = id.lastIndexOf("?");
-    const file = id.slice(0, at),
-      name = id.slice(at + 1);
-    return shells.has(file + "#" + name) || (shells.has(file) && (facts.get(file)?.defaultName ?? "default") === name);
-  };
+  // Components used as values (`componentValues`): code the walk does not see may render them (and, ZERO A1, adopt them).
   const escaped = new Set<string>();
   for (const [file, f] of facts)
     for (const name of f.componentValues ?? []) {
@@ -251,6 +225,68 @@ export function boundaryFacts(
           if (p) escaped.add(p);
         }
     }
+  // ORPHAN-B (2026-10-26): live data alone (live props / a live context into its read sites) makes no boundary when every
+  // instance renders inside a boundary (`enclosed`: every resolved call site's caller is a boundary or enclosed itself, and
+  // no unseen code renders it). The change source is above it; the browser runs its code inline in the unit of the
+  // boundary around it (its bindings read the live getters there), exactly as for a data-only caller, and change sources
+  // its helpers make out of the facts' sight (a `createInView` trigger, `.ts` signals) belong to that boundary on both
+  // sides. As a boundary of its own it was a conditional record dropped on every static instance (docs SideNav `Item`:
+  // 123 of 136 `data-b` per page, no tail record) and one more dependent unit run per instance once an ancestor
+  // materialised. Only plain data demotes: a call site that passes a function (a callback, a signal: `currentStep={step}`)
+  // hands it behaviour that may write the caller's state while the browser adopts it (ui Stepper: a step unregistered by
+  // the adopt run's probe clamps the two-way signal), so such a component is never enclosed.
+  // Not enclosed (a frame page, a route rendered by the router's own code, a component passed as a value):
+  // it stays a boundary as before (`kept`), else such a hidden source would have no boundary to report to.
+  const kept = new Set<string>();
+  for (let grew = true; grew;) {
+    grew = false;
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const [id, c] of info) {
+        const inputs = liveIn.get(id) || inputsLive(id);
+        const context = liveContext.get(id) || (c.context && contextLive(id));
+        const isLive = c.source || c.listens || inputs || context;
+        const below = (renders.get(id) ?? []).some((t) => t !== null && interactive.get(t));
+        const isInteractive = c.source || c.listens || ((inputs || context) && c.interactive && kept.has(id)) || below;
+        if (
+          inputs !== (liveIn.get(id) ?? false) ||
+          context !== (liveContext.get(id) ?? false) ||
+          isLive !== (live.get(id) ?? false) ||
+          isInteractive !== (interactive.get(id) ?? false)
+        ) {
+          liveIn.set(id, inputs);
+          liveContext.set(id, context);
+          live.set(id, isLive);
+          interactive.set(id, isInteractive);
+          changed = true;
+        }
+      }
+    }
+    // Enclosed (least fixpoint over the boundaries found so far; more boundaries only enclose more).
+    const enclosed = new Set<string>();
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const [id, list] of sites)
+        if (!enclosed.has(id) && !escaped.has(id) && !isRoot.has(id) && list.every((s) => !s.fn && (interactive.get(s.caller) || enclosed.has(s.caller))))
+          (enclosed.add(id), (changed = true));
+    }
+    // Not enclosed: kept, outermost first — one whose caller is itself an open case waits for it (that caller kept may
+    // enclose it); a cycle of open cases keeps them all.
+    const open = new Set<string>();
+    for (const [id, c] of info) if (!kept.has(id) && c.interactive && (liveIn.get(id) || liveContext.get(id)) && !enclosed.has(id)) open.add(id);
+    let add = [...open].filter((id) => !(sites.get(id) ?? []).some((s) => s.caller !== id && open.has(s.caller)));
+    if (!add.length) add = [...open];
+    for (const id of add) (kept.add(id), (grew = true));
+  }
+  // ZERO A1 adopted (least fixpoint): a boundary, a component used as a value, one without a resolved call site (rendered
+  // by code the walk does not see — a route root under the router's `Root`, a frame page under `FrameRoot` — unless it is
+  // a `shells` entry), or one an adopted component renders. A compound used as a value counts with every part.
+  const shell = (id: string): boolean => {
+    const at = id.lastIndexOf("?");
+    const file = id.slice(0, at),
+      name = id.slice(at + 1);
+    return shells.has(file + "#" + name) || (shells.has(file) && (facts.get(file)?.defaultName ?? "default") === name);
+  };
   const adopted = new Set<string>();
   for (const id of info.keys()) if (interactive.get(id) || escaped.has(id) || (!sites.has(id) && !shell(id))) adopted.add(id);
   for (let changed = true; changed;) {
@@ -277,9 +313,9 @@ export function boundaryFacts(
           ? "source"
           : c.listens
             ? "listener"
-            : c.interactive && liveIn.get(id)
+            : kept.has(id) && liveIn.get(id)
               ? "live-props"
-              : c.interactive && liveContext.get(id)
+              : kept.has(id) && liveContext.get(id)
                 ? "live-context"
                 : "renders";
       if (!isInteractive) verdict.dependentBecause = "not-interactive";

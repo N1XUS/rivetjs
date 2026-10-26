@@ -46,7 +46,7 @@ function domSlots(plan: ListPlan): readonly (readonly [number, string])[] | null
   return slots;
 }
 type TapeList = { plan: ListPlan; tape: unknown[]; rows: number; constructor: new (plan: ListPlan, tape: unknown[], rows: number) => unknown };
-function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, marked: ListPlan, value: unknown, rowSets: WeakSet<object>): unknown {
+function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, marked: ListPlan, value: unknown): unknown {
   const list = value as TapeList,
     slots = domSlots(plan);
   if (slots === null || list === null || typeof list !== "object" || list.plan !== marked || list.rows !== items.length) return value;
@@ -60,7 +60,6 @@ function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, mark
       new List({ fragments: Object.freeze(first), attributes: marked.attributes, bytes: null, fixed: 0, rows: marked.rows }, list.tape.slice(0, width), 1),
       new List(marked, list.tape.slice(width), list.rows - 1),
     ];
-  rowSets.add(rows);
   return rows;
 }
 // The parser keeps a string as is (CR → LF, NUL, lone surrogates do not survive).
