@@ -13,7 +13,7 @@ import { docsSite, FRAME_ROOT } from "@rivetjs/docs-kit/vite.ts";
  */
 export default defineConfig({
   plugins: [
-    // The home hero's aurora + rotating headline are CSS only (STATIC-ZERO-3): the home has no page script of its own.
+    // The home has no page script of its own: server HTML until input (HOME-DOCS).
     docsSite(),
     rivetRouter({
       mode: "static",

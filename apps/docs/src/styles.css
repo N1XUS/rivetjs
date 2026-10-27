@@ -5,7 +5,7 @@
 @import "@rivetjs/docs-kit/site.css";
 @import "@rivetjs/docs-kit/pages.css";
 @import "@rivetjs/docs-kit/components/bench-chart.css";
-/* Homepage styles are route-local (src/routes/index.tsx → home-studio.css). */
+/* Homepage styles are route-local (src/routes/index.tsx → home-ui.css + home.css). */
 @source "./**/*.{ts,tsx}";
 @source not "./generated/**";
 @source "../examples/**/*.{ts,tsx}";

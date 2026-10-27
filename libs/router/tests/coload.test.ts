@@ -113,6 +113,34 @@ test("planCoload: two groups that would import each other (a chunk cycle between
   assert.ok(!(merged("src/a1.ts", "src/a2.ts") && merged("src/b1.ts", "src/b2.ts")), JSON.stringify(plan.groups));
 });
 
+test("planCoload: an intent-only fetch-ahead list (lean page) is not before input", async () => {
+  const work = join(dir, "intent");
+  const client = join(work, "client");
+  await mkdir(client, { recursive: true });
+  const chunks = {
+    "assets/e-AAAAAAAA.js": chunk(["src/e.tsx"], ["assets/s1-AAAAAAAA.js", "assets/s2-AAAAAAAA.js"], true),
+    "assets/s1-AAAAAAAA.js": chunk(["src/s1.ts"]),
+    "assets/s2-AAAAAAAA.js": chunk(["src/s2.ts"]),
+  };
+  await writeFile(join(work, "chunks.json"), JSON.stringify({ v: 1, chunks }));
+  const tail = (fw: string) => `<script type="rivet/boundaries" data-fo="/assets/e-AAAAAAAA.js /assets/s1-AAAAAAAA.js /assets/s2-AAAAAAAA.js"${fw}>[]</script>`;
+  await writeFile(join(client, "index.html"), tail(' data-fw="intent"'));
+  assert.deepEqual(pageScripts(tail(' data-fw="intent"'), { beforeInput: true }), []);
+  assert.equal(pageScripts(tail(' data-fw="intent"')).length, 3, "still named (reach, prune)");
+  const report = await planCoload({ dir: work, client });
+  const plan = JSON.parse(await readFile(join(work, "plan.json"), "utf8")) as ColoadPlan;
+  assert.equal(report.pages, 1);
+  assert.deepEqual(plan.groups, [], "nothing is fetched before input");
+  await writeFile(join(client, "index.html"), tail(' data-fw="load"'));
+  await planCoload({ dir: work, client });
+  const loaded = JSON.parse(await readFile(join(work, "plan.json"), "utf8")) as ColoadPlan;
+  assert.deepEqual(
+    loaded.groups.map((g) => g.modules.sort()),
+    [["src/s1.ts", "src/s2.ts"]],
+    "fetched ahead after load: grouped",
+  );
+});
+
 test("coloadPlugin: inert without the env; with a plan, one group capturing the planned modules only", async () => {
   const before = process.env[COLOAD_ENV];
   try {

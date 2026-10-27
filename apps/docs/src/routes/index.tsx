@@ -1,150 +1,284 @@
 import { site } from "virtual:docs/site";
-import "../home-studio.css";
-import { ArrowRight, BookOpen, Box, Code, FileText, Layers, Package, Terminal } from "lucide";
+import "../home-ui.css";
+import "../home.css";
+import { ArrowRight, Blocks, Box, Cpu, FolderTree, Languages, Layers, MousePointerClick, Terminal, Zap } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
+import { buttonVariants } from "@rivetjs/ui/button";
+import { Card } from "@rivetjs/ui/card";
+import { Chip } from "@rivetjs/ui/chip";
 import { CopyButton } from "@rivetjs/docs-kit/components/CodeBlock.tsx";
-// The strip values as literals (docs-kit writes them from content/_charts.ts): importing the module would bundle its reports.
-import { homeStrip } from "../generated/charts.ts";
-import { HomeCanvas } from "../components/home/HomeCanvas.tsx";
-import { HomeHeadline } from "../components/home/HomeHeadline.tsx";
-import { HomeWorkbench } from "../components/home/HomeWorkbench.tsx";
-import { HomeArchitecture } from "../components/home/HomeArchitecture.tsx";
+// The benchmark values as literals (docs-kit writes them from content/_charts.ts): importing the module would bundle its reports.
+import { homeBench } from "../generated/charts.ts";
+import { ProductShot } from "../components/home/ProductShot.tsx";
 
 export const head = {
-  title: "Rivet · Make the web feel alive",
+  title: "Rivet · The resumable JSX framework",
   meta: [
     { name: "description", content: site.tagline },
-    { property: "og:title", content: "Rivet · Make the web feel alive" },
+    { property: "og:title", content: "Rivet · The resumable JSX framework" },
     { property: "og:description", content: site.tagline },
     { property: "og:type", content: "website" },
   ],
   links: [{ rel: "canonical", href: site.origin + "/" }],
 };
 
-const PIPELINE = [
-  { icon: Box, title: "Compiled on build", detail: "JSX becomes direct server and DOM code." },
-  { icon: FileText, title: "Rendered on the server", detail: "Send real HTML before asking the browser to do more." },
-  { icon: Code, title: "Resumed when needed", detail: "Continue from the server DOM when a component wakes." },
+const primary = buttonVariants({ variant: "primary", size: "lg" });
+const secondary = buttonVariants({ variant: "tertiary", size: "lg" });
+
+const FEATURES = [
+  {
+    icon: Cpu,
+    title: "Compiled JSX",
+    text: "A Rust compiler turns each component into a server string template and direct DOM code. No virtual DOM, no diffing.",
+    href: "/learn/rendering-modes/",
+  },
+  {
+    icon: MousePointerClick,
+    title: "Resumable pages",
+    text: "The page arrives as HTML. A component's code loads on its first event and adopts the existing DOM. Nothing renders twice.",
+    href: "/learn/resuming/",
+  },
+  {
+    icon: Zap,
+    title: "Fine-grained signals",
+    text: "signal, computed and effect update the one text node or attribute that changed, not the component around it.",
+    href: "/learn/signals/",
+  },
+  {
+    icon: FolderTree,
+    title: "File routing",
+    text: "Files in src/routes become pages, layouts, loaders and actions with typed links. Static or server output.",
+    href: "/guides/routing/file-routes/",
+  },
+  {
+    icon: Languages,
+    title: "Compile-time i18n",
+    text: "ICU messages are compiled into each locale's build, so the browser only receives the strings of its language.",
+    href: "/guides/i18n/translating-text/",
+  },
+  {
+    icon: Blocks,
+    title: "Framework bridges",
+    text: "Bring React and Preact components as islands: rendered into the server stream, started when they are needed.",
+    href: "/guides/components/framework-components/",
+  },
 ];
-const SOURCES = homeStrip.map((chart) => chart.source).filter((source, i, all) => all.findIndex((item) => item.href === source.href) === i);
-const DOCS = [
-  { icon: BookOpen, title: "Learn the framework", detail: "Core concepts, guides and API reference.", href: "/start/what-is-rivet/" },
-  { icon: Layers, title: "Build with UI", detail: "Accessible components with a finished point of view.", href: site.sites!.ui + "/" },
-  { icon: Box, title: "Go headless with CDK", detail: "The behavior is covered. The design is yours.", href: site.sites!.cdk + "/" },
+
+const STEPS = [
+  { title: "Write components", text: "JSX and signals. The compiler emits a server template and a DOM function for each component." },
+  { title: "Stream HTML", text: "The server renders the page with its data and records the signal values of interactive components." },
+  { title: "Resume on input", text: "On the first event, the browser loads that component's code, adopts its server nodes and updates them." },
 ];
+
+const STARTERS = [
+  { id: "static", title: "Static site", text: "Pages become HTML files at build time. Tailwind, two pages, one interactive component." },
+  { id: "server", title: "Node server", text: "Pages render for each request, with a loader, a form action and a Dockerfile." },
+  { id: "ui", title: "UI components", text: "The static starter with Rivet UI components and Tailwind CSS v4." },
+  { id: "minimal", title: "Minimal", text: "One page, one signal, no Tailwind. The smallest thing that runs." },
+];
+
+const FAMILY = [
+  {
+    icon: Layers,
+    title: "Rivet UI",
+    text: "HeroUI-style styled components with one token-driven theme, light and dark. Resumable like the rest of the page.",
+    href: site.sites!.ui + "/",
+  },
+  {
+    icon: Box,
+    title: "Rivet CDK",
+    text: "Headless components and utilities: React Aria and Angular CDK behaviour, ported. The styling is yours.",
+    href: site.sites!.cdk + "/",
+  },
+];
+
+const BAR_MAX = Math.max(...homeBench.bars.map((bar) => bar.value));
+
+function Install() {
+  return (
+    <div class="rh-install">
+      <div class="rh-command code-block">
+        <Icon icon={Terminal} size={16} />
+        <pre>npm create rivet@latest</pre>
+        <CopyButton />
+      </div>
+      <span class="rh-version">{site.version + " · on npm"}</span>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div class="hs-home" data-pagefind-body="" data-pagefind-filter="section:Home">
-      <section class="hs-hero" aria-labelledby="lp-title">
-        <HomeCanvas />
-        <div class="hs-inner">
-          <div class="hs-hero-copy">
-            <p class="hs-eyebrow">COMPILED JSX. RESUMABLE BY DESIGN.</p>
-            <HomeHeadline />
-            <p class="hs-lead">
-              Real HTML from the server. Fine-grained updates in the browser.
-              <br class="hs-desktop-break" /> One familiar component model.
-            </p>
-            <div class="hs-hero-actions">
-              <a class="hs-button hs-primary" href="/start/quick-start/" data-rivet-reload="">
-                Start building
-                <Icon icon={ArrowRight} size={19} />
-              </a>
-              <a class="hs-button hs-secondary" href="/start/what-is-rivet/" data-rivet-reload="">
-                Explore the docs
-              </a>
-            </div>
-            <div class="hs-install">
-              <div class="hs-command code-block">
-                <Icon icon={Terminal} size={15} />
-                <pre>npm create rivet@latest</pre>
-                <CopyButton />
-              </div>
-              <a class="hs-release" href="/about/roadmap/" data-rivet-reload="">
-                <span>Experimental</span> APIs can change
-                <Icon icon={ArrowRight} size={13} />
-              </a>
-              <span class="hs-published">
-                <Icon icon={Package} size={11} />
-                {site.version + " · on npm"}
+    <div class="rh" data-pagefind-body="" data-pagefind-filter="section:Home">
+      <section class="rh-hero rh-wrap" aria-labelledby="home-title">
+        <a class="rh-badge rh-ui" href="/about/roadmap/" data-rivet-reload="">
+          <Chip size="sm" variant="soft" color="accent">
+            Alpha
+          </Chip>
+          <span>Experimental: APIs can still change</span>
+          <Icon icon={ArrowRight} size={14} />
+        </a>
+        <h1 id="home-title">
+          <span class="rh-line">
+            The <span class="rh-grad">resumable</span>
+          </span>{" "}
+          <span class="rh-line">framework for the web</span>
+        </h1>
+        <p class="rh-lead">Rivet compiles JSX into streaming server HTML and precise DOM updates. Pages continue where the server left off, with no hydration.</p>
+        <div class="rh-actions rh-ui">
+          <a class={primary} href="/start/quick-start/" data-rivet-reload="">
+            Get started
+            <Icon icon={ArrowRight} size={18} />
+          </a>
+          <a class={secondary} href="/start/what-is-rivet/" data-rivet-reload="">
+            Why Rivet
+          </a>
+        </div>
+        <Install />
+      </section>
+
+      <section class="rh-wrap rh-shot-wrap" aria-label="A Rivet component, its server HTML and its browser code">
+        <ProductShot />
+      </section>
+
+      <section class="rh-wrap rh-section rh-bench" aria-labelledby="home-numbers-title">
+        <div class="rh-heading">
+          <h2 id="home-numbers-title">
+            <span class="rh-grad">{homeBench.big}</span> less server CPU than {homeBench.peer}
+          </h2>
+          <p>{homeBench.metric}</p>
+        </div>
+        <ol class="rh-bars" aria-label="Server CPU per page, lower is better">
+          {homeBench.bars.map((bar) => (
+            <li data-rivet={bar.rivet ? "" : undefined} style={{ "--v": (bar.value / BAR_MAX).toFixed(4) }}>
+              <span class="rh-bar-label">{bar.label}</span>
+              <span class="rh-bar-track">
+                <span class="rh-bar" />
+                <data value={bar.value.toFixed(3)}>{bar.text}</data>
               </span>
-            </div>
-          </div>
-          <HomeWorkbench />
-          <ol class="hs-pipeline" aria-label="From component to interaction">
-            {PIPELINE.map((item) => (
-              <li>
-                <span class="hs-pipeline-icon">
-                  <Icon icon={item.icon} size={20} />
-                </span>
-                <strong>{item.title}</strong>
-                <p>{item.detail}</p>
-              </li>
-            ))}
-          </ol>
+            </li>
+          ))}
+        </ol>
+        <ul class="rh-chips">
+          {homeBench.chips.map((chip) => (
+            <li>
+              <a href={chip.href}>
+                <data value={chip.big.replace("×", "")}>{chip.big}</data>
+                <span>{chip.text}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div class="rh-bench-foot">
+          <a class="rh-link" href="/about/benchmarks/" data-rivet-reload="">
+            See all benchmarks
+            <Icon icon={ArrowRight} size={16} />
+          </a>
+          <p class="rh-footnote">
+            {homeBench.footnote} <a href={homeBench.methodology}>Methodology</a>
+          </p>
         </div>
       </section>
-      <div class="hs-inner">
-        <HomeArchitecture />
-        <section class="hs-proof hs-section" aria-labelledby="home-proof-title">
-          <div class="hs-proof-heading">
-            <p class="hs-eyebrow">LESS WORK. MEASURED.</p>
-            <h2 id="home-proof-title">
-              A little less overhead.
-              <br />A lot more possibility.
-            </h2>
-            <a class="hs-text-link" href="/about/benchmarks/" data-rivet-reload="">
-              See the benchmarks
-              <Icon icon={ArrowRight} size={17} />
-            </a>
-          </div>
-          <div class="hs-proof-content">
-            <ul class="hs-stats">
-              {homeStrip.map((chart) => (
-                <li>
-                  <a href={`/about/benchmarks/#chart-${chart.chart}`} data-rivet-reload="">
-                    <data value={chart.big.replace("×", "")}>{chart.big}</data>
-                    <span>{chart.strip}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-            <p class="hs-proof-caveat" data-verdict="loss">
-              {homeStrip.find((chart) => chart.id === "dynamic")!.loss}{" "}
-              <a href="/about/benchmarks/" data-rivet-reload="">
-                Methods, sources and tradeoffs
-                <Icon icon={ArrowRight} size={13} />
-              </a>
-            </p>
-            <p class="hs-proof-sources">
-              {SOURCES.map((source) => (
-                <a href={source.href}>{source.text}</a>
-              ))}
-            </p>
-          </div>
-        </section>
-        <section id="home-docs" class="hs-directory hs-section" aria-labelledby="home-docs-title">
-          <p class="hs-eyebrow">YOUR NEXT CHAPTER</p>
-          <h2 id="home-docs-title">Take it from here.</h2>
-          <p class="hs-section-lead">Go deeper with guides, API reference and examples you can touch.</p>
-          <div class="hs-doc-links">
-            {DOCS.map((item) => (
-              <a href={item.href} data-rivet-reload="">
-                <span class="hs-doc-icon">
-                  <Icon icon={item.icon} size={24} />
+
+      <section class="rh-wrap rh-section" aria-labelledby="home-features-title">
+        <div class="rh-heading">
+          <h2 id="home-features-title">Everything a page needs, compiled in</h2>
+          <p>One component model from the server to the browser, with the tools around it.</p>
+        </div>
+        <ul class="rh-grid">
+          {FEATURES.map((feature) => (
+            <li>
+              <a href={feature.href} data-rivet-reload="">
+                <span class="rh-icon">
+                  <Icon icon={feature.icon} size={20} />
                 </span>
-                <span>
-                  <strong>{item.title}</strong>
-                  <span>{item.detail}</span>
-                </span>
-                <Icon class="hs-doc-arrow" icon={ArrowRight} size={22} />
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
               </a>
-            ))}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="rh-wrap rh-section" aria-labelledby="home-how-title">
+        <div class="rh-heading">
+          <h2 id="home-how-title">How it works</h2>
+          <p>
+            Three steps, no hydration pass. <a href="/learn/resuming/">Read how resuming works</a>.
+          </p>
+        </div>
+        <ol class="rh-steps">
+          {STEPS.map((step, i) => (
+            <li>
+              <span class="rh-step">{String(i + 1).padStart(2, "0")}</span>
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section class="rh-wrap rh-section" aria-labelledby="home-starters-title">
+        <div class="rh-heading rh-heading-row">
+          <div>
+            <h2 id="home-starters-title">Start from a template</h2>
+            <p>Pick a starter when you run the command, or pass it directly.</p>
           </div>
-          <p class="hs-end-note">Open source. Still experimental. Built for what comes next.</p>
-        </section>
-      </div>
+          <a class="rh-link" href="/start/quick-start/#starters" data-rivet-reload="">
+            Compare starters
+            <Icon icon={ArrowRight} size={16} />
+          </a>
+        </div>
+        <ul class="rh-starters rh-ui">
+          {STARTERS.map((starter) => (
+            <li>
+              <Card class="rh-starter">
+                <Card.Header>
+                  <Card.Title>{starter.title}</Card.Title>
+                  <Card.Description>{starter.text}</Card.Description>
+                </Card.Header>
+                <Card.Footer>
+                  <code>--template {starter.id}</code>
+                </Card.Footer>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="rh-wrap rh-section" aria-labelledby="home-family-title">
+        <div class="rh-heading">
+          <h2 id="home-family-title">Components, when you need them</h2>
+          <p>Two component libraries built on the same compiler and resume model, each with its own docs.</p>
+        </div>
+        <ul class="rh-grid rh-grid-2">
+          {FAMILY.map((item) => (
+            <li>
+              <a href={item.href}>
+                <span class="rh-icon">
+                  <Icon icon={item.icon} size={20} />
+                </span>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section class="rh-wrap rh-final" aria-labelledby="home-final-title">
+        <h2 id="home-final-title">Build a page that is ready before it boots</h2>
+        <p>Open source, MIT licensed and still experimental. Try it on your next page.</p>
+        <div class="rh-actions rh-ui">
+          <a class={primary} href="/start/quick-start/" data-rivet-reload="">
+            Get started
+            <Icon icon={ArrowRight} size={18} />
+          </a>
+          <a class={secondary} href={site.repo}>
+            Source on GitHub
+          </a>
+        </div>
+      </section>
     </div>
   );
 }

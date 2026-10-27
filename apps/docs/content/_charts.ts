@@ -1,5 +1,5 @@
-// Benchmark charts of the docs site (`::chart{id=…}` in content) and the homepage numbers (`homeStrip`, `homeFacts`,
-// `editorialLoss`, rendered by src/routes/index.tsx).
+// Benchmark charts of the docs site (`::chart{id=…}` in content) and the homepage numbers (`homeStrip`, `homeBench`,
+// rendered by src/routes/index.tsx).
 // Every number comes from a committed report — never type a value that is not in one. Every value is read at build time:
 // - SSR: docs/benchmarks/2026-10-23-ssr-comparison.json; resume: 2026-10-19-fair-comparison.json (not re-measured).
 //   apps/dom-bench/competitors.json stores the matching SSR and resume competitor numbers.
@@ -7,7 +7,6 @@
 // - DOM (browser mount / update): docs/benchmarks/2026-10-21-dom-mount-2.json `runTs.baseline` — every lane re-measured
 //   interleaved in the same runs under the run.ts mount protocol rewarm-2026-10-21; apps/dom-bench/competitors.json
 //   `dom` stores the same competitor numbers (`fair-report.ts --dom … --store-competitors`).
-// - Homepage loss row: docs/benchmarks/2026-10-11-editorial.json.
 // tests/charts.test.ts re-checks every value against those files and the verdicts (≥ 3% and non-overlapping trial
 // ranges, apps/dom-bench/verdict.ts) behind every win / tie / loss the page and the homepage state.
 // Lanes are like-for-like within a group; where Rivet loses or ties, the chart shows it.
@@ -16,7 +15,7 @@ import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with 
 import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
 import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
 import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
-import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
+import reactRun from "../../../docs/benchmarks/2026-10-27-ssr-comparison-react.json" with { type: "json" };
 
 const REPO = "https://github.com/N1XUS/rivetjs/blob/main/";
 const FAIR = { label: "SSR comparison 2026-10-23 (full report)", href: REPO + "docs/benchmarks/2026-10-23-ssr-comparison.md" };
@@ -576,25 +575,49 @@ export const homeStrip: HomeChart[] = [
   },
 ];
 
-// Where Rivet loses: purely static content sites (docs/benchmarks/2026-10-11-editorial.json, 1,000 articles).
-// output["1000"][lane].article.inlineJS = inline JS bytes of an article page; serve["1000"][lane].client.jsBytes =
-// JS fetched by a visit; serve["1000"][lane].lighthouse.article.lcp.median = Lighthouse mobile LCP (ms).
-const EDITORIAL = { text: "Editorial benchmark, 2026-10-11", href: REPO + "docs/benchmarks/2026-10-11-editorial.md" };
-const zeroJsLanes = (["astro", "eleventy", "hugo"] as const).filter((lane) => editorial.serve["1000"][lane].client.jsBytes === 0);
-export const editorialLoss = {
-  zeroJs: zeroJsLanes.map((lane) => ({ astro: "Astro", eleventy: "Eleventy", hugo: "Hugo" })[lane]),
-  rivetInlineJS: editorial.output["1000"].rivet.article.inlineJS,
-  rivetFetchedJS: editorial.serve["1000"].rivet.client.jsBytes,
-  rivetLcp: editorial.serve["1000"].rivet.lighthouse.article.lcp.median,
-  astroLcp: editorial.serve["1000"].astro.lighthouse.article.lcp.median,
-  source: EDITORIAL,
+// Homepage benchmark section (src/routes/index.tsx `.rh-bench`): one claim, one bar comparison, three chips.
+// Bars: static SSR CPU per page, 1,000 rows, one request at a time (docs/benchmarks/2026-10-27-ssr-comparison-react.json
+// `ssr.tuned["1000"]["1"]`: Rivet compiled, Solid 1.9 static, Razor, React 19.3 `renderToPipeableStream`), every lane of one
+// run. That run was on a busier host than 2026-10-23 (load median 8.3), so /about/benchmarks/ keeps the 2026-10-23 charts and
+// the home footnote says it is one single-host run. Chips: TTFB from the same batch, DOM update (homeStrip `update`), JS heap
+// after mounting 1,000 rows (DOM report `runTs.baseline["1000"][lane].heapMiB`). tests/charts.test.ts re-checks every value
+// and verdict, and that every React CPU / p50 / TTFB comparison of the run is a WIN.
+const REACT_LINE = { text: "SSR comparison with React, 2026-10-27 · Apple M4 Pro", href: REPO + "docs/benchmarks/2026-10-27-ssr-comparison-react.md" };
+const react1000 = reactRun.ssr.tuned["1000"]["1"];
+const heap1000 = domRun.runTs.baseline["1000"];
+const updateChip = homeStrip.find((chart) => chart.id === "update")!;
+export interface HomeBar {
+  label: string;
+  value: number;
+  /** Formatted value label at the bar end. */
+  text: string;
+  rivet?: true;
+}
+export const homeBench = {
+  big: times(react1000["rivet-compiled"].cpu_ms.median, react1000["react-static"].cpu_ms.median, 0),
+  peer: "React",
+  metric: "Server CPU per page, 1,000-row static page, one request at a time, one CPU core each. Lower is better.",
+  bars: (
+    [
+      ["Rivet", "rivet-compiled"],
+      ["Solid 1.9", "solid-stable-static"],
+      ["Razor (.NET 10)", "dotnet"],
+      ["React 19.3", "react-static"],
+    ] as const
+  )
+    .map(([label, lane]): HomeBar => ({ label, value: react1000[lane].cpu_ms.median, text: ms(react1000[lane].cpu_ms.median, 2), ...(lane === "rivet-compiled" ? { rivet: true as const } : {}) }))
+    .sort((a, b) => a.value - b.value),
+  chips: [
+    {
+      big: times(react1000["rivet-compiled"].ttfb_p50_ms.median, react1000["react-static"].ttfb_p50_ms.median, 0),
+      text: "faster time to first byte than React 19",
+      href: REACT_LINE.href,
+    },
+    { big: updateChip.big, text: "faster DOM updates than Solid 1.9", href: `/about/benchmarks/#chart-${updateChip.chart}` },
+    { big: times(heap1000.rivet.heapMiB.median, heap1000["solid-stable"].heapMiB.median, 1), text: "less JS heap than Solid 1.9 for 1,000 rows", href: DOM.href },
+  ],
+  footnote: "Single-host runs on an Apple M4 Pro.",
+  methodology: REACT_LINE.href + "#methodology",
+  source: REACT_LINE,
 };
 
-/** Numbers quoted by the home feature grid (index.tsx FEATURES), from the same JSON files. */
-export const homeFacts = {
-  /** Browser: update every field of 1,000 rows, Rivet median (chart dom-update-1000, domRun.runTs.baseline["1000"].rivet.update100). */
-  domUpdate1000: ms(valueOf(update100, "Rivet"), 2),
-  /** Streaming SSR, 5,000 rows, 1 connection: p99 page latency, Rivet compiled vs Razor (fair.ssr.tuned["5000"]["1"][lane].p99_ms). */
-  streamP99: ms(ssr5000["rivet-compiled"].p99_ms.median, 1),
-  razorP99: ms(ssr5000["dotnet"].p99_ms.median, 1),
-};

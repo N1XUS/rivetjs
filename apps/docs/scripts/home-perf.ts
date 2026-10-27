@@ -123,9 +123,10 @@ async function lighthouse(repo: string): Promise<NonNullable<HomePerf["lighthous
   const { chromium } = await import("playwright");
   const harness = resolve(repo, "apps/editorial-bench/harness");
   const { runLighthouse } = (await import(resolve(harness, "lh.mjs"))) as {
-    runLighthouse: (url: string, chrome: string) => Promise<{ score: number; lcp: number; fcp: number; tbt: number; cls: number }>;
+    runLighthouse: (url: string, chrome: string, port?: number) => Promise<{ score: number; lcp: number; fcp: number; tbt: number; cls: number }>;
   };
-  const port = 4419;
+  // HOME_PERF_PORT: the static server's port (Chrome's debugging port = +1), for hosts with a reserved port range.
+  const port = Number(process.env.HOME_PERF_PORT ?? 4419);
   const server = spawn(process.execPath, [resolve(harness, "static-server.mjs"), resolve(root, "dist/client"), String(port)], { stdio: "ignore" });
   try {
     for (let i = 0; i < 100; i++) {
@@ -134,7 +135,7 @@ async function lighthouse(repo: string): Promise<NonNullable<HomePerf["lighthous
     }
     const url = `http://127.0.0.1:${port}/`;
     const runs = [];
-    for (let i = 0; i < 3; i++) runs.push(await runLighthouse(url, chromium.executablePath()));
+    for (let i = 0; i < 3; i++) runs.push(await runLighthouse(url, chromium.executablePath(), process.env.HOME_PERF_PORT ? port + 1 : undefined));
     const browser = await chromium.launch();
     const navs = [];
     try {

@@ -18,7 +18,7 @@ export const site = {
   packageVersion: "0.1.0-alpha.1",
   /** Version label in the top bar. */
   version: "0.1.0-alpha.1",
-  /** Disable generic docs idle effects and fetch-ahead. The home's hero motion is CSS only (no script before input). */
+  /** Disable generic docs idle effects and fetch-ahead. The home has no script before input. */
   leanPages: ["/"],
   /** Diagnostic code pages `/errors/RVxxxx` (docs-kit `tools/errors.ts`), generated from the code registry. */
   errorPages: true,

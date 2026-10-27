@@ -102,9 +102,11 @@ const STATE_TAG = /<script type="rivet\/boundaries"([^>]*)>/g;
 const attr = (attrs: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`).exec(attrs)?.[1];
 
 /** Script URLs a prerendered page fetches before input: `<script src>`, modulepreload links, the resume state's `data-fo`. */
-export function pageScripts(html: string): string[] {
+export function pageScripts(html: string, options: { beforeInput?: boolean } = {}): string[] {
   const urls = [...html.matchAll(SCRIPT_URL)].map((m) => m[1]!);
   for (const [, attrs] of html.matchAll(STATE_TAG)) {
+    // `beforeInput`: a tail fetching ahead only on intent (`data-fw="intent"`, lean pages) fetches its list after input.
+    if (options.beforeInput && attr(attrs!, "data-fw") === "intent") continue;
     // `data-ab`: entries without a `/` are short (base + entry + ".js").
     const ab = attr(attrs!, "data-ab");
     for (const u of (attr(attrs!, "data-fo") ?? "").split(" ")) if (u) urls.push(ab && !u.includes("/") ? ab + u + ".js" : u);
@@ -139,15 +141,22 @@ export async function planCoload(options: { dir: string; client: string; base?: 
   let pages = 0;
   for (const file of files) {
     const html = await readFile(join(options.client, file), "utf8");
-    const own = new Set<string>();
-    for (const url of pageScripts(html)) {
-      if (!url.startsWith("/") || url.startsWith("//")) continue;
-      const path = (base && url.startsWith(base + "/") ? url.slice(base.length) : url).slice(1).split(/[?#]/)[0]!;
-      if (chunks[path]) own.add(path);
-    }
+    const chunkFiles = (urls: string[]) => {
+      const found = new Set<string>();
+      for (const url of urls) {
+        if (!url.startsWith("/") || url.startsWith("//")) continue;
+        const path = (base && url.startsWith(base + "/") ? url.slice(base.length) : url).slice(1).split(/[?#]/)[0]!;
+        if (chunks[path]) found.add(path);
+      }
+      return found;
+    };
+    // Every script the page names (reach) vs the ones it fetches before input: a lean page's intent-only fetch-ahead
+    // list is loaded on the first interaction (HOME-DOCS 2026-10-27: counting it grouped the docs home's ui chunks with
+    // the cdk focus chunk, and the search palette fetched both on every docs page).
+    const own = chunkFiles(pageScripts(html));
     if (!own.size) continue;
     const page = pages++;
-    for (const chunk of [...own].sort()) add(before, chunk, page);
+    for (const chunk of [...chunkFiles(pageScripts(html, { beforeInput: true }))].sort()) add(before, chunk, page);
     const stack = [...own],
       seen = new Set<string>();
     while (stack.length) {

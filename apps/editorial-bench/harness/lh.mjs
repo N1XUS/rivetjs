@@ -3,9 +3,11 @@
 import * as chromeLauncher from "chrome-launcher";
 import lighthouse from "lighthouse";
 
-export async function runLighthouse(url, chromePath) {
+// `port` (optional): the Chrome debugging port (default: a free one).
+export async function runLighthouse(url, chromePath, port) {
   const chrome = await chromeLauncher.launch({
     chromePath,
+    ...(port ? { port } : {}),
     chromeFlags: ["--headless=new", "--no-first-run", "--disable-extensions", "--use-mock-keychain", "--password-store=basic"],
   });
   try {

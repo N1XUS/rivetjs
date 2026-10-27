@@ -5,14 +5,14 @@ import { strict as assert } from "node:assert";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { test } from "vitest";
-import { charts, editorialLoss, homeFacts, homeStrip } from "../content/_charts.ts";
+import { charts, homeBench, homeStrip } from "../content/_charts.ts";
 import { verdict, type Stat } from "../../dom-bench/verdict.ts";
 import fair from "../../../docs/benchmarks/2026-10-23-ssr-comparison.json" with { type: "json" };
 import resumeRun from "../../../docs/benchmarks/2026-10-19-fair-comparison.json" with { type: "json" };
 import krausest from "../../../docs/benchmarks/2026-10-23-krausest.json" with { type: "json" };
 import domRun from "../../../docs/benchmarks/2026-10-21-dom-mount-2.json" with { type: "json" };
 import competitors from "../../dom-bench/competitors.json" with { type: "json" };
-import editorial from "../../../docs/benchmarks/2026-10-11-editorial.json" with { type: "json" };
+import reactRun from "../../../docs/benchmarks/2026-10-27-ssr-comparison-react.json" with { type: "json" };
 
 const repo = fileURLToPath(new URL("../../../", import.meta.url));
 
@@ -251,6 +251,35 @@ test("homepage strip: values equal the reports, big ratios computed and backed b
   assert.ok(strip.dynamic!.loss?.includes(fair.ssr.tuned["100"]["10"]["solid-stable"].cpu_ms.median.toFixed(2) + " ms"), "plain Solid loss line carries its number");
 });
 
+test("homepage benchmark: values equal the reports; the claim, every bar pair and every chip are report WINs", () => {
+  const lanes = reactRun.ssr.tuned["1000"]["1"];
+  const cmp = (peer: string, metric: string) =>
+    reactRun.comparisons.find((c) => c.profile === "tuned" && c.rows === 1000 && c.concurrency === 1 && c.rivet === "rivet-compiled" && c.peer === peer && c.metric === metric);
+  assert.equal(homeBench.big, (lanes["react-static"].cpu_ms.median / lanes["rivet-compiled"].cpu_ms.median).toFixed(0) + "×");
+  assert.equal(cmp("react-static", "cpu_ms")?.verdict, "WIN", "headline claim");
+  const LANES: Record<string, keyof typeof lanes> = { Rivet: "rivet-compiled", "Solid 1.9": "solid-stable-static", "Razor (.NET 10)": "dotnet", "React 19.3": "react-static" };
+  assert.deepEqual(homeBench.bars.map((bar) => bar.label).sort(), Object.keys(LANES).sort());
+  for (const bar of homeBench.bars) {
+    assert.equal(bar.value, lanes[LANES[bar.label]!].cpu_ms.median, bar.label);
+    assert.equal(bar.text, bar.value.toFixed(2) + " ms");
+    if (bar.label !== "Rivet") assert.equal(cmp(LANES[bar.label]!, "cpu_ms")?.verdict, "WIN", `Rivet vs ${bar.label}`);
+  }
+  assert.deepEqual(homeBench.bars.filter((bar) => bar.rivet).map((bar) => bar.label), ["Rivet"]);
+  assert.ok(homeBench.bars.every((bar, i, all) => i === 0 || all[i - 1]!.value <= bar.value), "fastest first");
+  const [ttfb, update, heap] = homeBench.chips;
+  assert.equal(ttfb!.big, (lanes["react-static"].ttfb_p50_ms.median / lanes["rivet-compiled"].ttfb_p50_ms.median).toFixed(0) + "×");
+  assert.equal(cmp("react-static", "ttfb_p50_ms")?.verdict, "WIN");
+  assert.equal(update!.big, (dom["1000"]["solid-stable"].update100.median / dom["1000"].rivet.update100.median).toFixed(1) + "×");
+  assert.equal(domVerdict("1000", "update100", "solid-stable"), "WIN");
+  assert.equal(heap!.big, (dom["1000"]["solid-stable"].heapMiB.median / dom["1000"].rivet.heapMiB.median).toFixed(1) + "×");
+  assert.equal(verdict(dom["1000"].rivet.heapMiB, dom["1000"]["solid-stable"].heapMiB, "lower"), "WIN");
+  const react = reactRun.comparisons.filter((c) => c.peer.startsWith("react-") && ["cpu_ms", "p50_ms", "ttfb_p50_ms"].includes(c.metric));
+  assert.ok(react.length >= 60, "the run compares React on CPU, p50 and TTFB in every batch");
+  for (const c of react) assert.equal(c.verdict, "WIN", `${c.rivet} vs ${c.peer} ${c.metric} ${c.rows} c${c.concurrency}`);
+  for (const href of [homeBench.source.href, ttfb!.href, heap!.href]) assert.ok(existsSync(repo + href.replace("https://github.com/N1XUS/rivetjs/blob/main/", "")), href);
+  assert.ok(readFileSync(repo + "docs/benchmarks/2026-10-27-ssr-comparison-react.md", "utf8").includes("\n## Methodology\n"), "#methodology anchor");
+});
+
 test("benchmarks page: the findings carry no typed numbers (charts render them from the JSON); runs table lists the latest reports", () => {
   const page = readFileSync(new URL("../content/about/benchmarks.md", import.meta.url), "utf8");
   const findings = page.slice(0, page.indexOf("## What the server benchmark measures"));
@@ -263,19 +292,3 @@ test("benchmarks page: the findings carry no typed numbers (charts render them f
   }
 });
 
-test("homepage loss row: editorial numbers equal the JSON", () => {
-  assert.deepEqual(editorialLoss.zeroJs, ["Astro", "Eleventy", "Hugo"]);
-  assert.equal(editorialLoss.rivetInlineJS, editorial.output["1000"].rivet.article.inlineJS);
-  assert.equal(editorialLoss.rivetFetchedJS, editorial.serve["1000"].rivet.client.jsBytes);
-  assert.equal(editorialLoss.rivetLcp, editorial.serve["1000"].rivet.lighthouse.article.lcp.median);
-  assert.ok(editorialLoss.rivetLcp > editorialLoss.astroLcp, "still a loss: Rivet's article LCP is above Astro's");
-  assert.ok(existsSync(repo + editorialLoss.source.href.replace("https://github.com/N1XUS/rivetjs/blob/main/", "")));
-});
-
-test("home feature grid facts equal the JSON", () => {
-  assert.equal(homeFacts.domUpdate1000, dom["1000"].rivet.update100.median.toFixed(2) + " ms");
-  const p99 = fair.ssr.tuned["5000"]["1"];
-  assert.equal(homeFacts.streamP99, p99["rivet-compiled"].p99_ms.median.toFixed(1) + " ms");
-  assert.equal(homeFacts.razorP99, p99["dotnet"].p99_ms.median.toFixed(1) + " ms");
-  assert.equal(ssrVerdict(5000, 1, "rivet-compiled", "dotnet", "p99_ms"), "WIN");
-});

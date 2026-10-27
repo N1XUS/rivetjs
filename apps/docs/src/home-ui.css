@@ -1,18 +1,69 @@
 /*
  * @rivetjs/ui on the home page only: imported by src/routes/index.tsx, so the router links it on `/` alone (route
  * CSS, `.vite/rivet-route-css.json`) and no other docs page pays for it. Tailwind context for the components' `@apply`
- * comes from references (nothing emitted twice); the Rivet tokens are scoped to `[data-ui-theme="rivet"]`
- * (`themes/scoped.css`): the docs theme keeps `:root`. The stylesheets of the components the home renders come with their modules.
+ * comes from references (nothing emitted twice). Theme: no `themes/scoped.css` (its ~160 variables × light / dark +
+ * color-mix fallbacks were 24 KB of the page's inline critical CSS); `.rh-ui` below sets only the variables the home's
+ * components read, mapped onto the docs tokens, so the ui parts share the docs palette in both themes. Each component's own stylesheet (`@rivetjs/ui/styles/out/<name>.css`)
+ * comes with its module (Tabs, Button, Card, Chip) and the router merges it into this route's sheet.
  */
 @reference "tailwindcss";
 @reference "tw-animate-css";
 @reference "@rivetjs/ui/styles/utilities/index.css";
 @reference "@rivetjs/ui/styles/variants/index.css";
 @reference "@rivetjs/ui/styles/themes/rivet.css";
-@import "@rivetjs/ui/styles/themes/scoped.css" layer(theme);
 /* The Tailwind theme variables the component files read (`--border-width-field`, `--ease-smooth`, `--text-xs`, …) in a
    sub-layer of `theme`: the docs' own theme values (direct in `theme`, or unlayered) win, it only fills the gaps. */
 @import "@rivetjs/ui/styles/out/theme.css" layer(theme.ui);
-/* The components' own stylesheets (`@rivetjs/ui/styles/out/<name>.css`) come with their modules (Showcase.tsx)
-   and the router merges them into this route's sheet; only what no imported module brings is listed here. */
-@import "@rivetjs/ui/styles/components/popover.css" layer(components);
+
+/* The ui variables Button / Tabs / Card / Chip read (out/{button,tabs,card,chip}.css), on every `.rh-ui` island. Docs
+   tokens (theme.css) are read on `.rh`, so `--accent` here (the ui name) does not shadow the docs link colour outside. */
+.rh {
+  --rh-link: var(--accent);
+  --rh-ui-accent: var(--button-bg);
+  --rh-ui-accent-hover: var(--button-bg-hover);
+  --rh-ui-fg: var(--fg-strong);
+  --rh-ui-muted: var(--fg-faint);
+  --rh-ui-line: var(--line);
+  --rh-ui-page: var(--bg);
+  --rh-ui-raised: var(--bg-raised);
+  --rh-ui-soft: var(--bg-soft);
+  --rh-ui-softer: var(--bg-softer);
+}
+.rh-ui {
+  --spacing: 0.25rem;
+  --radius: 0.5rem;
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-3xl: calc(var(--radius) * 3);
+  --r-min: var(--radius-sm);
+  --ring-offset-width: 2px;
+  --disabled-opacity: 0.5;
+  --cursor-interactive: pointer;
+  --cursor-disabled: not-allowed;
+  --background: var(--rh-ui-page);
+  --foreground: var(--rh-ui-fg);
+  --muted: var(--rh-ui-muted);
+  --border: var(--rh-ui-line);
+  --focus: var(--rh-link);
+  --accent: var(--rh-ui-accent);
+  --accent-foreground: oklch(99% 0 0);
+  --accent-hover: var(--rh-ui-accent-hover);
+  --accent-soft: color-mix(in oklab, var(--rh-link) 13%, transparent);
+  --accent-soft-foreground: var(--rh-link);
+  --default: color-mix(in oklab, var(--rh-ui-fg) 6%, var(--rh-ui-page));
+  --default-foreground: var(--rh-ui-fg);
+  --default-hover: color-mix(in oklab, var(--rh-ui-fg) 10%, var(--rh-ui-page));
+  --default-soft: color-mix(in oklab, var(--rh-ui-fg) 4%, transparent);
+  --default-soft-foreground: var(--rh-ui-fg);
+  --segment: var(--rh-ui-raised);
+  --segment-foreground: var(--rh-ui-fg);
+  --surface: var(--rh-ui-raised);
+  --surface-foreground: var(--rh-ui-fg);
+  --surface-secondary: var(--rh-ui-soft);
+  --surface-tertiary: var(--rh-ui-softer);
+  --surface-shadow: none;
+  color-scheme: light;
+}
+[data-theme="dark"] .rh-ui {
+  --accent-foreground: oklch(99% 0 0);
+  color-scheme: dark;
+}

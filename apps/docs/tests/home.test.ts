@@ -1,13 +1,38 @@
-// Homepage contracts on the BUILT site. Motion-specific coverage lives in home-studio.test.ts.
+// Homepage contracts on the BUILT site (nx `docs:test` depends on `docs:build`): structure, sourced numbers, links,
+// product shot code = the live component, no JS before input, phone width, both themes, interaction after resume.
 import { strict as assert } from "node:assert";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, test } from "vitest";
 import { chromium, type Browser, type Page } from "playwright";
+import { generateContent } from "@rivetjs/docs-kit/tools/content/generate.ts";
+import { TEMPLATES } from "../../../libs/create-rivet/index.ts";
+import { homeBench } from "../content/_charts.ts";
+import { site } from "../site.config.ts";
 
-const client = resolve(fileURLToPath(new URL("..", import.meta.url)), "dist/client");
+const root = fileURLToPath(new URL("..", import.meta.url));
+const client = resolve(root, "dist/client");
+/** The built home without comments: hole / boundary markers (`<!--[-->`, `<!--b7-->`) split text runs. */
+const home = () => readFileSync(resolve(client, "index.html"), "utf8").replace(/<!--[^]*?-->/g, "");
+const section = (html: string, id: string) => {
+  const start = html.indexOf(`aria-labelledby="${id}"`);
+  assert.ok(start > 0, `section ${id}`);
+  return html.slice(start, html.indexOf("</section>", start));
+};
+const decode = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&#10;/g, "\n")
+    .replace(/&#123;/g, "{")
+    .replace(/&#125;/g, "}")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+
 const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2" };
 let server: Server;
 let origin: string;
@@ -29,346 +54,247 @@ afterAll(async () => {
   await new Promise((done) => server?.close(done));
 });
 
-async function home(options: { reducedMotion?: "reduce" | "no-preference"; width?: number; height?: number } = {}): Promise<Page> {
+async function open(options: { width?: number; height?: number; colorScheme?: "light" | "dark"; javaScriptEnabled?: boolean; reducedMotion?: "reduce" | "no-preference" } = {}) {
   const page = await browser.newPage({
-    viewport: { width: options.width ?? 1300, height: options.height ?? 850 },
+    viewport: { width: options.width ?? 1440, height: options.height ?? 900 },
+    colorScheme: options.colorScheme ?? "light",
+    javaScriptEnabled: options.javaScriptEnabled ?? true,
     reducedMotion: options.reducedMotion ?? "no-preference",
   });
-  await page.goto(origin + "/", { waitUntil: "load" });
-  return page;
+  const scripts: string[] = [];
+  const errors: string[] = [];
+  page.on("request", (request) => {
+    if (request.resourceType() === "script") scripts.push(request.url());
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    (window as unknown as { __cls: number }).__cls = 0;
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as unknown as { value: number; hadRecentInput: boolean }[]) {
+        if (!entry.hadRecentInput) (window as unknown as { __cls: number }).__cls += entry.value;
+      }
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  await page.goto(origin + "/", { waitUntil: "networkidle" });
+  await page.evaluate(() => document.fonts.ready);
+  return { page, scripts, errors };
 }
 
-/** In the page: the word the CSS rotation shows now (STATIC-ZERO-3: the three words are stacked server markup; the shown
- * one is the `.hs-word` whose letters are the most opaque), compared with `text`. */
-const shownIs = (text: string) => {
-  let best = "";
-  let most = -1;
-  for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
-    if (getComputedStyle(word).visibility === "hidden") continue;
-    const letters = [...word.children];
-    const opacity = letters.reduce((sum, letter) => sum + Number(getComputedStyle(letter).opacity), 0) / letters.length;
-    if (opacity > most) [most, best] = [opacity, word.textContent ?? ""];
+test("home: hero = one h1, lead, two CTAs to docs pages, the install command with the published version", async () => {
+  const html = home();
+  assert.equal(html.match(/<h1\b/g)?.length, 1);
+  assert.equal(decode(/<h1 id="home-title">([^]*?)<\/h1>/.exec(html)![1]!).replace(/\s+/g, " ").trim(), "The resumable framework for the web");
+  assert.match(html, /<span class="rh-grad">resumable<\/span>/, "the gradient marks one word");
+  const hero = section(html, "home-title");
+  const ctas = [...hero.matchAll(/<a class="button [^"]*" href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(ctas, ["/start/quick-start/", "/start/what-is-rivet/"]);
+  assert.match(hero, /<pre>npm create rivet@latest<\/pre>/);
+  assert.ok(hero.includes(`${site.version} · on npm`), "the published version beside the command");
+  const quick = readFileSync(resolve(root, "content/start/quick-start.md"), "utf8");
+  assert.ok(quick.includes("npm create rivet@latest"), "quick start documents the homepage install command");
+  assert.doesNotMatch(html, /not on npm yet|not published|coming soon|npm publish pending/i);
+});
+
+test("home: no obsolete hero motion (aurora, rotating words, canvas, animated gradients)", () => {
+  const html = home();
+  for (const gone of ["hs-aurora", "hs-word", "hs-pause", "<canvas", "hs-workbench", "lp-"]) assert.ok(!html.includes(gone), `no ${gone}`);
+  const css = readFileSync(resolve(root, "src/home.css"), "utf8");
+  // One animation only: the benchmark bars grow on a view timeline (scroll position), never on a clock.
+  assert.deepEqual([...css.matchAll(/@keyframes ([\w-]+)/g)].map((m) => m[1]), ["rh-grow"], "one keyframe set: the bars");
+  const timed = css.replace(/@supports \(animation-timeline: view\(\)\) \{[^]*?\n\}\n/, "").replace(/animation: none;/g, "");
+  assert.doesNotMatch(timed, /animation\s*:/, "nothing animates outside the bars' view timeline");
+  for (const file of ["src/home-studio.css", "src/components/home/HomeCanvas.tsx", "src/components/home/HomeHeadline.tsx"]) assert.ok(!existsSync(resolve(root, file)), `${file} removed`);
+});
+
+test("home: product shot = ui Tabs, three force-mounted panels, one selected; code panes show the live Counter source", () => {
+  const html = home();
+  const shot = html.slice(html.indexOf('class="rh-shot rh-ui"'), html.indexOf('class="rh-result-note"'));
+  const tabs = [...shot.matchAll(/<div [^>]*role="tab"[^>]*>([^<]*)</g)];
+  assert.deepEqual(
+    tabs.map((m) => m[1]),
+    ["Component", "Server HTML", "Browser"],
+  );
+  assert.equal(tabs.filter((m) => m[0].includes('aria-selected="true"')).length, 1, "one selected tab");
+  assert.ok(tabs[0]![0].includes('aria-selected="true"'), "Component first");
+  assert.equal(shot.match(/class="tabs__panel rh-pane/g)?.length, 3, "every panel is server HTML");
+  assert.ok(!shot.includes("data-slot=\"tabs-indicator\""), "no automatic indicator (its visible trigger would boot the page)");
+
+  const counter = readFileSync(resolve(root, "src/components/home/Counter.tsx"), "utf8").replace(/^(\/\/.*\n)+/, "").trim();
+  for (const name of ["_home-component.md", "_home-browser.md"]) {
+    const fence = /```tsx[^\n]*\n([^]*?)\n```/.exec(readFileSync(resolve(root, "content", name), "utf8"))?.[1];
+    assert.equal(fence, counter, `${name} shows Counter.tsx verbatim`);
   }
-  return most > 0.9 && best === text;
-};
-const shown = (page: Page) =>
-  page.evaluate(() => {
-    for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
-      const letters = [...word.children];
-      if (getComputedStyle(word).visibility !== "hidden" && letters.every((letter) => Number(getComputedStyle(letter).opacity) > 0.9)) return word.textContent;
+  const panes = [...shot.matchAll(/<pre [^>]*data-pane="(source|dom|server)"[^>]*>([^]*?)<\/pre>/g)];
+  assert.ok(decode(panes.find((m) => m[1] === "source")![2]!).includes("const count = signal(0);"));
+  assert.match(decode(panes.find((m) => m[1] === "dom")![2]!), /from "@rivetjs\/runtime\/dom"/, "Browser pane = the real compiled DOM module");
+});
+
+test("home: the Server HTML pane equals the counter's server markup (resume markers and ids removed)", () => {
+  const html = home();
+  const built = /<div class="counter"[^]*?<\/div>/.exec(html)![0].replace(/ data-b="\d+"/g, "").replace(/ id="rv\d+"/g, "");
+  const fence = /```html[^\n]*\n([^]*?)\n```/.exec(readFileSync(resolve(root, "content/_home-server.md"), "utf8"))![1]!;
+  const flat = (text: string) => text.replace(/>\s+</g, "><").trim();
+  assert.equal(flat(fence), flat(built));
+});
+
+test("home: benchmark = one claim, one bar comparison, three chips, all from content/_charts.ts homeBench", () => {
+  const html = home();
+  const numbers = section(html, "home-numbers-title");
+  const title = decode(/<h2 id="home-numbers-title">([^]*?)<\/h2>/.exec(numbers)![1]!).replace(/\s+/g, " ").trim();
+  assert.equal(title, `${homeBench.big} less server CPU than ${homeBench.peer}`);
+  const bars = [...numbers.matchAll(/<li( data-rivet="")? style="--v:([\d.]+)"><span class="rh-bar-label">([^<]+)<\/span>[^]*?<data value="[^"]+">([^<]+)<\/data>/g)];
+  assert.deepEqual(
+    bars.map((m) => [m[3], m[4]]),
+    homeBench.bars.map((bar) => [bar.label, bar.text]),
+    "every bar: label + value label",
+  );
+  assert.deepEqual(bars.filter((m) => m[1]).map((m) => m[3]), ["Rivet"], "only Rivet's bar is marked (logo gradient)");
+  assert.equal(bars.at(-1)![2], "1.0000", "the slowest lane is the full bar");
+  const chips = [...numbers.matchAll(/<li><a href="([^"]+)"><data value="[^"]+">([^<]+)<\/data><span>([^<]+)<\/span><\/a><\/li>/g)];
+  assert.deepEqual(
+    chips.map((m) => [m[1], m[2], m[3]]),
+    homeBench.chips.map((chip) => [chip.href, chip.big, chip.text]),
+  );
+  const benchmarks = readFileSync(resolve(client, "about/benchmarks/index.html"), "utf8");
+  for (const chip of homeBench.chips.filter((c) => c.href.startsWith("/about/benchmarks/#")))
+    assert.ok(benchmarks.includes(`id="${chip.href.split("#")[1]}"`), `${chip.href}: the chart exists`);
+  assert.match(numbers, /href="\/about\/benchmarks\/"/, "See all benchmarks");
+  assert.ok(numbers.includes(`href="${homeBench.methodology}"`), "methodology link");
+  assert.doesNotMatch(numbers, /rh-caveat|rh-sources|rh-stats/, "caveats and losses live on /about/benchmarks/");
+  // Every typed ratio on the page comes from homeBench (no hand-written claims).
+  const text = decode(html.slice(html.indexOf("<main"), html.indexOf("</main>")).replace(/<pre[^]*?<\/pre>/g, "").replace(/<[^>]+>/g, " "));
+  const allowed = new Set([homeBench.big, ...homeBench.chips.map((chip) => chip.big)]);
+  for (const ratio of text.match(/\d+(?:\.\d+)?×/g) ?? []) assert.ok(allowed.has(ratio), `${ratio} comes from homeBench`);
+});
+
+test("home: six feature cards and three steps link to existing pages; icons are lucide through kit Icon", async () => {
+  const html = home();
+  const { pages } = await generateContent(root, { dryRun: true });
+  const hrefs = new Set(pages.map((page) => page.href));
+  const features = section(html, "home-features-title");
+  const links = [...features.matchAll(/<li><a href="([^"]+)"/g)].map((m) => m[1]!);
+  assert.equal(links.length, 6);
+  for (const href of links) assert.ok(hrefs.has(href), `feature links a docs page: ${href}`);
+  assert.equal(features.match(/<span class="rh-icon"><svg [^>]*aria-hidden="true"/g)?.length, 6, "one decorative icon per card");
+  for (const name of ["Compiled JSX", "Resumable pages", "Fine-grained signals", "File routing", "Compile-time i18n", "Framework bridges"]) {
+    assert.ok(features.includes(`<h3>${name}</h3>`), name);
+  }
+  const how = section(html, "home-how-title");
+  assert.equal(how.match(/<li>/g)?.length, 3);
+  assert.ok(hrefs.has("/learn/resuming/") && how.includes('href="/learn/resuming/"'));
+  for (const file of ["src/routes/index.tsx", "src/components/home/ProductShot.tsx", "src/components/home/Counter.tsx"]) {
+    const source = readFileSync(resolve(root, file), "utf8");
+    assert.doesNotMatch(source, /<svg|<path|[\u2190-\u21ff\u2700-\u27bf\u2600-\u26ff]/, `${file}: no hand-drawn SVG or glyph icons`);
+  }
+});
+
+test("home: the component libraries link to the UI and CDK docs sites", () => {
+  const family = section(home(), "home-family-title");
+  const links = [...family.matchAll(/<li><a href="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(links, [site.sites.ui + "/", site.sites.cdk + "/"]);
+});
+
+test("home: starters = every templates/ starter with its create-rivet id; final CTA", async () => {
+  const html = home();
+  const starters = section(html, "home-starters-title");
+  const ids = [...starters.matchAll(/<code>--template ([a-z]+)<\/code>/g)].map((m) => m[1]);
+  assert.deepEqual([...ids].sort(), TEMPLATES.map((t) => t.id).sort());
+  const dirs = readdirSync(resolve(root, "../../templates")).filter((d) => d.startsWith("starter-"));
+  assert.deepEqual(TEMPLATES.map((t) => t.dir).sort(), dirs.sort(), "one card per templates/ starter");
+  assert.match(starters, /class="card [^"]*rh-starter/, "ui Card");
+  assert.match(starters, /href="\/start\/quick-start\/#starters"/);
+  assert.match(readFileSync(resolve(client, "start/quick-start/index.html"), "utf8"), /id="starters"/);
+  const final = section(html, "home-final-title");
+  assert.match(final, /href="\/start\/quick-start\/"/);
+  assert.ok(final.includes(`href="${site.repo}"`));
+});
+
+test("home: no JS before input (desktop + phone, both themes), CLS 0, no horizontal scroll at 375 px", async () => {
+  for (const [width, height] of [
+    [1440, 900],
+    [375, 812],
+  ] as const) {
+    for (const colorScheme of ["light", "dark"] as const) {
+      const { page, scripts, errors } = await open({ width, height, colorScheme });
+      try {
+        assert.deepEqual(scripts, [], `${width}/${colorScheme}: no script fetched before input`);
+        assert.equal(await page.locator('link[rel="modulepreload"]').count(), 0, "no modulepreload before input");
+        assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), colorScheme);
+        assert.ok((await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, `${width}: no horizontal scroll`);
+        await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
+        await page.waitForTimeout(100);
+        // Lighthouse shows CLS 0 (0.00014 measured): what is left is the docs-wide Manrope swap over its metric-matched
+        // fallback (docs-kit fonts.ts); the hero is left-aligned with fixed headline lines so nothing re-centres or re-wraps.
+        assert.ok((await page.evaluate(() => (window as unknown as { __cls: number }).__cls)) < 0.001, "CLS below 0.001");
+        // Only the bars' scroll-driven animation exists; nothing runs on the document (time) timeline.
+        assert.equal(await page.evaluate(() => document.getAnimations().filter((a) => a.timeline === document.timeline).length), 0, "nothing animates on a clock");
+        await page.locator(".rh-bars").evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await page.waitForTimeout(100);
+        const scale = await page.locator(".rh-bars > li:last-child .rh-bar").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+        assert.ok(scale > 0.999, `${width}/${colorScheme}: bars full length once in view (${scale})`);
+        assert.deepEqual(errors, []);
+      } finally {
+        await page.close();
+      }
     }
-    return null;
-  });
-
-test("home headline: full sentence as the accessible name, first word painted, words cycle without layout shift", async () => {
-  const page = await home();
-  try {
-    const heading = page.getByRole("heading", { level: 1 });
-    assert.equal(await heading.getAttribute("id"), "lp-title");
-    assert.equal(await heading.getAttribute("aria-label"), "Make the web feel alive, fast and fluid.");
-    assert.equal(await shown(page), "alive.");
-    assert.equal(await page.locator(".hs-title-line").getAttribute("aria-hidden"), "true");
-    await page.evaluate(() => document.fonts.ready);
-    const box = async () => page.locator("h1").evaluate((h1) => [h1.getBoundingClientRect().width, h1.getBoundingClientRect().height]);
-    const size = await box();
-    for (const word of ["fast.", "fluid.", "alive."]) {
-      await page.waitForFunction(shownIs, word, { timeout: 6000 });
-      assert.deepEqual(await box(), size, `h1 box unchanged for ${word}`);
-    }
-  } finally {
-    await page.close();
   }
 });
 
-test("home headline: keyboard pause control and reduced motion keep the first word static", async () => {
-  const page = await home();
-  try {
-    // A native checkbox (CSS pauses the letters while it is checked; no JS).
-    const pause = page.getByRole("checkbox", { name: "Pause headline animation" });
-    await pause.focus();
-    await page.keyboard.press("Space");
-    assert.ok(await pause.isChecked());
-    const word = await shown(page);
-    await page.waitForTimeout(3400);
-    assert.equal(await shown(page), word);
-    await page.keyboard.press("Space");
-    assert.ok(!(await pause.isChecked()));
-  } finally {
-    await page.close();
-  }
-  const reduced = await home({ reducedMotion: "reduce" });
-  try {
-    await reduced.waitForLoadState("networkidle");
-    await reduced.evaluate(() => document.fonts.ready);
-    // Deferred sheets can create the reduced-motion 0.01ms transitions for one frame as they arrive.
-    await reduced.waitForFunction(() => document.getAnimations().filter((a) => a.playState === "running").length === 0, undefined, { timeout: 5000 });
-    assert.equal(await shown(reduced), "alive.");
-    assert.ok(!(await reduced.locator(".hs-word-pause").isVisible()), "no pause control without motion");
-  } finally {
-    await reduced.close();
-  }
-});
-
-test("home hero: the command box copies `npm create rivet@latest`; no horizontal scroll on a phone", async () => {
-  const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
-  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
-  const page = await context.newPage();
-  try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 375, "no horizontal page scroll at 375 px");
-    const command = page.locator(".hs-hero .hs-command");
-    assert.equal(await command.locator("pre").textContent(), "npm create rivet@latest");
-    await command.getByRole("button").click();
-    await page.waitForFunction(() => document.querySelector(".hs-command .copy-button")?.hasAttribute("data-copied"));
-    assert.equal(await page.evaluate(() => navigator.clipboard.readText()), "npm create rivet@latest");
-    assert.equal(await page.locator('.hs-hero-actions a[href="/start/what-is-rivet/"]').textContent(), "Explore the docs");
-    assert.ok(await page.locator('.hs-hero a[href="/start/quick-start/"]').isVisible());
-  } finally {
-    await context.close();
-  }
-});
-test("home: no JS before input (the hero motion is CSS); generic docs highlighter and search stay lazy", async () => {
-  for (const width of [1300, 375]) {
-    const page = await browser.newPage({ viewport: { width, height: 850 } });
-    const scripts: string[] = [];
-    page.on("request", (request) => {
-      if (["script", "fetch", "xhr"].includes(request.resourceType()) || /\.m?js(\?|$)/.test(request.url())) scripts.push(request.url());
-    });
+test("home: both themes are designed: text and surfaces follow the theme, headline contrast holds", async () => {
+  const colors: Record<string, { bg: string; fg: string; shot: string }> = {};
+  for (const colorScheme of ["light", "dark"] as const) {
+    const { page } = await open({ colorScheme });
     try {
-      await page.goto(origin + "/", { waitUntil: "load" });
-      await page.waitForTimeout(2700); // idle-time prefetches and the first word change would have happened by now
-      assert.deepEqual(scripts, [], `no JS before input at width ${width}`);
-      assert.ok(await page.evaluate(() => document.getAnimations().some((a) => a.playState === "running")), "the CSS hero motion runs");
-      assert.equal(await page.locator('link[rel="modulepreload"]').count(), 0);
+      colors[colorScheme] = await page.evaluate(() => ({
+        bg: getComputedStyle(document.body).backgroundColor,
+        fg: getComputedStyle(document.querySelector("h1")!).color,
+        shot: getComputedStyle(document.querySelector(".rh-result")!).backgroundColor,
+      }));
     } finally {
       await page.close();
     }
   }
+  assert.notEqual(colors.light!.bg, colors.dark!.bg);
+  assert.notEqual(colors.light!.fg, colors.dark!.fg);
+  assert.notEqual(colors.light!.shot, colors.dark!.shot);
 });
 
-test("home numbers: four readable final values in view, below the fold, print and reduced motion", async () => {
-  const page = await home();
+test("home: tabs and counter resume on input; every panel is readable without JS", async () => {
+  const { page, errors } = await open();
   try {
-    const counts = await page.locator(".hs-stats data").evaluateAll((nodes) => nodes.map((n) => [n.getAttribute("value"), n.textContent]));
-    assert.equal(counts.length, 4);
-    for (let index = 0; index < 4; index++) {
-      const chart = page.locator(".hs-stats li").nth(index);
-      await chart.evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().bottom + scrollY - innerHeight + 20));
-      await page.waitForTimeout(100);
-      const state = await chart.evaluate((el) => {
-        const cu = el.querySelector<HTMLElement>("data")!;
-        return {
-          n: cu.textContent!.replace("×", ""),
-          to: cu.getAttribute("value"),
-          visible: getComputedStyle(cu).opacity === "1",
-        };
-      });
-      assert.equal(state.n, state.to, `chart ${index}: counter at its value`);
-      assert.ok(state.visible, `stat ${index}: real text visible`);
-    }
+    await page.getByRole("tab", { name: "Server HTML" }).click();
+    await page.waitForFunction(() => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent === "Server HTML");
+    assert.match((await page.locator('.rh-pane:not([inert]) pre').first().textContent()) ?? "", /<output aria-live="polite">0<\/output>/);
+    await page.getByRole("tab", { name: "Browser" }).click();
+    await page.waitForFunction(() => document.querySelector('.rh-pane:not([inert]) pre[data-pane="dom"]')?.getBoundingClientRect().height! > 0);
+    await page.getByRole("button", { name: "Increment" }).click();
+    await page.waitForFunction(() => document.querySelector(".rh-result output")?.textContent === "1");
+    assert.equal(await page.getByRole("button", { name: "Reset" }).isDisabled(), false);
+    await page.getByRole("button", { name: "Reset" }).click();
+    await page.waitForFunction(() => document.querySelector(".rh-result output")?.textContent === "0");
+    assert.deepEqual(errors, []);
   } finally {
     await page.close();
   }
-  // Complete at rest: charts not scrolled to yet (full-page captures, link previews) and print show the real values.
-  // A short viewport keeps every chart below the fold (at 850 px the 2nd row straddles it: its view timeline runs).
-  const rest = await home({ height: 400 });
+  const noJs = await open({ javaScriptEnabled: false });
   try {
-    const tops = await rest.locator(".hs-stats li").evaluateAll((charts) => charts.map((chart) => chart.getBoundingClientRect().top - innerHeight));
-    assert.ok(tops.every((below) => below > 0), `every chart below the fold: ${tops.join(", ")}`);
-    const atRest = () =>
-      rest.locator(".hs-stats li").evaluateAll((charts) =>
-        charts.map((chart) => {
-          const cu = chart.querySelector<HTMLElement>("data")!;
-          return {
-            shown: cu.textContent!.replace("×", "") === cu.getAttribute("value"),
-            visible: getComputedStyle(cu).opacity === "1",
-          };
-        }),
-      );
-    for (const state of await atRest()) assert.deepEqual(state, { shown: true, visible: true }, "below the fold, before any scroll");
-    await rest.emulateMedia({ media: "print" });
-    const printed = await rest.locator(".hs-stats data").evaluateAll((nodes) => nodes.map((n) => [getComputedStyle(n).color !== "rgba(0, 0, 0, 0)", getComputedStyle(n, "::after").content]));
-    for (const [visible, after] of printed) assert.ok(visible && after === "none", `print shows the <data> text (${after})`);
+    const visible = await noJs.page.$$eval(".rh-pane", (panes) => panes.filter((pane) => (pane as HTMLElement).offsetHeight > 0).length);
+    assert.equal(visible, 1, "the selected panel shows without JS");
+    assert.equal(await noJs.page.locator(".rh-pane pre").count(), 5, "all code is in the HTML (component, server HTML, compiled source / dom / server)");
   } finally {
-    await rest.close();
-  }
-  const reduced = await home({ reducedMotion: "reduce" });
-  try {
-    const colors = await reduced.locator(".hs-stats data").evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).color));
-    for (const color of colors) assert.notEqual(color, "rgba(0, 0, 0, 0)", "real number text shows");
-    // The deferred sheets can start reduced-motion 0.01ms transitions just after load: wait for them to have loaded
-    // (CI: they landed after a first zero, 658 animations at the assertion).
-    await reduced.waitForLoadState("networkidle");
-    await reduced.waitForFunction(() => document.getAnimations().filter((a) => a.playState === "running").length === 0);
-  } finally {
-    await reduced.close();
+    await noJs.page.close();
   }
 });
 
-test("home proof: four linked chart summaries and every section readable at rest", async () => {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+test("home: reduced motion: the benchmark bars are static, full length, no animation", async () => {
+  const { page } = await open({ reducedMotion: "reduce" });
   try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    const strip = await page.locator(".hs-stats a").evaluateAll((links) =>
-      links.map((a) => ({ href: a.getAttribute("href"), bottom: a.getBoundingClientRect().bottom, text: a.textContent })),
-    );
-    assert.equal(strip.length, 4);
-    for (const item of strip) {
-      const response = await page.request.get(origin + item.href!);
-      assert.equal(response.status(), 200, `linked chart page ${item.href} exists`);
-      assert.ok((await response.text()).includes(`id="${item.href!.split("#")[1]}"`), `chart anchor ${item.href} exists`);
-    }
-    const bigs = strip.map((item) => /^[\d.]+×/.exec(item.text!)?.[0]);
-    for (let i = 1; i < bigs.length; i++) assert.notEqual(bigs[i], bigs[i - 1], `no two equal ratios side by side: ${bigs}`);
-    // No scroll reveal: sections below the fold are fully opaque before they are scrolled to.
-    const faded = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>(".hs-section, .hs-directory")].filter((el) => getComputedStyle(el).opacity !== "1" || getComputedStyle(el).translate !== "none").map((el) => el.className),
-    );
-    assert.deepEqual(faded, []);
-  } finally {
-    await page.close();
-  }
-});
-
-/** Actual script resources, used to separate visible-animation startup from later input downloads. */
-const scriptsNow = (page: Page) => page.evaluate(() => performance.getEntriesByType("resource").map((entry) => new URL(entry.name).pathname).filter((path) => path.endsWith(".js")));
-
-test("resume counter: server HTML contains the value; adoption and repeated clicks keep the server's elements", async () => {
-  const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
-  await page.addInitScript(() => {
-    document.addEventListener("DOMContentLoaded", () => {
-      (window as unknown as { serverButton?: Element | null }).serverButton = document.querySelector('[aria-label="Increment counter"]');
-    }, { once: true });
-  });
-  try {
-    const response = await page.goto(origin + "/", { waitUntil: "load" });
-    assert.match(await response!.text(), /id="home-counter-value"[^>]*>[^]*?07/);
-    assert.equal(await page.locator("#home-counter-value").textContent(), "07");
-    const button = page.getByRole("button", { name: "Increment counter", exact: true });
-    for (let i = 0; i < 3; i++) await button.click();
-    await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "10");
-    assert.ok(await page.evaluate(() => (window as unknown as { serverButton?: Element }).serverButton === document.querySelector('[aria-label="Increment counter"]')), "the server's button was adopted, not re-created");
-  } finally {
-    await page.close();
-  }
-});
-
-test("resume counter: an earlier theme interaction leaves the counter working without duplicate downloads", async () => {
-  const page = await home();
-  try {
-    await page.getByRole("button", { name: "Theme", exact: true }).click();
-    await page.waitForLoadState("networkidle");
-    await page.keyboard.press("Escape");
-    const prior = await scriptsNow(page);
-    assert.ok(prior.some((name) => /\/theme-menu-open-/.test(name)), `the theme was really loaded before the counter: ${prior.join(", ")}`);
-    await page.getByRole("button", { name: "Increment counter", exact: true }).click();
-    await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "08");
-    await page.waitForLoadState("networkidle");
-    const after = await scriptsNow(page);
-    for (const path of prior) assert.equal(after.filter((item) => item === path).length, 1, `${path} was not downloaded again`);
-  } finally {
-    await page.close();
-  }
-});
-
-test("resume counter: after a hover, the first click paints within 100 ms on slow 4G + 4x CPU", async () => {
-  const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
-  try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send("Network.emulateNetworkConditions", { offline: false, latency: 150, downloadThroughput: (1.6 * 1024 * 1024) / 8, uploadThroughput: (750 * 1024) / 8 });
-    await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-    const button = page.getByRole("button", { name: "Increment counter", exact: true });
-    await button.scrollIntoViewIfNeeded();
-    await button.hover();
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(500);
-    await page.evaluate(() => {
-      const w = window as unknown as { paint?: number; down?: number };
-      document.addEventListener("pointerdown", (event) => (w.down = event.timeStamp), { capture: true, once: true });
-      new MutationObserver((_, observer) => {
-        observer.disconnect();
-        requestAnimationFrame(() => setTimeout(() => (w.paint = performance.now())));
-      }).observe(document.querySelector("#home-counter-value")!, { childList: true, characterData: true, subtree: true });
-    });
-    await button.click();
-    const ms = await page.waitForFunction(() => {
-      const w = window as unknown as { paint?: number; down?: number };
-      return w.paint !== undefined && w.down !== undefined && w.paint - w.down;
-    });
-    const elapsed = (await ms.jsonValue()) as number;
-    // The homepage claim's budget: enforced off CI (4x throttling on CI's runners: 176–482 ms; root vitest.config.ts
-    // PERF_BUDGETS).
-    if (!process.env.CI || process.env.RIVET_PERF_BUDGETS === "1") assert.ok(elapsed <= 100, `pointerdown → paint ${elapsed.toFixed(1)} ms`);
-    assert.equal(await page.locator("#home-counter-value").textContent(), "08");
-  } finally {
-    await page.close();
-  }
-});
-
-test("component workbench: focusing server controls keeps their markup and box; keyboard tabs and input work, no axe violations", async () => {
-  const page = await browser.newPage({ viewport: { width: 1300, height: 850 }, bypassCSP: true });
-  try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    await page.locator(".hs-workbench").scrollIntoViewIfNeeded();
-    await page.evaluate(() => document.fonts.ready);
-    const snapshot = () =>
-      page.evaluate(() => {
-        const panel = document.querySelector(".hs-workbench")!;
-        const box = panel.getBoundingClientRect();
-        return { controls: [...panel.querySelectorAll("button")].map((el) => [el.className, el.getAttribute("role"), el.getAttribute("aria-label"), el.textContent]), box: [box.x, box.y, box.width, box.height] };
-      });
-    const before = await snapshot();
-    await page.getByRole("tab", { name: "Component", exact: true }).focus();
-    await page.waitForLoadState("networkidle");
-    const after = await snapshot();
-    assert.deepEqual(after, before, "server and adopted controls retain markup and geometry on focus");
-    await page.keyboard.press("ArrowRight");
-    await page.waitForFunction(() => document.activeElement?.id === "home-tab-server");
-    assert.ok(await page.locator("#home-code-server").isVisible());
-    await page.keyboard.press("Home");
-    await page.waitForFunction(() => document.activeElement?.id === "home-tab-component");
-    await page.getByRole("button", { name: "Increment counter", exact: true }).focus();
-    await page.keyboard.press("Enter");
-    await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "08");
-    await page.addScriptTag({ path: resolve(fileURLToPath(new URL("../../..", import.meta.url)), "node_modules/axe-core/axe.min.js") });
-    const violations = await page.evaluate(async () => {
-      const axe = (window as unknown as { axe: { run: (context: string) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
-      return (await axe.run(".hs-workbench")).violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
-    });
-    assert.deepEqual(violations, []);
-  } finally {
-    await page.close();
-  }
-});
-
-test("component workbench: a pointer can select server HTML; the initial server panel has no axe violations", async () => {
-  const page = await browser.newPage({ viewport: { width: 1300, height: 850 }, bypassCSP: true });
-  try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    await page.locator(".hs-workbench").scrollIntoViewIfNeeded();
-    await page.addScriptTag({ path: resolve(fileURLToPath(new URL("../../..", import.meta.url)), "node_modules/axe-core/axe.min.js") });
-    const violations = await page.evaluate(async () => {
-      const axe = (window as unknown as { axe: { run: (context: string) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
-      return (await axe.run(".hs-workbench")).violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`);
-    });
-    assert.deepEqual(violations, [], "preview");
-    await page.getByRole("tab", { name: "Server HTML", exact: true }).click();
-    await page.waitForFunction(() => document.querySelector("#home-tab-server")?.getAttribute("aria-selected") === "true");
-    assert.ok(await page.locator("#home-code-server").isVisible());
-    assert.ok(!(await page.locator("#home-code-component").isVisible()));
-  } finally {
-    await page.close();
-  }
-});
-
-test("footer: reference links remain available and the homepage makes no obsolete zero-startup-JS claim", async () => {
-  const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
-  try {
-    await page.goto(origin + "/", { waitUntil: "load" });
-    await page.locator("footer").scrollIntoViewIfNeeded();
-    for (const href of ["/api/", "/examples/", "/search/"]) assert.ok(await page.locator(`footer a[href="${href}"]`).isVisible());
-    assert.doesNotMatch(await page.locator(".hs-home").innerText(), /no script files before you interact|JS loaded with the page: 0 B/);
+    assert.equal(await page.evaluate(() => document.getAnimations().length), 0);
+    const scale = await page.locator(".rh-bars > li:last-child .rh-bar").evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+    assert.equal(scale, 1);
   } finally {
     await page.close();
   }
