@@ -71,6 +71,7 @@ export const groups: NavGroup[] = [
       "components/radio-group",
       "components/radio-button-group",
       "components/rating",
+      "components/drop-zone",
     ],
   },
   {

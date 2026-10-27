@@ -693,6 +693,12 @@ export const entries: ApiEntryConfig[] = [
     runsOn: "both",
     summary: "RAC DisclosureGroup, Disclosure, DisclosurePanel; DetailsDisclosure.",
   },
+  {
+    entry: "@rivetjs/cdk/drop-zone",
+    file: "cdk/drop-zone/index.tsx",
+    runsOn: "both",
+    summary: "DropZone (react-aria-components DropZone, react-aria useDrop / useClipboard).",
+  },
   { entry: "@rivetjs/cdk/file-trigger", file: "cdk/file-trigger/index.tsx", runsOn: "both", summary: "FileTrigger (react-aria-components FileTrigger)." },
   { entry: "@rivetjs/cdk/form", file: "cdk/form/index.tsx", runsOn: "both", summary: "Form and FieldError (react-aria-components Form)." },
   { entry: "@rivetjs/cdk/group", file: "cdk/group/index.tsx", runsOn: "both", summary: "Group (react-aria-components Group)." },

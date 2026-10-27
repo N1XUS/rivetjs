@@ -162,6 +162,8 @@ React Spectrum (react-stately, react-aria, react-aria-components) — formerly @
 - progress-bar/index.tsx, progress-bar/behaviour.tsx, meter/index.tsx, meter/behaviour.tsx — react-aria progress/useProgressBar.ts,
   meter/useMeter.ts, react-aria-components ProgressBar.tsx, Meter.tsx (© 2020/2022 Adobe)
 - file-trigger/index.tsx — react-aria-components FileTrigger.tsx (© 2023 Adobe)
+- drop-zone/index.tsx, drop-zone/dnd.ts, drop-zone/intl.ts, tests/drop-zone.browser.test.tsx — react-aria dnd/{useDrop,utils,constants,useClipboard}.ts + intl,
+  react-aria-components DropZone.tsx, test/DropZone.test.js (© 2020/2023 Adobe)
 - toggle-button-group/index.tsx, toggle-button-group/context.ts, toggle-button-group/behaviour.tsx, toggle-button-group/item.tsx,
   state/toggle-group.ts — react-aria button/useToggleButtonGroup.ts, react-stately toggle/useToggleGroupState.ts,
   react-aria-components ToggleButtonGroup.tsx (© 2024 Adobe)

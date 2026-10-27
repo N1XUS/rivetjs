@@ -313,6 +313,12 @@ export const entries: ApiEntryConfig[] = [
     summary: "Command (Rivet addition): a modal command palette; search field filtering grouped commands, sizes, backdrops.",
   },
   {
+    entry: "@rivetjs/ui/drop-zone",
+    file: "ui/src/components/drop-zone/index.ts",
+    runsOn: "both",
+    summary: "DropZone (Rivet addition): a drag-and-drop / paste / browse upload area with a file list (format badge, progress, retry, remove).",
+  },
+  {
     entry: "@rivetjs/ui/kpi-group",
     file: "ui/src/components/kpi-group/index.ts",
     runsOn: "both",
