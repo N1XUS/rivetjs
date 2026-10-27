@@ -119,6 +119,17 @@ compiled("cold press: an uncanceled press focuses its target as a mouse focus", 
   });
 });
 
+compiled("cold press: focus moved after the press (a script focus, a Tab) stays where it went", async () => {
+  await cold(async (page) => {
+    // Before the chunk loaded: the press focused #plain natively, then focus moved on (Playwright `press` / a tab-in).
+    await page.click("#plain");
+    await page.focus("#held");
+    await page.waitForFunction(() => document.querySelector("#clicks")!.textContent === "1", undefined, { timeout: 5000 });
+    await idle(page);
+    assert.equal(await active(page), "held", "the replayed press's default focus does not pull focus back");
+  });
+});
+
 compiled("cold hover: the units a press adopted get the enter events the pointer made before they existed", async () => {
   await cold(async (page) => {
     await page.hover("#hover");

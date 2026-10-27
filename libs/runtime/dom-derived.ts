@@ -471,15 +471,13 @@ function counted(rec: Rec | null, n: number): void {
   for (const key in tail!.w) if (key.startsWith(prefix)) wakeAll(tail!.w![key]!);
 }
 
-// The first write to a keyed signal: the lazy lists whose rows read it materialise every row, the boundaries on its
-// wake list materialise — before the write notifies, so their bindings start from what the page shows.
+// The first write to a keyed signal: the boundaries on its wake list materialise, then the lazy lists whose rows read it
+// materialise every row — before the write notifies, so their bindings start from what the page shows. Wake list first:
+// a woken record's run may create a lazy list whose rows read this signal (it joins `e.fors`), and that list must take
+// this write too (TOGGLE-TABS-COLD: a cold arrow key selected a tab, the force-mounted panels' list — created by the
+// TabPanels wake — kept the server's visible panel until the second change).
 function before(e: Keyed): void {
-  const fors = e.fors,
-    wake = e.wake;
-  if (fors) {
-    e.fors = null;
-    for (const lazy of fors) wakeFor(lazy);
-  }
+  const wake = e.wake;
   if (wake) {
     e.wake = undefined;
     for (const id of wake) {
@@ -489,6 +487,11 @@ function before(e: Keyed): void {
         if (p !== true) p.catch(report);
       }
     }
+  }
+  const fors = e.fors;
+  if (fors) {
+    e.fors = null;
+    for (const lazy of fors) wakeFor(lazy);
   }
 }
 
@@ -2046,7 +2049,9 @@ let added: Added[] = [],
   down: Event | undefined,
   pressed: [HTMLElement | null] | false | undefined,
   start: [x: number, y: number, before: Element | null, after?: Element | null] | undefined,
-  back: [Element | null] | undefined;
+  back: [Element | null] | undefined,
+  // The focus verdict of the last replayed linked pointerdown (`replay` `fresh`), for its mousedown.
+  pairFresh = false;
 const captures = (o: unknown): boolean => !!(typeof o == "object" ? (o as AddEventListenerOptions | null)?.capture : o);
 const sameAdded = (r: Added, t: EventTarget, type: string, fn: unknown, o: unknown) => r[0] === t && r[1] === type && r[2] === fn && r[3] === captures(o);
 function addRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | AddEventListenerOptions): void {
@@ -2099,6 +2104,8 @@ function late(event: Event, path: EventTarget[]): Added[] {
 const linked = new WeakSet<Event>(),
   // Cold focus / blur events of a cold press's native mouse focus: the replay re-creates that move, they never replay.
   moved = new WeakSet<Event>(),
+  // Presses queued while they dispatched: their native focus move is undone as it lands (`hidden`), focus stays put.
+  hiddenMove = new WeakSet<Event>(),
   // A pressed element whose native focus move a replayed handler canceled → [element focused at its dispatch, undo time,
   // dispatch time] per canceled press (a later press dispatched before the undo puts focus back past it).
   undone = new WeakMap<Element, [was: Element | null, at: number, dispatched: number][]>();
@@ -2139,7 +2146,7 @@ function queued([event, , , state]: HeldEvent): void {
   else if (event.type === "mousedown" && down?.target === event.target) (linked.add(down).add(event), (down = undefined));
   const dispatching = event.eventPhase !== 0;
   if (/^(focus|blur)/.test(event.type)) pressed && !dispatching && (/^(blur|focusout)$/.test(event.type) || pressed[0] === event.target) && moved.add(event);
-  else if ((pressed = isPress(event)) && dispatching) (hide(1), (back = [state[2]]), setTimeout(hide));
+  else if ((pressed = isPress(event)) && dispatching) (hide(1), (back = [state[2]]), hiddenMove.add(event), setTimeout(hide));
 }
 
 // Run a held event's delegated handlers over its path (then the listeners replays attached since its dispatch), with the
@@ -2166,7 +2173,14 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   hide();
   const press = isPress(event),
     pair = linked.has(event),
-    before = doc!.activeElement;
+    before = doc!.activeElement,
+    // Focus sits where the press left it: on its target (the native move landed) or where it was at dispatch (the move
+    // was undone, `hidden`). Elsewhere, focus moved on after the press (a script focus, a Tab, a later press's own
+    // move): its default focus already happened and is not replayed over that move (TOGGLE-TABS-COLD: a cold click
+    // then a focus + ArrowDown in another toolbar pulled focus back to the clicked button before the key replayed).
+    // A linked mousedown follows its pointerdown's verdict (that replay already put focus back).
+    fresh = pair && type === "mousedown" ? pairFresh : !!press && before === ((hiddenMove.has(event) ? state[2] : press[0]) ?? doc!.body);
+  if (pair && type === "pointerdown") pairFresh = fresh;
   if (press && !(pair && type === "mousedown") && doc!.activeElement === (press[0] ?? doc!.body)) {
     let was = state[2] as HTMLElement | null,
       ts = event.timeStamp,
@@ -2238,7 +2252,8 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     try {
       if (press && !(pair && type === "pointerdown"))
         if (!kept || type === "pointerdown")
-          press[0] ? press[0].focus({ preventScroll: true, focusVisible: false } as FocusOptions) : (doc!.activeElement as HTMLElement | null)?.blur?.();
+          fresh &&
+            (press[0] ? press[0].focus({ preventScroll: true, focusVisible: false } as FocusOptions) : (doc!.activeElement as HTMLElement | null)?.blur?.());
         else if (press[0]) {
           const list = undone.get(press[0]) ?? [];
           (undone.set(press[0], list), list.push([state[2], performance.now(), event.timeStamp]));
