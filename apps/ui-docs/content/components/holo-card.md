@@ -6,7 +6,7 @@ status: experimental
 related: [components/card, components/item-card]
 ---
 
-`HoloCard` tilts toward the pointer and lights a holographic glare where the pointer is. The root writes a few CSS variables on pointer move; the tilt, glare and parallax are CSS. No script runs before the first pointer move (it resumes the card), and the card stays flat with `prefers-reduced-motion`.
+`HoloCard` tilts toward the pointer and lights a holographic glare where the pointer is. The root writes a few CSS variables on pointer move; the tilt, glare and parallax are CSS. The first pointer input resumes the card; no card script runs before input. On touch devices, a tap enables device tilt. The card stays flat with `prefers-reduced-motion`.
 
 ## Usage
 
@@ -58,9 +58,15 @@ Render one `HoloCard.Content` per band of the card and position its children wit
 
 ::example{id=holo-card-pattern}
 
-### Static
+### On phones and tablets
 
-On touch screens, horizontal drags tilt the card and vertical drags scroll the page.
+Tap the card once to enable device tilt. On iOS, the card requests motion permission once per page; allow it to enable the effect. Your holding angle becomes the neutral position, and moving the device up to 25 degrees in either direction tilts the card and moves the glare. Turning the screen recalibrates the neutral position.
+
+Tracking pauses while the card is offscreen or the page is hidden. Sensor readings stay on the page. If permission is denied or no usable sensor reading arrives within one second, horizontal touch drags still tilt the card and vertical drags scroll the page.
+
+With reduced motion enabled, `isInteractive={false}`, or `isDisabled`, the card stays flat and unlit and does not request permission or track device movement.
+
+### Static
 
 ::example{id=holo-card-static}
 
@@ -87,7 +93,7 @@ The component’s parts emit these additional `data-slot` values: `holo-card-rot
 
 ### Data Attributes
 
-- `[data-active="true"]` on the root while the pointer is over the card.
+- `[data-active="true"]` on the root while the pointer is over the card or device tilt is active.
 - `[data-static="true"]` on the root when `isInteractive={false}` or `isDisabled`.
 - `[data-parallax="false"]` on a content layer without parallax.
 
@@ -109,7 +115,7 @@ The component’s parts emit these additional `data-slot` values: `holo-card-rot
 
 Image textures: inline styles refuse `url()`, so set `--holo-card-pattern: url(...)` in a stylesheet rule on a class and pass the class.
 
-Written by the card on pointer move (read only): `--holo-card-pointer-x`, `--holo-card-pointer-y` (0–100), `--holo-card-background-x`, `--holo-card-background-y`, `--holo-card-opacity` (0 or 1).
+Written by pointer or device movement (read only): `--holo-card-pointer-x`, `--holo-card-pointer-y` (0–100), `--holo-card-background-x`, `--holo-card-background-y`, `--holo-card-opacity` (0 or 1).
 
 ## API Reference
 
@@ -117,15 +123,15 @@ See the [full module API](/api/rivetjs/ui/holo-card/) for every named export and
 
 ### HoloCard
 
-A `div` that tracks the pointer. Wrap it in a flex or grid container to position it.
+A `div` that tracks the pointer or, after a touch tap, device movement. Wrap it in a flex or grid container to position it.
 
-| Prop               | Type      | Default | Description                                 |
-| ------------------ | --------- | ------- | ------------------------------------------- |
-| `gradient`         | `string`  | -       | Surface background (`--holo-card-gradient`) |
-| `patternSize`      | `string`  | -       | Texture `background-size`                   |
-| `isInteractive`    | `boolean` | `true`  | Tilt and light up on pointer move           |
-| `isDisabled`       | `boolean` | `false` | No pointer tracking                         |
-| `parallaxStrength` | `number`  | `10`    | How far content layers drift (px)           |
+| Prop               | Type      | Default | Description                                     |
+| ------------------ | --------- | ------- | ----------------------------------------------- |
+| `gradient`         | `string`  | -       | Surface background (`--holo-card-gradient`)     |
+| `patternSize`      | `string`  | -       | Texture `background-size`                       |
+| `isInteractive`    | `boolean` | `true`  | Tilt and light up on pointer or device movement |
+| `isDisabled`       | `boolean` | `false` | No pointer or device tracking                   |
+| `parallaxStrength` | `number`  | `10`    | How far content layers drift (px)               |
 
 ### HoloCard.Rotator / Frame / Surface / Inset / Pattern / Shine / ShinePattern
 

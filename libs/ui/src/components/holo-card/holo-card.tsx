@@ -8,13 +8,18 @@
 //   `prefers-reduced-motion` keep the card flat and unlit (`data-static`, CSS).
 // - No image-URL texture prop: inline styles refuse `url()` (`@rivetjs/runtime/style` `unsafeStyle`), so an image texture
 //   is a stylesheet rule setting `--holo-card-pattern: url(...)` on a class.
-// - Touch: `touch-action: pan-y` (horizontal drags tilt, vertical drags scroll).
-// - Nothing runs before input: the first pointer move resumes the card.
+// - Touch/pen/no-hover: the first tap requests iOS orientation permission once per page, then lazy-loads the shared
+//   sensor tracker. First reading = neutral; +/-25 degrees reaches an edge, screen rotation remaps the axes. Filtered
+//   rAF writes reuse `set` below. Tracking pauses offscreen / in a hidden page / with reduced motion; owner disposal
+//   removes it. Denied/unavailable sensors silently retain touch dragging (`touch-action: pan-y`, vertical scroll).
+// - Nothing runs before input: the first pointer event resumes the card; desktop hover never imports the gyro tracker.
+import { onCleanup } from "@rivetjs/reactivity";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import { holoCardVariants } from "../../../styles/src/components/holo-card/index.ts";
 import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
+import { isHoloTouchTap, requestHoloOrientation } from "./holo-card-input.ts";
 
 const SLOTS = holoCardVariants();
 
@@ -28,9 +33,9 @@ interface HoloCardRootProps extends DivProps {
   gradient?: string;
   /** `background-size` of both texture layers (`--holo-card-pattern-size`). */
   patternSize?: string;
-  /** Tilt and light up on pointer move. @default true */
+  /** Tilt and light up on pointer move, or device movement after a touch tap. @default true */
   isInteractive?: boolean;
-  /** No pointer tracking: flat and unlit. @default false */
+  /** No pointer or device tracking: flat and unlit. @default false */
   isDisabled?: boolean;
   /** How far `.Content` layers drift against the tilt (px at the edge). @default 10 */
   parallaxStrength?: number;
@@ -39,6 +44,14 @@ interface HoloCardRootProps extends DivProps {
 const HoloCardRoot = (props: HoloCardRootProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["class", "children", "gradient", "patternSize", "isInteractive", "isDisabled", "parallaxStrength", "style"]);
   const isStatic = local.isInteractive === false || local.isDisabled === true;
+  let gyro: ReturnType<typeof import("./holo-card-gyro.ts").trackHoloOrientation> | undefined;
+  let attempted = false;
+  let disposed = false;
+  if (!isStatic)
+    onCleanup(() => {
+      disposed = true;
+      gyro?.dispose();
+    });
   const style = {
     ...(local.gradient ? { "--holo-card-gradient": local.gradient } : {}),
     ...(local.patternSize ? { "--holo-card-pattern-size": local.patternSize } : {}),
@@ -59,6 +72,7 @@ const HoloCardRoot = (props: HoloCardRootProps): JSX.Element => {
   const onPointerMove = isStatic
     ? undefined
     : (e: PointerEvent) => {
+        if (gyro?.active()) return;
         const el = e.currentTarget as HTMLElement;
         const box = el.getBoundingClientRect();
         if (!box.width || !box.height) return;
@@ -70,9 +84,25 @@ const HoloCardRoot = (props: HoloCardRootProps): JSX.Element => {
   const onPointerLeave = isStatic
     ? undefined
     : (e: PointerEvent) => {
+        if (gyro?.active()) return;
         const el = e.currentTarget as HTMLElement;
         el.removeAttribute("data-active");
         set(el, 50, 50, 0);
+      };
+  const onPointerUp = isStatic
+    ? undefined
+    : (e: PointerEvent) => {
+        if (attempted || !isHoloTouchTap(e)) return;
+        attempted = true;
+        const el = e.currentTarget as HTMLElement;
+        // Do not move the permission request behind import(): iOS requires the tap's user activation.
+        void requestHoloOrientation()
+          .then(async (granted) => {
+            if (!granted || disposed) return;
+            const { trackHoloOrientation } = await import("./holo-card-gyro.ts");
+            if (!disposed) gyro = trackHoloOrientation(el, set, () => local.isInteractive !== false && local.isDisabled !== true);
+          })
+          .catch(() => {});
       };
   return (
     <div
@@ -82,6 +112,7 @@ const HoloCardRoot = (props: HoloCardRootProps): JSX.Element => {
       {...rest}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
+      onPointerUp={onPointerUp}
       style={style}
     >
       {local.children}
