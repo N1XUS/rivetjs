@@ -1,7 +1,8 @@
 // PressableFeedback on a resumed page (`/pressable-feedback`; Rivet addition, feature set inspired by HeroUI Pro's public
 // Pressable Feedback docs): a cold press ripples (`data-pressed`, position variables), a held press completes the hold
 // confirm (`data-complete`, onComplete count) and a release resets it, a cold press on the progress button runs to
-// `data-complete` and resets; keyboard Space holds too.
+// `data-complete` and resets; keyboard Space holds too. A standalone Ripple inside a ui Button (`#pf-button`) ripples on a
+// cold page's first mouse press (at the pointer) and first keyboard Space (centred), each on a fresh page.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { stories, type Stories } from "./harness.ts";
@@ -44,4 +45,32 @@ test("pressable feedback: cold ripple, hold confirm, progress, keyboard hold", a
   await page.waitForFunction(() => document.querySelector("#pf-sent")?.textContent === "1");
   await page.waitForSelector("#pf-progress .pressable-feedback__progress-feedback:not([data-complete]):not([data-progressing])");
   await page.close();
+});
+
+test("pressable feedback: standalone ripple in a ui Button, cold mouse and cold Space", async () => {
+  const ripple = "#pf-button [data-slot=pressable-feedback-ripple]";
+  const prop = (page: import("playwright").Page, name: string) =>
+    page.evaluate(([sel, n]) => (document.querySelector(sel!) as HTMLElement).style.getPropertyValue(n!), [ripple, name]);
+  const mouse = await s.browser.newPage({ viewport: { width: 1000, height: 900 } });
+  await mouse.goto(s.origin + "/pressable-feedback");
+  await mouse.waitForLoadState("networkidle");
+  const box = (await mouse.locator("#pf-button").boundingBox())!;
+  await mouse.mouse.move(box.x + 12, box.y + 10);
+  await mouse.mouse.down();
+  await mouse.waitForSelector(`${ripple}[data-pressed=true]`);
+  assert.ok(Math.abs(parseFloat(await prop(mouse, "--pressable-feedback-ripple-x")) - 12) < 3);
+  await mouse.mouse.up();
+  await mouse.waitForSelector(`${ripple}[data-released=true]`);
+  await mouse.close();
+
+  const key = await s.browser.newPage({ viewport: { width: 1000, height: 900 } });
+  await key.goto(s.origin + "/pressable-feedback");
+  await key.waitForLoadState("networkidle");
+  await key.focus("#pf-button");
+  await key.keyboard.press("Space");
+  await key.waitForSelector(`${ripple}[data-pressed=true]`);
+  await key.waitForSelector(`${ripple}[data-released=true]`);
+  const width = (await key.locator(ripple).boundingBox())!.width;
+  assert.ok(Math.abs(parseFloat(await prop(key, "--pressable-feedback-ripple-x")) - width / 2) < 1);
+  await key.close();
 });

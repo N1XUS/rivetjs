@@ -105,7 +105,7 @@ A function child of `Item` receives the render props (accessors such as `isSelec
 ### With Ripple
 
 :::warning
-Not ported yet: Rivet has no ripple effect (the same gap as Button's ripple). Pressed cards scale down slightly instead (`data-pressed`, none with reduced motion).
+Not ported yet: no ripple demo for the cards (a [`PressableFeedback.Ripple`](pressable-feedback.md#standalone-ripple) follows its parent's press, but a card's keyboard focus sits on its hidden input, which the ripple does not follow). Pressed cards scale down slightly instead (`data-pressed`, none with reduced motion).
 :::
 
 ## Styling Reference

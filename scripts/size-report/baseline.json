@@ -149,7 +149,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6740,
+          "htmlBr": 6737,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1338,7 +1338,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4512,
+          "htmlBr": 4500,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -1573,17 +1573,17 @@
     "cdk-example:scheduler-views-binding": {
       "totalJS": {
         "files": 81,
-        "min": 432638,
-        "br": 145518
+        "min": 432709,
+        "br": 145520
       },
       "serverJS": {
-        "min": 411898,
-        "br": 123236
+        "min": 411969,
+        "br": 123179
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 5158,
+          "htmlBr": 5193,
           "cssSheets": 1,
           "css": {
             "min": 43066,
@@ -1593,8 +1593,8 @@
           "inlineBytes": 3559,
           "eagerRequests": 51,
           "eagerJS": {
-            "min": 370085,
-            "br": 124508
+            "min": 370156,
+            "br": 124519
           },
           "eagerFiles": [
             "derived-runtime.js",
@@ -1654,8 +1654,8 @@
             "br": 27424
           },
           "pageJS": {
-            "min": 370085,
-            "br": 124508
+            "min": 370156,
+            "br": 124519
           },
           "interactionRequests": 0,
           "interactionJS": {

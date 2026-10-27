@@ -74,3 +74,42 @@ test("pressable feedback: progress feedback completes and resets", async () => {
   assert.deepEqual(log, ["complete", "reset"]);
   unmount();
 });
+
+test("pressable feedback: standalone ripple follows its parent ui Button (pointer, keyboard, disabled)", async () => {
+  const { Button } = await import("../src/components/button/index.ts");
+  const W2 = window as unknown as { KeyboardEvent: typeof KeyboardEvent };
+  const { container, unmount } = render(() => (
+    <div>
+      <Button id="on" variant="secondary">
+        <PressableFeedback.Ripple minimumPressDuration={0} />
+        Ripple
+      </Button>
+      <Button id="off" isDisabled>
+        <PressableFeedback.Ripple />
+        Off
+      </Button>
+    </div>
+  ));
+  await wait(10);
+  const button = container.querySelector("#on")!;
+  const ripple = button.querySelector("[data-slot=pressable-feedback-ripple]") as HTMLElement;
+  down(button);
+  assert.equal(ripple.getAttribute("data-pressed"), "true");
+  assert.ok(ripple.style.getPropertyValue("--pressable-feedback-ripple-size"));
+  up(button);
+  await wait(10);
+  assert.equal(ripple.getAttribute("data-released"), "true");
+  // Space: centred, released by the key going up.
+  (button as HTMLElement).focus();
+  button.dispatchEvent(new W2.KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+  assert.equal(ripple.hasAttribute("data-released"), false);
+  assert.equal(ripple.getAttribute("data-pressed"), "true");
+  button.dispatchEvent(new W2.KeyboardEvent("keyup", { key: " ", bubbles: true, cancelable: true }));
+  await wait(10);
+  assert.equal(ripple.getAttribute("data-released"), "true");
+  // A disabled parent gets no ripple.
+  const off = container.querySelector("#off")!;
+  down(off);
+  assert.equal(off.querySelector("[data-slot=pressable-feedback-ripple]")!.hasAttribute("data-pressed"), false);
+  unmount();
+});

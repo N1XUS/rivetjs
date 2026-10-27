@@ -116,9 +116,13 @@ Tailwind animation utilities work on any component through `class`:
 To change a built-in transition everywhere, override the component class in your stylesheet:
 
 ```css
-/* Slower accordion */
+/* Slower accordion: the panel (interactive path) and the <details> content slot (zero-JS native path).
+   Two rules: a browser without ::details-content drops a whole selector list that names it. */
 .accordion__panel {
-  @apply transition-all duration-500;
+  transition-duration: 500ms;
+}
+details.accordion__item::details-content {
+  transition-duration: 500ms;
 }
 
 /* Bouncy button */

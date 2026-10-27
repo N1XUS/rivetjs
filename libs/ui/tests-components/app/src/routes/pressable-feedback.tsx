@@ -1,10 +1,11 @@
 import { signal } from "@rivetjs/reactivity";
+import { Button } from "@rivetjs/ui/button";
 import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
 
 export const head = { title: "PressableFeedback" };
 
 // Rivet addition (feature set inspired by HeroUI Pro's public Pressable Feedback docs): ripple + highlight, hold to confirm,
-// progress feedback. Resumes on the first press.
+// progress feedback; a standalone Ripple inside a ui Button (`#pf-button`). Resumes on the first press.
 export default function PressableFeedbackStory() {
   const held = signal(0);
   const sent = signal(0);
@@ -29,6 +30,10 @@ export default function PressableFeedbackStory() {
         Send
       </PressableFeedback>
       <p id="pf-sent">{sent()}</p>
+      <Button id="pf-button" variant="secondary">
+        <PressableFeedback.Ripple />
+        Button ripple
+      </Button>
     </main>
   );
 }

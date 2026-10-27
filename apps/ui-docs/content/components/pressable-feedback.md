@@ -6,7 +6,7 @@ status: experimental
 related: [components/button, components/item-card]
 ---
 
-`PressableFeedback` is a button (the cdk `Button`: pointer, touch, keyboard and screen reader presses) with optional feedback layers inside it. Each layer reacts to the root's press events; the visuals are CSS. Nothing loads before the first press.
+`PressableFeedback` is a button (the cdk `Button`: pointer, touch, keyboard and screen reader presses) with optional feedback layers inside it. Each layer reacts to the root's press events; the visuals are CSS. Nothing loads before the first press. `.Highlight` and `.Ripple` also work on their own inside another pressable, such as a ui `Button` (see [Standalone Ripple](#standalone-ripple)).
 
 ## Usage
 
@@ -63,6 +63,24 @@ Hold with the pointer, or hold Space / Enter. `duration` sets the hold time and 
 ## Standalone Highlight
 
 ::example{id=pressable-feedback-standalone}
+
+## Standalone Ripple
+
+Outside a `PressableFeedback` root, `.Ripple` follows its parent element's own press: a pointer or touch press ripples from the press point, Space / Enter on the parent from the centre; a parent that is `:disabled`, `aria-disabled="true"` or `data-disabled="true"` gets none. The parent needs a position (a ui `Button` has one) and its own corner radius (the ripple inherits it). On a resumed page the first press loads the ripple and still shows it. Live demo: [Button, Adding Ripple Effect](button.md#adding-ripple-effect).
+
+```tsx
+import { Button } from "@rivetjs/ui/button";
+import { PressableFeedback } from "@rivetjs/ui/pressable-feedback";
+
+export function RippleButton() {
+  return (
+    <Button variant="secondary">
+      <PressableFeedback.Ripple />
+      Click me
+    </Button>
+  );
+}
+```
 
 ## Disabled
 

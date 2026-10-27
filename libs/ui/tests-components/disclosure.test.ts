@@ -5,7 +5,7 @@
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { eased, stories, traceHeight, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -66,6 +66,17 @@ test("disclosure: mouse toggle on the resumed page + HeroUI CSS", () =>
     await page.waitForFunction(() => document.querySelector("#ds-state")?.textContent === "false");
     await settled(page);
     assert.equal(await height(page, "#ds-panel"), 0);
+  }));
+
+// ACCORDION-MOTION: the cdk panel eases both ways (`--disclosure-panel-height` in px while it animates).
+test("disclosure: panel height eases open and closed (no snap)", () =>
+  onPage(async (page) => {
+    const open = await traceHeight(page, "#ds-trigger", "#ds-panel");
+    const full = open.at(-1)![1];
+    assert.ok(full > 20, `panel opened (${full})`);
+    const close = await traceHeight(page, "#ds-trigger", "#ds-panel");
+    assert.equal(close.at(-1)![1], 0);
+    assert.deepEqual([eased(open, 0, full), eased(close, full, 0)], [true, true], JSON.stringify({ open, close }));
   }));
 
 test("disclosure: defaultExpanded panel visible at load, collapses on press", () =>

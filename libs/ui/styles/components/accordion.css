@@ -150,6 +150,47 @@ span.accordion__indicator {
   }
 }
 
+/* Rivet (ACCORDION-MOTION, TW-168): a native item's panel has no `--disclosure-panel-height` (no JS writes it), so its
+   `height` transition never runs. The `<details>` content slot (`::details-content`, the panel's parent) animates
+   instead: a one-row grid `0fr` → `1fr` (the panel, `min-height: 0`, is the row: the row eases to the content's height,
+   no `interpolate-size` needed), its opacity, and `content-visibility` as a discrete transition so a closing item
+   (incl. the sibling an exclusive `name` group closes) stays painted while it collapses. Same tokens as the cdk path.
+   Engines without `::details-content` skip the block: instant open / close, as before. WebKit 26 does not transition
+   `content-visibility`: opening animates, closing is instant. */
+@supports selector(::details-content) {
+  details.accordion__item::details-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows var(--duration-base) var(--ease-out-quad),
+      opacity var(--duration-base) var(--ease-out),
+      content-visibility var(--duration-base) allow-discrete;
+  }
+
+  details.accordion__item[open]::details-content {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  /* `motion-reduce:transition-none` by hand: the variant appends pseudo-classes after the pseudo-element. */
+  details.accordion__item:is([data-reduce-motion="true"], [data-reduce-motion="true"] *)::details-content {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    details.accordion__item:not(:is([data-reduce-motion="true"], [data-reduce-motion="true"] *))::details-content {
+      transition: none;
+    }
+  }
+
+  /* The slot fades: the panel itself stays opaque (two fades would compound). */
+  details.accordion__item > .accordion__panel {
+    min-height: 0;
+    opacity: 1;
+  }
+}
+
 /* Surface variant */
 .accordion--surface {
   @apply bg-surface;

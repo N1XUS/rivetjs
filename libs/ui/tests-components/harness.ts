@@ -126,6 +126,35 @@ export const nonRuntimeScripts = (seen: Watch): string[] => {
   return seen.scripts.filter((url) => !runtime.has(url.replace(/\.deps\.js$/, ".js")));
 };
 
+/**
+ * Per-frame heights of `box` (rAF in the page) from a trusted mouse click on `toggle` until 600 ms after it: `[t, height]`
+ * pairs, `t` in ms after the click.
+ */
+export async function traceHeight(page: Page, toggle: string, box: string): Promise<[number, number][]> {
+  await page.evaluate((sel) => {
+    const w = window as unknown as { __trace: [number, number][]; __t0: number };
+    w.__trace = [];
+    w.__t0 = 0;
+    document.addEventListener("click", () => (w.__t0 = performance.now()), { capture: true, once: true });
+    const frame = () => {
+      const t = performance.now() - w.__t0;
+      if (w.__t0) w.__trace.push([Math.round(t), Math.round(document.querySelector(sel)!.getBoundingClientRect().height * 10) / 10]);
+      if (!w.__t0 || t < 600) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }, box);
+  await page.click(toggle);
+  await page.waitForFunction(() => {
+    const w = window as unknown as { __t0: number };
+    return w.__t0 > 0 && performance.now() - w.__t0 > 650;
+  });
+  return page.evaluate(() => (window as unknown as { __trace: [number, number][] }).__trace);
+}
+
+/** Some frame strictly between `from` and `to` (5–95 % of the way): the height eased instead of snapping. */
+export const eased = (samples: [number, number][], from: number, to: number): boolean =>
+  samples.some(([, h]) => (h - from) / (to - from) > 0.05 && (h - from) / (to - from) < 0.95);
+
 /** One animation frame of {@link traceFade}: the element's computed opacity + backdrop blur, state attributes, running animation count. */
 export interface FadeSample {
   t: number;

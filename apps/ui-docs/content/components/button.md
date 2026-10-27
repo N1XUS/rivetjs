@@ -87,11 +87,7 @@ You can extend Rivet UI components by wrapping them and adding your own custom v
 
 ### Adding Ripple Effect
 
-The Button component supports ripple effects through composition, allowing you to nest ripple components as children. This example uses [m3-ripple](https://github.com/saltyaom/m3-ripple).
-
-:::warning
-Not yet ported: the original demo nests `<Ripple />` from m3-ripple (a React component + its CSS) inside the button. There is no Rivet ripple component, so the button renders without the ripple.
-:::
+The Button component supports ripple effects through composition, allowing you to nest ripple components as children. This example nests [`PressableFeedback.Ripple`](pressable-feedback.md#standalone-ripple) (the original demo uses [m3-ripple](https://github.com/saltyaom/m3-ripple)): it follows the button's own press, ripples from the press point (Space / Enter: from the centre) and needs no other wrapper.
 
 ::example{id=button-ripple-effect}
 

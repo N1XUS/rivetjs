@@ -9,6 +9,12 @@
 // - `.Highlight` is CSS only (`:hover` / `[data-hovered]` / `[data-pressed]` on the parent), usable outside the root.
 // - `.Ripple`: press start sets `--pressable-feedback-ripple-{x,y,size}` from the press point (keyboard / virtual: centre) and
 //   restarts the grow animation (`data-pressed`); press end fades it (`data-released`) after `minimumPressDuration`.
+//   Standalone (no root context: inside a ui `Button` or any positioned pressable element) it drives itself from its parent
+//   element: native `pointerdown` (press point; release on the document's `pointerup` / `pointercancel`) and `keydown`
+//   Space / Enter on the parent itself (centred; release on `keyup` / its `click` / `focusout`, Enter at once); a parent that is
+//   `:disabled` / `aria-disabled` / `data-disabled` gets none. The listeners attach when the ripple's node is created or
+//   adopted (a cold page: the first press adopts the parent's unit, the runtime records listeners added meanwhile and
+//   replays the held press into them) and drop themselves once the ripple left that parent.
 // - `.HoldConfirm`: press start → `data-holding` (clip-path reveal over `duration`); a timer completes it (`data-complete`,
 //   `onComplete`); press end before that snaps back over `releaseDuration`; after a completed hold the press end resets it
 //   unless `resetOnComplete={false}`.
@@ -109,13 +115,51 @@ const restart = (el: HTMLElement, name: string) => {
   el.setAttribute(name, "true");
 };
 
+// Standalone ripple: the parent element's own press (no PressableFeedback root). `start` / `end` take the root's PressEvent
+// shape (`target` = the parent, `x` / `y` relative to it). Document capture listeners filtered to the parent: a cold
+// press replays its held events into listeners its adopt run added, and a replay stops at an element once a delegated
+// handler stopped propagation (cdk `usePress` does) — the document's capture phase still runs.
+const selfDriven = (el: HTMLElement, layer: Required<Pick<Layer, "start" | "end">>): void => {
+  const host = el.parentElement;
+  if (!host) return;
+  const ac = new AbortController(),
+    on = { signal: ac.signal, capture: true },
+    listen = (type: string, fn: (e: Event) => unknown) => host.ownerDocument.addEventListener(type, fn, on);
+  let active: string | undefined;
+  const live = () => (el.isConnected && el.parentElement === host) || (ac.abort(), false);
+  const press = (pointerType: string, x = 0, y = 0) => ({ pointerType, target: host, x, y }) as unknown as PressEvent;
+  const end = () => {
+    if (active && live()) layer.end(press(active));
+    active = undefined;
+  };
+  const begin = (pointerType: string, x?: number, y?: number) => {
+    if (active || !live() || host.matches(":disabled,[aria-disabled=true],[data-disabled=true]")) return false;
+    layer.start(press((active = pointerType), x, y));
+    return true;
+  };
+  listen("pointerdown", (e) => {
+    const { button, clientX, clientY, pointerType, target } = e as PointerEvent;
+    if (button || !host.contains(target as Node)) return;
+    const box = host.getBoundingClientRect();
+    begin(pointerType, clientX - box.left, clientY - box.top);
+  });
+  for (const type of ["pointerup", "pointercancel"]) listen(type, () => active !== "keyboard" && end());
+  listen("keydown", (e) => {
+    const { key, repeat, target } = e as KeyboardEvent;
+    if (!repeat && target === host && (key === " " || key === "Enter") && begin("keyboard") && key === "Enter") end();
+  });
+  // A cold keyup is not held (not a delegated type) and may land before the adopt run: the native button's Space click,
+  // which is held and replayed, ends the press too.
+  for (const type of ["keyup", "focusout", "click"]) listen(type, (e) => e.target === host && active === "keyboard" && end());
+};
+
 const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["class", "duration", "hoverOpacity", "pressedOpacity", "minimumPressDuration", "isDisabled", "style"]);
   const layers = useContext(PressableFeedbackContext);
   let el: HTMLElement | undefined;
   let startedAt = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  layers?.push({
+  const layer: Required<Pick<Layer, "start" | "end">> = {
     start(e) {
       if (!el?.isConnected || local.isDisabled) return;
       clearTimeout(timer);
@@ -137,7 +181,10 @@ const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Eleme
       const wait = Math.max(0, (local.minimumPressDuration ?? 225) - (performance.now() - startedAt));
       timer = setTimeout(() => el?.setAttribute("data-released", "true"), wait);
     },
-  });
+  };
+  layers?.push(layer);
+  // Standalone: drive it from the parent once the node is in place (a client render inserts it after the ref).
+  const own = (node: HTMLElement) => (node.parentElement ? selfDriven(node, layer) : queueMicrotask(() => selfDriven(node, layer)));
   const style = {
     "--pressable-feedback-ripple-duration": `${local.duration ?? 150}ms`,
     ...(local.hoverOpacity == null ? {} : { "--pressable-feedback-ripple-hover-opacity": String(local.hoverOpacity) }),
@@ -152,7 +199,7 @@ const PressableFeedbackRipple = (props: PressableFeedbackRippleProps): JSX.Eleme
       data-disabled={local.isDisabled ? "true" : undefined}
       {...rest}
       style={style}
-      ref={(node: HTMLElement) => (el = node)}
+      ref={(node: HTMLElement) => ((el = node), layers || own(node))}
     >
       <span class={SLOTS.rippleSurface()} />
     </span>

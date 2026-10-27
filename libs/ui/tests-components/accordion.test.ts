@@ -3,11 +3,12 @@
 // height animates to the content and back (HeroUI CSS), disabled item); upstream accordion.browser.test.tsx: custom
 // `hover:bg-surface` wins over the default hover background, a stale `data-hovered` paints no hover background, the default
 // hover background follows the pointer (default + surface variants); Rivet: the hover background eases (transition on the same
-// resumed trigger node).
+// resumed trigger node). ACCORDION-MOTION: the native `<details>` path (`/visual/accordion`) and the resumed path ease the
+// height both ways (per-frame trace), reduced motion snaps.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import type { Page } from "playwright";
-import { stories, watch, type Stories } from "./harness.ts";
+import { eased, stories, traceHeight, watch, type Stories } from "./harness.ts";
 
 let s: Stories;
 beforeAll(async () => (s = await stories()));
@@ -136,3 +137,53 @@ for (const acc of ["acc-hover-default", "acc-hover-surface"])
       await unhover(page);
       await page.waitForFunction(([s, r]) => getComputedStyle(document.querySelector(s!)!).backgroundColor === r, [sel, resting]);
     }));
+
+// ACCORDION-MOTION: the native (zero-JS) accordion (`<details name>`: the docs `accordion-basic` example in the visual
+// matrix) eases its height both ways, incl. the sibling an exclusive group closes (`::details-content`, TW-168); reduced
+// motion snaps. Before the fix every toggle snapped (no JS writes `--disclosure-panel-height` on this path).
+const NATIVE = "[data-visual=accordion-basic] [data-slot=accordion]";
+const nativeItem = (n: number) => `${NATIVE} > details:nth-of-type(${n})`;
+
+test("accordion: native details path animates open and close (exclusive sibling too); reduced motion snaps", async () => {
+  for (const reducedMotion of ["no-preference", "reduce"] as const) {
+    const context = await s.browser.newContext({ viewport: { width: 1000, height: 900 }, reducedMotion });
+    const page = await context.newPage();
+    try {
+      const seen = watch(page);
+      await page.goto(s.origin + "/visual/accordion");
+      await page.waitForLoadState("networkidle");
+      assert.ok((await page.locator(`${NATIVE} > details[name]`).count()) >= 2, "native exclusive items");
+      const [item1, item2] = [nativeItem(1), nativeItem(2)];
+      const closed1 = await height(page, item1);
+      const closed2 = await height(page, item2);
+      const open = await traceHeight(page, `${item1} > summary`, item1);
+      const full1 = open.at(-1)![1];
+      assert.ok(full1 > closed1 + 10, `item 1 opened (${closed1} → ${full1})`);
+      const swap = await traceHeight(page, `${item2} > summary`, item1);
+      assert.equal(swap.at(-1)![1], closed1, "exclusive sibling closed");
+      const full2 = await height(page, item2);
+      assert.ok(full2 > closed2 + 10, `item 2 opened (${closed2} → ${full2})`);
+      const close = await traceHeight(page, `${item2} > summary`, item2);
+      assert.equal(close.at(-1)![1], closed2, "item 2 closed");
+      const animated = [eased(open, closed1, full1), eased(swap, full1, closed1), eased(close, full2, closed2)];
+      assert.deepEqual(
+        animated,
+        reducedMotion === "reduce" ? [false, false, false] : [true, true, true],
+        `${reducedMotion} ${JSON.stringify({ open, swap, close })}`,
+      );
+      assert.deepEqual(seen.errors, []);
+    } finally {
+      await context.close();
+    }
+  }
+});
+
+test("accordion: resumed (cdk) path animates open and close", () =>
+  onPage(async (page) => {
+    const open = await traceHeight(page, trigger(1), panel(1));
+    const full = open.at(-1)![1];
+    assert.ok(full > 10, `panel opened (${full})`);
+    const close = await traceHeight(page, trigger(1), panel(1));
+    assert.equal(close.at(-1)![1], 0);
+    assert.deepEqual([eased(open, 0, full), eased(close, full, 0)], [true, true], JSON.stringify({ open, close }));
+  }));

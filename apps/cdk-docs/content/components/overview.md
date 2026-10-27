@@ -114,7 +114,8 @@ Each component has its own page with the markup it renders, its props, the keys 
 | [ComboBox](combobox.md) | `@rivetjs/cdk/combobox` | text input that filters a list, ignoring case and accents |
 | [Calendar](calendar.md) | `@rivetjs/cdk/calendar` | month grid of dates, keyboard navigation, min / max and unavailable dates |
 | [RangeCalendar](range-calendar.md) | `@rivetjs/cdk/range-calendar` | a calendar that selects a start and end date |
-| [DateField](date-field.md) | `@rivetjs/cdk/date-field` | segmented date input, one spin button per part (TimeField not ported yet) |
+| [DateField](date-field.md) | `@rivetjs/cdk/date-field` | segmented date input, one spin button per part |
+| [TimeField](time-field.md) | `@rivetjs/cdk/date-field` | segmented time input: hour cycles, granularity, time zones |
 | [DatePicker](date-picker.md) | `@rivetjs/cdk/date-picker` | date field + calendar popover in the overlay layer |
 | [DateRangePicker](date-range-picker.md) | `@rivetjs/cdk/date-picker` | two date fields + range calendar popover |
 
