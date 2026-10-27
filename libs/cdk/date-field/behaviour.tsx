@@ -264,14 +264,20 @@ function startsWith(locale: string, string: string, substring: string): boolean 
 }
 
 // Safari dayPeriod option doesn't work...
-function dayPeriods(locale: string): { am: string; pm: string } {
-  const formatter = getDateFormatter(locale, { hour: "numeric", hour12: true });
-  const date = new Date();
-  date.setHours(0);
-  const am = formatter.formatToParts(date).find((part) => part.type === "dayPeriod")?.value ?? "AM";
-  date.setHours(12);
-  const pm = formatter.formatToParts(date).find((part) => part.type === "dayPeriod")?.value ?? "PM";
-  return { am, pm };
+// Per locale, computed once (PERF-REST P12, Rivet: upstream formats both on each call; a locale's labels are constants).
+const dayPeriodCache = new Map<string, { readonly am: string; readonly pm: string }>();
+function dayPeriods(locale: string): { readonly am: string; readonly pm: string } {
+  let periods = dayPeriodCache.get(locale);
+  if (!periods) {
+    const formatter = getDateFormatter(locale, { hour: "numeric", hour12: true });
+    const date = new Date();
+    date.setHours(0);
+    const am = formatter.formatToParts(date).find((part) => part.type === "dayPeriod")?.value ?? "AM";
+    date.setHours(12);
+    const pm = formatter.formatToParts(date).find((part) => part.type === "dayPeriod")?.value ?? "PM";
+    dayPeriodCache.set(locale, (periods = { am, pm }));
+  }
+  return periods;
 }
 
 // Get a list of formatted era names so users can type the first character to choose one.

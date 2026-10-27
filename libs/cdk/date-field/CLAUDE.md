@@ -25,6 +25,7 @@ RAC `DateField` / `TimeField` / `DateInput` / `DateSegment` / `HiddenDateInput` 
 - `state.aria.ownLabelledBy` (`AriaDateFieldOptions["aria-labelledby"]`) = a string or an accessor (pickers pass `base.labelledBy`); `fieldLabelledBy` reads it per call.
 
 ## Gotchas
+- Day period labels (`behaviour.tsx` `dayPeriods`, PERF-REST P12 2026-10-27, Rivet-only): formatted once per locale (`dayPeriodCache`; upstream formats AM + PM on each call: 12-hour `fieldKeys`, day period input / composition); 1,000 calls 1.7 ms → 17 µs. Assumes untampered `Intl` and a fixed time zone per page.
 - Id root (FACTS-GAP 2026-10-27): DateField / TimeField pass the state `id: props.id || resumedId()` (caller's id, else `createId()` in a keyed signal): a resumed page's adopt run reuses the server id; see `../date-picker/CLAUDE.md`.
 - Description id stays in server markup until the slot-id effect runs (RA useSlotId)
 - `isDateUnavailable`, `validate`, `onChange` must be inline / local
