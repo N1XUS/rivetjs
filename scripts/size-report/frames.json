@@ -249,17 +249,16 @@
  },
  "showcase-kanban": {
   "site": "ui",
-  "html": 36070,
+  "html": 36102,
   "holes": 86,
   "records": 98,
-  "stateBytes": 2601,
+  "stateBytes": 2636,
   "inlineJsBytes": 5882,
   "files": 19,
-  "jsRaw": 289451,
-  "jsGz": 98609,
-  "jsBr": 89246,
+  "jsRaw": 289298,
+  "jsGz": 98608,
+  "jsBr": 89279,
   "urls": [
-   "/assets/NumberFormatter.js",
    "/assets/behaviour.js",
    "/assets/button.js",
    "/assets/button.js",
@@ -268,8 +267,8 @@
    "/assets/derived-runtime.js",
    "/assets/dom-derived-abi.js",
    "/assets/dom-tags.js",
-   "/assets/drag.js",
    "/assets/drag-ref.js",
+   "/assets/drag.js",
    "/assets/drop-list.js",
    "/assets/focus.js",
    "/assets/focus-visible.js",
@@ -277,7 +276,8 @@
    "/assets/i18n.js",
    "/assets/icon.js",
    "/assets/live-element.js",
-   "/assets/press.js"
+   "/assets/press.js",
+   "/assets/progress-bar.js"
   ]
  },
  "table-virtualization": {

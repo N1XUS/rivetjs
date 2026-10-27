@@ -3,8 +3,8 @@
 // entry flag, imports); the orchestrator prerenders it and calls `planCoload`, which reads every page's scripts fetched
 // before input (`<script src>`, modulepreload, the resume state's `data-fo`) and writes `plan.json`: groups of shared
 // (non-entry) chunks with the same set of pages that fetch them before input AND the same set of pages that can reach
-// them at all (static + dynamic imports), so no page loads a byte more, before or after input. A group never puts an
-// outside chunk on an import path between two members (a chunk cycle would change evaluation order). Pass 2 (same env,
+// them at all (static + dynamic imports), so no page loads a byte more, before or after input. A merge never closes an
+// import cycle through the group, via an outside chunk or another group (a chunk cycle would change evaluation order). Pass 2 (same env,
 // `plan.json` present) captures each group's modules into one chunk (`codeSplitting.groups`, dependencies not
 // captured). Without the env the plugin does nothing (zero cost). docs-kit builds run both passes (`tools/coload.ts`).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -158,21 +158,26 @@ export async function planCoload(options: { dir: string; client: string; base?: 
     }
     for (const chunk of [...seen].sort()) add(reached, chunk, page);
   }
-  // Static + dynamic import closure per chunk (cycle check).
-  const closures = new Map<string, Set<string>>();
-  const closure = (file: string): Set<string> => {
-    let seen = closures.get(file);
-    if (seen) return seen;
-    seen = new Set();
-    const stack = [...(chunks[file]?.imports ?? [])];
+  // The group each chunk was put in so far (every key's groups, built in turn): the chunk graph as pass 2 will emit it.
+  const owner = new Map<string, string[]>();
+  // Whether merging `members` into one chunk closes an import cycle (static or dynamic imports) through it, over the
+  // chunks as already grouped: a path leaving the members and coming back, through an outside chunk or through another
+  // group (two groups importing each other: a chunk cycle changes evaluation order — `TypeError: x is not a function`
+  // at a top-level call, BIG-UI-3 menus).
+  const closesCycle = (members: string[]): boolean => {
+    const inside = new Set(members),
+      seen = new Set<string>();
+    // Imports between the members stay inside the merged chunk.
+    const stack = members.flatMap((file) => chunks[file]?.imports ?? []).filter((file) => !inside.has(file));
     while (stack.length) {
       const next = stack.pop()!;
-      if (seen.has(next)) continue;
-      seen.add(next);
-      stack.push(...(chunks[next]?.imports ?? []));
+      if (inside.has(next)) return true;
+      const part = owner.get(next) ?? [next];
+      if (seen.has(part[0]!)) continue;
+      seen.add(part[0]!);
+      for (const file of part) stack.push(...(chunks[file]?.imports ?? []));
     }
-    closures.set(file, seen);
-    return seen;
+    return false;
   };
   const sets = new Map<string, string[]>();
   for (const [file, list] of before) {
@@ -187,18 +192,16 @@ export async function planCoload(options: { dir: string; client: string; base?: 
     if (members.length < 2) continue;
     // Largest first (it names the group), then by file name: deterministic.
     members.sort((a, b) => chunks[b]!.size - chunks[a]!.size || (a < b ? -1 : 1));
-    // Greedy: a member joins the first group where no chunk outside the group sits on an import path between two of its chunks.
+    // Greedy: a member joins the first group it closes no import cycle with (`closesCycle`), else starts one.
     const parts: string[][] = [];
     for (const file of members) {
-      const fits = (part: string[]) => {
-        const all = [...part, file],
-          inside = new Set(all);
-        for (const a of all) for (const x of closure(a)) if (!inside.has(x) && all.some((b) => closure(x).has(b))) return false;
-        return true;
-      };
-      const part = parts.find(fits);
-      if (part) part.push(file);
-      else parts.push([file]);
+      const part = parts.find((part) => !closesCycle([...part, file]));
+      if (part) (part.push(file), owner.set(file, part));
+      else {
+        const fresh = [file];
+        parts.push(fresh);
+        owner.set(file, fresh);
+      }
     }
     groups.push(...parts.filter((part) => part.length > 1));
   }

@@ -88,6 +88,31 @@ test("planCoload: a chunk some page reaches lazily (dynamic import) stays apart 
   assert.deepEqual(plan.groups, [], "s1 is reachable on page b (after input), s2 is not");
 });
 
+test("planCoload: two groups that would import each other (a chunk cycle between groups) are not both merged", async () => {
+  const work = join(dir, "pair");
+  const client = join(work, "client");
+  await mkdir(join(client, "b"), { recursive: true });
+  // a1 + a2: both pages; b1 + b2: page one only. a1 → b1 and b2 → a2: each group alone has no cycle, both merged do.
+  const chunks = {
+    "assets/e-AAAAAAAA.js": chunk(["src/e.tsx"], ["assets/a1-AAAAAAAA.js", "assets/a2-AAAAAAAA.js", "assets/b1-AAAAAAAA.js", "assets/b2-AAAAAAAA.js"], true),
+    // f reaches b2 lazily (a dynamic import): page b reaches b1 + b2 without fetching them before input.
+    "assets/f-AAAAAAAA.js": chunk(["src/f.tsx"], ["assets/a1-AAAAAAAA.js", "assets/a2-AAAAAAAA.js", "assets/b2-AAAAAAAA.js"], true),
+    "assets/a1-AAAAAAAA.js": chunk(["src/a1.ts"], ["assets/b1-AAAAAAAA.js"]),
+    "assets/a2-AAAAAAAA.js": chunk(["src/a2.ts"]),
+    "assets/b1-AAAAAAAA.js": chunk(["src/b1.ts"]),
+    "assets/b2-AAAAAAAA.js": chunk(["src/b2.ts"], ["assets/a2-AAAAAAAA.js"]),
+  };
+  await writeFile(join(work, "chunks.json"), JSON.stringify({ v: 1, chunks }));
+  const page = (files: string[]) => files.map((f) => `<link rel="modulepreload" href="/${f}">`).join("");
+  await writeFile(join(client, "index.html"), page(Object.keys(chunks).filter((f) => !f.includes("/f-"))));
+  await writeFile(join(client, "b/index.html"), page(["assets/f-AAAAAAAA.js", "assets/a1-AAAAAAAA.js", "assets/a2-AAAAAAAA.js"]));
+  await planCoload({ dir: work, client });
+  const plan = JSON.parse(await readFile(join(work, "plan.json"), "utf8")) as ColoadPlan;
+  const merged = (a: string, b: string) => plan.groups.some((g) => g.modules.includes(a) && g.modules.includes(b));
+  assert.ok(merged("src/a1.ts", "src/a2.ts") || merged("src/b1.ts", "src/b2.ts"), "one of them merges");
+  assert.ok(!(merged("src/a1.ts", "src/a2.ts") && merged("src/b1.ts", "src/b2.ts")), JSON.stringify(plan.groups));
+});
+
 test("coloadPlugin: inert without the env; with a plan, one group capturing the planned modules only", async () => {
   const before = process.env[COLOAD_ENV];
   try {
