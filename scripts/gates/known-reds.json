@@ -308,6 +308,13 @@
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
       "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/live-props.test.ts > live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select / ListBoxItem / Tabs / RadioGroup / Text / Link / wave-3 parts value forms update in place",
+      "reason": "order / load dependent: passes in a whole-file run, fails in the full project run and alone with -t (check / switch first value false); TOGGLE-TABS-COLD (d7e9c3bd6) fixed it once, red again at HEAD 645ab2e88 without later changes to cdk / runtime",
+      "owner": "cdk (triage lane)",
+      "since": "2026-10-28"
     }
   ]
 }

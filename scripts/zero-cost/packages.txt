@@ -398,6 +398,6 @@
 @rivetjs/cdk/masonry [server] cd567d88a864 80585
 @rivetjs/cdk/masonry/behaviour 9a3cc9e6aabd 16055
 @rivetjs/cdk/flip 94e1c39bc99c 3782
-@rivetjs/cdk/scheduler [dom] 8cd05d0b094d 197341
-@rivetjs/cdk/scheduler [server] a90ea8439536 180166
+@rivetjs/cdk/scheduler [dom] b62856a09011 197587
+@rivetjs/cdk/scheduler [server] cc6f7ca10caf 180412
 @rivetjs/cdk/scheduler/layout f4c2c747b346 23962
