@@ -50,6 +50,8 @@ Values that need Motion's full engine (`rotateX`, `skew`, SVG `pathLength`, diff
 
 The server writes the **final** state inline (`style="opacity:1;translate:0px 0px"`), so the content is visible and counts for LCP without JavaScript. The entrance becomes one CSS `@keyframes` rule per distinct entrance, in the page head with the request's CSP nonce. Nothing runs in the browser for it.
 
+When the props are constants written in place (`initial`, `animate`, `transition` and `reducedMotion` literals, no gestures, `whileInView`, `exit`, layout, variants, `style` or `ref`) and no `MotionConfig`, variant parent or presence (`Presence`, kit `Transition`, an overlay) can be above the element, a production build goes further: the element is compiled as the plain tag (`<h1 style="…" data-mve="…">`) and its rule joins the page's stylesheet. The page then ships no Motion code at all, even when the element sits inside an interactive component, and the entrance plays without a head or the sheet below. Anything else keeps the `Motion` component, with the same result on screen.
+
 When the head is already sent (a part streamed after the shell, a plain `renderToString`), the element carries the entrance as inline custom properties instead. Import the static sheet once so those play too:
 
 ```ts
@@ -107,7 +109,7 @@ When a gesture ends the element returns to the next active state (press, then ho
 | Element | Server | Resumed page | Client render |
 | --- | --- | --- | --- |
 | `animate` only | final styles inline | nothing runs | styles set |
-| `initial` → `animate` | final styles + one CSS rule | CSS plays the entrance, no JS | same rule |
+| `initial` → `animate` | final styles + one CSS rule | CSS plays the entrance, no JS (constant props: no Motion code in the page either) | same rule |
 | live `animate={signal}` | current target inline | code loads on the first change | binding |
 | `whileHover` / `whilePress` / `whileFocus` | nothing extra | handlers resume; the hover code is preloaded when the element is visible | handlers |
 | `whileInView` | the `initial` state | an observer attaches when the element nears the viewport | same |

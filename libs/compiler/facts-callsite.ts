@@ -91,6 +91,8 @@ export interface CallSites {
   /** Census: a path from a component to an unprovable binding (`file\0name` labels), or to a token of `tokenName`. */
   why(id: string, tokenName?: string): string[];
   whyAbove(id: string, tokenName?: string): string[];
+  /** MOTION-CSS: what may be provided above a call (any caller's call, resolved or not): token names, null = TOP. */
+  aboveSite(site: CallSiteSite): string[] | null;
 }
 
 const TOP = 0;
@@ -605,7 +607,13 @@ export function callSites(input: CallSiteInput): CallSites {
     return ["?"];
   };
 
+  const aboveSite = (s: CallSiteSite): string[] | null => {
+    const set = siteAbove(s);
+    return set.has(TOP) ? null : [...set].map((t) => names[t]!);
+  };
+
   return {
+    aboveSite,
     whyAbove,
     why,
     site: (file) => siteNames.get(file) ?? [],

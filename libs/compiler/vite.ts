@@ -18,6 +18,7 @@ import { hotModule, sourceStamps } from "./hot.ts";
 import { updateEditorManifest } from "./editor.ts";
 import { imagesPlugin } from "./images/plugin.ts";
 import { staticIcons } from "./static-icons.ts";
+import { applyMotion, motionContextToken, motionSites, type MotionElementSite, type MotionLowering } from "./static-motion.ts";
 import { matchesServerOnly, type ServerOnlyPattern } from "./server-only.ts";
 import { nameRegistry, scopedName, type ClassNames } from "./styles.ts";
 import type { ImagesConfig } from "./images/options.ts";
@@ -64,8 +65,12 @@ export interface RivetResumeOptions {
    * DOM-backed list data (DERIVED-C5, spec `docs/design/specs/2026-10-18-structural-resume-design.md` "DOM data on
    * derived"): `<For>` items of a boundary record's data props become tail `d` entries the browser reads back from the
    * rows (`DOM_DATA` in `@rivetjs/runtime` `dom-derived.ts`; server `server-derived-dom.ts` behind the `dom-data-derived`
-   * switch) instead of shipping them in the boundaries tail. Default false (the row read-back costs the first click a few
-   * ms at 4× CPU); `true` adds the reader + encoder and `domData: true` to the resume manifest.
+   * switch) instead of shipping them in the boundaries tail. Default true (DOMDATA-DEFAULT 2026-10-27: −3 µs SSR CPU and
+   * smaller pages for +2–9 ms on the first interaction at 4× CPU): a resume build whose walk saw a keyed `<For>` with rows
+   * showing a value as an element's whole text or a plain attribute (`domListIn`) adds the reader + encoder and
+   * the browser reader's chunk URL as manifest `domData` (a chunk of its own: the runtime imports it for a tail with `d`
+   * entries, whose page preloads it); any other build is byte-identical to `false`. `false` opts out (neither
+   * ships, the rows travel in the tail).
    */
   domData?: boolean;
   /**
@@ -372,6 +377,10 @@ const LITE_QUERY = /[?&]rivet-lite(?=&|$)/;
 const PRELOAD_HELPER = "\0vite/preload-helper.js";
 /** A stylesheet imported for its side effect (no query, not a CSS module): `LITE_EMPTY` in the lite graph. */
 const LITE_CSS = /(?<!\.module)\.(?:css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/;
+/** MOTION-CSS (`static-motion.ts`): the import a rewritten module gets per entrance rule (`<prefix><hash>.css`; resolved to
+ * `\0` + it, the rule's CSS from the walk). Not `virtual:`: the call-site proof's `contextExternal` reads a stylesheet
+ * import as context-free. */
+const MOTION_CSS = "rivet-motion-entrance:";
 /** The id of a module's copy in the lite graph. */
 const liteCopy = (id: string): string => id + (id.includes("?") ? "&" : "?") + "rivet-lite";
 /** Importers the derived reactivity alias leaves alone (DERIVED-C4): the runtime and reactivity packages themselves. */
@@ -380,6 +389,91 @@ const RUNTIME_OWN = /[\\/](?:libs[\\/](?:runtime|reactivity)|@rivetjs[\\/](?:run
  * The runtime's browser build-time switches of the adopt run (`switches.ts` `DERIVED_SWITCHES`) → their opted-in content.
  * Matched by path: the workspace source (`libs/runtime/`) or an installed package (`@rivetjs/runtime/`, any layout).
  */
+type DomSlots = (plan: { fragments: readonly string[]; attributes: readonly unknown[] }) => unknown[] | null;
+/**
+ * `resume.domData`: whether a server-compiled resume module holds a keyed `<For>` list mount (`"$list": [plan, …]`) whose
+ * row template shows a value as an element's whole text or a plain attribute (`slots`: the runtime's `_domSlots`). The
+ * plan is rebuilt from the module's `__rivetFragmentsN` / `__rivetListPlan(…)` declarations (child component plans
+ * flattened as `_listPlan` does); any shape not read here (or no helper) counts as a hit: the switch ships.
+ */
+export function domListIn(code: string, slots: DomSlots | null): boolean {
+  if (!code.includes('"$list"')) return false;
+  if (slots === null) return true;
+  type Node = { type: string; [key: string]: unknown };
+  let body: Node[];
+  try {
+    body = (parseAst(code, { lang: "js" }) as unknown as { body: Node[] }).body;
+  } catch {
+    return true;
+  }
+  const decls = new Map<string, Node>();
+  for (const statement of body)
+    if (statement.type === "VariableDeclaration")
+      for (const d of statement.declarations as Node[]) {
+        const id = d.id as Node;
+        if (id.type === "Identifier" && d.init) decls.set(id.name as string, d.init as Node);
+      }
+  const strings = (node: Node | undefined): string[] | null => {
+    // `Object.freeze([...])` of string literals.
+    const array = node?.type === "CallExpression" ? ((node.arguments as Node[])[0] as Node | undefined) : node;
+    if (array?.type !== "ArrayExpression") return null;
+    const out: string[] = [];
+    for (const e of array.elements as (Node | null)[]) {
+      if (e?.type !== "Literal" || typeof e.value !== "string") return null;
+      out.push(e.value);
+    }
+    return out;
+  };
+  const OPEN = 1,
+    CLOSE = -1;
+  const plans = new Map<string, { fragments: string[]; attributes: unknown[] } | null>();
+  const plan = (name: string, depth = 0): { fragments: string[]; attributes: unknown[] } | null => {
+    if (plans.has(name)) return plans.get(name)!;
+    plans.set(name, null);
+    const call = decls.get(name);
+    const args = call?.type === "CallExpression" ? (call.arguments as Node[]) : null;
+    const fragments = args?.[0]?.type === "Identifier" ? strings(decls.get(args[0].name as string)) : null;
+    const entries = args?.[1]?.type === "ArrayExpression" ? (args[1].elements as (Node | null)[]) : null;
+    if (!fragments || !entries || fragments.length !== entries.length + 1 || depth > 32) return null;
+    const flat = [fragments[0]!],
+      attributes: unknown[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i]!;
+      if (entry.type === "Identifier") {
+        const child = plan(entry.name as string, depth + 1);
+        if (!child) return null;
+        attributes.push(OPEN);
+        flat.push(child.fragments[0]!);
+        for (let k = 0; k < child.attributes.length; k++) (attributes.push(child.attributes[k]), flat.push(child.fragments[k + 1]!));
+        attributes.push(CLOSE);
+      } else if (entry.type === "Literal" && entry.value === null) attributes.push(null);
+      else {
+        const pair = strings(entry);
+        if (!pair || pair.length !== 2) return null;
+        attributes.push({ name: pair[1] === "svg" || pair[1] === "mathml" ? pair[0] : pair[0]!.toLowerCase() });
+      }
+      flat.push(fragments[i + 1]!);
+    }
+    const out = { fragments: flat, attributes };
+    plans.set(name, out);
+    return out;
+  };
+  let hit = false;
+  const visit = (node: unknown): void => {
+    if (hit || node === null || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    const n = node as Node;
+    if (n.type === "Property" && (n.key as Node).type === "Literal" && (n.key as Node).value === "$list") {
+      const first = ((n.value as Node).elements as Node[] | undefined)?.[0];
+      const p = first?.type === "Identifier" ? plan(first.name as string) : null;
+      if (p === null || slots(p) !== null) hit = true;
+      return;
+    }
+    for (const key in n) if (key !== "type") visit(n[key]);
+  };
+  visit(body);
+  return hit;
+}
 const DERIVED_SWITCH = /[\\/](?:libs[\\/]runtime|@rivetjs[\\/]runtime)[\\/](derived|lazy-rows)\.([cm]?[jt]s)$/;
 function derivedSwitch(id: string): string | null {
   const hit = DERIVED_SWITCH.exec(id);
@@ -825,8 +919,11 @@ function rivetPlugin(
   /** The languages this client build renders: the declared locales' (`languagesOf`, with `en`). */
   const localeLanguages = (): Set<string> => languagesOf(declaredLocales ?? []);
   const resumable = new Set<string>();
-  // `resume.domData` (DERIVED-C5): off unless `true` (the row read-back costs the first click a few ms at 4× CPU).
-  const domDataOn = (): boolean => resume?.domData === true;
+  // `resume.domData` (DERIVED-C5): on in resume builds unless `false` (DOMDATA-DEFAULT 2026-10-27), served only to a build
+  // whose walk saw a keyed `<For>` list mount with DOM slots (`domDataLists`): any other build is byte-identical to `false`.
+  // Dev (no walk) serves it whenever on.
+  let domDataLists = false;
+  const domDataOn = (): boolean => resume !== undefined && resume.domData !== false && (serve || domDataLists);
   // Per resume module, the build's boundary verdicts (`facts-fixpoint.ts`, buildStart of every build environment: client
   // and server walk the same graph, so both targets get the same boundaries / names / keys); dev compiles without them
   // (module-local closure, identical on both targets).
@@ -893,9 +990,37 @@ function rivetPlugin(
     }
     return exports;
   };
-  // `<Icon>` with constant props → inline `<svg>`.
-  const prepared = (filename: string, source: string): string =>
-    !/\.[jt]sx$/.test(filename) ? source : (serve ? (text: string) => text : _mergeOnlyImports)(icons ? staticIcons(source, filename, lucideFor) : source);
+  // MOTION-CSS (builds, `static-motion.ts`): module → its text with the proven CSS-only `<Motion.*>` call sites rewritten
+  // (`from`: the prepared text the walk proved them on), entrance rule CSS by hash (`MOTION_CSS` imports).
+  const motionText = new Map<string, { from: string; to: string }>();
+  const motionCss = new Map<string, string>();
+  // `@rivetjs/motion/static` as the importer resolves it (null: not installed / not loadable), by resolved file.
+  const motionLowering = new Map<string, Promise<MotionLowering | null>>();
+  const lowerFor = (importer: string): Promise<MotionLowering | null> => {
+    let file: string;
+    try {
+      file = createRequire(importer).resolve("@rivetjs/motion/static");
+    } catch {
+      return Promise.resolve(null);
+    }
+    let hit = motionLowering.get(file);
+    if (!hit)
+      motionLowering.set(
+        file,
+        (hit = import(pathToFileURL(file).href).then(
+          (m: { staticMotion?: MotionLowering }) => m.staticMotion ?? null,
+          () => null,
+        )),
+      );
+    return hit;
+  };
+  // `<Icon>` with constant props → inline `<svg>`; then the walk's Motion rewrite (builds).
+  const prepared = (filename: string, source: string): string => {
+    if (!/\.[jt]sx$/.test(filename)) return source;
+    const text = (serve ? (t: string) => t : _mergeOnlyImports)(icons ? staticIcons(source, filename, lucideFor) : source);
+    const motion = motionText.get(filename);
+    return motion && motion.from === text ? motion.to : text;
+  };
   // Read live: the router adds route modules while the dev server runs.
   const isRoute = (filename: string) => !!serverExports?.modules.some((path) => resolve(root, path) === resolve(filename));
   const split = (filename: string) => (isRoute(filename) ? { serverExports: true } : {});
@@ -909,6 +1034,10 @@ function rivetPlugin(
   // `@rivetjs/runtime/resume-builtins` (built-in value decoders: route payloads with RegExp / binary / errors / registered
   // classes, DERIVED-S): its resolved id (production: an emitted chunk, manifest `builtins`) once `buildStart` resolved it.
   let builtinsId: string | null = null;
+  // `resume.domData`: the browser's DOM data reader (`dom-data-reader.ts` next to the resolved derived runtime), emitted as
+  // a chunk of its own by client builds; the `dom-data` switch serves its URL (`import.meta.ROLLUP_FILE_URL_<ref>`).
+  let domReaderId: string | null = null,
+    domReaderRef: string | null = null;
   const posix = (path: string) => path.split(sep).join("/");
   const devResume: DevResume = {
     manifest: () => ({
@@ -1304,6 +1433,11 @@ function rivetPlugin(
       families = new Map<string, NativeFamily[]>(),
       stateStyled = new Set<string>();
     const pending = [...resumable];
+    // MOTION-CSS: the walked modules' prepared texts (the Motion pass rewrites from them).
+    const texts = new Map<string, string>();
+    motionText.clear();
+    // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
+    const forSources = new Map<string, string>();
     // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
     // `index.ts`, `meter/index.ts` with `Object.assign(MeterRoot, { … })`) join the walk without boundaries, so tags
     // resolve through them to the component's call sites; they are never compiled as resume modules.
@@ -1314,11 +1448,13 @@ function rivetPlugin(
       if (facts.has(filename)) continue;
       const source = prepared(filename, await sourceOf(ctx, filename));
       sourceBytes.set(filename, source.length);
+      texts.set(filename, source);
       const route = isRoute(filename);
       const f = plain.has(filename)
         ? moduleFacts(source, filename, { refs: true })
         : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true });
       facts.set(filename, f);
+      if (!plain.has(filename) && resume?.domData !== false && /\bFor\b/.test(source)) forSources.set(filename, source);
       // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
       const declared = plain.has(filename) ? [] : nativeFamilies(source);
       if (declared.length) families.set(filename, declared);
@@ -1347,20 +1483,71 @@ function rivetPlugin(
       const at = entry.lastIndexOf("#");
       return at > 0 ? resolve(root, entry.slice(0, at)) + entry.slice(at) : resolve(root, entry);
     });
-    const verdicts = boundaryFacts(
-      facts,
-      graph,
-      roots,
-      shells,
-      {
-        external: contextExternal,
-        debug: !!process.env.RIVET_CALLSITE_TRACE,
-        ...(hostList.length ? { hosts: new Set(hostList) } : {}),
-        // RT-DIET2: the derived roots (`resume.roots`: the router's `Root`) render every route module.
-        ...(resume?.roots?.length ? { routeHosts: new Set(resume.roots.map((path) => resolve(root, path))) } : {}),
-      },
-      { families, stateStyled },
-    );
+    const close = () =>
+      boundaryFacts(
+        facts,
+        graph,
+        roots,
+        shells,
+        {
+          external: contextExternal,
+          debug: !!process.env.RIVET_CALLSITE_TRACE,
+          ...(hostList.length ? { hosts: new Set(hostList) } : {}),
+          // RT-DIET2: the derived roots (`resume.roots`: the router's `Root`) render every route module.
+          ...(resume?.roots?.length ? { routeHosts: new Set(resume.roots.map((path) => resolve(root, path))) } : {}),
+        },
+        { families, stateStyled },
+      );
+    let verdicts = close();
+    // MOTION-CSS: CSS-only `<Motion.*>` call sites with nothing Motion reads provided above them become plain elements
+    // (`static-motion.ts`); the rewritten modules' facts are recomputed and the program closed again. A rewrite can only
+    // shrink what is provided above other calls (an outer Motion element gone), so a later round may prove more.
+    const motionTrace = process.env.RIVET_MOTION_TRACE ? (...a: unknown[]) => console.error("[motion-css]", ...a) : null;
+    for (let round = 0; round < 4; round++) {
+      let changed = false;
+      for (const [file, text] of texts) {
+        if (plain.has(file) || !text.includes("@rivetjs/motion")) continue;
+        const lower = await lowerFor(file);
+        if (!lower) continue;
+        const own = facts.get(file)!;
+        const sites = motionSites(text, file, lower);
+        const proven = (site: MotionElementSite): boolean => {
+          if (!site.rewrite || site.component === null) return false;
+          const calls = own.boundaries.get(site.component)?.calls;
+          if (!calls) return false;
+          const same = calls.flatMap((call, index) => (call.tag === site.tag ? [index] : []));
+          // The walk's calls and the parsed elements must agree (count, enclosing tags), else nothing is rewritten.
+          if (same.length !== sites.filter((s) => s.component === site.component && s.tag === site.tag).length) return false;
+          const index = same[site.ordinal]!;
+          if (calls[index]!.around.join("\0") !== site.around.join("\0")) return false;
+          const above = verdicts.aboveCall(file + "?" + site.component, index);
+          const ok = above !== null && !above.some(motionContextToken);
+          motionTrace?.(
+            relative(root, file),
+            site.component,
+            site.tag,
+            site.ordinal,
+            ok ? "static" : above === null ? "above TOP" : above.filter(motionContextToken),
+          );
+          return ok;
+        };
+        const chosen = sites.filter(proven);
+        if (!chosen.length) continue;
+        const to = applyMotion(text, chosen, (hash) => MOTION_CSS + hash + ".css");
+        if (to === text) continue;
+        for (const site of chosen) if (site.rewrite?.css) motionCss.set(site.rewrite.css.hash, site.rewrite.css.css);
+        motionText.set(file, { from: motionText.get(file)?.from ?? text, to });
+        texts.set(file, to);
+        sourceBytes.set(file, to.length);
+        facts.set(
+          file,
+          moduleFacts(to, file, isRoute(file) ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+        );
+        changed = true;
+      }
+      if (!changed) break;
+      verdicts = close();
+    }
     if (process.env.RIVET_CALLSITE_TRACE) {
       const out: Record<string, unknown> = {};
       for (const [id, results] of verdicts.callSites!.trace) out[id] = results;
@@ -1402,6 +1589,28 @@ function rivetPlugin(
           f.reexports.size > 0 || [...f.exports].some(([exported, local]) => !own.has(local) && !own.has(exported) && !types.has(exported)),
         );
       }
+    domDataLists = false;
+    if (forSources.size) {
+      const slots = await domSlotsHelper(ctx);
+      for (const [file, source] of forSources)
+        if (domListIn(compile(source, moduleOptions(file, source, true)).code, slots)) {
+          domDataLists = true;
+          break;
+        }
+    }
+  };
+  /** The app runtime's `_domSlots` (`server-derived-dom.ts`, next to the resolved `server-derived`), null when not found. */
+  const domSlotsHelper = async (ctx: Rollup.PluginContext): Promise<DomSlots | null> => {
+    const hit = await ctx.resolve("@rivetjs/runtime/server-derived", join(root, "index.html"), { skipSelf: true });
+    const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
+    if (!file) return null;
+    const helper = join(dirname(file), "server-derived-dom" + file.slice(file.lastIndexOf(".")));
+    if (!existsSync(helper)) return null;
+    try {
+      return ((await import(pathToFileURL(helper).href)) as { _domSlots?: DomSlots })._domSlots ?? null;
+    } catch {
+      return null;
+    }
   };
   /** Resume manifest (`.vite/rivet-resume.json`): `runtime` (the derived entry chunk), `symbols` (boundary
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
@@ -1419,6 +1628,7 @@ function rivetPlugin(
     const lite: Record<string, string> = {};
     let runtime: string | null = null,
       builtins: string | null = null,
+      domReader: string | null = null,
       liteRuntime: string | null = null;
     for (const output of Object.values(bundle)) {
       if (output.type !== "chunk") continue;
@@ -1430,6 +1640,7 @@ function rivetPlugin(
         roots.push(real.fileName);
       }
       if (output.facadeModuleId === builtinsId) builtins = base + _foldFacade(bundle, output, []).fileName;
+      if (domReaderId && output.facadeModuleId === domReaderId) domReader = base + output.fileName;
       // Lite graph (ZERO LITE-WIRE): the lite runtime + per module its lite entry (`lite.symbols`: boundary name → URL).
       if (output.facadeModuleId === LITE_RUNTIME) {
         const real = _foldFacade(bundle, output, ["default"]);
@@ -1502,7 +1713,7 @@ function rivetPlugin(
       deps,
       ...(Object.keys(islands).length ? { islands } : {}),
       ...(builtins ? { builtins } : {}),
-      ...(domDataIn ? { domData: true } : {}),
+      ...(domDataIn && domReader ? { domData: domReader } : {}),
       ...(Object.keys(lazy).length ? { lazy } : {}),
       // Pages whose every record is in `lite.symbols` load `lite.runtime` + those entries instead (server `flush`).
       ...(liteRuntime && Object.keys(lite).length ? { lite: { runtime: liteRuntime, symbols: lite } } : {}),
@@ -1848,9 +2059,18 @@ function rivetPlugin(
           if (!verdict.boundaries.length && bridges.facade(file)) this.emitFile({ type: "chunk", id: file, preserveSignature: "strict" });
       this.emitFile({ type: "chunk", id: DERIVED_ENTRY, name: "derived-runtime", preserveSignature: "strict" });
       if (builtinsId) this.emitFile({ type: "chunk", id: builtinsId, name: "resume-builtins", preserveSignature: "strict" });
+      domReaderId = domReaderRef = null;
+      if (domDataOn()) {
+        const hit = await this.resolve("@rivetjs/runtime/dom-derived-runtime", join(root, "index.html"), { skipSelf: true });
+        const file = hit && !hit.external ? hit.id.split("?")[0]! : null;
+        const reader = file && join(dirname(file), "dom-data-reader" + file.slice(file.lastIndexOf(".")));
+        if (reader && existsSync(reader))
+          domReaderRef = this.emitFile({ type: "chunk", id: (domReaderId = reader), name: "dom-data-reader", preserveSignature: "strict" });
+      }
     },
     resolveId(id, importer) {
       if (boundaryEntries.has(id)) return id;
+      if (id.startsWith(MOTION_CSS)) return { id: "\0" + id, moduleSideEffects: true };
       if (id.startsWith(LOCALE_FULL)) return id;
       // `@rivetjs/ui`'s merge switch (ZERO UI-JS2): merge everywhere but production browser builds, whatever the
       // environment's conditions (a worker SSR target resolves `browser`); the package `imports` map is the fallback.
@@ -1926,6 +2146,8 @@ function rivetPlugin(
       return null;
     },
     async load(id) {
+      // MOTION-CSS: one entrance rule (`static-motion.ts`; the walk of this build proved and lowered it).
+      if (id.startsWith("\0" + MOTION_CSS)) return motionCss.get(id.slice(MOTION_CSS.length + 1, -4)) ?? "";
       // A locale table whole (its lazy chunk): the table's own source text (pure data).
       if (id.startsWith(LOCALE_FULL)) {
         const hash = id.lastIndexOf("#");
@@ -1976,6 +2198,9 @@ function rivetPlugin(
         const code = domDataSwitch(clean);
         if (code !== null) {
           if (code.includes("DOM_DATA") && client) domDataIn = true;
+          // A client build: the emitted reader chunk's URL (dev / tests: the module next to the switch).
+          if (code.includes("DOM_READER") && client && domReaderRef)
+            return `export const DOM_DATA = true;\nexport const DOM_READER = import.meta.ROLLUP_FILE_URL_${domReaderRef};\n`;
           return code;
         }
       }

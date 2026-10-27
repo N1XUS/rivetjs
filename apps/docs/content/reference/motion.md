@@ -18,6 +18,7 @@ related: [guides/motion/index, guides/motion/presence, guides/motion/layout, gui
 | `@rivetjs/motion/in-view` | `createInView` |
 | `@rivetjs/motion/reduced-motion` | `prefersReducedMotion` |
 | `@rivetjs/motion/entrance.css` | stylesheet for entrances rendered without a head (custom-property form) |
+| `@rivetjs/motion/static` | `staticMotion(props)`: the build-time form of a constant entrance (final style, `data-mve`, CSS rule) the compiler writes for CSS-only call sites; not for app code |
 
 ## Motion element props
 

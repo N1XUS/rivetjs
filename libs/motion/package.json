@@ -50,6 +50,10 @@
       "types": "./in-view.tsx",
       "default": "./in-view.tsx"
     },
+    "./static": {
+      "types": "./static.ts",
+      "default": "./static.ts"
+    },
     "./reduced-motion": {
       "types": "./reduced-motion.ts",
       "default": "./reduced-motion.ts"

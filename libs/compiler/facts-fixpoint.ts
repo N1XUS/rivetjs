@@ -79,6 +79,11 @@ export interface BoundaryFacts {
   callers: ReadonlyMap<string, readonly { caller: string; index: number }[]>;
   /** PLACE: route / derived roots (component keys). */
   roots: ReadonlySet<string>;
+  /**
+   * MOTION-CSS (`static-motion.ts`): the context tokens that may be provided above call `index` of component `caller`
+   * (`file?Name`; its `calls[index]`, resolved or not), null = TOP (or no call-site proof: `contexts` not given).
+   */
+  aboveCall(caller: string, index: number): string[] | null;
 }
 
 const key = (file: string, name: string) => file + "?" + name;
@@ -342,7 +347,14 @@ export function boundaryFacts(
     ? nativeSites({ ...natives, facts, info, sites, escaped, interactive: (id) => interactive.get(id) ?? false, live: (id) => live.get(id) ?? false, renders })
     : new Map<string, string[]>();
   const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, shell, options: contexts }) : null;
+  const aboveCall = (caller: string, index: number): string[] | null => {
+    const call = info.get(caller)?.calls[index];
+    if (!proof || !call) return null;
+    const file = caller.slice(0, caller.lastIndexOf("?"));
+    return proof.aboveSite({ caller, index, data: call.data, fn: call.fn, around: call.around.map((tag) => resolveTag(file, tag)), tags: call.around });
+  };
   return {
+    aboveCall,
     callSites: proof,
     native: (file) => native.get(file) ?? [],
     callers: sites,
