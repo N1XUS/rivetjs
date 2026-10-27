@@ -9,7 +9,7 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     {
-      rightclick: "#cm-sections [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-sections [data-slot=context-menu-trigger]",
     },
     {
       expect: ["[role=menu]", "Danger zone"],

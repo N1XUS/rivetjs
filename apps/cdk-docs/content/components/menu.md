@@ -262,6 +262,7 @@ The popover renders at the end of `<body>`: select it by class, not as a descend
 ## Resumability
 
 - Server HTML: the trigger only; a closed menu renders nothing. The trigger carries `data-rk` so a cold :kbd[ArrowDown] opens the menu instead of scrolling.
+- A `trigger="contextMenu"` trigger carries `data-cm` instead: a cold right click opens your menu, not the browser's.
 - Menu and item behaviour is one delegated handler on the menu element; item callbacks are registered by key.
 - `onAction`, item events and render functions: inline arrows or local functions.
 

@@ -12,7 +12,7 @@ export default defineExample({
       attr: ["#cm-disabled [data-slot=context-menu-trigger]", "data-disabled", "true"],
     },
     {
-      rightclick: "#cm-disabled-items",
+      contextmenu: "#cm-disabled-items",
     },
     {
       attr: ["[role=menuitem][data-key=paste]", "aria-disabled", "true"],

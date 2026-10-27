@@ -52,7 +52,7 @@ Private docs-site engine: Markdown content → Rivet routes, examples as pages o
 
 ## Example `Step` schema (`define.ts`, runner `tools/example-checks.ts` `run()`)
 Input steps (first one starts the "after first interaction" measure):
-- `{ click: sel }`, `{ dblclick: sel }`, `{ rightclick: sel }` (fires `contextmenu`), `{ hover: sel }` (pointer/mouse enter/over)
+- `{ click: sel }`, `{ dblclick: sel }`, `{ rightclick: sel }` (fires `contextmenu`), `{ contextmenu: sel }` (right click that fails unless the trusted `contextmenu` default ended prevented — a custom context menu; catches a cold one the resume loader did not hold, `data-cm`, COLD-CTXMENU 2026-10-27), `{ hover: sel }` (pointer/mouse enter/over)
 - `{ longpress: sel | [sel, ms] }`: mouse down on the element centre, hold `ms` (default 700), mouse up (press-and-hold, item morph)
 - `{ wheel: [sel, deltaY] }`: hover then wheel; `{ drag: [from, to] }`: Playwright `dragAndDrop` (pointer drags + HTML DnD)
 - `{ tap: sel }`: CDP touch at element centre (touchstart/touchend, `pointerType: "touch"`, click); no `hasTouch` context needed

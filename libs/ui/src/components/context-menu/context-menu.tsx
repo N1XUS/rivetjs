@@ -4,8 +4,9 @@
 // independent implementation, Rivet-authored styles on HeroUI tokens.
 // - Root = cdk `MenuTrigger trigger="contextMenu"` (RA useContextMenu port: `contextmenu` opens the menu at the pointer, macOS
 //   Ctrl+Enter / Shift+F10 through the browser's own contextmenu event on a focusable trigger, a right click outside closes;
-//   `isOpen` value or two-way Signal / `defaultOpen` / `onOpenChange`). `isDisabled` (read once): no MenuTrigger at all, so the
-//   browser's own context menu appears and `.Popover` renders nothing.
+//   `isOpen` value or two-way Signal / `defaultOpen` / `onOpenChange`; its trigger props carry `data-cm`: the resume loader
+//   cancels the browser's menu for a cold first right click and the replay opens this one). `isDisabled` (read once): no
+//   MenuTrigger at all, so the browser's own context menu appears and `.Popover` renders nothing.
 // - `.Trigger` = a `div` (not focusable unless `tabIndex` is passed) taking the MenuTrigger's press-responder props through cdk
 //   `pressProps` (the `<Pressable>` wrapper would warn about a non-focusable child) and its `ref`. iOS fires no `contextmenu`:
 //   the trigger runs a touch long press (500 ms) there (`contextMenuUsesLongPress`, cdk `menuTriggerContextMenuLongPress`).

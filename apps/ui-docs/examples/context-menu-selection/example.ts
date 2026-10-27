@@ -9,7 +9,7 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     {
-      rightclick: "#cm-selection [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-selection [data-slot=context-menu-trigger]",
     },
     {
       attr: ["[role=menuitemradio][data-key=grid]", "aria-checked", "true"],

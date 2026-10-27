@@ -1,5 +1,6 @@
 // ContextMenu / Command on a resumed page (`/menus-pro`; Rivet additions, feature sets inspired by HeroUI Pro's public docs):
-// no component script before input; a right click on the trigger opens the menu at the pointer, an item runs + closes, Escape
+// no component script before input; a right click on the trigger opens the menu at the pointer (the first, cold one too: the
+// browser's own menu is canceled — COLD-CTXMENU, the loader holds a cold `contextmenu` inside `data-cm`), an item runs + closes, Escape
 // closes; the palette opens from its button with the field focused, typing filters (textValue search terms), Enter runs the
 // focused command and the palette closes; Escape on an empty field closes it.
 import { test, afterAll, beforeAll } from "vitest";
@@ -20,10 +21,16 @@ test("menus pro: nothing before input, then context menu + command palette behav
     [],
   );
 
-  // ContextMenu: right click opens near the pointer
+  // ContextMenu: right click opens near the pointer; the cold first one cancels the browser's own menu (read after dispatch)
+  await page.evaluate(() => {
+    const w = window as unknown as { cm: Event[] };
+    w.cm = [];
+    addEventListener("contextmenu", (e) => e.isTrusted && w.cm.push(e), true);
+  });
   const box = (await page.locator("#cm").boundingBox())!;
   await page.mouse.click(box.x + 60, box.y + 40, { button: "right" });
   await page.waitForSelector("[role=menu][aria-label=Edit]");
+  assert.deepEqual(await page.evaluate(() => (window as unknown as { cm: Event[] }).cm.map((e) => e.defaultPrevented)), [true], "native menu canceled");
   const pop = (await page.locator("[data-slot=context-menu-popover]").boundingBox())!;
   assert.ok(Math.abs(pop.x - (box.x + 60)) < 24 && Math.abs(pop.y - (box.y + 40)) < 24, `at pointer: ${JSON.stringify(pop)}`);
   await page.click("[role=menuitem][data-key=paste]");

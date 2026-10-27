@@ -7,6 +7,11 @@ export type Step =
   | { dblclick: string }
   /** Right-click the element (fires `contextmenu`). */
   | { rightclick: string }
+  /**
+   * Right-click the element and fail unless the page canceled the browser's own context menu (the trusted `contextmenu`
+   * event's default prevented, by a live handler or the resume loader holding a cold one): a custom context menu.
+   */
+  | { contextmenu: string }
   /** Press and hold the primary mouse button on the element's centre for `ms` (default 700), then release (long press / press-and-hold, e.g. an item morph). */
   | { longpress: string | [selector: string, ms: number] }
   /** Move the mouse over the element (fires `pointerover`/`pointerenter`/`mouseover`; hover intent, tooltips, hover cards). */
@@ -60,7 +65,7 @@ export interface ExampleConfig {
   frame?: { height?: "xs" | "sm" | "md" | "lg" | "xl" | number; auto?: boolean; width?: "full" | "phone"; theme?: boolean };
   /** Files shown as code tabs, in order (paths inside the example). */
   show: string[];
-  /** Steps the build runs in Chromium; the first input step (click, fill, press, key, dblclick, rightclick, longpress, hover, wheel, drag, tap) counts as the first interaction. */
+  /** Steps the build runs in Chromium; the first input step (click, fill, press, key, dblclick, rightclick, contextmenu, longpress, hover, wheel, drag, tap) counts as the first interaction. */
   test?: Step[];
 }
 

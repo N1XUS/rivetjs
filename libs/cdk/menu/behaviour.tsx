@@ -100,6 +100,9 @@ export interface MenuTriggerAria {
   longPressDescription?: { id: string; text: string };
 }
 
+/** A context menu trigger's attributes (`data-cm`: a cold `contextmenu` holds the browser's own menu, resume loader). */
+const CONTEXT_MENU_ATTRS = { "data-cm": "" };
+
 /** Keys the trigger may handle (`data-rk`: a cold key does not scroll while the handler loads). */
 export const menuTriggerKeys = (trigger: MenuTriggerType = "press"): string =>
   trigger === "contextMenu"
@@ -287,8 +290,11 @@ export function menuTriggerProps(props: AriaMenuTriggerProps, state: MenuTrigger
       onKeyDown: (e: KeyboardEvent) => menuTriggerContextMenuKeyDown(e, props, state),
     };
   }
-  // Remove aria-haspopup and associated attributes from context menu triggers (w3c/aria#1971).
-  const triggerAttrs = trigger === "contextMenu" ? {} : overlay;
+  // Remove aria-haspopup and associated attributes from context menu triggers (w3c/aria#1971). Rivet: a context menu
+  // trigger carries `data-cm` instead (not when disabled: the browser's menu shows) — the resume loader holds the browser's
+  // own menu for a cold `contextmenu` inside it (`resume-loader-derived.ts`), so the replayed handler's menu is not covered
+  // by the native one.
+  const triggerAttrs = trigger === "contextMenu" ? (props.isDisabled ? {} : CONTEXT_MENU_ATTRS) : overlay;
   return {
     menuTriggerProps: { ...triggerAttrs, ...interaction, id: state.triggerId, "data-rk": menuTriggerKeys(trigger) || undefined },
     menuProps: {

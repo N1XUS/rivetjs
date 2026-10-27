@@ -12,7 +12,7 @@ export default defineExample({
       absent: "[role=menu]",
     },
     {
-      rightclick: "#cm-basic [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-basic [data-slot=context-menu-trigger]",
     },
     {
       matches: "[role=menu] [role=menuitem]",

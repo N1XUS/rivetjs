@@ -22,12 +22,13 @@ import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "../resum
 // into a scroll is cancelled, not left pressed): budget 1,585 B. SLIDER-KEY (2026-10-27): +48 B (1,631) — a cold keydown
 // is held for the keys of the target's nearest `data-rk` (cdk thumbs / spin fields / composites; read by nothing since
 // M6-CUT: a cold slider PageUp stepped the native range), a text field without its own `data-rk` keeps its caret keys:
-// budget 1,635 B.
-test("shipped derived loader is current, inline-safe and fits 1,635 B brotli", async () => {
+// budget 1,635 B. COLD-CTXMENU (2026-10-27): +5 B (1,636) — a cold `contextmenu` inside the nearest `data-cm` (cdk
+// MenuTrigger `trigger="contextMenu"`) holds the browser's own menu (it showed over the replayed ui ContextMenu): budget 1,640 B.
+test("shipped derived loader is current, inline-safe and fits 1,640 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1635, `minified ${size} B`);
+  assert.ok(size <= 1640, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 

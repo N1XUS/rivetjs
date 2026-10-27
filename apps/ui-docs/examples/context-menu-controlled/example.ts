@@ -12,7 +12,7 @@ export default defineExample({
       expect: ["#cm-controlled-state", "Menu is closed"],
     },
     {
-      rightclick: "#cm-controlled [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-controlled [data-slot=context-menu-trigger]",
     },
     {
       expect: ["#cm-controlled-state", "Menu is open"],

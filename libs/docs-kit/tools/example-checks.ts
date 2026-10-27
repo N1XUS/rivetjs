@@ -17,7 +17,7 @@ import { writeAtomic } from "./lock.ts";
 /** Chromium launch flags (no keychain prompts on macOS). */
 export const CHROMIUM_ARGS = ["--use-mock-keychain", "--password-store=basic"];
 /** Steps that act on the page (the first one starts the "after the first interaction" window); the rest only wait. */
-const INPUT_STEPS = ["click", "fill", "press", "key", "dblclick", "rightclick", "longpress", "hover", "wheel", "drag", "tap"] as const;
+const INPUT_STEPS = ["click", "fill", "press", "key", "dblclick", "rightclick", "contextmenu", "longpress", "hover", "wheel", "drag", "tap"] as const;
 /**
  * Strict mode (env `DOCS_KIT_CHECK_STRICT=1`, for measure audits): the pre-2026-10-09 waits (Playwright `networkidle`
  * = 500 ms without any request + a 300 ms settle, before and after the steps) and one page at a time.
@@ -267,6 +267,23 @@ async function longPress(page: import("playwright").Page, target: string | [stri
   await page.mouse.up();
 }
 
+/**
+ * Right-click `selector`; throws unless the trusted `contextmenu` event's default ended prevented (the browser's own menu
+ * would show over the page's: a cold one the resume loader did not hold, `data-cm`). Read after dispatch, from a window
+ * capture listener (a handler may stop propagation; the runtime's replay restores the event's own `defaultPrevented`).
+ */
+async function contextMenu(page: import("playwright").Page, selector: string): Promise<void> {
+  await page.evaluate(() => {
+    const w = window as unknown as { __rvCm?: Event[] };
+    if (!w.__rvCm) addEventListener("contextmenu", (e) => e.isTrusted && w.__rvCm!.push(e), true);
+    w.__rvCm = [];
+  });
+  await page.click(selector, { button: "right", timeout: 5000 });
+  const prevented = await page.evaluate(() => (window as unknown as { __rvCm: Event[] }).__rvCm.map((e) => e.defaultPrevented));
+  if (!prevented.length) throw new Error("no contextmenu event reached the page");
+  if (!prevented.every(Boolean)) throw new Error("the browser's own context menu was not canceled (contextmenu default not prevented)");
+}
+
 /** Run one test step (exported for tests/steps.test.ts). */
 export async function run(page: import("playwright").Page, step: Step, id: string): Promise<void> {
   const where = `example ${id}: step ${JSON.stringify(step)}`;
@@ -274,6 +291,7 @@ export async function run(page: import("playwright").Page, step: Step, id: strin
     if ("click" in step) await page.click(step.click, { timeout: 5000 });
     else if ("dblclick" in step) await page.dblclick(step.dblclick, { timeout: 5000 });
     else if ("rightclick" in step) await page.click(step.rightclick, { button: "right", timeout: 5000 });
+    else if ("contextmenu" in step) await contextMenu(page, step.contextmenu);
     else if ("longpress" in step) await longPress(page, step.longpress);
     else if ("hover" in step) await page.hover(step.hover, { timeout: 5000 });
     else if ("wheel" in step) {

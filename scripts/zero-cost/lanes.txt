@@ -21,6 +21,8 @@ qwik-server/qwik.js 5588999ce371
 qwik-stable-server/qwik-stable.js 4c1201940f5c
 qwik-stable.mjs 3b1399687b9b
 qwik.mjs 044b6e77a931
+react-interactive.mjs 5797437212d2
+react-static.mjs 11b9bccdc5fd
 rivet-compiled.mjs 5fee918247d7
 rivet-for.mjs 0838c26dc11d
 rivet-router-bunserve.mjs 7b05a3dfaed1
@@ -52,10 +54,10 @@ rivet-router/server/assets/resume-format-cYh7FszK.js c5f43e8d15ac
 rivet-router/server/assets/route-cache-t6kkto8Z.js d0568927cadc
 rivet-router/server/assets/server-cache-BQnLdqHL.js d4b0efd6b25b
 rivet-router/server/assets/strict-csp-CY36HMTO.js 164d3634cec1
-rivet-router/server/entry.server.js 2fef644521e1
+rivet-router/server/entry.server.js 3cfd184574eb
 rivet.mjs 1d7f24edb7f5
 server-uws.mjs cb8c978a4da4
-server.mjs e94a73bd4cc4
+server.mjs 68a3f8f56e37
 solid-stable-interactive.mjs 27f2b0679103
 solid-stable-static.mjs c543ecf1bc8f
 solid-stable-string.mjs 3a120a4c9092

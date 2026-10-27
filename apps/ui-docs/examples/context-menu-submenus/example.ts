@@ -9,7 +9,7 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     {
-      rightclick: "#cm-submenus [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-submenus [data-slot=context-menu-trigger]",
     },
     {
       hover: "[role=menuitem][data-key=share]",

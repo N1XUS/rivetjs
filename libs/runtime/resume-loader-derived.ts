@@ -10,7 +10,7 @@
 // `<!--b<id>-->` openers before an ancestor) whose name listens to its type (tail v2 `n[i][2]`, D5 / ZERO R2; any other event acts
 // natively: nothing listens there before the page adopts) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
-// invalid, the keys the target's nearest `data-rk` or the boundary record (`k`) lists — and queued with its path and the target's form state, and the
+// invalid, a `contextmenu` inside the nearest `data-cm` (COLD-CTXMENU), the keys the target's nearest `data-rk` or the boundary record (`k`) lists — and queued with its path and the target's form state, and the
 // runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
 // a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
 // (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element) inside a listening
@@ -142,7 +142,11 @@ export function derivedLoader(): void {
       const form = target as unknown as HTMLFormElement,
         submitter = (event as SubmitEvent).submitter;
       replay = () => ((skip = form), form.requestSubmit(submitter), (skip = null));
-    } else if (type == "invalid") replay = () => {};
+    }
+    // A cold `contextmenu` inside a widget that opens its own menu (the nearest `data-cm`: cdk MenuTrigger
+    // `trigger="contextMenu"`) holds the browser's menu; the replayed handler opens the widget's. Elsewhere (a link's
+    // "open in new tab", text selection) the browser's menu shows: nothing says a handler cancels it.
+    else if (type == "invalid" || (type == "contextmenu" && target.closest?.("[data-cm]"))) replay = () => {};
     else if (type == "keydown") {
       // The keys the target's widget handles (the nearest `data-rk`: cdk composites, slider thumbs, spin fields) and the
       // boundaries around it (record `k`): held while the chunk loads, so a cold key never acts natively (a range input

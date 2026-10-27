@@ -21,6 +21,7 @@ RAC Menu family port: `MenuTrigger`, `Menu`, `MenuItem`, `MenuSection`, `Submenu
 ## Rules / invariants
 - Popover is the shared div overlay layer (`<Popover>`), never native `popover`
 - Trigger `aria-haspopup="true"` (RA useOverlayTrigger type menu); pointer open focuses the menu itself, keyboard open the first / last item
+- `trigger="contextMenu"`: no `aria-haspopup` / `aria-expanded` / `aria-controls` (w3c/aria#1971); `data-cm` instead (COLD-CTXMENU 2026-10-27): the resume loader cancels the browser's own menu for a cold `contextmenu` inside it (the replayed handler opens ours; before, the native menu covered the first open)
 - `menuTriggerKeyDown` has no `defaultPrevented` gate (RA): the Button's usePress already prevented Enter / Space
 - `menuTriggerProps` press / longPress `onKeyDown`: keys `menuTriggerKeyDown` does not handle call `continuePropagation()` (RA useMenuTrigger `default: e.continuePropagation()`; the cdk keyboard wrapper stops propagation otherwise): Tab reaches an enclosing FocusScope (sidebar sheet, dialog), Cmd/Ctrl+B the sidebar shortcut.
 - ids: trigger id via `idSignal` (Button `id` merges on the server); menu id via the `idRef` context pattern (merged on the client) → `aria-labelledby` / `aria-controls` are accessors

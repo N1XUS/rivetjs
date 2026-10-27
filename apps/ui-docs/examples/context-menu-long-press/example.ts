@@ -9,7 +9,7 @@ export default defineExample({
   show: ["src/routes/index.tsx"],
   test: [
     {
-      rightclick: "#cm-long-press [data-slot=context-menu-trigger]",
+      contextmenu: "#cm-long-press [data-slot=context-menu-trigger]",
     },
     {
       matches: "[role=menuitem][data-key=share]",

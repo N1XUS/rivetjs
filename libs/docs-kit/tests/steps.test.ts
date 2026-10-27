@@ -59,6 +59,19 @@ test("rightclick fires contextmenu, not click", async () => {
   assert.doesNotMatch(log, /(^| )click/);
 });
 
+test("contextmenu passes when the page cancels the browser's menu, fails when it does not", async () => {
+  page = await browser.newPage();
+  try {
+    await page.setContent(PAGE);
+    await assert.rejects(run(page, { contextmenu: "#b" }, "steps-test"), /browser's own context menu was not canceled/);
+    // A handler that stops propagation too (cdk MenuTrigger): read from the window capture listener after dispatch.
+    await page.evaluate(() => document.getElementById("b")!.addEventListener("contextmenu", (e) => (e.preventDefault(), e.stopPropagation())));
+    await run(page, { contextmenu: "#b" }, "steps-test");
+  } finally {
+    await page.close();
+  }
+});
+
 test("longpress holds the mouse down for the given time before releasing", async () => {
   page = await browser.newPage();
   try {
