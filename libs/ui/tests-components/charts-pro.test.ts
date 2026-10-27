@@ -1,7 +1,8 @@
 // Pie / Radar / Radial / Composed charts + ChartTooltip on a resumed page (`/charts-pro`; UI-PORT S6, Rivet additions with
 // feature sets inspired by HeroUI Pro's public chart docs): nothing boots and no chart script loads; hovering a pie sector
 // shows its (custom ChartTooltip) tooltip and dims the others, keyboard focus shows a radar category's tooltip, the radial
-// ring and the composed chart's bars + dashed line render, a composed slot hover shows every series.
+// ring and the composed chart's bars + dashed line render, a composed slot hover shows every series; fixed-size polar plots
+// in a shrink-to-fit grid keep their width (no overlap).
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { nonRuntimeScripts, stories, watch, type Stories } from "./harness.ts";
@@ -48,5 +49,20 @@ test("charts pro: no JS, CSS tooltips on hover + focus", async () => {
   await page.waitForFunction((sel) => getComputedStyle(document.querySelector(sel)!).opacity === "1", ctip);
   assert.match((await page.textContent(ctip))!, /Apr.*Online.*61.*Retail.*30.*Target.*80/);
   assert.deepEqual(seen.errors, []);
+  await page.close();
+});
+
+// UI-BUGS 2026-10-27: `.chart`'s inline-size container sized a fixed-size polar chart as if empty, so a `grid-cols-3` grid in
+// a centred flex parent got 0-wide columns and the three plots overlapped (docs RadialChart gauge grid).
+test("charts pro: polar plots in a shrink-to-fit grid keep their width", async () => {
+  const page = await s.browser.newPage({ viewport: { width: 1000, height: 1400 } });
+  await page.goto(s.origin + "/charts-pro");
+  const boxes = await page.$$eval("#polar-grid > figure", (els) =>
+    els.map((el) => [el.getBoundingClientRect().left, el.getBoundingClientRect().width] as const),
+  );
+  assert.equal(boxes.length, 3);
+  for (const [, width] of boxes) assert.ok(width >= 120, `figure ${width}px wide (plot 120px)`);
+  for (let i = 1; i < boxes.length; i++)
+    assert.ok(boxes[i]![0] >= boxes[i - 1]![0] + boxes[i - 1]![1], `figure ${i} overlaps figure ${i - 1}: ${JSON.stringify(boxes)}`);
   await page.close();
 });

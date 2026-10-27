@@ -16134,6 +16134,10 @@
     align-items: flex-start;
   }
 
+  .chart--donut, .chart--pie, .chart--radar, .chart--radial {
+    container-type: normal;
+  }
+
   .chart__polar {
     width: var(--chart-polar-size, 200px);
     height: var(--chart-polar-size, 200px);

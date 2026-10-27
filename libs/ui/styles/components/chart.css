@@ -299,6 +299,17 @@
   @apply items-start;
 }
 
+/* Fixed-size plots (donut / pie / radar / radial) keep their intrinsic width: the `.chart` inline-size container would size
+   them as if empty, so in a shrink-to-fit parent (a `grid-cols-3` grid in a centred flex frame) every column collapsed to 0
+   and the plots overlapped (UI-BUGS 2026-10-27, RadialChart gauge grid). Their tooltips' `cqw` resolve against an outer
+   container or the viewport instead. */
+.chart--donut,
+.chart--pie,
+.chart--radar,
+.chart--radial {
+  container-type: normal;
+}
+
 .chart__polar {
   @apply relative shrink-0;
   width: var(--chart-polar-size, 200px);
