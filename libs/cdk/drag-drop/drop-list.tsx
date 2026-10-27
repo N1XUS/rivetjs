@@ -13,9 +13,17 @@ import { createId } from "@rivetjs/cdk/id";
 import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { DragDropConfigContext } from "./directives/config.ts";
-import { read } from "./directives/registry.ts";
+import { listHost, read } from "./directives/registry.ts";
 import type { DropListInputs, DropListSetup } from "./directives/drop-list.ts";
-import { dropListDestroyed, dropListHostEvent } from "./lazy-refs.ts";
+
+/**
+ * Creates the list's instance (`lazy-refs.ts` `dropListHostEvent`) through the registry's `listHost` (BIG-UI): set once a
+ * `<Drag>` chunk or an instance lookup (`dropListInstance`) is in — the only code that needs a list's instance — so a page
+ * whose lists never meet an item (a scheduler's external-drop hit area, a list not rendered) ships none of it.
+ */
+function dropListHostEvent<T>(event: Event, setup: DropListSetup<T>): void {
+  listHost.event?.(event, setup as never);
+}
 
 /** Global DOM events DropList handles itself; the user's handlers run after its own. */
 const OWNED = ["onMouseDown", "onTouchStart"] as const;
@@ -176,7 +184,7 @@ export function DropList<T = any>(props: DropListProps<T>) {
     rendered = element() ?? rendered;
   });
   onCleanup(() => {
-    if (rendered) dropListDestroyed(rendered);
+    if (rendered) listHost.destroyed?.(rendered);
   });
   return node;
 }

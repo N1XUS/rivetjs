@@ -119,12 +119,13 @@ export const scriptsOf = (scripts: readonly string[], match: RegExp): string[] =
 
 /**
  * The chunks holding matching symbols plus the shared chunks they import that neither the runtime nor the router App
- * (loaded on every page) imports: the code a page downloads only for those symbols.
+ * (loaded on every page) imports: the code a page downloads only for those symbols. A matching chunk the App imports
+ * itself (the announcer regions) is App code, fetched with the App chunk on every page.
  */
 export const codeOf = (match: RegExp): Set<string> => {
   const own = chunksOf(match);
   const always = closureOf([path(resumeManifest().runtime), ...chunksOf(/^\.rivet\/app\.tsx#/)]);
-  return new Set([...own, ...[...closureOf(own)].filter((chunk) => !always.has(chunk))]);
+  return new Set([...closureOf(own)].filter((chunk) => !always.has(chunk)));
 };
 
 /**

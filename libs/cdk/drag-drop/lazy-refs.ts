@@ -13,7 +13,7 @@
 // handles the press (so it never starts in standalone mode).
 import { DragInstance, type DragSetup } from "./directives/drag.ts";
 import { DropListInstance, type DropListSetup } from "./directives/drop-list.ts";
-import { DRAG_ATTR, closestDropListElement, dragOf, dropListOf, drags, dropLists, isWake, wake, whenRegistered } from "./directives/registry.ts";
+import { DRAG_ATTR, closestDropListElement, dragOf, dropListOf, drags, dropLists, isWake, listHost, wake, whenRegistered } from "./directives/registry.ts";
 import { handleElements } from "./directives/drag-handle.ts";
 import { toggleNativeDragInteractions } from "./dom/styling.ts";
 
@@ -96,6 +96,10 @@ export function dragDestroyed(element: HTMLElement): void {
 export function dropListDestroyed(element: HTMLElement): void {
   dropLists.get(element)?.destroy();
 }
+
+// The `<DropList>` handlers reach this module through the registry (`listHost`): set once it evaluates.
+listHost.event = dropListHostEvent as (event: Event, setup: never) => void;
+listHost.destroyed = dropListDestroyed;
 
 /** Drag elements (refs: set once rendered) with an alternate root and no instance yet, per document. */
 const watchedRoots = new Map<() => HTMLElement | undefined, () => string | undefined>();

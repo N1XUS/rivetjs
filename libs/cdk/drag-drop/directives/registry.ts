@@ -28,6 +28,18 @@ export const drags = new WeakMap<Element, DragInstance>();
 export const dropLists = new WeakMap<Element, DropListInstance>();
 export const groups = new WeakMap<Element, DropListGroupInstance>();
 
+/**
+ * The `<DropList>` element handlers (`lazy-refs.ts` sets them when it evaluates, BIG-UI): `drop-list.tsx` reaches the
+ * instance code through here, not through a static import, so a page whose lists hold no `<Drag>` (a scheduler's
+ * external-drop hit area, a list not rendered at all) ships none of it. Whatever needs a list's instance (an item's
+ * press or wake, `dropListInstance`, a connected list) imports `lazy-refs.ts` statically, so the handlers are set by then;
+ * before that a list's own press creates nothing (no instance is needed yet: the item's press or wake creates it).
+ */
+export const listHost: {
+  event?: (event: Event, setup: never) => void;
+  destroyed?: (element: HTMLElement) => void;
+} = {};
+
 /** Callbacks waiting for an element's instance (a wake replayed after its chunk loaded). */
 const waiting = new WeakMap<Element, Array<() => void>>();
 
