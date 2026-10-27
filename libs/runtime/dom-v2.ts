@@ -22,9 +22,12 @@ import {
 } from "@rivetjs/reactivity";
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { coerce, unsupported, write } from "./dom-attr.ts";
-import { _booleans } from "./dom-base.ts";
+// `_constructionDoc` from the leaf, not through `dom.ts`: `dom.ts` imports this module, and `host` below reads the
+// binding while this module evaluates. Vite's module runner (Vitest, SSR dev) defines `dom.ts`'s re-exports only when
+// its body reaches them, so through the cycle it was still undefined there (NX-E2E 2026-10-27).
+import { _booleans, _constructionDoc } from "./dom-base.ts";
 
-import { _constructionDoc, _parseHTML, bindRef } from "./dom.ts";
+import { _parseHTML, bindRef } from "./dom.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
 import { DERIVED } from "./derived.ts";
 
