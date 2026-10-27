@@ -31,6 +31,7 @@ const form = createForm(signupForm, { result: actionResult() });
 - Ids: `formId`, `fieldId`, `errorId`, `descriptionId`, `summaryId`, `describedBy`, `path` (typed `name`).
 - Imperative: `setValue`, `setIssues` (`""` = form level), `clearIssues`, `reset`, `validate`, `focusFirstInvalid`.
 - Components (`/components`): `FieldError`, `ErrorSummary` (`role="alert"`, links to fields), `FormMeta` (`_form` for several instances of one definition), `FormStatus`.
+- Rejected async schemas during input/change/blur produce an `errors.check` issue on the triggering field, following the usual armed-field visibility rules. Newer validation supersedes stale failures; a successful run clears the issue.
 - Timing: `validateOn` (`submit` default, `blur`, `input`, `change`) for pristine fields; `revalidateOn` (`input` default) once a field shows issues; cross-field rules revalidate armed dependents.
 - Messages are issue keys or literal messages; i18n: pass `format` (no i18n dependency).
 

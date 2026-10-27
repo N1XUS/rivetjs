@@ -48,7 +48,7 @@ Flat: one file per module at package root, `server/` for server-only code (packa
 - Client and server decode the same way (`decode.ts` used by both) → identical validation input.
 - Dev façades (`dev.ts`, `autosave-dev.ts`) must keep the exact export surface of their base module (`export *` + override).
 - Server-only code (`server/*`, `csrf.ts`) must never join a client graph (`browser` condition throws). Apps import it from `*.server.ts`.
-- Messages are issue keys or literal messages; i18n via a `format` callback, never an i18n import.
+- Messages are issue keys or literal messages; i18n via a `format` callback, never an i18n import. Rejected async event-time schema validation becomes `errors.check` on the triggering field (error message retained); stale generations are ignored, the pending count always settles, and the next successful run clears the issue.
 - Components: reads stay inside JSX expressions (component bodies run once).
 
 ## Commands

@@ -208,6 +208,58 @@ test("validateAll: arms every invalid field, returns output; async schemas drop 
   assert.equal(isInvalid(asyncForm, "email"), undefined);
 });
 
+test("async event schema rejections become field issues, clear busy state, and recover", async () => {
+  for (const kind of ["input", "blur"] as const) {
+    const def = defineForm({
+      name: "f",
+      validateOn: kind,
+      schema: schema<Signup>(
+        (input) => {
+          if (input.email === "bad") throw new Error("validation unavailable");
+          return [];
+        },
+        { async: true },
+      ),
+    });
+    const form = createForm(def);
+    trigger(def, form, fakeElement, "email", kind, data({ email: "bad" }));
+    assert.equal(validating(form), true);
+    await tick();
+    assert.equal(validating(form), false);
+    assert.deepEqual(fieldIssues(form), [["email", [{ key: "errors.check", message: "validation unavailable" }]]]);
+    trigger(def, form, fakeElement, "email", "input", data({ email: "good" }));
+    await tick();
+    assert.deepEqual(fieldIssues(form), []);
+  }
+});
+
+test("a superseded async schema rejection cannot replace newer validation", async () => {
+  let reject!: (error: Error) => void;
+  const def = defineForm({
+    name: "f",
+    validateOn: "input",
+    schema: {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: (input: unknown) =>
+          (input as Signup).email === "bad"
+            ? new Promise<never>((_, fail) => {
+                reject = fail;
+              })
+            : { value: input },
+      },
+    },
+  });
+  const form = createForm(def);
+  trigger(def, form, fakeElement, "email", "input", data({ email: "bad" }));
+  trigger(def, form, fakeElement, "email", "input", data({ email: "good" }));
+  reject(new Error("stale"));
+  await tick();
+  assert.equal(validating(form), false);
+  assert.deepEqual(fieldIssues(form), []);
+});
+
 test("field checks: debounced, abortable, merged after schema issues, awaited by submit with timeout", async () => {
   // Mocked setTimeout (engine debounce/timeout and the checks' own tick): deterministic under load.
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });

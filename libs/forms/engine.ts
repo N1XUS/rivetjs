@@ -72,7 +72,13 @@ export function trigger(def: FormDefinition<any>, store: FormStore<any>, element
   };
   if (result instanceof Promise) {
     pending(store, 1);
-    result.then(done).finally(() => pending(store, -1));
+    result
+      .then(done, (error: unknown) =>
+        done({
+          issues: { fields: { [path]: [{ key: "errors.check", message: error instanceof Error ? error.message : String(error) }] }, form: [] },
+        }),
+      )
+      .finally(() => pending(store, -1));
   } else done(result);
 }
 
