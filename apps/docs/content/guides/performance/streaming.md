@@ -90,7 +90,7 @@ A [deferred loader](../routing/loading-data.md#deferred-loaders) (`load(fn, { de
 
 ## Make sure the response is really streamed
 
-The Node adapter sends a page in one piece when it is complete before the next event-loop turn. A large uncompressed page sends its first part (the document head) at once and the rest when it is rendered. A page that is still waiting streams, and compressed responses are flushed after every piece.
+The Node adapter sends a page in one piece, with a `Content-Length`, when it is complete before the next event-loop turn and at most 256 KiB. A larger uncompressed page sends its first part (the document head) at once and the rest when it is rendered. A page that is still waiting streams, and compressed responses are flushed after every piece.
 
 Proxies and CDNs in front of your server can buffer the whole response. Then the visitor sees nothing until everything is done. Check your proxy settings for response buffering.
 

@@ -52,6 +52,8 @@ Main options:
 | `timeZone` | Time zone for date formatting. |
 | `dts` | Where the generated types go (default `src/rivet-i18n.d.ts`). |
 
+The same `locales` also decide which built-in component strings (the cdk and ui labels and announcements) the browser build keeps: these languages and `en-US`. Without `i18n()`, list them in `rivetRouter({ locales })` or `rivet({ locales })` ([config reference](../../reference/config.md)).
+
 ## Write catalogs
 
 A catalog is a JSON file. Nested objects become dotted keys:

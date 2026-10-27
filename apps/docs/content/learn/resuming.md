@@ -55,7 +55,7 @@ A component whose subtree has nothing interactive gets no record and never runs 
 
 **Props decide who runs together.** A component whose props are plain data (strings, numbers, plain objects and arrays, dates, `Map` / `Set`, signals of its parent) waits for its own first use: its props are in its record. A component that gets a function, a JSX child with handlers or a value that is not data runs together with its parent, which passes it the real values. Passing plain data is what keeps the browser's work small.
 
-**Nodes stay where they are.** The browser walks the server's nodes instead of creating new ones, so focus, typed text, selection and scroll position survive. A press on an element whose code is still loading is held and replayed once it runs, with the focus a loaded page would have seen.
+**Nodes stay where they are.** The browser walks the server's nodes instead of creating new ones, so focus, typed text, selection and scroll position survive. While a component first runs over them it writes nothing a node already holds: an `<iframe>` keeps its `src` (no reload), a `<details>` the visitor opened stays open, a picked radio stays picked. A press on an element whose code is still loading is held and replayed once it runs, with the focus a loaded page would have seen.
 
 ## Render the same thing twice
 
@@ -66,6 +66,8 @@ The browser repeats a component's render over the server's HTML, so the render h
 - Code that reads browser globals (`window`, `localStorage`) in the render gives different markup in the browser; read them in a `clientEffect`.
 
 If the markup still differs, that component renders in the browser instead of reusing the server nodes (development prints a warning naming it).
+
+A build step that rewrites static text into richer markup after rendering (syntax highlighting that wraps tokens in `<span>`s) changes the markup but not the text. Put `data-rv-text` on the element it rewrote: when the text below it is the same and the component shows no value inside it, the browser keeps those nodes as they are.
 
 ## What reaches the browser
 

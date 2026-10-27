@@ -198,7 +198,7 @@ import inter from "google-font:Inter?weight=100..900&fallback=Arial&font";
 - One import gives one subset. Import the font again with `subset=latin-ext` (or another subset) to add more; each file only loads for the characters it covers.
 - Downloads are cached in `node_modules/.rivet/fonts` (`kit({ fonts: { cacheDir } })`). With the cache in place the build needs no network. Without network and without a cache the build fails with a clear error: keep the cache in CI, or download the file and import it as a local `?font` file. Delete the folder to fetch fonts again.
 
-Each preload competes with your main image for bandwidth. Preload one or two fonts, not all.
+Each preload competes with your main image for bandwidth. Preload one or two fonts, not all. With an adjusted `fallback` you may not need a preload at all: Chrome holds the first paint while a preloaded font is still downloading, and the fallback already keeps the layout from shifting when the font arrives.
 
 ## Image preloads
 
