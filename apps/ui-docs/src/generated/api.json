@@ -1364,12 +1364,16 @@
     "ItemCard",
     "ItemCard",
     "ItemCardAction",
+    "ItemCardCollectionContext",
+    "ItemCardCollectionContextValue",
     "ItemCardContent",
     "ItemCardDescription",
     "ItemCardIcon",
+    "ItemCardIndicator",
     "ItemCardPartProps",
     "ItemCardRoot",
     "ItemCardRootProps",
+    "ItemCardRowProps",
     "ItemCardTextProps",
     "ItemCardTitle",
     "ItemCardVariants",
@@ -1390,6 +1394,7 @@
     "ItemCardGroupHeaderProps",
     "ItemCardGroupRoot",
     "ItemCardGroupRootProps",
+    "ItemCardGroupStaticProps",
     "ItemCardGroupTitle",
     "ItemCardGroupTitleProps",
     "ItemCardGroupVariants",
@@ -1535,6 +1540,7 @@
    "runsOn": "both",
    "href": "/api/rivetjs/ui/kanban/",
    "symbols": [
+    "KANBAN_MESSAGES",
     "Kanban",
     "Kanban",
     "KanbanBoard",
@@ -1542,6 +1548,7 @@
     "KanbanCardContent",
     "KanbanCardList",
     "KanbanCardListProps",
+    "KanbanCardMove",
     "KanbanCardProps",
     "KanbanColumn",
     "KanbanColumnActions",
@@ -1551,10 +1558,15 @@
     "KanbanColumnIndicator",
     "KanbanColumnIndicatorProps",
     "KanbanColumnTitle",
+    "KanbanComposer",
+    "KanbanComposerProps",
+    "KanbanContext",
+    "KanbanContextValue",
     "KanbanDivProps",
     "KanbanDragHandle",
     "KanbanDropIndicator",
     "KanbanDropIndicatorProps",
+    "KanbanMessages",
     "KanbanOptions",
     "KanbanRoot",
     "KanbanRootProps",
@@ -140333,8 +140345,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 143,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L143"
+    "line": 145,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L145"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuMenu/"
   },
@@ -140355,8 +140367,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 141,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L141"
+    "line": 143,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L143"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuMenuProps/"
   },
@@ -140385,8 +140397,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 116,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L116"
+    "line": 118,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L118"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuPopover/"
   },
@@ -141192,8 +141204,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 112,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L112"
+    "line": 114,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L114"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuPopoverProps/"
   },
@@ -141222,8 +141234,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 57,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L57"
+    "line": 59,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L59"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuRoot/"
   },
@@ -141281,8 +141293,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 52,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L52"
+    "line": 54,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L54"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuRootProps/"
   },
@@ -141311,8 +141323,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 156,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L156"
+    "line": 158,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L158"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuSeparator/"
   },
@@ -141333,8 +141345,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 154,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L154"
+    "line": 156,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L156"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuSeparatorProps/"
   },
@@ -141363,8 +141375,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 78,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L78"
+    "line": 80,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L80"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuTrigger/"
   },
@@ -141385,8 +141397,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/context-menu/context-menu.tsx",
-    "line": 76,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L76"
+    "line": 78,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/context-menu/context-menu.tsx#L78"
    },
    "href": "/api/rivetjs/ui/context-menu/ContextMenuTriggerProps/"
   },
@@ -206341,7 +206353,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const ItemCard: (props: ItemCardRootProps) => CompiledElement & { Action: (props: DivProps) => CompiledElement; Content: (props: DivProps) => CompiledElement; Description: (props: SpanProps) => CompiledElement; Icon: (props: DivProps) => CompiledElement; Root: (props: ItemCardRootProps) => CompiledElement; Title: (props: SpanProps) => CompiledElement }"
+    "const ItemCard: (props: ItemCardRootProps) => CompiledElement & { Action: (props: DivProps) => CompiledElement; Content: (props: DivProps) => CompiledElement; Description: (props: SpanProps) => CompiledElement; Icon: (props: DivProps) => CompiledElement; Indicator: (props: SpanProps) => CompiledElement; Root: (props: ItemCardRootProps) => CompiledElement; Title: (props: SpanProps) => CompiledElement }"
    ],
    "params": [],
    "members": [],
@@ -206372,10 +206384,62 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 52,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L52"
+    "line": 88,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L88"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardAction/"
+  },
+  {
+   "key": "@rivetjs/ui/item-card#ItemCardCollectionContext",
+   "entry": "@rivetjs/ui/item-card",
+   "name": "ItemCardCollectionContext",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const ItemCardCollectionContext: Context<ItemCardCollectionContextValue>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/item-card/item-card-collection.ts",
+    "line": 15,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card-collection.ts#L15"
+   },
+   "href": "/api/rivetjs/ui/item-card/ItemCardCollectionContext/"
+  },
+  {
+   "key": "@rivetjs/ui/item-card#ItemCardCollectionContextValue",
+   "entry": "@rivetjs/ui/item-card",
+   "name": "ItemCardCollectionContextValue",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface ItemCardCollectionContextValue"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "inCollection",
+     "kind": "property",
+     "signature": "inCollection?: boolean",
+     "doc": "",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/item-card/item-card-collection.ts",
+    "line": 11,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card-collection.ts#L11"
+   },
+   "href": "/api/rivetjs/ui/item-card/ItemCardCollectionContextValue/"
   },
   {
    "key": "@rivetjs/ui/item-card#ItemCardContent",
@@ -206394,8 +206458,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 51,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L51"
+    "line": 87,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L87"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardContent/"
   },
@@ -206416,8 +206480,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 54,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L54"
+    "line": 90,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L90"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardDescription/"
   },
@@ -206438,10 +206502,40 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L50"
+    "line": 86,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L86"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardIcon/"
+  },
+  {
+   "key": "@rivetjs/ui/item-card#ItemCardIndicator",
+   "entry": "@rivetjs/ui/item-card",
+   "name": "ItemCardIndicator",
+   "kind": "function",
+   "summary": "The unread dot: shown only while its card is unread (`isUnread`, CSS).",
+   "remarks": "The unread dot: shown only while its card is unread (`isUnread`, CSS). Name it with `aria-label` (e.g. \"Unread\").",
+   "signatures": [
+    "function ItemCardIndicator(props: SpanProps): CompiledElement"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "SpanProps",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "CompiledElement",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/item-card/item-card.tsx",
+    "line": 92,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L92"
+   },
+   "href": "/api/rivetjs/ui/item-card/ItemCardIndicator/"
   },
   {
    "key": "@rivetjs/ui/item-card#ItemCardPartProps",
@@ -206460,8 +206554,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L18"
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L25"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardPartProps/"
   },
@@ -206490,8 +206584,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 23,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L23"
+    "line": 47,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L47"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardRoot/"
   },
@@ -206578,6 +206672,13 @@
      "optional": true
     },
     {
+     "name": "href",
+     "kind": "property",
+     "signature": "href?: string",
+     "doc": "Collection mode: the row is a link (cdk GridListItem `href`).",
+     "optional": true
+    },
+    {
      "name": "id",
      "kind": "property",
      "signature": "id?: string",
@@ -206596,6 +206697,27 @@
      "kind": "property",
      "signature": "inputMode?: \"search\" | \"text\" | \"none\" | \"decimal\" | \"numeric\" | \"tel\" | \"email\" | \"url\"",
      "doc": "",
+     "optional": true
+    },
+    {
+     "name": "isCurrent",
+     "kind": "property",
+     "signature": "isCurrent?: boolean | (() => boolean)",
+     "doc": "The open / playing / current item (value or accessor): `aria-current=\"true\"` + `data-current`.",
+     "optional": true
+    },
+    {
+     "name": "isDisabled",
+     "kind": "property",
+     "signature": "isDisabled?: boolean",
+     "doc": "Collection mode: the row is disabled.",
+     "optional": true
+    },
+    {
+     "name": "isUnread",
+     "kind": "property",
+     "signature": "isUnread?: boolean | (() => boolean)",
+     "doc": "Unread-style emphasis (value or accessor): `data-unread` (bold title, shows `ItemCard.Indicator`).",
      "optional": true
     },
     {
@@ -206659,6 +206781,13 @@
      "kind": "property",
      "signature": "onAbortCapture?: Handler<HTMLDivElement, UIEvent>",
      "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAction",
+     "kind": "property",
+     "signature": "onAction?: () => void",
+     "doc": "Collection mode: the row's action (the group's `onAction` gets the key too).",
      "optional": true
     },
     {
@@ -208160,6 +208289,13 @@
      "optional": true
     },
     {
+     "name": "textValue",
+     "kind": "property",
+     "signature": "textValue?: string",
+     "doc": "Collection mode (inside an `ItemCardGroupCollection`): typeahead / accessible text of the row.",
+     "optional": true
+    },
+    {
      "name": "title",
      "kind": "property",
      "signature": "title?: string",
@@ -208186,10 +208322,761 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 21,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L21"
+    "line": 28,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L28"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardRootProps/"
+  },
+  {
+   "key": "@rivetjs/ui/item-card#ItemCardRowProps",
+   "entry": "@rivetjs/ui/item-card",
+   "name": "ItemCardRowProps",
+   "kind": "interface",
+   "summary": "Row-only props of an `ItemCard` inside an `ItemCardGroupCollection` (the cdk `GridListItem` props).",
+   "remarks": "Row-only props of an `ItemCard` inside an `ItemCardGroupCollection` (the cdk `GridListItem` props).",
+   "signatures": [
+    "interface ItemCardRowProps<T extends object = object> extends Omit<GridListItemPrimitiveProps<T>, \"class\" | \"children\" | \"render\" | \"style\">, ItemCardVariants"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "allowsArrowNavigation",
+     "kind": "property",
+     "signature": "allowsArrowNavigation?: boolean",
+     "doc": "Whether the row supports arrow key navigation even when the collection uses tab keyboard navigation.",
+     "optional": true
+    },
+    {
+     "name": "aria-label",
+     "kind": "property",
+     "signature": "aria-label?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "children",
+     "kind": "property",
+     "signature": "children?: Children",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "class",
+     "kind": "property",
+     "signature": "class?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "dir",
+     "kind": "property",
+     "signature": "dir?: \"auto\" | \"ltr\" | \"rtl\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "download",
+     "kind": "property",
+     "signature": "download?: string | boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "focusMode",
+     "kind": "property",
+     "signature": "focusMode?: \"row\" | \"child\"",
+     "doc": "Whether the row or its first focusable child element should be focused when navigating to the row. Default \"row\".",
+     "optional": true
+    },
+    {
+     "name": "hidden",
+     "kind": "property",
+     "signature": "hidden?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "href",
+     "kind": "property",
+     "signature": "href?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "hrefLang",
+     "kind": "property",
+     "signature": "hrefLang?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: Key",
+     "doc": "The unique id of the item.",
+     "optional": true
+    },
+    {
+     "name": "inert",
+     "kind": "property",
+     "signature": "inert?: boolean",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "isCurrent",
+     "kind": "property",
+     "signature": "isCurrent?: boolean | (() => boolean)",
+     "doc": "The open / playing / current item (value or accessor): `aria-current=\"true\"` + `data-current`.",
+     "optional": true
+    },
+    {
+     "name": "isDisabled",
+     "kind": "property",
+     "signature": "isDisabled?: boolean",
+     "doc": "Whether the item is disabled.",
+     "optional": true
+    },
+    {
+     "name": "isUnread",
+     "kind": "property",
+     "signature": "isUnread?: boolean | (() => boolean)",
+     "doc": "Unread-style emphasis (value or accessor): `data-unread` (bold title, shows `ItemCard.Indicator`).",
+     "optional": true
+    },
+    {
+     "name": "lang",
+     "kind": "property",
+     "signature": "lang?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAction",
+     "kind": "property",
+     "signature": "onAction?: () => void",
+     "doc": "Handler that is called when a user performs an action on the item.",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEnd",
+     "kind": "property",
+     "signature": "onAnimationEnd?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationEndCapture",
+     "kind": "property",
+     "signature": "onAnimationEndCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIteration",
+     "kind": "property",
+     "signature": "onAnimationIteration?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationIterationCapture",
+     "kind": "property",
+     "signature": "onAnimationIterationCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStart",
+     "kind": "property",
+     "signature": "onAnimationStart?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAnimationStartCapture",
+     "kind": "property",
+     "signature": "onAnimationStartCapture?: (event: AnimationEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClick",
+     "kind": "property",
+     "signature": "onAuxClick?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onAuxClickCapture",
+     "kind": "property",
+     "signature": "onAuxClickCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onClick",
+     "kind": "property",
+     "signature": "onClick?: (e: MouseEvent) => void",
+     "doc": "Not recommended (use `onPress`): a click alias for compatibility with other libraries.",
+     "optional": true
+    },
+    {
+     "name": "onClickCapture",
+     "kind": "property",
+     "signature": "onClickCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenu",
+     "kind": "property",
+     "signature": "onContextMenu?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onContextMenuCapture",
+     "kind": "property",
+     "signature": "onContextMenuCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClick",
+     "kind": "property",
+     "signature": "onDblClick?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onDblClickCapture",
+     "kind": "property",
+     "signature": "onDblClickCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCapture",
+     "kind": "property",
+     "signature": "onGotPointerCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onGotPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onGotPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onHoverChange",
+     "kind": "property",
+     "signature": "onHoverChange?: (isHovering: boolean) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onHoverEnd",
+     "kind": "property",
+     "signature": "onHoverEnd?: (e: HoverEvent) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onHoverStart",
+     "kind": "property",
+     "signature": "onHoverStart?: (e: HoverEvent) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCapture",
+     "kind": "property",
+     "signature": "onLostPointerCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onLostPointerCaptureCapture",
+     "kind": "property",
+     "signature": "onLostPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDown",
+     "kind": "property",
+     "signature": "onMouseDown?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseDownCapture",
+     "kind": "property",
+     "signature": "onMouseDownCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnter",
+     "kind": "property",
+     "signature": "onMouseEnter?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseEnterCapture",
+     "kind": "property",
+     "signature": "onMouseEnterCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeave",
+     "kind": "property",
+     "signature": "onMouseLeave?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseLeaveCapture",
+     "kind": "property",
+     "signature": "onMouseLeaveCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMove",
+     "kind": "property",
+     "signature": "onMouseMove?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseMoveCapture",
+     "kind": "property",
+     "signature": "onMouseMoveCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOut",
+     "kind": "property",
+     "signature": "onMouseOut?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOutCapture",
+     "kind": "property",
+     "signature": "onMouseOutCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOver",
+     "kind": "property",
+     "signature": "onMouseOver?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseOverCapture",
+     "kind": "property",
+     "signature": "onMouseOverCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUp",
+     "kind": "property",
+     "signature": "onMouseUp?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onMouseUpCapture",
+     "kind": "property",
+     "signature": "onMouseUpCapture?: (event: MouseEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancel",
+     "kind": "property",
+     "signature": "onPointerCancel?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerCancelCapture",
+     "kind": "property",
+     "signature": "onPointerCancelCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDown",
+     "kind": "property",
+     "signature": "onPointerDown?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerDownCapture",
+     "kind": "property",
+     "signature": "onPointerDownCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnter",
+     "kind": "property",
+     "signature": "onPointerEnter?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerEnterCapture",
+     "kind": "property",
+     "signature": "onPointerEnterCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeave",
+     "kind": "property",
+     "signature": "onPointerLeave?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerLeaveCapture",
+     "kind": "property",
+     "signature": "onPointerLeaveCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMove",
+     "kind": "property",
+     "signature": "onPointerMove?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerMoveCapture",
+     "kind": "property",
+     "signature": "onPointerMoveCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOut",
+     "kind": "property",
+     "signature": "onPointerOut?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOutCapture",
+     "kind": "property",
+     "signature": "onPointerOutCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOver",
+     "kind": "property",
+     "signature": "onPointerOver?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerOverCapture",
+     "kind": "property",
+     "signature": "onPointerOverCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUp",
+     "kind": "property",
+     "signature": "onPointerUp?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPointerUpCapture",
+     "kind": "property",
+     "signature": "onPointerUpCapture?: (event: PointerEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onPress",
+     "kind": "property",
+     "signature": "onPress?: (e: PressEvent) => void",
+     "doc": "Called when the press is released over the target.",
+     "optional": true
+    },
+    {
+     "name": "onPressChange",
+     "kind": "property",
+     "signature": "onPressChange?: (isPressed: boolean) => void",
+     "doc": "Called when the press state changes.",
+     "optional": true
+    },
+    {
+     "name": "onPressEnd",
+     "kind": "property",
+     "signature": "onPressEnd?: (e: PressEvent) => void",
+     "doc": "Called when a press interaction ends, over the target or when the pointer leaves it.",
+     "optional": true
+    },
+    {
+     "name": "onPressStart",
+     "kind": "property",
+     "signature": "onPressStart?: (e: PressEvent) => void",
+     "doc": "Called when a press interaction starts.",
+     "optional": true
+    },
+    {
+     "name": "onPressUp",
+     "kind": "property",
+     "signature": "onPressUp?: (e: PressEvent) => void",
+     "doc": "Called when a press is released over the target, whether or not it started there.",
+     "optional": true
+    },
+    {
+     "name": "onScroll",
+     "kind": "property",
+     "signature": "onScroll?: (event: Event & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onScrollCapture",
+     "kind": "property",
+     "signature": "onScrollCapture?: (event: Event & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancel",
+     "kind": "property",
+     "signature": "onTouchCancel?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchCancelCapture",
+     "kind": "property",
+     "signature": "onTouchCancelCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEnd",
+     "kind": "property",
+     "signature": "onTouchEnd?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchEndCapture",
+     "kind": "property",
+     "signature": "onTouchEndCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMove",
+     "kind": "property",
+     "signature": "onTouchMove?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchMoveCapture",
+     "kind": "property",
+     "signature": "onTouchMoveCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStart",
+     "kind": "property",
+     "signature": "onTouchStart?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTouchStartCapture",
+     "kind": "property",
+     "signature": "onTouchStartCapture?: (event: TouchEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancel",
+     "kind": "property",
+     "signature": "onTransitionCancel?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionCancelCapture",
+     "kind": "property",
+     "signature": "onTransitionCancelCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEnd",
+     "kind": "property",
+     "signature": "onTransitionEnd?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionEndCapture",
+     "kind": "property",
+     "signature": "onTransitionEndCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRun",
+     "kind": "property",
+     "signature": "onTransitionRun?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionRunCapture",
+     "kind": "property",
+     "signature": "onTransitionRunCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStart",
+     "kind": "property",
+     "signature": "onTransitionStart?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onTransitionStartCapture",
+     "kind": "property",
+     "signature": "onTransitionStartCapture?: (event: TransitionEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheel",
+     "kind": "property",
+     "signature": "onWheel?: (event: WheelEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onWheelCapture",
+     "kind": "property",
+     "signature": "onWheelCapture?: (event: WheelEvent & { currentTarget: HTMLDivElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "ping",
+     "kind": "property",
+     "signature": "ping?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "ref",
+     "kind": "property",
+     "signature": "ref?: RefValue<HTMLDivElement>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "referrerPolicy",
+     "kind": "property",
+     "signature": "referrerPolicy?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "rel",
+     "kind": "property",
+     "signature": "rel?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "routerOptions",
+     "kind": "property",
+     "signature": "routerOptions?: RouterOptions",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "style",
+     "kind": "property",
+     "signature": "style?: StyleOrFunction<GridListItemRenderProps>",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "target",
+     "kind": "property",
+     "signature": "target?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "textValue",
+     "kind": "property",
+     "signature": "textValue?: string",
+     "doc": "A string representation of the item's contents, used for features like typeahead.",
+     "optional": true
+    },
+    {
+     "name": "translate",
+     "kind": "property",
+     "signature": "translate?: \"yes\" | \"no\"",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "value",
+     "kind": "property",
+     "signature": "value?: T",
+     "doc": "The object value that this item represents. When using dynamic collections, this is set automatically.",
+     "optional": true
+    },
+    {
+     "name": "variant",
+     "kind": "property",
+     "signature": "variant?: \"default\" | \"secondary\" | \"tertiary\" | \"outline\" | \"transparent\"",
+     "doc": "",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/item-card/item-card-row.tsx",
+    "line": 24,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card-row.tsx#L24"
+   },
+   "href": "/api/rivetjs/ui/item-card/ItemCardRowProps/"
   },
   {
    "key": "@rivetjs/ui/item-card#ItemCardTextProps",
@@ -208208,8 +209095,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 19,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L19"
+    "line": 26,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L26"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardTextProps/"
   },
@@ -208230,8 +209117,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card/item-card.tsx",
-    "line": 53,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L53"
+    "line": 89,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card/item-card.tsx#L89"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardTitle/"
   },
@@ -208252,8 +209139,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/styles/src/components/item-card/item-card.styles.ts",
-    "line": 32,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/item-card/item-card.styles.ts#L32"
+    "line": 33,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/item-card/item-card.styles.ts#L33"
    },
    "href": "/api/rivetjs/ui/item-card/ItemCardVariants-type/"
   },
@@ -208265,7 +209152,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const itemCardVariants: TVReturnType<{ variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; title: string }, undefined, { variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; title: string }, TVReturnTypeLike<{ variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; title: string }>>"
+    "const itemCardVariants: TVReturnType<{ variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; indicator: string; title: string }, undefined, { variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; indicator: string; title: string }, TVReturnTypeLike<{ variant: { default: { base: string }; outline: { base: string }; secondary: { base: string }; tertiary: { base: string }; transparent: { base: string } } }, { action: string; base: string; content: string; description: string; icon: string; indicator: string; title: string }>>"
    ],
    "params": [],
    "members": [],
@@ -208345,7 +209232,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const ItemCardGroup: (props: ItemCardGroupRootProps) => CompiledElement & { Description: (props: ParagraphProps) => CompiledElement; Header: (props: DivProps) => CompiledElement; Root: (props: ItemCardGroupRootProps) => CompiledElement; Title: (props: HeadingProps) => CompiledElement }"
+    "const ItemCardGroup: (props: ItemCardGroupStaticProps) => CompiledElement & { Description: (props: ParagraphProps) => CompiledElement; Header: (props: DivProps) => CompiledElement; Root: (props: ItemCardGroupStaticProps) => CompiledElement; Title: (props: HeadingProps) => CompiledElement }"
    ],
    "params": [],
    "members": [],
@@ -208384,8 +209271,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 62,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L62"
+    "line": 71,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L71"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupDescription/"
   },
@@ -208406,8 +209293,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 42,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L42"
+    "line": 51,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L51"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupDescriptionProps/"
   },
@@ -208436,8 +209323,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 44,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L44"
+    "line": 53,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L53"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupHeader/"
   },
@@ -208458,8 +209345,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 40,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L40"
+    "line": 49,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L49"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupHeaderProps/"
   },
@@ -208471,12 +209358,12 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "function ItemCardGroupRoot(props: ItemCardGroupRootProps): CompiledElement"
+    "function ItemCardGroupRoot(props: ItemCardGroupStaticProps): CompiledElement"
    ],
    "params": [
     {
      "name": "props",
-     "type": "ItemCardGroupRootProps",
+     "type": "ItemCardGroupStaticProps",
      "optional": false,
      "doc": ""
     }
@@ -208488,8 +209375,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 24,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L24"
+    "line": 31,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L31"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupRoot/"
   },
@@ -208497,11 +209384,33 @@
    "key": "@rivetjs/ui/item-card-group#ItemCardGroupRootProps",
    "entry": "@rivetjs/ui/item-card-group",
    "name": "ItemCardGroupRootProps",
+   "kind": "type",
+   "summary": "Markup-only group (`div role=\"group\"`); the interactive form is `ItemCardGroupCollection`.",
+   "remarks": "Markup-only group (`div role=\"group\"`); the interactive form is `ItemCardGroupCollection`.",
+   "signatures": [
+    "type ItemCardGroupRootProps = ItemCardGroupStaticProps"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
+    "line": 29,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L29"
+   },
+   "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupRootProps/"
+  },
+  {
+   "key": "@rivetjs/ui/item-card-group#ItemCardGroupStaticProps",
+   "entry": "@rivetjs/ui/item-card-group",
+   "name": "ItemCardGroupStaticProps",
    "kind": "interface",
    "summary": "",
    "remarks": "",
    "signatures": [
-    "interface ItemCardGroupRootProps extends Omit<JSX.IntrinsicElements[\"div\"], \"class\">, ItemCardGroupVariants"
+    "interface ItemCardGroupStaticProps extends Omit<JSX.IntrinsicElements[\"div\"], \"class\">, ItemCardGroupVariants"
    ],
    "params": [],
    "members": [
@@ -210192,10 +211101,10 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 18,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L18"
+    "line": 22,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L22"
    },
-   "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupRootProps/"
+   "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupStaticProps/"
   },
   {
    "key": "@rivetjs/ui/item-card-group#ItemCardGroupTitle",
@@ -210222,8 +211131,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 53,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L53"
+    "line": 62,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L62"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupTitle/"
   },
@@ -210244,8 +211153,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/item-card-group/item-card-group.tsx",
-    "line": 41,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L41"
+    "line": 50,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/item-card-group/item-card-group.tsx#L50"
    },
    "href": "/api/rivetjs/ui/item-card-group/ItemCardGroupTitleProps/"
   },
@@ -211053,6 +211962,28 @@
    "href": "/api/rivetjs/ui/item-morph/useItemMorphPanel/"
   },
   {
+   "key": "@rivetjs/ui/kanban#KANBAN_MESSAGES",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KANBAN_MESSAGES",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const KANBAN_MESSAGES: KanbanMessages"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/messages.ts",
+    "line": 13,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/messages.ts#L13"
+   },
+   "href": "/api/rivetjs/ui/kanban/KANBAN_MESSAGES/"
+  },
+  {
    "key": "@rivetjs/ui/kanban#Kanban",
    "entry": "@rivetjs/ui/kanban",
    "name": "Kanban",
@@ -211086,6 +212017,13 @@
      "optional": false
     },
     {
+     "name": "ComposerProps",
+     "kind": "property",
+     "signature": "ComposerProps: KanbanComposerProps",
+     "doc": "",
+     "optional": false
+    },
+    {
      "name": "DropIndicatorProps",
      "kind": "property",
      "signature": "DropIndicatorProps: KanbanDropIndicatorProps",
@@ -211112,8 +212050,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/index.ts",
-    "line": 24,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/index.ts#L24"
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/index.ts#L25"
    },
    "href": "/api/rivetjs/ui/kanban/Kanban/"
   },
@@ -211134,8 +212072,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/index.ts",
-    "line": 24,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/index.ts#L24"
+    "line": 25,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/index.ts#L25"
    },
    "href": "/api/rivetjs/ui/kanban/Kanban/"
   },
@@ -211173,6 +212111,13 @@
      "optional": false
     },
     {
+     "name": "onCardMove",
+     "kind": "property",
+     "signature": "onCardMove: (move: KanbanCardMove) => void",
+     "doc": "`Kanban onCardMove` (keyboard moves): `move(key, column, index)`.",
+     "optional": false
+    },
+    {
      "name": "onDropped",
      "kind": "property",
      "signature": "onDropped: (event: DragDrop<string, string, string>) => void",
@@ -211185,8 +212130,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 237,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L237"
+    "line": 326,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L326"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanBoard/"
   },
@@ -211215,8 +212160,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 162,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L162"
+    "line": 245,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L245"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCard/"
   },
@@ -211245,8 +212190,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 177,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L177"
+    "line": 266,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L266"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardContent/"
   },
@@ -211275,8 +212220,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 143,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L143"
+    "line": 224,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L224"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardList/"
   },
@@ -211470,6 +212415,13 @@
      "optional": true
     },
     {
+     "name": "onBlur",
+     "kind": "property",
+     "signature": "onBlur?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "onClick",
      "kind": "property",
      "signature": "onClick?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -211533,6 +212485,27 @@
      "optional": true
     },
     {
+     "name": "onFocus",
+     "kind": "property",
+     "signature": "onFocus?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusIn",
+     "kind": "property",
+     "signature": "onFocusIn?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOut",
+     "kind": "property",
+     "signature": "onFocusOut?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "onGotPointerCapture",
      "kind": "property",
      "signature": "onGotPointerCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -211543,6 +212516,20 @@
      "name": "onGotPointerCaptureCapture",
      "kind": "property",
      "signature": "onGotPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDown",
+     "kind": "property",
+     "signature": "onKeyDown?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUp",
+     "kind": "property",
+     "signature": "onKeyUp?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
      "doc": "",
      "optional": true
     },
@@ -211960,6 +212947,13 @@
      "optional": true
     },
     {
+     "name": "tabIndex",
+     "kind": "property",
+     "signature": "tabIndex?: number",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "translate",
      "kind": "property",
      "signature": "translate?: \"yes\" | \"no\"",
@@ -211972,10 +212966,61 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 138,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L138"
+    "line": 219,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L219"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardListProps/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanCardMove",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanCardMove",
+   "kind": "interface",
+   "summary": "A keyboard move request: put card `key` at `index` of `column` (index among that column's other cards).",
+   "remarks": "A keyboard move request: put card `key` at `index` of `column` (index among that column's other cards).",
+   "signatures": [
+    "interface KanbanCardMove"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "column",
+     "kind": "property",
+     "signature": "column: string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "from",
+     "kind": "property",
+     "signature": "from: { column: string; index: number }",
+     "doc": "Where the card was before this step.",
+     "optional": false
+    },
+    {
+     "name": "index",
+     "kind": "property",
+     "signature": "index: number",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "key",
+     "kind": "property",
+     "signature": "key: string",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/keyboard.ts",
+    "line": 14,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/keyboard.ts#L14"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanCardMove/"
   },
   {
    "key": "@rivetjs/ui/kanban#KanbanCardProps",
@@ -212160,6 +213205,13 @@
      "optional": true
     },
     {
+     "name": "onBlur",
+     "kind": "property",
+     "signature": "onBlur?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "onClick",
      "kind": "property",
      "signature": "onClick?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -212230,6 +213282,27 @@
      "optional": true
     },
     {
+     "name": "onFocus",
+     "kind": "property",
+     "signature": "onFocus?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusIn",
+     "kind": "property",
+     "signature": "onFocusIn?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOut",
+     "kind": "property",
+     "signature": "onFocusOut?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "onGotPointerCapture",
      "kind": "property",
      "signature": "onGotPointerCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -212240,6 +213313,20 @@
      "name": "onGotPointerCaptureCapture",
      "kind": "property",
      "signature": "onGotPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDown",
+     "kind": "property",
+     "signature": "onKeyDown?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUp",
+     "kind": "property",
+     "signature": "onKeyUp?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
      "doc": "",
      "optional": true
     },
@@ -212671,6 +213758,13 @@
      "optional": true
     },
     {
+     "name": "tabIndex",
+     "kind": "property",
+     "signature": "tabIndex?: number",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "textValue",
      "kind": "property",
      "signature": "textValue?: string",
@@ -212690,8 +213784,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 157,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L157"
+    "line": 240,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L240"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanCardProps/"
   },
@@ -212720,8 +213814,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 55,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L55"
+    "line": 136,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L136"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumn/"
   },
@@ -212750,8 +213844,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 112,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L112"
+    "line": 193,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L193"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnActions/"
   },
@@ -212780,8 +213874,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 121,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L121"
+    "line": 202,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L202"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnBody/"
   },
@@ -212810,8 +213904,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 103,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L103"
+    "line": 184,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L184"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnCount/"
   },
@@ -212840,8 +213934,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 64,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L64"
+    "line": 145,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L145"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnHeader/"
   },
@@ -212870,8 +213964,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 78,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L78"
+    "line": 159,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L159"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnIndicator/"
   },
@@ -214559,8 +215653,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 73,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L73"
+    "line": 154,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L154"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnIndicatorProps/"
   },
@@ -214589,10 +215683,205 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 94,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L94"
+    "line": 175,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L175"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanColumnTitle/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanComposer",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanComposer",
+   "kind": "function",
+   "summary": "The \"add a card\" row of a column: a trigger that opens an inline title form.",
+   "remarks": "The \"add a card\" row of a column: a trigger that opens an inline title form.",
+   "signatures": [
+    "function KanbanComposer(props: KanbanComposerProps): CompiledElement"
+   ],
+   "params": [
+    {
+     "name": "props",
+     "type": "KanbanComposerProps",
+     "optional": false,
+     "doc": ""
+    }
+   ],
+   "returns": "CompiledElement",
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/kanban-composer.tsx",
+    "line": 48,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban-composer.tsx#L48"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanComposer/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanComposerProps",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanComposerProps",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface KanbanComposerProps"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "cancelLabel",
+     "kind": "property",
+     "signature": "cancelLabel?: string",
+     "doc": "Cancel button text.",
+     "optional": true,
+     "default": "\"Cancel\""
+    },
+    {
+     "name": "class",
+     "kind": "property",
+     "signature": "class?: string",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "defaultOpen",
+     "kind": "property",
+     "signature": "defaultOpen?: boolean",
+     "doc": "",
+     "optional": true,
+     "default": "false"
+    },
+    {
+     "name": "id",
+     "kind": "property",
+     "signature": "id?: string",
+     "doc": "Trigger id; the input gets `${id}-input`, the Add button `${id}-submit`.",
+     "optional": true
+    },
+    {
+     "name": "isOpen",
+     "kind": "property",
+     "signature": "isOpen?: boolean | Signal<boolean> | (() => boolean)",
+     "doc": "Open state (value, two-way Signal or accessor).",
+     "optional": true
+    },
+    {
+     "name": "keepOpen",
+     "kind": "property",
+     "signature": "keepOpen?: boolean",
+     "doc": "Stay open (field cleared, focused) after a submit, for the next card.",
+     "optional": true,
+     "default": "false"
+    },
+    {
+     "name": "label",
+     "kind": "property",
+     "signature": "label?: string",
+     "doc": "Trigger text and the field's accessible name.",
+     "optional": true,
+     "default": "\"Add a card\""
+    },
+    {
+     "name": "onOpenChange",
+     "kind": "property",
+     "signature": "onOpenChange?: (isOpen: boolean) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onSubmit",
+     "kind": "property",
+     "signature": "onSubmit: (title: string) => void",
+     "doc": "Called with the trimmed title (never empty).",
+     "optional": false
+    },
+    {
+     "name": "placeholder",
+     "kind": "property",
+     "signature": "placeholder?: string",
+     "doc": "Field placeholder.",
+     "optional": true,
+     "default": "\"Card title\""
+    },
+    {
+     "name": "submitLabel",
+     "kind": "property",
+     "signature": "submitLabel?: string",
+     "doc": "Submit button text.",
+     "optional": true,
+     "default": "\"Add card\""
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/kanban-composer.tsx",
+    "line": 24,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban-composer.tsx#L24"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanComposerProps/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanContext",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanContext",
+   "kind": "variable",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "const KanbanContext: Context<KanbanContextValue>"
+   ],
+   "params": [],
+   "members": [],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/kanban.tsx",
+    "line": 61,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L61"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanContext/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanContextValue",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanContextValue",
+   "kind": "interface",
+   "summary": "",
+   "remarks": "",
+   "signatures": [
+    "interface KanbanContextValue"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "describedBy",
+     "kind": "property",
+     "signature": "describedBy?: string",
+     "doc": "Id of the board's keyboard instructions (`aria-describedby` of every card).",
+     "optional": true
+    },
+    {
+     "name": "keyboard",
+     "kind": "property",
+     "signature": "keyboard?: boolean",
+     "doc": "Cards are focusable and move with the keyboard (the root has `onCardMove`).",
+     "optional": true
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/kanban.tsx",
+    "line": 54,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L54"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanContextValue/"
   },
   {
    "key": "@rivetjs/ui/kanban#KanbanDivProps",
@@ -214611,8 +215900,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 28,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L28"
+    "line": 41,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L41"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDivProps/"
   },
@@ -214641,8 +215930,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 192,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L192"
+    "line": 281,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L281"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDragHandle/"
   },
@@ -214671,8 +215960,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 209,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L209"
+    "line": 298,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L298"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDropIndicator/"
   },
@@ -214715,10 +216004,68 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 201,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L201"
+    "line": 290,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L290"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanDropIndicatorProps/"
+  },
+  {
+   "key": "@rivetjs/ui/kanban#KanbanMessages",
+   "entry": "@rivetjs/ui/kanban",
+   "name": "KanbanMessages",
+   "kind": "interface",
+   "summary": "Screen reader texts of keyboard moves (`position` is 1-based).",
+   "remarks": "Screen reader texts of keyboard moves (`position` is 1-based).",
+   "signatures": [
+    "interface KanbanMessages"
+   ],
+   "params": [],
+   "members": [
+    {
+     "name": "cancelled",
+     "kind": "property",
+     "signature": "cancelled: (card: string, column: string, position: number, total: number) => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "dropped",
+     "kind": "property",
+     "signature": "dropped: (card: string, column: string, position: number, total: number) => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "instructions",
+     "kind": "property",
+     "signature": "instructions: string",
+     "doc": "Card description (`aria-describedby` of every card).",
+     "optional": false
+    },
+    {
+     "name": "moved",
+     "kind": "property",
+     "signature": "moved: (card: string, column: string, position: number, total: number) => string",
+     "doc": "",
+     "optional": false
+    },
+    {
+     "name": "pickedUp",
+     "kind": "property",
+     "signature": "pickedUp: (card: string, column: string, position: number, total: number) => string",
+     "doc": "",
+     "optional": false
+    }
+   ],
+   "runsOn": "both",
+   "status": "stable",
+   "examples": [],
+   "source": {
+    "file": "libs/ui/src/components/kanban/messages.ts",
+    "line": 4,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/messages.ts#L4"
+   },
+   "href": "/api/rivetjs/ui/kanban/KanbanMessages/"
   },
   {
    "key": "@rivetjs/ui/kanban#KanbanOptions",
@@ -214773,8 +216120,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 224,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L224"
+    "line": 313,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L313"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanOptions/"
   },
@@ -214803,8 +216150,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 43,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L43"
+    "line": 80,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L80"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanRoot/"
   },
@@ -214886,6 +216233,13 @@
      "optional": true
     },
     {
+     "name": "messages",
+     "kind": "property",
+     "signature": "messages?: Partial<KanbanMessages>",
+     "doc": "Screen reader texts of keyboard moves (English defaults).",
+     "optional": true
+    },
+    {
      "name": "onAnimationEnd",
      "kind": "property",
      "signature": "onAnimationEnd?: (event: AnimationEvent & { currentTarget: HTMLElement }) => void",
@@ -214942,6 +216296,20 @@
      "optional": true
     },
     {
+     "name": "onBlur",
+     "kind": "property",
+     "signature": "onBlur?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onCardMove",
+     "kind": "property",
+     "signature": "onCardMove?: (move: KanbanCardMove) => void",
+     "doc": "Keyboard moves: a focused card is picked up with Space / Enter, moved with the arrow keys, dropped with Space / Enter\nand put back with Escape; every step calls this with the target (`createKanban().onCardMove`). Read once.",
+     "optional": true
+    },
+    {
      "name": "onClick",
      "kind": "property",
      "signature": "onClick?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -214984,6 +216352,27 @@
      "optional": true
     },
     {
+     "name": "onFocus",
+     "kind": "property",
+     "signature": "onFocus?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusIn",
+     "kind": "property",
+     "signature": "onFocusIn?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onFocusOut",
+     "kind": "property",
+     "signature": "onFocusOut?: (event: FocusEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "onGotPointerCapture",
      "kind": "property",
      "signature": "onGotPointerCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
@@ -214994,6 +216383,20 @@
      "name": "onGotPointerCaptureCapture",
      "kind": "property",
      "signature": "onGotPointerCaptureCapture?: (event: PointerEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyDown",
+     "kind": "property",
+     "signature": "onKeyDown?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
+     "doc": "",
+     "optional": true
+    },
+    {
+     "name": "onKeyUp",
+     "kind": "property",
+     "signature": "onKeyUp?: (event: KeyboardEvent & { currentTarget: HTMLElement }) => void",
      "doc": "",
      "optional": true
     },
@@ -215383,6 +216786,13 @@
      "optional": true
     },
     {
+     "name": "tabIndex",
+     "kind": "property",
+     "signature": "tabIndex?: number",
+     "doc": "",
+     "optional": true
+    },
+    {
      "name": "translate",
      "kind": "property",
      "signature": "translate?: \"yes\" | \"no\"",
@@ -215395,8 +216805,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 41,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L41"
+    "line": 63,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L63"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanRootProps/"
   },
@@ -215425,8 +216835,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 130,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L130"
+    "line": 211,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L211"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanScrollShadow/"
   },
@@ -215447,8 +216857,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/styles/src/components/kanban/kanban.styles.ts",
-    "line": 38,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/kanban/kanban.styles.ts#L38"
+    "line": 42,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/kanban/kanban.styles.ts#L42"
    },
    "href": "/api/rivetjs/ui/kanban/KanbanVariants-type/"
   },
@@ -215477,8 +216887,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/kanban/kanban.tsx",
-    "line": 247,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L247"
+    "line": 338,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/kanban/kanban.tsx#L338"
    },
    "href": "/api/rivetjs/ui/kanban/createKanban/"
   },
@@ -215490,7 +216900,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const kanbanVariants: TVReturnType<{ size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }, undefined, { size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }, TVReturnTypeLike<{ size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }>>"
+    "const kanbanVariants: TVReturnType<{ size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; composer: string; composerActions: string; composerForm: string; composerTrigger: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }, undefined, { size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; composer: string; composerActions: string; composerForm: string; composerTrigger: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }, TVReturnTypeLike<{ size: { lg: { base: string }; md: { base: string }; sm: { base: string } } }, { base: string; card: string; cardContent: string; cardList: string; column: string; columnActions: string; columnBody: string; columnCount: string; columnHeader: string; columnIndicator: string; columnTitle: string; composer: string; composerActions: string; composerForm: string; composerTrigger: string; dragHandle: string; dropIndicator: string; empty: string; scrollShadow: string }>>"
    ],
    "params": [],
    "members": [],
@@ -345879,8 +347289,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 258,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L258"
+    "line": 266,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L266"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarContent/"
   },
@@ -346469,8 +347879,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 254,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L254"
+    "line": 262,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L262"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarContentProps/"
   },
@@ -346571,8 +347981,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 248,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L248"
+    "line": 256,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L256"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarFooter/"
   },
@@ -347161,8 +348571,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 244,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L244"
+    "line": 252,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L252"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarFooterProps/"
   },
@@ -347191,8 +348601,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 271,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L271"
+    "line": 279,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L279"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroup/"
   },
@@ -347221,8 +348631,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 291,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L291"
+    "line": 299,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L299"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupAction/"
   },
@@ -347811,8 +349221,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 287,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L287"
+    "line": 295,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L295"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupActionProps/"
   },
@@ -347841,8 +349251,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 301,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L301"
+    "line": 309,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L309"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupContent/"
   },
@@ -348431,8 +349841,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 297,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L297"
+    "line": 305,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L305"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupContentProps/"
   },
@@ -348461,8 +349871,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 281,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L281"
+    "line": 289,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L289"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupLabel/"
   },
@@ -349051,8 +350461,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 277,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L277"
+    "line": 285,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L285"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupLabelProps/"
   },
@@ -349649,8 +351059,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 267,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L267"
+    "line": 275,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L275"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarGroupProps/"
   },
@@ -349679,8 +351089,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 238,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L238"
+    "line": 246,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L246"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarHeader/"
   },
@@ -350269,8 +351679,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 234,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L234"
+    "line": 242,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L242"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarHeaderProps/"
   },
@@ -350299,8 +351709,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 213,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L213"
+    "line": 221,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L221"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarInput/"
   },
@@ -352163,8 +353573,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 209,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L209"
+    "line": 217,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L217"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarInputProps/"
   },
@@ -352193,8 +353603,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 200,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L200"
+    "line": 208,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L208"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarInset/"
   },
@@ -352783,8 +354193,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 196,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L196"
+    "line": 204,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L204"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarInsetProps/"
   },
@@ -352813,8 +354223,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 314,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L314"
+    "line": 322,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L322"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenu/"
   },
@@ -352843,8 +354253,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 358,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L358"
+    "line": 366,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L366"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuAction/"
   },
@@ -353694,8 +355104,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 354,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L354"
+    "line": 362,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L362"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuActionProps/"
   },
@@ -353724,8 +355134,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 470,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L470"
+    "line": 478,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L478"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuActions/"
   },
@@ -354322,8 +355732,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 465,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L465"
+    "line": 473,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L473"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuActionsProps/"
   },
@@ -354352,8 +355762,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 368,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L368"
+    "line": 376,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L376"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuBadge/"
   },
@@ -354942,8 +356352,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 364,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L364"
+    "line": 372,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L372"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuBadgeProps/"
   },
@@ -354972,8 +356382,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 332,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L332"
+    "line": 340,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L340"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuButton/"
   },
@@ -354994,8 +356404,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 330,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L330"
+    "line": 338,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L338"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuButtonProps/"
   },
@@ -355024,8 +356434,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 485,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L485"
+    "line": 493,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L493"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuChip/"
   },
@@ -355630,8 +357040,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 476,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L476"
+    "line": 484,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L484"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuChipProps/"
   },
@@ -355660,8 +357070,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 455,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L455"
+    "line": 463,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L463"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuIndicator/"
   },
@@ -356250,8 +357660,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 450,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L450"
+    "line": 458,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L458"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuIndicatorProps/"
   },
@@ -356280,8 +357690,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 324,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L324"
+    "line": 332,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L332"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuItem/"
   },
@@ -356907,8 +358317,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 320,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L320"
+    "line": 328,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L328"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuItemProps/"
   },
@@ -357521,8 +358931,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 310,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L310"
+    "line": 318,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L318"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuProps/"
   },
@@ -357551,8 +358961,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 378,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L378"
+    "line": 386,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L386"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSkeleton/"
   },
@@ -358149,8 +359559,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 374,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L374"
+    "line": 382,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L382"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSkeletonProps/"
   },
@@ -358179,8 +359589,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 398,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L398"
+    "line": 406,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L406"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSub/"
   },
@@ -358209,8 +359619,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 416,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L416"
+    "line": 424,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L424"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSubButton/"
   },
@@ -358231,8 +359641,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 414,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L414"
+    "line": 422,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L422"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSubButtonProps/"
   },
@@ -358261,8 +359671,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 408,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L408"
+    "line": 416,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L416"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSubItem/"
   },
@@ -358888,8 +360298,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 404,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L404"
+    "line": 412,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L412"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSubItemProps/"
   },
@@ -359478,8 +360888,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 394,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L394"
+    "line": 402,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L402"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuSubProps/"
   },
@@ -359508,8 +360918,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 429,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L429"
+    "line": 437,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L437"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuTrigger/"
   },
@@ -359530,8 +360940,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 426,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L426"
+    "line": 434,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L434"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarMenuTriggerProps/"
   },
@@ -359560,8 +360970,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 508,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L508"
+    "line": 516,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L516"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarPage/"
   },
@@ -359632,8 +361042,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 503,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L503"
+    "line": 511,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L511"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarPageProps/"
   },
@@ -359662,8 +361072,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 498,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L498"
+    "line": 506,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L506"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarPages/"
   },
@@ -359808,8 +361218,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 493,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L493"
+    "line": 501,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L501"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarPagesProps/"
   },
@@ -359838,8 +361248,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 120,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L120"
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L126"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarProvider/"
   },
@@ -359884,6 +361294,14 @@
      "doc": "Rivet: default `collapsible` of the `Sidebar`s inside (their own prop wins; shadcn default kept).",
      "optional": true,
      "default": "\"offcanvas\""
+    },
+    {
+     "name": "contained",
+     "kind": "property",
+     "signature": "contained?: boolean",
+     "doc": "The sidebar lives in a bounded box (a card or panel of the page) instead of the viewport: the provider fills the\nheight you give it and clips, the desktop panel is positioned inside it (not `fixed`), and the panel + inset take the\nprovider's background (`sidebar-wrapper--contained`). The mobile sheet is unchanged. Read once.",
+     "optional": true,
+     "default": "false"
     },
     {
      "name": "defaultOpen",
@@ -360549,8 +361967,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 190,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L190"
+    "line": 198,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L198"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarRail/"
   },
@@ -361139,8 +362557,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 186,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L186"
+    "line": 194,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L194"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarRailProps/"
   },
@@ -361169,8 +362587,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 144,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L144"
+    "line": 152,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L152"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarRoot/"
   },
@@ -361868,8 +363286,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 136,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L136"
+    "line": 144,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L144"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarRootProps/"
   },
@@ -361898,8 +363316,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 226,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L226"
+    "line": 234,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L234"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarSeparator/"
   },
@@ -362517,8 +363935,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 221,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L221"
+    "line": 229,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L229"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarSeparatorProps/"
   },
@@ -362547,8 +363965,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 174,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L174"
+    "line": 182,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L182"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarTrigger/"
   },
@@ -363390,8 +364808,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/sidebar/sidebar.tsx",
-    "line": 170,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L170"
+    "line": 178,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/sidebar/sidebar.tsx#L178"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarTriggerProps/"
   },
@@ -363412,8 +364830,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/styles/src/components/sidebar/sidebar.styles.ts",
-    "line": 81,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/sidebar/sidebar.styles.ts#L81"
+    "line": 88,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/styles/src/components/sidebar/sidebar.styles.ts#L88"
    },
    "href": "/api/rivetjs/ui/sidebar/SidebarVariants-type/"
   },
@@ -363455,7 +364873,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const sidebarVariants: TVReturnType<{ size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }, undefined, { size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }, TVReturnTypeLike<{ size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }>>"
+    "const sidebarVariants: TVReturnType<{ contained: { false: {}; true: { wrapper: string } }; size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }, undefined, { contained: { false: {}; true: { wrapper: string } }; size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }, TVReturnTypeLike<{ contained: { false: {}; true: { wrapper: string } }; size: { default: {}; lg: { menuButton: string }; sm: { menuButton: string } }; subSize: { md: {}; sm: { menuSubButton: string } }; variant: { default: {}; outline: { menuButton: string } } }, { container: string; content: string; footer: string; gap: string; group: string; groupAction: string; groupContent: string; groupLabel: string; header: string; inner: string; input: string; inset: string; menu: string; menuAction: string; menuActions: string; menuBadge: string; menuButton: string; menuChip: string; menuIndicator: string; menuItem: string; menuSkeleton: string; menuSkeletonIcon: string; menuSkeletonText: string; menuSub: string; menuSubButton: string; menuSubItem: string; menuSubPanel: string; page: string; pages: string; rail: string; resizeHandle: string; root: string; separator: string; sheet: string; sheetBackdrop: string; sheetDialog: string; tooltip: string; trigger: string; wrapper: string }>>"
    ],
    "params": [],
    "members": [],

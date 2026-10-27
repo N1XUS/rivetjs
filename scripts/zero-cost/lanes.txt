@@ -28,11 +28,11 @@ rivet-for.mjs 0838c26dc11d
 rivet-router-bunserve.mjs 7b05a3dfaed1
 rivet-router-uws.mjs 3a1c519b4cf9
 rivet-router.mjs b974012008de
-rivet-router/client/.vite/rivet-resume.json d7a16dd4b980
+rivet-router/client/.vite/rivet-resume.json 165b7a2a5e0c
 rivet-router/client/assets/_layout-B4QYig2F.js b20ca9d8c193
 rivet-router/client/assets/_layout-BeLvhDDm.js 7e2c01eee273
 rivet-router/client/assets/app-jL45NAdk.js 562aa41d1672
-rivet-router/client/assets/derived-runtime-Vqlnjs7Q.js 34effe4ea7b7
+rivet-router/client/assets/derived-runtime-bXBux6tB.js 0f60f10c6b53
 rivet-router/client/assets/dom-derived-abi-Cjlu1_K2.js 884cd385f779
 rivet-router/client/assets/index-DvoZSdEN.js f0d56578734c
 rivet-router/client/assets/link-DKKMF65y.js 4ec91e2790cc
@@ -42,7 +42,7 @@ rivet-router/client/assets/resume-CTvx045J.js 36136602cce9
 rivet-router/client/assets/resume-builtins-COoHWQQJ.js a70ad7638b3d
 rivet-router/client/assets/resume-format-CHwU03VW.js 4186078b5118
 rivet-router/server/assets/content.server-CeYyxAmC.js e6e4384563d8
-rivet-router/server/assets/csp-directives-BjmWH3xM.js d3125c131412
+rivet-router/server/assets/csp-directives-Coli5tj7.js 2792a48c9e80
 rivet-router/server/assets/deferred-DxG9lGtv.js ea4be2a72eaf
 rivet-router/server/assets/early-hints-BOdMVNPo.js 8463ad1fb7aa
 rivet-router/server/assets/escape-BFg3koIZ.js 321732aff3a2
@@ -51,10 +51,10 @@ rivet-router/server/assets/metrics-CYMyudnt.js 4c2871ccd30a
 rivet-router/server/assets/page-MODIivh4.js d5d9ab287480
 rivet-router/server/assets/resume-Cp4P4_g7.js b8866c4d6fdf
 rivet-router/server/assets/resume-format-cYh7FszK.js c5f43e8d15ac
-rivet-router/server/assets/route-cache-t6kkto8Z.js d0568927cadc
+rivet-router/server/assets/route-cache-CUJN0q4D.js ecca1601e09e
 rivet-router/server/assets/server-cache-BQnLdqHL.js d4b0efd6b25b
-rivet-router/server/assets/strict-csp-CY36HMTO.js 164d3634cec1
-rivet-router/server/entry.server.js 3cfd184574eb
+rivet-router/server/assets/strict-csp-nG9xclrT.js 21a1c9dc0690
+rivet-router/server/entry.server.js 6431449dacb2
 rivet.mjs 1d7f24edb7f5
 server-uws.mjs cb8c978a4da4
 server.mjs 68a3f8f56e37

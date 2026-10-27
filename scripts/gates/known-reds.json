@@ -161,6 +161,181 @@
       "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
       "owner": "ui (triage lane)",
       "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-browser",
+      "match": "libs/cdk/tests/combobox.browser.test.tsx > ComboBox > should close on scroll",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-browser",
+      "match": "libs/cdk/tests/tooltip.browser.test.tsx > Tooltip > should hide tooltip on scroll",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/axe.test.ts > axe: resumed widgets with overlays open have no violations",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/combobox.test.ts > typing filters (accent-insensitive), arrow keys move virtual focus, Enter commits, hidden input",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/combobox.test.ts > button opens the full list; clicking an option selects it; onOpenChange",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/combobox.test.ts > static items, menuTrigger focus",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/combobox.test.ts > multiple selection: ComboBoxValue lists the selected items; hidden inputs per key",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/dom-events-overlays.test.ts > combobox: root and listbox events; input events, keydown, focus change chained with filtering",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > nothing drag-drop related loads before the lists are visible; scrolling them in preloads it",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/drag-drop-resume.test.ts > first drag after the visible preload starts synchronously; the drop reports the new index",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/grid-list.test.ts > grid list: row aria-labelledby (row + description id) survives a selection change after resume",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/list-data.test.ts > createListData.update re-renders the resumed row; other rows keep their elements",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/list-data.test.ts > update after another first change (append first, then update)",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/list-data.test.ts > a row of a section's nested For re-renders on a value change (the section row is re-created)",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/list-data.test.ts > virtualized ListBox: a resumed view's option follows an update",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/list-data.test.ts > Table: a resumed body row follows an item change; the other row keeps its element",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/live-props.test.ts > live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select / ListBoxItem / Tabs / RadioGroup / Text / Link / wave-3 parts value forms update in place",
+      "reason": "flakes under host load (passes alone on the same tree, passes at base 08d7b2937)",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/live-props.test.ts > live props: controlled values (NumberField / RadioGroup / CheckboxGroup / ComboBox / ColorField / DateField / ToggleButtonGroup / DisclosureGroup / ListBox / Tree) follow the prop in place",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/radio-group.test.ts > radio group: RTL horizontal flips left/right",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/resizable.test.ts > cold: the imperative panel ref collapses; a drag persists the layout to the cookie, server-rendered on reload",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/select.test.ts > focus events fire once per focus, not when the listbox takes focus; data-focused stays while open",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/slots.test.ts > slots: resumed page — slot ids, re-created slotted parts, accessor context values, PressResponder",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/table.test.ts > table: resumed selection checkboxes (cold mouse clicks: row box toggles every time, select all toggles all)",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/table.test.ts > table: resumed row action, keyboard selection, row press in selection mode",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:cdk-components",
+      "match": "libs/cdk/tests-components/tabs.test.ts > tabs: automatic activation — arrows skip disabled and wrap, Home / End, two-way selectedKey",
+      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
+      "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
     }
   ]
 }
