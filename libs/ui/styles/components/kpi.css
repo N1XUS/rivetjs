@@ -1,9 +1,10 @@
 /* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no KPI). Feature set inspired by HeroUI Pro's public KPI docs; independent implementation on HeroUI tokens (card surface look, tabular numerals). */
 /* -------------------------------------------------------------------------------------------------
  * KPI Component Styles
- * Block: kpi (parts: header / title / icon / value / trend / description / chart / footer)
+ * Block: kpi (parts: header / title / icon / body / content / value / trend / progress / progress-bar / description / chart /
+ * actions / separator / footer)
  * Modifiers: kpi--default / --secondary / --transparent
- * Variables: --kpi-padding (card padding; the chart bleeds by it)
+ * Variables: --kpi-padding (card padding; the chart and separator bleed by it), --kpi-progress (bar fill)
  * -----------------------------------------------------------------------------------------------*/
 
 .kpi {
@@ -36,6 +37,52 @@
 
 .kpi__icon {
   @apply inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-default text-foreground;
+}
+
+.kpi__icon {
+  &[data-status="success"] {
+    @apply bg-success-soft text-success-soft-foreground;
+  }
+
+  &[data-status="warning"] {
+    @apply bg-warning-soft text-warning-soft-foreground;
+  }
+
+  &[data-status="danger"] {
+    @apply bg-danger-soft text-danger-soft-foreground;
+  }
+}
+
+.kpi__content {
+  @apply flex flex-wrap items-center gap-x-2 gap-y-1;
+}
+
+.kpi__actions {
+  @apply absolute end-3 top-3 flex items-center gap-1;
+}
+
+.kpi__progress {
+  @apply h-1.5 w-full overflow-hidden rounded-full bg-default;
+  --kpi-progress-color: var(--success);
+
+  &[data-status="warning"] {
+    --kpi-progress-color: var(--warning);
+  }
+
+  &[data-status="danger"] {
+    --kpi-progress-color: var(--danger);
+  }
+}
+
+.kpi__progress-bar {
+  @apply h-full rounded-full;
+  width: var(--kpi-progress, 0%);
+  background-color: var(--kpi-progress-color);
+}
+
+.kpi__separator {
+  @apply my-1 border-0 border-t border-separator;
+  margin-inline: calc(var(--kpi-padding) * -1);
 }
 
 .kpi__body {

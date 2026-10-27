@@ -69,7 +69,7 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/empty-state",
     file: "ui/src/components/empty-state/index.ts",
     runsOn: "both",
-    summary: "EmptyState: a placeholder for empty lists and searches.",
+    summary: "EmptyState: a placeholder for empty lists and searches; optional media, title, description and actions parts.",
   },
   {
     entry: "@rivetjs/ui/data-grid",
@@ -268,19 +268,20 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/rating",
     file: "ui/src/components/rating/index.ts",
     runsOn: "both",
-    summary: "Rating (Rivet addition): star rating on native radios, or a read-only fractional display.",
+    summary: "Rating (Rivet addition): star (or any lucide icon) rating on native radios, or a read-only fractional display; render function per item.",
   },
   {
     entry: "@rivetjs/ui/trend-chip",
     file: "ui/src/components/trend-chip/index.ts",
     runsOn: "both",
-    summary: "TrendChip (Rivet addition): direction of a change with a lucide icon and a good / bad colour (inverted for lower-is-better).",
+    summary:
+      "TrendChip (Rivet addition): direction of a change with a lucide icon and a good / bad colour (inverted for lower-is-better), prefix / suffix, custom indicator.",
   },
   {
     entry: "@rivetjs/ui/kpi",
     file: "ui/src/components/kpi/index.ts",
     runsOn: "both",
-    summary: "Kpi (Rivet addition): metric card with title, formatted value, trend, description and a chart slot.",
+    summary: "Kpi (Rivet addition): metric card with title, icon, formatted value, trend, progress, description, chart, actions and footer slots.",
   },
   {
     entry: "@rivetjs/ui/cell-switch",

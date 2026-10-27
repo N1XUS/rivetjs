@@ -14,7 +14,7 @@ export type Rating = { Props: RatingProps; RootProps: RatingProps };
  * Named Component
  * -----------------------------------------------------------------------------------------------*/
 export { RatingRoot } from "./rating.tsx";
-export type { RatingProps, RatingProps as RatingRootProps } from "./rating.tsx";
+export type { RatingProps, RatingProps as RatingRootProps, RatingItemRenderProps } from "./rating.tsx";
 
 /* -------------------------------------------------------------------------------------------------
  * Variants

@@ -13,3 +13,56 @@
 .empty-state--lg {
   @apply p-6 text-base;
 }
+
+/* Rivet: structured parts (UI-PORT S7, TWEAKS.md TW-164). With a header or content part the state is a centred column. */
+.empty-state:has(> .empty-state__header, > .empty-state__content) {
+  @apply flex flex-col items-center justify-center gap-4 p-9 text-center;
+
+  &.empty-state--sm {
+    @apply gap-3 p-4;
+  }
+
+  &.empty-state--lg {
+    @apply gap-6 p-13;
+  }
+}
+
+.empty-state--outline {
+  @apply rounded-2xl border border-dashed border-border;
+}
+
+.empty-state__header {
+  @apply flex max-w-sm flex-col items-center gap-2;
+}
+
+.empty-state__media {
+  @apply mb-2 flex shrink-0 items-center justify-center text-foreground;
+
+  &[data-variant="icon"] {
+    @apply size-12 rounded-full bg-default;
+
+    & > svg {
+      @apply size-6;
+    }
+  }
+}
+
+.empty-state__title {
+  @apply text-base font-medium text-foreground;
+
+  .empty-state--sm & {
+    @apply text-sm;
+  }
+
+  .empty-state--lg & {
+    @apply text-lg;
+  }
+}
+
+.empty-state__description {
+  @apply text-sm text-pretty text-muted;
+}
+
+.empty-state__content {
+  @apply flex w-full max-w-sm flex-wrap items-center justify-center gap-2;
+}

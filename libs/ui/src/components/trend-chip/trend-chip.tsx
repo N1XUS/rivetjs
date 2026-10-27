@@ -1,14 +1,18 @@
 // Rivet addition (NOT a HeroUI port: HeroUI v3.2.6 has no trend chip). Feature set inspired by HeroUI Pro's public TrendChip
-// docs (direction of a change with an icon and a colour; sizes); independent implementation, Rivet-authored styles.
+// docs (direction of a change with an icon and a colour; sizes, variants, prefix / suffix, custom indicator); independent
+// implementation, Rivet-authored styles.
 // - `trend` up / down / neutral picks the lucide icon (`TrendingUp` / `TrendingDown` / `Minus`); the colour follows whether
 //   the change is good: up = positive (success) unless `isInverted` (lower is better, e.g. churn or latency).
+// - Parts: `.Prefix` / `.Suffix` (text around the value), `.Indicator` (your own icon in place of the default one: CSS
+//   `:has()` hides the default icon when an indicator is present, so the root needs no child inspection).
 // - Pure markup: no state, no script.
 import { Icon } from "@rivetjs/kit/icon";
-import type { JSX } from "@rivetjs/runtime/jsx-runtime";
+import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { Minus, TrendingDown, TrendingUp } from "lucide";
 
 import type { TrendChipVariants } from "../../../styles/src/components/trend-chip/index.ts";
 import { trendChipVariants } from "../../../styles/src/components/trend-chip/index.ts";
+import { composeSlotClassName } from "../../utils/compose.tsx";
 import { splitLive } from "../../utils/live.tsx";
 
 type TrendDirection = "up" | "down" | "neutral";
@@ -39,5 +43,38 @@ const TrendChipRoot = (props: TrendChipProps): JSX.Element => {
   );
 };
 
-export { TrendChipRoot };
-export type { TrendChipProps, TrendDirection };
+/** One slots object for the parts (their element classes do not depend on the variants). */
+const SLOTS = trendChipVariants();
+
+interface TrendChipPartProps extends Omit<JSX.IntrinsicElements["span"], "class"> {
+  children?: Content;
+  class?: string;
+}
+
+const part =
+  (slot: "prefix" | "suffix" | "indicator", dataSlot: string) =>
+  (props: TrendChipPartProps): JSX.Element => {
+    const [local, rest] = splitLive(props, ["children", "class"]);
+    return (
+      <span class={composeSlotClassName(SLOTS[slot], local.class)} data-slot={dataSlot} {...rest}>
+        {local.children}
+      </span>
+    );
+  };
+
+/** Text before the value (a sign, a currency). */
+const TrendChipPrefix = part("prefix", "trend-chip-prefix");
+/** Text after the value ("vs last week"). */
+const TrendChipSuffix = part("suffix", "trend-chip-suffix");
+/** Your own direction icon; the default icon hides while one is present. */
+const TrendChipIndicator = (props: TrendChipPartProps): JSX.Element => {
+  const [local, rest] = splitLive(props, ["children", "class"]);
+  return (
+    <span class={composeSlotClassName(SLOTS.indicator, local.class)} data-slot="trend-chip-indicator" aria-hidden="true" {...rest}>
+      {local.children}
+    </span>
+  );
+};
+
+export { TrendChipRoot, TrendChipPrefix, TrendChipSuffix, TrendChipIndicator };
+export type { TrendChipProps, TrendChipPartProps, TrendDirection };

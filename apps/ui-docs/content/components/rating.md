@@ -1,6 +1,6 @@
 ---
 title: Rating
-description: "A star rating: an interactive radio group for picking a score, or a read-only display of a fractional average."
+description: "A star rating: an interactive radio group for picking a score, or a read-only display of a fractional average; custom icons and a render function."
 template: reference
 status: experimental
 related: [components/radio-group, components/slider]
@@ -25,6 +25,54 @@ import { Rating } from "@rivetjs/ui/rating";
 ::example{id=rating-read-only}
 
 `isReadOnly` renders a display, not an input: fractional values fill the last star partially (`--rating-fill`), `showValue` prints the value with one decimal, and nothing runs in the browser.
+
+### Read Only Fractional
+
+::example{id=rating-read-only-fractional}
+
+## Controlled
+
+::example{id=rating-controlled}
+
+## Sizes
+
+::example{id=rating-sizes}
+
+## Disabled
+
+::example{id=rating-disabled}
+
+## With Label
+
+::example{id=rating-with-label}
+
+Name the group with `aria-labelledby` pointing at a visible label, or with `aria-label`.
+
+## Custom Color
+
+::example{id=rating-custom-color}
+
+## Custom Icon Heart
+
+::example{id=rating-custom-icon-heart}
+
+`icon` takes any lucide icon; both layers (empty and filled) use it.
+
+## Custom Icon Per Item
+
+::example{id=rating-custom-icon-per-item}
+
+`icon` as a function returns the icon of each value (1…`maxValue`).
+
+## Render Function
+
+::example{id=rating-render-function}
+
+`renderItem` replaces a star's two icon layers with your content. It gets `{ value, isActive, isPartial, partialPercent }` and re-renders when the score changes; the CSS hover preview does not apply to custom content, so style hover yourself if you need it.
+
+## Product Review
+
+::example{id=rating-product-review}
 
 ## Styling Reference
 
@@ -67,8 +115,19 @@ Rivet-authored, in the vendored format (`@rivetjs/ui/styles` includes them):
 | `name`         | `string`                                       | -       | Form field name                             |
 | `showValue`    | `boolean`                                      | `false` | Print the value after the stars             |
 | `size`         | `"sm"` \| `"md"` \| `"lg"`                     | `"md"`  | Star size                                   |
+| `icon`         | `IconNode` \| `(value: number) => IconNode`    | `Star`  | Lucide icon of every star, or one per value |
+| `renderItem`   | `(item: RatingItemRenderProps) => Content`     | -       | Custom content of one star                  |
 | `aria-label`   | `string`                                       | -       | Accessible name                             |
 | `class`        | `string`                                       | -       | Additional CSS classes                      |
+
+### RatingItemRenderProps
+
+| Property         | Type      | Description                               |
+| ---------------- | --------- | ----------------------------------------- |
+| `value`          | `number`  | The star's value (1…`maxValue`)           |
+| `isActive`       | `boolean` | The score is at or above this star        |
+| `isPartial`      | `boolean` | Read-only fractional score: partly filled |
+| `partialPercent` | `number`  | Fill of this star, 0…100                  |
 
 ## Related Components
 

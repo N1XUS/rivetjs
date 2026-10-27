@@ -3,6 +3,8 @@
 // Rivet-authored styles on HeroUI tokens.
 // - `Kpi.Value` formats `value` with `Intl.NumberFormat(locale, formatOptions)` (value, accessor or live prop: the text
 //   follows) or shows its children; `Kpi.Trend` is the ui TrendChip.
+// - UI-PORT S7: `.Content` (value + trend side by side), `.Progress` (`value` 0…100, `status`), `.Actions` (a corner slot
+//   for your own Button / Dropdown), `.Separator` (edge to edge), `.Icon` `status` (success / warning / danger tint).
 // - Pure markup: no state, no script. The root provides `SurfaceContext` so nested ui parts pick the surface.
 import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
@@ -31,7 +33,7 @@ const KpiRoot = (props: KpiRootProps): JSX.Element => {
 };
 
 const part =
-  (slot: "header" | "body" | "chart" | "description" | "footer" | "icon", dataSlot: string) =>
+  (slot: "header" | "body" | "chart" | "description" | "footer" | "content" | "actions", dataSlot: string) =>
   (props: DivProps): JSX.Element => {
     const [local, rest] = splitLive(props, ["children", "class"]);
     return (
@@ -46,7 +48,59 @@ const KpiBody = part("body", "kpi-body");
 const KpiChart = part("chart", "kpi-chart");
 const KpiDescription = part("description", "kpi-description");
 const KpiFooter = part("footer", "kpi-footer");
-const KpiIcon = part("icon", "kpi-icon");
+const KpiContent = part("content", "kpi-content");
+const KpiActions = part("actions", "kpi-actions");
+
+type KpiStatus = "success" | "warning" | "danger";
+
+interface KpiIconProps extends DivProps {
+  /** Tints the icon background. */
+  status?: KpiStatus;
+}
+
+const KpiIcon = (props: KpiIconProps): JSX.Element => {
+  const [local, rest] = splitLive(props, ["children", "class", "status"]);
+  return (
+    <div class={composeSlotClassName(SLOTS.icon, local.class)} data-slot="kpi-icon" data-status={local.status} {...rest}>
+      {local.children}
+    </div>
+  );
+};
+
+interface KpiProgressProps extends DivProps {
+  /** 0…100. */
+  value: number;
+  /** Bar colour. @default "success" */
+  status?: KpiStatus;
+  /** Accessible name. @default "Progress" */
+  "aria-label"?: string;
+}
+
+const KpiProgress = (props: KpiProgressProps): JSX.Element => {
+  const [local, rest] = splitLive(props, ["class", "value", "status", "aria-label"]);
+  const value = Math.max(0, Math.min(100, local.value));
+  return (
+    <div
+      class={composeSlotClassName(SLOTS.progress, local.class)}
+      data-slot="kpi-progress"
+      data-status={local.status ?? "success"}
+      role="progressbar"
+      aria-label={local["aria-label"] ?? "Progress"}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+      style={{ "--kpi-progress": `${value}%` }}
+      {...rest}
+    >
+      <div class={SLOTS.progressBar()} />
+    </div>
+  );
+};
+
+const KpiSeparator = (props: Omit<JSX.IntrinsicElements["hr"], "class"> & { class?: string }): JSX.Element => {
+  const [local, rest] = splitLive(props, ["class"]);
+  return <hr class={composeSlotClassName(SLOTS.separator, local.class)} data-slot="kpi-separator" {...rest} />;
+};
 
 type HeadingProps = Omit<JSX.IntrinsicElements["h3"], "class"> & { class?: string };
 
@@ -86,5 +140,20 @@ const KpiValue = (props: KpiValueProps): JSX.Element => {
 
 const KpiTrend = (props: TrendChipProps): JSX.Element => <TrendChipRoot data-slot="kpi-trend" size="sm" {...props} />;
 
-export { KpiRoot, KpiHeader, KpiTitle, KpiIcon, KpiBody, KpiValue, KpiTrend, KpiDescription, KpiChart, KpiFooter };
-export type { KpiRootProps, KpiValueProps, DivProps as KpiPartProps, HeadingProps as KpiTitleProps };
+export {
+  KpiRoot,
+  KpiHeader,
+  KpiTitle,
+  KpiIcon,
+  KpiBody,
+  KpiContent,
+  KpiValue,
+  KpiTrend,
+  KpiProgress,
+  KpiDescription,
+  KpiChart,
+  KpiActions,
+  KpiSeparator,
+  KpiFooter,
+};
+export type { KpiRootProps, KpiValueProps, KpiIconProps, KpiProgressProps, KpiStatus, DivProps as KpiPartProps, HeadingProps as KpiTitleProps };

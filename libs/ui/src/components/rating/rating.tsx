@@ -7,12 +7,16 @@
 // - Interactive: a `radiogroup` of native radios (visually hidden inside each star's label, one shared `name`): arrow
 //   keys, form submission and the filled / hover-preview states work without JS (CSS `:checked` / `:hover`); the group's
 //   delegated `change` handler writes the controllable value (value / two-way Signal / accessor + `onChange`).
+// - UI-PORT S7: `icon` (a lucide icon, or one per star value) replaces the star; `renderItem` draws a star's content
+//   from `{ value, isActive, isPartial, partialPercent }` (read in the item's slot, so it follows the value). Colours:
+//   `--rating-color` / `--rating-empty`.
 import { visuallyHidden } from "@rivetjs/cdk/a11y";
 import { createId } from "@rivetjs/cdk/id";
 import { controllable, setControlledValue } from "@rivetjs/cdk/interactions";
 import { Icon } from "@rivetjs/kit/icon";
+import type { IconNode } from "@rivetjs/kit/icon";
 import type { Signal } from "@rivetjs/reactivity";
-import type { JSX } from "@rivetjs/runtime/jsx-runtime";
+import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { Star } from "lucide";
 
 import type { RatingVariants } from "../../../styles/src/components/rating/index.ts";
@@ -42,9 +46,24 @@ interface RatingProps extends Omit<JSX.IntrinsicElements["div"], "children" | "c
   name?: string;
   /** Renders the value (one decimal) after the stars. */
   showValue?: boolean;
+  /** The lucide icon of every star, or one per star value (1…`maxValue`). @default Star */
+  icon?: IconNode | ((value: number) => IconNode);
+  /** Custom content of one star (replaces the icon layers; style it from `isActive` / `partialPercent`). */
+  renderItem?: (item: RatingItemRenderProps) => Content;
   /** Accessible name of the group / image. Read-only default: "<value> out of <max>". Interactive default: "Rating". */
   "aria-label"?: string;
   class?: string;
+}
+
+interface RatingItemRenderProps {
+  /** The star's value (1…`maxValue`). */
+  value: number;
+  /** The rating is at or above this star. */
+  isActive: boolean;
+  /** Read-only fractional value: this star is partly filled. */
+  isPartial: boolean;
+  /** Fill of this star, 0…100. */
+  partialPercent: number;
 }
 
 const RatingRoot = (props: RatingProps): JSX.Element => {
@@ -59,6 +78,8 @@ const RatingRoot = (props: RatingProps): JSX.Element => {
     "isDisabled",
     "name",
     "showValue",
+    "icon",
+    "renderItem",
     "aria-label",
   ]);
   const readOnly = local.isReadOnly === true;
@@ -80,6 +101,26 @@ const RatingRoot = (props: RatingProps): JSX.Element => {
   const iconSize = size === "sm" ? 16 : size === "lg" ? 28 : 20;
   const showValue = local.showValue === true;
   const label = local["aria-label"];
+  const iconOf = (n: number): IconNode => {
+    const icon = local.icon;
+    return icon == null ? Star : typeof icon === "function" ? icon(n) : icon;
+  };
+  const renderItem = local.renderItem;
+  const percentOf = (value: number, n: number): number => Math.round(Math.max(0, Math.min(1, value - (n - 1))) * 1000) / 10;
+  const layers = (n: number, value: () => number): Content =>
+    renderItem ? (
+      renderItem({
+        value: n,
+        isActive: value() >= n,
+        isPartial: percentOf(value(), n) > 0 && percentOf(value(), n) < 100,
+        partialPercent: percentOf(value(), n),
+      })
+    ) : (
+      <>
+        <Icon icon={iconOf(n)} size={iconSize} class={starClass} />
+        <Icon icon={iconOf(n)} size={iconSize} class={fillClass} />
+      </>
+    );
 
   if (readOnly)
     return (
@@ -92,13 +133,8 @@ const RatingRoot = (props: RatingProps): JSX.Element => {
         {...rest}
       >
         {stars.map((n) => (
-          <span
-            class={itemClass}
-            data-slot="rating-item"
-            style={{ "--rating-fill": `${Math.round(Math.max(0, Math.min(1, shown() - (n - 1))) * 1000) / 10}%` }}
-          >
-            <Icon icon={Star} size={iconSize} class={starClass} />
-            <Icon icon={Star} size={iconSize} class={fillClass} />
+          <span class={itemClass} data-slot="rating-item" style={{ "--rating-fill": `${percentOf(shown(), n)}%` }}>
+            {layers(n, shown)}
           </span>
         ))}
         {showValue ? (
@@ -136,8 +172,7 @@ const RatingRoot = (props: RatingProps): JSX.Element => {
             aria-label={`${n} ${n === 1 ? "star" : "stars"}`}
             style={visuallyHidden}
           />
-          <Icon icon={Star} size={iconSize} class={starClass} />
-          <Icon icon={Star} size={iconSize} class={fillClass} />
+          {layers(n, () => Math.round(state.value()))}
         </label>
       ))}
       {showValue ? (
@@ -150,4 +185,4 @@ const RatingRoot = (props: RatingProps): JSX.Element => {
 };
 
 export { RatingRoot };
-export type { RatingProps };
+export type { RatingProps, RatingItemRenderProps };

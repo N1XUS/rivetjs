@@ -58,6 +58,72 @@
     display: inline-flex;
   }
 
+  .kpi__icon[data-status="success"] {
+    background-color: var(--success-soft);
+    color: var(--success-soft-foreground);
+  }
+
+  .kpi__icon[data-status="warning"] {
+    background-color: var(--warning-soft);
+    color: var(--warning-soft-foreground);
+  }
+
+  .kpi__icon[data-status="danger"] {
+    background-color: var(--danger-soft);
+    color: var(--danger-soft-foreground);
+  }
+
+  .kpi__content {
+    align-items: center;
+    column-gap: calc(var(--spacing, .25rem) * 2);
+    row-gap: var(--spacing, .25rem);
+    flex-wrap: wrap;
+    display: flex;
+  }
+
+  .kpi__actions {
+    inset-inline-end: calc(var(--spacing, .25rem) * 3);
+    top: calc(var(--spacing, .25rem) * 3);
+    align-items: center;
+    gap: var(--spacing, .25rem);
+    display: flex;
+    position: absolute;
+  }
+
+  .kpi__progress {
+    height: calc(var(--spacing, .25rem) * 1.5);
+    background-color: var(--default);
+    --kpi-progress-color: var(--success);
+    border-radius: 3.40282e38px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .kpi__progress[data-status="warning"] {
+    --kpi-progress-color: var(--warning);
+  }
+
+  .kpi__progress[data-status="danger"] {
+    --kpi-progress-color: var(--danger);
+  }
+
+  .kpi__progress-bar {
+    height: 100%;
+    width: var(--kpi-progress, 0%);
+    background-color: var(--kpi-progress-color);
+    border-radius: 3.40282e38px;
+  }
+
+  .kpi__separator {
+    margin-block: var(--spacing, .25rem);
+    border-style: var(--tw-border-style);
+    border-width: 0;
+    border-top-style: var(--tw-border-style);
+    border-top-width: 1px;
+    border-color: var(--separator);
+    margin-inline: calc(var(--kpi-padding) * -1);
+  }
+
   .kpi__body {
     align-items: baseline;
     column-gap: calc(var(--spacing, .25rem) * 2);
@@ -146,6 +212,11 @@
   syntax: "*";
   inherits: false
 }
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+}
 @property --tw-tracking {
   syntax: "*";
   inherits: false
@@ -169,9 +240,4 @@
 @property --tw-numeric-fraction {
   syntax: "*";
   inherits: false
-}
-@property --tw-border-style {
-  syntax: "*";
-  inherits: false;
-  initial-value: solid;
 }

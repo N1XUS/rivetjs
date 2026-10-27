@@ -10,12 +10,18 @@ export const emptyStateVariants = tv({
   // Rivet: sizes (TWEAKS.md TW-143)
   defaultVariants: {
     size: "md",
+    variant: "default",
   },
   variants: {
     size: {
       lg: "empty-state--lg",
       md: "",
       sm: "empty-state--sm",
+    },
+    // Rivet: outline (UI-PORT S7, TWEAKS.md TW-164)
+    variant: {
+      default: "",
+      outline: "empty-state--outline",
     },
   },
 });

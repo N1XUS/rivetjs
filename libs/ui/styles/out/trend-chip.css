@@ -20,6 +20,19 @@
     background-color: var(--trend-chip-bg);
   }
 
+  .trend-chip--primary {
+    color: var(--trend-chip-solid-fg);
+    background-color: var(--trend-chip-solid);
+  }
+
+  .trend-chip--secondary {
+    background-color: var(--default);
+  }
+
+  .trend-chip--tertiary {
+    background-color: #0000;
+  }
+
   .trend-chip--ghost {
     padding-inline: 0;
   }
@@ -37,34 +50,75 @@
     line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
   }
 
-  .trend-chip--ghost.trend-chip--sm, .trend-chip--ghost.trend-chip--md {
+  .trend-chip--lg {
+    height: calc(var(--spacing, .25rem) * 7);
+    padding-inline: calc(var(--spacing, .25rem) * 3);
+    font-size: var(--text-sm, .875rem);
+    line-height: var(--tw-leading, var(--text-sm--line-height, calc(1.25 / .875)));
+  }
+
+  .trend-chip--ghost.trend-chip--sm, .trend-chip--ghost.trend-chip--md, .trend-chip--ghost.trend-chip--lg {
     padding-inline: 0;
   }
 
   .trend-chip--positive {
     --trend-chip-color: var(--success-soft-foreground);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .trend-chip--positive {
+      --trend-chip-color: color-mix(in oklab, var(--success-soft-foreground) 85%, var(--foreground));
+    }
+  }
+
+  .trend-chip--positive {
     --trend-chip-bg: var(--success-soft);
+    --trend-chip-solid: var(--success);
+    --trend-chip-solid-fg: var(--success-foreground);
   }
 
   .trend-chip--negative {
     --trend-chip-color: var(--danger-soft-foreground);
     --trend-chip-bg: var(--danger-soft);
+    --trend-chip-solid: var(--danger);
+    --trend-chip-solid-fg: var(--danger-foreground);
   }
 
   .trend-chip--neutral {
     --trend-chip-color: var(--default-soft-foreground, var(--muted));
     --trend-chip-bg: var(--default);
+    --trend-chip-solid: var(--default-foreground);
+    --trend-chip-solid-fg: var(--background);
   }
 
-  .trend-chip__icon {
+  .trend-chip__icon, .trend-chip__indicator > svg {
     width: calc(var(--spacing, .25rem) * 3.5);
     height: calc(var(--spacing, .25rem) * 3.5);
     flex-shrink: 0;
   }
 
-  .trend-chip--sm .trend-chip__icon {
+  .trend-chip--sm :is(.trend-chip__icon, .trend-chip__indicator > svg) {
     width: calc(var(--spacing, .25rem) * 3);
     height: calc(var(--spacing, .25rem) * 3);
+  }
+
+  .trend-chip--lg :is(.trend-chip__icon, .trend-chip__indicator > svg) {
+    width: calc(var(--spacing, .25rem) * 4);
+    height: calc(var(--spacing, .25rem) * 4);
+  }
+
+  .trend-chip:has( > .trend-chip__indicator) > .trend-chip__icon {
+    display: none;
+  }
+
+  .trend-chip__indicator {
+    flex-shrink: 0;
+    align-items: center;
+    display: inline-flex;
+  }
+
+  .trend-chip__prefix, .trend-chip__suffix {
+    opacity: .8;
   }
 }
 @property --tw-font-weight {
