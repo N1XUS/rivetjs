@@ -69,6 +69,7 @@ import {
 import { ButtonContext } from "../button/index.tsx";
 import { CheckboxContext, CheckboxFieldContext } from "../checkbox/index.tsx";
 import { SelectionIndicatorContext } from "../selection-indicator/context.ts";
+import { selectableCollectionKeys } from "../selection/selectable-collection.ts";
 import { SharedElementContext, type SharedElementScope } from "../shared-element-transition/transition.tsx";
 import {
   DEFAULT_SLOT,
@@ -363,6 +364,7 @@ export function Tree<T>(inProps: TreeProps<T>) {
       "aria-describedby": () => gridAttr("aria-describedby"),
       "aria-details": () => gridAttr("aria-details"),
       "aria-multiselectable": () => gridAttr("aria-multiselectable"),
+      "data-rk": selectableCollectionKeys,
       "aria-rowcount": () => gridAttr("aria-rowcount"),
       "aria-colcount": () => gridAttr("aria-colcount"),
       tabindex: () => gridAttr("tabIndex"),

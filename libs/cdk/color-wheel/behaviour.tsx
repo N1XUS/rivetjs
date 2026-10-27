@@ -245,6 +245,9 @@ export function colorWheelThumbPointerDown(e: PointerEvent, props: ColorWheelAri
   movePointerDown(thumbMove(props, state), e);
 }
 
+/** Keys `colorWheelThumbKeyDown` handles (thumb `data-rk`: held while a cold chunk loads). */
+export const COLOR_WHEEL_KEYS = "ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown";
+
 /** Thumb `keydown` (RA useKeyboard shortcuts PageUp / PageDown + useMove arrow keys). */
 export function colorWheelThumbKeyDown(e: KeyboardEvent, props: ColorWheelAriaOptions, state: ColorWheelState): void {
   if (read(props.isDisabled)) return;

@@ -37,7 +37,7 @@ import {
   selectableListOptions,
   type AriaSelectableListOptions,
 } from "../selection/selectable-list.ts";
-import { collectionTabIndex, selectableCollectionAutoFocus } from "../selection/selectable-collection.ts";
+import { collectionTabIndex, selectableCollectionAutoFocus, selectableCollectionKeys } from "../selection/selectable-collection.ts";
 import {
   selectableItemAttrs,
   selectableItemClick,
@@ -255,6 +255,8 @@ function gridListAttrs(props: AriaGridListOptions, state: GridListStateLike<any>
     "aria-describedby": props["aria-describedby"],
     "aria-details": props["aria-details"],
     "aria-multiselectable": manager.selectionMode === "multiple" ? "true" : undefined,
+    // Rivet: the navigation keys, held by the resume loader while a cold chunk loads (a cold arrow never scrolls).
+    "data-rk": selectableCollectionKeys,
     // If the collection is empty, make sure the grid is tabbable unless there is a child tabbable element.
     tabIndex: state.collection.size === 0 ? (hasTabbableChild ? -1 : 0) : collectionTabIndex(manager),
   };

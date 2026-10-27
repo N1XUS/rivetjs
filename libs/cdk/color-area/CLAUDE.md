@@ -23,3 +23,4 @@ RAC `ColorArea` + react-aria `useColorArea` / `useColorAreaGradient`: 2D (x/y ch
 ## See also
 [../color/CLAUDE.md](../color/CLAUDE.md), [../color-thumb/CLAUDE.md](../color-thumb/CLAUDE.md), `apps/cdk-docs/content/components/color-area.md`
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element (default path unchanged); reactive attrs are accessors, handlers inline arrows; the state + thumb contexts wrap the children accessor; tests `tests/render-date-color.browser.test.tsx`
+- Thumb `data-rk` = `COLOR_AREA_KEYS` (arrows, PageUp / PageDown, Home / End; with the handlers, so not on a static disabled area): a cold key is held instead of stepping the native range inputs (SLIDER-KEY; `tests/color-area.browser.test.tsx`).

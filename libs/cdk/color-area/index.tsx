@@ -33,6 +33,7 @@ import {
   colorAreaThumbFocusIn,
   colorAreaThumbFocusOut,
   colorAreaThumbKeyDown,
+  COLOR_AREA_KEYS,
   colorAreaThumbPointerDown,
   colorAreaThumbStyle,
   createColorAreaInteraction,
@@ -178,6 +179,9 @@ function colorArea(merged: ColorAreaProps, forwarded: RefValue<HTMLDivElement> |
     ? { role: "presentation" }
     : {
         role: "presentation",
+        // Rivet: the keys `colorAreaThumbKeyDown` handles — held by the resume loader while the chunk loads (a cold key
+        // must not step the native range inputs).
+        "data-rk": COLOR_AREA_KEYS,
         onPointerDown: (e: PointerEvent) => colorAreaThumbPointerDown(e, opts, state),
         onKeyDown: (e: KeyboardEvent) => colorAreaThumbKeyDown(e, opts, state),
         onFocusIn: (e: FocusEvent) => colorAreaThumbFocusIn(e, opts),

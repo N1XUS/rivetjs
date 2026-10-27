@@ -40,6 +40,7 @@ import {
   colorWheelInputValue,
   colorWheelInputValueText,
   colorWheelThumbKeyDown,
+  COLOR_WHEEL_KEYS,
   colorWheelThumbPointerDown,
   colorWheelThumbStyle,
   colorWheelTrackPointerDown,
@@ -151,6 +152,9 @@ function colorWheel(merged: ColorWheelProps, ref: RefValue<HTMLDivElement> | und
   const thumbProps = dropHandlers
     ? {}
     : {
+        // Rivet: the keys `colorWheelThumbKeyDown` handles — held by the resume loader while the chunk loads (a cold
+        // PageUp must not step the native range input by its own page size).
+        "data-rk": COLOR_WHEEL_KEYS,
         onPointerDown: (e: PointerEvent) => colorWheelThumbPointerDown(e, opts, state),
         onKeyDown: (e: KeyboardEvent) => colorWheelThumbKeyDown(e, opts, state),
       };

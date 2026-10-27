@@ -28,7 +28,7 @@ Slider: RAC `Slider` parts (`index.tsx`), react-aria `useSlider` / `useSliderThu
 - Keyboard / programmatic changes never set a free position. Color sliders (`../color/slider-state.tsx`) inherit it: `ColorSliderProps.snap` passes through (default `"release"`); `sliderView` spreads the stored `dragPercents` / `snappings` / `refs` (the snap-motion WeakMap key), `colorSliderThumbStyle` positions with `getThumbPositionPercent`, `ColorThumb` gets `isSnapping` (`data-snapping`).
 
 ## Gotchas / deviations
-- Thumb `<input>` carries `data-rk` (arrows, PageUp/PageDown, Home/End; none when disabled): a cold keydown on a resumed page is held instead of moving the native range input by its own page size (`tests/slider.browser.test.tsx` data-rk case)
+- Thumb `<input>` carries `data-rk` (arrows, PageUp/PageDown, Home/End; none when disabled): a cold keydown on a resumed page is held by the derived loader (nearest `data-rk`, SLIDER-KEY 2026-10-27: unread since M6-CUT until then, so a cold PageUp stepped the native range) instead of moving the native range input by its own page size, then replayed (`tests/slider.browser.test.tsx` data-rk case; loader `libs/runtime/tests/derived-cold-keys-browser.test.ts`; cdk-docs `color-slider-basic`)
 - `numberFormatter` (Intl.NumberFormat instance) → `locale` + `formatOptions` (`../number` `NumberFormatter`, cached); locale / direction from `useLocale()`.
 - No-change detection compares values element-wise (upstream: `replaceIndex` identity + `Object.is`); write base = current values.
 - useSliderThumb's "focus the input when it becomes the focused thumb" effect runs where the track press sets the focused thumb.

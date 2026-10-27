@@ -190,6 +190,21 @@ export function spinButtonProps(props: SpinButtonProps): SpinbuttonAria {
   };
 }
 
+/** Keys the spin button shortcuts handle (`data-rk` of a field's input: held while a cold chunk loads). */
+export const SPIN_KEYS = "ArrowUp ArrowDown PageUp PageDown Home End";
+
+/** `data-rk` of a spin field's input: `SPIN_KEYS` unless disabled / read-only (an accessor when either flag is live). */
+export function spinKeysAttr(
+  isDisabled: MaybeAccessor<boolean | undefined>,
+  isReadOnly: MaybeAccessor<boolean | undefined>,
+): string | undefined | (() => string | undefined) {
+  return typeof isDisabled === "function" || typeof isReadOnly === "function"
+    ? () => (read(isDisabled) || read(isReadOnly) ? undefined : SPIN_KEYS)
+    : isDisabled || isReadOnly
+      ? undefined
+      : SPIN_KEYS;
+}
+
 /** RA's `useKeyboard` shortcuts of the spin button (a handler returning `false` = not handled). */
 export function spinButtonShortcuts(props: SpinButtonProps): KeyboardShortcutBindings {
   const { onIncrement, onIncrementPage, onDecrement, onDecrementPage, onDecrementToMin, onIncrementToMax } = props;

@@ -121,6 +121,12 @@ describe("ColorField", () => {
     expect(required.getByRole("textbox").closest(".rv-ColorField")).toHaveAttribute("data-required");
   });
 
+  // Rivet: the spin keys in `data-rk` (held by the resume loader while a cold chunk loads); none when disabled.
+  it("lists the spin keys on the input in data-rk", () => {
+    expect(renderField().getByRole("textbox")).toHaveAttribute("data-rk", "ArrowUp ArrowDown PageUp PageDown Home End");
+    expect(renderField({ isDisabled: true }).getByRole("textbox")).not.toHaveAttribute("data-rk");
+  });
+
   it("should render data- attributes only on the outer element", () => {
     const { getAllByTestId } = renderField({ "data-testid": "number-field" } as never);
     const outerEl = getAllByTestId("number-field");

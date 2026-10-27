@@ -60,6 +60,7 @@ import type {
   SelectionMode,
 } from "../collections/types.ts";
 import { ListKeyboardDelegate, searchCollator } from "../selection/list-keyboard-delegate.ts";
+import { selectableCollectionKeys } from "../selection/selectable-collection.ts";
 import { type DOMRenderProps } from "../utils/render.ts";
 import { globalDOMProps, type GlobalDOMAttributes } from "../utils/dom-props.ts";
 import {
@@ -451,6 +452,7 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
       "aria-describedby": () => gridAttrs()["aria-describedby"] as string | undefined,
       "aria-details": () => gridAttrs()["aria-details"] as string | undefined,
       "aria-multiselectable": () => gridAttrs()["aria-multiselectable"] as "true" | undefined,
+      "data-rk": selectableCollectionKeys,
       "aria-rowcount": () => gridAttrs()["aria-rowcount"] as number | undefined,
       "aria-colcount": () => gridAttrs()["aria-colcount"] as number | undefined,
       tabindex: () => gridAttrs().tabIndex as number,
@@ -534,6 +536,7 @@ export function GridList<T extends object>(inProps: GridListProps<T>) {
         aria-describedby={gridAttrs()["aria-describedby"] as string | undefined}
         aria-details={gridAttrs()["aria-details"] as string | undefined}
         aria-multiselectable={gridAttrs()["aria-multiselectable"] as "true" | undefined}
+        data-rk={selectableCollectionKeys}
         aria-rowcount={gridAttrs()["aria-rowcount"] as number | undefined}
         aria-colcount={gridAttrs()["aria-colcount"] as number | undefined}
         tabIndex={gridAttrs().tabIndex as number}

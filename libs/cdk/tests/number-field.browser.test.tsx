@@ -187,6 +187,14 @@ describe("NumberField", () => {
     expect(input).toBeDisabled();
   });
 
+  // Rivet: a cold keydown on a resumed page is held only for the keys in the nearest `data-rk` (the input lists the spin
+  // keys: a cold ArrowUp is replayed, not lost to the caret); none while disabled / read-only.
+  it("lists the spin keys on the input in data-rk (none when disabled or read-only)", () => {
+    expect(renderField(() => <TestNumberField />).getByRole("textbox")).toHaveAttribute("data-rk", "ArrowUp ArrowDown PageUp PageDown Home End");
+    expect(renderField(() => <TestNumberField isDisabled />).getByRole("textbox")).not.toHaveAttribute("data-rk");
+    expect(renderField(() => <TestNumberField isReadOnly />).getByRole("textbox")).not.toHaveAttribute("data-rk");
+  });
+
   it("should render data- attributes only on the outer element", () => {
     const { getAllByTestId } = renderField(() => <TestNumberField {...({ "data-testid": "number-field" } as {})} />);
     const outerEl = getAllByTestId("number-field");

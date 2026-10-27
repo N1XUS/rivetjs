@@ -325,6 +325,9 @@ export function colorAreaThumbPointerDown(e: PointerEvent, props: AriaColorAreaO
   movePointerDown(thumbMove(props, state), e);
 }
 
+/** Keys `colorAreaThumbKeyDown` handles (thumb `data-rk`: held while a cold chunk loads). */
+export const COLOR_AREA_KEYS = "ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown Home End";
+
 /** Thumb `keydown` (RA useKeyboard shortcuts PageUp / PageDown / Home / End + useMove arrow keys). */
 export function colorAreaThumbKeyDown(e: KeyboardEvent, props: AriaColorAreaOptions, state: ColorAreaState): void {
   if (read(props.isDisabled)) return;

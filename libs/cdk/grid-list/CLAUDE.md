@@ -22,3 +22,6 @@ RAC GridList family + RA useGridList / useGridListItem / useGridListSection / us
 
 ## Tests
 `tests/grid-list.browser.test.tsx`, story `tests-components/grid-list.test.ts` (route `app/src/routes/grid-list.tsx`).
+
+## Resumability
+- Root `data-rk` = `selectableCollectionKeys` (arrows, Home / End, PageUp / PageDown; `gridListAttrs` + both GridList branches, tree via `treeProps`): held by the resume loader while a cold chunk loads; a row's text field keeps its caret keys (the loader stops at a text field without its own `data-rk`). SLIDER-KEY.

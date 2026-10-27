@@ -31,6 +31,10 @@
     "step": "{\"expect\":[\"#sprint-end\",\"10/23/2026\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
+  "date-range-picker-events": {
+    "step": "{\"expect\":[\"#log\",\"focus focusChange:true change:2026-10-14..2026-10-17 keydown:ArrowUp keyup:ArrowUp\"]}",
+    "reason": "cold keyup lost (SLIDER-KEY 2026-10-27, same gap as date-field-events): the group's onKeyUp reaches it through GroupContext, so the page's data-events has no keyup (server-derived _rListens does not widen it) and a keyup dispatched before the adopt run is never held; red on base too with delayed chunks, a race the held keydown now loses; fix in lane RED-COMP"
+  },
   "dialog-alert": {
     "step": "{\"absent\":\"#delete\"}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"

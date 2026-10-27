@@ -65,6 +65,7 @@ import {
   spinButtonDispose,
   spinButtonFocus,
   spinButtonKeyDown,
+  spinKeysAttr,
   spinButtonKeyUp,
   type SpinButtonProps,
   type SpinButtonState,
@@ -195,6 +196,8 @@ export function colorFieldProps(props: AriaColorFieldProps, state: ColorFieldSta
       "aria-required": behaviour === "native" ? undefined : flagAttr(isRequired),
       "aria-invalid": () => isInvalid() || undefined,
       "aria-errormessage": props["aria-errormessage"],
+      // Rivet: the spin keys, held by the resume loader while a cold chunk loads.
+      "data-rk": spinKeysAttr(isDisabled, isReadOnly),
       "aria-label": field.fieldProps["aria-label"],
       "aria-labelledby": field.fieldProps["aria-labelledby"],
       "aria-describedby": () => describedBy(field, isInvalid()),

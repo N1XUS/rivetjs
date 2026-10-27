@@ -17,3 +17,4 @@ RA `useSpinButton`: spinbutton aria attributes, keyboard shortcuts, press-and-ho
 
 ## Gotchas
 - Consumer: `../number-field/behaviour.tsx`.
+- `SPIN_KEYS` / `spinKeysAttr(isDisabled, isReadOnly)`: the keys `spinButtonShortcuts` handle as a `data-rk` value (none while disabled / read-only; an accessor when a flag is live) — number-field / color-field inputs carry it, so the resume loader holds a cold spin key and replays it (SLIDER-KEY).

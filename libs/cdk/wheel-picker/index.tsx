@@ -22,6 +22,7 @@ import {
   wheelFollow,
   wheelItemStyle,
   wheelKeyDown,
+  WHEEL_KEYS,
   wheelPointerDown,
   wheelSelectedIndex,
   wheelStyle,
@@ -121,6 +122,7 @@ export function Wheel<V extends WheelValue = WheelValue>(props: WheelProps<V>) {
       data-type={type}
       data-disabled={dataBool(state.isDisabled)}
       data-readonly={dataBool(state.isReadOnly)}
+      data-rk={state.isDisabled || state.isReadOnly ? undefined : WHEEL_KEYS}
       style={wheelStyle(state.visibleItems)}
       onPointerDown={(event: PointerEvent) => wheelPointerDown(event, state)}
       onPointerOver={(event: PointerEvent) => wheelArm(state, event.currentTarget as Element)}

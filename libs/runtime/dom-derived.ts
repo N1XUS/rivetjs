@@ -2277,11 +2277,14 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   // later typing). Not for focus events: their handlers read no value, and writing a date input's value while focus is
   // in its fields focuses it (a trusted focusin) — each replayed focusin queued two more (cdk /date-picker autofill hung).
   const control = target && "value" in target && target.localName !== "button" && !/^(focus|blur)/.test(type),
-    now = control ? [target.value, target.checked] : null;
+    now = control ? [target.value, target.checked] : null,
+    // The state is put back afterwards only when it was written here (later typing): otherwise a value the handlers wrote
+    // stays (a number field's step — restoring the pre-replay value over it left a cold ArrowUp's input on the old number).
+    wrote = now && (now[0] !== state[0] || now[1] !== state[1]);
   Object.defineProperty(event, "composedPath", { configurable: true, value: () => path });
   Object.defineProperty(event, "defaultPrevented", { configurable: true, get: () => canceled });
   Object.defineProperty(event, "preventDefault", { configurable: true, value: () => void (canceled = true) });
-  if (now && (now[0] !== state[0] || now[1] !== state[1])) ((target.value = state[0] as string), (target.checked = state[1] as boolean));
+  if (wrote) ((target.value = state[0] as string), (target.checked = state[1] as boolean));
   replaying = true;
   replayed = event;
   try {
@@ -2292,7 +2295,7 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     delete (event as { defaultPrevented?: unknown }).defaultPrevented;
     delete (event as { preventDefault?: unknown }).preventDefault;
     (to || shifted) && delete (event as { target?: unknown }).target;
-    if (now && (target.value !== now[0] || target.checked !== now[1])) ((target.value = now[0] as string), (target.checked = now[1] as boolean));
+    if (wrote && (target.value !== now![0] || target.checked !== now![1])) ((target.value = now![0] as string), (target.checked = now![1] as boolean));
   }
   const kept = canceled;
   return Promise.resolve().then(() => {

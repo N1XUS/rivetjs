@@ -10,7 +10,7 @@
 // `<!--b<id>-->` openers before an ancestor) whose name listens to its type (tail v2 `n[i][2]`, D5 / ZERO R2; any other event acts
 // natively: nothing listens there before the page adopts) goes to the runtime: when everything around its target is adopted now it
 // runs live (`rt.on`); else it is held — click defaults (links, toggles, labels, summary, submit / reset), submit,
-// invalid, the keys the boundary record lists (`k`) — and queued with its path and the target's form state, and the
+// invalid, the keys the target's nearest `data-rk` or the boundary record (`k`) lists — and queued with its path and the target's form state, and the
 // runtime replays it once the boundary chunks loaded (`rt.cold`). An event outside every listening boundary whose target is inside
 // a `data-g` selector match goes to the document click listener's boundary (tail `g`, the router's links; M2-R5). Intent
 // (pointerdown, focusin, touchstart, keydown, a mouse / pen pointer resting 80 ms on an element) inside a listening
@@ -144,9 +144,15 @@ export function derivedLoader(): void {
       replay = () => ((skip = form), form.requestSubmit(submitter), (skip = null));
     } else if (type == "invalid") replay = () => {};
     else if (type == "keydown") {
-      // The keys the boundaries around the target handle (record `k`): held while the chunk loads.
+      // The keys the target's widget handles (the nearest `data-rk`: cdk composites, slider thumbs, spin fields) and the
+      // boundaries around it (record `k`): held while the chunk loads, so a cold key never acts natively (a range input
+      // stepping, the page scrolling) before its handler replays. A text field without its own `data-rk` (a row's
+      // editor inside a grid) keeps its caret keys: the nearest match is the field, which lists none.
       const key = (event as KeyboardEvent).key,
-        keys = at.map((id) => parse().k?.[id]).join(" ");
+        keys =
+          target.closest?.("[data-rk],textarea,input:not([type=checkbox],[type=radio],[type=range])")?.getAttribute("data-rk") +
+          " " +
+          at.map((id) => parse().k?.[id]).join(" ");
       if ((" " + keys + " ").includes(" " + (key == " " ? "Space" : key) + " ")) event.preventDefault();
     }
     if (replay) event.preventDefault();

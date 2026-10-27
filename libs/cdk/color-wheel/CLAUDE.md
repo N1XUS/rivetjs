@@ -20,3 +20,4 @@ RAC `ColorWheel` / `ColorWheelTrack` + react-aria `useColorWheel`: circular hue 
 ## See also
 [../color/CLAUDE.md](../color/CLAUDE.md), [../color-thumb/CLAUDE.md](../color-thumb/CLAUDE.md), `apps/cdk-docs/content/components/color-wheel.md`
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element (default path unchanged); reactive attrs are accessors, handlers inline arrows; also on `ColorWheelTrack`; the contexts wrap the children accessor; tests `tests/render-date-color.browser.test.tsx`
+- Thumb `data-rk` = `COLOR_WHEEL_KEYS` (arrows, PageUp / PageDown; with the handlers): a cold PageUp is held instead of stepping the native range input by its own page size (SLIDER-KEY; `tests/color-wheel.browser.test.tsx`).

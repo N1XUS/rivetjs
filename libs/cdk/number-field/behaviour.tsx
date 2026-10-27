@@ -80,6 +80,7 @@ import {
   spinButtonIncrementPressStart,
   spinButtonIncrementPressUp,
   spinButtonKeyDown,
+  spinKeysAttr,
   spinButtonKeyUp,
   type SpinButtonProps,
   type SpinButtonState,
@@ -305,6 +306,8 @@ export function numberFieldProps(props: AriaNumberFieldProps, state: NumberField
         typeof isRequired === "function" ? requiredWhen(isRequired, behaviour !== "native") : behaviour === "native" ? undefined : isRequired || undefined,
       "aria-invalid": () => isInvalid() || undefined,
       "aria-errormessage": props["aria-errormessage"],
+      // Rivet: the spin keys, held by the resume loader while a cold chunk loads (replayed, never lost to the caret).
+      "data-rk": spinKeysAttr(props.isDisabled, props.isReadOnly),
       "aria-label": field.fieldProps["aria-label"],
       "aria-labelledby": field.fieldProps["aria-labelledby"],
       "aria-describedby": () => describedBy(field, isInvalid()),

@@ -25,6 +25,6 @@ RAC `NumberField` + RA `useNumberField`: locale-formatted text input with steppe
 - `id` lands on the input (RAC); the root has no id.
 - Stepper labelledby = `${buttonId} ${labelId}` → accessible name "Decrease <label>".
 - Holding a stepper that becomes disabled (user `isDisabled` accessor) keeps spinning until release: Button does not cancel the press on disable (RA usePress effect; routed to B2). RAC test skipped.
-- Resumed page: keys typed while resume chunks load can be lost (runtime cold-event replay; lane R).
+- Resumed page: the input carries `data-rk` = `SPIN_KEYS` (`spinKeysAttr`; none while disabled / read-only): a cold ArrowUp / PageUp / Home / End is held and replayed, and the stepped value stays in the input (SLIDER-KEY: the replay used to put the pre-replay text back). Other keys typed while chunks load act natively and replay (`tests/number-field.browser.test.tsx` data-rk case).
 - `FieldErrorContext` value = object-literal arrow (`fieldError.validation`, index.tsx): a plain const arrow did not resume, so a resumed page's `<FieldError>` never rendered (tests-components `slider-number-field` "FieldError renders after resume").
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element; reactive attrs are accessors, handlers inline arrows; tests `tests/render-forms.browser.test.tsx`; hidden form input stays a sibling of the rendered element

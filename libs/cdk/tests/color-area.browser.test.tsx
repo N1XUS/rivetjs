@@ -48,6 +48,12 @@ describe("ColorArea", () => {
     expect(group.querySelector(".rv-ColorThumb")).toBeInTheDocument();
   });
 
+  // Rivet: the thumb lists the keys its keydown handles in `data-rk` (a cold key must not step the native range inputs).
+  it("lists the thumb keys in data-rk", () => {
+    const { getByRole } = renderColorArea();
+    expect(getByRole("group").querySelector(".rv-ColorThumb")).toHaveAttribute("data-rk", "ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown Home End");
+  });
+
   it("should render a slider with custom class", () => {
     const { getByRole } = renderColorArea({ class: "test" });
     const group = getByRole("group");

@@ -13,3 +13,4 @@
 ## Invariants / gotchas
 - Row / cell press handlers stop propagation like usePress, except the click a synthetic link dispatches (`isOpeningLink()`), so link rows reach the document.
 - State: `state/grid.ts` (RS useGridState); handlers build the selectable-item options per event from the state view.
+- `gridProps` sets `data-rk` = `selectableCollectionKeys` (resume loader holds cold navigation keys; a cell's text field keeps its caret keys). SLIDER-KEY.

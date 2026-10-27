@@ -23,3 +23,4 @@ RAC `ColorField` + react-aria `useColorField` / `useColorChannelField`: hex text
 ## See also
 [../color/CLAUDE.md](../color/CLAUDE.md), [../number-field/CLAUDE.md](../number-field/CLAUDE.md), `apps/cdk-docs/content/components/color-field.md`
 - `render` (RAC DOMRenderProps): `if (render) return render(attrs, renderProps)` before the compiled element; reactive attrs are accessors, handlers inline arrows; tests `tests/render-forms.browser.test.tsx`; hidden form input stays a sibling of the rendered element
+- Input `data-rk` = `SPIN_KEYS` (`spinKeysAttr(isDisabled, isReadOnly)`): cold spin keys are held by the resume loader and replayed (SLIDER-KEY; `tests/color-field.browser.test.tsx`).

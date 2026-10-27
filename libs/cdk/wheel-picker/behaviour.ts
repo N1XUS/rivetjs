@@ -479,6 +479,9 @@ function searchIndex<V extends WheelValue>(state: WheelState<V>, text: string): 
   );
 }
 
+/** Keys `wheelKeyDown` steps with (drum `data-rk`: held while a cold chunk loads, so they never scroll the page). */
+export const WHEEL_KEYS = "ArrowUp ArrowDown PageUp PageDown Home End";
+
 /** `keydown` on the drum (spinbutton keys + type-ahead). */
 export function wheelKeyDown<V extends WheelValue>(event: KeyboardEvent, state: WheelState<V>): void {
   if (blocked(state) || event.altKey || event.ctrlKey || event.metaKey) return;

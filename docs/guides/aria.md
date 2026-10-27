@@ -56,7 +56,7 @@ Design: [2026-10-03 spec](../design/specs/2026-10-03-cdk-and-aria-design.md); im
 ## Tests
 - [cdk unit](../../libs/cdk/tests/cdk.test.ts): key managers, typeahead, selection, positioning, merge, server-side platform probes.
 - [aria browser](../../libs/cdk/tests-components/): production build of a story app ([tests/app](../../libs/cdk/tests-components/app/)), node adapter, Chromium: [listbox](../../libs/cdk/tests-components/listbox.test.ts), [widgets](../../libs/cdk/tests-components/widgets.test.ts) (tabs, menu, dialog, popover, combobox, buttons, form fields incl. cold-Space focus, FocusScope cold Tab), [axe](../../libs/cdk/tests-components/axe.test.ts) (axe-core 4.13 over server HTML with scripts stripped and over resumed widgets with overlays open).
-- [dev a11y](../../libs/runtime/tests/dev-a11y.test.ts), [cold keys + non-passive delegation](../../libs/runtime/tests/resume-keys-browser.test.ts).
+- [dev a11y](../../libs/runtime/tests/dev-a11y.test.ts), [cold keys](../../libs/runtime/tests/derived-cold-keys-browser.test.ts).
 
 ## Docs site
 - Pages: `apps/docs/content/ui/accessible/<component>.md` (one per component; Checkbox+Switch, Button+ToggleButton, TextField+TextArea grouped), `apps/docs/content/ui/cdk/<module>.md`; each embeds a live example (`apps/docs/examples/aria-*`, `cdk-*`) whose `test` steps drive the keys and assert ARIA state.

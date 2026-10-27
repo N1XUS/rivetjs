@@ -31,6 +31,7 @@ import {
   selectableCollectionFocus,
   selectableCollectionKeyDown,
   selectableCollectionKeyDownCapture,
+  selectableCollectionKeys,
   selectableCollectionMouseDown,
   selectableCollectionScroll,
   type AriaSelectableCollectionOptions,
@@ -386,6 +387,8 @@ export function gridProps<T>(props: GridProps, state: GridStateLike<T, any>, has
     "aria-details": props["aria-details"],
     role: "grid",
     "aria-multiselectable": manager.selectionMode === "multiple" ? "true" : undefined,
+    // Rivet: the navigation keys, held by the resume loader while a cold chunk loads (a cold arrow never scrolls).
+    "data-rk": selectableCollectionKeys,
   };
   // useSelectableCollection's tabIndex (not with keyboard navigation disabled).
   if (!state.isKeyboardNavigationDisabled) attrs.tabIndex = collectionTabIndex(manager);

@@ -32,3 +32,4 @@ RAC Tree family + RA useTree/useTreeItem + Angular CDK TreeKeyManager/tree contr
 
 `tests/tree.browser.test.tsx`, `tests/navigation-tree.browser.test.tsx`, `tests/tree-key-manager.test.ts`, `tests/tree-control.test.ts`, story `tests-components/tree.test.ts` (route `app/src/routes/tree.tsx`).
 - `render` on Tree, TreeItem, TreeSection (TreeHeader via GridListHeader); aria prop objects as object-literal accessors (`gridAttr` / `rowAttr`; a loop-built accessor map does not resume); tests `tests/render-leftovers.browser.test.tsx`.
+- Root `data-rk` = `selectableCollectionKeys` (render branch explicit, JSX branch via `treeProps` → `gridListAttrs`): cold navigation keys are held while chunks load. SLIDER-KEY.

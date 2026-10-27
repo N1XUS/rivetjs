@@ -80,6 +80,8 @@ describe("GridList", () => {
     const { getByRole } = renderGridList();
     const gridListTester = testUtilUser.createTester("GridList", { root: getByRole("grid") });
     expect(gridListTester.getGridlist()).toHaveAttribute("class", "rv-GridList");
+    // Rivet: the navigation keys in `data-rk` (held by the resume loader while a cold chunk loads).
+    expect(gridListTester.getGridlist()).toHaveAttribute("data-rk", "ArrowDown ArrowUp ArrowLeft ArrowRight Home End PageUp PageDown");
     for (const row of gridListTester.getRows()) expect(row).toHaveAttribute("class", "rv-GridListItem");
   });
 

@@ -68,6 +68,12 @@ describe("ColorWheel", () => {
     expect(slider.parentElement!.parentElement!.querySelector(".rv-ColorThumb")).toBeInTheDocument();
   });
 
+  // Rivet: the thumb lists the keys its keydown handles in `data-rk` (a cold PageUp must not step the native range input).
+  it("lists the thumb keys in data-rk", () => {
+    const { getByRole } = renderColorWheel();
+    expect(getByRole("slider").closest(".rv-ColorThumb")).toHaveAttribute("data-rk", "ArrowLeft ArrowRight ArrowUp ArrowDown PageUp PageDown");
+  });
+
   it("should render a color wheel with custom class", () => {
     const { getByRole } = renderColorWheel({ class: "test" });
     expect(getByRole("slider").parentElement!.parentElement).toHaveAttribute("class", "test");

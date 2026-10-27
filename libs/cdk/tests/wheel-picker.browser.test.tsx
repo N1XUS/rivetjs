@@ -71,6 +71,8 @@ describe("Wheel", () => {
     expect(el.getAttribute("aria-valuemin")).toBe("0");
     expect(el.getAttribute("aria-valuemax")).toBe("59");
     expect(el.getAttribute("tabindex")).toBe("0");
+    // Rivet: the stepping keys in `data-rk` (held by the resume loader while a cold chunk loads: they never scroll the page).
+    expect(el.getAttribute("data-rk")).toBe("ArrowUp ArrowDown PageUp PageDown Home End");
     expect(el.style.touchAction).toBe("none");
     expect(center(el)).toBe("07");
     const items = el.querySelectorAll<HTMLElement>("[data-rv-wheel-item]");

@@ -19,24 +19,28 @@ import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "../resum
 // skip, the whole `data-fo` list at high priority on the first intent (no import waterfall: ui median frame first click
 // on Slow 4G, see docs/guides/resumability.md "Fetch-ahead timing"), keydown + 80 ms hover-dwell intent, on `intent` pages
 // hover events held without booting and dropped once the pointer left, `pointercancel` held (a cold touch press that turns
-// into a scroll is cancelled, not left pressed): budget 1,585 B.
-test("shipped derived loader is current, inline-safe and fits 1,585 B brotli", async () => {
+// into a scroll is cancelled, not left pressed): budget 1,585 B. SLIDER-KEY (2026-10-27): +48 B (1,631) — a cold keydown
+// is held for the keys of the target's nearest `data-rk` (cdk thumbs / spin fields / composites; read by nothing since
+// M6-CUT: a cold slider PageUp stepped the native range), a text field without its own `data-rk` keeps its caret keys:
+// budget 1,635 B.
+test("shipped derived loader is current, inline-safe and fits 1,635 B brotli", async () => {
   assert.equal(DERIVED_LOADER, await minifiedDerived(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER));
   const size = brotliCompressSync(DERIVED_LOADER).length;
-  assert.ok(size <= 1585, `minified ${size} B`);
+  assert.ok(size <= 1635, `minified ${size} B`);
   console.log(`derived loader brotli: ${size} B`);
 });
 
 // ZERO ABI-SPLIT visible-only boot: the loader of a `data-boot="<ids>"` page = the loader above with `derivedVisibleBoot`
-// spliced in at its `data-boot` start (the other pages' loader is unchanged): 1,768 B brotli at landing (+184 B).
-test("shipped visible-boot loader is current, inline-safe and fits 1,800 B brotli", async () => {
+// spliced in at its `data-boot` start (the other pages' loader is unchanged): 1,768 B brotli at landing (+184 B); 1,823 B
+// with SLIDER-KEY's `data-rk` hold.
+test("shipped visible-boot loader is current, inline-safe and fits 1,825 B brotli", async () => {
   assert.equal(DERIVED_LOADER_VISIBLE, await minifiedDerivedVisible(), "stale resume-loader-derived.min.ts: run node libs/runtime/build-loader.ts");
   assert.ok(!/<\/script|<!--/i.test(DERIVED_LOADER_VISIBLE));
   assert.ok(DERIVED_LOADER_VISIBLE.includes(".dataset.boot?(function("));
   new Function(DERIVED_LOADER_VISIBLE);
   const size = brotliCompressSync(DERIVED_LOADER_VISIBLE).length;
-  assert.ok(size <= 1800, `minified ${size} B`);
+  assert.ok(size <= 1825, `minified ${size} B`);
   console.log(`derived visible-boot loader brotli: ${size} B`);
 });
 

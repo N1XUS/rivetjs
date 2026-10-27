@@ -25,7 +25,7 @@ The server HTML of a ToggleButton and a ListBox (from the example below, runtime
 - **Full ARIA state.** Roles, names, `aria-selected`, `aria-pressed`, `aria-expanded`, the roving tab stop, hidden tab panels: screen readers and Tab work before any JavaScript.
 - **Native behaviour.** Buttons are `<button>`, fields are inputs, Disclosure is `<details>`, Select and ComboBox submit through hidden form fields: forms post without JavaScript.
 - **No component code on the critical path.** The page carries a small inline loader and a record per interactive component. After the page has loaded, the loader fetches the components' code at low priority without running it (on intent, hover or focus, at once). The first event runs the component over the server HTML and then its handler; an event that comes before the code is held and replayed.
-- **`data-rk` holds cold keys.** Composite widgets (ListBox, Menu, Tabs, Select, ComboBox, Toolbar, Calendar) list the keys they handle. While their code loads, the loader prevents the default action of those keys, so a first :kbd[ArrowDown] does not scroll the page; the widget's handler then runs for that key.
+- **`data-rk` holds cold keys.** Keyboard widgets (ListBox, Menu, Tabs, Select, Toolbar, Calendar, GridList, Tree, Slider and ColorSlider thumbs, ColorArea, ColorWheel, NumberField, ColorField, Wheel) list the keys they handle. While their code loads, the loader prevents the default action of those keys, so a first :kbd[ArrowDown] does not scroll the page; the widget's handler then runs for that key.
 - **Closed overlays render nothing.** A closed Dialog, Popover, Menu or Tooltip has no markup on the server; its content is created when it opens.
 
 ## Callbacks: inline arrows or local constants
