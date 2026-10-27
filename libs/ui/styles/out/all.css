@@ -11440,9 +11440,25 @@
 
   .input-group {
     --input-group-inset: 3px;
+    --input-group-height: calc(var(--spacing, .25rem) * 10);
+  }
+
+  @media (min-width: 40rem) {
+    .input-group {
+      --input-group-height: calc(var(--spacing, .25rem) * 9);
+    }
+  }
+
+  :where(.input-group:not(:has([data-slot="input-group-textarea"]))):has( > :is(.input-group__prefix, .input-group__suffix) > .button) {
+    height: calc(var(--input-group-height) + 2 * var(--border-width-field));
+  }
+
+  :where(.input-group:not(:has([data-slot="input-group-textarea"]))):has( > :is(.input-group__prefix, .input-group__suffix) > .button) > .input-group__input {
+    min-width: 0;
   }
 
   :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix):has( > .button) {
+    height: 100%;
     padding: 0;
     padding-block: var(--input-group-inset);
     align-self: stretch;
@@ -11451,7 +11467,7 @@
   }
 
   :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button {
-    height: auto;
+    height: 100%;
     min-height: 0;
     margin-inline: var(--input-group-inset);
     padding-inline: calc(var(--spacing, .25rem) * 2.5);

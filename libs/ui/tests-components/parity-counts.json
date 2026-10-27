@@ -350,6 +350,7 @@
   "ui-components/libs/ui/tests-components/forms.test.ts": 7,
   "ui-components/libs/ui/tests-components/geometry.test.ts": 13,
   "ui-components/libs/ui/tests-components/icons.test.ts": 9,
+  "ui-components/libs/ui/tests-components/input-group-buttons.test.ts": 7,
   "ui-components/libs/ui/tests-components/item-morph.test.ts": 6,
   "ui-components/libs/ui/tests-components/lightbox.test.ts": 3,
   "ui-components/libs/ui/tests-components/masonry.test.ts": 2,

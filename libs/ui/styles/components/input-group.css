@@ -176,22 +176,44 @@
    shell and pads by the inset, the button stretches in it: follows any shell height, 40 / 36 px → 32 / 28 px), radius = shell radius − border − inset (a circle in a pill shell, a small rounding in a square one),
    icon-only square (`aspect-ratio: 1` on the stretched height), 16 px icon. Ghost / tertiary rest without fill and with the muted icon colour, fill on hover / press;
    the focus ring is drawn inside the button (no offset past the shell). The suffix padding goes, so a `pe-0` class on it is
-   no longer needed; textarea groups (toolbar layouts) keep their own spacing. */
+   no longer needed; textarea groups (toolbar layouts) keep their own spacing.
+   TW-169: a percentage / stretched height never reaches the button (the shell only has a `min-height`, so `h-full` on
+   the Prefix / Suffix resolved to its content: a bare 16 px icon at the top), and a stretched-only height came too late
+   for the addon's width (an icon-only square overflowed the shell). A shell with a field button therefore gets a
+   definite height, `--input-group-height` (= the input row it had anyway: `py-2` + the input line height, 40 px below
+   `sm`, 36 px from `sm`) + its borders; `min-height` / height utilities on the group still win, so a taller shell keeps
+   a concentric button. The addon is `height: 100%` of it, the button `height: 100%` of the addon's content box, and an
+   icon-only button's width comes from that definite height (`aspect-ratio: 1`). */
 .input-group {
   --input-group-inset: 3px;
+  --input-group-height: --spacing(10);
+
+  @media (width >= 40rem) {
+    --input-group-height: --spacing(9);
+  }
 }
 
 /* Flat selectors (nesting would repeat the long prefix in every state rule); `:where()` keeps the shell part at 0
    specificity, `:is(prefix, suffix)[data-slot] > .button` (0,3,0) beats the Button size / variant classes. */
+:where(.input-group:not(:has([data-slot="input-group-textarea"]))):has(> :is(.input-group__prefix, .input-group__suffix) > .button) {
+  height: calc(var(--input-group-height) + 2 * var(--border-width-field));
+
+  /* the input yields to the addons (WebKit kept its intrinsic width: two buttons overflowed a 280 px field) */
+  & > .input-group__input {
+    min-width: 0;
+  }
+}
+
 :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix):has(> .button) {
   @apply gap-0 self-stretch p-0;
+  height: 100%;
   align-items: stretch;
   padding-block: var(--input-group-inset);
 }
 
 :where(.input-group:not(:has([data-slot="input-group-textarea"]))) :is(.input-group__prefix, .input-group__suffix)[data-slot] > .button {
   @apply shrink-0 self-stretch;
-  height: auto;
+  height: 100%;
   min-height: 0;
   margin-inline: var(--input-group-inset);
   padding-inline: --spacing(2.5);
