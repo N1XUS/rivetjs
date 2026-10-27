@@ -80,14 +80,14 @@
     },
     {
       "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/geometry.test.ts > geometry: Card → concentric Button (radius=concentric)",
+      "match": "libs/ui/tests-components/geometry.test.ts > geometry: Card \u2192 concentric Button (radius=concentric)",
       "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
       "owner": "ui (triage lane)",
       "since": "2026-10-27"
     },
     {
       "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/morph-icons.test.ts > morph chevron: Select open → close → open mid-flight reverses without a jump; settles as ⌃",
+      "match": "libs/ui/tests-components/morph-icons.test.ts > morph chevron: Select open \u2192 close \u2192 open mid-flight reverses without a jump; settles as \u2303",
       "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
       "owner": "ui (triage lane)",
       "since": "2026-10-27"
@@ -129,7 +129,7 @@
     },
     {
       "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/sidebar-resize.test.ts > sidebar-resize: keyboard — arrows, Shift, Home / End, Enter toggles",
+      "match": "libs/ui/tests-components/sidebar-resize.test.ts > sidebar-resize: keyboard \u2014 arrows, Shift, Home / End, Enter toggles",
       "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
       "owner": "ui (triage lane)",
       "since": "2026-10-27"
@@ -157,7 +157,7 @@
     },
     {
       "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/wave1.test.ts > wave1: T10–T13 markup identical server vs resumed client, per component (adopted region kept, re-created region equal), no resume errors",
+      "match": "libs/ui/tests-components/wave1.test.ts > wave1: T10\u2013T13 markup identical server vs resumed client, per component (adopted region kept, re-created region equal), no resume errors",
       "reason": "broad ui-components browser red, red at base 02bcc5001 and in two intakes in a row (2026-10-27); not yet triaged",
       "owner": "ui (triage lane)",
       "since": "2026-10-27"
@@ -311,7 +311,7 @@
     },
     {
       "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/slots.test.ts > slots: resumed page — slot ids, re-created slotted parts, accessor context values, PressResponder",
+      "match": "libs/cdk/tests-components/slots.test.ts > slots: resumed page \u2014 slot ids, re-created slotted parts, accessor context values, PressResponder",
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
       "since": "2026-10-27"
@@ -332,9 +332,16 @@
     },
     {
       "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/tabs.test.ts > tabs: automatic activation — arrows skip disabled and wrap, Home / End, two-way selectedKey",
+      "match": "libs/cdk/tests-components/tabs.test.ts > tabs: automatic activation \u2014 arrows skip disabled and wrap, Home / End, two-way selectedKey",
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
+      "since": "2026-10-27"
+    },
+    {
+      "gate": "vitest:ui-components",
+      "match": "libs/ui/tests-components/idrefs.test.ts > browser adoption > a resumed tabs keeps its IDREFs",
+      "reason": "new ID-RESUME test: on /idrefs a cold click on Tab Two never shows the 'Second' panel; red with and without ID-RESUME's tabs change (Tabs resume bug on that route, not an IDREF regression); SSR record test passes",
+      "owner": "ui (TABS-COLD lane)",
       "since": "2026-10-27"
     }
   ]

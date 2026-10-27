@@ -1,56 +1,4 @@
 {
-  "/carousel light": [
-    "color-contrast"
-  ],
-  "/data-grid light": [
-    "aria-required-attr"
-  ],
-  "/disclosure light": [
-    "aria-valid-attr-value"
-  ],
-  "/forms light": [
-    "aria-valid-attr-value",
-    "label"
-  ],
-  "/morph-icons dark": [
-    "color-contrast"
-  ],
-  "/reanimate light": [
-    "label"
-  ],
-  "/resizable-c light": [
-    "aria-required-attr"
-  ],
-  "/resume light": [
-    "aria-allowed-role"
-  ],
-  "/scroll-area light": [
-    "scrollable-region-focusable"
-  ],
-  "/scroll-shadow-browser light": [
-    "scrollable-region-focusable"
-  ],
-  "/selection-indicator light": [
-    "aria-valid-attr-value"
-  ],
-  "/sidebar-resize light": [
-    "aria-required-attr"
-  ],
-  "/tabs light": [
-    "aria-valid-attr-value"
-  ],
-  "/visual/autocomplete-indicator-open dark": [
-    "color-contrast"
-  ],
-  "/visual/checkbox light": [
-    "color-contrast"
-  ],
-  "/visual/combo-box-indicator-open dark": [
-    "color-contrast"
-  ],
-  "/visual/list-box light": [
-    "aria-required-children"
-  ],
   "/ai-chat dark": [
     "color-contrast"
   ],
@@ -72,6 +20,9 @@
   "/carousel dark": [
     "color-contrast"
   ],
+  "/carousel light": [
+    "color-contrast"
+  ],
   "/collections dark": [
     "color-contrast"
   ],
@@ -88,10 +39,16 @@
     "aria-required-attr",
     "color-contrast"
   ],
+  "/data-grid light": [
+    "aria-required-attr"
+  ],
   "/dates dark": [
     "color-contrast"
   ],
   "/disclosure dark": [
+    "aria-valid-attr-value"
+  ],
+  "/disclosure light": [
     "aria-valid-attr-value"
   ],
   "/forms dark": [
@@ -99,7 +56,17 @@
     "color-contrast",
     "label"
   ],
+  "/forms light": [
+    "aria-valid-attr-value",
+    "label"
+  ],
+  "/idrefs dark": [
+    "color-contrast"
+  ],
   "/inline-select-cold dark": [
+    "color-contrast"
+  ],
+  "/morph-icons dark": [
     "color-contrast"
   ],
   "/pickers dark": [
@@ -115,6 +82,9 @@
     "color-contrast",
     "label"
   ],
+  "/reanimate light": [
+    "label"
+  ],
   "/removed-region dark": [
     "color-contrast"
   ],
@@ -124,13 +94,25 @@
   "/resizable-c dark": [
     "aria-required-attr"
   ],
+  "/resizable-c light": [
+    "aria-required-attr"
+  ],
   "/resume dark": [
+    "aria-allowed-role"
+  ],
+  "/resume light": [
     "aria-allowed-role"
   ],
   "/scroll-area dark": [
     "scrollable-region-focusable"
   ],
+  "/scroll-area light": [
+    "scrollable-region-focusable"
+  ],
   "/scroll-shadow-browser dark": [
+    "scrollable-region-focusable"
+  ],
+  "/scroll-shadow-browser light": [
     "scrollable-region-focusable"
   ],
   "/select-cold dark": [
@@ -139,7 +121,13 @@
   "/selection-indicator dark": [
     "aria-valid-attr-value"
   ],
+  "/selection-indicator light": [
+    "aria-valid-attr-value"
+  ],
   "/sidebar-resize dark": [
+    "aria-required-attr"
+  ],
+  "/sidebar-resize light": [
     "aria-required-attr"
   ],
   "/slider dark": [
@@ -152,10 +140,16 @@
     "aria-valid-attr-value",
     "color-contrast"
   ],
+  "/tabs light": [
+    "aria-valid-attr-value"
+  ],
   "/toggle-buttons dark": [
     "color-contrast"
   ],
   "/toggles dark": [
+    "color-contrast"
+  ],
+  "/visual/autocomplete-indicator-open dark": [
     "color-contrast"
   ],
   "/visual/button dark": [
@@ -173,6 +167,9 @@
   "/visual/checkbox dark": [
     "color-contrast"
   ],
+  "/visual/checkbox light": [
+    "color-contrast"
+  ],
   "/visual/chip dark": [
     "color-contrast"
   ],
@@ -180,6 +177,9 @@
     "color-contrast"
   ],
   "/visual/combo-box dark": [
+    "color-contrast"
+  ],
+  "/visual/combo-box-indicator-open dark": [
     "color-contrast"
   ],
   "/visual/date-picker dark": [
@@ -203,6 +203,9 @@
   "/visual/list-box dark": [
     "aria-required-children",
     "color-contrast"
+  ],
+  "/visual/list-box light": [
+    "aria-required-children"
   ],
   "/visual/morph-chevron dark": [
     "color-contrast"

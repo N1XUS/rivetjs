@@ -40,7 +40,7 @@
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "grid-list-load-more": {
-    "step": "{\"expect\":[\"#pokedex-9\",\"Pokémon #9\"]}",
+    "step": "{\"expect\":[\"#pokedex-9\",\"Pok\u00e9mon #9\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "group-dom-events": {
@@ -92,7 +92,7 @@
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "slider-range": {
-    "step": "{\"expect\":[\"#price output\",\"$300 – $600\"]}",
+    "step": "{\"expect\":[\"#price output\",\"$300 \u2013 $600\"]}",
     "reason": "derived-only model (M6-CUT 2026-10-23): cdk component suite red on derived (cdk-components 38 red); runtime / cdk fix in lane RED-COMP"
   },
   "stepper-list": {
@@ -166,5 +166,9 @@
   "virtualizer-tree": {
     "step": "console errors",
     "reason": "derived-only model (M6-CUT 2026-10-23): Error: Duplicate For key on adopted virtualized rows; runtime fix in lane RED-COMP"
+  },
+  "toggle-button-group-options": {
+    "step": "{\"focused\":\"#size button:nth-child(2)\"}",
+    "reason": "exposed 2026-10-27 by COLD-FIX-B 07 (click steps wait out entrance animations): ArrowDown on the vertical #size group no longer moves focus once the page has adopted after the #align click; passes with the old step timing. Real cold toggle-group keyboard bug; lane TOGGLE-TABS-COLD"
   }
 }
