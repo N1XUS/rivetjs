@@ -6,12 +6,11 @@
 @import "@rivetjs/docs-kit/pages.css";
 
 /*
- * @rivetjs/ui/styles (Rivet theme) for the live components the home page renders in the site itself. The pieces
- * of `@rivetjs/ui/styles` (its index.css minus the second Tailwind import and the ui global base layer), and only
- * the component files the home showcase uses: `card`, `menu`, `menu-item` and `tag` share class names with the
- * docs frame, so they stay out. Component pages show components in example frames that load the whole
- * `@rivetjs/ui/styles`, exactly as an app does. `themes/scoped.css`: the Rivet tokens on the `.ui-stage` box
- * (`data-ui-theme="rivet"`, see stage.css).
+ * @rivetjs/ui/styles pieces for the pages that render ui components in the site itself (home, /themes): the Rivet
+ * theme, its scoped copy (`[data-ui-theme="rivet"]`), the Tailwind theme variables the component files read, utilities
+ * and variants (`@rivetjs/ui/styles` minus its second Tailwind import and the ui global base layer). No component
+ * rules: each ui styles module imports its own CSS, so a page links the CSS of the components it imports (route sheet).
+ * Component pages show components in example frames that load the whole `@rivetjs/ui/styles`, as an app does.
  */
 @import "tw-animate-css";
 @import "@rivetjs/ui/styles/themes/rivet.css" layer(theme);
@@ -19,27 +18,8 @@
 /* The Tailwind theme variables the component files read (`--border-width-field`, `--ease-smooth`, `--text-xs`, …) in a
    sub-layer of `theme`: the docs' own theme values (direct in `theme`, or unlayered) win, it only fills the gaps. */
 @import "@rivetjs/ui/styles/out/theme.css" layer(theme.ui);
-@import "@rivetjs/ui/styles/components/close-button.css" layer(components);
-@import "@rivetjs/ui/styles/components/label.css" layer(components);
-@import "@rivetjs/ui/styles/components/link.css" layer(components);
-@import "@rivetjs/ui/styles/components/button.css" layer(components);
-@import "@rivetjs/ui/styles/components/button-group.css" layer(components);
-@import "@rivetjs/ui/styles/components/toggle-button.css" layer(components);
-@import "@rivetjs/ui/styles/components/toggle-button-group.css" layer(components);
-@import "@rivetjs/ui/styles/components/badge.css" layer(components);
-@import "@rivetjs/ui/styles/components/chip.css" layer(components);
-@import "@rivetjs/ui/styles/components/alert.css" layer(components);
-@import "@rivetjs/ui/styles/components/meter.css" layer(components);
-@import "@rivetjs/ui/styles/components/progress-bar.css" layer(components);
-@import "@rivetjs/ui/styles/components/progress-circle.css" layer(components);
-@import "@rivetjs/ui/styles/components/spinner.css" layer(components);
-@import "@rivetjs/ui/styles/components/separator.css" layer(components);
-@import "@rivetjs/ui/styles/components/surface.css" layer(components);
-@import "@rivetjs/ui/styles/components/avatar.css" layer(components);
-@import "@rivetjs/ui/styles/components/kbd.css" layer(components);
 @import "@rivetjs/ui/styles/utilities/index.css";
 @import "@rivetjs/ui/styles/variants/index.css";
-@import "./stage.css";
 
 @source "./**/*.{ts,tsx}";
 @source not "./generated/**";

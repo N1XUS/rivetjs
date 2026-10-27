@@ -33,7 +33,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 | `libs/docs-kit` | Shared docs-site engine (markdown pipeline, examples, API docs, search, prerender) for `apps/docs` + `apps/cdk-docs` + `apps/ui-docs`. |
 | `apps/docs` | Main docs site (`content/` md → generated routes; `content/errors/` = committed per-code diagnostic pages `/errors/RVxxxx`, generated). |
 | `apps/cdk-docs` | cdk docs site; pages mirror upstream RAC/Angular CDK docs. |
-| `apps/ui-docs` | `@rivetjs/ui` docs site: component pages + live examples, theme builder, showcases; upstream named only on `start/licenses` (brand gate `tests/brand.test.ts`). |
+| `apps/ui-docs` | `@rivetjs/ui` docs site: component pages + live examples, theme builder, showcases; credits its upstreams (React Aria patterns, HeroUI-inspired design) where it helps, licenses on `start/licenses` (brand gate lifted 2026-10-27). |
 | `apps/playground` | Tailwind resumable SSR example app (user WIP — do not touch `src/routes/_layout.tsx`, `tsconfig.json`). |
 | `apps/ssr-bench` | Docker SSR benchmark: Rivet vs Solid/Qwik/Razor lanes; zero-cost lane hashes come from its build. |
 | `apps/dom-bench` | Browser DOM benchmarks + krausest + rendering-cost tools (`render/`: per-phase style / layout / paint self time, screenshot parity); writes `docs/benchmarks/perf-scoreboard.md`. |

@@ -180,7 +180,7 @@ jobs:
       - run: node scripts/size-report/frames.mjs --check
 
   # docs:build already runs as a dependency of docs:test (test job); cdk-docs has no test target and ui-docs:test
-  # (upstream section drift check, in the test job) does not build the site, so both sites build here.
+  # (home suite, skipped in the test job without a build) does not build the site, so both sites build here; the ui-docs home suite runs after.
   cdk-docs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -206,3 +206,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx nx run ui-docs:build --output-style=static --skip-nx-cache
+      # Home page contracts on the built site (apps/ui-docs/tests/home.test.ts skips without a build; required here).
+      - run: npx vitest run --project ui-docs apps/ui-docs/tests/home.test.ts
+        env:
+          RIVET_UI_DOCS_SITE: "1"

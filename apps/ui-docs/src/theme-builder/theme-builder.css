@@ -1,9 +1,9 @@
 /*
  * Theme builder page (/themes). Controls use the docs-kit tokens (they are part of the docs page); the preview
  * (`.tb-stage`) carries the edited theme as inline custom properties and renders @rivetjs/ui components with the
- * ui component CSS. The site stylesheet (src/styles.css) already has most component CSS; the ones it leaves out
- * because of docs class-name collisions (`card`, `menu`, `menu-item`, `tag`) or that only this page uses are imported
- * here (same order as `@rivetjs/ui/styles/components/index.css`), linked on /themes only (router route CSS). Overlays
+ * ui component CSS. The site stylesheet (src/styles.css) has no component CSS: each preview component's module brings
+ * its own, and the files below are imported here too (same order as `@rivetjs/ui/styles/components/index.css`; incl.
+ * `card`, `menu`, `menu-item`, `tag`, whose class names the docs frame shares), linked on /themes only (route CSS). Overlays
  * portal into `#tb-overlays` inside `.tb-stage`, so the collision resets below cover them too.
  */
 @reference "../styles.css";

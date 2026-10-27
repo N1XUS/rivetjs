@@ -1,0 +1,448 @@
+/*
+ * Home page (/): route CSS, linked on / only (router route sheet). The ui component CSS arrives with the components'
+ * own imports (each ui styles module imports its CSS); the theme presets load on demand (presets.ts). This file holds
+ * the page layout on the ui tokens (scoped Rivet theme, `[data-ui-theme="rivet"]`), and resets of
+ * the docs frame rules that share names with ui ones (`.card`, base headings), as on /themes.
+ */
+@reference "../styles.css";
+
+@layer components {
+  /* Page */
+  .uih {
+    @apply mx-auto w-full max-w-[78rem] px-4 pb-16 sm:px-6;
+    box-sizing: border-box;
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+  .uih-stage {
+    color: var(--foreground);
+  }
+  /* docs-kit `.card` (link tiles) and `.card p`: undo them on ui cards (the ui card sets what it needs after them). */
+  .uih .card {
+    border: 0;
+    color: inherit;
+    text-decoration: none;
+    transition: none;
+  }
+  .uih .card:hover {
+    color: inherit;
+  }
+  .uih .card--default,
+  .uih .card--default:hover {
+    background: var(--surface);
+  }
+  .uih .card p {
+    margin: 0;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+  }
+  .uih .card .card__description {
+    @apply text-muted;
+  }
+  /* docs-kit base h1–h4 (display font, weight, docs colour): ui headings inherit. Zero specificity, any class wins. */
+  :where(.uih-stage) :where(h1, h2, h3, h4) {
+    font-family: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+
+  /* Hero */
+  .uih-hero {
+    @apply flex flex-col items-center pt-14 pb-12 text-center sm:pt-20 sm:pb-16;
+  }
+  .uih-pill {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium no-underline sm:text-sm;
+    background: var(--accent-soft);
+    color: var(--accent-soft-foreground);
+  }
+  .uih-pill:hover {
+    color: var(--accent-soft-foreground);
+    background: color-mix(in oklab, var(--accent-soft) 80%, var(--accent) 20%);
+  }
+  .uih-title {
+    @apply mt-6 mb-0 flex flex-col leading-[1.08] font-bold tracking-tight;
+    /* Widest line: "Resumable from" 7.4em on phones, "Resumable from the first byte." 13.6em from sm (Manrope; the fallback
+       is narrower). Size = hero width / (widest + ~6 %), capped: lines never wrap, whatever the font. Hero width = 100vw
+       minus the page gutters (4rem phone, 5rem sm, 9rem lg; capped by .uih max-width at the 4.25rem cap). */
+    font-size: min(2.25rem, calc((100vw - 4rem) / 7.9));
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    letter-spacing: -0.035em;
+  }
+  @media (width >= 40rem) {
+    .uih-title {
+      font-size: min(4.25rem, calc((100vw - 5rem) / 14.4));
+    }
+  }
+  @media (width >= 64rem) {
+    .uih-title {
+      font-size: min(4.25rem, calc((100vw - 9rem) / 14.4));
+    }
+  }
+  .uih-title-line {
+    white-space: nowrap;
+  }
+  .uih-title-soft {
+    color: color-mix(in oklab, var(--foreground) 55%, transparent);
+  }
+  /* Headline word in the logo gradient (logo.svg stops, --rivet-* from the Rivet theme). */
+  .uih-gradient {
+    background: linear-gradient(
+      100deg,
+      var(--rivet-cyan),
+      var(--rivet-blue) 28%,
+      var(--rivet-indigo) 48%,
+      var(--rivet-violet) 62%,
+      var(--rivet-purple) 78%,
+      var(--rivet-magenta) 90%,
+      var(--rivet-pink)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  :where([data-theme="dark"]) .uih-gradient {
+    /* Same stops lifted toward white: the indigo / violet stops are too dark on the dark page. */
+    background-image: linear-gradient(
+      100deg,
+      var(--rivet-cyan),
+      color-mix(in oklab, var(--rivet-blue) 75%, white) 28%,
+      color-mix(in oklab, var(--rivet-indigo) 60%, white) 48%,
+      color-mix(in oklab, var(--rivet-violet) 55%, white) 62%,
+      color-mix(in oklab, var(--rivet-purple) 70%, white) 78%,
+      var(--rivet-magenta) 90%,
+      var(--rivet-pink)
+    );
+  }
+  .uih-lead {
+    @apply mt-5 mb-0 max-w-2xl text-base leading-7 sm:text-lg sm:leading-8;
+    color: var(--muted);
+  }
+  .uih-actions {
+    @apply mt-8 flex flex-wrap items-center justify-center gap-3 max-sm:flex-nowrap max-sm:gap-2;
+  }
+  .uih-actions a {
+    text-decoration: none;
+  }
+  /* Starter command: a docs `.code-panel` (its copy button runs from the docs page script), restyled as a pill. */
+  .uih .uih-install {
+    @apply mt-6 flex max-w-full items-center gap-3 rounded-full border py-1 ps-4 pe-1 text-sm;
+    box-sizing: border-box;
+    border-color: var(--border);
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .uih .uih-install pre {
+    @apply m-0 min-w-0 overflow-x-auto p-0 whitespace-nowrap;
+    background: none;
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    scrollbar-width: none;
+  }
+  .uih .uih-install > .copy-button {
+    position: static;
+    opacity: 1;
+    border-radius: 999px;
+  }
+
+  /* Showcase: view switch + swatches, then the collage panel (or the picked screen) */
+  .uih-showcase-head {
+    @apply mt-2 flex flex-col gap-4;
+  }
+  .uih-showcase-bar {
+    @apply flex flex-wrap items-center justify-between gap-3;
+  }
+  .uih-scroll-x {
+    @apply max-w-full overflow-x-auto;
+    scrollbar-width: none;
+  }
+  .uih-swatches {
+    @apply max-w-full overflow-x-auto;
+    scrollbar-width: none;
+  }
+  .uih-showcase-head:not([data-view="components"]) .uih-swatches,
+  .uih-showcase-head:not([data-view="components"]) + .uih-collage {
+    display: none;
+  }
+  .uih-panel {
+    @apply rounded-[2rem] border p-3 sm:p-6 lg:p-8;
+    box-sizing: border-box;
+    border-color: var(--border);
+    background: var(--background);
+  }
+  .uih-collage {
+    @apply mt-4;
+  }
+  .uih-screen {
+    @apply relative overflow-hidden p-0 sm:p-0 lg:p-0;
+  }
+  .uih-screen iframe {
+    @apply block h-[46rem] w-full border-0;
+  }
+  .uih-screen-link {
+    @apply absolute end-4 bottom-4 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium no-underline;
+    background: var(--surface);
+    color: var(--foreground);
+    box-shadow: var(--overlay-shadow);
+  }
+  .uih-screen-link:hover {
+    color: var(--foreground);
+  }
+
+  /* Collage */
+  .uih-bento {
+    @apply grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3;
+  }
+  .uih-col {
+    @apply flex min-w-0 flex-col gap-4;
+  }
+  @media (min-width: 48rem) and (max-width: 79.99rem) {
+    .uih-col:nth-child(3) {
+      @apply col-span-2 grid grid-cols-2 items-start;
+    }
+  }
+  .uih-tile {
+    @apply min-w-0;
+  }
+  /* Controls straight on the panel, as on a page (no card around them). */
+  .uih-bare {
+    @apply p-2;
+  }
+  .uih-stack {
+    @apply flex;
+  }
+  .uih-stack > * {
+    box-shadow: 0 0 0 3px var(--background);
+  }
+  .uih-stack > * + * {
+    margin-inline-start: -0.625rem;
+  }
+
+  /* Sections */
+  .uih-section {
+    @apply mt-24 sm:mt-32;
+  }
+  /* Date segments are 15 px wide inline text: 24 px targets (WCAG 2.2 target size) in the schedule tile. */
+  .uih [data-tile="schedule"] [data-slot="date-input-group-segment"] {
+    min-width: 1.5rem;
+    text-align: center;
+  }
+  .uih-heading {
+    @apply mb-8 flex flex-col gap-3;
+  }
+  .uih-heading-center {
+    @apply items-center text-center;
+  }
+  .uih-heading h2 {
+    @apply m-0 max-w-3xl text-3xl leading-tight font-bold tracking-tight sm:text-5xl;
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    letter-spacing: -0.03em;
+  }
+  .uih-eyebrow {
+    @apply m-0 text-sm font-semibold;
+    color: var(--accent);
+  }
+  .uih-section-lead {
+    @apply m-0 max-w-2xl text-base leading-7 sm:text-lg;
+    color: var(--muted);
+  }
+  .uih-section-lead code,
+  .uih-snippet {
+    font-size: 0.875em;
+  }
+  .uih-text-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-semibold no-underline;
+    color: var(--accent);
+  }
+  /* The accent fill colour is too dark for small text on the dark page: lift it toward white (AA). */
+  :where([data-theme="dark"]) :is(.uih-eyebrow, .uih-text-link) {
+    color: color-mix(in oklab, var(--accent) 55%, white);
+  }
+
+  /* Themes */
+  .uih-looks-bar {
+    @apply mb-4 flex flex-wrap items-center justify-center gap-3;
+  }
+  .uih-looks-bar a {
+    text-decoration: none;
+  }
+  .uih-looks {
+    @apply relative isolate overflow-hidden rounded-[2rem] border p-3 sm:p-6 lg:p-8;
+    border-color: var(--border);
+    background: var(--background);
+  }
+  .uih-looks-grid {
+    @apply grid items-start gap-4 md:grid-cols-3;
+  }
+  .uih-looks-glow {
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-0;
+    transition: opacity var(--duration-slow, 0.4s);
+  }
+  [data-ui-preset="glass"] > .uih-looks-glow {
+    opacity: 1;
+  }
+  .uih-blob {
+    @apply absolute rounded-full blur-3xl;
+  }
+  .uih-blob-a {
+    @apply top-[10%] left-[6%] size-72;
+    background: color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  .uih-blob-b {
+    @apply right-[8%] bottom-[4%] size-80;
+    background: color-mix(in oklab, var(--rivet-magenta) 35%, transparent);
+  }
+  .uih-blob-c {
+    @apply top-[35%] left-[42%] size-56;
+    background: color-mix(in oklab, var(--rivet-cyan) 35%, transparent);
+  }
+
+  /* Split sections (copy + demo) */
+  .uih-split {
+    @apply grid items-center gap-10 lg:grid-cols-2 lg:gap-16;
+  }
+  .uih-split-reverse > .uih-split-copy {
+    @apply lg:order-2;
+  }
+  .uih-split .uih-heading {
+    @apply mb-6;
+  }
+  .uih-snippet {
+    @apply m-0 mb-6 inline-block rounded-xl px-4 py-3;
+    background: var(--surface-secondary);
+    color: var(--foreground);
+  }
+  .uih-schemes {
+    @apply grid gap-4 sm:grid-cols-2;
+  }
+  .uih-scheme {
+    @apply rounded-[1.75rem];
+  }
+  .uih-scheme-light,
+  .uih-scheme-dark {
+    @apply rounded-[1.75rem] border p-4 sm:p-6;
+    border-color: var(--border);
+    background: var(--background);
+    color: var(--foreground);
+  }
+  .uih-feature-list {
+    @apply m-0 flex list-none flex-col gap-5 p-0;
+  }
+  .uih-feature-list li {
+    @apply flex gap-4;
+  }
+  .uih-feature-list li > span:last-child {
+    @apply flex flex-col gap-1 text-sm leading-6;
+    color: var(--muted);
+  }
+  .uih-feature-list strong {
+    @apply text-base font-semibold;
+    color: var(--foreground);
+  }
+  .uih-feature-icon {
+    @apply grid size-10 shrink-0 place-items-center rounded-xl;
+    background: var(--accent-soft);
+    color: var(--accent-soft-foreground);
+  }
+  .uih-demo {
+    @apply flex flex-col gap-5 rounded-[2rem] border p-4 sm:p-8;
+    border-color: var(--border);
+    background: var(--background);
+  }
+  .uih-demo-hint {
+    @apply m-0 flex flex-wrap items-center gap-1.5 text-sm;
+    color: var(--muted);
+  }
+
+  /* Customization */
+  .uih-custom {
+    @apply grid gap-4 lg:grid-cols-[1.2fr_1fr];
+  }
+  .uih-code {
+    @apply m-0 overflow-x-auto rounded-[1.75rem] p-5 text-[0.8125rem] leading-6 sm:p-7;
+    background: oklch(0.2 0.02 264);
+    color: oklch(0.92 0.01 264);
+  }
+  .uih-tok-key {
+    color: oklch(0.75 0.15 300);
+  }
+  .uih-tok-name {
+    color: oklch(0.8 0.12 220);
+  }
+  .uih-tok-fn {
+    color: oklch(0.85 0.12 90);
+  }
+  .uih-tok-str {
+    color: oklch(0.82 0.13 150);
+  }
+  .uih-tok-attr {
+    color: oklch(0.8 0.1 40);
+  }
+  .uih-tok-num {
+    color: oklch(0.8 0.14 30);
+  }
+  .uih-tok-com {
+    color: oklch(0.65 0.02 264);
+  }
+  .uih-custom-preview {
+    @apply flex flex-col justify-center gap-6 rounded-[1.75rem] border p-6 sm:p-8;
+    border-color: var(--border);
+    background: var(--background);
+  }
+  .uih-custom-row {
+    @apply flex items-center justify-between gap-4 rounded-2xl p-4;
+    background: var(--surface);
+  }
+  .uih-custom-label {
+    @apply text-sm;
+    color: var(--muted);
+  }
+
+  /* Component directory */
+  .uih-directory {
+    @apply columns-2 gap-x-6 md:columns-3 lg:columns-5;
+  }
+  .uih-dir-group {
+    @apply mb-8 break-inside-avoid;
+  }
+  .uih-dir-group h3 {
+    @apply m-0 mb-2 text-xs font-semibold tracking-wide uppercase;
+    font-family: var(--font-sans);
+    color: var(--muted);
+  }
+  .uih-dir-group ul {
+    @apply m-0 list-none p-0;
+  }
+  .uih-dir-group a {
+    @apply block rounded-lg py-1 text-sm no-underline;
+    color: var(--foreground);
+  }
+  .uih-dir-group a:hover {
+    color: var(--accent);
+  }
+
+  /* Final call */
+  .uih-cta-panel {
+    @apply relative flex flex-col items-center overflow-hidden rounded-[2rem] border px-5 py-14 text-center sm:py-20;
+    border-color: var(--border);
+    background:
+      radial-gradient(60% 80% at 50% 0%, color-mix(in oklab, var(--rivet-blue) 16%, transparent), transparent),
+      radial-gradient(40% 60% at 85% 100%, color-mix(in oklab, var(--rivet-magenta) 12%, transparent), transparent), var(--background);
+  }
+  .uih-cta-panel h2 {
+    @apply m-0 mt-5 max-w-2xl text-3xl leading-tight font-bold tracking-tight sm:text-5xl;
+    font-family: var(--font-sans);
+    color: var(--foreground);
+    letter-spacing: -0.03em;
+  }
+  .uih-cta-panel p {
+    @apply m-0 mt-4 max-w-xl text-base leading-7;
+    color: var(--muted);
+  }
+  .uih-cta-logo {
+    @apply block h-14 w-auto;
+  }
+}
