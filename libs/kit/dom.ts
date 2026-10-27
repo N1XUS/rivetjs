@@ -31,6 +31,7 @@ let pageLevel = Infinity;
 let seq = 0;
 const mounted = new Set<Mounted>();
 let queued = false;
+const persistent = new WeakMap<Document, Map<string, Element>>();
 
 type Policy = { createScriptURL(url: string): unknown; createScript(code: string): unknown };
 /** The one `rivet-script` policy per page: the script bootstrap's (`document.$rs`) when it ran, else ours. */
@@ -96,12 +97,38 @@ export function applyRouteHead<T extends Pick<RoutePayload, "head">>(result: T, 
 }
 
 const lower: Record<string, string> = { httpEquiv: "http-equiv" };
+const attributes = new WeakMap<Element, Set<string>>();
+const titles = new WeakSet<Document>();
+const bases = new WeakSet<Document>();
+function applyAttributes(el: Element, fields: Record<string, string | undefined> = {}): void {
+  const previous = attributes.get(el);
+  if (previous) for (const name of previous) if (!Object.hasOwn(fields, name) || fields[name] === undefined) el.removeAttribute(name);
+  const next = new Set<string>();
+  for (const [name, value] of Object.entries(fields)) {
+    if (value === undefined) continue;
+    next.add(name);
+    if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+  }
+  attributes.set(el, next);
+}
 function apply(head: HeadFields): void {
-  if (head.title !== undefined && document.title !== head.title) document.title = head.title;
-  const root = document.documentElement;
-  for (const [name, value] of Object.entries(head.html ?? {})) if (value !== undefined && root.getAttribute(name) !== value) root.setAttribute(name, value);
-  for (const [name, value] of Object.entries(head.body ?? {}))
-    if (value !== undefined && document.body.getAttribute(name) !== value) document.body.setAttribute(name, value);
+  // A revived route has no head payload: leave server values alone until the client supplies them.
+  if (head.title !== undefined) titles.add(document);
+  if (titles.has(document)) {
+    const title = head.title ?? "";
+    if (document.title !== title) document.title = title;
+  }
+  applyAttributes(document.documentElement, head.html);
+  applyAttributes(document.body, head.body);
+  const base = document.head.querySelector("base");
+  if (head.base) {
+    bases.add(document);
+    const next = document.createElement("base");
+    next.setAttribute("href", head.base.href);
+    if (head.base.target !== undefined) next.setAttribute("target", head.base.target);
+    if (!base) document.head.prepend(next);
+    else if (!base.isEqualNode(next)) base.replaceWith(next);
+  } else if (bases.has(document)) base?.remove();
   const wanted = new Map<string, () => Element>();
   // JSON-LD blocks by their data (the server writes them escaped): an equal block in the document stays as it is, so a
   // resumed page never rewrites server JSON-LD (no script text write, no Trusted Types sink).
@@ -116,12 +143,19 @@ function apply(head: HeadFields): void {
     } else if ("src" in script) load(script);
   }
   // Keyed diff over managed tags: keep equal ones, replace changed, drop stale, append new.
+  let defaults = persistent.get(document);
   for (const el of [...document.head.querySelectorAll("[data-rh]")]) {
     const key = keyOf(el);
+    if (key !== undefined && el.getAttribute("data-rh") === "0") {
+      if (!defaults) persistent.set(document, (defaults = new Map()));
+      defaults.set(key, el);
+    }
     const make = key === undefined ? undefined : wanted.get(key);
     if (!make) {
       // Root layout entries rendered on the server: the layout persists, so do they.
-      if (el.getAttribute("data-rh") !== "0") el.remove();
+      const original = key === undefined ? undefined : defaults?.get(key);
+      if (original && original !== el) el.replaceWith(original);
+      else if (el.getAttribute("data-rh") !== "0") el.remove();
       continue;
     }
     wanted.delete(key!);

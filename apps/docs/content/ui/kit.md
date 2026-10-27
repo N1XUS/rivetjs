@@ -78,7 +78,7 @@ These components render nothing where you place them. Their values go into the p
 
 The link component is called `HeadLink` because `Link` is the router's navigation component.
 
-Resumed pages never run components in the browser, so static head tags cost no JavaScript there. After client navigation, the kit updates the title, meta tags, links and JSON-LD for the new page.
+Resumed pages never run components in the browser, so static head tags cost no JavaScript there. After client navigation, the kit updates the title, base, HTML/body attributes, meta tags, links and JSON-LD for the new page. After the client first supplies a title or base, omitting that field clears it. Server title/base stay until the client first supplies those fields, including when a page resumes without head data. HTML/body attributes previously set by the client head manager are removed when absent from the new merged head; unrelated attributes stay.
 
 ### Title template
 
@@ -130,7 +130,7 @@ Several layouts, the page and its components can set the same tag. The rules, in
 
 Give any entry a `key` to choose the key yourself.
 
-In the browser after client navigation, the rule is close but simpler: layout components rank below the route `head` export, and page components win.
+In the browser after client navigation, the rule is close but simpler: layout components rank below the route `head` export, and page components win. Persistent root-layout meta tags, links and keyed JSON-LD return when a page removes its same-key override.
 
 :::note
 Head components inside a streamed `Async` part render after `<head>` was sent. Links and scripts still render in place there. Title and meta changes are ignored, with a warning.

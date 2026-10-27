@@ -43,7 +43,7 @@ export const head = { titleTemplate: "%s | Shop" }; // route export, layout or p
 - Head hold: page renders before the document start is written; app chunks buffered until shell rendered, then `<head>` written with merged head. Sync pages: one write as before.
 - Late entries (inside streamed `Async` parts): body-valid links/scripts render in place; title/meta warn (dev).
 - Output order (capo.js): base, title, preconnect, async scripts, blocking scripts, stylesheets (route CSS first), preloads, deferred scripts + bootstrap, prefetch, meta, SEO links, JSON-LD.
-- `data-rh` marks client-managed tags; root-layout component entries `data-rh="0"` (kept across navigation).
+- `data-rh` marks client-managed tags; root-layout component entries `data-rh="0"` (kept across navigation). A same-key page override temporarily replaces the root node; removing the override restores the original root node.
 
 ## Scripts
 
@@ -62,7 +62,7 @@ export const head = { titleTemplate: "%s | Shop" }; // route export, layout or p
 
 ## Client navigation
 
-- Route data's head + mounted components' entries re-merge; keyed diff over `[data-rh]` tags (persistent `data-rh="0"` kept); title updated.
+- Route data's head + mounted components' entries re-merge; keyed diff over `[data-rh]` tags (persistent `data-rh="0"` kept). Once supplied by the client manager, a missing title becomes empty and a missing base removes the element. Server title/base stay until the client first supplies those fields (revived route payloads omit head). HTML/body attribute names previously applied by the client manager are removed when absent; other attributes stay.
 - JSON-LD swapped via the policy's `createScript` (JSON only).
 - Approximation: layout components rank below the route head; page-level components win.
 
