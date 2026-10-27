@@ -177,7 +177,8 @@ export function plan(options: PlanOptions): Gate[] {
     add({ id: "parity", command: `${NX} run compiler:parity --output-style=static --skip-nx-cache`, heavy: true, why: why("compiler") });
 
   // 3. vitest per project (nx `test` target's --project list); suites reading built output run after their build.
-  const buildFirst = (name: string) => byName.get(name)?.targets.test?.dependsOn.includes("build") ?? false;
+  // ui-docs:test does not depend on its build (CI builds in its own job), but tests/home.test.ts reads the built site.
+  const buildFirst = (name: string) => name === "ui-docs" || (byName.get(name)?.targets.test?.dependsOn.includes("build") ?? false);
   const testedProjects = [...new Set([...tested, ...docsApps.filter((app) => app !== "cdk-docs")])].filter((name) => byName.get(name)?.targets.test).sort();
   const plain = testedProjects.filter((name) => !buildFirst(name));
   const afterBuild = testedProjects.filter(buildFirst);
