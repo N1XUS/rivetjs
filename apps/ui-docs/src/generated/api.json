@@ -181406,8 +181406,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 156,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L156"
+    "line": 166,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L166"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardContent/"
   },
@@ -183096,8 +183096,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 150,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L150"
+    "line": 160,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L160"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardContentProps/"
   },
@@ -183148,8 +183148,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 96,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L96"
+    "line": 106,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L106"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardFrame/"
   },
@@ -183178,8 +183178,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 145,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L145"
+    "line": 155,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L155"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardImage/"
   },
@@ -183208,8 +183208,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 116,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L116"
+    "line": 126,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L126"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardInset/"
   },
@@ -183238,8 +183238,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 122,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L122"
+    "line": 132,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L132"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardPattern/"
   },
@@ -185018,8 +185018,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 86,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L86"
+    "line": 96,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L96"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardRotator/"
   },
@@ -185048,8 +185048,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 134,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L134"
+    "line": 144,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L144"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardShine/"
   },
@@ -185078,8 +185078,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 128,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L128"
+    "line": 138,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L138"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardShinePattern/"
   },
@@ -185108,8 +185108,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/holo-card/holo-card.tsx",
-    "line": 106,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L106"
+    "line": 116,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/holo-card/holo-card.tsx#L116"
    },
    "href": "/api/rivetjs/ui/holo-card/HoloCardSurface/"
   },
