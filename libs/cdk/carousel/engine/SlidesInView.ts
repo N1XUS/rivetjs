@@ -1,5 +1,5 @@
 // Ported from embla-carousel (packages/embla-carousel/src/components/SlidesInView.ts, v8.6.0), MIT, © David Jerleke.
-// Rivet: TypeScript module specifiers (`.ts`, `import type`), `as` casts (erasable syntax), formatting; otherwise verbatim.
+// Rivet: TypeScript module specifiers (`.ts`, `import type`), `as` casts (erasable syntax), formatting; large observer deliveries use a per-delivery first-index Map.
 import type { EventHandlerType } from "./EventHandler.ts";
 import { objectKeys } from "./utils.ts";
 
@@ -32,8 +32,14 @@ export function SlidesInView(
       (entries) => {
         if (destroyed) return;
 
+        // Index only large deliveries; rebuild per delivery because slideNodes() exposes this array.
+        const indices = entries.length > 128 ? new Map<HTMLElement, number>() : null;
+        if (indices)
+          slides.forEach((slide, i) => {
+            if (!indices.has(slide)) indices.set(slide, i);
+          });
         entries.forEach((entry) => {
-          const index = slides.indexOf(entry.target as HTMLElement);
+          const index = indices ? (indices.get(entry.target as HTMLElement) ?? -1) : slides.indexOf(entry.target as HTMLElement);
           intersectionEntryMap[index] = entry;
         });
 

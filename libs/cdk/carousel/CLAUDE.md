@@ -44,6 +44,8 @@
 - ClassNames plugin → headless `data-*` on the parts (plugin still exported for custom markup).
 - `carouselKeyDown` ignores `defaultPrevented` on replayed events (`eventPhase` 0): the loader `preventDefault`s held `data-rk` keys.
 
+- `SlidesInView` indexes deliveries larger than 128 entries once per callback; the index is rebuilt because `slideNodes()` exposes the array. First duplicate index and unknown-target `-1` behavior stay unchanged (`tests/carousel-observer-index.test.ts`). Resize keeps its early-exit lookup.
+
 ## Tests
 - `../tests/carousel-*.test.ts` (29 files, 509 tests): embla `src/__tests__` port (fixtures / mocks in `../tests/carousel/`, happy-dom; `scrollToLocationInstant` in `carousel/helpers.ts`; `done` callbacks dropped).
 - `../tests/carousel-plugins-rivet.test.ts`: Autoplay / AutoScroll / ClassNames / Fade / AutoHeight on the engine (embla has no tests for Fade / AutoHeight: Rivet-authored checks of opacity / pointer-events / settle / scrollProgress and container height per snap) (fake timers routed through the happy-dom window).
@@ -59,3 +61,5 @@
 - Inactive engine (`active: false`, also per `breakpoints`): embla sets `plugins()` only in `activate`, so it returns `undefined` — `sync` / `stopRotation` / `startRotation` read `api.plugins() ?? {}`.
 - Resumed page + DOM plugins that add classes (ClassNames): fixed in the runtime 2026-10-08 — the server records the slides' rendered string class (` =class` spread token), so the resumed `_spread`'s first run (first signal change after the engine starts, `sync`) leaves an unchanged class alone and `is-snapped` set at init stays (`libs/runtime/tests/resume-spread-class-browser.test.ts`). A class that does change is rewritten, as on client renders. Inline styles (Fade / tweens) survive (per-property diff). The class-names examples dim with plain `.slide:not(.is-snapped)` and assert slide 0's `is-snapped` at load.
 - `behaviour.tsx` reads `globalThis.document` (bare `document` in a server-rendered `.tsx` = compiler RV2001).
+
+- ID-RESUME (2026-10-27): Generated carousel viewport / slide / tab IDREF roots use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
