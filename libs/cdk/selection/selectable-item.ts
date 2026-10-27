@@ -380,6 +380,18 @@ const itemOf = (options: SelectableItemOptions, e: Event): HTMLElement | null =>
 /** Interactive when it allows selection, has a primary action, or uses virtual focus (react-aria's press props gate). */
 const pressable = (options: SelectableItemOptions, d: Derived) => d.allowsSelection || d.hasPrimaryAction || (!!options.shouldUseVirtualFocus && !d.isDisabled);
 
+/** Cancel the compatibility mousedown of the touch now pressing `item` (its focus move), once; dropped after 1 s. */
+function holdTouchFocus(item: Element): void {
+  const doc = item.ownerDocument;
+  const stop = (m: Event): void => {
+    off();
+    if (item.contains(m.target as Node | null)) m.preventDefault();
+  };
+  const off = (): void => (clearTimeout(timer), doc.removeEventListener("mousedown", stop, true));
+  const timer = setTimeout(off, 1000);
+  doc.addEventListener("mousedown", stop, true);
+}
+
 /** pointerdown on the item (press start for mouse / pen / touch; long press timer on touch). */
 export function selectableItemPointerDown(options: SelectableItemOptions, e: PointerEvent): void {
   const item = itemOf(options, e);
@@ -396,8 +408,11 @@ export function selectableItemPointerDown(options: SelectableItemOptions, e: Poi
     e.preventDefault();
     return;
   }
-  // Prevent DOM focus from moving on mouse down when using virtual focus.
-  if (options.shouldUseVirtualFocus) e.preventDefault();
+  // Prevent DOM focus from moving on mouse down when using virtual focus (RA: the item's `onMouseDown`). A canceled
+  // pointerdown suppresses the compatibility mousedown, so mouse / pen cancel it here; a touch keeps its pointerdown
+  // default — WebKit sends no click after a canceled touch pointerdown (a tapped autocomplete / combo box option never
+  // committed, COLD-FIX-B 2026-10-27) — and cancels the compatibility mousedown that follows instead.
+  if (options.shouldUseVirtualFocus) e.pointerType === "touch" ? holdTouchFocus(item) : e.preventDefault();
   if (e.button !== 0 && e.pointerType === "mouse") return;
   if (!pressable(options, d)) return;
   const pe = pressOf(e);

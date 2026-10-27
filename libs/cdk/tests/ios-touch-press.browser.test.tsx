@@ -13,6 +13,8 @@ import { Button } from "../button/index.tsx";
 import { Popover } from "../popover/index.tsx";
 import { ListBox, ListBoxItem } from "../listbox/index.tsx";
 import { Menu, MenuItem, MenuTrigger, type Selection } from "../menu/index.tsx";
+import { ComboBox } from "../combobox/index.tsx";
+import { Input } from "../input/index.tsx";
 
 afterEach(cleanup);
 
@@ -105,5 +107,71 @@ describe("iOS Safari touch presses (zero-size pointerup)", () => {
     flush();
     expect(onSelectionChange).toHaveBeenCalledTimes(1);
     expect(cat).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+// COLD-FIX-B (2026-10-27): a virtual-focus collection (combo box / autocomplete list) kept DOM focus in the input by canceling
+// the option's pointerdown. WebKit sends no click after a canceled touch pointerdown, so a tapped option never committed
+// (Playwright WebKit touch; iOS taps are touches too). A touch now keeps its pointerdown default and the compatibility mousedown
+// is canceled instead: focus still stays in the input; mouse / pen still cancel at pointerdown.
+describe("virtual focus: a touch keeps its pointerdown default, the compatibility mousedown is canceled", () => {
+  const Combo = (props: { onSelectionChange: (key: unknown) => void }) => (
+    <ComboBox aria-label="Animal" onSelectionChange={props.onSelectionChange as never}>
+      <Input />
+      <Button>open</Button>
+      <Popover>
+        <ListBox>
+          <ListBoxItem id="cat">Cat</ListBoxItem>
+          <ListBoxItem id="dog">Dog</ListBoxItem>
+        </ListBox>
+      </Popover>
+    </ComboBox>
+  );
+
+  it("a tapped combo box option commits; focus stays in the input", async () => {
+    const onSelectionChange = vi.fn();
+    render(() => <Combo onSelectionChange={onSelectionChange} />);
+    const input = screen().getByRole("combobox") as HTMLInputElement;
+    input.focus();
+    fireEvent.input(input, { target: { value: "D" } });
+    flush();
+    const dog = await screen().findByRole("option", { name: "Dog" });
+    const prevented: Record<string, boolean> = {};
+    const seen = (e: Event) => void (prevented[e.type] = e.defaultPrevented);
+    for (const t of ["pointerdown", "mousedown"]) document.addEventListener(t, seen);
+    try {
+      iosTap(dog);
+      flush();
+    } finally {
+      for (const t of ["pointerdown", "mousedown"]) document.removeEventListener(t, seen);
+    }
+    expect(prevented).toEqual({ pointerdown: false, mousedown: true });
+    expect(document.activeElement).toBe(input);
+    expect(onSelectionChange).toHaveBeenCalledWith("dog");
+    await waitFor(() => expect(input.value).toBe("Dog"));
+  });
+
+  it("a mouse press still cancels the option's pointerdown", async () => {
+    render(() => <Combo onSelectionChange={() => {}} />);
+    const input = screen().getByRole("combobox") as HTMLInputElement;
+    input.focus();
+    fireEvent.input(input, { target: { value: "C" } });
+    flush();
+    const cat = await screen().findByRole("option", { name: "Cat" });
+    const down = new PointerEvent("pointerdown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      pointerType: "mouse",
+      pointerId: 1,
+      isPrimary: true,
+      button: 0,
+      buttons: 1,
+    });
+    cat.dispatchEvent(down);
+    expect(down.defaultPrevented).toBe(true);
+    cat.dispatchEvent(
+      new PointerEvent("pointerup", { bubbles: true, cancelable: true, composed: true, pointerType: "mouse", pointerId: 1, isPrimary: true, button: 0 }),
+    );
   });
 });

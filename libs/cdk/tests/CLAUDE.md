@@ -57,7 +57,8 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | interactions-browser | story `/press` (interactions/press, long-press) |
 | layout | layout |
 | list-state | collections/list-state |
-| ios-touch-press.browser (project `cdk-browser`) | `_adapters/selection` `collectionPointerUp` (Menu), `selection/selectable-item` `selectableItemPointerUp` (ListBox): iOS Safari tap event sequence (0×0 pointerup, click = PointerEvent "mouse" 1×1) as recorded in the iOS 26.4 simulator; VoiceOver 0×0 press stays virtual |
+| ios-touch-press.browser (project `cdk-browser`) | `_adapters/selection` `collectionPointerUp` (Menu), `selection/selectable-item` `selectableItemPointerUp` (ListBox): iOS Safari tap event sequence (0×0 pointerup, click = PointerEvent "mouse" 1×1) as recorded in the iOS 26.4 simulator; VoiceOver 0×0 press stays virtual; virtual focus (ComboBox): a touch pointerdown keeps its default, the compatibility mousedown is canceled, the tapped option commits; a mouse pointerdown is still prevented (COLD-FIX-B) |
+| storage | utils/storage (`webStorage` / `readStorage` / `writeStorage` / `removeStorage` with throwing storages), resizable `useDefaultLayout` saving into a throwing storage logs nothing (COLD-FIX-B) |
 | touch-tap.browser (project `cdk-browser`) | `grid/behaviour` row / cell `pointerup` (no propagation stop), Table selection checkbox + select-all + sortable column + body cell, GridList / Tree selection checkboxes: Chromium (Playwright tap) and iOS Safari touch tap sequences incl. the `pointerleave` before the click (B1 2026-10-27) |
 | listbox.browser / listbox-ssr / collection-components | listbox/index, listbox/behaviour, collections/components (port of RAC ListBox.test.js incl. "should support virtualizer"; drag-and-drop, `render` cases skipped; fixtures `fixtures/collection-parts.tsx`) |
 | calendar-cell-ssr | resumable server HTML of a live CalendarCell (ui `Calendar.Cell` shape: `splitProps` + spread) whose children function captures its `date` (server.ts; `renderPropsOf` per-key views) |
@@ -82,7 +83,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | focus-visible-loader.browser (project `cdk-browser`) | interactions/focus-visible first install adopts the resume loader's `window.__rvIM` (pointer types, keyboard, unknown / absent, a tracked modality wins; fresh iframe windows) |
 | utilities | bidi, platform, utils/id, utils |
 | id-scope | utils/id server registry per render id scope: a `mergeIds` in one scope leaves another in-flight render's `idSignal` ids alone (interleaved scopes, `_inIdScope`); outside any scope the module registry merges |
-| virtualizer-browser / -engine / -scroll-anchor | virtualizer/* (story `/virtualizer`) |
+| virtualizer-browser / -engine / -scroll-anchor / -observer | virtualizer/* (story `/virtualizer`); observer batching preserves nested keys, string collisions, delivery order and removal |
 | browser/observers | observers |
 | browser/smoke | announcer/index.tsx, bidi |
 | browser/text-field | text-field/autosize, platform |
@@ -102,7 +103,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | load-more-sentinel.browser | utils/load-more-sentinel (real IntersectionObserver) |
 | tree.browser / navigation-tree.browser | tree/index, tree/behaviour, navigation-tree/index (ports of RAC Tree.test.tsx + AriaTree test-util, NavigationTree.test.tsx; "Tree virtualizer" (window over the flattened expanded rows); skipped: render prop, DnD, mouse link cases until B5 row click stops propagation, item press props until C6a) |
 | grid-list.browser / tag-group.browser | grid-list/*, tag-group/* (ports of RAC GridList.test.js, TagGroup.test.js, RA useTagGroup.test.js; "GridList virtualizer" (ListLayout window + scroll); skipped: render prop, DnD, combobox/toolbar nesting, tooltips) |
-| data-list-data / data-async-list / data-tree-data / data-rivet (+ data-hook-utils) | data/* (ports of react-stately useListData / useAsyncList / useTreeData tests + Rivet signal cases) |
+| data-list-data / data-async-list / data-tree-data / data-rivet (+ data-hook-utils) | data/* (ports of react-stately useListData / useAsyncList / useTreeData tests + Rivet signal cases; bulk moves pin order, duplicate/missing keys, sparse slots and array species) |
 | tree-key-manager | tree/tree-key-manager (port of Angular tree-key-manager.spec.ts) |
 | tree-control | tree/control (ports of Angular flat- / nested-tree-control.spec.ts) |
 | dialog-behaviour.browser | dialog/behaviour (port of react-aria useDialog.test.js) |
@@ -144,6 +145,8 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | scroll-area.browser | scroll-area (port of Radix `scroll-area.test.tsx`, 16/17 — asChild fallback skipped; + thumb size / position, padding + 18 px min, resize, drag, track click, wheel, RTL, `<Dir>`, corner sizes / vars, auto / hover / scroll timing (fake `setTimeout`), forceMount, exit animation; pointer-capture mocked) |
 | resizable/** (project `cdk-browser`) / resizable.browser / resizable-ssr | resizable engine (react-resizable-panels 4.14.3 `lib/**/*.test.ts` mirrored under `tests/resizable/`, 408 tests, grid excluded; helpers `global/test`, `utils/test`, `setup.ts` = upstream vitest.setup imported per file); client mount + keyboard; SSR markup / sizes / cookie layout |
 | carousel-* (29 files) | carousel/engine (port of embla-carousel 8.6.0 `src/__tests__`, 509 tests; fixtures / mocks in `carousel/`, happy-dom; `scrollToLocationInstant` in `carousel/helpers.ts`) |
+| carousel-observer-index | large deliveries, first duplicate index, unknown targets, exposed slide-array edits and destruction |
+| carousel-observer-index | large deliveries, first duplicate index, unknown targets, exposed slide-array edits and destruction |
 | carousel-plugins-rivet | carousel/plugins autoplay, auto-scroll, class-names on the engine (fake timers through the happy-dom window; embla plugins ship no tests) |
 | carousel.browser | carousel parts (client render, Chromium): APG roles / labels, prev / next + mid-animation position, startIndex translate cleared before measuring, drag, dragFree, loop, RTL, vertical, keys, tabbed dots, slidesToScroll, `items`, autoplay (fake timers) + hover + rotation control, keyboard focus stops rotation, `active: false` inactive engine |
 | motion | motion/* (AnimationLoop with a fake scheduler, ScrollBody, VelocityTracker, DragRelease, Limit, Motion1D) |
