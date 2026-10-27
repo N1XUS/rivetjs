@@ -149,7 +149,7 @@
         },
         "/slots": {
           "status": 200,
-          "htmlBr": 6733,
+          "htmlBr": 6735,
           "cssSheets": 0,
           "css": {
             "min": 0,
@@ -488,41 +488,38 @@
     },
     "starter-server": {
       "totalJS": {
-        "files": 12,
-        "min": 130946,
-        "br": 45828
+        "files": 2,
+        "min": 55580,
+        "br": 18348
       },
       "serverJS": {
-        "min": 149850,
-        "br": 51985
+        "min": 145912,
+        "br": 50230
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4680,
+          "htmlBr": 2840,
           "cssSheets": 0,
           "css": {
             "min": 0,
             "br": 0
           },
-          "stateBytes": 124,
-          "inlineBytes": 3559,
-          "eagerRequests": 2,
+          "stateBytes": 0,
+          "inlineBytes": 0,
+          "eagerRequests": 0,
           "eagerJS": {
-            "min": 6250,
-            "br": 2834
+            "min": 0,
+            "br": 0
           },
-          "eagerFiles": [
-            "dom-lite.js",
-            "NoteForm.js"
-          ],
+          "eagerFiles": [],
           "runtimeJS": {
-            "min": 5311,
-            "br": 2323
+            "min": 0,
+            "br": 0
           },
           "pageJS": {
-            "min": 6250,
-            "br": 2834
+            "min": 0,
+            "br": 0
           }
         }
       }
@@ -619,20 +616,20 @@
       "totalJS": {
         "files": 49,
         "min": 188385,
-        "br": 67456
+        "br": 67461
       },
       "serverJS": {
         "min": 240376,
-        "br": 77458
+        "br": 77467
       },
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 3555,
+          "htmlBr": 3548,
           "cssSheets": 2,
           "css": {
-            "min": 80211,
-            "br": 9702
+            "min": 80189,
+            "br": 9692
           },
           "stateBytes": 1410,
           "inlineBytes": 3559,
@@ -1365,7 +1362,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4514,
+          "htmlBr": 4510,
           "cssSheets": 0,
           "css": {
             "min": 0,
