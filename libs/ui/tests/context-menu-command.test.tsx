@@ -37,6 +37,44 @@ function type(input: HTMLInputElement, value: string) {
 const items = () => [...document.querySelectorAll("[role^=menuitem]")] as HTMLElement[];
 const cleanup = (r: { unmount?: () => void; dispose?: () => void }) => (r.unmount ?? r.dispose)?.();
 
+test("context menu: a submenu's menu sits in its own .Popover (one popover per level, no inner dropdown popover)", async () => {
+  const r = render(() => (
+    <ContextMenu>
+      <ContextMenu.Trigger id="sub-area">Right click here</ContextMenu.Trigger>
+      <ContextMenu.Popover>
+        <ContextMenu.Menu aria-label="Actions">
+          <ContextMenu.Item id="copy">Copy</ContextMenu.Item>
+          <ContextMenu.SubmenuTrigger>
+            <ContextMenu.Item id="share" textValue="Share">
+              Share
+              <ContextMenu.SubmenuIndicator />
+            </ContextMenu.Item>
+            <ContextMenu.Popover>
+              <ContextMenu.Menu aria-label="Share">
+                <ContextMenu.Item id="email">Email</ContextMenu.Item>
+              </ContextMenu.Menu>
+            </ContextMenu.Popover>
+          </ContextMenu.SubmenuTrigger>
+        </ContextMenu.Menu>
+      </ContextMenu.Popover>
+    </ContextMenu>
+  ));
+  const area = document.getElementById("sub-area")!;
+  area.dispatchEvent(new W.MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2, clientX: 40, clientY: 30 }));
+  await flush();
+  const share = document.querySelector("[data-key=share]") as HTMLElement;
+  share.focus();
+  key(share, "ArrowRight");
+  await flush();
+  const sub = document.querySelector("[role=menu][aria-label=Share]") as HTMLElement;
+  assert.ok(sub, "submenu open");
+  // Before the fix the submenu's .Menu opened a second (dropdown) popover inside the .Popover: it had no trigger, never positioned.
+  assert.equal(document.querySelectorAll("[data-slot=dropdown-popover]").length, 0);
+  assert.equal(sub.parentElement!.getAttribute("data-slot"), "context-menu-popover");
+  assert.equal(sub.parentElement!.getAttribute("data-trigger"), "SubmenuTrigger");
+  cleanup(r as never);
+});
+
 test("context menu: right click opens at the pointer, action closes + reports the key", async () => {
   const actions: unknown[] = [];
   const r = render(() => (

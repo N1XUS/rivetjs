@@ -30,7 +30,7 @@ import type { SurfaceVariants } from "../../../styles/src/components/surface/ind
 import { composeSlotClassName, composeTwRenderProps } from "../../utils/compose.tsx";
 import { hasLiveProp, renderClass, splitLive } from "../../utils/live.tsx";
 import { portalTheme } from "../../utils/portal-theme.ts";
-import { DropdownMenu } from "../dropdown/dropdown.tsx";
+import { DropdownContext, DropdownMenu, popoverContextOf } from "../dropdown/dropdown.tsx";
 import type { DropdownMenuProps } from "../dropdown/dropdown.tsx";
 import { SeparatorRoot } from "../separator/separator.tsx";
 import type { SeparatorRootProps } from "../separator/separator.tsx";
@@ -116,6 +116,8 @@ const ContextMenuPopover = (props: ContextMenuPopoverProps): JSX.Element | null 
   portalTheme();
   if (useContext(ContextMenuContext).disabled) return null;
   const [local, rest] = splitLive(props, ["children", "class"]);
+  // A submenu's `.Menu` sits in the popover like Dropdown.Popover's: without this it opened a second, unpositioned popover.
+  const dropdown = popoverContextOf(useContext(DropdownContext));
   const classOf = () => composeTwRenderProps(local.class as never, SLOTS.popover()) as string | ((v: PopoverRenderProps) => string);
   const cls = hasLiveProp(local, ["class"]) ? (values: PopoverRenderProps) => renderClass(classOf(), values) : classOf();
   const content = () => (
@@ -125,7 +127,9 @@ const ContextMenuPopover = (props: ContextMenuPopoverProps): JSX.Element | null 
   );
   return (
     <Provider token={SurfaceContext} value={DEFAULT_SURFACE_CONTEXT}>
-      {content()}
+      <Provider token={DropdownContext} value={dropdown}>
+        {content()}
+      </Provider>
     </Provider>
   );
 };

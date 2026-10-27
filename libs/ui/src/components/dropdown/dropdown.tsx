@@ -64,6 +64,8 @@ const DropdownContext = createContext<DropdownContext>({});
 const ROOT_CONTEXT: DropdownContext = { inDropdown: true };
 const POPOVER_CONTEXT: DropdownContext = { inDropdown: true, inPopover: true };
 const LONE_POPOVER_CONTEXT: DropdownContext = { inPopover: true };
+/** The context a popover gives its menu: the menu renders in place instead of opening its own popover (ContextMenu.Popover too). */
+const popoverContextOf = (context: DropdownContext): DropdownContext => (context.inDropdown ? POPOVER_CONTEXT : LONE_POPOVER_CONTEXT);
 const DEFAULT_SURFACE_CONTEXT = { variant: "default" as SurfaceVariants["variant"] };
 
 type DropdownSlots = ReturnType<typeof dropdownVariants>;
@@ -124,7 +126,7 @@ const DropdownPopover = (props: DropdownPopoverProps): JSX.Element => {
 
   return (
     <Provider token={SurfaceContext} value={DEFAULT_SURFACE_CONTEXT}>
-      <Provider token={DropdownContext} value={context.inDropdown ? POPOVER_CONTEXT : LONE_POPOVER_CONTEXT}>
+      <Provider token={DropdownContext} value={popoverContextOf(context)}>
         {content()}
       </Provider>
     </Provider>
@@ -253,6 +255,8 @@ const DropdownSection = (props: DropdownSectionProps): JSX.Element => <MenuSecti
  * Exports
  * -----------------------------------------------------------------------------------------------*/
 export {
+  DropdownContext,
+  popoverContextOf,
   DropdownItem,
   DropdownItemIndicator,
   DropdownMenu,

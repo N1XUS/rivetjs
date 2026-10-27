@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .menu {
-  @apply relative flex w-full flex-col gap-1 overflow-clip p-1;
+  @apply relative flex w-full flex-col gap-1 overflow-clip p-1 outline-none; /* Rivet: no container ring, items show focus (TW-167) */
   /* Rivet: items keep their own radius unless a popover sets it for this menu (TWEAKS.md TW-123) */
   --r-inner: initial;
 

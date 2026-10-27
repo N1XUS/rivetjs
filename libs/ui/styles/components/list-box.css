@@ -5,7 +5,7 @@
    ========================================================================== */
 
 .list-box {
-  @apply relative w-full overflow-clip p-1;
+  @apply relative w-full overflow-clip p-1 outline-none; /* Rivet: TW-167 */
   /* Rivet: items keep their own radius unless a popover sets it for this list (TWEAKS.md TW-123) */
   --r-inner: initial;
 

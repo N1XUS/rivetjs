@@ -132,7 +132,7 @@
 }
 
 .dropdown__menu {
-  @apply relative flex w-full flex-col gap-0.5 overflow-clip p-1;
+  @apply relative flex w-full flex-col gap-0.5 overflow-clip p-1 outline-none; /* Rivet: TW-167 */
 
   /* This makes the separator take up 94% of the width and be centered */
   [data-slot="separator"] {

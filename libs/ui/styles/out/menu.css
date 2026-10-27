@@ -16,7 +16,9 @@
     gap: var(--spacing, .25rem);
     width: 100%;
     padding: var(--spacing, .25rem);
+    --tw-outline-style: none;
     --r-inner: initial;
+    outline-style: none;
     flex-direction: column;
     display: flex;
     position: relative;
@@ -27,4 +29,9 @@
     width: 94%;
     margin-inline-start: 3%;
   }
+}
+@property --tw-outline-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
 }

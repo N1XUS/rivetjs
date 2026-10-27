@@ -15,7 +15,11 @@ export default defineExample({
       hover: "[role=menuitem][data-key=share]",
     },
     {
-      matches: "[role=menuitem][data-key=messages]",
+      matches: "[data-slot=context-menu-popover][data-trigger=SubmenuTrigger][data-placement] [role=menuitem][data-key=messages]",
+    },
+    // The submenu's .Menu renders inside its .Popover, not in a second (never positioned) dropdown popover.
+    {
+      absent: "[data-slot=dropdown-popover]",
     },
   ],
 });

@@ -15,7 +15,9 @@
   .list-box {
     width: 100%;
     padding: var(--spacing, .25rem);
+    --tw-outline-style: none;
     --r-inner: initial;
+    outline-style: none;
     position: relative;
     overflow: clip;
   }
@@ -28,4 +30,9 @@
     width: 94%;
     margin-inline-start: 3%;
   }
+}
+@property --tw-outline-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
 }
