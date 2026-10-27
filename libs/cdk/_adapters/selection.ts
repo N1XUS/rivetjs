@@ -603,7 +603,9 @@ export function collectionPointerUp(list: SelectableCollection, e: Ev<PointerEve
   const record = presses.get(list);
   if (record?.pointerType !== "keyboard") presses.delete(list);
   if (!item) return;
-  const pointerType = pointerTypeOf(e);
+  // usePress: iOS Safari fires a touch's pointerup with zero width / height (what `isVirtualPointerEvent` reads as a
+  // screen reader), so a pointer press started here keeps the pointer type recorded at its pointerdown.
+  const pointerType = record && record.pointerType !== "keyboard" && record.pointerId === e.pointerId ? record.pointerType : pointerTypeOf(e);
   if (pointerType === "virtual") return;
   const manager = managerOf(list, root);
   const previous = manager.focusedKey;

@@ -428,7 +428,9 @@ export function selectableItemPointerUp(options: SelectableItemOptions, e: Point
   const m = memoOf(item);
   clearTimeout(m.longPressTimer);
   const d = derive(options);
-  const pe = pressOf(e);
+  // usePress: iOS Safari fires a touch's pointerup with zero width / height (read as virtual): a press started on
+  // this item keeps the pointer type recorded at its pointerdown.
+  const pe = pressOf(e, m.pressed && m.modality && m.modality !== "keyboard" && m.modality !== "virtual" ? m.modality : pointerTypeOf(e));
   if (pe.pointerType === "virtual") return;
   if (!d.isDisabled && pressable(options, d)) {
     pressUp(options, d, item, pe);

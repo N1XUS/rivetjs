@@ -57,6 +57,7 @@ Unit, node-DOM (happy-dom), server-render and Chromium tests for `@rivetjs/cdk` 
 | interactions-browser | story `/press` (interactions/press, long-press) |
 | layout | layout |
 | list-state | collections/list-state |
+| ios-touch-press.browser (project `cdk-browser`) | `_adapters/selection` `collectionPointerUp` (Menu), `selection/selectable-item` `selectableItemPointerUp` (ListBox): iOS Safari tap event sequence (0×0 pointerup, click = PointerEvent "mouse" 1×1) as recorded in the iOS 26.4 simulator; VoiceOver 0×0 press stays virtual |
 | listbox.browser / listbox-ssr / collection-components | listbox/index, listbox/behaviour, collections/components (port of RAC ListBox.test.js incl. "should support virtualizer"; drag-and-drop, `render` cases skipped; fixtures `fixtures/collection-parts.tsx`) |
 | calendar-cell-ssr | resumable server HTML of a live CalendarCell (ui `Calendar.Cell` shape: `splitProps` + spread) whose children function captures its `date` (server.ts; `renderPropsOf` per-key views) |
 | live-view-capture-ssr | resumable server HTML of 14 parts (Link, Group, Toolbar, Checkbox, Switch, TextField, SearchField, NumberField, Slider + SliderTrack, Meter, ProgressBar, RadioGroup, Text, Label) with live class / style and children (function + plain JSX) capturing a class instance (server.ts; per-key live views; known gaps listed in the file) |
