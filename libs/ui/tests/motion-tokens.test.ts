@@ -29,6 +29,7 @@ const EXCEPTIONS: { reason: string; uses: Record<string, string[]> }[] = [
       "prompt-input": ["1s"],
       "progress-bar": ["1.5s"],
       "text-shimmer": ["2.2s"],
+      status: ["1.6s"],
     },
   },
   { reason: "MASONRY lane owns masonry.css", uses: { masonry: ["150ms"] } },

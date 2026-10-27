@@ -18,6 +18,7 @@ import { PromptInput } from "@rivetjs/ui/prompt-input";
 import type { PromptInputStatus } from "@rivetjs/ui/prompt-input";
 import { PromptSuggestion } from "@rivetjs/ui/prompt-suggestion";
 import { Sidebar } from "@rivetjs/ui/sidebar";
+import { Status } from "@rivetjs/ui/status";
 import { TextShimmer } from "@rivetjs/ui/text-shimmer";
 import { MessageSquare, Plus, Sparkles, ThumbsDown, ThumbsUp } from "lucide";
 
@@ -197,7 +198,8 @@ export default function ChatShowcase() {
             <h2 class="truncate font-semibold">Shop assistant</h2>
             <p class="truncate text-xs text-muted">Answers from your orders, stock and suppliers</p>
           </div>
-          <Chip size="sm" variant="soft" color="success">
+          <Chip id="assistant-online" size="sm" variant="soft" color="success">
+            <Status color="success" size="sm" pulse class="me-1" />
             Online
           </Chip>
         </header>

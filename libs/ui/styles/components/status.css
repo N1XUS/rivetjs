@@ -1,0 +1,72 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no status dot): status / presence / unread dot on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Status Component Styles
+ * Block: status (colour modifiers --default / --accent / --success / --warning / --danger, sizes --sm / --md / --lg,
+ *   --pulse = an expanding ring, none under prefers-reduced-motion)
+ * Variables: --status-color (dot + ring colour), --status-size (diameter)
+ * -----------------------------------------------------------------------------------------------*/
+
+.status {
+  @apply relative inline-block shrink-0 rounded-full align-middle;
+  width: var(--status-size);
+  height: var(--status-size);
+  background-color: var(--status-color);
+}
+
+.status--sm {
+  --status-size: --spacing(1.5);
+}
+
+.status--md {
+  --status-size: --spacing(2);
+}
+
+.status--lg {
+  --status-size: --spacing(3);
+}
+
+.status--default {
+  --status-color: var(--muted);
+}
+
+.status--accent {
+  --status-color: var(--accent);
+}
+
+.status--success {
+  --status-color: var(--success);
+}
+
+.status--warning {
+  --status-color: var(--warning);
+}
+
+.status--danger {
+  --status-color: var(--danger);
+}
+
+.status--pulse::after {
+  @apply absolute inset-0 rounded-full;
+  content: "";
+  background-color: var(--status-color);
+  animation: status-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status--pulse::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+@keyframes status-pulse {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
