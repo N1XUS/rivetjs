@@ -44,6 +44,8 @@ Without `transitions`, nothing changes in your build: no extra code, no extra by
 `transitions: true` uses the defaults. Pass an object to change them:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({
   transitions: {
     viewTransitions: true, // false: no animation, keep only the loading state
@@ -178,6 +180,8 @@ For loading states of changes inside a page (not navigations), see [Suspense and
 Listen for `rivet:before-swap` and pass a promise to `event.detail.defer()`. The router waits for it, at most 500 ms:
 
 ```tsx
+import { clientEvent } from "@rivetjs/runtime/dom";
+
 clientEvent(document, "rivet:before-swap", (event: CustomEvent) => {
   const hero = document.querySelector<HTMLImageElement>("img[data-hero]");
   if (hero) event.detail.defer(hero.decode());

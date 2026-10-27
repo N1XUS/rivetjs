@@ -84,6 +84,9 @@ Kept rows keep things like focus, text selection and the state of a checkbox. Us
 `each` can be any function that reads signals. Rivet re-runs it when they change:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+
 const query = signal("");
 
 <input type="search" model:value={query} />
@@ -119,6 +122,8 @@ todos.update((list) => list.map((t) => (t.id === 1 ? { ...t, text: "Read it agai
 A row handler can use the row's `item` and `index`:
 
 ```tsx
+import { For } from "@rivetjs/runtime/dom";
+
 <For each={todos} by={(todo) => todo.id}>
   {(todo) => (
     <li>

@@ -210,6 +210,8 @@ A page that shows a long list from a database changes only a few rows between re
 Two switches: the build proves which lists qualify, and the server keeps the cache.
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ resume: { incr: true } });
 ```
 
@@ -233,6 +235,8 @@ On a 1,000-row list the server's time per page drops about 5× when nothing chan
 A page that greets the signed-in visitor cannot be stored whole, but most of it (the layout, the article, the footer) is the same for everyone. The `shell` rule stores that part, the **shell**, and renders only the personal parts, the **holes**, per request. The holes are [deferred loaders](./loading-data.md#deferred-loaders) shown through `<Async fallback>`:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({
   routeRules: {
     "/articles/**": { shell: { maxAge: 3600, tags: ["articles"] } },

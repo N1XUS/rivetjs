@@ -100,7 +100,7 @@ npm run build
 npm run preview
 ```
 
-The dev server resumes pages like production until you edit a file, but it is not what your visitors get: code is not bundled or minified, the runtime runs with extra development checks, and the first edit switches the page to rendering in the browser (so hot reload keeps state). To see the real behaviour and size, build:
+The dev server resumes pages by default. Editing a resumed component reloads the page. Code is not bundled or minified, and the runtime includes development checks. To measure production behavior and size, build:
 
 ```bash
 npm run build
@@ -131,7 +131,7 @@ Open the preview address and the browser's developer tools, on the Network tab:
 
 1. Reload the page. The text and the button are there right away: they are in the HTML.
 2. Look at the scripts. After the page has loaded, a few files arrive at low priority: the page's own code and the part of the Rivet runtime it needs (the names depend on the page: a small page like this one gets `dom-lite-….js`, larger ones `derived-runtime-….js` and `dom-derived-abi-….js`). They are fetched ahead, but none of it runs yet.
-3. Click the button. The runtime starts, runs the home page's code (`src/routes/index.tsx`) over the HTML that is already there, and the click reaches the counter's handler: the count goes up.
+3. Click the button. The runtime starts, adopts the counter's existing button, and the click reaches its handler: the count goes up.
 
 Nothing ran in the browser until you used the page, and the click reused the server's nodes instead of rendering new ones. [Resuming](../learn/resuming.md) explains how.
 
@@ -143,7 +143,7 @@ The `templates` folder has four starters. `npm create rivet` copies the one you 
 | --- | --- | --- | --- |
 | `starter-static` | `static` | Static site: pages become HTML files at build time. Tailwind, two pages, one interactive component. | `npm run dev`, `npm run build`, `npm run preview` |
 | `starter-server` | `server` | Node.js server: pages render for each request; a loader and a form action. Has a Dockerfile. | `npm run dev`, `npm run build`, `npm start` |
-| `starter-ui` | `ui` | Static site with [`@rivetjs/ui`](../ui/overview.md) components (Card, Avatar, Chip, Button) and Tailwind CSS v4, in the HeroUI default theme. | `npm run dev`, `npm run build`, `npm run preview` |
+| `starter-ui` | `ui` | Static site with [`@rivetjs/ui`](../ui/overview.md) components (Card, Avatar, Chip, Button) and Tailwind CSS v4, in the Rivet theme. | `npm run dev`, `npm run build`, `npm run preview` |
 | `starter-minimal` | `minimal` | One page, one signal, no Tailwind. | `npm run dev`, `npm run build` |
 
 `starter-server` serves the build at `http://127.0.0.1:3000` (`npm start` runs `node serve.js`).
@@ -158,7 +158,7 @@ Every starter also has:
 ## Common mistakes
 
 - **Options without `--` after `npm create`.** npm keeps options such as `--template` for itself. Write `npm create rivet@latest my-app -- --template ui`; pnpm, Yarn and Bun pass them on without `--`.
-- **Judging speed in dev mode.** `npm run dev` resumes pages, but after your first edit the browser renders the whole page, code is not bundled, and development checks add work. Use `npm run build` and `npm run preview` to judge speed and size. See [dev and production differ](../gotchas/dev-and-production-differ.md).
+- **Judging speed in dev mode.** `npm run dev` resumes pages, but component edits reload them, code is not bundled, and development checks add work. Use `npm run build` and `npm run preview` to judge speed and size. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 
 ## See also
 

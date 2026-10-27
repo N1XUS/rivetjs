@@ -80,7 +80,7 @@ If the browser has no JavaScript, the form still submits to `/search`. This is a
 Use the `window:` or `document:` prefix on any element. The listener is attached for as long as that element is on the page:
 
 ```tsx
-<p window:onKeyDown={(event: KeyboardEvent) => keys.update((k) => k + event.key)}>
+<p window:onKeyDown={(event) => keys.update((k) => k + (event as KeyboardEvent).key)}>
   You typed: {keys()}
 </p>
 ```
@@ -94,15 +94,17 @@ On a server-rendered page, the browser does not download your handlers when the 
 1. The page has loaded and the browser is idle. Rivet downloads the handler code at low priority, without running it.
 2. You rest the pointer on the button or focus it. Rivet downloads what has not arrived yet, at high priority.
 3. You press the button. Rivet makes sure the code is loaded.
-4. The handler runs. Signals change, and the page updates.
+4. The boundary adopts the existing HTML, then the handler runs. Signals change, and the page updates.
 
-The handler runs inside a [batch](../state/batching.md), so several writes cause one update (for the first mouse click on a page, that update lands one task later: see [the first mouse click on a page](../state/batching.md#the-first-mouse-click-on-a-page)). You can tune when code downloads with the `preload` attribute, for example `<button preload="idle">`. See [preloading](/guides/performance/preloading.md).
+The handler runs inside a [batch](../state/batching.md), so several writes cause one update (for the first mouse click on a page, that update lands one task later: see [the first mouse click on a page](../state/batching.md#the-first-mouse-click-on-a-page)). Use the server's `preload: { ahead }` or `preload: { lean }` options to control background downloads. Element-level `preload` has no effect on derived loading. See [preloading](/guides/performance/preloading.md).
 
 ## What a handler can use
 
 A handler can use anything in the component: signals, props, local constants, local functions, class instances. The browser runs the component's code again when it wakes up, so it has the real values.
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 export function Cart({ items }: { items: { id: string; cents: number }[] }) {
   const total = signal(0);
   const add = (cents: number) => total.update((t) => t + cents); // a local function: fine

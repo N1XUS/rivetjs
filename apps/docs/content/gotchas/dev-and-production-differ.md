@@ -41,5 +41,7 @@ Components outside `src/routes` resume without being listed: `rivetRouter` resum
 If resuming in dev gets in your way (for example a very large page), turn it off. Pages then render in the browser from the first load, and edits hot-replace components keeping their state:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ dev: { resume: false } })
 ```

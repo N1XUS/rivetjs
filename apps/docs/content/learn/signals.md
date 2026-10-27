@@ -41,10 +41,10 @@ quantity.set(3); // logs "total is 60"
 
 ## Why it matters
 
-Many frameworks re-run a whole component when its state changes, then compare the old and new output to find what changed. Rivet does not re-run components at all. It needs another way to know what to update, and signals are that way.
+Many frameworks re-run a whole component when its state changes, then compare the old and new output to find what changed. Rivet does not re-run the component body for each signal change. Signals identify the bindings that need to update.
 
 - **Updates are precise.** A change to `count` touches the text node that shows `count`, not the component, not the list next to it.
-- **Components can run once.** Because updates do not depend on re-running components, the component can run on the server only. This is what makes [resuming](resuming.md) possible.
+- **Components wake on demand.** The browser runs a component over its server HTML when needed. Later signal changes update its bindings. See [resuming](resuming.md).
 - **Unchanged values stop early.** If a computed value comes out the same as before, the things that read it do not run.
 
 ## How it works
@@ -71,11 +71,11 @@ The compiler sees that `{quantity()}` reads a signal and turns it into a binding
 
 Across server and browser:
 
-1. **Server.** `Cart()` runs. `quantity` is `1`. While writing `{quantity()}`, the server records that this text depends on `quantity`, and saves the value `1` into the page.
-2. **Browser, before any change.** Nothing runs. The signal is not even created yet.
-3. **Browser, first change.** You click "Add". The handler runs, and the runtime creates `quantity` from the saved value `1`. The handler sets it to `2`. The binding for the text wakes up and writes `2`.
+1. **Server.** `Cart()` runs with `quantity` set to `1`. The HTML carries a boundary record. The unchanged literal initializer `1` is omitted from its signal data because the browser can evaluate it.
+2. **Browser, before use.** The component has not run. Its code may be fetched ahead without running.
+3. **Browser, first click.** The runtime adopts the button and creates `quantity` before dispatching the handler. The signal starts from `1`; the handler sets it to `2`, and its text binding updates.
 
-A binding that reads no signal, such as `{title}` with a plain string, is static. It is never updated, and no code for it reaches the browser.
+A binding that reads no signal, such as `{title}` with a plain string, is static. It needs no reactive update. Its code can still be part of a component that the browser adopts.
 
 ## Reading versus passing
 
@@ -86,7 +86,7 @@ import { signal } from "@rivetjs/reactivity";
 
 export function Count() {
   const count = signal(0);
-  const now = count(); // in the component body: reads once, on the server
+  const now = count(); // snapshot for this component run, not a reactive binding
   return (
     <>
       <p>{now}</p> {/* a snapshot: never updates */}
@@ -103,6 +103,8 @@ Code in the component body runs on the server, and once in the browser when the 
 A signal notifies only when the new value is different. By default it compares with `Object.is`. That is why this does nothing:
 
 ```ts
+import { signal } from "@rivetjs/reactivity";
+
 const list = signal([1, 2]);
 list.update((items) => {
   items.push(3); // changes the same array
@@ -115,7 +117,7 @@ Return a new array or object instead: `list.update((items) => [...items, 3])`. Y
 ## What it means for your code
 
 - **All changing state is a signal.** A plain `let` variable changed in a handler does not update the page.
-- **Signal values are saved into the page.** A signal of a component that wakes up in the browser is written into the page when it holds :term[serializable]{id=serializable} data: strings, numbers, plain objects and arrays, dates, maps, sets. A signal holding a class instance or a function starts again from its initial value in the browser.
+- **Signal values are saved into the page.** Signal records accept plain JSON data: strings, finite numbers, booleans, `null`, and arrays or plain objects containing those values. Unchanged literal initializers are omitted. Other values, including `Date`, `Map`, `Set` and functions, start again from their browser initializer. [Route data](../guides/routing/loading-data.md) supports a richer format.
 - **Update immutably.** Create new arrays and objects when you change them.
 - **Handlers run in a batch.** Several `set` calls in one handler cause one update of the page, not one per call. Outside handlers, wrap them in `batch(() => …)`. See [batching](../guides/state/batching.md).
 - **Use `clientEffect` for browser side effects.** `effect` runs where its code runs, and a component body runs on the server. `clientEffect(fn)` runs only in the browser, at a time you choose (`load`, `idle`, `visible`, …). See [effects](../guides/state/effects.md).

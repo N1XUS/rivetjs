@@ -184,7 +184,7 @@ The site works from the root of a domain. Folders map to URLs with a trailing sl
 ## Common mistakes
 
 - **Pages missing after the build.** A dynamic route has no `entries(…)`, or `entries(…)` returns fewer values than you think. The report lists every built page.
-- **Testing with the dev server only.** Dev pages render in the browser and do not show resuming. Run `npm run build && npm run preview`.
+- **Testing with the dev server only.** Dev pages resume by default, but use unbundled modules. Run `npm run build && npm run preview`.
 - **Expecting cookies or per-user content.** A static page is the same for every visitor. Use the [Node adapter](node.md) for that.
 - **A multilingual site.** See [static builds with several languages](../i18n/locale-urls.md#static-builds).
 

@@ -18,6 +18,8 @@ The example uses a stand-in instead of a real service and shows what it sent.
 ### 1. Put it in the root layout
 
 ```tsx title="src/routes/_layout.tsx"
+import { type LayoutProps } from "@rivetjs/router";
+
 export default function Layout({ url, children }: LayoutProps) {
   return (
     <div>
@@ -33,6 +35,8 @@ The root `_layout.tsx` stays on the page while the router moves between pages. I
 ### 2. Send the view from a `clientEffect`
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 const loadAnalytics = () => import("../analytics.ts");
 
 clientEffect(

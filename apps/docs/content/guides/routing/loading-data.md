@@ -151,6 +151,8 @@ export const loader = load(async (event: RequestEvent) => {
 ```
 
 ```tsx
+import { invalidate } from "@rivetjs/router/client";
+
 await invalidate("cart"); // only loaders that called depends("cart")
 await invalidate(["cart", "user"]); // loaders that depend on any of them
 await invalidate((key) => key.startsWith("/api/")); // keys your function accepts

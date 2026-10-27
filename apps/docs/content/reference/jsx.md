@@ -104,6 +104,8 @@ Supported names: every event of TypeScript's `HTMLElementEventMap` (lib.dom) as 
 Two-way binding between a form field and a signal:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const name = signal("");
 const agree = signal(false);
 
@@ -124,7 +126,7 @@ The value must be a signal written as a name or property (`name`, `form.name`). 
 - Server: no `value` attribute (browsers ignore it); the matching `<option>` gets `selected`. Matching: `String(v) === option value`; an array selects each listed value. Option value = its `value` attribute, else its static text (whitespace collapsed).
 - Options count when written inside the select's JSX, also through expressions (`{items.map((i) => <option value={i}>…</option>)}`). Options rendered by another component or with dynamic text and no `value` are not compared: give them a `value` or write `selected` yourself (an explicit `selected` always wins).
 - DOM: the value is applied after the children exist, and again when options are added, removed or change `value` (a `MutationObserver`, only on such selects).
-- Resume: SSR markup is already selected; `model:value` compiles to a browser effect on the select (runs at load/idle, code in the symbol chunk). A selection the user changed before it runs wins over the signal; then both directions stay bound (`multiple` → array of values).
+- Resume: the containing boundary connects the select when it wakes up. A selection the user changed before adoption wins over the signal; then both directions stay bound (`multiple` → array of values).
 - Not with a spread on the `<select>` (`{...props}`): the value stays a plain attribute. A `<textarea>` with `model:value` cannot also have children.
 
 ## ref
@@ -141,8 +143,8 @@ let el!: HTMLCanvasElement;
 - Type per element: `ref?: Ref<E> | ((el: E) => void)`, where `E` is the tag's element type. A `Ref` for another element type is a type error; `Ref<HTMLElement>` (the default of `ref()`) fits every HTML element.
 - `ref()` is signal-backed: an effect that reads it re-runs when an element is attached, and when its owner unmounts (the ref goes back to `undefined` unless a newer element took it). On the server it is a no-op that reads `undefined`.
 - The callback runs in the browser once the element exists, never on the server.
-- Resumable modules: any expression is accepted except a local callback. A callback must assign a local variable (`Resumable ref callbacks must assign a local: ref={(el) => (local = el)}`, also for a variable holding a function). A function reaching `ref={…}` as a value (a prop) fails the render: `Cannot resume a ref callback passed as a value; use ref()`.
-- A `ref` key in a spread is applied like the attribute; on a resumed page only `ref()` objects, not callbacks. See [refs](../guides/components/refs.md).
+- The derived model rebuilds refs with the component: callback refs and callbacks passed as props or spread values are accepted. They run when the browser attaches the ref, not on the server.
+- A `ref` key in a spread is applied like the attribute. Prefer `ref()` plus `clientEffect` when work needs an explicit startup trigger. See [refs](../guides/components/refs.md).
 
 ## preload directive
 
@@ -150,7 +152,7 @@ let el!: HTMLCanvasElement;
 <button preload="eager" onClick={save}>Save</button>
 ```
 
-Sets when the element's handler code loads: `"eager"`, `"idle"`, `"visible"`, `"intent"` or `"interaction"`. It is not rendered as an attribute. Other values fail with `preload must be one of "eager", "idle", "visible", "intent", "interaction"`. On `<audio>` and `<video>`, `preload` is the normal HTML attribute. See [preloading](../guides/performance/preloading.md).
+Accepted directive values are `"eager"`, `"idle"`, `"visible"`, `"intent"` and `"interaction"`. The directive is not rendered as an attribute and has no effect on derived loading. Use the server's `preload` options for fetch-ahead timing. Other values fail with `preload must be one of "eager", "idle", "visible", "intent", "interaction"`. On `<audio>` and `<video>`, `preload` is the normal HTML attribute. See [preloading](../guides/performance/preloading.md).
 
 ## Slots
 
@@ -195,7 +197,6 @@ Import these by name from `@rivetjs/runtime/dom` (the server build rewrites the 
 | --- | --- |
 | ``Browser global `window` is read during server rendering; move it into a handler, clientEffect or clientEvent`` | `window`, `document`, `localStorage`… in render code. See [Window is not defined](../gotchas/window-is-not-defined.md). |
 | `Spread children are not supported` | `{...items}` as children. |
-| `Cannot resume two click handlers on one element …` | The same element gets `onClick` from a spread and from an attribute. Keep one. |
 | `Unsafe or unsupported native attribute: innerHTML` | `innerHTML`, `srcdoc`, `dangerouslySetInnerHTML`, or a `style` key in a spread. |
 | `style strings are not supported: use a style object …` | `style="…"` or a style string expression. |
 | `Unsafe style value for background: …` | A literal style value with `url(`, `expression(`, `javascript:`, `;`… |

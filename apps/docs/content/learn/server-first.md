@@ -14,14 +14,14 @@ In Rivet, the server makes the page. Every page starts as HTML written by your c
 
 - **Components** run on the server and produce HTML. This is called :term[server rendering]{id=server-rendering}.
 - **Data loading, access checks and form handling** live in the page file, in server exports such as `load(…)`. They never reach the browser.
-- **The browser** receives HTML, CSS and a small loader script. It runs only event handlers, client effects and the updates that a changed signal causes.
+- **The browser** receives HTML, CSS and a small loader script. It runs a component over the existing HTML when that component wakes up, then runs its handlers, client effects and reactive updates.
 
 You opt in to browser code piece by piece, by writing an event handler or a client effect. You do not opt out of it.
 
 ## Why it matters
 
 - **Content appears fast.** The HTML already contains the text, images and links. The browser can show it before any JavaScript runs.
-- **Less code in the browser.** A component that only shows data never ships its code. A page with one button ships the code for that button.
+- **Less code in the browser.** Static pages can ship no component code. An interactive page loads the modules needed by its interactive components, including their imports and any parents needed to restore context.
 - **Secrets stay on the server.** Database clients, API keys and private logic in `.server.ts` modules are not part of the browser build.
 - **Links and forms work without JavaScript.** A plain `<a href>` navigates. A `<form method="post">` posts to the page's server code. Once the router's script has loaded, link clicks swap only the page instead of reloading the document, but links work before that too.
 
@@ -78,8 +78,8 @@ The [server starter](../start/quick-start.md#starters) is this pattern in a work
 | Code | Server | Browser |
 | --- | --- | --- |
 | Server exports: `load(…)`, `actions(…)`, `guard(…)`, `headers(…)`, `onGet(…)`/`onPost(…)`; `.server.ts` modules | yes | never |
-| Component body (the code before `return`) | once per render | never |
-| JSX output | written as HTML | not rendered again; only changed parts update |
+| Component body (the code before `return`) | during rendering | runs when its boundary wakes up; also when client navigation mounts a page |
+| JSX output | written as HTML | adopts existing nodes on resume; creates nodes on client rendering or an adoption mismatch |
 | Event handlers (`onClick`, `onSubmit`, …) | recorded, not run | when the event happens |
 | `clientEffect(fn)` | recorded, not run | at the time you choose (`load`, `idle`, `visible`, …) |
 | Signals | created, values saved into the page | read from the saved values on first use |

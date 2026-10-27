@@ -141,6 +141,8 @@ The server checks everything again either way. Browser checks are for the user's
 To post to a third-party form service (or run your own client code) instead of a server action, give the definition a `submit` function. It runs in the browser after the browser checks pass, with the checked values:
 
 ```ts
+import { defineForm } from "@rivetjs/forms";
+
 export const contactForm = defineForm({
   name: "contact",
   schema: contactSchema,

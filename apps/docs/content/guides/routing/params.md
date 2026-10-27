@@ -83,6 +83,8 @@ The type argument `RequestEvent<"items/[id]">` takes the params from the route i
 Pages get `params` as a prop, next to `data` and `url`:
 
 ```tsx
+import { type PageProps } from "@rivetjs/router";
+
 export default function Item({ data, params, url }: PageProps<"items/[id]">) {
   return (
     <article>

@@ -37,6 +37,8 @@ You do not register click handlers. The router listens for clicks on the whole d
 The client router is opt-in. By default it never makes a page ship JavaScript: on a page with nothing else to resume (no event handlers, no signals in the markup, no client effects, no forms), links load the next document like on any website. On a page that ships JavaScript anyway, the router comes with it, and links to your pages navigate in place. To navigate in place from every page, turn it on:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ clientRouter: true });
 ```
 

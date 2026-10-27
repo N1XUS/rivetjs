@@ -77,6 +77,8 @@ For one class per state, `class:` works with scoped names as well: `class={style
 Only class names and `@keyframes` names are made unique. Element selectors like `code` or `a` stay as they are. To keep a class name unchanged, wrap it in `:global(...)`:
 
 ```tsx
+import { css } from "@rivetjs/runtime/css";
+
 const styles = css`
   /* .dark is set on <html> by the theme script: keep its name. */
   :global(.dark) .card { background: #0f172a; }
@@ -138,6 +140,8 @@ Add `/// <reference types="vite/client" />` at the top of the file if TypeScript
 Values cannot change at run time inside a `css` block. For a value that changes, set a custom property on the element and read it in the block:
 
 ```tsx
+import { css } from "@rivetjs/runtime/css";
+
 const styles = css`
   .bar { width: var(--progress); }
 `;

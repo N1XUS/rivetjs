@@ -42,7 +42,7 @@ So use the element only in browser code: event handlers and `clientEffect`. Do n
 
 ## Use a ref in an effect
 
-A [client effect](../state/effects.md) that uses a ref starts when the element comes near the screen. This is a good default for canvases and widgets below the fold:
+Choose `when: "visible"` for a [client effect](../state/effects.md) that should start when its component comes into view:
 
 ```tsx
 import { signal } from "@rivetjs/reactivity";
@@ -57,7 +57,7 @@ export function Meter() {
     ctx.clearRect(0, 0, el.width, el.height);
     ctx.fillStyle = "#0f766e";
     ctx.fillRect(0, 0, 24 * level(), el.height);
-  });
+  }, { when: "visible" });
   return (
     <div>
       <canvas width={240} height={12} ref={canvas} />
@@ -117,6 +117,8 @@ function Row(props: { name: string }) {
 Use a ref when other code needs the element. Create it inside the row's component, so each row has its own:
 
 ```tsx
+import { ref } from "@rivetjs/runtime/dom";
+
 function Row(props: { name: string }) {
   const item = ref<HTMLLIElement>();
   return (
@@ -154,20 +156,17 @@ clientEvent(box, "pointermove", (event: PointerEvent) => x.set(event.offsetX), {
 
 ## Rules
 
-The compiler checks how you use refs on resumed pages:
+Refs are rebuilt when a component runs in the browser:
 
-- `ref={…}` with a `ref()` object, or any expression that yields one (a prop, an array item), is always fine.
-- A callback must only assign a local variable: `ref={(el) => (local = el)}`. Other callbacks, including a variable that holds a function, fail with `Resumable ref callbacks must assign a local: ref={(el) => (local = el)}`. The editor quick fix turns it into a `ref()`.
-- That variable must be assigned only by ref callbacks. Assigning it elsewhere fails with `Ref-bound locals must be assigned only by ref callbacks`.
-- A callback that reaches `ref={…}` as a value (a prop holding a function) would never run on a resumed page, so the page fails to render: `Cannot resume a ref callback passed as a value; use ref()`.
-- A `ref` key inside a spread (`{...props}`) works like a `ref` attribute: a `ref()` object gets the element, also on a resumed page. A ref callback in a spread runs on pages the browser renders, but not on a resumed page; use `ref()` there. When an explicit `ref={…}` follows the spread, only the explicit one is used.
-
-Do the work with the element in a handler or a client effect, not in a ref callback.
+- A `ref()` object or a callback can be passed directly, through props, or in a spread.
+- Callback refs are not restricted to assigning a local variable. They receive the element when it is attached in the browser; they do not run on the server.
+- When an explicit `ref={…}` follows a spread, the explicit ref takes precedence.
+- A ref callback does not schedule a component to start on load. Use `ref()` with `clientEffect` when work needs a `when` trigger, reactive updates or cleanup.
 
 ## Common mistakes
 
 - **Using the ref at the top of the component.** The element does not exist on the server. Move the code into a handler or `clientEffect`.
-- **Doing work in the callback.** `ref={(el) => el.focus()}` is rejected. Use a `ref()`, then focus it in a `clientEffect`.
+- **Expecting a ref callback to schedule startup.** A callback runs when its element is attached. Use `clientEffect` with an explicit `when` when work must start before an interaction.
 - **Reaching for a ref to read an input's text.** For text fields and checkboxes, [model:value](./forms-and-input.md) is shorter.
 
 ## See also

@@ -50,6 +50,8 @@ batch(() => {
 - **Errors still flush.** If the function throws, the waiting effects still run, then the error is thrown again.
 
 ```ts
+import { batch } from "@rivetjs/reactivity";
+
 const total = batch(() => {
   price.set(500);
   quantity.set(3);
@@ -93,6 +95,9 @@ Code that reads the DOM right after that first click, in the same task (a microt
 You need `batch` yourself in code that Rivet does not call as a handler: inside a timer, a promise callback, a `clientEffect`, or a plain TypeScript module.
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+import { batch } from "@rivetjs/reactivity";
+
 clientEffect(() => {
   const timer = setInterval(() => {
     batch(() => {

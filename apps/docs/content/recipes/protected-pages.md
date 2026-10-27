@@ -61,6 +61,8 @@ The guard also runs when the Rivet router navigates in the page, not only on ful
 `locals` is an object shared by everything that handles one request. The guard puts the user there, and the page's loader reads it:
 
 ```tsx title="src/routes/(app)/dashboard.tsx"
+import { type RequestEvent, type PageProps } from "@rivetjs/router";
+
 import { load } from "@rivetjs/router";
 export const loader = load(({ locals }: RequestEvent) => ({ name: (locals.user as User).name }));
 

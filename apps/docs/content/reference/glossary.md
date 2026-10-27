@@ -16,7 +16,7 @@ The piece that connects a built app to where it runs: the Node adapter serves re
 
 ## Chunk
 
-One JavaScript file made by the build. The browser downloads a chunk only when the page needs the code inside it.
+One JavaScript file made by the build. The browser may fetch a chunk ahead of time and execute it later, when the page needs it.
 
 ## Computed
 
@@ -76,7 +76,7 @@ Asking the browser to download code before it is needed, for example when the po
 
 ## Resumability
 
-The browser carries on from the state the server rendered instead of starting the app over. Nothing runs on load; a component runs over the server's HTML the first time it is used.
+The browser carries on from the state the server rendered instead of starting the app over. A component adopts the server's HTML when an event, state change or configured trigger needs it; the page does not run every component on load.
 
 ## Route
 
@@ -84,7 +84,7 @@ A URL pattern and the page that answers it. In Rivet each file in `src/routes` i
 
 ## Serializable
 
-A value that can be written into the page as data and read back in the browser: strings, numbers, booleans, `null`, `undefined`, plain objects, arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays, and instances of a class registered with `registerClass`. Functions, promises and other class instances are not; the browser builds them again when it runs the component (see [what reaches the browser](../learn/resuming.md#what-reaches-the-browser)).
+A value that can be written into the page as data and read back in the browser: strings, numbers, booleans, `null`, `undefined`, plain objects, arrays, `Date`, `Map`, `Set`, `URL`, `bigint`, typed arrays, and instances of a class registered with `registerClass`. That richer format is used for route data. Signal records and independently shipped component props accept plain JSON data; see [signal values](../guides/state/signals.md#values-in-a-resumed-page). Functions, promises and unregistered class instances are not route data; build them inside components instead (see [what reaches the browser](../learn/resuming.md#what-reaches-the-browser)).
 
 ## Server rendering
 

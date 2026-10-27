@@ -94,12 +94,16 @@ Each prefetch is a full page request. A visitor who moves the pointer over ten l
 - **Earlier or later.** `rivetRouter({ prefetchEagerness: "conservative" })` waits for pointer or touch down in Chromium: fewer wasted requests, a smaller head start. `"eager"` starts sooner than the default `"moderate"`; Chromium decides exactly when. The fallback keeps its own timing.
 
   ```ts
+  import { rivetRouter } from "@rivetjs/router/vite";
+
   rivetRouter({ prefetch: "document", prefetchEagerness: "conservative" });
   ```
 
 - **Reload links only.** In a client-routed app every page carries a pattern of all route paths, so links that no route matches load a document too. When every document link is a `reload` link (a docs site, for example), `rivetRouter({ prefetchPaths: false })` drops that pattern: only `reload` and `rel="external"` links are prefetched, and each page is smaller (about 7.7 KB uncompressed on the Rivet docs).
 
   ```ts
+  import { rivetRouter } from "@rivetjs/router/vite";
+
   rivetRouter({ prefetch: "document", prefetchPaths: false });
   ```
 

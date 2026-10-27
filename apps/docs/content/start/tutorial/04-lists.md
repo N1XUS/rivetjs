@@ -116,7 +116,7 @@ The summary says "1 of 3 read". Click "Not read yet" on "The Hobbit": the button
 ::example{id=tutorial-04}
 
 :::tip
-On the server, `For` writes all rows into the HTML. In the browser, Rivet reuses those rows: it does not render the list again on load. A row is re-created only when its item changes.
+On the server, `For` writes all rows into the HTML. In the browser, Rivet reuses those rows: it does not render the list again on load. Rivet matches rows by their keys when the list changes. New keys create rows; removed keys dispose their rows.
 :::
 
 ## Next step

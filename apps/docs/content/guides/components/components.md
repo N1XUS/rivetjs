@@ -70,6 +70,8 @@ export function Badge(props: { label: string; count: number }) {
 ```
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const messages = signal(0);
 <Badge label="Messages" count={messages()} />; // <b> follows messages
 ```

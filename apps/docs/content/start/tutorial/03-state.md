@@ -1,6 +1,6 @@
 ---
 title: "Step 3: state"
-description: Give each book card a signal and a button, and see how Rivet runs only the click handler in the browser.
+description: Give each book card a signal and a button, and see how Rivet resumes a card when you use it.
 template: tutorial
 status: experimental
 related: [learn/signals, guides/state/signals, guides/components/events, learn/resuming]
@@ -63,8 +63,8 @@ The page itself does not change in this step.
 This is the core idea of Rivet, so look at it closely:
 
 1. **On the server** (at build time), `BookCard` runs three times, once per card. Each run creates a signal with `false`, writes the HTML, and records that the button has a click handler and that its text depends on the signal.
-2. **In the HTML**, the browser gets the three cards with "Not read yet", plus the saved state: three signals, each `false`.
-3. **In the browser**, `BookCard` never runs. When a card scrolls into view or you click, the browser loads the small file with the click handler. The handler changes that card's signal, and Rivet updates that card's label.
+2. **In the HTML**, the browser gets the three cards with "Not read yet" and their boundary records. The unchanged literal `false` values need no saved signal entries.
+3. **In the browser**, the card adopts its existing HTML when used, then the handler changes its signal and Rivet updates its label. The build can emit a smaller adoption function for simple cards like this one.
 
 This is :term[resuming]{id=resumability}: the browser picks up where the server left off, instead of running all components again. [Resuming](../../learn/resuming.md) explains the details.
 
@@ -74,10 +74,10 @@ Click the button on "Dune". Its label changes to "Read". The other cards keep "N
 
 ::example{id=tutorial-03}
 
-The "What loaded" line below the example lists the scripts the page loaded before and after the first click. Because the same button appears three times, Rivet fetches the card's small handler file as soon as the cards are visible, so the first click finds it ready.
+The "What loaded" line below the example lists the scripts the page loaded before and after the first click. By default, the loader fetches the page's interactive code at idle after load without running it. Pointer or keyboard intent fetches any missing code sooner. See [preloading](../../guides/performance/preloading.md).
 
-:::gotcha[Code at the top of a component does not run in the browser]
-If you add `console.log("hello")` at the top of `BookCard`, you see it in the terminal during the build, not in the browser console. Put browser work in an event handler. See [component did not run again](../../gotchas/component-did-not-run-again.md).
+:::gotcha[Component setup is not a reactive update]
+Code at the top of `BookCard` runs during server rendering and can run again when the browser adopts the card. It does not re-run for each signal change. Put browser work in a handler or `clientEffect`. See [component did not run again](../../gotchas/component-did-not-run-again.md).
 :::
 
 ## Next step

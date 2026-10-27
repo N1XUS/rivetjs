@@ -67,13 +67,17 @@ A `pending` signal blocks a second submit while the first one runs. Without it, 
 ### On the server
 
 ```tsx title="src/routes/index.tsx"
-like: async ({ request }: RequestEvent) => {
-  const form = await request.formData();
-  const liked = form.get("liked") === "true";
-  // …save…
-  if (request.headers.get("accept")?.includes("application/json")) return { likes: post.likes, liked };
-  return redirect("/", 303);
-},
+import { actions, type RequestEvent, redirect } from "@rivetjs/router";
+
+export const forms = actions({
+  like: async ({ request }: RequestEvent) => {
+    const form = await request.formData();
+    const liked = form.get("liked") === "true";
+    // …save…
+    if (request.headers.get("accept")?.includes("application/json")) return { likes: post.likes, liked };
+    return redirect("/", 303);
+  },
+});
 ```
 
 Actions check that the request comes from your own site (the `Origin` header). A `fetch` from your page passes that check.

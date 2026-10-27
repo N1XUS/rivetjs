@@ -12,6 +12,8 @@ When you write a signal, Rivet compares the new value with the old one. If they 
 Signals and computed values compare with `Object.is`. For numbers, strings and booleans this is what you expect:
 
 ```ts
+import { signal } from "@rivetjs/reactivity";
+
 const count = signal(1);
 count.set(1); // equal: no update
 count.set(2); // update
@@ -20,6 +22,8 @@ count.set(2); // update
 For objects and arrays, `Object.is` checks identity, not content. A new object with the same content is "not equal". The same object changed in place is "equal":
 
 ```ts
+import { signal } from "@rivetjs/reactivity";
+
 const user = signal({ id: 1, name: "Ada" });
 user.set({ id: 1, name: "Ada" }); // new object: update
 user().name = "Grace";
@@ -47,6 +51,8 @@ selected.set({ id: 2, name: "Grace" }); // update
 `equals: false` turns the comparison off. Every write updates, even with the same value. This is useful when you change a value in place on purpose:
 
 ```ts
+import { signal } from "@rivetjs/reactivity";
+
 const box = { n: 0 };
 const tick = signal(box, { equals: false });
 
@@ -73,6 +79,8 @@ When `score` goes from 3 to 4, `level` computes again, gets `0` again, and nothi
 The comparison must also work in the browser, after the page resumes. Rivet can carry it over when the compiler can see the function:
 
 ```ts
+import { signal } from "@rivetjs/reactivity";
+
 // Works: a function written inside the options.
 signal(item, { equals: (a, b) => a.id === b.id });
 

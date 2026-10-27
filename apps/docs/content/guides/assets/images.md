@@ -86,6 +86,8 @@ Available directives: `layout`, `width`, `height`, `formats` (separated by `;`, 
 When many images share options, name them once in the config:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({
   images: { presets: { hero: { layout: "full-width" } } },
 });
@@ -102,6 +104,8 @@ Directives in the import win over the preset, and the preset wins over the globa
 `sizes` tells the browser how wide the image will be on screen, so it can download the right file. You can pass a normal `sizes` string, or an object with screen names (`sm`, `md`, `lg`, `xl`, `2xl`, the Tailwind defaults), pixel widths, or media queries:
 
 ```tsx
+import { Picture } from "@rivetjs/kit/image";
+
 <Picture image={hero} alt="" sizes={{ md: "50vw", default: "100vw" }} />
 ```
 
@@ -132,6 +136,8 @@ All other images load lazily (`loading="lazy"`) by default. Use `priority` only 
 Pass an object of media queries instead of one image. `default` is the image used when no query matches:
 
 ```tsx
+import { Picture } from "@rivetjs/kit/image";
+
 import wide from "../assets/team-wide.jpg?image";
 import tall from "../assets/team-tall.jpg?image";
 
@@ -204,6 +210,8 @@ If an image is used only in server code, it may be missing from the client outpu
 In a component that resumes, a `<Picture />` element becomes a small piece of browser code in the [chunk](../performance/chunks.md) that holds the component's code. The image never changes, so you can avoid this by calling `Picture` as a function and rendering the result. The playground does this for its banner:
 
 ```tsx
+import { ImagePreload, Picture } from "@rivetjs/kit/image";
+
 import type { CompiledElement } from "@rivetjs/runtime/jsx-runtime";
 
 const banner = [ImagePreload({ image: hero }), Picture({ image: hero, alt: "", priority: true })] as unknown as CompiledElement[];

@@ -48,6 +48,8 @@ The effect runs once in the browser, then again each time `unread` changes. Code
 Return a function from the effect. Rivet calls it before the effect runs again, and when the part of the page that owns the effect goes away.
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 clientEffect(() => {
   if (!running()) return;
   const timer = setInterval(() => seconds.update((s) => s + 1), 1000);
@@ -71,6 +73,8 @@ On a server-rendered page, the `when` option says when the browser starts the ef
 The default is `"idle"`.
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 let canvas!: HTMLCanvasElement;
 clientEffect(() => {
   const ctx = canvas.getContext("2d")!;
@@ -85,6 +89,8 @@ clientEffect(() => {
 The effect function may be `async`. Rivet tracks only the signals read before the first `await`. Read the signals you need first:
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 const loadAnalytics = () => import("../analytics.ts");
 
 clientEffect(async () => {
@@ -118,7 +124,7 @@ stop();
 
 ## Common mistakes
 
-- **Using `effect` in a component for browser work.** It runs on the server only. Use `clientEffect`.
+- **Using `effect` in a component for browser work.** It runs during server rendering too. Use `clientEffect` for browser APIs.
 - **Copying values between signals.** If an effect only sets one signal from another, use a [computed value](./computed.md).
 - **Writing a signal the effect reads.** The effect triggers itself. Rivet stops after 10,000 runs with `Reactive effect did not settle after 10000 executions`.
 

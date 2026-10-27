@@ -27,6 +27,8 @@ The page gets it as `data.fruits`. The server renders the full list into the HTM
 ### 2. Two signals: what is typed, and what is searched
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const text = signal("");  // updates on every key press
 const query = signal(""); // updates after the pause
 ```
@@ -36,6 +38,8 @@ const query = signal(""); // updates after the pause
 ### 3. The debounce is an effect with a cleanup
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 clientEffect(() => {
   const value = text().trim().toLowerCase();
   const timer = setTimeout(() => query.set(value), 250);
@@ -54,6 +58,8 @@ So while the user types fast, every timer is cancelled before it fires. Only the
 ### 4. The list filters with a computed value
 
 ```tsx
+import { computed } from "@rivetjs/reactivity";
+
 const results = computed(() => fruits.filter((fruit) => fruit.toLowerCase().includes(query())));
 ```
 

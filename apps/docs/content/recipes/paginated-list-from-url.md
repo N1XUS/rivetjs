@@ -28,6 +28,8 @@ There is no signal for the page number. The page number lives in the query strin
 `load(…)` in `index.tsx` runs on the server for every request. It receives the request URL as `url`:
 
 ```tsx title="src/routes/index.tsx"
+import { type RequestEvent } from "@rivetjs/router";
+
 import { load } from "@rivetjs/router";
 export const loader = load(({ url }: RequestEvent) => {
   const page = Number(url.searchParams.get("page") ?? "1");

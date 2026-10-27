@@ -56,6 +56,8 @@ Main Rivet docs site (framework: reactivity, runtime, router, compiler, i18n, to
 
 ## Gotchas
 
+- `content/reference/utilities.md` covers application-facing id/owner/selector/lazy-function/form-decoding helpers. Its self-contained examples use `check` fences so the snippet gate checks their complete types. Signal records use plain JSON data (`server-derived.ts` `isData`); route data uses the richer resume-format encoder.
+
 - `content/guides/tooling/ai.md` documents portable `rivet-ui-design` installation for Codex/Claude Code/Cursor, local-clone and post-push remote commands, complete-bundle copying, automatic/explicit invocation, and optional MCP. The public bundles and starter copies are generated from `libs/mcp/ai`; keep this guide aligned with that source.
 - `content/guides/components/framework-components.md` is the user guide of `@rivetjs/bridge` + `@rivetjs/bridge-react` / `-preact` (plan T17 part 1): keep its policy table, island options, ownership rules and limits aligned with `libs/bridge*/CLAUDE.md` (no Solid / Vue / Svelte or `persist` until they ship).
 - `content/_charts.ts` imports `docs/benchmarks/*.json`: `serve` does not watch `docs/`, so a regenerated report needs a content touch or rebuild.

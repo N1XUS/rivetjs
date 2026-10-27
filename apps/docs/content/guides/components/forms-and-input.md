@@ -46,6 +46,8 @@ It also handles typing with an input method editor (for example Japanese or Chin
 `model:checked` connects a checkbox to a `boolean` signal:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const subscribed = signal(false);
 
 <label>
@@ -73,6 +75,8 @@ For other input types, read the value in a handler and write a `value`, `checked
 ### Number and range
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const amount = signal(1);
 
 <input type="number" min={1} max={10} value={amount()} onInput={(event) => amount.set((event.target as HTMLInputElement).valueAsNumber || 1)} />;
@@ -81,6 +85,8 @@ const amount = signal(1);
 ### Select
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const size = signal("m");
 
 <select name="size" model:value={size}>
@@ -98,6 +104,8 @@ const size = signal("m");
 ### Radio buttons
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const color = signal("teal");
 
 {["teal", "amber"].map((value) => (
@@ -139,7 +147,7 @@ For real forms with a schema, field errors, accessible messages and server check
 
 - **`value={name()}` without a handler.** The field shows the value, but typing does not change the signal. Use `model:value`.
 - **`model:value` on a number field.** Not supported. Use `onInput` with `valueAsNumber`.
-- **Removing `action` from the form.** Without it, the form does nothing until JavaScript is loaded. See [links and forms without JS](/best-practices/links-and-forms-without-js.md).
+- **Losing the server submission target.** A form without `action` submits to the current URL. Keep the intended `action` and `method` so the server can handle it when JavaScript is unavailable. See [links and forms without JS](/best-practices/links-and-forms-without-js.md).
 - **camelCase attributes.** Use the names from the JSX types: `autoComplete`, `autoFocus`, `maxLength`, `readOnly`.
 
 ## See also

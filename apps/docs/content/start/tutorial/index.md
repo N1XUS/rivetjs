@@ -66,7 +66,7 @@ npm run preview
 ```
 
 :::note
-The dev server renders the whole page in the browser. The production build does not: it sends HTML and runs only the code you use. Both show the same page; only the production build shows [resuming](../../learn/resuming.md).
+Dev pages [resume](../../learn/resuming.md) by default too. Editing a resumed component reloads the page; code is served as unbundled modules. Use the production build to measure download sizes and loading behavior.
 :::
 
 ## Check that it works

@@ -50,6 +50,8 @@ Files with relative `url()` or `@import` references always stay linked. The dev 
 Inlined CSS is not cached between pages: each page carries it again. Change the rule with the `inlineStylesheets` option of `rivetRouter`: `{ maxTotalBrotli: 8192 }` sets another total in bytes, `"always"` inlines every stylesheet, `"never"` links them all.
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ styles: ["src/styles.css"], inlineStylesheets: "never" });
 ```
 
@@ -115,6 +117,8 @@ Write `class` as in HTML. `className` also works and renders as `class`. Use one
 A `class` expression that reads a signal updates when the signal changes:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const active = signal(false);
 
 <article class={active() ? "card card--active" : "card"} onClick={() => active.update((v) => !v)}>

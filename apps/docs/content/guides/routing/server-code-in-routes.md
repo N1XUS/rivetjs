@@ -58,6 +58,8 @@ The export name is yours: `export const pageData = load(…)` works the same. Th
 They run for each module from the outermost layout to the page, `onRequest(…)` before `onGet(…)` / `onPost(…)` / …. `onRequest(…)` runs for every method, before the router checks whether the page accepts it: a layout can answer a `POST` to a page that has no actions. A page that exports `onPut(…)`, `onPatch(…)`, `onDelete(…)` or `onPost(…)` also accepts that method; anything else then gets `405` with an `Allow` header listing only what the page handles.
 
 ```tsx title="src/routes/index.tsx"
+import { type RequestEvent } from "@rivetjs/router";
+
 // /?format=json answers with the loader's data as JSON; other requests render the page.
 import { onGet } from "@rivetjs/router";
 export const GET = onGet(async (event: RequestEvent) =>

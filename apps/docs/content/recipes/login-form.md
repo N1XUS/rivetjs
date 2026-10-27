@@ -31,16 +31,20 @@ The form is plain HTML. It works before any JavaScript loads, and with JavaScrip
 ### 2. The action checks the password on the server
 
 ```tsx title="src/routes/login.tsx"
-login: async ({ request, cookies }: RequestEvent) => {
-  const form = await request.formData();
-  const email = String(form.get("email") ?? "");
-  const password = String(form.get("password") ?? "");
-  const next = safeNext(String(form.get("next") ?? ""));
-  const name = checkPassword(email, password);
-  if (!name) return fail(400, { email, next, message: "Wrong email or password." });
-  startSession(cookies, name);
-  return redirect(next, 303);
-},
+import { actions, type RequestEvent, fail, redirect } from "@rivetjs/router";
+
+export const forms = actions({
+  login: async ({ request, cookies }: RequestEvent) => {
+    const form = await request.formData();
+    const email = String(form.get("email") ?? "");
+    const password = String(form.get("password") ?? "");
+    const next = safeNext(String(form.get("next") ?? ""));
+    const name = checkPassword(email, password);
+    if (!name) return fail(400, { email, next, message: "Wrong email or password." });
+    startSession(cookies, name);
+    return redirect(next, 303);
+  },
+});
 ```
 
 - `checkPassword` lives in `src/auth.server.ts`, imported only by the server exports. Files ending in `.server.ts` can never be part of browser code: the build stops with an error if the component uses one.

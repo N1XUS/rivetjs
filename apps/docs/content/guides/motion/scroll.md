@@ -28,6 +28,8 @@ const scroll = createScroll(); // the window
 For an animation that follows scroll, let the browser run it:
 
 ```tsx
+import { ref, clientEffect } from "@rivetjs/runtime/dom";
+
 import { scrollAnimation } from "@rivetjs/motion/scroll";
 
 const bar = ref<HTMLElement>();
@@ -39,6 +41,8 @@ It uses a native `ScrollTimeline` where the browser has one, so the animation ru
 ## createInView
 
 ```tsx
+import { ref } from "@rivetjs/runtime/dom";
+
 import { createInView } from "@rivetjs/motion/in-view";
 
 const box = ref<HTMLElement>();
@@ -57,5 +61,5 @@ const seen = createInView(box, { once: true, amount: 0.5 });
 import { prefersReducedMotion } from "@rivetjs/motion/reduced-motion";
 
 const reduced = prefersReducedMotion();
-<video autoplay={!reduced()} />;
+<video autoPlay={!reduced()} />;
 ```

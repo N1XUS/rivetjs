@@ -198,6 +198,8 @@ await prerenderBuild({ dist: "dist", locales: ["en", "de"] });
 List the languages in each `[[lang]]` page's `entries(…)`. A set without `lang` builds the URL without the segment (the default language with `"as-needed"`), a set with it the prefixed URL:
 
 ```tsx title="src/routes/[[lang]]/blog/[slug].tsx"
+import { entries } from "@rivetjs/router";
+
 export const paths = entries(() => posts.flatMap((post) => [{ slug: post.slug }, { lang: "de", slug: post.slug }]));
 ```
 

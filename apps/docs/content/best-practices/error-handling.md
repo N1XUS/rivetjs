@@ -68,6 +68,8 @@ onClick={async () => {
 ## Don't
 
 ```ts avoid
+import { type RequestEvent } from "@rivetjs/router";
+
 import { load } from "@rivetjs/router";
 export const loader = load(async ({ params }: RequestEvent<"products/[id]">) => {
   try {

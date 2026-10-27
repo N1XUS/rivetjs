@@ -122,12 +122,12 @@ With the default comparison only the previous and the next value can change thei
 Pass a function to compare keys another way, e.g. membership in a `Set`. Then every subscribed key is compared on a change, unless the `keys` option lists the keys whose answer may have changed:
 
 ```ts
-import { selector, signal } from "@rivetjs/reactivity";
+import { memberKeys, selector, signal } from "@rivetjs/reactivity";
 
 const selected = signal<Set<string>>(new Set());
 const isIn = selector(selected, (key: string, set) => set.has(key), {
   // Keys added or removed since the previous value.
-  keys: (next, previous) => [...next].filter((k) => !previous.has(k)).concat([...previous].filter((k) => !next.has(k))),
+  keys: memberKeys,
 });
 ```
 
@@ -152,9 +152,11 @@ You can change this comparison with the `equals` option. See [equality](./equali
 
 ## Values in a resumed page
 
-On a server-rendered page, Rivet writes the value of each signal of an interactive component into the HTML. The browser reads it back when the component wakes up. So the value should be :term[serializable]{id=serializable}: Rivet must be able to turn it into text and back. A signal holding something else starts again from its initial value in the browser.
+A boundary records signal values that are plain JSON data: strings, finite numbers, booleans, `null`, and arrays or plain objects containing those values. An unchanged literal initializer, such as `signal(0)`, is omitted: the browser evaluates the same initializer when the boundary wakes up.
 
-These values work: strings, numbers, booleans, `null`, `undefined`, plain objects and arrays, `Date`, `URL`, `Map`, `Set` and `bigint`. These do not: functions, class instances, symbols, promises and `WeakMap`. The server render fails with an error that names the type.
+Other values, including `undefined`, `Date`, `URL`, `Map`, `Set`, `bigint`, functions and class instances, are not saved in signal records. The signal starts from its browser initializer instead; an unsupported signal value does not by itself fail the server render. If that produces different markup, the boundary renders in the browser instead of adopting its server nodes.
+
+This differs from [route data](../routing/loading-data.md), which uses the richer resume format and can carry dates, maps, sets and registered classes. Store a timestamp or other plain data in a signal when you need to preserve a server-created value.
 
 ## Common mistakes
 

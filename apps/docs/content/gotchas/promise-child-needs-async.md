@@ -29,7 +29,7 @@ An `async` function always returns a Promise. On the server, Rivet waits for a P
 
 In the browser, Rivet does not wait for bare Promises. It needs to know what to show while the data loads, what to show if loading fails, and when to cancel the request. A bare Promise says none of this, so Rivet refuses it.
 
-The browser renders components when you navigate to another page through a link, and on every page in development after you edited a file (see [Dev and production differ](dev-and-production-differ.md)). That is where the error appears.
+The browser renders components during client navigation, and it adopts components when a resumed page is used. Dev pages resume by default too; editing a resumed component reloads the page (see [Dev and production differ](dev-and-production-differ.md)). That is where the error appears.
 
 ## Fix
 

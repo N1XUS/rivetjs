@@ -6,7 +6,7 @@ status: experimental
 related: [guides/tooling/vite, guides/tooling/devtools, gotchas/dev-and-production-differ]
 ---
 
-The dev server shows your changes as soon as you save a file. For most edits it does not reload the page: it swaps the changed component in place and keeps its state. This is :term[hot reload]{id=hot-reload}.
+The dev server shows your changes as soon as you save a file. By default, editing a resumed component reloads the page. With `dev: { resume: false }`, components can be replaced in place while keeping state. This is :term[hot reload]{id=hot-reload}.
 
 After reading this page you know how the dev server renders pages, what hot reload keeps and what it resets, and how to opt out.
 
@@ -31,7 +31,7 @@ See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
 
 ## What hot reload keeps
 
-When you save a component file, every exported component in it is replaced in place. The rest of the page stays as it is.
+With dev resume disabled, when you save a component file, every exported component in it is replaced in place. The rest of the page stays as it is.
 
 State is kept like this:
 
@@ -122,7 +122,7 @@ If `@rivetjs/devtools` is installed, the dev server also loads Rivet DevTools. I
 
 ## Common mistakes
 
-- **"It works in dev but not in production."** Usually top-level component code expects to run in the browser. Check a production build.
+- **"It works in dev but not in production."** Compare a fresh dev page with a production build. DevTools inspection or `dev: { resume: false }` can switch dev pages to client rendering.
 - **State that never resets.** The signal count did not change, so the old values stay. Add `// @refresh reset` or reload the page.
 
 ## See also

@@ -202,6 +202,7 @@ export const nav: NavSection[] = [
           "reference/file-conventions",
           "reference/jsx",
           "reference/config",
+          "reference/utilities",
           { path: "reference/motion", tag: "new" },
           "reference/glossary",
           // One page per diagnostic code (generated: docs-kit tools/errors.ts); the side nav lists the index only.

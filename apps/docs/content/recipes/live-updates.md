@@ -45,6 +45,8 @@ Rivet's Node server sends each piece of a streamed response at once, also when i
 ### 3. The page connects in a `clientEffect`
 
 ```tsx
+import { clientEffect } from "@rivetjs/runtime/dom";
+
 clientEffect(() => {
   const source = new EventSource("/events");
   source.onopen = () => status.set("live");

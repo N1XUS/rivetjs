@@ -15,6 +15,8 @@ When a change moves elements (a list reorders, a card grows, an underline moves 
 Mark the elements with `layout` and make the change inside `animateLayout`:
 
 ```tsx
+import { ref, For } from "@rivetjs/runtime/dom";
+
 import { Motion } from "@rivetjs/motion";
 import { animateLayout } from "@rivetjs/motion/layout";
 
@@ -45,6 +47,8 @@ Elements animate inside `animateLayout`, not on every change: Rivet has no rende
 Two elements with the same `layoutId` are one element in two places: when the new one appears, it starts at the old one's box. The tab underline in the example:
 
 ```tsx
+import { Motion } from "@rivetjs/motion";
+
 import { LayoutGroup } from "@rivetjs/motion/layout";
 
 <LayoutGroup id="tabs">

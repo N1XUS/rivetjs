@@ -44,7 +44,7 @@ Rivet skips that second run on load. The server writes the HTML and a small amou
 What you get:
 
 - The page shows its content before any JavaScript runs.
-- The browser downloads code only for the parts you use. If you never click a button, its code never loads.
+- The browser can fetch interactive code ahead of time without running it. Components wake when an event, state change or configured trigger needs them.
 - A large page with little interaction stays cheap in the browser.
 
 ## How it works
@@ -52,8 +52,8 @@ What you get:
 For the counter above, the flow looks like this:
 
 1. **On the server**, `Home()` runs once. It creates the signal, writes `<button>Clicked 0 times</button>` and remembers two things: the button has a click handler, and the text depends on `count`.
-2. **In the HTML**, Rivet adds a small inline script (the loader) and a record of the component: where it is in the page and its state, for example "count is 0".
-3. **In the browser**, only the loader runs at first. After the page has loaded, it fetches the code of `Home` at low priority without running it. When you click, the browser runs `Home()` once over the existing HTML (no element is created; `count` starts at the saved 0), attaches the handler, and the click runs it: `count` becomes 1, and Rivet updates only the text inside the button.
+2. **In the HTML**, Rivet adds a small inline script (the loader) and a record of the component: where it is in the page and any state the browser cannot recover from its initializer. The unchanged literal `0` needs no saved signal value.
+3. **In the browser**, only the loader runs at first. After the page has loaded, it fetches the code of `Home` at low priority without running it. When you click, the browser runs `Home()` once over the existing HTML (the live button is reused; `count` starts at its initializer `0`), attaches the handler, and the click runs it: `count` becomes 1, and Rivet updates only the text inside the button.
 
 `Home()` runs in the browser once, on the first click, and never on load. After that, only the handler `() => count.update(...)` and the text update run.
 

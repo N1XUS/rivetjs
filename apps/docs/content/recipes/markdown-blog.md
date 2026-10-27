@@ -39,6 +39,8 @@ The types (`Post`, `PostSummary`) live in a separate `src/posts.ts`. Components 
 ### 3. Loaders return what each page needs
 
 ```tsx title="src/routes/blog/[slug].tsx"
+import { type RequestEvent, notFound, type PageProps } from "@rivetjs/router";
+
 import { getPost, listPosts } from "../../posts.server.ts"; // used only by server exports
 import { load } from "@rivetjs/router";
 

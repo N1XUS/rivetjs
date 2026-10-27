@@ -13,6 +13,8 @@ An element that disappears usually unmounts at once. `exit` gives it an animatio
 ## Presence
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 import { Motion } from "@rivetjs/motion";
 import { Presence } from "@rivetjs/motion/presence";
 
@@ -35,6 +37,8 @@ const open = signal(true);
 `PresenceFor` is a keyed list like [`For`](../components/lists.md) whose removed rows stay at their place while they leave:
 
 ```tsx
+import { Motion } from "@rivetjs/motion";
+
 import { PresenceFor } from "@rivetjs/motion/presence";
 
 <ul>
@@ -59,6 +63,8 @@ import { PresenceFor } from "@rivetjs/motion/presence";
 Every kit transition scope is a presence: kit `Transition` / `TransitionPresence`, cdk `Modal`, `Popover` and the overlays built on them. A Motion element with `exit` inside one plays its exit when the overlay closes, and the overlay waits for it. No `Presence` wrapper is needed:
 
 ```tsx
+import { Motion } from "@rivetjs/motion";
+
 <Modal isOpen={open} onOpenChange={(value) => open.set(value)}>
   <Motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
     …

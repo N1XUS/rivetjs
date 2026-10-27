@@ -12,7 +12,7 @@ Rivet does not ship its own measuring tool for production pages. The browser's n
 
 ## Measure a production build
 
-The dev server serves code unbundled (one module per file, one chunk per component) and unminified, and pages render in the browser after the first edit. Numbers from `npm run dev` say nothing about production. See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
+The dev server serves code unbundled (one module per file, one chunk per component) and unminified, and editing a resumed component reloads the page. Numbers from `npm run dev` say nothing about production. See [Dev and production differ](../../gotchas/dev-and-production-differ.md).
 
 Build and serve the app the way you deploy it:
 

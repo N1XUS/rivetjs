@@ -46,6 +46,8 @@ Secrets and database clients go in modules whose name ends in `.server.ts`, such
 - modules you list in the router option `serverOnly`, by id or pattern. Use it for virtual modules and generated data:
 
 ```ts title="vite.config.ts"
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ serverOnly: ["virtual:content", /\/generated\/.*\.json$/] });
 ```
 

@@ -38,6 +38,8 @@ A branch is created again only when the condition picks the other branch. If the
 Write it the way you would in React: `cond && <jsx/>`. When the condition is false, nothing is rendered:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const open = signal(false);
 
 <button type="button" onClick={() => open.update((v) => !v)}>
@@ -144,6 +146,8 @@ Change the look with a class expression:
 Instead of `Switch`, you can compute the branch in a local function and call it in JSX:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const status = signal<"idle" | "saving" | "saved" | "error">("idle");
 const message = (value: string) =>
   value === "saving" ? <span>Saving…</span>

@@ -16,6 +16,8 @@ A form often lives in an overlay: "New customer" in a drawer, "Edit address" in 
 By default, a successful submit reloads the page's data and renders the page again. That also resets everything the page holds in signals, such as an open drawer. Mark the page live instead:
 
 ```tsx title="src/routes/index.tsx"
+import { For } from "@rivetjs/runtime/dom";
+
 import type { LivePageProps } from "@rivetjs/router";
 import { load } from "@rivetjs/router";
 
@@ -41,6 +43,9 @@ Following a link to the same page with other search parameters (`?new`, `setSear
 The drawer is an ordinary overlay with an `isOpen` signal. Close it when the submit worked: `onSubmit` resolves to `true` once the server accepted the form and the new data is on the page.
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+import { createForm, formId, onSubmit } from "@rivetjs/forms";
+
 const open = signal(false);
 const form = createForm(customerForm, { result: actionResult("customer") });
 
@@ -71,6 +76,9 @@ The same page works as plain HTML:
 - after a successful post, the page renders with the new data and the drawer closed.
 
 ```tsx
+import { type RequestEvent } from "@rivetjs/router";
+import { signal } from "@rivetjs/reactivity";
+
 import { load } from "@rivetjs/router";
 export const loader = load(({ url }: RequestEvent) => ({ customers: listCustomers(), creating: url.searchParams.has("new") }));
 

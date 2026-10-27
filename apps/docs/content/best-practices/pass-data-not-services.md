@@ -11,7 +11,7 @@ related: [guides/routing/loading-data, learn/resuming, best-practices/secrets-in
 
 A component runs on the server, and again in the browser when it is used. What travels from the server to the browser inside the page is data: the route's loader data, signal values, and the props of components that wake up on their own. Data that can be written as text and read back is **serializable**.
 
-- Plain objects, arrays, strings, numbers, dates, `Map` and `Set` travel fine.
+- Route data supports plain objects, arrays, strings, numbers, dates, `Map` and `Set`. Signal records and independently shipped component props use plain JSON data; non-data props make a component adopt with its parent.
 - A database client or an API client is a class instance with methods and open connections. It cannot travel. Returned from a loader, the page renders but does not resume ([RV2107](../errors/RV2107.md)). Passed as a prop, it makes the child run together with its parent in the browser, so both components' code loads and the parent builds the client again there.
 - A service imported by a page module drags its code (and maybe its secrets) toward the browser. The build keeps `.server.ts` modules out of browser code (a component that uses one fails the build, RV3011), but an ordinary module has no such guard.
 
@@ -63,4 +63,4 @@ export default function Products() {
 ## When to break it
 
 - **Browser-only helpers.** A module that only uses browser APIs (a formatter, a small fetch wrapper) can be imported by handlers directly. The browser builds it again when the component runs there.
-- **Context with an id.** Some values (a theme, a locale) are provided to many components. Use context created with an `id` so the browser can provide the same value. See [context](/guides/components/context.md).
+- **Shared context.** Some values (a theme, a locale) are provided to many components. Export one context token from a shared module; the browser rebuilds its provider when the component wakes up. See [context](/guides/components/context.md).

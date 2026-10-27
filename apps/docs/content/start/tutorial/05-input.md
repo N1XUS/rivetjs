@@ -15,6 +15,8 @@ Add a text field and an "Add" button. When you submit the form, the new book app
 In `src/routes/index.tsx`, add a signal for the text in the field, next to the others:
 
 ```tsx title="src/routes/index.tsx"
+import { signal, computed } from "@rivetjs/reactivity";
+
 const books = signal(initialBooks);
 const readCount = computed(() => books().filter((book) => book.read).length);
 // The text in the input box. `model:value` keeps the signal and the input in sync.
@@ -52,14 +54,14 @@ What each part does:
 - **`model:value={title}`** connects the input to the signal in both directions. When you type, `title` gets the new text. When the code calls `title.set("")`, the field becomes empty.
 - **`onSubmit`** runs when you press :kbd[Enter] in the field or click "Add". `event.preventDefault()` stops the browser from sending the form to a server and reloading the page.
 - **`books.update(...)`** builds a new array with the new book at the end. `For` adds one row for it; the other rows stay as they are.
-- **`id: Date.now()`** gives the new book a unique key. This code runs in the browser, inside the handler, so reading the clock here is fine.
+- **`id: Date.now()`** uses the submission time as a key for this small demo. Reading the clock inside a handler is allowed. Real data should use stable unique IDs: two additions in the same millisecond could share a timestamp.
 - **The `<label>`** names the field for screen readers. `sr-only` is a Tailwind class that hides it visually.
 
 The rest of the page stays as in step 4.
 
 ## What runs where
 
-Typing into the field does not need any code from your app. Rivet keeps `model:value` in sync with a small built-in part of its runtime. Your `onSubmit` code loads when you are about to use the form.
+The input accepts text before the app code loads. Its first input event wakes the containing boundary and connects `model:value` to the signal, preserving text already typed. The submit handler belongs to that boundary too; it is not a separately loaded handler.
 
 ## Check that it works
 

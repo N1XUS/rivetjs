@@ -47,6 +47,8 @@ Install Wrangler as a dev dependency (`npm i -D wrangler`). Add `.wrangler/` to 
 Keep your own settings in `wrangler.jsonc` (or `wrangler.json`) in the project root: KV namespaces, D1 databases, `vars`, routes. The build merges it into the generated file and sets `main`, the assets folder and the module rules itself. `wrangler.toml` is not merged; use JSON, or pass the settings in the adapter:
 
 ```ts
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ adapter: { name: "cloudflare", wrangler: { kv_namespaces: [{ binding: "CACHE", id: "<id>" }] } } });
 ```
 

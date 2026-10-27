@@ -126,6 +126,8 @@ If you know Astro: `client="visible"` is `client:visible`, written as a normal p
 Pass values, not signals. A prop that reads a signal follows it: each Rivet update re-renders the island once, through React's own `root.render`.
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const range = signal("30d");
 <RevenueChart client="idle" data={series(range())} />;
 ```
@@ -139,6 +141,8 @@ A static island (no `client`) with a live prop loads nothing until the prop chan
 A function prop calls back into Rivet. Write it as an inline arrow or a local constant, as for any [event handler](events.md), so it can resume:
 
 ```tsx
+import { signal } from "@rivetjs/reactivity";
+
 const range = signal("30d");
 <RangePicker client="load" value={range()} onChange={(next) => range.set(next)} />;
 ```

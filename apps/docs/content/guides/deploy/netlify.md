@@ -46,6 +46,8 @@ The function is a Netlify Function (web-standard `Request` and `Response`) for e
 ## Edge Functions
 
 ```ts
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ adapter: { name: "netlify", edge: true } });
 ```
 

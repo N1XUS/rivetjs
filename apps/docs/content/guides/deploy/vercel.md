@@ -42,6 +42,8 @@ Add `.vercel/` to `.gitignore`.
 The default is a Node.js function (`nodejs24.x`). It uses the same response path as the [Node adapter](node.md): page bytes go straight from the renderer to the socket, compressed with zstd, Brotli or gzip, and stream as they render.
 
 ```ts
+import { rivetRouter } from "@rivetjs/router/vite";
+
 rivetRouter({ adapter: { name: "vercel", runtime: "edge", regions: ["iad1"] } });
 ```
 

@@ -103,13 +103,17 @@ Any component can also write the signal it got from context, for example a theme
 
 The lookup happens where the component runs. In the browser, a component that wakes up looks the value up again from its providers, which run with it when they are needed. See [pass data, not services](/best-practices/pass-data-not-services.md).
 
-`createContext` also takes an `id` option: `createContext(defaultValue, { id: "theme" })`. It names the context in the resumed page data, so a custom resume entry can supply its value in the browser. This is an advanced setup; most apps do not need it.
+`createContext(defaultValue)` takes one argument. Export the token from a shared module so providers and readers use the same object. The derived model rebuilds providers when their components run; it does not require a context id or a custom resume entry.
+
+For a callback that runs later while its owner is still alive, see [`runWithOwner`](../../reference/utilities.md#owner-callbacks-runwithowner).
 
 ## Context after await
 
 `useContext` is synchronous. After an `await`, Rivet no longer knows where in the tree the code runs, and `useContext` returns the default. Inside an [Async](./async.md) `load` function, use `work.get(token)` after an `await`:
 
 ```tsx
+import { Async } from "@rivetjs/runtime/dom";
+
 <Async
   load={async (work) => {
     const res = await fetch("/api/user");

@@ -100,7 +100,7 @@ You can start with `static` and switch to `server` later. Your pages and compone
 
 - In `static` mode, `load(…)` runs on your build machine. Do not read request-only things like cookies there.
 - In `server` mode, a module-level variable in server code (a route file or a `.server.ts` module) is shared by all requests. Keep per-user data out of it.
-- The dev server (`npm run dev`) resumes pages like production until your first edit, then renders them in the browser. Judge speed with a production build. See [dev and production differ](../gotchas/dev-and-production-differ.md).
+- The dev server (`npm run dev`) resumes pages like production by default. Editing a resumed component reloads the page with the new code. Judge speed with a production build. See [dev and production differ](../gotchas/dev-and-production-differ.md).
 
 ## Related
 
