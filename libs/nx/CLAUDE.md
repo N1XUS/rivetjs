@@ -66,3 +66,7 @@ Packages libs/nx into `.artifacts/nx-e2e/dist-<pid>/nx` (`buildPackage`), symlin
 ## See also
 
 `apps/docs/content/guides/tooling/nx.md` (user docs) · `libs/create-rivet/CLAUDE.md` · `templates/CLAUDE.md` · `scripts/CLAUDE.md` (package build, smoke, release ORDER).
+
+## CLI output (CLI-UX)
+
+CLI-UX: check schema adds `quiet` and `verbose`, forwarded to rivet-check. JSON check buffers successful sync stdout (`Step.quietSuccess`); failure stdout is replayed intact, executor headings suppressed. runSteps emits headings/timing/failure hints on stderr and start errors have a remedy (DEBUG=rivet stack). Nx's own task UI remains outside this JSON contract.

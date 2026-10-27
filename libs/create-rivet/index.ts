@@ -4,7 +4,7 @@
 //
 // Templates: the published package ships them in `templates/` (copied from the repository's `templates/` at
 // package time by `bundle.ts`); inside the repository they are read from `templates/` directly.
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -215,10 +215,30 @@ export function createProject(options: CreateOptions): { dir: string; name: stri
   return { dir, name, files: [...files].sort() };
 }
 
-/** `<pm> install` in `dir` (inherits the terminal). Returns whether it succeeded. */
-export function installDependencies(dir: string, pm: PackageManager, { stdio = "inherit" as "inherit" | "pipe" } = {}): boolean {
-  const run = spawnSync(pm, pm === "yarn" ? [] : ["install"], { cwd: dir, stdio, shell: process.platform === "win32" });
-  return run.status === 0;
+/** `<pm> install` in `dir`; asynchronous so the CLI can report progress. */
+export async function installDependencies(
+  dir: string,
+  pm: PackageManager,
+  {
+    stdio = "inherit",
+    onOutput,
+    env = process.env,
+  }: {
+    stdio?: "inherit" | "pipe";
+    onOutput?: (text: string) => void;
+    env?: NodeJS.ProcessEnv;
+  } = {},
+): Promise<boolean> {
+  const child = spawn(pm, pm === "yarn" ? [] : ["install"], { cwd: dir, stdio, env, shell: process.platform === "win32" });
+  child.stdout?.on("data", (chunk) => onOutput?.(String(chunk)));
+  child.stderr?.on("data", (chunk) => onOutput?.(String(chunk)));
+  return new Promise((done) => {
+    child.once("error", (error) => {
+      onOutput?.(error.message);
+      done(false);
+    });
+    child.once("close", (code) => done(code === 0));
+  });
 }
 
 /** `git init` + first commit, unless git is missing or `dir` is already inside a work tree. */

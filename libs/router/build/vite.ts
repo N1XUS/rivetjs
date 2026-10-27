@@ -1,5 +1,6 @@
 // Vite plugin: scan routes, write `.rivet/` codegen, compile it with the Rivet plugin (resume mode
 // for server/static apps), default the build inputs, and serve requests in dev.
+import { terminalError } from "./dev-errors.ts";
 import { lstat, mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -817,9 +818,7 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
       };
       // A failed regeneration is logged (an unhandled rejection would end the dev server's process).
       const logged = (fn: (file: string) => Promise<unknown>) => (file: string) =>
-        void fn(file).catch((error: unknown) =>
-          server.config.logger.error("rivet router: " + (error instanceof Error ? (error.stack ?? error.message) : String(error))),
-        );
+        void fn(file).catch((error: unknown) => server.config.logger.error(terminalError(error, root, "route regeneration failed", file)));
       server.watcher.on("add", logged(regenerate));
       server.watcher.on("unlink", logged(regenerate));
       // Any source edit can change what a route's browser graph reaches (re-walked lazily, changed files only).

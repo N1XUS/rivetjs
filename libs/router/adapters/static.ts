@@ -1,5 +1,6 @@
 // Static adapter: prerender resumable pages (static routes + `entries()`) through the app handler,
 // with `_data.json` beside each page for client navigation and a CSR shell for the rest.
+import { progress } from "@rivetjs/compiler/format";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, rm, rmdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
@@ -18,6 +19,8 @@ import { writeDictionaries, type DictionaryManifest, type WriteDictionariesOptio
 
 /** Options of `prerender()`. */
 export interface PrerenderOptions {
+  /** Terminal progress and timing (default true); false for a custom logger or JSON caller. */
+  progress?: boolean;
   handler: AppHandler;
   routes: readonly AppRoute[];
   outDir: string;
@@ -187,6 +190,17 @@ async function write(path: string, body: string | Uint8Array): Promise<void> {
  * pages whose paths differ only in letter case (checked before the second one is written).
  */
 export async function prerender(options: PrerenderOptions): Promise<PrerenderReport> {
+  const task = progress("rivet prerender", { quiet: options.progress === false });
+  try {
+    const report = await renderPages(options, task.update);
+    task.stop(`rivet: prerendered ${report.pages.length} page${report.pages.length === 1 ? "" : "s"}`);
+    return report;
+  } finally {
+    task.stop();
+  }
+}
+
+async function renderPages(options: PrerenderOptions, update: (detail: string) => void): Promise<PrerenderReport> {
   const { handler, routes, outDir, trailingSlash = "ignore" } = options;
   const origin = options.origin ?? PLACEHOLDER;
   // Directive mistakes throw before any page is rendered.
@@ -251,8 +265,9 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
       files.set(folded, path);
       // The canonical URL (`trailingSlash`): the other form would answer 308.
       const url = slashPath(path, trailingSlash);
+      update(`[${report.pages.length + 1}] ${url}`);
       const page = await render(url, false);
-      if (page.status !== 200) throw new Error(`Prerender ${url} (${route.id}) returned ${page.status}`);
+      if (page.status !== 200) throw new Error(`Prerender ${url} (${route.id}) returned ${page.status}. Fix the route loader/render error, then rebuild.`);
       const at = local(path);
       await write(trailingSlash === "never" && at !== "/" ? target(outDir, at + ".html", "") : target(outDir, at, "index.html"), await html(page, url));
       report.pages.push(url);
@@ -295,6 +310,8 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
 export async function prerenderBuild(
   options: {
     dist?: string;
+    /** Terminal progress and timing (default true). */
+    progress?: boolean;
     origin?: string;
     shell?: PrerenderOptions["shell"];
     csp?: PrerenderOptions["csp"];
@@ -316,6 +333,7 @@ export async function prerenderBuild(
   );
   return prerender({
     handler,
+    ...(options.progress !== undefined ? { progress: options.progress } : {}),
     routes: entry.routes,
     outDir: client,
     ...(entry.base ? { base: entry.base } : {}),

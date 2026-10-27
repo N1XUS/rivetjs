@@ -57,12 +57,12 @@ test("rivet check: an app without .rivet/editor.json fails (RV7101); a stale one
   }
 });
 
-test("rivet check: tsconfig errors exit 2 instead of skipping the project", () => {
+test("rivet check: tsconfig errors exit 1 instead of skipping the project", () => {
   const root = tempApp({ "src/a.tsx": "export const A = () => <p />;\n" });
   try {
     writeFileSync(join(root, "tsconfig.json"), JSON.stringify({ extends: "./missing-base.json", include: ["src"] }));
     const r = run(root);
-    assert.equal(r.status, 2, r.stdout + r.stderr);
+    assert.equal(r.status, 1, r.stdout + r.stderr);
     assert.match(r.stderr, /^rivet check: tsconfig\.json: .*missing-base\.json/m);
   } finally {
     rmSync(root, { recursive: true, force: true });

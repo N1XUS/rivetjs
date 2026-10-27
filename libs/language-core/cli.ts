@@ -4,12 +4,12 @@
 // Text: per diagnostic a `file:line:col - error RVxxxx: message` line, its code frame and `fix:` / `docs:` lines, then a
 // summary; JSON: one object on stdout (each diagnostic with `docs` and `fix`).
 // Exit 0 clean (warnings do not fail), 1 on errors (incl. a missing .rivet/editor.json, RV7101),
-// 2 on usage / setup errors (bad arguments, tsconfig errors, no usable compiler wasm).
+// 1 also covers setup failures; 2 is reserved for invalid arguments.
 import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import ts from "typescript";
 import { docsUrl } from "@rivetjs/compiler/codes";
-import { codeFrame, remedyLines } from "@rivetjs/compiler/format";
+import { codeFrame, remedyLines, paint, suggestion, groupDiagnostics, debugEnabled } from "@rivetjs/compiler/format";
 import { explainCode } from "./explain.ts";
 import { analyzeFile, createLanguageCore, findCompiler, manifestStatus, viteRoot, workspaceCompilerWasm, type CheckDiagnostic } from "./index.ts";
 
@@ -20,32 +20,43 @@ export interface CheckRun {
   skipped: { config: string; reason: string }[];
 }
 
-/** A setup problem (no compiler wasm, unreadable tsconfig): `main` exits 2. */
+/** A setup problem (no compiler wasm, unreadable tsconfig): `main` exits 1. */
 export class CheckSetupError extends Error {
   override name = "CheckSetupError";
 }
 
-const USAGE = `usage: rivet-check [-p tsconfig.json]... [--no-types] [--no-manifest] [--format text|json]
+class CheckUsageError extends Error {}
+
+const USAGE = `Usage:
+  rivet-check [-p tsconfig.json]... [--no-types] [--no-manifest] [--format text|json]
 
 Rivet compiler diagnostics (both targets, resume mode per .rivet/editor.json) plus the language
 service's type-aware checks for every Rivet file (.tsx / .jsx) of the given tsconfig projects
 (and the projects they reference). An app whose .rivet/editor.json is missing is an error (RV7101),
 a stale one a warning (RV7102): run \`rivet sync\` first.
 
+Options:
   -p, --project <path>      tsconfig file or directory (repeatable; default tsconfig.json)
   --no-types                skip type-aware checks (RV3101 route links)
   --no-manifest             skip the .rivet/editor.json checks (RV7101 / RV7102)
   --format text|json        output format (default text)
+  --json                    alias for --format json
+  --quiet                   errors only (JSON keeps counts)
+  --verbose                 include error stacks (also DEBUG=rivet)
   -h, --help                show this help
 
-Exit status: 0 no errors (warnings do not fail), 1 errors, 2 usage or setup error
-(bad arguments, tsconfig errors, no usable compiler wasm).`;
+Examples:
+  rivet-check -p tsconfig.json
+  rivet-check --json --quiet
+
+Exit status: 0 no errors (warnings do not fail), 1 errors or setup failure,
+2 usage error (invalid arguments or a non-tsconfig project path).`;
 
 /** `-p` argument → tsconfig path: a directory means its `tsconfig.json`; anything else must be a `.json` file. */
 function configPath(cwd: string, config: string): string {
   const path = resolve(cwd, config);
   if (ts.sys.directoryExists(path)) return join(path, "tsconfig.json");
-  if (!/\.json$/i.test(path)) throw new CheckSetupError(`rivet check: ${config}: not a tsconfig (expected a .json file or a directory)`);
+  if (!/\.json$/i.test(path)) throw new CheckUsageError(`rivet check: ${config}: not a tsconfig (expected a .json file or a directory)`);
   return path;
 }
 
@@ -149,7 +160,7 @@ export function checkProjects(
  * read this line), then the code frame, `fix:` (the code's explanation, `explain.json`) and `docs:` lines.
  */
 export function format(d: CheckDiagnostic, cwd = process.cwd()): string {
-  const head = `${relative(cwd, d.filename)}:${d.line ?? 1}:${d.column ?? 1} - ${d.severity} ${d.code}: ${d.message}`;
+  const head = `${relative(cwd, d.filename)}:${d.line ?? 1}:${d.column ?? 1} - ${paint(d.severity === "error" ? "red" : "yellow", d.severity, process.stdout)} ${d.code}: ${d.message}`;
   let source: string | undefined;
   try {
     source = d.line ? readFileSync(d.filename, "utf8") : undefined;
@@ -164,45 +175,68 @@ export function main(argv: readonly string[]): number {
   const configs: string[] = [];
   let typeAware = true,
     manifest = true,
-    json = false;
+    json = argv.includes("--json") || argv.includes("--format=json") || argv.some((arg, i) => arg === "--format" && argv[i + 1] === "json"),
+    quiet = false,
+    verbose = debugEnabled();
+  const fail = (message: string, code = 2, error?: unknown): number => {
+    const fix = "Check the project path/configuration; run rivet-check --help for options and rivet sync before checking an app.";
+    if (json) console.log(JSON.stringify({ error: message, fix, exitCode: code, ...(verbose && error instanceof Error ? { stack: error.stack } : {}) }));
+    else console.error(`${message}\n  fix: ${fix}${verbose && error instanceof Error ? "\n" + error.stack : ""}`);
+    return code;
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === "-h" || arg === "--help") {
       console.log(USAGE);
       return 0;
-    } else if (arg === "-p" || arg === "--project") configs.push(argv[++i] ?? "tsconfig.json");
+    } else if (arg === "-p" || arg === "--project") {
+      const value = argv[++i];
+      if (!value || value.startsWith("-")) return fail(`rivet check: ${arg} requires a project path.`);
+      configs.push(value);
+    } else if (arg === "--json") json = true;
+    else if (arg === "--quiet") quiet = true;
+    else if (arg === "--verbose") verbose = true;
     else if (arg === "--no-types") typeAware = false;
     else if (arg === "--no-manifest") manifest = false;
     else if (arg === "--format" || arg.startsWith("--format=")) {
       const value = arg === "--format" ? argv[++i] : arg.slice("--format=".length);
       if (value !== "text" && value !== "json") {
-        console.error(`rivet check: --format must be text or json (got ${value ?? "nothing"})\n\n${USAGE}`);
-        return 2;
+        return fail(`rivet check: --format must be text or json (got ${value ?? "nothing"})`);
       }
       json = value === "json";
     } else {
-      console.error(`rivet check: unknown argument ${arg}\n\n${USAGE}`);
-      return 2;
+      return fail(
+        `rivet check: unknown argument ${arg}.${suggestion(arg, ["--project", "--no-types", "--no-manifest", "--format", "--json", "--quiet", "--verbose", "--help"])} Run rivet-check --help.`,
+      );
     }
   }
   let run: CheckRun;
   try {
     run = checkProjects(configs.length ? configs : ["tsconfig.json"], { typeAware, manifest });
   } catch (error) {
-    if (!(error instanceof CheckSetupError)) throw error;
-    if (json) console.log(JSON.stringify({ error: error.message }));
-    else console.error(error.message);
-    return 2;
+    return fail(error instanceof Error ? error.message : String(error), error instanceof CheckUsageError ? 2 : 1, error);
   }
   const { diagnostics, files, skipped } = run;
   const errors = diagnostics.filter((d) => d.severity === "error").length;
   if (json) {
     const cwd = process.cwd();
-    const list = diagnostics.map((d) => ({ ...d, file: relative(cwd, d.filename), fix: explainCode(d.code)?.fix }));
+    const list = groupDiagnostics(diagnostics)
+      .filter(({ diagnostic }) => !quiet || diagnostic.severity === "error")
+      .map(({ diagnostic: d, count, occurrences }) => ({
+        ...d,
+        file: relative(cwd, d.filename),
+        fix: explainCode(d.code)?.fix,
+        count,
+        ...(count > 1 ? { occurrences: occurrences.map(({ line, column, message }) => ({ line, column, message })) } : {}),
+      }));
     console.log(JSON.stringify({ files, errors, warnings: diagnostics.length - errors, skipped, diagnostics: list }, null, 2));
     return errors ? 1 : 0;
   }
-  for (const d of diagnostics) console.log(format(d));
+  for (const { diagnostic: d, count } of groupDiagnostics(diagnostics)) {
+    if (!quiet || d.severity === "error")
+      console.log(format(d) + (count > 1 ? `\n  occurrences: ${count} (same code and file; --json lists every location)` : ""));
+  }
+  if (quiet) return errors ? 1 : 0;
   for (const s of skipped) console.log(`rivet check: skipped ${s.config} (${s.reason})`);
   console.log(
     `rivet check: ${files} file${files === 1 ? "" : "s"}, ${errors} error${errors === 1 ? "" : "s"}, ${diagnostics.length - errors} warning${diagnostics.length - errors === 1 ? "" : "s"}`,

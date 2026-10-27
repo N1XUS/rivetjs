@@ -10,6 +10,8 @@ import type { ExecutorContext } from "@nx/devkit";
 export interface Step {
   /** Shown before the step runs. */
   label: string;
+  /** Buffer stdout and replay it only on failure (JSON prerequisite steps). */
+  quietSuccess?: boolean;
   /** Arguments after the Node binary (`[bin, …args]` or `["--input-type=module", "-e", code]`). */
   args: string[];
   cwd: string;
@@ -77,14 +79,24 @@ function hookSignals() {
 /** Starts a step; `exit` resolves with its status (signals count as failure). */
 export function start(step: Step): { child: ChildProcess; exit: Promise<number> } {
   hookSignals();
-  const child = spawn(process.execPath, step.args, { cwd: step.cwd, env: { ...process.env, ...step.env }, stdio: "inherit" });
+  const child = spawn(process.execPath, step.args, {
+    cwd: step.cwd,
+    env: { ...process.env, ...step.env },
+    stdio: step.quietSuccess ? ["inherit", "pipe", "inherit"] : "inherit",
+  });
   children.add(child);
+  const output: Buffer[] = [];
+  if (step.quietSuccess) child.stdout?.on("data", (chunk: Buffer) => output.push(chunk));
   const exit = new Promise<number>((done) => {
     child.on("error", (error) => {
-      console.error(error);
+      children.delete(child);
+      console.error(
+        `[rivet:nx] error: ${step.label} could not start in ${step.cwd}: ${error.message}\n  fix: Check the working directory and tool installation.${process.env.DEBUG === "rivet" ? "\n" + error.stack : ""}`,
+      );
       done(1);
     });
-    child.on("exit", (code) => {
+    child.on("close", (code) => {
+      if (step.quietSuccess && code !== 0) for (const chunk of output) process.stdout.write(chunk);
       children.delete(child);
       done(code ?? 1);
     });
@@ -95,8 +107,14 @@ export function start(step: Step): { child: ChildProcess; exit: Promise<number> 
 /** Runs steps in order; stops at the first failure. */
 export async function runSteps(steps: Step[], { verbose = true } = {}): Promise<{ success: boolean }> {
   for (const step of steps) {
-    if (verbose) console.log(`> ${step.label}`);
-    if ((await start(step).exit) !== 0) return { success: false };
+    const started = performance.now();
+    if (verbose) console.error(`[rivet:nx] ${step.label} (${step.cwd})`);
+    const status = await start(step).exit;
+    if (status !== 0) {
+      if (verbose) console.error(`[rivet:nx] error: ${step.label} exited ${status}. Fix the diagnostic above and rerun the target.`);
+      return { success: false };
+    }
+    if (verbose) console.error(`[rivet:nx] ${step.label} finished in ${((performance.now() - started) / 1000).toFixed(1)} s`);
   }
   return { success: true };
 }

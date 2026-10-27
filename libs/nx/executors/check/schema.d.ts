@@ -8,5 +8,9 @@ export interface CheckExecutorSchema {
   /** Run `rivet sync` first (regenerates `.rivet/`). Default: routed apps only. */
   sync?: boolean;
   /** Output format. */
+  /** Errors only. */
+  quiet?: boolean;
+  /** Include error stacks. */
+  verbose?: boolean;
   format?: "text" | "json";
 }

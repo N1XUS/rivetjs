@@ -30,7 +30,7 @@ test("formatDiagnostic: origin, code, location, frame, fix and docs", () => {
     { root: "/app" },
   );
   const lines = text.split("\n");
-  assert.equal(lines[0], "[rivet:compiler] RV1002 Spread children are not supported");
+  assert.equal(lines[0], "error: [rivet:compiler] RV1002 Spread children are not supported");
   assert.equal(lines[1], "  at src/a.tsx:2:15");
   assert.match(text, /> 2 \| export const A = \(\) => <ul>\{\.\.\.xs\}<\/ul>;\n\s+\|\s{15}\^/);
   assert.match(text, /\n  fix: Render the array as an expression child/);
@@ -116,6 +116,49 @@ test("Vite compile errors: [RVnnnn] file:line:col header, frame, fix and docs li
     assert.equal(error.plugin, "vite-plugin-rivet");
     assert.equal(error.pluginCode, "RV1002");
     assert.equal(error.url, docsUrl("RV1002"));
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("Vite groups same-code warnings in a file and does not repeat them on another transform", async () => {
+  mkdirSync(".artifacts", { recursive: true });
+  const dir = mkdtempSync(resolve(".artifacts/rivet-warning-"));
+  try {
+    const file = join(dir, "warning.tsx");
+    const source =
+      'import { signal } from "@rivetjs/reactivity"; export function Counter(p: {list: number[]}) { const all = []; for (const n of p.list) { all.push(signal(n)); all.push(signal(n)); } return <p onClick={() => all[0]?.set(1)} />; }';
+    writeFileSync(file, source);
+    const plugin = rivet({ resume: { modules: [file] }, comptime: false });
+    const messages: string[] = [];
+    const summaries: string[] = [];
+    (plugin.configResolved as (config: unknown) => void)({
+      root: dir,
+      command: "build",
+      plugins: [],
+      logger: {
+        warn(message: string) {
+          summaries.push(message);
+        },
+      },
+    });
+    const transform = plugin.transform as unknown as (this: unknown, code: string, id: string, options: { ssr: boolean }) => unknown;
+    const ctx = {
+      warn(message: string) {
+        messages.push(message);
+      },
+      error(value: { message: string }): never {
+        throw new Error(value.message);
+      },
+    };
+    await transform.call(ctx, source, file, { ssr: true });
+    await transform.call(ctx, source, file, { ssr: true });
+    (plugin.buildEnd as () => void)();
+    assert.deepEqual(summaries, ["[rivet:compiler] 0 errors, 2 warnings"]);
+    assert.equal(messages.length, 1, messages.join("\n"));
+    assert.match(messages[0]!, /warning: \[rivet:compiler\] RV2104/);
+    assert.match(messages[0]!, /occurrences: 2/);
+    assert.match(messages[0]!, /docs: https:\/\/rivetjs.severyn.pro\/errors\/RV2104/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

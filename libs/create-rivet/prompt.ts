@@ -2,11 +2,12 @@
 // TTY, a numbered answer otherwise). Every prompt takes its streams, so tests drive them with PassThrough.
 import { emitKeypressEvents } from "node:readline";
 import { createInterface } from "node:readline/promises";
-import { styleText } from "node:util";
+import { paint } from "./output.ts";
 
 export interface PromptIO {
   input: NodeJS.ReadableStream & { isTTY?: boolean; setRawMode?: (mode: boolean) => unknown };
   output: NodeJS.WritableStream;
+  env?: Record<string, string | undefined>;
 }
 
 /** Thrown when the user cancels (Ctrl+C, Ctrl+D / end of input). */
@@ -16,7 +17,7 @@ export class PromptCancelled extends Error {
   }
 }
 
-const color = (format: Parameters<typeof styleText>[0], text: string, io: PromptIO) => styleText(format, text, { stream: io.output as NodeJS.WriteStream });
+const color = (format: Parameters<typeof paint>[0], text: string, io: PromptIO) => paint(format, text, io.output, io.env);
 
 interface Reader {
   close: () => void;

@@ -13,6 +13,8 @@ export interface SyncOptions {
   configFile?: string;
   /** Vite mode (default `production`). */
   mode?: string;
+  /** Capture Vite diagnostics instead of printing (CLI JSON / quiet modes). */
+  onLog?: (severity: "error" | "warning" | "info", message: string) => void;
 }
 
 export interface SyncResult {
@@ -23,13 +25,33 @@ export interface SyncResult {
   manifest: { resumeModules?: string[]; routesDir?: string; routes?: unknown[] } | null;
 }
 
-export async function sync({ root = process.cwd(), configFile, mode = "production" }: SyncOptions = {}): Promise<SyncResult> {
-  const { resolveConfig } = await import("vite");
+export async function sync({ root = process.cwd(), configFile, mode = "production", onLog }: SyncOptions = {}): Promise<SyncResult> {
+  const { resolveConfig, createLogger } = await import("vite");
   const appRoot = resolve(root);
+  const logger = onLog ? createLogger("silent") : undefined;
+  if (logger && onLog) {
+    logger.warn = (message) => onLog("warning", message);
+    const seen = new Set<string>();
+    logger.warnOnce = (message) => {
+      if (!seen.has(message)) {
+        seen.add(message);
+        onLog("warning", message);
+      }
+    };
+    logger.error = (message) => onLog("error", message);
+    logger.info = (message) => onLog("info", message);
+  }
   // Resolved as the server build: it carries every locale (an `i18n()` client build needs RIVET_LOCALE, one per locale)
   // and generates the same `.rivet/` files.
   const config = await resolveConfig(
-    { root: appRoot, mode, logLevel: "warn", build: { ssr: true }, ...(configFile ? { configFile: resolve(appRoot, configFile) } : {}) },
+    {
+      root: appRoot,
+      mode,
+      logLevel: "warn",
+      ...(logger ? { customLogger: logger } : {}),
+      build: { ssr: true },
+      ...(configFile ? { configFile: resolve(appRoot, configFile) } : {}),
+    },
     "build",
     mode,
   );

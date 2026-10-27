@@ -52,11 +52,11 @@ test("rivet sync writes route types and the editor manifest from the Vite config
   }
 });
 
-test("rivet sync: no Vite config or bad arguments exit 2", () => {
+test("rivet sync: missing Vite config exits 1; bad arguments exit 2", () => {
   const root = app({ "package.json": "{}" });
   try {
     const none = spawnSync("node", [cli, "sync"], { cwd: root, encoding: "utf8" });
-    assert.equal(none.status, 2);
+    assert.equal(none.status, 1);
     assert.match(none.stderr, /no Vite config/);
     assert.equal(spawnSync("node", [cli, "sync", "--nope", "x"], { cwd: root, encoding: "utf8" }).status, 2);
     assert.equal(spawnSync("node", [cli, "sync", "--root"], { cwd: root, encoding: "utf8" }).status, 2);

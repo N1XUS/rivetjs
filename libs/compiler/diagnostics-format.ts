@@ -5,12 +5,14 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { isAbsolute, join, relative } from "node:path";
-import { docsUrl } from "./codes.ts";
+import { codeInfo, docsUrl } from "./codes.ts";
+import { paint } from "./terminal.ts";
 
 /** One diagnostic to render. Lines and columns are 1-based. */
 export interface DiagnosticReport {
   /** Reporting package / plugin: `compiler`, `router`, `i18n`, … → `[rivet:compiler]`. */
   origin?: string;
+  severity?: "error" | "warning" | "info";
   /** `RVnnnn` code, if the diagnostic has one (its docs URL and fix text are looked up). */
   code?: string;
   message: string;
@@ -93,7 +95,7 @@ export function remedyOf(code: string, root?: string): string | undefined {
 
 /** `fix:` / `docs:` lines (indented, each line prefixed with `\n`) for `code`; "" for neither. */
 export function remedyLines(code: string | undefined, fix?: string, docs?: string, root?: string): string {
-  const remedy = fix ?? (code ? remedyOf(code, root) : undefined),
+  const remedy = fix ?? (code ? (remedyOf(code, root) ?? "Follow the diagnostic guide linked below.") : undefined),
     link = docs ?? (code ? docsUrl(code) : undefined);
   return (remedy ? "\n  fix: " + remedy : "") + (link ? "\n  docs: " + link : "");
 }
@@ -110,7 +112,9 @@ export function remedyLines(code: string | undefined, fix?: string, docs?: strin
  *       docs: https://rivetjs.severyn.pro/errors/RV1016
  */
 export function formatDiagnostic(report: DiagnosticReport, options: FormatOptions = {}): string {
-  const head = (report.origin ? "[rivet:" + report.origin + "] " : "") + (report.code ? report.code + " " : "") + report.message;
+  const severity = report.severity ?? (report.code ? codeInfo(report.code)?.severity : undefined);
+  const label = severity ? paint(severity === "error" ? "red" : severity === "warning" ? "yellow" : "cyan", severity + ": ") : "";
+  const head = label + (report.origin ? "[rivet:" + report.origin + "] " : "") + (report.code ? report.code + " " : "") + report.message;
   let out = head;
   if (report.file) {
     out += "\n  at " + location(report.file, report.line, report.column, options.root);
@@ -148,4 +152,19 @@ export function appFrames(stack: string, root: string, max = 2): string {
     if (out.length === max) break;
   }
   return out.join(" ← ");
+}
+
+export { colorEnabled, debugEnabled, groupDiagnostics, paint, progress, suggestion, summary } from "./terminal.ts";
+
+/** First source-mapped app location (framework frames omitted); for dev terminal code frames. */
+export function stackLocation(stack: string, root: string): { file: string; line: number; column: number } | undefined {
+  for (const line of stack.split("\n")) {
+    const m = FRAME.exec(line);
+    if (!m) continue;
+    const file = m[2]!,
+      rel = relative(root, file);
+    if (!rel || rel.startsWith("..") || isAbsolute(rel) || /[/\\]node_modules[/\\]/.test(file) || rel.startsWith(".rivet")) continue;
+    return { file, line: Number(m[3]), column: Number(m[4]) };
+  }
+  return undefined;
 }

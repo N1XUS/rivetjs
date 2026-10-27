@@ -176,3 +176,12 @@ test("packageDir finds workspace packages", () => {
   expect(packageDir("vite", import.meta.dirname)).toMatch(/node_modules\/vite$/);
   expect(() => packageDir("no-such-package-xyz", import.meta.dirname)).toThrow(/cannot find/);
 });
+
+test("JSON check hides successful sync output and forwards diagnostic controls", () => {
+  const steps = checkSteps({ format: "json", quiet: true, verbose: true }, root, facts(), bin);
+  expect(steps[0]!.quietSuccess).toBe(true);
+  expect(steps[0]!.args).toEqual(["/bin/@rivetjs/router:rivet", "sync", "--json", "--quiet"]);
+  expect(steps[1]!.args).toContain("--format");
+  expect(steps[1]!.args).toContain("--quiet");
+  expect(steps[1]!.args).toContain("--verbose");
+});

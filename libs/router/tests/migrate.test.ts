@@ -113,7 +113,7 @@ test("rivet CLI: --dry-run reports, default writes", async () => {
     assert.equal(await readFile(join(dir, "src/routes/item.server.ts"), "utf8"), server);
     await run("migrate", "server-exports");
     assert.match(await readFile(join(dir, "src/routes/item.server.ts"), "utf8"), /export const loader = load\(/);
-    await assert.rejects(run("nope"), /usage: rivet sync[\s\S]*rivet migrate server-exports/);
+    await assert.rejects(run("nope"), /Unknown argument nope[\s\S]*rivet --help/);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

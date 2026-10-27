@@ -203,13 +203,13 @@ test("cli: --help, --version, bad flags", async () => {
   assert.equal(await main(["-v"], p), 0);
   assert.equal(p.out().trim(), ownVersion());
   p = io();
-  assert.equal(await main(["x", "--template", "vue"], p), 1);
+  assert.equal(await main(["x", "--template", "vue"], p), 2);
   assert.match(p.err(), /Unknown template "vue"/);
   p = io();
-  assert.equal(await main(["x", "--pm", "deno"], p), 1);
+  assert.equal(await main(["x", "--pm", "deno"], p), 2);
   assert.match(p.err(), /Unknown package manager/);
   p = io();
-  assert.equal(await main(["--bogus"], p), 1);
+  assert.equal(await main(["--bogus"], p), 2);
   assert.match(p.err(), /bogus/);
 });
 
@@ -328,10 +328,10 @@ for (const { id, label } of DEPLOY_TARGETS) {
 
 test("cli --deploy errors: unknown target, server-only target on a static template", async () => {
   let p = io();
-  assert.equal(await main(["x", "--deploy", "heroku", "--yes"], p), 1);
+  assert.equal(await main(["x", "--deploy", "heroku", "--yes"], p), 2);
   assert.match(p.err(), /Unknown deploy target "heroku"/);
   p = io();
-  assert.equal(await main(["deno-static", "--template", "static", "--deploy", "deno", "--yes", "--no-install", "--no-git"], p), 1);
+  assert.equal(await main(["deno-static", "--template", "static", "--deploy", "deno", "--yes", "--no-install", "--no-git"], p), 2);
   assert.match(p.err(), /--deploy deno runs a server: use --template server/);
   assert.ok(!existsSync(join(scratch, "deno-static")));
 });

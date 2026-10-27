@@ -1,6 +1,7 @@
 // Dev server error surfaces (`vite serve` only; never part of a build): server failures reach Vite's
 // error overlay and a dev error page with the source-mapped stack, unmatched URLs list the route
 // table, and browser errors the dev entry forwards (`rivet:client-error`) open the overlay too.
+import { debugEnabled, formatDiagnostic, stackLocation } from "@rivetjs/compiler/format";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { join } from "node:path";
 import type { ViteDevServer } from "vite";
@@ -47,7 +48,7 @@ export function devReport(server: ViteDevServer, table: () => RouteTable, routes
     const id = file ? join(routesPath, file) : undefined;
     const message = codeOf(error) + text;
     const stack = error instanceof Error ? (error.stack ?? "") : "";
-    server.config.logger.error(`[rivet] ${phase} failed${route === undefined ? "" : ` (route "${route}")`}: ${stack || message}`);
+    server.config.logger.error(terminalError(error, server.config.root, `${phase} failed${route === undefined ? "" : ` (route "${route}")`}`, id));
     const failure: Failure = { message, stack, phase, route, id };
     failures.getStore()?.push(failure);
     if (overlayOn(server)) server.ws.send({ type: "error", err: overlayError(failure) });
@@ -68,7 +69,7 @@ export function listenClientErrors(server: ViteDevServer): void {
     // Benign ResizeObserver loop notice (older dev clients still forward it): no overlay, no error log.
     if (/^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/.test(message)) return;
     const stack = typeof data?.stack === "string" ? data.stack : "";
-    server.config.logger.error(`[rivet] browser error: ${stack || message}`);
+    server.config.logger.error(terminalError(Object.assign(new Error(message), { stack }), server.config.root, "browser error"));
     if (overlayOn(server)) client.send({ type: "error", err: { message: "Browser error: " + message, stack, plugin: "rivet" } });
   });
 }
@@ -225,4 +226,24 @@ function lateFailures(response: Response, seen: Failure[], server: ViteDevServer
     cancel: (reason) => reader.cancel(reason),
   });
   return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+}
+
+/** Compact terminal report; the browser overlay retains the full mapped stack. */
+export function terminalError(error: unknown, root: string, phase: string, file?: string): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const stack = error instanceof Error ? (error.stack ?? "") : "";
+  const code = codeOf(error).slice(1, -2) || undefined;
+  const point = stackLocation(stack, root);
+  const report = formatDiagnostic(
+    {
+      origin: "router",
+      severity: "error",
+      code,
+      message: `${phase}: ${message}`,
+      ...(point ?? (file ? { file } : {})),
+      ...(!code ? { fix: "Fix the named route or module and save to retry; set DEBUG=rivet for the full stack." } : {}),
+    },
+    { root },
+  );
+  return report + (debugEnabled() && stack ? "\n" + stack : "");
 }

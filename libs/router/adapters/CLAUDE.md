@@ -86,3 +86,7 @@ npx vitest run --project router libs/router/tests/node.test.ts libs/router/tests
 ## See also
 
 - [../CLAUDE.md](../CLAUDE.md), [../server/CLAUDE.md](../server/CLAUDE.md), [docs/guides/routing.md#file-routes-deploy-adapters](../../../docs/guides/routing.md), [docs/guides/i18n.md](../../../docs/guides/i18n.md)
+
+## CLI output (CLI-UX)
+
+CLI-UX: `prerender` and `prerenderBuild` accept `progress?: boolean` (default true). Build-only progress uses stderr, one updating TTY line or periodic plain CI/pipe lines, current discovered-page count and final timing; no speculative total or reordered entries()/loader calls. `progress: false` disables output. Timer cleared on success/failure; non-200 page failures include a repair hint.

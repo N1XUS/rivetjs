@@ -13,7 +13,7 @@ import { islandGetters } from "./island-props.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import { compile, moduleFacts, type CompileOptions, type CompileResult, type ModuleFacts } from "./index.ts";
 import { docsUrl } from "./codes.ts";
-import { appFrames, codeFrame, displayPath, formatDiagnostic, remedyLines } from "./diagnostics-format.ts";
+import { appFrames, codeFrame, displayPath, formatDiagnostic, remedyLines, groupDiagnostics, summary } from "./diagnostics-format.ts";
 import { runtimeAbiProblem, runtimePackage } from "./abi.ts";
 import { hotModule, sourceStamps } from "./hot.ts";
 import { updateEditorManifest } from "./editor.ts";
@@ -1759,17 +1759,23 @@ function rivetPlugin(
       );
   }
   const warned = new Set<string>();
+  let diagnosticErrors = 0,
+    diagnosticWarnings = 0;
+  let diagnosticLogger: ViteDevServer["config"]["logger"] | undefined;
   // Compile + dev bookkeeping of one transformed `.tsx` / `.jsx` module.
   const finish = (ctx: Rollup.TransformPluginContext, filename: string, source: string, server: boolean, id: string) => {
     const result = compile(source, moduleOptions(filename, source, server, id));
     if (result.diagnostics.length) fail(ctx, result, filename);
-    // T10 fix 2: compiler warnings (`[rivet:compiler] RVnnnn …` + location, frame, fix, docs), once per site and message
-    // across targets / rebuilds; the module still compiles.
-    for (const w of result.warnings ?? []) {
-      const key = `${w.filename}\0${w.line ?? 0}:${w.column ?? 0}\0${w.message}`;
+    // One warning per code/file, retaining occurrence counts; repeated transforms stay silent.
+    for (const { diagnostic: w, count } of groupDiagnostics(result.warnings ?? [])) {
+      const key = `${filename}\0${w.code}\0${createHash("sha256").update(source).digest("hex")}`;
       if (warned.has(key)) continue;
       warned.add(key);
-      ctx.warn(formatDiagnostic({ origin: "compiler", code: w.code, message: w.message, file: filename, line: w.line, column: w.column }, { root }));
+      diagnosticWarnings += count;
+      ctx.warn(
+        formatDiagnostic({ origin: "compiler", code: w.code, message: w.message, file: filename, line: w.line, column: w.column }, { root }) +
+          (count > 1 ? `\n  occurrences: ${count} (same code and file)` : ""),
+      );
     }
     // Dev server: boundary names → their module (dev manifest `symbols`).
     if (serve && resume) for (const name of result.boundaries ?? []) derivedDev.set(name, filename);
@@ -1903,6 +1909,7 @@ function rivetPlugin(
   // carrying `pluginCode` unchanged, so it would add neither the frame nor the plugin name), later ones carry their frame
   // in the message. Frames show the file on disk (compiled text may be `prepared`: static icons inlined).
   const fail = (ctx: { error(e: Rollup.RollupError | string): never }, result: CompileResult, filename: string): never => {
+    diagnosticErrors += result.diagnostics.length;
     const first = result.diagnostics[0]!;
     let text: string | undefined;
     const frameOf = (line: number | undefined, column: number | undefined): string => {
@@ -2008,6 +2015,7 @@ function rivetPlugin(
       };
     },
     configResolved(config) {
+      diagnosticLogger = config.logger;
       ssrBuild = Boolean(config.build?.ssr);
       serve = config.command === "serve";
       // Dev always maps (stack traces, debugger); builds when `build.sourcemap` asks for maps.
@@ -2035,7 +2043,14 @@ function rivetPlugin(
         if (plugin.name === "vite-plugin-rivet-i18n")
           declaredLocales ??= (plugin as { api?: { config?: { locales?: readonly string[] } } }).api?.config?.locales ?? null;
     },
+    buildEnd() {
+      if (!serve && (diagnosticErrors || diagnosticWarnings)) diagnosticLogger?.warn(`[rivet:compiler] ${summary(diagnosticErrors, diagnosticWarnings)}`);
+    },
     async buildStart() {
+      if (!serve) {
+        warned.clear();
+        diagnosticErrors = diagnosticWarnings = 0;
+      }
       if (localeClient(this)) localeMarks.length = 0;
       // Compiler ↔ runtime ABI handshake (abi.ts), once per plugin instance: the app's resolved runtime.
       if (!abiChecked) {

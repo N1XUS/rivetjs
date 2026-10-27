@@ -6,13 +6,45 @@
   "type": "object",
   "properties": {
     "tsConfig": {
-      "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }],
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ],
       "description": "tsconfig file(s) to check, relative to the project. Default tsconfig.json."
     },
-    "types": { "type": "boolean", "default": true, "description": "Type-aware checks (RV3101 route links)." },
-    "manifest": { "type": "boolean", "description": "Check .rivet/editor.json (RV7101 / RV7102). Default: routed apps only." },
-    "sync": { "type": "boolean", "description": "Run rivet sync first. Default: routed apps only." },
-    "format": { "type": "string", "enum": ["text", "json"], "description": "Output format." }
+    "types": {
+      "type": "boolean",
+      "default": true,
+      "description": "Type-aware checks (RV3101 route links)."
+    },
+    "manifest": {
+      "type": "boolean",
+      "description": "Check .rivet/editor.json (RV7101 / RV7102). Default: routed apps only."
+    },
+    "sync": {
+      "type": "boolean",
+      "description": "Run rivet sync first. Default: routed apps only."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["text", "json"],
+      "description": "Output format."
+    },
+    "quiet": {
+      "type": "boolean",
+      "description": "Errors only; suppress warnings, progress and summaries."
+    },
+    "verbose": {
+      "type": "boolean",
+      "description": "Include error stacks from rivet-check (also DEBUG=rivet)."
+    }
   },
   "additionalProperties": false
 }

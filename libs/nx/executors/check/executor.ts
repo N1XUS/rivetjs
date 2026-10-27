@@ -15,7 +15,14 @@ export function syncStep(root: string, bin: BinResolver): Step {
 export function checkSteps(options: CheckExecutorSchema, root: string, facts: ProjectFacts | undefined, bin: BinResolver): Step[] {
   const routed = facts?.kind === "app";
   const steps: Step[] = [];
-  if (options.sync ?? routed) steps.push(syncStep(root, bin));
+  if (options.sync ?? routed) {
+    const step = syncStep(root, bin);
+    if (options.format === "json") step.args.push("--json", "--quiet");
+    else if (options.quiet) step.args.push("--quiet");
+    // Capture successful sync JSON so stdout contains only the check result.
+    if (options.format === "json") step.quietSuccess = true;
+    steps.push(step);
+  }
   const configs = options.tsConfig === undefined ? ["tsconfig.json"] : Array.isArray(options.tsConfig) ? options.tsConfig : [options.tsConfig];
   steps.push({
     label: "rivet-check",
@@ -26,6 +33,8 @@ export function checkSteps(options: CheckExecutorSchema, root: string, facts: Pr
         ["--no-types", options.types === false],
         ["--no-manifest", !(options.manifest ?? routed)],
         ["--format", options.format],
+        ["--quiet", options.quiet],
+        ["--verbose", options.verbose],
       ]),
     ],
     cwd: root,
@@ -35,5 +44,5 @@ export function checkSteps(options: CheckExecutorSchema, root: string, facts: Pr
 
 export default async function checkExecutor(options: CheckExecutorSchema, context: ExecutorContext): Promise<{ success: boolean }> {
   const root = projectRoot(context);
-  return runSteps(checkSteps(options, root, projectFacts(root), resolverFrom(root)));
+  return runSteps(checkSteps(options, root, projectFacts(root), resolverFrom(root)), { verbose: !options.quiet && options.format !== "json" });
 }

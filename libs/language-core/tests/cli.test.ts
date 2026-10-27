@@ -67,7 +67,7 @@ test("rivet check: warnings (RV2104) do not fail", () => {
 test("rivet check --help exits 0; unknown arguments and bad --format exit 2", () => {
   const help = spawnSync("node", [cli, "--help"], { encoding: "utf8" });
   assert.equal(help.status, 0, help.stderr);
-  assert.match(help.stdout, /^usage: rivet-check \[-p tsconfig\.json\]\.\.\. \[--no-types\] \[--no-manifest\] \[--format text\|json\]/);
+  assert.match(help.stdout, /^Usage:\n  rivet-check \[-p tsconfig\.json\]\.\.\. \[--no-types\] \[--no-manifest\] \[--format text\|json\]/);
   assert.match(help.stdout, /Exit status: 0 no errors/);
   assert.equal(spawnSync("node", [cli, "--nope"], { encoding: "utf8" }).status, 2);
   const format = spawnSync("node", [cli, "--format", "xml"], { encoding: "utf8" });
@@ -99,15 +99,15 @@ test("rivet check --format json: diagnostics with codes, docs links and skipped 
   }
 });
 
-test("rivet check: an unreadable tsconfig is a setup error (exit 2)", () => {
+test("rivet check: an unreadable tsconfig is a setup failure (exit 1)", () => {
   const root = app(`export const A = () => <p />;\n`);
   try {
     writeFileSync(join(root, "tsconfig.json"), "{ not json");
     const run = spawnSync("node", [cli, "-p", "missing.json"], { cwd: root, encoding: "utf8" });
-    assert.equal(run.status, 2, run.stdout + run.stderr);
+    assert.equal(run.status, 1, run.stdout + run.stderr);
     assert.match(run.stderr, /^rivet check: missing\.json: /);
     const json = spawnSync("node", [cli, "-p", "missing.json", "--format", "json"], { cwd: root, encoding: "utf8" });
-    assert.equal(json.status, 2);
+    assert.equal(json.status, 1);
     assert.match(JSON.parse(json.stdout).error, /missing\.json/);
   } finally {
     rmSync(root, { recursive: true, force: true });
