@@ -6,6 +6,7 @@ import { basename, dirname, join, posix, relative, resolve, sep } from "node:pat
 import { pathToFileURL } from "node:url";
 import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
+import { placeCalls, placementMismatches } from "./facts-placement.ts";
 import { nativeFamilies, stylesState, type NativeFamily } from "./facts-native.ts";
 import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
 import { islandGetters } from "./island-props.ts";
@@ -1436,6 +1437,7 @@ function rivetPlugin(
     // MOTION-CSS: the walked modules' prepared texts (the Motion pass rewrites from them).
     const texts = new Map<string, string>();
     motionText.clear();
+    placementMismatches.length = 0;
     // `resume.domData`: resume modules that may hold a `<For>` (their source names it), checked after the verdicts.
     const forSources = new Map<string, string>();
     // Plain re-export modules (M6-PARITY 6b): app / source-package `.ts` / `.js` modules between resume modules (a package
@@ -1452,7 +1454,11 @@ function rivetPlugin(
       const route = isRoute(filename);
       const f = plain.has(filename)
         ? moduleFacts(source, filename, { refs: true })
-        : moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true });
+        : placeCalls(
+            source,
+            filename,
+            moduleFacts(source, filename, route ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+          );
       facts.set(filename, f);
       if (!plain.has(filename) && resume?.domData !== false && /\bFor\b/.test(source)) forSources.set(filename, source);
       // ZERO STATESPACE: the module's `@rivet-native` families (`facts-native.ts`).
@@ -1541,7 +1547,11 @@ function rivetPlugin(
         sourceBytes.set(file, to.length);
         facts.set(
           file,
-          moduleFacts(to, file, isRoute(file) ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+          placeCalls(
+            to,
+            file,
+            moduleFacts(to, file, isRoute(file) ? { serverExports: true, resume: true, boundaries: true, refs: true } : { boundaries: true, refs: true }),
+          ),
         );
         changed = true;
       }
@@ -1559,6 +1569,10 @@ function rivetPlugin(
         if (site.length || sites.length || free.length) marks[file] = { site, sites, free };
       }
       out["marks:"] = marks;
+      // CTX-SOUND: components whose parsed calls did not match the facts (every call of theirs escapes).
+      out["placement-mismatch:"] = [...new Set(placementMismatches)].map((id) => relative(root, id));
+      // CTX-SOUND: independent components demoted to dependent (they may read a context provided above an unproven site).
+      out["demoted:"] = verdicts.callSites!.demoted.map((id) => relative(root, id));
       for (const id of (process.env.RIVET_CALLSITE_WHY ?? "").split(",").filter(Boolean))
         out["why:" + id] = id.startsWith("^")
           ? verdicts.callSites!.whyAbove(resolve(root, id.slice(1).split("@")[0]!), id.split("@")[1])

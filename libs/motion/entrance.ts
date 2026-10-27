@@ -1,5 +1,5 @@
 // Client-render entrances (spec D9): the generated rule in one constructable stylesheet (`engine.ts` `clientRule`).
-// The tag components (`tags.tsx`) hand it to `motionElement`, so `css.ts` sits on the tags' graph only: a resumed page's
+// The tag components (`tags/<tag>.tsx`) hand it to `motionElement`, so `css.ts` sits on the tags' graph only: a resumed page's
 // gesture handlers (symbols of `element.tsx`) load without it.
 import { entranceRule, type ReducedPolicy, type Stagger } from "./css.ts";
 import { clientRule } from "./engine.ts";

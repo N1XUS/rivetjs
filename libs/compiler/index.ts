@@ -296,6 +296,12 @@ export interface ModuleFacts {
    */
   boundaries: Map<string, ComponentBoundaryFacts>;
   /**
+   * CTX-SOUND (`facts-placement.ts`, build walk only): component tags written outside every module-level component (a
+   * top-level helper `function rows() { return <X />; }`, a factory, module scope): instances no call site records
+   * (`*`: unparsable, any tag).
+   */
+  hidden?: string[];
+  /**
    * `boundaries: true` only (ZERO A1): PascalCase bindings the module uses as values — not as a JSX tag, an export
    * specifier, a `typeof` operand, a type or a top-level `Object.assign` compound's root / part (`icon={Glyph}`, a lookup
    * table, a direct call). A component reached this way may render under code the walk does not see: it counts adopted.
@@ -371,6 +377,11 @@ export interface ComponentBoundaryFacts {
     fn: boolean;
     /** Component tags enclosing the call in this component's JSX, innermost first (context providers around it). */
     around: string[];
+    /**
+     * CTX-SOUND (`facts-placement.ts`, build walk only): the element sits in a nested function that may run under a
+     * provider `around` does not show (bound to a variable, a local component, a callback handed to other code).
+     */
+    escapes?: boolean;
     /** Its attributes and expression children are data (element children are calls of their own, function children slots). */
     inputs: boolean;
     /** PLACE cost feature: source bytes of its attributes and text children (≈ the props a record would ship; absent from an older wasm). */

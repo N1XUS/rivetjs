@@ -111,7 +111,7 @@ When a gesture ends the element returns to the next active state (press, then ho
 | `animate` only | final styles inline | nothing runs | styles set |
 | `initial` → `animate` | final styles + one CSS rule | CSS plays the entrance, no JS (constant props: no Motion code in the page either) | same rule |
 | live `animate={signal}` | current target inline | code loads on the first change | binding |
-| `whileHover` / `whilePress` / `whileFocus` | nothing extra | handlers resume; the hover code is preloaded when the element is visible | handlers |
+| `whileHover` / `whilePress` / `whileFocus` | a small record for the element | the first hover / press / focus wakes the element alone and animates; the hover code is preloaded when the element is visible | handlers |
 | `whileInView` | the `initial` state | an observer attaches when the element nears the viewport | same |
 | `exit` | nothing | plays when its [presence](./presence.md) leaves | same |
 

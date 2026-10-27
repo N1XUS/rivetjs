@@ -54,7 +54,20 @@ async function buildApp(wrapped: boolean, roots: string[]) {
   const assets = resolve(root, "client-dist/assets");
   const files = await readdir(assets);
   const read = async (ext: string) => (await Promise.all(files.filter((f) => f.endsWith(ext)).map((f) => readFile(resolve(assets, f), "utf8")))).join("\n");
-  return { html, js: await read(".js"), css: await read(".css") };
+  // What the page can load: the chunks its HTML names (records, preloads, the loader's map) and their static imports.
+  // Other chunks are emitted for symbols no record of this page names (the Motion tags are conditional boundaries:
+  // an instance with gestures records itself, CTX-SOUND 2026-10-27).
+  const reach = new Set<string>();
+  const queue = [...html.matchAll(/\/assets\/([\w.-]+\.js)/g)].map((m) => m[1]!);
+  while (queue.length) {
+    const file = queue.pop()!;
+    if (reach.has(file)) continue;
+    reach.add(file);
+    const text = await readFile(resolve(assets, file), "utf8");
+    for (const m of text.matchAll(/from\s*"\.\/([\w.-]+\.js)"|import\s*"\.\/([\w.-]+\.js)"/g)) queue.push((m[1] ?? m[2])!);
+  }
+  const loaded = (await Promise.all([...reach].map((f) => readFile(resolve(assets, f), "utf8")))).join("\n");
+  return { html, loaded, css: await read(".css") };
 }
 
 test.skipIf(!hasDerivedModel())(
@@ -66,14 +79,14 @@ test.skipIf(!hasDerivedModel())(
       const hash = /<h1 class="t" style="opacity:1;translate:0px 0px" data-mve="(\w+)"/.exec(plain.html)?.[1];
       assert.ok(hash, plain.html);
       assert.ok(plain.css.includes(`[data-mve="${hash}"]`) && plain.css.includes("prefers-reduced-motion"), plain.css);
-      // No Motion element in any client chunk (its binding attribute, the gesture glue, kit's transition scope).
-      assert.ok(!/data-mv-t|data-mvv/.test(plain.js));
+      // No Motion element in any chunk the page can load (its binding attribute, the gesture glue, kit's transition scope).
+      assert.ok(!/data-mv-t|data-mvv/.test(plain.loaded));
       const wrapped = await buildApp(true, roots);
       assert.ok(/data-mv(?:e|v)/.test(wrapped.html));
       assert.ok(!wrapped.html.includes(`data-mve="${hash}"`), "the config changes the entrance: the component renders it");
-      assert.ok(/data-mv-t|data-mvv/.test(wrapped.js), "the component ships with the page's boundary");
+      assert.ok(/data-mv-t|data-mvv/.test(wrapped.loaded), "the component ships with the page's boundary");
     } finally {
-      for (const root of roots) await rm(root, { recursive: true, force: true });
+      if (!process.env.KEEP) for (const root of roots) await rm(root, { recursive: true, force: true });
     }
   },
   120_000,

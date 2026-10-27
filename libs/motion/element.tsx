@@ -1,5 +1,5 @@
 // The Motion element (spec D9 / D10): `motionElement(props, tag)` turns a tag component's props into what its compiled
-// `<tag>` binds (`tags.tsx`). One compiled element per tag, not `Dynamic`: props passed to `Dynamic` are no resume
+// `<tag>` binds (`tags/<tag>.tsx`). One compiled element per tag, not `Dynamic`: props passed to `Dynamic` are no resume
 // sites, so a resumed page would bind nothing (T8). The element gets:
 // - the FINAL state (`animate` over `initial`) inline, merged after the user's `style`: visible and LCP-valid without
 //   CSS or JS (spec D9);
@@ -220,7 +220,7 @@ const SERVER = typeof document === "undefined";
 type RefProp = Ref<Element> | ((el: Element) => void) | undefined;
 const isRef = (value: unknown): value is Ref<Element> => typeof value === "function" && typeof (value as { set?: unknown }).set === "function";
 
-/** What a tag component (`tags.tsx`) binds on its element: every value is resumable data or a resumable function. */
+/** What a tag component (`tags/<tag>.tsx`) binds on its element: every value is resumable data or a resumable function. */
 export interface Bound {
   /** Props for the element (`splitProps` rest: a forward to the props recipe on resumed pages). */
   rest: Record<string, unknown>;
@@ -235,6 +235,13 @@ export interface Bound {
   bind: Record<string, unknown>;
   /** The gesture handler `bind` holds. */
   on(event: Event): void;
+  /**
+   * The hover group's `pointerenter` handler (`on`, undefined without one), written as its own attribute by the tags: an
+   * event attribute whose value the build cannot tell is a function makes the tag component a conditional boundary
+   * (STATIC-ZERO T3 `listens`), so an instance with gestures keeps its record and a cold resumed page wakes it on the
+   * first pointer event (CTX-SOUND 2026-10-27); an instance without one records nothing.
+   */
+  enter: ((event: Event) => void) | undefined;
   /** Children (inside the variant scope when labels propagate). */
   content(): JSX.Element;
   /** Hands the element to a callback `ref` (client render), returns it. */
@@ -393,7 +400,7 @@ export function motionElement(props: Record<string, unknown>, tag: string, entra
   const on = (event: Event) => gesture(event, layers, config, parent);
   // Present keys only: the spread object is resume state (an absent group as `undefined` cost ~120 B per element).
   const bind: Record<string, unknown> = node ? { ref: node } : {};
-  if (h) bind.onPointerEnter = bind.onPointerLeave = on;
+  if (h) bind.onPointerLeave = on;
   if (p) bind.onPointerDown = bind.onPointerUp = bind.onKeyDown = bind.onKeyUp = on;
   if (f) bind.onFocusIn = bind.onFocusOut = on;
   // `whileInView`: from the element's first visibility (resumed pages: the `visible` trigger, no boot JS), Motion's
@@ -460,5 +467,5 @@ export function motionElement(props: Record<string, unknown>, tag: string, entra
       );
     return element;
   };
-  return { rest: attributes, node, live, style, mve: attrs["data-mve"], mvv: attrs["data-mvv"], bind, on, content, mount };
+  return { rest: attributes, node, live, style, mve: attrs["data-mve"], mvv: attrs["data-mvv"], bind, on, enter: h ? on : undefined, content, mount };
 }

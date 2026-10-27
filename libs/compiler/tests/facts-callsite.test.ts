@@ -2,6 +2,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { boundaryFacts } from "../facts-fixpoint.ts";
+import { placeCalls } from "../facts-placement.ts";
 import { moduleFacts, type ModuleFacts } from "../index.ts";
 
 const CTX = `import { createContext, useContext } from "@rivetjs/reactivity";
@@ -31,7 +32,8 @@ export function Counter(props: { start: number }) {
 function app(page: string, extra: Record<string, string> = {}) {
   const sources: Record<string, string> = { "src/ctx.tsx": CTX, "src/parts.tsx": PARTS, "src/page.tsx": page, ...extra };
   const facts = new Map<string, ModuleFacts>();
-  for (const [file, source] of Object.entries(sources)) facts.set(file, moduleFacts(source, file, { boundaries: true, refs: true }));
+  // As the build walk computes them (`vite.ts` `derivedWalk`): with the calls' placement (CTX-SOUND).
+  for (const [file, source] of Object.entries(sources)) facts.set(file, placeCalls(source, file, moduleFacts(source, file, { boundaries: true, refs: true })));
   const resolved = new Map<string, Map<string, string>>();
   for (const file of Object.keys(sources)) {
     const map = new Map<string, string>();
@@ -174,4 +176,55 @@ export const load = () => import("./page.tsx");`;
   out = run(provides, true);
   assert.deepEqual(out.free("src/parts.tsx"), []);
   assert.deepEqual(out.trace.get("src/parts.tsx?HookPart"), ["overlap"]);
+});
+
+// CTX-SOUND: `around` is lexical. JSX in a nested function runs where the function is called — maybe under a provider
+// the caller's JSX shows elsewhere (`facts-placement.ts`: the call `escapes`, TOP above it); JSX outside every component
+// (a top-level helper) records no call site at all (the callee is `hidden`: never `free`). Eager JSX (created in the body
+// before the provider runs) and callbacks placed in JSX / eager array methods keep their proof.
+test("CTX-SOUND: a call in a nested function the lexical walk cannot place is unproven; in-place and eager calls stay proven", () => {
+  const P = {
+    "src/p.tsx": `import { Provider } from "@rivetjs/runtime/dom";
+import { ThemeContext } from "./ctx.tsx";
+export function P(props: { children?: unknown; render?: () => unknown }) { return <Provider token={ThemeContext} value="dark"><i>{props.children as never}{props.render?.() as never}</i></Provider>; }`,
+  };
+  const page = (body: string, extra = "") => `import { Part, HookPart } from "./parts.tsx";
+import { P } from "./p.tsx";
+${extra}
+export default function Demo() { ${body} }`;
+  const result = (body: string, extra?: string) => {
+    const out = app(page(body, extra), P).callSites!;
+    return [out.trace.get("src/parts.tsx?Part"), out.free("src/parts.tsx")];
+  };
+  // Escaping: a function bound to a variable and called / passed in JSX, a local component, a callback handed to code.
+  for (const body of [
+    `const a = () => <Part label="a" />; return <P>{a()}</P>;`,
+    `const a = () => <Part label="a" />; return <P>{a}</P>;`,
+    `const a = () => <Part label="a" />; return <P render={a} />;`,
+    `const Inner = () => <Part label="a" />; return <P><Inner /></P>;`,
+    `function row() { return <Part label="a" />; } return <P>{row()}</P>;`,
+    `const list = { render: () => <Part label="a" /> }; return <P render={list.render} />;`,
+    `return <P>{wrap(() => <Part label="a" />)}</P>;`,
+    `return <div onClick={() => <Part label="a" />}><P /></div>;`,
+  ])
+    assert.deepEqual(result(body, "declare function wrap(f: () => unknown): unknown;")[0], ["above-top"], body);
+  // In place: eager in the body, a function child / render prop written in the component's JSX, `.map` callbacks.
+  for (const body of [
+    `const t = <Part label="a" />; return <P>{t}</P>;`,
+    `const rows = [1, 2].map((i) => <Part label={"r" + i} />); return <div>{rows}</div>;`,
+    `return <div>{[1].map(() => <Part label="a" />)}</div>;`,
+    `return <div>{() => <Part label="a" />}</div>;`,
+    `return <div>{(() => <Part label="a" />)()}</div>;`,
+    `return () => <div><Part label="a" /></div>;`,
+  ])
+    assert.ok(
+      result(body)[0]!.every((r) => r === "proven"),
+      body + ": " + result(body)[0],
+    );
+  // A render prop written in P's JSX stays P's (P provides the token: overlap, as before).
+  assert.deepEqual(result(`return <P render={() => <Part label="a" />} />;`)[0], ["overlap"]);
+  // Hidden: a top-level helper's instance; the independent part is not free although its one recorded site is proven.
+  const helper = `function rows() { return <HookPart label="h" />; }`;
+  assert.deepEqual(result(`return <div><HookPart label="a" /></div>;`)[1], ["HookPart"]);
+  assert.deepEqual(result(`return <div><HookPart label="a" /><P>{rows()}</P></div>;`, helper)[1], []);
 });

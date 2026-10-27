@@ -65,6 +65,8 @@ export interface CallSiteSite {
   fn: boolean;
   around: (string | null)[];
   tags: string[];
+  /** CTX-SOUND (`facts-placement.ts`): the call may run under a provider `around` does not show: TOP above it. */
+  escapes?: boolean;
 }
 
 export interface CallSiteInput {
@@ -75,6 +77,8 @@ export interface CallSiteInput {
   verdicts: Map<string, Map<string, BoundaryVerdict>>;
   isRoot(id: string): boolean;
   escaped: ReadonlySet<string>;
+  /** CTX-SOUND: components with instances no call site records (JSX outside every component): TOP above them, never free. */
+  hidden?: ReadonlySet<string>;
   shell(id: string): boolean;
   options: ContextOptions;
 }
@@ -91,6 +95,9 @@ export interface CallSites {
   /** Census: a path from a component to an unprovable binding (`file\0name` labels), or to a token of `tokenName`. */
   why(id: string, tokenName?: string): string[];
   whyAbove(id: string, tokenName?: string): string[];
+  /** CTX-SOUND: components the component facts called independent that may read a context provided above an unproven
+   * site (`file?name`): now dependent (`context`). */
+  demoted: string[];
   /** MOTION-CSS: what may be provided above a call (any caller's call, resolved or not): token names, null = TOP. */
   aboveSite(site: CallSiteSite): string[] | null;
 }
@@ -485,12 +492,13 @@ export function callSites(input: CallSiteInput): CallSites {
   for (const id of keys) {
     const list = input.sites.get(id);
     const at = id.lastIndexOf("?");
-    if (input.escaped.has(id)) above.set(id, new Set(TOPSET));
+    if (input.escaped.has(id) || input.hidden?.has(id)) above.set(id, new Set(TOPSET));
     else if (input.isRoot(id)) above.set(id, routeRoot(id) ? routeSet(id.slice(0, at)) : new Set(TOPSET));
     else if (!list) above.set(id, input.shell(id) && options.hosts ? hostSet(id.slice(0, at)) : new Set(TOPSET));
     else above.set(id, new Set());
   }
   const siteAbove = (s: CallSiteSite): Set<number> => {
+    if (s.escapes) return TOPSET;
     const out = new Set(providedBy(s.caller));
     s.around.forEach((key, i) => {
       for (const t of aroundOf(s.caller, key, s.tags[i] ?? "")) out.add(t);
@@ -540,6 +548,20 @@ export function callSites(input: CallSiteInput): CallSites {
     if (list) list.push(value);
     else map.set(file, [value]);
   };
+  // CTX-SOUND: may the callee's unit read a context provided above this site? (`prove` without the `!err` rule: an error
+  // handler above changes no rendered value.) TOP in what it touches, or a token it touches maybe provided above.
+  const reads = (callee: string, s: CallSiteSite | null): boolean => {
+    const touch = touchOf(callee);
+    if (touch.has(TOP)) return true;
+    let any = false;
+    for (const t of touch) if (t !== ERR) any = true;
+    if (!any) return false;
+    const over = s ? siteAbove(s) : (above.get(callee) ?? TOPSET);
+    if (over.has(TOP)) return true;
+    for (const t of touch) if (t !== ERR && over.has(t)) return true;
+    return false;
+  };
+  const demoted: string[] = [];
   for (const [file, byNameV] of input.verdicts) {
     const f = facts.get(file)!;
     for (const [name, v] of byNameV) {
@@ -550,8 +572,20 @@ export function callSites(input: CallSiteInput): CallSites {
       const results = list.map((s) => prove(id, s));
       trace.set(id, results);
       if (v.independent) {
-        if (results.every((r) => r === "proven")) add(freeNames, file, name);
-        continue;
+        // An instance no site records (CTX-SOUND `hidden`) may sit under any provider.
+        if (input.hidden?.has(id)) results.push("above-top");
+        if (results.every((r) => r === "proven")) {
+          add(freeNames, file, name);
+          continue;
+        }
+        // CTX-SOUND: independent by the component facts (no `useContext` of its own), but its unit may read a context
+        // (through a hook, a helper, a component it renders inline) that a provider above an unproven site sets: a
+        // standalone adopt (an outermost record) would read the default. Dependent (`context`) like a direct reader:
+        // it adopts with its parent's record, and per proven site (`SITE`) stays independent where it can.
+        if (!(input.hidden?.has(id) && reads(id, null)) && !list.some((s, i) => results[i] !== "proven" && reads(id, s))) continue;
+        v.independent = false;
+        v.dependentBecause = "context";
+        demoted.push(id);
       }
       if (c?.params !== "object" || (v.dependentBecause !== "context" && v.dependentBecause !== "call-site")) continue;
       let any = false;
@@ -613,6 +647,7 @@ export function callSites(input: CallSiteInput): CallSites {
   };
 
   return {
+    demoted,
     aboveSite,
     whyAbove,
     why,

@@ -147,16 +147,37 @@ export function boundaryFacts(
   };
   // A rendered tag → the (file, name) it names: a local component, an import of one (through re-exports), a compound
   // component or one of its parts (`Meter.Output`).
+  // A namespace binding of `file` (`import * as M`, or an import of an `export * as M from` re-export): its module.
+  const namespaceOf = (file: string, name: string, depth = 0): string | null => {
+    const own = facts.get(file);
+    if (!own || depth > 16) return null;
+    const ns = own.refs?.namespaces.get(name);
+    if (ns !== undefined) return target(file, ns);
+    const imported = own.imports.get(name);
+    const to = imported && target(file, imported.from);
+    return imported && to ? exportedNamespace(to, imported.imported, depth + 1) : null;
+  };
+  const exportedNamespace = (file: string, name: string, depth: number): string | null => {
+    const own = facts.get(file);
+    if (!own || depth > 16) return null;
+    const re = own.reexports?.get(name);
+    if (re) return re.imported === "*" ? target(file, re.from) : target(file, re.from) && exportedNamespace(target(file, re.from)!, re.imported, depth + 1);
+    const direct = own.exports?.get(name);
+    return direct !== undefined ? namespaceOf(file, direct, depth + 1) : null;
+  };
   const resolveTag = (file: string, tag: string): string | null => {
     const dot = tag.indexOf(".");
     if (dot < 0) return component(local(file, tag, new Set()));
+    // MOTION-GESTURES: `<Motion.div>` over `export * as Motion from "./tags.tsx"`: that module's export (through its re-exports: `tags/<tag>.tsx`).
+    const ns = tag.indexOf(".", dot + 1) < 0 ? namespaceOf(file, tag.slice(0, dot)) : null;
+    if (ns) return component(exported(ns, tag.slice(dot + 1), new Set()));
     const head = local(file, tag.slice(0, dot), new Set());
     const compound = head && facts.get(head.file)!.compounds?.get(head.local);
     const part = compound?.parts.get(tag.slice(dot + 1));
     return part !== undefined ? component(local(head!.file, part, new Set())) : null;
   };
   // Per component: facts, resolved renders, and its call sites by callee.
-  type Site = { caller: string; index: number; data: boolean; inputs: boolean; fn: boolean; around: (string | null)[]; tags: string[] };
+  type Site = { caller: string; index: number; data: boolean; inputs: boolean; fn: boolean; around: (string | null)[]; tags: string[]; escapes: boolean };
   const info = new Map<string, ComponentFacts>();
   const renders = new Map<string, (string | null)[]>();
   const sites = new Map<string, Site[]>();
@@ -183,8 +204,24 @@ export function boundaryFacts(
           fn: call.fn,
           around: call.around.map((tag) => resolveTag(file, tag)),
           tags: call.around,
+          escapes: call.escapes === true,
         });
       });
+    }
+  // CTX-SOUND: components with instances no call site records (`ModuleFacts.hidden`: JSX outside every component);
+  // `*` (an unparsable module): any component it imports.
+  const hidden = new Set<string>();
+  for (const [file, f] of facts)
+    for (const tag of f.hidden ?? []) {
+      if (tag !== "*") {
+        const to = resolveTag(file, tag);
+        if (to) hidden.add(to);
+        continue;
+      }
+      for (const name of [...f.boundaries.keys(), ...f.imports.keys()]) {
+        const to = resolveTag(file, name);
+        if (to) hidden.add(to);
+      }
     }
   // Least fixpoint (monotone): live data, then boundaries.
   const live = new Map<string, boolean>();
@@ -230,6 +267,15 @@ export function boundaryFacts(
           if (p) escaped.add(p);
         }
     }
+  // A module namespace used as a value (`tags[as](props)`, index.tsx `MotionElement`): code the walk does not see may
+  // call any component of that module (MOTION-GESTURES: the `Motion` tags are components since 2026-10-27).
+  for (const [file, f] of facts)
+    for (const decl of f.refs?.decls ?? [])
+      for (const name of decl.values) {
+        const ns = namespaceOf(file, name);
+        if (!ns) continue;
+        for (const local of facts.get(ns)?.boundaries.keys() ?? []) escaped.add(key(ns, local));
+      }
   // ORPHAN-B (2026-10-26): live data alone (live props / a live context into its read sites) makes no boundary when every
   // instance renders inside a boundary (`enclosed`: every resolved call site's caller is a boundary or enclosed itself, and
   // no unseen code renders it). The change source is above it; the browser runs its code inline in the unit of the
@@ -346,12 +392,20 @@ export function boundaryFacts(
   const native = natives?.families.size
     ? nativeSites({ ...natives, facts, info, sites, escaped, interactive: (id) => interactive.get(id) ?? false, live: (id) => live.get(id) ?? false, renders })
     : new Map<string, string[]>();
-  const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, shell, options: contexts }) : null;
+  const proof = contexts ? callSites({ facts, target, sites, verdicts, isRoot: (id) => isRoot.has(id), escaped, hidden, shell, options: contexts }) : null;
   const aboveCall = (caller: string, index: number): string[] | null => {
     const call = info.get(caller)?.calls[index];
     if (!proof || !call) return null;
     const file = caller.slice(0, caller.lastIndexOf("?"));
-    return proof.aboveSite({ caller, index, data: call.data, fn: call.fn, around: call.around.map((tag) => resolveTag(file, tag)), tags: call.around });
+    return proof.aboveSite({
+      caller,
+      index,
+      data: call.data,
+      fn: call.fn,
+      around: call.around.map((tag) => resolveTag(file, tag)),
+      tags: call.around,
+      escapes: call.escapes === true,
+    });
   };
   return {
     aboveCall,
