@@ -6,6 +6,7 @@
 //   (upstream effect + `checkOverflow` deps) and tears the listeners down and sets them up again on any change, as upstream.
 // - `onVisibilityChangeRef` (latest callback without re-subscribing) → `props.onVisibilityChange` read untracked when notifying.
 // - `useRef` caches → effect-local variables (reset by the cleanup, as upstream).
+// - Visibility effects release their fade attributes on cleanup (disable, axis/mode change, disposal).
 // - `ResizeObserver` → cdk `useResizeObserver` (react-aria; window `resize` where unsupported). The subtree `MutationObserver`
 //   keeps upstream's options (cdk `ContentObserver` watches no attributes, upstream also watches `class` / `style`).
 import { untrack } from "@rivetjs/reactivity";
@@ -21,6 +22,16 @@ export interface UseScrollShadowProps {
   visibility: ScrollShadowVisibility;
   isEnabled: boolean;
   onVisibilityChange?: (visibility: ScrollShadowVisibility) => void;
+}
+
+/** Release the attributes owned by an automatic or controlled visibility effect. */
+export function clearScrollAttributes(el: HTMLElement): void {
+  delete el.dataset["topScroll"];
+  delete el.dataset["bottomScroll"];
+  delete el.dataset["topBottomScroll"];
+  delete el.dataset["leftScroll"];
+  delete el.dataset["rightScroll"];
+  delete el.dataset["leftRightScroll"];
 }
 
 export function useScrollShadow(props: UseScrollShadowProps): void {
@@ -147,6 +158,7 @@ export function useScrollShadow(props: UseScrollShadowProps): void {
         rafId = null;
       }
       prevState = null;
+      clearScrollAttributes(el);
     };
   });
 }

@@ -261,6 +261,66 @@ test("scroll-shadow (Rivet): disabled detection writes no state; a passed ref (c
   r.unmount();
 });
 
+test("scroll-shadow clears automatic fades on disable, axis change and disposal", async () => {
+  const enabled = signal(true);
+  const orientation = signal<"vertical" | "horizontal">("vertical");
+  const r = render(() => (
+    <ScrollShadow isEnabled={enabled()} orientation={orientation()}>
+      Content
+    </ScrollShadow>
+  ));
+  const el = scroller(r.container);
+  const keys = ["topScroll", "bottomScroll", "topBottomScroll", "leftScroll", "rightScroll", "leftRightScroll"];
+  try {
+    stubScrollMetrics(el, { clientHeight: 100, scrollHeight: 300, scrollTop: 50, clientWidth: 100, scrollWidth: 300, scrollLeft: 50 });
+    await flushFrames();
+    assert.equal(el.dataset.topBottomScroll, "true");
+    enabled.set(false);
+    await flushFrames();
+    assert.ok(
+      keys.every((key) => el.dataset[key] === undefined),
+      "disabled auto mode has no stale fades",
+    );
+    enabled.set(true);
+    await flushFrames();
+    assert.equal(el.dataset.topBottomScroll, "true");
+    orientation.set("horizontal");
+    await flushFrames();
+    assert.equal(el.dataset.topBottomScroll, undefined);
+    assert.equal(el.dataset.leftRightScroll, "true");
+  } finally {
+    r.unmount();
+  }
+  assert.ok(
+    keys.every((key) => el.dataset[key] === undefined),
+    "cleanup removes owned attributes",
+  );
+});
+
+test("scroll-shadow controlled fades survive detection toggles and clear when returning to auto", async () => {
+  const enabled = signal(false);
+  const visibility = signal<Visibility>("top");
+  const r = render(() => (
+    <ScrollShadow isEnabled={enabled()} visibility={visibility()}>
+      Content
+    </ScrollShadow>
+  ));
+  const el = scroller(r.container);
+  try {
+    await flushFrames();
+    assert.equal(el.dataset.topScroll, "true");
+    enabled.set(true);
+    await flushFrames();
+    assert.equal(el.dataset.topScroll, "true", "isEnabled controls automatic detection only");
+    enabled.set(false);
+    visibility.set("auto");
+    await flushFrames();
+    assert.equal(el.dataset.topScroll, undefined);
+  } finally {
+    r.unmount();
+  }
+});
+
 test("scroll-shadow (Rivet): live pass-through props (id, aria-*, data-*, tabIndex) update the same container", () => {
   const n = signal(1);
   const r = render(() => (

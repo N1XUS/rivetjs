@@ -18,7 +18,7 @@ import type { ScrollShadowVariants } from "../../../styles/src/components/scroll
 import { scrollShadowVariants } from "../../../styles/src/components/scroll-shadow/index.ts";
 import { splitLive } from "../../utils/live.tsx";
 
-import { useScrollShadow } from "./use-scroll-shadow.tsx";
+import { clearScrollAttributes, useScrollShadow } from "./use-scroll-shadow.tsx";
 
 export type ScrollShadowVisibility = "auto" | "both" | "top" | "bottom" | "left" | "right" | "none";
 
@@ -111,12 +111,7 @@ const ScrollShadowRoot = (props: ScrollShadowRootProps): JSX.Element => {
     if (!el || mode === "auto") return;
 
     // Clear all data attributes
-    delete el.dataset["topScroll"];
-    delete el.dataset["bottomScroll"];
-    delete el.dataset["topBottomScroll"];
-    delete el.dataset["leftScroll"];
-    delete el.dataset["rightScroll"];
-    delete el.dataset["leftRightScroll"];
+    clearScrollAttributes(el);
 
     // Set controlled visibility
     if (mode === "both") {
@@ -124,6 +119,7 @@ const ScrollShadowRoot = (props: ScrollShadowRootProps): JSX.Element => {
     } else if (mode !== "none") {
       el.dataset[`${mode}Scroll`] = "true";
     }
+    return () => clearScrollAttributes(el);
   });
 
   // `mergeRefs(internalRef, ref)`: the passed ref (callback or `ref()` signal) gets the same element.

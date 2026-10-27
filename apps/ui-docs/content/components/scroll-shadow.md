@@ -12,6 +12,7 @@ Notes:
 
 - `class`, not `className`.
 - Every prop is live: changing `orientation`, `size`, `hideScrollBar`, `visibility` or `isEnabled` updates the same container and keeps its scroll position.
+- Disabling automatic detection clears its existing fade attributes. Changing orientation or visibility releases the previous mode's attributes. Explicit `visibility` still controls the fade while detection is disabled.
 - `useScrollShadow` takes an element accessor (`containerRef`) instead of a React ref.
 - An RTL page needs an RTL `lang` (for example `lang="ar"`) for the horizontal fade to flip: Tailwind v4 lowers `:dir(rtl)` to `:lang(…)`.
 - Need custom scrollbars too? [ScrollArea](scroll-area.md) (Rivet addition) takes a `shadow` option that puts this fade on its viewport.
