@@ -14,7 +14,7 @@ import { isFocusVisible, noteModality, setInteractionModality } from "../interac
 import { isVirtualClick } from "../platform/index.ts";
 import { focusWithoutScrolling } from "../utils/index.ts";
 import { pointerTypeOf } from "../selection/dom-utils.ts";
-import type { SelectionManager } from "../_adapters/collections.ts";
+import type { SelectionManager } from "../_adapters/selection-manager.ts";
 import { commitValidation } from "../state/form-validation.ts";
 import { commit, onFormReset, validationChange, validationInvalid } from "../form/behaviour.ts";
 import { fieldProps } from "../label/behaviour.ts";

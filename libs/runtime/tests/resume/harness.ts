@@ -27,6 +27,7 @@ const sources: Record<string, string> = {
   "/props.ts": "props.ts",
   "/dom-router.ts": "dom-router.ts",
   "/dom-suspense.ts": "dom-suspense.ts",
+  "/dom-async.ts": "dom-async.ts",
   "/async-coordinator.ts": "async-coordinator.ts",
   "/dom-resource.ts": "dom-resource.ts",
   "/resource.ts": "resource.ts",

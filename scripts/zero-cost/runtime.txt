@@ -3,16 +3,16 @@
 @rivetjs/reactivity/track ce983b5ae9df 1943
 @rivetjs/reactivity/store 02fab8d3fba0 10217
 @rivetjs/runtime/server e2aa844c38f7 54669
-@rivetjs/runtime/dom cb0367dd7a99 49854
-@rivetjs/runtime/dom [resumed] a70c1bc69c09 51425
+@rivetjs/runtime/dom 0e9c0a72f478 49873
+@rivetjs/runtime/dom [resumed] f8f358de1c76 51444
 @rivetjs/runtime/dev/a11y d97d8ae8584b 128
 @rivetjs/runtime/jsx-runtime 25ccf3645071 176
 @rivetjs/runtime/jsx-dev-runtime 25ccf3645071 176
 @rivetjs/runtime/async 82848baeb0de 866
 @rivetjs/runtime/lazy 3c11119c2312 697
 @rivetjs/runtime/router bd3c70cbcceb 2796
-@rivetjs/runtime/router/dom d17eed35d192 17731
-@rivetjs/runtime/router/dom [resumed] 18ca108ff517 18093
+@rivetjs/runtime/router/dom 5d500017841f 17782
+@rivetjs/runtime/router/dom [resumed] fb0e08ad833e 18144
 @rivetjs/runtime/router/server b00240071d79 8228
 @rivetjs/runtime/server-resume 3367ceb32c92 53722
 @rivetjs/runtime/server-resume [domData] 493e76e2ecf0 59591

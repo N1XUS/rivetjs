@@ -19,7 +19,7 @@ import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props
 import { resolveLocale } from "../i18n/index.ts";
 import { formatMessage } from "../_adapters/intl.ts";
 import type { Placement } from "../overlay/position.ts";
-import { PopoverOverlay } from "../popover/index.tsx";
+import { PopoverOverlay } from "../popover/popover-overlay.tsx";
 import {
   ListBox,
   ListBoxContext,

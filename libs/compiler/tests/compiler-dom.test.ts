@@ -15,6 +15,7 @@ test("actual compiled DOM fixture retains native identities and owned bindings",
   const routerFiles: Record<string, string> = {
     "/dom-router.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/dom-router.ts", import.meta.url), "utf8")),
     "/dom-suspense.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/dom-suspense.ts", import.meta.url), "utf8")),
+    "/dom-async.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/dom-async.ts", import.meta.url), "utf8")),
     "/async-coordinator.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/async-coordinator.ts", import.meta.url), "utf8")),
     "/dom-resource.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/dom-resource.ts", import.meta.url), "utf8")),
     "/resource.ts": stripTypeScriptTypes(await readFile(new URL("../../runtime/resource.ts", import.meta.url), "utf8")),

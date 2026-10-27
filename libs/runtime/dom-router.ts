@@ -1,5 +1,5 @@
 import { batch, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
-import { Async } from "./dom.ts";
+import { Async } from "./dom-async.ts";
 import { DERIVED } from "./derived.ts";
 import { routeMatcher, renderRoute, _popGate } from "./router.ts";
 import type { Signal } from "@rivetjs/reactivity";

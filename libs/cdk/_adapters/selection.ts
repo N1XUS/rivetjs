@@ -10,12 +10,10 @@ import { untrack } from "@rivetjs/reactivity";
 import { direction as dirOf } from "@rivetjs/cdk/bidi";
 import { isMac, isCtrlKeyPressed } from "@rivetjs/cdk/platform";
 import { tabbables, isTabbable } from "@rivetjs/cdk/a11y";
+import { GroupSelectionManager, SelectionManager, domCollection } from "./selection-manager.ts";
 import {
   COLLECTION_ATTR,
-  GroupSelectionManager,
   ListKeyboardDelegate,
-  SelectionManager,
-  domCollection,
   domKey,
   getItemElement,
   getSearchCollator,

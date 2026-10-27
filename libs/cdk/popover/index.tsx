@@ -408,5 +408,4 @@ function PopoverInner(props: PopoverInnerProps) {
 }
 
 export type { StyleObject };
-export { PopoverOverlay, type PopoverOverlayProps } from "./popover-overlay.tsx";
 export * from "./use-popover.ts";

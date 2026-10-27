@@ -2,7 +2,8 @@
 //
 // LOCAL ADAPTER (split from `./selection.ts`): typeahead for delegated collection handlers and the closed
 // Select trigger. The buffer lives in a WeakMap keyed by the selection state (never serialized).
-import type { Key, KeyboardDelegate, SelectionManager } from "./collections.ts";
+import type { Key, KeyboardDelegate } from "./collections.ts";
+import type { SelectionManager } from "./selection-manager.ts";
 
 const TYPEAHEAD_DEBOUNCE_WAIT_MS = 1000;
 const searches = new WeakMap<object, { search: string; timeout?: ReturnType<typeof setTimeout> }>();

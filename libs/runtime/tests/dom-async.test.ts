@@ -33,6 +33,7 @@ test("compiled Async and lazy DOM regions cancel stale generations and restore o
     "/fixture.mjs": result.code,
     "/dom-router.ts": stripTypeScriptTypes(await readFile(new URL("../dom-router.ts", import.meta.url), "utf8")),
     "/dom-suspense.ts": stripTypeScriptTypes(await readFile(new URL("../dom-suspense.ts", import.meta.url), "utf8")),
+    "/dom-async.ts": stripTypeScriptTypes(await readFile(new URL("../dom-async.ts", import.meta.url), "utf8")),
     "/async-coordinator.ts": stripTypeScriptTypes(await readFile(new URL("../async-coordinator.ts", import.meta.url), "utf8")),
     "/dom-resource.ts": stripTypeScriptTypes(await readFile(new URL("../dom-resource.ts", import.meta.url), "utf8")),
     "/resource.ts": stripTypeScriptTypes(await readFile(new URL("../resource.ts", import.meta.url), "utf8")),
