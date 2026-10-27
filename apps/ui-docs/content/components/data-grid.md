@@ -136,6 +136,12 @@ A controlled `sortDescriptor` means the data arrives sorted: the grid shows `dat
 
 ::example{id=data-grid-async}
 
+## Alignment
+
+A column's `align` (`start`, `center`, `end`) aligns its header and cells. `verticalAlign` on the grid (`top`, `middle` default, `bottom`; `data-vertical-align` on the root) places short cells against a taller, wrapped one.
+
+::example{id=data-grid-alignment}
+
 ## Virtualization
 
 `virtualized` renders the rows in view plus `overscan` (default 8) between two spacer rows, with a fixed `rowHeight` (default 42) and `height` (default 480). `aria-rowcount` / `aria-rowindex` describe the full set; keyboard navigation scrolls the focused row into view.

@@ -52,6 +52,10 @@ Each event needs `id`, `title`, `start` and `end`. Semantic `color` values are `
 
 ::example{id=scheduler-custom-event}
 
+Unconfirmed and read-only events need no extra fields: keep a status in `data` and let `renderEvent` render a marker that your CSS keys on (here a dashed, transparent chip), and set `isDraggable: false` / `isResizable: false` on an event that must not change; it stays selectable and activatable.
+
+::example{id=scheduler-event-status}
+
 ## Drag Interactions
 
 ::example{id=scheduler-drag}
@@ -77,6 +81,10 @@ Set `allDay: true` and use date-only strings for whole-day events. Long timed ev
 `showWeekNumbers` adds an ISO week-number column. `visibleLanes` caps month lanes; overflow appears in the `+N more` panel. The automatic cap follows density: compact, default and comfortable use three, four and five lanes. Explicit numeric caps win. `onMoreAction` receives the hidden events for the opened day.
 
 The lane cap is determined on the server. It does not measure the browser's available row height. A spanning event continues across cells and splits at week boundaries.
+
+To open a day from the month grid, bind `view` and `date` to signals and switch them in `onSlotAction` (a click, Enter or Space on a day).
+
+::example{id=scheduler-date-navigation}
 
 ## Weekend Highlighting
 

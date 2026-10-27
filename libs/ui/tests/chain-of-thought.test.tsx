@@ -1,5 +1,5 @@
 // DOM-target suite (happy-dom): `ChainOfThought` (Rivet-authored; feature set inspired by HeroUI Pro's public
-// ChainOfThought docs): exports, trigger toggles the panel, `isStreaming` accessor → `data-streaming`, step statuses.
+// ChainOfThought docs): exports, trigger toggles the panel, `isStreaming` accessor → `data-streaming`, step statuses (live `status`).
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { installOverlayDom } from "./install-overlay-dom.ts";
@@ -52,5 +52,34 @@ test("chain-of-thought: toggle + streaming", async () => {
   await flush();
   assert.equal(root.getAttribute("data-streaming"), null);
   assert.equal(r.container.querySelector("[role=listitem]")!.getAttribute("data-status"), "error");
+  r.unmount();
+});
+
+test("chain-of-thought: a step's status is live (attribute + status icon follow a signal)", async () => {
+  const done = signal(0);
+  const r = render(() => (
+    <ChainOfThought defaultExpanded>
+      <ChainOfThought.Trigger>Working</ChainOfThought.Trigger>
+      <ChainOfThought.Content>
+        <ChainOfThought.Steps>
+          <ChainOfThought.Step id="s0" label="Search" status={done() > 0 ? "complete" : "active"} />
+          <ChainOfThought.Step id="s1" label="Write" status={done() > 1 ? "complete" : done() === 1 ? "active" : "pending"} />
+        </ChainOfThought.Steps>
+      </ChainOfThought.Content>
+    </ChainOfThought>
+  ));
+  const step = (id: string) => r.container.querySelector(`#${id}`)!;
+  const icon = (id: string) => step(id).querySelector("svg")!.innerHTML;
+  assert.equal(step("s0").getAttribute("data-status"), "active");
+  assert.equal(step("s1").getAttribute("data-status"), "pending");
+  const pendingIcon = icon("s1");
+  done.set(1);
+  await flush();
+  assert.equal(step("s0").getAttribute("data-status"), "complete");
+  assert.equal(step("s1").getAttribute("data-status"), "active");
+  assert.notEqual(icon("s1"), pendingIcon);
+  done.set(2);
+  await flush();
+  assert.equal(step("s1").getAttribute("data-status"), "complete");
   r.unmount();
 });

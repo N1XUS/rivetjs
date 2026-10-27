@@ -59,6 +59,12 @@ A one-line pill that expands into the stacked layout when the text wraps or atta
 
 ::example{id=prompt-input-compact}
 
+## Review Composer
+
+Compose the toolbar with workflow controls for compact agent surfaces: a review follow-up with the pull request, a commit option and an Approve action next to Send.
+
+::example{id=prompt-input-review-composer}
+
 ## With Suggestions
 
 `value` takes a Signal for two-way binding; suggestion buttons write it.

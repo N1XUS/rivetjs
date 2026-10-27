@@ -52,6 +52,14 @@ export const pins: FuzzPin[] = [
   // ScrollArea deviation (cdk/CLAUDE.md, scroll-area/CLAUDE.md): a resumed area stays native (no scroll-area code) until
   // pointerenter / wheel / focusin / scroll.
   pin("/scroll-area", "load", "overflow-x:scroll", "cdk", "ScrollArea viewport overflow: " + MOUNT_EFFECT, true),
+  pin(
+    "/resizable-c",
+    "load",
+    "",
+    "cdk",
+    "resizable groups mount on the first hover / focus / press (flex-grow layout, separator aria-value*; cdk /resizable pin): " + MOUNT_EFFECT,
+    true,
+  ),
 
   // Open findings.
   { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },

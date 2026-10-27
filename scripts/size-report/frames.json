@@ -70,9 +70,9 @@
   "stateBytes": 1269,
   "inlineJsBytes": 5838,
   "files": 46,
-  "jsRaw": 207846,
-  "jsGz": 79531,
-  "jsBr": 71634,
+  "jsRaw": 207854,
+  "jsGz": 79538,
+  "jsBr": 71638,
   "urls": [
    "/assets/button.js",
    "/assets/chain-of-thought.js",

@@ -176,7 +176,8 @@ export const entries: ApiEntryConfig[] = [
     entry: "@rivetjs/ui/resizable",
     file: "ui/src/components/resizable/index.ts",
     runsOn: "both",
-    summary: "Resizable (Rivet addition): shadcn/ui ResizablePanelGroup / ResizablePanel / ResizableHandle on the cdk resizable, Rivet UI look.",
+    summary:
+      "Resizable (Rivet addition): shadcn/ui ResizablePanelGroup / ResizablePanel / ResizableHandle (+ ResizableIndicator, handle types line / drag / pill / handle, separator-token variants) on the cdk resizable, Rivet UI look.",
   },
   {
     entry: "@rivetjs/ui/scroll-area",

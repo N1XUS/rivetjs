@@ -1,14 +1,23 @@
-/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no resizable panels). Behaviour = react-resizable-panels 4.14.3 (MIT, © Brian Vaughn) via @rivetjs/cdk/resizable; API + anatomy = shadcn/ui Resizable (MIT); look = HeroUI separator / focus / accent tokens. Flex layout, panel sizes and touch-action are inline styles of the cdk parts. */
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no resizable panels). Behaviour = react-resizable-panels 4.14.3 (MIT, © Brian Vaughn) via @rivetjs/cdk/resizable; API + anatomy = shadcn/ui Resizable (MIT); look = HeroUI separator / focus / accent tokens; handle types / variants / indicator / CSS variables named after HeroUI Pro's public Resizable docs (TW-166). Flex layout, panel sizes and touch-action are inline styles of the cdk parts. */
 /* -------------------------------------------------------------------------------------------------
  * Resizable Component Styles
- * Block: resizable (parts: panel / handle[aria-orientation][data-separator] / grip)
+ * Block: resizable (parts: panel / handle[aria-orientation][data-separator] / grip / indicator)
  * -----------------------------------------------------------------------------------------------*/
 
 /**
- * Block: resizable - the panel group (cdk sets display:flex + flex-direction inline)
+ * Block: resizable - the panel group (cdk sets display:flex + flex-direction inline).
+ * The variables are read by every handle and indicator inside (nested groups inherit them).
  */
 .resizable {
   @apply size-full;
+  --resizable-handle-size: 1px;
+  --resizable-handle-hit-area: 8px;
+  --resizable-handle-color: var(--color-separator);
+  --resizable-handle-color-hover: var(--color-accent);
+  --resizable-handle-color-active: var(--color-accent);
+  --resizable-indicator-pill-width: 6px;
+  --resizable-indicator-pill-height: 32px;
+  --resizable-indicator-drag-size: 12px;
 }
 
 /**
@@ -21,35 +30,46 @@
 /**
  * Element: handle - the separator line; a wider invisible hit area via ::after.
  * aria-orientation = the line's orientation ("vertical" in a horizontal group).
+ * --resizable-line-color = the line colour of the current state (the indicator follows it).
  */
 .resizable__handle {
-  @apply relative flex w-px items-center justify-center bg-separator outline-none;
+  @apply relative flex shrink-0 items-center justify-center outline-none;
+  --resizable-line-color: var(--resizable-handle-color);
+  width: var(--resizable-handle-size);
+  background-color: var(--resizable-line-color);
   cursor: col-resize;
   transition: background-color var(--duration-fast) var(--ease-smooth);
   @apply motion-reduce:transition-none;
 
   &::after {
     content: "";
-    @apply absolute inset-y-0 left-1/2 w-1 -translate-x-1/2;
+    @apply absolute inset-y-0 left-1/2 -translate-x-1/2;
+    width: max(var(--resizable-handle-hit-area), var(--resizable-handle-size));
   }
 
   &[aria-orientation="horizontal"] {
-    @apply h-px w-full;
+    @apply w-full;
+    height: var(--resizable-handle-size);
     cursor: row-resize;
 
     &::after {
-      @apply inset-x-0 inset-y-auto top-1/2 left-0 h-1 w-full translate-x-0 -translate-y-1/2;
+      @apply inset-x-0 inset-y-auto top-1/2 left-0 w-full translate-x-0 -translate-y-1/2;
+      height: max(var(--resizable-handle-hit-area), var(--resizable-handle-size));
     }
   }
 
-  &[data-separator="hover"],
+  &[data-separator="hover"] {
+    --resizable-line-color: var(--resizable-handle-color-hover);
+  }
+
   &[data-separator="active"] {
-    @apply bg-accent;
+    --resizable-line-color: var(--resizable-handle-color-active);
   }
 
   &:focus-visible,
   &[data-separator="focus"]:focus-visible {
-    @apply status-focused bg-accent;
+    @apply status-focused;
+    --resizable-line-color: var(--resizable-handle-color-active);
   }
 
   &[data-separator="disabled"] {
@@ -57,8 +77,26 @@
   }
 }
 
+/* Variants: the separator tokens, so the line blends into the surface it sits on */
+.resizable__handle--secondary {
+  --resizable-handle-color: var(--color-separator-secondary);
+}
+
+.resizable__handle--tertiary {
+  --resizable-handle-color: var(--color-separator-tertiary);
+}
+
+/* Type handle: a standalone pill between the panels, no line */
+.resizable__handle--handle {
+  background-color: transparent;
+
+  &:focus-visible {
+    background-color: transparent;
+  }
+}
+
 /**
- * Element: grip - the optional handle knob (withHandle), lucide grip icon inside
+ * Element: grip - the grip chip (type="drag" / withHandle), lucide grip icon inside
  */
 .resizable__grip {
   @apply z-10 flex h-4 w-3 shrink-0 items-center justify-center rounded-sm border border-separator bg-surface text-muted;
@@ -69,5 +107,53 @@
 
   & svg {
     @apply size-2.5;
+  }
+}
+
+/**
+ * Element: indicator - the inner affordance (pill or drag dots); its colour follows the line state
+ */
+.resizable__indicator {
+  @apply z-10 flex shrink-0 items-center justify-center;
+}
+
+.resizable__indicator--pill {
+  @apply rounded-full;
+  width: var(--resizable-indicator-pill-width);
+  height: var(--resizable-indicator-pill-height);
+  background-color: var(--resizable-line-color, var(--color-separator));
+  transition: background-color var(--duration-fast) var(--ease-smooth);
+  @apply motion-reduce:transition-none;
+
+  .resizable__handle[aria-orientation="horizontal"] > & {
+    width: var(--resizable-indicator-pill-height);
+    height: var(--resizable-indicator-pill-width);
+  }
+
+  /* On a line the pill needs the panel colour around it to read as a grip */
+  .resizable__handle--pill > & {
+    @apply ring-2 ring-background;
+  }
+
+  /* A standalone pill: the resting colour is a step darker than a line, so it is visible on its own */
+  .resizable__handle--handle:not([data-separator="hover"], [data-separator="active"], :focus-visible) > & {
+    background-color: var(--color-separator-tertiary);
+  }
+}
+
+.resizable__indicator--drag {
+  @apply rounded-xs bg-background py-1 text-muted;
+
+  .resizable__handle[aria-orientation="horizontal"] > & {
+    @apply px-1 py-0;
+  }
+
+  & svg {
+    width: var(--resizable-indicator-drag-size);
+    height: var(--resizable-indicator-drag-size);
+  }
+
+  .resizable__handle:is([data-separator="hover"], [data-separator="active"], :focus-visible) > & {
+    @apply text-accent;
   }
 }

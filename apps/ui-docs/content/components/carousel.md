@@ -101,6 +101,12 @@ Set the slide size with `--rv-carousel-slide-size` (on the root or an item); `sl
 
 ::example{id=carousel-free-drag}
 
+### API access
+
+`onApi` receives the embla API once the engine runs (on a resumed page, when the carousel becomes visible): call `scrollTo`, `scrollPrev`, `scrollNext` from your own controls and follow `select` events.
+
+::example{id=carousel-api-access}
+
 ## Embla examples
 
 Every predefined example of [embla-carousel](https://www.embla-carousel.com/examples/predefined/) 8.6.0, in its order, on the ui Carousel. Default, Loop, Drag Free, Y-axis and Thumbnails are the example at the top, [Loop](#loop), [Free drag](#free-drag), [Vertical](#vertical) and [Thumbnails](#thumbnails) above; the headless versions are on the [cdk carousel page](site:cdk/components/carousel/#examples).

@@ -96,7 +96,7 @@ const STATUS_ICONS: Record<ChainOfThoughtStepStatus, IconNode> = { complete: Cir
 interface ChainOfThoughtStepProps extends DivProps {
   /** Step title. */
   label?: Content;
-  /** @default "complete" */
+  /** Live. @default "complete" */
   status?: ChainOfThoughtStepStatus;
   /** Lucide icon replacing the status icon. */
   icon?: IconNode;
@@ -104,11 +104,12 @@ interface ChainOfThoughtStepProps extends DivProps {
 
 const ChainOfThoughtStep = (props: ChainOfThoughtStepProps): JSX.Element => {
   const [local, rest] = splitLive(props, ["class", "children", "label", "status", "icon"]);
-  const status = local.status ?? "complete";
+  // Live: a caller's reactive `status` (a step moving pending → active → complete) updates the attribute and icon.
+  const status = () => local.status ?? "complete";
   return (
-    <div class={composeSlotClassName(SLOTS.step, local.class)} role="listitem" data-status={status} data-slot="chain-of-thought-step" {...rest}>
+    <div class={composeSlotClassName(SLOTS.step, local.class)} role="listitem" data-status={status()} data-slot="chain-of-thought-step" {...rest}>
       <span class={SLOTS.stepMarker()} aria-hidden="true">
-        <Icon icon={local.icon ?? STATUS_ICONS[status]} size={16} class={SLOTS.stepIcon()} />
+        <Icon icon={local.icon ?? STATUS_ICONS[status()]} size={16} class={SLOTS.stepIcon()} />
       </span>
       <div class={SLOTS.stepBody()}>
         {local.label != null ? <div class={SLOTS.stepLabel()}>{local.label}</div> : null}

@@ -625,11 +625,11 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 2894,
+          "htmlBr": 2892,
           "cssSheets": 2,
           "css": {
-            "min": 67190,
-            "br": 8462
+            "min": 67362,
+            "br": 8524
           },
           "stateBytes": 638,
           "inlineBytes": 3515,
@@ -1338,7 +1338,7 @@
       "routes": {
         "/": {
           "status": 200,
-          "htmlBr": 4505,
+          "htmlBr": 4511,
           "cssSheets": 0,
           "css": {
             "min": 0,

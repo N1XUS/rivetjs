@@ -43,6 +43,12 @@ Each `Step` has a `status` (`complete` default, `active`, `pending`, `error`) an
 
 ::example{id=chain-of-thought-agent-trace}
 
+## Agent Trace Streaming
+
+The same trace while the agent works: `isStreaming` on the running block, and each step's `status` (a live prop: an expression over a signal) moves from `pending` to `active` to `complete`.
+
+::example{id=chain-of-thought-agent-trace-streaming}
+
 ## CSS Classes
 
 | Class                                                             | Applied                                                |

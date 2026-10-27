@@ -11,7 +11,25 @@ export const resizableVariants = tv({
     group: "resizable",
     handle: "resizable__handle",
     handleGrip: "resizable__grip",
+    indicator: "resizable__indicator",
     panel: "resizable__panel",
+  },
+  variants: {
+    indicator: {
+      drag: {indicator: "resizable__indicator--drag"},
+      pill: {indicator: "resizable__indicator--pill"},
+    },
+    type: {
+      drag: {handle: "resizable__handle--drag"},
+      handle: {handle: "resizable__handle--handle"},
+      line: {handle: "resizable__handle--line"},
+      pill: {handle: "resizable__handle--pill"},
+    },
+    variant: {
+      primary: {handle: "resizable__handle--primary"},
+      secondary: {handle: "resizable__handle--secondary"},
+      tertiary: {handle: "resizable__handle--tertiary"},
+    },
   },
 });
 

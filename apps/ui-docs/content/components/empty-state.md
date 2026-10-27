@@ -90,4 +90,4 @@ Plain markup; the default text is real text and is read normally.
 - `class`, not `className`.
 - The default text shows when there are no children or the child is an empty string.
 - `size` (`sm` / `md` / `lg`) sets the scale.
-- The parts and `variant="outline"` are Rivet additions (feature set inspired by HeroUI Pro's public Empty State docs, independent implementation); a root with plain text keeps the compact collection look.
+- The parts and `variant="outline"` are Rivet additions; a root with plain text keeps the compact collection look.

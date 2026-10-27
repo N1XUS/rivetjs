@@ -18,6 +18,9 @@
   "/reanimate light": [
     "label"
   ],
+  "/resizable-c light": [
+    "aria-required-attr"
+  ],
   "/resume light": [
     "aria-allowed-role"
   ],
@@ -117,6 +120,9 @@
   ],
   "/removed-region-auth dark": [
     "color-contrast"
+  ],
+  "/resizable-c dark": [
+    "aria-required-attr"
   ],
   "/resume dark": [
     "aria-allowed-role"

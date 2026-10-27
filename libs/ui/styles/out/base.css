@@ -141,8 +141,12 @@
     --blur-lg: 16px;
     --default-transition-duration: .15s;
     --default-transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    --color-accent: var(--accent);
+    --color-separator: var(--separator);
     --radius-field: var(--field-radius, calc(var(--radius) * 1.5));
     --border-width-field: var(--field-border-width, var(--border-width));
+    --color-separator-secondary: var(--separator-secondary);
+    --color-separator-tertiary: var(--separator-tertiary);
     --r-min: var(--radius-sm);
     --ease-smooth: cubic-bezier(.2, 0, 0, 1);
     --duration-fast: .12s;

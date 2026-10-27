@@ -87,6 +87,24 @@ export default function App() {
 
 ::example{id=app-layout-floating}
 
+### Inset dashboard
+
+A dashboard on the inset sidebar with off-canvas collapse, KPIs in the page and a user menu in the sidebar footer.
+
+::example{id=app-layout-inset-dashboard}
+
+### Docs site
+
+A documentation layout: search and a theme segment in the navbar, grouped page navigation in the sidebar.
+
+::example{id=app-layout-docs-site}
+
+### With breadcrumbs
+
+A multi-level breadcrumb trail in the navbar shows the current depth.
+
+::example{id=app-layout-breadcrumbs}
+
 ### With aside
 
 ::example{id=app-layout-aside}
@@ -130,6 +148,12 @@ Below 1024px the aside column is hidden (`asideMobile="hidden"`, default) or ope
 `sidebarOpen` / `asideOpen` take a two-way Signal, a value or an accessor (+ `onSidebarOpenChange` / `onAsideOpenChange`). `useAppLayout()` returns `{ isAsideOpen, setAsideOpen, toggleAside }` inside a layout (`null` outside); `useSidebar()` covers the sidebar.
 
 ::example{id=app-layout-controlled}
+
+### Client-side routing
+
+`navigate(href)` on AppLayout reaches the internal sidebar provider, so every `Sidebar.MenuButton` with an `href` routes through it; mark the current page with `isCurrent`. Inside a `@rivetjs/router` app, links already route client-side: pass `navigate` only for another router.
+
+::example{id=app-layout-routing}
 
 ## Styling
 
