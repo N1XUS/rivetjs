@@ -357,7 +357,10 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   for (const route of pageRoutes)
     for (const layout of route.layouts) if (!layoutIndex.has(layoutKey(layout))) layoutIndex.set(layoutKey(layout), layoutModulesList.push(layout) - 1);
   const indexOf = (module: RouteModule) => layoutIndex.get(layoutKey(module))!;
-  const persisted = (route: RouteEntry): number[] => route.layouts.flatMap((layout, at) => (layout.page && layout.page !== rootLayout ? [at] : []));
+  const persistedByRoute = new Map(
+    pageRoutes.map((route) => [route, route.layouts.flatMap((layout, at) => (layout.page && layout.page !== rootLayout ? [at] : []))]),
+  );
+  const persisted = (route: RouteEntry): number[] => persistedByRoute.get(route)!;
   const useNest = layoutModulesList.length > 0;
   // Data requests name the layouts whose data the client keeps (only layouts with server exports load).
   const keeps = mode === "server" && layoutModulesList.some((layout) => layout.server || layout.inline);
@@ -372,7 +375,11 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     root: rootLayout ? indexOf(pageRoutes[0]!.layouts[0]!) : -1,
     routes: pageRoutes.map((route) => [at(route.pattern), route.layouts.map(indexOf)]),
   };
-  const routeIndex = (route: RouteEntry) => pageRoutes.indexOf(route);
+  const routeIndices = new Map<RouteEntry, number>();
+  pageRoutes.forEach((route, i) => {
+    if (!routeIndices.has(route)) routeIndices.set(route, i);
+  });
+  const routeIndex = (route: RouteEntry) => routeIndices.get(route)!;
   const slot = (i: number) => `nest.l[${i}]!`;
   // Level `k` of `route`: its persisted layout at that depth around the next level's Router, or the page.
   // Entering level `k + 1`: the persisted layout `i` (at depth `at`) around the next level's Router.
@@ -410,16 +417,24 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
   // rows [route index, data depth, page, enter view (-1: the page), failure view]. Each level's
   // `{ paths, route }` defines only the matched route per request; its load / render read the row.
   const failureKeys = [...new Set(pageRoutes.map(failureKey))];
-  const enterKeys: string[] = [];
-  for (const route of pageRoutes)
-    for (let k = 0; k < persisted(route).length; k++) if (!enterKeys.includes(enterKey(route, k)!)) enterKeys.push(enterKey(route, k)!);
+  const failureIndices = new Map(failureKeys.map((key, i) => [key, i]));
+  const enterIndices = new Map<string, number>();
   type Level = { name: string; k: number; routes: RouteEntry[] };
-  const tables: Level[] = [
-    { name: "", k: 0, routes: pageRoutes },
-    ...[...new Set(pageRoutes.flatMap((route) => persisted(route).map((at, k) => [indexOf(route.layouts[at]!), k + 1] as const)).map((pair) => pair.join(":")))]
-      .map((pair) => pair.split(":").map(Number) as [number, number])
-      .map(([i, k]) => ({ name: String(i), k, routes: pageRoutes.filter((route) => persisted(route).map((at) => indexOf(route.layouts[at]!))[k - 1] === i) })),
-  ];
+  const levelTables = new Map<string, Level>();
+  for (const route of pageRoutes) {
+    const chain = persisted(route);
+    for (let k = 0; k < chain.length; k++) {
+      const key = enterKey(route, k)!;
+      if (!enterIndices.has(key)) enterIndices.set(key, enterIndices.size);
+      const i = indexOf(route.layouts[chain[k]!]!);
+      const pair = `${i}:${k + 1}`;
+      let table = levelTables.get(pair);
+      if (!table) levelTables.set(pair, (table = { name: String(i), k: k + 1, routes: [] }));
+      table.routes.push(route);
+    }
+  }
+  const enterKeys = [...enterIndices.keys()];
+  const tables: Level[] = [{ name: "", k: 0, routes: pageRoutes }, ...levelTables.values()];
   // Z5: route table columns [route id, data depth, page, enter view, failure view] per level, each as code: a literal when
   // every row has the same value, `n` (the row index) when it equals the row, else a per-level array `R<level>_<c>`
   // (columns, not rows: the App chunk grows by a few bytes per route, not by a row literal per route).
@@ -437,27 +452,30 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
       routes.map((route) => pageIndex.get(route.page!)!),
       routes.map((route) => {
         const enter = nested ? enterKey(route, k) : null;
-        return enter === null ? -1 : enterKeys.indexOf(enter);
+        return enter === null ? -1 : enterIndices.get(enter)!;
       }),
-      routes.map((route) => failureKeys.indexOf(failureKey(route))),
+      routes.map((route) => failureIndices.get(failureKey(route))!),
     ].map((values, c) => column(values, `R${name}_${c}`));
   const columns = new Map(tables.map((table) => [table, columnsOf(table)]));
   const topPage = columns.get(tables[0]!)![2]!;
   // Layout chains of the top-level rows (`NEST.routes`, same order as `PATHS`): one shared array per distinct chain.
-  const chains = [...new Set(pageRoutes.map((route) => str(route.layouts.map(indexOf))))];
-  const chain = column(
-    pageRoutes.map((route) => chains.indexOf(str(route.layouts.map(indexOf)))),
-    "R_L",
-  );
+  const chainIndices = new Map<string, number>();
+  const routeChains = pageRoutes.map((route) => {
+    const chain = str(route.layouts.map(indexOf));
+    if (!chainIndices.has(chain)) chainIndices.set(chain, chainIndices.size);
+    return chainIndices.get(chain)!;
+  });
+  const chains = [...chainIndices.keys()];
+  const chain = column(routeChains, "R_L");
   // Shared views reachable from a level's rows (a single one is called directly).
   const pick = (indices: number[], call: (j: number) => string, at: string): string =>
     indices.slice(0, -1).reduceRight((rest, j) => `${at} === ${j} ? ${call(j)} : ${rest}`, call(indices.at(-1)!));
   const routeTableOf = (table: Level): string => {
     const { name, k, routes } = table;
     const col = columns.get(table)!;
-    const fails = [...new Set(routes.map((route) => failureKeys.indexOf(failureKey(route))))].sort((a, b) => a - b);
+    const fails = [...new Set(routes.map((route) => failureIndices.get(failureKey(route))!))].sort((a, b) => a - b);
     const enters = nested
-      ? [...new Set(routes.map((route) => enterKey(route, k)).filter((key) => key !== null))].map((key) => enterKeys.indexOf(key)).sort((a, b) => a - b)
+      ? [...new Set(routes.map((route) => enterKey(route, k)).filter((key) => key !== null))].map((key) => enterIndices.get(key)!).sort((a, b) => a - b)
       : [];
     const pageRows = routes.some((route) => !nested || enterKey(route, k) === null);
     const enter = enters.length ? pick(enters, (j) => `enter${j}(result, match.url)`, col[3]!) : "";

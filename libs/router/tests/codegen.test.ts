@@ -1,5 +1,6 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { generate, routePathRegExp } from "../build/codegen.ts";
 import { routeTable } from "../build/routes.ts";
 import { mergeHeads } from "../server/app.ts";
@@ -504,4 +505,10 @@ test("csr: route loads apply the route head in the browser (`_csrHead`); server 
     const app = generate(routeTable(files), { routesDir: "src/routes", mode }).files["app.tsx"]!;
     assert.doesNotMatch(app, /_csrHead|HEADS|import \* as/, mode);
   }
+});
+
+test("layout buckets preserve complete generated output order for optional routes and failure views", () => {
+  const table = routeTable(["_layout.tsx", "a/_layout.tsx", "a/_404.tsx", "a/[[id]].tsx", "b/_layout.tsx", "b/_error.tsx", "b/index.tsx", "c.tsx"]);
+  const output = generate(table, { routesDir: "src/routes", navigate: true, params: true, transitions: true });
+  assert.equal(createHash("sha256").update(JSON.stringify(output)).digest("hex"), "7540c78e3ff7588a88156b43d3ef6f6a3548f14764284ef4b543befe8f69169a");
 });
