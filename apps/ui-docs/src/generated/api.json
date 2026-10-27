@@ -384995,8 +384995,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 315,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L315"
+    "line": 455,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L455"
    },
    "href": "/api/rivetjs/ui/table/TableBody/"
   },
@@ -385585,8 +385585,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 313,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L313"
+    "line": 453,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L453"
    },
    "href": "/api/rivetjs/ui/table/TableBodyProps/"
   },
@@ -385615,8 +385615,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 341,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L341"
+    "line": 500,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L500"
    },
    "href": "/api/rivetjs/ui/table/TableCell/"
   },
@@ -386212,8 +386212,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 339,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L339"
+    "line": 498,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L498"
    },
    "href": "/api/rivetjs/ui/table/TableCellProps/"
   },
@@ -386234,8 +386234,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 498,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L498"
+    "line": 674,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L674"
    },
    "href": "/api/rivetjs/ui/table/TableCollection/"
   },
@@ -386264,8 +386264,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 302,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L302"
+    "line": 431,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L431"
    },
    "href": "/api/rivetjs/ui/table/TableColumn/"
   },
@@ -386322,8 +386322,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 88,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L88"
+    "line": 140,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L140"
    },
    "href": "/api/rivetjs/ui/table/TableColumnDef/"
   },
@@ -386954,8 +386954,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 300,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L300"
+    "line": 429,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L429"
    },
    "href": "/api/rivetjs/ui/table/TableColumnProps/"
   },
@@ -386984,8 +386984,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 388,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L388"
+    "line": 564,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L564"
    },
    "href": "/api/rivetjs/ui/table/TableColumnResizer/"
   },
@@ -387574,8 +387574,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 386,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L386"
+    "line": 562,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L562"
    },
    "href": "/api/rivetjs/ui/table/TableColumnResizerProps/"
   },
@@ -387604,8 +387604,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 269,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L269"
+    "line": 374,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L374"
    },
    "href": "/api/rivetjs/ui/table/TableContent/"
   },
@@ -388348,8 +388348,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 267,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L267"
+    "line": 372,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L372"
    },
    "href": "/api/rivetjs/ui/table/TableContentProps/"
   },
@@ -388378,8 +388378,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 359,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L359"
+    "line": 535,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L535"
    },
    "href": "/api/rivetjs/ui/table/TableFooter/"
   },
@@ -388422,8 +388422,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 352,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L352"
+    "line": 528,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L528"
    },
    "href": "/api/rivetjs/ui/table/TableFooterProps/"
   },
@@ -388452,8 +388452,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 289,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L289"
+    "line": 408,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L408"
    },
    "href": "/api/rivetjs/ui/table/TableHeader/"
   },
@@ -389049,8 +389049,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 287,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L287"
+    "line": 406,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L406"
    },
    "href": "/api/rivetjs/ui/table/TableHeaderProps/"
   },
@@ -389079,8 +389079,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 424,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L424"
+    "line": 600,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L600"
    },
    "href": "/api/rivetjs/ui/table/TableLoadMoreContent/"
   },
@@ -389123,8 +389123,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 417,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L417"
+    "line": 593,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L593"
    },
    "href": "/api/rivetjs/ui/table/TableLoadMoreContentProps/"
   },
@@ -389153,8 +389153,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 401,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L401"
+    "line": 577,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L577"
    },
    "href": "/api/rivetjs/ui/table/TableLoadMoreItem/"
   },
@@ -389745,8 +389745,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 399,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L399"
+    "line": 575,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L575"
    },
    "href": "/api/rivetjs/ui/table/TableLoadMoreItemProps/"
   },
@@ -389775,8 +389775,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 371,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L371"
+    "line": 547,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L547"
    },
    "href": "/api/rivetjs/ui/table/TableResizableContainer/"
   },
@@ -390358,8 +390358,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 369,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L369"
+    "line": 545,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L545"
    },
    "href": "/api/rivetjs/ui/table/TableResizableContainerProps/"
   },
@@ -390390,8 +390390,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 167,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L167"
+    "line": 219,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L219"
    },
    "href": "/api/rivetjs/ui/table/TableRoot/"
   },
@@ -390412,8 +390412,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 158,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L158"
+    "line": 210,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L210"
    },
    "href": "/api/rivetjs/ui/table/TableRootProps/"
   },
@@ -390442,8 +390442,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 328,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L328"
+    "line": 476,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L476"
    },
    "href": "/api/rivetjs/ui/table/TableRow/"
   },
@@ -391179,8 +391179,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 326,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L326"
+    "line": 474,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L474"
    },
    "href": "/api/rivetjs/ui/table/TableRowProps/"
   },
@@ -391209,8 +391209,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 257,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L257"
+    "line": 362,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L362"
    },
    "href": "/api/rivetjs/ui/table/TableScrollContainer/"
   },
@@ -391253,8 +391253,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 250,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L250"
+    "line": 355,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L355"
    },
    "href": "/api/rivetjs/ui/table/TableScrollContainerProps/"
   },
@@ -391275,8 +391275,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 434,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L434"
+    "line": 610,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L610"
    },
    "href": "/api/rivetjs/ui/table/TableSortDirection/"
   },
@@ -391305,8 +391305,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 457,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L457"
+    "line": 633,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L633"
    },
    "href": "/api/rivetjs/ui/table/TableSortableColumnHeader/"
   },
@@ -393009,8 +393009,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/table/table.tsx",
-    "line": 436,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L436"
+    "line": 612,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/table/table.tsx#L612"
    },
    "href": "/api/rivetjs/ui/table/TableSortableColumnHeaderProps/"
   },
