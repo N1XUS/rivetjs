@@ -333,9 +333,19 @@ function createDriver<T, O>(model: VirtualizerModel<T, O>, el: HTMLElement): Dri
   };
   if (model.shouldObserveItemSize && typeof ResizeObserver !== "undefined") {
     observer = new ResizeObserver((entries) => {
+      let byKey: Map<string, VirtualView<T>> | undefined;
       for (const entry of entries) {
         const key = (entry.target.parentElement as HTMLElement | null)?.closest<HTMLElement>("[data-rv-view]")?.dataset.rvView;
-        const view = key == null ? undefined : [...flatten(untrack(model.views)).values()].find((v) => String(v.key) === key);
+        if (key == null) continue;
+        if (!byKey) {
+          byKey = new Map();
+          // flatten keeps the last descriptor for an exact key; string collisions keep the first.
+          for (const view of flatten(untrack(model.views)).values()) {
+            const text = String(view.key);
+            if (!byKey.has(text)) byKey.set(text, view);
+          }
+        }
+        const view = byKey.get(key);
         if (view) schedule(view.key);
       }
     });

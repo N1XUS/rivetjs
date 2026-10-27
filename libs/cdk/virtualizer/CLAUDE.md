@@ -28,6 +28,8 @@ React Spectrum virtualizer port: react-stately engine + layouts (List, Grid, Tab
 - story routes: `tests/app/src/routes/virtualizer.tsx`, `tests-components/app/src/routes/dom-events-collections.tsx`, `tests-components/app/src/routes/virtualized-collections.tsx`
 - docs examples: `apps/cdk-docs/examples/virtualizer-*/`
 
+- Observer delivery indexes flattened views once per batch, preserving first string-key match and exact-key flatten replacement. Measurement still queries each key independently because a size update can synchronously reproject rows. `tests/virtualizer-observer.test.ts` covers nested keys, collisions, removal and delivery order.
+
 ## Upstream
 - react-spectrum `react-stately/src/virtualizer/*`, `react-stately/src/layout/{ListLayout,GridLayout,WaterfallLayout,TableLayout}.ts`, `react-stately/src/table/{TableColumnLayout,TableUtils}.ts`, `react-stately/src/list/ListCollection.ts`, `react-aria/src/virtualizer/{Virtualizer,ScrollView,VirtualizerItem,useVirtualizerItem,utils}`, RAC `Virtualizer.tsx` (Apache-2.0, © Adobe); RTL offset detection from react-window (MIT)
 - Deviations (headers): ListLayout `buildSection` never skips a section header child (a cold-started engine lays out from the scrolled rect; upstream starts at 0); `Rect.intersects` and `getVisibleLayoutInfos` have no jsdom shortcut; view key counter per instance (no module state); `createVirtualizerState` uses signals + one effect; `createScrollView` = useScrollView as a plain controller (no flushSync); collections built from plain arrays (no JSX builder); table collection = one header row, no nested columns; TableColumnLayout without dev warning; drop target types local
