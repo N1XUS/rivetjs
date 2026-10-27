@@ -328,11 +328,13 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
       return id === "virtual:docs/scripts" ? SCRIPTS + (this.environment?.config.consumer === "server" ? "" : "?client") : null;
     },
     load(id) {
-      if (id === SCRIPTS + "?client") return "export const pageScript = () => undefined;\nexport const routeScript = (_path) => undefined;";
+      if (id === SCRIPTS + "?client")
+        return "export const pageScript = () => undefined;\nexport const pageScriptImports = () => [];\nexport const routeScript = (_path) => undefined;";
       if (id !== SCRIPTS) return null;
       if (dev)
         return [
           `export const pageScript = () => ${JSON.stringify(base + "@fs" + PAGE_SCRIPT)};`,
+          "export const pageScriptImports = () => [];",
           `const routes = ${JSON.stringify(Object.fromEntries(files.map(([path, file]) => [path, base + "@fs" + file])))};`,
           "export const routeScript = (path) => routes[path];",
         ].join("\n");
@@ -342,6 +344,7 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
         "let scripts;",
         `const read = () => (scripts ??= existsSync(${JSON.stringify(file)}) ? JSON.parse(readFileSync(${JSON.stringify(file)}, "utf8")) : {});`,
         "export const pageScript = () => read().page;",
+        "export const pageScriptImports = () => read().pageImports ?? [];",
         "export const routeScript = (path) => read().routes?.[path];",
       ].join("\n");
     },
@@ -358,8 +361,11 @@ function docsScripts(routes: Record<string, string> = {}): Plugin {
         return chunk ? base + chunk.fileName : undefined;
       };
       const page = url(PAGE_SCRIPT);
+      // The page script's static imports (the preload helper): `document.ts`'s stub preloads them with the script, so
+      // the first intent waits one round trip, not two (DOCS-ZERO).
+      const imports = chunks.find((output) => output.facadeModuleId === PAGE_SCRIPT)?.imports.map((file) => base + file) ?? [];
       const scripts = Object.fromEntries(files.flatMap(([path, file]) => (url(file) ? [[path, url(file)]] : [])));
-      if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, routes: scripts }) + "\n" });
+      if (page) this.emitFile({ type: "asset", fileName: SCRIPTS_FILE, source: JSON.stringify({ page, pageImports: imports, routes: scripts }) + "\n" });
     },
   };
 }

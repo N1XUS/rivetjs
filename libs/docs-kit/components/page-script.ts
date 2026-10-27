@@ -2,13 +2,18 @@
 // no resume runtime, no boundary. Each piece used to be a client trigger on a boundary that booted the resume runtime at
 // idle on every docs page, before any input (`SiteFrame` `clientEffect(watchCode, { when: "idle" })`, `SearchButton`
 // document listeners, `Toc` scroll listener; docs `/learn/resuming/`: +21 ms main-thread tasks, +3.3 MB JS heap at
-// idle): `document.ts` links this script on every docs page (not example frames). Listeners live for the document, so
-// client navigations keep them; code blocks a navigation adds are coloured too.
+// idle). Listeners live for the document, so client navigations keep them; code blocks a navigation adds are coloured too.
 //  - code highlighter: at idle, colours code blocks near the viewport (`highlight-browser.ts`; not on `site.leanPages`)
 //  - search: `/` and Ctrl/Cmd+K open the dialog (capture phase: cdk buttons stop the propagation of keys pressed on
 //    them), a lone Ctrl / Meta down or a pointer over / focus of a search trigger fetches it (not on lean pages)
 //  - TOC scroll-spy: marks the TOC link of the heading above the reading line (`browser.ts` `spy`)
 //  - site chrome (RT-DIET2): theme menu / mobile drawer mounted on intent, search button click, code copy (below)
+// Loaded on first intent (DOCS-ZERO, 2026-10-27): `document.ts` links no module — its inline stub (`PAGE_STUB`) imports
+// this module on the first pointerover / pointerdown / focusin / keydown / click, the first scroll of a page with a TOC,
+// or at idle when a visible code block is left plain (dev server, runtime-filled blocks); built content pages fetch no
+// JS before input. The stub queues the events it saw (`window.__rvDocs`; it already prevented the defaults this module
+// prevents: Ctrl/Cmd+K, `/`, ArrowDown / ArrowUp on the theme button, a plain search-button click) and this module
+// replays them through its own listeners when it runs (`replay`).
 // A .ts module: browser globals are fine. `<html data-lean>` = a `site.leanPages` page (set by `document.ts`).
 import { spy, spyState } from "./browser.ts";
 import { CODE_SELECTOR, watchCode } from "./highlight-browser.ts";
@@ -16,38 +21,32 @@ import { CODE_SELECTOR, watchCode } from "./highlight-browser.ts";
 const lean = document.documentElement.hasAttribute("data-lean");
 const dialog = () => import("../search/dialog.tsx");
 
-addEventListener(
-  "scroll",
-  () => {
-    if (spyState.queued || !document.querySelector(".toc-list")) return;
-    spyState.queued = true;
-    requestAnimationFrame(spy);
-  },
-  { passive: true },
-);
+const onScroll = () => {
+  if (spyState.queued || !document.querySelector(".toc-list")) return;
+  spyState.queued = true;
+  requestAnimationFrame(spy);
+};
+addEventListener("scroll", onScroll, { passive: true });
 
+const onSearchKey = (event: KeyboardEvent) => {
+  // Ctrl / Meta down: Ctrl+K / Cmd+K follows — fetch the dialog while the second key is on its way.
+  if (event.key === "Control" || event.key === "Meta") return void dialog();
+  const target = event.target as HTMLElement | null;
+  const typing = target?.closest?.("input, textarea, select, [contenteditable='true']");
+  if ((event.key === "k" && (event.metaKey || event.ctrlKey)) || (event.key === "/" && !typing)) {
+    if (!document.querySelector(".search-button")) return;
+    event.preventDefault();
+    void dialog().then((module) => module.openSearch());
+  }
+};
+const warm = (event: Event) => {
+  if (!(event.target as Element | null)?.closest?.(".search-button")) return;
+  document.removeEventListener("pointerover", warm);
+  document.removeEventListener("focusin", warm);
+  void dialog();
+};
 if (!lean) {
-  document.addEventListener(
-    "keydown",
-    (event) => {
-      // Ctrl / Meta down: Ctrl+K / Cmd+K follows — fetch the dialog while the second key is on its way.
-      if (event.key === "Control" || event.key === "Meta") return void dialog();
-      const target = event.target as HTMLElement | null;
-      const typing = target?.closest("input, textarea, select, [contenteditable='true']");
-      if ((event.key === "k" && (event.metaKey || event.ctrlKey)) || (event.key === "/" && !typing)) {
-        if (!document.querySelector(".search-button")) return;
-        event.preventDefault();
-        void dialog().then((module) => module.openSearch());
-      }
-    },
-    { capture: true },
-  );
-  const warm = (event: Event) => {
-    if (!(event.target as Element | null)?.closest?.(".search-button")) return;
-    document.removeEventListener("pointerover", warm);
-    document.removeEventListener("focusin", warm);
-    void dialog();
-  };
+  document.addEventListener("keydown", onSearchKey, { capture: true });
   document.addEventListener("pointerover", warm);
   document.addEventListener("focusin", warm);
 
@@ -87,33 +86,63 @@ const chrome = (event: Event) => {
   const menu = target?.closest?.<HTMLButtonElement>(".menu-button[data-chrome]");
   if (menu) void mobileMenu().then((module) => pressing || module.liveMobileMenu(menu));
 };
-document.addEventListener("pointerover", chrome, { passive: true });
-document.addEventListener("focusin", chrome);
-document.addEventListener("pointerdown", () => (pressing = true), { capture: true, passive: true });
-for (const type of ["click", "pointercancel"]) document.addEventListener(type, () => setTimeout(() => (pressing = false)), { capture: true, passive: true });
-document.addEventListener("click", (event) => {
+const press = () => (pressing = true);
+const released = () => setTimeout(() => (pressing = false));
+const onClick = (event: MouseEvent) => {
   const target = event.target as Element | null;
   // `data-chrome`: the static button (a mounted live trigger has its own handlers).
-  const theme = target?.closest<HTMLButtonElement>(".theme-button[data-chrome]");
+  const theme = target?.closest?.<HTMLButtonElement>(".theme-button[data-chrome]");
   if (theme) return void themeMenu().then((module) => module.openThemeMenu(theme, event));
-  const menu = target?.closest<HTMLButtonElement>(".menu-button[data-chrome]");
+  const menu = target?.closest?.<HTMLButtonElement>(".menu-button[data-chrome]");
   if (menu) return void mobileMenu().then((module) => module.openMobileMenu(menu, event));
-  const search = target?.closest(".search-button");
+  const search = target?.closest?.(".search-button");
   if (search && plain(event)) {
     event.preventDefault();
     return void dialog().then((module) => module.openSearch());
   }
-  const copy = target?.closest<HTMLButtonElement>(".copy-button");
+  const copy = target?.closest?.<HTMLButtonElement>(".copy-button");
   if (copy) copyCode(copy);
-});
-document.addEventListener("keydown", (event) => {
+};
+const onArrow = (event: KeyboardEvent) => {
   // The menu button's ArrowDown / ArrowUp opens the menu (cdk MenuTrigger keys); Enter / Space arrive as clicks.
   if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
   const theme = (event.target as Element | null)?.closest?.<HTMLButtonElement>(".theme-button[data-chrome]");
   if (!theme) return;
   event.preventDefault();
   void themeMenu().then((module) => module.openThemeMenu(theme, event));
-});
+};
+document.addEventListener("pointerover", chrome, { passive: true });
+document.addEventListener("focusin", chrome);
+document.addEventListener("pointerdown", press, { capture: true, passive: true });
+for (const type of ["click", "pointercancel"]) document.addEventListener(type, released, { capture: true, passive: true });
+document.addEventListener("click", onClick);
+document.addEventListener("keydown", onArrow);
+
+/**
+ * The events `document.ts`'s inline stub saw before this module ran (`window.__rvDocs`), through the listeners above in
+ * dispatch order (capture before bubble, as the browser ran them). Setting the global to null stops the stub.
+ */
+function replay(events: readonly Event[]): void {
+  for (const event of events) {
+    const type = event.type;
+    if (type === "scroll") onScroll();
+    else if (type === "keydown") {
+      if (!lean) onSearchKey(event as KeyboardEvent);
+      onArrow(event as KeyboardEvent);
+    } else if (type === "pointerover" || type === "focusin") {
+      if (!lean) warm(event);
+      chrome(event);
+    } else if (type === "pointerdown") press();
+    else if (type === "click") {
+      released();
+      onClick(event as MouseEvent);
+    }
+  }
+}
+const stub = window as unknown as { __rvDocs?: Event[] | null };
+const queued = stub.__rvDocs;
+stub.__rvDocs = null;
+if (queued) replay(queued);
 
 /** Copy the first visible `<pre>` of the button's `.code-block` / `.code-panel` (the open tab, or a compiled block's source). */
 function copyCode(button: HTMLButtonElement): void {

@@ -3,8 +3,9 @@ import { FRAME_HEIGHT, FRAME_THEME, frameIdOf, PARENT_FRAME_HEIGHT, PARENT_THEME
 import { site } from "virtual:docs/site";
 // Favicon: the Rivet logo (repo root logo.svg, emitted as a hashed asset by `docsSite()`).
 import { logo } from "virtual:docs/brand";
-// The docs page script (ZERO Z13): highlighter, search shortcuts, TOC spy without the resume runtime (`components/page-script.ts`).
-import { pageScript, routeScript } from "virtual:docs/scripts";
+// The docs page script (ZERO Z13): highlighter, search shortcuts, TOC spy, site chrome without the resume runtime
+// (`components/page-script.ts`), imported on first intent by `PAGE_STUB` (DOCS-ZERO).
+import { pageScript, pageScriptImports, routeScript } from "virtual:docs/scripts";
 
 const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
 // Applies the saved theme (`localStorage.theme`: "light" | "dark"; absent = follow the system) before
@@ -13,7 +14,7 @@ const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"',
 // in the back / forward cache (`pageshow`) is applied too. Static pages allow it by hash (hashCSP); server pages
 // (the dev server's CSP included) by the request nonce. Then the bridges that hand the theme to example
 // frames and size auto-height frames (`frame-theme.ts`).
-const themeScript = (nonce: string | undefined) =>
+const themeScript = (nonce: string | undefined, stub = "") =>
   `<script${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}>` +
   '(function(){var d=document.documentElement,m=matchMedia("(prefers-color-scheme: dark)"),p;try{p=localStorage.getItem("theme")}catch(e){}if(p!=="light"&&p!=="dark")p="system";d.dataset.themePref=p;function a(){d.dataset.theme=d.dataset.themePref==="system"?(m.matches?"dark":"light"):d.dataset.themePref}a();m.addEventListener("change",a);' +
   'function r(){var v;try{v=localStorage.getItem("theme")}catch(e){}d.dataset.themePref=v==="light"||v==="dark"?v:"system";a()}addEventListener("storage",function(e){if(e.key==="theme"||e.key===null)r()});addEventListener("pageshow",function(e){if(e.persisted)r()})})();' +
@@ -21,6 +22,7 @@ const themeScript = (nonce: string | undefined) =>
   PARENT_THEME_BRIDGE +
   ";" +
   PARENT_FRAME_HEIGHT +
+  stub +
   "</script>";
 // After the first paint (`AFTER_PAINT`: first contentful paint → task; browsers without paint timing: `load` → task;
 // or the first pointerover / pointerdown / touchstart / keydown / focusin, whichever comes first: the full sheets are
@@ -52,25 +54,49 @@ const frameDocument: DocumentShell = ({ head, nonce, managed }) => ({
 const document: DocumentShell = (input) => (frameIdOf(input.url.pathname) ? frameDocument(input) : siteDocument(input));
 
 /**
- * The docs page script (every docs page; `site.leanPages` are marked `<html data-lean>`: no highlighter / search
- * shortcuts) + the page's own script (`docsSite({ scripts })`). Both low priority: nothing the first paint needs
- * (a High module script counts as render-blocking in Lighthouse's simulation when it starts before first paint).
+ * The docs page script, on first intent (DOCS-ZERO 2026-10-27): built content pages fetch no JS before input. Inline in
+ * the head script (~0.4 KB br, below the docs page script's 1.9 KB br module + request on every page view), it imports
+ * `src` on the first pointerover / pointerdown / focusin / keydown / click (capture), on the first scroll of a page with a
+ * TOC (`.toc-list`: scroll-spy), or after parsing at idle when a code block is visible and left plain
+ * (`pre[data-lang]:not([data-hl])` = `highlight-browser.ts` `CODE_SELECTOR`, `checkVisibility()`: hidden "Server HTML"
+ * tabs wait for their tab press), with a `modulepreload` of the script's static imports (`pageScriptImports()`: the preload
+ * helper — one round trip, not two). It queues those events on `window.__rvDocs` for the module's `replay`, and does now the
+ * defaults the module prevents (they cannot wait for a fetch): Ctrl/Cmd+K and `/` (not typing; not on `<html
+ * data-lean>`; only with a `.search-button`), ArrowDown / ArrowUp on the static theme button, a plain click on a
+ * `.search-button` link (a failed import follows that link). Once the module ran (`__rvDocs` = null) the stub detaches.
+ * Measured against the external module script (glossary, Lighthouse mobile): see `libs/docs-kit/CLAUDE.md`.
  */
-const pageScriptTag = (nonce: string | undefined, pathname: string) => {
-  const attr = nonce === undefined ? "" : ` nonce="${escape(nonce)}"`;
+const PAGE_STUB = (src: string, imports: string[]) =>
+  '(function(u,D){var d=document,w=window,q=w.__rvDocs=[],T=["pointerover","pointerdown","focusin","keydown","click"],l;' +
+  'function g(){if(l)return;for(var x of D){var k=d.createElement("link");k.rel="modulepreload";k.href=x;d.head.appendChild(k)}l=import(u).catch(function(){for(var e of q){var a=e.type=="click"&&e.target.closest&&e.target.closest(".search-button");if(a)location.href=a.href}})}' +
+  "function h(e){if(w.__rvDocs!==q){for(var n of T)d.removeEventListener(n,h,!0);return}" +
+  "var t=e.target,c=function(s){return t&&t.closest?t.closest(s):null},k=e.key;" +
+  'if(e.type=="keydown"){if((k=="ArrowDown"||k=="ArrowUp")&&c(".theme-button[data-chrome]")||!d.documentElement.hasAttribute("data-lean")&&d.querySelector(".search-button")&&(k=="k"&&(e.metaKey||e.ctrlKey)||k=="/"&&!c("input,textarea,select,[contenteditable=\'true\']")))e.preventDefault()}' +
+  'else if(e.type=="click"&&c(".search-button")&&!(e.button||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey))e.preventDefault();' +
+  "q.push(e);g()}" +
+  "for(var n of T)d.addEventListener(n,h,!0);" +
+  'addEventListener("scroll",function s(e){if(d.querySelector(".toc-list")){removeEventListener("scroll",s);w.__rvDocs===q&&q.push(e);g()}},{passive:!0});' +
+  'function i(){for(var p of d.querySelectorAll("pre[data-lang]:not([data-hl])"))if(!p.checkVisibility||p.checkVisibility())return g()}' +
+  'function j(){w.requestIdleCallback?requestIdleCallback(i,{timeout:2e3}):setTimeout(i,1)}d.readyState=="loading"?d.addEventListener("DOMContentLoaded",j):j()' +
+  `})(${JSON.stringify(src)},${JSON.stringify(imports)});`;
+
+/** `;` + the stub for this build's docs page script (none in the browser bundle / unbuilt). */
+const pageStub = () => {
   const src = pageScript();
+  return src ? ";" + PAGE_STUB(src, pageScriptImports()) : "";
+};
+
+/** The page's own script (`docsSite({ scripts })`), low priority: a High module script started before first paint counts as render-blocking in Lighthouse's simulation. */
+const routeScriptTag = (nonce: string | undefined, pathname: string) => {
   const own = routeScript(pathname);
-  return (
-    (src ? `<script type="module" src="${escape(src)}" fetchpriority="low"${attr}></script>` : "") +
-    (own ? `<script type="module" src="${escape(own)}" fetchpriority="low"${attr}></script>` : "")
-  );
+  return own ? `<script type="module" src="${escape(own)}" fetchpriority="low"${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}></script>` : "";
 };
 
 const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => ({
   start:
     `<!doctype html><html lang="en"${site.leanPages?.includes(url.pathname) ? " data-lean" : ""}>` +
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-    themeScript(nonce) +
+    themeScript(nonce, pageStub()) +
     // The whole route head (scripts included: a route `head.scripts` entry is written, nonce'd on server pages).
     headTags(
       {
@@ -83,7 +109,7 @@ const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => (
     '<meta name="color-scheme" content="light dark">' +
     `<link rel="icon" type="image/svg+xml" href="${logo}">` +
     styles.map((href) => `<link rel="stylesheet" href="${escape(href)}">`).join("") +
-    pageScriptTag(nonce, url.pathname) +
+    routeScriptTag(nonce, url.pathname) +
     "</head><body>",
   end: "</body></html>",
 });

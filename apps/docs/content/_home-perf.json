@@ -8,12 +8,12 @@
     "a11y": 631
   },
   "inlineJs": {
-    "bytes": 6847,
+    "bytes": 8376,
     "scripts": 3
   },
   "html": {
-    "bytes": 94841,
-    "brotli": 19133
+    "bytes": 96647,
+    "brotli": 19694
   },
   "lighthouse": {
     "date": "2026-10-12",

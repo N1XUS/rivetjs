@@ -26,6 +26,8 @@ declare module "virtual:docs/examples?ids=*" {
 declare module "virtual:docs/scripts" {
   /** URL of the docs page script (`components/page-script.ts`, ZERO Z13); undefined in the browser / when not built. */
   export const pageScript: () => string | undefined;
+  /** URLs of the docs page script's static imports (built: the preload helper; DOCS-ZERO), preloaded with it on first intent. */
+  export const pageScriptImports: () => string[];
   /** URL of a page's own plain module script (`docsSite({ scripts })`, DOCS-FAST); undefined in the browser / for other pages. */
   export const routeScript: (pathname: string) => string | undefined;
 }

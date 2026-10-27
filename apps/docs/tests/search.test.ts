@@ -62,7 +62,8 @@ test("search: a cold Ctrl+K fetches only the palette + light overlay primitives;
     await page.waitForFunction(() => document.activeElement?.matches(".search-box input"));
     await page.waitForLoadState("networkidle");
     // The DOM runtime chunk (RT-DIET2 DOCS-CHROME: docs pages boot no runtime before input, so the first overlay brings
-    // it; once per page, shared with the theme menu / drawer) is not the palette's.
+    // it; once per page, shared with the theme menu / drawer) is not the palette's. The docs page script (DOCS-ZERO:
+    // fetched on this first intent, 5 KB) is counted.
     const fetched = js.slice(mark).filter(([path]) => !/\/dom-derived-[\w-]+\.js$/.test(path));
     assert.ok(js.slice(mark).length - fetched.length <= 1, "one DOM runtime chunk");
     const bytes = fetched.reduce((sum, [, size]) => sum + size, 0);
@@ -162,5 +163,45 @@ test("search: a result click navigates on the client; a page with an `::api` car
     assert.deepEqual(errors, []);
   } finally {
     await page.close();
+  }
+});
+
+// DOCS-ZERO 2026-10-27: docs pages link no module; an inline stub (docs-kit `document.ts` `PAGE_STUB`) imports the docs
+// page script on the first intent and queues the events that came before it (defaults prevented at once), which the
+// module replays. The module is held back here so every event lands before it.
+test("page script: no JS before input; events before the module replay (Ctrl+K, theme click, scroll-spy)", async () => {
+  const slow = async (page: Page) =>
+    page.route(/\/docs-page-[\w-]+\.js$/, async (route) => {
+      await new Promise((done) => setTimeout(done, 400));
+      await route.continue();
+    });
+  {
+    const { page, js } = await docsPage("/reference/glossary/");
+    try {
+      assert.equal(js.length, 0, `JS fetched before input: ${js.map(([path]) => path).join(", ")}`);
+      await slow(page);
+      await page.keyboard.press("Control+k");
+      await page.getByRole("combobox", { name: "Search the docs" }).waitFor({ state: "visible" });
+      assert.ok(js.some(([path]) => /\/docs-page-/.test(path)), "first intent fetched the page script");
+      assert.equal(await page.evaluate(() => (window as unknown as { __rvDocs?: unknown }).__rvDocs), null, "stub handed over");
+    } finally {
+      await page.close();
+    }
+  }
+  {
+    const { page } = await docsPage("/reference/glossary/");
+    try {
+      await slow(page);
+      await page.click(".theme-button");
+      await page.getByRole("menuitemradio", { name: "Dark" }).waitFor({ state: "visible" });
+      await page.getByRole("menuitemradio", { name: "Dark" }).click();
+      assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "dark");
+      // The wheel over the page body (the pointer still rests where the menu was).
+      await page.mouse.move(640, 400);
+      await page.mouse.wheel(0, 1500);
+      await page.waitForFunction(() => document.querySelector('.toc-list a[aria-current="true"]'), null, { timeout: 5_000 });
+    } finally {
+      await page.close();
+    }
   }
 });
