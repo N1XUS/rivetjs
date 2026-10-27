@@ -202,6 +202,16 @@ const OWNED = ["style"] as const;
 
 function PopoverInner(props: PopoverInnerProps) {
   const { state, popoverRef, element, isExitingNow: isExiting, exit } = props;
+  // Out of flow from creation (RA: `useOverlayPosition`'s style is `position: absolute` from the first render, before a
+  // position exists). Unpositioned, the popover was a static block: in its in-place host it pushed the trigger's
+  // siblings down, then the portal move inserted it in flow into the overlay layer — a `PortalProvider` container above
+  // the viewport (ui-docs home `#home-overlays`) grew by the popover's height and scroll anchoring scrolled the page by
+  // it on every open (UI-BUGS 2026-10-27). First effect of the instance: before the self-focus and the move. A user
+  // `style.position` (already bound) wins; positioning writes `absolute` again.
+  clientEffect(() => {
+    const el = element();
+    if (el && !el.style.position) el.style.position = "absolute";
+  });
   watchExitAnimation(element, exit);
   const arrowRef = createRef<HTMLDivElement>();
   const containerRef = createRef<HTMLDivElement>();

@@ -62,6 +62,16 @@ export const pins: FuzzPin[] = [
   ),
 
   // Open findings.
+  // UI-BUGS 2026-10-27 (found by the new route, not caused by its fix): a DatePicker in a STATIC route (its own boundary, as on
+  // the ui-docs home "Book a demo" tile) resumes its DateField segments without the label / description links and one id
+  // counter ahead of a client render (`#1-field-month` vs `#0-field-month #0-label`); every later id of the page drifts.
+  pin(
+    "/date-picker-scroll",
+    "mismatch",
+    /resumed only \[(aria-[a-z]+|id|data-rv-[a-z-]+)="#\d/,
+    "cdk",
+    "DatePicker on a static page: resumed field segments miss aria-labelledby (label) / aria-describedby and ids drift by one",
+  ),
   { ...pin("/action-bar-clear-grid", "recreated", "svg, path", "cdk", "grid rows " + NO_REGION), step: 1 },
   pin("/avatar-group", "recreated", "span#ag-a.avatar", "ui", "Avatar " + NO_REGION),
   { ...pin("/visual/card", "mismatch", 'csr only [data-hovered="true"]', "runtime", COLD_HOVER), step: 11 },
