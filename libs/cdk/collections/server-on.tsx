@@ -79,7 +79,7 @@ export function scopedIdUpdaters(): Map<string, unknown> | undefined {
 }
 
 /**
- * DOM-backed loader data (DOM-DATA, `resume: { domData: true }` servers): a built collection row renders `item` (the
+ * DOM-backed loader data (DOM-DATA, `resume.domData` servers: the default): a built collection row renders `item` (the
  * node's `value`, the user's data object) although its `For` iterates keys. `@rivetjs/runtime/server-resume` installs the
  * hook only in domData builds (`Symbol.for("rivet.domRowItem")`): the row then registers that object, so the item's
  * strings the row shows as an element's whole text / a plain attribute travel as DOM paths. Elsewhere: nothing.

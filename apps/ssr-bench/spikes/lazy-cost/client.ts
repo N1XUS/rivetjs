@@ -1,5 +1,5 @@
 // Client cost harness (LAZY-FLIP, derived since M6): the `stories/` app built several ways (e.g. default vs `domData`:
-// `stories.ts --build [--dom-data] --dist <d>`). One server child per build (`@rivetjs/router/node` `start()`,
+// `stories.ts --build [--no-dom-data] --dist <d>`). One server child per build (`@rivetjs/router/node` `start()`,
 // compression on). Headless Chromium (playwright), fresh context per load, cold (the resume runtime boots
 // at the first input). Per page and build:
 //   - `row`: first click on a row → its handler's DOM effect (`until`), `ctl`: first click on the layout's `#bench-ctl`

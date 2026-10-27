@@ -1,5 +1,5 @@
-// DOM data on derived (DERIVED-C5, 2026-10-22), server half: only servers of builds with
-// `rivet({ resume: { domData: true } })` reach this module — the compiler plugin serves
+// DOM data on derived (DERIVED-C5, 2026-10-22), server half: only servers of resume builds with `resume.domData` on (the
+// default; `false` opts out) reach this module — the compiler plugin serves
 // `dom-data-derived.ts` with `_derivedDom` from here (default: null), so other derived servers carry none of it.
 import type { DerivedDom } from "./resume-format.ts";
 import { rowTexts } from "./server-resume-paths.ts";
@@ -26,7 +26,12 @@ const domSlotsOf = new WeakMap<ListPlan, readonly (readonly [number, string])[] 
 const PLAIN_ATTRIBUTE = /^(?:data-[a-z0-9_.:-]+|id|title|alt|name|placeholder|aria-label|aria-description|aria-valuetext)$/;
 function domSlots(plan: ListPlan): readonly (readonly [number, string])[] | null {
   let slots = domSlotsOf.get(plan);
-  if (slots !== undefined) return slots;
+  if (slots === undefined) domSlotsOf.set(plan, (slots = _domSlots(plan)));
+  return slots;
+}
+/** @internal A list plan's DOM slots (tape slot → DOM path), null when none. The compiler plugin asks it at build time
+ * (`vite.ts` `domDataLists`) so a build with no such list keeps the switch off (no reader, no server encoder). */
+export function _domSlots(plan: Pick<ListPlan, "fragments" | "attributes">): [slot: number, path: string][] | null {
   // A flattened child plan's bounds (`OPEN` / `CLOSE`, numbers) hold nothing: the fragments around them join.
   const fragments = [plan.fragments[0]!],
     entries: (PlanEntry | null)[] = [],
@@ -42,8 +47,7 @@ function domSlots(plan: ListPlan): readonly (readonly [number, string])[] | null
     if (entry === null) out.push([at[f]!, path]);
     else if (PLAIN_ATTRIBUTE.test(entry.name)) out.push([at[f]!, path + entry.name]);
   }
-  domSlotsOf.set(plan, (slots = out.length ? out : null));
-  return slots;
+  return out.length ? out : null;
 }
 type TapeList = { plan: ListPlan; tape: unknown[]; rows: number; constructor: new (plan: ListPlan, tape: unknown[], rows: number) => unknown };
 function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, marked: ListPlan, value: unknown): unknown {

@@ -5,8 +5,8 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { createServer as createHttp } from "node:http";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { extname, resolve } from "node:path";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { basename, extname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { brotliCompressSync } from "node:zlib";
 import { build } from "vite";
@@ -33,8 +33,15 @@ export function Other(props) {
   return <p id="other" onClick={() => on.set(!on())}>{props.label}: {on() ? "on" : "off"}</p>;
 }
 `;
-/** The page: `rows: "static"` renders plain rows, `"interactive"` rows with a handler + a class reading a keyed signal. */
-const page = (rows: "static" | "interactive") => `import { signal } from "@rivetjs/reactivity";
+/** The page: `rows: "static"` renders plain rows, `"interactive"` rows with a handler + a class reading a keyed signal,
+ * `"class-only"` interactive rows that show no value as text / plain attribute (no DOM data slots). */
+type Rows = "static" | "interactive" | "class-only";
+const ROW_BODY: Record<Rows, string> = {
+  static: "<li>{row().name}</li>",
+  interactive: '<li class={selected() === row().id ? "on" : "off"} onClick={() => selected.set(row().id)}>{row().name}</li>',
+  "class-only": '<li class={selected() === row().id ? "on " + row().name : "off"} onClick={() => selected.set(row().id)}><b>row</b></li>',
+};
+const page = (rows: Rows) => `import { signal } from "@rivetjs/reactivity";
 import { For } from "@rivetjs/runtime/dom";
 import { Counter, Other } from "./counter.tsx";
 function Footer() {
@@ -51,7 +58,7 @@ export default function Page(props) {
       <p id="theme">{theme()}</p>
       <ul>
         <For each={() => props.data.rows} by={(row) => row.id}>
-          {(row) => ${rows === "static" ? "<li>{row().name}</li>" : '<li class={selected() === row().id ? "on" : "off"} onClick={() => selected.set(row().id)}>{row().name}</li>'}}
+          {(row) => ${ROW_BODY[rows]}}
         </For>
       </ul>
       <Other label="other" />
@@ -83,11 +90,11 @@ interface Built {
     symbols: Record<string, string>;
     builtins?: string;
     deps?: Record<string, string[]>;
-    domData?: boolean;
+    domData?: string;
     lazy?: Record<string, string[]>;
   };
 }
-async function buildApp(rows: "static" | "interactive", roots: string[], domData = false, files: Record<string, string> = {}): Promise<Built> {
+async function buildApp(rows: Rows, roots: string[], domData?: boolean, files: Record<string, string> = {}): Promise<Built> {
   await mkdir(".artifacts", { recursive: true });
   const root = await mkdtemp(resolve(".artifacts/vite-derived-" + rows + "-"));
   roots.push(root);
@@ -102,7 +109,7 @@ async function buildApp(rows: "static" | "interactive", roots: string[], domData
   const plugin = () =>
     rivet({
       serverExports: { modules: ["src/page.tsx"] },
-      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(domData ? { domData } : {}) },
+      resume: { modules: ["src/page.tsx", "src/counter.tsx"], ...(domData !== undefined ? { domData } : {}) },
     });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "client-dist", manifest: true } });
   await build({ root, configFile: false, logLevel: "silent", plugins: [plugin()], build: { outDir: "server-dist", ssr: "src/server.tsx" } });
@@ -238,15 +245,15 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
 });
 
 (hasDerivedModel() ? test : test.skip)(
-  "rivet({ resume: { domData: true } }): manifest domData, rows left out of the route payload, read back from the page",
+  "rivet({ resume }) (domData default on): manifest domData, rows left out of the route payload, read back from the page; `domData: false` opts out",
   async () => {
     const browser = await chromium.launch({ headless: true });
     const roots: string[] = [];
     try {
-      const plain = await buildApp("interactive", roots);
+      const plain = await buildApp("interactive", roots, false);
       assert.equal(plain.manifest.domData, undefined);
-      const built = await buildApp("interactive", roots, true);
-      assert.equal(built.manifest.domData, true);
+      const built = await buildApp("interactive", roots);
+      assert.match(built.manifest.domData ?? "", /^\/assets\/dom-data-reader-[^/]*\.js$/);
       const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>([\s\S]*?)<\/script>/.exec(built.html)![1]!)) as any;
       assert.equal(tail.d?.length, 1, "one d entry: the 50 rows");
       assert.equal(tail.d[0][3], 50);
@@ -257,11 +264,25 @@ const TAGGED = ["main", "#count", "#inc", "#theme", "#title", "ul li:nth-child(3
         await Promise.all(
           Object.values(built.manifest.deps ?? {})
             .flat()
-            .concat(built.manifest.runtime)
+            .concat(built.manifest.runtime, built.manifest.domData!)
             .map((url) => readFile(resolve(built.root, "client-dist" + url), "utf8")),
         )
       ).join("");
       assert.match(js, /r0\(\\d\+\)/);
+      assert.match(/data-fo="([^"]*)"/.exec(built.html)?.[1] ?? "", /\/dom-data-reader-[^/ ]*\.js/, "a page with `d` entries preloads the reader");
+      // A build whose lists show no value as text / plain attribute ships no reader: byte-identical to `domData: false`.
+      const off = await buildApp("class-only", roots, false),
+        on = await buildApp("class-only", roots);
+      assert.equal(on.manifest.domData, undefined);
+      assert.equal(on.html, off.html);
+      for (const dir of ["client-dist", "server-dist"]) {
+        const files = (await readdir(resolve(off.root, dir), { recursive: true })).filter((file) => /\.js$/.test(file)).sort();
+        assert.deepEqual((await readdir(resolve(on.root, dir), { recursive: true })).filter((file) => /\.js$/.test(file)).sort(), files, dir);
+        assert.ok(files.length > 0, dir);
+        // (Bundles name their temp root in region comments.)
+        const text = async (built: Built, file: string) => (await readFile(resolve(built.root, dir, file), "utf8")).replaceAll(basename(built.root), "ROOT");
+        for (const file of files) assert.equal(await text(on, file), await text(off, file), dir + "/" + file);
+      }
       await serve(built, browser, async (page) => {
         await page.click("ul li:nth-child(3)");
         await page.waitForFunction(() => document.querySelector("ul li:nth-child(3)")!.className === "on");

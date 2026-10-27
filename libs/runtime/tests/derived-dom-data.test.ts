@@ -16,7 +16,7 @@ import { importServer } from "./resume/compile.ts";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tailJson = (tail: unknown): any => expandTail(tail as never);
 
-// The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
+// The server half of a `domData` (default) build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
 const source = `
 import { For } from "@rivetjs/runtime/dom";
@@ -60,7 +60,7 @@ async function bytes(factory: () => ServerValue, domData: boolean): Promise<stri
     },
   });
   const writer = new NodeStreamWriter(sink);
-  await renderDerived(factory, writer, { manifest: { ...manifest, ...(domData ? { domData: true } : {}) } });
+  await renderDerived(factory, writer, { manifest: { ...manifest, ...(domData ? { domData: "/dom-data-reader.ts" } : {}) } });
   await writer.finish();
   return Buffer.concat(parts).toString();
 }
@@ -72,7 +72,7 @@ async function bytes(factory: () => ServerValue, domData: boolean): Promise<stri
   for (const n of [0, 1, 5, 120]) {
     const p = props(n);
     const off = (await derivedToString(() => App(p), { manifest })) as string;
-    const on = (await derivedToString(() => App(p), { manifest: { ...manifest, domData: true } })) as string;
+    const on = (await derivedToString(() => App(p), { manifest: { ...manifest, domData: "/dom-data-reader.ts" } })) as string;
     assert.equal(await bytes(() => App(p), true), on, `rows=${n}: string and byte writer agree`);
     assert.equal(body(on), body(off), `rows=${n}: same rows`);
     const tail = tailOf(on),
@@ -119,13 +119,13 @@ export function App(props) {
   assert.deepEqual(out.diagnostics, []);
   const { App } = await importServer<{ App: (p: { rows: { id: number; values: number[] }[] }) => ServerValue }>(out.code);
   const rows = Array.from({ length: 6 }, (_, id) => ({ id, values: [id * 100, id * 100 + 1] }));
-  const html = (await derivedToString(() => App({ rows }), { manifest: { ...manifest, domData: true } })) as string;
+  const html = (await derivedToString(() => App({ rows }), { manifest: { ...manifest, domData: "/dom-data-reader.ts" } })) as string;
   const entry = tailOf(html).d![0]!;
   assert.deepEqual(entry[4], { id: 1, values: [2, 3] }, "skeleton: three leaves");
   assert.deepEqual(entry[5], ["#article:@data-row", "#dd:0", "#dd:1"], "three distinct paths");
   assert.equal(entry[7], undefined, "no whole rows");
   // A row whose value differs in kind from its DOM text (a string where row 0 has a number) still ships whole.
   const mixed = rows.map((r, i) => (i === 2 ? { id: r.id, values: [String(r.values[0]), r.values[1]] } : r));
-  const html2 = (await derivedToString(() => App({ rows: mixed as never }), { manifest: { ...manifest, domData: true } })) as string;
+  const html2 = (await derivedToString(() => App({ rows: mixed as never }), { manifest: { ...manifest, domData: "/dom-data-reader.ts" } })) as string;
   assert.deepEqual(Object.keys(tailOf(html2).d![0]![7] as object), ["2"]);
 });

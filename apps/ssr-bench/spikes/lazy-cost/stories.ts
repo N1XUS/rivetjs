@@ -1,9 +1,9 @@
 // Story harness build (LAZY-COST-2, derived since M6): cdk story pages (`stories/`: the cdk stories `/list-data`,
 // `/virtualized-collections`, `/dom-data` as is + 1000-row `/list-data-1000`, `/dom-data-1000`, `/resume-1000`) built into
-// `--dist` (default `stories/.artifacts/dist[-domdata]`); `--dom-data` adds `resume.domData`. Measured by `client.ts`
+// `--dist` (default `stories/.artifacts/dist[-nodomdata]`); `--no-dom-data` sets `resume: { domData: false }` (on by default). Measured by `client.ts`
 // (browser) and `cpu.ts` (server CPU per request).
 //
-//   node apps/ssr-bench/spikes/lazy-cost/stories.ts --build [--dom-data] [--dist <dir>]
+//   node apps/ssr-bench/spikes/lazy-cost/stories.ts --build [--no-dom-data] [--dist <dir>]
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
@@ -12,11 +12,11 @@ function arg(name: string, def: string): string {
   return i > 0 ? process.argv[i + 1]! : def;
 }
 const root = resolve(import.meta.dirname, "stories");
-const domData = process.argv.includes("--dom-data");
+const domData = !process.argv.includes("--no-dom-data");
 // Default output under `.artifacts/` (gitignored).
-const dist = resolve(arg("dist", resolve(root, ".artifacts", domData ? "dist-domdata" : "dist")));
+const dist = resolve(arg("dist", resolve(root, ".artifacts", domData ? "dist" : "dist-nodomdata")));
 if (!process.argv.includes("--build")) throw new Error("stories.ts: pass --build (measure with client.ts / cpu.ts)");
-const env = { ...process.env, ...(domData ? { RIVET_DOM_DATA: "1" } : {}) };
+const env = { ...process.env, ...(domData ? {} : { RIVET_DOM_DATA: "0" }) };
 const script = `
   import { build } from "vite";
   const root = ${JSON.stringify(root)}, dist = ${JSON.stringify(dist)};

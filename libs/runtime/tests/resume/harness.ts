@@ -42,6 +42,7 @@ const sources: Record<string, string> = {
   // Build-time switches (served as written: `false`; `DERIVED_BUILD` / `DOM_DATA_BUILD` serve the opted-in content).
   "/lazy-rows.ts": "lazy-rows.ts",
   "/dom-data.ts": "dom-data.ts",
+  "/dom-data-reader.ts": "dom-data-reader.ts",
   "/derived.ts": "derived.ts",
   "/dom-derived.ts": "dom-derived.ts",
   "/dom-derived-abi.ts": "dom-derived-abi.ts",

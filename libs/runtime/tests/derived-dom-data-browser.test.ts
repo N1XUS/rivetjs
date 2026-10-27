@@ -1,4 +1,4 @@
-// DOM data on derived (DERIVED-C5): with `manifest.domData` (builds with `resume: { domData: true }`),
+// DOM data on derived (DERIVED-C5): with `manifest.domData` (the reader chunk URL: builds with `resume.domData` on and a qualifying list),
 // a list written from one tape whose rows show item values as an element's whole text (or a plain attribute) leaves the
 // items array out of its record's props: the tail's `d` entry carries the item skeleton + the literals, the first row is
 // anchored `<!--r0<n>[-->`, and the browser (`DOM_DATA` switch on) rebuilds the items from the page's rows. Values the
@@ -19,7 +19,7 @@ import { DERIVED_BUILD, rewrite, withPage } from "./resume/harness.ts";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const tailJson = (tail: unknown): any => expandTail(tail as never);
 
-// The server half of a `{ domData: true }` build (the compiler plugin serves `dom-data-derived.ts` with it).
+// The server half of a `domData` (default) build (the compiler plugin serves `dom-data-derived.ts` with it).
 derivedDom.api = _derivedDom;
 const PAGE = `
 import { signal } from "@rivetjs/reactivity";
@@ -75,7 +75,7 @@ async function render(domData: boolean): Promise<{ html: string; tail: Tail }> {
   assert.deepEqual(out.diagnostics, []);
   const { App, ROWS } = await importServer<{ App: (props: { rows: unknown[] }) => ServerValue; ROWS: unknown[] }>(out.code);
   const html = (await derivedToString(() => App({ rows: ROWS }), {
-    manifest: { hash: "t", runtime: "/rt.js", symbols, ...(domData ? { domData: true } : {}) },
+    manifest: { hash: "t", runtime: "/rt.js", symbols, ...(domData ? { domData: "/dom-data-reader.ts" } : {}) },
   })) as string;
   return { html, tail: tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!)) };
 }
@@ -130,7 +130,7 @@ async function files(): Promise<Record<string, string>> {
 compiled("browser: row values come back from the page (escaping, numbers, literals, whole rows), cold and after idle", async () => {
   const served = await files();
   for (const idle of [false, true])
-    await withPage(served, async (page) => {
+    await withPage(served, async (page, requests) => {
       const errors: string[] = [];
       page.on("pageerror", (error) => errors.push(error.message));
       if (!idle) await page.addInitScript(() => void ((window as unknown as Record<string, unknown>).requestIdleCallback = () => 0));
@@ -146,5 +146,122 @@ compiled("browser: row values come back from the page (escaping, numbers, litera
       await page.waitForFunction(() => document.querySelector("#picked")!.textContent!.includes(":"));
       assert.equal(await page.textContent("#picked"), String((39 * 40 * 7) / 2) + ":40");
       assert.deepEqual(errors, []);
+      // The reader is its own module, named by the tail (`D`).
+      assert.equal(requests.filter((path) => path === "/dom-data-reader.ts").length, 1);
     });
 });
+
+compiled("browser: a page without `d` entries never fetches the reader", async () => {
+  const served = await files();
+  const { html } = await render(false);
+  served["/"] = '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + "</body></html>";
+  await withPage(served, async (page, requests) => {
+    await page.goto("http://rivet.test/");
+    await page.click('li[data-id="4"] button');
+    await page.waitForFunction(() => document.querySelector("#picked")!.textContent !== "");
+    assert.equal(await page.textContent("#picked"), "<b>\"x\"</b> & 'é€漢字𝄞'|4|21|t0");
+    assert.ok(!requests.includes("/dom-data-reader.ts"), requests.join(" "));
+  });
+});
+
+// A row text that also depends on a non-data value: the server shows the item's value, so it ships as DOM data; a
+// write then turns the rows' text into something else before anything read their items. Every path that writes into a
+// lazy row (a keyed write's row writers, with or without the index; a live prop; a module signal; a component child)
+// reads that row's DOM data first (`readRow`), so the items read later are the server's.
+const MASKED = `
+import { signal } from "@rivetjs/reactivity";
+import { For } from "@rivetjs/runtime/dom";
+
+const global = signal(false);
+export function Global() {
+  return <button type="button" id="global" onClick={() => global.set(!global())}>global</button>;
+}
+function Label(p) {
+  return <span>{p.text}</span>;
+}
+
+export function List(props) {
+  const picked = signal("");
+  const masked = signal(false);
+  return (
+    <section>
+      <p id="picked">{picked()}</p>
+      <button type="button" id="mask" onClick={() => masked.set(!masked())}>mask</button>
+      <ul id="rows">
+        <For each={() => props.rows} by={(row) => row.id}>
+          {(row, index) => (
+            <li data-id={row().id}>
+              <button type="button" onClick={() => picked.set(row().label + "|" + row().id)}>
+                ROW_TEXT
+              </button>
+            </li>
+          )}
+        </For>
+      </ul>
+      <button type="button" id="all" onClick={() => picked.set(props.rows.map((r) => r.label).join(","))}>all</button>
+    </section>
+  );
+}
+
+export const ROWS = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, label: "row " + i }));
+
+export function App(props) {
+  const outer = signal(false);
+  return (
+    <main>
+      <Global />
+      <button type="button" id="outer" onClick={() => outer.set(!outer())}>outer</button>
+      <List rows={props.rows} outer={outer()} />
+    </main>
+  );
+}
+`;
+const MASKED_RESUME = { module: "src/page.tsx", boundaries: ["App", "List", "Global"], independent: ["App", "Global"] };
+const maskedSymbols = Object.fromEntries(MASKED_RESUME.boundaries.map((name) => ["src/page.tsx#" + name, "/page.js"]));
+// [row text, the button that changes it]
+const MASKS: Record<string, [string, string]> = {
+  "keyed write": ['{masked() ? "***" : row().label}', "#mask"],
+  "keyed write with the index": ['{masked() ? "*" + index() : row().label}', "#mask"],
+  "live prop": ['{props.outer ? "***" : row().label}', "#outer"],
+  "module signal": ['{global() ? "***" : row().label}', "#global"],
+  "component child": ['<Label text={masked() ? "***" : row().label} />', "#mask"],
+};
+for (const [name, [text, button]] of Object.entries(MASKS))
+  compiled("browser: a write that changes unread rows' text (" + name + ") leaves the items read back later the server's", async () => {
+    const source = MASKED.replace("ROW_TEXT", text);
+    const out = compile(source, { target: "server", filename: "page.tsx", resume: MASKED_RESUME } as never);
+    assert.deepEqual(out.diagnostics, []);
+    const { App, ROWS } = await importServer<{ App: (props: { rows: unknown[] }) => ServerValue; ROWS: unknown[] }>(out.code);
+    const html = (await derivedToString(() => App({ rows: ROWS }), {
+      manifest: { hash: "t", runtime: "/rt.js", symbols: maskedSymbols, domData: "/dom-data-reader.ts" },
+    })) as string;
+    const tail = tailJson(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
+    assert.equal(tail.d?.length, 1, "the labels ship as DOM data");
+    const dom = compile(source, { target: "dom", filename: "page.tsx", resume: MASKED_RESUME } as never);
+    assert.deepEqual(dom.diagnostics, []);
+    const served = {
+      ...DERIVED_BUILD,
+      "/dom-data.ts": switchContent("dom-data", (module) => "/" + module + ".ts")!,
+      "/": '<!doctype html><html><head><meta charset="utf-8"></head><body>' + html + "</body></html>",
+      "/rt.js": 'export { default } from "/dom-derived.ts";',
+      "/page.js": rewrite(dom.code),
+    };
+    await withPage(served, async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      // Cold: no idle read before the write.
+      await page.addInitScript(() => void ((window as unknown as Record<string, unknown>).requestIdleCallback = () => 0));
+      await page.goto("http://rivet.test/");
+      await page.click(button);
+      await page.waitForFunction(() => document.querySelector('li[data-id="4"] button')!.textContent!.trim().startsWith("*"));
+      await page.click('li[data-id="4"] button');
+      await page.waitForFunction(() => document.querySelector("#picked")!.textContent !== "");
+      assert.equal(await page.textContent("#picked"), "row 3|4");
+      await page.click("#all");
+      await page.waitForFunction(() => document.querySelector("#picked")!.textContent!.includes(","));
+      assert.equal(await page.textContent("#picked"), "row 0,row 1,row 2,row 3,row 4,row 5");
+      await page.click(button);
+      await page.waitForFunction(() => document.querySelector('li[data-id="6"] button')!.textContent!.trim() === "row 5");
+      assert.deepEqual(errors, []);
+    });
+  });

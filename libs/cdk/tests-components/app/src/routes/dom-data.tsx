@@ -10,7 +10,7 @@ interface Customer {
   mail: string;
 }
 
-// DOM-DATA (`resume: { domData: true }` builds, `dom-data.test.ts`): built-collection rows whose item strings the rows
+// DOM-DATA (`resume.domData` builds, the default; `dom-data.test.ts`): built-collection rows whose item strings the rows
 // show as an element's whole text. With domData the item lists travel as `D` entries read back from the rows; the
 // actions show what a resumed handler reads from the captured items (deep equal to the server data).
 export default function DomDataStory() {

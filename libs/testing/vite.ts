@@ -10,7 +10,7 @@
 // `snapshotSerializers` `./serializer.ts` (snapshots without runtime marker comments).
 // DOM-target modules compile like the Vite plugin's client modules (DOM v2, the only DOM lowering).
 // Runtime switch modules (`@rivetjs/compiler/switches`) load with the content a resumable app build ships by default
-// (derived adopt run: `derived` + `lazy-rows` on; `domData` off, `resume: { domData: true }` opts in, as the compiler
+// (derived adopt run: `derived` + `lazy-rows` on; `domData` on, `resume: { domData: false }` opts out, as the compiler
 // plugin): suites run the same runtime code as the app. Applies to runtime modules Vite loads (workspace sources,
 // non-prebundled browser-mode modules); a runtime Vitest externalizes to Node keeps its files' content (off), and so does
 // the node `@rivetjs/runtime/testing/register` hook.
@@ -27,7 +27,7 @@ export interface RivetTestOptions {
   cleanup?: boolean;
   /** Register `rivetSerializer` (DOM snapshots without runtime marker comments; default true). */
   serializer?: boolean;
-  /** Runtime switches, as the compiler plugin's `resume` options: `domData` default false (the shipped default); the derived
+  /** Runtime switches, as the compiler plugin's `resume` options: `domData` default true (the shipped default); the derived
    *  adopt run switches (`derived`, `lazy-rows`) are always served opted in. */
   resume?: { domData?: boolean };
 }
@@ -75,7 +75,8 @@ export function rivetTest(options: RivetTestOptions = {}): Plugin {
       if (!hit) return null;
       const name = hit[1]!;
       const on =
-        (DERIVED_SWITCHES as readonly string[]).includes(name) || ((DOM_DATA_SWITCHES as readonly string[]).includes(name) && options.resume?.domData === true);
+        (DERIVED_SWITCHES as readonly string[]).includes(name) ||
+        ((DOM_DATA_SWITCHES as readonly string[]).includes(name) && options.resume?.domData !== false);
       return on ? switchContent(name, (module) => "./" + module + "." + hit[2]) : null;
     },
     transform(code, id) {

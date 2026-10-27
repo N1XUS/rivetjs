@@ -49,7 +49,7 @@ export default defineConfig({
 - `rivetTest()` runs `cleanup()` after every test: each `render` is unmounted and the id counter starts again, so ids do not depend on test order. `rivetTest({ cleanup: false })` turns it off.
 - Snapshots of elements leave out Rivet's marker comments. `rivetTest({ serializer: false })` turns that off.
 - `rivetTest({ target: "server" })` compiles every module for the server.
-- Runtime modules that Vite loads (workspace packages, browser mode) run with the same build switches a resumable app build ships: the adopt run on, DOM-backed data off. `rivetTest({ resume: { domData: true } })` matches an app that sets `resume.domData`. A runtime that Vitest hands to Node unchanged, and the `@rivetjs/runtime/testing/register` hook under `node --test`, keep every switch off.
+- Runtime modules that Vite loads (workspace packages, browser mode) run with the same build switches a resumable app build ships: the adopt run and DOM-backed data on. `rivetTest({ resume: { domData: false } })` matches an app that sets `resume.domData: false`. A runtime that Vitest hands to Node unchanged, and the `@rivetjs/runtime/testing/register` hook under `node --test`, keep every switch off.
 - For layout, focus and pointer behaviour, run the DOM project in Vitest browser mode with Playwright instead of happy-dom. The [cdk testing page](site:cdk/start/testing/) shows that config.
 
 ## Test a component

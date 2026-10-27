@@ -1,7 +1,7 @@
 # DOM-backed loader data — strings the page already shows are read back from the DOM, not serialized again (2026-10-20)
 
 - Status: **design + prototype; T2 + T3 done** (lanes DOM-DATA, DD-T2T3 2026-10-20). Prototype behind the build switch `rivet({ resume: { domData: true } })`, default **off**; measured on the ssr-bench `/resume?rows=1000&strings=2` grid.
-- Default (LAZY-FLIP, applied 2026-10-22 after LAZY-BLOCKERS + LVD-2): **on** — `resume.domData` defaults to true (`false` turns it off); client numbers `../../benchmarks/2026-10-21-lazy-flip.md`. Status lines below that say "default off" describe the state before the flip.
+- Default (LAZY-FLIP, applied 2026-10-22 after LAZY-BLOCKERS + LVD-2): **on** — `resume.domData` defaults to true (`false` turns it off); client numbers `../../benchmarks/2026-10-21-lazy-flip.md`. Status lines below that say "default off" describe the state before the flip. Derived model (the only one since M6-CUT 2026-10-22): off from M6-CUT, **on** again since DOMDATA-DEFAULT 2026-10-27 (user ruling: SSR CPU ≈ −3 µs/page + smaller pages for +2–9 ms on the first interaction at 4× CPU; `docs/guides/performance.md` "DOMDATA-DEFAULT").
 - Position: complements lazy rows (`2026-10-19-lazy-collection-rows-design.md`). Lazy rows drop the per-row *records*; the loader data they leave behind (`data.rows`, captured by the page component and by every `For`'s `items`) is the remaining 400 KB. This spec removes that copy. It composes with lazy rows (§3.5) and works without them.
 - Compiler: **no change** (no Rust patch). Registration is runtime-side: row plans already know which tape slots are an element's whole text (§3.1).
 

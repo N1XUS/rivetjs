@@ -57,7 +57,7 @@ import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, serialize, typeName } from "./resume-format.ts";
 import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, FlushTail, TableEntry } from "./resume-format.ts";
 import { encodeTail, tailPieces } from "./server-tail.ts";
-import { derivedDom } from "./dom-data-derived.ts";
+import { DOM_DATA_SERVER, derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_LOADER_VISIBLE_LATER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
 import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
@@ -381,8 +381,9 @@ export interface ResumeManifest {
    * decoders of a `_rData` payload or an `Async` value that is not JSON data). Omitted: the app loads it itself.
    */
   builtins?: string;
-  /** The build's browser runtime reads DOM-backed data (`rivet({ resume: { domData: true } })`, DERIVED-C5). */
-  domData?: boolean;
+  /** URL of the browser's DOM data reader chunk (`dom-data-reader.ts`, DERIVED-C5): the build has a list with DOM slots
+   * and `resume.domData` on (the default); a page with `d` entries preloads it (fetch-ahead). */
+  domData?: string;
   /** Static import closure per chunk URL: fetch-ahead (`data-fo`) lists it too. */
   deps?: Record<string, string[]>;
   /** Minified chunk sizes per URL. */
@@ -2114,13 +2115,16 @@ const jsonRecord = (pieces: string[]): ServerValue =>
   (pieces.length === 1 ? template(pieces) : template(pieces, new Array<string>(pieces.length - 1).fill(""))) as unknown as ServerValue;
 /** The fetch-ahead list (`data-fo`, ZERO R6a `foUrls`): the runtime and the chunks of the boundaries that can become live (D5
  * listening records, triggers, document click listeners and what adopting them needs; every boundary without D5 facts), the
- * chunks of the islands an adopt run hydrates (M6-PARITY) and their static import closures (manifest `deps`). Nothing live and
+ * chunks of the islands an adopt run hydrates (M6-PARITY), the DOM data reader of a tail with `d` entries, and their static
+ * import closures (manifest `deps`). Nothing live and
  * no island: empty (no fetch-ahead, the runtime never boots). */
 function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime: string): string {
   const islands = (manifest as { islands?: Record<string, string> }).islands,
     list = islandUrls.map((key) => islands?.[key]!).filter(Boolean),
     names = foNames(tail);
   if (!names.size && !list.length) return "";
+  // DOM data: the browser's reader chunk, which the runtime imports for this tail's `d` entries.
+  if (DOM_DATA_SERVER && tail.d) list.push(manifest.domData!);
   // A pure function of (manifest, names, islands): memoised per manifest (ZERO REGRESS: the closure over chunk deps cost a
   // routed page ~0.5 µs per request).
   let key = runtime === manifest.runtime ? list.join(" ") : "\u0001" + list.join(" ");

@@ -103,7 +103,7 @@ A keyed [`<For each={…} by={…}>`](../guides/components/lists.md) sends its i
 
 ### Data from the page
 
-With `resume: { domData: true }` on `rivetRouter(…)` (or `rivet(…)`), the items of a `<For>` over a component's data props (a route's loader rows) are left out of the page when every value the rows show is the item's: the browser reads them back from the rows the page shows, the first time code uses them, and the rest in short idle slices after it starts. Off by default: on a 1,000-row page the resume data goes from 8.5 KB to 0.3 KB brotli, and the first click costs a few milliseconds more at 4× CPU slowdown (the rows are found and read in the browser).
+The items of a `<For>` over a component's data props (a route's loader rows) are left out of the page when every value the rows show is the item's: the browser reads them back from the rows the page shows, the first time code uses them, and the rest in short idle slices after it starts. On by default: on a 1,000-row page the resume data goes from 8.5 KB to 0.3 KB brotli and the server spends less time per page, while the first click costs a few milliseconds more at 4× CPU slowdown (the rows are found and read in the browser). An app with no such list ships none of this code. To send the items with the props instead, turn it off with `resume: { domData: false }` on `rivetRouter(…)` (or `rivet(…)`):
 
 ```ts
 // vite.config.ts
@@ -111,7 +111,7 @@ import { defineConfig } from "vite";
 import { rivetRouter } from "@rivetjs/router/vite";
 
 export default defineConfig({
-  plugins: [rivetRouter({ resume: { domData: true } })],
+  plugins: [rivetRouter({ resume: { domData: false } })],
 });
 ```
 

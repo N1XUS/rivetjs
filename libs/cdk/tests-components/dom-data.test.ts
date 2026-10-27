@@ -1,6 +1,6 @@
 // Built-collection rows over loader data (`/dom-data` story): a resumed handler sees the server data (deep equal). The
-// former `D`-entry assertions went with the serialized model (M6-CUT 2026-10-22): on the derived model `resume.domData` is
-// off by default and covers plain `For` lists over data props only, not built collections.
+// former `D`-entry assertions went with the serialized model (M6-CUT 2026-10-22): on the derived model `resume.domData` (on
+// by default since DOMDATA-DEFAULT 2026-10-27) covers plain `For` lists over data props only, not built collections.
 import { test, afterAll, beforeAll } from "vitest";
 import assert from "node:assert/strict";
 import { stories, watch } from "./harness.ts";

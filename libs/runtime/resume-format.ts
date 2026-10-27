@@ -723,7 +723,7 @@ export interface BoundaryTail {
    */
   c?: Record<string, number>;
   /**
-   * DOM data on derived (DERIVED-C5, builds with `resume: { domData: true }`): list item arrays of a
+   * DOM data on derived (DERIVED-C5, resume builds unless `resume: { domData: false }`): list item arrays of a
    * record's props that the page shows, left out of the props (`0` at `path`) and rebuilt by the browser from the rows
    * after the list's anchor (`<!--r0<n>[-->`). `DerivedDom`.
    */

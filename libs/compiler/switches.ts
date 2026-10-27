@@ -25,9 +25,11 @@ export function switchContent(name: string, from: (module: string) => string): s
     case "derived":
       return "export const DERIVED = true;\n";
     case "dom-data":
-      return "export const DOM_DATA = true;\n";
+      // The reader chunk's URL (DOMDATA-DEFAULT v2): next to this module; the compiler plugin's client build serves its
+      // emitted chunk's URL instead (`vite.ts` `domDataSwitch`).
+      return `export const DOM_DATA = true;\nexport const DOM_READER = new URL(${JSON.stringify(from("dom-data-reader"))}, import.meta.url).href;\n`;
     case "dom-data-derived":
-      return `import { _derivedDom } from "${from("server-derived-dom")}";\nexport const derivedDom = { api: _derivedDom };\n`;
+      return `import { _derivedDom } from "${from("server-derived-dom")}";\nexport const derivedDom = { api: _derivedDom };\nexport const DOM_DATA_SERVER = true;\n`;
   }
   return null;
 }

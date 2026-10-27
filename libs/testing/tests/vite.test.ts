@@ -51,11 +51,18 @@ test("runtime switches: the derived adopt run switches opted in, workspace sourc
   assert.equal(load({}, "/repo/libs/runtime/lazy-rows.ts?v=1"), "export const LAZY_ROWS = true;\n");
 });
 
-test("runtime switches: DOM data off by default, `resume: { domData: true }` opts in; other files untouched", () => {
-  assert.equal(load({}, "/repo/libs/runtime/dom-data.ts"), null);
-  assert.equal(load({}, "/repo/libs/runtime/dom-data-derived.ts"), null);
-  assert.equal(load({ resume: { domData: true } }, "/repo/libs/runtime/dom-data.ts"), "export const DOM_DATA = true;\n");
-  assert.match(load({ resume: { domData: true } }, "/repo/libs/runtime/dom-data-derived.ts")!, /from "\.\/server-derived-dom\.ts"/);
+test("runtime switches: DOM data on by default, `resume: { domData: false }` opts out; other files untouched", () => {
+  assert.equal(
+    load({}, "/repo/libs/runtime/dom-data.ts"),
+    'export const DOM_DATA = true;\nexport const DOM_READER = new URL("./dom-data-reader.ts", import.meta.url).href;\n',
+  );
+  assert.match(load({}, "/repo/libs/runtime/dom-data-derived.ts")!, /from "\.\/server-derived-dom\.ts"/);
+  assert.equal(
+    load({ resume: { domData: true } }, "/repo/libs/runtime/dom-data.ts"),
+    'export const DOM_DATA = true;\nexport const DOM_READER = new URL("./dom-data-reader.ts", import.meta.url).href;\n',
+  );
+  assert.equal(load({ resume: { domData: false } }, "/repo/libs/runtime/dom-data.ts"), null);
+  assert.equal(load({ resume: { domData: false } }, "/repo/libs/runtime/dom-data-derived.ts"), null);
   assert.equal(load({}, "/repo/libs/runtime/dom.ts"), null);
   assert.equal(load({}, "/repo/src/derived.ts"), null);
 });

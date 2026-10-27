@@ -93,7 +93,7 @@ Component props are live. A prop expression that reads a signal updates only the
 
 ## Large collections
 
-A keyed collection (`ListBox`, `GridList`, `Table`, `Tree`) sends its items once, with the component's data, and no record per row; the browser runs a row's code when the row is used. With `resume: { domData: true }`, the items of a `<For>` over a component's data props are read back from the page instead ([data from the page](site:docs/learn/resuming/#data-from-the-page)). Some collection components (`ListBox`, `Select`, `TagGroup`, grid list, tree) still render again in the browser on their first interaction.
+A keyed collection (`ListBox`, `GridList`, `Table`, `Tree`) sends its items once, with the component's data, and no record per row; the browser runs a row's code when the row is used. The items of a `<For>` over a component's data props are read back from the page instead (default; `resume: { domData: false }` turns it off) ([data from the page](site:docs/learn/resuming/#data-from-the-page)). Some collection components (`ListBox`, `Select`, `TagGroup`, grid list, tree) still render again in the browser on their first interaction.
 
 ## Known limits
 

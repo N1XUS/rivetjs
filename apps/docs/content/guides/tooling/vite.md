@@ -66,7 +66,7 @@ Pages from the server :term[resume]{id=resumability} in the browser: the browser
 
 ```ts
 rivetRouter({
-  resume: { domData: true },
+  resume: { domData: false },
 });
 ```
 
@@ -74,7 +74,7 @@ rivetRouter({
 | --- | --- |
 | `modules` | Root-relative source files compiled in resume mode |
 | `appModules` | Every app `.tsx`/`.jsx` module a resume module imports resumes too (default `true` with `rivetRouter`) |
-| `domData` | `<For>` items over data props are read back from the page; see [data from the page](../../learn/resuming.md#data-from-the-page) |
+| `domData` | `<For>` items over data props are read back from the page (default `true`; `false` sends them with the props); see [data from the page](../../learn/resuming.md#data-from-the-page) |
 | `roots` | Files whose default export is the page's root component (its props are sent as data) |
 
 The full list, with types and defaults, is in [Config](../../reference/config.md#rivetresumeoptions).
