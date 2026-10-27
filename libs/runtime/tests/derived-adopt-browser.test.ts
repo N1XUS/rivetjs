@@ -257,6 +257,48 @@ test("visible-only boot (ZERO ABI-SPLIT): the runtime loads when the boundary sc
   });
 });
 
+test("visible trigger observer is disconnected when its boundary's markup leaves the page before it intersected (SMA-08)", async () => {
+  // Counter: `visible` (below the fold); Header: `idle` — it adopts App at idle, whose hand-broken markup renders it in the
+  // browser: Counter's server nodes leave the page before they ever intersected.
+  const served = await files(3, {
+    dev: true,
+    edit: (s) => s.replace(/<h1 id="title">([\s\S]*?)<\/h1>/, '<h2 id="title">$1</h2>'),
+    // (Counter's server root carries its `data-b`, `ATTR`: the hand-lowered fixture writes no opener for it.)
+    server: (s) =>
+      s
+        .replace('_rB("Counter", 1,', '_rB("Counter", ' + (1 | 2 | 128) + ",")
+        .replace('<div class="counter">', '<div class="counter" data-b="3">')
+        .replace('_rB("Header", 0,', '_rB("Header", 64,'),
+  });
+  served["/"] = served["/"]!.replace("<body>", '<body><div id="spacer" style="height:3000px"></div>');
+  await withPage(served, async (page) => {
+    // Observers of Counter's element: observed / disconnected.
+    await page.addInitScript(() => {
+      const Native = window.IntersectionObserver,
+        log = ((window as unknown as { ioLog: { observed: number; disconnected: number } }).ioLog = { observed: 0, disconnected: 0 });
+      window.IntersectionObserver = class extends Native {
+        mine = false;
+        override observe(el: Element): void {
+          if (el.classList.contains("counter")) ((this.mine = true), log.observed++);
+          super.observe(el);
+        }
+        override disconnect(): void {
+          if (this.mine) ((this.mine = false), log.disconnected++);
+          super.disconnect();
+        }
+      };
+    });
+    await page.goto("http://rivet.test/");
+    await page.waitForFunction(() => document.querySelector("#title")!.localName === "h2");
+    const log = await page.evaluate(() => (window as unknown as { ioLog: { observed: number; disconnected: number } }).ioLog);
+    assert.equal(log.observed, 1, "Counter's visible trigger was scheduled");
+    assert.equal(log.disconnected, 1, "its observer was disconnected when its markup left the page");
+    // Counter renders as a plain client component inside App's browser render.
+    await page.evaluate(() => (document.querySelector("#inc") as HTMLElement).click());
+    await page.waitForFunction(() => document.querySelector("#count")!.textContent === "6");
+  });
+});
+
 test("dev adopt verifier: a hand-broken fixture warns with the boundary name and renders it in the browser", async () => {
   const broken = await files(3, { dev: true, edit: (s) => s.replace(/<h1 id="title">([\s\S]*?)<\/h1>/, '<h2 id="title">$1</h2>') });
   await withPage(broken, async (page) => {

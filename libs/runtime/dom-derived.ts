@@ -28,7 +28,7 @@
 // materialises on an event inside it, on a write to a keyed signal its rows read (sampled from one detached row run),
 // or through the client For (reconcile). Show / Switch branches adopt by node identity. A structural mismatch renders
 // the unit in the browser instead (dev: the adopt verifier warns first, naming the boundary).
-import { _bindingEffect1, _dispose, _rootIn, _tracking, getOwner, runWithOwner, signal, untrack } from "@rivetjs/reactivity";
+import { _bindingEffect1, _dispose, _rootIn, _tracking, getOwner, onCleanup, runWithOwner, signal, untrack } from "@rivetjs/reactivity";
 import { _ownedReads, _trackReads } from "@rivetjs/reactivity/track";
 import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore } from "@rivetjs/reactivity/store";
@@ -1310,7 +1310,7 @@ function dead(n: Node): void {
   const d = data(n),
     id = d !== null && B_OPEN.test(d) ? +d.slice(1) : n.nodeType === 1 ? +((n as Element).getAttribute("data-b") ?? 0) : 0;
   const r = id ? recs.get(id) : undefined;
-  if (r) r.done = true;
+  if (r) ((r.done = true), unwatch(r));
   for (let c = n.firstChild; c !== null; c = c.nextSibling) dead(c);
 }
 
@@ -1892,10 +1892,21 @@ function trigger(r: Rec): void {
     const el = range?.find((n) => n.nodeType === 1) as Element | undefined;
     if (!el) return go();
     const io = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) (io.disconnect(), go());
+      if (entries.some((entry) => entry.isIntersecting)) (unwatch(r), go());
     });
     io.observe(el);
+    watching.set(r, io);
+    // Claimed by a unit that is disposed before it intersected (a Show branch / page left): its target leaves with it.
+    const owner = r.hole?.owner;
+    if (owner && !(owner as { disposed?: boolean }).disposed) runWithOwner(owner, () => onCleanup(() => unwatch(r)));
   }
+}
+// Visible triggers not fired yet (SMA-08): disconnected when the boundary's markup leaves the page before it intersected
+// (`dead`, its claiming unit's disposal) — a detached target never intersects, its observer would hold it for good.
+const watching = new Map<Rec, IntersectionObserver>();
+function unwatch(r: Rec): void {
+  const io = watching.get(r);
+  if (io) (io.disconnect(), watching.delete(r));
 }
 
 // The units around `node`, outermost first: boundary ranges (`data-b` elements, `<!--bN-->` openers) and region
@@ -2035,12 +2046,24 @@ const isPress = (event: Event): [HTMLElement | null] | false | undefined =>
   (event.type === "mousedown" || (event.type === "pointerdown" && (event as PointerEvent).pointerType !== "touch")) && pressTarget(event);
 // Listeners a replayed handler attaches (RA usePress's document `pointerup` on press start, a tooltip's close-on-press
 // capture `pointerdown`): while cold events are queued `EventTarget.prototype` add / remove record them; each later
-// replayed event dispatched before one was added runs it after its delegated handlers, in path order (`late`).
-type Added = [target: EventTarget, type: string, fn: EventListenerOrEventListenerObject, capture: boolean, at: number, during: Event | null, options: unknown];
+// replayed event dispatched before one was added runs it after its delegated handlers, in path order (`late`). A removed
+// record stays in `added` marked `gone` (O(1) removal and replay membership); past 32 records `byFn` indexes the live ones
+// by listener for the native duplicate check and removal (PERF-REST P1: N recorded adds / removes were N² tuple scans).
+type Added = [
+  target: EventTarget,
+  type: string,
+  fn: EventListenerOrEventListenerObject,
+  capture: boolean,
+  at: number,
+  during: Event | null,
+  options: unknown,
+  gone?: 1,
+];
 const proto = EventTarget.prototype,
   nativeAdd = proto.addEventListener,
   nativeRemove = proto.removeEventListener;
 let added: Added[] = [],
+  byFn: Map<unknown, Added[]> | null = null,
   replayed: Event | null | undefined,
   // A replay is running (its handlers' own events — a `focus()`'s focusin — are live, not queued behind the chain).
   replaying = false,
@@ -2053,25 +2076,40 @@ let added: Added[] = [],
   // The focus verdict of the last replayed linked pointerdown (`replay` `fresh`), for its mousedown.
   pairFresh = false;
 const captures = (o: unknown): boolean => !!(typeof o == "object" ? (o as AddEventListenerOptions | null)?.capture : o);
-const sameAdded = (r: Added, t: EventTarget, type: string, fn: unknown, o: unknown) => r[0] === t && r[1] === type && r[2] === fn && r[3] === captures(o);
+const sameAdded = (r: Added, t: EventTarget, type: string, fn: unknown, capture: boolean) =>
+  r[0] === t && r[1] === type && r[2] === fn && r[3] === capture && !r[7];
 function addRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | AddEventListenerOptions): void {
   nativeAdd.call(this, type, fn, o);
   // During a replay, and while events are held: an adopt run (a chunk's `load` resolving outside any replay) adds a
   // `model:value` input listener, a ref's library listener — the held events dispatched before it reach it too (ai-eval
   // filter-list: the cold input that adopted the field updates its signal).
-  if ((replayed !== undefined || pending.length) && fn && !added.some((r) => sameAdded(r, this, type, fn, o)))
-    added.push([this, type, fn, captures(o), performance.now(), replayed ?? null, o]);
+  if ((replayed !== undefined || pending.length) && fn) {
+    const capture = captures(o),
+      list = byFn ? byFn.get(fn) : added;
+    if (list?.some((r) => sameAdded(r, this, type, fn, capture))) return;
+    const r: Added = [this, type, fn, capture, performance.now(), replayed ?? null, o];
+    added.push(r);
+    if (byFn) list ? list.push(r) : byFn.set(fn, [r]);
+    else if (added.length > 32) {
+      byFn = new Map();
+      for (const x of added) x[7] || (byFn.get(x[2])?.push(x) ?? byFn.set(x[2], [x]));
+    }
+  }
 }
 function removeRecorded(this: EventTarget, type: string, fn: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
   nativeRemove.call(this, type, fn, o);
-  added = added.filter((r) => !sameAdded(r, this, type, fn, o));
+  const capture = captures(o),
+    list = byFn ? byFn.get(fn) : added,
+    i = list ? list.findIndex((r) => sameAdded(r, this, type, fn, capture)) : -1;
+  if (i >= 0) ((list![i]![7] = 1), byFn && list!.splice(i, 1));
 }
 const record = (on: unknown): void => {
   if (on) ((proto.addEventListener = addRecorded), (proto.removeEventListener = removeRecorded));
-  else if (proto.addEventListener === addRecorded) ((proto.addEventListener = nativeAdd), (proto.removeEventListener = nativeRemove), (added = []));
+  else if (proto.addEventListener === addRecorded)
+    ((proto.addEventListener = nativeAdd), (proto.removeEventListener = nativeRemove), (added = []), (byFn = null));
 };
 function late(event: Event, path: EventTarget[]): Added[] {
-  const list = added.filter((r) => r[1] === event.type && r[5] !== event && event.timeStamp < r[4]),
+  const list = added.filter((r) => !r[7] && r[1] === event.type && r[5] !== event && event.timeStamp < r[4]),
     stopped = event.cancelBubble,
     ran: Added[] = [];
   if (!list.length) return ran;
@@ -2080,7 +2118,7 @@ function late(event: Event, path: EventTarget[]): Added[] {
   for (const [t, capture] of order) {
     if (event.cancelBubble && (!stopped || !capture || ((t as Node).nodeType > 0 && (t as Node).nodeType != 9))) break;
     for (const r of list)
-      if (r[0] === t && r[3] === capture && added.includes(r)) {
+      if (r[0] === t && r[3] === capture && !r[7]) {
         const o = r[6] as AddEventListenerOptions | undefined,
           aborted = typeof o == "object" && o?.signal?.aborted,
           once = typeof o == "object" && o?.once;
