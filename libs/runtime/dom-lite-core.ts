@@ -123,7 +123,12 @@ export function delegate(event: Event, path: EventTarget[] = event.composedPath(
       } else flush();
   }
 }
-export const dispatch = (event: Event): void => delegate(event);
+// The default a replay dispatches (`dom-lite.ts` `replay`: the loader's `requestSubmit()`, a link's re-dispatched click)
+// reaches native listeners and the browser, not the handlers that ran on the held event (RESUME-FIX A1).
+let ran: Event | undefined;
+export const dispatch = (event: Event): void => void (event == ran || delegate(event));
+/** The event a replay dispatches as a held event's default (`dom-lite.ts`): its handlers ran already. */
+export const defaulted = (event: Event): void => void (ran = event);
 // A full runtime on the page (R5: it adopts this residual; or the lite runtime handed over) owns the delegation
 // (`dom-derived.ts` sets `$$rvOn` = `dom-events.ts` `_on`): one document listener per type, never two.
 export function on(el: Element, type: string, fn: ((event: Event) => unknown) | null): void {

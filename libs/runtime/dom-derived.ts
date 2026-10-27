@@ -34,6 +34,7 @@ import type { EqualsOptions, Owner, Signal } from "@rivetjs/reactivity";
 import { createStore } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { _adoption, _delegateBelow, _for, _insert, _on } from "./dom-v2.ts";
+import { _delegated } from "./dom-events.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
 import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
@@ -794,6 +795,9 @@ function realFor(lazy: Lazy): () => Node[] {
   } finally {
     building = false;
   }
+  // Rows the browser never ran (server nodes, no binding) show their server index: the first write of another index
+  // adopts the row first (RESUME-FIX D1: kept as "did not read its index", it kept "2." after the first row left).
+  if (lazy.props.children.length > 1) for (const row of rows) row.done || follow(row);
   const outer = _adoption.rows;
   if (!lazy.bad)
     _adoption.rows = () => {
@@ -818,6 +822,26 @@ function realFor(lazy: Lazy): () => Node[] {
     cur = unitOuter;
     _adoption.rows = outer;
   }
+}
+// An unrun row's index signal: a write of another index materialises the row over its server nodes (at the index they
+// show), then writes it. Outside the client `_for`'s own creation (`inner`): the row's lists and boundaries adopt.
+function follow(row: LRow): void {
+  const index = row.index!,
+    set = index.set,
+    k = untrack(index);
+  index.set = ((value: number) => {
+    if (value !== k) {
+      index.set = set;
+      const was = inner;
+      inner = false;
+      try {
+        materialiseRow(row);
+      } finally {
+        inner = was;
+      }
+    }
+    return set.call(index, value);
+  }) as typeof set;
 }
 // The row of a sole list (by the element holding its server rows) a row opener the event path meets stands for: `k`
 // groups before it (`enclosing` counted them).
@@ -2168,10 +2192,11 @@ const record = (on: unknown): void => {
   if (on) ((proto.addEventListener = addRecorded), (proto.removeEventListener = removeRecorded));
   else if (proto.addEventListener === addRecorded) ((proto.addEventListener = nativeAdd), (proto.removeEventListener = nativeRemove), (added = []));
 };
-function late(event: Event, path: EventTarget[]): void {
+function late(event: Event, path: EventTarget[]): Added[] {
   const list = added.filter((r) => r[1] === event.type && r[5] !== event && event.timeStamp < r[4]),
-    stopped = event.cancelBubble;
-  if (!list.length) return;
+    stopped = event.cancelBubble,
+    ran: Added[] = [];
+  if (!list.length) return ran;
   const order: [EventTarget, boolean][] = [...path].reverse().map((t) => [t, true]);
   for (const t of path.slice(0, event.bubbles ? path.length : 1)) order.push([t, false]);
   for (const [t, capture] of order) {
@@ -2179,9 +2204,12 @@ function late(event: Event, path: EventTarget[]): void {
     for (const r of list)
       if (r[0] === t && r[3] === capture && added.includes(r)) {
         const o = r[6] as AddEventListenerOptions | undefined,
-          aborted = typeof o == "object" && o?.signal?.aborted;
-        if (aborted || (typeof o == "object" && o?.once)) t.removeEventListener(r[1], r[2], capture);
+          aborted = typeof o == "object" && o?.signal?.aborted,
+          once = typeof o == "object" && o?.once;
+        if (aborted || once) t.removeEventListener(r[1], r[2], capture);
         if (!aborted) {
+          // (A `once` listener is gone: nothing to take off for the default, `defaulted`.)
+          once || ran.push(r);
           Object.defineProperty(event, "currentTarget", { configurable: true, value: t });
           try {
             typeof r[2] == "function" ? r[2].call(t, event) : r[2].handleEvent(event);
@@ -2193,6 +2221,7 @@ function late(event: Event, path: EventTarget[]): void {
         }
       }
   }
+  return ran;
 }
 const linked = new WeakSet<Event>(),
   // Cold focus / blur events of a cold press's native mouse focus: the replay re-creates that move, they never replay.
@@ -2300,8 +2329,9 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   if (wrote) ((target.value = state[0] as string), (target.checked = state[1] as boolean));
   replaying = true;
   replayed = event;
+  let ran: Added[] = [];
   try {
-    if (!moved.has(event)) (_delegateBelow(event, doc!), late(event, path));
+    if (!moved.has(event)) (_delegateBelow(event, doc!), (ran = late(event, path)));
   } finally {
     replaying = false;
     delete (event as { composedPath?: unknown }).composedPath;
@@ -2323,11 +2353,33 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
           const list = undone.get(press[0]) ?? [];
           (undone.set(press[0], list), list.push([state[2], performance.now(), event.timeStamp]));
         }
-      kept || again?.();
+      kept || (again && defaulted(type, again, ran));
     } finally {
       replaying = false;
     }
   });
+}
+// A held event's default (the loader's `requestSubmit()`, a link's re-dispatched click): native listeners and the browser
+// see it, the handlers that just ran on the held event do not run again (RESUME-FIX A1: a cold `onSubmit` without
+// `preventDefault` ran twice) — the delegated ones (`_delegated`), and the listeners added since its dispatch that `late`
+// ran (a compiled `onSubmit`: a direct `_listen` listener), off while it propagates. Its event = the first of the held type
+// the window's capture phase sees; a re-dispatched control click (no link) stops at the loader's document listener, and
+// what its activation fires (a label's click on its control, a submit button's submit) is live.
+function defaulted(type: string, again: () => void, ran: Added[]): void {
+  const win = doc!.defaultView!;
+  let off: Added[] = [];
+  const mark = (event: Event): void => {
+    nativeRemove.call(win, type, mark, true);
+    _delegated(event);
+    if (type !== "click" || (event.target as Element).localName === "a") for (const r of (off = ran)) nativeRemove.call(r[0], r[1], r[2], r[3]);
+  };
+  nativeAdd.call(win, type, mark, true);
+  try {
+    again();
+  } finally {
+    nativeRemove.call(win, type, mark, true);
+    for (const r of off) nativeAdd.call(r[0], r[1], r[2], r[6] as AddEventListenerOptions);
+  }
 }
 // Cold hover (DERIVED-C): the pointer entered the units an event just adopted before their hover listeners existed (RA
 // useHover's `pointerenter`: direct, non-bubbling listeners): a mouse / pen event that adopted something gives the

@@ -27,7 +27,7 @@ import type { DerivedLoaderApi, DerivedRuntime, HeldEvent } from "./dom-derived.
 import type { BoundaryTail } from "./resume-format.ts";
 import { eachRecord } from "./resume-tail.ts";
 import { DEV } from "#dev";
-import { type Eff, _lw, delegate, dispatch, effect, miss, type On, on, own, release, signal, types } from "./dom-lite-core.ts";
+import { type Eff, _lw, defaulted, delegate, dispatch, effect, miss, type On, on, own, release, signal, types } from "./dom-lite-core.ts";
 
 export { signal, _lw } from "./dom-lite-core.ts";
 export { _lb, _lk, _lq } from "./dom-lite-attr.ts";
@@ -222,10 +222,15 @@ function replay([event, path, again, state]: HeldEvent): void {
     delete (event as { preventDefault?: unknown }).preventDefault;
     now && restore(now);
   }
+  // Its default: the first event of its type the window's capture phase sees (`defaulted`; what that one's activation
+  // fires — a label's click on its control, a submit button's submit — is live).
+  const type = event.type,
+    mark = (e: Event): void => (removeEventListener(type, mark, true), defaulted(e));
   try {
-    canceled || again?.();
+    canceled || (addEventListener(type, mark, true), again?.());
   } finally {
     replaying = 0;
+    removeEventListener(type, mark, true);
   }
 }
 async function drain(): Promise<void> {

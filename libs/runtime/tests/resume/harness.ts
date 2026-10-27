@@ -1,8 +1,9 @@
-// Serve runtime sources plus test modules to Chromium under http://rivet.test/ without a bundler.
+// Serve runtime sources plus test modules to Chromium (or WebKit, `engine`) under http://rivet.test/ without a bundler.
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { createServer } from "node:http";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import type { Browser, Page } from "playwright";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -97,11 +98,15 @@ export interface PageOptions {
   /** Path → ms to hold its response, or a promise it waits for (chunk load order tests; a promise = cold for as long
    * as the test needs, whatever the host's speed). */
   delays?: Record<string, number | Promise<unknown>>;
+  /** The engine (default Chromium; WebKit only where Playwright's WebKit is installed: `hasWebkit`). */
+  engine?: "chromium" | "webkit";
 }
+/** Playwright's WebKit is installed on this host (CI installs Chromium only). */
+export const hasWebkit = (): boolean => existsSync(webkit.executablePath());
 export async function withPage<T>(
   files: Record<string, Served>,
   fn: (page: Page, requests: string[], browser: Browser) => Promise<T>,
-  { offline = new Set<string>(), streams = {}, delays = {} }: PageOptions = {},
+  { offline = new Set<string>(), streams = {}, delays = {}, engine = "chromium" }: PageOptions = {},
 ): Promise<T> {
   let http: Server | null = null,
     origin: string | null = null;
@@ -124,7 +129,7 @@ export async function withPage<T>(
       /* Optional during incremental development. */
     }
   }
-  const browser = await chromium.launch({ headless: true });
+  const browser = await (engine === "webkit" ? webkit : chromium).launch({ headless: true });
   try {
     const page = await browser.newPage();
     const requests: string[] = [];

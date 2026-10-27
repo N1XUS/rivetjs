@@ -52,6 +52,12 @@ export function _delegateBelow(event: Event, stop: Element | Document): boolean 
   if (!event.bubbles || !delegated.get(stop.ownerDocument ?? (stop as Document))?.has(event.type)) return false;
   return delegate(event, stop);
 }
+/**
+ * Resume (`dom-derived.ts` replay, RESUME-FIX A1): the delegated handlers of `event` ran already — the default of a held
+ * event its replay dispatches (the loader's `requestSubmit()`, a link's re-dispatched click) reaches native listeners and
+ * the browser, never the handlers that ran on the held event a second time.
+ */
+export const _delegated = (event: Event): void => void ranTo.set(event, -1);
 function delegate(event: Event, stop: Node | null): boolean {
   const done = ranTo.get(event);
   if (done === -1) return true;
