@@ -79,6 +79,16 @@ export function llmsFrom(source: LlmsSource, options: LlmsOptions = {}): LlmsOut
   const link = options.link ? (target: LlmsLinkTarget) => options.link!(target, source) : defaultLink;
   const symbols = new Map<string, ApiSymbol[]>();
   for (const symbol of api.symbols) symbols.set(symbol.key, [...(symbols.get(symbol.key) ?? []), symbol]);
+  // A custom link callback can mutate its source; retain live joins in that case.
+  const symbolsByEntry = options.link ? null : new Map<string, ApiSymbol[]>();
+  if (symbolsByEntry)
+    for (const symbol of api.symbols) {
+      const list = symbolsByEntry.get(symbol.entry);
+      if (list) list.push(symbol);
+      else symbolsByEntry.set(symbol.entry, [symbol]);
+    }
+  const pageByPath = options.link ? null : new Map<string, LlmsSource["pages"][number]>();
+  if (pageByPath) for (const page of source.pages) if (!pageByPath.has(page.path)) pageByPath.set(page.path, page);
   const pageHrefs = new Set(source.pages.map((page) => page.href));
   const docs: LlmsDoc[] = [];
   const header = (title: string, description: string, href: string) =>
@@ -106,7 +116,7 @@ export function llmsFrom(source: LlmsSource, options: LlmsOptions = {}): LlmsOut
     });
   }
   for (const entry of api.entries) {
-    const entrySymbols = api.symbols.filter((symbol) => symbol.entry === entry.entry);
+    const entrySymbols = symbolsByEntry ? (symbolsByEntry.get(entry.entry) ?? []) : api.symbols.filter((symbol) => symbol.entry === entry.entry);
     const body = entrySymbols.map((symbol) => symbolMarkdown(symbol, 2)).join("\n\n");
     docs.push({
       kind: "api",
@@ -121,7 +131,7 @@ export function llmsFrom(source: LlmsSource, options: LlmsOptions = {}): LlmsOut
   }
   for (const example of source.examples.values()) {
     const href = `/examples/${example.id}/`;
-    const usedOn = example.usedOn.map((path) => source.pages.find((page) => page.path === path)!).filter(Boolean);
+    const usedOn = example.usedOn.map((path) => (pageByPath ? pageByPath.get(path) : source.pages.find((page) => page.path === path))!).filter(Boolean);
     const used = usedOn.length ? `Used on: ${usedOn.map((page) => `[${page.title}](${link({ href: page.href, kind: "page" })})`).join(", ")}\n\n` : "";
     docs.push({
       kind: "example",
