@@ -946,6 +946,8 @@ export function rivetRouter(options: RivetRouterOptions = {}): Plugin[] {
                 devScripts: (locale) => [
                   ...(compiler.api as { devtoolsScripts(): string[] }).devtoolsScripts(),
                   server.config.base + "@vite/client",
+                  // Framework bridges' dev preambles (React Fast Refresh: `@vitejs/plugin-react/preamble`), before any island module.
+                  ...((compiler.api as { bridgeScripts?(): string[] }).bridgeScripts?.() ?? []),
                   // Resumed: the entry that switches to client rendering on a hot update; else the mount itself.
                   devMode(locale) === "resume"
                     ? devEntry

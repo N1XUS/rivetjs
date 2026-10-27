@@ -24,7 +24,7 @@
 // keys its cold keydowns hold (`k`), the delegated event types (`data-events`), the runtime (`data-rt`) and `data-boot`
 // (a load / idle / visible trigger), and the derived inline loader (`resume-loader-derived.ts`) follows it. Without a
 // `manifest.runtime` the tail only.
-import { foNames, urlsOf } from "./server-derived-fo.ts";
+import { foNames, laterUrls, urlsOf } from "./server-derived-fo.ts";
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
   computed,
@@ -59,7 +59,7 @@ import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDo
 import { encodeTail, tailPieces } from "./server-tail.ts";
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
-import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
+import { DERIVED_LOADER, DERIVED_LOADER_LATER, DERIVED_LOADER_VISIBLE, DERIVED_LOADER_VISIBLE_LATER, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
 import { _onEager, _onIsland, _onWeak } from "./derived-eager.ts";
 import type { DerivedIsland } from "./derived-eager.ts";
 import type { ListPlan, ServerValue } from "./server.ts";
@@ -395,6 +395,12 @@ export interface ResumeManifest {
    * no island, `Async`, wake list, DOM data, document listener) loads these instead of `runtime` / `symbols`.
    */
   lite?: { runtime: string; symbols: Record<string, string> };
+  /**
+   * Lazy parts (IDLE-PREFETCH): chunk URL → the chunks of the `lazyComponent(() => import(…))` parts its modules import.
+   * The parts a page's fetch-ahead list reaches (+ their `deps`) are its later fetch list (tail `data-fl`): fetched after the
+   * fetch-ahead list, at idle, so a first interaction that opens one evaluates a module already fetched.
+   */
+  lazy?: Record<string, string[]>;
 }
 /**
  * When the browser fetches the page's handler code (tail `data-fo`: the runtime + the chunks of the boundaries that can
@@ -405,6 +411,8 @@ export interface ResumeManifest {
  * - `"load"`: right after `load`;
  * - `"intent"` (= `lean: true`): nothing before the first intent: a page nobody touches fetches no JS.
  * Save-Data / 2G connections skip the background fetch. Nothing is ever evaluated before an event or trigger.
+ * The page's lazy parts (manifest `lazy`, tail `data-fl`) follow once the fetch-ahead list has loaded, in the next idle
+ * period, at low priority (whenever the fetch-ahead list ran: background or intent; never under Save-Data / 2G).
  */
 export interface PreloadOptions {
   ahead?: "idle" | "load" | "intent";
@@ -1281,6 +1289,9 @@ _onIsland((entry) => {
   at.flags |= entry.on === undefined ? IDLE : (ISLAND_WHEN[entry.on] ?? IDLE);
   ctx.boot = true;
   ctx.adopt.push(entry);
+  // `visible` (user ruling 2026-10-27): no idle fetch-ahead of its chunk; the bridge's boot fetches it once the island
+  // nears the viewport (a prefetch-only lean record, `props` null), the adopt run hydrates it when visible.
+  if (entry.on === "visible" && !ctx.tailed) ctx.lean.push(entry);
   return true;
 });
 /** Flush: `DEFER` / `MOD` on the dependent boundaries whose subtree is closed and heavy enough (`flags`), creator counts. */
@@ -1871,7 +1882,8 @@ function flush(ctx: DerivedRender): FlushTail | null {
   ctx.flushed = ctx.boundaries.length;
   const tail: FlushTail = { b };
   if (rd) tail.r = rd;
-  if (ctx.adopt.length) tail.i = ctx.adopt.splice(0).map((island) => (islandUrls.push(island.key), island.id));
+  if (ctx.adopt.length)
+    tail.i = ctx.adopt.splice(0).map((island) => (island.on === "visible" && ctx.lean.includes(island) ? 0 : islandUrls.push(island.key), island.id));
   if (d?.length) tail.d = d;
   // `_rListen`: the first top-level boundary of this flush takes the pending document click listeners.
   if (ctx.listen.length) {
@@ -2076,17 +2088,20 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     // no trigger) fetches nothing in the background: its full runtime + router chunks load on the first link intent.
     when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
   if (tail.l) tail.F = fetchAhead(manifest, tail, manifest.runtime!) || manifest.runtime!;
+  // IDLE-PREFETCH: the lazy parts the fetch-ahead list reaches (`data-fl`), fetched after it (not on lite pages).
+  const later = ahead && manifest.lazy && !tail.l ? fetchLater(manifest, ahead) : "";
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
   const pieces = tailPieces(tail);
   let events = "";
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
   const boot = ctx.boot ? visibleBoot(ctx) : null;
+  // (`later` is a function of the manifest and `ahead`.)
   const key = (nonce ? "n" : "-") + (boot === null ? "-" : "b" + boot) + (liteTail ? "l" : "-") + when + events + "\0" + ctx.clicks + "\0" + ahead;
   let memo = tails.get(manifest);
   if (memo === undefined) tails.set(manifest, (memo = new Map()));
   let fragments = memo.get(key);
   if (fragments === undefined) {
-    fragments = tailFragments(runtime, ahead, when, events, ctx, boot, !!nonce);
+    fragments = tailFragments(runtime, ahead, when, events, ctx, boot, !!nonce, later);
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
@@ -2121,6 +2136,18 @@ function fetchAhead(manifest: Partial<ResumeManifest>, tail: FlushTail, runtime:
   return ahead;
 }
 const aheads = new WeakMap<object, Map<string, string>>();
+/** The later fetch list (`data-fl`, IDLE-PREFETCH `laterUrls`) of a fetch-ahead list, memoised per manifest like `aheads`. */
+function fetchLater(manifest: Partial<ResumeManifest>, ahead: string): string {
+  let memo = laters.get(manifest);
+  if (memo === undefined) laters.set(manifest, (memo = new Map()));
+  let later = memo.get(ahead);
+  if (later === undefined) {
+    later = laterUrls(ahead.split(" "), manifest.lazy!, manifest.deps).join(" ");
+    if (memo.size < 512) memo.set(ahead, later);
+  }
+  return later;
+}
+const laters = new WeakMap<object, Map<string, string>>();
 /** RT-DIET2: the tail's only live records are its document click listeners (`g`): no listening name, no trigger. */
 function linksOnly(tail: FlushTail): boolean {
   if (!tail.g || tail.l || tail.i || tail.a) return false;
@@ -2163,6 +2190,7 @@ function tailFragments(
   ctx: DerivedRender,
   boot: string | null,
   nonce: boolean,
+  later: string,
 ): readonly string[] {
   // The derived client: attributes the loader reads, then the loader (same nonce sanitising as the serialized loader).
   const attrs =
@@ -2172,9 +2200,11 @@ function tailFragments(
     (events ? ' data-events="' + attr(DEFAULT_EVENTS + " " + events) + '"' : "") +
     (boot === null ? "" : boot ? ' data-boot="' + boot + '"' : " data-boot") +
     (ctx.clicks ? ' data-g="' + attr(ctx.clicks) + '"' : "") +
-    (ahead ? ' data-fo="' + attr(ahead) + '"' + (when === "idle" ? "" : ' data-fw="' + when + '"') : "");
+    (ahead ? ' data-fo="' + attr(ahead) + '"' + (when === "idle" ? "" : ' data-fw="' + when + '"') : "") +
+    (later ? ' data-fl="' + attr(later) + '"' : "");
   const open = '<script type="rivet/boundaries"' + attrs + ">",
-    loader = boot ? DERIVED_LOADER_VISIBLE : DERIVED_LOADER;
+    // Lazy parts (IDLE-PREFETCH): the loader whose fetch-ahead also fetches `data-fl` once the list loaded (`derivedFetchLater`).
+    loader = boot ? (later ? DERIVED_LOADER_VISIBLE_LATER : DERIVED_LOADER_VISIBLE) : later ? DERIVED_LOADER_LATER : DERIVED_LOADER;
   return Object.freeze(nonce ? [open, '</script><script nonce="', '">' + loader + "</script>"] : [open, "</script><script>" + loader + "</script>"]);
 }
 /** The loader's event types when `data-events` is absent (`resume-loader-derived.ts`); `data-events` = these + the page's

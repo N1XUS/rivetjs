@@ -8,6 +8,7 @@ import { switchContent } from "./switches.ts";
 import { boundaryFacts } from "./facts-fixpoint.ts";
 import { nativeFamilies, stylesState, type NativeFamily } from "./facts-native.ts";
 import { explainText, placementTable, placeVerdicts, type PlacementOption, type PlacementTable } from "./place.ts";
+import { islandGetters } from "./island-props.ts";
 import { createFilter, parseAst, type FilterPattern, type HtmlTagDescriptor, type Plugin, type Rollup, type UserConfig, type ViteDevServer } from "vite";
 import { compile, moduleFacts, type CompileOptions, type CompileResult, type ModuleFacts } from "./index.ts";
 import { docsUrl } from "./codes.ts";
@@ -158,6 +159,12 @@ export interface BridgeEntry {
    * look like components but are not islands (a store class, a factory).
    */
   islands?: { include?: readonly string[]; exclude?: readonly string[] };
+  /**
+   * Dev server: module ids a server-rendered dev page loads before any island module (`rivetRouter()` adds them to the
+   * page head next to `@vite/client`): what the framework's Vite plugin would inject through `transformIndexHtml`, which
+   * SSR pages never run (React: `@vitejs/plugin-react/preamble`, the Fast Refresh preamble).
+   */
+  devScripts?(): string[];
 }
 
 /**
@@ -179,6 +186,8 @@ export interface RivetBridgesApi {
   islandKey(id: string): string | null;
   /** Dev: the island client module id of an island key. */
   islandModule(key: string): string | undefined;
+  /** Dev page scripts of the configured bridges (`BridgeEntry.devScripts`, module ids). */
+  devScripts?(): string[];
   /** Modules a facade's server render records symbols of (`@rivetjs/bridge` `root.tsx`): resume modules with it. */
   seeds(): string[];
 }
@@ -553,6 +562,19 @@ const twPure = (code: string): string =>
   );
 
 /**
+ * @internal The lazy parts of a module (IDLE-PREFETCH): the specifiers of its `lazyComponent(() => import("…"))` calls
+ * (an inline arrow importer, optional type arguments and an annotated empty parameter list). Other dynamic imports
+ * (route tables, `clientOnly`, plain `import()` on use) are not lazy parts: the browser fetches lazy parts after the
+ * page's fetch-ahead list, at idle (tail `data-fl`).
+ */
+export function _lazyParts(source: string): string[] {
+  if (!source.includes("lazyComponent")) return [];
+  const out: string[] = [];
+  for (const hit of source.matchAll(/\blazyComponent\s*(?:<[^()]*>)?\(\s*\(\s*\)\s*(?::[^=]*)?=>\s*import\(\s*(["'`])([^"'`]+)\1\s*\)/g)) out.push(hit[2]!);
+  return out;
+}
+
+/**
  * @internal Build-time module layout for tailwind-variants 3.x (ZERO B3). Rolldown shakes per statement but places per
  * module, so upstream's single `index.js` (tailwind-merge + `cn`, then the `tv` runtime built at load) put the `tv` runtime
  * into the chunk every `@rivetjs/ui` page loads for `cn` as soon as any page of the build imported upstream `tv`.
@@ -833,6 +855,11 @@ function rivetPlugin(
   // is a facade re-exporting only the compiled boundary names, so the module's other exports (and imports only they use)
   // shake, instead of the whole module signature being pinned by a strict entry on the module itself.
   const boundaryEntries = new Map<string, string>();
+  // Client build (IDLE-PREFETCH): importer module → the resolved ids of its lazy parts (`lazyComponent(() => import("…"))`
+  // targets, `lazyParts`), for the manifest's `lazy` (the server's later fetch list, tail `data-fl`). Resolved while the
+  // build transforms (`lazyPending`), read once the bundle is written.
+  const lazyImports = new Map<string, Set<string>>();
+  const lazyPending: Promise<unknown>[] = [];
   // Client build (ZERO LITE-WIRE): module → its lite entry (compile `lite`: residual code + the boundary names it covers).
   const liteEntries = new Map<string, { code: string; names: string[] }>();
   // Resume walk: module → whether it exports anything but its boundary components (the facade only pays off then).
@@ -893,6 +920,18 @@ function rivetPlugin(
         },
       }),
       ...(builtinsId ? { builtins: base + devUrl(builtinsId) } : {}),
+      // Framework islands (E2a): island key → its dev client module (`\0rivet-island-client:…`), so lean records (JSON
+      // props) boot in dev as in a build, and adopt runs' fetch-ahead names their modules.
+      ...(bridges
+        ? {
+            islands: new Proxy({} as Record<string, string>, {
+              get: (_, key) => {
+                const id = typeof key === "string" ? bridges?.islandModule(key) : undefined;
+                return id && base + devUrl(id);
+              },
+            }),
+          }
+        : {}),
     }),
   };
   // Framework packages keep the plain `signal` (their state is not component state); their tests
@@ -1367,7 +1406,8 @@ function rivetPlugin(
   /** Resume manifest (`.vite/rivet-resume.json`): `runtime` (the derived entry chunk), `symbols` (boundary
    * name → the chunk of its module), `sizes` (those chunks' bytes), `deps` (static import closure of the runtime and of
    * every boundary chunk: the server's fetch-ahead list `data-fo`, DERIVED-C), `builtins` (the built-in decoders' chunk: the
-   * server names it in a route payload that needs it, `_rData`). */
+   * server names it in a route payload that needs it, `_rData`), `lazy` (IDLE-PREFETCH: chunk → the chunks of the lazy
+   * parts its modules import; absent without lazy parts). */
   function derivedManifest(this: Rollup.PluginContext, bundle: Rollup.OutputBundle): void {
     const symbols: Record<string, string> = {},
       sizes: Record<string, number> = {},
@@ -1422,6 +1462,25 @@ function rivetPlugin(
       roots.push(real.fileName);
     }
     if (liteRuntime) liteShared.call(this, chunks);
+    // Lazy parts (IDLE-PREFETCH): per chunk, the chunks of the lazy parts its modules import (`lazyImports`); those chunks
+    // join the roots, so `deps` holds their static closures. The server's later fetch list (tail `data-fl`) = what the
+    // fetch-ahead list reaches through these edges, minus the fetch-ahead list.
+    const lazy: Record<string, string[]> = {};
+    if (lazyImports.size)
+      for (const chunk of chunks.values()) {
+        const targets = new Set<string>();
+        for (const id of chunk.moduleIds) for (const target of lazyImports.get(id) ?? []) targets.add(target);
+        if (!targets.size) continue;
+        // The chunk an `import()` names: the part's facade (a dynamic entry), or the chunk holding the part's module.
+        const parts = new Set<string>();
+        for (const file of chunk.dynamicImports) {
+          const to = chunks.get(file);
+          if (to && ((to.facadeModuleId && targets.has(to.facadeModuleId)) || to.moduleIds.some((id) => targets.has(id)))) parts.add(file);
+        }
+        if (!parts.size) continue;
+        lazy[base + chunk.fileName] = [...parts].sort().map((file) => base + file);
+        for (const file of parts) roots.includes(file) || roots.push(file);
+      }
     // After the loop: folding (`foldFacade`) appends export names to a chunk named earlier.
     for (const chunk of sized) sizes[base + chunk.fileName] = Buffer.byteLength(chunk.code);
     for (const file of roots) {
@@ -1444,6 +1503,7 @@ function rivetPlugin(
       ...(Object.keys(islands).length ? { islands } : {}),
       ...(builtins ? { builtins } : {}),
       ...(domDataIn ? { domData: true } : {}),
+      ...(Object.keys(lazy).length ? { lazy } : {}),
       // Pages whose every record is in `lite.symbols` load `lite.runtime` + those entries instead (server `flush`).
       ...(liteRuntime && Object.keys(lite).length ? { lite: { runtime: liteRuntime, symbols: lite } } : {}),
     };
@@ -1489,6 +1549,15 @@ function rivetPlugin(
     // Dev server: boundary names → their module (dev manifest `symbols`).
     if (serve && resume) for (const name of result.boundaries ?? []) derivedDev.set(name, filename);
     if (resume && !server) derivedNames.set(filename, result.boundaries ?? []);
+    if (resume && !server && !serve) {
+      lazyImports.delete(id);
+      for (const spec of _lazyParts(source))
+        lazyPending.push(
+          ctx.resolve(spec, id).then((target) => {
+            if (target && !target.external) (lazyImports.get(id) ?? lazyImports.set(id, new Set()).get(id)!).add(target.id);
+          }),
+        );
+    }
     // ZERO LITE-WIRE: a module with lite residuals gets its lite entry (`\0rivet-lite:<file>.js`, a strict chunk of its own)
     // and the build the lite runtime entry, once; a copy in the lite graph (`?rivet-lite`) emits nothing.
     if (resume && !server && !serve && result.lite && !LITE_QUERY.test(id)) {
@@ -1643,6 +1712,8 @@ function rivetPlugin(
     api: {
       /** Scripts a dev page loads before `@vite/client`: the DevTools agent when enabled. */
       devtoolsScripts: (): string[] => (tools ? [tools.agentScript(base)] : []),
+      /** Dev page scripts of the configured framework bridges (`BridgeEntry.devScripts`: React's Fast Refresh preamble), as URLs. */
+      bridgeScripts: (): string[] => (bridges?.devScripts?.() ?? []).map((id) => base + "@id/" + id),
       /** Dev server: resume manifest and symbol descriptions for dev SSR (see `DevResume`). */
       devResume,
       /** `rivet({ serverOnly })`: modules browser code must never import (read by `rivetRouter()`). */
@@ -1939,14 +2010,16 @@ function rivetPlugin(
     // Post: chunk code is final (Vite's preload helpers rewritten), so sizes match the emitted files.
     generateBundle: {
       order: "post",
-      handler(_options, bundle) {
+      async handler(_options, bundle) {
         if (ssrBuild || this.environment?.config?.consumer === "server") return;
         if (joinsRecord && joinsDir) {
           const data: JoinsFile = { v: 1, joins: [...joinsRecord.joins].sort(), needed: [...joinsRecord.needed].sort(), all: joinsRecord.all };
           writeFileSync(join(joinsDir, JOINS_FILE), JSON.stringify(data) + "\n");
         }
         _hintEagerCompile(bundle, (output) => output.isEntry);
-        if (resume) derivedManifest.call(this, bundle);
+        if (!resume) return;
+        await Promise.all(lazyPending.splice(0));
+        derivedManifest.call(this, bundle);
       },
     },
     transform(original, id, options) {
@@ -2001,7 +2074,25 @@ function rivetPlugin(
         return classMerged(this, filename, original, options, comptimeRewrite(this, filename, { code: split.code, map: split.map ?? null }, original));
       }
       const done = finish(this, filename, source, server, id);
-      return facade ? done : classMerged(this, filename, original, options, comptimeRewrite(this, filename, done, original));
+      if (facade) return done;
+      // Server output with island facade calls: props that can read a signal become getters (`island-props.ts`, E1), so
+      // the bridge sees a live prop instead of a plain JSON value.
+      if (server && bridges) {
+        const ctx = this,
+          api = bridges;
+        const live = islandGetters(done.code, async (spec) => {
+          const hit = await ctx.resolve(spec, id);
+          return !!hit && !hit.external && api.facade(hit.id);
+        }).then((code) => (code === null ? done : { code, map: done.map }));
+        return classMerged(
+          this,
+          filename,
+          original,
+          options,
+          live.then((out) => comptimeRewrite(this, filename, out, original)),
+        );
+      }
+      return classMerged(this, filename, original, options, comptimeRewrite(this, filename, done, original));
     },
     async closeBundle() {
       // The last environment's bundle closes the evaluator (a later build of this plugin instance makes a new one).

@@ -195,6 +195,7 @@ export function bridgePlugin(entries: BridgeEntry[]): Plugin {
     },
     islandModule: islandModuleOf,
     seeds: () => [fileURLToPath(new URL("./root.tsx", import.meta.url))],
+    devScripts: () => [...new Set(entries.flatMap((entry) => entry.devScripts?.() ?? []))],
   };
 
   return {

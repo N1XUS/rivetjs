@@ -4,7 +4,7 @@
 import type { Trigger } from "./client.ts";
 
 /** Client-created islands: the policy trigger the resume runtime applies to server-rendered ones (`dom-resume` `when`). */
-export const trigger: Trigger = (on, root, options, listen, stops, start) => {
+export const trigger: Trigger = (on, root, options, listen, stops, start, fetch) => {
   if (on === "load" || on === "only") return start();
   if (on === "idle") {
     const idle = (globalThis.requestIdleCallback ?? ((fn: () => void) => setTimeout(fn, 1))) as (fn: () => void, o?: { timeout?: number }) => unknown;
@@ -16,9 +16,16 @@ export const trigger: Trigger = (on, root, options, listen, stops, start) => {
     return;
   }
   if (on === "visible") {
-    const observer = new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && (observer.disconnect(), start()), {
-      rootMargin: typeof options.rootMargin === "string" ? options.rootMargin : "100% 0px",
-    });
+    // User ruling 2026-10-27: fetched when the island nears the viewport (one viewport away: `fetch`, the island chunk
+    // without hydrating), hydrated once it is visible — or both within `rootMargin` when the policy sets one.
+    const watch = (go: () => void, rootMargin: string | undefined, root: Document | null): void => {
+      const observer = new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && (observer.disconnect(), go()), {
+        rootMargin,
+        root,
+      });
+      for (const box of boxes) observer.observe(box);
+      stops.push(() => observer.disconnect());
+    };
     // The root is `display: contents`: observe its boxed descendants (the fallback), else the root as an empty block.
     const boxes: Element[] = [];
     const walk = (parent: Element): void => {
@@ -29,8 +36,11 @@ export const trigger: Trigger = (on, root, options, listen, stops, start) => {
       (root as HTMLElement).style.display = "block";
       boxes.push(root);
     }
-    for (const box of boxes) observer.observe(box);
-    stops.push(() => observer.disconnect());
+    // An explicit `rootMargin`: fetched and hydrated within it. The near observer's root is the document: its margin also
+    // applies inside an iframe.
+    const margin = typeof options.rootMargin === "string" ? options.rootMargin : undefined;
+    if (fetch && margin === undefined) watch(fetch, "100% 0px", root.ownerDocument);
+    watch(start, margin, null);
     return;
   }
   if (on.startsWith("media:")) {

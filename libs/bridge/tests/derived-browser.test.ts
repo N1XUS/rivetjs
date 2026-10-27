@@ -11,7 +11,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "vite";
 import { rivet } from "@rivetjs/compiler/vite";
-import { withPage } from "../../runtime/tests/resume/harness.ts";
+import { hasWebkit, withPage } from "../../runtime/tests/resume/harness.ts";
 import { fixtureApp } from "./app.ts";
 
 const app = await fixtureApp("derived");
@@ -35,18 +35,47 @@ export function Slotted() {
 }
 `,
 );
+// E1: an island whose only Rivet-needing prop is live (no callback, no slot) still follows the signal.
+await writeFile(
+  resolve(app.root, "src/live.tsx"),
+  `import { signal } from "@rivetjs/reactivity";
+import { Counter } from "./Counter.fake.js";
+export function Live() {
+  const n = signal(1);
+  return <main><button class="bump" onClick={() => n.set(n() + 1)}>bump</button><p class="total">{n()}</p><Counter client="load" count={n()} label="x" /></main>;
+}
+`,
+);
+// E4 (ruling 2026-10-27): a below-the-fold `visible` island its boundary hydrates (live prop): its chunk is fetched
+// near the viewport (prefetch-only lean record), not in the idle fetch-ahead.
+await writeFile(
+  resolve(app.root, "src/below.tsx"),
+  `import { signal } from "@rivetjs/reactivity";
+import { Counter } from "./Counter.fake.js";
+export function Below() {
+  const n = signal(1);
+  return <main><button class="bump" onClick={() => n.set(n() + 1)}>bump</button><div style={{ height: "400vh" }}></div><Counter client="visible" count={n()} /></main>;
+}
+`,
+);
 await writeFile(
   resolve(app.root, "src/entry-derived.tsx"),
   `import { derivedToString } from "@rivetjs/runtime/server-derived";
 import { Islands } from "./islands.tsx";
 import { Page } from "./page.tsx";
 import { Slotted } from "./slotted.tsx";
+import { Live } from "./live.tsx";
+import { Below } from "./below.tsx";
+export const below = (manifest: never) => derivedToString(() => <Below />, { manifest });
+export const live = (manifest: never) => derivedToString(() => <Live />, { manifest });
 export const slotted = (manifest: never) => derivedToString(() => <Slotted />, { manifest });
 export const islands = (manifest: never) => derivedToString(() => <Islands />, { manifest });
 export const mixed = (manifest: never) => derivedToString(() => <Page />, { manifest });
 `,
 );
-const plugins = () => [rivet({ resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx"] }, bridges: [app.fake()] })];
+const plugins = () => [
+  rivet({ resume: { modules: ["src/page.tsx", "src/islands.tsx", "src/slotted.tsx", "src/live.tsx", "src/below.tsx"] }, bridges: [app.fake()] }),
+];
 await build({ configFile: false, root: app.root, logLevel: "silent", plugins: plugins(), build: { outDir: "dist", minify: false } });
 await build({
   configFile: false,
@@ -60,7 +89,7 @@ const manifest = JSON.parse(await readFile(resolve(app.root, "dist/.vite/rivet-r
   islands?: Record<string, string>;
 };
 const entry = (await import(pathToFileURL(resolve(app.root, "dist-server/entry-derived.js")).href)) as Record<
-  "islands" | "mixed" | "slotted",
+  "islands" | "mixed" | "slotted" | "live" | "below",
   (m: unknown) => Promise<string>
 >;
 const assets: Record<string, string> = {};
@@ -132,6 +161,86 @@ test("slot with Rivet content: the island hydrates in the adopt run, the slot's 
     await page.waitForFunction(() => ((globalThis as unknown as { __fake?: Log }).__fake ?? []).length === 1);
     await page.click("button.inner");
     await page.waitForFunction(() => document.querySelector(".outer")?.textContent === "1" && document.querySelector("button.inner")?.textContent === "1");
+    assert.deepEqual(errors, []);
+  });
+});
+
+test("live prop only (no callback, no slot): the boundary hydrates the island, a Rivet write updates it (E1)", async () => {
+  const html = await entry.live(manifest);
+  const tail = JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  const [island] = [...html.matchAll(/data-ri="(i\d+)"/g)].map((m) => m[1]!);
+  assert.ok(!html.includes('<script type="rivet/islands">'), "not a lean record: its prop is live");
+  assert.deepEqual(tail.i, [island]);
+  await withPage(pageOf(html), async (page) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(String(error)));
+    page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+    await page.goto("http://rivet.test/");
+    await page.waitForFunction(() => ((globalThis as unknown as { __fake?: Log }).__fake ?? []).length === 1);
+    await page.click("button.bump");
+    await page.click("button.bump");
+    await page.waitForFunction(
+      () => document.querySelector(".total")?.textContent === "3" && document.querySelector("rivet-island .count")?.textContent === "3",
+      undefined,
+      { timeout: 5000 },
+    );
+    assert.deepEqual(errors, []);
+  });
+});
+
+// E3: a cold click on Rivet content inside an island slot, held while the page's chunks are slow: the adopt run renders
+// the slot content again into the island's holes, the replay lands on the new node (retarget), not the removed server one.
+for (const engine of ["chromium", "webkit"] as const)
+  test.skipIf(engine === "webkit" && !hasWebkit())(`slot with Rivet content: a cold click before the chunks load is replayed (E3, ${engine})`, async () => {
+    const html = await entry.slotted(manifest);
+    let release!: () => void;
+    const gate = new Promise<void>((go) => (release = go));
+    const delays = Object.fromEntries(Object.keys(assets).map((path) => [path, gate]));
+    await withPage(
+      pageOf(html),
+      async (page) => {
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(String(error)));
+        page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+        await page.goto("http://rivet.test/", { waitUntil: "domcontentloaded" });
+        await page.click("button.inner");
+        release();
+        await page.waitForFunction(
+          () => document.querySelector(".outer")?.textContent === "1" && document.querySelector("button.inner")?.textContent === "1",
+          undefined,
+          {
+            timeout: 5000,
+          },
+        );
+        assert.deepEqual(errors, []);
+      },
+      { delays, engine },
+    );
+  });
+
+test("visible island hydrated by its boundary, below the fold: no chunk before the user scrolls near it, hydrated when visible (E4)", async () => {
+  const html = await entry.below(manifest);
+  const chunk = manifest.islands!["src/Counter.fake.js#Counter"]!;
+  const fo = /data-fo="([^"]*)"/.exec(html)?.[1] ?? "";
+  assert.ok(!fo.split(" ").includes(chunk), "island chunk not in the idle fetch-ahead: " + fo);
+  const records = JSON.parse(/<script type="rivet\/islands"[^>]*>(.*?)<\/script>/s.exec(html)![1]!);
+  assert.equal(records.length, 1);
+  assert.deepEqual(records[0].slice(1, 4), [chunk, null, "visible"]);
+  await withPage(pageOf(html), async (page, requests) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(String(error)));
+    page.on("console", (message) => message.type() === "error" && errors.push(message.text()));
+    await page.goto("http://rivet.test/");
+    await page.waitForTimeout(1500);
+    assert.ok(!requests.includes(chunk), "no island chunk before scrolling: " + requests.join(" "));
+    await page.evaluate(() => {
+      const box = document.querySelector("rivet-island .counter")!;
+      window.scrollTo(0, box.getBoundingClientRect().top + window.scrollY - window.innerHeight * 1.5);
+    });
+    await page.waitForFunction(() => performance.getEntriesByType("resource").some((entry) => entry.name.includes("Counter")), undefined, { timeout: 5000 });
+    assert.deepEqual(await log(page), []);
+    await page.evaluate(() => document.querySelector("rivet-island .counter")!.scrollIntoView());
+    await page.waitForFunction(() => ((globalThis as unknown as { __fake?: Log }).__fake ?? []).length === 1, undefined, { timeout: 5000 });
     assert.deepEqual(errors, []);
   });
 });

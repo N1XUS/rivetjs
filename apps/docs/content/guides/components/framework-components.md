@@ -48,19 +48,27 @@ Rivet and React both use JSX, so every file has exactly one owner. React owns:
 
 `exclude` takes the same patterns and wins over everything else. Every other `.tsx` file is Rivet. A file that both Rivet and a bridge claim stops the build with `RV2145`. Preact uses `*.preact.tsx`, `@jsxImportSource preact` and `preact({ include })`.
 
-For editor types, import the adapter's JSX types once anywhere in the project:
+The file name is a build rule only. TypeScript and your editor read the JSX import source from `tsconfig.json`, which names Rivet's for the whole project, so start every React file with the pragma to type-check it as React:
+
+```tsx title="src/components/RevenueChart.react.tsx"
+/** @jsxImportSource react */
+```
+
+For Preact files, the pragma is `/** @jsxImportSource preact */`. Then import each adapter's JSX types once anywhere in the project:
 
 ```ts
 import "@rivetjs/bridge-react/types";
+import "@rivetjs/bridge-preact/types";
 ```
 
-Then a React component used in a Rivet file is type-checked with its own props, plus the island options below.
+Then a React or Preact component used in a Rivet file is type-checked with its own props, plus the island options below. Without the types import, `client` on that component is a type error; without the pragma, the component's own JSX is.
 
 ## Use a component
 
 Write the React component as usual:
 
 ```tsx title="src/components/RevenueChart.react.tsx"
+/** @jsxImportSource react */
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
 export function RevenueChart(props: { data: { month: string; paid: number }[] }) {
@@ -94,7 +102,7 @@ export default function Overview({ data }: PageProps<typeof loader>) {
 }
 ```
 
-React renders the chart on the server (`renderToString`, or its streaming API when something suspends), so the HTML arrives with the page. When the chart scrolls into view, the browser loads React and the component and hydrates it. Without a `client` prop, an island stays static HTML and ships no JavaScript at all.
+React renders the chart on the server (`renderToString`, or its streaming API when something suspends), so the HTML arrives with the page. When the chart comes within about one screen height of the viewport, the browser downloads React and the component; once the chart is visible, it hydrates. A visitor who never scrolls down downloads nothing for it. Without a `client` prop, an island stays static HTML and ships no JavaScript at all.
 
 ## When it starts: client
 
@@ -103,13 +111,13 @@ React renders the chart on the server (`renderToString`, or its streaming API wh
 | none | never: static HTML. With a live prop, on the first change of that prop |
 | `"load"` | right after the page is ready |
 | `"idle"` | when the browser is idle |
-| `"visible"` | when it scrolls into view |
+| `"visible"` | when it scrolls into view; its code downloads when it is about one screen height away |
 | `"interaction"` | on the first pointer down or key press anywhere on the page |
 | `"intent"` | on hover, focus or touch of the island; a click during loading is replayed once after hydration |
 | `"media:(max-width: 600px)"` | when the media query matches |
 | `"only"` | not rendered on the server: the `fallback` shows until the component mounts in the browser |
 
-Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` or `client={{ on: "idle", timeout: 500 }}`. `preload` has no effect: Rivet fetches island code ahead of its trigger on its own. A per-island `preload` is not yet on the derived resume model; it is tracked in plan M6.
+Options use an object: `client={{ on: "visible", rootMargin: "200px" }}` (download and hydrate once the island is within 200px of the viewport) or `client={{ on: "idle", timeout: 500 }}`. `preload` has no effect: Rivet downloads island code ahead of its trigger on its own: after the page has painted for `load`, `idle` and `only`, near the viewport for `visible`. A per-island `preload` is not yet on the derived resume model; it is tracked in plan M6.
 
 If you know Astro: `client="visible"` is `client:visible`, written as a normal prop so it is typed and can take options.
 
@@ -149,7 +157,7 @@ Props typed as `ReactNode`, `children` included, accept Rivet content. React ren
 </Card>
 ```
 
-That content stays Rivet's. It resumes like the rest of the page, its handlers work before and after React hydrates, and React re-renders keep the same nodes. A React island can sit inside another island's slot: the inner one hydrates first and keeps its root when the outer one updates.
+That content stays Rivet's. It resumes like the rest of the page, its handlers work before and after React hydrates (a click that arrives before the page's code has loaded is held and runs once it has), and React re-renders keep the same nodes. A React island can sit inside another island's slot: the inner one hydrates first and keeps its root when the outer one updates.
 
 Render props (a slot that React calls with arguments) are not supported. Use a callback and a live prop instead.
 
@@ -159,17 +167,22 @@ Render props (a slot that React calls with arguments) are not supported. Use a c
 - **In the browser**, a hydration mismatch makes React render the island again on the client, and the console shows `RV2149` with the island id.
 - **If the island's code fails to load** (offline, a new deploy), the server HTML stays and the console shows one error.
 
+## Development
+
+`npm run dev` starts islands like a production build: by their `client` policy, through the inline script or the Rivet component that renders them. With `@vitejs/plugin-react` installed, the router adds its Fast Refresh preamble to every dev page.
+
 ## Pages with only islands
 
 When a page's only browser code is islands with plain JSON props, Rivet skips its own loader and runtime. The page gets a list of the islands and a small inline script (under 1 KB compressed) that starts each one by its policy. On file-router pages the router waits until the first link hover, focus or click.
 
-On other pages, too, every island with plain JSON props starts through that inline script. An island that needs Rivet (live props, callbacks, Rivet content in a slot, `client="intent"`) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; its handlers work from then on. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it). See [Resuming](../../learn/resuming.md).
+On other pages, too, every island with plain JSON props starts through that inline script. An island that needs Rivet (live props, callbacks, Rivet content in a slot, `client="intent"`) starts with the Rivet component that renders it: that component loads when the island's policy fires (`load`, `idle`, `visible`), takes over the server HTML and then hydrates the island. Rivet content in its slots renders again in the browser at that moment; an event held on the server's nodes runs on the new ones. A `visible` island of this kind still downloads its code near the viewport, not before. An island that needs Rivet but is rendered outside any interactive component stays static (development prints a warning naming it). See [Resuming](../../learn/resuming.md).
 
 ## Common mistakes
 
 - **Writing React JSX in a plain `.tsx` file.** Rivet then compiles it as Rivet JSX and fails. Rename the file to `*.react.tsx`, add the pragma, or list the folder in `include`.
 - **Expecting clicks before hydration to work.** Events inside an island that has not started yet are lost. `intent` replays a click that arrives while the island loads, but not one that arrives before Rivet's own runtime has started on the page. Pick `load` for controls people press right away.
-- **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, but its runtime alone is about 58 KB compressed (Preact's is about 4 KB), so make islands wide (a whole table, a whole form), not one per button.
+- **Many small islands.** Each island is its own React root that hydrates on its own. Islands on one page share one copy of React, but its runtime alone is about 58 KB compressed (Preact's is 4 to 6 KB with hooks), so make islands wide (a whole table, a whole form), not one per button.
+- **Running the production server without `NODE_ENV=production`.** React then renders with its development build: slower, with development warnings. The starters' `serve.js` sets it unless you set it yourself; see [Node.js](../deploy/node.md#start-the-server).
 - **Sharing React context between islands.** Each island is a separate root, so React context does not cross from one island to another, and Rivet context does not reach React.
 - **Stopping propagation in React.** `stopPropagation` in a React handler stops the event at the island, so Rivet handlers above it do not run.
 

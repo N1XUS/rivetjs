@@ -1,5 +1,5 @@
 // T7b inline lean boot (`boot.min.ts`, run as the server writes it: a classic script right after the island records):
-// policies as the resume runtime applies them (load / idle at idle, visible over the root's boxes + idle prefetch, interaction, media,
+// policies as the resume runtime applies them (load / idle at idle, visible: fetched near the viewport, hydrated when visible, interaction, media,
 // only over the fallback), hydration through the chunk's adapter with the JSON props, mismatch → mount, chunk failure
 // → one console.error, the hydrated island handles its own events.
 import { afterEach, expect, test, vi } from "vitest";
@@ -37,6 +37,7 @@ afterEach(() => {
   log.length = 0;
   clicks.n = clicks.pointerdowns = 0;
   document.body.innerHTML = "";
+  window.scrollTo(0, 0);
 });
 
 test("load / idle: hydrate(root, component, JSON props, {}, { id }); the island then handles its clicks", async () => {
@@ -73,15 +74,33 @@ test("interaction: nothing until the first pointerdown / keydown in the document
   expect(log[0]!.call).toBe("hydrate");
 });
 
-test("visible: hydrates once a box of the display:contents root nears the viewport", async () => {
+test("visible (ruling 2026-10-27): nothing at idle; fetched (modulepreload) once a box nears the viewport, hydrated once it is visible", async () => {
   serve('<div style="height:500vh"></div>' + counterHtml("i0", 1), [["i0", ISLAND, { count: 1 }, "visible", [ISLAND, FAKE_CLIENT]]]);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  // Far below the fold: no bytes before the user scrolls (no idle prefetch).
+  expect(preloads()).toEqual([]);
+  expect(log).toEqual([]);
+  // Within one viewport below the fold: the closure is fetched, the island not hydrated.
+  const box = document.querySelector('[data-ri="i0"] div')!;
+  window.scrollTo(0, box.getBoundingClientRect().top + window.scrollY - window.innerHeight * 1.5);
+  await until(() => preloads().length === 2);
+  expect(preloads()).toEqual([ISLAND, FAKE_CLIENT]);
   await new Promise((resolve) => setTimeout(resolve, 150));
   expect(log).toEqual([]);
-  // The record's closure is modulepreloaded at idle (the full planner's `P`), not hydrated.
-  expect(preloads()).toEqual([ISLAND, FAKE_CLIENT]);
-  document.querySelector('[data-ri="i0"] div')!.scrollIntoView();
+  box.scrollIntoView();
   await until(() => log.length === 1);
   expect(log[0]!.call).toBe("hydrate");
+});
+
+test("prefetch-only record (an island its boundary hydrates, `visible`): fetched near the viewport, never started by the boot", async () => {
+  serve('<div style="height:500vh"></div>' + counterHtml("i0", 1), [["i0", ISLAND, null, "visible", [ISLAND, FAKE_CLIENT]]]);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  expect(preloads()).toEqual([]);
+  const box = document.querySelector('[data-ri="i0"] div')!;
+  box.scrollIntoView();
+  await until(() => preloads().length === 2);
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  expect(log).toEqual([]);
 });
 
 test("media: hydrates when the query matches", async () => {

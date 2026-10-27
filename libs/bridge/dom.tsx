@@ -28,18 +28,20 @@ export function _island(props: Record<string, unknown>, def: IslandDef, load?: (
   // Derived model (M6-PARITY): inside an adopt run the island is a hole over its server root; the runtime calls `adopt`
   // after the run for the islands its record names (tail `i`: not booted by the lean boot).
   const hook = (globalThis as { [ISLAND]?: IslandHook })[ISLAND];
-  const held = hook?.((root) => untrack(() => adopt(props, root, load)));
+  const held = hook?.((root, swap) => untrack(() => adopt(props, root, load, swap)));
   if (held !== undefined) return held as DOMValue;
   // Untracked (as on the server): the facade's `{_island(…)}` child never re-runs; live props flow through the driver.
   return untrack(() => create(props, def, load));
 }
 
 /** The derived runtime's island hook (`dom-derived.ts`, installed at start): a hole in an adopt run, else undefined. */
-type IslandHook = (adopt: (root: Element) => void) => unknown;
+type IslandHook = (adopt: (root: Element, swap?: Retarget) => void) => unknown;
+/** The runtime's `retarget` (`dom-derived.ts`): `swap()` replaces `old`; held events on `old` replay on the fresh nodes. */
+type Retarget = (old: Node[], swap: () => Node[]) => void;
 const ISLAND = Symbol.for("rivet.island");
 
 /** A server-rendered island the derived adopt run hydrates: the driver over its root, the policy applied here. */
-function adopt(props: Record<string, unknown>, root: Element, load?: () => Promise<IslandModule>): void {
+function adopt(props: Record<string, unknown>, root: Element, load?: () => Promise<IslandModule>, swap?: Retarget): void {
   if (load === undefined) return;
   const [own, rest] = splitProps(props, OWN) as unknown as [{ client?: ClientPolicy }, Record<string, unknown>];
   const client = own.client;
@@ -48,14 +50,21 @@ function adopt(props: Record<string, unknown>, root: Element, load?: () => Promi
   for (const key of Object.keys(rest)) if (key === "children" || isContent(rest[key])) (slotKeys ??= []).push(key);
   const live = slotKeys === null ? rest : (splitProps(rest, slotKeys) as unknown as Record<string, unknown>[])[1]!;
   // Slot content: rendered here again (Rivet-owned outputs under the unit's owner) into the server's `rivet-slot` holes
-  // of this island, before the framework hydrates over them; its handlers work from the adopt run on.
+  // of this island, before the framework hydrates over them; its handlers work from the adopt run on. A cold event held
+  // on the server nodes (a click before the chunks loaded) replays on the new ones (`swap`: the runtime's retarget, E3).
   if (slotKeys !== null) {
     const doc = root.ownerDocument;
     for (const hole of root.querySelectorAll("rivet-slot")) {
       if (hole.closest("rivet-island") !== root) continue;
       const name = hole.getAttribute("name") ?? "default";
       const value = rest[name === "default" ? "children" : name];
-      hole.replaceChildren(...(value == null ? [] : _dom.nodes(_dom.output(doc, () => value))));
+      const fill = (): Node[] => {
+        const fresh = value == null ? [] : _dom.nodes(_dom.output(doc, () => value));
+        hole.replaceChildren(...fresh);
+        return fresh;
+      };
+      if (swap) swap([...hole.childNodes], fill);
+      else fill();
     }
   }
   const id = root.getAttribute("data-ri")!;

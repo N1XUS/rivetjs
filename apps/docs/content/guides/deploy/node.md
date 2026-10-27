@@ -41,6 +41,8 @@ You need Node.js 24 or newer.
 ```js title="serve.js"
 import { closeOnSignals, start } from "@rivetjs/router/node";
 
+// Production builds of the libraries the server build loads (React, …): set before `start()` imports it.
+process.env.NODE_ENV ??= "production";
 const serving = await start({
   dist: "dist",
   port: Number(process.env.PORT ?? 3000),
@@ -50,7 +52,7 @@ closeOnSignals(serving);
 console.log(`Listening on ${serving.url}`);
 ```
 
-`start()` loads the server build, connects it to the browser build's manifests, and listens. It resolves once the server is listening. `serving.url` is the address it listens on.
+`start()` loads the server build, connects it to the browser build's manifests, and listens. Set `NODE_ENV` before it: packages such as React pick their development or production build when the server build first imports them, and without `NODE_ENV=production` the server renders with React's development build (slower, with dev warnings). It resolves once the server is listening. `serving.url` is the address it listens on.
 
 The default host `127.0.0.1` accepts only local connections. In a container or on a server that receives traffic directly, set `HOST=0.0.0.0`.
 

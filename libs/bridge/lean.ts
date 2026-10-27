@@ -7,6 +7,7 @@ import { _trackReads } from "@rivetjs/reactivity/track";
 import { BOOT } from "./boot.min.ts";
 import type { LeanRecord } from "./boot.ts";
 
+// `visible`: fetched near the viewport, not at idle (the boot's near observer reads the same closure).
 const PREFETCH = new Set(["idle", "visible", "load", "only"]);
 
 // Inside a `<script>`: no `</script`, `<!--` or line separators survive (`<` and U+2028/9 escaped).
@@ -73,7 +74,9 @@ export function derivedLean(
   const records: LeanRecord[] = [];
   for (const island of islands) {
     const url = manifest?.islands?.[island.key];
-    if (url === undefined || island.props === null || island.on === undefined) continue;
+    // `props` null: an island its boundary's adopt run hydrates; a `visible` one gets a prefetch-only record (the boot
+    // fetches its closure near the viewport, user ruling 2026-10-27).
+    if (url === undefined || (island.props === null && island.on !== "visible") || island.on === undefined) continue;
     records.push(
       PREFETCH.has(island.on) ? [island.id, url, island.props, island.on, [url, ...(manifest?.deps?.[url] ?? [])]] : [island.id, url, island.props, island.on],
     );

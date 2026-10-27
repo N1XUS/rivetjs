@@ -36,7 +36,16 @@ export function hydrateIsland(load: () => Promise<IslandModule>, root: Element, 
 }
 
 /** @internal Policy trigger of a client-created island (`triggers.ts`; the resume runtime applies it for resumed ones). */
-export type Trigger = (on: string, root: Element, options: PolicyOptions, listen: Listen, stops: (() => void)[], start: () => void) => void;
+export type Trigger = (
+  on: string,
+  root: Element,
+  options: PolicyOptions,
+  listen: Listen,
+  stops: (() => void)[],
+  start: () => void,
+  /** Fetch the island chunk without hydrating (`visible`: once the island nears the viewport). */
+  fetch?: () => void,
+) => void;
 
 /**
  * @internal The driver of one island (run with the island's owner). `mode` "mount" with a `trigger` = client-created
@@ -216,6 +225,6 @@ export function _drive(
     if (dead) return;
     if (on === undefined) start();
     else if (on === "intent") watch();
-    else trigger(on, root, options, listen, stops, start);
+    else trigger(on, root, options, listen, stops, start, () => void load().catch(() => {}));
   });
 }

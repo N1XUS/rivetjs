@@ -26,12 +26,18 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const list = (pattern: FilterPattern | undefined): (string | RegExp)[] =>
   pattern == null ? [] : Array.isArray(pattern) ? [...pattern] : [pattern as string | RegExp];
 
+type PluginReact = (options: Record<string, unknown>) => Plugin[];
+let found: PluginReact | null | undefined;
 /** `@vitejs/plugin-react` from the app (sync: `require` of its ESM build), or null when not installed. */
-function pluginReact(): ((options: Record<string, unknown>) => Plugin[]) | null {
+function pluginReact(): PluginReact | null {
+  if (found !== undefined) return found;
+  return (found = locate());
+}
+function locate(): PluginReact | null {
   for (const from of [join(process.cwd(), "package.json"), import.meta.url]) {
     try {
       const mod = createRequire(from)("@vitejs/plugin-react") as { default?: unknown };
-      return (typeof mod.default === "function" ? mod.default : mod) as (options: Record<string, unknown>) => Plugin[];
+      return (typeof mod.default === "function" ? mod.default : mod) as PluginReact;
     } catch {
       // try the next location
     }
@@ -53,6 +59,9 @@ export function react(options: ReactBridgeOptions = {}): BridgeEntry {
     dedupe: ["react", "react-dom"],
     optimize: ["react", "react/jsx-runtime", "react/jsx-dev-runtime", "react-dom/client"],
     ...(options.islands ? { islands: options.islands } : {}),
+    // SSR dev pages never run `transformIndexHtml`: the router loads plugin-react's Fast Refresh preamble (its virtual
+    // module, empty when Fast Refresh is off) before any island module, else "@vitejs/plugin-react can't detect preamble".
+    devScripts: () => (options.plugin !== false && pluginReact() ? ["@vitejs/plugin-react/preamble"] : []),
     plugins() {
       const source = jsxSource("react", "react", own.owns);
       if (options.plugin === false) return [source];

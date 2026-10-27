@@ -2,19 +2,21 @@
 // when a page's only resumables are framework islands with plain-value props (`lean.ts` decides per render). It reads
 // the island records from the `<script type="rivet/islands">` right before it and, per island, applies the same policy
 // trigger the resume runtime applies to a resumed island (`dom-resume` `when`: load / idle at idle, `interaction`,
-// `visible` over the root's boxes, `idle` / `visible` chunk closures prefetched at idle, `media:`), imports the island chunk and hydrates (or, `only`, mounts) through the
+// `visible` over the root's boxes, `idle` chunk closures prefetched at idle, `media:`), imports the island chunk and hydrates (or, `only`, mounts) through the
 // chunk's adapter, mounting over the server HTML when hydration throws — what `client.ts` `_drive` does without the
 // Rivet runtime: no live props, callbacks, slots or nesting (the server never picks the lean tail for those).
 // Serialized with Function#toString and minified by `build-boot.ts` into `boot.min.ts`: browser globals only, no
 // imports, no free variables.
 
 /**
- * Island record on the wire: [root id (`data-ri`), island chunk URL, framework props (JSON), policy, prefetch: the
- * chunk + its static imports, modulepreloaded at idle after the paint gate — `idle` / `visible` islands like the full
- * planner's `i` / `P` schedule, `load` / `only` islands the same way (no `<link>` in the HTML: high-priority preloads
- * issued during parse sat on the paint path)].
+ * Island record on the wire: [root id (`data-ri`), island chunk URL, framework props (JSON; null = prefetch only: an
+ * island its boundary's adopt run hydrates, whose `visible` closure the boot fetches near the viewport), policy,
+ * prefetch: the chunk + its static imports, modulepreloaded after the paint gate — `idle` / `load` / `only` islands at
+ * idle (no `<link>` in the HTML: high-priority preloads issued during parse sat on the paint path), `visible` islands
+ * once a box comes within one viewport of the viewport (user ruling 2026-10-27: no bytes for an island nobody scrolls
+ * to), hydrated once a box is visible].
  */
-export type LeanRecord = [id: string, url: string, props: Record<string, unknown>, on: string, prefetch?: string[]];
+export type LeanRecord = [id: string, url: string, props: Record<string, unknown> | null, on: string, prefetch?: string[]];
 
 // Strings compare with `==` (same result for strings, fewer inline bytes).
 export function boot(): void {
@@ -46,14 +48,17 @@ export function boot(): void {
     const root = doc.querySelector('rivet-island[data-ri="' + id + '"]') as HTMLElement | null;
     if (!root) continue;
     const ctx = { id };
-    // Before the trigger's own idle start: the closure is in flight when `import(url)` runs.
-    if (prefetch)
+    const preload = (): unknown =>
+      prefetch &&
       idle.then(() => {
         // `nonce` "" when the boot has none: the property only, no attribute.
         for (const href of prefetch)
           if (!fetched.has(href)) (fetched.add(href), doc.head.append(Object.assign(doc.createElement("link"), { rel: "modulepreload", href, nonce })));
       });
+    // Before the trigger's own idle start: the closure is in flight when `import(url)` runs (`visible`: near the viewport).
+    if (on != "visible") preload();
     const start = (): unknown =>
+      props &&
       idle
         .then(() => import(url))
         .then(async (mod: { default: unknown; adapter: { hydrate: Function; mount: Function } }) => {
@@ -88,13 +93,20 @@ export function boot(): void {
         for (const kid of parent.children) (kid as HTMLElement).style?.display == "contents" ? walk(kid) : boxes.push(kid);
       };
       walk(root);
-      if (!boxes.length) start();
+      if (!boxes.length) (preload(), start());
       else {
-        const observer = new IntersectionObserver((entries) => entries.some((entry) => entry.isIntersecting) && (observer.disconnect(), start()), {
-          rootMargin: "100% 0px",
-        });
-        const n = Math.min(boxes.length, 48);
-        for (let i = 0; i < n; i++) observer.observe(boxes[Math.floor((i * boxes.length) / n)]!);
+        // Two observers over the same boxes: within one viewport → fetch the closure; visible → hydrate. The near one
+        // has the document as its explicit root: a root margin also widens the viewport of a page inside an iframe.
+        const watch = (go: () => unknown, margin?: string): void => {
+          const observer = new IntersectionObserver(
+            (entries) => entries.some((entry) => entry.isIntersecting) && (observer.disconnect(), go()),
+            margin ? { root: doc, rootMargin: margin } : {},
+          );
+          const n = Math.min(boxes.length, 48);
+          for (let i = 0; i < n; i++) observer.observe(boxes[Math.floor((i * boxes.length) / n)]!);
+        };
+        watch(preload, "100% 0px");
+        watch(start);
       }
     } else if (on.startsWith("media:")) {
       const query = matchMedia(on.slice(6));

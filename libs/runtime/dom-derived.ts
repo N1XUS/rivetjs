@@ -134,7 +134,7 @@ interface IHole {
   kind: 3;
   nodes: Node[];
   el: Element | null;
-  run: ((root: Element) => void) | null;
+  run: ((root: Element, swap: typeof retarget) => void) | null;
   owner: Owner | null;
   token: { n(): Node[] };
 }
@@ -573,7 +573,7 @@ function asyncHook(props: NonNullable<AHole["props"]>, self: (props: never) => u
   return hole.token;
 }
 // `_island` in a unit's runs (M6-PARITY): probe → a comment pair, adopt run → a keep token over the server root.
-function islandHook(run: (root: Element) => void): unknown {
+function islandHook(run: (root: Element, swap: typeof retarget) => void): unknown {
   const u = cur;
   if (u === null || u.mode === CLIENT || inner || u.depth) return undefined;
   if (u.mode === PROBE) {
@@ -595,7 +595,7 @@ function landIsland(h: IHole): void {
   const el = h.el;
   if (!el || !islandIds.delete(el.getAttribute("data-ri")!)) return;
   try {
-    runWithOwner(h.owner, () => h.run!(el));
+    runWithOwner(h.owner, () => h.run!(el, retarget));
   } catch (error) {
     report(error);
   }
@@ -1273,6 +1273,17 @@ function addresses(old: Node[]): [Node, number[]][] | null {
     if (el) (out ??= []).push([target, [tops.indexOf(el), ...steps]]);
   }
   return out;
+}
+/**
+ * @internal Nodes replaced after an adopt run (the bridge's island slot content, rendered again into its `rivet-slot`
+ * holes: `@rivetjs/bridge/dom` `adopt`, handed over through the island hook): `swap()` removes `old` and returns the
+ * nodes standing in their place; a held event (or the one being dispatched) whose target was in `old` replays on the
+ * node at the same element path in the fresh nodes (`retargets`, as a unit rendered in the browser does).
+ */
+export function retarget(old: Node[], swap: () => Node[]): void {
+  const held = addresses(old);
+  const fresh = swap();
+  if (held) resolve(held, fresh);
 }
 function resolve(held: [Node, number[]][], fresh: Node[]): void {
   const tops = fresh.filter((n) => n.nodeType === 1) as Element[];
