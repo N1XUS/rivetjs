@@ -22,5 +22,10 @@ export const site = {
   leanPages: ["/"],
   /** Diagnostic code pages `/errors/RVxxxx` (docs-kit `tools/errors.ts`), generated from the code registry. */
   errorPages: true,
+  /**
+   * Attributes the home hero script (`src/components/home/hero.ts`) sets at load, before the full stylesheets apply:
+   * the word's shared per-letter gradient (`data-gradient-ready`) and the aurora pause state (`data-paused`).
+   */
+  criticalCss: { extraSelectors: ["[data-gradient-ready]", "[data-paused]"] },
 } as const;
 export type Site = typeof site;
