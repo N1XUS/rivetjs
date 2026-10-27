@@ -93,3 +93,39 @@ async function bytes(factory: () => ServerValue, domData: boolean): Promise<stri
     assert.doesNotMatch(JSON.stringify(tail), /row 1/);
   }
 });
+
+// ROWS-SSR: a value row 0 shows twice (the ssr-bench `/resume` shape: `{ id: 0, values: [0, 1, …] }`, the id in an attribute
+// and `values[0]` as text) gave both leaves the first slot, so every later row (id ≠ values[0]) shipped whole. Each leaf now
+// takes a slot no earlier leaf took; misfits still ship whole (row 2's changed value).
+const benchSource = `
+import { For } from "@rivetjs/runtime/dom";
+export function App(props) {
+  return (
+    <section>
+      <For each={() => props.rows} by={(row) => row.id}>
+        {(row) => (
+          <article data-row={row().id}>
+            <dd>{row().values[0]}</dd>
+            <dd>{row().values[1]}</dd>
+          </article>
+        )}
+      </For>
+    </section>
+  );
+}
+`;
+(hasDerivedModel() ? test : test.skip)("domData: row 0's repeated value takes distinct slots (no whole rows on the bench shape)", async () => {
+  const out = compile(benchSource, { target: "server", filename: "page.tsx", resume: RESUME } as never);
+  assert.deepEqual(out.diagnostics, []);
+  const { App } = await importServer<{ App: (p: { rows: { id: number; values: number[] }[] }) => ServerValue }>(out.code);
+  const rows = Array.from({ length: 6 }, (_, id) => ({ id, values: [id * 100, id * 100 + 1] }));
+  const html = (await derivedToString(() => App({ rows }), { manifest: { ...manifest, domData: true } })) as string;
+  const entry = tailOf(html).d![0]!;
+  assert.deepEqual(entry[4], { id: 1, values: [2, 3] }, "skeleton: three leaves");
+  assert.deepEqual(entry[5], ["#article:@data-row", "#dd:0", "#dd:1"], "three distinct paths");
+  assert.equal(entry[7], undefined, "no whole rows");
+  // A row whose value differs in kind from its DOM text (a string where row 0 has a number) still ships whole.
+  const mixed = rows.map((r, i) => (i === 2 ? { id: r.id, values: [String(r.values[0]), r.values[1]] } : r));
+  const html2 = (await derivedToString(() => App({ rows: mixed as never }), { manifest: { ...manifest, domData: true } })) as string;
+  assert.deepEqual(Object.keys(tailOf(html2).d![0]![7] as object), ["2"]);
+});

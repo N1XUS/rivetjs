@@ -51,16 +51,25 @@ function domList(dom: DomList[], items: readonly unknown[], plan: ListPlan, mark
     slots = domSlots(plan);
   if (slots === null || list === null || typeof list !== "object" || list.plan !== marked || list.rows !== items.length) return value;
   const n = dom.length,
-    width = marked.attributes.length,
-    first = marked.fragments.slice();
-  first[0] = "<!--r0" + n + "[-->" + first[0]!.slice(9);
+    width = marked.attributes.length;
   dom.push({ items, tape: list.tape, width, slots, n, done: false });
   const List = list.constructor,
-    rows = [
-      new List({ fragments: Object.freeze(first), attributes: marked.attributes, bytes: null, fixed: 0, rows: marked.rows }, list.tape.slice(0, width), 1),
-      new List(marked, list.tape.slice(width), list.rows - 1),
-    ];
+    rows = [new List(firstPlan(marked, n), list.tape.slice(0, width), 1), new List(marked, list.tape.slice(width), list.rows - 1)];
   return rows;
+}
+// Row 0's plan per (marked plan, anchor number): one object per process, so the byte writers' per-plan caches (encoded
+// fragments, the row emitter's table) hold across requests instead of re-encoding the row template per render.
+const firstPlans = new WeakMap<ListPlan, ListPlan[]>();
+function firstPlan(marked: ListPlan, n: number): ListPlan {
+  let plans = firstPlans.get(marked);
+  if (plans === undefined) firstPlans.set(marked, (plans = []));
+  let plan = plans[n];
+  if (plan === undefined) {
+    const first = marked.fragments.slice();
+    first[0] = "<!--r0" + n + "[-->" + first[0]!.slice(9);
+    plan = plans[n] = { fragments: Object.freeze(first), attributes: marked.attributes, bytes: null, fixed: 0, rows: marked.rows };
+  }
+  return plan;
 }
 // The parser keeps a string as is (CR → LF, NUL, lone surrogates do not survive).
 const KEPT = /[\r\0]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
@@ -69,13 +78,21 @@ const shown = (v: unknown): boolean => (typeof v === "string" ? !KEPT.test(v) : 
 function skeleton(value: unknown, tape: readonly unknown[], slots: DomList["slots"], paths: string[], leaf: number[], depth: number): unknown {
   if (typeof value === "string" || typeof value === "number") {
     if (!shown(value)) return 0;
-    for (const [slot, path] of slots)
-      if (tape[slot] === value) {
-        paths.push(typeof value === "number" ? "#" + path : path);
-        leaf.push(slot);
-        return paths.length;
+    // A value several slots show (row 0 of `{ id: 0, values: [0, 1, …] }`: the id's attribute and the first value's text)
+    // takes the first slot no earlier leaf took: the same slot for two leaves made every other row a misfit.
+    let pick: readonly [number, string] | undefined;
+    for (const entry of slots)
+      if (tape[entry[0]] === value) {
+        pick ??= entry;
+        if (!leaf.includes(entry[0])) {
+          pick = entry;
+          break;
+        }
       }
-    return 0;
+    if (pick === undefined) return 0;
+    paths.push(typeof value === "number" ? "#" + pick[1] : pick[1]);
+    leaf.push(pick[0]);
+    return paths.length;
   }
   if (value === null || typeof value !== "object" || depth > 16) return 0;
   if (Array.isArray(value)) return value.map((v) => skeleton(v, tape, slots, paths, leaf, depth + 1));
@@ -84,37 +101,43 @@ function skeleton(value: unknown, tape: readonly unknown[], slots: DomList["slot
   for (const key of Object.keys(value)) out[key] = skeleton((value as Record<string, unknown>)[key], tape, slots, paths, leaf, depth + 1);
   return out;
 }
-/** Row `value` against the skeleton: its literals appended to `lits`, false when its shape or a DOM value differs. */
-function fits(
-  skel: unknown,
-  value: unknown,
-  tape: readonly unknown[],
-  base: number,
-  leaf: readonly number[],
-  paths: readonly string[],
-  lits: unknown[],
-): boolean {
+/** One row against the skeleton (`check`): its literals appended to `lits`, false when its shape or a DOM value differs. */
+type Check = (value: unknown, base: number, lits: unknown[]) => boolean;
+/**
+ * The skeleton as a tree of closures, built once per list (ROWS-SSR: the generic walk with two `Object.keys` arrays per
+ * object cost ~140 ns per bench row, more than the JSON it saves). A DOM leaf: the row's own tape value, of row 0's kind
+ * (a `#` path parses a number), shown as written; a literal leaf: any non-object; an array: same length; a plain object:
+ * the same keys in the same order.
+ */
+function checker(skel: unknown, tape: readonly unknown[], leaf: readonly number[], paths: readonly string[]): Check {
   if (typeof skel === "number") {
-    if (skel === 0) {
-      if (value !== null && typeof value === "object") return false;
-      return (lits.push(value), true);
-    }
-    // The row's own tape value, of row 0's kind (a `#` path parses a number).
-    return value === tape[base + leaf[skel - 1]!] && shown(value) && (typeof value === "number") === (paths[skel - 1]!.charCodeAt(0) === 35);
+    if (skel === 0) return (value, _base, lits) => (value === null || typeof value !== "object") && (lits.push(value), true);
+    const slot = leaf[skel - 1]!;
+    return paths[skel - 1]!.charCodeAt(0) === 35
+      ? (value, base) => value === tape[base + slot] && typeof value === "number" && value - value === 0 && !Object.is(value, -0)
+      : (value, base) => value === tape[base + slot] && typeof value === "string" && !KEPT.test(value);
   }
   if (Array.isArray(skel)) {
-    if (!Array.isArray(value) || value.length !== skel.length) return false;
-    for (let i = 0; i < skel.length; i++) if (!fits(skel[i], value[i], tape, base, leaf, paths, lits)) return false;
-    return true;
+    const kids = skel.map((s) => checker(s, tape, leaf, paths)),
+      length = kids.length;
+    return (value, base, lits) => {
+      if (!Array.isArray(value) || value.length !== length) return false;
+      for (let i = 0; i < length; i++) if (!kids[i]!(value[i], base, lits)) return false;
+      return true;
+    };
   }
-  if (value === null || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) return false;
   const keys = Object.keys(skel as object),
-    own = Object.keys(value);
-  if (keys.length !== own.length) return false;
-  for (let i = 0; i < keys.length; i++)
-    if (keys[i] !== own[i] || !fits((skel as Record<string, unknown>)[keys[i]!], (value as Record<string, unknown>)[keys[i]!], tape, base, leaf, paths, lits))
-      return false;
-  return true;
+    kids = keys.map((key) => checker((skel as Record<string, unknown>)[key], tape, leaf, paths)),
+    length = keys.length;
+  return (value, base, lits) => {
+    if (value === null || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) return false;
+    let i = 0;
+    for (const key in value) {
+      if (i === length || key !== keys[i] || !kids[i]!((value as Record<string, unknown>)[key], base, lits)) return false;
+      i++;
+    }
+    return i === length;
+  };
 }
 function encodeDom(record: number, list: DomList, path: (string | number)[]): DerivedDom | null {
   const paths: string[] = [],
@@ -122,11 +145,12 @@ function encodeDom(record: number, list: DomList, path: (string | number)[]): De
     skel = skeleton(list.items[0], list.tape, list.slots, paths, leaf, 0);
   if (!paths.length) return null;
   const lits: unknown[] = [],
-    whole: Record<number, unknown> = {};
+    whole: Record<number, unknown> = {},
+    check = checker(skel, list.tape, leaf, paths);
   let kept = false;
   for (let r = 0; r < list.items.length; r++) {
     const mark = lits.length;
-    if (!fits(skel, list.items[r], list.tape, r * list.width, leaf, paths, lits)) ((lits.length = mark), (whole[r] = list.items[r]), (kept = true));
+    if (!check(list.items[r], r * list.width, lits)) ((lits.length = mark), (whole[r] = list.items[r]), (kept = true));
   }
   list.done = true;
   const entry: DerivedDom = [record, list.n, path, list.items.length, skel, paths, lits];

@@ -247,6 +247,8 @@ export interface DerivedRender {
   tailed: boolean;
   /** `_rData`'s payload (or its table encoding) and the objects in it, checked as data this render (`propsData`). */
   verified: unknown[] | null;
+  /** `_rData`'s payload until `settle` checks it (the first flush that writes records). */
+  pending: object | null;
 }
 
 /** H-holes (DERIVED-C3): what a fill's derived recorder retains for hits (`ShellHoles.derived`). */
@@ -362,6 +364,7 @@ export function createDerived(): DerivedRender {
     adopt: [],
     tailed: false,
     verified: null,
+    pending: null,
   };
 }
 
@@ -1590,22 +1593,25 @@ function checked(payload: object): unknown[] {
 /**
  * Router ABI (generated `entry.server.tsx`, derived model): the `Root` boundary's route payload as `Root` props can carry it —
  * `payload` itself when it is JSON data, else its resume table encoding (`EncodedData`), else (RV2107 warning) `payload`.
+ * Under a derived render the payload is returned as is and checked at the first flush that writes records (`settle`): a page
+ * none of whose records ships (a renders-only route: no tail) never walks its route data (ROWS-SSR: `/page` 100 rows ~4 µs).
  */
 export function _rData<T extends object>(payload: T): T | EncodedData {
   const ctx = useContext(DERIVED);
-  if (ctx) ctx.verified = null;
-  if (isData(payload)) {
-    if (ctx) ctx.verified = checked(payload);
-    return payload;
-  }
+  if (!ctx) return payloadData(payload, undefined) ?? payload;
+  ctx.verified = checked(payload);
+  ctx.pending = payload;
+  return payload;
+}
+/** The route payload as data (itself), its resume table, or null (RV2107 warned: not encodable). */
+function payloadData<T extends object>(payload: T, ctx: DerivedRender | undefined): T | EncodedData | null {
+  if (isData(payload)) return payload;
   try {
     const options = ctx?.options;
     const encoder = createEncoder({ special: registered, opaque, origin: options?.origin });
     const r = encoder.ref(payload),
       x = _builtinKinds(encoder.table) ? options?.manifest?.builtins : undefined;
-    const encoded: EncodedData = x ? { t: encoder.table, r, x } : { t: encoder.table, r };
-    if (ctx) ctx.verified = [encoded];
-    return encoded;
+    return x ? { t: encoder.table, r, x } : { t: encoder.table, r };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     if (warned.size < 64 && !warned.has(reason)) {
@@ -1616,7 +1622,29 @@ export function _rData<T extends object>(payload: T): T | EncodedData {
           ". The page renders but does not resume. Return JSON data, Date / Map / Set / BigInt / URL values, or instances of a class registered with registerClass(…) from loaders.",
       );
     }
-    return payload;
+    return null;
+  }
+}
+/**
+ * `_rData`'s deferred check, before the first flush that writes records: JSON data → nothing to do (`_rB` took the payload
+ * and its loader results as checked). Otherwise the records this flush writes get what an eager check gave them: a props
+ * value that is the payload becomes its table encoding, and every independent boundary's props are checked against that
+ * (`propsData`: a loader result that is not data demotes its page; a payload that cannot be encoded demotes `Root`).
+ */
+function settle(ctx: DerivedRender): void {
+  const payload = ctx.pending!;
+  ctx.pending = null;
+  const data = payloadData(payload, ctx);
+  if (data === payload) return;
+  ctx.verified = data === null ? null : [data];
+  for (let i = ctx.flushed; i < ctx.boundaries.length; i++) {
+    const x = ctx.boundaries[i]!;
+    let props = x.props as Record<string, unknown> | null;
+    if (!(x.flags & INDEPENDENT) || props === null) continue;
+    if (data !== null && !Array.isArray(props))
+      for (const key in props) if (props[key] === payload) (props === x.props && (props = { ...props }), (props[key] = data));
+    if (propsData(ctx, props)) x.props = props;
+    else ((x.flags = (x.flags & ~(INDEPENDENT | CTXFREE)) | DEMOTED), (x.props = null));
   }
 }
 
@@ -1758,6 +1786,9 @@ function flush(ctx: DerivedRender): FlushTail | null {
     // Some name listens to every event (else no ancestor walk below).
     any = false;
   if (ctx.listened) for (const types of ctx.listened.values()) any ||= types === "*";
+  // `_rData`'s check, unless this first flush writes nothing even with every conditional record kept (nothing it decides
+  // can make the page ship then: a demotion only keeps a conditional parent).
+  if (ctx.pending !== null && (ctx.flushed !== 0 || !(weakOnly(ctx, true) || inertOnly(ctx, true)))) settle(ctx);
   deferFlags(ctx, ctx.flushed);
   keep(ctx, ctx.flushed);
   // ZERO Z3: the first flush keeps only weak boundaries (the router's Root / App with nothing live below them) and nothing
@@ -1949,12 +1980,12 @@ function litSame(key: string, value: unknown, json: string): boolean {
 }
 
 /** Every record the first flush would write is weak, and the render made nothing else the browser needs. */
-function weakOnly(ctx: DerivedRender): boolean {
+function weakOnly(ctx: DerivedRender, all?: boolean): boolean {
   if (ctx.adopt.length || ctx.dirty.size || ctx.counted.size || ctx.changed.size || ctx.dom?.length) return false;
   let weak = false;
   for (const x of ctx.boundaries) {
     if (x.an) return false;
-    if (x.flags & COND && !x.kept) continue;
+    if (x.flags & COND && !x.kept && !all) continue;
     if (!x.weak) return false;
     weak = true;
   }
@@ -1962,11 +1993,11 @@ function weakOnly(ctx: DerivedRender): boolean {
 }
 
 /** RT-DIET2: no record the first flush would write can become live, and one of them is weak (the router's root, client router off). */
-function inertOnly(ctx: DerivedRender): boolean {
+function inertOnly(ctx: DerivedRender, all?: boolean): boolean {
   if (ctx.boot || ctx.adopt.length || ctx.asyncs.length || ctx.an || ctx.dom?.length) return false;
   let weak = false;
   for (const x of ctx.boundaries) {
-    if (x.flags & COND && !x.kept) continue;
+    if (x.flags & COND && !x.kept && !all) continue;
     // (A weak record's listeners are the router's, which alone do not make a page resumable.)
     if (x.weak) weak = true;
     else if (x.an || x.ev || x.flags & TRIGGERS) return false;

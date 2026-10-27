@@ -162,3 +162,58 @@ test("RV2107: functions, symbols, unregistered or symbol-only classes warn once 
   for (const message of seen) assert.match(message, /^\[RV2107\] Route data cannot resume \(derived model\): .+ The page renders but does not resume\./);
   assert.match(seen[2]!, /Plain instance is not serializable/);
 });
+
+// ROWS-SSR: the payload is checked at the first flush that writes records (`settle`), with the eager check's outcome.
+test("deferred check: a loader result that is not data demotes its page record; the payload ships encoded", async () => {
+  const day = new Date(0);
+  const html = (await derivedToString(
+    () => {
+      const payload = { d: [{ day }] };
+      const props = { s: _rData(payload) };
+      const B = _rB("Root", INDEPENDENT, props);
+      try {
+        const P = _rB("Page", INDEPENDENT, { data: payload.d[0] });
+        try {
+          return _rBOut(B, _rBOut(P, "<p>page</p>"));
+        } finally {
+          _rBEnd(P);
+        }
+      } finally {
+        _rBEnd(B);
+      }
+    },
+    { manifest } as never,
+  )) as string;
+  const tail = expandTail(JSON.parse(/<script type="rivet\/boundaries"[^>]*>(.*?)<\/script>/s.exec(html)![1]!));
+  const [root, page] = tail.b;
+  assert.equal(root![2]! & (INDEPENDENT | DEMOTED), INDEPENDENT);
+  assert.equal(((await browser((root![5] as { s: unknown }).s)) as { d: { day: Date }[] }).d[0]!.day.getTime(), 0);
+  assert.equal(page![2]! & (INDEPENDENT | DEMOTED), DEMOTED, "the page's props are not data: demoted, as before");
+  assert.equal(page![5], undefined);
+});
+
+test("deferred check: a page none of whose records ships never walks (or warns about) its route data", async () => {
+  const { _rWeak } = await import("@rivetjs/runtime/derived-eager");
+  const warn = console.warn,
+    seen: string[] = [];
+  console.warn = (message: string) => void seen.push(message);
+  try {
+    const html = (await derivedToString(
+      () => {
+        const props = { s: _rData({ d: [{ value: () => 1 }] }) };
+        const B = _rB("Root", INDEPENDENT, props);
+        _rWeak();
+        try {
+          return _rBOut(B, "<p>static</p>");
+        } finally {
+          _rBEnd(B);
+        }
+      },
+      { manifest } as never,
+    )) as string;
+    assert.doesNotMatch(html, /rivet\/boundaries/, "no tail");
+  } finally {
+    console.warn = warn;
+  }
+  assert.deepEqual(seen, []);
+});
