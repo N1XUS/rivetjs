@@ -39,7 +39,8 @@ describe("browser adoption", () => {
   for (const [name, selector, ready] of [
     ["combo", "[role=combobox]", "[role=listbox]"],
     ["select", "[data-slot=select-trigger]", "[role=listbox]"],
-    ["tabs", "[role=tab]:text-is('Two')", "[role=tabpanel]:text-is('Second')"],
+    // `:has-text`, not `:text-is`: the panel's text sits in a child `<p>`, and `:text-is` skips an element whose child matches too.
+    ["tabs", "[role=tab]:text-is('Two')", "[role=tabpanel]:has-text('Second')"],
     ["menu", "[data-slot=dropdown-trigger]", "[role=menu]"],
     ["list", "[role=option]:has-text('Pear')", "[role=option][aria-selected=true]"],
   ])

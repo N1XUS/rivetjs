@@ -178,13 +178,6 @@
     },
     {
       "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/axe.test.ts > axe: resumed widgets with overlays open have no violations",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/combobox.test.ts > typing filters (accent-insensitive), arrow keys move virtual focus, Enter commits, hidden input",
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
@@ -262,22 +255,8 @@
     },
     {
       "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/list-data.test.ts > virtualized ListBox: a resumed view's option follows an update",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
       "match": "libs/cdk/tests-components/list-data.test.ts > Table: a resumed body row follows an item change; the other row keeps its element",
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/live-props.test.ts > live props: ToggleButton / Checkbox / Switch / TextField / Slider / Select / ListBoxItem / Tabs / RadioGroup / Text / Link / wave-3 parts value forms update in place",
-      "reason": "flakes under host load (passes alone on the same tree, passes at base 08d7b2937)",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
       "since": "2026-10-27"
     },
@@ -328,20 +307,6 @@
       "match": "libs/cdk/tests-components/table.test.ts > table: resumed row action, keyboard selection, row press in selection mode",
       "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
       "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:cdk-components",
-      "match": "libs/cdk/tests-components/tabs.test.ts > tabs: automatic activation \u2014 arrows skip disabled and wrap, Home / End, two-way selectedKey",
-      "reason": "red at base 08d7b2937 (same 13 files run on a clean HEAD snapshot, 2026-10-27) and in lane reports; not yet triaged",
-      "owner": "cdk (triage lane / COLD-FIX lanes)",
-      "since": "2026-10-27"
-    },
-    {
-      "gate": "vitest:ui-components",
-      "match": "libs/ui/tests-components/idrefs.test.ts > browser adoption > a resumed tabs keeps its IDREFs",
-      "reason": "new ID-RESUME test: on /idrefs a cold click on Tab Two never shows the 'Second' panel; red with and without ID-RESUME's tabs change (Tabs resume bug on that route, not an IDREF regression); SSR record test passes",
-      "owner": "ui (TABS-COLD lane)",
       "since": "2026-10-27"
     }
   ]
