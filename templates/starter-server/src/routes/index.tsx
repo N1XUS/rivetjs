@@ -1,5 +1,4 @@
 import { redirect, type PageProps, type RequestEvent, load, actions } from "@rivetjs/router";
-import { NoteForm } from "../components/NoteForm.tsx";
 
 // Server code in the page file: the `load(…)` and `actions(…)` exports (and everything only they use, like
 // `notes`) run on the server and are removed from the browser build. A real app would use a database.
@@ -30,7 +29,13 @@ export default function Home({ data }: PageProps<"index">) {
           <li>{note}</li>
         ))}
       </ul>
-      <NoteForm />
+      <form method="post" action="?/add" class="mt-6 flex gap-2">
+        <label class="sr-only" for="text">
+          New note
+        </label>
+        <input id="text" name="text" class="flex-1 rounded-md border border-slate-300 px-3 py-2" required />
+        <button class="rounded-md bg-teal-700 px-4 py-2 font-semibold text-white">Add</button>
+      </form>
     </main>
   );
 }

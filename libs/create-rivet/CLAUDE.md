@@ -31,7 +31,7 @@
 
 ## Starter examples
 
-Copied without special handling: static has `components/ReadingPlan.tsx` plus the `/about` build-time loader; server has `components/NoteForm.tsx` (native POST with signal-backed draft); UI has `components/ReadingPreferences.tsx` (two-way Switch). Minimal keeps one route and one signal. See `templates/CLAUDE.md` for the complete layout.
+Copied without special handling: static has `components/ReadingPlan.tsx` plus the `/about` build-time loader; server keeps a zero-JS page (native POST form through `actions(…)`; e2e `checkZeroJs`); UI has `components/ReadingPreferences.tsx` (two-way Switch). Minimal keeps one route and one signal. See `templates/CLAUDE.md` for the complete layout.
 
 Deploy documentation distinguishes Netlify server functions from static output and explains that Bun/Deno replace the Node/Docker instructions. The Deno prompt hint includes the permissions used by the generated start script.
 

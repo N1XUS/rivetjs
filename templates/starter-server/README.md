@@ -16,7 +16,7 @@ npm run check   # Rivet compiler diagnostics + tsc (CI)
 ## Next steps
 
 - Edit `src/routes/index.tsx`: the `load(…)` export reads data, the `actions(…)` export handles the form, the component renders both. Swap the in-memory notes for your database there.
-- `src/components/NoteForm.tsx` uses `signal` and `model:value` for a live character count; its native POST works without JavaScript. Notes are shared in this process and reset when it restarts.
+- Notes are shared in this process and reset when it restarts. The page has nothing interactive, so it ships no JavaScript; the form posts natively.
 - Add a page or an API route: a new file in `src/routes/`. Docs "File routes" (`guides/routing/file-routes`), "Actions and forms" (`guides/routing/actions-and-forms`).
 - Deploy: `npm run build && npm start` on any Node 24 host, or the `Dockerfile` (docs `guides/deploy/node`, `guides/deploy/docker`). Vercel / Netlify / Cloudflare / Bun / Deno: docs `guides/deploy/<target>` (one `adapter` option in `vite.config.ts`; new projects: `npm create rivet@latest -- --deploy <target>`).
 - Learn the model: docs "Signals" (`learn/signals`), "Resuming" (`learn/resuming`), "Server first" (`learn/server-first`).
