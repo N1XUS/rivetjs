@@ -328,6 +328,13 @@
     opacity: 1;
   }
 
+  @media (hover: none) {
+    .toast[data-frontmost="true"] .toast__close-button, .toast[data-expanded="true"] .toast__close-button {
+      pointer-events: auto;
+      opacity: 1;
+    }
+  }
+
   .toast[data-exiting="true"] .toast__close-button {
     pointer-events: none;
     opacity: 0;

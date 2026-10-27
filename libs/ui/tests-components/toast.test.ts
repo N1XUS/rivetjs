@@ -1,6 +1,6 @@
 // Toast — resumed story app (`/toast`): SSR renders only the region anchors (no region, no toast); upstream
 // toast.browser.test.tsx (first toast shows the region + alertdialog, Close dismisses it after the exit animation); HeroUI CSS
-// (fixed zero-height region at the viewport bottom, close button revealed on hover, stacked back toast scaled down, hover expands the stack); upstream keyboard cases on a
+// (fixed zero-height region at the viewport bottom, close button revealed on hover — always shown under `(hover: none)`, TW-177 —, stacked back toast scaled down, hover expands the stack); upstream keyboard cases on a
 // real keyboard (Tab to the frontmost toast + its Close, Enter closes it, focus moves to the remaining toast; Alt+T focuses +
 // expands the region, Escape collapses it); success toast action; promise toast swaps loading → success and auto-dismisses;
 // a second module-level queue (`name`) wakes its own top-end region.
@@ -67,6 +67,30 @@ test("toast: shows a toast in the region and dismisses it via Close (upstream br
     await page.click('[role="alertdialog"] [data-slot="toast-close"]');
     await page.waitForFunction(() => !document.querySelector('[role="alertdialog"]'));
   }));
+
+// TW-177 (COLD-FIX-B 2026-10-27): a touch screen has no hover, so the frontmost toast shows its close button without one and a
+// tap closes it (before: hover-revealed only — WebKit dropped the touch's hover before the pointerup and the tap closed nothing).
+test("toast: under (hover: none) the close button shows without hover and a tap closes the toast", async () => {
+  const context = await s.browser.newContext({ viewport: { width: 1000, height: 700 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    const seen = watch(page);
+    await page.goto(s.origin + "/toast");
+    await page.waitForLoadState("networkidle");
+    assert.equal(await page.evaluate(() => matchMedia("(hover: none)").matches), true);
+    await page.tap("#t-add");
+    await page.waitForSelector('[role="alertdialog"]');
+    await settled(page);
+    const close = page.locator('[role="alertdialog"] [data-slot="toast-close"]');
+    const style = await close.evaluate((el) => ({ events: getComputedStyle(el).pointerEvents, opacity: getComputedStyle(el).opacity }));
+    assert.deepEqual(style, { events: "auto", opacity: "1" });
+    await close.tap();
+    await page.waitForFunction(() => !document.querySelector('[role="alertdialog"]'));
+    assert.deepEqual(seen.errors, []);
+  } finally {
+    await context.close();
+  }
+});
 
 test("toast: stacks newest frontmost, back toast scaled; hover expands", () =>
   onPage(async (page) => {

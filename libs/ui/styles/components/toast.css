@@ -259,6 +259,16 @@
   @apply pointer-events-auto opacity-100;
 }
 
+/* Rivet: no hover on touch screens — the close button of the toasts it would reveal on is always shown. A tap could not
+   hit a hover-revealed button: WebKit drops the touch's hover before the pointerup, so the press ended outside the button
+   (now invisible again) and closed nothing; iOS needed a first tap to reveal it (COLD-FIX-B 2026-10-27). */
+@media (hover: none) {
+  .toast[data-frontmost="true"] .toast__close-button,
+  .toast[data-expanded="true"] .toast__close-button {
+    @apply pointer-events-auto opacity-100;
+  }
+}
+
 /* Exiting toasts never show the close button */
 .toast[data-exiting="true"] .toast__close-button {
   @apply pointer-events-none opacity-0;
