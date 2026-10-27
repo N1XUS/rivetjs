@@ -1,0 +1,140 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no floating TOC). Feature set inspired by HeroUI Pro's public Floating TOC docs; independent implementation on HeroUI tokens (--overlay, --overlay-shadow, --accent, --default, --muted, focus / disabled status utilities). Behaviour = @rivetjs/cdk/dialog (DialogTrigger hover / press) + @rivetjs/cdk/popover (div overlay layer). */
+/* -------------------------------------------------------------------------------------------------
+ * FloatingToc Component Styles
+ * Parts: trigger (bars) / bar / content (popover) / item
+ * States: trigger [data-placement="left|right"]; bar / item [data-active]; content [data-entering] [data-exiting] [data-placement]
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Element: trigger - the stack of bars; hover / press target
+ */
+.floating-toc__trigger {
+  @apply flex flex-col items-end rounded-md border-0 bg-transparent p-2 outline-none;
+
+  --floating-toc-bar-width: 16px;
+  --floating-toc-bar-active-width: 24px;
+  --floating-toc-bar-height: 2px;
+  --floating-toc-bar-level-step: 3px;
+  --floating-toc-bar-gap: 12px;
+  gap: calc(var(--floating-toc-bar-gap) - var(--floating-toc-bar-height));
+  cursor: var(--cursor-interactive);
+
+  &[data-placement="left"] {
+    @apply items-start;
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+}
+
+/**
+ * Element: bar - one section indicator (the visible line is ::after)
+ */
+.floating-toc__bar {
+  @apply relative block;
+
+  width: var(--floating-toc-bar-active-width);
+  height: var(--floating-toc-bar-height);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: calc(var(--floating-toc-bar-width) - (var(--floating-toc-level, 1) - 1) * var(--floating-toc-bar-level-step));
+    border-radius: 9999px;
+    background-color: var(--muted);
+    opacity: 0.5;
+    transition:
+      width var(--duration-fast) var(--ease-out),
+      background-color var(--duration-fast) var(--ease-out),
+      opacity var(--duration-fast) var(--ease-out);
+    @apply motion-reduce:transition-none;
+  }
+
+  &[data-active="true"]::after {
+    width: var(--floating-toc-bar-active-width);
+    background-color: var(--accent);
+    opacity: 1;
+  }
+}
+
+.floating-toc__trigger[data-placement="left"] .floating-toc__bar::after {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+}
+
+/**
+ * Element: content - the floating list
+ */
+.floating-toc__content {
+  @apply flex max-h-96 min-w-48 flex-col gap-0.5 overflow-y-auto bg-overlay p-1.5 text-sm outline-none;
+
+  --floating-toc-item-indent: 0.75rem;
+  border-radius: min(20px, var(--radius-2xl));
+  box-shadow: var(--overlay-shadow);
+
+  &[data-entering="true"] {
+    @apply animate-in duration-(--duration-fast) ease-smooth fade-in-0 zoom-in-95;
+
+    &[data-placement="left"] {
+      @apply slide-in-from-right-1;
+    }
+
+    &[data-placement="right"] {
+      @apply slide-in-from-left-1;
+    }
+
+    &[data-placement="top"] {
+      @apply slide-in-from-bottom-1;
+    }
+
+    &[data-placement="bottom"] {
+      @apply slide-in-from-top-1;
+    }
+  }
+
+  &[data-exiting="true"] {
+    @apply animate-out duration-(--duration-fast) ease-smooth zoom-out-95 fade-out pointer-events-none;
+  }
+}
+
+/**
+ * Element: item - one section entry
+ */
+.floating-toc__item {
+  @apply flex w-full items-center rounded-lg border-0 bg-transparent py-1.5 pe-3 text-start text-muted outline-none select-none;
+
+  padding-inline-start: calc(0.625rem + (var(--floating-toc-level, 1) - 1) * var(--floating-toc-item-indent));
+  cursor: var(--cursor-interactive);
+  transition: background-color var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover,
+    &[data-hovered="true"] {
+      background-color: var(--default);
+    }
+  }
+
+  &:active,
+  &[data-pressed="true"] {
+    background-color: var(--default-hover);
+  }
+
+  &[data-active="true"] {
+    @apply font-medium text-accent;
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"] {
+    @apply status-disabled;
+  }
+}

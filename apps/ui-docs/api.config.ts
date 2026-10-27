@@ -326,6 +326,30 @@ export const entries: ApiEntryConfig[] = [
     summary: "FileTree (Rivet addition): a file / folder tree on Tree (sizes, guide lines, icons, custom indicator, selection).",
   },
   {
+    entry: "@rivetjs/ui/pressable-feedback",
+    file: "ui/src/components/pressable-feedback/index.ts",
+    runsOn: "both",
+    summary: "PressableFeedback (Rivet addition): a pressable with highlight, ripple, hold-to-confirm and progress feedback layers.",
+  },
+  {
+    entry: "@rivetjs/ui/holo-card",
+    file: "ui/src/components/holo-card/index.ts",
+    runsOn: "both",
+    summary: "HoloCard (Rivet addition): a 3D tilting card with a pointer-tracked holographic glare (CSS variables, CSS tilt).",
+  },
+  {
+    entry: "@rivetjs/ui/floating-toc",
+    file: "ui/src/components/floating-toc/index.ts",
+    runsOn: "both",
+    summary: "FloatingToc (Rivet addition): section bars that open a floating list of sections on hover or press.",
+  },
+  {
+    entry: "@rivetjs/ui/cell-color-picker",
+    file: "ui/src/components/cell-color-picker/index.ts",
+    runsOn: "both",
+    summary: "CellColorPicker (Rivet addition): a settings-row ColorPicker (label, hex value, swatch, popover).",
+  },
+  {
     entry: "@rivetjs/ui/drop-zone",
     file: "ui/src/components/drop-zone/index.ts",
     runsOn: "both",

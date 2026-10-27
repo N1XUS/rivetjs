@@ -53,6 +53,10 @@ export * from "./input-group/index.ts";
 export * from "./input-otp/index.ts";
 export * from "./kbd/index.ts";
 export * from "./kpi/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./cell-color-picker/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./floating-toc/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./holo-card/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./pressable-feedback/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./file-tree/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./list-view/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./drop-zone/index.ts"; // Rivet-authored (TWEAKS.md)

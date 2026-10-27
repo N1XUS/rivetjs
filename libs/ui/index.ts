@@ -198,6 +198,18 @@ export * from "./src/components/list-view/index.ts";
 // Rivet addition: file tree on cdk tree (inspired by HeroUI Pro File Tree docs)
 export * from "./src/components/file-tree/index.ts";
 
+// Rivet addition: press feedback layers (inspired by HeroUI Pro Pressable Feedback docs)
+export * from "./src/components/pressable-feedback/index.ts";
+
+// Rivet addition: holographic tilt card (inspired by HeroUI Pro Holo Card docs)
+export * from "./src/components/holo-card/index.ts";
+
+// Rivet addition: floating table of contents (inspired by HeroUI Pro Floating TOC docs)
+export * from "./src/components/floating-toc/index.ts";
+
+// Rivet addition: settings-row color picker (inspired by HeroUI Pro Cell Color Picker docs)
+export * from "./src/components/cell-color-picker/index.ts";
+
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
 export * from "./src/components/chat-loader/index.ts";

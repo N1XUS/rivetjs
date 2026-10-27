@@ -548,6 +548,22 @@
       "types": "./src/components/file-tree/index.ts",
       "default": "./src/components/file-tree/index.ts"
     },
+    "./pressable-feedback": {
+      "types": "./src/components/pressable-feedback/index.ts",
+      "default": "./src/components/pressable-feedback/index.ts"
+    },
+    "./holo-card": {
+      "types": "./src/components/holo-card/index.ts",
+      "default": "./src/components/holo-card/index.ts"
+    },
+    "./floating-toc": {
+      "types": "./src/components/floating-toc/index.ts",
+      "default": "./src/components/floating-toc/index.ts"
+    },
+    "./cell-color-picker": {
+      "types": "./src/components/cell-color-picker/index.ts",
+      "default": "./src/components/cell-color-picker/index.ts"
+    },
     "./text-shimmer": {
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"

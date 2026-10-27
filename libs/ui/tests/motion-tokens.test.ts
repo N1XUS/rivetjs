@@ -32,6 +32,16 @@ const EXCEPTIONS: { reason: string; uses: Record<string, string[]> }[] = [
     },
   },
   { reason: "MASONRY lane owns masonry.css", uses: { masonry: ["150ms"] } },
+  {
+    reason:
+      "documented duration props (PressableFeedback `duration` / `releaseDuration` defaults: CSS fallbacks of the variables the props write; M3 ripple fade); 1 ms = reduced-motion end state",
+    uses: { "pressable-feedback": ["150ms", "375ms", "1ms", "200ms", "2000ms", "300ms"] },
+  },
+  {
+    reason:
+      "pointer-tracked tilt: an 80 ms follow while the pointer moves, a slow 400–500 ms settle / glare fade on leave (physical feel, longer than --duration-slow)",
+    uses: { "holo-card": ["500ms", "80ms", "400ms"] },
+  },
 ];
 
 const LITERAL = /(?<![\w.-])(\d+(?:\.\d+)?m?s)\b|(?<![\w-])duration-(\d+)(?![\w.])/g;

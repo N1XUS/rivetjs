@@ -12,6 +12,7 @@ export const groups: NavGroup[] = [
       "components/toggle-button",
       "components/toggle-button-group",
       "components/emoji-reaction-button",
+      "components/pressable-feedback",
       "components/segment",
       "components/morph",
     ],
@@ -47,6 +48,7 @@ export const groups: NavGroup[] = [
       "components/table",
       "components/list-view",
       "components/file-tree",
+      "components/holo-card",
     ],
   },
   {
@@ -102,6 +104,7 @@ export const groups: NavGroup[] = [
       "components/pagination",
       "components/stepper",
       "components/tabs",
+      "components/floating-toc",
     ],
   },
   { title: "Typography", pages: ["components/typography"] },
@@ -152,6 +155,7 @@ export const groups: NavGroup[] = [
       "components/color-field",
       "components/color-swatch-picker",
       "components/color-picker",
+      "components/cell-color-picker",
     ],
   },
   {

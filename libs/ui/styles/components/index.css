@@ -183,6 +183,10 @@
  * ------------------------------------------------------------------------------------------------ */
 @import "./kbd.css";
 @import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./cell-color-picker.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./floating-toc.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./holo-card.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./pressable-feedback.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./file-tree.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./list-view.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./drop-zone.css"; /* Rivet-authored (TWEAKS.md) */

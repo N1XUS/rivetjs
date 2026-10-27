@@ -1,0 +1,198 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no holo card). Feature set inspired by HeroUI Pro's public Holo Card docs; independent implementation (a fixed dark card face by design: the default gradient / sheen are literal colours, every one overridable through `--holo-card-*`). */
+/* -------------------------------------------------------------------------------------------------
+ * HoloCard Component Styles
+ * Block: holo-card (layers: rotator / frame / surface / image / pattern / inset / content / shine / shine-pattern)
+ * States: root [data-active] (pointer over), [data-static] (no tilt / glare); content [data-parallax="false"]
+ * Pointer variables (written by JS on the root, unitless): --holo-card-pointer-x/y 0–100, --holo-card-background-x/y,
+ *   --holo-card-opacity 0 | 1
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: holo-card - perspective wrapper; declares every variable
+ */
+.holo-card {
+  @apply relative inline-block align-top;
+
+  --holo-card-width: 302px;
+  --holo-card-height: 453px;
+  --holo-card-radius: 20px;
+  --holo-card-bleed: 36px;
+  --holo-card-perspective: 600px;
+  --holo-card-gradient: linear-gradient(150deg, oklch(0.32 0.03 265) 0%, oklch(0.2 0.02 265) 55%, oklch(0.26 0.04 290) 100%);
+  --holo-card-inset-color: rgb(255 255 255 / 0.06);
+  --holo-card-pattern: repeating-linear-gradient(
+    115deg,
+    oklch(0.8 0.15 20) 0%,
+    oklch(0.85 0.15 90) 7%,
+    oklch(0.85 0.15 160) 14%,
+    oklch(0.8 0.15 220) 21%,
+    oklch(0.75 0.15 290) 28%,
+    oklch(0.8 0.15 20) 35%
+  );
+  --holo-card-pattern-size: 200% 200%;
+  --holo-card-pattern-opacity: 0.9;
+  --holo-card-texture-opacity: 0.1;
+  --holo-card-parallax: 10;
+  --holo-card-pointer-x: 50;
+  --holo-card-pointer-y: 50;
+  --holo-card-background-x: 50;
+  --holo-card-background-y: 50;
+  --holo-card-opacity: 0;
+
+  perspective: var(--holo-card-perspective);
+  touch-action: pan-y;
+}
+
+/**
+ * Element: rotator - 3D tilt around the card centre
+ */
+.holo-card__rotator {
+  transform-style: preserve-3d;
+  transform: rotateY(calc((var(--holo-card-pointer-x) - 50) * 0.28deg)) rotateX(calc((50 - var(--holo-card-pointer-y)) * 0.28deg));
+  transition: transform 500ms var(--ease-out);
+  will-change: transform;
+}
+
+.holo-card[data-active="true"] .holo-card__rotator {
+  transition-duration: 80ms;
+}
+
+/**
+ * Element: frame - room for the tilted card
+ */
+.holo-card__frame {
+  @apply grid place-items-center;
+
+  width: var(--holo-card-width);
+  height: var(--holo-card-height);
+}
+
+/**
+ * Element: surface - the card body
+ */
+.holo-card__surface {
+  @apply relative isolate overflow-hidden;
+
+  width: var(--holo-card-width);
+  height: var(--holo-card-height);
+  border-radius: var(--holo-card-radius);
+  background: var(--holo-card-gradient);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.2),
+    0 18px 40px -12px rgb(0 0 0 / 0.45);
+}
+
+/**
+ * Element: image - full-bleed art under every overlay
+ */
+.holo-card__image {
+  @apply pointer-events-none absolute inset-0 z-0 size-full object-cover select-none;
+}
+
+/**
+ * Element: pattern - static texture
+ */
+.holo-card__pattern {
+  @apply pointer-events-none absolute inset-0 z-[1];
+
+  background-image: var(--holo-card-pattern);
+  background-size: var(--holo-card-pattern-size);
+  opacity: var(--holo-card-texture-opacity);
+  mix-blend-mode: overlay;
+}
+
+/**
+ * Element: inset - hairline border inside the edge
+ */
+.holo-card__inset {
+  @apply pointer-events-none absolute z-[2];
+
+  inset: 8px;
+  border: 1px solid var(--holo-card-inset-color);
+  border-radius: calc(var(--holo-card-radius) - 8px);
+}
+
+/**
+ * Element: shine - pointer-tracked glare (above the texture, below the content)
+ */
+.holo-card__shine {
+  @apply pointer-events-none absolute inset-0 z-[3];
+
+  background: radial-gradient(
+    farthest-corner circle at calc(var(--holo-card-pointer-x) * 1%) calc(var(--holo-card-pointer-y) * 1%),
+    rgb(255 255 255 / 0.35) 0%,
+    rgb(255 255 255 / 0.08) 35%,
+    rgb(255 255 255 / 0) 70%
+  );
+  mix-blend-mode: soft-light;
+  opacity: var(--holo-card-opacity);
+  transition: opacity 400ms var(--ease-out);
+}
+
+/**
+ * Element: shine-pattern - the texture the glare reveals
+ */
+.holo-card__shine-pattern {
+  @apply absolute inset-0;
+
+  background-image: var(--holo-card-pattern);
+  background-size: var(--holo-card-pattern-size);
+  background-position: calc(var(--holo-card-background-x) * 1%) calc(var(--holo-card-background-y) * 1%);
+  opacity: var(--holo-card-pattern-opacity);
+  mix-blend-mode: color-dodge;
+  mask-image: radial-gradient(circle at calc(var(--holo-card-pointer-x) * 1%) calc(var(--holo-card-pointer-y) * 1%), black 0%, transparent 65%);
+}
+
+/**
+ * Element: content - full-bleed parallax layer for the card face
+ */
+.holo-card__content {
+  @apply pointer-events-none absolute inset-0 z-[4] flex;
+
+  translate: calc((var(--holo-card-pointer-x) - 50) / 50 * var(--holo-card-parallax) * -1px)
+    calc((var(--holo-card-pointer-y) - 50) / 50 * var(--holo-card-parallax) * -1px);
+  transition: translate 500ms var(--ease-out);
+
+  > * {
+    pointer-events: auto;
+  }
+
+  &[data-parallax="false"] {
+    translate: none;
+  }
+}
+
+.holo-card[data-active="true"] .holo-card__content {
+  transition-duration: 80ms;
+}
+
+/**
+ * Static: flat and unlit (isInteractive={false}, isDisabled, reduced motion)
+ */
+.holo-card[data-static="true"] {
+  .holo-card__rotator {
+    transform: none;
+  }
+
+  .holo-card__shine {
+    opacity: 0;
+  }
+
+  .holo-card__content {
+    translate: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-card__rotator {
+    transform: none;
+  }
+
+  .holo-card__shine {
+    opacity: 0;
+  }
+
+  .holo-card__content {
+    translate: none;
+  }
+}
