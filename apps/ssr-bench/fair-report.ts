@@ -27,8 +27,8 @@ const option = (name: string) => {
 };
 const list = (name: string) => (option(name) ?? "").split(",").filter(Boolean);
 
-export const STATIC_PEERS = ["dotnet", "solid-stable-static"];
-export const RESUMABLE_PEERS = ["solid-stable-interactive", "solid-stable", "solid", "qwik-stable", "qwik"];
+export const STATIC_PEERS = ["dotnet", "solid-stable-static", "react-static"];
+export const RESUMABLE_PEERS = ["solid-stable-interactive", "react-interactive", "solid-stable", "solid", "qwik-stable", "qwik"];
 const RIVET: Record<string, string[]> = {
   "rivet-compiled": STATIC_PEERS,
   "rivet-for": STATIC_PEERS,
@@ -56,6 +56,8 @@ const LABEL: Record<string, string> = {
   solid: "Solid 2 rc hydratable",
   "qwik-stable": "Qwik 1.20",
   qwik: "Qwik 2 rc",
+  "react-static": "React 19.3 static",
+  "react-interactive": "React 19.3 hydratable (interactive rows + data)",
   "rivet-compiled": "Rivet static (.map)",
   "rivet-for": "Rivet static (<For>)",
   "rivet-router": "Rivet router (resumable, no handlers)",
@@ -290,7 +292,7 @@ function markdown(
     "- **SSR** (`apps/ssr-bench`, Docker): every lane 1 CPU / 512 MiB, same gRPC backend (2 CPU), same DTO, strict validation of every row/field (sampled strictly every 32nd response + length checks). Node load generator `loadgen/` v2 (sha " +
       `\`${p.generator_sha256?.slice(0, 12)}\`), ${p.duration} s measured after ${p.warmup} s warmup per trial, ${p.repeats} repeats with rotating lane order, ${p.prewarm ?? 0} s unrecorded prewarm per lane (JIT tiering). Closed loop c=1/10/100.`,
     `- **GC profiles (B2)**: identical for every Node lane. \`tuned\` = \`${data.profiles.tuned?.commands ? "--single-threaded-gc --max-semi-space-size=8" : "?"}\` (Razor: \`DOTNET_gcConcurrent=0 DOTNET_GCgen0size=0x1000000\`); \`default\` = runtime defaults for everyone. Container commands are recorded per run (results.json metadata.provenance.commands).`,
-    "- **Like-for-like classes (B3/RA3)**: *static* — `rivet-compiled` (Rivet compiled JSX, no resume data) vs Razor and Solid 1 compiled `hydratable:false` + `renderToString`; *resumable/hydratable* — `rivet-resume` (`/resume`: file route + nested layout with state, keyed `<For>`, per-row click handler + reactive attribute + `<Link>`, resume state) vs Solid 1/2 (`hydratable:true`, hydration keys) and Qwik 1/2 (container state). Peers render the same page without handlers, so the resumable comparison is conservative for Rivet. `rivet-router` (router + resume render, no handlers) and `rivet-for` are shown for attribution.",
+    "- **Like-for-like classes (B3/RA3)**: *static* — `rivet-compiled` (Rivet compiled JSX, no resume data) vs Razor, Solid 1 compiled `hydratable:false` + `renderToString` and React 19 `renderToPipeableStream` (no bootstrap); *resumable/hydratable* — `rivet-resume` (`/resume`: file route + nested layout with state, keyed `<For>`, per-row click handler + reactive attribute + `<Link>`, resume state) vs Solid 1/2 (`hydratable:true`, hydration keys), React 19 interactive (same per-row work, page data as hydration JSON + bootstrap script) and Qwik 1/2 (container state). Peers render the same page without handlers, so the resumable comparison is conservative for Rivet. `rivet-router` (router + resume render, no handlers) and `rivet-for` are shown for attribution.",
     "- **Verdicts (B4)**: WIN/LOSE only for a ≥3% median gap with non-overlapping trial ranges; else TIE (`apps/dom-bench/verdict.ts`).",
     "- **Escaping (B5)**: `--strings` variant — every field is text, field 3 of each row (10%) is `<b>\"N\"</b> & 'é€漢字𝄞'`; the validator compares exact characters after HTML parsing (any valid escaping accepted, raw markup rejected).",
     "- **HTML bytes**: mean successful response body bytes (chunked framing excluded).",
@@ -412,7 +414,9 @@ const order = (lane: string) =>
     "dotnet",
     "solid-stable-static",
     "solid-stable-static-bun",
+    "react-static",
     "solid-stable-interactive",
+    "react-interactive",
     "solid-stable",
     "solid",
     "qwik-stable",

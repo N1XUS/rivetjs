@@ -7,7 +7,7 @@ import { dirname, resolve } from "node:path";
 import { Window } from "happy-dom";
 import { fieldText, validateResponse } from "../loadgen/validate.ts";
 
-for (const name of ["rivet", "rivet-for", "solid", "qwik", "solid-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "qwik-stable"]) {
+for (const name of ["rivet", "rivet-for", "solid", "qwik", "solid-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "qwik-stable", "react-static", "react-interactive"]) {
   test(`${name} production adapter renders all fixture fields and escaped identity`, async () => {
     const { renderPage } = (await import(`../dist/${name}.mjs`)) as typeof import("../adapters/rivet.ts");
     let html = "";
@@ -49,7 +49,7 @@ for (const name of ["rivet", "rivet-for", "solid", "qwik", "solid-stable", "soli
 // Escaping variant (B5, strings=1) and text grid (strings=2): text values with markup-significant (+ non-ASCII)
 // characters in every lane, checked with the load generator's exact parsed-text validator (each framework may pick
 // its own valid encoding).
-for (const name of ["rivet", "rivet-compiled", "rivet-for", "solid", "qwik", "solid-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "qwik-stable"])
+for (const name of ["rivet", "rivet-compiled", "rivet-for", "solid", "qwik", "solid-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "qwik-stable", "react-static", "react-interactive"])
   for (const profile of [1, 2])
   test(`${name} escapes the strings=${profile} variant exactly`, async () => {
     const { renderPage } = (await import(`../dist/${name}.mjs`)) as typeof import("../adapters/rivet.ts");
@@ -91,7 +91,32 @@ test("solid-stable-interactive does rivet-resume's row work: links, signal attri
   assert.match(scripts, /8009/);
 });
 
+test("react-static ships no script while react-interactive does rivet-resume's row work: links, state attribute, page data, bootstrap script", async () => {
+  const render = async (name: string) => {
+    const { renderPage } = (await import(`../dist/${name}.mjs`)) as typeof import("../adapters/rivet.ts");
+    let html = "";
+    const sink = new Writable({ write(chunk: Buffer, _encoding, done) { html += chunk.toString(); done(); } });
+    const rows = [7, 8].map((id) => ({ id, values: Array.from({ length: 10 }, (_, i) => id * 1000 + i) }));
+    await renderPage({ title: "t", token: "k", markdown: "", rows }, { signal: new AbortController().signal, articleHtml: "" }, sink);
+    return html;
+  };
+  const staticHtml = await render("react-static");
+  assert.doesNotMatch(staticHtml, /<script\b|<a\b/);
+  assert.match(staticHtml, /^<!DOCTYPE html>/);
+  const html = await render("react-interactive");
+  assert.equal((html.match(/data-state="even"/g) ?? []).length, 2);
+  assert.match(html, /href="\/resume\?rows=8"/);
+  assert.match(html, /<nav>/);
+  assert.match(html, /<script src="\/assets\/react-client\.js" async="">/);
+  // The page data (every row value) travels in the bootstrap script for hydrateRoot, like Rivet's resume state.
+  const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join("\n");
+  assert.match(scripts, /window\.__PAGE__=/);
+  assert.match(scripts, /8009/);
+});
+
 for (const [framework, packageName, version] of [
+  ["react-static", "react-dom", "19.3.0"],
+  ["react-interactive", "react-dom", "19.3.0"],
   ["solid-stable", "solid-js", "1.9.15"],
   ["solid-stable-string", "solid-js", "1.9.15"],
   ["solid-stable-static", "solid-js", "1.9.15"],
@@ -127,7 +152,7 @@ for (const [framework, packageName, version] of [
   });
 }
 
-for (const framework of ["solid-stable", "solid-stable-string", "qwik-stable"]) {
+for (const framework of ["solid-stable", "solid-stable-string", "qwik-stable", "react-static"]) {
   test(`${framework} preserves the caller-owned response under backpressure`, async () => {
     const { renderPage } = await import(`../dist/${framework}.mjs`) as typeof import("../adapters/rivet.ts");
     let pending = 0, written = "";

@@ -28,7 +28,7 @@ export async function stablePackage(name: string): Promise<{ directory: string; 
 export const stableResolver: Plugin = {
   name: "stable-framework-workspace",
   setup(builder) {
-    builder.onResolve({ filter: /^(?:solid-js|@builder\.io\/qwik)(?:\/|$)/ }, args => {
+    builder.onResolve({ filter: /^(?:solid-js|@builder\.io\/qwik|react|react-dom)(?:\/|$)/ }, args => {
       if (args.pluginData?.stableWorkspace) return;
       return builder.resolve(args.path, { kind: args.kind, resolveDir: stableRoot, pluginData: { stableWorkspace: true } });
     });

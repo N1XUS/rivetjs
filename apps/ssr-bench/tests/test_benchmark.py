@@ -54,6 +54,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.frameworks,['solid-stable','solid-stable-string'])
         self.assertNotIn('solid-stable-string',parse_args([]).frameworks)
         self.assertEqual(benchmark.PORTS['solid-stable-string'],18113)
+        self.assertEqual(benchmark.PORTS['react-static'],18133)
+        self.assertEqual(benchmark.PORTS['react-interactive'],18134)
         self.assertIn('--profile',benchmark.startup_command(args))
         self.assertIn('--no-build',benchmark.startup_command(args))
         report=html_report({'metadata':{'versions':{'solid-stable-string':{

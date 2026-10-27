@@ -19,13 +19,13 @@ const run = (cases: ReturnType<typeof kase>[], p: object = provenance) => ({
 });
 
 test("rivet-compiled ranks only against static peers, rivet-resume only against resumable peers", () => {
-  const cases = ["rivet-compiled", "rivet-resume", "dotnet", "solid-stable-static", "solid-stable", "qwik"].flatMap((f, i) =>
-    [0, 1, 2].map((r) => kase(f, 100 + 50 * i + r, r)),
+  const cases = ["rivet-compiled", "rivet-resume", "dotnet", "solid-stable-static", "react-static", "solid-stable", "react-interactive", "qwik"].flatMap(
+    (f, i) => [0, 1, 2].map((r) => kase(f, 100 + 50 * i + r, r)),
   );
   const { comparisons } = summarize([run(cases)]);
   const peers = (lane: string) => [...new Set(comparisons.filter((c) => c.rivet === lane).map((c) => c.peer))].sort();
-  assert.deepEqual(peers("rivet-compiled"), ["dotnet", "solid-stable-static"]);
-  assert.deepEqual(peers("rivet-resume"), ["qwik", "solid-stable"]);
+  assert.deepEqual(peers("rivet-compiled"), ["dotnet", "react-static", "solid-stable-static"]);
+  assert.deepEqual(peers("rivet-resume"), ["qwik", "react-interactive", "solid-stable"]);
   const rps = comparisons.find((c) => c.rivet === "rivet-compiled" && c.peer === "dotnet" && c.metric === "rps")!;
   assert.equal(rps.verdict, "LOSE"); // 100–102 vs 200–202 req/s
   const bytes = comparisons.find((c) => c.rivet === "rivet-compiled" && c.peer === "dotnet" && c.metric === "html_kb")!;

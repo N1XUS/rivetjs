@@ -100,7 +100,7 @@ The server benchmark (`apps/ssr-bench`) renders the same page in each framework:
 - Every response is checked for status, framing, body length and completion. Strict validation checks every row and field on the first two responses per connection, every thirty-second response, and whenever the body length or tail changes.
 - Every frontend container gets the same limit: 1 CPU and 512 MiB of memory.
 - Nothing is cached between requests.
-- Every Node lane runs on the same Node 26 image with the same gRPC data client; Razor runs on .NET 10.
+- Every Node lane (Rivet, Solid, Qwik and React) runs on the same Node 26 image with the same gRPC data client; Razor runs on .NET 10.
 
 The reports use these measures:
 
@@ -118,6 +118,7 @@ The reports use these measures:
 
 | Report | What it compared |
 | --- | --- |
+| [SSR comparison with React 2026-10-27](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-27-ssr-comparison-react.md) | The 2026-10-23 matrix again with two React 19.3 lanes added: a static page and a hydratable page that does the same per-row work. It also includes browser mount and update at 100 and 1,000 rows. The host was busier than on 2026-10-23, so the charts on this page keep the 2026-10-23 numbers. |
 | [Scheduler 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-scheduler.md) | Component layout, complete server rendering, cold input, drag and integration checks. Pure layout meets its target; full-week rendering and historical cold-download budgets remain unmet. |
 | [SSR comparison 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-ssr-comparison.md) | The latest ten-lane Docker matrix: integer pages at concurrency 1 and 10, plus the text grid at concurrency 1. The server charts and homepage server numbers read it. |
 | [Krausest local run 2026-10-23](https://github.com/N1XUS/rivetjs/blob/main/docs/benchmarks/2026-10-23-krausest.md) | Fresh local Rivet/vanilla CPU, memory, startup and size measurements. Published framework comparisons are not comparable because Chrome major versions differ. The keyed-table charts read this run. |

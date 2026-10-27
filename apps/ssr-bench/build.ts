@@ -61,9 +61,13 @@ for (const name of [
   "rivet-compiled",
   "rivet-for",
   "rivet-router",
+  "react-static",
+  "react-interactive",
 ]) {
-  const plugins: Plugin[] =
-    name === "solid-stable-static"
+  const react = name.startsWith("react");
+  const plugins: Plugin[] = react
+    ? [stableResolver]
+    : name === "solid-stable-static"
       ? [stableResolver, stableSolidStaticCompiler]
       : name.startsWith("solid-stable")
         ? [stableResolver, stableSolidCompiler]
@@ -124,18 +128,30 @@ for (const name of [
     external: ["node:*"],
     alias: { "@rivetjs/runtime/server": resolve(root, "../../libs/runtime/server.ts") },
     define: { "process.env.NODE_ENV": '"production"' },
+    // React lanes: automatic JSX runtime from the stable workspace (the repo tsconfig sets the Rivet JSX source);
+    // react-dom/server's CommonJS build `require`s Node built-ins, which an ESM bundle gets from `createRequire`.
+    ...(react
+      ? {
+          jsx: "automatic" as const,
+          jsxImportSource: "react",
+          tsconfigRaw: {},
+          banner: { js: 'import { createRequire as __createRequire } from "node:module"; const require = __createRequire(import.meta.url);' },
+        }
+      : {}),
   });
   const bytes = await readFile(outfile);
   const packageName = name.startsWith("rivet")
     ? "@rivetjs/runtime"
-    : name.startsWith("solid")
-      ? "solid-js"
-      : name === "qwik-stable"
-        ? "@builder.io/qwik"
-        : "@qwik.dev/core";
+    : react
+      ? "react-dom"
+      : name.startsWith("solid")
+        ? "solid-js"
+        : name === "qwik-stable"
+          ? "@builder.io/qwik"
+          : "@qwik.dev/core";
   let version: string | undefined;
   if (name.startsWith("rivet")) version = "0.0.0-experimental";
-  else if (name.startsWith("solid-stable") || name === "qwik-stable") version = (await stablePackage(packageName)).version;
+  else if (name.startsWith("solid-stable") || name === "qwik-stable" || react) version = (await stablePackage(packageName)).version;
   else {
     let directory = dirname(fileURLToPath(import.meta.resolve(packageName)));
     for (;;) {
@@ -168,9 +184,13 @@ for (const name of [
                   ? "Solid stable production SSR (babel-preset-solid)"
                   : name === "solid-stable-interactive"
                     ? "Solid stable production SSR (babel-preset-solid), interactive rows + serialized page data"
-                    : name === "qwik-stable"
-                      ? "Qwik stable production SSR (Qwik optimizer + Vite 7)"
-                      : name,
+                    : name === "react-static"
+                      ? "React stable production SSR (react-dom/server renderToPipeableStream), static page"
+                      : name === "react-interactive"
+                        ? "React stable production SSR (react-dom/server renderToPipeableStream), interactive rows + serialized page data"
+                        : name === "qwik-stable"
+                          ? "Qwik stable production SSR (Qwik optimizer + Vite 7)"
+                          : name,
     outputMode:
       name === "solid-stable-string"
         ? "buffered-renderToString"

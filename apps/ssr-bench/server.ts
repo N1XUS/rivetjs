@@ -24,7 +24,7 @@ interface BuildArtifact {
 // containers: Node's type stripping costs ~24 MB of resident memory per process).
 const dist = new URL(import.meta.url.endsWith("/dist/server.mjs") ? "./" : "./dist/", import.meta.url);
 const framework = process.env.FRAMEWORK ?? "rivet";
-if (!["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "rivet-compiled", "rivet-for"].includes(framework)) throw new Error("Invalid framework");
+if (!["rivet", "solid", "qwik", "solid-stable", "qwik-stable", "solid-stable-string", "solid-stable-static", "solid-stable-interactive", "rivet-compiled", "rivet-for", "react-static", "react-interactive"].includes(framework)) throw new Error("Invalid framework");
 const { renderPage, close: closeAdapter } = (await import(new URL(`${framework}.mjs`, dist).href)) as Adapter;
 const service = contentServer(process.env.GRPC_URL ?? "127.0.0.1:18100");
 const metadata = (

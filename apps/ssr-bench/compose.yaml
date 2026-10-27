@@ -118,6 +118,20 @@ services:
     environment: { <<: *node-env, FRAMEWORK: solid-stable-interactive }
     ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}21:8080"]
     profiles: [variants]
+  react-static:
+    <<: *node-build
+    # React 19 react-dom/server renderToPipeableStream of the static page (no handlers / state / bootstrap script):
+    # static peer of rivet-compiled / Razor / solid-stable-static. Stable toolchain from apps/bench-stable.
+    environment: { <<: *node-env, FRAMEWORK: react-static }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}33:8080"]
+    profiles: [variants]
+  react-interactive:
+    <<: *node-build
+    # React 19 hydratable with rivet-resume's per-row work (as solid-stable-interactive): nested layout with state +
+    # handler + links, per-row onClick, state-driven data-state, page data as hydration JSON, client bootstrap script.
+    environment: { <<: *node-env, FRAMEWORK: react-interactive }
+    ports: ["127.0.0.1:${SSR_BENCH_PORT_PREFIX:-181}34:8080"]
+    profiles: [variants]
   rivet-compiled:
     <<: *node-build
     environment: { <<: *node-env, FRAMEWORK: rivet-compiled }

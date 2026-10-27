@@ -6,12 +6,12 @@ Dependency-only workspace: isolates the **stable** Solid 1 / Qwik 1 toolchains f
 
 ## Entry points
 
-- `package.json` — pinned exact versions (checked against npm 2026-10-04): `solid-js` 1.9.15, `@builder.io/qwik` 1.20.1, `babel-preset-solid` 1.9.15, `@babel/core` 7.29.7, `vite-plugin-solid` 2.11.14, `vite` 7.3.6 (Qwik 1 peer `>=5 <8`).
+- `package.json` — pinned exact versions (checked against npm 2026-10-04): `solid-js` 1.9.15, `@builder.io/qwik` 1.20.1, `babel-preset-solid` 1.9.15, `@babel/core` 7.29.7, `vite-plugin-solid` 2.11.14, `vite` 7.3.6 (Qwik 1 peer `>=5 <8`), `react` / `react-dom` 19.3.0 (2026-10-27, ssr-bench React lanes; same version as `apps/dom-bench`, so the lockfile only lists them on this workspace and resolves the hoisted root copy).
 - `README.md` — version table + purpose.
 
 ## Who resolves from here
 
-- `apps/ssr-bench/stable-build.ts` — `stableRoot = ../bench-stable`, `stableRequire` → `solid-stable`, `solid-stable-string`, `qwik-stable` SSR lanes.
+- `apps/ssr-bench/stable-build.ts` — `stableRoot = ../bench-stable`, `stableRequire` → `solid-stable`, `solid-stable-string`, `qwik-stable` SSR lanes; `stableResolver` also resolves `react` / `react-dom` for `react-static` / `react-interactive`.
 - `apps/resume-bench/stable-dependencies.ts` — `stableRequire`, `stablePackage`, `stableSolidAliases`, `assertStableSolidModules` → resume `solid-stable` / `qwik-stable` lanes.
 - `apps/dom-bench/build.ts` — imports `../resume-bench/stable-dependencies.ts` → dom `solid-stable` lane.
 

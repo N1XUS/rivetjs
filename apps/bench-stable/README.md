@@ -10,6 +10,7 @@ This private workspace isolates the stable releases from the existing Solid 2 an
 | `@babel/core` | 7.29.7 | Compatible compiler core required by the Solid preset |
 | `vite-plugin-solid` | 2.11.14 | Stable Solid production client/SSR builds |
 | `vite` | 7.3.6 | Compatible with Qwik 1's `>=5 <8` peer range |
+| `react` / `react-dom` | 19.3.0 | Stable React for the ssr-bench `react-static` / `react-interactive` lanes (`react-dom/server`); same version as `apps/dom-bench`, so the lockfile resolves the existing hoisted copy (added 2026-10-27) |
 
 The existing comparison lanes retain Solid 2.0.0-rc.13 and Qwik 2.0.0-rc.0. The additional lanes are named `solid-stable` and `qwik-stable`; build manifests record exact versions. Stable builds must resolve their runtime and transitive imports through this workspace, rather than mixing Solid 1 and Solid 2 instances.
 
