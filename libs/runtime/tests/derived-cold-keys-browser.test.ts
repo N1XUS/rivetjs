@@ -97,3 +97,65 @@ compiled("cold keys: the nearest data-rk holds a key (no native step) and the re
     { delays: { "/keys.js": cold } },
   );
 });
+
+// COLD-FIX-B: keys typed before boot all went to the element focused then (held: no native default moved focus). A
+// replayed key whose handler moves focus sends the next held keys of that element to where focus went, as on a loaded
+// page (cdk date segments advance after two digits: a cold "0101" typed the month twice). A held key dispatched to
+// another element (the user's own focus move in between) keeps its target.
+const SEGMENTS = `import { signal } from "@rivetjs/reactivity";
+export function Segments() {
+  const a = signal("");
+  const b = signal("");
+  const c = signal("");
+  const typeInto = (e: KeyboardEvent, s: { (): string; set(v: string): void }, next: string | null) => {
+    e.preventDefault();
+    s.set(s() + e.key);
+    if (next && s().length === 2) (document.getElementById(next) as HTMLElement).focus();
+  };
+  return (
+    <div data-rk="0 1 2 3 4 5 6 7 8 9">
+      <span id="a" tabIndex={0} onKeyDown={(e) => typeInto(e, a, "b")}>{a()}</span>
+      <span id="b" tabIndex={0} onKeyDown={(e) => typeInto(e, b, null)}>{b()}</span>
+      <span id="c" tabIndex={0} onKeyDown={(e) => typeInto(e, c, null)}>{c()}</span>
+    </div>
+  );
+}
+`;
+
+compiled("cold keys follow the focus their replays move; a key sent to another element keeps its target", async () => {
+  const resume2 = { module: "src/segments.tsx", boundaries: ["Segments"], independent: ["Segments"] };
+  const server = compile(SEGMENTS, { target: "server", filename: "segments.tsx", resume: resume2 } as never);
+  const dom = compile(SEGMENTS, { target: "dom", filename: "segments.tsx", resume: resume2 } as never);
+  assert.deepEqual(server.diagnostics, []);
+  assert.deepEqual(dom.diagnostics, []);
+  const { Segments } = await importServer<{ Segments: () => ServerValue }>(server.code);
+  const symbols = { "src/segments.tsx#Segments": "/segments.js" };
+  const html = (await derivedToString(() => Segments(), { manifest: { hash: "t", runtime: "/rt.js", symbols }, preload: { lean: true } } as never)) as string;
+  let release!: () => void;
+  const cold = new Promise<void>((resolve) => (release = resolve));
+  const served = {
+    ...DERIVED_BUILD,
+    "/": "<!doctype html><html><body>" + html + "</body></html>",
+    "/rt.js": 'export { default } from "/dom-derived.ts";',
+    "/segments.js": rewrite(dom.code),
+  };
+  await withPage(
+    served,
+    async (page) => {
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("http://rivet.test/");
+      await page.focus("#a");
+      for (const key of "0123") await page.keyboard.press(key);
+      // The user moves focus to c (programmatic here: the loader holds no focus move) and types there.
+      await page.focus("#c");
+      await page.keyboard.press("9");
+      release();
+      await page.waitForFunction(() => document.querySelector("#c")!.textContent === "9");
+      const text = await page.evaluate(() => ["a", "b", "c"].map((id) => document.getElementById(id)!.textContent).join("|"));
+      assert.equal(text, "01|23|9");
+      assert.deepEqual(errors, []);
+    },
+    { delays: { "/segments.js": cold } },
+  );
+});
