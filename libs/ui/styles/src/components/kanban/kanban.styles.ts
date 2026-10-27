@@ -13,7 +13,6 @@ export const kanbanVariants = tv({
     base: "kanban",
     card: "kanban__card",
     cardContent: "kanban__card-content",
-    cardGroup: "kanban__card-group",
     cardList: "kanban__card-list",
     column: "kanban__column",
     columnActions: "kanban__column-actions",

@@ -12,12 +12,12 @@ import { effect, onCleanup } from "@rivetjs/reactivity";
 import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { read, type MaybeAccessor } from "./directives/registry.ts";
 import { handleChanged, handleOwner } from "./lazy-refs.ts";
 import { nativeDragInteractionStyles } from "./dom/styling.ts";
 
-export interface DragHandleProps extends GlobalDOMAttributes<HTMLElement> {
+export interface DragHandleProps extends GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
   /** Whether starting to drag through this handle is disabled (Angular `cdkDragHandleDisabled`). */
   disabled?: MaybeAccessor<boolean | undefined>;
   /** Element to render. @default "div" */
@@ -34,7 +34,7 @@ export interface DragHandleProps extends GlobalDOMAttributes<HTMLElement> {
 export function DragHandle(props: DragHandleProps) {
   // Read every prop up front: an element with a spread resumes as one binding over all its
   // attributes, and reading `props` there would capture the whole props object (children included).
-  const dom = globalDOMProps(props);
+  const dom = hostDOMProps(props);
   const { id, elementType, children } = props;
   const userStyle = props.style;
   const disabled = props.disabled;

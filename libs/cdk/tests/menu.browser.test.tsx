@@ -562,6 +562,84 @@ describe("Menu", () => {
     expect(getByRole("menuitem")).toHaveTextContent("No results");
   });
 
+  // Rivet additions: the items' live-count cleanups run while the menu's owner is being disposed; they must not
+  // re-run the empty-state `Show` under that disposed owner ("Cannot run with a disposed owner"). The disposal order
+  // that threw (items before the `Show`) reproduces in the happy-dom suite (libs/ui/tests/context-menu-command.test.tsx
+  // unmounts an open Command palette); these cases pin the browser side and the empty-state transitions.
+  it("unmounts with renderEmptyState and items", () => {
+    const { unmount } = render((() => (
+      <Menu aria-label="Test" renderEmptyState={() => "No results"}>
+        <MenuItem id="a">A</MenuItem>
+        <MenuItem id="b">B</MenuItem>
+      </Menu>
+    )) as never);
+    expect(screen().getAllByRole("menuitem")).toHaveLength(2);
+    expect(() => unmount()).not.toThrow();
+    expect(document.querySelector("[role=menu]")).toBeNull();
+  });
+
+  it("unmounts with renderEmptyState inside a filtering Autocomplete", async () => {
+    const { unmount } = render((() => (
+      <Autocomplete filter={(text: string, input: string) => text.toLowerCase().includes(input.toLowerCase())}>
+        <SearchField aria-label="Search">
+          <Input />
+        </SearchField>
+        <Menu aria-label="Commands" renderEmptyState={() => "No results"}>
+          <MenuSection>
+            <Header>Section</Header>
+            <MenuItem id="foo">Foo</MenuItem>
+            <MenuItem id="bar">Bar</MenuItem>
+          </MenuSection>
+          <Separator />
+          <MenuItem id="baz">Baz</MenuItem>
+        </Menu>
+      </Autocomplete>
+    )) as never);
+    await user.click(screen().getByRole("searchbox"));
+    await user.keyboard("zz");
+    await waitFor(() => expect(screen().getByRole("menu")).toHaveAttribute("data-empty", "true"));
+    await user.keyboard("{Backspace}{Backspace}f");
+    await waitFor(() => expect(within(screen().getByRole("menu")).getAllByRole("menuitem")).toHaveLength(1));
+    expect(() => unmount()).not.toThrow();
+    expect(document.querySelector("[role=menu]")).toBeNull();
+  });
+
+  it("unmounts an open popover menu with renderEmptyState", async () => {
+    const { unmount } = render((() => (
+      <MenuTrigger>
+        <Button aria-label="Menu">Menu</Button>
+        <Popover>
+          <Menu aria-label="Test" renderEmptyState={() => "No results"}>
+            <MenuItem id="a">A</MenuItem>
+            <MenuItem id="b">B</MenuItem>
+          </Menu>
+        </Popover>
+      </MenuTrigger>
+    )) as never);
+    await user.click(screen().getByRole("button"));
+    expect(within(screen().getByRole("menu")).getAllByRole("menuitem")).toHaveLength(2);
+    expect(() => unmount()).not.toThrow();
+    expect(document.querySelector("[role=menu]")).toBeNull();
+  });
+
+  it("shows the empty state when the last item goes, and hides it when one comes back", () => {
+    const show = signal(true);
+    const { getByRole, getAllByRole } = renderUI(() => (
+      <Menu aria-label="Test" renderEmptyState={() => "No results"}>
+        {() => (show() ? <MenuItem id="a">A</MenuItem> : null)}
+      </Menu>
+    ));
+    expect(getAllByRole("menuitem")).toHaveLength(1);
+    expect(getByRole("menu")).not.toHaveAttribute("data-empty");
+    show.set(false);
+    flush();
+    expect(getByRole("menu")).toHaveAttribute("data-empty", "true");
+    expect(getByRole("menuitem")).toHaveTextContent("No results");
+    show.set(true);
+    flush();
+    expect(getByRole("menuitem")).toHaveTextContent("A");
+  });
+
   it("should not close the menu when shouldCloseOnSelect is false", async () => {
     const { queryByRole, getByRole, getAllByRole } = renderUI(() => <MenuTriggerExample menuProps={{ shouldCloseOnSelect: false }} />);
     expect(queryByRole("menu")).not.toBeInTheDocument();

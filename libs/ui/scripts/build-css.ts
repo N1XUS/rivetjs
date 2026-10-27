@@ -65,6 +65,29 @@ export function componentOrder(): string[] {
   return [...index.matchAll(/^@import "\.\/([a-z0-9-]+)\.css";/gm)].map((m) => m[1]!);
 }
 
+/**
+ * The provenance header of a component source (`/* Ported from … *\/`, `/* Rivet … *\/`): the leading block comments
+ * that start on the file's first two lines, each kept whole (a multi-line comment stays closed in the out file). An
+ * unclosed leading comment throws instead of commenting out the rest of the out file.
+ */
+export function headerComments(source: string, name = "<source>"): string[] {
+  const header: string[] = [];
+  let at = 0;
+  for (;;) {
+    const start = source.slice(at).search(/\S/);
+    if (start < 0 || !source.startsWith("/*", at + start)) break;
+    const open = at + start;
+    const close = source.indexOf("*/", open + 2);
+    if (close < 0) throw new Error(`build-css: components/${name}.css: unclosed header comment`);
+    const line = source.slice(0, open).split("\n").length - 1;
+    if (line >= 2) break;
+    const comment = source.slice(open, close + 2);
+    if (/^\/\* (Ported from|Rivet)/.test(comment)) header.push(comment);
+    at = close + 2;
+  }
+  return header;
+}
+
 async function tailwind(css: string): Promise<string> {
   const compiler = await compile(css, { base: STYLES, onDependency() {} });
   return compiler.build([]);
@@ -118,7 +141,7 @@ export async function generateCss(): Promise<Record<string, string>> {
 
   for (const name of order) {
     const source = readFileSync(`${STYLES}components/${name}.css`, "utf8");
-    const header = source.split("\n").filter((line, i) => i < 2 && /^\/\* (Ported from|Rivet)/.test(line));
+    const header = headerComments(source, name);
     const root = postcss.parse(lower(await tailwind(`${REFERENCE}\n@layer components {\n${source}\n}\n`)));
     // Tailwind's banner, `@layer properties` (statement + fallback block) and `@property` rules come from the registry.
     root.walkComments((c) => void c.remove());

@@ -173,10 +173,9 @@ test("command: opens from the button, parts + defaults, filters, empty state, a 
   press(items().find((i) => i.getAttribute("data-key") === "billing")!);
   await flush();
   assert.deepEqual(actions, ["billing"]);
-  // Closed before unmount: unmounting a cdk Menu with `renderEmptyState` throws today (its items' count cleanup re-runs
-  // the empty-state Show under the disposed menu owner); reported to the cdk owner.
-  open.set(false);
+  // Unmounted while open: the cdk Menu with `renderEmptyState` disposes cleanly (its items' count cleanups no longer
+  // re-run the empty-state Show under the disposed menu owner).
+  cleanup(r as never);
   await flush();
   assert.equal(document.querySelector("[role=dialog]"), null);
-  cleanup(r as never);
 });

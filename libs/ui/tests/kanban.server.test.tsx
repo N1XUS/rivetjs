@@ -53,7 +53,8 @@ test("kanban SSR: board, columns, lists, cards, handle, indicator, empty", async
   assert.match(html, /data-rv-drop-list-group/);
   assert.equal((html.match(/class="cdk-drop-list kanban__card-list"/g) ?? []).length, 3);
   assert.equal((html.match(/class="cdk-drag kanban__card"/g) ?? []).length, 3);
-  assert.match(html, /class="kanban__card-group" role="group" aria-label="Task a"/);
+  assert.match(html, /<div role="group" aria-label="Task a"[^>]*class="cdk-drag kanban__card"/);
+  assert.doesNotMatch(html, /kanban__card-group/);
   assert.match(html, /kanban__column-indicator"[^>]*style="--kanban-column-color:red"/);
   assert.doesNotMatch(html, /kanban__column-indicator"[^>]*data-icon/);
   assert.match(html, /<h3 class="kanban__column-title"/);

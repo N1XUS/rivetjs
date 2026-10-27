@@ -31,7 +31,7 @@
 // `render` (RAC DOMRenderProps) on Menu (`<div>`), MenuSection (`<section>`) and MenuItem (`<div>` / `<a>`): given, the attributes object goes to `render(attrs, renderProps)`. Deviations: no FocusScope around the menu (the popover's focus scope contains focus;
 //   a standalone menu has no FocusManager); `isEmpty` counts rendered (visible) items (live collection; a
 //   virtualized menu: its rendered window); live-mode filtering keeps empty sections (RAC drops them); no `--trigger-width` on the popover.
-import { onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
+import { createRoot, onCleanup, signal, untrack, useContext, type Signal } from "@rivetjs/reactivity";
 import { Show, clientEffect, ref as createRef, type Ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import { isSlot } from "@rivetjs/runtime/slot";
@@ -429,6 +429,10 @@ export function Menu<T = object>(inProps: MenuProps<T>) {
       ...(virtual ? { virtual } : {}),
     },
   );
+  // Unmount: children dispose in creation order before the menu's own cleanups, so the items' count cleanups (below,
+  // MenuItem) would write `itemCount` while the empty-state `Show` (a later child) still listens, and its re-run
+  // would create a scope under the already disposed menu owner. A scope created before both marks the teardown first.
+  createRoot(() => onCleanup(() => void (state.disposing = true)));
   // MenuTrigger's reactive menu id (DialogContext `idRef` pattern): the trigger's aria-controls follows a Menu `id`
   // (RA mergeIds; on a resumed page the merge runs in the browser, where idSignal has no updaters).
   const idRef = (props as { idRef?: Signal<string> }).idRef;
@@ -874,7 +878,7 @@ export const MenuItem = /*#__PURE__*/ createLeafComponent(ItemNode, function Men
   // Live collection size (RAC `collection.size`): visible items count themselves.
   const count = () => {
     state.itemCount.set(untrack(state.itemCount) + 1);
-    onCleanup(() => state.itemCount.set(untrack(state.itemCount) - 1));
+    onCleanup(() => state.disposing || state.itemCount.set(untrack(state.itemCount) - 1));
   };
 
   // A SubmenuTrigger's trigger item: bind the key, register the submenu (hover delay).

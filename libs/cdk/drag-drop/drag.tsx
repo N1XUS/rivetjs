@@ -10,7 +10,7 @@ import { effect, onCleanup, useContext } from "@rivetjs/reactivity";
 import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { getTransform } from "./dom/styling.ts";
 import { DragDropConfigContext } from "./directives/config.ts";
@@ -29,7 +29,7 @@ const OWNED = ["onMouseDown", "onTouchStart", "style"] as const;
 /** Preload the drag-drop handlers when a draggable scrolls into view (first press runs synchronously). */
 export const preload = "visible";
 
-export interface DragProps<T = any> extends DragInputs<T>, GlobalDOMAttributes<HTMLElement> {
+export interface DragProps<T = any> extends DragInputs<T>, GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
   /** Element to render. @default "div" */
   elementType?: "div" | "li" | "tr" | "span" | "section" | "article";
   id?: string;
@@ -75,7 +75,7 @@ export function Drag<T = any>(props: DragProps<T>) {
   const setup: DragSetup<T> = { inputs, config, dir, element };
   // Read every prop up front: an element with a spread resumes as one binding over all its
   // attributes, and reading `props` there would capture the whole props object (children included).
-  const dom = globalDOMProps(props, OWNED);
+  const dom = hostDOMProps(props, OWNED);
   const { onMouseDown, onTouchStart, id, elementType, style, children } = props;
   const disabled = props.disabled;
   const rootSelector = props.rootElementSelector;

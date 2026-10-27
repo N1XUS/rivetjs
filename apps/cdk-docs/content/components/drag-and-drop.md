@@ -317,7 +317,7 @@ import { DragDropConfigContext } from "@rivetjs/cdk/drag-drop";
 
 ## API
 
-Every component takes `id`, `class` (replaces the default `rv-*` class; the `cdk-*` class always stays), `style`, `children` and every global DOM attribute and event. Inputs take a value or an accessor / Signal, except the function-valued ones (`constrainPosition`, `enterPredicate`, `sortPredicate`), which are plain functions.
+Every component takes `id`, `class` (replaces the default `rv-*` class; the `cdk-*` class always stays), `style`, `children` and every global DOM attribute and event. `Drag`, `DragHandle`, `DropList` and `DropListGroup` also pass `role` and every `aria-*` attribute to their element, as attributes on an Angular CDK directive's host element stay there. Inputs take a value or an accessor / Signal, except the function-valued ones (`constrainPosition`, `enterPredicate`, `sortPredicate`), which are plain functions.
 
 ### Drag
 
@@ -403,7 +403,7 @@ The arrays are mutated: copy a signal's array first (`const next = items().slice
 
 ## Accessibility
 
-Angular CDK drag and drop is pointer only (mouse and touch): there is no keyboard or screen reader dragging, upstream or here. Give every drag interaction an alternative that every user can operate, such as move buttons or :kbd[Alt+ArrowUp] / :kbd[Alt+ArrowDown] shortcuts ([Keyboard shortcuts](../foundations/keyboard-shortcuts.md)), and announce the result in a live region ([Announcements](../foundations/announcements.md)). The [Kanban showcase](site:ui/showcase/kanban/) does both.
+Name the elements with `role` and `aria-*` props (`<Drag role="group" aria-label="Task 12">`, `<DropList aria-labelledby="todo-title">`); a non-focusable handle is better named by its icon (`role="img"` + `aria-label`). Angular CDK drag and drop is pointer only (mouse and touch): there is no keyboard or screen reader dragging, upstream or here. Give every drag interaction an alternative that every user can operate, such as move buttons or :kbd[Alt+ArrowUp] / :kbd[Alt+ArrowDown] shortcuts ([Keyboard shortcuts](../foundations/keyboard-shortcuts.md)), and announce the result in a live region ([Announcements](../foundations/announcements.md)). The [Kanban showcase](site:ui/showcase/kanban/) does both.
 
 ## Resumability
 

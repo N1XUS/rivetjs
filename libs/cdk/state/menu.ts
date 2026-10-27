@@ -82,6 +82,11 @@ export interface MenuState extends ListState {
   readonly delays: Record<string, number>;
   /** Rivet: number of rendered items (live collection: RAC `collection.size` for `isEmpty`). */
   readonly itemCount: Signal<number>;
+  /**
+   * Rivet: set while the menu's owner is being disposed (its first child scope's cleanup): the items' count cleanups
+   * then skip the write, which would re-run the empty-state `Show` under the disposed menu owner.
+   */
+  disposing?: boolean;
 }
 
 export interface MenuProps extends Omit<

@@ -78,7 +78,7 @@ export default function Anatomy() {
 - `.kanban__column`, `.kanban__column-header`, `.kanban__column-indicator` (`[data-icon]` with children), `.kanban__column-title`, `.kanban__column-count`, `.kanban__column-actions` (revealed on header hover / focus) - Columns.
 - `.kanban__column-body`, `.kanban__scroll-shadow` - Column container and its optional scroll wrapper.
 - `.kanban__card-list` - The drop list (`.cdk-drop-list-dragging` / `-receiving` while dragging).
-- `.kanban__card`, `.kanban__card-group` (`textValue`, `display: contents`), `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left).
+- `.kanban__card`, `.kanban__card-content` - Cards (`.cdk-drag-preview` = the dragged copy, `.cdk-drag-placeholder` = the slot it left).
 - `.kanban__drag-handle` - The grip (`Kanban.DragHandle`), shown on card hover / focus.
 - `.kanban__drop-indicator` - A custom landing slot (`Kanban.DropIndicator`).
 - `.kanban__empty` - Empty column state, shown while the list has no cards.
@@ -135,7 +135,7 @@ Also supports every cdk `DropList` prop (`orientation`, `disabled`, `sortingDisa
 | Prop        | Type      | Default | Description                                |
 | ----------- | --------- | ------- | ------------------------------------------ |
 | `data`      | `string`  | -       | The card key                               |
-| `textValue` | `string`  | -       | Accessible name (a `role="group"` wrapper) |
+| `textValue` | `string`  | -       | Accessible name (`role="group"` + `aria-label` on the card) |
 | `disabled`  | `boolean` | `false` | Not draggable                              |
 
 Also supports every cdk `Drag` prop.

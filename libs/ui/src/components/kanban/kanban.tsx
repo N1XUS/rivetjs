@@ -155,22 +155,21 @@ const KanbanCardList = <T,>(props: KanbanCardListProps<T>): JSX.Element => {
 };
 
 interface KanbanCardProps<T = string> extends DragProps<T> {
-  /** Accessible name of the card (`aria-label` on a `role="group"` wrapper inside the drag element). */
+  /** Accessible name of the card (`role="group"` + `aria-label` on the drag element). */
   textValue?: string;
 }
 
 const KanbanCard = <T,>(props: KanbanCardProps<T>): JSX.Element => {
   const { class: cls, children, textValue, ...rest } = props;
   return (
-    <Drag {...(rest as DragProps<T>)} class={composeSlotClassName(S.card, cls)} data-slot="kanban-card">
-      {/* The cdk Drag forwards only global DOM props (no aria-*): the name sits on a contents-only group inside. */}
-      {textValue ? (
-        <div class={S.cardGroup()} role="group" aria-label={textValue}>
-          {children}
-        </div>
-      ) : (
-        children
-      )}
+    <Drag
+      role={textValue ? "group" : undefined}
+      aria-label={textValue}
+      {...(rest as DragProps<T>)}
+      class={composeSlotClassName(S.card, cls)}
+      data-slot="kanban-card"
+    >
+      {children}
     </Drag>
   );
 };
@@ -185,7 +184,7 @@ const KanbanCardContent = (props: DivProps): JSX.Element => {
 };
 
 interface KanbanDragHandleProps extends DragHandlePrimitiveProps {
-  /** Name of the default grip icon (the cdk handle forwards no aria-* itself). @default "Drag" */
+  /** Name of the default grip icon (the handle itself is not focusable, so its name sits on the `role="img"` icon). @default "Drag" */
   "aria-label"?: string;
 }
 

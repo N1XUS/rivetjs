@@ -5,10 +5,10 @@
 // (directives/drop-list-group.ts): no code ships for it.
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
-import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { read, type MaybeAccessor } from "./directives/registry.ts";
 
-export interface DropListGroupProps extends GlobalDOMAttributes<HTMLElement> {
+export interface DropListGroupProps extends GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
   /** Whether starting a dragging sequence from inside this group is disabled. */
   disabled?: MaybeAccessor<boolean | undefined>;
   /** Element to render. @default "div" */
@@ -27,7 +27,7 @@ export interface DropListGroupProps extends GlobalDOMAttributes<HTMLElement> {
  * automatically. Can be used as an alternative to the `connectedTo` input of `DropList`.
  */
 export function DropListGroup(props: DropListGroupProps) {
-  const dom = globalDOMProps(props);
+  const dom = hostDOMProps(props);
   const { id, elementType, style, children } = props;
   const disabled = props.disabled;
   const className = props.class ?? "rv-DropListGroup";

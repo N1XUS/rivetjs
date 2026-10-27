@@ -80,9 +80,24 @@ export function globalDOMProps(props: object, owned?: readonly string[]): Record
   return pick(props, GLOBAL, GLOBAL_KEYS, owned);
 }
 
+/** `aria-*` attributes and `role`: what a directive's host element keeps (Angular `cdkDrag` / `cdkDragHandle`). */
+export type AriaDOMAttributes = { [K in `aria-${string}`]?: string | number | boolean | undefined } & { role?: string };
+
+const HOST = new RegExp(`${GLOBAL.source.slice(0, -2)}|role|aria-[a-z]+)$`);
+
+/**
+ * `globalDOMProps` + every `aria-*` attribute and `role`: for components ported from Angular CDK directives (`Drag`,
+ * `DragHandle`), where attributes the app writes stay on the host element. RAC's `filterDOMProps` `labelable` set
+ * (`aria-label` / `-labelledby` / `-describedby` / `-details`) is a subset.
+ */
+export function hostDOMProps(props: object, owned?: readonly string[]): Record<string, unknown> {
+  return pick(props, HOST, HOST_KEYS, owned);
+}
+
 // Parse once per key string (docs/guides/performance.md): the alternation regex per prop key of every part root was
 // ~40% of `pick`; key → match, bounded so arbitrary user keys cannot grow it.
 const GLOBAL_KEYS = new Map<string, boolean>(),
+  HOST_KEYS = new Map<string, boolean>(),
   TEXT_INPUT_KEYS = new Map<string, boolean>();
 function matches(cache: Map<string, boolean>, pattern: RegExp, key: string): boolean {
   let hit = cache.get(key);

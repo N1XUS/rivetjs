@@ -110,10 +110,6 @@
   }
 }
 
-.kanban__card-group {
-  display: contents;
-}
-
 .kanban__card-content {
   @apply flex flex-col gap-2 rounded-xl bg-overlay p-3 text-sm text-foreground;
   box-shadow: var(--surface-shadow);

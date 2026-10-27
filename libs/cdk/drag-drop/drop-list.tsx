@@ -10,7 +10,7 @@ import { ref } from "@rivetjs/runtime/dom";
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
 import type { StyleObject } from "@rivetjs/runtime/style";
 import { createId } from "@rivetjs/cdk/id";
-import { globalDOMProps, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
+import { hostDOMProps, type AriaDOMAttributes, type GlobalDOMAttributes } from "@rivetjs/cdk/dom-props";
 import { DirectionalityContext } from "../bidi/index.ts";
 import { DragDropConfigContext } from "./directives/config.ts";
 import { listHost, read } from "./directives/registry.ts";
@@ -31,7 +31,7 @@ const OWNED = ["onMouseDown", "onTouchStart"] as const;
 /** Preload the drag-drop handlers when a list scrolls into view (first press runs synchronously). */
 export const preload = "visible";
 
-export interface DropListProps<T = any> extends DropListInputs<T>, GlobalDOMAttributes<HTMLElement> {
+export interface DropListProps<T = any> extends DropListInputs<T>, GlobalDOMAttributes<HTMLElement>, AriaDOMAttributes {
   /** Element to render. @default "div" */
   elementType?: "div" | "ul" | "ol" | "tbody" | "section";
   /** Unique ID for the drop zone. Can be used as a reference in the `connectedTo` of another `DropList`. */
@@ -68,7 +68,7 @@ export function DropList<T = any>(props: DropListProps<T>) {
   const setup: DropListSetup<T> = { inputs, config, dir };
   // Read every prop up front: an element with a spread resumes as one binding over all its
   // attributes, and reading `props` there would capture the whole props object (children included).
-  const dom = globalDOMProps(props, OWNED);
+  const dom = hostDOMProps(props, OWNED);
   const { onMouseDown, onTouchStart, elementType, style, children } = props;
   const id = props.id ?? "cdk-drop-list-" + createId();
   const disabled = props.disabled;

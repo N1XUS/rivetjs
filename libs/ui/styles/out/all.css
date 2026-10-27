@@ -21097,10 +21097,6 @@
     transition: transform var(--duration-base) var(--ease-smooth);
   }
 
-  .kanban__card-group {
-    display: contents;
-  }
-
   .kanban__card-content {
     gap: calc(var(--spacing, .25rem) * 2);
     border-radius: calc(var(--radius) * 1.5);

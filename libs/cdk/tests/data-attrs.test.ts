@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, test } from "vitest";
 import { dataBool } from "../utils/data-attrs.tsx";
-import { globalDOMProps } from "../utils/dom-props.ts";
+import { globalDOMProps, hostDOMProps } from "../utils/dom-props.ts";
 
 const root = join(import.meta.dirname, "..");
 
@@ -26,6 +26,37 @@ describe("globalDOMProps", () => {
   });
   test("owned names are not forwarded (a component resolving a style render prop owns `style`)", () => {
     expect(globalDOMProps({ style: () => ({}), "data-a": "1" }, ["style"])).toEqual({ "data-a": "1" });
+  });
+});
+
+// `global: true` cases after react-aria test/utils/filterDOMProps.test.ts (Apache-2.0, © Adobe); `id` is a component
+// prop here (not forwarded by the helper) and React's `suppressHydrationWarning` has no Rivet equivalent.
+describe("globalDOMProps: global attributes", () => {
+  test("includes global attributes", () => {
+    const props = { dir: "rtl", lang: "en", hidden: true, inert: true, translate: "no" } as const;
+    expect(globalDOMProps(props)).toEqual(props);
+  });
+  test("strips aria-* and role (labelable props are the component's)", () => {
+    expect(globalDOMProps({ "aria-label": "x", role: "group", dir: "ltr" })).toEqual({ dir: "ltr" });
+  });
+});
+
+describe("hostDOMProps (Angular CDK directive hosts: Drag, DragHandle, DropList, DropListGroup)", () => {
+  test("forwards global props + every aria-* + role", () => {
+    const props = {
+      "aria-label": "Task",
+      "aria-labelledby": "t",
+      "aria-describedby": "d",
+      "aria-details": "x",
+      "aria-roledescription": "card",
+      role: "group",
+      dir: "rtl",
+      "data-a": "1",
+    };
+    expect(hostDOMProps(props)).toEqual(props);
+  });
+  test("drops non-attribute keys and owned names", () => {
+    expect(hostDOMProps({ ariaLabel: "x", roles: "y", lockAxis: "x", style: "a", onMouseDown: () => {} }, ["style", "onMouseDown"])).toEqual({});
   });
 });
 
