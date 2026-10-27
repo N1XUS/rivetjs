@@ -23,7 +23,7 @@ Rivet = compiled, resumable JSX framework: SSR-first streaming server output, fi
 | `libs/ui` | `@rivetjs/ui`: styled compound components on cdk (own stylesheet forked from an Apache-2.0 upstream, provenance in `libs/ui/UPSTREAM` / `NOTICE`; Tailwind v4, one Rivet theme + presets), story app tests. |
 | `libs/devtools` | `@rivetjs/devtools`: Vite dev-server DevTools (tree, signals, updates, HMR/error log, perf). |
 | `libs/testing` | `@rivetjs/testing` (dev-only): happy-dom/browser harnesses, user-event, fake events, jest/jasmine shims, vitest `rivetTest()` plugin, resume fuzz (`/fuzz`). |
-| `libs/language-core` | Editor-agnostic language features (compiler diagnostics, quick fixes, resume sites, route links) + `cli.ts` (`rivet-check`). |
+| `libs/language-core` | Editor-agnostic language features (compiler diagnostics, quick fixes, resume sites, route links, RV1017 signal self-writes in effects / computeds) + `cli.ts` (`rivet-check`). |
 | `libs/typescript-plugin` | TS language-service plugin over language-core. |
 | `libs/mcp` | `@rivetjs/mcp` (dev tooling): MCP server (stdio) for AI assistants: docs search / pages (same documents as the sites' llms.txt), component reference (ui / cdk / kit), `check_code` (compiler + language-core), `explain_diagnostic`. |
 | `skills/` | Public portable agent skill bundles for Codex, Claude Code and Cursor, generated from `libs/mcp/ai`; `rivet-ui-design` covers visual foundations, structure/layouts, composition and interactions, with MCP optional. Installation: `skills/README.md`. |

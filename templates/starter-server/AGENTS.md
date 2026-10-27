@@ -48,6 +48,7 @@ untrack(count); // read without subscribing (there is no .peek())
 ```
 
 - Avoid `count(5)` (not a setter) and `count.value`.
+- In an `effect` / `computed` / `clientEffect`, write from the current value with `update`: `count.set(count() + 1)` there subscribes the effect to its own write and re-runs it until the 10000-run cutoff (RV1017). In event handlers `count.set(count() + 1)` is fine (nothing tracks there).
 - `computed` / `effect` must be synchronous (an async fn is a type error).
 - Stores: `createStore` from `@rivetjs/reactivity/store`.
 

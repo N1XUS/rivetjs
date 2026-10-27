@@ -76,6 +76,12 @@ describe("@rivetjs/mcp", () => {
       code: 'import { signal } from "@rivetjs/reactivity";\nexport default function Page() {\n  const count = signal(0);\n  return <button class="btn" onClick={() => count.update((n) => n + 1)}>{count()}</button>;\n}\n',
     });
     expect(clean.text).toContain("— clean");
+    // RV1017 (language-core, type-aware): a signal written from its own read in an effect, with the update rewrite.
+    const loop = await call("check_code", {
+      code: 'import { effect, signal } from "@rivetjs/reactivity";\nconst x = signal(0);\neffect(() => x.set(x() + 1));\nexport default function Page() {\n  return <p>{x()}</p>;\n}\n',
+    });
+    expect(loop.text).toContain("RV1017");
+    expect(loop.text).toContain("effect(() => x.update((v) => v + 1));");
   });
   it("explain_diagnostic", async () => {
     const one = await call("explain_diagnostic", { code: "rv1016" });

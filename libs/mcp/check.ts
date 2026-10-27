@@ -1,6 +1,6 @@
 // `check_code`: the Rivet compiler (both targets, resume mode by default) + language-core checks on one snippet, as
 // the editor and `rivet check` report them: RV diagnostics with line / column, the explanation's fix text, the quick
-// fixes that apply (with the fixed source), RV3101 when a TypeScript program can be built, and TypeScript's
+// fixes that apply (with the fixed source), RV3101 / RV1017 when a TypeScript program can be built, and TypeScript's
 // own errors when the `@rivetjs/*` packages resolve from the working directory.
 import { resolve } from "node:path";
 import ts from "typescript";

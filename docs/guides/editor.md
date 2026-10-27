@@ -25,8 +25,9 @@ Design: [superpowers/specs/2026-10-03-language-service-design.md](../design/spec
 ## Features
 
 - Compiler diagnostics while typing: same text as the build, exact range, both targets (server + DOM), resume mode per manifest. tsserver code = `70000 + n` for `RVn` (source `rivet`); TypeScript's own syntax errors win over compiler parse errors.
-- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`.
+- Quick fixes: `preload` value → nearest valid; void element / textarea-with-model children → self-close; browser global in server render → wrap in `clientEffect(() => { … })` (+ import); `ns.Helper` → named import; bind-once handler (RV1016) → `(event) => (…)?.(event)`; signal self-write in an effect (RV1017) → `x.update((v) => …)`.
 - Resume boundary: inlay hint at each browser-only closure (`client · count, step`; VS Code: native provider from `_rivet:sites` labels, other editors: tsserver `provideInlayHints`); hover on `onClick` / `clientEffect` / a local function shows the site id, where it runs and its captures; hover on a captured variable names the resumable code capturing it.
+- Signal self-writes (RV1017, warning, `libs/language-core/self-write.ts`): `x.set(<expr reading x()>)` in the inline, non-async function of `effect` / `computed` (`@rivetjs/reactivity`) or `clientEffect` (`@rivetjs/runtime/dom`), also through `batch(() => …)`; the receiver must type as the reactivity `Signal`. Silent elsewhere (handlers, callbacks, `untrack`, JSX, component bodies: components run untracked). Editor + `rivet check` only (`.tsx` / `.jsx`); the build does not report it.
 - Links: `<Link to="…">` from `@rivetjs/router` / `@rivetjs/router/client` / `@rivetjs/router/link` (plugin option `linkModules`).
   - `to` typed as a route union (generated): TypeScript checks and completes; the plugin adds go-to-route-file and hover only.
   - `to` typed `string`: plugin completes route paths, warns RV3101 for literal internal paths that match no route, plus go-to-route-file and hover (route id, file, params).
@@ -57,6 +58,7 @@ Public reference: one page per code at `/errors/RVxxxx` on the framework docs si
 | RV1014 | Retired (live props, 2026-10-07): `<For each={xs()}>` / `<Show when={c()}>` / `<Match when={c()}>` are getters and update |
 | RV1015 | Event handler is a literal (`onClick="go()"`, `onClick={1}`): never callable — pass a function |
 | RV1016 | Event handler reads state when it binds (`onClick={s() ? a : b}`, `onClick={getHandler()}`): handlers bind once (`f.bind(…)`, function literals, identifiers, member reads, call-free conditionals compile); quick fix wraps it as `(event) => (…)?.(event)` |
+| RV1017 | Signal written from its own read in an effect / computed (`effect(() => x.set(x() + 1))`): the read subscribes the scope to its own write (warning; language service, type-aware); quick fix (effects) → `x.update((v) => v + 1)` |
 | RV1101 / RV1102 | Unsafe attribute / `preload` value |
 | RV2001 | Browser global read during server rendering (resume) |
 | RV1103, RV2002, RV2003, RV2005–RV2016, RV2101, RV2102, RV2105, RV2106 | Retired (M6, 2026-10-22): serialized resume model deleted (captures, refs, `.bind`, module references, resources, lazy rows); RV2004 retired earlier (`onXCapture` resumes) |

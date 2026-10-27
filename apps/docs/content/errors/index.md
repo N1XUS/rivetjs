@@ -31,6 +31,7 @@ Codes are never reused. A retired code keeps its page.
 | [RV1014](RV1014.md) | retired | Structural prop passes a value instead of an accessor (retired: component props are live, `each={xs()}` / `when={on()}` update) |
 | [RV1015](RV1015.md) | error | Event handler is a literal (string / number / boolean), not a function |
 | [RV1016](RV1016.md) | error | Event handler reads state when it binds (handlers bind once; wrap it in an arrow) |
+| [RV1017](RV1017.md) | warning | Signal written from its own read in a tracked scope (effect / computed): the read subscribes the scope to its own write (language service) |
 | [RV1101](RV1101.md) | error | Unsafe or unsupported native attribute / URL |
 | [RV1102](RV1102.md) | error | Invalid preload directive value |
 | [RV1103](RV1103.md) | retired | Invalid clientEvent target (retired: derived resume model) |

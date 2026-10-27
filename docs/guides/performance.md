@@ -64,6 +64,10 @@ Measured by lane BEAT-RAZOR 2026-10-26 (ssr-bench router build, Docker 1 CPU / 5
 - **Hand web objects what they copy anyway.** `new Request(url, { headers })` fills and validates its own header list: building a `Headers` first validated and stored every header twice (node adapter `toRequest` now passes name / value pairs). Server `createRouter(url)` no longer reparses the request URL, and a page URL the static index lacks skips the async file lookup. Together −2–4 µs per routed document (host interleaved A/B, within noise of Docker). Measured, not landed: an own `signal` on the bridged Request instead of undici's signal-following (`new Request(url, { signal })` 2.6–3.1 µs vs 1.3 µs: its AbortController, `addAbortListener`, WeakRef and FinalizationRegistry cell) — `new Request(event.request)` / `clone()` copies would stop following the client disconnect.
 - **Promoted bytes / request follow in-flight time, not the request signal.** The 8 / 18 KB-per-request "modes" of the router lane appear and vanish with host load (backend + driver latency keeps more requests in flight across scavenges); the loader without `request.signal`, or with an own signal, shows the same modes. One-shot pages cut the in-flight window: 2.6–3.9 KB/req at ordinary load.
 
+Measured by lane SELF-WRITE 2026-10-27 (Node 26 in-process, 2 M writes, median of 9; host load ≈ 30):
+
+- **Untracked self-write: `x.set(x() + 1)`, not `x.update((v) => v + 1)`.** In a handler nothing is tracking, so the read returns early from `track`, while `update` allocates its closure and swaps the observer through `untrack`: 2.6 vs 5.8 ns per write when the signal has no subscribers, 44.0 vs 47.3 ns with one subscribed effect to flush. In an effect / computed the read subscribes the scope to its own write — use `update` there (RV1017, language service).
+
 ## Incremental lists (INCR2 2026-10-26, opt-in)
 
 - `rivetRouter({ resume: { incr: true } })` + `start({ incr: createIncrCache() })`: compiler proves row purity (`libs/compiler/rust/src/compile/incr.rs`), runtime reuses row bytes per list (`libs/runtime/incr/`). Byte-identical (differential `libs/runtime/tests/server-incr.test.ts`).

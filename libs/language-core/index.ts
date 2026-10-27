@@ -8,6 +8,7 @@ import type { CheckDiagnostic, CheckSite, Compiler } from "./compiler.ts";
 import { linkDiagnostics } from "./links.ts";
 import { ManifestCache, moduleId, type EditorRoute, type ProjectManifest } from "./manifest.ts";
 import { isRouteModule, untaggedServerExports } from "./server-exports.ts";
+import { selfWrites } from "./self-write.ts";
 import { sourcePackagesOf } from "./sources.ts";
 
 export * from "./compiler.ts";
@@ -18,6 +19,7 @@ export * from "./doctor.ts";
 export * from "./links.ts";
 export * from "./explain.ts";
 export * from "./server-exports.ts";
+export * from "./self-write.ts";
 
 export interface FileCheck {
   diagnostics: CheckDiagnostic[];
@@ -86,7 +88,7 @@ export interface AnalyzeOptions {
   linkModules?: readonly string[];
 }
 
-/** Every Rivet diagnostic of a program file (compiler + RV3010 + RV3101), as the editor shows them. */
+/** Every Rivet diagnostic of a program file (compiler + RV3010 + RV1017 + RV3101), as the editor shows them. */
 export function analyzeFile(
   ts: typeof TS,
   core: LanguageCore,
@@ -101,6 +103,9 @@ export function analyzeFile(
   const manifest = result.project?.manifest;
   // RV3010: route modules only (the build's `serverExports` compile pass; the editor compiles without it).
   if (manifest && isRouteModule(result.project!.root, manifest.routesDir, file.fileName)) diagnostics = [...diagnostics, ...untaggedServerExports(ts, file)];
+  // RV1017: signal self-writes in tracked scopes (type-aware: the program's checker decides what a signal is).
+  const writes = selfWrites(ts, file, program.getTypeChecker());
+  if (writes.length) diagnostics = [...diagnostics, ...writes];
   if (manifest?.routes && options.typeAware !== false)
     diagnostics = [
       ...diagnostics,

@@ -135,6 +135,18 @@
       "quickFix": "rivetHandlerArrow: \"Wrap handler in arrow function\" → (event) => (<expr>)?.(event)"
     },
     {
+      "code": "RV1017",
+      "messages": [
+        "`{name}` is read and written in an effect: the read subscribes the effect to its own write, so it re-runs until the 10000-run cutoff. Use `{name}.update((v) => …)`: it reads without subscribing",
+        "`{name}` is read and written in a computed: the read subscribes the computed to its own write, and signal writes throw during computed evaluation. Derive the value instead, or write it from an effect or handler with `{name}.update((v) => …)`"
+      ],
+      "fix": "In an effect, write from the current value with update, which reads it untracked: count.update((v) => v + 1) instead of count.set(count() + 1). In a computed, do not write at all: derive the value (computed(() => count() + 1)) or move the write into an effect or handler.",
+      "avoid": "import { effect, signal } from \"@rivetjs/reactivity\";\nconst items = signal<string[]>([]);\nconst incoming = signal(\"\");\neffect(() => {\n  if (incoming()) items.set([...items(), incoming()]);\n});",
+      "prefer": "import { effect, signal } from \"@rivetjs/reactivity\";\nconst items = signal<string[]>([]);\nconst incoming = signal(\"\");\neffect(() => {\n  const next = incoming();\n  if (next) items.update((v) => [...v, next]);\n});",
+      "quickFix": "rivetSignalUpdate: \"Read untracked: x.update((v) => …)\" → x.set(<expr>) becomes x.update((v) => <expr with each direct x() replaced by v>) (effects only)",
+      "note": "Language service only (editor, rivet check); warning; TS-side, type-aware (the receiver's type is the @rivetjs/reactivity Signal; stores have another API). Fires only where the scope is provably tracked: the inline, non-async function of effect / computed (@rivetjs/reactivity) or clientEffect (@rivetjs/runtime/dom), including batch(() => …) bodies inside it. Silent in event handlers, on* props, callbacks, untrack bodies, JSX and component bodies (components run untracked): there x.set(x() + 1) is the faster form (update allocates a closure and swaps the observer; an untracked read returns early)."
+    },
+    {
       "code": "RV1101",
       "messages": ["Unsafe or unsupported native attribute: {name}", "Unsafe URL attribute"],
       "fix": "Remove the attribute (e.g. innerHTML is rejected); for URL attributes use a safe http(s) or relative value instead of a javascript: URL.",

@@ -1,5 +1,5 @@
 {
-  "$comment": "Rivet diagnostic code registry. Compiler codes are assigned in rust/src/diagnostics.rs (tests/codes.test.ts keeps both in sync); language-service codes (RV3101, RV7101, RV7102) in libs/language-core. Codes are never reused; retired codes stay listed. `docs` per code = the docs base + code (placeholder origin until the docs site is published).",
+  "$comment": "Rivet diagnostic code registry. Compiler codes are assigned in rust/src/diagnostics.rs (tests/codes.test.ts keeps both in sync); language-service codes (RV1017, RV3101, RV7101, RV7102) in libs/language-core. Codes are never reused; retired codes stay listed. `docs` per code = the docs base + code (placeholder origin until the docs site is published).",
   "docs": "https://rivetjs.severyn.pro/errors/",
   "ranges": {
     "RV1": "syntax / JSX / attributes",
@@ -130,6 +130,12 @@
       "severity": "error",
       "title": "Event handler reads state when it binds (handlers bind once; wrap it in an arrow)",
       "docs": "https://rivetjs.severyn.pro/errors/RV1016"
+    },
+    {
+      "code": "RV1017",
+      "severity": "warning",
+      "title": "Signal written from its own read in a tracked scope (effect / computed): the read subscribes the scope to its own write (language service)",
+      "docs": "https://rivetjs.severyn.pro/errors/RV1017"
     },
     {
       "code": "RV1101",

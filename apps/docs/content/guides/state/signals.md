@@ -62,6 +62,8 @@ Write signals in event handlers, in [effects](./effects.md), or in other browser
 
 The function you pass to `update` does not subscribe anything to the signal. You can call `update` inside an effect without making the effect depend on the signal it writes.
 
+Inside an effect or a computed, write from the current value with `update`, not `count.set(count() + 1)`: that read subscribes the effect to its own write, so it runs again after every write until Rivet stops it after 10000 runs (a computed throws on any write). The editor and `rivet check` warn about it ([RV1017](/errors/RV1017.md)) and offer the `update` rewrite. In event handlers `count.set(count() + 1)` is fine, and a little faster: nothing tracks the read there.
+
 ## Read without subscribing
 
 Sometimes you want the current value but do not want the code around it to re-run when the value changes. Use `untrack`:

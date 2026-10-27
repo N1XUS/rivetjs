@@ -3,6 +3,7 @@
 // where a fix needs binding resolution (`rivetWrapServerExport`).
 import type TS from "typescript";
 import { MAGIC_SERVER_EXPORTS, ROUTER } from "./server-exports.ts";
+import { selfWriteFix } from "./self-write.ts";
 
 export interface TextEdit {
   start: number;
@@ -17,7 +18,7 @@ export interface CodeFix {
 }
 
 /** Codes with fixes below. */
-export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1102", "RV2001", "RV3002", "RV3010"] as const;
+export const FIXABLE_CODES = ["RV1008", "RV1009", "RV1016", "RV1017", "RV1102", "RV2001", "RV3002", "RV3010"] as const;
 
 const PRELOAD = ["eager", "idle", "visible", "intent", "interaction"] as const;
 
@@ -250,6 +251,8 @@ export function codeFixes(ts: typeof TS, file: TS.SourceFile, diagnostic: { code
   switch (diagnostic.code) {
     case "RV3010":
       return wrapServerExport(ts, file, node);
+    case "RV1017":
+      return selfWriteFix(ts, file, node);
     case "RV1102": {
       const attribute = ts.findAncestor(node, ts.isJsxAttribute);
       const value = attribute?.initializer;
