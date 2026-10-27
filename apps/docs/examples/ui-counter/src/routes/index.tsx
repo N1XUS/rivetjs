@@ -1,5 +1,3 @@
-// Home product shot, live result. The code below is shown verbatim by content/_home-component.md and _home-browser.md
-// (tests/home.test.ts keeps them equal).
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 

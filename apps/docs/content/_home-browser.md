@@ -1,4 +1,4 @@
-```tsx compiled open title="counter.tsx"
+```tsx compiled open title="src/routes/index.tsx"
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 

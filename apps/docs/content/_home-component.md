@@ -1,4 +1,4 @@
-```tsx title="counter.tsx"
+```tsx title="src/routes/index.tsx"
 import { signal } from "@rivetjs/reactivity";
 import { Button } from "@rivetjs/ui/button";
 

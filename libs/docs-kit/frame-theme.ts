@@ -17,6 +17,17 @@
 //   the root (or its last child's margin box) + the body's bottom padding / border / margin, with viewport-tall
 //   wrappers (`min-h-dvh` layouts) measured at `min-height: 0` (else the frame grows but never shrinks). Overlays (the
 //   cdk overlay layer, positioned outside the root) are not measured, so an open popover never grows the frame.
+// - FRAME_JS_METER (frame pages of `DocsSite.frameMeters` only, after FRAME_HEIGHT): posts the JavaScript files the
+//   frame page fetched — its own resource timing entries whose path ends in `.js` / `.mjs` (module scripts, dynamic
+//   imports, modulepreloads; the inline scripts of its HTML are not files) — to its parent as
+//   `{ rivetDocsFrameJs: { files, bytes, cached } }`: once at start (0 files before any input), then on every new file
+//   (PerformanceObserver, buffered). `bytes` = `transferSize` (compressed body + headers); a file served from the cache
+//   or revalidated (`transferSize` below `encodedBodySize`) counts its `encodedBodySize` (compressed body) and `cached`.
+// - PARENT_FRAME_JS_METER (pages of `DocsSite.frameMeters` only, in the head script): writes those numbers into the
+//   element whose id the sending iframe names in `data-js-meter` ("JS loaded: 0 B · 0 files",
+//   "JS loaded: 56.3 KB · 16 files", "… · 16 files · 1 cached", "… · 16 files · from cache"; KB = 1024 B of `bytes`) and keeps it there (the page's resume adopt run restores server text). A metered iframe written with
+//   `data-src` instead of `src` gets its `src` once the page has loaded and painted (first contentful paint), at the
+//   next idle period: its requests stay out of the page's first / largest paint.
 
 /** URL path of an example's frame page (a page of the docs app, rendered without the docs chrome). */
 export const framePath = (id: string): string => `/examples/${id}/frame/`;
@@ -27,8 +38,16 @@ export const frameIdOf = (pathname: string): string | undefined => /^\/examples\
  * prefetched before the first interaction (no runtime fetch-ahead); handlers load on intent.
  */
 export function pagePreload(lean: readonly string[] = []): { lean: (url: URL) => boolean | undefined } {
-  return { lean: (url) => lean.includes(url.pathname) || undefined };
+  return { lean: (url) => pathIn(url.pathname, lean) || undefined };
 }
+/** A URL path without its trailing slash (`/` stays): prerender renders `/a/b`, the server `/a/b/`. */
+export const pathKey = (path: string): string => (path.length > 1 ? path.replace(/\/+$/, "") : path);
+/** Whether `path` is one of `paths`, trailing slashes ignored (site `leanPages`, `frameMeters` keys). */
+export const pathIn = (path: string, paths: Iterable<string>): boolean => {
+  const key = pathKey(path);
+  for (const p of paths) if (pathKey(p) === key) return true;
+  return false;
+};
 
 /** Message a frame posts to its parent to ask for the theme. */
 export const THEME_REQUEST = "rivet-docs:theme?";
@@ -80,6 +99,33 @@ export const FRAME_HEIGHT =
   "function st(){if(u)return;u=1;o=new ResizeObserver(q);o.observe(document.body);new MutationObserver(q).observe(document.body,{childList:true,subtree:true});q()}" +
   'if(typeof ResizeObserver!=="function")return;if(document.body)st();else addEventListener("DOMContentLoaded",st);addEventListener("load",q);' +
   'addEventListener("pageshow",function(e){if(e.persisted){h=-1;q()}})})()';
+
+/** Frame side (frame pages of `DocsSite.frameMeters`): the JS files this page fetched → parent. */
+export const FRAME_JS_METER =
+  '(function(){if(parent===window||typeof PerformanceObserver!=="function")return;var s={};' +
+  "function p(){var n=0,b=0,c=0,k,r;for(k in s){r=s[k];n++;if(r.transferSize>0&&r.transferSize>=r.encodedBodySize)b+=r.transferSize;else{b+=r.encodedBodySize;c++}}" +
+  'parent.postMessage({rivetDocsFrameJs:{files:n,bytes:b,cached:c}},"*")}' +
+  "try{new PerformanceObserver(function(l){var x=0;for(var r of l.getEntries())if(!s[r.name]&&/\\.m?js$/.test(new URL(r.name).pathname)){s[r.name]=r;x=1}if(x)p()})" +
+  '.observe({type:"resource",buffered:true})}catch(e){}p();addEventListener("pageshow",function(e){if(e.persisted)p()})})()';
+
+/**
+ * Parent side (pages of `DocsSite.frameMeters`): a metered frame's JS numbers → the element its `data-js-meter` names.
+ * The text is kept: the page's resume adopt run (the first intent on the page) restores its server text ("0 B") in a
+ * boundary's region, so a MutationObserver puts the last numbers back.
+ */
+export const PARENT_FRAME_JS_METER =
+  '(function(){addEventListener("message",function(e){var v=e.data&&e.data.rivetDocsFrameJs,f,o,b,n,c;if(!v||typeof v.files!=="number"||!e.source)return;' +
+  'for(f of document.querySelectorAll("iframe[data-js-meter]"))if(f.contentWindow===e.source){o=document.getElementById(f.getAttribute("data-js-meter"));if(!o)return;' +
+  'b=+v.bytes||0;n=v.files;c=+v.cached||0;o.__rvJs="JS loaded: "+(b<1024?b+" B":(b/1024).toFixed(1)+" KB")+" · "+n+(n===1?" file":" files")+(c?c===n?" · from cache":" · "+c+" cached":"");' +
+  "if(!o.__rvJsKeep)new MutationObserver(o.__rvJsKeep=function(){if(o.textContent!==o.__rvJs)o.textContent=o.__rvJs}).observe(o,{childList:true,characterData:true,subtree:true});" +
+  "o.__rvJsKeep();return}});" +
+  // Deferred metered frames (`<iframe data-js-meter data-src>`): src once the page has loaded AND painted, at the next
+  // idle period, so the frame's document and styles never compete with the page's first / largest paint (Lighthouse
+  // mobile: FCP 1,354 → 1,505 ms when loaded with the page, eager or `loading="lazy"` alike — the shot is near the fold;
+  // `load` alone is not enough: a static page's load can come before its first paint).
+  'var k=2;function L(){if(--k)return;(window.requestIdleCallback||setTimeout)(function(){for(var f of document.querySelectorAll("iframe[data-js-meter][data-src]")){f.src=f.getAttribute("data-src");f.removeAttribute("data-src")}},{timeout:1e3})}' +
+  'document.readyState==="complete"?L():addEventListener("load",L,{once:true});' +
+  'try{if(PerformanceObserver.supportedEntryTypes.indexOf("paint")<0)throw 0;new PerformanceObserver(function(l,o){if(l.getEntriesByName("first-contentful-paint").length){o.disconnect();L()}}).observe({type:"paint",buffered:true})}catch(e){L()}})()';
 
 /**
  * Dev server (`vite.ts` `docsFrames`, the frame branch of `.rivet/entry.dev.tsx`): whether a hot update concerns a frame page: the example's files, its generated frame module / stylesheet, libraries

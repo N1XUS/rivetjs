@@ -3,7 +3,8 @@
 // stricter case. Theme: the frame starts from the system preference / its last answer, takes the parent's theme,
 // follows every `data-theme` change live and keeps it across a re-render of its `<html>` attributes. Height: an
 // auto-height iframe follows its page's in-flow content height (grow / shrink, clamped, overlays not counted); static
-// iframes, other senders and malformed messages are ignored.
+// iframes, other senders and malformed messages are ignored. JS meter: a metered frame (`data-src`) loads after the
+// page's load event and reports the JS files it fetched; the page shows them and keeps them across a text reset.
 // Run: `npx vitest run --project docs-kit libs/docs-kit/tests/frame-theme.test.ts`.
 import { strict as assert } from "node:assert";
 import { createServer, type Server } from "node:http";
@@ -14,13 +15,16 @@ import {
   FRAME_HEIGHT,
   FRAME_HEIGHT_MAX,
   FRAME_HEIGHT_MIN,
+  FRAME_JS_METER,
   FRAME_THEME,
   frameIdOf,
   framePath,
   frameUpdate,
   pagePreload,
   PARENT_FRAME_HEIGHT,
+  PARENT_FRAME_JS_METER,
   PARENT_THEME_BRIDGE,
+  pathIn,
 } from "../frame-theme.ts";
 import { frameDevEntry } from "../vite.ts";
 import { generate } from "../../router/build/codegen.ts";
@@ -35,6 +39,8 @@ let docsOrigin = "";
 const listen = (html: (url: URL) => string) =>
   new Promise<Server>((done) => {
     const server = createServer((request, response) => {
+      if (request.url?.endsWith(".js"))
+        return void response.writeHead(200, { "content-type": "text/javascript" }).end(`window.loaded = (window.loaded || 0) + 1; // ${"x".repeat(2000)}`);
       response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       response.end(html(new URL(request.url ?? "/", "http://localhost")));
     });
@@ -51,19 +57,27 @@ beforeAll(async () => {
         `<!doctype html><html lang="en"><head>${frameScript}</head><body style="margin:0;padding:0 0 10px">` +
         `<div data-rivet-frame=""><div id="content" style="height:100px"></div></div>` +
         `<div style="position:absolute;top:0;left:0;width:10px;height:3000px"></div><div id="layer"></div></body></html>`
-      : url.pathname === "/v/"
-        ? // A viewport-tall layout wrapper (`min-h-dvh flex items-center p-3`), as the ui-docs examples have.
-          `<!doctype html><html lang="en"><head>${frameScript}</head><body style="margin:0"><div data-rivet-frame="">` +
-          `<div style="min-height:100dvh;display:flex;align-items:center;padding:12px;box-sizing:border-box"><div id="content" style="height:100px;width:10px"></div></div></div></body></html>`
-        : `<!doctype html><html lang="en"><head>${frameScript}</head><body><p>example</p></body></html>`,
+      : url.pathname === "/m/"
+        ? // A metered example: its button loads two modules (as a resumed page's first press does).
+          `<!doctype html><html lang="en"><head><script>${FRAME_THEME};${FRAME_HEIGHT};${FRAME_JS_METER}</script></head><body>` +
+          `<button id="go" onclick="for(const f of ['a','b'])document.head.append(Object.assign(document.createElement('script'),{type:'module',src:'/m/'+f+'.js'}))">go</button></body></html>`
+        : url.pathname === "/v/"
+          ? // A viewport-tall layout wrapper (`min-h-dvh flex items-center p-3`), as the ui-docs examples have.
+            `<!doctype html><html lang="en"><head>${frameScript}</head><body style="margin:0"><div data-rivet-frame="">` +
+            `<div style="min-height:100dvh;display:flex;align-items:center;padding:12px;box-sizing:border-box"><div id="content" style="height:100px;width:10px"></div></div></div></body></html>`
+          : `<!doctype html><html lang="en"><head>${frameScript}</head><body><p>example</p></body></html>`,
   );
   examplesOrigin = origin(examples);
   docs = await listen((url) =>
-    url.pathname === "/auto/"
-      ? `<!doctype html><html lang="en" data-theme="light"><head><script>${PARENT_THEME_BRIDGE};${PARENT_FRAME_HEIGHT}</script></head><body>` +
-        `<iframe id="auto" data-auto-height="" height="180" style="border:0" src="${examplesOrigin}/${url.searchParams.get("page") ?? "h"}/"></iframe><iframe id="static" height="180" style="border:0" src="${examplesOrigin}/h/?static"></iframe></body></html>`
-      : `<!doctype html><html lang="en" data-theme="${url.searchParams.get("theme") ?? "light"}"><head><script>${PARENT_THEME_BRIDGE};${PARENT_FRAME_HEIGHT}</script></head>` +
-        `<body><iframe src="${examplesOrigin}/x/"></iframe></body></html>`,
+    url.pathname === "/meter/"
+      ? `<!doctype html><html lang="en" data-theme="light"><head><script>${PARENT_THEME_BRIDGE};${PARENT_FRAME_HEIGHT};${PARENT_FRAME_JS_METER}</script></head><body>` +
+        `<iframe id="metered" data-js-meter="out" data-src="${examplesOrigin}/m/"></iframe><iframe id="other" src="${examplesOrigin}/m/?other"></iframe>` +
+        `<p id="out">JS loaded: 0 B · 0 files</p><p id="out2">untouched</p></body></html>`
+      : url.pathname === "/auto/"
+        ? `<!doctype html><html lang="en" data-theme="light"><head><script>${PARENT_THEME_BRIDGE};${PARENT_FRAME_HEIGHT}</script></head><body>` +
+          `<iframe id="auto" data-auto-height="" height="180" style="border:0" src="${examplesOrigin}/${url.searchParams.get("page") ?? "h"}/"></iframe><iframe id="static" height="180" style="border:0" src="${examplesOrigin}/h/?static"></iframe></body></html>`
+        : `<!doctype html><html lang="en" data-theme="${url.searchParams.get("theme") ?? "light"}"><head><script>${PARENT_THEME_BRIDGE};${PARENT_FRAME_HEIGHT}</script></head>` +
+          `<body><iframe src="${examplesOrigin}/x/"></iframe></body></html>`,
   );
   docsOrigin = origin(docs);
 });
@@ -285,4 +299,55 @@ test("frameDevEntry: the router's generated dev entry gets the frame mounter + u
       }),
     /unexpected \.rivet\/entry\.dev\.tsx shape/,
   );
+});
+
+test("JS meter: a metered frame loads after the page's load event, reports 0 files, then the files its first press fetched", async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(`${docsOrigin}/meter/`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelector("#metered")?.getAttribute("src"));
+  assert.equal(await page.locator("#metered").getAttribute("data-src"), null);
+  const order = await page.evaluate(() => {
+    const load = (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming).loadEventEnd;
+    const frame = performance.getEntriesByType("resource").find((e) => e.name.endsWith("/m/"))!;
+    const paint = performance.getEntriesByName("first-contentful-paint")[0]?.startTime ?? 0;
+    return { load, paint, start: frame.startTime };
+  });
+  assert.ok(order.start >= order.load && order.start >= order.paint, `frame requested after load and first paint (${JSON.stringify(order)})`);
+  const frame = page.frames().find((f) => f.url() === `${examplesOrigin}/m/`)!;
+  await frame.waitForLoadState();
+  assert.equal(await page.locator("#out").textContent(), "JS loaded: 0 B · 0 files");
+  await frame.click("#go");
+  await frame.waitForFunction(() => (window as unknown as { loaded?: number }).loaded === 2);
+  const bytes = await frame.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .filter((e) => e.name.endsWith(".js"))
+      .reduce((sum, e) => sum + (e as PerformanceResourceTiming).transferSize, 0),
+  );
+  assert.ok(bytes > 4000, "two ~2 KB modules + headers");
+  const expected = `JS loaded: ${(bytes / 1024).toFixed(1)} KB · 2 files`;
+  await page.waitForFunction((text) => document.querySelector("#out")?.textContent === text, expected);
+  // A resume adopt run restoring the server text: the numbers come back.
+  await page.evaluate(() => (document.querySelector("#out")!.textContent = "JS loaded: 0 B · 0 files"));
+  await page.waitForFunction((text) => document.querySelector("#out")?.textContent === text, expected);
+  // An iframe without data-js-meter and a message from the page itself change nothing.
+  const other = page.frames().find((f) => f.url().endsWith("/m/?other"))!;
+  await other.click("#go");
+  await page.evaluate(() => postMessage({ rivetDocsFrameJs: { files: 9, bytes: 9, cached: 0 } }, "*"));
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator("#out").textContent(), expected);
+  assert.equal(await page.locator("#out2").textContent(), "untouched");
+  await context.close();
+});
+
+test("pathIn / pagePreload: trailing slashes ignored (prerender renders /a/b, the server /a/b/)", () => {
+  assert.ok(pathIn("/examples/x/frame", ["/examples/x/frame/"]));
+  assert.ok(pathIn("/examples/x/frame/", ["/examples/x/frame"]));
+  assert.ok(pathIn("/", ["/"]));
+  assert.ok(!pathIn("/a", ["/"]));
+  assert.ok(!pathIn("/examples/x", ["/examples/x/frame/"]));
+  const lean = pagePreload(["/", "/examples/x/frame/"]).lean;
+  assert.equal(lean(new URL("http://h/examples/x/frame")), true);
+  assert.equal(lean(new URL("http://h/other/")), undefined);
 });

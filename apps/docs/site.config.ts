@@ -18,8 +18,14 @@ export const site = {
   packageVersion: "0.1.0-alpha.1",
   /** Version label in the top bar. */
   version: "0.1.0-alpha.1",
-  /** Disable generic docs idle effects and fetch-ahead. The home has no script before input. */
-  leanPages: ["/"],
+  /**
+   * Disable generic docs idle effects and fetch-ahead. The home has no script before input; neither has the counter page
+   * its product shot embeds (no idle prefetch of its handlers: router `preload.lean`, so the shot's meter shows what the
+   * first intent loads — 0 before).
+   */
+  leanPages: ["/", "/examples/ui-counter/frame/"],
+  /** The home's product shot embeds the `ui-counter` example page and shows the JS that page fetched (docs-kit `frameMeters`). */
+  frameMeters: { "/": ["ui-counter"] },
   /** Diagnostic code pages `/errors/RVxxxx` (docs-kit `tools/errors.ts`), generated from the code registry. */
   errorPages: true,
 } as const;

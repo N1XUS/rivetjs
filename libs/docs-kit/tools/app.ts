@@ -24,11 +24,19 @@ export interface DocsSite {
   /** Version label in the top bar. */
   version: string;
   /**
-   * Lean pages (URL paths, e.g. `["/"]`): no generic idle code highlighter (colour code at build time),
-   * no `/` / Ctrl+K search shortcut listener (the search button still works), and no runtime fetch-ahead
-   * (`preload.lean`). Page-owned visible effects and client triggers still load and run normally.
+   * Lean pages (URL paths, e.g. `["/"]`, trailing slash ignored): no generic idle code highlighter (colour code at
+   * build time), no `/` / Ctrl+K search shortcut listener (the search button still works), and no runtime fetch-ahead
+   * (`preload.lean`). Page-owned visible effects and client triggers still load and run normally. An example frame page
+   * (`/examples/<id>/frame/`) may be listed too: only the fetch-ahead part applies (nothing loads before its first intent).
    */
   leanPages?: readonly string[];
+  /**
+   * JS meters (`frame-theme.ts` `FRAME_JS_METER` / `PARENT_FRAME_JS_METER`): page path → example ids whose frame page
+   * reports the JavaScript files it fetched (its own resource timing) to that page, e.g. `{ "/": ["ui-counter"] }`. Only
+   * those frame pages carry the reporter and only those pages the receiver (inline, nothing fetched); the page shows the
+   * numbers in the element named by the iframe's `data-js-meter` attribute.
+   */
+  frameMeters?: Readonly<Record<string, readonly string[]>>;
   /**
    * Diagnostic code reference (`tools/errors.ts`): `content/errors/index.md` + one page per code of
    * `libs/compiler/codes.json` (prose from `libs/language-core/explain.json`), committed, refreshed by every

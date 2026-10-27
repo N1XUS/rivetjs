@@ -1,5 +1,14 @@
 import { headTags, type DocumentShell } from "@rivetjs/router/server";
-import { FRAME_HEIGHT, FRAME_THEME, frameIdOf, PARENT_FRAME_HEIGHT, PARENT_THEME_BRIDGE } from "./frame-theme.ts";
+import {
+  FRAME_HEIGHT,
+  FRAME_JS_METER,
+  FRAME_THEME,
+  frameIdOf,
+  PARENT_FRAME_HEIGHT,
+  PARENT_FRAME_JS_METER,
+  PARENT_THEME_BRIDGE,
+  pathIn,
+} from "./frame-theme.ts";
 import { site } from "virtual:docs/site";
 // Favicon: the Rivet logo (repo root logo.svg, emitted as a hashed asset by `docsSite()`).
 import { logo } from "virtual:docs/brand";
@@ -13,8 +22,8 @@ const escape = (value: string) => value.replaceAll("&", "&amp;").replaceAll('"',
 // "system", later OS changes apply live; a choice made in another tab (`storage`) or while this page sat
 // in the back / forward cache (`pageshow`) is applied too. Static pages allow it by hash (hashCSP); server pages
 // (the dev server's CSP included) by the request nonce. Then the bridges that hand the theme to example
-// frames and size auto-height frames (`frame-theme.ts`).
-const themeScript = (nonce: string | undefined, stub = "") =>
+// frames and size auto-height frames (`frame-theme.ts`); on a `site.frameMeters` page also the JS meter receiver.
+const themeScript = (nonce: string | undefined, stub = "", meter = false) =>
   `<script${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}>` +
   '(function(){var d=document.documentElement,m=matchMedia("(prefers-color-scheme: dark)"),p;try{p=localStorage.getItem("theme")}catch(e){}if(p!=="light"&&p!=="dark")p="system";d.dataset.themePref=p;function a(){d.dataset.theme=d.dataset.themePref==="system"?(m.matches?"dark":"light"):d.dataset.themePref}a();m.addEventListener("change",a);' +
   'function r(){var v;try{v=localStorage.getItem("theme")}catch(e){}d.dataset.themePref=v==="light"||v==="dark"?v:"system";a()}addEventListener("storage",function(e){if(e.key==="theme"||e.key===null)r()});addEventListener("pageshow",function(e){if(e.persisted)r()})})();' +
@@ -22,6 +31,7 @@ const themeScript = (nonce: string | undefined, stub = "") =>
   PARENT_THEME_BRIDGE +
   ";" +
   PARENT_FRAME_HEIGHT +
+  (meter ? ";" + PARENT_FRAME_JS_METER : "") +
   stub +
   "</script>";
 // After the first paint (`AFTER_PAINT`: first contentful paint → task; browsers without paint timing: `load` → task;
@@ -38,14 +48,18 @@ const AFTER_PAINT =
 
 /**
  * Example frame pages (`/examples/<id>/frame/…`): the example's own document, as the static starter writes it (its
- * head, its stylesheets from the head links), plus the frame script (theme + content height, `frame-theme.ts`) — none of the docs' stylesheets, fonts or
+ * head, its stylesheets from the head links), plus the frame script (theme + content height, + the JS meter reporter for a
+ * `site.frameMeters` frame, `frame-theme.ts`) — none of the docs' stylesheets, fonts or
  * theme script.
  */
-const frameDocument: DocumentShell = ({ head, nonce, managed }) => ({
+/** A frame page some `site.frameMeters` page meters: it reports its JS files (`FRAME_JS_METER`). */
+const metered = (id: string | undefined) => !!id && Object.values(site.frameMeters ?? {}).some((ids) => ids.includes(id));
+
+const frameDocument: DocumentShell = ({ head, nonce, managed, url }) => ({
   start:
     '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
     headTags({ ...head, title: head?.title ?? "Example" }, { nonce, managed }) +
-    `<script id="rivet-docs-frame"${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}>${FRAME_THEME};${FRAME_HEIGHT}</script>` +
+    `<script id="rivet-docs-frame"${nonce === undefined ? "" : ` nonce="${escape(nonce)}"`}>${FRAME_THEME};${FRAME_HEIGHT}${metered(frameIdOf(url.pathname)) ? ";" + FRAME_JS_METER : ""}</script>` +
     "</head><body>",
   end: "</body></html>",
 });
@@ -96,9 +110,9 @@ const routeScriptTag = (nonce: string | undefined, pathname: string) => {
 
 const siteDocument: DocumentShell = ({ head, nonce, styles, managed, url }) => ({
   start:
-    `<!doctype html><html lang="en"${site.leanPages?.includes(url.pathname) ? " data-lean" : ""}>` +
+    `<!doctype html><html lang="en"${pathIn(url.pathname, site.leanPages ?? []) ? " data-lean" : ""}>` +
     '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
-    themeScript(nonce, pageStub()) +
+    themeScript(nonce, pageStub(), pathIn(url.pathname, Object.keys(site.frameMeters ?? {}))) +
     // The whole route head (scripts included: a route `head.scripts` entry is written, nonce'd on server pages).
     headTags(
       {

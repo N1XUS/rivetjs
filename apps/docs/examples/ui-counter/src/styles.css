@@ -1,0 +1,50 @@
+/* Tailwind v4 + the Rivet UI styles, as in an app; the page colours follow the docs (light / dark, set by the docs
+   frame script on <html>), so the docs home's product shot shows it seamlessly. */
+@import "tailwindcss";
+@import "@rivetjs/ui/styles";
+@source "./**/*.{ts,tsx}";
+
+:root {
+  color-scheme: light;
+  --page: oklch(100% 0 0);
+  --ink: oklch(16% 0.02 275);
+  --accent: #262cfa;
+  --accent-hover: #1d04cd;
+}
+:root.dark {
+  color-scheme: dark;
+  --page: oklch(16.5% 0.012 275);
+  --ink: oklch(98.5% 0.003 275);
+  --accent: #3a40f0;
+  --accent-hover: #2a2fd8;
+}
+:root,
+:root.dark {
+  --accent-foreground: oklch(99% 0 0);
+}
+
+@layer base {
+  body {
+    @apply m-0 font-sans antialiased;
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    background: var(--page);
+    color: var(--ink);
+  }
+}
+
+.counter {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-items: center;
+  gap: 1.25rem 0.625rem;
+}
+.counter output {
+  grid-column: 1 / -1;
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}

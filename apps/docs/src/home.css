@@ -308,41 +308,58 @@
 .rh-url {
   margin-left: 0.75rem;
   flex: 1;
+  min-width: 0;
   max-width: 16rem;
   padding: 0.25rem 0.75rem;
+  overflow: hidden;
   border-radius: 999px;
   background: var(--bg-soft);
   color: var(--fg-faint);
   font-family: var(--font-mono);
   font-size: 0.75rem;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.rh-url:hover {
+  color: var(--fg);
+}
+/* The counter is the ui-counter example's own page (ProductShot.tsx): the iframe fills a box whose size never depends
+   on it (no layout shift when it loads); the page paints the docs background in both themes. */
 .rh-result-body {
+  position: relative;
   flex: 1;
-  display: grid;
-  place-items: center;
   min-height: 13rem;
-  padding: 2rem 1rem;
 }
-.rh-result .counter {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-items: center;
-  gap: 1.25rem 0.625rem;
-}
-.rh-result .counter output {
-  grid-column: 1 / -1;
-  color: var(--fg-strong);
-  font-size: 4.5rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
+.rh-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 .rh-result-note {
+  display: grid;
+  gap: 0.25rem;
   padding: 0.75rem 1.25rem;
   border-top: 1px solid var(--line);
   color: var(--fg-faint);
   font-size: 0.8125rem;
+}
+/* The meter's text changes after the first press: on a phone the shot is one column, so its line(s) are reserved (a
+   cached-files suffix wraps there) and nothing below moves. */
+.rh-js {
+  line-height: 1.5;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 59.99rem) {
+  .rh-js {
+    min-height: 3em;
+  }
 }
 
 /* Sections */
