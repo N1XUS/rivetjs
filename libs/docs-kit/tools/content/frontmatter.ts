@@ -38,12 +38,19 @@ export function splitFrontmatter(source: string, file: string): { raw: Raw; body
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(source);
   if (!match) throw new Error(`${file}: missing frontmatter (--- block at the top)`);
   const raw: Raw = {};
-  for (const [index, line] of match[1]!.split(/\r?\n/).entries()) {
+  const lines = match[1]!.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!;
     if (!line.trim() || line.trimStart().startsWith("#")) continue;
     const at = line.indexOf(":");
     if (at <= 0) throw new Error(`${file}:${index + 2}: expected "key: value"`);
     const key = line.slice(0, at).trim();
-    const value = line.slice(at + 1).trim();
+    let value = line.slice(at + 1).trim();
+    // A flow list may continue on indented lines (`key:\n  [a, b]`, `key: [a,\n  b]`): prettier wraps long ones.
+    const start = index;
+    if (!value && /^\s+\[/.test(lines[index + 1] ?? "")) value = lines[++index]!.trim();
+    while (value.startsWith("[") && !value.endsWith("]") && /^\s+\S/.test(lines[index + 1] ?? "")) value += " " + lines[++index]!.trim();
+    if (value.startsWith("[") && !value.endsWith("]")) throw new Error(`${file}:${start + 2}: unterminated list for ${key}`);
     if (value.startsWith("[")) {
       if (!value.endsWith("]")) throw new Error(`${file}:${index + 2}: unterminated list for ${key}`);
       const inner = value.slice(1, -1).trim();

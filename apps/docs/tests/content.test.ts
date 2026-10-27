@@ -35,6 +35,15 @@ test("frontmatter: parses scalars and lists, validates the schema", () => {
   assert.throws(() => splitFrontmatter("no frontmatter", "x.md"), /missing frontmatter/);
 });
 
+test("frontmatter: flow lists wrapped across indented lines (prettier)", () => {
+  const source = "---\ntitle: T\nrelated:\n  [a/b, c/d]\ntags: [x,\n  y]\ndescription: D\n---\n";
+  const { raw } = splitFrontmatter(source, "x.md");
+  assert.deepEqual(raw.related, ["a/b", "c/d"]);
+  assert.deepEqual(raw.tags, ["x", "y"]);
+  assert.equal(raw.description, "D");
+  assert.throws(() => splitFrontmatter("---\ntitle: T\ntags: [x,\ndescription: D\n---\n", "x.md"), /x\.md:3: unterminated list for tags/);
+});
+
 test("markdown: text that looks like JSX stays text after compilation", () => {
   const { jsx } = renderMarkdown("Use `<Async>` and {braces} & 1 < 2?\n", context());
   assert.match(jsx, /&lt;Async&gt;/);
