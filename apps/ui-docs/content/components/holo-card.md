@@ -6,7 +6,7 @@ status: experimental
 related: [components/card, components/item-card]
 ---
 
-`HoloCard` tilts toward the pointer and lights a holographic glare where the pointer is. The root writes a few CSS variables on pointer move; the tilt, glare and parallax are CSS. Nothing loads before the first pointer move, and the card stays flat with `prefers-reduced-motion`.
+`HoloCard` tilts toward the pointer and lights a holographic glare where the pointer is. The root writes a few CSS variables on pointer move; the tilt, glare and parallax are CSS. No script runs before the first pointer move (it resumes the card), and the card stays flat with `prefers-reduced-motion`.
 
 ## Usage
 

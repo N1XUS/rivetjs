@@ -14,5 +14,9 @@ export default defineExample({
     {
       hover: "#hc-basic",
     },
+    // Cold: the first pointer move resumes the card and tilts it (UI-BUGS 2026-10-27: it shipped no JS and never moved).
+    {
+      attr: ["#hc-basic", "data-active", "true"],
+    },
   ],
 });

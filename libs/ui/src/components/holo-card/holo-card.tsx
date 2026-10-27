@@ -52,28 +52,38 @@ const HoloCardRoot = (props: HoloCardRootProps): JSX.Element => {
     el.style.setProperty("--holo-card-background-y", String(33 + (py / 100) * 34));
     el.style.setProperty("--holo-card-opacity", String(on));
   };
-  // Spread (not JSX attributes): the card adopts with its parent and its listener types reach the resume loader this way.
-  const handlers = isStatic
-    ? {}
-    : {
-        onPointerMove: (e: PointerEvent) => {
-          const el = e.currentTarget as HTMLElement;
-          const box = el.getBoundingClientRect();
-          if (!box.width || !box.height) return;
-          const px = Math.min(100, Math.max(0, ((e.clientX - box.left) / box.width) * 100));
-          const py = Math.min(100, Math.max(0, ((e.clientY - box.top) / box.height) * 100));
-          el.setAttribute("data-active", "true");
-          set(el, px, py, 1);
-        },
-        onPointerLeave: (e: PointerEvent) => {
-          const el = e.currentTarget as HTMLElement;
-          el.removeAttribute("data-active");
-          set(el, 50, 50, 0);
-        },
+  // JSX attributes, not a spread object: the compiler sees these handlers (STATIC-ZERO T3 conditional handlers → a `COND`
+  // boundary kept per instance that installs one), so the card resumes on its own first pointer move on a page with no
+  // other boundary (a docs example frame). A spread `{ ...(isStatic ? {} : { onPointerMove }) }` hid them: no boundary,
+  // no loader, the card never moved (UI-BUGS 2026-10-27).
+  const onPointerMove = isStatic
+    ? undefined
+    : (e: PointerEvent) => {
+        const el = e.currentTarget as HTMLElement;
+        const box = el.getBoundingClientRect();
+        if (!box.width || !box.height) return;
+        const px = Math.min(100, Math.max(0, ((e.clientX - box.left) / box.width) * 100));
+        const py = Math.min(100, Math.max(0, ((e.clientY - box.top) / box.height) * 100));
+        el.setAttribute("data-active", "true");
+        set(el, px, py, 1);
       };
-  const attrs = { ...rest, ...handlers };
+  const onPointerLeave = isStatic
+    ? undefined
+    : (e: PointerEvent) => {
+        const el = e.currentTarget as HTMLElement;
+        el.removeAttribute("data-active");
+        set(el, 50, 50, 0);
+      };
   return (
-    <div class={composeSlotClassName(SLOTS.base, local.class)} data-slot="holo-card" data-static={isStatic ? "true" : undefined} {...attrs} style={style}>
+    <div
+      class={composeSlotClassName(SLOTS.base, local.class)}
+      data-slot="holo-card"
+      data-static={isStatic ? "true" : undefined}
+      {...rest}
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+      style={style}
+    >
       {local.children}
     </div>
   );

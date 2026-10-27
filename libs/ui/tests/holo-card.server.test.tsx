@@ -1,7 +1,11 @@
 // Server-target suite: HoloCard (Rivet addition, feature set inspired by HeroUI Pro's public Holo Card docs): layer markup, root
-// variables from `gradient` / `patternSize` / `parallaxStrength`, static flag, default shine pattern, image.
+// variables from `gradient` / `patternSize` / `parallaxStrength`, static flag, default shine pattern, image; the root's pointer
+// handlers visible to the derived model's facts.
 import { test } from "vitest";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { moduleFacts } from "@rivetjs/compiler";
 import { renderToString } from "@rivetjs/runtime/testing/server";
 import { HoloCard } from "../src/components/holo-card/index.ts";
 
@@ -45,4 +49,14 @@ test("holo card SSR: static", async () => {
     </HoloCard>
   ));
   assert.match(html, /data-static="true"/);
+});
+
+// UI-BUGS 2026-10-27: the root's handlers were hidden in a spread object (`{ ...rest, ...(isStatic ? {} : { onPointerMove }) }`),
+// so the derived build saw no change source: no boundary, no loader, and on a page with no other boundary (a docs example
+// frame) the card never tilted. JSX handler attributes make it a listener (`COND` boundary kept per interactive instance).
+test("holo card facts: the root listens (its pointer handlers resume it)", () => {
+  const file = fileURLToPath(new URL("../src/components/holo-card/holo-card.tsx", import.meta.url));
+  const root = moduleFacts(readFileSync(file, "utf8"), file, { boundaries: true }).boundaries.get("HoloCardRoot");
+  assert.ok(root, "HoloCardRoot facts");
+  assert.ok(root.source || root.listens, "HoloCardRoot has a change source or a conditional listener");
 });
