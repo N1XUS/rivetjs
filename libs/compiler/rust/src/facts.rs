@@ -62,14 +62,15 @@ struct Facts<'t, 'a> {
     compounds: Vec<(String, String, Vec<(String, String)>)>,
 }
 
-/// `Object.assign(Root, { Part: Local, … })` (identifiers only): (root, parts).
+/// `Object.assign(Root, { Part: Local, … })` (identifiers only): (root, parts). TS wrappers / parentheses around the call
+/// or its root (`Object.assign(Root as T, …)`, `Object.assign(…) as T`) are seen through (COLD-FIX-A 2026-10-27).
 fn compound<'a>(init: &Expression<'a>) -> Option<(String, Vec<(String, String)>)> {
-    let Expression::CallExpression(call) = init else { return None };
+    let Expression::CallExpression(call) = init.get_inner_expression() else { return None };
     let Expression::StaticMemberExpression(m) = &call.callee else { return None };
     if !matches!(&m.object, Expression::Identifier(o) if o.name == "Object") || m.property.name != "assign" || call.arguments.len() != 2 {
         return None;
     }
-    let Some(Expression::Identifier(root)) = call.arguments[0].as_expression() else { return None };
+    let Some(Expression::Identifier(root)) = call.arguments[0].as_expression().map(|e| e.get_inner_expression()) else { return None };
     let Some(Expression::ObjectExpression(o)) = call.arguments[1].as_expression() else { return None };
     let mut parts = Vec::new();
     for p in &o.properties {
@@ -211,6 +212,12 @@ impl<'t, 'a> Facts<'t, 'a> {
                 if let (BindingPatternKind::BindingIdentifier(name), Some(init), true) = (&d.id.kind, &d.init, top) {
                     if let Some((root, parts)) = compound(init) {
                         self.compounds.push((name.name.to_string(), root, parts));
+                    } else if let Expression::Identifier(alias) = init.get_inner_expression() {
+                        // `const X = Compound as T` (ui Calendar / RangeCalendar did this): X is that compound too. Without
+                        // it `<X>` resolved to nothing, the page above it stayed static and the root adopted with `{}`.
+                        if let Some((_, root, parts)) = self.compounds.iter().find(|(n, _, _)| n == alias.name.as_str()).cloned() {
+                            self.compounds.push((name.name.to_string(), root, parts));
+                        }
                     }
                 }
                 if let (BindingPatternKind::BindingIdentifier(name), Some(init)) = (&d.id.kind, &d.init) {
