@@ -115,7 +115,7 @@ export const groups: NavGroup[] = [
       "components/toast",
     ],
   },
-  { title: "Collections", pages: ["components/list-box", "components/tag-group", "components/dropdown"] },
+  { title: "Collections", pages: ["components/list-box", "components/tag-group", "components/dropdown", "components/context-menu", "components/command"] },
   {
     title: "Date and time",
     pages: [

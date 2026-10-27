@@ -301,6 +301,18 @@ export const entries: ApiEntryConfig[] = [
     summary: "EmojiReactionButton (Rivet addition): an emoji + count reaction toggle, sizes, read-only.",
   },
   {
+    entry: "@rivetjs/ui/context-menu",
+    file: "ui/src/components/context-menu/index.ts",
+    runsOn: "both",
+    summary: "ContextMenu (Rivet addition): a right-click / long-press menu at the pointer on the Dropdown parts.",
+  },
+  {
+    entry: "@rivetjs/ui/command",
+    file: "ui/src/components/command/index.ts",
+    runsOn: "both",
+    summary: "Command (Rivet addition): a modal command palette; search field filtering grouped commands, sizes, backdrops.",
+  },
+  {
     entry: "@rivetjs/ui/kpi-group",
     file: "ui/src/components/kpi-group/index.ts",
     runsOn: "both",

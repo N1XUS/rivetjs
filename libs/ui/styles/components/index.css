@@ -183,6 +183,8 @@
  * ------------------------------------------------------------------------------------------------ */
 @import "./kbd.css";
 @import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./command.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./context-menu.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./emoji-reaction-button.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./hover-card.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./cell-switch.css"; /* Rivet-authored (TWEAKS.md) */

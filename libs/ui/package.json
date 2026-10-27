@@ -528,6 +528,14 @@
       "types": "./src/components/emoji-reaction-button/index.ts",
       "default": "./src/components/emoji-reaction-button/index.ts"
     },
+    "./context-menu": {
+      "types": "./src/components/context-menu/index.ts",
+      "default": "./src/components/context-menu/index.ts"
+    },
+    "./command": {
+      "types": "./src/components/command/index.ts",
+      "default": "./src/components/command/index.ts"
+    },
     "./text-shimmer": {
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"

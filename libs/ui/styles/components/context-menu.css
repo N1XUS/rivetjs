@@ -1,0 +1,32 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no context menu). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens. The popover / menu also take the vendored `dropdown__popover` / `dropdown__menu` rules (surface, list, enter / exit motion from `--trigger-anchor-point` = the pointer). Behaviour = @rivetjs/cdk/menu MenuTrigger `trigger="contextMenu"`. */
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenu Component Styles
+ * Block: context-menu (parts: trigger / popover / menu / separator)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Element: trigger - the right-click / long-press area
+ */
+.context-menu__trigger {
+  @apply relative inline-block outline-none;
+  -webkit-touch-callout: none;
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+}
+
+/**
+ * Element: popover - the menu panel at the pointer (dropdown surface)
+ */
+.context-menu__popover {
+  @apply motion-reduce:animate-none;
+}
+
+/**
+ * Element: separator - divider between groups
+ */
+.context-menu__separator {
+  @apply my-1;
+}

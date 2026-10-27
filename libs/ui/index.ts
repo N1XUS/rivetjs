@@ -183,6 +183,12 @@ export * from "./src/components/hover-card/index.ts";
 // Rivet addition (feature set inspired by HeroUI Pro's public Emoji Reaction Button docs)
 export * from "./src/components/emoji-reaction-button/index.ts";
 
+// Rivet addition (feature set inspired by HeroUI Pro's public Context Menu docs)
+export * from "./src/components/context-menu/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Command docs)
+export * from "./src/components/command/index.ts";
+
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
 export * from "./src/components/chat-loader/index.ts";

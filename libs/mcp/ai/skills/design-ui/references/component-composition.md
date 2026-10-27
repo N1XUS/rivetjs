@@ -44,7 +44,7 @@ Avoid nested interactive targets: an entire clickable card with nested buttons, 
 
 **Dashboard:** lead with metrics that support a decision, then the trend or collection needed to act. `Kpi`, `KpiGroup`, `Widget`, `NumberValue`, `TrendChip`, and the chart exports may fit; `ItemCard` / `ItemCardGroup` for settings rows, `Timeline` for activity history. Every chart needs a readable explanation or data alternative; meaningful units, time range and empty states matter more than decorative chart variety.
 
-**Command picker:** compose a labeled search field and a supported action collection, often using `Autocomplete` + `Menu` for commands. Confirm documented filtering, virtual focus and activation behavior for the installed version. A command menu and a value-selecting list box are different tasks. A dialog may provide a focused enclosing surface. Add pending, no-match, error and clear-query behavior; do not invent a `Command` export or manual arrow-key loop when suitable primitives exist.
+**Command picker:** `Command` (`@rivetjs/ui/command`) is the modal palette: a search field filtering grouped commands with virtual focus, Enter to run, Escape to clear then close; put extra search words in each item's `textValue`. For an inline picker, compose a labeled search field with `Autocomplete` + `Menu`. A command menu and a value-selecting list box are different tasks. Add pending, no-match, error and clear-query behavior; do not write a manual arrow-key loop. For actions on a right click, use `ContextMenu`.
 
 ## Reuse at the pattern boundary
 
