@@ -62,6 +62,18 @@ export interface LlmsSource {
 const posix = (path: string) => path.split(sep).join("/");
 export const hrefOf = (path: string): string => "/" + path.replace(/(^|\/)index$/, "") + (path === "index" ? "" : "/");
 
+// Read at most 16 files at a time; consume results (including failures) in source order.
+// Parsing stays in the caller, so an earlier parse error still wins over a later read error.
+async function* readTexts(files: string[]): AsyncGenerator<string> {
+  for (let i = 0; i < files.length; i += 16) {
+    const results = await Promise.allSettled(files.slice(i, i + 16).map((file) => readFile(file, "utf8")));
+    for (const result of results) {
+      if (result.status === "rejected") throw result.reason;
+      yield result.value;
+    }
+  }
+}
+
 /** Load the site at `root` for the AI outputs. Throws on the same nav / frontmatter errors as the content build. */
 export async function loadLlmsSource(root: string): Promise<LlmsSource> {
   const { site, repo } = await loadApp(root);
@@ -70,12 +82,15 @@ export async function loadLlmsSource(root: string): Promise<LlmsSource> {
   const navModule = (await import(pathToFileURL(resolve(contentDir, "_nav.ts")).href)) as { nav: NavSection[]; areas?: NavArea[] };
   const areas = navModule.areas ?? [];
   const pages: LlmsPage[] = [];
+  const texts = readTexts(
+    navModule.nav.flatMap((section) => section.groups.flatMap((group) => group.pages.flatMap(navPaths))).map((path) => resolve(contentDir, path + ".md")),
+  );
   for (const section of navModule.nav) {
     const area = areas.find((candidate) => candidate.id === section.area);
     for (const group of section.groups)
       for (const path of group.pages.flatMap(navPaths)) {
         const file = resolve(contentDir, path + ".md");
-        const text = await readFile(file, "utf8");
+        const text = (await texts.next()).value!;
         const { raw, body } = splitFrontmatter(text, `content/${path}.md`);
         const fm = validateFrontmatter(raw, `content/${path}.md`);
         pages.push({
@@ -116,8 +131,9 @@ export async function loadLlmsSource(root: string): Promise<LlmsSource> {
     const config = await loadExample(root, id);
     const dir = resolve(root, "examples", id);
     const files: LlmsExample["files"] = [];
+    const shownTexts = readTexts(config.show.map((path) => resolve(dir, path)));
     for (const path of config.show) {
-      const source = await readFile(resolve(dir, path), "utf8");
+      const source = (await shownTexts.next()).value!;
       files.push({ path, text: shownFile(path, source).text });
     }
     examples.set(id, { id, title: config.title, summary: config.summary, tags: config.tags ?? [], files, usedOn: usedOn.get(id) ?? [] });
