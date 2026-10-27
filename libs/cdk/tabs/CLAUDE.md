@@ -55,3 +55,5 @@ RAC Tabs family 1:1 (`Tabs` / `TabList` / `Tab` / `TabPanels` / `TabPanel`, rend
 - `docs/design/specs/2026-10-05-tabs-parity.md`
 
 - ID-RESUME (2026-10-27): Generated tab / panel roots (state/tabs.ts) use the shared `resumedId()` keyed-signal helper. The resume record retains the server id when parts adopt independently. Existing explicit-id fallback and ARIA behaviour are unchanged.
+
+- TOGGLE-TABS-COLD (2026-10-27): the first cold selection on a resumed page (arrow key / Enter / click) switches the force-mounted `items` panels too — the selection's first write wakes the deferred `TabPanels` records, whose run creates the panels' lazy list; the runtime now hands that list the same write (`libs/runtime/dom-derived.ts` `before`, `dom-derived-abi.ts` `_guard`). Pinned by `tests-components/tabs.test.ts` automatic + manual activation.

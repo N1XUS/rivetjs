@@ -49,12 +49,16 @@ export function _dsignal<T>(init?: T, options?: EqualsOptions<T>): Signal<T> {
 }
 const wakeLoose = (): void => H?.l();
 
-/** @internal `s.set` runs `fn` first. */
+/**
+ * @internal `s.set` runs `fn` first. When `fn` wrapped `s.set` again (a woken record's lazy list waiting for this signal's
+ * first write, `dom-derived.ts` `wakeOnWrite`), the write goes through that wrapper — it lands back here, then on the
+ * setter (TOGGLE-TABS-COLD: the first cold selection of an uncontrolled Tabs skipped the panels' list).
+ */
 export function _guard<T>(s: Signal<T>, fn: () => void): Signal<T> {
   const set = s.set;
-  s.set = function (this: unknown, value: T) {
+  const guarded = (s.set = function (this: unknown, value: T) {
     fn();
-    return set.call(this, value);
-  } as Signal<T>["set"];
+    return (s.set === guarded ? set : s.set).call(this, value);
+  } as Signal<T>["set"]);
   return s;
 }
