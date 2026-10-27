@@ -6,7 +6,7 @@ import { _variants, _variantTemplate, _variantValue } from "@rivetjs/runtime/ser
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import { _rB, _rBEnd, _rBOut, _rSig } from "@rivetjs/runtime/server-derived";
 import { createApp, mergeHeads, type GeneratedEntry } from "../server/app.ts";
-import type { DocumentInput } from "../server/render.ts";
+import { headTags, type DocumentInput } from "../server/render.ts";
 import type { ServerModule } from "../server/handler.ts";
 import { notFound } from "../shared/errors.ts";
 import { i18nGuard, type I18nRouteConfig } from "@rivetjs/i18n/router";
@@ -242,4 +242,74 @@ test("a response that writes the locale cookie is private; other responses keep 
   // Without a route Cache-Control: the default `no-cache`, made private.
   const plain = await guardedApp(i18nConfig)("https://x.test/cart", { ...followed, "accept-language": "de" });
   assert.equal(plain.response.headers.get("cache-control"), "private, no-cache");
+});
+
+const headTagsOf = (input: DocumentInput) => headTags(input.head, input);
+
+// Route `head` exports and kit head components with server `t()` values (one value per locale): resolved for the
+// request's locale in the document, the data endpoint and error pages (a VariantValue's `String()` throws).
+test("translated head values resolve for the request locale: route head, data endpoint, component head, error page", async () => {
+  const title = _variantValue(["Shop", "Laden"]);
+  const description = _variantValue(["Cheap", () => "Billig"]);
+  const layout = { head: { titleTemplate: "%s · " + "X", meta: [{ name: "description", content: description }] } };
+  const page = { head: () => ({ title }) };
+  const localized = (event: { url: URL; locals: Record<string, unknown> }) => void (event.locals.locale = event.url.pathname.startsWith("/de") ? "de" : "en");
+  const entry = {
+    routes: [
+      { id: "index", pattern: "/:lang", layouts: [() => Promise.resolve({ guard: localized })], keys: ["/"], server: () => Promise.resolve({}), page: true },
+      { id: "index", pattern: "/", layouts: [() => Promise.resolve({ guard: localized })], keys: ["/"], server: () => Promise.resolve({}), page: true },
+      {
+        id: "missing",
+        pattern: "/:lang/missing",
+        layouts: [() => Promise.resolve({ guard: localized })],
+        keys: ["/"],
+        server: () =>
+          Promise.resolve({
+            load: () => {
+              throw notFound();
+            },
+          }),
+        page: true,
+      },
+    ],
+    universal: {
+      index: () =>
+        Promise.resolve([
+          [0, layout],
+          [1, page],
+        ]),
+      missing: () =>
+        Promise.resolve([
+          [0, layout],
+          [1, {}],
+        ]),
+    },
+    headComponents: true,
+    page: (input: { headSink?: { push(level: number, head: object): unknown } }) => () => {
+      input.headSink!.push(1, { meta: [{ property: "og:title", content: _variantValue(["OG", "OG-de"]) }] });
+      return "<p>page</p>";
+    },
+  } as unknown as GeneratedEntry;
+  const handler = createApp({
+    entry,
+    csp: false,
+    document: (input) => ({ start: `<html><head>${headTagsOf(input)}</head><body>`, end: "</body></html>" }),
+    i18n: { locales: ["en", "de"] },
+  });
+  const de = await (await handler(new Request("https://x.test/de"))).text();
+  assert.match(de, /<title>Laden · X<\/title>/);
+  assert.match(de, /<meta name="description" content="Billig"[ >]/);
+  assert.match(de, /<meta property="og:title" content="OG-de"[ >]/);
+  const en = await (await handler(new Request("https://x.test/"))).text();
+  assert.match(en, /<title>Shop · X<\/title><meta name="description" content="Cheap"[ >]/);
+  // Client navigation's data endpoint carries the resolved head.
+  const data = await (await handler(new Request("https://x.test/de?_rivet=data"))).text();
+  assert.match(data, /Laden · X/);
+  assert.match(data, /Billig/);
+  // A3: the error page keeps the layout head (title template, meta) under its own title.
+  const missing = await handler(new Request("https://x.test/de/missing"));
+  assert.equal(missing.status, 404);
+  const body = await missing.text();
+  assert.match(body, /<title>Not found · X<\/title>/);
+  assert.match(body, /<meta name="description" content="Billig"[ >]/);
 });

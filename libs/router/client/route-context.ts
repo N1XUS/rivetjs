@@ -14,9 +14,17 @@ export interface ServerRoutePayload extends RoutePayload {
   readonly headSink?: HeadSink;
   /** Layouts whose loader read the URL: never kept by client navigation (unknown: none kept). */
   readonly byURL?: readonly number[];
+  /** i18n: the request's locale (`locals.locale`); `locale()` from `@rivetjs/i18n` reads it on the server. */
+  readonly locale?: string;
 }
 /** Context with the route data the server already loaded for this render. */
 export const ServerData: Context<ServerRoutePayload | null> = createContext<ServerRoutePayload | null>(null);
+
+/**
+ * @internal The request locale of the server render (`locals.locale` of an i18n app, `createApp({ i18n })`), read in
+ * component setup; undefined outside a server render. `locale()` from `@rivetjs/i18n` (server target) is built on it.
+ */
+export const _requestLocale = (): string | undefined => useContext(ServerData)?.locale;
 
 let actionsRead: WeakMap<ServerRoutePayload, Set<string>> | undefined;
 /**

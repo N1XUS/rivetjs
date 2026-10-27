@@ -41,6 +41,8 @@ export function clientPathPattern(locale: string, config: Pick<I18nConfig, "loca
 }
 
 const TABLE = "rivet-i18n";
+/** Client graphs: `@rivetjs/i18n` resolves to this module per locale (`locale()` = the locale's constant). */
+const CLIENT_MODULE = "\0rivet-i18n-client:";
 /** Dev: client module URLs of a non-default locale carry `?rivet-locale=<locale>`. */
 export const DEV_LOCALE_PARAM = "rivet-locale";
 const localeOfId = (id: string | undefined): string | null => {
@@ -147,9 +149,15 @@ export function i18n(options: I18nConfig & { dts?: string }): Plugin & { api: I1
         res.end(JSON.stringify({ locales: config.locales, defaultLocale: config.defaultLocale, param: DEV_LOCALE_PARAM, ...devState }));
       });
     },
-    // Dev client: app modules imported by a locale's module keep its `?rivet-locale=` query.
+    // Client graphs: `@rivetjs/i18n` is the locale's module (`locale()` a constant: the client build's locale; dev: the
+    // importer's `?rivet-locale=` or the default locale). Dev client: app modules imported by a locale's module keep its query.
     async resolveId(source, importer, options) {
-      if (!serve || !importer || options?.ssr || this.environment?.config?.consumer === "server") return null;
+      if (options?.ssr || this.environment?.config?.consumer === "server") return null;
+      if (source === "@rivetjs/i18n") {
+        const chosen = serve ? (localeOfId(importer) ?? config.defaultLocale) : locale;
+        return chosen && config.locales.includes(chosen) ? CLIENT_MODULE + chosen : null;
+      }
+      if (!serve || !importer) return null;
       const wanted = localeOfId(importer);
       if (!wanted) return null;
       const hit = await this.resolve(source, importer, { ...options, skipSelf: true });
@@ -161,6 +169,13 @@ export function i18n(options: I18nConfig & { dts?: string }): Plugin & { api: I1
       if (params.has(DEV_LOCALE_PARAM)) return hit;
       params.set(DEV_LOCALE_PARAM, wanted);
       return { ...hit, id: file + "?" + params.toString() };
+    },
+    async load(id) {
+      if (!id.startsWith(CLIENT_MODULE)) return null;
+      const real = await this.resolve("@rivetjs/i18n", resolve(root, "index.html"), { skipSelf: true });
+      if (!real) return null;
+      // The module's runtime exports (`t`: the compiler replaces its calls) plus the locale constant.
+      return `export { t } from ${JSON.stringify(real.id)};\nexport const locale = () => ${JSON.stringify(id.slice(CLIENT_MODULE.length))};\n`;
     },
     transform(code, id) {
       if (code.includes("@rivetjs/i18n")) users.add(id);

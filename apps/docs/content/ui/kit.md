@@ -243,22 +243,22 @@ The kit works with a strict :term[Content Security Policy]{id=content-security-p
 
 - Every script tag gets the request's nonce. Static pages get hashes from `hashCSP`, which also allows the origins of your `<Script src>` files.
 - JSON-LD is data, not code. It gets no nonce and no hash.
-- With :term[Trusted Types]{id=trusted-types}, add the kit's policy name `rivet-script`. The kit creates this policy once per page and only lets it load the script URLs you listed.
+- With :term[Trusted Types]{id=trusted-types}, the kit uses a policy named `rivet-script` for every head component that writes a script (`<Script>`, `<JsonLd>`). `trustedTypes: true` allows it together with the runtime's `rivet` policy. The kit creates this policy once per page and only lets it load the script URLs you listed.
 
 ```ts
 import { strictCSP } from "@rivetjs/router/server";
 
-strictCSP(nonce, { trustedTypes: ["rivet-script"] });
+strictCSP(nonce, { trustedTypes: true }); // trusted-types rivet rivet-script
 ```
 
-For static builds, pass the same list to `prerenderBuild({ csp: { trustedTypes: ["rivet-script"] } })`. See [CSP](../guides/security/csp.md) and [Trusted Types](../guides/security/trusted-types.md).
+For static builds, pass the same option to `prerenderBuild({ csp: { trustedTypes: true } })`. A list of your own policy names keeps both: `trustedTypes: ["article"]` gives `trusted-types rivet rivet-script article`. See [CSP](../guides/security/csp.md) and [Trusted Types](../guides/security/trusted-types.md).
 
 ## Common mistakes
 
 - **`kit()` without the shell change.** Without `headTags(input.head, input)`, stylesheets, nonces and client updates are missing.
 - **Linking stylesheets twice.** Remove the `styles.map(...)` loop when you pass `input` to `headTags`.
 - **Relative URLs in `seo()`.** Pass absolute URLs or `baseUrl`.
-- **Forgetting `rivet-script`** in the Trusted Types list. Deferred scripts are then blocked.
+- **Writing the Trusted Types directive by hand without `rivet-script`.** Deferred scripts and client updates of `<JsonLd>` are then blocked. Use the `trustedTypes` option, which always includes it.
 
 ## See also
 

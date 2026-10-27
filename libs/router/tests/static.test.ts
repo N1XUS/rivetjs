@@ -49,6 +49,26 @@ test("prerenders static routes and entries with data files, 404 page and CSR she
   }
 });
 
+test("optional params ([[lang]]): each entries() set renders through the form that has exactly its optional params", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "rivet-static-"));
+  try {
+    // Generated for `[[lang]]/blog/[slug].tsx` and `[[lang]]/index.tsx`: one route per form, same id and module.
+    const post = mod({ entries: () => [{ slug: "a" }, { lang: "uk", slug: "b" }], load: (e) => e.params.slug });
+    const home = mod({ entries: () => [{}, { lang: "uk" }] });
+    const routes: AppRoute[] = [
+      { id: "[[lang]]/blog/[slug]", pattern: "/blog/:slug", page: true, layouts: [], server: post },
+      { id: "[[lang]]/blog/[slug]", pattern: "/:lang/blog/:slug", page: true, layouts: [], server: post },
+      { id: "[[lang]]/index", pattern: "/:lang", page: true, layouts: [], server: home },
+      { id: "[[lang]]/index", pattern: "/", page: true, layouts: [], server: home },
+    ];
+    const report = await prerender({ handler: handler(routes), routes, outDir: dir });
+    assert.deepEqual(report.pages, ["/blog/a", "/uk/blog/b", "/uk", "/"]);
+    assert.equal(await readFile(join(dir, "uk/blog/b/index.html"), "utf8"), '<p>/uk/blog/b ["b"]</p>');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("zero-JS sites: no _data.json when no page resumes and no CSR shell route navigates; one resumed page brings them all", async () => {
   const dir = await mkdtemp(join(tmpdir(), "rivet-static-"));
   try {
@@ -261,7 +281,7 @@ test("hashCSP: kit head scripts (third-party origins, #rivet-scripts list, boots
   const bootstrap = /<script id="rivet-scripts">([\s\S]*?)<\/script>/.exec(head)![1]!;
   assert.equal(csp, `script-src ${sha(bootstrap)} 'self' https://cdn.test https://analytics.test; object-src 'none'; base-uri 'none'`);
   const { trustedTypesDirectives } = await import("../shared/csp.ts");
-  assert.equal(trustedTypesDirectives({ trustedTypes: true }), "; require-trusted-types-for 'script'; trusted-types rivet");
+  assert.equal(trustedTypesDirectives({ trustedTypes: true }), "; require-trusted-types-for 'script'; trusted-types rivet rivet-script");
   assert.equal(trustedTypesDirectives({ trustedTypes: ["rivet-script"] }), "; require-trusted-types-for 'script'; trusted-types rivet rivet-script");
 });
 

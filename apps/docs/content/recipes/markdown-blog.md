@@ -97,3 +97,4 @@ With `rivetRouter({ mode: "static" })`, the build renders one HTML file for each
 - **Strip `position`.** The parser adds source positions to every node. The example removes them before returning, because loader data is sent to the browser on client navigation.
 - **Unsafe links throw.** Rivet refuses `javascript:`, `vbscript:` and `data:` URLs in `href` and other URL attributes. A post with such a link fails to render. Filter link URLs in the component if authors are not trusted.
 - **Install the parser.** The example's `package.json` adds `mdast-util-from-markdown` and `@types/mdast`.
+- **Types for `import.meta.glob`.** TypeScript reports `Property 'glob' does not exist on type 'ImportMeta'` until you add Vite's types: `"types": ["node", "vite/client"]` in `tsconfig.json`.

@@ -234,7 +234,7 @@ export function lazyComponent<M, P>(
   const reference = lazyFunction(importer, select!);
   // Once loaded, the component renders synchronously (no load promise, request-signal link or
   // AbortController per render: a routed page's lazy view pays them on every request otherwise).
-  return (props: P) =>
+  const lazy = (props: P) =>
     Async({
       load: (work) => reference.peek() ?? reference.load({ signal: work.signal }),
       children: (component) => component(props),
@@ -242,6 +242,10 @@ export function lazyComponent<M, P>(
       fallback: options.fallback,
       $i: 1,
     } as AsyncProps<(props: P) => ServerValue>);
+  // Load now, so the next render is synchronous (as the DOM target's): the router loads a page's module before its
+  // first render, so a render that throws fails before the response starts (500 + error page, not 200 + marker).
+  (lazy as typeof lazy & { load?: () => Promise<unknown> }).load = () => reference.load();
+  return lazy;
 }
 
 /** Render fallback only; browser importer/default component is never evaluated. */

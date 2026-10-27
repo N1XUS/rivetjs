@@ -50,6 +50,9 @@ Document head as components (title, meta, links, scripts, JSON-LD, theme script)
 - Compile-time icons: the compiler's Vite plugin inlines `<Icon icon={LucideImport} …/>` with constant simple props as the `<svg>` this component renders (`libs/compiler/static-icons.ts` mirrors `root` + defaults: change both together; its test compares bytes for every lucide icon).
 - `Icon` perf shape (IMPL-ICON 2026-10-09): shapes = `_svgShapes(props.icon)` imported from `@rivetjs/runtime/dom` (the compiler rewrites it to `/server` on the server target; keep it a `.tsx` import) — keyed by array identity, so icon data must not be mutated. Root `mode(props)` picks one of four JSX branches, all byte-identical on the server: FIXED (no getter: locals, no binding), STATIC (only `icon` a getter), LIVE (`title` key or another getter: per-attribute bindings, `<title>` cond), SPREAD (keys beyond own props + `class`, or Proxy props `Symbol.for("rivet.props")`: `{...root(props)}`). A key set is fixed per props object (non-Proxy), so the mode is decided once at creation. Measured (1000 icons, Chromium mount / Node SSR): 6.7 → 3.0 ms (getter `icon`), 2.4 ms (constant), heap 1466 → 247 / 73 KB; SSR 3.0 → 0.71 ms.
 
+- i18n (C3): `<Title>` text = `childText(children, sink.resolve)` (`sinkOf(component)`); `<Meta>` props / other pushed heads are translated by the router sink (`translateHead`).
+- JSON-LD adopt (C8): `dom.ts` keeps an equal server `<script type=application/ld+json>` (compares `canonical(text)` = `JSON.stringify(JSON.parse)`), no rewrite through `rivet-script` on resume. Test `tests/head-dom.test.ts` (happy-dom).
+
 ## Commands
 
 ```sh

@@ -73,6 +73,14 @@ export default function Layout({ data, children }: LayoutProps<typeof loader>) {
 
 Note the call: layout props are **functions**. Read them as `data()`, `params()` and `url()`. When the user moves to another page, the router updates these values, and only the parts of the layout that read them change.
 
+| | Page (`PageProps`) | Layout (`LayoutProps`) |
+| --- | --- | --- |
+| Data | `data.title` | `data().title` |
+| Params | `params.slug` | `params().slug` |
+| URL | `url.pathname` | `url().pathname` |
+
+A page renders again for each URL, so its props are plain values. A page with `export const live = true` gets `data()` as a function too ([loading data](./loading-data.md)).
+
 Layout loaders and the page loader run at the same time, after all guards. A layout loader runs again on every navigation to a page inside it.
 
 ## Root layout state survives navigation
@@ -117,7 +125,7 @@ A `guard(…)` in `_layout.tsx` runs before every page and [endpoint](./endpoint
 - **Reading `data.user` instead of `data().user`.** In a layout, `data` is a function. In a page, `data` is a plain value.
 - **Expecting `params()` in the root layout.** The root layout wraps every route, so its `params()` is always empty. Read `url()` instead.
 - **Putting state that must survive navigation in a nested layout.** Nested layouts render again on every navigation. Move the state up to the root layout.
-- **Expecting the root layout around server error pages.** When the root layout has server code (`load(…)`, `guard(…)`, …), a 404 or error page that the server renders (a full page load) shows without the root layout, because the error response carries no layout data. During client navigation the error renders inside the layout. Give `_404.tsx` and `_error.tsx` their own link back home.
+- **Expecting nested layouts around a server error page.** On a full page load, 404 and error pages render inside the root layout (with its data and `head`), not inside nested layouts; when the root layout's own guard or loader failed, without it. During client navigation the error renders inside the layouts that stay. See [errors and 404 pages](./errors-and-404.md#layouts-and-head).
 
 ## See also
 

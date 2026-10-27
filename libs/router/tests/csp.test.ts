@@ -21,7 +21,7 @@ test("strictCSP: directives merge (script-src additive, object-src replaced, new
         "upgrade-insecure-requests": true,
       },
     }),
-    "script-src 'nonce-n' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src 'self' blob:; img-src 'self' data: https://cdn.test; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types rivet",
+    "script-src 'nonce-n' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src 'self' blob:; img-src 'self' data: https://cdn.test; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types rivet rivet-script",
   );
   // Header policies may carry frame-ancestors / reporting.
   assert.match(strictCSP("n", { directives: { "Frame-Ancestors": "'none'" } }), /; frame-ancestors 'none'$/);
@@ -118,7 +118,7 @@ test("createApp csp directives: merge module loads at startup (pay-per-use), fir
   const nonce = "bm9uY2U=";
   const policy = async (handler: ReturnType<typeof createApp>) => (await handler(get(), { nonce })).headers.get("content-security-policy");
   assert.equal(await policy(createApp({ entry })), `script-src 'nonce-${nonce}' 'strict-dynamic'; object-src 'none'; base-uri 'none'`);
-  assert.match((await policy(createApp({ entry, csp: { trustedTypes: true } })))!, /; trusted-types rivet$/);
+  assert.match((await policy(createApp({ entry, csp: { trustedTypes: true } })))!, /; trusted-types rivet rivet-script$/);
   const csp = { directives: { "script-src": "'wasm-unsafe-eval'", "worker-src": "'self' blob:" } };
   // Request before the module settled, then after: same merged policy.
   const handler = createApp({ entry, csp });
@@ -128,4 +128,26 @@ test("createApp csp directives: merge module loads at startup (pay-per-use), fir
     await policy(handler),
     `script-src 'nonce-${nonce}' 'strict-dynamic' 'wasm-unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src 'self' blob:`,
   );
+});
+
+test("default-src without style-src*: the page's own <style>s get a style-src of the default sources + their nonce / hashes", () => {
+  const base = [["script-src", ["'self'"]]] as const;
+  assert.equal(
+    cspPolicy(base, { directives: { "default-src": "'self'" } }, false, ["'nonce-n'"]),
+    "script-src 'self'; default-src 'self'; style-src 'self' 'nonce-n'",
+  );
+  // An explicit style-src / style-src-elem, or 'unsafe-inline' in default-src: left as before.
+  assert.equal(
+    cspPolicy(base, { directives: { "default-src": "'self'", "style-src-elem": "'self'" } }, false, ["'nonce-n'"]),
+    "script-src 'self'; default-src 'self'; style-src-elem 'self' 'nonce-n'",
+  );
+  assert.equal(
+    cspPolicy(base, { directives: { "default-src": "'self' 'unsafe-inline'" } }, false, ["'nonce-n'"]),
+    "script-src 'self'; default-src 'self' 'unsafe-inline'",
+  );
+  // Server nonce policy and static hash policy alike.
+  // `'none'` is not a source to keep beside others.
+  assert.match(strictCSP("n", { directives: { "default-src": "'none'" } }), /; default-src 'none'; style-src 'nonce-n'$/);
+  const page = hashCSP("<html><head><style>p{}</style><script>1</script></head></html>", { directives: { "default-src": "'self'" } });
+  assert.match(policyOf(page)!, new RegExp(`; default-src 'self'; style-src 'self' ${sha("p{}").replace(/[+/]/g, "\\$&")}$`));
 });

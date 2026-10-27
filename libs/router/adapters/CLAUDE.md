@@ -81,6 +81,8 @@ npx vitest run --project router libs/router/tests/node.test.ts libs/router/tests
 - Behind a TLS proxy without `origin`/`trustProxy`, every POST is rejected 403 (origin mismatch).
 - i18n builds: per-locale `client/<locale>/` dirs; `start({ locales })` marks each `assets/` immutable.
 
+- Static optional params (C4): `[[lang]]` = several `AppRoute`s with one id. `optionalParams(route, routes)` = params that differ between same-id forms; an `entries()` set goes to the form that has exactly the optional params the set names (`{ slug }` → `/blog/:slug`, `{ lang, slug }` → `/:lang/blog/:slug`); param-less forms build once (`[{}]`). `entries()` / `fillPattern` take `Record<string, string | undefined>`. Test `tests/static.test.ts`.
+
 ## See also
 
 - [../CLAUDE.md](../CLAUDE.md), [../server/CLAUDE.md](../server/CLAUDE.md), [docs/guides/routing.md#file-routes-deploy-adapters](../../../docs/guides/routing.md), [docs/guides/i18n.md](../../../docs/guides/i18n.md)

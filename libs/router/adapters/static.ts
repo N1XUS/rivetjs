@@ -73,7 +73,7 @@ export interface PrerenderReport {
 }
 
 /** Fill a router pattern with params (`:name` encoded, `*name` encoded per segment). */
-export function fillPattern(pattern: string, params: Record<string, string>): string {
+export function fillPattern(pattern: string, params: Readonly<Record<string, string | undefined>>): string {
   const out = pattern.replace(/([:*])([A-Za-z_$][\w$]*)/g, (_, kind: string, name: string) => {
     const value = params[name];
     if (value === undefined || value === "") throw new Error(`Missing param "${name}" for ${pattern}`);
@@ -103,6 +103,25 @@ export function hashCSP(html: string, options?: CSPOptions): string {
   const lead = /^(?:\s*<meta\s+charset\b[^>]*>)?(?:\s*<meta\s+name\s*=\s*["']?viewport\b[^>]*>)?/i.exec(html.slice(head.index + head[0].length))!;
   const at = head.index + head[0].length + lead[0].length;
   return html.slice(0, at) + `<meta http-equiv="Content-Security-Policy" content="${policy}">` + html.slice(at);
+}
+
+const PARAM = /[:*]([A-Za-z_$][\w$]*)/g;
+const paramNames = (pattern: string): string[] => [...pattern.matchAll(PARAM)].map((m) => m[1]!);
+/**
+ * Optional segments (`[[lang]]`) generate one route per form (`/:lang/x` and `/x`, same id and module): the params a
+ * sibling form has and this one lacks, and the ones this form has that a sibling lacks. An `entries()` set belongs to
+ * the form whose optional params it names: `{ slug }` → `/x/:slug`, `{ lang: "uk", slug }` → `/:lang/x/:slug`.
+ */
+function optionalParams(route: AppRoute, routes: readonly AppRoute[]): Set<string> {
+  const own = new Set(paramNames(route.pattern));
+  const optional = new Set<string>();
+  for (const other of routes)
+    if (other !== route && other.id === route.id) {
+      const theirs = new Set(paramNames(other.pattern));
+      for (const name of theirs) if (!own.has(name)) optional.add(name);
+      for (const name of own) if (!theirs.has(name)) optional.add(name);
+    }
+  return optional;
 }
 
 /** Synthetic request origin when `origin` is unset. */
@@ -214,7 +233,12 @@ export async function prerender(options: PrerenderOptions): Promise<PrerenderRep
       if (!report.fallback.includes(route.id)) report.fallback.push(route.id);
       continue;
     }
-    const sets = dynamic ? [...((await module?.entries?.()) ?? [])] : [{}];
+    const optional = optionalParams(route, routes);
+    const own = new Set(paramNames(route.pattern));
+    const sets = (dynamic ? [...((await module?.entries?.()) ?? [])] : [{}]).filter(
+      // This form's sets: each optional param given exactly when this form has it.
+      (params: Record<string, string | undefined>) => [...optional].every((name) => own.has(name) === (params[name] !== undefined && params[name] !== "")),
+    );
     for (const params of sets) {
       const path = fillPattern(route.pattern, params);
       if (done.has(path)) continue;

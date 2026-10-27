@@ -108,11 +108,10 @@ The document shell receives `locale` and `dir`. Use them on `<html>`, so screen 
 ```ts title="src/document.ts"
 import { headTags, type DocumentShell } from "@rivetjs/router/server";
 
-const document: DocumentShell = ({ head, styles, locale, dir }) => ({
+const document: DocumentShell = (input) => ({
   start:
-    `<!doctype html><html lang="${locale ?? "en"}" dir="${dir ?? "ltr"}"><head><meta charset="utf-8">` +
-    headTags(head ?? {}) +
-    styles.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
+    `<!doctype html><html lang="${input.locale ?? "en"}" dir="${input.dir ?? "ltr"}"><head><meta charset="utf-8">` +
+    headTags(input.head, input) +
     "</head><body>",
   end: "</body></html>",
 });
@@ -178,12 +177,41 @@ closeOnSignals(serving);
 
 `loadBuild(dist, config, { locales, resolveLocale })` takes the same option. The dev server uses the URL prefix, as the default does.
 
+## Static builds
+
+A static site builds one browser bundle per language, one server build, then prerenders every language:
+
+```json title="package.json"
+{
+  "scripts": {
+    "build": "RIVET_LOCALE=en vite build && RIVET_LOCALE=de vite build && vite build --ssr && node prerender.js"
+  }
+}
+```
+
+```js title="prerender.js"
+import { prerenderBuild } from "@rivetjs/router/static";
+
+await prerenderBuild({ dist: "dist", locales: ["en", "de"] });
+```
+
+List the languages in each `[[lang]]` page's `entries(…)`. A set without `lang` builds the URL without the segment (the default language with `"as-needed"`), a set with it the prefixed URL:
+
+```tsx title="src/routes/[[lang]]/blog/[slug].tsx"
+export const paths = entries(() => posts.flatMap((post) => [{ slug: post.slug }, { lang: "de", slug: post.slug }]));
+```
+
+- A page without other parameters (`[[lang]]/about.tsx`) builds `/about` on its own; list the prefixed languages: `entries(() => [{ lang: "de" }])`.
+- Images are written once to `dist/client/assets/`, their URLs carry no language prefix.
+- `/en/` (the default language's prefix) is not built unless you list `{ lang: "en" }`, and on a static host it is a 404. List it only if you link to it; otherwise let the host redirect `/en/*` to `/*`.
+- A static host serves one `404.html`, in the first locale. For a 404 page per language, write one page per language (for example `src/routes/[[lang]]/not-found.tsx` with entries for each language) and point the host's per-folder 404 rules at it (Netlify `_redirects`: `/de/* /de/not-found/ 404`). The [Node adapter](#error-pages-in-the-right-language) picks the language per request.
+
 ## Common mistakes
 
 - **404 for a valid page.** The first segment looked like a language but is not in `locales`, or a page outside `[[lang]]` has the same path. Keep translated pages inside `[[lang]]`.
 - **`alternates() needs baseUrl`.** Add `baseUrl` (your public origin) to the config.
 - **Wrong language from a CDN cache.** Keep the `Vary` header the guard sets, or cache only prefixed URLs.
-- **`/de` missing from a static build.** Prerendering only follows `entries(…)`. Export `paths = entries(() => [{ lang: "de" }])` from the `[[lang]]` page and pass `locales` to `prerenderBuild`.
+- **`/de` missing from a static build.** Prerendering only follows `entries(…)`. Export `paths = entries(() => [{ lang: "de" }])` from the `[[lang]]` page and pass `locales` to `prerenderBuild`; see [static builds](#static-builds).
 
 ## See also
 

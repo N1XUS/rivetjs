@@ -122,6 +122,8 @@ export interface HeadSink {
   push(level: number, head: Head, component?: string): string | undefined;
   /** CSP nonce of the response (inline scripts carry it). */
   readonly nonce: string | undefined;
+  /** i18n: resolves translated values (server `t()` outside JSX) for the request's locale; kit `<Title>` reads its text through it. */
+  readonly resolve?: (value: unknown) => unknown;
 }
 /** An action's outcome (form POST `?/name`): its return value, or the data and status of `fail()`. */
 export interface ActionResult {

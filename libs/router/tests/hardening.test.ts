@@ -9,7 +9,8 @@ import { createApp, type GeneratedEntry } from "../server/app.ts";
 import { renderDocument, renderPage } from "../server/render.ts";
 import { deny } from "../shared/errors.ts";
 import { withoutRivet } from "../shared/data.ts";
-import { template } from "@rivetjs/runtime/server";
+import { lazyComponent, template } from "@rivetjs/runtime/server";
+import { preloadPage } from "../client/index.ts";
 
 /** Raw markup (strings are escaped as text). */
 const html = (markup: string) => template([markup], []);
@@ -192,6 +193,38 @@ test("U7: a render failure before the first byte answers with the error page, 50
   const ok = await appWith(() => html("<p>fine</p>"))(new Request("http://x/"));
   assert.equal(ok.status, 200);
   assert.equal(await ok.text(), "<!doctype html><body><p>fine</p></body>");
+});
+
+test("a route's first render loads its lazy page module first: a page that throws in render answers 500 + error page", async () => {
+  const log: unknown[][] = [];
+  const importer = () =>
+    Promise.resolve({
+      default: (): never => {
+        throw new Error("page boom");
+      },
+    });
+  const Page = lazyComponent(importer);
+  const entry = {
+    routes: [{ id: "index", pattern: "/", page: true, layouts: [], server: mod({ load: () => "page" }) }],
+    universal: {},
+    loadPage: () => preloadPage(Page, importer),
+    page: (input: { error?: { status: number; message: string } }) => {
+      const error = input.error;
+      return error ? () => `error page ${error.status}` : () => Page({});
+    },
+    document: () => ({ start: "<!doctype html><body>", end: "</body>" }),
+  } as unknown as GeneratedEntry;
+  const handler = createApp({ entry, csp: false, onError: (error, _request, info) => log.push([String(error), info?.phase]) });
+  // First request (module not loaded yet) and a later one answer alike.
+  for (let i = 0; i < 2; i++) {
+    const response = await handler(new Request("http://x/"));
+    assert.equal(response.status, 500);
+    assert.equal(await response.text(), "<!doctype html><body>error page 500</body>");
+  }
+  assert.deepEqual(log, [
+    ["Error: page boom", "render"],
+    ["Error: page boom", "render"],
+  ]);
 });
 
 test("U7: a failure after the shell streamed ends the document cleanly with a nonce'd failure marker", async () => {

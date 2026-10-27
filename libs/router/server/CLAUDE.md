@@ -85,6 +85,13 @@ npx vitest run --project forms   # drives createHandler via ../../router/server/
 - Exporting both `load` and `load(…)` in one sibling, or one export in both page and sibling → error at first request (`module.ts`).
 - Request handlers run before guards: auth checks inside `onRequest(…)`/`on<Method>` are the handler's job.
 
+## Error pages, translated heads, lazy pages (R18N 2026-10-27)
+
+- Page module warm-up: `GeneratedEntry.loadPage?(url)` (generated `entry.server.tsx` re-exports `app.tsx` `loadPage`). `respond()` awaits a route's page module before its first render (`pages` Map of promises per route id; failed load → entry dropped, next request retries; dev: every request). Reason: server `lazyComponent` made the first request's render pending → response started → a render throw gave 200 + blank page. Now any render throw before the first flush → 500 + `_error`. Test `tests/hardening.test.ts` (lazy page throws: 500 on first + second request).
+- Error head (A3): `renderError` → `errorHead(route, layouts, status, params, url, locals)`: layout `head` exports (title template, meta) merged under the error page's own title; unmatched URL → root layout (`entry.routes.find(r => r.keys?.[0] === "/")`); a throwing layout head → error page's own head only. `ErrorInput.params` = matched params or `{}`.
+- Translated heads (C3): `translateHead(value, variant)` (exported) deep-resolves i18n VariantValues (`Symbol.for("rivet.variantValue")`) through plain objects / arrays, identity kept when nothing changes. Used by `routeHead(…)` (route `head` exports, data endpoint head, error head; variant from `locals.locale`) and the kit head sink (`createSink(nonce, late, variant)`: `HeadSink.resolve` + pushed heads translated).
+- `PageInput.locale` (i18n apps): the rendered locale (`locals.locale` when listed, else `i18n.locales[0]`) → codegen `ServerData` `locale` → `@rivetjs/router/route-context` `_requestLocale()` → `locale()` of `@rivetjs/i18n`.
+
 ## See also
 
 - [../CLAUDE.md](../CLAUDE.md), [../shared/CLAUDE.md](../shared/CLAUDE.md) (wire contract, head, errors), [docs/guides/server-code.md](../../../docs/guides/server-code.md), [docs/guides/forms.md](../../../docs/guides/forms.md)

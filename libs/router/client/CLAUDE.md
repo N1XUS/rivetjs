@@ -15,7 +15,7 @@ Browser side of file routes: data-endpoint loads, link interception, intent pref
 | `/navigation` | `navigation.ts` | `navigation` signal, `Navigation` context (`rivet:navigation`), `IDLE` — tiny, resume entry imports it |
 | `/search` | `search.ts` | `searchParams` signal, `SearchParams` context (browser default `searchParams`; tests detect the module by its `_searchSync.search = () => …` install) |
 | `/leave` | `leave.ts` | `beforeLeave(fn)` — dependency free (forms autosave imports it alone) |
-| `/route-context` | `route-context.ts` | `ServerData` context, `actionResult()` |
+| `/route-context` | `route-context.ts` | `ServerData` context (`ServerRoutePayload.locale`), `actionResult()`, `_requestLocale()` (internal: `locale()` of `@rivetjs/i18n` on the server) |
 | `/transitions` | `transitions.ts` | `install(options)`: View Transitions + pending attributes; loaded on first navigation intent |
 | `/transitions.css`, `/tailwind.css` | `*.css` | Default transition CSS; Tailwind variants |
 

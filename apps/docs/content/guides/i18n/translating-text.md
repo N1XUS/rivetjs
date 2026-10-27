@@ -162,6 +162,27 @@ When the key depends on a value, use a template literal with a fixed prefix:
 
 The compiler includes every key under `nav.`. These keys cannot take parameters. An unknown key gives an empty string (the dev server also logs a warning). TypeScript accepts the template when some key starts with `nav.`; a fixed key such as `t("nav.hmoe")` is still checked exactly.
 
+### Text in attributes and the head
+
+A message works anywhere a page renders text: in JSX children, in attributes (`<Picture alt={t("home.hero")} />`, `placeholder`), in a route's `head` export and in kit head components (`<Title>{t("about.title")}</Title>`, `<Meta>`). Each page gets its own language's text.
+
+### The current language
+
+`locale()` returns the language the page renders in:
+
+```tsx
+import { locale, t } from "@rivetjs/i18n";
+
+export function Price(props: { amount: number }) {
+  const lang = locale();
+  return <span>{new Intl.NumberFormat(lang, { style: "currency", currency: "EUR" }).format(props.amount)}</span>;
+}
+```
+
+- On the server it is the request's language (`locals.locale`, set by the [guard](locale-urls.md)). Call it during a render: in a component, a layout or a page. Outside a render (a loader, an action) it throws; use `event.locals.locale` there.
+- In the browser each language's build replaces it with a fixed string, so it costs nothing.
+- Without the guard, the server uses the first locale.
+
 ### Text outside a page render
 
 In server code that runs outside rendering, such as an email in an [action](../routing/actions-and-forms.md), pass the language yourself with `t.in`:
@@ -182,7 +203,9 @@ RIVET_LOCALE=de vite build
 vite build --ssr
 ```
 
-Client builds go to `dist/client/<locale>/`, served under `/<locale>/`. A client build without `RIVET_LOCALE` fails on purpose. The server build contains every language.
+Client builds go to `dist/client/<locale>/`, served under `/<locale>/`. Images (`?image`) are the same in every language: they are written once to `dist/client/assets/`, under URLs without the language. A client build without `RIVET_LOCALE` fails on purpose. The server build contains every language. For a static site, see [static builds](locale-urls.md#static-builds).
+
+`rivet sync` and `npm run check` work with `i18n()` in the config; they need no `RIVET_LOCALE`.
 
 Serve it with the Node adapter and list the locales:
 
@@ -214,7 +237,7 @@ The dev server renders every language from one server, without per-language buil
 
 - **`t() was not compiled`.** `i18n()` is missing from the Vite plugins, or comes after `rivetRouter()` / `rivet()`.
 - **A key or parameter in a variable.** `t(key)` or `t("cart.greeting", params)` cannot be checked by the compiler. Write the key as a literal (or a template literal with a fixed prefix) and the parameters as an object literal.
-- **`String(t("…"))` in server code outside JSX.** On the server a message is a value per language; converting it throws. Use `t.in(locale, "…")`.
+- **`String(t("…"))` in server code outside JSX.** On the server a message is a value per language; converting it throws. Pass the value itself (JSX, attributes, `head`, kit head components resolve it), or use `t.in(locale, "…")`.
 - **Tags in an attribute.** `placeholder={t("terms", …)}` with a `<link>` message fails the build. Use a message without tags.
 - **Testing a language only in the dev server.** Missing keys are warnings there and errors in the build. Run the build before you ship a new catalog.
 

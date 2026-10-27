@@ -91,6 +91,12 @@ Unexpected errors are different. When a loader throws a plain `Error` (say, "con
 
 The digest is a short random id. When a user reports it, search your logs for it. With the dev server (`vite`), you see the real message to help you debug.
 
+## Errors while rendering
+
+A component can throw too, while the server renders the page. When that happens before the response has started, the visitor gets the same answer as for a failed loader: status `500` and your `_error.tsx` (or the short alert), with the digest. That covers ordinary components, also on the first request after a deploy (the router loads the page's code before it starts the response).
+
+Content that streams (an `Async` boundary still waiting for data when the first bytes leave) is different: the status `200` is already sent. If that content fails, its boundary's `error` view takes its place in a later chunk ([error boundaries](../components/error-boundaries.md)); without one the document ends cleanly with a `rivet:resume-error` event on `document` (`detail.digest` = the server log's digest).
+
 To send errors to your own logging, pass `onError` to the server:
 
 ```js title="serve.js"
@@ -120,13 +126,15 @@ For URLs that match no route, the router picks the `_404.tsx` of the longest mat
 
 Error pages run no server code of their own: put loaders and guards in pages and layouts. A `_404.server.ts` or `_error.server.ts` file is a build error.
 
+## Layouts and head
+
+On a full page load, error and 404 pages render inside your root layout, with its loader data, also for a URL that matches no route. When the root layout's own guard or loader is what failed, the page renders without it. Nested layouts are not rendered around a server-rendered error; after a link click the error renders inside the layouts that stay on the page.
+
+The head follows the layouts that loaded: their `head` exports (a `titleTemplate`, meta tags) apply, under the page's own title "Not found" or "Error". With `titleTemplate: "%s · Shop"` the 404 page's title is "Not found · Shop".
+
 ## Client navigation
 
 Errors also happen after a link click. The router then renders the same `_404.tsx` or `_error.tsx` in place of the page, inside your layouts. The status code does not matter here, as no new HTML document loads.
-
-:::note
-When your root layout has server code (a `load(…)`, `guard(…)` or other server export in `_layout.tsx`), error pages from a full page load render **without** the root layout, because there is no layout data. Include a link home in both pages.
-:::
 
 ## Static sites
 
@@ -137,6 +145,7 @@ In `mode: "static"`, the build writes your root `_404.tsx` as `404.html`. Config
 - **Returning `notFound()` from a loader.** In a loader, a returned value is data. `throw notFound()`.
 - **Catching every error in the loader and returning `null`.** The page then renders with status 200 and an empty view. Let errors reach the router, or throw `notFound()`.
 - **Showing `error.message` for every error.** For 5xx errors in production it only contains the generic text and digest. Show your own words.
+- **Relying on a nested layout around `_404.tsx` or `_error.tsx`.** A server-rendered error page renders inside the root layout only. Put links the error page needs into the root layout or the error page itself.
 
 ## See also
 

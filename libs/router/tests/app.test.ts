@@ -437,7 +437,7 @@ test("static build: prerendered pages carry a hash CSP (Trusted Types on) and re
   assert.match(
     html,
     // After the leading charset (and viewport) meta: the charset stays first.
-    /<head><meta charset=[^>]*>(?:\s*<meta name="viewport"[^>]*>)?<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-[^']+' 'self'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet">/,
+    /<head><meta charset=[^>]*>(?:\s*<meta name="viewport"[^>]*>)?<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-[^']+' 'self'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet rivet-script">/,
   );
   const { serve } = await import("../adapters/node.ts");
   // A plain static host: `<path>/index.html`, no headers of its own.

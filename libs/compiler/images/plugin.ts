@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { access, mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import type { Plugin, ResolvedConfig } from "vite";
 import { parseImageId, validateConfig, type ImagesConfig } from "./options.ts";
 import { sharpProcessor } from "./processor.ts";
@@ -36,6 +37,10 @@ export function imagesPlugin(input: ImagesConfig | true): Plugin {
   let pipeline: ReturnType<typeof createPipeline>;
   let resolved: ResolvedConfig;
   let appBuild = false;
+  // i18n per-locale client builds (`@rivetjs/i18n/vite`: base `<base><locale>/`, outDir `<outDir>/<locale>/`): images are
+  // locale-free — URLs under the app base, files once in the parent client directory — so the server build's markup (base
+  // `<base>`) and every locale's client code name the same files.
+  let localeDir: string | null = null;
   const isClient = (ctx: { environment?: { config: { consumer: string } } }, ssr?: boolean) =>
     ctx.environment ? ctx.environment.config.consumer === "client" : !ssr;
   return {
@@ -44,10 +49,15 @@ export function imagesPlugin(input: ImagesConfig | true): Plugin {
     sharedDuringBuild: true,
     configResolved(config_) {
       resolved = config_;
+      const i18n = config_.plugins.find((plugin) => plugin.name === "vite-plugin-rivet-i18n") as { api?: { locale?: string | null } } | undefined;
+      const locale = config_.command === "build" && !config_.build.ssr ? (i18n?.api?.locale ?? null) : null;
+      const suffix = locale ? locale + "/" : "";
+      const base = suffix && config_.base.endsWith("/" + suffix) ? config_.base.slice(0, -suffix.length) : config_.base;
+      localeDir = base !== config_.base ? resolve(config_.root, config_.build.outDir, "..") : null;
       pipeline = createPipeline({
         config,
         processor,
-        base: config_.base,
+        base,
         assetsDir: config_.build.assetsDir,
         dev: config_.command === "serve",
         cacheDir: resolve(config_.root, config.cacheDir ?? "node_modules/.rivet/images"),
@@ -141,7 +151,19 @@ export function imagesPlugin(input: ImagesConfig | true): Plugin {
         [...registry.values()].map(async (asset) => {
           if (emitted.has(asset.fileName)) return;
           emitted.add(asset.fileName);
-          this.emitFile({ type: "asset", fileName: asset.fileName, source: await pipeline.encode(asset) });
+          if (!localeDir) return void this.emitFile({ type: "asset", fileName: asset.fileName, source: await pipeline.encode(asset) });
+          // Per-locale build: one copy beside the locale directories (content-addressed names: another locale's build
+          // wrote the same bytes already).
+          const out = resolve(localeDir, asset.fileName);
+          if (
+            await access(out).then(
+              () => true,
+              () => false,
+            )
+          )
+            return;
+          await mkdir(dirname(out), { recursive: true });
+          await writeFile(out, await pipeline.encode(asset));
         }),
       );
     },

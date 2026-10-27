@@ -1,5 +1,5 @@
 // Assemble the generated route table, page factory and document shell into one request handler.
-import type { ServerValue } from "@rivetjs/runtime/server";
+import { _variantOf, type ServerValue } from "@rivetjs/runtime/server";
 import type { ResumeManifest } from "@rivetjs/runtime/server-resume";
 import type { RenderCache, RenderCacheScope } from "@rivetjs/runtime/server-cache";
 import type { IncrCache } from "@rivetjs/runtime/server-incr";
@@ -38,6 +38,8 @@ export interface PageInput {
   readonly moved?: () => string | undefined;
   /** @internal Route rule `shell`: a shell fill / replay (always streams). */
   readonly shell?: ShellPhase;
+  /** i18n: the rendered locale (`locals.locale` when one of `AppConfig.i18n.locales`, else the first): `locale()` from `@rivetjs/i18n` reads it. */
+  readonly locale?: string;
 }
 type HeadExport = Head | ((context: { data: unknown; params: Readonly<Record<string, string>>; url: URL }) => Head | undefined);
 /** Shape of the generated `.rivet/entry.server.tsx` module. */
@@ -45,6 +47,11 @@ export interface GeneratedEntry {
   readonly routes: readonly AppRoute[];
   readonly universal: Readonly<Record<string, () => Promise<[number, { head?: unknown }][]>>>;
   page(input: PageInput): () => ServerValue;
+  /**
+   * The page module of `url` (generated `loadPage`): loaded before a route's first render, so its lazy page component
+   * renders synchronously — a render that throws then fails before the response starts (500 + error page).
+   */
+  loadPage?(url: URL): Promise<unknown> | undefined;
   /** The app's document shell, when codegen was given one. */
   readonly document?: DocumentShell;
   /** `createApp` from the same bundle as the app (one runtime instance). */
@@ -173,6 +180,35 @@ const ROUTE_CACHE = Symbol.for("rivet.routeCache");
 const EARLY_HINTS = Symbol.for("rivet.earlyHints");
 const RENDER_FAILED = Symbol.for("rivet.renderFailed");
 
+// `@rivetjs/runtime/server` `VARIANT_VALUE`: an i18n `t()` value outside JSX (one value per locale variant).
+const VARIANT_VALUE = Symbol.for("rivet.variantValue");
+/**
+ * `value` with its translated values (server `t()` outside JSX: route `head` exports, kit head components) resolved for
+ * locale `variant`, deep through plain objects and arrays; unchanged values (and containers holding none) keep their identity.
+ */
+export function translateHead<T>(value: T, variant: number): T {
+  if (value === null || typeof value !== "object") return value;
+  if ((value as Record<symbol, unknown>)[VARIANT_VALUE]) return _variantOf(value, variant) as T;
+  if (Array.isArray(value)) {
+    let out: unknown[] | undefined;
+    for (let i = 0; i < value.length; i++) {
+      const item = translateHead(value[i], variant);
+      if (item !== value[i]) (out ??= value.slice())[i] = item;
+    }
+    return (out ?? value) as T;
+  }
+  // Plain records only (head fields, JSON-LD data); branded inline scripts, URLs and class instances stay as they are.
+  const proto = Object.getPrototypeOf(value);
+  if (proto !== Object.prototype && proto !== null) return value;
+  let out: Record<string, unknown> | undefined;
+  for (const key of Object.keys(value)) {
+    const item = (value as Record<string, unknown>)[key];
+    const next = translateHead(item, variant);
+    if (next !== item) (out ??= { ...(value as Record<string, unknown>) })[key] = next;
+  }
+  return (out ?? value) as T;
+}
+
 /** Route export levels: layouts outermost first, then the page (undefined entries skipped). */
 const ranked = (heads: readonly (Head | undefined)[], defaults?: Head): RankedHead[] => [
   ...(defaults ? [{ level: -1, phase: 0 as const, seq: 0, head: defaults }] : []),
@@ -187,15 +223,23 @@ export function mergeHeads(heads: readonly (Head | undefined)[]): Head | undefin
 }
 
 /** Component head collector of one request: entries until the hold releases, then late entries render in place. */
-function createSink(nonce: string | undefined, late: (message: string) => void): HeadSink & { entries: RankedHead[]; close(): void } {
+function createSink(
+  nonce: string | undefined,
+  late: (message: string) => void,
+  variant: number | undefined,
+): HeadSink & { entries: RankedHead[]; close(): void } {
   let seq = 0,
     closed = false;
   const entries: RankedHead[] = [];
+  // i18n: translated values (`<Title>{t("…")}</Title>`, `<Meta content={t("…")} />`) resolve for the request's locale.
+  const resolve = variant === undefined ? undefined : (value: unknown) => translateHead(value, variant);
   return {
     nonce,
     entries,
+    ...(resolve ? { resolve } : {}),
     close: () => void (closed = true),
     push(level, head, component) {
+      if (resolve) head = resolve(head) as Head;
       if (!closed) {
         entries.push({ level, phase: 1, seq: seq++, head });
         return undefined;
@@ -232,6 +276,8 @@ export function createApp(config: AppConfig): AppHandler {
       : null;
   // Route export contributions behind each merged head (rank merge with component entries).
   const levels = new WeakMap<Head, RankedHead[]>();
+  // Page module loads per route (`entry.loadPage`; null: loaded). Dev loads every time (modules change between requests).
+  const pages = new Map<string, Promise<unknown> | null>();
   // Early hints: the per-route Link values live in `early-hints.ts`, loaded at startup only with `earlyHints`.
   const hintOption = dev ? undefined : config.earlyHints;
   let hinter: Hinter | undefined;
@@ -278,6 +324,34 @@ export function createApp(config: AppConfig): AppHandler {
   ): Response | Promise<Response> => {
     if (directives || fragments || hintLoading)
       return Promise.all([directives, fragments, hintLoading]).then(() => respond(page, status, headers, nonce, request, locals, routeId));
+    // A route's first render: its page module loads first (the lazy page would otherwise make the render pending, and a
+    // pending render opens the response — a throw in the page then ends a 200 with a failure marker instead of a 500).
+    if (routeId !== undefined && entry.loadPage) {
+      let loading = dev ? entry.loadPage(page.url) : pages.get(routeId);
+      if (loading === undefined) {
+        pages.set(routeId, (loading = entry.loadPage(page.url) ?? null));
+        // Loaded: later renders go straight on. Failed: the render fails (route error view / 500), the next request retries.
+        loading?.then(
+          () => pages.set(routeId, null),
+          () => pages.delete(routeId),
+        );
+      }
+      if (loading) {
+        const go = () => styled(page, status, headers, nonce, request, locals, routeId);
+        return loading.then(go, go);
+      }
+    }
+    return styled(page, status, headers, nonce, request, locals, routeId);
+  };
+  const styled = (
+    page: PageInput,
+    status: number,
+    headers: Headers,
+    nonce: string | undefined,
+    request: Request,
+    locals?: Record<string, unknown>,
+    routeId?: string,
+  ): Response | Promise<Response> => {
     const extra = routeId === undefined || !routeStyles ? undefined : typeof routeStyles === "function" ? routeStyles(routeId) : routeStyles[routeId];
     if (extra && "then" in extra) return extra.then((list) => render(page, status, headers, nonce, request, locals, list, routeId));
     return render(page, status, headers, nonce, request, locals, extra, routeId);
@@ -296,13 +370,22 @@ export function createApp(config: AppConfig): AppHandler {
   ): Response | Promise<Response> => {
     const pageStyles = extra?.length ? [...styles, ...extra] : styles;
     const inlineStyles = inlineFor?.(pageStyles);
+    const i18n = config.i18n;
+    const locale = i18n && typeof locals?.locale === "string" && i18n.locales.includes(locals.locale) ? locals.locale : undefined;
+    const variant = locale ? i18n!.locales.indexOf(locale) : 0;
+    // `locale()` (`@rivetjs/i18n`): the variant rendered; without a settled locale the first one.
+    if (i18n) page = { ...page, locale: locale ?? i18n.locales[0]! };
     let sink: ReturnType<typeof createSink> | undefined;
     if (entry.headComponents) {
-      sink = createSink(nonce, (message) => {
-        if (dev) console.error("[rivet] " + message);
-        // Once per message (component + text: bounded by the app's code), not per URL (unbounded).
-        else if (!warned.has(message)) (warned.add(message), console.warn("[rivet] " + message));
-      });
+      sink = createSink(
+        nonce,
+        (message) => {
+          if (dev) console.error("[rivet] " + message);
+          // Once per message (component + text: bounded by the app's code), not per URL (unbounded).
+          else if (!warned.has(message)) (warned.add(message), console.warn("[rivet] " + message));
+        },
+        i18n ? variant : undefined,
+      );
       page = { ...page, headSink: sink };
       // Shell cache H-holes hit: no hold (the stored shell's head is out), so the holes' head components get late entries.
       if (page.shell?.render?.holes) (sink.close(), (page.shell.headSink = sink));
@@ -314,9 +397,6 @@ export function createApp(config: AppConfig): AppHandler {
       if (links.length && !headers.has("link")) headers.set("link", links.join(", "));
     }
     if (csp && nonce !== undefined && !headers.has("content-security-policy")) headers.set("content-security-policy", csp(nonce));
-    const i18n = config.i18n;
-    const locale = i18n && typeof locals?.locale === "string" && i18n.locales.includes(locals.locale) ? locals.locale : undefined;
-    const variant = locale ? i18n!.locales.indexOf(locale) : 0;
     const built = (i18n && i18n.manifests?.[locale ?? i18n.locales[0]!]) || manifest;
     const devMode =
       built || !config.devResume ? undefined : typeof config.devResume.mode === "function" ? config.devResume.mode(locale) : config.devResume.mode;
@@ -428,15 +508,7 @@ export function createApp(config: AppConfig): AppHandler {
     async head(route, data, match) {
       const modules = await entry.universal[route.id]?.();
       if (!modules) return config.head ? rankMerge(ranked([], config.head)) : undefined;
-      const heads: (Head | undefined)[] = [];
-      for (const [index, module] of modules) {
-        const head = module.head as HeadExport | undefined;
-        heads[index] = typeof head === "function" ? head({ data: data[index], params: match.params, url: match.url }) : head;
-      }
-      const contributions = ranked(heads, config.head);
-      const merged = rankMerge(contributions);
-      if (merged) levels.set(merged, contributions);
-      return merged;
+      return routeHead(modules, data, match.params, match.url, match.locals, Infinity);
     },
     // A layout whose `head` is a function of its data reruns its loader (the merged head needs it).
     async keepable(route) {
@@ -466,21 +538,24 @@ export function createApp(config: AppConfig): AppHandler {
         input.locals,
         input.route.id,
       ),
-    renderError: async (input) =>
-      respond(
+    renderError: async (input) => {
+      const locals = await errorLocals(input.locals, input.request, input.url);
+      const layouts = input.layouts ?? [];
+      return respond(
         {
           // The outermost layouts' data (error pages render inside the layouts that loaded).
-          data: input.layouts ?? [],
+          data: layouts,
           url: input.url,
-          head: { title: input.status === 404 ? "Not found" : "Error" },
+          head: await errorHead(input.route, layouts, input.status, input.params ?? {}, input.url, locals),
           error: { status: input.status, message: input.message },
         },
         input.status,
         input.headers,
         input.nonce,
         input.request,
-        await errorLocals(input.locals, input.request, input.url),
-      ),
+        locals,
+      );
+    },
   });
   const given = config.routeRules ?? entry.routeRules;
   if (!given || !Object.keys(given).length) return app;
@@ -524,6 +599,59 @@ export function createApp(config: AppConfig): AppHandler {
     const query = own.query ?? cache.query;
     const varies = own.varies ?? cache.varies;
     return { maxAge: 0, ...(query !== undefined ? { query } : {}), ...(varies ? { varies } : {}) };
+  }
+  /**
+   * Merged head of a route's universal modules below `depth` (route data order: layouts, then the page), over the app's
+   * defaults; i18n: translated values resolve for the request's locale (`locals.locale`). `extra`: the innermost entry.
+   */
+  function routeHead(
+    modules: readonly [number, { head?: unknown }][],
+    data: readonly unknown[],
+    params: Readonly<Record<string, string>>,
+    url: URL,
+    locals: Record<string, unknown> | undefined,
+    depth: number,
+    extra?: Head,
+  ): Head | undefined {
+    const heads: (Head | undefined)[] = [];
+    for (const [index, module] of modules) {
+      if (index >= depth) continue;
+      const head = module.head as HeadExport | undefined;
+      heads[index] = typeof head === "function" ? head({ data: data[index], params, url }) : head;
+    }
+    if (extra) heads[depth] = extra;
+    const i18n = config.i18n;
+    if (i18n) {
+      const locale = typeof locals?.locale === "string" ? i18n.locales.indexOf(locals.locale) : -1;
+      for (let i = 0; i < heads.length; i++) heads[i] = translateHead(heads[i], locale < 0 ? 0 : locale);
+    }
+    const contributions = ranked(heads, config.head);
+    const merged = rankMerge(contributions);
+    if (merged) levels.set(merged, contributions);
+    return merged;
+  }
+  /**
+   * Error / 404 page head: the `head` exports of the layouts it renders inside (title template, meta), then its own title.
+   * A layout `head` that throws leaves the page with its own head (the error page must render).
+   */
+  async function errorHead(
+    route: AppRoute | undefined,
+    layouts: readonly unknown[],
+    status: number,
+    params: Readonly<Record<string, string>>,
+    url: URL,
+    locals: Record<string, unknown>,
+  ): Promise<Head> {
+    const own: Head = { title: status === 404 ? "Not found" : "Error" };
+    // Unmatched URLs render inside the root layout: any route below it lists that layout's module first.
+    const source = route ?? (layouts.length ? entry.routes.find((r) => r.keys?.[0] === "/") : undefined);
+    try {
+      const modules = source && layouts.length ? await entry.universal[source.id]?.() : undefined;
+      if (modules) return routeHead(modules, layouts, params, url, locals, layouts.length, own) ?? own;
+    } catch {
+      /* The error page's own head. */
+    }
+    return own;
   }
   // Error pages without a settled locale: the app's resolver, else the URL's locale prefix.
   async function errorLocals(locals: Record<string, unknown>, request: Request, url: URL): Promise<Record<string, unknown>> {

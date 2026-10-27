@@ -163,12 +163,13 @@ test("dev: reading a deferred handle synchronously fails the render with Deferre
   await server.listen();
   try {
     const origin = server.resolvedUrls!.local[0]!.replace(/\/$/, "");
-    // The page renders after the document started (lazy page view): 200 + the dev render-failure comment and overlay.
+    // The page module loads before the render (`createApp` + generated `loadPage`): the synchronous failure answers
+    // 500 with the dev error page and the overlay.
     const response = await fetch(origin + "/sync-read");
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 500);
     const html = await response.text();
-    assert.match(html, /rivet:resume-error/);
-    assert.match(html, /render failed in route "sync-read": Deferred loader data read synchronously \(`data\.title`\)/);
+    assert.match(html, /<pre class="message">Deferred loader data read synchronously \(`data\.title`\)/);
+    assert.match(html, /new ErrorOverlay\(\{"message":"render failed in route \\"sync-read\\": Deferred loader data read synchronously \(`data\.title`\)/);
     const fine = await fetch(origin + "/");
     assert.equal(fine.status, 200);
     assert.match(await fine.text(), /Deferred item/);

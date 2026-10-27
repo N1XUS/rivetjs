@@ -103,12 +103,16 @@ function apply(head: HeadFields): void {
   for (const [name, value] of Object.entries(head.body ?? {}))
     if (value !== undefined && document.body.getAttribute(name) !== value) document.body.setAttribute(name, value);
   const wanted = new Map<string, () => Element>();
+  // JSON-LD blocks by their data (the server writes them escaped): an equal block in the document stays as it is, so a
+  // resumed page never rewrites server JSON-LD (no script text write, no Trusted Types sink).
+  const json = new Map<string, string>();
   for (const meta of head.meta ?? []) wanted.set("m " + metaKey(meta), () => element("meta", meta));
   for (const link of head.links ?? []) wanted.set("l " + linkKey(link), () => element("link", link));
   for (const script of head.scripts ?? []) {
     if ("jsonLd" in script) {
       const code = JSON.stringify(script.jsonLd);
       wanted.set("j " + (script.id ?? code), () => jsonLd(code, script.id));
+      json.set("j " + (script.id ?? code), code);
     } else if ("src" in script) load(script);
   }
   // Keyed diff over managed tags: keep equal ones, replace changed, drop stale, append new.
@@ -121,6 +125,7 @@ function apply(head: HeadFields): void {
       continue;
     }
     wanted.delete(key!);
+    if (json.has(key!) && canonical(el.textContent) === json.get(key!)) continue;
     const next = make();
     if (!next.isEqualNode(el)) el.replaceWith(next);
   }
@@ -141,6 +146,14 @@ function jsonLd(code: string, id: string | undefined): Element {
   el.setAttribute("data-rh", "");
   return el;
 }
+/** JSON text as `JSON.stringify` writes it (server blocks are escaped: `\u003c`); other text as it is. */
+function canonical(text: string | null): string {
+  try {
+    return JSON.stringify(JSON.parse(text ?? ""));
+  } catch {
+    return text ?? "";
+  }
+}
 function keyOf(el: Element): string | undefined {
   const get = (name: string) => el.getAttribute(name) ?? undefined;
   if (el.localName === "meta") {
@@ -159,7 +172,7 @@ function keyOf(el: Element): string | undefined {
     };
     return "l " + linkKey(Object.fromEntries(Object.entries(link).filter(([, v]) => v !== undefined)) as unknown as HeadLinkFields);
   }
-  if (el.localName === "script" && (el as HTMLScriptElement).type === "application/ld+json") return "j " + (el.id || el.textContent);
+  if (el.localName === "script" && (el as HTMLScriptElement).type === "application/ld+json") return "j " + (el.id || canonical(el.textContent));
   return undefined;
 }
 

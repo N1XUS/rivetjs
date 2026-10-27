@@ -26,8 +26,10 @@ export interface SyncResult {
 export async function sync({ root = process.cwd(), configFile, mode = "production" }: SyncOptions = {}): Promise<SyncResult> {
   const { resolveConfig } = await import("vite");
   const appRoot = resolve(root);
+  // Resolved as the server build: it carries every locale (an `i18n()` client build needs RIVET_LOCALE, one per locale)
+  // and generates the same `.rivet/` files.
   const config = await resolveConfig(
-    { root: appRoot, mode, logLevel: "warn", ...(configFile ? { configFile: resolve(appRoot, configFile) } : {}) },
+    { root: appRoot, mode, logLevel: "warn", build: { ssr: true }, ...(configFile ? { configFile: resolve(appRoot, configFile) } : {}) },
     "build",
     mode,
   );

@@ -34,7 +34,7 @@ Code imported by both server and client (and by `@rivetjs/kit`): handler ↔ cli
 - `HeadTagOptions.inlineStyles` (URL → CSS, `rivetRouter({ inlineStylesheets })`): a `styles` URL found in it (own key) is written as `<style nonce>` in its link's place (cascade order kept), else linked. Tests `tests/route-css.test.ts` "inline stylesheets".
 - `Head.styles` (inline `<style>`, trusted CSS from components, e.g. `@rivetjs/motion` entrance rules): deduped by `key`, else the CSS text; `headTags` group 5 after the stylesheet links, request nonce, `</style` escaped, never `data-rh` (client navigation keeps them); the server head sink renders them in place after the shell (like links / scripts). Test `libs/kit/tests/head.test.ts` "inline styles".
 - Inline scripts only via branded `inlineScript()` (WeakSet brand); plain `{ code }` throws in `headTags`. Code never contains `</script` (escaped).
-- One Trusted Types policy per page: `rivet-script`, created by the bootstrap (`document.$rs`), shared with kit's head manager. Charset, viewport, CSP meta belong to the document shell, not `headTags`.
+- One Trusted Types policy per page: `rivet-script`, created by the bootstrap (`document.$rs`), shared with kit's head manager. `trustedTypesDirectives` (`csp.ts`): `true` → `trusted-types rivet rivet-script`; a list → those two + the app's names (deduped). Charset, viewport, CSP meta belong to the document shell, not `headTags`.
 - `html`/`body` attributes need the kit head hold.
 
 ## Rules / invariants
@@ -55,6 +55,9 @@ Code imported by both server and client (and by `@rivetjs/kit`): handler ↔ cli
 npx vitest run --project router libs/router/tests/server.test.ts libs/router/tests/base.test.ts
 npx vitest run --project kit   # head merge consumers
 ```
+
+- `csp-directives.ts` `cspPolicy` styles (C7): page styles present, no `style-src` / `style-src-elem`, and a `default-src` without `'unsafe-inline'` → synthesized `style-src` = `default-src` sources minus `'none'` + nonce / hashes (else the browser falls back to `default-src` and blocks Rivet's `<style>`).
+- `data.ts` `HeadSink.resolve?(value)`: resolves i18n variant values for kit head components (`<Title>` children text).
 
 ## See also
 

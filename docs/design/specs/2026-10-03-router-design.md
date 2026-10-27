@@ -22,7 +22,7 @@ Input: [meta-framework research](../research/2026-10-03-meta-framework-routing.m
 - `_layout.tsx` wraps every route below it (nesting outer → inner); `_404.tsx` (nearest wins), `_error.tsx` (nearest wins).
   - Every `_layout` stays mounted while client navigation stays below it (state survives); layout data lives in resume-serialized signals updated per navigation; data requests skip kept layouts' loaders (G12, [routing: nested layouts](../../guides/routing.md#file-routes-nested-layouts)).
   - Layout props are accessors (`LayoutProps`: `data()`, `params()`, `url()`, `children`); page props are values (`PageProps`).
-  - Unmatched URLs: `_404` of the longest static folder prefix (groups add no segment, param folders skipped), else root. Failed loads: matched route's nearest `_404` (status 404) / `_error`. Error pages render without layouts (no layout data).
+  - Unmatched URLs: `_404` of the longest static folder prefix (groups add no segment, param folders skipped), else root. Failed loads: matched route's nearest `_404` (status 404) / `_error`. Error pages render inside the layouts whose guards passed and loaders succeeded (unmatched: root layout), with those layouts' `head` merged under the error title (current behaviour, R18N 2026-10-27).
 - Ignored: files/folders starting with `_` other than the above, `*.test.*`, `*.d.ts`.
 - Conflicts (two files → same pattern) and invalid names are build errors with both paths.
 - Ordering: static segments before params before optional before splat; ties by depth → deterministic, independent of file system order.

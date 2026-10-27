@@ -127,3 +127,142 @@ test("clientPathPattern: the paths a client build's locale serves", async () => 
   assert.deepEqual(["/deutsch/x", "/de"].map(own("de", { prefix: { de: "/deutsch/" } })!), [true, false]);
   assert.equal(own("de", { prefix: "never" }), null);
 });
+
+test("?image with per-locale client builds: URLs locale-free, files once beside the locale directories", async () => {
+  const sharp = (await import("sharp")).default;
+  const { rivet } = await import("@rivetjs/compiler/vite");
+  const { i18n } = await import("../vite.ts");
+  const { pathToFileURL } = await import("node:url");
+  const { existsSync, mkdirSync, writeFileSync } = await import("node:fs");
+  mkdirSync(".artifacts", { recursive: true });
+  const app = mkdtempSync(join(process.cwd(), ".artifacts", "i18n-images-"));
+  onTestFinished(() => rmSync(app, { recursive: true, force: true }));
+  mkdirSync(join(app, "locales"));
+  writeFileSync(join(app, "locales/en.json"), JSON.stringify({ hero: "A hero" }));
+  writeFileSync(join(app, "locales/de.json"), JSON.stringify({ hero: "Ein Held" }));
+  await sharp({ create: { width: 800, height: 400, channels: 3, background: "#123456" } })
+    .jpeg()
+    .toFile(join(app, "hero.jpg"));
+  writeFileSync(
+    join(app, "view.tsx"),
+    `import { Picture } from "@rivetjs/runtime/image";\nimport { t } from "@rivetjs/i18n";\nimport hero from "./hero.jpg?image";\nexport default () => <main><Picture image={hero} alt={t("hero")} /></main>;\n`,
+  );
+  writeFileSync(join(app, "client.tsx"), `import { mount } from "@rivetjs/runtime/dom";\nimport View from "./view.tsx";\nmount(View, document.body);\n`);
+  writeFileSync(
+    join(app, "server.tsx"),
+    `import { renderToString } from "@rivetjs/runtime/server";\nimport View from "./view.tsx";\nexport const render = (variant: number) => renderToString(() => View(), { variant });\n`,
+  );
+  const plugins = () => [
+    i18n({ locales: ["en", "de"], defaultLocale: "en", catalogs: "locales/{locale}.json", dts: "i18n.d.ts" }),
+    rivet({ images: { cacheDir: ".image-cache" } }),
+  ];
+  try {
+    for (const locale of ["en", "de"]) {
+      process.env.RIVET_LOCALE = locale;
+      await build({
+        root: app,
+        configFile: false,
+        logLevel: "silent",
+        plugins: plugins(),
+        build: { outDir: join(app, "dist/client"), rollupOptions: { input: join(app, "client.tsx") } },
+      });
+    }
+  } finally {
+    delete process.env.RIVET_LOCALE;
+  }
+  await build({
+    root: app,
+    configFile: false,
+    logLevel: "silent",
+    plugins: plugins(),
+    build: { ssr: join(app, "server.tsx"), outDir: join(app, "dist/server") },
+  });
+  const { render } = await import(pathToFileURL(join(app, "dist/server/server.js")).href);
+  for (const [variant, alt] of [
+    [0, "A hero"],
+    [1, "Ein Held"],
+  ] as const) {
+    const html: string = await render(variant);
+    assert.match(html, new RegExp(`alt="${alt}"`));
+    const urls = [...html.matchAll(/(?:src|srcset)="([^"]+)"/g)].flatMap((m) => m[1]!.split(/,\s+/).map((part) => part.split(/\s+/)[0]!));
+    assert.ok(urls.length > 1, html);
+    for (const url of urls) {
+      assert.match(url, /^\/assets\//);
+      assert.ok(existsSync(join(app, "dist/client", url)), url + " exists in dist/client");
+    }
+  }
+  // Once: no per-locale copies; each locale's client code names the same locale-free URLs.
+  for (const locale of ["en", "de"]) {
+    assert.ok(
+      !existsSync(join(app, "dist/client", locale, "assets")) || !readdirSync(join(app, "dist/client", locale, "assets")).some((f) => f.startsWith("hero-")),
+    );
+    const code = read(join(app, "dist/client", locale));
+    assert.ok(/[`"]\/assets\/hero-/.test(code), locale + " client code names /assets/hero-…");
+    assert.ok(!code.includes(`/${locale}/assets/hero-`), locale + " client code names no per-locale image URL");
+  }
+});
+
+test("locale(): the request locale on the server, the build's constant in the browser (dev: the page's locale)", async () => {
+  const { rivet } = await import("@rivetjs/compiler/vite");
+  const { i18n } = await import("../vite.ts");
+  const { pathToFileURL } = await import("node:url");
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  mkdirSync(".artifacts", { recursive: true });
+  const app = mkdtempSync(join(process.cwd(), ".artifacts", "i18n-locale-"));
+  onTestFinished(() => rmSync(app, { recursive: true, force: true }));
+  mkdirSync(join(app, "locales"));
+  writeFileSync(join(app, "locales/en.json"), JSON.stringify({ hi: "Hi" }));
+  writeFileSync(join(app, "locales/de.json"), JSON.stringify({ hi: "Hallo" }));
+  writeFileSync(
+    join(app, "view.tsx"),
+    `import { locale, t } from "@rivetjs/i18n";\nexport default () => <p lang={locale()} data-n={new Intl.NumberFormat(locale()).format(1.5)}>{t("hi")}</p>;\n`,
+  );
+  writeFileSync(join(app, "client.tsx"), `import { mount } from "@rivetjs/runtime/dom";\nimport View from "./view.tsx";\nmount(View, document.body);\n`);
+  writeFileSync(
+    join(app, "server.tsx"),
+    `import { Provider, renderToString } from "@rivetjs/runtime/server";\nimport { ServerData } from "@rivetjs/router/route-context";\nimport View from "./view.tsx";\n` +
+      `export const render = (variant: number, locale: string) => renderToString(() => Provider({ token: ServerData, value: { data: [], url: new URL("https://x.test/"), head: undefined, locale }, children: () => View() }), { variant });\n` +
+      `export const outside = () => renderToString(() => View());\n`,
+  );
+  const plugins = () => [i18n({ locales: ["en", "de"], defaultLocale: "en", catalogs: "locales/{locale}.json", dts: "i18n.d.ts" }), rivet()];
+  process.env.RIVET_LOCALE = "de";
+  try {
+    await build({
+      root: app,
+      configFile: false,
+      logLevel: "silent",
+      plugins: plugins(),
+      build: { outDir: join(app, "dist/client"), rollupOptions: { input: join(app, "client.tsx") } },
+    });
+  } finally {
+    delete process.env.RIVET_LOCALE;
+  }
+  const code = read(join(app, "dist/client/de"));
+  assert.ok(/[`"]de[`"]/.test(code), "the de build inlines its locale");
+  assert.ok(!code.includes("has no request locale") && !code.includes("rivet.context"), "nothing of the server locale() ships");
+  await build({
+    root: app,
+    configFile: false,
+    logLevel: "silent",
+    plugins: plugins(),
+    build: { ssr: join(app, "server.tsx"), outDir: join(app, "dist/server") },
+  });
+  const { render, outside } = await import(pathToFileURL(join(app, "dist/server/server.js")).href);
+  assert.equal(await render(1, "de"), '<p lang="de" data-n="1,5">Hallo</p>');
+  assert.equal(await render(0, "en"), '<p lang="en" data-n="1.5">Hi</p>');
+  await assert.rejects(async () => outside(), /locale\(\) has no request locale/);
+  // Dev: the importer's locale query (default locale without one); the server environment keeps the real module.
+  const server = await createServer({ root: app, configFile: false, logLevel: "silent", plugins: plugins(), server: { middlewareMode: true, ws: false } });
+  try {
+    const de = await server.environments.client.pluginContainer.resolveId("@rivetjs/i18n", join(app, "view.tsx") + "?rivet-locale=de");
+    assert.equal(de?.id, "\0rivet-i18n-client:de");
+    const en = await server.environments.client.pluginContainer.resolveId("@rivetjs/i18n", join(app, "view.tsx"));
+    assert.equal(en?.id, "\0rivet-i18n-client:en");
+    const loaded = await server.environments.client.pluginContainer.load("\0rivet-i18n-client:de");
+    assert.match(String(typeof loaded === "string" ? loaded : loaded?.code), /export const locale = \(\) => "de";/);
+    const ssr = await server.environments.ssr.pluginContainer.resolveId("@rivetjs/i18n", join(app, "view.tsx"));
+    assert.ok(ssr && !ssr.id.startsWith("\0"), String(ssr?.id));
+  } finally {
+    await server.close();
+  }
+});

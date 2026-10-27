@@ -64,3 +64,25 @@ test("rivet sync: no Vite config or bad arguments exit 2", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("rivet sync with i18n() in the Vite config (no RIVET_LOCALE): resolves as the server build", () => {
+  const root = app({
+    "package.json": JSON.stringify({ name: "sync-i18n", type: "module" }),
+    "vite.config.ts":
+      `import { i18n } from "@rivetjs/i18n/vite";\nimport { rivetRouter } from "@rivetjs/router/vite";\n` +
+      `export default { plugins: [i18n({ locales: ["en", "de"], defaultLocale: "en", catalogs: "locales/{locale}.json" }), rivetRouter()] };\n`,
+    "locales/en.json": JSON.stringify({ hi: "Hi" }),
+    "locales/de.json": JSON.stringify({ hi: "Hallo" }),
+    "src/routes/[[lang]]/index.tsx": 'import { t } from "@rivetjs/i18n";\nexport default () => <p>{t("hi")}</p>;\n',
+  });
+  try {
+    const env = { ...process.env };
+    delete env.RIVET_LOCALE;
+    const run = spawnSync("node", [cli, "sync"], { cwd: root, encoding: "utf8", env });
+    assert.equal(run.status, 0, run.stdout + run.stderr);
+    assert.match(run.stdout, /^rivet sync: \.\/\.rivet \(2 routes, \d+ resume modules\)$/m);
+    assert.ok(existsSync(join(root, ".rivet/editor.json")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

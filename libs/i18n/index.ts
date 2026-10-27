@@ -2,6 +2,7 @@
 // the module was not compiled with the i18n plugin.
 
 import type { Content } from "@rivetjs/runtime/jsx-runtime";
+import { _requestLocale } from "@rivetjs/router/route-context";
 
 /** Augmented by the generated declarations (i18n Vite plugin): key → params. */
 export interface Messages {}
@@ -38,3 +39,18 @@ const uncompiled = (): never => {
 };
 /** Translate a message key. The compiler replaces every call with the locale's message; `t.in(locale, key)` picks the locale explicitly. */
 export const t: Translate = Object.assign(uncompiled, { in: uncompiled }) as unknown as Translate;
+
+/**
+ * The page's locale. Server: the request's (`locals.locale`, set by `i18nGuard`; none settled: the first locale), read while rendering — call it in
+ * component setup, not after an `await` (loaders and actions: `event.locals.locale`). Browser: a constant of the locale's
+ * client build (`i18n()` swaps this module, so the call is a string literal and nothing of this function ships); dev:
+ * the page's locale. Both sides return the same value, so markup built from it resumes as rendered.
+ */
+export function locale(): Locale {
+  const value = _requestLocale();
+  if (value === undefined)
+    throw new Error(
+      "@rivetjs/i18n: locale() has no request locale. Call it while a page renders (component setup) in an app with i18n (i18nGuard sets locals.locale; loaders and actions read event.locals.locale).",
+    );
+  return value as Locale;
+}

@@ -858,6 +858,8 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     `import type { PageInput } from "@rivetjs/router/server";`,
     derived ? `import Root from "./app.tsx";` : `import { App } from "./app.tsx";`,
     `export { routes, universal } from "./routes.ts";`,
+    "/** The page module of a URL (`createApp` loads it before a route's first render: a throwing render then fails before the response starts). */",
+    `export { loadPage } from "./app.tsx";`,
     '/** URL base path the route patterns carry (`""`: root); adapters serve files and prerender under it. */',
     `export const base = ${str(base)};`,
     "// The server build bundles the handler with the app, so both share one runtime instance.",
@@ -917,7 +919,7 @@ export function generate(table: RouteTable, options: CodegenOptions): Generated 
     "/** Page factory for one request; the app reads the handler's loader results through ServerData. */",
     "export function page(input: PageInput) {",
     "  return () => (",
-    `    <Provider token={ServerData} value={{ data: input.data, url: input.url, head: input.head, ...(input.error ? { error: input.error } : {}), ...(input.action ? { action: input.action } : {})${useNest ? ", ...(input.byURL ? { byURL: input.byURL } : {}), ...(input.deps ? { deps: input.deps } : {})" : ""}${kit ? ", ...(input.headSink ? { headSink: input.headSink } : {})" : ""} }}>`,
+    `    <Provider token={ServerData} value={{ data: input.data, url: input.url, head: input.head, ...(input.error ? { error: input.error } : {}), ...(input.action ? { action: input.action } : {}), ...(input.locale ? { locale: input.locale } : {})${useNest ? ", ...(input.byURL ? { byURL: input.byURL } : {}), ...(input.deps ? { deps: input.deps } : {})" : ""}${kit ? ", ...(input.headSink ? { headSink: input.headSink } : {})" : ""} }}>`,
     ...wrap(
       [
         ...(search

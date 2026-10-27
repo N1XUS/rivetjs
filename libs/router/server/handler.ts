@@ -101,7 +101,8 @@ export interface ServerModule {
   onOptions?: Handler;
   guard?(event: RequestEvent): Result | Promise<Result>;
   load?(event: RequestEvent): Result | Promise<Result>;
-  entries?(): Iterable<Record<string, string>> | Promise<Iterable<Record<string, string>>>;
+  /** Static adapter: param sets to prerender (an optional `[[param]]` left out or `undefined` → the form without it). */
+  entries?(): Iterable<Record<string, string | undefined>> | Promise<Iterable<Record<string, string | undefined>>>;
   prerender?: boolean;
   /** `false` (route module only): skip the cross-site check for this route's unsafe methods (webhooks). */
   csrf?: boolean;
@@ -205,6 +206,8 @@ export interface ErrorInput {
    * passed and whose loaders succeeded, up to the first that did not. Unmatched URLs: the root layout's.
    */
   readonly layouts?: readonly unknown[];
+  /** The matched route's params (`{}` for unmatched URLs): layout `head` functions of the error page get them. */
+  readonly params?: Readonly<Record<string, string>>;
 }
 /** Options of the app handler: routes, renderers, head and dev flags. */
 export interface AppOptions {
@@ -212,7 +215,11 @@ export interface AppOptions {
   render(input: RenderInput): Response | Promise<Response>;
   renderError?(input: ErrorInput): Response | Promise<Response>;
   /** Merged head for a route from its universal modules' `head` exports. */
-  head?(route: AppRoute, data: readonly unknown[], match: { params: Readonly<Record<string, string>>; url: URL }): Head | undefined | Promise<Head | undefined>;
+  head?(
+    route: AppRoute,
+    data: readonly unknown[],
+    match: { params: Readonly<Record<string, string>>; url: URL; locals?: Record<string, unknown> },
+  ): Head | undefined | Promise<Head | undefined>;
   /** Show 5xx messages (never in production). */
   readonly dev?: boolean;
   /** Server failures; `digest` is also in the (otherwise generic) 5xx message the client sees. */
@@ -502,7 +509,18 @@ export function createHandler(options: AppOptions): AppHandler {
       if (setsCookie) privateCache(headers);
       if (wantsJSON) return reply({ error: { status, message } }, status, headers, url.origin);
       const layouts = options.renderError && guarded ? await errorLayouts() : [];
-      const input: ErrorInput = { request, url, route, status, message, headers, nonce, locals, ...(layouts.length ? { layouts } : {}) };
+      const input: ErrorInput = {
+        request,
+        url,
+        route,
+        status,
+        message,
+        headers,
+        nonce,
+        locals,
+        params: found?.params ?? {},
+        ...(layouts.length ? { layouts } : {}),
+      };
       if (options.renderError) return options.renderError(input);
       headers.set("content-type", "text/plain; charset=utf-8");
       return new Response(message, { status, headers });
@@ -760,7 +778,7 @@ export function createHandler(options: AppOptions): AppHandler {
             url.search = "";
             phase = "loader";
             const fresh = await Promise.all(modules.map((module, i) => module?.load?.(loaderEvent(i, false))));
-            const head = await options.head?.(route, fresh, { params: found.params, url });
+            const head = await options.head?.(route, fresh, { params: found.params, url, locals });
             return reply({ redirect: failure.location, status: failure.status, data: fresh, ...(head ? { head } : {}), ...depsOf() }, 200, headers, url.origin);
           }
           throw failure;
@@ -780,7 +798,7 @@ export function createHandler(options: AppOptions): AppHandler {
           if (status < 400 && request.headers.has("x-rivet-revalidate")) {
             phase = "loader";
             const fresh = await Promise.all(modules.map((module, i) => module?.load?.(loaderEvent(i, false))));
-            const head = await options.head?.(route, fresh, { params: found.params, url });
+            const head = await options.head?.(route, fresh, { params: found.params, url, locals });
             return reply({ action: performed, data: fresh, ...(head ? { head } : {}), ...depsOf() }, status, headers, url.origin);
           }
           return reply({ action: performed }, status, headers, url.origin);
@@ -831,7 +849,7 @@ export function createHandler(options: AppOptions): AppHandler {
       );
       shell?.loaded?.(loaded.slice(), [...byURL], depsOf().deps);
       if (promises) promises.forEach((promise, i) => (loaded[i] = shell?.handle ? shell.handle(promise!, dev, i) : lazy!.deferredHandle(promise!, dev)));
-      const head = await options.head?.(route, loaded, { params: found.params, url });
+      const head = await options.head?.(route, loaded, { params: found.params, url, locals });
       if (data) {
         if (!headers.has("cache-control")) headers.set("cache-control", "private, no-store");
         else if (setsCookie) privateCache(headers);

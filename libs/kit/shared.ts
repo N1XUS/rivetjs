@@ -18,11 +18,15 @@ export const KIT_POLICY = "rivet-script";
  */
 export const unsafeInlineScript = (code: string): InlineScript => inlineScript(code);
 
-/** Text of JSX children (`<Title>Item {name}</Title>`). */
-export function childText(children: unknown): string {
+/**
+ * Text of JSX children (`<Title>Item {name}</Title>`). `resolve` (server, i18n: the head sink's) turns translated values
+ * (`<Title>{t("…")}</Title>`) into the request locale's text first.
+ */
+export function childText(children: unknown, resolve?: (value: unknown) => unknown): string {
+  if (resolve) children = resolve(children);
   if (children === null || children === undefined || children === false || children === true) return "";
-  if (typeof children === "function") return childText((children as () => unknown)());
-  if (Array.isArray(children)) return children.map(childText).join("");
+  if (typeof children === "function") return childText((children as () => unknown)(), resolve);
+  if (Array.isArray(children)) return children.map((child) => childText(child, resolve)).join("");
   return String(children);
 }
 

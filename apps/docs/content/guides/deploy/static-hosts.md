@@ -61,6 +61,8 @@ dist/client/
 
 The `_data.json` files hold the route data. When a visitor clicks a link on an interactive page, the browser loads the next page's data from there instead of a full page.
 
+Two more folders are build internals you may leave out of the upload: `.vite/` (the build manifests, also under `<locale>/` with i18n) and `_rivet/dict/` (compression dictionaries, used only by the [Node adapter](node.md)). `prerenderBuild({ dictionary: false })` skips the dictionaries.
+
 ## Pages without JavaScript
 
 A page with nothing to resume ships no JavaScript at all: no loader, no state script, no preload links. Nothing to resume means no event handlers, no signals read in the markup, no `clientEffect` and no forms. The build decides this per page, from what each page actually rendered. A mixed site keeps JavaScript on its interactive pages only.
@@ -143,11 +145,13 @@ The build fails when:
 - a route with `load(…)` or `guard(…)` cannot be prerendered (dynamic, no `entries(…)`). The message says to use the [Node adapter](node.md) or add `entries(…)`;
 - a page does not answer with status 200.
 
+With optional segments (`[[lang]]`), each value set builds the URL that fits it: `entries(() => [{ slug: "a" }, { lang: "de", slug: "a" }])` builds `/blog/a` and `/de/blog/a`. A set without the optional key takes the pattern without the segment.
+
 Dynamic routes without server code and without `entries(…)` need a browser-rendered fallback page. Pass `shell` to `prerenderBuild`; the result is written to `200.html`. Most apps avoid this by adding `entries(…)`.
 
 ## Security policy
 
-Each page gets a `<meta>` Content Security Policy, placed right after `<meta charset>` and `<meta name="viewport">`. It allows its own inline scripts by hash and script files from the same origin. Turn on Trusted Types with `csp: { trustedTypes: true }`, add sources such as `'wasm-unsafe-eval'` or `worker-src blob:` with `csp: { directives }`, or turn the tag off with `csp: false` if your host sends the header. See [Content Security Policy](../security/csp.md#static-pages-a-hash-policy).
+Each page with inline scripts gets a `<meta>` Content Security Policy (with `csp: { directives }`, every page), placed right after `<meta charset>` and `<meta name="viewport">`. It allows its own inline scripts by hash and script files from the same origin. Turn on Trusted Types with `csp: { trustedTypes: true }`, add sources such as `'wasm-unsafe-eval'` or `worker-src blob:` with `csp: { directives }`, or turn the tag off with `csp: false` if your host sends the header (needed for `frame-ancestors` and other header-only directives). See [Content Security Policy](../security/csp.md#static-pages-a-hash-policy).
 
 ## Preview
 
@@ -182,6 +186,7 @@ The site works from the root of a domain. Folders map to URLs with a trailing sl
 - **Pages missing after the build.** A dynamic route has no `entries(…)`, or `entries(…)` returns fewer values than you think. The report lists every built page.
 - **Testing with the dev server only.** Dev pages render in the browser and do not show resuming. Run `npm run build && npm run preview`.
 - **Expecting cookies or per-user content.** A static page is the same for every visitor. Use the [Node adapter](node.md) for that.
+- **A multilingual site.** See [static builds with several languages](../i18n/locale-urls.md#static-builds).
 
 ## See also
 

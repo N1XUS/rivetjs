@@ -150,3 +150,17 @@ test("pictureHtml caches the descriptor markup of branded (build-emitted, deep-f
   // Object sizes and art direction are never cached (fresh every call).
   assert.equal(pictureHtml({ image: branded, alt: "", sizes: { md: "50vw" } }), pictureHtml({ image: hero, alt: "", sizes: { md: "50vw" } }));
 });
+
+test("server Picture: a translated alt / title (server t() value) renders the page locale's text, escaped", async () => {
+  const { Picture } = await import("../image.ts");
+  const { renderToString, _variantValue } = await import("../server.ts");
+  const alt = _variantValue(["A <dog>", () => 'Ein "Hund"']);
+  const title = _variantValue(["Photo", "Foto"]);
+  const plain = pictureHtml({ image: hero, alt: "X", title: "Y" });
+  const de = await renderToString(Picture({ image: hero, alt: alt as unknown as string, title: title as unknown as string }), { variant: 1 });
+  assert.equal(de, plain.replace('alt="X"', 'alt="Ein &quot;Hund&quot;"').replace('title="Y"', 'title="Foto"'));
+  const en = await renderToString(Picture({ image: hero, alt: alt as unknown as string }), { variant: 0 });
+  assert.equal(en, pictureHtml({ image: hero, alt: "A <dog>" }));
+  // Plain strings: one static fragment, as before.
+  assert.equal(await renderToString(Picture({ image: hero, alt: "X", title: "Y" })), plain);
+});

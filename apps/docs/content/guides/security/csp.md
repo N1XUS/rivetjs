@@ -49,7 +49,7 @@ The policy string comes from `strictCSP(nonce)` in `@rivetjs/router/server`.
 
 ## Static pages: a hash policy
 
-Static files have no per-request nonce. Instead, `prerenderBuild` adds a `<meta>` tag to each page. It allows the page's own inline scripts by their SHA-256 hash, and script files from your own origin:
+Static files have no per-request nonce. Instead, `prerenderBuild` adds a `<meta>` tag to each page that has inline scripts (with `directives` set, to every page). A page without scripts gets no tag; it runs no code a policy could block. It allows the page's own inline scripts by their SHA-256 hash, and script files from your own origin:
 
 ```html
 <meta http-equiv="Content-Security-Policy" content="script-src 'sha256-…' 'self'; object-src 'none'; base-uri 'none'">
@@ -107,12 +107,11 @@ Inline scripts you write in the document shell must carry the nonce. The shell r
 ```ts title="src/document.ts"
 import { headTags, type DocumentShell } from "@rivetjs/router/server";
 
-const document: DocumentShell = ({ head, styles, nonce }) => ({
+const document: DocumentShell = (input) => ({
   start:
     '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
-    headTags(head ?? {}) +
-    styles.map((href) => `<link rel="stylesheet" href="${href}">`).join("") +
-    `<script nonce="${nonce ?? ""}">document.documentElement.dataset.js = "on"</script>` +
+    headTags(input.head, input) +
+    `<script nonce="${input.nonce ?? ""}">document.documentElement.dataset.js = "on"</script>` +
     "</head><body>",
   end: "</body></html>",
 });
@@ -129,7 +128,9 @@ Third-party scripts from another origin (analytics, chat widgets) are blocked un
 - `createApp({ csp })` from `@rivetjs/router/server` accepts a function `(nonce) => policy`, or `false` for no header.
 - `start()` from `@rivetjs/router/node` takes the same `csp` option: `{ trustedTypes, directives }`, a function or `false`.
 
-The policy only covers scripts. It sets no `style-src` or `img-src`. If you add those directives (with `directives`), remember that `Picture` uses an inline `style` attribute for its placeholder. Rivet's own `<style>` elements (small [inlined stylesheets](../styling/css-and-tailwind.md#small-stylesheets-are-inlined), head styles) stay allowed: Rivet adds the page's nonce (server pages) or their hashes (static pages) to the `style-src` / `style-src-elem` you set. A list with `'unsafe-inline'` is left as you wrote it, because a nonce or hash would turn `'unsafe-inline'` off.
+The policy only covers scripts. It sets no `style-src` or `img-src`. If you add those directives (with `directives`), remember that `Picture` uses an inline `style` attribute for its placeholder. Rivet's own `<style>` elements (small [inlined stylesheets](../styling/css-and-tailwind.md#small-stylesheets-are-inlined), head styles) stay allowed: Rivet adds the page's nonce (server pages) or their hashes (static pages) to the `style-src` / `style-src-elem` you set. A list with `'unsafe-inline'` is left as you wrote it, because a nonce or hash would turn `'unsafe-inline'` off. With only a `default-src` (no `style-src`), Rivet adds a `style-src` with the `default-src` sources plus the nonce or hashes, so the browser does not fall back to a `default-src` that blocks the page's own `<style>` elements.
+
+A static host that sends headers (Netlify and Cloudflare `_headers`, Vercel `vercel.json` `headers`) can send the policy for every file, also for pages without scripts. Header-only directives such as `frame-ancestors` work only there, not in the `<meta>` tag. Then build with `csp: false` and copy the policy into the host's header config.
 
 ## Common mistakes
 

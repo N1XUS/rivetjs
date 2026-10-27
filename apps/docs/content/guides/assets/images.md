@@ -211,6 +211,10 @@ const banner = [ImagePreload({ image: hero }), Picture({ image: hero, alt: "", p
 return <header>{banner}</header>;
 ```
 
+### Images with i18n
+
+With [one build per language](../i18n/translating-text.md#build-one-app-per-language) the images are still written once, to `dist/client/assets/`, under the same URLs for every language. Translated `alt` text works: `<Picture image={hero} alt={t("home.hero")} />`.
+
 ### Missing size
 
 `cdn()` throws when `width` or `height` is missing. Without a size, the page jumps when the image loads.

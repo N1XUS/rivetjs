@@ -156,3 +156,24 @@ test("?font ids", () => {
   assert.throws(() => parseFontId("/f/a.png?font"), /woff2/);
   assert.throws(() => parseFontId("/f/a.woff2?font&family=a%22b"), /invalid font family/);
 });
+
+test("server <Title> / <Meta>: translated values (server t() outside JSX) resolve through the head sink for the request locale", async () => {
+  const { renderToString, Provider, _variantValue } = await import("@rivetjs/runtime/server");
+  const { ServerData } = await import("@rivetjs/router/route-context");
+  const { Title, Meta, childText } = await import("../index.ts");
+  const pushed: unknown[] = [];
+  const resolve = (value: unknown) => (value && typeof value === "object" && Symbol.for("rivet.variantValue") in value ? "Hallo" : value);
+  const sink = { nonce: undefined, resolve, push: (_level: number, head: unknown) => (pushed.push(head), undefined) };
+  const hello = _variantValue(["Hello", "Hallo"]);
+  await renderToString(
+    Provider({
+      token: ServerData,
+      value: { data: [], url: new URL("https://x.test/"), head: undefined, headSink: sink } as never,
+      children: () => [Title({ children: ["» ", hello] }), Meta({ name: "description", content: hello as unknown as string })],
+    }),
+  );
+  assert.deepEqual(pushed[0], { title: "» Hallo" });
+  // Meta values stay as given: the router's sink resolves whole heads on push.
+  assert.equal((pushed[1] as { meta: { content: unknown }[] }).meta[0]!.content, hello);
+  assert.equal(childText(["a", 1, null, () => "b"]), "a1b");
+});

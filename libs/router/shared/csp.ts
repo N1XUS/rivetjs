@@ -9,8 +9,8 @@ export type CSPDirectives = Readonly<Record<string, string | readonly string[] |
 /** Content Security Policy options: directives, nonces and Trusted Types. */
 export interface CSPOptions {
   /**
-   * Enforce Trusted Types: `require-trusted-types-for 'script'` with the runtime's `rivet` policy
-   * (template HTML) allowed. Pass policy names to allow your own as well.
+   * Enforce Trusted Types: `require-trusted-types-for 'script'` with Rivet's policies allowed — `rivet` (runtime
+   * template HTML) and `rivet-script` (`@rivetjs/kit` head scripts and JSON-LD). Pass policy names to allow your own as well.
    */
   readonly trustedTypes?: boolean | readonly string[];
   /**
@@ -35,5 +35,7 @@ export const nonceCSP = (nonce: string, options?: CSPOptions): string =>
 export function trustedTypesDirectives(options: CSPOptions | undefined): string {
   const names = options?.trustedTypes;
   if (!names) return "";
-  return `; require-trusted-types-for 'script'; trusted-types ${["rivet", ...(names === true ? [] : names)].join(" ")}`;
+  // `true`: Rivet's own policies — `rivet` (runtime template HTML) and `rivet-script` (kit head scripts / JSON-LD: URL
+  // allowlist, JSON-only code); a list adds the app's.
+  return `; require-trusted-types-for 'script'; trusted-types ${["rivet", "rivet-script", ...(names === true ? [] : names.filter((n) => n !== "rivet" && n !== "rivet-script"))].join(" ")}`;
 }

@@ -39,7 +39,8 @@ const SOURCE = /^[^\s;,"'<>\\]+$|^'[A-Za-z0-9+/=_-]+'$/;
  * The policy string for `generated` (directive → sources, in order) merged with `options.directives`
  * and the Trusted Types directives. `meta`: the policy goes into a `<meta>` (header-only directives throw).
  * `styles`: the sources of the page's own `<style>` elements (nonce / hashes: inlined stylesheets, head styles), added
- * to a `style-src` / `style-src-elem` the options set (none set: inline styles are not restricted). A list with
+ * to a `style-src` / `style-src-elem` the options set; with neither but a `default-src` (which then governs styles), to a
+ * synthesized `style-src` = the `default-src` sources (none of the three: inline styles are not restricted). A list with
  * `'unsafe-inline'` is left as given (a nonce or hash would turn it off).
  */
 export function cspPolicy(
@@ -70,11 +71,19 @@ export function cspPolicy(
       }
     }
   }
-  if (styles.length)
+  if (styles.length) {
+    // `default-src` alone governs styles too: the page's own `<style>`s get a `style-src` of its sources + theirs.
+    const fallback = policy.get("default-src");
+    if (fallback && !policy.has("style-src") && !policy.has("style-src-elem") && !fallback.includes("'unsafe-inline'"))
+      policy.set(
+        "style-src",
+        fallback.filter((source) => source !== "'none'"),
+      );
     for (const name of ["style-src", "style-src-elem"]) {
       const list = policy.get(name);
       if (list && !list.includes("'unsafe-inline'")) for (const source of styles) if (!list.includes(source)) list.push(source);
     }
+  }
   let out = "";
   for (const [name, sources] of policy) out += (out ? "; " : "") + (sources.length ? `${name} ${sources.join(" ")}` : name);
   return out + trustedTypesDirectives(options);

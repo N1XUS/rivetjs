@@ -73,7 +73,7 @@ test(
         const header = async (module: FetchModule) => (await module.fetch(new Request(node.url + "/"))).headers.get("content-security-policy");
         assert.match(
           (await header(create({ csp: { trustedTypes: true } })))!,
-          /'strict-dynamic'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet$/,
+          /'strict-dynamic'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet rivet-script$/,
         );
         assert.match(
           (await header(create({ csp: (n: string) => `default-src 'self'; script-src 'nonce-${n}'` })))!,
@@ -84,7 +84,7 @@ test(
         const typed = await start({ dist, port: 0, csp: { trustedTypes: ["mine"] }, onError: () => {} });
         try {
           assert.equal((await fetch(off.url + "/")).headers.get("content-security-policy"), null);
-          assert.match((await fetch(typed.url + "/")).headers.get("content-security-policy")!, /trusted-types rivet mine$/);
+          assert.match((await fetch(typed.url + "/")).headers.get("content-security-policy")!, /trusted-types rivet rivet-script mine$/);
         } finally {
           await off.close();
           await typed.close();

@@ -7,19 +7,23 @@ import type { RoutePayload } from "@rivetjs/router/client";
 import { HeadLevel, childText, themeScript, type Head as HeadFields, type HeadLinkProps, type JsonLdProps, type MetaProps, type ScriptProps, type ThemeScriptProps } from "./shared.ts";
 export * from "./shared.ts";
 
-/** Record `head` at the current route level; markup only for late (post-shell) body-valid entries. */
-export function pushHead(head: HeadFields, component = "<Head>"): ServerValue {
+const sinkOf = (component: string) => {
   const sink = useContext(ServerData)?.headSink;
   if (!sink)
     throw new Error(`${component}: kit head needs @rivetjs/router with the kit Vite plugin (kit() from @rivetjs/kit/vite) or rivetRouter({ head: "components" })`);
-  const late = sink.push(useContext(HeadLevel), head, component);
+  return sink;
+};
+/** Record `head` at the current route level; markup only for late (post-shell) body-valid entries. */
+export function pushHead(head: HeadFields, component = "<Head>"): ServerValue {
+  const late = sinkOf(component).push(useContext(HeadLevel), head, component);
   return late ? template([late]) : null;
 }
 
 /** Any head fields (`<Head value={seo({ … })} />`). */
 export const Head = (props: { value: HeadFields }): ServerValue => pushHead(props.value, "<Head>");
 /** `<title>` (the route's `titleTemplate` applies). */
-export const Title = (props: { children?: unknown }): ServerValue => pushHead({ title: childText(props.children) }, "<Title>");
+export const Title = (props: { children?: unknown }): ServerValue =>
+  pushHead({ title: childText(props.children, sinkOf("<Title>").resolve) }, "<Title>");
 /** A head `<meta>` (deduplicated by name / property / key). */
 export const Meta = (props: MetaProps): ServerValue => pushHead({ meta: [props] }, "<Meta>");
 /** A head `<link>` (named apart from the router's navigation `Link`). */

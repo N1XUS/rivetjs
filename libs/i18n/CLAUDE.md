@@ -20,7 +20,8 @@ Flat: one file per module (package convention; keep it — `libs/compiler/tests/
 - `icu.ts` — ICU MessageFormat → compact IR (`Part`, `Variant`), `paramsOf`, `I18nError`. Build-time only (`@formatjs/icu-messageformat-parser`).
 - `catalog.ts` — `I18nConfig`, `loadCatalogs`, `flatten` (nested → dotted keys), `fallbackChain`, `buildTable` (`Table` = key → `Variant[]` indexed by `config.locales`).
 - `types.ts` — `declarations(table, locales)`: text of the generated `.d.ts`; tag params `(children: Content) => Content` (+ `import type { Content }` when any), native tags (`NATIVE_TAGS` = compile.rs `MESSAGE_TAGS`) optional.
-- `vite.ts` — plugin (catalog load, `registerTable`, dts write, per-locale client build, dev locale query, HMR, DevTools JSON).
+- `vite.ts` — plugin (catalog load, `registerTable`, dts write, per-locale client build, dev locale query, HMR, DevTools JSON). Client environments resolve `@rivetjs/i18n` to `\0rivet-i18n-client:<locale>` (`t` re-exported, `export const locale = () => "<l>"`): build = `RIVET_LOCALE`, dev = importer's `?rivet-locale`, else default locale.
+- `index.ts` — `t` (compiled away) + `locale()`: server = `_requestLocale()` (`@rivetjs/router/route-context`, `ServerData.locale` = rendered locale, first locale when none settled); throws outside a render (loaders / actions: `event.locals.locale`). Test `tests/vite.test.ts` (`locale()`).
 - `runtime.ts` — message runtime (Intl instances cached per locale + options).
 - `resolve.ts`, `router.ts` — see entry points.
 - `tests/` — vitest project `i18n` (`libs/i18n/tests/*.test.ts`, root `vitest.config.ts`).
@@ -60,7 +61,8 @@ npx vitest run --project compiler libs/compiler/tests/i18n.test.ts   # compiler-
 
 - `browser.test.ts` and the app-base test both touch `fixture-app/.rivet/` — that's why the app-base test works on a `.base-app-*` copy.
 - Node without full ICU formats numbers/dates in English (plugin warns at config resolve).
-- Server `t()` outside JSX is a per-locale value: `String()` throws; use `t.in(locale, …)`.
+- Server `t()` outside JSX is a per-locale value: `String()` throws; use `t.in(locale, …)`. Resolved for you in children, attributes (runtime `Picture` alt / title too), route `head` and kit head components (router `translateHead`).
+- Images (`?image`) under per-locale client builds: `libs/compiler/images/plugin.ts` strips `<locale>/` from the base and writes files once into the locale outDir's parent (C1).
 - Message tags in attributes / `t.in` → diagnostic `RV4004`.
 - Modules importing `t`: server list-mount plans and direct regions off.
 - Dev: non-default locale pages load `entry.dev.tsx?rivet-locale=<l>`; app modules (under Vite root, not node_modules) inherit the query (`resolveId`).

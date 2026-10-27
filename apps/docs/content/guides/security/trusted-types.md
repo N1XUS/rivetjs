@@ -18,14 +18,14 @@ Rivet's JSX never writes your strings as HTML:
 - JSX rejects `innerHTML`, `dangerouslySetInnerHTML` and `srcdoc` as attributes. The compiler reports an unsafe attribute.
 - Event handlers are functions, never strings.
 
-The runtime has exactly one place where it parses HTML: the static markup of compiled templates. That markup comes from the compiler, with all text escaped. It goes through a Trusted Types policy named `rivet`.
+The runtime has exactly one place where it parses HTML: the static markup of compiled templates. That markup comes from the compiler, with all text escaped. It goes through a Trusted Types policy named `rivet`. The [kit](../../ui/kit.md)'s head components write scripts (deferred `<Script>` files, `<JsonLd>` data) through a second policy, `rivet-script`.
 
 ## Turn it on
 
 Trusted Types is part of the [Content Security Policy](csp.md). Two directives turn it on:
 
 ```txt
-require-trusted-types-for 'script'; trusted-types rivet
+require-trusted-types-for 'script'; trusted-types rivet rivet-script
 ```
 
 You do not need to write them by hand. The CSP helpers add them with the `trustedTypes` option.
@@ -41,7 +41,7 @@ await prerenderBuild({ dist: "dist", csp: { trustedTypes: true } });
 Each page then gets:
 
 ```txt
-script-src 'sha256-…' 'self'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet
+script-src 'sha256-…' 'self'; object-src 'none'; base-uri 'none'; require-trusted-types-for 'script'; trusted-types rivet rivet-script
 ```
 
 ### Server pages
@@ -52,7 +52,7 @@ import { strictCSP } from "@rivetjs/router/server";
 const policy = (nonce: string) => strictCSP(nonce, { trustedTypes: true });
 ```
 
-Pass this function as `csp` to `createApp({ csp: policy })`. `start()` from `@rivetjs/router/node` does not take a `csp` option today, so with `start()` you get the default policy without Trusted Types. See [Content Security Policy](csp.md#change-or-turn-off-the-policy).
+Pass this function as `csp` to `createApp({ csp: policy })`. With `start()` from `@rivetjs/router/node`, pass `csp: { trustedTypes: true }`. See [Content Security Policy](csp.md#change-or-turn-off-the-policy).
 
 ## Your own HTML
 
@@ -76,11 +76,11 @@ export function Article(props: { html: string }) {
 }
 ```
 
-Then list the policy name in the option. `rivet` is always included:
+Then list the policy name in the option. `rivet` and `rivet-script` are always included:
 
 ```js
 await prerenderBuild({ dist: "dist", csp: { trustedTypes: ["article"] } });
-// trusted-types rivet article
+// trusted-types rivet rivet-script article
 ```
 
 A policy is only as safe as its `createHTML` function. A policy that returns the value unchanged, like the one above, is safe only for HTML that is already clean. For user content, clean it first with a sanitizer library.
