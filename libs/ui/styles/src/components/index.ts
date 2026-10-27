@@ -53,6 +53,15 @@ export * from "./input-group/index.ts";
 export * from "./input-otp/index.ts";
 export * from "./kbd/index.ts";
 export * from "./kpi/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./emoji-reaction-button/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./hover-card/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./cell-switch/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./kpi-group/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./item-card/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./item-card-group/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./number-value/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./timeline/index.ts"; // Rivet-authored (TWEAKS.md)
+export * from "./widget/index.ts"; // Rivet-authored (TWEAKS.md)
 export * from "./label/index.ts";
 export * from "./link/index.ts";
 export * from "./list-box/index.ts";

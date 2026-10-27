@@ -1,0 +1,53 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no dashboard widget). Feature set inspired by HeroUI Pro's public Widget docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Widget Component Styles
+ * Block: widget (parts: header / title / description / legend / legend-item (+ -dot / -label) / content / footer)
+ * Shell = surface-secondary with a small inset; content = raised surface, its radius concentric with the shell's.
+ * Variables: --widget-inset (shell padding around the content), --widget-radius (shell radius)
+ * -----------------------------------------------------------------------------------------------*/
+
+.widget {
+  --widget-inset: --spacing(1.5);
+  --widget-radius: min(28px, var(--radius-3xl));
+  @apply flex min-w-0 flex-col gap-1.5 bg-surface-secondary;
+  padding: var(--widget-inset);
+  border-radius: var(--widget-radius);
+}
+
+.widget__header {
+  @apply flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-3 pt-1.5 pb-1;
+}
+
+.widget__title {
+  @apply text-sm font-medium text-foreground;
+}
+
+.widget__description {
+  @apply text-xs text-muted;
+}
+
+.widget__content {
+  @apply min-w-0 bg-surface p-4 shadow-surface;
+  border-radius: calc(var(--widget-radius) - var(--widget-inset));
+}
+
+.widget__footer {
+  @apply flex flex-wrap items-center gap-2 px-3 pt-1 pb-1.5 text-xs text-muted;
+}
+
+.widget__legend {
+  @apply flex flex-wrap items-center gap-x-3 gap-y-1;
+}
+
+.widget__legend-item {
+  @apply inline-flex items-center gap-1.5 text-xs text-muted;
+}
+
+.widget__legend-item-dot {
+  @apply size-2 shrink-0 rounded-full;
+  background-color: var(--widget-legend-color, currentColor);
+}
+
+.widget__legend-item-label {
+  @apply truncate;
+}

@@ -1,0 +1,95 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no cell switch). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --surface, focus / disabled status utilities). Behaviour = @rivetjs/ui/switch (cdk SwitchField + SwitchButton: the row is the switch's label). */
+/* -------------------------------------------------------------------------------------------------
+ * CellSwitch Component Styles
+ * Block: cell-switch (parts: trigger = the whole row / label / control)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: cell-switch - the switch field (the trigger is the cell)
+ */
+.cell-switch {
+  @apply flex w-full flex-col gap-1;
+
+  --cell-switch-height: calc(var(--spacing) * 11);
+}
+
+/**
+ * Element: trigger - a full-width row: label start, control end
+ */
+.cell-switch__trigger {
+  @apply relative flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2 text-sm outline-none select-none no-highlight;
+
+  min-height: var(--cell-switch-height);
+  background-color: var(--cell-switch-bg);
+  cursor: var(--cursor-interactive);
+
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled="true"]),
+    &[data-hovered="true"] {
+      background-color: var(--cell-switch-bg-hover);
+    }
+  }
+
+  &[data-pressed="true"] {
+    background-color: var(--cell-switch-bg-hover);
+  }
+
+  /* The focus ring moves from the control to the whole row */
+  &:has(input:focus-visible),
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-disabled="true"] {
+    @apply status-disabled;
+    cursor: default;
+  }
+}
+
+/* Default: gray cell for pages */
+.cell-switch__trigger--default {
+  --cell-switch-bg: var(--default);
+  --cell-switch-bg-hover: var(--default-hover);
+}
+
+/* Secondary: surface cell inside gray containers */
+.cell-switch__trigger--secondary {
+  --cell-switch-bg: var(--surface);
+  --cell-switch-bg-hover: var(--surface-hover);
+}
+
+/**
+ * Element: label - start of the row (may hold a title + description column)
+ */
+.cell-switch__label {
+  @apply flex min-w-0 flex-1 flex-col gap-1 text-start font-medium text-foreground;
+}
+
+/**
+ * Element: control - the switch track at the end; its own focus ring is replaced by the row's
+ */
+.cell-switch__control {
+  @apply ms-auto;
+
+  .cell-switch__trigger &,
+  .cell-switch__trigger[data-focus-visible="true"] & {
+    box-shadow: none;
+  }
+}
+
+/* Secondary: the unchecked track stays visible on a surface cell */
+.cell-switch__control--secondary {
+  --switch-control-bg: var(--default);
+}
+
+/**
+ * Element: description - shorthand secondary line under the label
+ */
+.cell-switch__description {
+  @apply text-xs font-normal text-muted;
+}

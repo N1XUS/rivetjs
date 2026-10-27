@@ -1,0 +1,201 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no timeline). Feature set inspired by HeroUI Pro's public Timeline docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Timeline Component Styles
+ * Block: timeline (`ol`; parts: item (`li`) / rail / marker / connector / content)
+ * Modifiers: timeline--start / --center (axis), timeline--placement-end / -start / -alternate (content side on a centered
+ * axis), timeline--sm / --md / --lg, timeline--comfortable / --compact
+ * Item state: [data-status] default / current / success / warning / danger / muted, [data-align] start / center,
+ * [data-side] start / end (centered axis; also on a content part)
+ * Defaults without JS: an item always renders a default rail (`timeline__rail--default`, marker + connector), hidden when
+ * the item has its own `Timeline.Rail`; a rail's default marker is hidden when it has its own `Timeline.Marker`; the last
+ * item's connector is hidden unless `[data-force]`.
+ * Variables: --timeline-marker-size, --timeline-gap (rhythm between events), --timeline-tone / --timeline-tone-soft /
+ * --timeline-tone-foreground (marker colours from the status)
+ * -----------------------------------------------------------------------------------------------*/
+
+.timeline {
+  --timeline-marker-size: --spacing(6);
+  --timeline-gap: --spacing(6);
+  @apply m-0 flex min-w-0 list-none flex-col p-0;
+}
+
+.timeline--sm {
+  --timeline-marker-size: --spacing(5);
+  @apply text-xs;
+}
+
+.timeline--md {
+  @apply text-sm;
+}
+
+.timeline--lg {
+  --timeline-marker-size: --spacing(8);
+  @apply text-base;
+}
+
+.timeline--compact {
+  --timeline-gap: --spacing(3);
+}
+
+/* ---- item */
+.timeline__item {
+  --timeline-tone: var(--muted);
+  --timeline-tone-soft: var(--default);
+  --timeline-tone-foreground: var(--default-foreground);
+  @apply relative grid min-w-0 gap-x-3;
+  grid-template-columns: var(--timeline-marker-size) minmax(0, 1fr);
+}
+
+.timeline__item[data-status="current"],
+.timeline__marker[data-status="current"] {
+  --timeline-tone: var(--accent);
+  --timeline-tone-soft: var(--accent-soft);
+  --timeline-tone-foreground: var(--accent-soft-foreground);
+}
+
+.timeline__item[data-status="success"],
+.timeline__marker[data-status="success"] {
+  --timeline-tone: var(--success);
+  --timeline-tone-soft: var(--success-soft);
+  --timeline-tone-foreground: var(--success-soft-foreground);
+}
+
+.timeline__item[data-status="warning"],
+.timeline__marker[data-status="warning"] {
+  --timeline-tone: var(--warning);
+  --timeline-tone-soft: var(--warning-soft);
+  --timeline-tone-foreground: var(--warning-soft-foreground);
+}
+
+.timeline__item[data-status="danger"],
+.timeline__marker[data-status="danger"] {
+  --timeline-tone: var(--danger);
+  --timeline-tone-soft: var(--danger-soft);
+  --timeline-tone-foreground: var(--danger-soft-foreground);
+}
+
+.timeline__item[data-status="muted"],
+.timeline__marker[data-status="muted"] {
+  --timeline-tone: var(--separator);
+  --timeline-tone-soft: var(--default-soft);
+  --timeline-tone-foreground: var(--muted);
+}
+
+.timeline__item[data-status="default"],
+.timeline__marker[data-status="default"] {
+  --timeline-tone: var(--muted);
+  --timeline-tone-soft: var(--default);
+  --timeline-tone-foreground: var(--default-foreground);
+}
+
+/* ---- rail: marker on top, connector to the next event */
+.timeline__rail {
+  @apply flex flex-col items-center;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.timeline__item:has(> .timeline__rail:not(.timeline__rail--default)) > .timeline__rail--default,
+.timeline__rail:has(> .timeline__marker:not(.timeline__marker--default)) > .timeline__marker--default {
+  @apply hidden;
+}
+
+.timeline__marker {
+  @apply relative inline-flex shrink-0 items-center justify-center rounded-full font-medium;
+  width: var(--timeline-marker-size);
+  height: var(--timeline-marker-size);
+  background-color: var(--timeline-tone-soft);
+  color: var(--timeline-tone-foreground);
+
+  & svg {
+    @apply size-[55%];
+  }
+}
+
+/* Empty (decorative) marker: a dot centred on the rail. */
+.timeline__marker--dot {
+  @apply bg-transparent;
+
+  &::after {
+    @apply size-2.5 rounded-full;
+    content: "";
+    background-color: var(--timeline-tone);
+  }
+}
+
+.timeline__item[data-status="current"] > .timeline__rail > .timeline__marker--dot::after,
+.timeline__marker--dot[data-status="current"]::after {
+  box-shadow: 0 0 0 4px var(--timeline-tone-soft);
+}
+
+.timeline__connector {
+  @apply mt-1 w-px flex-1 bg-separator;
+  min-height: --spacing(3);
+}
+
+.timeline__item:last-child .timeline__connector:not([data-force]) {
+  @apply hidden;
+}
+
+/* ---- content */
+.timeline__content {
+  @apply min-w-0;
+  grid-column: 2;
+  grid-row: 1;
+  padding-bottom: var(--timeline-gap);
+  /* Text starts level with the marker centre line. */
+  padding-top: calc((var(--timeline-marker-size) - 1lh) / 2);
+}
+
+.timeline__item:last-child > .timeline__content {
+  @apply pb-0;
+}
+
+.timeline__item[data-align="center"] {
+  @apply items-center;
+
+  & > .timeline__content {
+    @apply pt-0;
+    padding-bottom: 0;
+    margin-bottom: var(--timeline-gap);
+  }
+}
+
+/* ---- centered axis */
+.timeline--center .timeline__item {
+  grid-template-columns: minmax(0, 1fr) var(--timeline-marker-size) minmax(0, 1fr);
+}
+
+.timeline--center .timeline__rail {
+  grid-column: 2;
+}
+
+.timeline--center .timeline__content {
+  grid-column: 3;
+}
+
+.timeline--center.timeline--placement-start .timeline__content,
+.timeline--center.timeline--placement-alternate .timeline__item:where(:nth-child(even)) > .timeline__content {
+  @apply text-end;
+  grid-column: 1;
+}
+
+.timeline--center .timeline__item[data-side="start"] > .timeline__content {
+  @apply text-end;
+  grid-column: 1;
+}
+
+.timeline--center .timeline__item[data-side="end"] > .timeline__content {
+  @apply text-start;
+  grid-column: 3;
+}
+
+.timeline--center .timeline__item > .timeline__content[data-side="start"] {
+  @apply text-end;
+  grid-column: 1;
+}
+
+.timeline--center .timeline__item > .timeline__content[data-side="end"] {
+  @apply text-start;
+  grid-column: 3;
+}

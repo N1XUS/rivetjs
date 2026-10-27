@@ -1,0 +1,41 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no KPI group). Feature set inspired by HeroUI Pro's public KPI Group docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * KPI Group Component Styles
+ * Block: kpi-group (part: separator)
+ * Modifiers: kpi-group--horizontal / --vertical
+ * The KPI cards inside drop their own surface (the group is the surface) and share the width equally.
+ * -----------------------------------------------------------------------------------------------*/
+
+.kpi-group {
+  @apply flex min-w-0 bg-surface shadow-surface;
+  border-radius: min(28px, var(--radius-3xl));
+
+  & > .kpi {
+    @apply min-w-0 bg-transparent shadow-none;
+  }
+}
+
+/* Horizontal: equal-width cards that wrap below ~12rem each (no horizontal scroll on phones). */
+.kpi-group--horizontal {
+  @apply flex-row flex-wrap;
+
+  & > .kpi {
+    flex: 1 1 12rem;
+  }
+}
+
+.kpi-group--vertical {
+  @apply flex-col;
+}
+
+.kpi-group__separator {
+  @apply shrink-0 self-stretch bg-separator;
+}
+
+.kpi-group--horizontal > .kpi-group__separator {
+  @apply my-4 w-px;
+}
+
+.kpi-group--vertical > .kpi-group__separator {
+  @apply mx-4 h-px;
+}

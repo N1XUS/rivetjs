@@ -1,0 +1,85 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no item card). Feature set inspired by HeroUI Pro's public Item Card docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Item Card Component Styles
+ * Block: item-card (parts: icon / content / title / description / action)
+ * Modifiers: item-card--default / --secondary / --tertiary / --outline / --transparent
+ * Pressable: a link / button root (`render`) or `[data-pressable]` gets hover + pressed tints and the focus ring.
+ * Variables: --item-card-padding, --item-card-radius (the icon's radius is concentric with it)
+ * -----------------------------------------------------------------------------------------------*/
+
+.item-card {
+  --item-card-padding: --spacing(3);
+  --item-card-radius: var(--radius-2xl);
+  @apply relative flex w-full min-w-0 items-center gap-3 text-start text-foreground no-underline transition-colors duration-(--duration-fast) motion-reduce:transition-none;
+  padding: var(--item-card-padding);
+  border-radius: var(--item-card-radius);
+
+  &:is(a, button, [data-pressable]) {
+    @apply cursor-pointer;
+  }
+
+  &:is(a, button, [data-pressable]):focus-visible {
+    @apply focus-ring;
+  }
+}
+
+.item-card--default {
+  @apply bg-surface shadow-surface;
+
+  &:is(a, button, [data-pressable]):hover {
+    @apply bg-surface-hover;
+  }
+}
+
+.item-card--secondary {
+  @apply bg-surface-secondary;
+
+  &:is(a, button, [data-pressable]):hover {
+    @apply bg-default;
+  }
+}
+
+.item-card--tertiary {
+  @apply bg-surface-tertiary;
+
+  &:is(a, button, [data-pressable]):hover {
+    @apply bg-default-hover;
+  }
+}
+
+.item-card--outline {
+  @apply border border-border bg-transparent;
+
+  &:is(a, button, [data-pressable]):hover {
+    @apply bg-default-soft;
+  }
+}
+
+.item-card--transparent {
+  @apply bg-transparent;
+
+  &:is(a, button, [data-pressable]):hover {
+    @apply bg-default-soft;
+  }
+}
+
+.item-card__icon {
+  @apply inline-flex size-10 shrink-0 items-center justify-center bg-default text-foreground;
+  border-radius: max(var(--radius-sm), calc(var(--item-card-radius) - var(--item-card-padding)));
+}
+
+.item-card__content {
+  @apply flex min-w-0 flex-1 flex-col gap-0.5;
+}
+
+.item-card__title {
+  @apply truncate text-sm font-medium text-foreground;
+}
+
+.item-card__description {
+  @apply truncate text-xs text-muted;
+}
+
+.item-card__action {
+  @apply flex shrink-0 items-center gap-2;
+}

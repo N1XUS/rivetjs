@@ -38,11 +38,11 @@ Avoid nested interactive targets: an entire clickable card with nested buttons, 
 
 **Collection page:** heading + main create action → labeled search/filter controls → result count and collection → pagination. Show bulk actions only when selection exists; `ActionBar` or `Toolbar` may fit. Align filters and table columns to the same content edges. Provide initial-empty and filtered-empty states separately.
 
-**Settings page:** heading/description → grouped `Fieldset` sections → controls/help/errors → save feedback/actions. Group related rows within a section with consistent spacing or separators. Do not wrap every preference in a card. Choose either explicit save or immediate updates for a region and make that behavior visible.
+**Settings page:** heading/description → grouped `Fieldset` sections → controls/help/errors → save feedback/actions. Group related rows within a section with consistent spacing or separators; `CellSwitch`, `CellSelect` and `CellSlider` are full-row settings cells. Do not wrap every preference in a card. Choose either explicit save or immediate updates for a region and make that behavior visible.
 
 **Detail/edit page:** summary and status → related content sections → contextual actions. Use a drawer for short contextual edits, a page for long/deep edits, and inline editing for small well-bounded values. Destructive actions belong near the affected object with clear labels and proportionate confirmation.
 
-**Dashboard:** lead with metrics that support a decision, then the trend or collection needed to act. `Kpi`, `TrendChip`, and the chart exports may fit. Every chart needs a readable explanation or data alternative; meaningful units, time range and empty states matter more than decorative chart variety.
+**Dashboard:** lead with metrics that support a decision, then the trend or collection needed to act. `Kpi`, `KpiGroup`, `Widget`, `NumberValue`, `TrendChip`, and the chart exports may fit; `ItemCard` / `ItemCardGroup` for settings rows, `Timeline` for activity history. Every chart needs a readable explanation or data alternative; meaningful units, time range and empty states matter more than decorative chart variety.
 
 **Command picker:** compose a labeled search field and a supported action collection, often using `Autocomplete` + `Menu` for commands. Confirm documented filtering, virtual focus and activation behavior for the installed version. A command menu and a value-selecting list box are different tasks. A dialog may provide a focused enclosing surface. Add pending, no-match, error and clear-query behavior; do not invent a `Command` export or manual arrow-key loop when suitable primitives exist.
 

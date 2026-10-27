@@ -156,6 +156,33 @@ export * from "./src/components/kpi/index.ts";
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): data-driven SVG / HTML charts, CSS-only tooltips.
 export * from "./src/components/chart/index.ts";
 
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): KPI cards on one surface.
+export * from "./src/components/kpi-group/index.ts";
+
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): locale-aware formatted number.
+export * from "./src/components/number-value/index.ts";
+
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): dashboard widget shell.
+export * from "./src/components/widget/index.ts";
+
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): list row card.
+export * from "./src/components/item-card/index.ts";
+
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): item cards as a list or grid.
+export * from "./src/components/item-card-group/index.ts";
+
+// Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): read-only chronology.
+export * from "./src/components/timeline/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Cell Switch docs)
+export * from "./src/components/cell-switch/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Hover Card docs)
+export * from "./src/components/hover-card/index.ts";
+
+// Rivet addition (feature set inspired by HeroUI Pro's public Emoji Reaction Button docs)
+export * from "./src/components/emoji-reaction-button/index.ts";
+
 // Rivet additions (no HeroUI OSS counterpart; feature sets inspired by HeroUI Pro's public AI docs; independent implementations): AI chat components.
 export * from "./src/components/text-shimmer/index.ts";
 export * from "./src/components/chat-loader/index.ts";

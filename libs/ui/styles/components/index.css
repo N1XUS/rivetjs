@@ -183,6 +183,15 @@
  * ------------------------------------------------------------------------------------------------ */
 @import "./kbd.css";
 @import "./kpi.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./emoji-reaction-button.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./hover-card.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./cell-switch.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./kpi-group.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./item-card.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./item-card-group.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./number-value.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./timeline.css"; /* Rivet-authored (TWEAKS.md) */
+@import "./widget.css"; /* Rivet-authored (TWEAKS.md) */
 @import "./typography.css";
 
 /* ------------------------------------------------------------------------------------------------

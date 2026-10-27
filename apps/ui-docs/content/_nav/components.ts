@@ -11,6 +11,7 @@ export const groups: NavGroup[] = [
       "components/close-button",
       "components/toggle-button",
       "components/toggle-button-group",
+      "components/emoji-reaction-button",
       "components/segment",
       "components/morph",
     ],
@@ -35,6 +36,12 @@ export const groups: NavGroup[] = [
       "components/bento",
       "components/data-grid",
       "components/kpi",
+      "components/kpi-group",
+      "components/number-value",
+      "components/widget",
+      "components/item-card",
+      "components/item-card-group",
+      "components/timeline",
       "components/trend-chip",
       "components/chart",
       "components/table",
@@ -100,6 +107,7 @@ export const groups: NavGroup[] = [
     pages: [
       "components/popover",
       "components/tooltip",
+      "components/hover-card",
       "components/modal",
       "components/alert-dialog",
       "components/drawer",
@@ -120,7 +128,7 @@ export const groups: NavGroup[] = [
       "components/date-range-picker",
     ],
   },
-  { title: "Controls", pages: ["components/switch", "components/slider", "components/cell-slider"] },
+  { title: "Controls", pages: ["components/switch", "components/cell-switch", "components/slider", "components/cell-slider"] },
   {
     title: "Pickers",
     pages: [

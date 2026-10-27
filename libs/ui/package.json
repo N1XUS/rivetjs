@@ -492,6 +492,42 @@
       "types": "./src/components/chart/index.ts",
       "default": "./src/components/chart/index.ts"
     },
+    "./kpi-group": {
+      "types": "./src/components/kpi-group/index.ts",
+      "default": "./src/components/kpi-group/index.ts"
+    },
+    "./number-value": {
+      "types": "./src/components/number-value/index.ts",
+      "default": "./src/components/number-value/index.ts"
+    },
+    "./widget": {
+      "types": "./src/components/widget/index.ts",
+      "default": "./src/components/widget/index.ts"
+    },
+    "./item-card": {
+      "types": "./src/components/item-card/index.ts",
+      "default": "./src/components/item-card/index.ts"
+    },
+    "./item-card-group": {
+      "types": "./src/components/item-card-group/index.ts",
+      "default": "./src/components/item-card-group/index.ts"
+    },
+    "./timeline": {
+      "types": "./src/components/timeline/index.ts",
+      "default": "./src/components/timeline/index.ts"
+    },
+    "./cell-switch": {
+      "types": "./src/components/cell-switch/index.ts",
+      "default": "./src/components/cell-switch/index.ts"
+    },
+    "./hover-card": {
+      "types": "./src/components/hover-card/index.ts",
+      "default": "./src/components/hover-card/index.ts"
+    },
+    "./emoji-reaction-button": {
+      "types": "./src/components/emoji-reaction-button/index.ts",
+      "default": "./src/components/emoji-reaction-button/index.ts"
+    },
     "./text-shimmer": {
       "types": "./src/components/text-shimmer/index.ts",
       "default": "./src/components/text-shimmer/index.ts"

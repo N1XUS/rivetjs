@@ -66,6 +66,16 @@ export const pins: FuzzPin[] = [
   ),
   pin("/disclosure-group", "mismatch", 'csr: "dg-a"', "ui", "DisclosureGroup Previous/Next: the resumed page steps from a different expanded key"),
   pin("/lightbox", "recreated", "lightbox__slide", "cdk", "Lightbox slides " + NO_REGION),
+  {
+    ...pin(
+      "/cells-overlays-pro",
+      "mismatch",
+      'aria-controls="hc-card" aria-describedby="hc-card" aria-expanded="true"',
+      "cdk",
+      "HoverCard (cdk PreviewTrigger, openDelay 0): a cold first click on the trigger leaves the card open on the resumed page, closed on a client render (same cold-press gap as the cdk /preview-trigger PRESS pin; UI-PORT S2, 3/3 runs)",
+    ),
+    step: 7,
+  },
   pin("/resume", "recreated", "span#l-surface", "ui", "surface span " + NO_REGION),
   pin("/selection-indicator", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),
   pin("/visual/segment", "recreated", "segment__indicator", "cdk", "SelectionIndicator " + NO_REGION),

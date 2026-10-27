@@ -1,0 +1,91 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no emoji reaction button). Feature set inspired by HeroUI Pro's public docs; independent implementation on HeroUI tokens (--default, --accent, --accent-soft, --border, focus / disabled status utilities). Behaviour = @rivetjs/cdk/toggle-button. */
+/* -------------------------------------------------------------------------------------------------
+ * EmojiReactionButton Component Styles
+ * Block: emoji-reaction-button (parts: emoji / count)
+ * -----------------------------------------------------------------------------------------------*/
+
+/**
+ * Block: emoji-reaction-button - a pill toggle
+ */
+.emoji-reaction-button {
+  @apply inline-flex w-fit shrink-0 items-center justify-center gap-1.5 rounded-full border font-medium whitespace-nowrap outline-none select-none no-highlight;
+
+  border-color: var(--erb-border);
+  background-color: var(--erb-bg);
+  color: var(--foreground);
+  cursor: var(--cursor-interactive);
+
+  --erb-bg: var(--default);
+  --erb-bg-hover: var(--default-hover);
+  --erb-border: transparent;
+
+  transition:
+    transform var(--duration-base) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  @apply transform-gpu motion-reduce:transition-none;
+
+  @media (hover: hover) {
+    &:hover:not([data-disabled="true"]):not([data-readonly="true"]),
+    &[data-hovered="true"]:not([data-readonly="true"]) {
+      background-color: var(--erb-bg-hover);
+    }
+  }
+
+  &:active:not([data-readonly="true"]),
+  &[data-pressed="true"]:not([data-readonly="true"]) {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible,
+  &[data-focus-visible="true"] {
+    @apply status-focused;
+  }
+
+  &[data-selected="true"] {
+    --erb-bg: var(--accent-soft);
+    --erb-bg-hover: var(--accent-soft-hover);
+    --erb-border: var(--accent);
+  }
+
+  &[data-readonly="true"] {
+    cursor: default;
+  }
+
+  &:disabled,
+  &[aria-disabled="true"],
+  &[data-disabled="true"] {
+    @apply status-disabled;
+  }
+}
+
+.emoji-reaction-button--sm {
+  @apply h-7 px-2 text-xs;
+}
+
+.emoji-reaction-button--md {
+  @apply h-8 px-3 text-sm;
+}
+
+.emoji-reaction-button--lg {
+  @apply h-10 px-4 text-base;
+}
+
+/**
+ * Element: emoji - the reaction glyph (content, not an icon)
+ */
+.emoji-reaction-button__emoji {
+  @apply leading-none;
+}
+
+/**
+ * Element: count - tabular figures; accent when selected
+ */
+.emoji-reaction-button__count {
+  @apply text-muted tabular-nums;
+
+  .emoji-reaction-button[data-selected="true"] & {
+    color: var(--accent-soft-foreground);
+  }
+}

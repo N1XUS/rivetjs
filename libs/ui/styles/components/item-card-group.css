@@ -1,0 +1,85 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no item card group). Feature set inspired by HeroUI Pro's public Item Card Group docs; independent implementation on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * Item Card Group Component Styles
+ * Block: item-card-group (parts: header / title / description)
+ * Layout: item-card-group--list (one surface, cards divided by hairlines) / --grid (spaced cards, --item-card-group-columns)
+ * Modifiers: item-card-group--default / --secondary / --tertiary / --outline / --transparent
+ * In a list the group is the surface: the cards inside drop their own background, shadow and border.
+ * -----------------------------------------------------------------------------------------------*/
+
+.item-card-group {
+  --item-card-group-columns: 2;
+  @apply flex min-w-0 flex-col;
+  border-radius: var(--radius-2xl);
+}
+
+.item-card-group__header {
+  @apply flex flex-col gap-0.5 px-3 pt-3 pb-1;
+}
+
+.item-card-group__title {
+  @apply text-sm font-medium text-foreground;
+}
+
+.item-card-group__description {
+  @apply text-xs text-muted;
+}
+
+/* List: one surface; the cards are transparent rows divided by hairlines (inset by the card padding). */
+.item-card-group--list {
+  & > .item-card {
+    @apply rounded-none border-0 bg-transparent shadow-none;
+  }
+
+  & > .item-card:first-child,
+  & > .item-card-group__header + .item-card {
+    border-start-start-radius: inherit;
+    border-start-end-radius: inherit;
+  }
+
+  & > .item-card:last-child {
+    border-end-start-radius: inherit;
+    border-end-end-radius: inherit;
+  }
+
+  & > .item-card + .item-card::before {
+    @apply pointer-events-none absolute top-0 h-px bg-separator;
+    content: "";
+    inset-inline: var(--item-card-padding);
+  }
+}
+
+.item-card-group--list.item-card-group--default {
+  @apply bg-surface shadow-surface;
+}
+
+.item-card-group--list.item-card-group--secondary {
+  @apply bg-surface-secondary;
+}
+
+.item-card-group--list.item-card-group--tertiary {
+  @apply bg-surface-tertiary;
+}
+
+.item-card-group--list.item-card-group--outline {
+  @apply border border-border;
+}
+
+.item-card-group--list.item-card-group--transparent {
+  @apply rounded-none;
+}
+
+/* Grid: spaced cards, one column on phones. */
+.item-card-group--grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(var(--item-card-group-columns), minmax(0, 1fr));
+
+  & > .item-card-group__header {
+    @apply px-0 pt-0;
+    grid-column: 1 / -1;
+  }
+
+  @media (width < 40rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
