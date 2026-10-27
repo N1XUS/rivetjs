@@ -504,6 +504,18 @@
       "types": "./src/components/widget/index.ts",
       "default": "./src/components/widget/index.ts"
     },
+    "./description-list": {
+      "types": "./src/components/description-list/index.ts",
+      "default": "./src/components/description-list/index.ts"
+    },
+    "./feature-list": {
+      "types": "./src/components/feature-list/index.ts",
+      "default": "./src/components/feature-list/index.ts"
+    },
+    "./status": {
+      "types": "./src/components/status/index.ts",
+      "default": "./src/components/status/index.ts"
+    },
     "./item-card": {
       "types": "./src/components/item-card/index.ts",
       "default": "./src/components/item-card/index.ts"

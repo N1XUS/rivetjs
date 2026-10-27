@@ -1,0 +1,30 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no description list): key / value rows on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * DescriptionList Component Styles
+ * Block: description-list (parts: item / term / details; item modifier --emphasized = a total row)
+ * A `dl` of rows: term at the start (muted), details at the end (tabular figures); rows wrap on narrow widths.
+ * -----------------------------------------------------------------------------------------------*/
+
+.description-list {
+  @apply m-0 flex min-w-0 flex-col gap-1.5 text-sm;
+}
+
+.description-list__item {
+  @apply flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-1;
+}
+
+.description-list__term {
+  @apply min-w-0 text-muted;
+}
+
+.description-list__details {
+  @apply m-0 ms-auto text-end text-foreground tabular-nums;
+}
+
+.description-list__item--emphasized {
+  @apply font-semibold;
+
+  .description-list__term {
+    @apply text-foreground;
+  }
+}

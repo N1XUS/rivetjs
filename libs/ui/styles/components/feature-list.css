@@ -1,0 +1,36 @@
+/* Rivet-authored (NOT vendored from @heroui/styles; HeroUI v3.2.6 has no feature list): perks / plan features with a leading icon on HeroUI tokens. */
+/* -------------------------------------------------------------------------------------------------
+ * FeatureList Component Styles
+ * Block: feature-list (parts: item / icon / label; colour modifiers --success (default) / --accent / --default)
+ * Variables: --feature-list-icon-color (icon colour, set by the colour modifier)
+ * -----------------------------------------------------------------------------------------------*/
+
+.feature-list {
+  @apply m-0 flex list-none flex-col gap-2 p-0 text-sm;
+}
+
+.feature-list--success {
+  --feature-list-icon-color: var(--success);
+}
+
+.feature-list--accent {
+  --feature-list-icon-color: var(--accent);
+}
+
+.feature-list--default {
+  --feature-list-icon-color: var(--muted);
+}
+
+.feature-list__item {
+  @apply flex min-w-0 items-start gap-2;
+}
+
+/* One line box high, so the icon centres on the first line of a wrapping label. */
+.feature-list__icon {
+  @apply mt-0.5 size-4 shrink-0;
+  color: var(--feature-list-icon-color);
+}
+
+.feature-list__label {
+  @apply min-w-0;
+}

@@ -376,6 +376,24 @@ export const entries: ApiEntryConfig[] = [
     summary: "Widget (Rivet addition): dashboard container with header, legend, raised content area and footer.",
   },
   {
+    entry: "@rivetjs/ui/description-list",
+    file: "ui/src/components/description-list/index.ts",
+    runsOn: "both",
+    summary: "DescriptionList (Rivet addition): key / value rows (order summaries, totals, specs) with an emphasized total row.",
+  },
+  {
+    entry: "@rivetjs/ui/feature-list",
+    file: "ui/src/components/feature-list/index.ts",
+    runsOn: "both",
+    summary: "FeatureList (Rivet addition): perks / plan features with a leading lucide icon (check by default).",
+  },
+  {
+    entry: "@rivetjs/ui/status",
+    file: "ui/src/components/status/index.ts",
+    runsOn: "both",
+    summary: "Status (Rivet addition): status / presence / unread dot in the semantic colours, three sizes, optional CSS pulse.",
+  },
+  {
     entry: "@rivetjs/ui/item-card",
     file: "ui/src/components/item-card/index.ts",
     runsOn: "both",

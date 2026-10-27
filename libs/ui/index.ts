@@ -165,6 +165,15 @@ export * from "./src/components/number-value/index.ts";
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): dashboard widget shell.
 export * from "./src/components/widget/index.ts";
 
+// Rivet addition (no HeroUI counterpart): key / value rows (order summaries, totals, specs).
+export * from "./src/components/description-list/index.ts";
+
+// Rivet addition (no HeroUI counterpart): perks / plan features with a leading icon.
+export * from "./src/components/feature-list/index.ts";
+
+// Rivet addition (no HeroUI counterpart): status / presence / unread dot.
+export * from "./src/components/status/index.ts";
+
 // Rivet addition (no HeroUI OSS counterpart; feature set inspired by HeroUI Pro's public docs): list row card.
 export * from "./src/components/item-card/index.ts";
 

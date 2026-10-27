@@ -30,3 +30,16 @@
 .separator--tertiary {
   @apply bg-separator-tertiary;
 }
+
+/* Rivet (TW-173): labelled horizontal divider (`Separator` with children): two lines around a muted label. */
+.separator-label {
+  @apply flex w-full min-w-0 items-center gap-3 text-xs text-muted;
+}
+
+.separator-label__line {
+  @apply min-w-0 flex-1;
+}
+
+.separator-label__content {
+  @apply shrink-0;
+}

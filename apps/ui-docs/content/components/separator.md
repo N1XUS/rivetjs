@@ -42,6 +42,12 @@ The Separator component adapts to different surface backgrounds for better visib
 
 ::example{id=separator-with-content}
 
+### With Label
+
+Rivet addition: children make a labelled horizontal divider ("or" between sign-in options). The two lines are decorative (`aria-hidden`); the label stays text that screen readers read in place. It renders no `role="separator"` (that role makes its children presentational) and ignores `orientation`.
+
+::example{id=separator-with-label}
+
 ### Render Function
 
 ::example{id=separator-render-function}
@@ -89,6 +95,12 @@ The Separator component uses these CSS classes ([View source styles](https://git
 - `.separator--secondary` - Secondary variant with medium contrast
 - `.separator--tertiary` - Tertiary variant with subtle contrast
 
+#### Label Classes (Rivet)
+
+- `.separator-label` - Labelled divider row (`data-slot="separator-label"`, muted `text-xs` label)
+- `.separator-label__line` - Each decorative line (also has the separator and variant classes)
+- `.separator-label__content` - The label
+
 ## API Reference
 
 ### Separator
@@ -98,6 +110,7 @@ The Separator component uses these CSS classes ([View source styles](https://git
 | `orientation` | `'horizontal' \| 'vertical'`                                | `'horizontal'` | The orientation of the separator                                 |
 | `variant`     | `'default' \| 'secondary' \| 'tertiary'`                    | `'default'`    | The visual variant of the separator                              |
 | `class`       | `string`                                                    | -              | Additional CSS classes                                           |
+| `children`    | `Content`                                                   | -              | Rivet: a label in the middle of a horizontal divider             |
 | `render`      | `DOMRenderFunction<keyof JSX.IntrinsicElements, undefined>` | -              | Overrides the default DOM element with a custom render function. |
 
 ::api{symbol="@rivetjs/ui/separator#SeparatorRootProps"}

@@ -37,9 +37,33 @@
   .separator--tertiary {
     background-color: var(--separator-tertiary);
   }
+
+  .separator-label {
+    align-items: center;
+    gap: calc(var(--spacing, .25rem) * 3);
+    width: 100%;
+    min-width: 0;
+    font-size: var(--text-xs, .75rem);
+    line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / .75)));
+    color: var(--muted);
+    display: flex;
+  }
+
+  .separator-label__line {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .separator-label__content {
+    flex-shrink: 0;
+  }
 }
 @property --tw-border-style {
   syntax: "*";
   inherits: false;
   initial-value: solid;
+}
+@property --tw-leading {
+  syntax: "*";
+  inherits: false
 }
