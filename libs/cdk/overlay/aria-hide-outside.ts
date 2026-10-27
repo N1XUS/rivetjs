@@ -9,7 +9,7 @@
 //
 // Ported from @react-aria/overlays (ariaHideOutside.ts), Apache-2.0, © Adobe.
 
-import { isShadowRoot, nodeContains } from "../utils/dom-core.ts";
+import { isShadowRoot } from "../utils/dom-core.ts";
 import { createShadowTreeWalker } from "../utils/shadow-tree-walker.ts";
 
 export interface AriaHideOutsideOptions {
@@ -31,6 +31,14 @@ interface ObserverWrapper {
   disconnect(): void;
 }
 const observerStack: ObserverWrapper[] = [];
+// The next node up in `nodeContains`'s climb (slot → its parent, shadow root → host, else parent): `nodeContains(x, n)` ⇔
+// `x` is `n` or on its climb. One climb per target / mutation replaces a containment scan per walked node × target
+// (PERF-REST P6, our optimisation; upstream scans).
+const up = (current: Node): Node | null => {
+  const slotted = current as Node & { assignedSlot?: HTMLSlotElement | null; assignedElements?: unknown };
+  if (typeof slotted.assignedElements !== "function" && slotted.assignedSlot?.parentNode) return slotted.assignedSlot.parentNode;
+  return isShadowRoot(current) ? current.host : current.parentNode;
+};
 
 /** Hide everything outside `targets`; returns the function that restores it. */
 export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOptions | Element): () => void {
@@ -69,6 +77,9 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
   const walk = (walkRoot: Element) => {
     // Live announcers and top-layer content stay visible.
     for (const element of walkRoot.querySelectorAll(ALWAYS_VISIBLE)) visibleNodes.add(element);
+    // Every node containing a target (rebuilt per walk: `keepVisible` and mutations add targets between walks).
+    const containing = new Set<Node>();
+    for (const target of visibleNodes) for (let n: Node | null = target; n !== null && !containing.has(n); n = up(n)) containing.add(n);
     const acceptNode = (node: Element): number => {
       // Skip targets, announcers, and children of hidden nodes (aria-hidden is recursive) — except
       // children of role="row": VoiceOver on iOS does not hide rows (https://bugs.webkit.org/show_bug.cgi?id=222623).
@@ -79,7 +90,7 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
       )
         return NodeFilter.FILTER_REJECT;
       // Descend into nodes containing a target.
-      for (const target of visibleNodes) if (nodeContains(node, target)) return NodeFilter.FILTER_SKIP;
+      if (containing.has(node)) return NodeFilter.FILTER_SKIP;
       return NodeFilter.FILTER_ACCEPT;
     };
     const walker = createShadowTreeWalker(walkRoot.ownerDocument, walkRoot, NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => acceptNode(node as Element) });
@@ -108,11 +119,16 @@ export function ariaHideOutside(targets: Element[], options?: AriaHideOutsideOpt
   if (observerStack.length) observerStack[observerStack.length - 1]!.disconnect();
   walk(root);
 
+  // `change.target` is in a target or a hidden node (one climb, not a containment test per node).
+  const inside = (target: Node): boolean => {
+    for (let n: Node | null = target; n !== null; n = up(n)) if (visibleNodes.has(n as Element) || hiddenNodes.has(n as Element)) return true;
+    return false;
+  };
   const onMutation: MutationCallback = (changes) => {
     for (const change of changes) {
       if (change.type !== "childList") continue;
       // Added outside every target and every hidden node: hide the new children.
-      if (change.target.isConnected && ![...visibleNodes, ...hiddenNodes].some((node) => nodeContains(node, change.target))) {
+      if (change.target.isConnected && !inside(change.target)) {
         for (const node of change.addedNodes) {
           if ((node instanceof HTMLElement || node instanceof SVGElement) && isAlwaysVisibleNode(node)) visibleNodes.add(node);
           else if (node instanceof Element) walk(node);
