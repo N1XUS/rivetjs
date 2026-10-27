@@ -17,7 +17,33 @@ export const areas: NavArea[] = [
 ];
 
 export const nav: NavSection[] = [
-  { id: "start", title: "Getting started", area: "start", groups: start },
-  { id: "components", title: "Components", area: "components", groups: components },
+  { id: "start", title: "Getting started", area: "start", groups: [...start, { title: "Theme API", pages: ["start/theme-api"] }] },
+  {
+    id: "components",
+    title: "Components",
+    area: "components",
+    groups: [
+      ...components,
+      {
+        title: "Component parts",
+        pages: [
+          "components/list-box-item",
+          "components/list-box-section",
+          "components/menu",
+          "components/menu-item",
+          "components/menu-section",
+          "components/date-input-group",
+          "components/radio",
+          "components/switch-group",
+          "components/color-input-group",
+          "components/calendar-year-picker",
+          "components/item-morph",
+          "components/time-picker",
+          "components/item-card-group-collection",
+          "components/tag",
+        ],
+      },
+    ],
+  },
   { id: "showcase", title: "Showcase", area: "showcase", groups: showcase },
 ];

@@ -113,3 +113,7 @@ Prefer the component subpath. The root `@rivetjs/ui` entry re-exports everything
 - [Components](/components/overview/): every component with examples
 - [Styling](/start/styling/): customize with Tailwind CSS
 - [Composition](/start/composition/): parts, variant functions and BEM classes
+
+## Package entry points
+
+Prefer component subpaths such as `@rivetjs/ui/button`. The `@rivetjs/ui` root also re-exports components, types, variant functions and shared utilities; the [component index](/components/overview/#complete-subpath-index) lists all component subpaths. Theme functions live in [`@rivetjs/ui/theme`](/start/theme-api/); stylesheet and class-merging entries are described in [Styling](/start/styling/).

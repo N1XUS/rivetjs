@@ -328,3 +328,24 @@ To switch the mode for the whole page or one subtree, set `data-scrollbar` on an
 - [Animation](/start/animation/)
 - [Theming](/start/theming/)
 - [Components](/components/overview/)
+
+## Class merging
+
+`@rivetjs/ui/tv-merge` is a side-effect entry, not a component or a function export:
+
+```ts
+import "@rivetjs/ui/tv-merge";
+```
+
+It registers Tailwind class conflict resolution for UI variant resolvers in production browser code. The Rivet compiler adds this import to modules whose variant overrides need merging. Keep component composition as the default; the registration does not add styling or accessibility behavior by itself.
+
+## Style subpaths
+
+`@rivetjs/ui/styles` is the main CSS entry. The `@rivetjs/ui/styles/*` export exposes the package’s style files by path:
+
+```css
+@import "@rivetjs/ui/styles";
+@import "@rivetjs/ui/styles/themes/presets.css" layer(theme);
+```
+
+Component modules import their own `out/<name>.css`. For an environment without Tailwind or a bundler, use `out/base.css` with `out/all.css`, as described in [Importing the styles](/start/theming/#importing-the-styles). The wildcard is a file-path export, not a JSX component; CSS imports have no props, keyboard behavior or component anatomy.

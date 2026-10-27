@@ -6,7 +6,7 @@ status: experimental
 related: [start/styling, start/design-principles]
 ---
 
-There are three ways to get the library's look onto an element: use the component, call its variant function, or write its BEM classes. This page covers each, then how to build your own components and variants on top. Links are plain `<a>` elements throughout: the Rivet router handles same-origin links itself.
+Start with UI components and their compound parts. Use the `render` prop when a component needs a different semantic element; the Rivet router handles same-origin links. Variant functions and BEM classes expose styling for integrations, but do not supply the component’s behavior or accessibility wiring.
 
 ## Styles without components
 
@@ -29,27 +29,12 @@ Variant functions and BEM classes work on native elements, router links and your
 **A link that looks like a button:**
 
 ```tsx
-import { buttonVariants } from "@rivetjs/ui/button";
+import { Button } from "@rivetjs/ui/button";
 
-// Style a router link as a primary button
-<a class={buttonVariants({ variant: "primary" })} href="/about">
-  About
-</a>
-
-// Style an external anchor as a secondary button with custom size
-<a class={buttonVariants({ variant: "secondary", size: "lg" })} href="https://example.com">
-  External Link
-</a>
+<Button render={(props) => <a {...props} href="/about" />}>About</Button>;
 ```
 
-**The same with BEM classes:**
-
-```tsx
-// Apply button styles directly using BEM classes
-<a class="button button--primary" href="/about">
-  About
-</a>
-```
+Keep the component’s attributes in the spread. For external navigation, set the anchor’s `href`, `target` and `rel` in the render function as needed.
 
 **Parts under your own root:**
 
@@ -74,7 +59,7 @@ const slots = linkVariants();
 
 ## BEM classes
 
-Writing the [BEM](https://getbem.com/) classes is the shortest route, and it works in any framework and in static HTML.
+The [BEM](https://getbem.com/) classes can be used in static HTML or an integration that cannot render Rivet components. In Rivet apps and examples, compose UI components first; copied classes supply appearance only.
 
 **Router link:**
 
