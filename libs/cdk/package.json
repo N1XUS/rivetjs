@@ -35,6 +35,10 @@
       "types": "./utils/animation.tsx",
       "default": "./utils/animation.tsx"
     },
+    "./storage": {
+      "types": "./utils/storage.ts",
+      "default": "./utils/storage.ts"
+    },
     "./platform": {
       "types": "./platform/index.ts",
       "default": "./platform/index.ts"

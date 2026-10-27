@@ -21,6 +21,7 @@ Small modules for your own widgets. Each is its own import path; code you do not
 | `@rivetjs/cdk/date` | `CalendarDate`, `ZonedDateTime`, calendar systems, date math, `stringifyDateValue()`. | `@internationalized/date` | [Dates](dates.md) |
 | `@rivetjs/cdk/utils`, `@rivetjs/cdk/interactions` | `mergeProps()`, `controllable()`, `clamp()`, `runAfterTransition()`, `useLabels()`, `useFormReset()`. | React Aria utils, react-stately | [Props, values and timing](props-and-values.md) |
 | `@rivetjs/cdk/dom` | Owner document, shadow-DOM-safe containment, `scrollIntoView()`, `getViewportSize()`, `getNonce()`. | React Aria utils | [DOM helpers](dom.md) |
+| `@rivetjs/cdk/storage` | `webStorage()`, `readStorage()`, `writeStorage()`, `removeStorage()`: Web Storage that never throws (Safari private mode, blocked cookies, full quota). | Rivet | [Resizable: persisted layout](../components/resizable.md) |
 | `@rivetjs/cdk/drag-drop`, `@rivetjs/cdk/drag-drop/cdk`, `@rivetjs/cdk/drag-drop/utils` | Drag and drop components, engine (`DragRef`, `DropListRef`) and array helpers. | Angular CDK drag-drop | [Drag and drop](../components/drag-and-drop.md) |
 
 ## Import and example

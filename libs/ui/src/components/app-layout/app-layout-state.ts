@@ -3,6 +3,7 @@
 // as plain signals + free functions (resume-safe: no closures are created here).
 import { controllable, controlledValue, setControlledValue, type ControlledState } from "@rivetjs/cdk/interactions";
 import { matchesSidebarShortcut, parseSidebarShortcut } from "@rivetjs/cdk/sidebar/state";
+import { readStorage, webStorage, writeStorage } from "@rivetjs/cdk/storage";
 import { signal, untrack, type Signal } from "@rivetjs/reactivity";
 
 /** Cookie holding the aside's open state (`true` / `false`), written on every change. */
@@ -161,29 +162,16 @@ export function panelPercent(state: PanelSizeState, total?: number): number | un
 /** Bounds as percents for aria-valuemin / -valuemax (numbers only; strings: `undefined`). */
 export const percentBound = (size: AppLayoutSize): number | undefined => (typeof size === "number" ? size : undefined);
 
-function storage(): Storage | null {
-  try {
-    return typeof localStorage === "undefined" ? null : localStorage;
-  } catch {
-    return null;
-  }
-}
-
-/** Persists the size under `storageKey` (no-op without one or without storage). */
+/** Persists the size under `storageKey` (no-op without one or without storage; private mode / quota: the in-memory size stays). */
 export function savePanelSize(state: PanelSizeState): void {
-  if (!state.storageKey) return;
-  try {
-    storage()?.setItem(state.storageKey, JSON.stringify(untrack(state.size)));
-  } catch {
-    // private mode / quota: keep the in-memory size
-  }
+  if (state.storageKey) writeStorage(webStorage("local"), state.storageKey, JSON.stringify(untrack(state.size)));
 }
 
 /** Restores a persisted size (browser; `resizableAutoSaveId`). */
 export function restorePanelSize(state: PanelSizeState): void {
   if (!state.storageKey) return;
   try {
-    const raw = storage()?.getItem(state.storageKey);
+    const raw = readStorage(webStorage("local"), state.storageKey);
     if (raw == null) return;
     const value = JSON.parse(raw) as unknown;
     if (typeof value === "number" || typeof value === "string") state.size.set(value);

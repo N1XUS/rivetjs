@@ -31,7 +31,8 @@ import { createContext, signal, untrack, useContext } from "@rivetjs/reactivity"
 import { Provider, clientEffect } from "@rivetjs/runtime/dom";
 import type { Content, JSX } from "@rivetjs/runtime/jsx-runtime";
 import { splitProps } from "@rivetjs/runtime/props";
-import { createId } from "../utils/id.ts";
+import { resumedId } from "../utils/id.ts";
+import { readStorage, webStorage, writeStorage } from "../utils/storage.ts";
 import type { StyleObject } from "../utils/types.ts";
 import type { RefValue } from "../slots/index.tsx";
 import {
@@ -195,7 +196,7 @@ export function Group(props: GroupProps): JSX.Element {
   const onLayoutChange = local.onLayoutChange;
   const onLayoutChanged = local.onLayoutChanged;
   const state: GroupState = {
-    id: idProp != null ? String(idProp) : createId(),
+    id: idProp != null ? String(idProp) : resumedId(),
     orientation,
     disabled,
     disableCursor,
@@ -378,7 +379,7 @@ export function Panel(props: PanelProps): JSX.Element {
   const disabled = local.disabled;
   const defaultSize = local.defaultSize;
   const record: PanelRecord = {
-    id: idProp != null ? String(idProp) : createId(),
+    id: idProp != null ? String(idProp) : resumedId(),
     idProp,
     idIsStable: idProp != null,
     collapsedSize: local.collapsedSize ?? "0%",
@@ -516,7 +517,7 @@ export function Separator(props: SeparatorProps): JSX.Element {
   const idProp = local.id;
   const disabled = local.disabled;
   const record: SeparatorRecord = {
-    id: idProp != null ? String(idProp) : createId(),
+    id: idProp != null ? String(idProp) : resumedId(),
     disabled,
     disableDoubleClick: local.disableDoubleClick,
     preview: local.preview,
@@ -685,25 +686,12 @@ export interface UseDefaultLayoutOptions {
   groupId?: string;
 }
 
-const defaultStorage = (): LayoutStorage | undefined => {
-  try {
-    return (globalThis as { document?: unknown }).document === undefined
-      ? undefined
-      : ((globalThis as { localStorage?: LayoutStorage }).localStorage ?? undefined);
-  } catch {
-    return undefined;
-  }
-};
+const defaultStorage = (): LayoutStorage | undefined => webStorage("local");
 
-/** Upstream `useDefaultLayout` read: modern (v4) layout, else the legacy (v3) record. */
+/** Upstream `useDefaultLayout` read: modern (v4) layout, else the legacy (v3) record. A storage that throws reads as empty. */
 function readLayout(storage: LayoutStorage | undefined, id: string, panelIds: string[] | undefined): Layout | undefined {
   if (!storage) return undefined;
-  let value: string | null = null;
-  try {
-    value = storage.getItem(getStorageKey(id, panelIds ?? []));
-  } catch {
-    return undefined;
-  }
+  const value = readStorage(storage, getStorageKey(id, panelIds ?? []));
   if (value) {
     try {
       // Rule out false positive for legacy layout format
@@ -713,7 +701,11 @@ function readLayout(storage: LayoutStorage | undefined, id: string, panelIds: st
       // unreadable entry
     }
   }
-  return readLegacyLayout({ id, panelIds, storage });
+  try {
+    return readLegacyLayout({ id, panelIds, storage });
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -758,11 +750,9 @@ export function useDefaultLayout(options: UseDefaultLayoutOptions): {
       // Save the requested layout so size-dependent constraints aren't persisted (see #720)
       const layoutToSave = meta.requestedLayout ?? next;
       const writeStorageKey = hasPanelIds ? getStorageKey(id, Object.keys(layoutToSave)) : getStorageKey(id, []);
-      try {
-        (storage ?? defaultStorage())?.setItem(writeStorageKey, JSON.stringify(layoutToSave));
-      } catch (error) {
-        console.error(error);
-      }
+      // Rivet: a failed write (private mode, quota, access denied) keeps the layout in memory, silently
+      // (`@rivetjs/cdk/storage`; upstream logs it with `console.error`).
+      writeStorage(storage ?? defaultStorage(), writeStorageKey, JSON.stringify(layoutToSave));
     },
   };
   return {

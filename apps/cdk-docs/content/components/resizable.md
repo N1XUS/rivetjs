@@ -53,7 +53,7 @@ A `collapsible` panel snaps to `collapsedSize` (default 0) when dragged past its
 
 ## Persisted layout
 
-`useDefaultLayout({ id })` saves the layout under `react-resizable-panels:<id>` after each change. With the default `localStorage`, the browser restores it once the page is idle. With `cookieStorage(cookieHeader)` the server reads the stored layout and renders it, so a reload shows the saved sizes with no shift:
+`useDefaultLayout({ id })` saves the layout under `react-resizable-panels:<id>` after each change. With the default `localStorage`, the browser restores it once the page is idle. If the storage throws (Safari private mode, blocked cookies, a full quota), the layout stays in memory for the visit and nothing is logged. With `cookieStorage(cookieHeader)` the server reads the stored layout and renders it, so a reload shows the saved sizes with no shift:
 
 ```tsx
 const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: "mail", storage: cookieStorage(data.cookie) });

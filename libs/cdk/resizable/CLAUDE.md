@@ -15,7 +15,7 @@
 - `Group`: `orientation` (`horizontal` default), `defaultLayout` (id → %), `onLayoutChange` (every change, also during drags), `onLayoutChanged` (committed; `meta.isUserInteraction`), `groupRef`, `disabled`, `disableCursor`, `resizePreviewMode` (`"separator"` previews), `resizeTargetMinimumSize`, `elementRef`, `class` / `style`.
 - `Panel`: `id`, `defaultSize`, `minSize`, `maxSize`, `collapsible`, `collapsedSize`, `collapsedThreshold`, `groupResizeBehavior`, `disabled`, `onResize(size, id, prevSize)`, `panelRef`; sizes = number (px) / `"30%"` / `"200px"` / `"2rem"` / `"10vw"` …; unitless string = %.
 - `Separator`: `id`, `disabled`, `disableDoubleClick`, `preview` (function), `class` / `style`; `data-separator` = `inactive` / `hover` / `active` / `focus` / `disabled`; `aria-valuenow` etc. after mount. Must be a direct child of its Group.
-- `useDefaultLayout({ id, storage?, panelIds?, debounceSaveMs?, onlySaveAfterUserInteractions? })` → `{ defaultLayout: accessor, onLayoutChange, onLayoutChanged }`; key `react-resizable-panels:<id>` (upstream). Storage default = `localStorage` (client only).
+- `useDefaultLayout({ id, storage?, panelIds?, debounceSaveMs?, onlySaveAfterUserInteractions? })` → `{ defaultLayout: accessor, onLayoutChange, onLayoutChanged }`; key `react-resizable-panels:<id>` (upstream). Storage default = `localStorage` (client only, `@rivetjs/cdk/storage` `webStorage`). Reads / writes go through `readStorage` / `writeStorage` (COLD-FIX-B 2026-10-27): a throwing storage (iOS private mode `QuotaExceededError`, blocked cookies) keeps the layout in memory, no `console.error` (upstream logs one per failed save).
 - `cookieStorage(cookieHeader | cookieMap)` (Rivet): server-readable storage (`ssr: true`) → server renders the stored layout, no client restore effect.
 
 ## Rivet rulings (2026-10-08)
@@ -40,3 +40,5 @@
 - Upstream component suites (`Group.test.tsx`, `Panel.test.tsx`, `Separator.test.tsx`, `useDefaultLayout.test.tsx`, `ResizePreview.test.tsx`; React Testing Library) not ported yet — behaviour covered by the engine suite + the Rivet tests above.
 - Resumed page: implicit panel-edge hover cursor (groups without separators) appears only after the first pointer down.
 - Props read once: `orientation`, `resizePreviewMode`, panel sizes / `collapsible`, `id` (upstream re-registers on change); accessors for `disabled` / `disableCursor` / `defaultLayout`.
+
+- ID-RESUME (2026-10-27): generated Group / Panel / Separator ids use the shared `resumedId()` keyed-signal helper. Separators' `aria-controls` (`aria().valueControls`) and the panel records keep the server ids when parts adopt independently; explicit ids and upstream resize behaviour stay unchanged.
