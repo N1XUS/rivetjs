@@ -1,4 +1,4 @@
-import { _dispose, _rootIn, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
+import { _dispose, _rootIn, _settle, getOwner, onCleanup, signal, untrack } from "@rivetjs/reactivity";
 import type { Owner } from "@rivetjs/reactivity";
 import { _adoption, _insert } from "./dom-v2.ts";
 import { LAZY_ROWS } from "./lazy-rows.ts";
@@ -39,7 +39,14 @@ export interface Probe {
   owner: Owner | null;
 }
 export type Hooks = [node: typeof _adoption.node, slot: typeof _adoption.slot, live: boolean | undefined];
-export const save = (): Hooks => [_adoption.node, _adoption.slot, _adoption.live];
+// Entering an adoption (a unit's probe / adopt runs, a lazy row): first run a deferred first-click flush still pending
+// (reactivity `_settle`). Any `batched` call inside the runs would otherwise run it there, with the unit current and the
+// probe's creation hooks installed: another unit's update then renders its `_b` children as this unit's holes (COLD-FIX-A,
+// WebKit: a tap's click is held, the next event's adoption probes before the held task: "an adopt run diverged from its
+// probe", the popup never adopted).
+export const save = (): Hooks => (_settle(), [_adoption.node, _adoption.slot, _adoption.live]);
+/** The owner an adoption runs under was disposed (by the flush `save` ran, e.g. a view switch replaced the subtree). */
+export const gone = (parent: Owner | null): boolean => !!(parent as { disposed?: boolean } | null)?.disposed;
 const restore = (h: Hooks): void => void ((_adoption.node = h[0]), (_adoption.slot = h[1]), (_adoption.live = h[2]));
 export const between = (start: Node, end: Node): Node[] => {
   const out: Node[] = [];
@@ -272,8 +279,9 @@ export function _adoptRow(
   verify: ((first: string) => void) | null = null,
   cache: RowPlanCache | null = null,
 ): Owner | null {
-  const outer = save(),
-    row = flatRow(start, end),
+  const outer = save();
+  if (gone(parent)) return null;
+  const row = flatRow(start, end),
     plan = cache?.p;
   if (plan && plan.sig === row.sig && !DEV) {
     const owner = adopt(parent, enter, rowFn, end, fromPlan(plan, row.list), row.controls, outer, true);

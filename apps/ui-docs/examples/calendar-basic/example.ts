@@ -10,6 +10,8 @@ export default defineExample({
   test: [
     { expect: ["[data-slot=calendar-heading]", ""] },
     { click: "[data-slot=calendar-nav-button][slot=next]" },
-    { expect: ["[data-slot=calendar-grid]", ""] },
+    // The next month is shown (today's cell left the grid) and the compound parts kept their markup (icons, slots).
+    { absent: "[data-slot=calendar-cell][data-today]:not([data-outside-month])" },
+    { matches: "[data-slot=calendar-nav-button-icon]" },
   ],
 });

@@ -10,6 +10,12 @@ export default defineExample({
   show: ["src/routes/index.tsx", "src/components/aurora-canvas.tsx", "src/components/aurora.ts", "src/styles.css"],
   test: [
     { expect: ["#auth-title", "Welcome back"] },
+    // Cold first input: "Forgot password?" swaps the form for the reset step (WebKit threw "Cannot create a child of a
+    // disposed owner" here: the held first-click flush ran inside an adopt probe, COLD-FIX-A); Back returns to sign-in.
+    { click: "#forgot" },
+    { matches: "#reset-email" },
+    { click: "button.button--ghost.self-start" },
+    { expect: ["#auth-title", "Welcome back"] },
     { click: "#auth-mode [role=radio]:last-child" },
     { expect: ["#auth-title", "Create your shop"] },
     { fill: ["#signup-name", "Mira Okonkwo"] },

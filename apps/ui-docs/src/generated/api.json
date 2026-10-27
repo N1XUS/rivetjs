@@ -12500,8 +12500,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/app-layout/app-layout-state.ts",
-    "line": 12,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L12"
+    "line": 13,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L13"
    },
    "href": "/api/rivetjs/ui/app-layout/ASIDE_BREAKPOINT/"
   },
@@ -12522,8 +12522,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/app-layout/app-layout-state.ts",
-    "line": 9,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L9"
+    "line": 10,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L10"
    },
    "href": "/api/rivetjs/ui/app-layout/ASIDE_COOKIE_NAME/"
   },
@@ -13260,8 +13260,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/app-layout/app-layout-state.ts",
-    "line": 15,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L15"
+    "line": 16,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L16"
    },
    "href": "/api/rivetjs/ui/app-layout/AppLayoutSize/"
   },
@@ -13407,8 +13407,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/app-layout/app-layout-state.ts",
-    "line": 86,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L86"
+    "line": 87,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/app-layout/app-layout-state.ts#L87"
    },
    "href": "/api/rivetjs/ui/app-layout/asideCookieOpen/"
   },
@@ -29565,8 +29565,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/calendar/index.ts",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/calendar/index.ts#L74"
+    "line": 53,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/calendar/index.ts#L53"
    },
    "href": "/api/rivetjs/ui/calendar/Calendar/"
   },
@@ -29578,7 +29578,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const Calendar: CalendarComponent & <T extends DateValue = DateValue, M extends CalendarSelectionMode = \"single\">(props: CalendarRootProps<T, M>) => CompiledElement & { Cell: (props: CalendarCellProps) => CompiledElement; CellIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarCellIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement; Grid: (props: CalendarGridProps) => CompiledElement; GridBody: (props: CalendarGridBodyProps) => CompiledElement; GridHeader: (props: CalendarGridHeaderProps) => CompiledElement; Header: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"header\">(props: CalendarHeaderProps<E> & IntrinsicElements[E]) => CompiledElement; HeaderCell: (props: CalendarHeaderCellProps) => CompiledElement; Heading: (props: CalendarHeadingProps) => CompiledElement; NavButton: (props: CalendarNavButtonProps) => CompiledElement; Root: <T extends DateValue = DateValue, M extends CalendarSelectionMode = \"single\">(props: CalendarRootProps<T, M>) => CompiledElement; YearPickerCell: (props: CalendarYearPickerCellProps) => CompiledElement; YearPickerGrid: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"div\">(props: CalendarYearPickerGridProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerGridBody: (props: CalendarYearPickerGridBodyProps) => CompiledElement; YearPickerTrigger: (props: CalendarYearPickerTriggerProps) => CompiledElement; YearPickerTriggerHeading: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerHeadingProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerTriggerIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement }"
+    "const Calendar: <T extends DateValue = DateValue, M extends CalendarSelectionMode = \"single\">(props: CalendarRootProps<T, M>) => CompiledElement & { Cell: (props: CalendarCellProps) => CompiledElement; CellIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarCellIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement; Grid: (props: CalendarGridProps) => CompiledElement; GridBody: (props: CalendarGridBodyProps) => CompiledElement; GridHeader: (props: CalendarGridHeaderProps) => CompiledElement; Header: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"header\">(props: CalendarHeaderProps<E> & IntrinsicElements[E]) => CompiledElement; HeaderCell: (props: CalendarHeaderCellProps) => CompiledElement; Heading: (props: CalendarHeadingProps) => CompiledElement; NavButton: (props: CalendarNavButtonProps) => CompiledElement; Root: <T extends DateValue = DateValue, M extends CalendarSelectionMode = \"single\">(props: CalendarRootProps<T, M>) => CompiledElement; YearPickerCell: (props: CalendarYearPickerCellProps) => CompiledElement; YearPickerGrid: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"div\">(props: CalendarYearPickerGridProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerGridBody: (props: CalendarYearPickerGridBodyProps) => CompiledElement; YearPickerTrigger: (props: CalendarYearPickerTriggerProps) => CompiledElement; YearPickerTriggerHeading: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerHeadingProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerTriggerIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement }"
    ],
    "params": [],
    "members": [],
@@ -29587,8 +29587,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/calendar/index.ts",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/calendar/index.ts#L74"
+    "line": 53,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/calendar/index.ts#L53"
    },
    "href": "/api/rivetjs/ui/calendar/Calendar/"
   },
@@ -146525,8 +146525,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L48"
+    "line": 49,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L49"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerContext/"
   },
@@ -146547,8 +146547,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 48,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L48"
+    "line": 49,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L49"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerContext/"
   },
@@ -146577,8 +146577,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 172,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L172"
+    "line": 173,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L173"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerPopover/"
   },
@@ -147398,8 +147398,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 168,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L168"
+    "line": 169,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L169"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerPopoverProps/"
   },
@@ -147428,8 +147428,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 80,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L80"
+    "line": 81,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L81"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerRoot/"
   },
@@ -148281,8 +148281,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 76,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L76"
+    "line": 77,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L77"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerRootProps/"
   },
@@ -148311,8 +148311,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 122,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L122"
+    "line": 123,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L123"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerTrigger/"
   },
@@ -148341,8 +148341,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 147,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L147"
+    "line": 148,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L148"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerTriggerIndicator/"
   },
@@ -148385,8 +148385,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 139,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L139"
+    "line": 140,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L140"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerTriggerIndicatorProps/"
   },
@@ -149228,8 +149228,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-picker/date-picker.tsx",
-    "line": 120,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L120"
+    "line": 121,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-picker/date-picker.tsx#L121"
    },
    "href": "/api/rivetjs/ui/date-picker/DatePickerTriggerProps/"
   },
@@ -149389,8 +149389,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L50"
+    "line": 51,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L51"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerContext/"
   },
@@ -149411,8 +149411,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 50,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L50"
+    "line": 51,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L51"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerContext/"
   },
@@ -149441,8 +149441,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 197,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L197"
+    "line": 198,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L198"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerPopover/"
   },
@@ -150262,8 +150262,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 193,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L193"
+    "line": 194,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L194"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerPopoverProps/"
   },
@@ -150292,8 +150292,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 172,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L172"
+    "line": 173,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L173"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerRangeSeparator/"
   },
@@ -150336,8 +150336,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 163,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L163"
+    "line": 164,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L164"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerRangeSeparatorProps/"
   },
@@ -150366,8 +150366,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 74,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L74"
+    "line": 75,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L75"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerRoot/"
   },
@@ -151233,8 +151233,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 70,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L70"
+    "line": 71,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L71"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerRootProps/"
   },
@@ -151263,8 +151263,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 116,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L116"
+    "line": 117,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L117"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerTrigger/"
   },
@@ -151293,8 +151293,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 142,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L142"
+    "line": 143,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L143"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerTriggerIndicator/"
   },
@@ -151337,8 +151337,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 133,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L133"
+    "line": 134,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L134"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerTriggerIndicatorProps/"
   },
@@ -152180,8 +152180,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/date-range-picker/date-range-picker.tsx",
-    "line": 114,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L114"
+    "line": 115,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/date-range-picker/date-range-picker.tsx#L115"
    },
    "href": "/api/rivetjs/ui/date-range-picker/DateRangePickerTriggerProps/"
   },
@@ -309770,8 +309770,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/range-calendar/index.ts",
-    "line": 72,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/range-calendar/index.ts#L72"
+    "line": 52,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/range-calendar/index.ts#L52"
    },
    "href": "/api/rivetjs/ui/range-calendar/RangeCalendar/"
   },
@@ -309783,7 +309783,7 @@
    "summary": "",
    "remarks": "",
    "signatures": [
-    "const RangeCalendar: RangeCalendarComponent & <T extends DateValue = DateValue>(props: RangeCalendarRootProps<T>) => CompiledElement & { Cell: (props: RangeCalendarCellProps) => CompiledElement; CellIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: RangeCalendarCellIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement; Grid: (props: RangeCalendarGridProps) => CompiledElement; GridBody: (props: RangeCalendarGridBodyProps) => CompiledElement; GridHeader: (props: RangeCalendarGridHeaderProps) => CompiledElement; Header: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"header\">(props: RangeCalendarHeaderProps<E> & IntrinsicElements[E]) => CompiledElement; HeaderCell: (props: RangeCalendarHeaderCellProps) => CompiledElement; Heading: (props: RangeCalendarHeadingProps) => CompiledElement; NavButton: (props: RangeCalendarNavButtonProps) => CompiledElement; Root: <T extends DateValue = DateValue>(props: RangeCalendarRootProps<T>) => CompiledElement; YearPickerCell: (props: CalendarYearPickerCellProps) => CompiledElement; YearPickerGrid: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"div\">(props: CalendarYearPickerGridProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerGridBody: (props: CalendarYearPickerGridBodyProps) => CompiledElement; YearPickerTrigger: (props: CalendarYearPickerTriggerProps) => CompiledElement; YearPickerTriggerHeading: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerHeadingProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerTriggerIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement }"
+    "const RangeCalendar: <T extends DateValue = DateValue>(props: RangeCalendarRootProps<T>) => CompiledElement & { Cell: (props: RangeCalendarCellProps) => CompiledElement; CellIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: RangeCalendarCellIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement; Grid: (props: RangeCalendarGridProps) => CompiledElement; GridBody: (props: RangeCalendarGridBodyProps) => CompiledElement; GridHeader: (props: RangeCalendarGridHeaderProps) => CompiledElement; Header: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"header\">(props: RangeCalendarHeaderProps<E> & IntrinsicElements[E]) => CompiledElement; HeaderCell: (props: RangeCalendarHeaderCellProps) => CompiledElement; Heading: (props: RangeCalendarHeadingProps) => CompiledElement; NavButton: (props: RangeCalendarNavButtonProps) => CompiledElement; Root: <T extends DateValue = DateValue>(props: RangeCalendarRootProps<T>) => CompiledElement; YearPickerCell: (props: CalendarYearPickerCellProps) => CompiledElement; YearPickerGrid: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"div\">(props: CalendarYearPickerGridProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerGridBody: (props: CalendarYearPickerGridBodyProps) => CompiledElement; YearPickerTrigger: (props: CalendarYearPickerTriggerProps) => CompiledElement; YearPickerTriggerHeading: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerHeadingProps<E> & IntrinsicElements[E]) => CompiledElement; YearPickerTriggerIndicator: <E extends \"symbol\" | \"object\" | \"a\" | \"abbr\" | \"address\" | \"area\" | \"article\" | \"aside\" | \"audio\" | \"b\" | \"base\" | \"bdi\" | \"bdo\" | \"blockquote\" | \"body\" | \"br\" | \"button\" | \"canvas\" | \"caption\" | \"cite\" | \"code\" | \"col\" | \"colgroup\" | \"data\" | \"datalist\" | \"dd\" | \"del\" | \"details\" | \"dfn\" | \"dialog\" | \"div\" | \"dl\" | \"dt\" | \"em\" | \"embed\" | \"fieldset\" | \"figcaption\" | \"figure\" | \"footer\" | \"form\" | \"h1\" | \"h2\" | \"h3\" | \"h4\" | \"h5\" | \"h6\" | \"head\" | \"header\" | \"hgroup\" | \"hr\" | \"html\" | \"i\" | \"iframe\" | \"img\" | \"input\" | \"ins\" | \"kbd\" | \"label\" | \"legend\" | \"li\" | \"link\" | \"main\" | \"map\" | \"mark\" | \"menu\" | \"meta\" | \"meter\" | \"nav\" | \"noscript\" | \"ol\" | \"optgroup\" | \"option\" | \"output\" | \"p\" | \"picture\" | \"pre\" | \"progress\" | \"q\" | \"rp\" | \"rt\" | \"ruby\" | \"s\" | \"samp\" | \"script\" | \"search\" | \"section\" | \"select\" | \"slot\" | \"small\" | \"source\" | \"span\" | \"strong\" | \"style\" | \"sub\" | \"summary\" | \"sup\" | \"table\" | \"tbody\" | \"td\" | \"template\" | \"textarea\" | \"tfoot\" | \"th\" | \"thead\" | \"time\" | \"title\" | \"tr\" | \"track\" | \"u\" | \"ul\" | \"var\" | \"video\" | \"wbr\" | \"animate\" | \"animateMotion\" | \"animateTransform\" | \"circle\" | \"clipPath\" | \"defs\" | \"desc\" | \"ellipse\" | \"feBlend\" | \"feColorMatrix\" | \"feComponentTransfer\" | \"feComposite\" | \"feConvolveMatrix\" | \"feDiffuseLighting\" | \"feDisplacementMap\" | \"feDistantLight\" | \"feDropShadow\" | \"feFlood\" | \"feFuncA\" | \"feFuncB\" | \"feFuncG\" | \"feFuncR\" | \"feGaussianBlur\" | \"feImage\" | \"feMerge\" | \"feMergeNode\" | \"feMorphology\" | \"feOffset\" | \"fePointLight\" | \"feSpecularLighting\" | \"feSpotLight\" | \"feTile\" | \"feTurbulence\" | \"filter\" | \"foreignObject\" | \"g\" | \"image\" | \"line\" | \"linearGradient\" | \"marker\" | \"mask\" | \"metadata\" | \"mpath\" | \"path\" | \"pattern\" | \"polygon\" | \"polyline\" | \"radialGradient\" | \"rect\" | \"set\" | \"stop\" | \"svg\" | \"switch\" | \"text\" | \"textPath\" | \"tspan\" | \"use\" | \"view\" | \"annotation\" | \"maction\" | \"math\" | \"merror\" | \"mfrac\" | \"mi\" | \"mmultiscripts\" | \"mn\" | \"mo\" | \"mover\" | \"mpadded\" | \"mphantom\" | \"mprescripts\" | \"mroot\" | \"mrow\" | \"ms\" | \"mspace\" | \"msqrt\" | \"mstyle\" | \"msub\" | \"msubsup\" | \"msup\" | \"mtable\" | \"mtd\" | \"mtext\" | \"mtr\" | \"munder\" | \"munderover\" | \"semantics\" | `${string}-${string}` = \"span\">(props: CalendarYearPickerTriggerIndicatorProps<E> & IntrinsicElements[E]) => CompiledElement }"
    ],
    "params": [],
    "members": [],
@@ -309792,8 +309792,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/range-calendar/index.ts",
-    "line": 72,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/range-calendar/index.ts#L72"
+    "line": 52,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/range-calendar/index.ts#L52"
    },
    "href": "/api/rivetjs/ui/range-calendar/RangeCalendar/"
   },
@@ -324047,8 +324047,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/resizable/index.tsx",
-    "line": 786,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L786"
+    "line": 776,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L776"
    },
    "href": "/api/rivetjs/ui/resizable/cookieStorage/"
   },
@@ -324099,8 +324099,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/resizable/index.tsx",
-    "line": 726,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L726"
+    "line": 718,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L718"
    },
    "href": "/api/rivetjs/ui/resizable/useDefaultLayout/"
   },
@@ -324122,8 +324122,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/resizable/index.tsx",
-    "line": 633,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L633"
+    "line": 634,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L634"
    },
    "href": "/api/rivetjs/ui/resizable/useGroupRef/"
   },
@@ -324145,8 +324145,8 @@
    "examples": [],
    "source": {
     "file": "libs/cdk/resizable/index.tsx",
-    "line": 638,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L638"
+    "line": 639,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/cdk/resizable/index.tsx#L639"
    },
    "href": "/api/rivetjs/ui/resizable/usePanelRef/"
   },
@@ -337124,8 +337124,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx",
-    "line": 17,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx#L17"
+    "line": 18,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx#L18"
    },
    "href": "/api/rivetjs/ui/scroll-shadow/UseScrollShadowProps/"
   },
@@ -337176,8 +337176,8 @@
    "examples": [],
    "source": {
     "file": "libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx",
-    "line": 26,
-    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx#L26"
+    "line": 37,
+    "url": "https://github.com/N1XUS/rivetjs/blob/main/libs/ui/src/components/scroll-shadow/use-scroll-shadow.tsx#L37"
    },
    "href": "/api/rivetjs/ui/scroll-shadow/useScrollShadow/"
   },

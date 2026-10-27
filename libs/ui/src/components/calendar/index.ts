@@ -1,9 +1,6 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/calendar/index.ts (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet: `ComponentProps<typeof X>` → the parts' prop types; `@heroui/styles` → vendored `styles/`; `CalendarSelectionMode` from
 // `@rivetjs/cdk/calendar`.
-import type { DateValue } from "@rivetjs/cdk/date";
-import type { CalendarSelectionMode } from "@rivetjs/cdk/calendar";
-import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import {
   CalendarYearPickerCell,
@@ -47,12 +44,13 @@ import type {
   CalendarRootProps,
 } from "./calendar.tsx";
 
-type CalendarComponent = <T extends DateValue = DateValue, M extends CalendarSelectionMode = "single">(props: CalendarRootProps<T, M>) => JSX.Element;
-
 /* -------------------------------------------------------------------------------------------------
  * Compound Component
  * -----------------------------------------------------------------------------------------------*/
-const CalendarCompound = Object.assign(CalendarRoot, {
+// A plain `export const X = Object.assign(Root, { … })`: the compiler's boundary facts resolve `<Calendar>` / `<Calendar.Part>`
+// through it (a `const X = Compound as T` alias hid the compound: the demo above every Calendar rendered as a static
+// page and the root adopted standalone with `{}` props — cold clicks re-rendered the bare cdk Calendar).
+export const Calendar = Object.assign(CalendarRoot, {
   Root: CalendarRoot,
   Header: CalendarHeader,
   Heading: CalendarHeading,
@@ -70,8 +68,6 @@ const CalendarCompound = Object.assign(CalendarRoot, {
   YearPickerGridBody: CalendarYearPickerGridBody,
   YearPickerCell: CalendarYearPickerCell,
 });
-
-export const Calendar = CalendarCompound as CalendarComponent & typeof CalendarCompound;
 
 export type Calendar = {
   Props: CalendarRootProps;

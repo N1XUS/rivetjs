@@ -37,7 +37,7 @@ import { _adoption, _delegateBelow, _for, _insert, _on } from "./dom-v2.ts";
 import { _delegated } from "./dom-events.ts";
 import type { ForRow, InsertSlot } from "./dom-v2.ts";
 import { same } from "./dom-adopt.ts";
-import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
+import { _adoptRow, adopt, between, copyIn, describe, dirtyOf, gone, kids, probeRow, save, textOf } from "./dom-adopt-run.ts";
 import type { Align, Answers, Current, Probe, RowPlanCache } from "./dom-adopt-run.ts";
 import { _setUnrecorded, _tableDecoder } from "./resume-format.ts";
 import type { BoundaryTail, DerivedAsync, DerivedDom } from "./resume-format.ts";
@@ -1113,6 +1113,8 @@ function adoptUnit(parent: Owner | null, run: () => unknown, start: Node, end: N
   const outer = save(),
     previous = cur,
     verify = !!DEV;
+  // The held flush `save` ran removed the unit (its claiming owner disposed): its range left the page, nothing to adopt.
+  if (gone(parent)) return null;
   // 1. Probe (create mode, detached; holes for child boundaries and lists). A child boundary whose output the run
   // discarded (its hole reached no node of the probe: a build pass that renders for side effects) runs inline instead,
   // probed again.
@@ -2121,6 +2123,13 @@ const hidden = (event: Event): void => {
 // default toggles it again). Every event is held while the queue drains (`on`), so no newer state is skipped; reset when
 // the queue is empty.
 let typed = new WeakMap<EventTarget, [unknown, unknown]>();
+// Held keys follow the focus their replays move (COLD-FIX-B): keys typed before boot all went to the element focused
+// then (the loader held them, so no native default moved focus); a replayed key whose handler moves focus (a date
+// segment advancing after two digits) sends the next held keys dispatched to that same element to where focus went,
+// as a loaded page had — before, the rest of a cold "01/01/2020" retyped the month. [dispatch target, element a replay
+// focused].
+// Reset by any other held event (a press or input between them was the user's own focus move) and when the queue empties.
+let keyed: [EventTarget, Element] | undefined;
 // A cold event as it is queued (dom-resume `cold`'s synchronous part): link a press's pointerdown + mousedown, mark the
 // focus events of a pre-boot press's native move, hide the move of a press queued while it dispatches.
 function queued([event, , , state]: HeldEvent): void {
@@ -2139,19 +2148,25 @@ function queued([event, , , state]: HeldEvent): void {
 function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   let canceled = false,
     target = event.target as HTMLInputElement;
-  // Its boundary rendered in the browser instead of adopting (mismatch): the target left the page — replayed on the node
-  // at its place in the browser's render (`retargets`), dropped when there is none.
-  const shifted = target && !target.isConnected;
-  if (shifted) {
-    const to = retargets.get(target) as HTMLInputElement | undefined;
+  const type = event.type,
+    key = /^key/.test(type),
+    sent = target,
+    // Its boundary rendered in the browser instead of adopting (mismatch): the target left the page — replayed on the
+    // node at its place in the browser's render (`retargets`), dropped when there is none.
+    shifted = target && !target.isConnected,
+    // A held key sent where an earlier key's replay moved focus from (`keyed`): replayed there.
+    follow = key && keyed?.[0] === target && keyed[1].isConnected && keyed[1];
+  if (shifted || follow) {
+    const to = (follow || retargets.get(target)) as HTMLInputElement | undefined;
     if (!to?.isConnected) return;
     Object.defineProperty(event, "target", { configurable: true, value: (target = to) });
     path = pathOf(to);
   }
+  if (!key && !/^(focus|blur)/.test(type)) keyed = undefined;
   hide();
-  const type = event.type,
-    press = isPress(event),
-    pair = linked.has(event);
+  const press = isPress(event),
+    pair = linked.has(event),
+    before = doc!.activeElement;
   if (press && !(pair && type === "mousedown") && doc!.activeElement === (press[0] ?? doc!.body)) {
     let was = state[2] as HTMLElement | null,
       ts = event.timeStamp,
@@ -2186,7 +2201,8 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
   // The control's value / checked at the event's dispatch, for its handlers (an input / change / click replayed after
   // later typing). Not for focus events: their handlers read no value, and writing a date input's value while focus is
   // in its fields focuses it (a trusted focusin) — each replayed focusin queued two more (cdk /date-picker autofill hung).
-  const control = target && "value" in target && target.localName !== "button" && !/^(focus|blur)/.test(type),
+  // A followed key (`keyed`): its dispatch state is the first element's, not the one it now goes to.
+  const control = !follow && target && "value" in target && target.localName !== "button" && !/^(focus|blur)/.test(type),
     at = control ? [target.value, target.checked] : null,
     // Put back afterwards: the latest held state of the control (later typing), else the live one (`typed`).
     now = at && (typed.get(target) ?? at),
@@ -2208,7 +2224,10 @@ function replay([event, path, again, state]: HeldEvent): Promise<void> | void {
     delete (event as { composedPath?: unknown }).composedPath;
     delete (event as { defaultPrevented?: unknown }).defaultPrevented;
     delete (event as { preventDefault?: unknown }).preventDefault;
-    (to || shifted) && delete (event as { target?: unknown }).target;
+    (to || shifted || follow) && delete (event as { target?: unknown }).target;
+    // Only a move this replay made (the live focus may sit where the user moved it after typing).
+    const moved = doc!.activeElement;
+    if (key && moved !== before) keyed = moved && moved !== doc!.body && moved !== sent ? [sent, moved] : undefined;
     if (wrote && (target.value !== now![0] || target.checked !== now![1])) ((target.value = now![0] as string), (target.checked = now![1] as boolean));
   }
   const kept = canceled;
@@ -2302,6 +2321,7 @@ async function drain(): Promise<void> {
     pending.shift();
   }
   typed = new WeakMap();
+  keyed = undefined;
   record(0);
 }
 

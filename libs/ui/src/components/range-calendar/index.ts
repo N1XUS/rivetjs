@@ -1,7 +1,5 @@
 // Ported from HeroUI v3.2.6 packages/react/src/components/range-calendar/index.ts (Apache-2.0, © 2025 NextUI Inc.; modified).
 // Rivet: `ComponentProps<typeof X>` → the parts' prop types; `@heroui/styles` → vendored `styles/`.
-import type { DateValue } from "@rivetjs/cdk/date";
-import type { JSX } from "@rivetjs/runtime/jsx-runtime";
 
 import {
   CalendarYearPickerCell,
@@ -45,12 +43,13 @@ import type {
   RangeCalendarRootProps,
 } from "./range-calendar.tsx";
 
-type RangeCalendarComponent = <T extends DateValue = DateValue>(props: RangeCalendarRootProps<T>) => JSX.Element;
-
 /* -------------------------------------------------------------------------------------------------
  * Compound Component
  * -----------------------------------------------------------------------------------------------*/
-const RangeCalendarCompound = Object.assign(RangeCalendarRoot, {
+// A plain `export const X = Object.assign(Root, { … })`: the compiler's boundary facts resolve `<RangeCalendar>` / `<RangeCalendar.Part>`
+// through it (a `const X = Compound as T` alias hid the compound: the demo above every RangeCalendar rendered as a static
+// page and the root adopted standalone with `{}` props — cold clicks re-rendered the bare cdk Calendar).
+export const RangeCalendar = Object.assign(RangeCalendarRoot, {
   Root: RangeCalendarRoot,
   Header: RangeCalendarHeader,
   Heading: RangeCalendarHeading,
@@ -68,8 +67,6 @@ const RangeCalendarCompound = Object.assign(RangeCalendarRoot, {
   YearPickerGridBody: CalendarYearPickerGridBody,
   YearPickerCell: CalendarYearPickerCell,
 });
-
-export const RangeCalendar = RangeCalendarCompound as RangeCalendarComponent & typeof RangeCalendarCompound;
 
 export type RangeCalendar = {
   Props: RangeCalendarRootProps;
