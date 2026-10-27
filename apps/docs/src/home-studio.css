@@ -68,19 +68,125 @@
     inset: 0 0 10rem;
     pointer-events: none;
   }
+  /* Aurora, CSS only (STATIC-ZERO-3; was a canvas loop in hero.ts): four blobs, each a radial gradient as wide as 70 % of
+     the hero (the canvas's 0.44 × 0.8 radius), centred on its point, drifting ±7 % / ±6 % of the box (container units)
+     and breathing ±12 %. Composited `translate` / `scale` animations: no main-thread frames. The point is a `transform`
+     in container units, not `left` / `top` percentages: the hero's height settles when the fonts and the deferred
+     stylesheets apply, and moving boxes by layout counted as layout shift (Lighthouse CLS 0.002 → 0.009–0.043). */
   .hs-aurora {
     position: absolute;
     z-index: -1;
     inset: 0;
     overflow: hidden;
+    container-type: size;
     mask-image: linear-gradient(transparent, #000 10%, #000 65%, transparent);
     background: radial-gradient(ellipse at 30% 25%, #262cfa0b, transparent 60%), radial-gradient(ellipse at 75% 50%, #b815f90a, transparent 60%);
-  }
-  .hs-aurora canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
     opacity: 0.85;
+  }
+  .hs-blob {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(calc(var(--x) * 100cqw), calc(var(--y) * 100cqh));
+    width: 70.4cqw;
+    aspect-ratio: 1;
+    margin: -35.2cqw 0 0 -35.2cqw;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgb(var(--c) / var(--a)), rgb(var(--c) / 0));
+    animation:
+      hs-drift var(--drift) ease-in-out var(--phase) infinite,
+      hs-breathe var(--breathe) ease-in-out var(--phase) infinite alternate;
+  }
+  .hs-blob:nth-child(1) {
+    --x: 0.23;
+    --y: 0.35;
+    --c: 1 238 249;
+    --a: 0.12;
+    --drift: 29s;
+    --breathe: 19s;
+    --phase: -4s;
+  }
+  .hs-blob:nth-child(2) {
+    --x: 0.5;
+    --y: 0.42;
+    --c: 38 44 250;
+    --a: 0.2;
+    --drift: 33s;
+    --breathe: 24s;
+    --phase: -17s;
+  }
+  .hs-blob:nth-child(3) {
+    --x: 0.76;
+    --y: 0.3;
+    --c: 91 0 248;
+    --a: 0.12;
+    --drift: 37s;
+    --breathe: 29s;
+    --phase: -9s;
+  }
+  .hs-blob:nth-child(4) {
+    --x: 0.58;
+    --y: 0.66;
+    --c: 248 39 245;
+    --a: 0.12;
+    --drift: 41s;
+    --breathe: 34s;
+    --phase: -26s;
+  }
+  @keyframes hs-drift {
+    0%,
+    100% {
+      translate: 7cqw 0;
+    }
+    25% {
+      translate: 0 6cqh;
+    }
+    50% {
+      translate: -7cqw 0;
+    }
+    75% {
+      translate: 0 -6cqh;
+    }
+  }
+  @keyframes hs-breathe {
+    from {
+      scale: 0.88;
+    }
+    to {
+      scale: 1.12;
+    }
+  }
+  /* Pause controls: a native checkbox in a label (no JS); the icons swap on its state. */
+  .hs-pause {
+    cursor: pointer;
+  }
+  .hs-pause-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 0;
+  }
+  .hs-pause:has(.hs-pause-input:focus-visible) {
+    outline: 2px solid var(--hs-cyan);
+    outline-offset: 5px;
+  }
+  .hs-pause-icon {
+    display: inline-flex;
+  }
+  .hs-play-icon,
+  .hs-pause:has(.hs-pause-input:checked) .hs-pause-icon {
+    display: none;
+  }
+  .hs-pause:has(.hs-pause-input:checked) .hs-play-icon {
+    display: inline-flex;
+  }
+  .hs-backdrop:has(.hs-pause-input:checked) .hs-blob,
+  .hs-headline:has(.hs-pause-input:checked) .hs-word-letter {
+    animation-play-state: paused;
   }
   .hs-ambient-control {
     position: absolute;
@@ -97,13 +203,6 @@
     padding: 0.5rem;
     font-size: 0.64rem !important;
     border-radius: 0.4rem;
-  }
-  .hs-ambient-play,
-  .hs-backdrop[data-paused] .hs-ambient-pause {
-    display: none;
-  }
-  .hs-backdrop[data-paused] .hs-ambient-play {
-    display: inline-flex;
   }
   .hs-hero-copy {
     position: relative;
@@ -130,6 +229,11 @@
     justify-content: center;
     gap: 0.24em;
   }
+  /* Rotating word, CSS only (STATIC-ZERO-3; was WAAPI in hero.ts): the three words share one grid cell (slot = widest
+     word, no layout shift). One 9.3 s keyframe cycle per letter: entry 420 ms (from 18 px below, 8 px blur), hold, exit
+     220 ms (14 px up, blur); word w starts 3.1 s after word w − 1 and letter j 22 ms after letter j − 1. Word 0 starts
+     settled (negative delay): the server word paints sharp, nothing animates in at load. Each letter shows its slice j / n
+     of the word gradient (background n letters wide), so the colours run on across the letters. */
   .hs-word-window {
     position: relative;
     display: inline-grid;
@@ -137,36 +241,45 @@
     text-align: left;
   }
   .hs-word {
-    position: relative;
+    grid-area: 1 / 1;
     display: inline-flex;
     justify-self: start;
-    background: var(--hs-gradient);
-    color: transparent;
-    background-clip: text;
   }
   .hs-word-letter {
     display: inline-block;
     white-space: pre;
-  }
-  .hs-word[data-gradient-ready] {
-    background: none;
-  }
-  .hs-word[data-gradient-ready] > .hs-word-letter {
+    color: transparent;
     background-image: var(--hs-gradient);
-    background-size: var(--word-width) 100%;
-    background-position-x: calc(-1 * var(--word-offset));
+    background-size: calc(var(--n) * 100%) 100%;
+    background-position-x: calc(var(--j) / max(1, var(--n) - 1) * 100%);
     background-repeat: no-repeat;
     background-clip: text;
+    animation: hs-word 9300ms calc(var(--w) * 3100ms - 540ms + var(--j) * 22ms) infinite both;
   }
-  .hs-word-pause-icon {
-    display: inline-flex;
-  }
-  .hs-word-play-icon,
-  .hs-word-pause[aria-pressed="true"] .hs-word-pause-icon {
-    display: none;
-  }
-  .hs-word-pause[aria-pressed="true"] .hs-word-play-icon {
-    display: inline-flex;
+  @keyframes hs-word {
+    0% {
+      opacity: 0;
+      transform: translateY(18px);
+      filter: blur(8px);
+      animation-timing-function: var(--hs-ease);
+    }
+    4.516% {
+      opacity: 1;
+      transform: none;
+      filter: blur(0px);
+    }
+    29.677% {
+      opacity: 1;
+      transform: none;
+      filter: blur(0px);
+      animation-timing-function: ease-in;
+    }
+    32.043%,
+    100% {
+      opacity: 0;
+      transform: translateY(-14px);
+      filter: blur(8px);
+    }
   }
   .hs-word-pause {
     position: absolute;
@@ -860,8 +973,17 @@
     .hs-ambient-control {
       display: none;
     }
+    .hs-word + .hs-word {
+      visibility: hidden;
+    }
   }
   @media print {
+    .hs-word-letter {
+      animation: none !important;
+    }
+    .hs-word + .hs-word {
+      visibility: hidden;
+    }
     .hs-home {
       overflow: visible;
     }

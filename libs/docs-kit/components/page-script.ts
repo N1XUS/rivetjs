@@ -8,15 +8,18 @@
 //    them), a lone Ctrl / Meta down or a pointer over / focus of a search trigger fetches it (not on lean pages)
 //  - TOC scroll-spy: marks the TOC link of the heading above the reading line (`browser.ts` `spy`)
 //  - site chrome (RT-DIET2): theme menu / mobile drawer mounted on intent, search button click, code copy (below)
+//  - benchmark charts (STATIC-ZERO-3): keyboard reading of a focused `BenchChart` plot (`bench-keys.ts`, bundled in)
 // Loaded on first intent (DOCS-ZERO, 2026-10-27): `document.ts` links no module — its inline stub (`PAGE_STUB`) imports
 // this module on the first pointerover / pointerdown / focusin / keydown / click, the first scroll of a page with a TOC,
-// or at idle when a visible code block is left plain (dev server, runtime-filled blocks); built content pages fetch no
-// JS before input. The stub queues the events it saw (`window.__rvDocs`; it already prevented the defaults this module
-// prevents: Ctrl/Cmd+K, `/`, ArrowDown / ArrowUp on the theme button, a plain search-button click) and this module
-// replays them through its own listeners when it runs (`replay`).
+// or at idle when a visible code block is left plain (dev server, runtime-filled blocks), or at load on `/search/?q=…`;
+// built content pages fetch no JS before input. The stub queues the events it saw (`window.__rvDocs`; it already
+// prevented the defaults this module prevents: Ctrl/Cmd+K, `/`, ArrowDown / ArrowUp on the theme button, chart keys on
+// a focused chart plot, a plain search-button click) and this module replays them through its own listeners when it
+// runs (`replay`).
 // A .ts module: browser globals are fine. `<html data-lean>` = a `site.leanPages` page (set by `document.ts`).
 import { spy, spyState } from "./browser.ts";
 import { CODE_SELECTOR, watchCode } from "./highlight-browser.ts";
+import * as benchKeys from "./bench-keys.ts";
 
 const lean = document.documentElement.hasAttribute("data-lean");
 const dialog = () => import("../search/dialog.tsx");
@@ -111,6 +114,32 @@ const onArrow = (event: KeyboardEvent) => {
   event.preventDefault();
   void themeMenu().then((module) => module.openThemeMenu(theme, event));
 };
+// Benchmark charts (STATIC-ZERO-3): the plot is server HTML with CSS hover tooltips; its keyboard reading
+// (`bench-keys.ts`, ~0.3 KB br) is bundled into this script: as a dynamic import a Tab + arrow cost one more round trip
+// (Slow 4G: 13 → 181 ms vs the canvas the runtime mounted at load). The stub prevents these keys' defaults on a plot too.
+const CHART_KEYS = /^(Arrow(Up|Down|Left|Right)|Home|End|Escape)$/;
+const plotOf = (event: Event) => {
+  const target = event.target as Element | null;
+  return target?.matches?.(".bench-plot") ? target : null;
+};
+const onChartKey = (event: KeyboardEvent) => {
+  const plot = plotOf(event);
+  if (!plot || !CHART_KEYS.test(event.key)) return;
+  event.preventDefault();
+  benchKeys.key(plot, event.key);
+};
+const onChartFocus = (event: Event) => {
+  const plot = plotOf(event);
+  if (plot && document.activeElement === plot && plot.matches(":focus-visible")) benchKeys.focus(plot);
+};
+const onChartBlur = (event: Event) => {
+  const plot = plotOf(event);
+  if (plot) benchKeys.blur(plot);
+};
+document.addEventListener("keydown", onChartKey);
+document.addEventListener("focusin", onChartFocus);
+document.addEventListener("focusout", onChartBlur);
+
 document.addEventListener("pointerover", chrome, { passive: true });
 document.addEventListener("focusin", chrome);
 document.addEventListener("pointerdown", press, { capture: true, passive: true });
@@ -129,9 +158,11 @@ function replay(events: readonly Event[]): void {
     else if (type === "keydown") {
       if (!lean) onSearchKey(event as KeyboardEvent);
       onArrow(event as KeyboardEvent);
+      onChartKey(event as KeyboardEvent);
     } else if (type === "pointerover" || type === "focusin") {
       if (!lean) warm(event);
       chrome(event);
+      if (type === "focusin") onChartFocus(event);
     } else if (type === "pointerdown") press();
     else if (type === "click") {
       released();
@@ -139,6 +170,11 @@ function replay(events: readonly Event[]): void {
     }
   }
 }
+// The search page with a query (`/search/?q=…`: its form, a shared search link): the dialog opens with it. The stub
+// imports this module at load on that page only (STATIC-ZERO-3: the route itself is static).
+const query = document.querySelector(".search-page-form") ? new URLSearchParams(location.search).get("q") : null;
+if (query !== null) void dialog().then((module) => module.openSearch(query));
+
 const stub = window as unknown as { __rvDocs?: Event[] | null };
 const queued = stub.__rvDocs;
 stub.__rvDocs = null;

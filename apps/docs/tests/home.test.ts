@@ -38,19 +38,41 @@ async function home(options: { reducedMotion?: "reduce" | "no-preference"; width
   return page;
 }
 
+/** In the page: the word the CSS rotation shows now (STATIC-ZERO-3: the three words are stacked server markup; the shown
+ * one is the `.hs-word` whose letters are the most opaque), compared with `text`. */
+const shownIs = (text: string) => {
+  let best = "";
+  let most = -1;
+  for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
+    if (getComputedStyle(word).visibility === "hidden") continue;
+    const letters = [...word.children];
+    const opacity = letters.reduce((sum, letter) => sum + Number(getComputedStyle(letter).opacity), 0) / letters.length;
+    if (opacity > most) [most, best] = [opacity, word.textContent ?? ""];
+  }
+  return most > 0.9 && best === text;
+};
+const shown = (page: Page) =>
+  page.evaluate(() => {
+    for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
+      const letters = [...word.children];
+      if (getComputedStyle(word).visibility !== "hidden" && letters.every((letter) => Number(getComputedStyle(letter).opacity) > 0.9)) return word.textContent;
+    }
+    return null;
+  });
+
 test("home headline: full sentence as the accessible name, first word painted, words cycle without layout shift", async () => {
   const page = await home();
   try {
     const heading = page.getByRole("heading", { level: 1 });
     assert.equal(await heading.getAttribute("id"), "lp-title");
     assert.equal(await heading.getAttribute("aria-label"), "Make the web feel alive, fast and fluid.");
-    assert.equal(await page.locator(".hs-word").textContent(), "alive.");
+    assert.equal(await shown(page), "alive.");
     assert.equal(await page.locator(".hs-title-line").getAttribute("aria-hidden"), "true");
     await page.evaluate(() => document.fonts.ready);
     const box = async () => page.locator("h1").evaluate((h1) => [h1.getBoundingClientRect().width, h1.getBoundingClientRect().height]);
     const size = await box();
     for (const word of ["fast.", "fluid.", "alive."]) {
-      await page.waitForFunction((text) => document.querySelector(".hs-word")?.textContent === text, word, { timeout: 6000 });
+      await page.waitForFunction(shownIs, word, { timeout: 6000 });
       assert.deepEqual(await box(), size, `h1 box unchanged for ${word}`);
     }
   } finally {
@@ -61,15 +83,16 @@ test("home headline: full sentence as the accessible name, first word painted, w
 test("home headline: keyboard pause control and reduced motion keep the first word static", async () => {
   const page = await home();
   try {
-    const pause = page.locator(".hs-word-pause");
+    // A native checkbox (CSS pauses the letters while it is checked; no JS).
+    const pause = page.getByRole("checkbox", { name: "Pause headline animation" });
     await pause.focus();
     await page.keyboard.press("Space");
-    await page.waitForFunction(() => document.querySelector(".hs-word-pause")?.getAttribute("aria-pressed") === "true");
-    const word = await page.locator(".hs-word").textContent();
+    assert.ok(await pause.isChecked());
+    const word = await shown(page);
     await page.waitForTimeout(3400);
-    assert.equal(await page.locator(".hs-word").textContent(), word);
+    assert.equal(await shown(page), word);
     await page.keyboard.press("Space");
-    await page.waitForFunction(() => document.querySelector(".hs-word-pause")?.getAttribute("aria-pressed") === "false");
+    assert.ok(!(await pause.isChecked()));
   } finally {
     await page.close();
   }
@@ -79,7 +102,7 @@ test("home headline: keyboard pause control and reduced motion keep the first wo
     await reduced.evaluate(() => document.fonts.ready);
     // Deferred sheets can create the reduced-motion 0.01ms transitions for one frame as they arrive.
     await reduced.waitForFunction(() => document.getAnimations().filter((a) => a.playState === "running").length === 0, undefined, { timeout: 5000 });
-    assert.equal(await reduced.locator(".hs-word").textContent(), "alive.");
+    assert.equal(await shown(reduced), "alive.");
     assert.ok(!(await reduced.locator(".hs-word-pause").isVisible()), "no pause control without motion");
   } finally {
     await reduced.close();
@@ -104,7 +127,7 @@ test("home hero: the command box copies `npm create rivet@latest`; no horizontal
     await context.close();
   }
 });
-test("home: visible animations load before input, generic docs highlighter and search stay lazy", async () => {
+test("home: no JS before input (the hero motion is CSS); generic docs highlighter and search stay lazy", async () => {
   for (const width of [1300, 375]) {
     const page = await browser.newPage({ viewport: { width, height: 850 } });
     const scripts: string[] = [];
@@ -113,14 +136,10 @@ test("home: visible animations load before input, generic docs highlighter and s
     });
     try {
       await page.goto(origin + "/", { waitUntil: "load" });
-      await page.waitForTimeout(1500); // idle-time prefetches would have started by now
-      assert.ok(scripts.some((url) => url.includes("/docs-route-")), `the hero script (canvas + headline) really started at width ${width}`);
-      assert.ok(!scripts.some((url) => /pagefind|SearchDialog|highlight/i.test(url)), `no generic docs eager code: ${scripts.join(", ")}`);
-      const settled = scripts.length;
-      await page.waitForTimeout(1200);
-      assert.equal(scripts.length, settled, "continuous motion does not repeatedly download code");
-      const preloads = await page.locator('link[rel="modulepreload"]').evaluateAll((links) => links.map((link) => (link as HTMLLinkElement).href));
-      for (const url of preloads) assert.ok(scripts.includes(url), `modulepreload belongs to code actually used by visible effects: ${url}`);
+      await page.waitForTimeout(2700); // idle-time prefetches and the first word change would have happened by now
+      assert.deepEqual(scripts, [], `no JS before input at width ${width}`);
+      assert.ok(await page.evaluate(() => document.getAnimations().some((a) => a.playState === "running")), "the CSS hero motion runs");
+      assert.equal(await page.locator('link[rel="modulepreload"]').count(), 0);
     } finally {
       await page.close();
     }
@@ -343,15 +362,13 @@ test("component workbench: a pointer can select server HTML; the initial server 
   }
 });
 
-test("footer: reference links remain available and the animated homepage makes no obsolete zero-startup-JS claim", async () => {
+test("footer: reference links remain available and the homepage makes no obsolete zero-startup-JS claim", async () => {
   const page = await browser.newPage({ viewport: { width: 1300, height: 850 } });
   try {
     await page.goto(origin + "/", { waitUntil: "load" });
     await page.locator("footer").scrollIntoViewIfNeeded();
     for (const href of ["/api/", "/examples/", "/search/"]) assert.ok(await page.locator(`footer a[href="${href}"]`).isVisible());
     assert.doesNotMatch(await page.locator(".hs-home").innerText(), /no script files before you interact|JS loaded with the page: 0 B/);
-    await page.waitForLoadState("networkidle");
-    assert.ok((await scriptsNow(page)).length > 0, "visible Motion/canvas code really runs with the page");
   } finally {
     await page.close();
   }

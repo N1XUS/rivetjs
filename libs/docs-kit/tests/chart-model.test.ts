@@ -1,22 +1,7 @@
-// Benchmark chart math (components/chart-model.ts): ticks, scales, sorting, row layout, gauge.
+// Benchmark chart math (components/chart-model.ts): ticks, formatting, sorting, extent, advantage.
 import { strict as assert } from "node:assert";
 import { test } from "vitest";
-import {
-  advantage,
-  easeOut,
-  extent,
-  formatTick,
-  formatValue,
-  hitRow,
-  LAYOUT,
-  linear,
-  niceAxis,
-  niceStep,
-  rowLayout,
-  sorted,
-  type BarChartSpec,
-  type RangeChartSpec,
-} from "../components/chart-model.ts";
+import { advantage, extent, formatTick, formatValue, niceAxis, niceStep, sorted, type BarChartSpec } from "../components/chart-model.ts";
 
 const caption = { machine: "m", date: "2026-10-07", method: "x", source: { label: "r", href: "https://example.com" } };
 
@@ -35,16 +20,6 @@ test("niceAxis covers the max with whole steps from 0", () => {
   assert.deepEqual(niceAxis(50, 5), { max: 50, ticks: [0, 10, 20, 30, 40, 50] });
   const axis = niceAxis(0.7, 4);
   assert.ok(axis.max >= 0.7 && axis.ticks.at(-1) === axis.max);
-});
-
-test("linear maps and clamps", () => {
-  const x = linear(10, 100, 300);
-  assert.equal(x(0), 100);
-  assert.equal(x(5), 200);
-  assert.equal(x(10), 300);
-  assert.equal(x(-3), 100);
-  assert.equal(x(20), 300);
-  assert.equal(linear(0, 0, 10)(1), 10);
 });
 
 test("formatting", () => {
@@ -103,57 +78,7 @@ test("extent includes whisker ends", () => {
   assert.equal(extent([{ label: "", points: [{ label: "a", value: 1, max: 12 }] }]), 12);
 });
 
-test("rowLayout: wide — label column, headings, sorted rows, stacked without overlap", () => {
-  const layout = rowLayout(bar, 720);
-  assert.equal(layout.labelsLeft, true);
-  assert.equal(layout.plot.x0, LAYOUT.labelWidth);
-  assert.equal(layout.plot.x1, 720 - LAYOUT.valueWidth);
-  assert.deepEqual(
-    layout.headings.map((h) => h.label),
-    ["Class A", "Class B"],
-  );
-  assert.deepEqual(
-    layout.rows.map((r) => r.point.label),
-    ["Rivet", "slow", "x"],
-  );
-  for (let i = 1; i < layout.rows.length; i++) assert.ok(layout.rows[i]!.y >= layout.rows[i - 1]!.y + layout.rows[i - 1]!.h);
-  assert.equal(layout.height, layout.plot.y1 + LAYOUT.axis);
-  assert.deepEqual(layout.axis, { max: 10, ticks: [0, 2, 4, 6, 8, 10] });
-});
-
-test("rowLayout: narrow — labels above the bars, taller rows", () => {
-  const layout = rowLayout(bar, 340);
-  assert.equal(layout.labelsLeft, false);
-  assert.equal(layout.plot.x0, LAYOUT.pad);
-  assert.ok(layout.rows.every((r) => r.h === LAYOUT.rowNarrow));
-  assert.ok(layout.height > rowLayout(bar, 720).height);
-});
-
-test("rowLayout: range charts keep source order", () => {
-  const range: RangeChartSpec = { ...bar, kind: "range" };
-  assert.deepEqual(
-    rowLayout(range, 720).rows.map((r) => r.point.label),
-    ["slow", "Rivet", "x"],
-  );
-});
-
-test("hitRow finds the row under y", () => {
-  const layout = rowLayout(bar, 720);
-  const second = layout.rows[1]!;
-  assert.equal(hitRow(layout, second.y + 1), 1);
-  assert.equal(hitRow(layout, -5), -1);
-  assert.equal(hitRow(layout, layout.height + 50), -1);
-});
-
 test("advantage", () => {
   assert.equal(advantage(1, 2, "lower"), 2);
   assert.equal(advantage(4, 2, "higher"), 2);
-});
-
-test("easeOut: 0 → 1, clamped", () => {
-  assert.equal(easeOut(0), 0);
-  assert.equal(easeOut(1), 1);
-  assert.equal(easeOut(-1), 0);
-  assert.equal(easeOut(2), 1);
-  assert.ok(easeOut(0.5) > 0.5);
 });

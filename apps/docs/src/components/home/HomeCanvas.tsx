@@ -1,22 +1,31 @@
 import { Pause, Play } from "lucide";
 import { Icon } from "@rivetjs/kit/icon";
 
-/** Hero backdrop: static markup; the aurora canvas and its pause button come alive in `hero.ts` (no resume runtime). */
+/**
+ * Hero backdrop, CSS only (STATIC-ZERO-3): four soft brand blobs (`.hs-blob`, radial gradients) drift and breathe on
+ * composited `translate` / `scale` animations (`home-studio.css`, 23–40 s loops, phase per blob); the native checkbox
+ * pauses them (`:has(:checked)`), reduced motion keeps the still frame, hidden tabs stop CSS animations. It was a 24 fps
+ * canvas loop in `hero.ts`, the docs home's only script before input.
+ */
 export function HomeCanvas() {
   return (
     <div class="hs-backdrop">
       <div class="hs-aurora" aria-hidden="true">
-        <canvas width="8" height="8" />
+        <span class="hs-blob" />
+        <span class="hs-blob" />
+        <span class="hs-blob" />
+        <span class="hs-blob" />
       </div>
-      <button type="button" class="hs-ambient-control" aria-label="Pause background animation" aria-pressed="false">
-        <span class="hs-ambient-pause">
+      <label class="hs-ambient-control hs-pause">
+        <input type="checkbox" class="hs-pause-input" aria-label="Pause background animation" />
+        <span class="hs-pause-icon">
           <Icon icon={Pause} size={13} />
         </span>
-        <span class="hs-ambient-play">
+        <span class="hs-play-icon">
           <Icon icon={Play} size={13} />
         </span>
         <span>Ambient motion</span>
-      </button>
+      </label>
     </div>
   );
 }

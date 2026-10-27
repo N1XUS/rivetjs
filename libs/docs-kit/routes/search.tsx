@@ -1,4 +1,3 @@
-import { clientEffect } from "@rivetjs/runtime/dom";
 import { sections } from "virtual:docs/nav";
 import { site } from "virtual:docs/site";
 
@@ -9,14 +8,13 @@ export const head = {
 };
 
 /**
- * Search page: the target of the search button without JavaScript, and of `/search/?q=…` links.
- * With JavaScript it opens the search dialog with the query; it always lists every page.
+ * Search page: the target of the search button without JavaScript, and of `/search/?q=…` links (this form submits one).
+ * With JavaScript a `?q=` opens the search dialog with the query: the docs page script does it (`components/page-script.ts`,
+ * imported at load by `document.ts`'s stub only on this page with a `q` parameter), so the page is static and ships no
+ * JS before input (STATIC-ZERO-3; it was a load-time `clientEffect` that booted the resume runtime). It always lists
+ * every page.
  */
 export default function Search() {
-  clientEffect(() => {
-    const query = new URLSearchParams(location.search).get("q");
-    if (query !== null) void import("@rivetjs/docs-kit/search/dialog.tsx").then((module) => module.openSearch(query));
-  });
   return (
     <div class="wide-page">
       <header class="doc-header">

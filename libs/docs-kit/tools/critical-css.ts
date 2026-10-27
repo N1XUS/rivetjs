@@ -60,7 +60,7 @@ export const CLIENT_SELECTORS: readonly string[] = [
   // @rivetjs/kit <Transition> (Headless UI v2 + react-aria-components attributes).
   "[data-closed] [data-enter] [data-leave] [data-transition] [data-entering] [data-exiting]",
   // docs-kit components: highlighter, CodeBlock copy, charts, hero glow, bench proof, TOC.
-  ".line [data-hl] [data-copied] [data-drawn] .bench-tip-note [data-live] [data-in] [aria-current] strong span",
+  ".line [data-hl] [data-copied] [data-live] [data-in] [aria-current] strong span",
 ];
 
 /** The names of `selectors` (see `CLIENT_SELECTORS`). */

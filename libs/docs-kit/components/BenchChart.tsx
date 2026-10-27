@@ -1,28 +1,26 @@
-import { clientEffect, ref } from "@rivetjs/runtime/dom";
-import { advantage, formatValue, LAYOUT, rowLayout, sorted, type BenchChartSpec, type ChartPoint } from "./chart-model.ts";
-import { mountChart } from "./chart-canvas.ts";
+import { advantage, extent, formatTick, formatValue, niceAxis, sorted, type BenchChartSpec, type ChartPoint } from "./chart-model.ts";
 
 const range = (p: ChartPoint, digits: number) =>
   p.min !== undefined && p.max !== undefined ? `${formatValue(p.min, digits)}–${formatValue(p.max, digits)}` : "not reported";
 
-/** Server-side plot height (CSS px) at a wide and a narrow container, so the canvas never shifts layout. */
-function plotHeights(chart: Exclude<BenchChartSpec, { kind: "stat" }>): { wide: number; narrow: number } {
-  return { wide: rowLayout(chart, 720).height, narrow: rowLayout(chart, LAYOUT.narrow - 1).height };
-}
+/** Share of the axis (0–1, clamped), as a short CSS number. */
+const share = (value: number, max: number) => String(Math.round((Math.min(Math.max(value, 0), max) / (max > 0 ? max : 1)) * 1e5) / 1e5);
 
 /**
  * Benchmark chart (`::chart{id}` in content, or any page): figure with title, "lower / higher is
- * better" note, legend, a canvas the browser draws on when it scrolls into view, a visually hidden
- * data table (screen readers, no-JS fallback; the canvas reads its data back from it) and a caption
- * with machine, date, method and the report link. `stat` = a big-number card (HTML only, no canvas).
+ * better" note, legend, the plot, a visually hidden data table (screen readers, no-CSS fallback) and a
+ * caption with machine, date, method and the report link. `stat` = a big-number card.
+ * The plot is server HTML + CSS (STATIC-ZERO-3; it was a canvas drawn by a `visible` client effect, which booted the
+ * resume runtime on `/about/benchmarks/` at load): one row per lane, bar / whisker / median dot / value placed by their
+ * share of the axis (`--fw` etc., `bench-chart.css`), the axis of a narrow plot (< 520 px: labels above the bars,
+ * 4 ticks) chosen by a container query, theme colours and fonts from CSS, a per-row tooltip on hover (CSS) and the
+ * entrance growth on a per-row view timeline (no JS). Keyboard (arrows / Home / End / Escape on the focusable plot,
+ * announced in the live region) loads with the docs page script on focus (`bench-keys.ts`).
  * Spec shapes: `chart-model.ts`.
  * `compact` drops the caption's method line (homepage tiles); the table and source link stay.
  */
 export function BenchChart({ chart, compact }: { chart: BenchChartSpec; compact?: boolean }) {
-  const root = ref<HTMLElement>();
-  clientEffect(() => mountChart(root()!), { when: "visible" });
   const digits = chart.digits ?? 1;
-  const heights = chart.kind === "stat" ? undefined : plotHeights(chart);
   const titleId = `chart-${chart.id}-title`;
   const tableId = `chart-${chart.id}-table`;
   const better = chart.better === "lower" ? "Lower is better" : "Higher is better";
@@ -31,11 +29,7 @@ export function BenchChart({ chart, compact }: { chart: BenchChartSpec; compact?
     <figure
       class={compact ? "bench-tokens bench-chart bench-compact" : "bench-tokens bench-chart"}
       id={`chart-${chart.id}`}
-      ref={root}
       data-kind={chart.kind}
-      data-unit={chart.unit}
-      data-better={chart.better}
-      data-digits={String(digits)}
       aria-labelledby={titleId}
     >
       <header class="bench-head">
@@ -62,18 +56,8 @@ export function BenchChart({ chart, compact }: { chart: BenchChartSpec; compact?
             ))}
           </dl>
         </div>
-      ) : (
-        <div
-          class="bench-plot"
-          tabIndex={0}
-          role="group"
-          aria-label={`${chart.title}. Arrow keys read each value; the same data is in the table below.`}
-          style={{ "--bench-h": heights!.wide + "px", "--bench-h-narrow": heights!.narrow + "px" }}
-        >
-          <canvas class="bench-canvas" aria-hidden="true" />
-          <div class="bench-tip" aria-hidden="true" hidden />
-          <p class="bench-sr bench-live" aria-live="polite" />
-        </div>
+      ) : chart.kind === "stat" ? null : (
+        <Plot chart={chart} digits={digits} />
       )}
       {chart.kind === "stat" ? null : (
         <ul class="bench-legend" aria-hidden="true">
@@ -96,18 +80,9 @@ export function BenchChart({ chart, compact }: { chart: BenchChartSpec; compact?
             </tr>
           </thead>
           <tbody>
-            {chart.groups.map((group, g) =>
+            {chart.groups.map((group) =>
               (chart.kind === "bar" ? sorted(group.points, chart.better) : group.points).map((p) => (
-                <tr
-                  data-group={String(g)}
-                  data-group-label={group.label}
-                  data-label={p.label}
-                  data-value={String(p.value)}
-                  data-min={p.min === undefined ? undefined : String(p.min)}
-                  data-max={p.max === undefined ? undefined : String(p.max)}
-                  data-rivet={p.rivet ? "" : undefined}
-                  data-note={p.note}
-                >
+                <tr>
                   <td>{group.label}</td>
                   <th scope="row">
                     {p.label}
@@ -130,6 +105,91 @@ export function BenchChart({ chart, compact }: { chart: BenchChartSpec; compact?
         </a>
       </figcaption>
     </figure>
+  );
+}
+
+/**
+ * The bar / range plot as HTML: a wide axis (5 ticks) and a narrow one (4 ticks, < 520 px), each row carrying its marks'
+ * shares of both (`--fw` / `--fn` median, `--lw` / `--ln` and `--hw` / `--hn` whisker ends); CSS picks the pair.
+ */
+function Plot({ chart, digits }: { chart: Exclude<BenchChartSpec, { kind: "stat" }>; digits: number }) {
+  const max = extent(chart.groups);
+  const wide = niceAxis(max, 5);
+  const narrow = niceAxis(max, 4);
+  const rows = chart.groups.flatMap((group, g) => (chart.kind === "bar" ? sorted(group.points, chart.better) : group.points).map((point) => ({ point, g })));
+  const last = rows.length;
+  let index = 0;
+  const ticks = (axis: { max: number; ticks: number[] }, kind: string) => (
+    <div class={"bench-axis " + kind} aria-hidden="true">
+      {axis.ticks.map((tick) => (
+        <span style={{ "--t": share(tick, axis.max) }}>{formatTick(tick)}</span>
+      ))}
+      <span class="bench-unit">{chart.unit}</span>
+    </div>
+  );
+  return (
+    <div
+      class="bench-plot"
+      tabIndex={0}
+      role="group"
+      aria-label={`${chart.title}. Arrow keys read each value; the same data is in the table below.`}
+      style={{ "--kw": String(wide.ticks.length - 1), "--kn": String(narrow.ticks.length - 1) }}
+    >
+      <div class="bench-rows" aria-hidden="true">
+        {chart.groups.map((group, g) => (
+          <div class="bench-group">
+            {group.label ? <p class="bench-heading">{group.label}</p> : null}
+            {rows
+              .filter((row) => row.g === g)
+              .map(({ point: p }) => {
+                const i = index++;
+                const ranged = p.min !== undefined && p.max !== undefined;
+                const median = `median ${formatValue(p.value, digits)} ${chart.unit}`;
+                const span = ranged ? `min–max ${formatValue(p.min!, digits)}–${formatValue(p.max!, digits)} ${chart.unit}` : "";
+                const say = [
+                  p.label,
+                  median,
+                  ranged ? `range ${formatValue(p.min!, digits)} to ${formatValue(p.max!, digits)} ${chart.unit}` : "",
+                  group.label,
+                  p.note ?? "",
+                ]
+                  .filter(Boolean)
+                  .join(", ");
+                const anchor = (p.max ?? p.value) / (wide.max || 1);
+                const style: Record<string, string> = { "--fw": share(p.value, wide.max), "--fn": share(p.value, narrow.max) };
+                if (ranged) {
+                  style["--lw"] = share(p.min!, wide.max);
+                  style["--ln"] = share(p.min!, narrow.max);
+                  style["--hw"] = share(p.max!, wide.max);
+                  style["--hn"] = share(p.max!, narrow.max);
+                }
+                const tipClass = "bench-tip" + (anchor > 0.55 ? " is-left" : "") + (i >= 2 && i >= last - 2 ? " is-up" : "");
+                return (
+                  <div class={p.rivet ? "bench-row is-rivet" : "bench-row"} style={style} data-say={say}>
+                    <span class="bench-label">{p.label}</span>
+                    <span class="bench-track">
+                      {chart.kind === "bar" ? <span class="bench-bar" /> : null}
+                      {ranged ? <span class="bench-whisker" /> : null}
+                      {chart.kind === "range" ? <span class="bench-dot" /> : null}
+                      <span class="bench-value">{formatValue(p.value, digits)}</span>
+                      <span class={tipClass}>
+                        <strong>{p.label}</strong>
+                        <span>{median}</span>
+                        {span ? <span>{span}</span> : null}
+                        {group.label ? <span class="bench-tip-note">{group.label}</span> : null}
+                        {p.note ? <span class="bench-tip-note">{p.note}</span> : null}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        ))}
+        {ticks(wide, "is-wide")}
+        {ticks(narrow, "is-narrow")}
+      </div>
+      <p class="bench-sr bench-live" aria-live="polite" />
+    </div>
   );
 }
 

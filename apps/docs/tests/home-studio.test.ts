@@ -42,11 +42,28 @@ async function home(reducedMotion: "reduce" | "no-preference" = "no-preference",
   return page;
 }
 
+/** In the page: the word the CSS rotation shows now, fully (STATIC-ZERO-3: the three words are stacked server markup;
+ * every letter of the shown one is opaque), or null mid-transition. */
+const shownWord = () => {
+  for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
+    const letters = [...word.children];
+    if (getComputedStyle(word).visibility !== "hidden" && letters.every((letter) => Number(getComputedStyle(letter).opacity) > 0.9)) return word.textContent;
+  }
+  return null;
+};
+const shownIs = (text: string) => {
+  for (const word of document.querySelectorAll<HTMLElement>(".hs-word")) {
+    const letters = [...word.children];
+    if (getComputedStyle(word).visibility !== "hidden" && letters.every((letter) => Number(getComputedStyle(letter).opacity) > 0.9)) return word.textContent === text;
+  }
+  return false;
+};
+
 test("studio hero: selected headline, docs CTA and mobile containment", async () => {
   const page = await home("no-preference", 375);
   try {
     assert.equal(await page.getByRole("heading", { level: 1 }).getAttribute("aria-label"), "Make the web feel alive, fast and fluid.");
-    assert.match((await page.locator(".hs-word").textContent()) ?? "", /^(alive|fast|fluid)\.$/);
+    assert.match((await page.evaluate(shownWord)) ?? "", /^(alive|fast|fluid)\.$/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 375);
     assert.equal(await page.getByRole("link", { name: "Start building", exact: true }).getAttribute("href"), "/start/quick-start/");
     assert.match(await page.locator(".hs-command pre").innerText(), /npm create rivet@latest/);
@@ -93,24 +110,30 @@ test("studio counter: cold input, rapid reversals, decimal boundary and keyboard
   }
 });
 
-test("studio canvas: real drifting pixels, explicit pause and offscreen suspension", async () => {
+test("studio aurora: CSS blobs really drift, the native checkbox pauses and resumes them", async () => {
   const page = await home();
   try {
-    const canvas = page.locator(".hs-aurora canvas");
-    await page.waitForFunction(() => document.querySelector(".hs-aurora canvas")?.getAttribute("data-state") === "running");
-    const bitmap = () => canvas.evaluate((el) => (el as HTMLCanvasElement).toDataURL());
-    const before = await bitmap();
-    await page.waitForTimeout(180);
-    assert.notEqual(await bitmap(), before);
-    await page.getByRole("button", { name: "Pause background animation", exact: true }).click();
-    await page.waitForFunction(() => document.querySelector(".hs-aurora canvas")?.getAttribute("data-state") === "paused");
-    const paused = await bitmap();
-    await page.waitForTimeout(150);
-    assert.equal(await bitmap(), paused);
-    await page.getByRole("button", { name: "Resume background animation", exact: true }).click();
-    await page.waitForFunction(() => document.querySelector(".hs-aurora canvas")?.getAttribute("data-state") === "running");
-    await page.locator("#home-docs").scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => document.querySelector(".hs-aurora canvas")?.getAttribute("data-state") === "paused");
+    const blobs = () => page.evaluate(() => [...document.querySelectorAll(".hs-aurora .hs-blob")].map((blob) => getComputedStyle(blob).translate + " " + getComputedStyle(blob).scale));
+    const running = () => page.evaluate(() => document.querySelector(".hs-aurora .hs-blob")!.getAnimations().map((a) => a.playState));
+    assert.equal((await blobs()).length, 4);
+    assert.deepEqual(await running(), ["running", "running"]);
+    const before = await blobs();
+    await page.waitForTimeout(400);
+    assert.notDeepEqual(await blobs(), before, "the blobs move");
+    // The mouse path: a click on the visible label toggles its visually hidden checkbox.
+    const pause = page.getByRole("checkbox", { name: "Pause background animation", exact: true });
+    await page.locator(".hs-ambient-control").click();
+    assert.ok(await pause.isChecked());
+    assert.deepEqual(await running(), ["paused", "paused"]);
+    // A pending pause settles on the next frame (its current time is held from then on).
+    await page.evaluate(() => Promise.all(document.querySelector(".hs-aurora .hs-blob")!.getAnimations().map((a) => a.ready)));
+    await page.waitForTimeout(50);
+    const paused = await blobs();
+    await page.waitForTimeout(300);
+    assert.deepEqual(await blobs(), paused);
+    await page.locator(".hs-ambient-control").click();
+    assert.ok(!(await pause.isChecked()));
+    assert.deepEqual(await running(), ["running", "running"]);
   } finally {
     await page.close();
   }
@@ -135,10 +158,10 @@ test("studio schema: keyboard stages and replay explain HTML, adoption and updat
   }
 });
 
-test("studio reduced motion and no-JS: still canvas and readable server content", async () => {
+test("studio reduced motion and no-JS: still aurora and readable server content", async () => {
   const page = await home("reduce");
   try {
-    await page.waitForFunction(() => document.querySelector(".hs-aurora canvas")?.getAttribute("data-state") === "still");
+    assert.equal(await page.evaluate(() => document.querySelector(".hs-aurora .hs-blob")!.getAnimations().length), 0, "still aurora");
     await page.getByRole("button", { name: "Increment counter", exact: true }).click();
     await page.waitForFunction(() => document.querySelector("#home-counter-value")?.textContent === "08");
     await page.waitForFunction(() => document.getAnimations().filter((a) => a.playState === "running").length === 0);
@@ -167,15 +190,16 @@ test("studio headline: words stagger without moving the heading box and pause at
     const headline = page.locator(".hs-headline h1");
     const box = () => headline.evaluate((el) => [el.getBoundingClientRect().width, el.getBoundingClientRect().height]);
     const initial = await box();
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "fast.", undefined, { timeout: 6000 });
+    await page.waitForFunction(shownIs, "fast.", { timeout: 6000 });
     assert.deepEqual(await box(), initial);
-    await page.getByRole("button", { name: "Pause headline animation", exact: true }).click();
+    await page.locator(".hs-word-pause").click();
+    assert.ok(await page.getByRole("checkbox", { name: "Pause headline animation", exact: true }).isChecked());
     await page.waitForTimeout(600);
-    const paused = await page.locator(".hs-word").textContent();
+    const paused = await page.evaluate(shownWord);
     await page.waitForTimeout(3300);
-    assert.equal(await page.locator(".hs-word").textContent(), paused);
+    assert.equal(await page.evaluate(shownWord), paused);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "alive.");
+    await page.waitForFunction(shownIs, "alive.");
     assert.deepEqual(await box(), initial);
   } finally {
     await page.close();
@@ -185,48 +209,36 @@ test("studio headline: words stagger without moving the heading box and pause at
 test("studio headline: replacement words enter from hidden with staggered blur and no flash", async () => {
   const page = await home();
   try {
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.hasAttribute("data-gradient-ready"));
     const transitions = await page.evaluate(
       () =>
-        new Promise<
-          {
-            word: string;
-            firstHidden: boolean;
-            blurred: boolean;
-            staggered: boolean;
-            settled: boolean;
-          }[]
-        >((resolve) => {
-          const results: Awaited<Parameters<typeof resolve>[0]> = [];
-          let previous = document.querySelector(".hs-word")!.textContent;
+        new Promise<{ word: string; firstHidden: boolean; blurred: boolean; staggered: boolean; settled: boolean }[]>((resolve) => {
+          type Track = { word: string; firstHidden: boolean; blurred: boolean; staggered: boolean; settled: boolean; seen: boolean };
+          const words = [...document.querySelectorAll<HTMLElement>(".hs-word")];
+          // Word 0 is on screen at load; the samples follow fast. → fluid. → alive. (its second entry).
+          const order = [1, 2, 0];
+          const tracks: Track[] = order.map((i) => ({ word: words[i]!.textContent!, firstHidden: false, blurred: false, staggered: false, settled: false, seen: false }));
+          let step = 0;
+          let leftZero = false;
           const started = performance.now();
           function sample(now: number) {
-            const word = document.querySelector<HTMLElement>(".hs-word")!;
-            const styles = [...word.children].map((letter) => getComputedStyle(letter));
-            if (word.textContent !== previous) {
-              previous = word.textContent;
-              results.push({
-                word: previous!,
-                firstHidden: getComputedStyle(word).visibility === "hidden" || styles.every((style) => Number(style.opacity) < 0.1),
-                blurred: false,
-                staggered: false,
-                settled: false,
-              });
+            const index = order[step]!;
+            const styles = [...words[index]!.children].map((letter) => getComputedStyle(letter));
+            const track = tracks[step]!;
+            const hidden = styles.every((style) => Number(style.opacity) < 0.1);
+            if (index === 0 && !leftZero) leftZero = hidden;
+            const watching = index !== 0 || leftZero;
+            if (watching) {
+              if (!track.seen && hidden) track.firstHidden = true;
+              if (!hidden) track.seen = true;
+              track.blurred ||= styles.some((style) => Number(style.opacity) > 0.1 && Number(style.opacity) < 0.9 && parseFloat(style.filter.slice(5)) > 2);
+              track.staggered ||= Number(styles[0]!.opacity) > 0.3 && Number(styles.at(-1)!.opacity) < 0.1;
+              track.settled ||= styles.every(
+                (style) =>
+                  Number(style.opacity) === 1 && new DOMMatrixReadOnly(style.transform).m42 === 0 && (style.filter === "none" || style.filter === "blur(0px)"),
+              );
+              if (track.settled) step++;
             }
-            const current = results.at(-1);
-            if (current && !current.settled) {
-              current.blurred ||= styles.some((style) => Number(style.opacity) > 0.1 && Number(style.opacity) < 0.9 && parseFloat(style.filter.slice(5)) > 2);
-              current.staggered ||= Number(styles[0]!.opacity) > 0.3 && Number(styles.at(-1)!.opacity) < 0.1;
-              current.settled ||=
-                getComputedStyle(word).visibility === "visible" &&
-                styles.every(
-                  (style) =>
-                    Number(style.opacity) === 1 &&
-                    new DOMMatrixReadOnly(style.transform).m42 === 0 &&
-                    (style.filter === "none" || style.filter === "blur(0px)"),
-                );
-            }
-            if ((results.length === 3 && current!.settled) || now - started > 12000) resolve(results);
+            if (step === 3 || now - started > 12000) resolve(tracks.map(({ seen: _, ...rest }) => rest));
             else requestAnimationFrame(sample);
           }
           requestAnimationFrame(sample);
@@ -250,68 +262,64 @@ test("studio headline: replacement words enter from hidden with staggered blur a
 test("studio headline: reduced motion interrupts exit and entry without leaving hidden or blurry text", async () => {
   const page = await home();
   try {
-    for (const word of ["alive.", "fast."]) {
+    const sharp = () =>
+      page.evaluate(() => {
+        const [first, ...rest] = [...document.querySelectorAll<HTMLElement>(".hs-word")];
+        return (
+          first!.textContent === "alive." &&
+          getComputedStyle(first!).visibility === "visible" &&
+          rest.every((word) => getComputedStyle(word).visibility === "hidden") &&
+          [...first!.children].every((letter) => {
+            const style = getComputedStyle(letter);
+            return style.opacity === "1" && (style.filter === "none" || style.filter === "blur(0px)") && new DOMMatrixReadOnly(style.transform).m42 === 0;
+          })
+        );
+      });
+    for (const index of [0, 1]) {
+      // Mid-transition: a letter of word `index` half faded and blurred.
       await page.waitForFunction(
-        (text) => {
-          const word = document.querySelector(".hs-word");
-          if (word?.textContent !== text) return false;
-          const style = getComputedStyle(word.firstElementChild!);
+        (i) => {
+          const style = getComputedStyle(document.querySelectorAll(".hs-word")[i]!.firstElementChild!);
           return Number(style.opacity) > 0.1 && Number(style.opacity) < 0.9 && style.filter !== "none";
         },
-        word,
-        { timeout: 6000 },
+        index,
+        { timeout: 10000, polling: "raf" },
       );
       await page.emulateMedia({ reducedMotion: "reduce" });
-      const sharp = () =>
-        page.evaluate(() => {
-          const word = document.querySelector(".hs-word")!;
-          return (
-            word.textContent === "alive." &&
-            getComputedStyle(word).visibility === "visible" &&
-            [...word.children].every((letter) => {
-              const style = getComputedStyle(letter);
-              return style.opacity === "1" && (style.filter === "none" || style.filter === "blur(0px)") && new DOMMatrixReadOnly(style.transform).m42 === 0;
-            })
-          );
-        });
-      await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "alive.");
       await page.waitForTimeout(100);
       assert.ok(await sharp(), "preference changes reveal a complete, sharp static word");
       await page.waitForTimeout(600);
       assert.ok(await sharp(), "a cancelled transition cannot overwrite the static word");
       await page.emulateMedia({ reducedMotion: "no-preference" });
     }
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "fast.", undefined, { timeout: 6000 });
+    await page.waitForFunction(shownIs, "fast.", { timeout: 6000 });
   } finally {
     await page.close();
   }
 });
 
-test("studio headline: every staggered letter samples the same word-wide gradient", async () => {
+test("studio headline: each letter shows its own slice of one word gradient, so the colours run on across letters", async () => {
   const page = await home("reduce");
   try {
     await page.evaluate(() => document.fonts.ready);
-    const aligned = () =>
-      page.evaluate(() => {
-        const word = document.querySelector<HTMLElement>(".hs-word")!;
-        const box = word.getBoundingClientRect();
-        return [...word.querySelectorAll<HTMLElement>(".hs-word-letter")].every((letter) => {
-          const style = getComputedStyle(letter);
-          return (
-            Math.abs(parseFloat(style.backgroundSize) - box.width) < 1 &&
-            Math.abs(parseFloat(style.backgroundPositionX) + letter.getBoundingClientRect().left - box.left) < 1
-          );
-        });
-      });
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.hasAttribute("data-gradient-ready"));
-    assert.ok(await aligned(), "one shared gradient space, not a repeated gradient per glyph");
+    const sliced = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>(".hs-word")].every((word) => {
+          const letters = [...word.querySelectorAll<HTMLElement>(".hs-word-letter")];
+          const n = letters.length;
+          return letters.every((letter, j) => {
+            const style = getComputedStyle(letter);
+            const width = letter.getBoundingClientRect().width;
+            // Background n letters wide, shifted by j letters: letter j paints the gradient's j/n … (j+1)/n.
+            const size = parseFloat(style.backgroundSize) / 100;
+            const position = parseFloat(style.backgroundPositionX) / 100;
+            return style.backgroundClip === "text" && Math.abs(size - n) < 1e-6 && Math.abs(position * (width - size * width) + j * width) < 0.5;
+          });
+        }),
+      );
+    assert.ok(await sliced(), "one gradient per word, sliced per letter");
     await page.setViewportSize({ width: 375, height: 900 });
-    await page.waitForTimeout(80); // ResizeObserver must apply the new font/word geometry.
-    assert.ok(await aligned(), "gradient remains continuous at the phone type size");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.waitForFunction(() => document.querySelector(".hs-word")?.textContent === "fast.", undefined, { timeout: 6000 });
-    await page.waitForTimeout(500);
-    assert.ok(await aligned(), "new words get their own complete gradient, including reused glyphs");
+    assert.ok(await sliced(), "the slices hold at the phone type size");
   } finally {
     await page.close();
   }

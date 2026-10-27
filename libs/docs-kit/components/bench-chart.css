@@ -1,10 +1,10 @@
 /*
- * Benchmark charts (BenchChart.tsx + chart-canvas.ts). Imported by the app's styles.css after the
+ * Benchmark charts (BenchChart.tsx: server HTML, no script; keyboard in bench-keys.ts). Imported by the app's styles.css after the
  * docs-kit theme. Restrained engineering-docs look: plain title, quiet grid, flat bars, value labels
  * at the bar ends, one indigo accent for Rivet, neutral greys for everyone else.
  * Every colour is a --chart-* token on .bench-tokens (BenchChart / BenchProof / BenchGrid roots carry it). Marks are literals (contrast-tested in
  * tests/bench-chart.test.ts: ≥ 3:1 on the page background); text maps onto the theme's semantic tokens
- * (with fallbacks) so a new identity restyles it. chart-canvas.ts resolves the tokens through a probe.
+ * (with fallbacks) so a new identity restyles it.
  */
 .bench-tokens {
   /* Rivet: one solid indigo (the start and end stops are equal; a soft indigo → violet only by
@@ -63,6 +63,8 @@
   font-size: 0.75rem;
   color: var(--chart-muted);
 }
+/* Plot (STATIC-ZERO-3: server HTML, was a canvas): rows of label | track | value room. Wide (≥ 520 px): 168 px label
+   column, 30 px rows, 5 ticks; narrow: labels above the bars, 42 px rows, 4 ticks (container query picks the shares). */
 .bench-plot {
   position: relative;
   container-type: inline-size;
@@ -72,24 +74,198 @@
   outline: 2px solid var(--accent, var(--link));
   outline-offset: 4px;
 }
-.bench-canvas {
-  display: block;
-  width: 100%;
-  height: var(--bench-h, 12rem);
+.bench-rows {
+  padding-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.bench-group + .bench-group {
+  margin-top: 14px;
+}
+.bench-chart .bench-heading {
+  height: 28px;
+  padding-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--chart-label);
+}
+.bench-row {
+  --f: var(--fw);
+  --lo: var(--lw, var(--f));
+  --hi: var(--hw, var(--f));
+  --k: var(--kw);
+  position: relative;
+  display: grid;
+  grid-template-columns: 168px 1fr 64px;
+  align-items: center;
+  height: 30px;
+  border-block: 1px solid transparent;
+  border-radius: 4px;
+  background-clip: padding-box;
+}
+.bench-row:hover,
+.bench-row[data-active] {
+  background-color: var(--chart-hover);
+}
+.bench-label {
+  overflow: hidden;
+  padding-right: 16px;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--chart-label);
+}
+.bench-row.is-rivet .bench-label,
+.bench-row:hover .bench-label,
+.bench-row[data-active] .bench-label {
+  color: var(--chart-label-strong);
+}
+.bench-row.is-rivet .bench-label {
+  font-weight: 600;
+}
+/* The plot column: axis line on the left, a grid line at every tick after 0 (tiles one tick step wide). */
+.bench-track {
+  position: relative;
+  align-self: stretch;
+  margin-block: -1px;
+  border-left: 1px solid var(--chart-axis);
+  background: linear-gradient(to left, var(--chart-grid) 1px, transparent 1px) right / calc(100% / var(--k)) 100% repeat-x;
+}
+.bench-track > * {
+  position: absolute;
+  top: 50%;
+}
+.bench-bar {
+  left: 0;
+  height: 16px;
+  width: max(0px, calc(var(--f) * 100% - 1px));
+  translate: 0 -50%;
+  border-radius: 0 3px 3px 0;
+  background: var(--chart-peer);
+  transform-origin: left;
+}
+.bench-row.is-rivet .bench-bar {
+  background: linear-gradient(90deg, var(--chart-rivet), var(--chart-rivet-end));
+}
+.bench-whisker {
+  left: calc(var(--lo) * 100%);
+  width: calc((var(--hi) - var(--lo)) * 100%);
+  height: 6px;
+  translate: 0 -50%;
+  border-inline: 1px solid var(--chart-label);
+  background: linear-gradient(var(--chart-label), var(--chart-label)) center / 100% 1px no-repeat;
+}
+.bench-chart[data-kind="range"] .bench-whisker {
+  height: 8px;
+  border-color: var(--chart-peer-strong);
+  background-image: linear-gradient(var(--chart-peer-strong), var(--chart-peer-strong));
+}
+.bench-chart[data-kind="range"] .bench-row.is-rivet .bench-whisker {
+  border-width: 0 1.5px;
+  border-color: var(--chart-rivet);
+  background-image: linear-gradient(var(--chart-rivet), var(--chart-rivet));
+  background-size: 100% 1.5px;
+}
+.bench-dot {
+  left: calc(var(--f) * 100%);
+  width: 7px;
+  height: 7px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--chart-peer-strong);
+  box-shadow: 0 0 0 2px var(--chart-surface);
+}
+.bench-row.is-rivet .bench-dot {
+  width: 9px;
+  height: 9px;
+  background: var(--chart-rivet);
+}
+.bench-value {
+  left: calc(max(var(--f) * 100%, var(--hi) * 100%) + 8px);
+  translate: 0 -50%;
+  font-size: 12.5px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--chart-label);
+}
+.bench-chart[data-kind="range"] .bench-value {
+  left: calc(max(var(--f) * 100% + 5px, var(--hi) * 100%) + 8px);
+}
+.bench-row.is-rivet .bench-value {
+  font-weight: 600;
+  color: var(--chart-label-strong);
+}
+.bench-axis {
+  position: relative;
+  height: 26px;
+  margin-left: 168px;
+  margin-right: 64px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--chart-tick);
+}
+.bench-axis > span {
+  position: absolute;
+  top: 10px;
+  left: calc(var(--t) * 100%);
+  translate: -50% 0;
+}
+.bench-axis > span:first-child {
+  translate: -3px 0;
+}
+.bench-axis > .bench-unit {
+  left: calc(100% + 14px);
+  translate: none;
+}
+.bench-axis.is-narrow {
+  display: none;
 }
 @container (width < 520px) {
-  .bench-canvas {
-    height: var(--bench-h-narrow, 14rem);
+  .bench-row {
+    --f: var(--fn);
+    --lo: var(--ln, var(--f));
+    --hi: var(--hn, var(--f));
+    --k: var(--kn);
+    grid-template-columns: 4px 1fr 64px;
+    grid-template-rows: 22px 1fr;
+    height: 42px;
+  }
+  .bench-label {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    padding-right: 0;
+  }
+  .bench-track {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .bench-track > * {
+    top: 31px;
+  }
+  .bench-bar {
+    height: 12px;
+  }
+  .bench-axis {
+    margin-left: 4px;
+  }
+  .bench-axis.is-wide {
+    display: none;
+  }
+  .bench-axis.is-narrow {
+    display: block;
   }
 }
+/* Tooltip: the row's own, shown while the row is hovered (or keyboard-active, `bench-keys.ts`); right of the mark's
+   end (left of it past 55 % of the axis), below the row (above it for the last two rows). */
 .bench-tip {
-  position: absolute;
-  top: 0;
-  left: 0;
+  top: calc(100% + 6px);
+  left: calc(var(--hi) * 100% + 12px);
   z-index: 1;
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.125rem;
+  width: max-content;
   max-width: 16rem;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--line);
@@ -99,10 +275,21 @@
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--chart-label);
-  font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
-.bench-tip[hidden] {
+.bench-tip.is-left {
+  left: auto;
+  right: calc((1 - var(--hi)) * 100% + 12px);
+}
+.bench-tip.is-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+.bench-row:hover .bench-tip,
+.bench-row[data-active] .bench-tip {
+  display: flex;
+}
+.bench-rows:hover .bench-row[data-active]:not(:hover) .bench-tip {
   display: none;
 }
 .bench-tip strong {
@@ -111,6 +298,37 @@
 }
 .bench-tip-note {
   color: var(--chart-muted);
+}
+/* Entrance: each mark grows (value fades in) while its row scrolls into view, on the row's own view timeline: a row
+   that is on screen always shows its full bar; no timelines / reduced motion = static final marks. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .bench-row {
+      view-timeline: --bench-row block;
+    }
+    .bench-bar,
+    .bench-whisker {
+      animation: bench-grow linear both;
+      animation-timeline: --bench-row;
+      animation-range: entry 0% entry 100%;
+    }
+    .bench-dot,
+    .bench-value {
+      animation: bench-show linear both;
+      animation-timeline: --bench-row;
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+@keyframes bench-grow {
+  from {
+    scale: 0 1;
+  }
+}
+@keyframes bench-show {
+  from {
+    opacity: 0;
+  }
 }
 .prose .bench-legend,
 .bench-legend {

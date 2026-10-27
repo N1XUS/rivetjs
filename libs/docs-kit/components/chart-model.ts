@@ -1,6 +1,5 @@
-// Benchmark chart data shapes + pure scale / layout math (server + browser, no DOM). `BenchChart.tsx`
-// renders a spec as figure + table on the server; `chart-canvas.ts` reads the table back in the browser
-// and draws with the layouts computed here. Unit-tested in `tests/chart-model.test.ts`.
+// Benchmark chart data shapes + pure scale math (no DOM). `BenchChart.tsx` renders a spec as figure (HTML plot, CSS
+// placed by axis shares) + table on the server. Unit-tested in `tests/chart-model.test.ts`.
 
 /** One measured lane: median, optional trial range. */
 export interface ChartPoint {
@@ -85,12 +84,6 @@ export function niceAxis(max: number, count = 5): { max: number; ticks: number[]
 }
 const round = (n: number) => Math.round(n * 1e9) / 1e9;
 
-/** Linear map [0, domainMax] → [x0, x1]; clamps to the range. */
-export function linear(domainMax: number, x0: number, x1: number): (value: number) => number {
-  const span = domainMax > 0 ? domainMax : 1;
-  return (value) => x0 + (Math.min(Math.max(value, 0), span) / span) * (x1 - x0);
-}
-
 // One `Intl.NumberFormat` per option set: `Number.prototype.toLocaleString(locale, options)` builds a new formatter on
 // every call (~10 µs each; 80 % of the server render of a page with a few charts). `format` is the same algorithm
 // (ECMA-402 `toLocaleString` = `new Intl.NumberFormat(locale, options).format`), so labels are unchanged.
@@ -130,80 +123,9 @@ export function extent(groups: readonly ChartGroup[]): number {
   return max;
 }
 
-export interface RowBox {
-  group: number;
-  point: ChartPoint;
-  /** Row top / height in CSS px. */
-  y: number;
-  h: number;
-}
-export interface RowLayout {
-  rows: RowBox[];
-  /** Group heading baselines (bar: lane-class headings; range: scenario headings). */
-  headings: { label: string; y: number }[];
-  /** Plot area in CSS px. */
-  plot: { x0: number; x1: number; y0: number; y1: number };
-  height: number;
-  axis: { max: number; ticks: number[] };
-  /** Label column on the left; false = labels above the bars (narrow). */
-  labelsLeft: boolean;
-}
-
-/** Shared geometry constants (CSS px); exported for tests. */
-export const LAYOUT = {
-  pad: 4,
-  /** Width below which labels move above the bars. */
-  narrow: 520,
-  labelWidth: 168,
-  /** Room right of the plot for the value label. */
-  valueWidth: 64,
-  row: 30,
-  rowNarrow: 42,
-  heading: 28,
-  groupGap: 14,
-  axis: 26,
-} as const;
-
-/**
- * Rows for bar and range charts: one heading per group (when there is more than one group or the
- * group has a label), rows sorted best-first for bars, source order for ranges.
- */
-export function rowLayout(spec: BarChartSpec | RangeChartSpec, width: number): RowLayout {
-  const labelsLeft = width >= LAYOUT.narrow;
-  const rowH = labelsLeft ? LAYOUT.row : LAYOUT.rowNarrow;
-  const x0 = labelsLeft ? LAYOUT.labelWidth : LAYOUT.pad;
-  const x1 = Math.max(x0 + 40, width - LAYOUT.valueWidth);
-  const axis = niceAxis(extent(spec.groups), width < LAYOUT.narrow ? 4 : 5);
-  const rows: RowBox[] = [];
-  const headings: { label: string; y: number }[] = [];
-  let y = LAYOUT.pad;
-  spec.groups.forEach((group, g) => {
-    if (g > 0) y += LAYOUT.groupGap;
-    if (group.label) {
-      headings.push({ label: group.label, y: y + LAYOUT.heading - 10 });
-      y += LAYOUT.heading;
-    }
-    const points = spec.kind === "bar" ? sorted(group.points, spec.better) : group.points;
-    for (const point of points) {
-      rows.push({ group: g, point, y, h: rowH });
-      y += rowH;
-    }
-  });
-  const y1 = y;
-  return { rows, headings, plot: { x0, x1, y0: LAYOUT.pad, y1 }, height: y1 + LAYOUT.axis, axis, labelsLeft };
-}
-
 /** Rivet's advantage over a reference: reference / rivet for lower-is-better, rivet / reference otherwise. */
 export function advantage(rivet: number, reference: number, better: "lower" | "higher"): number {
   return better === "lower" ? reference / rivet : rivet / reference;
-}
-
-/** Easing for the entrance animation (ease-out cubic). */
-export const easeOut = (t: number) => 1 - (1 - Math.min(Math.max(t, 0), 1)) ** 3;
-
-/** Index of the row under `y` (CSS px), or -1. */
-export function hitRow(layout: RowLayout, y: number): number {
-  return layout.rows.findIndex((row) => y >= row.y && y < row.y + row.h);
 }
 
 /**

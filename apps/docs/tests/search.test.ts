@@ -205,3 +205,26 @@ test("page script: no JS before input; events before the module replay (Ctrl+K, 
     }
   }
 });
+
+// STATIC-ZERO-3 2026-10-27: the search page is static (no load-time effect, no resume runtime): no JS before input; with
+// `?q=` the stub imports the page script at load, which opens the dialog with the query.
+test("search page: no JS before input; ?q= opens the dialog with the query", async () => {
+  {
+    const { page, js } = await docsPage("/search/");
+    try {
+      assert.equal(js.length, 0, `JS fetched before input: ${js.map(([path]) => path).join(", ")}`);
+    } finally {
+      await page.close();
+    }
+  }
+  {
+    const { page } = await docsPage("/search/?q=signal");
+    try {
+      const input = page.getByRole("combobox", { name: "Search the docs" });
+      await input.waitFor({ state: "visible" });
+      assert.equal(await input.inputValue(), "signal");
+    } finally {
+      await page.close();
+    }
+  }
+});

@@ -296,7 +296,7 @@ export const SCRIPTS_FILE = ".vite/docs-scripts.json";
 export interface DocsSiteOptions {
   /**
    * Plain module scripts of single pages (DOCS-FAST): page path → module (relative to the Vite root), e.g.
-   * `{ "/": "src/components/home/hero.ts" }`. Each is its own entry chunk (`assets/docs-route-<n>-<hash>.js`, no resume
+   * `{ "/": "src/components/home/intro.ts" }`. Each is its own entry chunk (`assets/docs-route-<n>-<hash>.js`, no resume
    * runtime); `document.ts` links it on that page only, `fetchpriority="low"` (visible effects that must not compete
    * with the page's first paint).
    */
