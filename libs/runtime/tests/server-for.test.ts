@@ -66,3 +66,41 @@ test("non-resume server For keeps the array, duplicate-key and row-error rules",
   assert.equal(cleaned, 2, "a failing row disposes the For root with every row's cleanups");
   assert.equal(getOwner(), null);
 });
+
+test("_forKeys: duplicate keys throw as with a Set (SameValueZero), small integer ids and other keys never collide", async () => {
+  const { _forKeys } = await import("../server-structural.ts");
+  const dup = (keys: unknown[]) => {
+    try {
+      _forKeys(keys, (k) => k);
+      return false;
+    } catch (error) {
+      assert.equal((error as Error).message, "Duplicate For key");
+      return true;
+    }
+  };
+  assert.equal(dup([0, 1, 2, 3]), false);
+  assert.equal(dup([0, 1, 2, 1]), true);
+  assert.equal(dup([0, -0]), true);
+  assert.equal(dup([NaN, NaN]), true);
+  assert.equal(dup([1, "1", 1n, true]), false);
+  assert.equal(dup([1.5, 1.5]), true);
+  assert.equal(dup([1e9, 1e9]), true);
+  assert.equal(dup([2 ** 32, 0]), false);
+  assert.equal(dup([-1, -1]), true);
+  // Past the byte map's size (4 × length + 64): the Set answers.
+  assert.equal(dup([500, 3, 500]), true);
+  const o = {};
+  assert.equal(dup([o, {}, o]), true);
+  // Holes: reported (derived rows), `by` still sees each index once in order.
+  const seen: number[] = [];
+  // eslint-disable-next-line no-sparse-arrays
+  assert.equal(
+    _forKeys([1, , 3], (_, i) => (seen.push(i), i), true),
+    false,
+  );
+  assert.deepEqual(seen, [0, 1, 2]);
+  assert.equal(
+    _forKeys([1, 2, 3], (_, i) => i, true),
+    true,
+  );
+});

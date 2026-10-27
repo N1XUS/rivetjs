@@ -129,6 +129,36 @@ export function For<T, K>(props: ForProps<T, K>): ServerScope {
   return scoped((capture) => capture(() => forRows(each, by, children, $list, $incr))) as unknown as ServerScope;
 }
 
+/**
+ * @internal Run `by` over every row in order and throw "Duplicate For key" at the first key seen before (SameValueZero, as
+ * a Set). Keys that are small non-negative integers (row ids) are marked in a byte map instead of Set inserts — the same
+ * value always lands in the same structure, so the answer is the Set's: 100 rows 1.4 → 0.3 µs (SSR-130). `holes`: also
+ * ask each index `in items` before its `by` (derived rows: a hole takes the row-by-row path); returns false when one was a
+ * hole.
+ */
+export function _forKeys<T>(items: readonly T[], by: (item: T, index: number) => unknown, holes = false): boolean {
+  // (`items.length` re-read per row as before: a `by` that grows the array still meets every row; the byte map is sized
+  // from the length at the start, later keys past it take the Set.)
+  const cap = 4 * items.length + 64;
+  let dense = true,
+    seen: Uint8Array | null = null,
+    keys: Set<unknown> | null = null;
+  for (let index = 0; index < items.length; index++) {
+    if (holes && !(index in items)) dense = false;
+    const key = by(items[index]!, index);
+    if (typeof key === "number" && key >>> 0 === key && key < cap) {
+      seen ??= new Uint8Array(cap);
+      if (seen[key] === 1) throw new Error("Duplicate For key");
+      seen[key] = 1;
+    } else {
+      keys ??= new Set();
+      if (keys.has(key)) throw new Error("Duplicate For key");
+      keys.add(key);
+    }
+  }
+  return dense;
+}
+
 // The row loop lives in a module-level function, not in the per-For closure: V8 keeps a function's optimized
 // code only while a closure using it is alive, so code of per-call closures is dropped at every full GC and
 // re-tiered (interpreter → Maglev → TurboFan / OSR) on the next large list.
@@ -152,17 +182,12 @@ function forRows<T, K>(
     );
     if (rows !== undefined) return rows;
   }
-  const hook = rowHook,
-    keys = new Set<K>();
-  for (let index = 0; index < items.length; index++) {
-    const key = by(items[index]!, index);
-    if (keys.has(key)) throw new Error("Duplicate For key");
-    keys.add(key);
-  }
+  const hook = rowHook;
   // No resume recorder module: rows share the For's root (their cleanups and contexts are the
   // same; the server never removes a row) and render as a plain array, like `.map` — no per-row
   // root, record or admission.
   if (hook === null) {
+    _forKeys(items, by);
     // Compiled rows: one list record (same bytes, evaluation order and errors as the mapped records).
     if ($list !== undefined && listMount !== null)
       return listMount(
@@ -185,6 +210,12 @@ function forRows<T, K>(
   }
   // Resumable renders: each row renders through the hook (row region, recorder scope), still under the
   // For's root — a per-row root would cost a root, a scoped record and its admission per row.
+  const keys = new Set<K>();
+  for (let index = 0; index < items.length; index++) {
+    const key = by(items[index]!, index);
+    if (keys.has(key)) throw new Error("Duplicate For key");
+    keys.add(key);
+  }
   const instance = {},
     list = [...keys],
     render = (get: () => unknown, at: () => number) => children(get as () => T, at);

@@ -4,7 +4,7 @@
 import { test } from "vitest";
 import assert from "node:assert/strict";
 import { escapeJSON, expandTail, recAt, type BoundaryRecord, type BoundaryTail, type FlushTail } from "../resume-format.ts";
-import { chunkBase, encodeTail, foAttr, shortUrl, tailOf } from "../server-tail.ts";
+import { chunkBase, encodeTail, foAttr, shortUrl, tailOf, tailPieces } from "../server-tail.ts";
 
 const copy = (t: FlushTail): FlushTail => ({ ...t, b: t.b.map((r) => [...r] as BoundaryRecord) });
 /** Encode (on a copy: the encoder reuses records in place) and decode back. */
@@ -147,4 +147,21 @@ test("per-field encoding is byte-identical to one JSON.stringify of the tail (in
   };
   const once = escapeJSON(JSON.stringify(tailOf(copy(t), "/assets/")));
   assert.equal(encodeTail(copy(t), "/assets/"), once);
+});
+
+test("tailPieces: joined pieces are exactly encodeTail (long fields alone, short ones merged, escapes, U+2028 / U+2029)", () => {
+  const big = (n: number) => Array.from({ length: n }, (_, id) => ({ id, label: "row <" + id + ">\u2028\u2029", values: [id, id / 3, true] }));
+  const cases: FlushTail[] = [
+    { b: [] },
+    { b: [rec(1, 0, "A", ["s"])] },
+    { b: [rec(1, 0, "App", [big(100)], 1), rec(2, 1, "Page")], m: { App: "/assets/app-X.js", Page: "/assets/page-Y.js" }, e: { Page: "click" } },
+    // Long fields before and after short ones, two long fields in a row, a long last field.
+    { b: [rec(1, 0, "App", [big(40)])], w: { "1.$0": [1] }, i: big(30).map((r) => "/assets/" + r.label + ".js"), k: { "2": "Enter" }, g: [[1, "a[href]"]] },
+    { b: [rec(1, 0, "App", ["x"])], c: { "2": 8 }, d: big(50) as unknown as FlushTail["d"] },
+  ];
+  for (const t of cases) {
+    const pieces = tailPieces(copy(t), "/assets/");
+    assert.equal(pieces.join(""), encodeTail(copy(t), "/assets/"));
+    assert.ok(pieces.length === 1 || pieces.some((p) => p.length >= 512), "a long field is a piece of its own");
+  }
 });

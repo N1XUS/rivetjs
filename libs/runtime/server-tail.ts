@@ -177,12 +177,36 @@ export function tailOf(t: FlushTail, base?: string): BoundaryTail {
 // (13.8+) gives up on an object with an integer-like key (`c` / `k`: `{"2": 8}`) and restarts the WHOLE value on the
 // slow path — 1000 resumed rows: 385 → 68 µs per tail (lane NATIVE). Only that small field takes the slow path now.
 export function encodeTail(t: FlushTail, base?: string): string {
+  const pieces = tailPieces(t, base);
+  return pieces.length === 1 ? pieces[0]! : pieces.join("");
+}
+/** A field's JSON at least this long is its own piece in `tailPieces` (shorter ones join their neighbours). */
+const PIECE = 512;
+/**
+ * `encodeTail` as escaped pieces whose concatenation is exactly `encodeTail(t, base)`: a long field's JSON (`b` with the
+ * route data) stays its own flat `JSON.stringify` result, written as it is, instead of a concatenated copy of the whole
+ * tail that the escape check flattens (SSR-130: 100 route rows, 7.5 KB copied and ~15 KB allocated per request). Escaping
+ * piece by piece is the same: `<` / U+2028 / U+2029 are replaced one character at a time.
+ */
+export function tailPieces(t: FlushTail, base?: string): string[] {
   const tail = tailOf(t, base) as unknown as Record<string, unknown>;
-  // `server-incr` data memo (lane INCR2): records' long frozen arrays as their stored JSON.
+  // `server-incr` data memo (lane INCR2): records' long frozen arrays as their stored JSON, spliced into the escaped tail.
   const spliced = tailHook === null ? null : tailHook(tail.b as unknown[][]);
-  let json = "{";
-  for (const key in tail) json += (json.length > 1 ? ',"' : '"') + key + '":' + JSON.stringify(key === "b" && spliced !== null ? spliced.b : tail[key]);
-  return spliced === null ? escapeJSON(json + "}") : spliced.fill(escapeJSON(json + "}"));
+  if (spliced !== null) {
+    let json = "{";
+    for (const key in tail) json += (json.length > 1 ? ',"' : '"') + key + '":' + JSON.stringify(key === "b" ? spliced.b : tail[key]);
+    return [spliced.fill(escapeJSON(json + "}"))];
+  }
+  const out: string[] = [];
+  let small = "{";
+  for (const key in tail) {
+    const head = (small.length > 1 || out.length ? ',"' : '"') + key + '":',
+      json = escapeJSON(JSON.stringify(tail[key]));
+    if (json.length < PIECE) small += head + json;
+    else (out.push(small + head), out.push(json), (small = ""));
+  }
+  out.push(small + "}");
+  return out;
 }
 let tailHook: ((b: unknown[][]) => { b: unknown[]; fill(json: string): string } | null) | null = null;
 /** @internal `server-incr`: records `b` with placeholders for stored array JSON, and how to splice it into the escaped tail. */

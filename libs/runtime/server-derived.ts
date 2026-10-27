@@ -46,7 +46,7 @@ import { createStore, read } from "@rivetjs/reactivity/store";
 import type { Store } from "@rivetjs/reactivity/store";
 import { ATTRIBUTE, COMPILED, compiledTemplate, template, MARK_CHAIN, _attributeRecord, _markFragments } from "./template.ts";
 import type { AttributeRecord, TemplateRecord } from "./template.ts";
-import { CONSTANT, For, _forIncr, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
+import { CONSTANT, For, _forIncr, _forKeys, _onBranch, _onForRow, _scopedRecord } from "./server-structural.ts";
 import type { ConstantGetter } from "./server-structural.ts";
 import { _onErrorBoundary } from "./server-boundary.ts";
 import { _onSlot } from "./slot.ts";
@@ -56,7 +56,7 @@ import { _onDerivedResource } from "./server-resource-slot.ts";
 import type { AsyncStream } from "./server-async.ts";
 import { _CLASSES, _builtinKinds, _setUnrecorded, createEncoder, serialize, typeName } from "./resume-format.ts";
 import type { BoundaryRecord, ClassHooks, ClassRegistry, DerivedAsync, DerivedDom, FlushTail, TableEntry } from "./resume-format.ts";
-import { encodeTail } from "./server-tail.ts";
+import { encodeTail, tailPieces } from "./server-tail.ts";
 import { derivedDom } from "./dom-data-derived.ts";
 import type { DomList } from "./server-derived-dom.ts";
 import { DERIVED_LOADER, DERIVED_LOADER_VISIBLE, DERIVED_STREAM } from "./resume-loader-derived.min.ts";
@@ -644,7 +644,20 @@ export function isData(value: unknown, depth = 0): boolean {
     const v = (value as Record<string, unknown>)[key];
     if (typeof v === "number") {
       if (v - v !== 0) return false;
-    } else if (typeof v !== "string" && typeof v !== "boolean" && !isData(v, depth + 1)) return false;
+    } else if (typeof v !== "string" && typeof v !== "boolean" && !(Array.isArray(v) ? leafData(v, depth) : isData(v, depth + 1))) return false;
+  }
+  return true;
+}
+// An object member that is an array (a route row's `values`): its primitive elements are checked here, without a call per
+// array; the first element that is not one (an object, null, a hole) hands the whole array to `isData` as before. 100 route
+// rows `{ id, values: [10 numbers] }`: 3.4 → 2.7 µs per walk (SSR-130).
+function leafData(v: unknown[], depth: number): boolean {
+  if (depth >= 64 || (v.length >= 64 && dataHook !== null)) return isData(v, depth + 1);
+  for (let i = 0, n = v.length; i < n; i++) {
+    const x: unknown = v[i];
+    if (typeof x === "number") {
+      if (x - x !== 0) return false;
+    } else if (typeof x !== "string" && typeof x !== "boolean") return isData(v, depth + 1);
   }
   return true;
 }
@@ -1706,14 +1719,8 @@ function derivedRows(props: ForProps, $list: NonNullable<ForProps["$list"]>, ctx
     );
     if (rows !== undefined) return rows;
   }
-  const keys = new Set<unknown>();
-  let dense = Object.getPrototypeOf(items) === Array.prototype;
-  for (let index = 0; index < items.length; index++) {
-    if (!(index in items)) dense = false;
-    const key = (by as (item: unknown, index: number) => unknown)(items[index], index);
-    if (keys.has(key)) throw new Error("Duplicate For key");
-    keys.add(key);
-  }
+  const plain = Object.getPrototypeOf(items) === Array.prototype,
+    dense = _forKeys(items, by as (item: unknown, index: number) => unknown, true) && plain;
   // A plain dense array: one list over the marked plan (`_list` keeps `.map`'s observable reads: Get map / length /
   // constructor, then each index).
   if (dense) {
@@ -2070,7 +2077,7 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     when = options.preload?.lean || (!options.preload?.ahead && linksOnly(tail)) ? "intent" : (options.preload?.ahead ?? "idle");
   if (tail.l) tail.F = fetchAhead(manifest, tail, manifest.runtime!) || manifest.runtime!;
   // (Encoded after the fetch-ahead list: encoding rewrites the records' names in place.)
-  const json = encodeTail(tail);
+  const pieces = tailPieces(tail);
   let events = "";
   for (const type of ctx.events) if (!DEFAULT_TYPES.has(type)) events += events ? " " + type : type;
   const boot = ctx.boot ? visibleBoot(ctx) : null;
@@ -2083,9 +2090,13 @@ export function derivedTail(ctx: DerivedRender): ServerValue {
     // Bounded: an app with more page shapes than this re-builds the rest per request.
     if (memo.size < 512) memo.set(key, fragments);
   }
-  const record = compiledTemplate(fragments, nonce ? [template([json]), nonce] : [template([json])]);
+  const json = jsonRecord(pieces),
+    record = compiledTemplate(fragments, nonce ? [json, nonce] : [json]);
   return lean ? [template([lean]), record] : record;
 }
+// The tail JSON's pieces (`tailPieces`) as one trusted record: each piece a fragment, written as it is.
+const jsonRecord = (pieces: string[]): ServerValue =>
+  (pieces.length === 1 ? template(pieces) : template(pieces, new Array<string>(pieces.length - 1).fill(""))) as unknown as ServerValue;
 /** The fetch-ahead list (`data-fo`, ZERO R6a `foUrls`): the runtime and the chunks of the boundaries that can become live (D5
  * listening records, triggers, document click listeners and what adopting them needs; every boundary without D5 facts), the
  * chunks of the islands an adopt run hydrates (M6-PARITY) and their static import closures (manifest `deps`). Nothing live and
